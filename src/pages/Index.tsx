@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -422,6 +421,51 @@ const MusicStudioTycoon = () => {
     }
   };
 
+  // Add CSS styles dynamically
+  useEffect(() => {
+    const styleId = 'orb-animations';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        .orb {
+          position: absolute;
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          font-weight: bold;
+          transition: all 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+          pointer-events: none;
+          z-index: 1000;
+        }
+        
+        .orb.creativity {
+          background: linear-gradient(45deg, #3b82f6, #60a5fa);
+          color: white;
+          box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+        }
+        
+        .orb.technical {
+          background: linear-gradient(45deg, #10b981, #34d399);
+          color: white;
+          box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    return () => {
+      const existingStyle = document.getElementById(styleId);
+      if (existingStyle) {
+        existingStyle.remove();
+      }
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-green-900 text-white">
       {/* Top Bar */}
@@ -742,35 +786,6 @@ const MusicStudioTycoon = () => {
           )}
         </DialogContent>
       </Dialog>
-
-      <style jsx>{`
-        .orb {
-          position: absolute;
-          width: 30px;
-          height: 30px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 12px;
-          font-weight: bold;
-          transition: all 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-          pointer-events: none;
-          z-index: 1000;
-        }
-        
-        .orb.creativity {
-          background: linear-gradient(45deg, #3b82f6, #60a5fa);
-          color: white;
-          box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
-        }
-        
-        .orb.technical {
-          background: linear-gradient(45deg, #10b981, #34d399);
-          color: white;
-          box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
-        }
-      `}</style>
     </div>
   );
 };
