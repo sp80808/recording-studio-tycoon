@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -53,16 +54,22 @@ interface Project {
   currentStageIndex: number;
 }
 
-interface Engineer {
+interface StaffMember {
   id: string;
   name: string;
-  primarySkill: string;
-  skillLevel: number;
-  efficiency: number;
-  speedMultiplier: number;
-  salary: number;
+  role: 'Engineer' | 'Producer' | 'Songwriter';
+  primaryStats: {
+    creativity: number;
+    technical: number;
+    speed: number;
+  };
+  xpInRole: number;
+  levelInRole: number;
+  genreAffinity: { genre: string; bonus: number } | null;
   energy: number;
+  salary: number;
   status: 'Idle' | 'Working' | 'Resting';
+  assignedProjectId: string | null;
 }
 
 interface Equipment {
@@ -91,13 +98,14 @@ interface GameState {
   ownedEquipment: Equipment[];
   availableProjects: Project[];
   activeProject: Project | null;
-  hiredStaff: Engineer[];
-  candidateEngineers: Engineer[];
+  hiredStaff: StaffMember[];
+  availableCandidates: StaffMember[];
+  lastSalaryDay: number;
 }
 
 const MusicStudioTycoon = () => {
   const [gameState, setGameState] = useState<GameState>({
-    money: 1000,
+    money: 2000,
     reputation: 10,
     currentDay: 2,
     playerData: {
@@ -143,7 +151,8 @@ const MusicStudioTycoon = () => {
     availableProjects: [],
     activeProject: null,
     hiredStaff: [],
-    candidateEngineers: []
+    availableCandidates: [],
+    lastSalaryDay: 0
   });
 
   const [focusAllocation, setFocusAllocation] = useState({
@@ -156,6 +165,8 @@ const MusicStudioTycoon = () => {
   const [showAttributesModal, setShowAttributesModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showStudioModal, setShowStudioModal] = useState(false);
+  const [showStaffModal, setShowStaffModal] = useState(false);
+  const [showRecruitmentModal, setShowRecruitmentModal] = useState(false);
   const [lastReview, setLastReview] = useState<any>(null);
   const orbContainerRef = useRef<HTMLDivElement>(null);
 
@@ -232,10 +243,11 @@ const MusicStudioTycoon = () => {
 
   const initGame = () => {
     const initialProjects = generateNewProjects(3);
+    const initialCandidates = generateCandidates(3);
     setGameState(prev => ({
       ...prev,
       availableProjects: initialProjects,
-      candidateEngineers: generateCandidateEngineers(3)
+      availableCandidates: initialCandidates
     }));
   };
 
@@ -287,25 +299,185 @@ const MusicStudioTycoon = () => {
     return projects;
   };
 
-  const generateCandidateEngineers = (count: number): Engineer[] => {
-    const names = ['Alex Rivera', 'Sam Chen', 'Jordan Blake', 'Casey Smith', 'Taylor Johnson'];
-    const skills = ['Rock', 'Pop', 'Electronic', 'Hip-hop', 'Acoustic'];
-    const engineers: Engineer[] = [];
+  const generateCandidates = (count: number): StaffMember[] => {
+    const names = ['Alex Rivera', 'Sam Chen', 'Jordan Blake', 'Casey Smith', 'Taylor Johnson', 'Morgan Davis', 'Riley Parker', 'Avery Wilson', 'Quinn Martinez', 'Sage Thompson'];
+    const roles: ('Engineer' | 'Producer' | 'Songwriter')[] = ['Engineer', 'Producer', 'Songwriter'];
+    const genres = ['Rock', 'Pop', 'Electronic', 'Hip-hop', 'Acoustic'];
+    const candidates: StaffMember[] = [];
 
     for (let i = 0; i < count; i++) {
-      engineers.push({
-        id: `engineer_${Date.now()}_${i}`,
+      const role = roles[Math.floor(Math.random() * roles.length)];
+      const hasAffinity = Math.random() > 0.6; // 40% chance of genre affinity
+      
+      const candidate: StaffMember = {
+        id: '', // Will be assigned when hired
         name: names[Math.floor(Math.random() * names.length)],
-        primarySkill: skills[Math.floor(Math.random() * skills.length)],
-        skillLevel: Math.floor(Math.random() * 5) + 1,
-        efficiency: 0.8 + (Math.random() * 0.4),
-        speedMultiplier: 1 + (Math.random() * 0.5),
-        salary: 100 + Math.floor(Math.random() * 200),
+        role,
+        primaryStats: {
+          creativity: 15 + Math.floor(Math.random() * 25), // 15-40 range
+          technical: 15 + Math.floor(Math.random() * 25),
+          speed: 15 + Math.floor(Math.random() * 25)
+        },
+        xpInRole: 0,
+        levelInRole: 1,
+        genreAffinity: hasAffinity ? {
+          genre: genres[Math.floor(Math.random() * genres.length)],
+          bonus: 10 + Math.floor(Math.random() * 15) // 10-25% bonus
+        } : null,
         energy: 100,
-        status: 'Idle'
-      });
+        salary: 80 + Math.floor(Math.random() * 120), // $80-200 per week
+        status: 'Idle',
+        assignedProjectId: null
+      };
+      
+      candidates.push(candidate);
     }
-    return engineers;
+    return candidates;
+  };
+
+  const hireStaff = (candidateIndex: number): boolean => {
+    const candidate = gameState.availableCandidates[candidateIndex];
+    if (!candidate) return false;
+
+    const signingFee = candidate.salary * 2;
+    if (gameState.money < signingFee) {
+      toast({
+        title: "Insufficient Funds",
+        description: `Need $${signingFee} to hire ${candidate.name} (2x salary signing fee)`,
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    const newStaff: StaffMember = {
+      ...candidate,
+      id: `staff_${Date.now()}_${Math.random()}`
+    };
+
+    setGameState(prev => ({
+      ...prev,
+      money: prev.money - signingFee,
+      hiredStaff: [...prev.hiredStaff, newStaff],
+      availableCandidates: prev.availableCandidates.filter((_, index) => index !== candidateIndex)
+    }));
+
+    toast({
+      title: "Staff Hired!",
+      description: `${candidate.name} has joined your studio as a ${candidate.role}.`,
+    });
+
+    return true;
+  };
+
+  const assignStaffToProject = (staffId: string) => {
+    if (!gameState.activeProject) {
+      toast({
+        title: "No Active Project",
+        description: "Start a project before assigning staff.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const staff = gameState.hiredStaff.find(s => s.id === staffId);
+    if (!staff || staff.status !== 'Idle') return;
+
+    // Check if role slot is available (max 1 of each role per project)
+    const assignedStaff = gameState.hiredStaff.filter(s => s.assignedProjectId === gameState.activeProject?.id);
+    const roleCount = assignedStaff.filter(s => s.role === staff.role).length;
+    
+    if (roleCount >= 1) {
+      toast({
+        title: "Role Slot Filled",
+        description: `Already have a ${staff.role} assigned to this project.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setGameState(prev => ({
+      ...prev,
+      hiredStaff: prev.hiredStaff.map(s => 
+        s.id === staffId 
+          ? { ...s, status: 'Working' as const, assignedProjectId: prev.activeProject?.id || null }
+          : s
+      )
+    }));
+
+    toast({
+      title: "Staff Assigned",
+      description: `${staff.name} is now working on the project.`,
+    });
+  };
+
+  const unassignStaffFromProject = (staffId: string) => {
+    setGameState(prev => ({
+      ...prev,
+      hiredStaff: prev.hiredStaff.map(s => 
+        s.id === staffId 
+          ? { ...s, status: 'Idle' as const, assignedProjectId: null }
+          : s
+      )
+    }));
+
+    const staff = gameState.hiredStaff.find(s => s.id === staffId);
+    toast({
+      title: "Staff Unassigned",
+      description: `${staff?.name} is now idle.`,
+    });
+  };
+
+  const toggleStaffRest = (staffId: string) => {
+    const staff = gameState.hiredStaff.find(s => s.id === staffId);
+    if (!staff || staff.status === 'Working') return;
+
+    const newStatus = staff.status === 'Idle' ? 'Resting' : 'Idle';
+    
+    setGameState(prev => ({
+      ...prev,
+      hiredStaff: prev.hiredStaff.map(s => 
+        s.id === staffId 
+          ? { ...s, status: newStatus as 'Idle' | 'Resting' }
+          : s
+      )
+    }));
+  };
+
+  const addStaffXP = (staffId: string, amount: number) => {
+    setGameState(prev => ({
+      ...prev,
+      hiredStaff: prev.hiredStaff.map(s => {
+        if (s.id === staffId) {
+          const newXP = s.xpInRole + amount;
+          const xpForNextLevel = s.levelInRole * 50; // Scaling XP requirement
+          
+          if (newXP >= xpForNextLevel) {
+            // Level up!
+            const newLevel = s.levelInRole + 1;
+            const statIncrease = 2;
+            
+            toast({
+              title: "Staff Level Up!",
+              description: `${s.name} reached level ${newLevel} in ${s.role}!`,
+            });
+
+            return {
+              ...s,
+              xpInRole: newXP - xpForNextLevel,
+              levelInRole: newLevel,
+              primaryStats: {
+                creativity: s.primaryStats.creativity + statIncrease,
+                technical: s.primaryStats.technical + statIncrease,
+                speed: s.primaryStats.speed + statIncrease
+              }
+            };
+          }
+          
+          return { ...s, xpInRole: newXP };
+        }
+        return s;
+      })
+    }));
   };
 
   const startProject = (project: Project) => {
@@ -337,7 +509,6 @@ const MusicStudioTycoon = () => {
     orb.className = `orb ${type}`;
     orb.textContent = `+${amount}`;
     
-    // Random starting position in work area
     const startX = Math.random() * 200;
     const startY = Math.random() * 100;
     orb.style.left = `${startX}px`;
@@ -345,7 +516,6 @@ const MusicStudioTycoon = () => {
 
     orbContainerRef.current.appendChild(orb);
 
-    // Animate to target
     setTimeout(() => {
       const targetElement = document.getElementById(type === 'creativity' ? 'creativity-points' : 'technical-points');
       if (targetElement) {
@@ -359,7 +529,6 @@ const MusicStudioTycoon = () => {
       }
     }, 100);
 
-    // Remove after animation
     setTimeout(() => {
       if (orb.parentNode) {
         orb.parentNode.removeChild(orb);
@@ -373,17 +542,51 @@ const MusicStudioTycoon = () => {
     const project = gameState.activeProject;
     const currentStage = project.stages[project.currentStageIndex];
     
-    // Calculate points based on focus allocation and player attributes
-    const creativityGain = Math.floor(
+    // Calculate base points from player attributes
+    let creativityGain = Math.floor(
       (focusAllocation.performance / 100) * 5 * gameState.playerData.attributes.creativeIntuition
     );
-    const technicalGain = Math.floor(
+    let technicalGain = Math.floor(
       (focusAllocation.soundCapture / 100) * 5 * gameState.playerData.attributes.technicalAptitude
     );
+
+    // Add staff contributions
+    const assignedStaff = gameState.hiredStaff.filter(s => s.assignedProjectId === project.id);
+    
+    assignedStaff.forEach(staff => {
+      if (staff.energy < 20) {
+        // Low energy penalty
+        const penalty = 0.3;
+        creativityGain += Math.floor(staff.primaryStats.creativity * 0.1 * penalty);
+        technicalGain += Math.floor(staff.primaryStats.technical * 0.1 * penalty);
+      } else {
+        // Normal contribution
+        let staffCreativity = Math.floor(staff.primaryStats.creativity * 0.15);
+        let staffTechnical = Math.floor(staff.primaryStats.technical * 0.15);
+        
+        // Genre affinity bonus
+        if (staff.genreAffinity && staff.genreAffinity.genre === project.genre) {
+          const bonus = staff.genreAffinity.bonus / 100;
+          staffCreativity += Math.floor(staffCreativity * bonus);
+          staffTechnical += Math.floor(staffTechnical * bonus);
+        }
+        
+        creativityGain += staffCreativity;
+        technicalGain += staffTechnical;
+      }
+    });
 
     // Create orb animations
     createOrb('creativity', creativityGain);
     createOrb('technical', technicalGain);
+
+    // Calculate work progress (staff speed affects this)
+    let workProgress = 2;
+    assignedStaff.forEach(staff => {
+      if (staff.energy >= 20) {
+        workProgress += Math.floor(staff.primaryStats.speed * 0.05);
+      }
+    });
 
     // Update project progress
     const updatedProject = {
@@ -392,20 +595,28 @@ const MusicStudioTycoon = () => {
       accumulatedTPoints: project.accumulatedTPoints + technicalGain,
       stages: project.stages.map((stage, index) => 
         index === project.currentStageIndex 
-          ? { ...stage, workUnitsCompleted: Math.min(stage.workUnitsCompleted + 2, stage.workUnitsBase) }
+          ? { ...stage, workUnitsCompleted: Math.min(stage.workUnitsCompleted + workProgress, stage.workUnitsBase) }
           : stage
       )
     };
 
     setGameState(prev => ({ ...prev, activeProject: updatedProject }));
 
+    // Deplete staff energy
+    setGameState(prev => ({
+      ...prev,
+      hiredStaff: prev.hiredStaff.map(s => 
+        s.assignedProjectId === project.id && s.status === 'Working'
+          ? { ...s, energy: Math.max(0, s.energy - 15) }
+          : s
+      )
+    }));
+
     // Check if stage is complete
-    if (currentStage.workUnitsCompleted + 2 >= currentStage.workUnitsBase) {
+    if (currentStage.workUnitsCompleted + workProgress >= currentStage.workUnitsBase) {
       if (project.currentStageIndex + 1 >= project.stages.length) {
-        // Project complete
         completeProject(updatedProject);
       } else {
-        // Move to next stage
         setTimeout(() => {
           setGameState(prev => ({
             ...prev,
@@ -442,7 +653,13 @@ const MusicStudioTycoon = () => {
     setLastReview(review);
     setShowReviewModal(true);
 
-    // Update game state
+    // Give XP to assigned staff
+    const assignedStaff = gameState.hiredStaff.filter(s => s.assignedProjectId === project.id);
+    assignedStaff.forEach(staff => {
+      addStaffXP(staff.id, 20 + Math.floor(qualityScore * 5));
+    });
+
+    // Unassign staff from completed project
     setGameState(prev => ({
       ...prev,
       money: prev.money + payout,
@@ -452,10 +669,14 @@ const MusicStudioTycoon = () => {
       playerData: {
         ...prev.playerData,
         xp: prev.playerData.xp + xpGain
-      }
+      },
+      hiredStaff: prev.hiredStaff.map(s => 
+        s.assignedProjectId === project.id 
+          ? { ...s, status: 'Idle' as const, assignedProjectId: null }
+          : s
+      )
     }));
 
-    // Check for level up
     if (gameState.playerData.xp + xpGain >= gameState.playerData.xpToNextLevel) {
       levelUpPlayer();
     }
@@ -499,29 +720,55 @@ const MusicStudioTycoon = () => {
     });
   };
 
-  const hireEngineer = (engineerId: string) => {
-    const engineer = gameState.candidateEngineers.find(e => e.id === engineerId);
-    if (!engineer || gameState.money < engineer.salary) return;
-
-    setGameState(prev => ({
-      ...prev,
-      money: prev.money - engineer.salary,
-      hiredStaff: [...prev.hiredStaff, engineer],
-      candidateEngineers: prev.candidateEngineers.filter(e => e.id !== engineerId)
-    }));
-
-    toast({
-      title: "Engineer Hired!",
-      description: `${engineer.name} has joined your studio.`,
-    });
-  };
-
   const advanceDay = () => {
-    setGameState(prev => ({ ...prev, currentDay: prev.currentDay + 1 }));
+    const newDay = gameState.currentDay + 1;
+    
+    setGameState(prev => ({ 
+      ...prev, 
+      currentDay: newDay,
+      // Recover energy for resting staff
+      hiredStaff: prev.hiredStaff.map(s => 
+        s.status === 'Resting' 
+          ? { ...s, energy: Math.min(100, s.energy + 20) }
+          : s
+      )
+    }));
+    
+    // Process salary payments every 7 days
+    if (newDay % 7 === 0 && newDay > gameState.lastSalaryDay) {
+      const totalSalaries = gameState.hiredStaff.reduce((total, staff) => total + staff.salary, 0);
+      
+      if (gameState.money >= totalSalaries) {
+        setGameState(prev => ({
+          ...prev,
+          money: prev.money - totalSalaries,
+          lastSalaryDay: newDay
+        }));
+        
+        toast({
+          title: "Salaries Paid",
+          description: `Paid $${totalSalaries} in weekly salaries.`,
+        });
+      } else {
+        toast({
+          title: "Cannot Pay Salaries!",
+          description: `Need $${totalSalaries} for weekly salaries. Staff morale will suffer.`,
+          variant: "destructive"
+        });
+      }
+    }
     
     // Process active project if exists
     if (gameState.activeProject) {
       processStageWork();
+    }
+
+    // Refresh candidates occasionally
+    if (newDay % 5 === 0) {
+      setGameState(prev => ({
+        ...prev,
+        availableCandidates: generateCandidates(3)
+      }));
     }
   };
 
@@ -602,6 +849,21 @@ const MusicStudioTycoon = () => {
     };
   }, []);
 
+  const getStaffStatusColor = (status: string) => {
+    switch (status) {
+      case 'Working': return 'text-green-400';
+      case 'Resting': return 'text-blue-400';
+      case 'Idle': return 'text-gray-400';
+      default: return 'text-gray-400';
+    }
+  };
+
+  const getEnergyColor = (energy: number) => {
+    if (energy > 60) return 'text-green-400';
+    if (energy > 30) return 'text-yellow-400';
+    return 'text-red-400';
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-green-900 text-white">
       {/* Top Bar */}
@@ -611,6 +873,7 @@ const MusicStudioTycoon = () => {
           <div className="text-blue-400">{gameState.reputation} Reputation</div>
           <div className="text-yellow-400">Day {gameState.currentDay}</div>
           <div className="text-purple-400">Level {gameState.playerData.level}</div>
+          <div className="text-orange-400">Staff: {gameState.hiredStaff.length}</div>
         </div>
         <div className="flex items-center gap-4">
           <Dialog open={showStudioModal} onOpenChange={setShowStudioModal}>
@@ -679,6 +942,171 @@ const MusicStudioTycoon = () => {
               </div>
             </DialogContent>
           </Dialog>
+          
+          <Dialog open={showStaffModal} onOpenChange={setShowStaffModal}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="bg-gray-800/80 hover:bg-gray-700/80 text-white border-gray-600">
+                My Staff 👥
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-gray-900 border-gray-600 text-white max-w-4xl">
+              <DialogHeader>
+                <DialogTitle className="text-white">Staff Management</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {gameState.hiredStaff.length === 0 ? (
+                  <div className="text-center text-gray-400 py-8">
+                    No staff hired yet. Visit the recruitment center to hire your first team members!
+                  </div>
+                ) : (
+                  gameState.hiredStaff.map(staff => (
+                    <Card key={staff.id} className="p-4 bg-gray-800 border-gray-600">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h4 className="text-lg font-bold text-white">{staff.name}</h4>
+                          <p className="text-gray-300">{staff.role} - Level {staff.levelInRole}</p>
+                        </div>
+                        <div className="text-right">
+                          <div className={`font-bold ${getStaffStatusColor(staff.status)}`}>{staff.status}</div>
+                          <div className="text-sm text-gray-400">${staff.salary}/week</div>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-4 mb-3">
+                        <div className="text-center">
+                          <div className="text-blue-400 font-bold">{staff.primaryStats.creativity}</div>
+                          <div className="text-xs text-gray-400">Creativity</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-green-400 font-bold">{staff.primaryStats.technical}</div>
+                          <div className="text-xs text-gray-400">Technical</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-yellow-400 font-bold">{staff.primaryStats.speed}</div>
+                          <div className="text-xs text-gray-400">Speed</div>
+                        </div>
+                      </div>
+                      
+                      <div className="mb-3">
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-gray-300">Energy</span>
+                          <span className={getEnergyColor(staff.energy)}>{staff.energy}/100</span>
+                        </div>
+                        <Progress value={staff.energy} className="h-2" />
+                      </div>
+                      
+                      {staff.genreAffinity && (
+                        <div className="mb-3 text-sm">
+                          <span className="text-purple-400">Genre Affinity: </span>
+                          <span className="text-white">{staff.genreAffinity.genre} (+{staff.genreAffinity.bonus}%)</span>
+                        </div>
+                      )}
+                      
+                      <div className="flex gap-2">
+                        {staff.status === 'Idle' && gameState.activeProject && (
+                          <Button 
+                            size="sm" 
+                            onClick={() => assignStaffToProject(staff.id)}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            Assign to Project
+                          </Button>
+                        )}
+                        
+                        {staff.status === 'Working' && (
+                          <Button 
+                            size="sm" 
+                            onClick={() => unassignStaffFromProject(staff.id)}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            Unassign
+                          </Button>
+                        )}
+                        
+                        {staff.status !== 'Working' && (
+                          <Button 
+                            size="sm" 
+                            onClick={() => toggleStaffRest(staff.id)}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            {staff.status === 'Resting' ? 'Stop Resting' : 'Rest'}
+                          </Button>
+                        )}
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+          
+          {gameState.playerData.level >= 2 && (
+            <Dialog open={showRecruitmentModal} onOpenChange={setShowRecruitmentModal}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="bg-gray-800/80 hover:bg-gray-700/80 text-white border-gray-600">
+                  Recruit Staff 🎯
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-gray-900 border-gray-600 text-white max-w-4xl">
+                <DialogHeader>
+                  <DialogTitle className="text-white">Recruitment Center</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 max-h-96 overflow-y-auto">
+                  {gameState.availableCandidates.length === 0 ? (
+                    <div className="text-center text-gray-400 py-8">
+                      No candidates available. Check back in a few days!
+                    </div>
+                  ) : (
+                    gameState.availableCandidates.map((candidate, index) => (
+                      <Card key={index} className="p-4 bg-gray-800 border-gray-600">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <h4 className="text-lg font-bold text-white">{candidate.name}</h4>
+                            <p className="text-gray-300">{candidate.role}</p>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-red-400 font-bold">${candidate.salary * 2} signing fee</div>
+                            <div className="text-sm text-gray-400">${candidate.salary}/week salary</div>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-3 gap-4 mb-3">
+                          <div className="text-center">
+                            <div className="text-blue-400 font-bold">{candidate.primaryStats.creativity}</div>
+                            <div className="text-xs text-gray-400">Creativity</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-green-400 font-bold">{candidate.primaryStats.technical}</div>
+                            <div className="text-xs text-gray-400">Technical</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-yellow-400 font-bold">{candidate.primaryStats.speed}</div>
+                            <div className="text-xs text-gray-400">Speed</div>
+                          </div>
+                        </div>
+                        
+                        {candidate.genreAffinity && (
+                          <div className="mb-3 text-sm">
+                            <span className="text-purple-400">Genre Affinity: </span>
+                            <span className="text-white">{candidate.genreAffinity.genre} (+{candidate.genreAffinity.bonus}%)</span>
+                          </div>
+                        )}
+                        
+                        <Button 
+                          onClick={() => hireStaff(index)}
+                          disabled={gameState.money < candidate.salary * 2}
+                          className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600"
+                        >
+                          {gameState.money < candidate.salary * 2 ? 'Insufficient Funds' : 'Hire'}
+                        </Button>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+          
           <div className="text-right text-sm">
             <div>Music Studio Tycoon</div>
             <div className="text-gray-400">
@@ -709,12 +1137,25 @@ const MusicStudioTycoon = () => {
             <Card className="p-4 bg-blue-900/80 border-blue-400 backdrop-blur-sm">
               <div className="text-sm text-blue-200 mb-2">Currently working on a project.</div>
               <div className="text-xs text-gray-300">Complete it before taking another.</div>
+              
+              {/* Show assigned staff */}
+              <div className="mt-2 pt-2 border-t border-blue-400/30">
+                <div className="text-xs text-blue-300 mb-1">Assigned Staff:</div>
+                {gameState.hiredStaff.filter(s => s.assignedProjectId === gameState.activeProject?.id).map(staff => (
+                  <div key={staff.id} className="text-xs text-gray-200">
+                    {staff.name} ({staff.role})
+                  </div>
+                ))}
+                {gameState.hiredStaff.filter(s => s.assignedProjectId === gameState.activeProject?.id).length === 0 && (
+                  <div className="text-xs text-gray-400">No staff assigned</div>
+                )}
+              </div>
             </Card>
           )}
 
           <div className="space-y-3 max-h-96 overflow-y-auto">
             {gameState.availableProjects.map(project => (
-              <Card key={project.id} className="p-4 bg-gray-900/80 border-gray-600 hover:bg-gray-800/80 transition-colors backdrop-blur-sm">
+              <Card key={project.id} className="p-4 bg-gray-900/90 border-gray-600 hover:bg-gray-800/90 transition-colors backdrop-blur-sm">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-semibold text-white">{project.title}</h3>
                   <span className="text-xs bg-red-600 px-2 py-1 rounded text-white">{project.clientType}</span>
@@ -829,6 +1270,9 @@ const MusicStudioTycoon = () => {
                 <div className="text-6xl mb-4">🎵</div>
                 <h2 className="text-2xl font-bold mb-2 text-white">Studio Ready</h2>
                 <p className="text-gray-300">Select a project from the left panel to get started</p>
+                {gameState.playerData.level < 2 && (
+                  <p className="text-yellow-400 mt-2 text-sm">Reach level 2 to unlock staff recruitment!</p>
+                )}
               </Card>
             </div>
           )}
@@ -940,34 +1384,6 @@ const MusicStudioTycoon = () => {
               ))}
             </div>
           </div>
-
-          {gameState.candidateEngineers.length > 0 && (
-            <div>
-              <h3 className="text-lg font-bold mb-3 text-white">Hiring</h3>
-              <div className="space-y-3 max-h-60 overflow-y-auto">
-                {gameState.candidateEngineers.map(engineer => (
-                  <Card key={engineer.id} className="p-3 bg-gray-900/80 border-gray-600 backdrop-blur-sm">
-                    <h4 className="font-semibold text-white">{engineer.name}</h4>
-                    <div className="text-sm text-gray-300">
-                      <div>{engineer.primarySkill} - Level {engineer.skillLevel}</div>
-                      <div>Efficiency: {Math.floor(engineer.efficiency * 100)}%</div>
-                    </div>
-                    <div className="flex justify-between items-center mt-2">
-                      <span className="text-red-400">${engineer.salary}</span>
-                      <Button 
-                        size="sm" 
-                        onClick={() => hireEngineer(engineer.id)}
-                        disabled={gameState.money < engineer.salary}
-                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600"
-                      >
-                        Hire
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
