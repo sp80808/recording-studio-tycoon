@@ -490,43 +490,44 @@ const MusicStudioTycoon = () => {
         {/* Left Panel - Available Projects */}
         <div className="w-80 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold">Available Projects</h2>
+            <h2 className="text-xl font-bold text-white">Available Projects</h2>
             <Button 
               onClick={() => setGameState(prev => ({ 
                 ...prev, 
                 availableProjects: [...prev.availableProjects, ...generateNewProjects(1)] 
               }))}
               size="sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               Refresh
             </Button>
           </div>
 
           {gameState.activeProject && (
-            <Card className="p-4 bg-blue-900/50 border-blue-500">
-              <div className="text-sm text-blue-300 mb-2">Currently working on a project.</div>
-              <div className="text-xs text-gray-400">Complete it before taking another.</div>
+            <Card className="p-4 bg-blue-900/80 border-blue-400 backdrop-blur-sm">
+              <div className="text-sm text-blue-200 mb-2">Currently working on a project.</div>
+              <div className="text-xs text-gray-300">Complete it before taking another.</div>
             </Card>
           )}
 
           <div className="space-y-3 max-h-96 overflow-y-auto">
             {gameState.availableProjects.map(project => (
-              <Card key={project.id} className="p-4 bg-gray-800/50 hover:bg-gray-700/50 transition-colors">
+              <Card key={project.id} className="p-4 bg-gray-900/80 border-gray-600 hover:bg-gray-800/80 transition-colors backdrop-blur-sm">
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold">{project.title}</h3>
-                  <span className="text-xs bg-red-600 px-2 py-1 rounded">{project.clientType}</span>
+                  <h3 className="font-semibold text-white">{project.title}</h3>
+                  <span className="text-xs bg-red-600 px-2 py-1 rounded text-white">{project.clientType}</span>
                 </div>
-                <div className="text-sm space-y-1">
-                  <div>Genre: {project.genre}</div>
-                  <div>Difficulty: {project.difficulty}</div>
-                  <div className="text-green-400">${project.payoutBase}</div>
-                  <div className="text-blue-400">+{project.repGainBase} Rep</div>
-                  <div className="text-yellow-400">{project.durationDaysTotal} days</div>
+                <div className="text-sm space-y-1 text-gray-200">
+                  <div>Genre: <span className="text-white">{project.genre}</span></div>
+                  <div>Difficulty: <span className="text-orange-400">{project.difficulty}</span></div>
+                  <div className="text-green-400 font-semibold">${project.payoutBase}</div>
+                  <div className="text-blue-400 font-semibold">+{project.repGainBase} Rep</div>
+                  <div className="text-yellow-400 font-semibold">{project.durationDaysTotal} days</div>
                 </div>
                 <Button 
                   onClick={() => startProject(project)}
                   disabled={!!gameState.activeProject}
-                  className="w-full mt-3"
+                  className="w-full mt-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white"
                   size="sm"
                 >
                   Start Project
@@ -541,31 +542,31 @@ const MusicStudioTycoon = () => {
           {gameState.activeProject ? (
             <div className="space-y-6">
               {/* Active Project Dashboard */}
-              <Card className="p-6 bg-black/30">
-                <h2 className="text-2xl font-bold mb-2">Working on: {gameState.activeProject.title}</h2>
-                <div className="text-lg mb-4">
+              <Card className="p-6 bg-black/50 backdrop-blur-sm border-gray-600">
+                <h2 className="text-2xl font-bold mb-2 text-white">Working on: {gameState.activeProject.title}</h2>
+                <div className="text-lg mb-4 text-gray-200">
                   Stage {gameState.activeProject.currentStageIndex + 1} of {gameState.activeProject.stages.length}: {gameState.activeProject.stages[gameState.activeProject.currentStageIndex].stageName}
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4 mb-6">
                   <div id="creativity-points" className="text-center">
                     <div className="text-3xl mb-2">💙</div>
-                    <div className="text-xl font-bold">{gameState.activeProject.accumulatedCPoints}</div>
-                    <div className="text-sm text-gray-400">Creativity</div>
+                    <div className="text-xl font-bold text-white">{gameState.activeProject.accumulatedCPoints}</div>
+                    <div className="text-sm text-gray-300">Creativity</div>
                   </div>
                   <div id="technical-points" className="text-center">
                     <div className="text-3xl mb-2">💚</div>
-                    <div className="text-xl font-bold">{gameState.activeProject.accumulatedTPoints}</div>
-                    <div className="text-sm text-gray-400">Technical</div>
+                    <div className="text-xl font-bold text-white">{gameState.activeProject.accumulatedTPoints}</div>
+                    <div className="text-sm text-gray-300">Technical</div>
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Focus Allocation:</h3>
+                  <h3 className="text-lg font-semibold text-white">Focus Allocation:</h3>
                   
                   <div className="space-y-3">
                     <div>
-                      <div className="flex justify-between mb-2">
+                      <div className="flex justify-between mb-2 text-gray-200">
                         <span>Performance</span>
                         <span>{focusAllocation.performance}%</span>
                       </div>
@@ -578,7 +579,7 @@ const MusicStudioTycoon = () => {
                     </div>
 
                     <div>
-                      <div className="flex justify-between mb-2">
+                      <div className="flex justify-between mb-2 text-gray-200">
                         <span>Sound Capture</span>
                         <span>{focusAllocation.soundCapture}%</span>
                       </div>
@@ -591,7 +592,7 @@ const MusicStudioTycoon = () => {
                     </div>
 
                     <div>
-                      <div className="flex justify-between mb-2">
+                      <div className="flex justify-between mb-2 text-gray-200">
                         <span>Layering</span>
                         <span>{focusAllocation.layering}%</span>
                       </div>
@@ -604,13 +605,13 @@ const MusicStudioTycoon = () => {
                     </div>
                   </div>
 
-                  <Button onClick={processStageWork} className="w-full" size="lg">
+                  <Button onClick={processStageWork} className="w-full bg-purple-600 hover:bg-purple-700 text-white" size="lg">
                     Complete {gameState.activeProject.stages[gameState.activeProject.currentStageIndex].stageName} & Proceed
                   </Button>
                 </div>
 
                 <div className="mt-4">
-                  <div className="text-sm text-gray-400 mb-2">Stage Progress</div>
+                  <div className="text-sm text-gray-300 mb-2">Stage Progress</div>
                   <Progress 
                     value={(gameState.activeProject.stages[gameState.activeProject.currentStageIndex].workUnitsCompleted / gameState.activeProject.stages[gameState.activeProject.currentStageIndex].workUnitsBase) * 100} 
                   />
@@ -622,10 +623,10 @@ const MusicStudioTycoon = () => {
             </div>
           ) : (
             <div className="flex items-center justify-center h-full">
-              <Card className="p-8 text-center bg-black/30">
+              <Card className="p-8 text-center bg-black/50 backdrop-blur-sm border-gray-600">
                 <div className="text-6xl mb-4">🎵</div>
-                <h2 className="text-2xl font-bold mb-2">Studio Ready</h2>
-                <p className="text-gray-400">Select a project from the left panel to get started</p>
+                <h2 className="text-2xl font-bold mb-2 text-white">Studio Ready</h2>
+                <p className="text-gray-300">Select a project from the left panel to get started</p>
               </Card>
             </div>
           )}
@@ -636,18 +637,18 @@ const MusicStudioTycoon = () => {
           <div className="space-y-2">
             <Dialog open={showSkillsModal} onOpenChange={setShowSkillsModal}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="w-full">View Studio Skills</Button>
+                <Button variant="outline" className="w-full bg-gray-800/80 hover:bg-gray-700/80 text-white border-gray-600">View Studio Skills</Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="bg-gray-900 border-gray-600 text-white">
                 <DialogHeader>
-                  <DialogTitle>Studio Skills</DialogTitle>
+                  <DialogTitle className="text-white">Studio Skills</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-3">
                   {Object.values(gameState.studioSkills).map(skill => (
                     <div key={skill.name} className="flex justify-between items-center">
-                      <span>{skill.name}</span>
+                      <span className="text-gray-200">{skill.name}</span>
                       <div className="text-right">
-                        <div className="font-bold">Level {skill.level}</div>
+                        <div className="font-bold text-white">Level {skill.level}</div>
                         <div className="text-sm text-gray-400">{skill.xp}/{skill.xpToNext}</div>
                       </div>
                     </div>
@@ -658,25 +659,26 @@ const MusicStudioTycoon = () => {
 
             <Dialog open={showAttributesModal} onOpenChange={setShowAttributesModal}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="w-full">
+                <Button variant="outline" className="w-full bg-gray-800/80 hover:bg-gray-700/80 text-white border-gray-600">
                   Player Attributes ({gameState.playerData.perkPoints} points)
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="bg-gray-900 border-gray-600 text-white">
                 <DialogHeader>
-                  <DialogTitle>Player Attributes</DialogTitle>
+                  <DialogTitle className="text-white">Player Attributes</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div className="text-sm text-gray-400">Available Perk Points: {gameState.playerData.perkPoints}</div>
                   {Object.entries(gameState.playerData.attributes).map(([key, value]) => (
                     <div key={key} className="flex justify-between items-center">
-                      <span className="capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                      <span className="capitalize text-gray-200">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold">{value}</span>
+                        <span className="font-bold text-white">{value}</span>
                         <Button
                           size="sm"
                           onClick={() => spendPerkPoint(key as keyof PlayerAttributes)}
                           disabled={gameState.playerData.perkPoints <= 0}
+                          className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600"
                         >
                           +
                         </Button>
@@ -687,28 +689,28 @@ const MusicStudioTycoon = () => {
               </DialogContent>
             </Dialog>
 
-            <Button onClick={advanceDay} className="w-full">Next Day</Button>
+            <Button onClick={advanceDay} className="w-full bg-orange-600 hover:bg-orange-700 text-white">Next Day</Button>
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-3">Upgrades</h3>
+            <h3 className="text-lg font-bold mb-3 text-white">Upgrades</h3>
             <div className="space-y-3">
-              <Card className="p-4 bg-gray-800/50">
+              <Card className="p-4 bg-gray-900/80 border-gray-600 backdrop-blur-sm">
                 <h4 className="font-semibold text-green-400">Pro Mic Bundle</h4>
-                <p className="text-sm text-gray-400 mt-1">Professional microphones for better acoustic and pop recordings</p>
-                <div className="mt-2 text-sm">Skills: acoustic +2, pop +1</div>
+                <p className="text-sm text-gray-300 mt-1">Professional microphones for better acoustic and pop recordings</p>
+                <div className="mt-2 text-sm text-gray-200">Skills: acoustic +2, pop +1</div>
                 <div className="flex justify-between items-center mt-3">
                   <span className="text-green-400 font-bold">$800</span>
-                  <Button size="sm" disabled={gameState.money < 800}>Purchase</Button>
+                  <Button size="sm" disabled={gameState.money < 800} className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600">Purchase</Button>
                 </div>
               </Card>
 
-              <Card className="p-4 bg-gray-800/50">
+              <Card className="p-4 bg-gray-900/80 border-gray-600 backdrop-blur-sm">
                 <h4 className="font-semibold text-yellow-400">Faster DAW</h4>
-                <p className="text-sm text-gray-400 mt-1">Upgraded digital audio workstation for faster project completion</p>
+                <p className="text-sm text-gray-300 mt-1">Upgraded digital audio workstation for faster project completion</p>
                 <div className="flex justify-between items-center mt-3">
                   <span className="text-green-400 font-bold">$1200</span>
-                  <Button size="sm" disabled={gameState.money < 1200}>Purchase</Button>
+                  <Button size="sm" disabled={gameState.money < 1200} className="bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600">Purchase</Button>
                 </div>
               </Card>
             </div>
@@ -716,12 +718,12 @@ const MusicStudioTycoon = () => {
 
           {gameState.candidateEngineers.length > 0 && (
             <div>
-              <h3 className="text-lg font-bold mb-3">Hiring</h3>
+              <h3 className="text-lg font-bold mb-3 text-white">Hiring</h3>
               <div className="space-y-3 max-h-60 overflow-y-auto">
                 {gameState.candidateEngineers.map(engineer => (
-                  <Card key={engineer.id} className="p-3 bg-gray-800/50">
-                    <h4 className="font-semibold">{engineer.name}</h4>
-                    <div className="text-sm text-gray-400">
+                  <Card key={engineer.id} className="p-3 bg-gray-900/80 border-gray-600 backdrop-blur-sm">
+                    <h4 className="font-semibold text-white">{engineer.name}</h4>
+                    <div className="text-sm text-gray-300">
                       <div>{engineer.primarySkill} - Level {engineer.skillLevel}</div>
                       <div>Efficiency: {Math.floor(engineer.efficiency * 100)}%</div>
                     </div>
@@ -731,6 +733,7 @@ const MusicStudioTycoon = () => {
                         size="sm" 
                         onClick={() => hireEngineer(engineer.id)}
                         disabled={gameState.money < engineer.salary}
+                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600"
                       >
                         Hire
                       </Button>
@@ -745,40 +748,40 @@ const MusicStudioTycoon = () => {
 
       {/* Review Modal */}
       <Dialog open={showReviewModal} onOpenChange={setShowReviewModal}>
-        <DialogContent>
+        <DialogContent className="bg-gray-900 border-gray-600 text-white">
           <DialogHeader>
-            <DialogTitle>Project Complete! 🎉</DialogTitle>
+            <DialogTitle className="text-white">Project Complete! 🎉</DialogTitle>
           </DialogHeader>
           {lastReview && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">{lastReview.projectTitle}</h3>
+              <h3 className="text-lg font-semibold text-white">{lastReview.projectTitle}</h3>
               <div className="grid grid-cols-2 gap-4 text-center">
                 <div>
                   <div className="text-2xl">💙</div>
-                  <div className="font-bold">{lastReview.creativityPoints}</div>
+                  <div className="font-bold text-white">{lastReview.creativityPoints}</div>
                   <div className="text-sm text-gray-400">Creativity</div>
                 </div>
                 <div>
                   <div className="text-2xl">💚</div>
-                  <div className="font-bold">{lastReview.technicalPoints}</div>
+                  <div className="font-bold text-white">{lastReview.technicalPoints}</div>
                   <div className="text-sm text-gray-400">Technical</div>
                 </div>
               </div>
               <div className="text-center">
                 <div className="text-3xl mb-2">⭐</div>
-                <div className="text-xl font-bold">Quality Score: {lastReview.qualityScore}%</div>
+                <div className="text-xl font-bold text-white">Quality Score: {lastReview.qualityScore}%</div>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span>Payment:</span>
+                  <span className="text-gray-300">Payment:</span>
                   <span className="text-green-400 font-bold">${lastReview.payout}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Reputation:</span>
+                  <span className="text-gray-300">Reputation:</span>
                   <span className="text-blue-400 font-bold">+{lastReview.repGain}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Experience:</span>
+                  <span className="text-gray-300">Experience:</span>
                   <span className="text-purple-400 font-bold">+{lastReview.xpGain} XP</span>
                 </div>
               </div>
