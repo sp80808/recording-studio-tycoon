@@ -65,6 +65,22 @@ interface Engineer {
   status: 'Idle' | 'Working' | 'Resting';
 }
 
+interface Equipment {
+  id: string;
+  name: string;
+  category: 'microphone' | 'monitor' | 'interface' | 'processor' | 'instrument';
+  price: number;
+  description: string;
+  bonuses: {
+    genreBonus?: Record<string, number>;
+    qualityBonus?: number;
+    speedBonus?: number;
+    creativityBonus?: number;
+    technicalBonus?: number;
+  };
+  icon: string;
+}
+
 interface GameState {
   money: number;
   reputation: number;
@@ -72,6 +88,7 @@ interface GameState {
   playerData: PlayerData;
   studioSkills: Record<string, StudioSkill>;
   ownedUpgrades: string[];
+  ownedEquipment: Equipment[];
   availableProjects: Project[];
   activeProject: Project | null;
   hiredStaff: Engineer[];
@@ -103,6 +120,26 @@ const MusicStudioTycoon = () => {
       Acoustic: { name: 'Acoustic', level: 1, xp: 0, xpToNext: 20 }
     },
     ownedUpgrades: [],
+    ownedEquipment: [
+      {
+        id: 'basic_mic',
+        name: 'Basic USB Mic',
+        category: 'microphone',
+        price: 0,
+        description: 'Standard starter microphone',
+        bonuses: { qualityBonus: 0 },
+        icon: '🎤'
+      },
+      {
+        id: 'basic_monitors',
+        name: 'Basic Speakers',
+        category: 'monitor',
+        price: 0,
+        description: 'Standard studio monitors',
+        bonuses: { qualityBonus: 0 },
+        icon: '🔊'
+      }
+    ],
     availableProjects: [],
     activeProject: null,
     hiredStaff: [],
@@ -118,8 +155,75 @@ const MusicStudioTycoon = () => {
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [showAttributesModal, setShowAttributesModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showStudioModal, setShowStudioModal] = useState(false);
   const [lastReview, setLastReview] = useState<any>(null);
   const orbContainerRef = useRef<HTMLDivElement>(null);
+
+  const availableEquipment: Equipment[] = [
+    {
+      id: 'condenser_mic',
+      name: 'Professional Condenser Mic',
+      category: 'microphone',
+      price: 450,
+      description: 'High-quality condenser microphone perfect for vocals and acoustic instruments',
+      bonuses: { genreBonus: { Acoustic: 2, Pop: 1 }, qualityBonus: 10 },
+      icon: '🎤'
+    },
+    {
+      id: 'dynamic_mic',
+      name: 'Dynamic Recording Mic',
+      category: 'microphone',
+      price: 320,
+      description: 'Robust dynamic microphone ideal for rock and live recordings',
+      bonuses: { genreBonus: { Rock: 2, Hiphop: 1 }, qualityBonus: 8 },
+      icon: '🎤'
+    },
+    {
+      id: 'studio_monitors',
+      name: 'Studio Monitor Pair',
+      category: 'monitor',
+      price: 800,
+      description: 'Professional studio monitors for accurate sound reproduction',
+      bonuses: { qualityBonus: 15, technicalBonus: 5 },
+      icon: '🔊'
+    },
+    {
+      id: 'audio_interface',
+      name: 'Audio Interface',
+      category: 'interface',
+      price: 350,
+      description: 'Multi-channel audio interface for professional recording',
+      bonuses: { qualityBonus: 12, speedBonus: 10 },
+      icon: '🔌'
+    },
+    {
+      id: 'compressor',
+      name: 'Hardware Compressor',
+      category: 'processor',
+      price: 600,
+      description: 'Analog compressor for that warm, professional sound',
+      bonuses: { qualityBonus: 20, technicalBonus: 8 },
+      icon: '⚙️'
+    },
+    {
+      id: 'synthesizer',
+      name: 'Analog Synthesizer',
+      category: 'instrument',
+      price: 1200,
+      description: 'Vintage-style analog synthesizer for electronic music production',
+      bonuses: { genreBonus: { Electronic: 3, Pop: 1 }, creativityBonus: 15 },
+      icon: '🎹'
+    },
+    {
+      id: 'guitar_amp',
+      name: 'Tube Guitar Amplifier',
+      category: 'instrument',
+      price: 900,
+      description: 'Classic tube amplifier for that perfect rock guitar tone',
+      bonuses: { genreBonus: { Rock: 3, Acoustic: 1 }, creativityBonus: 10 },
+      icon: '🎸'
+    }
+  ];
 
   // Initialize game
   useEffect(() => {
@@ -421,6 +525,38 @@ const MusicStudioTycoon = () => {
     }
   };
 
+  const purchaseEquipment = (equipmentId: string) => {
+    const equipment = availableEquipment.find(e => e.id === equipmentId);
+    if (!equipment || gameState.money < equipment.price) {
+      toast({
+        title: "Cannot Purchase",
+        description: "Not enough money for this equipment.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (gameState.ownedEquipment.some(e => e.id === equipmentId)) {
+      toast({
+        title: "Already Owned",
+        description: "You already own this equipment.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setGameState(prev => ({
+      ...prev,
+      money: prev.money - equipment.price,
+      ownedEquipment: [...prev.ownedEquipment, equipment]
+    }));
+
+    toast({
+      title: "Equipment Purchased!",
+      description: `${equipment.name} added to your studio.`,
+    });
+  };
+
   // Add CSS styles dynamically
   useEffect(() => {
     const styleId = 'orb-animations';
@@ -477,6 +613,72 @@ const MusicStudioTycoon = () => {
           <div className="text-purple-400">Level {gameState.playerData.level}</div>
         </div>
         <div className="flex items-center gap-4">
+          <Dialog open={showStudioModal} onOpenChange={setShowStudioModal}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="bg-gray-800/80 hover:bg-gray-700/80 text-white border-gray-600">
+                View Studio 🏠
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-gray-900 border-gray-600 text-white max-w-4xl">
+              <DialogHeader>
+                <DialogTitle className="text-white">Your Studio</DialogTitle>
+              </DialogHeader>
+              <div className="grid grid-cols-3 gap-4 p-4">
+                {/* Studio Visual Representation */}
+                <div className="col-span-2 bg-gray-800 rounded-lg p-6 h-64 relative">
+                  <div className="text-center mb-4 text-gray-300">Studio Layout</div>
+                  <div className="grid grid-cols-4 gap-2 h-full">
+                    {/* Recording Booth */}
+                    <div className="bg-blue-900/50 rounded border-2 border-blue-400 p-2 text-center">
+                      <div className="text-xs text-blue-300 mb-1">Recording</div>
+                      {gameState.ownedEquipment.filter(e => e.category === 'microphone').map(eq => (
+                        <div key={eq.id} className="text-lg">{eq.icon}</div>
+                      ))}
+                    </div>
+                    
+                    {/* Control Room */}
+                    <div className="bg-green-900/50 rounded border-2 border-green-400 p-2 text-center">
+                      <div className="text-xs text-green-300 mb-1">Control</div>
+                      {gameState.ownedEquipment.filter(e => e.category === 'monitor').map(eq => (
+                        <div key={eq.id} className="text-lg">{eq.icon}</div>
+                      ))}
+                    </div>
+                    
+                    {/* Equipment Rack */}
+                    <div className="bg-yellow-900/50 rounded border-2 border-yellow-400 p-2 text-center">
+                      <div className="text-xs text-yellow-300 mb-1">Rack</div>
+                      {gameState.ownedEquipment.filter(e => e.category === 'processor' || e.category === 'interface').map(eq => (
+                        <div key={eq.id} className="text-lg">{eq.icon}</div>
+                      ))}
+                    </div>
+                    
+                    {/* Live Room */}
+                    <div className="bg-purple-900/50 rounded border-2 border-purple-400 p-2 text-center">
+                      <div className="text-xs text-purple-300 mb-1">Live Room</div>
+                      {gameState.ownedEquipment.filter(e => e.category === 'instrument').map(eq => (
+                        <div key={eq.id} className="text-lg">{eq.icon}</div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Equipment List */}
+                <div className="bg-gray-800 rounded-lg p-4">
+                  <h3 className="text-lg font-bold mb-3 text-white">Owned Equipment</h3>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {gameState.ownedEquipment.map(equipment => (
+                      <div key={equipment.id} className="bg-gray-700 p-2 rounded text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{equipment.icon}</span>
+                          <span className="text-white">{equipment.name}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
           <div className="text-right text-sm">
             <div>Music Studio Tycoon</div>
             <div className="text-gray-400">
@@ -632,7 +834,7 @@ const MusicStudioTycoon = () => {
           )}
         </div>
 
-        {/* Right Panel - Upgrades & Controls */}
+        {/* Right Panel - Equipment & Upgrades */}
         <div className="w-80 space-y-4">
           <div className="space-y-2">
             <Dialog open={showSkillsModal} onOpenChange={setShowSkillsModal}>
@@ -693,26 +895,49 @@ const MusicStudioTycoon = () => {
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-3 text-white">Upgrades</h3>
-            <div className="space-y-3">
-              <Card className="p-4 bg-gray-900/80 border-gray-600 backdrop-blur-sm">
-                <h4 className="font-semibold text-green-400">Pro Mic Bundle</h4>
-                <p className="text-sm text-gray-300 mt-1">Professional microphones for better acoustic and pop recordings</p>
-                <div className="mt-2 text-sm text-gray-200">Skills: acoustic +2, pop +1</div>
-                <div className="flex justify-between items-center mt-3">
-                  <span className="text-green-400 font-bold">$800</span>
-                  <Button size="sm" disabled={gameState.money < 800} className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600">Purchase</Button>
-                </div>
-              </Card>
-
-              <Card className="p-4 bg-gray-900/80 border-gray-600 backdrop-blur-sm">
-                <h4 className="font-semibold text-yellow-400">Faster DAW</h4>
-                <p className="text-sm text-gray-300 mt-1">Upgraded digital audio workstation for faster project completion</p>
-                <div className="flex justify-between items-center mt-3">
-                  <span className="text-green-400 font-bold">$1200</span>
-                  <Button size="sm" disabled={gameState.money < 1200} className="bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600">Purchase</Button>
-                </div>
-              </Card>
+            <h3 className="text-lg font-bold mb-3 text-white">Equipment Shop</h3>
+            <div className="space-y-3 max-h-80 overflow-y-auto">
+              {availableEquipment
+                .filter(equipment => !gameState.ownedEquipment.some(owned => owned.id === equipment.id))
+                .map(equipment => (
+                <Card key={equipment.id} className="p-4 bg-gray-900/90 border-gray-600 backdrop-blur-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl">{equipment.icon}</div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-white">{equipment.name}</h4>
+                      <p className="text-xs text-gray-300 mt-1">{equipment.description}</p>
+                      
+                      {/* Equipment bonuses */}
+                      <div className="mt-2 space-y-1">
+                        {equipment.bonuses.qualityBonus && (
+                          <div className="text-xs text-blue-400">Quality: +{equipment.bonuses.qualityBonus}%</div>
+                        )}
+                        {equipment.bonuses.genreBonus && Object.entries(equipment.bonuses.genreBonus).map(([genre, bonus]) => (
+                          <div key={genre} className="text-xs text-green-400">{genre}: +{bonus}</div>
+                        ))}
+                        {equipment.bonuses.creativityBonus && (
+                          <div className="text-xs text-purple-400">Creativity: +{equipment.bonuses.creativityBonus}%</div>
+                        )}
+                        {equipment.bonuses.technicalBonus && (
+                          <div className="text-xs text-orange-400">Technical: +{equipment.bonuses.technicalBonus}%</div>
+                        )}
+                      </div>
+                      
+                      <div className="flex justify-between items-center mt-3">
+                        <span className="text-green-400 font-bold">${equipment.price}</span>
+                        <Button 
+                          size="sm" 
+                          onClick={() => purchaseEquipment(equipment.id)}
+                          disabled={gameState.money < equipment.price}
+                          className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600"
+                        >
+                          Buy
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
             </div>
           </div>
 
