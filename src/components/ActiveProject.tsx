@@ -36,13 +36,46 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     );
   }
 
+  // Additional safety checks for stages
+  if (!gameState.activeProject.stages || gameState.activeProject.stages.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Card className="p-8 text-center bg-black/50 backdrop-blur-sm border-gray-600">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold mb-2 text-white">Project Error</h2>
+          <p className="text-gray-300">This project has no stages defined</p>
+        </Card>
+      </div>
+    );
+  }
+
+  // Ensure currentStageIndex is valid
+  const currentStageIndex = Math.min(
+    Math.max(0, gameState.activeProject.currentStageIndex || 0),
+    gameState.activeProject.stages.length - 1
+  );
+
+  const currentStage = gameState.activeProject.stages[currentStageIndex];
+
+  if (!currentStage) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Card className="p-8 text-center bg-black/50 backdrop-blur-sm border-gray-600">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold mb-2 text-white">Stage Error</h2>
+          <p className="text-gray-300">Current stage is not available</p>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Active Project Dashboard */}
       <Card className="p-6 bg-black/50 backdrop-blur-sm border-gray-600">
         <h2 className="text-2xl font-bold mb-2 text-white">Working on: {gameState.activeProject.title}</h2>
         <div className="text-lg mb-4 text-gray-200">
-          Stage {gameState.activeProject.currentStageIndex + 1} of {gameState.activeProject.stages.length}: {gameState.activeProject.stages[gameState.activeProject.currentStageIndex].stageName}
+          Stage {currentStageIndex + 1} of {gameState.activeProject.stages.length}: {currentStage.stageName}
         </div>
         
         <div className="grid grid-cols-2 gap-4 mb-6">
@@ -103,14 +136,14 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           </div>
 
           <Button onClick={processStageWork} className="w-full bg-purple-600 hover:bg-purple-700 text-white" size="lg">
-            Complete {gameState.activeProject.stages[gameState.activeProject.currentStageIndex].stageName} & Proceed
+            Complete {currentStage.stageName} & Proceed
           </Button>
         </div>
 
         <div className="mt-4">
           <div className="text-sm text-gray-300 mb-2">Stage Progress</div>
           <Progress 
-            value={(gameState.activeProject.stages[gameState.activeProject.currentStageIndex].workUnitsCompleted / gameState.activeProject.stages[gameState.activeProject.currentStageIndex].workUnitsBase) * 100} 
+            value={currentStage.workUnitsBase > 0 ? (currentStage.workUnitsCompleted / currentStage.workUnitsBase) * 100 : 0} 
           />
         </div>
       </Card>
