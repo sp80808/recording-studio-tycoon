@@ -23,13 +23,13 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
   if (!gameState.activeProject) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Card className="p-8 text-center bg-black/50 backdrop-blur-sm border-gray-600">
-          <div className="text-6xl mb-4">🎵</div>
-          <h2 className="text-2xl font-bold mb-2 text-white">Studio Ready</h2>
-          <p className="text-gray-300">Select a project from the left panel to get started</p>
+      <div className="flex items-center justify-center h-full min-h-[300px]">
+        <Card className="p-6 sm:p-8 text-center bg-black/50 backdrop-blur-sm border-gray-600 mx-4 max-w-sm">
+          <div className="text-4xl sm:text-6xl mb-4">🎵</div>
+          <h2 className="text-xl sm:text-2xl font-bold mb-2 text-white">Studio Ready</h2>
+          <p className="text-sm sm:text-base text-gray-300">Select a project from above to get started</p>
           {gameState.playerData.level < 2 && (
-            <p className="text-yellow-400 mt-2 text-sm">Reach level 2 to unlock staff recruitment!</p>
+            <p className="text-yellow-400 mt-2 text-xs sm:text-sm">Reach level 2 to unlock staff recruitment!</p>
           )}
         </Card>
       </div>
@@ -39,11 +39,11 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   // Additional safety checks for stages
   if (!gameState.activeProject.stages || gameState.activeProject.stages.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Card className="p-8 text-center bg-black/50 backdrop-blur-sm border-gray-600">
-          <div className="text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold mb-2 text-white">Project Error</h2>
-          <p className="text-gray-300">This project has no stages defined</p>
+      <div className="flex items-center justify-center h-full min-h-[300px]">
+        <Card className="p-6 sm:p-8 text-center bg-black/50 backdrop-blur-sm border-gray-600 mx-4 max-w-sm">
+          <div className="text-4xl sm:text-6xl mb-4">⚠️</div>
+          <h2 className="text-xl sm:text-2xl font-bold mb-2 text-white">Project Error</h2>
+          <p className="text-sm sm:text-base text-gray-300">This project has no stages defined</p>
         </Card>
       </div>
     );
@@ -59,91 +59,99 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
   if (!currentStage) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Card className="p-8 text-center bg-black/50 backdrop-blur-sm border-gray-600">
-          <div className="text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold mb-2 text-white">Stage Error</h2>
-          <p className="text-gray-300">Current stage is not available</p>
+      <div className="flex items-center justify-center h-full min-h-[300px]">
+        <Card className="p-6 sm:p-8 text-center bg-black/50 backdrop-blur-sm border-gray-600 mx-4 max-w-sm">
+          <div className="text-4xl sm:text-6xl mb-4">⚠️</div>
+          <h2 className="text-xl sm:text-2xl font-bold mb-2 text-white">Stage Error</h2>
+          <p className="text-sm sm:text-base text-gray-300">Current stage is not available</p>
         </Card>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Active Project Dashboard */}
-      <Card className="p-6 bg-black/50 backdrop-blur-sm border-gray-600">
-        <h2 className="text-2xl font-bold mb-2 text-white">Working on: {gameState.activeProject.title}</h2>
-        <div className="text-lg mb-4 text-gray-200">
+      <Card className="p-4 sm:p-6 bg-black/50 backdrop-blur-sm border-gray-600">
+        <h2 className="text-lg sm:text-2xl font-bold mb-2 text-white break-words">Working on: {gameState.activeProject.title}</h2>
+        <div className="text-sm sm:text-lg mb-4 text-gray-200">
           Stage {currentStageIndex + 1} of {gameState.activeProject.stages.length}: {currentStage.stageName}
         </div>
         
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
           <div id="creativity-points" className="text-center">
-            <div className="text-3xl mb-2">💙</div>
-            <div className="text-xl font-bold text-white">{gameState.activeProject.accumulatedCPoints}</div>
-            <div className="text-sm text-gray-300">Creativity</div>
+            <div className="text-2xl sm:text-3xl mb-2">💙</div>
+            <div className="text-lg sm:text-xl font-bold text-white">{gameState.activeProject.accumulatedCPoints}</div>
+            <div className="text-xs sm:text-sm text-gray-300">Creativity</div>
           </div>
           <div id="technical-points" className="text-center">
-            <div className="text-3xl mb-2">💚</div>
-            <div className="text-xl font-bold text-white">{gameState.activeProject.accumulatedTPoints}</div>
-            <div className="text-sm text-gray-300">Technical</div>
+            <div className="text-2xl sm:text-3xl mb-2">💚</div>
+            <div className="text-lg sm:text-xl font-bold text-white">{gameState.activeProject.accumulatedTPoints}</div>
+            <div className="text-xs sm:text-sm text-gray-300">Technical</div>
           </div>
         </div>
 
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-white">Focus Allocation:</h3>
+          <h3 className="text-base sm:text-lg font-semibold text-white">Focus Allocation:</h3>
           
-          <div className="space-y-3">
+          <div className="space-y-4 sm:space-y-3">
             <div>
-              <div className="flex justify-between mb-2 text-gray-200">
+              <div className="flex justify-between mb-2 text-sm sm:text-base text-gray-200">
                 <span>Performance</span>
-                <span>{focusAllocation.performance}%</span>
+                <span className="font-semibold">{focusAllocation.performance}%</span>
               </div>
               <Slider
                 value={[focusAllocation.performance]}
                 onValueChange={(value) => setFocusAllocation(prev => ({ ...prev, performance: value[0] }))}
                 max={100}
                 step={1}
+                className="touch-manipulation"
               />
             </div>
 
             <div>
-              <div className="flex justify-between mb-2 text-gray-200">
+              <div className="flex justify-between mb-2 text-sm sm:text-base text-gray-200">
                 <span>Sound Capture</span>
-                <span>{focusAllocation.soundCapture}%</span>
+                <span className="font-semibold">{focusAllocation.soundCapture}%</span>
               </div>
               <Slider
                 value={[focusAllocation.soundCapture]}
                 onValueChange={(value) => setFocusAllocation(prev => ({ ...prev, soundCapture: value[0] }))}
                 max={100}
                 step={1}
+                className="touch-manipulation"
               />
             </div>
 
             <div>
-              <div className="flex justify-between mb-2 text-gray-200">
+              <div className="flex justify-between mb-2 text-sm sm:text-base text-gray-200">
                 <span>Layering</span>
-                <span>{focusAllocation.layering}%</span>
+                <span className="font-semibold">{focusAllocation.layering}%</span>
               </div>
               <Slider
                 value={[focusAllocation.layering]}
                 onValueChange={(value) => setFocusAllocation(prev => ({ ...prev, layering: value[0] }))}
                 max={100}
                 step={1}
+                className="touch-manipulation"
               />
             </div>
           </div>
 
-          <Button onClick={processStageWork} className="w-full bg-purple-600 hover:bg-purple-700 text-white" size="lg">
+          <Button 
+            onClick={processStageWork} 
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white touch-manipulation py-3 sm:py-2 text-sm sm:text-base" 
+            size="lg"
+          >
             Complete {currentStage.stageName} & Proceed
           </Button>
         </div>
 
         <div className="mt-4">
-          <div className="text-sm text-gray-300 mb-2">Stage Progress</div>
+          <div className="text-xs sm:text-sm text-gray-300 mb-2">Stage Progress</div>
           <Progress 
             value={currentStage.workUnitsBase > 0 ? (currentStage.workUnitsCompleted / currentStage.workUnitsBase) * 100 : 0} 
+            className="h-2 sm:h-auto"
           />
         </div>
       </Card>

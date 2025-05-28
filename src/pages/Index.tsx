@@ -622,16 +622,21 @@ const MusicStudioTycoon = () => {
         hireStaff={hireStaff}
       />
 
-      <div className="flex gap-4 p-4 h-[calc(100vh-80px)]">
-        {/* Left Panel - Available Projects */}
-        <ProjectList 
-          gameState={gameState}
-          setGameState={setGameState}
-          startProject={startProject}
-        />
+      {/* Mobile-optimized layout */}
+      <div className="p-2 sm:p-4 space-y-4 sm:space-y-0 sm:flex sm:gap-4 sm:h-[calc(100vh-80px)]">
+        {/* Mobile: Stack vertically, Desktop: Side by side */}
+        
+        {/* Projects Panel - Full width on mobile, left panel on desktop */}
+        <div className="w-full sm:w-80 lg:w-96">
+          <ProjectList 
+            gameState={gameState}
+            setGameState={setGameState}
+            startProject={startProject}
+          />
+        </div>
 
-        {/* Central Area */}
-        <div className="flex-1 relative">
+        {/* Central Area - Active Project */}
+        <div className="flex-1 relative min-h-[400px] sm:min-h-0">
           <ActiveProject 
             gameState={gameState}
             focusAllocation={focusAllocation}
@@ -643,36 +648,38 @@ const MusicStudioTycoon = () => {
           <div ref={orbContainerRef} className="absolute inset-0 pointer-events-none z-10"></div>
         </div>
 
-        {/* Right Panel - Equipment & Upgrades */}
-        <RightPanel 
-          gameState={gameState}
-          showSkillsModal={showSkillsModal}
-          setShowSkillsModal={setShowSkillsModal}
-          showAttributesModal={showAttributesModal}
-          setShowAttributesModal={setShowAttributesModal}
-          spendPerkPoint={spendPerkPoint}
-          advanceDay={advanceDay}
-          purchaseEquipment={purchaseEquipment}
-        />
+        {/* Right Panel - Hidden on mobile, shown on larger screens */}
+        <div className="w-full sm:w-80 lg:w-96">
+          <RightPanel 
+            gameState={gameState}
+            showSkillsModal={showSkillsModal}
+            setShowSkillsModal={setShowSkillsModal}
+            showAttributesModal={showAttributesModal}
+            setShowAttributesModal={setShowAttributesModal}
+            spendPerkPoint={spendPerkPoint}
+            advanceDay={advanceDay}
+            purchaseEquipment={purchaseEquipment}
+          />
+        </div>
       </div>
 
       {/* Review Modal */}
       <Dialog open={showReviewModal} onOpenChange={setShowReviewModal}>
-        <DialogContent className="bg-gray-900 border-gray-600 text-white">
+        <DialogContent className="bg-gray-900 border-gray-600 text-white mx-4 max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-white">Project Complete! 🎉</DialogTitle>
+            <DialogTitle className="text-white text-lg">Project Complete! 🎉</DialogTitle>
           </DialogHeader>
           {lastReview && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-white">{lastReview.projectTitle}</h3>
               <div className="grid grid-cols-2 gap-4 text-center">
                 <div>
-                  <div className="text-2xl">💙</div>
+                  <div className="text-2xl mb-2">💙</div>
                   <div className="font-bold text-white">{lastReview.creativityPoints}</div>
                   <div className="text-sm text-gray-400">Creativity</div>
                 </div>
                 <div>
-                  <div className="text-2xl">💚</div>
+                  <div className="text-2xl mb-2">💚</div>
                   <div className="font-bold text-white">{lastReview.technicalPoints}</div>
                   <div className="text-sm text-gray-400">Technical</div>
                 </div>
