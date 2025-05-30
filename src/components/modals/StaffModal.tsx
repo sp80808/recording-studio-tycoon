@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { GameState } from '@/types/game';
+import { GameState, StaffMember } from '@/types/game';
 import { getStaffStatusColor, getEnergyColor } from '@/utils/staffUtils';
 
 interface StaffModalProps {
@@ -14,6 +14,7 @@ interface StaffModalProps {
   assignStaffToProject: (staffId: string) => void;
   unassignStaffFromProject: (staffId: string) => void;
   toggleStaffRest: (staffId: string) => void;
+  openTrainingModal?: (staff: StaffMember) => void;
 }
 
 export const StaffModal: React.FC<StaffModalProps> = ({
@@ -22,7 +23,8 @@ export const StaffModal: React.FC<StaffModalProps> = ({
   setShowStaffModal,
   assignStaffToProject,
   unassignStaffFromProject,
-  toggleStaffRest
+  toggleStaffRest,
+  openTrainingModal
 }) => {
   return (
     <Dialog open={showStaffModal} onOpenChange={setShowStaffModal}>
@@ -47,6 +49,11 @@ export const StaffModal: React.FC<StaffModalProps> = ({
                   <div>
                     <h4 className="text-lg font-bold text-white">{staff.name}</h4>
                     <p className="text-gray-300">{staff.role} - Level {staff.levelInRole}</p>
+                    {staff.status === 'Training' && staff.trainingEndDay && (
+                      <p className="text-yellow-400 text-sm">
+                        Training until Day {staff.trainingEndDay}
+                      </p>
+                    )}
                   </div>
                   <div className="text-right">
                     <div className={`font-bold ${getStaffStatusColor(staff.status)}`}>{staff.status}</div>
@@ -84,7 +91,7 @@ export const StaffModal: React.FC<StaffModalProps> = ({
                   </div>
                 )}
                 
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {staff.status === 'Idle' && gameState.activeProject && (
                     <Button 
                       size="sm" 
@@ -105,13 +112,23 @@ export const StaffModal: React.FC<StaffModalProps> = ({
                     </Button>
                   )}
                   
-                  {staff.status !== 'Working' && (
+                  {staff.status !== 'Working' && staff.status !== 'Training' && (
                     <Button 
                       size="sm" 
                       onClick={() => toggleStaffRest(staff.id)}
                       className="bg-blue-600 hover:bg-blue-700"
                     >
                       {staff.status === 'Resting' ? 'Stop Resting' : 'Rest'}
+                    </Button>
+                  )}
+
+                  {staff.status === 'Idle' && openTrainingModal && (
+                    <Button 
+                      size="sm" 
+                      onClick={() => openTrainingModal(staff)}
+                      className="bg-purple-600 hover:bg-purple-700"
+                    >
+                      Send to Training
                     </Button>
                   )}
                 </div>

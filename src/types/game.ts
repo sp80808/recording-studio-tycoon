@@ -27,6 +27,7 @@ export interface ProjectStage {
   focusAreas: string[];
   workUnitsBase: number;
   workUnitsCompleted: number;
+  completed: boolean;
 }
 
 export interface Project {
@@ -44,6 +45,7 @@ export interface Project {
   accumulatedCPoints: number;
   accumulatedTPoints: number;
   currentStageIndex: number;
+  completedStages: number[];
 }
 
 export interface StaffMember {
@@ -60,14 +62,16 @@ export interface StaffMember {
   genreAffinity: { genre: string; bonus: number } | null;
   energy: number;
   salary: number;
-  status: 'Idle' | 'Working' | 'Resting';
+  status: 'Idle' | 'Working' | 'Resting' | 'Training';
   assignedProjectId: string | null;
+  trainingEndDay?: number;
+  trainingCourse?: string;
 }
 
 export interface Equipment {
   id: string;
   name: string;
-  category: 'microphone' | 'monitor' | 'interface' | 'processor' | 'instrument';
+  category: 'microphone' | 'monitor' | 'interface' | 'processor' | 'instrument' | 'software';
   price: number;
   description: string;
   bonuses: {
@@ -78,6 +82,30 @@ export interface Equipment {
     technicalBonus?: number;
   };
   icon: string;
+  skillRequirement?: {
+    skill: string;
+    level: number;
+  };
+}
+
+export interface TrainingCourse {
+  id: string;
+  name: string;
+  description: string;
+  cost: number;
+  duration: number;
+  effects: {
+    statBoosts?: {
+      creativity?: number;
+      technical?: number;
+      speed?: number;
+    };
+    skillXP?: {
+      skill: string;
+      amount: number;
+    };
+    specialEffects?: string[];
+  };
 }
 
 export interface GameState {
@@ -93,6 +121,15 @@ export interface GameState {
   hiredStaff: StaffMember[];
   availableCandidates: StaffMember[];
   lastSalaryDay: number;
+  notifications: GameNotification[];
+}
+
+export interface GameNotification {
+  id: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  timestamp: number;
+  duration?: number;
 }
 
 export interface FocusAllocation {
