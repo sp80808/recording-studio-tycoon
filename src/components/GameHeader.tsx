@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { GameState } from '@/types/game';
+import { GameState, StaffMember } from '@/types/game';
 import { StudioModal } from './modals/StudioModal';
 import { StaffModal } from './modals/StaffModal';
 import { RecruitmentModal } from './modals/RecruitmentModal';
@@ -19,6 +19,7 @@ interface GameHeaderProps {
   unassignStaffFromProject: (staffId: string) => void;
   toggleStaffRest: (staffId: string) => void;
   hireStaff: (candidateIndex: number) => boolean;
+  openTrainingModal: (staff: StaffMember) => void;
 }
 
 export const GameHeader: React.FC<GameHeaderProps> = ({
@@ -32,7 +33,8 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
   assignStaffToProject,
   unassignStaffFromProject,
   toggleStaffRest,
-  hireStaff
+  hireStaff,
+  openTrainingModal
 }) => {
   return (
     <div className="flex justify-between items-center p-4 bg-black/30 backdrop-blur-sm">
@@ -57,6 +59,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
           assignStaffToProject={assignStaffToProject}
           unassignStaffFromProject={unassignStaffFromProject}
           toggleStaffRest={toggleStaffRest}
+          openTrainingModal={openTrainingModal}
         />
         
         {gameState.playerData.level >= 2 && (

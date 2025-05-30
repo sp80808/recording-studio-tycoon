@@ -24,25 +24,29 @@ export const generateNewProjects = (count: number): Project[] => {
           stageName: 'Pre-production',
           focusAreas: ['planning', 'arrangement'],
           workUnitsBase: 10,
-          workUnitsCompleted: 0
+          workUnitsCompleted: 0,
+          completed: false
         },
         {
           stageName: 'Recording & Production',
           focusAreas: ['performance', 'soundCapture', 'layering'],
           workUnitsBase: 15,
-          workUnitsCompleted: 0
+          workUnitsCompleted: 0,
+          completed: false
         },
         {
           stageName: 'Mixing & Mastering',
           focusAreas: ['mixing', 'mastering'],
           workUnitsBase: 8,
-          workUnitsCompleted: 0
+          workUnitsCompleted: 0,
+          completed: false
         }
       ],
       matchRating: 'Good',
       accumulatedCPoints: 0,
       accumulatedTPoints: 0,
-      currentStageIndex: 0
+      currentStageIndex: 0,
+      completedStages: []
     };
     projects.push(project);
   }
