@@ -9,7 +9,8 @@ export const useStageWork = (
   setGameState: React.Dispatch<React.SetStateAction<GameState>>,
   focusAllocation: FocusAllocation,
   completeProject: (project: any, addStaffXP: (staffId: string, amount: number) => void) => any,
-  addStaffXP: (staffId: string, amount: number) => void
+  addStaffXP: (staffId: string, amount: number) => void,
+  advanceDay: () => void
 ) => {
   const orbContainerRef = useRef<HTMLDivElement>(null);
 
@@ -47,25 +48,42 @@ export const useStageWork = (
     }, 1500);
   }, []);
 
-  const processStageWork = useCallback(() => {
-    if (!gameState.activeProject) return;
+  const performDailyWork = useCallback(() => {
+    if (!gameState.activeProject) {
+      console.log('No active project');
+      return;
+    }
 
     const project = gameState.activeProject;
     const currentStage = project.stages[project.currentStageIndex];
     
-    // Prevent processing if stage is already completed
-    if (currentStage.completed) {
+    console.log(`Performing work on stage: ${currentStage.stageName}`);
+    console.log(`Current progress: ${currentStage.workUnitsCompleted}/${currentStage.workUnitsBase}`);
+
+    // Check if stage is already completed
+    if (currentStage.completed || currentStage.workUnitsCompleted >= currentStage.workUnitsBase) {
       console.log('Stage already completed, not processing work');
+      toast({
+        title: "Stage Already Complete",
+        description: "This stage has already been completed.",
+        variant: "destructive"
+      });
       return;
     }
 
+    // Calculate work units to add (player's daily capacity)
+    const workUnitsToAdd = gameState.playerData.dailyWorkCapacity;
+    console.log(`Adding ${workUnitsToAdd} work units`);
+
     // Calculate base points from player attributes
     let creativityGain = Math.floor(
-      (focusAllocation.performance / 100) * 5 * gameState.playerData.attributes.creativeIntuition
+      (focusAllocation.performance / 100) * workUnitsToAdd * gameState.playerData.attributes.creativeIntuition
     );
     let technicalGain = Math.floor(
-      (focusAllocation.soundCapture / 100) * 5 * gameState.playerData.attributes.technicalAptitude
+      (focusAllocation.soundCapture / 100) * workUnitsToAdd * gameState.playerData.attributes.technicalAptitude
     );
+
+    console.log(`Base gains - Creativity: ${creativityGain}, Technical: ${technicalGain}`);
 
     // Apply studio skill bonuses for the project's genre
     const genreSkill = gameState.studioSkills[project.genre];
@@ -75,12 +93,16 @@ export const useStageWork = (
       
       creativityGain += Math.floor(creativityGain * (creativityBonus / 100));
       technicalGain += Math.floor(technicalGain * (technicalBonus / 100));
+      
+      console.log(`After skill bonuses - Creativity: ${creativityGain}, Technical: ${technicalGain}`);
     }
 
     // Apply equipment bonuses
     const equipmentBonuses = getEquipmentBonuses(gameState.ownedEquipment, project.genre);
     creativityGain += Math.floor(creativityGain * (equipmentBonuses.creativity / 100));
     technicalGain += Math.floor(technicalGain * (equipmentBonuses.technical / 100));
+    
+    console.log(`After equipment bonuses - Creativity: ${creativityGain}, Technical: ${technicalGain}`);
 
     // Add staff contributions
     const assignedStaff = gameState.hiredStaff.filter(s => s.assignedProjectId === project.id);
@@ -105,11 +127,21 @@ export const useStageWork = (
       }
     });
 
+    console.log(`Final gains - Creativity: ${creativityGain}, Technical: ${technicalGain}`);
+
     // Create orb animations
     createOrb('creativity', creativityGain);
     createOrb('technical', technicalGain);
 
-    // Mark stage as completed and update project progress
+    // Update work units completed
+    const newWorkUnitsCompleted = Math.min(
+      currentStage.workUnitsCompleted + workUnitsToAdd,
+      currentStage.workUnitsBase
+    );
+
+    console.log(`Work units after: ${newWorkUnitsCompleted}/${currentStage.workUnitsBase}`);
+
+    // Update project with progress and points
     const updatedProject = {
       ...project,
       accumulatedCPoints: project.accumulatedCPoints + creativityGain,
@@ -118,17 +150,44 @@ export const useStageWork = (
         index === project.currentStageIndex 
           ? { 
               ...stage, 
-              workUnitsCompleted: stage.workUnitsBase,
-              completed: true
+              workUnitsCompleted: newWorkUnitsCompleted,
+              completed: newWorkUnitsCompleted >= stage.workUnitsBase
             }
           : stage
-      ),
-      completedStages: [...(project.completedStages || []), project.currentStageIndex]
+      )
     };
 
-    // Deplete staff energy
+    // Check if stage is now complete
+    const stageNowComplete = newWorkUnitsCompleted >= currentStage.workUnitsBase;
+    console.log(`Stage complete: ${stageNowComplete}`);
+
+    if (stageNowComplete) {
+      // Add to completed stages
+      updatedProject.completedStages = [...(project.completedStages || []), project.currentStageIndex];
+      
+      // Check if this was the final stage
+      if (project.currentStageIndex + 1 >= project.stages.length) {
+        console.log('Project complete!');
+        // Complete the project
+        const review = completeProject(updatedProject, addStaffXP);
+        advanceDay(); // Advance the day
+        return { review, isComplete: true };
+      } else {
+        // Move to next stage
+        console.log('Moving to next stage');
+        updatedProject.currentStageIndex = updatedProject.currentStageIndex + 1;
+        
+        toast({
+          title: "Stage Complete!",
+          description: `Moving to: ${updatedProject.stages[updatedProject.currentStageIndex].stageName}`,
+        });
+      }
+    }
+
+    // Update game state
     setGameState(prev => ({
       ...prev,
+      activeProject: updatedProject,
       hiredStaff: prev.hiredStaff.map(s => 
         s.assignedProjectId === project.id && s.status === 'Working'
           ? { ...s, energy: Math.max(0, s.energy - 15) }
@@ -136,34 +195,14 @@ export const useStageWork = (
       )
     }));
 
-    // Check if moving to next stage or completing project
-    if (project.currentStageIndex + 1 >= project.stages.length) {
-      // Complete the project immediately
-      const review = completeProject(updatedProject, addStaffXP);
-      return { review, isComplete: true };
-    } else {
-      // Move to next stage immediately
-      const nextStageProject = {
-        ...updatedProject,
-        currentStageIndex: updatedProject.currentStageIndex + 1
-      };
-      
-      setGameState(prev => ({
-        ...prev,
-        activeProject: nextStageProject
-      }));
-
-      toast({
-        title: "Stage Complete!",
-        description: `Moving to: ${nextStageProject.stages[nextStageProject.currentStageIndex].stageName}`,
-      });
-      
-      return { review: null, isComplete: false };
-    }
-  }, [gameState, focusAllocation, createOrb, setGameState, completeProject, addStaffXP]);
+    // Advance the day after work is done
+    advanceDay();
+    
+    return { review: null, isComplete: false };
+  }, [gameState, focusAllocation, createOrb, setGameState, completeProject, addStaffXP, advanceDay]);
 
   return {
-    processStageWork,
+    performDailyWork,
     orbContainerRef
   };
 };

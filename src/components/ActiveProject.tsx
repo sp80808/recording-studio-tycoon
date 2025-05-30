@@ -10,14 +10,14 @@ interface ActiveProjectProps {
   gameState: GameState;
   focusAllocation: FocusAllocation;
   setFocusAllocation: React.Dispatch<React.SetStateAction<FocusAllocation>>;
-  processStageWork: () => void;
+  performDailyWork: () => void;
 }
 
 export const ActiveProject: React.FC<ActiveProjectProps> = ({
   gameState,
   focusAllocation,
   setFocusAllocation,
-  processStageWork
+  performDailyWork
 }) => {
   const orbContainerRef = useRef<HTMLDivElement>(null);
 
@@ -68,6 +68,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       </div>
     );
   }
+
+  const isStageComplete = currentStage.workUnitsCompleted >= currentStage.workUnitsBase;
+  const progressPercentage = (currentStage.workUnitsCompleted / currentStage.workUnitsBase) * 100;
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -138,19 +141,27 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             </div>
           </div>
 
+          <div className="bg-gray-800/50 p-3 rounded">
+            <div className="text-sm text-gray-300 mb-2">Daily Work Capacity: {gameState.playerData.dailyWorkCapacity} Work Units</div>
+            <div className="text-xs text-gray-400">Each work session advances 1 day and contributes your full daily capacity to the current stage.</div>
+          </div>
+
           <Button 
-            onClick={processStageWork} 
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white touch-manipulation py-3 sm:py-2 text-sm sm:text-base" 
+            onClick={performDailyWork} 
+            disabled={isStageComplete}
+            className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white touch-manipulation py-3 sm:py-2 text-sm sm:text-base" 
             size="lg"
           >
-            Complete {currentStage.stageName} & Proceed
+            {isStageComplete ? 'Stage Complete - Next Day Will Advance' : `Work on ${currentStage.stageName} (1 Day)`}
           </Button>
         </div>
 
         <div className="mt-4">
-          <div className="text-xs sm:text-sm text-gray-300 mb-2">Stage Progress</div>
+          <div className="text-xs sm:text-sm text-gray-300 mb-2">
+            Stage Progress: {currentStage.workUnitsCompleted}/{currentStage.workUnitsBase} Work Units
+          </div>
           <Progress 
-            value={currentStage.workUnitsBase > 0 ? (currentStage.workUnitsCompleted / currentStage.workUnitsBase) * 100 : 0} 
+            value={progressPercentage} 
             className="h-2 sm:h-auto"
           />
         </div>

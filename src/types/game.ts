@@ -1,4 +1,3 @@
-
 // Game type definitions
 export interface PlayerAttributes {
   focusMastery: number;
@@ -13,6 +12,7 @@ export interface PlayerData {
   xpToNextLevel: number;
   perkPoints: number;
   attributes: PlayerAttributes;
+  dailyWorkCapacity: number;
 }
 
 export interface StudioSkill {

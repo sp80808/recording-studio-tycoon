@@ -23,21 +23,21 @@ export const generateNewProjects = (count: number): Project[] => {
         {
           stageName: 'Pre-production',
           focusAreas: ['planning', 'arrangement'],
-          workUnitsBase: 10,
+          workUnitsBase: 8 + (difficulty * 2),
           workUnitsCompleted: 0,
           completed: false
         },
         {
           stageName: 'Recording & Production',
           focusAreas: ['performance', 'soundCapture', 'layering'],
-          workUnitsBase: 15,
+          workUnitsBase: 12 + (difficulty * 3),
           workUnitsCompleted: 0,
           completed: false
         },
         {
           stageName: 'Mixing & Mastering',
           focusAreas: ['mixing', 'mastering'],
-          workUnitsBase: 8,
+          workUnitsBase: 6 + (difficulty * 2),
           workUnitsCompleted: 0,
           completed: false
         }

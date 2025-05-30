@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { StaffMember } from '@/types/game';
 import { generateCandidates } from '@/utils/projectUtils';
 import { availableTrainingCourses } from '@/data/training';
-import { canPurchaseEquipment, addNotification } from '@/utils/gameUtils';
+import { canPurchaseEquipment, addNotification, applyEquipmentEffects } from '@/utils/gameUtils';
+import { availableEquipment } from '@/data/equipment';
 import { GameHeader } from '@/components/GameHeader';
 import { ProjectList } from '@/components/ProjectList';
 import { ActiveProject } from '@/components/ActiveProject';
@@ -24,7 +24,6 @@ const MusicStudioTycoon = () => {
   const { levelUpPlayer, spendPerkPoint } = usePlayerProgression(gameState, setGameState);
   const { hireStaff, assignStaffToProject, unassignStaffFromProject, toggleStaffRest, addStaffXP, openTrainingModal } = useStaffManagement(gameState, setGameState);
   const { startProject, completeProject } = useProjectManagement(gameState, setGameState);
-  const { processStageWork, orbContainerRef } = useStageWork(gameState, setGameState, focusAllocation, completeProject, addStaffXP);
 
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [showAttributesModal, setShowAttributesModal] = useState(false);
@@ -35,18 +34,6 @@ const MusicStudioTycoon = () => {
   const [showTrainingModal, setShowTrainingModal] = useState(false);
   const [selectedStaffForTraining, setSelectedStaffForTraining] = useState<StaffMember | null>(null);
   const [lastReview, setLastReview] = useState<any>(null);
-
-  const handleProcessStageWork = () => {
-    const result = processStageWork();
-    if (result?.isComplete && result.review) {
-      setLastReview(result.review);
-      setShowReviewModal(true);
-      
-      if (gameState.playerData.xp + result.review.xpGain >= gameState.playerData.xpToNextLevel) {
-        levelUpPlayer();
-      }
-    }
-  };
 
   const advanceDay = () => {
     const newDay = gameState.currentDay + 1;
@@ -118,10 +105,6 @@ const MusicStudioTycoon = () => {
         });
       }
     }
-    
-    if (gameState.activeProject) {
-      handleProcessStageWork();
-    }
 
     if (newDay % 5 === 0) {
       setGameState(prev => ({
@@ -131,13 +114,34 @@ const MusicStudioTycoon = () => {
     }
   };
 
+  const { performDailyWork, orbContainerRef } = useStageWork(gameState, setGameState, focusAllocation, completeProject, addStaffXP, advanceDay);
+
+  const handlePerformDailyWork = () => {
+    const result = performDailyWork();
+    if (result?.isComplete && result.review) {
+      setLastReview(result.review);
+      setShowReviewModal(true);
+      
+      if (gameState.playerData.xp + result.review.xpGain >= gameState.playerData.xpToNextLevel) {
+        levelUpPlayer();
+      }
+    }
+  };
+
   const purchaseEquipment = (equipmentId: string) => {
-    const { availableEquipment } = require('@/data/equipment');
-    const equipment = availableEquipment.find((e: any) => e.id === equipmentId);
-    if (!equipment) return;
+    console.log(`Attempting to purchase equipment: ${equipmentId}`);
+    
+    const equipment = availableEquipment.find(e => e.id === equipmentId);
+    if (!equipment) {
+      console.log('Equipment not found');
+      return;
+    }
+
+    console.log(`Found equipment: ${equipment.name}`);
 
     const purchaseCheck = canPurchaseEquipment(equipment, gameState);
     if (!purchaseCheck.canPurchase) {
+      console.log(`Purchase blocked: ${purchaseCheck.reason}`);
       toast({
         title: "Cannot Purchase",
         description: purchaseCheck.reason,
@@ -146,11 +150,24 @@ const MusicStudioTycoon = () => {
       return;
     }
 
-    setGameState(prev => ({
-      ...prev,
-      money: prev.money - equipment.price,
-      ownedEquipment: [...prev.ownedEquipment, equipment]
-    }));
+    console.log('Purchase checks passed, processing purchase...');
+    console.log(`Money before: $${gameState.money}`);
+    console.log(`Equipment cost: $${equipment.price}`);
+
+    // Apply equipment effects and update state
+    let updatedGameState = applyEquipmentEffects(equipment, gameState);
+    
+    // Deduct money and add equipment
+    updatedGameState = {
+      ...updatedGameState,
+      money: updatedGameState.money - equipment.price,
+      ownedEquipment: [...updatedGameState.ownedEquipment, equipment]
+    };
+
+    console.log(`Money after: $${updatedGameState.money}`);
+    console.log('Equipment added to owned equipment');
+
+    setGameState(updatedGameState);
 
     toast({
       title: "Equipment Purchased!",
@@ -284,7 +301,7 @@ const MusicStudioTycoon = () => {
             gameState={gameState}
             focusAllocation={focusAllocation}
             setFocusAllocation={setFocusAllocation}
-            processStageWork={handleProcessStageWork}
+            performDailyWork={handlePerformDailyWork}
           />
           
           <div ref={orbContainerRef} className="absolute inset-0 pointer-events-none z-10"></div>
