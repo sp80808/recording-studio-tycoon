@@ -1,3 +1,4 @@
+
 import { Equipment } from '@/types/game';
 
 export const availableEquipment: Equipment[] = [
@@ -155,3 +156,13 @@ export const availableEquipment: Equipment[] = [
     icon: '🎸'
   }
 ];
+
+export const equipmentCategories = {
+  all: 'All Equipment',
+  microphone: 'Microphones',
+  monitor: 'Studio Monitoring',
+  interface: 'Audio Interfaces',
+  processor: 'Outboard Gear',
+  instrument: 'Instruments',
+  software: 'Software & Plugins'
+};

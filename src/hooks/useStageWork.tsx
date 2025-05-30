@@ -53,12 +53,9 @@ export const useStageWork = (
     const project = gameState.activeProject;
     const currentStage = project.stages[project.currentStageIndex];
     
+    // Prevent processing if stage is already completed
     if (currentStage.completed) {
-      toast({
-        title: "Stage Already Complete",
-        description: "This stage has already been completed.",
-        variant: "destructive"
-      });
+      console.log('Stage already completed, not processing work');
       return;
     }
 
@@ -112,14 +109,6 @@ export const useStageWork = (
     createOrb('creativity', creativityGain);
     createOrb('technical', technicalGain);
 
-    // Calculate work progress
-    let workProgress = 2;
-    assignedStaff.forEach(staff => {
-      if (staff.energy >= 20) {
-        workProgress += Math.floor(staff.primaryStats.speed * 0.05);
-      }
-    });
-
     // Mark stage as completed and update project progress
     const updatedProject = {
       ...project,
@@ -137,8 +126,6 @@ export const useStageWork = (
       completedStages: [...(project.completedStages || []), project.currentStageIndex]
     };
 
-    setGameState(prev => ({ ...prev, activeProject: updatedProject }));
-
     // Deplete staff energy
     setGameState(prev => ({
       ...prev,
@@ -151,22 +138,26 @@ export const useStageWork = (
 
     // Check if moving to next stage or completing project
     if (project.currentStageIndex + 1 >= project.stages.length) {
+      // Complete the project immediately
       const review = completeProject(updatedProject, addStaffXP);
       return { review, isComplete: true };
     } else {
-      setTimeout(() => {
-        setGameState(prev => ({
-          ...prev,
-          activeProject: prev.activeProject ? {
-            ...prev.activeProject,
-            currentStageIndex: prev.activeProject.currentStageIndex + 1
-          } : null
-        }));
-        toast({
-          title: "Stage Complete!",
-          description: `Moving to: ${project.stages[project.currentStageIndex + 1].stageName}`,
-        });
-      }, 1000);
+      // Move to next stage immediately
+      const nextStageProject = {
+        ...updatedProject,
+        currentStageIndex: updatedProject.currentStageIndex + 1
+      };
+      
+      setGameState(prev => ({
+        ...prev,
+        activeProject: nextStageProject
+      }));
+
+      toast({
+        title: "Stage Complete!",
+        description: `Moving to: ${nextStageProject.stages[nextStageProject.currentStageIndex].stageName}`,
+      });
+      
       return { review: null, isComplete: false };
     }
   }, [gameState, focusAllocation, createOrb, setGameState, completeProject, addStaffXP]);
