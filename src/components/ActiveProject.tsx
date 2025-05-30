@@ -71,6 +71,10 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
   const isStageComplete = currentStage.workUnitsCompleted >= currentStage.workUnitsBase;
   const progressPercentage = (currentStage.workUnitsCompleted / currentStage.workUnitsBase) * 100;
+  
+  // Check if player has already worked today
+  const hasWorkedToday = gameState.activeProject.lastWorkDay && gameState.activeProject.lastWorkDay >= gameState.currentDay;
+  const canWorkToday = !isStageComplete && !hasWorkedToday;
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -144,15 +148,20 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           <div className="bg-gray-800/50 p-3 rounded">
             <div className="text-sm text-gray-300 mb-2">Daily Work Capacity: {gameState.playerData.dailyWorkCapacity} Work Units</div>
             <div className="text-xs text-gray-400">Each work session advances 1 day and contributes your full daily capacity to the current stage.</div>
+            {hasWorkedToday && (
+              <div className="text-xs text-yellow-400 mt-1">Already worked today! Use 'Next Day' to continue tomorrow.</div>
+            )}
           </div>
 
           <Button 
             onClick={performDailyWork} 
-            disabled={isStageComplete}
+            disabled={!canWorkToday}
             className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white touch-manipulation py-3 sm:py-2 text-sm sm:text-base" 
             size="lg"
           >
-            {isStageComplete ? 'Stage Complete - Next Day Will Advance' : `Work on ${currentStage.stageName} (1 Day)`}
+            {isStageComplete ? 'Stage Complete - Next Day Will Advance' : 
+             hasWorkedToday ? 'Work Complete for Today' :
+             `Work on ${currentStage.stageName} (1 Day)`}
           </Button>
         </div>
 

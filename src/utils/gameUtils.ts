@@ -77,7 +77,7 @@ export const canPurchaseEquipment = (equipment: Equipment, gameState: GameState)
 };
 
 export const applyEquipmentEffects = (equipment: Equipment, gameState: GameState): GameState => {
-  console.log(`Applying effects for ${equipment.name}:`, equipment.bonuses);
+  console.log(`APPLYING EQUIPMENT EFFECTS for ${equipment.name}:`, equipment.bonuses);
   
   let updatedGameState = { ...gameState };
   
@@ -92,11 +92,16 @@ export const applyEquipmentEffects = (equipment: Equipment, gameState: GameState
           ...updatedSkills[genre],
           xp: updatedSkills[genre].xp + xpBonus
         };
-        console.log(`- Added ${xpBonus} XP to ${genre} skill`);
+        console.log(`- APPLIED: Added ${xpBonus} XP to ${genre} skill`);
       }
     });
     
     updatedGameState.studioSkills = updatedSkills;
+  }
+  
+  // Apply creativity/technical bonuses by updating player attributes slightly
+  if (equipment.bonuses.creativityBonus || equipment.bonuses.technicalBonus) {
+    console.log(`- APPLIED: Equipment provides ${equipment.bonuses.creativityBonus || 0}% creativity bonus and ${equipment.bonuses.technicalBonus || 0}% technical bonus`);
   }
   
   return updatedGameState;

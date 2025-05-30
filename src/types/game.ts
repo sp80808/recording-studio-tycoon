@@ -46,6 +46,7 @@ export interface Project {
   accumulatedTPoints: number;
   currentStageIndex: number;
   completedStages: number[];
+  lastWorkDay?: number; // Track when work was last performed
 }
 
 export interface StaffMember {

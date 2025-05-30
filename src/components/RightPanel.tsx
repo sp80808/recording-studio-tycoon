@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -31,10 +30,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  const filteredEquipment = availableEquipment.filter(equipment => {
-    if (selectedCategory === 'all') return true;
-    return equipment.category === selectedCategory;
-  }).filter(equipment => !gameState.ownedEquipment.some(owned => owned.id === equipment.id));
+  // Filter and sort equipment by price
+  const filteredEquipment = availableEquipment
+    .filter(equipment => {
+      if (selectedCategory === 'all') return true;
+      return equipment.category === selectedCategory;
+    })
+    .filter(equipment => !gameState.ownedEquipment.some(owned => owned.id === equipment.id))
+    .sort((a, b) => a.price - b.price); // Sort by price, cheapest first
 
   return (
     <div className="w-80 space-y-4">
@@ -124,6 +127,8 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             </SelectContent>
           </Select>
         </div>
+
+        <div className="text-xs text-gray-400 mb-2">Sorted by price (cheapest first)</div>
 
         <div className="space-y-3 max-h-80 overflow-y-auto">
           {filteredEquipment.map(equipment => {

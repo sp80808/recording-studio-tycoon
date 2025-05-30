@@ -55,14 +55,37 @@ export const useStageWork = (
     }
 
     const project = gameState.activeProject;
-    const currentStage = project.stages[project.currentStageIndex];
     
+    // Check if player has already worked on this project today
+    if (project.lastWorkDay && project.lastWorkDay >= gameState.currentDay) {
+      console.log('Already worked on this project today');
+      toast({
+        title: "Already Worked Today",
+        description: "You can only work on a project once per day. Use 'Next Day' to continue.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Ensure currentStageIndex is valid
+    const currentStageIndex = Math.min(
+      Math.max(0, project.currentStageIndex || 0),
+      project.stages.length - 1
+    );
+
+    const currentStage = project.stages[currentStageIndex];
+    
+    if (!currentStage) {
+      console.log('No valid current stage');
+      return;
+    }
+
     console.log(`Performing work on stage: ${currentStage.stageName}`);
     console.log(`Current progress: ${currentStage.workUnitsCompleted}/${currentStage.workUnitsBase}`);
 
     // Check if stage is already completed
     if (currentStage.completed || currentStage.workUnitsCompleted >= currentStage.workUnitsBase) {
-      console.log('Stage already completed, not processing work');
+      console.log('Stage already completed');
       toast({
         title: "Stage Already Complete",
         description: "This stage has already been completed.",
@@ -139,15 +162,17 @@ export const useStageWork = (
       currentStage.workUnitsBase
     );
 
+    console.log(`Work units before: ${currentStage.workUnitsCompleted}/${currentStage.workUnitsBase}`);
     console.log(`Work units after: ${newWorkUnitsCompleted}/${currentStage.workUnitsBase}`);
 
-    // Update project with progress and points
+    // CRITICAL FIX: Update project with progress and points
     const updatedProject = {
       ...project,
       accumulatedCPoints: project.accumulatedCPoints + creativityGain,
       accumulatedTPoints: project.accumulatedTPoints + technicalGain,
+      lastWorkDay: gameState.currentDay, // Track when work was last performed
       stages: project.stages.map((stage, index) => 
-        index === project.currentStageIndex 
+        index === currentStageIndex 
           ? { 
               ...stage, 
               workUnitsCompleted: newWorkUnitsCompleted,
@@ -157,16 +182,19 @@ export const useStageWork = (
       )
     };
 
+    console.log(`Project C points: ${project.accumulatedCPoints} -> ${updatedProject.accumulatedCPoints}`);
+    console.log(`Project T points: ${project.accumulatedTPoints} -> ${updatedProject.accumulatedTPoints}`);
+
     // Check if stage is now complete
     const stageNowComplete = newWorkUnitsCompleted >= currentStage.workUnitsBase;
     console.log(`Stage complete: ${stageNowComplete}`);
 
     if (stageNowComplete) {
       // Add to completed stages
-      updatedProject.completedStages = [...(project.completedStages || []), project.currentStageIndex];
+      updatedProject.completedStages = [...(project.completedStages || []), currentStageIndex];
       
       // Check if this was the final stage
-      if (project.currentStageIndex + 1 >= project.stages.length) {
+      if (currentStageIndex + 1 >= project.stages.length) {
         console.log('Project complete!');
         // Complete the project
         const review = completeProject(updatedProject, addStaffXP);
@@ -175,7 +203,7 @@ export const useStageWork = (
       } else {
         // Move to next stage
         console.log('Moving to next stage');
-        updatedProject.currentStageIndex = updatedProject.currentStageIndex + 1;
+        updatedProject.currentStageIndex = currentStageIndex + 1;
         
         toast({
           title: "Stage Complete!",
