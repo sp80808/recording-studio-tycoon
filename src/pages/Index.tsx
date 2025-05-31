@@ -37,6 +37,7 @@ const MusicStudioTycoon = () => {
 
   const advanceDay = () => {
     const newDay = gameState.currentDay + 1;
+    console.log(`Advancing to day ${newDay}`);
     
     // Process training completions
     const completedTraining: string[] = [];
@@ -117,8 +118,10 @@ const MusicStudioTycoon = () => {
   const { performDailyWork, orbContainerRef } = useStageWork(gameState, setGameState, focusAllocation, completeProject, addStaffXP, advanceDay);
 
   const handlePerformDailyWork = () => {
+    console.log('=== HANDLE PERFORM DAILY WORK ===');
     const result = performDailyWork();
     if (result?.isComplete && result.review) {
+      console.log('Project completed with review:', result.review);
       setLastReview(result.review);
       setShowReviewModal(true);
       
@@ -129,7 +132,7 @@ const MusicStudioTycoon = () => {
   };
 
   const purchaseEquipment = (equipmentId: string) => {
-    console.log(`Attempting to purchase equipment: ${equipmentId}`);
+    console.log(`=== PURCHASING EQUIPMENT: ${equipmentId} ===`);
     
     const equipment = availableEquipment.find(e => e.id === equipmentId);
     if (!equipment) {
@@ -137,7 +140,7 @@ const MusicStudioTycoon = () => {
       return;
     }
 
-    console.log(`Found equipment: ${equipment.name}`);
+    console.log(`Found equipment: ${equipment.name} - $${equipment.price}`);
 
     const purchaseCheck = canPurchaseEquipment(equipment, gameState);
     if (!purchaseCheck.canPurchase) {
@@ -152,7 +155,6 @@ const MusicStudioTycoon = () => {
 
     console.log('Purchase checks passed, processing purchase...');
     console.log(`Money before: $${gameState.money}`);
-    console.log(`Equipment cost: $${equipment.price}`);
 
     // Apply equipment effects and update state
     let updatedGameState = applyEquipmentEffects(equipment, gameState);
@@ -167,12 +169,22 @@ const MusicStudioTycoon = () => {
     console.log(`Money after: $${updatedGameState.money}`);
     console.log('Equipment added to owned equipment');
 
+    // Add success notification
+    updatedGameState = addNotification(
+      updatedGameState,
+      `${equipment.name} purchased and equipped!`,
+      'success',
+      3000
+    );
+
     setGameState(updatedGameState);
 
     toast({
       title: "Equipment Purchased!",
       description: `${equipment.name} added to your studio.`,
     });
+
+    console.log('PLAY_SOUND: equipment_purchase');
   };
 
   const removeNotification = (id: string) => {
@@ -223,6 +235,29 @@ const MusicStudioTycoon = () => {
       setSelectedStaffForTraining(staff);
       setShowTrainingModal(true);
     }
+  };
+
+  // Enhanced spendPerkPoint function
+  const handleSpendPerkPoint = (attribute: keyof PlayerAttributes) => {
+    console.log(`Spending perk point on: ${attribute}`);
+    if (gameState.playerData.perkPoints <= 0) {
+      toast({
+        title: "No Perk Points",
+        description: "Complete projects to earn perk points!",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const updatedGameState = spendPerkPoint(gameState, attribute);
+    setGameState(updatedGameState);
+
+    toast({
+      title: "Attribute Upgraded!",
+      description: `${attribute.replace(/([A-Z])/g, ' $1').trim()} increased!`,
+    });
+
+    console.log('PLAY_SOUND: attribute_upgrade');
   };
 
   // Add CSS styles dynamically
@@ -314,7 +349,7 @@ const MusicStudioTycoon = () => {
             setShowSkillsModal={setShowSkillsModal}
             showAttributesModal={showAttributesModal}
             setShowAttributesModal={setShowAttributesModal}
-            spendPerkPoint={spendPerkPoint}
+            spendPerkPoint={handleSpendPerkPoint}
             advanceDay={advanceDay}
             purchaseEquipment={purchaseEquipment}
           />

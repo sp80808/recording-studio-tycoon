@@ -2,6 +2,26 @@
 import { Equipment } from '@/types/game';
 
 export const availableEquipment: Equipment[] = [
+  // Microphones
+  {
+    id: 'basic_mic',
+    name: 'Basic USB Mic',
+    category: 'microphone',
+    price: 0,
+    description: 'Standard starter microphone that came with your first audio interface',
+    bonuses: { qualityBonus: 0 },
+    icon: '🎤'
+  },
+  {
+    id: 'shurely_serious_mic',
+    name: 'Shurely You Can\'t Be Serious Mic',
+    category: 'microphone',
+    price: 280,
+    description: 'Perfect for loud sources and denying the undeniable. Modest boost to Rock & Acoustic recording quality.',
+    bonuses: { genreBonus: { Rock: 2, Acoustic: 1 }, technicalBonus: 5 },
+    icon: '🎤',
+    skillRequirement: { skill: 'Rock', level: 1 }
+  },
   {
     id: 'condenser_mic',
     name: 'Professional Condenser Mic',
@@ -17,19 +37,8 @@ export const availableEquipment: Equipment[] = [
     category: 'microphone',
     price: 320,
     description: 'Robust dynamic microphone ideal for rock and live recordings',
-    bonuses: { genreBonus: { Rock: 2, Hiphop: 1 }, qualityBonus: 8 },
+    bonuses: { genreBonus: { Rock: 2, 'Hip-hop': 1 }, qualityBonus: 8 },
     icon: '🎤'
-  },
-  
-  {
-    id: 'shurely_serious_mic',
-    name: 'Shurely You Can\'t Be Serious Mic',
-    category: 'microphone',
-    price: 280,
-    description: 'Perfect for loud sources and denying the undeniable. Modest boost to Rock & Acoustic recording quality.',
-    bonuses: { genreBonus: { Rock: 2, Acoustic: 1 }, technicalBonus: 5 },
-    icon: '🎤',
-    skillRequirement: { skill: 'Rock', level: 1 }
   },
   {
     id: 'neumann_u_wish',
@@ -41,10 +50,12 @@ export const availableEquipment: Equipment[] = [
     icon: '🎤',
     skillRequirement: { skill: 'Acoustic', level: 4 }
   },
+
+  // Outboard Gear
   {
     id: 'telefunken_around',
     name: 'Telefunken Around Reverb Unit',
-    category: 'processor',
+    category: 'outboard',
     price: 950,
     description: 'Spacious, warm, and occasionally wanders off key. Adds character and creativity during mixing.',
     bonuses: { creativityBonus: 20, qualityBonus: 15, genreBonus: { Acoustic: 2, Electronic: 1 } },
@@ -54,7 +65,7 @@ export const availableEquipment: Equipment[] = [
   {
     id: 'api_the_wiser',
     name: 'API The Wiser EQ',
-    category: 'processor',
+    category: 'outboard',
     price: 750,
     description: 'Makes your tracks sit up and pay attention. Boosts clarity and punch during mixing.',
     bonuses: { technicalBonus: 18, qualityBonus: 12, speedBonus: 5 },
@@ -64,13 +75,24 @@ export const availableEquipment: Equipment[] = [
   {
     id: 'fairychild_comp',
     name: 'The Fairychild Compressor',
-    category: 'processor',
+    category: 'outboard',
     price: 1200,
     description: 'Magically glues tracks together. Improves overall cohesion and technical score.',
     bonuses: { technicalBonus: 25, qualityBonus: 20, genreBonus: { Pop: 2, Rock: 2 } },
     icon: '⚙️',
     skillRequirement: { skill: 'Pop', level: 3 }
   },
+  {
+    id: 'compressor',
+    name: 'Hardware Compressor',
+    category: 'outboard',
+    price: 600,
+    description: 'Analog compressor for that warm, professional sound',
+    bonuses: { qualityBonus: 20, technicalBonus: 8 },
+    icon: '⚙️'
+  },
+
+  // Instruments
   {
     id: 'moog_or_less',
     name: 'Moog-or-Less Analog Synth',
@@ -92,6 +114,26 @@ export const availableEquipment: Equipment[] = [
     skillRequirement: { skill: 'Rock', level: 1 }
   },
   {
+    id: 'synthesizer',
+    name: 'Analog Synthesizer',
+    category: 'instrument',
+    price: 1200,
+    description: 'Vintage-style analog synthesizer for electronic music production',
+    bonuses: { genreBonus: { Electronic: 3, Pop: 1 }, creativityBonus: 15 },
+    icon: '🎹'
+  },
+  {
+    id: 'guitar_amp',
+    name: 'Tube Guitar Amplifier',
+    category: 'instrument',
+    price: 900,
+    description: 'Classic tube amplifier for that perfect rock guitar tone',
+    bonuses: { genreBonus: { Rock: 3, Acoustic: 1 }, creativityBonus: 10 },
+    icon: '🎸'
+  },
+
+  // Software & Plugins
+  {
     id: 'pro_tools_shed',
     name: 'Pro Tools Shed DAW',
     category: 'software',
@@ -109,7 +151,17 @@ export const availableEquipment: Equipment[] = [
     bonuses: { creativityBonus: 15, speedBonus: 10, genreBonus: { Electronic: 2 } },
     icon: '💻'
   },
-  
+
+  // Studio Monitoring
+  {
+    id: 'basic_monitors',
+    name: 'Basic Speakers',
+    category: 'monitor',
+    price: 0,
+    description: 'Standard studio monitors that came with your starter setup',
+    bonuses: { qualityBonus: 0 },
+    icon: '🔊'
+  },
   {
     id: 'studio_monitors',
     name: 'Studio Monitor Pair',
@@ -119,6 +171,8 @@ export const availableEquipment: Equipment[] = [
     bonuses: { qualityBonus: 15, technicalBonus: 5 },
     icon: '🔊'
   },
+
+  // Audio Interfaces
   {
     id: 'audio_interface',
     name: 'Audio Interface',
@@ -127,33 +181,6 @@ export const availableEquipment: Equipment[] = [
     description: 'Multi-channel audio interface for professional recording',
     bonuses: { qualityBonus: 12, speedBonus: 10 },
     icon: '🔌'
-  },
-  {
-    id: 'compressor',
-    name: 'Hardware Compressor',
-    category: 'processor',
-    price: 600,
-    description: 'Analog compressor for that warm, professional sound',
-    bonuses: { qualityBonus: 20, technicalBonus: 8 },
-    icon: '⚙️'
-  },
-  {
-    id: 'synthesizer',
-    name: 'Analog Synthesizer',
-    category: 'instrument',
-    price: 1200,
-    description: 'Vintage-style analog synthesizer for electronic music production',
-    bonuses: { genreBonus: { Electronic: 3, Pop: 1 }, creativityBonus: 15 },
-    icon: '🎹'
-  },
-  {
-    id: 'guitar_amp',
-    name: 'Tube Guitar Amplifier',
-    category: 'instrument',
-    price: 900,
-    description: 'Classic tube amplifier for that perfect rock guitar tone',
-    bonuses: { genreBonus: { Rock: 3, Acoustic: 1 }, creativityBonus: 10 },
-    icon: '🎸'
   }
 ];
 
@@ -162,7 +189,7 @@ export const equipmentCategories = {
   microphone: 'Microphones',
   monitor: 'Studio Monitoring',
   interface: 'Audio Interfaces',
-  processor: 'Outboard Gear',
+  outboard: 'Outboard Gear',
   instrument: 'Instruments',
   software: 'Software & Plugins'
 };
