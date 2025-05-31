@@ -2,6 +2,7 @@
 import { useCallback } from 'react';
 import { GameState, PlayerAttributes } from '@/types/game';
 import { toast } from '@/hooks/use-toast';
+import { spendPerkPoint as utilSpendPerkPoint } from '@/utils/gameUtils';
 
 export const usePlayerProgression = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
   const levelUpPlayer = useCallback(() => {
@@ -21,26 +22,20 @@ export const usePlayerProgression = (gameState: GameState, setGameState: React.D
     });
   }, [gameState.playerData.level, setGameState]);
 
-  const spendPerkPoint = useCallback((attribute: keyof PlayerAttributes) => {
-    if (gameState.playerData.perkPoints <= 0) return;
+  const spendPerkPoint = useCallback((attribute: keyof PlayerAttributes): GameState => {
+    if (gameState.playerData.perkPoints <= 0) {
+      return gameState;
+    }
 
-    setGameState(prev => ({
-      ...prev,
-      playerData: {
-        ...prev.playerData,
-        perkPoints: prev.playerData.perkPoints - 1,
-        attributes: {
-          ...prev.playerData.attributes,
-          [attribute]: prev.playerData.attributes[attribute] + 1
-        }
-      }
-    }));
+    const updatedGameState = utilSpendPerkPoint(gameState, attribute);
 
     toast({
       title: "Attribute Upgraded!",
-      description: `${attribute} increased to ${gameState.playerData.attributes[attribute] + 1}`,
+      description: `${String(attribute)} increased to ${updatedGameState.playerData.attributes[attribute]}`,
     });
-  }, [gameState.playerData, setGameState]);
+
+    return updatedGameState;
+  }, [gameState]);
 
   return {
     levelUpPlayer,

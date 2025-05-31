@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { StaffMember } from '@/types/game';
+import { StaffMember, PlayerAttributes } from '@/types/game';
 import { generateCandidates } from '@/utils/projectUtils';
 import { availableTrainingCourses } from '@/data/training';
 import { canPurchaseEquipment, addNotification, applyEquipmentEffects } from '@/utils/gameUtils';
@@ -249,12 +250,12 @@ const MusicStudioTycoon = () => {
       return;
     }
 
-    const updatedGameState = spendPerkPoint(gameState, attribute);
+    const updatedGameState = spendPerkPoint(attribute);
     setGameState(updatedGameState);
 
     toast({
       title: "Attribute Upgraded!",
-      description: `${attribute.replace(/([A-Z])/g, ' $1').trim()} increased!`,
+      description: `${String(attribute).replace(/([A-Z])/g, ' $1').trim()} increased!`,
     });
 
     console.log('PLAY_SOUND: attribute_upgrade');

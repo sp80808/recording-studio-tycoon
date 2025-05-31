@@ -1,3 +1,4 @@
+
 // Game type definitions
 export interface PlayerAttributes {
   focusMastery: number;
@@ -72,7 +73,7 @@ export interface StaffMember {
 export interface Equipment {
   id: string;
   name: string;
-  category: 'microphone' | 'monitor' | 'interface' | 'processor' | 'instrument' | 'software';
+  category: 'microphone' | 'monitor' | 'interface' | 'outboard' | 'instrument' | 'software';
   price: number;
   description: string;
   bonuses: {
