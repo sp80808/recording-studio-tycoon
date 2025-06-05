@@ -50,7 +50,7 @@ export const StudioModal: React.FC<StudioModalProps> = ({
               {/* Equipment Rack */}
               <div className="bg-yellow-900/50 rounded border-2 border-yellow-400 p-2 text-center">
                 <div className="text-xs text-yellow-300 mb-1">Rack</div>
-                {gameState.ownedEquipment.filter(e => e.category === 'processor' || e.category === 'interface').map(eq => (
+                {gameState.ownedEquipment.filter(e => e.category === 'outboard' || e.category === 'interface').map(eq => (
                   <div key={eq.id} className="text-lg">{eq.icon}</div>
                 ))}
               </div>
