@@ -1,8 +1,9 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { GameState, FocusAllocation } from '@/types/game';
+import { MinigameManager, MinigameType } from './minigames/MinigameManager';
 import { useOrbAnimationStyles } from './OrbAnimationStyles';
 
 interface ActiveProjectProps {
@@ -19,9 +20,22 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   performDailyWork
 }) => {
   const orbContainerRef = useRef<HTMLDivElement>(null);
+  const [showMinigame, setShowMinigame] = useState(false);
+  const [selectedMinigame, setSelectedMinigame] = useState<MinigameType>('rhythm');
   
   // Apply enhanced orb animation styles
   useOrbAnimationStyles();
+
+  const handleMinigameOpen = (gameType: MinigameType) => {
+    setSelectedMinigame(gameType);
+    setShowMinigame(true);
+  };
+
+  const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number) => {
+    // This would need to be passed up to the parent component to actually apply the rewards
+    console.log('Minigame rewards:', { creativityBonus, technicalBonus, xpBonus });
+    setShowMinigame(false);
+  };
 
   if (!gameState.activeProject) {
     return (
@@ -95,6 +109,39 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             <div className="text-xs sm:text-sm text-gray-300">Technical</div>
           </div>
         </div>
+
+        {/* Minigames Section */}
+        {!isProjectComplete && (
+          <Card className="p-4 mb-4 bg-gradient-to-r from-purple-900/30 to-pink-900/30 border-purple-500/30">
+            <h3 className="text-sm sm:text-lg font-bold mb-3 text-purple-300">🎮 Studio Minigames</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+              <Button
+                onClick={() => handleMinigameOpen('rhythm')}
+                className="bg-purple-600/80 hover:bg-purple-700/80 text-white border border-purple-400/30 text-xs sm:text-sm h-8 sm:h-10"
+                size="sm"
+              >
+                🎵 Rhythm
+              </Button>
+              <Button
+                onClick={() => handleMinigameOpen('mixing')}
+                className="bg-blue-600/80 hover:bg-blue-700/80 text-white border border-blue-400/30 text-xs sm:text-sm h-8 sm:h-10"
+                size="sm"
+              >
+                🎛️ Mixing
+              </Button>
+              <Button
+                onClick={() => handleMinigameOpen('waveform')}
+                className="bg-green-600/80 hover:bg-green-700/80 text-white border border-green-400/30 text-xs sm:text-sm h-8 sm:h-10"
+                size="sm"
+              >
+                🌊 Waveform
+              </Button>
+            </div>
+            <div className="text-xs text-gray-400 mt-2 text-center">
+              Play minigames to earn bonus creativity and technical points!
+            </div>
+          </Card>
+        )}
 
         {!isProjectComplete && (
           <div className="space-y-4">
@@ -181,6 +228,14 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
       {/* Orb Animation Container */}
       <div ref={orbContainerRef} className="absolute inset-0 pointer-events-none z-10"></div>
+
+      {/* Minigame Modal */}
+      <MinigameManager
+        isOpen={showMinigame}
+        onClose={() => setShowMinigame(false)}
+        gameType={selectedMinigame}
+        onReward={handleMinigameReward}
+      />
     </div>
   );
 };
