@@ -9,7 +9,7 @@ import { availableTrainingCourses } from '@/data/training';
 interface TrainingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  staff: StaffMember;
+  staff: StaffMember | null;
   gameState: GameState;
   sendStaffToTraining: (staffId: string, courseId: string) => void;
 }
@@ -21,6 +21,11 @@ export const TrainingModal: React.FC<TrainingModalProps> = ({
   gameState,
   sendStaffToTraining
 }) => {
+  // Don't render the modal if staff is null
+  if (!staff) {
+    return null;
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-gray-900 border-gray-600 text-white max-w-2xl">
