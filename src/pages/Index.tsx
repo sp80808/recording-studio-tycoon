@@ -116,7 +116,30 @@ const MusicStudioTycoon = () => {
     }
   };
 
-  const { performDailyWork, orbContainerRef } = useStageWork(gameState, setGameState, focusAllocation, completeProject, addStaffXP, advanceDay);
+  const { performDailyWork, orbContainerRef, autoTriggeredMinigame, clearAutoTriggeredMinigame } = useStageWork(gameState, setGameState, focusAllocation, completeProject, addStaffXP, advanceDay);
+
+  // Handle minigame rewards by updating project points
+  const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number) => {
+    if (gameState.activeProject) {
+      setGameState(prev => ({
+        ...prev,
+        activeProject: prev.activeProject ? {
+          ...prev.activeProject,
+          accumulatedCPoints: prev.activeProject.accumulatedCPoints + creativityBonus,
+          accumulatedTPoints: prev.activeProject.accumulatedTPoints + technicalBonus
+        } : null,
+        playerData: {
+          ...prev.playerData,
+          xp: prev.playerData.xp + xpBonus
+        }
+      }));
+
+      toast({
+        title: "Production Bonus!",
+        description: `+${creativityBonus} creativity, +${technicalBonus} technical, +${xpBonus} XP`,
+      });
+    }
+  };
 
   const handlePerformDailyWork = () => {
     console.log('=== HANDLE PERFORM DAILY WORK ===');
@@ -421,6 +444,7 @@ const MusicStudioTycoon = () => {
             focusAllocation={focusAllocation}
             setFocusAllocation={setFocusAllocation}
             performDailyWork={handleEnhancedDailyWork}
+            onMinigameReward={handleMinigameReward}
           />
           
           <div ref={orbContainerRef} className="absolute inset-0 pointer-events-none z-10"></div>

@@ -6,19 +6,22 @@ import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
 import { GameState, FocusAllocation } from '@/types/game';
 import { MinigameManager, MinigameType } from './minigames/MinigameManager';
+import { getTriggeredMinigames } from '@/utils/minigameUtils';
 
 interface ActiveProjectProps {
   gameState: GameState;
   focusAllocation: FocusAllocation;
   setFocusAllocation: (allocation: FocusAllocation) => void;
   performDailyWork: () => void;
+  onMinigameReward?: (creativityBonus: number, technicalBonus: number, xpBonus: number) => void;
 }
 
 export const ActiveProject: React.FC<ActiveProjectProps> = ({
   gameState,
   focusAllocation,
   setFocusAllocation,
-  performDailyWork
+  performDailyWork,
+  onMinigameReward
 }) => {
   const [showMinigame, setShowMinigame] = useState(false);
   const [selectedMinigame, setSelectedMinigame] = useState<MinigameType>('rhythm');
@@ -42,9 +45,15 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const completedWorkUnits = project.stages.reduce((total, stage) => total + stage.workUnitsCompleted, 0);
   const workProgress = totalWorkUnits > 0 ? (completedWorkUnits / totalWorkUnits) * 100 : 0;
 
+  // Get contextual minigame suggestions
+  const triggeredMinigames = getTriggeredMinigames(project, gameState, focusAllocation);
+  const suggestedMinigames = triggeredMinigames.slice(0, 3); // Top 3 suggestions
+
   const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number) => {
-    // This would be handled by the parent component in a real implementation
     console.log('Minigame rewards:', { creativityBonus, technicalBonus, xpBonus });
+    if (onMinigameReward) {
+      onMinigameReward(creativityBonus, technicalBonus, xpBonus);
+    }
     setShowMinigame(false);
   };
 
@@ -72,6 +81,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           </div>
           <div className="text-right">
             <div className="text-yellow-400 font-bold">{project.durationDaysTotal} days total</div>
+            <div className="text-gray-400 text-sm">Work sessions: {project.workSessionCount || 0}</div>
           </div>
         </div>
 
@@ -127,9 +137,36 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           </div>
         </div>
 
-        {/* Minigames Section */}
+        {/* Contextual Minigame Suggestions */}
+        {suggestedMinigames.length > 0 && (
+          <div className="mb-6 p-4 bg-blue-900/30 border border-blue-600 rounded-lg">
+            <h4 className="text-white font-semibold mb-3">🎯 Suggested Production Activities</h4>
+            <div className="space-y-2">
+              {suggestedMinigames.map((trigger, index) => (
+                <div key={index} className="flex items-center justify-between p-2 bg-gray-700/50 rounded">
+                  <div>
+                    <div className="text-yellow-400 font-medium text-sm">{trigger.triggerReason}</div>
+                    <div className="text-gray-400 text-xs">Priority: {trigger.priority}/10</div>
+                  </div>
+                  <Button
+                    onClick={() => {
+                      setSelectedMinigame(trigger.minigameType);
+                      setShowMinigame(true);
+                    }}
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-xs"
+                  >
+                    Start
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* All Minigames Section */}
         <div className="mb-6">
-          <h4 className="text-white font-semibold mb-3">🎮 Production Minigames</h4>
+          <h4 className="text-white font-semibold mb-3">🎮 All Production Minigames</h4>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
             {minigameOptions.map((minigame) => (
               <Button

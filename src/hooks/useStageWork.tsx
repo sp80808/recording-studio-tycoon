@@ -1,7 +1,7 @@
-
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { GameState, FocusAllocation } from '@/types/game';
 import { calculateStudioSkillBonus, getEquipmentBonuses } from '@/utils/gameUtils';
+import { shouldAutoTriggerMinigame } from '@/utils/minigameUtils';
 import { toast } from '@/hooks/use-toast';
 
 export const useStageWork = (
@@ -13,6 +13,10 @@ export const useStageWork = (
   advanceDay: () => void
 ) => {
   const orbContainerRef = useRef<HTMLDivElement>(null);
+  const [autoTriggeredMinigame, setAutoTriggeredMinigame] = useState<{
+    type: string;
+    reason: string;
+  } | null>(null);
 
   const createOrb = useCallback((type: 'creativity' | 'technical', amount: number) => {
     console.log(`Creating ${type} orb with amount: ${amount}`);
@@ -85,6 +89,24 @@ export const useStageWork = (
     const currentStage = project.stages[currentStageIndex];
     console.log(`Current stage: ${currentStage.stageName} (index: ${currentStageIndex})`);
 
+    // Increment work session count
+    const newWorkSessionCount = (project.workSessionCount || 0) + 1;
+
+    // Check for auto-triggered minigames
+    const autoTrigger = shouldAutoTriggerMinigame(project, gameState, focusAllocation, newWorkSessionCount);
+    if (autoTrigger) {
+      setAutoTriggeredMinigame({
+        type: autoTrigger.minigameType,
+        reason: autoTrigger.triggerReason
+      });
+      
+      toast({
+        title: "🎮 Production Opportunity!",
+        description: autoTrigger.triggerReason,
+        duration: 4000
+      });
+    }
+
     // Calculate base points from player attributes and focus allocation
     const baseCreativityWork = gameState.playerData.dailyWorkCapacity * gameState.playerData.attributes.creativeIntuition;
     const baseTechnicalWork = gameState.playerData.dailyWorkCapacity * gameState.playerData.attributes.technicalAptitude;
@@ -155,17 +177,19 @@ export const useStageWork = (
     createOrb('creativity', creativityGain);
     createOrb('technical', technicalGain);
 
-    // CRITICAL: Update project with accumulated points
+    // CRITICAL: Update project with accumulated points and work session count
     const updatedProject = {
       ...project,
       accumulatedCPoints: project.accumulatedCPoints + creativityGain,
       accumulatedTPoints: project.accumulatedTPoints + technicalGain,
       lastWorkDay: gameState.currentDay,
-      currentStageIndex: currentStageIndex + 1 // Advance to next stage
+      currentStageIndex: currentStageIndex + 1, // Advance to next stage
+      workSessionCount: newWorkSessionCount
     };
 
     console.log(`Project C points: ${project.accumulatedCPoints} -> ${updatedProject.accumulatedCPoints}`);
     console.log(`Project T points: ${project.accumulatedTPoints} -> ${updatedProject.accumulatedTPoints}`);
+    console.log(`Work sessions: ${project.workSessionCount || 0} -> ${updatedProject.workSessionCount}`);
     console.log(`Stage advanced from ${currentStageIndex} to ${updatedProject.currentStageIndex}`);
 
     // Check if project is complete
@@ -204,6 +228,8 @@ export const useStageWork = (
 
   return {
     performDailyWork,
-    orbContainerRef
+    orbContainerRef,
+    autoTriggeredMinigame,
+    clearAutoTriggeredMinigame: () => setAutoTriggeredMinigame(null)
   };
 };

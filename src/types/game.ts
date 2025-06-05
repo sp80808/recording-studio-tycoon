@@ -1,4 +1,3 @@
-
 // Game type definitions
 export interface PlayerAttributes {
   focusMastery: number;
@@ -48,6 +47,7 @@ export interface Project {
   currentStageIndex: number;
   completedStages: number[];
   lastWorkDay?: number; // Track when work was last performed
+  workSessionCount: number; // Track how many work sessions have been completed
 }
 
 export interface StaffMember {
