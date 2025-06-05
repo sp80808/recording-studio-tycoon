@@ -36,7 +36,11 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   }
 
   const project = gameState.activeProject;
-  const workProgress = (project.currentWork / project.totalWork) * 100;
+  
+  // Calculate total work units across all stages
+  const totalWorkUnits = project.stages.reduce((total, stage) => total + stage.workUnitsBase, 0);
+  const completedWorkUnits = project.stages.reduce((total, stage) => total + stage.workUnitsCompleted, 0);
+  const workProgress = totalWorkUnits > 0 ? (completedWorkUnits / totalWorkUnits) * 100 : 0;
 
   const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number) => {
     // This would be handled by the parent component in a real implementation
@@ -59,22 +63,22 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
         <div className="flex justify-between items-start mb-4">
           <div>
             <h3 className="text-xl font-bold text-white mb-1">{project.title}</h3>
-            <p className="text-gray-300 text-sm mb-2">{project.description}</p>
+            <p className="text-gray-300 text-sm mb-2">{project.genre} • {project.clientType}</p>
             <div className="flex gap-4 text-sm">
-              <span className="text-green-400">💰 ${project.payment}</span>
+              <span className="text-green-400">💰 ${project.payoutBase}</span>
               <span className="text-blue-400">🎵 {project.genre}</span>
               <span className="text-purple-400">⭐ {project.difficulty}</span>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-yellow-400 font-bold">{project.deadline - gameState.currentDay} days left</div>
+            <div className="text-yellow-400 font-bold">{project.durationDaysTotal} days total</div>
           </div>
         </div>
 
         <div className="mb-6">
           <div className="flex justify-between items-center mb-2">
             <span className="text-white font-semibold">Project Progress</span>
-            <span className="text-gray-400">{project.currentWork}/{project.totalWork}</span>
+            <span className="text-gray-400">{completedWorkUnits}/{totalWorkUnits}</span>
           </div>
           <Progress value={workProgress} className="h-3" />
         </div>
