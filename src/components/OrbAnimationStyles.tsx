@@ -38,6 +38,30 @@ export const useOrbAnimationStyles = () => {
           border: 2px solid rgba(255, 255, 255, 0.3);
         }
 
+        /* Enhanced blob animation for stat gains */
+        @keyframes blobFloat {
+          0% {
+            transform: scale(0.3) translateY(20px);
+            opacity: 0;
+          }
+          20% {
+            transform: scale(1.2) translateY(-10px);
+            opacity: 1;
+          }
+          80% {
+            transform: scale(1) translate(calc(var(--target-x) * 0.8), calc(var(--target-y) * 0.8));
+            opacity: 1;
+          }
+          100% {
+            transform: scale(0.8) translate(var(--target-x), var(--target-y));
+            opacity: 0;
+          }
+        }
+
+        .animate-blob-float {
+          animation: blobFloat 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
         @keyframes orbFloat {
           0% {
             transform: scale(0.5) translateY(20px);
@@ -87,6 +111,17 @@ export const useOrbAnimationStyles = () => {
           }
         }
 
+        @keyframes statPulse {
+          0%, 100% {
+            transform: scale(1);
+            text-shadow: 0 0 10px currentColor;
+          }
+          50% {
+            transform: scale(1.05);
+            text-shadow: 0 0 20px currentColor;
+          }
+        }
+
         @keyframes pulse {
           0%, 100% {
             opacity: 1;
@@ -124,8 +159,17 @@ export const useOrbAnimationStyles = () => {
           animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
 
+        .animate-stat-pulse {
+          animation: statPulse 0.8s ease-in-out;
+        }
+
         .animate-bounce {
           animation: bounce 1s infinite;
+        }
+
+        /* Progress bar animation */
+        .progress-bar {
+          transition: width 1.2s ease-in-out;
         }
 
         /* Stat item hover effects */
@@ -171,11 +215,6 @@ export const useOrbAnimationStyles = () => {
 
         .game-button:hover::before {
           left: 100%;
-        }
-
-        /* Progress bar animation */
-        .progress-bar {
-          transition: width 0.8s ease-in-out;
         }
 
         /* XP progress specific styling */
@@ -224,6 +263,26 @@ export const useOrbAnimationStyles = () => {
           background: rgba(55, 65, 81, 0.7);
           transform: translateX(4px);
           border-color: rgba(147, 51, 234, 0.5);
+        }
+
+        /* Stage completion celebration */
+        @keyframes stageComplete {
+          0% {
+            transform: scale(1);
+            background: rgba(16, 185, 129, 0.1);
+          }
+          50% {
+            transform: scale(1.02);
+            background: rgba(16, 185, 129, 0.3);
+          }
+          100% {
+            transform: scale(1);
+            background: rgba(16, 185, 129, 0.1);
+          }
+        }
+
+        .stage-complete-animation {
+          animation: stageComplete 1s ease-in-out;
         }
       `;
       document.head.appendChild(style);

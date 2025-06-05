@@ -1,3 +1,4 @@
+
 import { useCallback, useRef, useState } from 'react';
 import { GameState, FocusAllocation } from '@/types/game';
 import { calculateStudioSkillBonus, getEquipmentBonuses } from '@/utils/gameUtils';
@@ -61,20 +62,18 @@ export const useStageWork = (
       return;
     }
 
-    const project = gameState.activeProject;
-    console.log(`Working on project: ${project.title}`);
-    
-    // Check if player has already worked today
-    if (project.lastWorkDay && project.lastWorkDay >= gameState.currentDay) {
-      console.log(`Already worked today. Last work day: ${project.lastWorkDay}, Current day: ${gameState.currentDay}`);
+    if (gameState.playerData.dailyWorkCapacity <= 0) {
       toast({
-        title: "Already Worked Today",
-        description: "You can only work once per day. Use 'Next Day' to continue tomorrow.",
+        title: "No Energy Left",
+        description: "You need to advance to the next day to restore your energy.",
         variant: "destructive"
       });
       return;
     }
 
+    const project = gameState.activeProject;
+    console.log(`Working on project: ${project.title}`);
+    
     // Ensure we have valid stages
     if (!project.stages || project.stages.length === 0) {
       console.log('Project has no stages');
@@ -88,6 +87,15 @@ export const useStageWork = (
 
     const currentStage = project.stages[currentStageIndex];
     console.log(`Current stage: ${currentStage.stageName} (index: ${currentStageIndex})`);
+
+    // Check if current stage is already completed
+    if (currentStage.completed) {
+      toast({
+        title: "Stage Already Complete",
+        description: "This stage has been completed. The project will advance automatically.",
+      });
+      return;
+    }
 
     // Increment work session count
     const newWorkSessionCount = (project.workSessionCount || 0) + 1;
@@ -177,33 +185,63 @@ export const useStageWork = (
     createOrb('creativity', creativityGain);
     createOrb('technical', technicalGain);
 
+    // Calculate work units completed for current stage
+    const workUnitsCompleted = Math.min(
+      currentStage.workUnitsCompleted + Math.floor((creativityGain + technicalGain) / 10),
+      currentStage.workUnitsBase
+    );
+
+    // Check if stage is completed
+    const stageCompleted = workUnitsCompleted >= currentStage.workUnitsBase;
+    let newCurrentStageIndex = currentStageIndex;
+    
+    if (stageCompleted && !currentStage.completed) {
+      newCurrentStageIndex = Math.min(currentStageIndex + 1, project.stages.length - 1);
+    }
+
+    // Update the current stage
+    const updatedStages = project.stages.map((stage, index) => {
+      if (index === currentStageIndex) {
+        return {
+          ...stage,
+          workUnitsCompleted,
+          completed: stageCompleted
+        };
+      }
+      return stage;
+    });
+
     // CRITICAL: Update project with accumulated points and work session count
     const updatedProject = {
       ...project,
+      stages: updatedStages,
       accumulatedCPoints: project.accumulatedCPoints + creativityGain,
       accumulatedTPoints: project.accumulatedTPoints + technicalGain,
-      lastWorkDay: gameState.currentDay,
-      currentStageIndex: currentStageIndex + 1, // Advance to next stage
+      currentStageIndex: newCurrentStageIndex,
       workSessionCount: newWorkSessionCount
     };
 
     console.log(`Project C points: ${project.accumulatedCPoints} -> ${updatedProject.accumulatedCPoints}`);
     console.log(`Project T points: ${project.accumulatedTPoints} -> ${updatedProject.accumulatedTPoints}`);
     console.log(`Work sessions: ${project.workSessionCount || 0} -> ${updatedProject.workSessionCount}`);
-    console.log(`Stage advanced from ${currentStageIndex} to ${updatedProject.currentStageIndex}`);
+    console.log(`Stage progress: ${currentStage.workUnitsCompleted}/${currentStage.workUnitsBase} -> ${workUnitsCompleted}/${currentStage.workUnitsBase}`);
 
-    // Check if project is complete
-    if (updatedProject.currentStageIndex >= project.stages.length) {
+    // Check if project is complete (all stages finished)
+    const allStagesComplete = updatedProject.stages.every(stage => stage.completed);
+    if (allStagesComplete) {
       console.log('PROJECT COMPLETE!');
       const review = completeProject(updatedProject, addStaffXP);
-      advanceDay();
       return { review, isComplete: true };
     }
 
-    // Update game state with new project data and reduce staff energy
+    // Update game state with new project data, reduce player energy, and reduce staff energy
     setGameState(prev => ({
       ...prev,
       activeProject: updatedProject,
+      playerData: {
+        ...prev.playerData,
+        dailyWorkCapacity: prev.playerData.dailyWorkCapacity - 1
+      },
       hiredStaff: prev.hiredStaff.map(s => 
         s.assignedProjectId === project.id && s.status === 'Working'
           ? { ...s, energy: Math.max(0, s.energy - 15) }
@@ -211,20 +249,22 @@ export const useStageWork = (
       )
     }));
 
-    // Advance the day after work is done
-    advanceDay();
-
     // Show stage completion notification
-    const nextStage = project.stages[updatedProject.currentStageIndex];
-    if (nextStage) {
+    if (stageCompleted) {
       toast({
-        title: "Stage Complete!",
-        description: `Moving to: ${nextStage.stageName}`,
+        title: "🎉 Stage Complete!",
+        description: `${currentStage.stageName} finished! ${newCurrentStageIndex < project.stages.length ? `Moving to: ${project.stages[newCurrentStageIndex].stageName}` : 'Project ready for completion!'}`,
+        duration: 4000
+      });
+    } else {
+      toast({
+        title: "Work Progress",
+        description: `Stage progress: ${workUnitsCompleted}/${currentStage.workUnitsBase} work units`,
       });
     }
     
     return { review: null, isComplete: false };
-  }, [gameState, focusAllocation, createOrb, setGameState, completeProject, addStaffXP, advanceDay]);
+  }, [gameState, focusAllocation, createOrb, setGameState, completeProject, addStaffXP]);
 
   return {
     performDailyWork,

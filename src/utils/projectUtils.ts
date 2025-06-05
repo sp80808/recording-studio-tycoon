@@ -46,7 +46,8 @@ export const generateNewProjects = (count: number): Project[] => {
       accumulatedCPoints: 0,
       accumulatedTPoints: 0,
       currentStageIndex: 0,
-      completedStages: []
+      completedStages: [],
+      workSessionCount: 0
     };
     projects.push(project);
   }
