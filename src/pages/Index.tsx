@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { StaffMember, PlayerAttributes } from '@/types/game';
@@ -6,13 +5,14 @@ import { generateCandidates } from '@/utils/projectUtils';
 import { availableTrainingCourses } from '@/data/training';
 import { canPurchaseEquipment, addNotification, applyEquipmentEffects } from '@/utils/gameUtils';
 import { availableEquipment } from '@/data/equipment';
-import { GameHeader } from '@/components/GameHeader';
 import { ProjectList } from '@/components/ProjectList';
 import { ActiveProject } from '@/components/ActiveProject';
 import { RightPanel } from '@/components/RightPanel';
 import { NotificationSystem } from '@/components/NotificationSystem';
 import { TrainingModal } from '@/components/modals/TrainingModal';
 import { GameModals } from '@/components/GameModals';
+import { EnhancedGameHeader } from '@/components/EnhancedGameHeader';
+import { FloatingXPOrb } from '@/components/FloatingXPOrb';
 import { useGameState } from '@/hooks/useGameState';
 import { useStaffManagement } from '@/hooks/useStaffManagement';
 import { useProjectManagement } from '@/hooks/useProjectManagement';
@@ -306,9 +306,92 @@ const MusicStudioTycoon = () => {
     };
   }, []);
 
+  // Add floating orb state
+  const [floatingOrbs, setFloatingOrbs] = useState<Array<{
+    id: string;
+    amount: number;
+    type: 'xp' | 'money' | 'skill';
+  }>>([]);
+
+  // Enhanced level up with visual feedback
+  const handleLevelUp = () => {
+    levelUpPlayer();
+    
+    // Add floating XP orb
+    const orbId = `xp-${Date.now()}`;
+    setFloatingOrbs(prev => [...prev, {
+      id: orbId,
+      amount: 100,
+      type: 'xp'
+    }]);
+
+    // Remove orb after animation
+    setTimeout(() => {
+      setFloatingOrbs(prev => prev.filter(orb => orb.id !== orbId));
+    }, 2500);
+  };
+
+  // Enhanced purchase equipment with feedback
+  const enhancedPurchaseEquipment = (equipmentId: string) => {
+    const equipment = availableEquipment.find(e => e.id === equipmentId);
+    if (!equipment) return;
+
+    purchaseEquipment(equipmentId);
+    
+    // Add money orb effect
+    const orbId = `money-${Date.now()}`;
+    setFloatingOrbs(prev => [...prev, {
+      id: orbId,
+      amount: equipment.price,
+      type: 'money'
+    }]);
+
+    setTimeout(() => {
+      setFloatingOrbs(prev => prev.filter(orb => orb.id !== orbId));
+    }, 2500);
+  };
+
+  // Enhanced daily work with XP feedback
+  const handleEnhancedDailyWork = () => {
+    console.log('=== ENHANCED DAILY WORK ===');
+    const result = performDailyWork();
+    
+    if (result?.isComplete && result.review) {
+      console.log('Project completed with review:', result.review);
+      setLastReview(result.review);
+      setShowReviewModal(true);
+      
+      // Add XP orb for completion
+      const orbId = `completion-${Date.now()}`;
+      setFloatingOrbs(prev => [...prev, {
+        id: orbId,
+        amount: result.review.xpGain,
+        type: 'xp'
+      }]);
+
+      setTimeout(() => {
+        setFloatingOrbs(prev => prev.filter(orb => orb.id !== orbId));
+      }, 2500);
+      
+      if (gameState.playerData.xp + result.review.xpGain >= gameState.playerData.xpToNextLevel) {
+        // Delay level up for better UX
+        setTimeout(() => {
+          handleLevelUp();
+        }, 1000);
+      }
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-green-900 text-white">
-      <GameHeader 
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-green-900 text-white relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-10 left-10 w-32 h-32 bg-purple-500/10 rounded-full animate-pulse"></div>
+        <div className="absolute top-1/3 right-20 w-24 h-24 bg-blue-500/10 rounded-full animate-bounce" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute bottom-20 left-1/3 w-20 h-20 bg-green-500/10 rounded-full animate-pulse" style={{ animationDelay: '2s' }}></div>
+      </div>
+
+      <EnhancedGameHeader 
         gameState={gameState}
         showStudioModal={showStudioModal}
         setShowStudioModal={setShowStudioModal}
@@ -323,8 +406,8 @@ const MusicStudioTycoon = () => {
         openTrainingModal={handleOpenTrainingModal}
       />
 
-      <div className="p-2 sm:p-4 space-y-4 sm:space-y-0 sm:flex sm:gap-4 sm:h-[calc(100vh-80px)]">
-        <div className="w-full sm:w-80 lg:w-96">
+      <div className="p-2 sm:p-4 space-y-4 sm:space-y-0 sm:flex sm:gap-4 sm:h-[calc(100vh-140px)] relative">
+        <div className="w-full sm:w-80 lg:w-96 animate-fade-in">
           <ProjectList 
             gameState={gameState}
             setGameState={setGameState}
@@ -332,18 +415,30 @@ const MusicStudioTycoon = () => {
           />
         </div>
 
-        <div className="flex-1 relative min-h-[400px] sm:min-h-0">
+        <div className="flex-1 relative min-h-[400px] sm:min-h-0 animate-fade-in" style={{ animationDelay: '0.2s' }}>
           <ActiveProject 
             gameState={gameState}
             focusAllocation={focusAllocation}
             setFocusAllocation={setFocusAllocation}
-            performDailyWork={handlePerformDailyWork}
+            performDailyWork={handleEnhancedDailyWork}
           />
           
           <div ref={orbContainerRef} className="absolute inset-0 pointer-events-none z-10"></div>
+          
+          {/* Floating XP/Money orbs */}
+          {floatingOrbs.map(orb => (
+            <FloatingXPOrb
+              key={orb.id}
+              amount={orb.amount}
+              type={orb.type}
+              onComplete={() => {
+                setFloatingOrbs(prev => prev.filter(o => o.id !== orb.id));
+              }}
+            />
+          ))}
         </div>
 
-        <div className="w-full sm:w-80 lg:w-96">
+        <div className="w-full sm:w-80 lg:w-96 animate-fade-in" style={{ animationDelay: '0.4s' }}>
           <RightPanel 
             gameState={gameState}
             showSkillsModal={showSkillsModal}
@@ -352,23 +447,21 @@ const MusicStudioTycoon = () => {
             setShowAttributesModal={setShowAttributesModal}
             spendPerkPoint={handleSpendPerkPoint}
             advanceDay={advanceDay}
-            purchaseEquipment={purchaseEquipment}
+            purchaseEquipment={enhancedPurchaseEquipment}
           />
         </div>
       </div>
 
-      {selectedStaffForTraining && (
-        <TrainingModal
-          isOpen={showTrainingModal}
-          onClose={() => {
-            setShowTrainingModal(false);
-            setSelectedStaffForTraining(null);
-          }}
-          staff={selectedStaffForTraining}
-          gameState={gameState}
-          sendStaffToTraining={sendStaffToTraining}
-        />
-      )}
+      <TrainingModal
+        isOpen={showTrainingModal}
+        onClose={() => {
+          setShowTrainingModal(false);
+          setSelectedStaffForTraining(null);
+        }}
+        staff={selectedStaffForTraining}
+        gameState={gameState}
+        sendStaffToTraining={sendStaffToTraining}
+      />
 
       <NotificationSystem
         notifications={gameState.notifications}
