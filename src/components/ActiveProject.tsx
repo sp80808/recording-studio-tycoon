@@ -1,15 +1,16 @@
-import React, { useRef, useState } from 'react';
+
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
 import { GameState, FocusAllocation } from '@/types/game';
 import { MinigameManager, MinigameType } from './minigames/MinigameManager';
-import { useOrbAnimationStyles } from './OrbAnimationStyles';
 
 interface ActiveProjectProps {
   gameState: GameState;
   focusAllocation: FocusAllocation;
-  setFocusAllocation: React.Dispatch<React.SetStateAction<FocusAllocation>>;
+  setFocusAllocation: (allocation: FocusAllocation) => void;
   performDailyWork: () => void;
 }
 
@@ -19,217 +20,145 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   setFocusAllocation,
   performDailyWork
 }) => {
-  const orbContainerRef = useRef<HTMLDivElement>(null);
   const [showMinigame, setShowMinigame] = useState(false);
   const [selectedMinigame, setSelectedMinigame] = useState<MinigameType>('rhythm');
-  
-  // Apply enhanced orb animation styles
-  useOrbAnimationStyles();
-
-  const handleMinigameOpen = (gameType: MinigameType) => {
-    setSelectedMinigame(gameType);
-    setShowMinigame(true);
-  };
-
-  const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number) => {
-    // This would need to be passed up to the parent component to actually apply the rewards
-    console.log('Minigame rewards:', { creativityBonus, technicalBonus, xpBonus });
-    setShowMinigame(false);
-  };
 
   if (!gameState.activeProject) {
     return (
-      <div className="flex items-center justify-center h-full min-h-[300px]">
-        <Card className="p-6 sm:p-8 text-center bg-black/50 backdrop-blur-sm border-gray-600 mx-4 max-w-sm">
-          <div className="text-4xl sm:text-6xl mb-4">🎵</div>
-          <h2 className="text-xl sm:text-2xl font-bold mb-2 text-white">Studio Ready</h2>
-          <p className="text-sm sm:text-base text-gray-300">Select a project from above to get started</p>
-          {gameState.playerData.level < 2 && (
-            <p className="text-yellow-400 mt-2 text-xs sm:text-sm">Reach level 2 to unlock staff recruitment!</p>
-          )}
-        </Card>
-      </div>
+      <Card className="flex-1 bg-gray-800/50 border-gray-600 p-6 backdrop-blur-sm">
+        <div className="text-center text-gray-400">
+          <div className="text-6xl mb-4">🎵</div>
+          <h3 className="text-xl font-bold mb-2">No Active Project</h3>
+          <p>Select a project from the left panel to start working</p>
+        </div>
+      </Card>
     );
   }
 
   const project = gameState.activeProject;
-  
-  // Safety checks for stages
-  if (!project.stages || project.stages.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-full min-h-[300px]">
-        <Card className="p-6 sm:p-8 text-center bg-black/50 backdrop-blur-sm border-gray-600 mx-4 max-w-sm">
-          <div className="text-4xl sm:text-6xl mb-4">⚠️</div>
-          <h2 className="text-xl sm:text-2xl font-bold mb-2 text-white">Project Error</h2>
-          <p className="text-sm sm:text-base text-gray-300">This project has no stages defined</p>
-        </Card>
-      </div>
-    );
-  }
+  const workProgress = (project.currentWork / project.totalWork) * 100;
 
-  const currentStageIndex = Math.min(
-    Math.max(0, project.currentStageIndex || 0),
-    project.stages.length - 1
-  );
+  const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number) => {
+    // This would be handled by the parent component in a real implementation
+    console.log('Minigame rewards:', { creativityBonus, technicalBonus, xpBonus });
+    setShowMinigame(false);
+  };
 
-  const currentStage = project.stages[currentStageIndex];
-  const isProjectComplete = currentStageIndex >= project.stages.length;
-  
-  // Check if player has already worked today
-  const hasWorkedToday = project.lastWorkDay && project.lastWorkDay >= gameState.currentDay;
-  const canWorkToday = !isProjectComplete && !hasWorkedToday;
+  const minigameOptions = [
+    { id: 'rhythm', name: '🥁 Rhythm Training', description: 'Perfect your timing skills' },
+    { id: 'mixing', name: '🎚️ Mixing Board', description: 'Balance the perfect mix' },
+    { id: 'waveform', name: '🌊 Waveform Analysis', description: 'Analyze audio patterns' },
+    { id: 'beatmaking', name: '🎵 Beat Making', description: 'Create killer drum patterns' },
+    { id: 'vocal', name: '🎤 Vocal Recording', description: 'Nail the perfect take' },
+    { id: 'mastering', name: '✨ Mastering Challenge', description: 'Polish the final sound' }
+  ];
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Active Project Dashboard */}
-      <Card className="p-4 sm:p-6 bg-black/50 backdrop-blur-sm border-gray-600">
-        <h2 className="text-lg sm:text-2xl font-bold mb-2 text-white break-words">Working on: {project.title}</h2>
-        
-        {!isProjectComplete && currentStage && (
-          <div className="text-sm sm:text-lg mb-4 text-gray-200">
-            Stage {currentStageIndex + 1} of {project.stages.length}: {currentStage.stageName}
+    <div className="flex-1 space-y-4">
+      <Card className="bg-gray-800/50 border-gray-600 p-6 backdrop-blur-sm">
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h3 className="text-xl font-bold text-white mb-1">{project.title}</h3>
+            <p className="text-gray-300 text-sm mb-2">{project.description}</p>
+            <div className="flex gap-4 text-sm">
+              <span className="text-green-400">💰 ${project.payment}</span>
+              <span className="text-blue-400">🎵 {project.genre}</span>
+              <span className="text-purple-400">⭐ {project.difficulty}</span>
+            </div>
           </div>
-        )}
-        
-        {isProjectComplete && (
-          <div className="text-sm sm:text-lg mb-4 text-green-400">
-            All stages complete! Project ready for review.
+          <div className="text-right">
+            <div className="text-yellow-400 font-bold">{project.deadline - gameState.currentDay} days left</div>
           </div>
-        )}
-        
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <div id="creativity-points" className="text-center p-3 bg-blue-900/30 rounded-lg border border-blue-500/30">
-            <div className="text-2xl sm:text-3xl mb-2">💙</div>
-            <div className="text-lg sm:text-xl font-bold text-white">{project.accumulatedCPoints}</div>
-            <div className="text-xs sm:text-sm text-gray-300">Creativity</div>
+        </div>
+
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-white font-semibold">Project Progress</span>
+            <span className="text-gray-400">{project.currentWork}/{project.totalWork}</span>
           </div>
-          <div id="technical-points" className="text-center p-3 bg-green-900/30 rounded-lg border border-green-500/30">
-            <div className="text-2xl sm:text-3xl mb-2">💚</div>
-            <div className="text-lg sm:text-xl font-bold text-white">{project.accumulatedTPoints}</div>
-            <div className="text-xs sm:text-sm text-gray-300">Technical</div>
+          <Progress value={workProgress} className="h-3" />
+        </div>
+
+        {/* Focus Allocation Sliders */}
+        <div className="space-y-4 mb-6">
+          <h4 className="text-white font-semibold">Focus Allocation</h4>
+          
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <label className="text-gray-300">🎭 Performance ({focusAllocation.performance}%)</label>
+            </div>
+            <Slider
+              value={[focusAllocation.performance]}
+              onValueChange={(value) => setFocusAllocation({...focusAllocation, performance: value[0]})}
+              max={100}
+              step={5}
+              className="w-full"
+            />
+          </div>
+
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <label className="text-gray-300">🎤 Sound Capture ({focusAllocation.soundCapture}%)</label>
+            </div>
+            <Slider
+              value={[focusAllocation.soundCapture]}
+              onValueChange={(value) => setFocusAllocation({...focusAllocation, soundCapture: value[0]})}
+              max={100}
+              step={5}
+              className="w-full"
+            />
+          </div>
+
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <label className="text-gray-300">🎚️ Layering ({focusAllocation.layering}%)</label>
+            </div>
+            <Slider
+              value={[focusAllocation.layering]}
+              onValueChange={(value) => setFocusAllocation({...focusAllocation, layering: value[0]})}
+              max={100}
+              step={5}
+              className="w-full"
+            />
           </div>
         </div>
 
         {/* Minigames Section */}
-        {!isProjectComplete && (
-          <Card className="p-4 mb-4 bg-gradient-to-r from-purple-900/30 to-pink-900/30 border-purple-500/30">
-            <h3 className="text-sm sm:text-lg font-bold mb-3 text-purple-300">🎮 Studio Minigames</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+        <div className="mb-6">
+          <h4 className="text-white font-semibold mb-3">🎮 Production Minigames</h4>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            {minigameOptions.map((minigame) => (
               <Button
-                onClick={() => handleMinigameOpen('rhythm')}
-                className="bg-purple-600/80 hover:bg-purple-700/80 text-white border border-purple-400/30 text-xs sm:text-sm h-8 sm:h-10"
-                size="sm"
+                key={minigame.id}
+                onClick={() => {
+                  setSelectedMinigame(minigame.id as MinigameType);
+                  setShowMinigame(true);
+                }}
+                variant="outline"
+                className="bg-gray-700/50 hover:bg-gray-600/50 text-white border-gray-600 p-3 h-auto flex flex-col gap-1"
               >
-                🎵 Rhythm
+                <div className="text-lg">{minigame.name.split(' ')[0]}</div>
+                <div className="text-xs text-gray-300 text-center">{minigame.description}</div>
               </Button>
-              <Button
-                onClick={() => handleMinigameOpen('mixing')}
-                className="bg-blue-600/80 hover:bg-blue-700/80 text-white border border-blue-400/30 text-xs sm:text-sm h-8 sm:h-10"
-                size="sm"
-              >
-                🎛️ Mixing
-              </Button>
-              <Button
-                onClick={() => handleMinigameOpen('waveform')}
-                className="bg-green-600/80 hover:bg-green-700/80 text-white border border-green-400/30 text-xs sm:text-sm h-8 sm:h-10"
-                size="sm"
-              >
-                🌊 Waveform
-              </Button>
-            </div>
-            <div className="text-xs text-gray-400 mt-2 text-center">
-              Play minigames to earn bonus creativity and technical points!
-            </div>
-          </Card>
-        )}
-
-        {!isProjectComplete && (
-          <div className="space-y-4">
-            <h3 className="text-base sm:text-lg font-semibold text-white">Focus Allocation:</h3>
-            
-            <div className="space-y-4 sm:space-y-3">
-              <div>
-                <div className="flex justify-between mb-2 text-sm sm:text-base text-gray-200">
-                  <span>Performance</span>
-                  <span className="font-semibold">{focusAllocation.performance}%</span>
-                </div>
-                <Slider
-                  value={[focusAllocation.performance]}
-                  onValueChange={(value) => setFocusAllocation(prev => ({ ...prev, performance: value[0] }))}
-                  max={100}
-                  step={1}
-                  className="touch-manipulation"
-                />
-              </div>
-
-              <div>
-                <div className="flex justify-between mb-2 text-sm sm:text-base text-gray-200">
-                  <span>Sound Capture</span>
-                  <span className="font-semibold">{focusAllocation.soundCapture}%</span>
-                </div>
-                <Slider
-                  value={[focusAllocation.soundCapture]}
-                  onValueChange={(value) => setFocusAllocation(prev => ({ ...prev, soundCapture: value[0] }))}
-                  max={100}
-                  step={1}
-                  className="touch-manipulation"
-                />
-              </div>
-
-              <div>
-                <div className="flex justify-between mb-2 text-sm sm:text-base text-gray-200">
-                  <span>Layering</span>
-                  <span className="font-semibold">{focusAllocation.layering}%</span>
-                </div>
-                <Slider
-                  value={[focusAllocation.layering]}
-                  onValueChange={(value) => setFocusAllocation(prev => ({ ...prev, layering: value[0] }))}
-                  max={100}
-                  step={1}
-                  className="touch-manipulation"
-                />
-              </div>
-            </div>
-
-            <div className="bg-gray-800/50 p-3 rounded">
-              <div className="text-sm text-gray-300 mb-2">Daily Work Capacity: {gameState.playerData.dailyWorkCapacity} Work Units</div>
-              <div className="text-xs text-gray-400">Each work session completes one stage and contributes your full daily capacity.</div>
-              {hasWorkedToday && (
-                <div className="text-xs text-yellow-400 mt-1">Already worked today! Use 'Next Day' to continue tomorrow.</div>
-              )}
-            </div>
-
-            <Button 
-              onClick={performDailyWork} 
-              disabled={!canWorkToday}
-              className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white touch-manipulation py-3 sm:py-2 text-sm sm:text-base game-button" 
-              size="lg"
-            >
-              {hasWorkedToday ? 'Work Complete for Today' : 
-               currentStage ? `Work on ${currentStage.stageName} (1 Day)` : 'Work on Project (1 Day)'}
-            </Button>
+            ))}
           </div>
-        )}
-
-        <div className="mt-4">
-          <div className="text-xs sm:text-sm text-gray-300 mb-2">
-            Project Progress: Stage {Math.min(currentStageIndex + 1, project.stages.length)} of {project.stages.length}
-          </div>
-          <div className="w-full bg-gray-700 rounded-full h-3">
-            <div 
-              className="bg-gradient-to-r from-purple-600 to-blue-600 h-3 rounded-full transition-all duration-500 progress-bar" 
-              style={{ 
-                width: `${Math.min(100, ((currentStageIndex) / project.stages.length) * 100)}%` 
-              }}
-            ></div>
-          </div>
+          <p className="text-xs text-gray-400 mt-2">
+            💡 Play minigames to earn bonus creativity, technical points, and XP!
+          </p>
         </div>
+
+        <Button 
+          onClick={performDailyWork}
+          disabled={gameState.playerData.dailyWorkCapacity <= 0}
+          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 py-3 text-lg font-bold"
+        >
+          {gameState.playerData.dailyWorkCapacity > 0 
+            ? `🎵 Work on Project (${gameState.playerData.dailyWorkCapacity} energy left)`
+            : '😴 No Energy Left (Advance Day to Restore)'
+          }
+        </Button>
       </Card>
 
-      {/* Orb Animation Container */}
-      <div ref={orbContainerRef} className="absolute inset-0 pointer-events-none z-10"></div>
-
-      {/* Minigame Modal */}
       <MinigameManager
         isOpen={showMinigame}
         onClose={() => setShowMinigame(false)}

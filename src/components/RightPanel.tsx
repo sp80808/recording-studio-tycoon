@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -31,13 +30,18 @@ export const RightPanel: React.FC<RightPanelProps> = ({
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  // Filter and sort equipment by price
+  // Filter equipment to only show purchasable items (hide locked equipment)
   const filteredEquipment = availableEquipment
     .filter(equipment => {
       if (selectedCategory === 'all') return true;
       return equipment.category === selectedCategory;
     })
     .filter(equipment => !gameState.ownedEquipment.some(owned => owned.id === equipment.id))
+    .filter(equipment => {
+      const purchaseCheck = canPurchaseEquipment(equipment, gameState);
+      // Hide equipment that's locked due to skill requirements
+      return purchaseCheck.canPurchase || purchaseCheck.reason?.includes('funds');
+    })
     .sort((a, b) => a.price - b.price); // Sort by price, cheapest first
 
   const getAttributeDescription = (attribute: keyof PlayerAttributes): string => {
@@ -205,13 +209,6 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                       ))}
                     </div>
 
-                    {/* Skill requirement */}
-                    {equipment.skillRequirement && (
-                      <div className="text-xs text-red-400 mt-1">
-                        Requires: {equipment.skillRequirement.skill} Level {equipment.skillRequirement.level}
-                      </div>
-                    )}
-                    
                     <div className="flex justify-between items-center mt-3">
                       <span className="text-green-400 font-bold">${equipment.price}</span>
                       <Button 
@@ -222,7 +219,6 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                         title={!purchaseCheck.canPurchase ? purchaseCheck.reason : 'Purchase this equipment'}
                       >
                         {!purchaseCheck.canPurchase && purchaseCheck.reason?.includes('funds') ? 'No $' : 
-                         !purchaseCheck.canPurchase && purchaseCheck.reason?.includes('Requires') ? 'Locked' :
                          !purchaseCheck.canPurchase ? 'Owned' : 'Buy'}
                       </Button>
                     </div>
@@ -235,7 +231,8 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           {filteredEquipment.length === 0 && (
             <div className="text-center text-gray-400 py-8">
               <div className="text-2xl mb-2">🏆</div>
-              <div className="text-sm">All equipment in this category owned!</div>
+              <div className="text-sm">No equipment available in this category!</div>
+              <div className="text-xs mt-1">Level up your skills to unlock more gear</div>
             </div>
           )}
         </div>
