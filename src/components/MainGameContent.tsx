@@ -1,6 +1,6 @@
 
 import React, { useRef, useState } from 'react';
-import { GameState, FocusAllocation, StaffMember, PlayerAttributes } from '@/types/game';
+import { GameState, FocusAllocation, StaffMember, PlayerAttributes, Project } from '@/types/game';
 import { ProjectList } from '@/components/ProjectList';
 import { ActiveProject } from '@/components/ActiveProject';
 import { RightPanel } from '@/components/RightPanel';
@@ -13,7 +13,7 @@ interface MainGameContentProps {
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
   focusAllocation: FocusAllocation;
   setFocusAllocation: React.Dispatch<React.SetStateAction<FocusAllocation>>;
-  startProject: (projectIndex: number) => void;
+  startProject: (project: Project) => void;
   performDailyWork: () => void;
   onMinigameReward: (creativityBonus: number, technicalBonus: number, xpBonus: number) => void;
   spendPerkPoint: (attribute: keyof PlayerAttributes) => void;

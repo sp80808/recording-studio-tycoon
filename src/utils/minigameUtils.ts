@@ -24,89 +24,99 @@ export const getTriggeredMinigames = (
   const ownedEquipmentIds = gameState.ownedEquipment.map(e => e.id);
   const triggers: MinigameTrigger[] = [];
 
-  // Rhythm game triggers
-  if (focusAllocation.performance >= 70 && currentStage.stageName.toLowerCase().includes('recording')) {
+  // Enhanced trigger logic based on stage types and equipment
+  const stageName = currentStage.stageName.toLowerCase();
+  const isLastStage = project.currentStageIndex >= project.stages.length - 2;
+  const stageProgress = currentStage.workUnitsCompleted / currentStage.workUnitsBase;
+
+  // Rhythm game triggers - for performance-heavy stages
+  if (focusAllocation.performance >= 60 && (stageName.includes('recording') || stageName.includes('performance'))) {
     triggers.push({
       minigameType: 'rhythm',
       triggerReason: 'High performance focus during recording - perfect your timing!',
-      priority: 8,
-      focusThreshold: { type: 'performance', min: 70 }
-    });
-  }
-
-  // Mixing board triggers
-  if (focusAllocation.layering >= 60 && 
-      (currentStage.stageName.toLowerCase().includes('mixing') || 
-       currentStage.stageName.toLowerCase().includes('layering'))) {
-    triggers.push({
-      minigameType: 'mixing',
-      triggerReason: 'Heavy layering work detected - time to balance the mix!',
-      priority: 9,
-      focusThreshold: { type: 'layering', min: 60 }
-    });
-  }
-
-  // Waveform analysis with audio interface
-  if (ownedEquipmentIds.includes('audio_interface_pro') && 
-      focusAllocation.soundCapture >= 75) {
-    triggers.push({
-      minigameType: 'waveform',
-      triggerReason: 'Pro audio interface + high sound capture focus = waveform optimization time!',
-      priority: 10,
-      equipmentRequired: ['audio_interface_pro'],
-      focusThreshold: { type: 'soundCapture', min: 75 }
-    });
-  }
-
-  // Beat making for certain genres
-  if (['Hip-hop', 'Electronic'].includes(project.genre) && 
-      currentStage.stageName.toLowerCase().includes('production')) {
-    triggers.push({
-      minigameType: 'beatmaking',
-      triggerReason: `${project.genre} production stage - create some killer beats!`,
-      priority: 7,
-      stageRequired: ['production']
-    });
-  }
-
-  // Vocal recording with good microphones
-  if (ownedEquipmentIds.some(id => id.includes('mic')) && 
-      focusAllocation.performance >= 60 &&
-      currentStage.stageName.toLowerCase().includes('vocal')) {
-    triggers.push({
-      minigameType: 'vocal',
-      triggerReason: 'Vocal recording stage with quality microphone - nail that perfect take!',
       priority: 8,
       focusThreshold: { type: 'performance', min: 60 }
     });
   }
 
-  // Mastering with high-end equipment
-  if (ownedEquipmentIds.includes('mastering_suite') && 
-      currentStage.stageName.toLowerCase().includes('mastering')) {
-    triggers.push({
-      minigameType: 'mastering',
-      triggerReason: 'Professional mastering stage - polish this track to perfection!',
-      priority: 10,
-      equipmentRequired: ['mastering_suite']
-    });
-  }
-
-  // Additional contextual triggers
-  if (project.difficulty >= 8 && focusAllocation.layering >= 80) {
+  // Mixing board triggers - for layering and mixing stages
+  if (focusAllocation.layering >= 50 && 
+      (stageName.includes('mixing') || stageName.includes('layering') || stageName.includes('production'))) {
     triggers.push({
       minigameType: 'mixing',
-      triggerReason: 'High difficulty project with intense layering - master the complex mix!',
-      priority: 9
+      triggerReason: 'Complex layering detected - time to balance the mix!',
+      priority: 9,
+      focusThreshold: { type: 'layering', min: 50 }
     });
   }
 
-  if (project.genre === 'Electronic' && ownedEquipmentIds.includes('synthesizer_pro')) {
+  // Waveform analysis with professional audio interfaces
+  if (ownedEquipmentIds.some(id => id.includes('interface') || id.includes('apogee')) && 
+      focusAllocation.soundCapture >= 70) {
     triggers.push({
       minigameType: 'waveform',
-      triggerReason: 'Electronic music + pro synthesizer = sound design opportunity!',
-      priority: 7,
-      equipmentRequired: ['synthesizer_pro']
+      triggerReason: 'Professional interface detected - optimize your sound capture!',
+      priority: 10,
+      focusThreshold: { type: 'soundCapture', min: 70 }
+    });
+  }
+
+  // Beat making for Hip-hop and Electronic genres
+  if (['Hip-hop', 'Electronic'].includes(project.genre) && 
+      (stageName.includes('production') || stageName.includes('beat'))) {
+    triggers.push({
+      minigameType: 'beatmaking',
+      triggerReason: `${project.genre} production stage - create some killer beats!`,
+      priority: 8,
+      stageRequired: ['production']
+    });
+  }
+
+  // Vocal recording with quality microphones
+  if (ownedEquipmentIds.some(id => id.includes('mic') && !id.includes('basic')) && 
+      focusAllocation.performance >= 50 &&
+      (stageName.includes('vocal') || stageName.includes('recording'))) {
+    triggers.push({
+      minigameType: 'vocal',
+      triggerReason: 'Quality microphone + vocal stage - nail that perfect take!',
+      priority: 9,
+      focusThreshold: { type: 'performance', min: 50 }
+    });
+  }
+
+  // Mastering with high-end equipment on final stages
+  if (ownedEquipmentIds.some(id => id.includes('mastering') || id.includes('ssl') || id.includes('yamaha')) && 
+      (stageName.includes('mastering') || isLastStage)) {
+    triggers.push({
+      minigameType: 'mastering',
+      triggerReason: 'Final stage with pro equipment - polish this track to perfection!',
+      priority: 10
+    });
+  }
+
+  // Genre-specific enhanced triggers
+  if (project.genre === 'Electronic' && ownedEquipmentIds.some(id => id.includes('synth') || id.includes('moog'))) {
+    triggers.push({
+      minigameType: 'waveform',
+      triggerReason: 'Electronic music + synthesizer = sound design opportunity!',
+      priority: 8
+    });
+  }
+
+  if (project.genre === 'Rock' && ownedEquipmentIds.some(id => id.includes('fender') || id.includes('guitar'))) {
+    triggers.push({
+      minigameType: 'rhythm',
+      triggerReason: 'Rock project with guitar gear - time to rock out!',
+      priority: 7
+    });
+  }
+
+  // High difficulty project triggers
+  if (project.difficulty >= 7 && stageProgress >= 0.75) {
+    triggers.push({
+      minigameType: 'mixing',
+      triggerReason: 'High difficulty project nearing completion - master the complex mix!',
+      priority: 9
     });
   }
 
@@ -118,27 +128,36 @@ export const shouldAutoTriggerMinigame = (
   project: Project,
   gameState: GameState,
   focusAllocation: FocusAllocation,
-  workCount: number // How many times they've worked on this project
+  workCount: number
 ): MinigameTrigger | null => {
   const triggers = getTriggeredMinigames(project, gameState, focusAllocation);
   
   if (triggers.length === 0) return null;
 
-  // Auto-trigger logic based on work count and conditions
+  const currentStage = project.stages[project.currentStageIndex];
+  const isLastStage = project.currentStageIndex >= project.stages.length - 2;
+  const stageProgress = currentStage ? (currentStage.workUnitsCompleted / currentStage.workUnitsBase) : 0;
+  
   const topTrigger = triggers[0];
+  
+  // Enhanced auto-trigger logic
+  // Always trigger on final stages with high-priority minigames
+  if (isLastStage && topTrigger.priority >= 9) {
+    return topTrigger;
+  }
+  
+  // Trigger when stage is 75%+ complete
+  if (stageProgress >= 0.75 && topTrigger.priority >= 8) {
+    return topTrigger;
+  }
   
   // Trigger every 2-3 work sessions for high priority minigames
   if (topTrigger.priority >= 9 && workCount % 2 === 0) {
     return topTrigger;
   }
   
-  // Trigger every 3-4 work sessions for medium priority
+  // Trigger every 3 work sessions for medium priority
   if (topTrigger.priority >= 7 && workCount % 3 === 0) {
-    return topTrigger;
-  }
-  
-  // Trigger every 4-5 work sessions for lower priority
-  if (topTrigger.priority >= 5 && workCount % 4 === 0) {
     return topTrigger;
   }
 
