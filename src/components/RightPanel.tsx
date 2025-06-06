@@ -1,14 +1,17 @@
 
 import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Lock, Check } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { GameState, PlayerAttributes } from '@/types/game';
-import { availableEquipment, equipmentCategories } from '@/data/equipment';
-import { canPurchaseEquipment, calculateStudioSkillBonus } from '@/utils/gameUtils';
+import { availableEquipment } from '@/data/equipment';
+import { canPurchaseEquipment } from '@/utils/gameUtils';
+import { XPProgressBar } from '@/components/XPProgressBar';
+import { SkillProgressDisplay } from '@/components/SkillProgressDisplay';
+import { AttributesModal } from '@/components/modals/AttributesModal';
+import { StudioModal } from '@/components/modals/StudioModal';
 
 interface RightPanelProps {
   gameState: GameState;
@@ -31,278 +34,167 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   advanceDay,
   purchaseEquipment
 }) => {
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-
-  // Filter equipment based on category and ownership
-  const filteredEquipment = availableEquipment
-    .filter(equipment => {
-      if (selectedCategory === 'all') return true;
-      return equipment.category === selectedCategory;
-    })
-    .filter(equipment => !gameState.ownedEquipment.some(owned => owned.id === equipment.id))
-    .sort((a, b) => a.price - b.price);
-
-  const getAttributeDescription = (attribute: keyof PlayerAttributes): string => {
-    switch (attribute) {
-      case 'focusMastery':
-        return 'Improves effectiveness of focus allocation sliders';
-      case 'creativeIntuition':
-        return 'Increases creativity points generated during work sessions';
-      case 'technicalAptitude':
-        return 'Increases technical points generated during work sessions';
-      case 'businessAcumen':
-        return 'Improves project payouts and reputation gains';
-      default:
-        return '';
-    }
-  };
-
-  const formatAttributeName = (attribute: string): string => {
-    return attribute.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-  };
-
-  const getSkillRequirementStatus = (equipment: any) => {
-    if (!equipment.skillRequirement) return { met: true, message: '' };
-    
-    const skill = gameState.studioSkills[equipment.skillRequirement.skill];
-    const hasSkill = skill && skill.level >= equipment.skillRequirement.level;
-    
-    return {
-      met: hasSkill,
-      message: `Requires ${equipment.skillRequirement.skill} Level ${equipment.skillRequirement.level}`
-    };
-  };
+  // Filter equipment to only show purchasable items
+  const purchasableEquipment = availableEquipment.filter(equipment => {
+    const purchaseCheck = canPurchaseEquipment(equipment, gameState);
+    return purchaseCheck.canPurchase;
+  });
 
   return (
-    <div className="w-80 space-y-4">
-      <div className="space-y-2">
-        {/* Studio Skills Modal */}
-        <Dialog open={showSkillsModal} onOpenChange={setShowSkillsModal}>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="w-full bg-gray-800/80 hover:bg-gray-700/80 text-white border-gray-600">
-              View Studio Skills
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="bg-gray-900 border-gray-600 text-white max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-white">Studio Skills</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              {Object.values(gameState.studioSkills).map(skill => {
-                const creativityBonus = calculateStudioSkillBonus(skill, 'creativity');
-                const technicalBonus = calculateStudioSkillBonus(skill, 'technical');
-                
-                return (
-                  <div key={skill.name} className="group relative">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-200">{skill.name}</span>
-                      <div className="text-right">
-                        <div className="font-bold text-white">Level {skill.level}</div>
-                        <div className="text-sm text-gray-400">{skill.xp}/{skill.xpToNext} XP</div>
-                      </div>
-                    </div>
-                    
-                    {/* Passive bonuses */}
-                    <div className="text-xs text-gray-400 mt-1">
-                      <div className="text-blue-400">+{creativityBonus}% Creativity for {skill.name} projects</div>
-                      <div className="text-green-400">+{technicalBonus}% Technical for {skill.name} projects</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Player Attributes Modal */}
-        <Dialog open={showAttributesModal} onOpenChange={setShowAttributesModal}>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="w-full bg-gray-800/80 hover:bg-gray-700/80 text-white border-gray-600">
-              Player Attributes ({gameState.playerData.perkPoints} points)
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="bg-gray-900 border-gray-600 text-white max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-white">Player Attributes</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="text-sm text-gray-400 mb-4">
-                Available Perk Points: <span className="text-white font-bold">{gameState.playerData.perkPoints}</span>
-              </div>
-              
-              {Object.entries(gameState.playerData.attributes).map(([key, value]) => (
-                <div key={key} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <div className="font-semibold text-white">{formatAttributeName(key)}</div>
-                      <div className="text-xs text-gray-400">{getAttributeDescription(key as keyof PlayerAttributes)}</div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-white text-lg">{value}</span>
-                      <Button
-                        size="sm"
-                        onClick={() => spendPerkPoint(key as keyof PlayerAttributes)}
-                        disabled={gameState.playerData.perkPoints <= 0}
-                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 min-w-[32px]"
-                      >
-                        +
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              
-              <div className="text-xs text-gray-400 mt-4 p-2 bg-gray-800 rounded">
-                💡 Tip: Gain perk points by leveling up through project completion!
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        <Button onClick={advanceDay} className="w-full bg-orange-600 hover:bg-orange-700 text-white">
-          Next Day
-        </Button>
-      </div>
-
-      {/* Equipment Shop */}
-      <div>
-        <h3 className="text-lg font-bold mb-3 text-white">Equipment Shop</h3>
-        
-        {/* Category Filter */}
-        <div className="mb-4">
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full bg-gray-800 border-gray-600 text-white">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent className="bg-gray-800 border-gray-600">
-              {Object.entries(equipmentCategories).map(([key, label]) => (
-                <SelectItem key={key} value={key} className="text-white hover:bg-gray-700">
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="text-xs text-gray-400 mb-2">
-          Sorted by price • {filteredEquipment.length} items available
-        </div>
-
-        <div className="space-y-3 max-h-80 overflow-y-auto">
-          {filteredEquipment.map(equipment => {
-            const purchaseCheck = canPurchaseEquipment(equipment, gameState);
-            const skillStatus = getSkillRequirementStatus(equipment);
-            const isLocked = !skillStatus.met;
-            const canAfford = gameState.money >= equipment.price;
-            
-            return (
-              <Card key={equipment.id} className={`p-4 border-gray-600 backdrop-blur-sm transition-colors ${
-                isLocked ? 'bg-gray-900/60 opacity-75' : 'bg-gray-900/90 hover:bg-gray-800/90'
-              }`}>
-                <div className="flex items-start gap-3">
-                  <div className="relative">
-                    <div className="text-2xl">{equipment.icon}</div>
-                    {isLocked && (
-                      <div className="absolute -top-1 -right-1 bg-red-500 rounded-full p-1">
-                        <Lock size={12} className="text-white" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className={`font-semibold text-sm ${isLocked ? 'text-gray-400' : 'text-white'}`}>
-                        {equipment.name}
-                      </h4>
-                      {!isLocked && equipment.skillRequirement && (
-                        <Badge variant="outline" className="text-xs border-green-500 text-green-400">
-                          <Check size={10} className="mr-1" />
-                          Unlocked
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    <p className={`text-xs mt-1 leading-tight ${isLocked ? 'text-gray-500' : 'text-gray-300'}`}>
-                      {equipment.description}
-                    </p>
-                    
-                    {/* Skill requirement display */}
-                    {equipment.skillRequirement && (
-                      <div className={`text-xs mt-2 p-1 rounded ${
-                        skillStatus.met ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'
-                      }`}>
-                        {skillStatus.message}
-                      </div>
-                    )}
-                    
-                    {/* Equipment bonuses */}
-                    <div className="mt-2 space-y-1">
-                      {equipment.bonuses.qualityBonus && (
-                        <div className={`text-xs ${isLocked ? 'text-gray-500' : 'text-blue-400'}`}>
-                          Quality: +{equipment.bonuses.qualityBonus}%
-                        </div>
-                      )}
-                      {equipment.bonuses.creativityBonus && (
-                        <div className={`text-xs ${isLocked ? 'text-gray-500' : 'text-purple-400'}`}>
-                          Creativity: +{equipment.bonuses.creativityBonus}%
-                        </div>
-                      )}
-                      {equipment.bonuses.technicalBonus && (
-                        <div className={`text-xs ${isLocked ? 'text-gray-500' : 'text-orange-400'}`}>
-                          Technical: +{equipment.bonuses.technicalBonus}%
-                        </div>
-                      )}
-                      {equipment.bonuses.speedBonus && (
-                        <div className={`text-xs ${isLocked ? 'text-gray-500' : 'text-yellow-400'}`}>
-                          Speed: +{equipment.bonuses.speedBonus}%
-                        </div>
-                      )}
-                      {equipment.bonuses.genreBonus && Object.entries(equipment.bonuses.genreBonus).map(([genre, bonus]) => (
-                        <div key={genre} className={`text-xs ${isLocked ? 'text-gray-500' : 'text-green-400'}`}>
-                          {genre}: +{bonus} points
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex justify-between items-center mt-3">
-                      <span className={`font-bold ${isLocked ? 'text-gray-500' : 'text-green-400'}`}>
-                        ${equipment.price}
-                      </span>
-                      <Button 
-                        size="sm" 
-                        onClick={() => purchaseEquipment(equipment.id)}
-                        disabled={!purchaseCheck.canPurchase || isLocked}
-                        className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-xs px-2 py-1"
-                        title={
-                          isLocked ? skillStatus.message :
-                          !canAfford ? 'Insufficient funds' :
-                          purchaseCheck.canPurchase ? 'Purchase this equipment' :
-                          purchaseCheck.reason
-                        }
-                      >
-                        {isLocked ? (
-                          <Lock size={12} />
-                        ) : !canAfford ? (
-                          'No $'
-                        ) : (
-                          'Buy'
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
+    <div className="space-y-4 h-full flex flex-col">
+      {/* Player Info Card */}
+      <Card className="bg-gray-800 border-gray-600">
+        <CardHeader className="pb-2">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-white text-sm">Player Progress</CardTitle>
+            <Badge variant="secondary" className="bg-blue-600 text-white">
+              Level {gameState.playerData.level}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <XPProgressBar 
+            currentXP={gameState.playerData.xp}
+            xpToNextLevel={gameState.playerData.xpToNextLevel}
+            level={gameState.playerData.level}
+          />
           
-          {filteredEquipment.length === 0 && (
-            <div className="text-center text-gray-400 py-8">
-              <div className="text-2xl mb-2">🏆</div>
-              <div className="text-sm">No equipment available in this category!</div>
-              <div className="text-xs mt-1">You've purchased everything available</div>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="text-gray-300">
+              <span className="text-green-400">${gameState.money}</span>
             </div>
-          )}
-        </div>
-      </div>
+            <div className="text-gray-300">
+              <span className="text-blue-400">{gameState.reputation} Rep</span>
+            </div>
+            <div className="text-gray-300">
+              Perk Points: <span className="text-yellow-400">{gameState.playerData.perkPoints}</span>
+            </div>
+            <div className="text-gray-300">
+              Energy: <span className="text-purple-400">{gameState.playerData.dailyWorkCapacity}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tabs */}
+      <Tabs defaultValue="equipment" className="flex-1 flex flex-col">
+        <TabsList className="grid w-full grid-cols-3 bg-gray-700">
+          <TabsTrigger value="equipment" className="text-white data-[state=active]:bg-gray-600">
+            Equipment
+          </TabsTrigger>
+          <TabsTrigger value="skills" className="text-white data-[state=active]:bg-gray-600">
+            Skills
+          </TabsTrigger>
+          <TabsTrigger value="day" className="text-white data-[state=active]:bg-gray-600">
+            Day {gameState.currentDay}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="equipment" className="flex-1 overflow-hidden">
+          <Card className="h-full bg-gray-800 border-gray-600">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-white text-sm">Equipment Shop</CardTitle>
+            </CardHeader>
+            <CardContent className="h-full overflow-y-auto">
+              <div className="space-y-3">
+                {purchasableEquipment.length === 0 ? (
+                  <p className="text-gray-400 text-sm">No equipment available for purchase at your current skill level.</p>
+                ) : (
+                  purchasableEquipment.map(equipment => (
+                    <Card key={equipment.id} className="p-3 bg-gray-700 border-gray-500">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1">
+                          <h4 className="text-white font-semibold text-sm">{equipment.name}</h4>
+                          <p className="text-gray-300 text-xs">{equipment.description}</p>
+                        </div>
+                        <div className="text-right ml-2">
+                          <div className="text-green-400 font-bold text-sm">${equipment.price}</div>
+                          <Badge variant="outline" className="text-xs mt-1">
+                            {equipment.category}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      {/* Equipment bonuses */}
+                      <div className="mb-2">
+                        {equipment.bonuses.creativityBonus && (
+                          <div className="text-xs text-purple-400">+{equipment.bonuses.creativityBonus}% Creativity</div>
+                        )}
+                        {equipment.bonuses.technicalBonus && (
+                          <div className="text-xs text-blue-400">+{equipment.bonuses.technicalBonus}% Technical</div>
+                        )}
+                        {equipment.bonuses.genreBonus && Object.entries(equipment.bonuses.genreBonus).map(([genre, bonus]) => (
+                          <div key={genre} className="text-xs text-yellow-400">+{bonus} {genre}</div>
+                        ))}
+                      </div>
+
+                      <Button 
+                        onClick={() => purchaseEquipment(equipment.id)}
+                        disabled={gameState.money < equipment.price}
+                        className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-sm py-1"
+                      >
+                        {gameState.money < equipment.price ? 'Insufficient Funds' : 'Purchase'}
+                      </Button>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="skills" className="flex-1">
+          <SkillProgressDisplay
+            studioSkills={gameState.studioSkills}
+            showModal={showSkillsModal}
+            setShowModal={setShowSkillsModal}
+            showAttributesModal={showAttributesModal}
+            setShowAttributesModal={setShowAttributesModal}
+            playerData={gameState.playerData}
+            spendPerkPoint={spendPerkPoint}
+          />
+        </TabsContent>
+
+        <TabsContent value="day" className="flex-1">
+          <Card className="h-full bg-gray-800 border-gray-600">
+            <CardHeader>
+              <CardTitle className="text-white">Day {gameState.currentDay}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="text-gray-300 space-y-2">
+                <div>Active Projects: {gameState.activeProject ? 1 : 0}</div>
+                <div>Staff: {gameState.hiredStaff.length}</div>
+                {gameState.hiredStaff.length > 0 && (
+                  <div className="text-sm">
+                    Daily Salaries: ${gameState.hiredStaff.reduce((total, staff) => total + staff.salary, 0)}
+                  </div>
+                )}
+              </div>
+              
+              <Button 
+                onClick={advanceDay}
+                className="w-full bg-blue-600 hover:bg-blue-700"
+              >
+                Advance Day
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Modals */}
+      <AttributesModal 
+        isOpen={showAttributesModal}
+        onClose={() => setShowAttributesModal(false)}
+        playerData={gameState.playerData}
+        spendPerkPoint={spendPerkPoint}
+      />
+
+      <StudioModal 
+        isOpen={showSkillsModal}
+        onClose={() => setShowSkillsModal(false)}
+        studioSkills={gameState.studioSkills}
+      />
     </div>
   );
 };

@@ -4,176 +4,246 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 
+interface PitchBlock {
+  id: string;
+  position: number; // Position from 0-100 (percentage across screen)
+  hit: boolean;
+  missed: boolean;
+}
+
 interface VocalRecordingGameProps {
   onComplete: (score: number) => void;
   onClose: () => void;
 }
 
 export const VocalRecordingGame: React.FC<VocalRecordingGameProps> = ({ onComplete, onClose }) => {
-  const [currentPhrase, setCurrentPhrase] = useState(0);
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
+  const [pitchBlocks, setPitchBlocks] = useState<PitchBlock[]>([]);
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const [gameActive, setGameActive] = useState(false);
+  const [gameStarted, setGameStarted] = useState(false);
   const [score, setScore] = useState(0);
-  const [completedPhrases, setCompletedPhrases] = useState<number[]>([]);
-  const recordingIntervalRef = useRef<NodeJS.Timeout>();
+  const [hitCount, setHitCount] = useState(0);
+  const [totalBlocks] = useState(7);
+  const intervalRef = useRef<NodeJS.Timeout>();
+  const gameContainerRef = useRef<HTMLDivElement>(null);
 
-  const phrases = [
-    "🎵 In the studio we create",
-    "🎶 Making music is our fate", 
-    "🎵 Every beat and every rhyme",
-    "🎶 Perfect sound every time",
-    "🎵 Creativity flows like water"
-  ];
+  const initializeGame = () => {
+    const blocks: PitchBlock[] = [];
+    for (let i = 0; i < totalBlocks; i++) {
+      blocks.push({
+        id: `block-${i}`,
+        position: (i + 1) * (100 / (totalBlocks + 1)), // Evenly space blocks
+        hit: false,
+        missed: false
+      });
+    }
+    setPitchBlocks(blocks);
+    setCursorPosition(0);
+    setHitCount(0);
+    setScore(0);
+  };
 
-  const startRecording = () => {
-    setIsRecording(true);
-    setRecordingTime(0);
+  const startGame = () => {
+    setGameActive(true);
+    setGameStarted(true);
+    initializeGame();
+
+    // Move cursor across screen
+    intervalRef.current = setInterval(() => {
+      setCursorPosition(prev => {
+        const newPos = prev + 1;
+        if (newPos >= 100) {
+          // Game over
+          setGameActive(false);
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+          }
+          
+          // Calculate final score
+          const accuracy = (hitCount / totalBlocks) * 100;
+          let finalScore = 0;
+          
+          if (accuracy >= 90) {
+            finalScore = 150; // High creativity bonus
+          } else if (accuracy >= 70) {
+            finalScore = 100;
+          } else if (accuracy >= 50) {
+            finalScore = 50;
+          } else {
+            finalScore = 20;
+          }
+          
+          setTimeout(() => onComplete(finalScore), 1000);
+          return 100;
+        }
+        return newPos;
+      });
+    }, 100); // Cursor moves every 100ms for 10 seconds total
+  };
+
+  const handleHit = () => {
+    if (!gameActive) return;
+
+    const tolerance = 3; // Hit tolerance (percentage)
     
-    recordingIntervalRef.current = setInterval(() => {
-      setRecordingTime(prev => prev + 0.1);
-    }, 100);
+    setPitchBlocks(prev => {
+      let newHitCount = hitCount;
+      const updatedBlocks = prev.map(block => {
+        if (!block.hit && !block.missed) {
+          const distance = Math.abs(block.position - cursorPosition);
+          if (distance <= tolerance) {
+            newHitCount++;
+            setHitCount(newHitCount);
+            setScore(s => s + 20);
+            return { ...block, hit: true };
+          }
+        }
+        return block;
+      });
+      
+      return updatedBlocks;
+    });
   };
 
-  const stopRecording = () => {
-    setIsRecording(false);
-    if (recordingIntervalRef.current) {
-      clearInterval(recordingIntervalRef.current);
-    }
-
-    // Score based on timing (2-4 seconds is optimal)
-    const timing = recordingTime;
-    let phraseScore = 0;
+  // Mark missed blocks
+  useEffect(() => {
+    if (!gameActive) return;
     
-    if (timing >= 2 && timing <= 4) {
-      phraseScore = 100; // Perfect timing
-    } else if (timing >= 1.5 && timing <= 5) {
-      phraseScore = 70; // Good timing
-    } else {
-      phraseScore = 30; // Poor timing
-    }
+    setPitchBlocks(prev => 
+      prev.map(block => {
+        if (!block.hit && !block.missed && block.position < cursorPosition - 5) {
+          return { ...block, missed: true };
+        }
+        return block;
+      })
+    );
+  }, [cursorPosition, gameActive]);
 
-    setScore(prev => prev + phraseScore);
-    setCompletedPhrases(prev => [...prev, currentPhrase]);
+  // Handle spacebar press
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && gameActive) {
+        e.preventDefault();
+        handleHit();
+      }
+    };
 
-    // Add visual feedback
-    const recordButton = document.getElementById('record-button');
-    if (recordButton) {
-      recordButton.style.transform = 'scale(1.1)';
-      setTimeout(() => {
-        recordButton.style.transform = 'scale(1)';
-      }, 200);
-    }
-  };
-
-  const nextPhrase = () => {
-    if (currentPhrase < phrases.length - 1) {
-      setCurrentPhrase(prev => prev + 1);
-    } else {
-      handleComplete();
-    }
-  };
-
-  const handleComplete = () => {
-    if (recordingIntervalRef.current) {
-      clearInterval(recordingIntervalRef.current);
-    }
-    
-    // Bonus for completing all phrases
-    const completionBonus = completedPhrases.length === phrases.length ? 100 : 0;
-    onComplete(score + completionBonus);
-  };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [gameActive, cursorPosition, hitCount]);
 
   useEffect(() => {
     return () => {
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
       }
     };
   }, []);
 
+  const getAccuracy = () => {
+    return totalBlocks > 0 ? Math.round((hitCount / totalBlocks) * 100) : 0;
+  };
+
   return (
     <Card className="w-full max-w-4xl bg-gray-900 border-gray-600 p-6">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-white mb-2">🎤 Vocal Recording Session</h2>
-        <p className="text-gray-300">Record each phrase with perfect timing!</p>
-        <div className="text-yellow-400 font-bold mt-2">Score: {score}</div>
-      </div>
-
-      <div className="mb-6">
-        <Progress value={(currentPhrase / phrases.length) * 100} className="mb-4" />
-        <div className="text-center text-sm text-gray-400">
-          Phrase {currentPhrase + 1} of {phrases.length}
-        </div>
-      </div>
-
-      <div className="text-center mb-8">
-        <div className="text-3xl font-bold text-white mb-4 p-4 bg-gray-800 rounded-lg">
-          {phrases[currentPhrase]}
-        </div>
-        <div className="text-gray-400 text-sm">
-          Hold the record button for 2-4 seconds for perfect timing
-        </div>
-      </div>
-
-      {isRecording && (
-        <div className="text-center mb-6">
-          <div className="text-red-400 font-bold text-xl animate-pulse">
-            🔴 RECORDING... {recordingTime.toFixed(1)}s
+        <h2 className="text-2xl font-bold text-white mb-2">🎤 Vocal Tuning Challenge</h2>
+        <p className="text-gray-300">Hit the pitch blocks when the cursor reaches them!</p>
+        
+        {gameStarted && gameActive && (
+          <div className="mt-4 space-y-2">
+            <div className="text-yellow-400 font-bold">Score: {score}</div>
+            <div className="text-blue-400">Hits: {hitCount}/{totalBlocks}</div>
           </div>
-          <div className="w-32 h-2 bg-gray-700 rounded-full mx-auto mt-2 overflow-hidden">
-            <div 
-              className="h-full bg-red-500 transition-all duration-100"
-              style={{ width: `${Math.min((recordingTime / 4) * 100, 100)}%` }}
-            />
+        )}
+      </div>
+
+      {!gameStarted ? (
+        <div className="text-center space-y-4">
+          <p className="text-gray-300">
+            Click or press SPACEBAR when the cursor line hits each pitch block.
+            Perfect timing gives you maximum creativity points!
+          </p>
+          <Button onClick={startGame} className="bg-purple-600 hover:bg-purple-700 text-lg px-8 py-3">
+            Start Vocal Session
+          </Button>
+        </div>
+      ) : !gameActive ? (
+        <div className="text-center space-y-4">
+          <div className="text-2xl font-bold text-yellow-400">Vocal Session Complete!</div>
+          <div className="space-y-2">
+            <div className="text-lg">Accuracy: {getAccuracy()}%</div>
+            <div className="text-lg">Final Score: {score}</div>
+            {getAccuracy() >= 90 && (
+              <div className="text-green-400 font-bold text-xl">🌟 Polished Vocals!</div>
+            )}
+            {getAccuracy() >= 70 && getAccuracy() < 90 && (
+              <div className="text-blue-400 font-bold">🎵 Good Performance!</div>
+            )}
           </div>
+          <Button onClick={onClose} className="bg-green-600 hover:bg-green-700 text-lg px-8 py-3">
+            Collect Rewards
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Game area */}
+          <div 
+            ref={gameContainerRef}
+            className="relative h-32 bg-gray-800 rounded-lg border-2 border-gray-600 overflow-hidden cursor-pointer"
+            onClick={handleHit}
+          >
+            {/* Vocal waveform background */}
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-900/20 to-blue-900/20" />
+            
+            {/* Pitch blocks */}
+            {pitchBlocks.map(block => (
+              <div
+                key={block.id}
+                className={`absolute w-4 h-16 rounded transition-all duration-200 ${
+                  block.hit 
+                    ? 'bg-green-400 scale-110 animate-pulse' 
+                    : block.missed 
+                    ? 'bg-red-400 opacity-50' 
+                    : 'bg-yellow-400 hover:bg-yellow-300'
+                }`}
+                style={{
+                  left: `${block.position}%`,
+                  top: '50%',
+                  transform: 'translateY(-50%)'
+                }}
+              >
+                {block.hit && (
+                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-green-300 font-bold text-sm">
+                    ✓
+                  </div>
+                )}
+                {block.missed && (
+                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-red-300 font-bold text-sm">
+                    ✗
+                  </div>
+                )}
+              </div>
+            ))}
+            
+            {/* Moving cursor */}
+            <div
+              className="absolute top-0 bottom-0 w-1 bg-white shadow-lg transition-all duration-100"
+              style={{ left: `${cursorPosition}%` }}
+            >
+              <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-white rounded-full" />
+            </div>
+            
+            {/* Hit zone indicator */}
+            <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-white text-xs">
+              Click or press SPACEBAR
+            </div>
+          </div>
+          
+          {/* Progress indicator */}
+          <Progress value={cursorPosition} className="w-full" />
         </div>
       )}
-
-      <div className="flex gap-4 justify-center mb-6">
-        <Button
-          id="record-button"
-          onMouseDown={startRecording}
-          onMouseUp={stopRecording}
-          onTouchStart={startRecording}
-          onTouchEnd={stopRecording}
-          disabled={completedPhrases.includes(currentPhrase)}
-          className={`px-8 py-4 text-xl transition-all duration-150 ${
-            isRecording 
-              ? 'bg-red-600 hover:bg-red-700 scale-110' 
-              : completedPhrases.includes(currentPhrase)
-                ? 'bg-green-600'
-                : 'bg-red-500 hover:bg-red-600'
-          }`}
-        >
-          {completedPhrases.includes(currentPhrase) ? '✅ Recorded' : '🎤 Hold to Record'}
-        </Button>
-      </div>
-
-      <div className="flex gap-4 justify-center">
-        {completedPhrases.includes(currentPhrase) && (
-          <Button onClick={nextPhrase} className="px-6 py-3 bg-blue-600 hover:bg-blue-700">
-            {currentPhrase < phrases.length - 1 ? 'Next Phrase' : 'Finish Session'}
-          </Button>
-        )}
-        <Button onClick={onClose} variant="outline" className="px-6 py-3">
-          Cancel
-        </Button>
-      </div>
-
-      <div className="mt-6 flex justify-center gap-2">
-        {phrases.map((_, index) => (
-          <div
-            key={index}
-            className={`w-3 h-3 rounded-full ${
-              completedPhrases.includes(index) 
-                ? 'bg-green-500' 
-                : index === currentPhrase 
-                  ? 'bg-blue-500' 
-                  : 'bg-gray-600'
-            }`}
-          />
-        ))}
-      </div>
     </Card>
   );
 };

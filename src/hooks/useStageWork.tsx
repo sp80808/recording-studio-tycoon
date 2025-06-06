@@ -55,6 +55,12 @@ export const useStageWork = (
     }, 1500);
   }, []);
 
+  const getMoodEffectiveness = useCallback((mood: number) => {
+    if (mood < 40) return 0.75; // 25% penalty for low mood
+    if (mood > 75) return 1.1; // 10% bonus for high mood
+    return 1.0; // Normal effectiveness
+  }, []);
+
   const performDailyWork = useCallback(() => {
     console.log('=== PERFORMING DAILY WORK ===');
     
@@ -158,7 +164,7 @@ export const useStageWork = (
     
     console.log(`After equipment bonuses - Creativity: ${creativityGain}, Technical: ${technicalGain}`);
 
-    // Add staff contributions
+    // Add staff contributions with mood effects
     const assignedStaff = gameState.hiredStaff.filter(s => s.assignedProjectId === project.id && s.status === 'Working');
     
     assignedStaff.forEach(staff => {
@@ -169,8 +175,11 @@ export const useStageWork = (
         technicalGain += Math.floor(staff.primaryStats.technical * 0.1 * penalty);
         console.log(`Staff ${staff.name} working with low energy (penalty applied)`);
       } else {
-        let staffCreativity = Math.floor(staff.primaryStats.creativity * 0.2);
-        let staffTechnical = Math.floor(staff.primaryStats.technical * 0.2);
+        // Apply mood effectiveness
+        const moodMultiplier = getMoodEffectiveness(staff.mood);
+        
+        let staffCreativity = Math.floor(staff.primaryStats.creativity * 0.2 * moodMultiplier);
+        let staffTechnical = Math.floor(staff.primaryStats.technical * 0.2 * moodMultiplier);
         
         // Apply staff genre affinity bonus
         if (staff.genreAffinity && staff.genreAffinity.genre === project.genre) {
@@ -182,7 +191,7 @@ export const useStageWork = (
         
         creativityGain += staffCreativity;
         technicalGain += staffTechnical;
-        console.log(`Staff ${staff.name} contributed: +${staffCreativity} creativity, +${staffTechnical} technical`);
+        console.log(`Staff ${staff.name} contributed: +${staffCreativity} creativity, +${staffTechnical} technical (mood: ${staff.mood})`);
       }
     });
 
@@ -238,7 +247,7 @@ export const useStageWork = (
       return { review, isComplete: true };
     }
 
-    // Update game state
+    // Update game state with mood changes
     setGameState(prev => ({
       ...prev,
       activeProject: updatedProject,
@@ -246,11 +255,17 @@ export const useStageWork = (
         ...prev.playerData,
         dailyWorkCapacity: prev.playerData.dailyWorkCapacity - 1
       },
-      hiredStaff: prev.hiredStaff.map(s => 
-        s.assignedProjectId === project.id && s.status === 'Working'
-          ? { ...s, energy: Math.max(0, s.energy - 15) }
-          : s
-      )
+      hiredStaff: prev.hiredStaff.map(s => {
+        if (s.assignedProjectId === project.id && s.status === 'Working') {
+          // Decrease mood slightly after work, decrease energy
+          return { 
+            ...s, 
+            energy: Math.max(0, s.energy - 15),
+            mood: Math.max(0, s.mood - 2) // Small mood decrease from work
+          };
+        }
+        return s;
+      })
     }));
 
     // Show stage completion notification
@@ -268,7 +283,7 @@ export const useStageWork = (
     }
     
     return { review: null, isComplete: false };
-  }, [gameState, focusAllocation, createOrb, setGameState, completeProject, addStaffXP]);
+  }, [gameState, focusAllocation, createOrb, setGameState, completeProject, addStaffXP, getMoodEffectiveness]);
 
   return {
     performDailyWork,

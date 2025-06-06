@@ -1,3 +1,4 @@
+
 // Game type definitions
 export interface PlayerAttributes {
   focusMastery: number;
@@ -63,6 +64,7 @@ export interface StaffMember {
   levelInRole: number;
   genreAffinity: { genre: string; bonus: number } | null;
   energy: number;
+  mood: number; // 0-100, affects work effectiveness
   salary: number;
   status: 'Idle' | 'Working' | 'Resting' | 'Training';
   assignedProjectId: string | null;
@@ -108,6 +110,7 @@ export interface TrainingCourse {
     };
     specialEffects?: string[];
   };
+  requiredLevel: number;
 }
 
 export interface GameState {
