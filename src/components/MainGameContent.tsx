@@ -1,0 +1,135 @@
+
+import React, { useRef, useState } from 'react';
+import { GameState, FocusAllocation, StaffMember, PlayerAttributes } from '@/types/game';
+import { ProjectList } from '@/components/ProjectList';
+import { ActiveProject } from '@/components/ActiveProject';
+import { RightPanel } from '@/components/RightPanel';
+import { FloatingXPOrb } from '@/components/FloatingXPOrb';
+import { RecruitmentModal } from '@/components/modals/RecruitmentModal';
+import { StaffManagementModal } from '@/components/modals/StaffManagementModal';
+
+interface MainGameContentProps {
+  gameState: GameState;
+  setGameState: React.Dispatch<React.SetStateAction<GameState>>;
+  focusAllocation: FocusAllocation;
+  setFocusAllocation: React.Dispatch<React.SetStateAction<FocusAllocation>>;
+  startProject: (projectIndex: number) => void;
+  performDailyWork: () => void;
+  onMinigameReward: (creativityBonus: number, technicalBonus: number, xpBonus: number) => void;
+  spendPerkPoint: (attribute: keyof PlayerAttributes) => void;
+  advanceDay: () => void;
+  purchaseEquipment: (equipmentId: string) => void;
+  hireStaff: (candidateIndex: number) => boolean;
+  refreshCandidates: () => void;
+  assignStaffToProject: (staffId: string) => void;
+  unassignStaffFromProject: (staffId: string) => void;
+  toggleStaffRest: (staffId: string) => void;
+  openTrainingModal: (staff: StaffMember) => void;
+  orbContainerRef: React.RefObject<HTMLDivElement>;
+}
+
+export const MainGameContent: React.FC<MainGameContentProps> = ({
+  gameState,
+  setGameState,
+  focusAllocation,
+  setFocusAllocation,
+  startProject,
+  performDailyWork,
+  onMinigameReward,
+  spendPerkPoint,
+  advanceDay,
+  purchaseEquipment,
+  hireStaff,
+  refreshCandidates,
+  assignStaffToProject,
+  unassignStaffFromProject,
+  toggleStaffRest,
+  openTrainingModal,
+  orbContainerRef
+}) => {
+  const [showSkillsModal, setShowSkillsModal] = useState(false);
+  const [showAttributesModal, setShowAttributesModal] = useState(false);
+  const [showStaffModal, setShowStaffModal] = useState(false);
+  const [showRecruitmentModal, setShowRecruitmentModal] = useState(false);
+  const [floatingOrbs, setFloatingOrbs] = useState<Array<{
+    id: string;
+    amount: number;
+    type: 'xp' | 'money' | 'skill';
+  }>>([]);
+
+  return (
+    <>
+      <div className="p-2 sm:p-4 space-y-4 sm:space-y-0 sm:flex sm:gap-4 sm:h-[calc(100vh-140px)] relative">
+        <div className="w-full sm:w-80 lg:w-96 animate-fade-in">
+          <ProjectList 
+            gameState={gameState}
+            setGameState={setGameState}
+            startProject={startProject}
+          />
+        </div>
+
+        <div className="flex-1 relative min-h-[400px] sm:min-h-0 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+          <ActiveProject 
+            gameState={gameState}
+            focusAllocation={focusAllocation}
+            setFocusAllocation={setFocusAllocation}
+            performDailyWork={performDailyWork}
+            onMinigameReward={onMinigameReward}
+          />
+          
+          <div ref={orbContainerRef} className="absolute inset-0 pointer-events-none z-10"></div>
+          
+          {/* Floating XP/Money orbs */}
+          {floatingOrbs.map(orb => (
+            <FloatingXPOrb
+              key={orb.id}
+              amount={orb.amount}
+              type={orb.type}
+              onComplete={() => {
+                setFloatingOrbs(prev => prev.filter(o => o.id !== orb.id));
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="w-full sm:w-80 lg:w-96 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+          <RightPanel 
+            gameState={gameState}
+            showSkillsModal={showSkillsModal}
+            setShowSkillsModal={setShowSkillsModal}
+            showAttributesModal={showAttributesModal}
+            setShowAttributesModal={setShowAttributesModal}
+            spendPerkPoint={spendPerkPoint}
+            advanceDay={advanceDay}
+            purchaseEquipment={purchaseEquipment}
+          />
+        </div>
+      </div>
+
+      {/* Staff Management */}
+      {gameState.playerData.level >= 2 && (
+        <>
+          {gameState.hiredStaff.length === 0 ? (
+            <RecruitmentModal 
+              gameState={gameState}
+              showRecruitmentModal={showRecruitmentModal}
+              setShowRecruitmentModal={setShowRecruitmentModal}
+              hireStaff={hireStaff}
+              refreshCandidates={refreshCandidates}
+            />
+          ) : (
+            <StaffManagementModal 
+              gameState={gameState}
+              showStaffModal={showStaffModal}
+              setShowStaffModal={setShowStaffModal}
+              assignStaffToProject={assignStaffToProject}
+              unassignStaffFromProject={unassignStaffFromProject}
+              toggleStaffRest={toggleStaffRest}
+              openTrainingModal={openTrainingModal}
+            />
+          )}
+        </>
+      )}
+    </>
+  );
+};
