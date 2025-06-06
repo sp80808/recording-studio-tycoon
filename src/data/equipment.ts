@@ -50,6 +50,16 @@ export const availableEquipment: Equipment[] = [
     icon: '🎤',
     skillRequirement: { skill: 'Acoustic', level: 4 }
   },
+  {
+    id: 'ribbon_vintage_mic',
+    name: 'Ribbon-Me-This Vintage Mic',
+    category: 'microphone',
+    price: 850,
+    description: 'Smooth as butter, warm as toast. Makes everything sound like it was recorded in the good old days.',
+    bonuses: { genreBonus: { Acoustic: 3, Rock: 2 }, creativityBonus: 15, qualityBonus: 12 },
+    icon: '🎤',
+    skillRequirement: { skill: 'Acoustic', level: 2 }
+  },
 
   // Outboard Gear
   {
@@ -91,6 +101,16 @@ export const availableEquipment: Equipment[] = [
     bonuses: { qualityBonus: 20, technicalBonus: 8 },
     icon: '⚙️'
   },
+  {
+    id: 'ssl_console_strip',
+    name: 'SSL Seriously Solid Logic Console Strip',
+    category: 'outboard',
+    price: 2200,
+    description: 'The channel strip that launched a thousand hits. Or at least made them sound better.',
+    bonuses: { technicalBonus: 30, qualityBonus: 25, speedBonus: 10, genreBonus: { Pop: 3, Rock: 2 } },
+    icon: '⚙️',
+    skillRequirement: { skill: 'Pop', level: 4 }
+  },
 
   // Instruments
   {
@@ -131,6 +151,16 @@ export const availableEquipment: Equipment[] = [
     bonuses: { genreBonus: { Rock: 3, Acoustic: 1 }, creativityBonus: 10 },
     icon: '🎸'
   },
+  {
+    id: 'drum_machine_808',
+    name: 'TR-808 Probably Genuine Drum Machine',
+    category: 'instrument',
+    price: 1350,
+    description: 'The boom, the bap, the legendary sound that defined Hip-hop. May or may not be an authentic vintage unit.',
+    bonuses: { genreBonus: { 'Hip-hop': 4, Electronic: 2 }, creativityBonus: 18, technicalBonus: 10 },
+    icon: '🥁',
+    skillRequirement: { skill: 'Hip-hop', level: 2 }
+  },
 
   // Software & Plugins
   {
@@ -150,6 +180,26 @@ export const availableEquipment: Equipment[] = [
     description: 'Great for Mac users who enjoy solving puzzles while making music.',
     bonuses: { creativityBonus: 15, speedBonus: 10, genreBonus: { Electronic: 2 } },
     icon: '💻'
+  },
+  {
+    id: 'ableton_live_wire',
+    name: 'Ableton Live Wire',
+    category: 'software',
+    price: 450,
+    description: 'Perfect for live performances and studio work. Sometimes gets a bit too energetic.',
+    bonuses: { creativityBonus: 20, speedBonus: 15, genreBonus: { Electronic: 3, 'Hip-hop': 1 } },
+    icon: '💻',
+    skillRequirement: { skill: 'Electronic', level: 1 }
+  },
+  {
+    id: 'autotune_autobot',
+    name: 'Auto-Tune Autobot Plugin',
+    category: 'software',
+    price: 280,
+    description: 'Robots in disguise... as vocal processors. Makes everyone sound like the future.',
+    bonuses: { technicalBonus: 12, genreBonus: { Pop: 2, 'Hip-hop': 2 } },
+    icon: '💻',
+    skillRequirement: { skill: 'Pop', level: 1 }
   },
 
   // Studio Monitoring
@@ -171,6 +221,16 @@ export const availableEquipment: Equipment[] = [
     bonuses: { qualityBonus: 15, technicalBonus: 5 },
     icon: '🔊'
   },
+  {
+    id: 'yamaha_ns_no_way',
+    name: 'Yamaha NS-No-Way Reference Monitors',
+    category: 'monitor',
+    price: 1600,
+    description: 'These monitors reveal truths about your mix you didn\'t want to know. Brutally honest.',
+    bonuses: { qualityBonus: 30, technicalBonus: 20, speedBonus: 5 },
+    icon: '🔊',
+    skillRequirement: { skill: 'Pop', level: 2 }
+  },
 
   // Audio Interfaces
   {
@@ -181,6 +241,16 @@ export const availableEquipment: Equipment[] = [
     description: 'Multi-channel audio interface for professional recording',
     bonuses: { qualityBonus: 12, speedBonus: 10 },
     icon: '🔌'
+  },
+  {
+    id: 'apogee_symphony_phony',
+    name: 'Apogee Symphony-Phony Interface',
+    category: 'interface',
+    price: 2800,
+    description: 'Converts analog to digital with the precision of a Swiss watch and the ego of a virtuoso.',
+    bonuses: { qualityBonus: 35, technicalBonus: 25, speedBonus: 15 },
+    icon: '🔌',
+    skillRequirement: { skill: 'Acoustic', level: 3 }
   }
 ];
 

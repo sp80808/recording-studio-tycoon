@@ -48,11 +48,6 @@ export const canPurchaseEquipment = (equipment: Equipment, gameState: GameState)
   console.log(`- Player money: $${gameState.money}`);
   console.log(`- Equipment cost: $${equipment.price}`);
   
-  if (gameState.money < equipment.price) {
-    console.log('- Result: Insufficient funds');
-    return { canPurchase: false, reason: 'Insufficient funds' };
-  }
-
   if (gameState.ownedEquipment.some(e => e.id === equipment.id)) {
     console.log('- Result: Already owned');
     return { canPurchase: false, reason: 'Already owned' };
@@ -70,6 +65,11 @@ export const canPurchaseEquipment = (equipment: Equipment, gameState: GameState)
         reason: `Requires ${equipment.skillRequirement.skill} Level ${equipment.skillRequirement.level}` 
       };
     }
+  }
+  
+  if (gameState.money < equipment.price) {
+    console.log('- Result: Insufficient funds');
+    return { canPurchase: false, reason: 'Insufficient funds' };
   }
 
   console.log('- Result: Can purchase');
