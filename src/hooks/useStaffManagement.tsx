@@ -8,11 +8,11 @@ export const useStaffManagement = (gameState: GameState, setGameState: React.Dis
     const candidate = gameState.availableCandidates[candidateIndex];
     if (!candidate) return false;
 
-    const signingFee = candidate.salary * 2;
+    const signingFee = candidate.salary * 3; // 3x daily salary as signing fee
     if (gameState.money < signingFee) {
       toast({
         title: "Insufficient Funds",
-        description: `Need $${signingFee} to hire ${candidate.name} (2x salary signing fee)`,
+        description: `Need $${signingFee} to hire ${candidate.name} (3x daily salary signing fee)`,
         variant: "destructive"
       });
       return false;
@@ -50,18 +50,6 @@ export const useStaffManagement = (gameState: GameState, setGameState: React.Dis
 
     const staff = gameState.hiredStaff.find(s => s.id === staffId);
     if (!staff || staff.status !== 'Idle') return;
-
-    const assignedStaff = gameState.hiredStaff.filter(s => s.assignedProjectId === gameState.activeProject?.id);
-    const roleCount = assignedStaff.filter(s => s.role === staff.role).length;
-    
-    if (roleCount >= 1) {
-      toast({
-        title: "Role Slot Filled",
-        description: `Already have a ${staff.role} assigned to this project.`,
-        variant: "destructive"
-      });
-      return;
-    }
 
     setGameState(prev => ({
       ...prev,
@@ -109,6 +97,11 @@ export const useStaffManagement = (gameState: GameState, setGameState: React.Dis
           : s
       )
     }));
+
+    toast({
+      title: staff.status === 'Idle' ? "Staff Resting" : "Staff Back to Work",
+      description: `${staff.name} is now ${newStatus.toLowerCase()}.`,
+    });
   }, [gameState.hiredStaff, setGameState]);
 
   const addStaffXP = useCallback((staffId: string, amount: number) => {
@@ -121,7 +114,7 @@ export const useStaffManagement = (gameState: GameState, setGameState: React.Dis
           
           if (newXP >= xpForNextLevel) {
             const newLevel = s.levelInRole + 1;
-            const statIncrease = 2;
+            const statIncrease = 3;
             
             toast({
               title: "Staff Level Up!",

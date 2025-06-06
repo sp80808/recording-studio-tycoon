@@ -2,6 +2,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { GameState, FocusAllocation } from '@/types/game';
 import { calculateStudioSkillBonus, getEquipmentBonuses } from '@/utils/gameUtils';
+import { getCreativityMultiplier, getTechnicalMultiplier, getFocusEffectiveness } from '@/utils/playerUtils';
 import { shouldAutoTriggerMinigame } from '@/utils/minigameUtils';
 import { toast } from '@/hooks/use-toast';
 
@@ -74,7 +75,6 @@ export const useStageWork = (
     const project = gameState.activeProject;
     console.log(`Working on project: ${project.title}`);
     
-    // Ensure we have valid stages
     if (!project.stages || project.stages.length === 0) {
       console.log('Project has no stages');
       return;
@@ -88,7 +88,6 @@ export const useStageWork = (
     const currentStage = project.stages[currentStageIndex];
     console.log(`Current stage: ${currentStage.stageName} (index: ${currentStageIndex})`);
 
-    // Check if current stage is already completed
     if (currentStage.completed) {
       toast({
         title: "Stage Already Complete",
@@ -97,7 +96,6 @@ export const useStageWork = (
       return;
     }
 
-    // Increment work session count
     const newWorkSessionCount = (project.workSessionCount || 0) + 1;
 
     // Check for auto-triggered minigames
@@ -115,21 +113,30 @@ export const useStageWork = (
       });
     }
 
-    // Calculate base points from player attributes and focus allocation
+    // Calculate base points with player attribute multipliers
     const baseCreativityWork = gameState.playerData.dailyWorkCapacity * gameState.playerData.attributes.creativeIntuition;
     const baseTechnicalWork = gameState.playerData.dailyWorkCapacity * gameState.playerData.attributes.technicalAptitude;
 
-    // Apply focus allocation
+    // Apply player attribute bonuses
+    const creativityMultiplier = getCreativityMultiplier(gameState);
+    const technicalMultiplier = getTechnicalMultiplier(gameState);
+    const focusEffectiveness = getFocusEffectiveness(gameState);
+
+    // Apply focus allocation with focus mastery bonus
     let creativityGain = Math.floor(
-      baseCreativityWork * (focusAllocation.performance / 100) * 0.8 + 
-      baseCreativityWork * (focusAllocation.layering / 100) * 0.6
+      baseCreativityWork * creativityMultiplier * focusEffectiveness * (
+        (focusAllocation.performance / 100) * 0.8 + 
+        (focusAllocation.layering / 100) * 0.6
+      )
     );
     let technicalGain = Math.floor(
-      baseTechnicalWork * (focusAllocation.soundCapture / 100) * 0.8 + 
-      baseTechnicalWork * (focusAllocation.layering / 100) * 0.4
+      baseTechnicalWork * technicalMultiplier * focusEffectiveness * (
+        (focusAllocation.soundCapture / 100) * 0.8 + 
+        (focusAllocation.layering / 100) * 0.4
+      )
     );
 
-    console.log(`Base gains - Creativity: ${creativityGain}, Technical: ${technicalGain}`);
+    console.log(`Player base gains - Creativity: ${creativityGain}, Technical: ${technicalGain}`);
 
     // Apply studio skill bonuses for the project's genre
     const genreSkill = gameState.studioSkills[project.genre];
@@ -147,7 +154,7 @@ export const useStageWork = (
     const equipmentBonuses = getEquipmentBonuses(gameState.ownedEquipment, project.genre);
     creativityGain += Math.floor(creativityGain * (equipmentBonuses.creativity / 100));
     technicalGain += Math.floor(technicalGain * (equipmentBonuses.technical / 100));
-    creativityGain += equipmentBonuses.genre; // Genre bonus is flat points
+    creativityGain += equipmentBonuses.genre;
     
     console.log(`After equipment bonuses - Creativity: ${creativityGain}, Technical: ${technicalGain}`);
 
@@ -162,8 +169,8 @@ export const useStageWork = (
         technicalGain += Math.floor(staff.primaryStats.technical * 0.1 * penalty);
         console.log(`Staff ${staff.name} working with low energy (penalty applied)`);
       } else {
-        let staffCreativity = Math.floor(staff.primaryStats.creativity * 0.15);
-        let staffTechnical = Math.floor(staff.primaryStats.technical * 0.15);
+        let staffCreativity = Math.floor(staff.primaryStats.creativity * 0.2);
+        let staffTechnical = Math.floor(staff.primaryStats.technical * 0.2);
         
         // Apply staff genre affinity bonus
         if (staff.genreAffinity && staff.genreAffinity.genre === project.genre) {
@@ -211,7 +218,6 @@ export const useStageWork = (
       return stage;
     });
 
-    // CRITICAL: Update project with accumulated points and work session count
     const updatedProject = {
       ...project,
       stages: updatedStages,
@@ -223,10 +229,8 @@ export const useStageWork = (
 
     console.log(`Project C points: ${project.accumulatedCPoints} -> ${updatedProject.accumulatedCPoints}`);
     console.log(`Project T points: ${project.accumulatedTPoints} -> ${updatedProject.accumulatedTPoints}`);
-    console.log(`Work sessions: ${project.workSessionCount || 0} -> ${updatedProject.workSessionCount}`);
-    console.log(`Stage progress: ${currentStage.workUnitsCompleted}/${currentStage.workUnitsBase} -> ${workUnitsCompleted}/${currentStage.workUnitsBase}`);
 
-    // Check if project is complete (all stages finished)
+    // Check if project is complete
     const allStagesComplete = updatedProject.stages.every(stage => stage.completed);
     if (allStagesComplete) {
       console.log('PROJECT COMPLETE!');
@@ -234,7 +238,7 @@ export const useStageWork = (
       return { review, isComplete: true };
     }
 
-    // Update game state with new project data, reduce player energy, and reduce staff energy
+    // Update game state
     setGameState(prev => ({
       ...prev,
       activeProject: updatedProject,

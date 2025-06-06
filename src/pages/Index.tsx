@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { StaffMember, PlayerAttributes } from '@/types/game';
@@ -13,11 +14,14 @@ import { TrainingModal } from '@/components/modals/TrainingModal';
 import { GameModals } from '@/components/GameModals';
 import { EnhancedGameHeader } from '@/components/EnhancedGameHeader';
 import { FloatingXPOrb } from '@/components/FloatingXPOrb';
+import { RecruitmentModal } from '@/components/modals/RecruitmentModal';
+import { StaffManagementModal } from '@/components/modals/StaffManagementModal';
 import { useGameState } from '@/hooks/useGameState';
 import { useStaffManagement } from '@/hooks/useStaffManagement';
 import { useProjectManagement } from '@/hooks/useProjectManagement';
 import { usePlayerProgression } from '@/hooks/usePlayerProgression';
 import { useStageWork } from '@/hooks/useStageWork';
+import { useGameActions } from '@/hooks/useGameActions';
 
 const MusicStudioTycoon = () => {
   const { gameState, setGameState, focusAllocation, setFocusAllocation } = useGameState();
@@ -25,6 +29,7 @@ const MusicStudioTycoon = () => {
   const { levelUpPlayer, spendPerkPoint } = usePlayerProgression(gameState, setGameState);
   const { hireStaff, assignStaffToProject, unassignStaffFromProject, toggleStaffRest, addStaffXP, openTrainingModal } = useStaffManagement(gameState, setGameState);
   const { startProject, completeProject } = useProjectManagement(gameState, setGameState);
+  const { advanceDay, refreshCandidates } = useGameActions(gameState, setGameState);
 
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [showAttributesModal, setShowAttributesModal] = useState(false);
@@ -35,86 +40,6 @@ const MusicStudioTycoon = () => {
   const [showTrainingModal, setShowTrainingModal] = useState(false);
   const [selectedStaffForTraining, setSelectedStaffForTraining] = useState<StaffMember | null>(null);
   const [lastReview, setLastReview] = useState<any>(null);
-
-  const advanceDay = () => {
-    const newDay = gameState.currentDay + 1;
-    console.log(`Advancing to day ${newDay}`);
-    
-    // Process training completions
-    const completedTraining: string[] = [];
-    const updatedStaff = gameState.hiredStaff.map(staff => {
-      if (staff.status === 'Training' && staff.trainingEndDay && newDay >= staff.trainingEndDay) {
-        const course = availableTrainingCourses.find(c => c.id === staff.trainingCourse);
-        if (course) {
-          completedTraining.push(`${staff.name} completed ${course.name}!`);
-          
-          const updatedStats = { ...staff.primaryStats };
-          if (course.effects.statBoosts) {
-            updatedStats.creativity += course.effects.statBoosts.creativity || 0;
-            updatedStats.technical += course.effects.statBoosts.technical || 0;
-            updatedStats.speed += course.effects.statBoosts.speed || 0;
-          }
-          
-          return {
-            ...staff,
-            status: 'Idle' as const,
-            primaryStats: updatedStats,
-            trainingEndDay: undefined,
-            trainingCourse: undefined,
-            energy: 100
-          };
-        }
-      }
-      return staff;
-    });
-
-    let newGameState = { 
-      ...gameState, 
-      currentDay: newDay,
-      hiredStaff: updatedStaff.map(s => 
-        s.status === 'Resting' 
-          ? { ...s, energy: Math.min(100, s.energy + 20) }
-          : s
-      )
-    };
-
-    completedTraining.forEach(message => {
-      newGameState = addNotification(newGameState, message, 'success', 4000);
-    });
-    
-    setGameState(newGameState);
-    
-    // Process salary payments every 7 days
-    if (newDay % 7 === 0 && newDay > gameState.lastSalaryDay) {
-      const totalSalaries = gameState.hiredStaff.reduce((total, staff) => total + staff.salary, 0);
-      
-      if (gameState.money >= totalSalaries) {
-        setGameState(prev => ({
-          ...prev,
-          money: prev.money - totalSalaries,
-          lastSalaryDay: newDay
-        }));
-        
-        toast({
-          title: "Salaries Paid",
-          description: `Paid $${totalSalaries} in weekly salaries.`,
-        });
-      } else {
-        toast({
-          title: "Cannot Pay Salaries!",
-          description: `Need $${totalSalaries} for weekly salaries. Staff morale will suffer.`,
-          variant: "destructive"
-        });
-      }
-    }
-
-    if (newDay % 5 === 0) {
-      setGameState(prev => ({
-        ...prev,
-        availableCandidates: generateCandidates(3)
-      }));
-    }
-  };
 
   const { performDailyWork, orbContainerRef, autoTriggeredMinigame, clearAutoTriggeredMinigame } = useStageWork(gameState, setGameState, focusAllocation, completeProject, addStaffXP, advanceDay);
 
@@ -164,8 +89,6 @@ const MusicStudioTycoon = () => {
       return;
     }
 
-    console.log(`Found equipment: ${equipment.name} - $${equipment.price}`);
-
     const purchaseCheck = canPurchaseEquipment(equipment, gameState);
     if (!purchaseCheck.canPurchase) {
       console.log(`Purchase blocked: ${purchaseCheck.reason}`);
@@ -177,9 +100,6 @@ const MusicStudioTycoon = () => {
       return;
     }
 
-    console.log('Purchase checks passed, processing purchase...');
-    console.log(`Money before: $${gameState.money}`);
-
     // Apply equipment effects and update state
     let updatedGameState = applyEquipmentEffects(equipment, gameState);
     
@@ -189,9 +109,6 @@ const MusicStudioTycoon = () => {
       money: updatedGameState.money - equipment.price,
       ownedEquipment: [...updatedGameState.ownedEquipment, equipment]
     };
-
-    console.log(`Money after: $${updatedGameState.money}`);
-    console.log('Equipment added to owned equipment');
 
     // Add success notification
     updatedGameState = addNotification(
@@ -207,8 +124,6 @@ const MusicStudioTycoon = () => {
       title: "Equipment Purchased!",
       description: `${equipment.name} added to your studio.`,
     });
-
-    console.log('PLAY_SOUND: equipment_purchase');
   };
 
   const removeNotification = (id: string) => {
@@ -280,54 +195,7 @@ const MusicStudioTycoon = () => {
       title: "Attribute Upgraded!",
       description: `${String(attribute).replace(/([A-Z])/g, ' $1').trim()} increased!`,
     });
-
-    console.log('PLAY_SOUND: attribute_upgrade');
   };
-
-  // Add CSS styles dynamically
-  useEffect(() => {
-    const styleId = 'orb-animations';
-    if (!document.getElementById(styleId)) {
-      const style = document.createElement('style');
-      style.id = styleId;
-      style.textContent = `
-        .orb {
-          position: absolute;
-          width: 30px;
-          height: 30px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 12px;
-          font-weight: bold;
-          transition: all 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-          pointer-events: none;
-          z-index: 1000;
-        }
-        
-        .orb.creativity {
-          background: linear-gradient(45deg, #3b82f6, #60a5fa);
-          color: white;
-          box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
-        }
-        
-        .orb.technical {
-          background: linear-gradient(45deg, #10b981, #34d399);
-          color: white;
-          box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
-        }
-      `;
-      document.head.appendChild(style);
-    }
-
-    return () => {
-      const existingStyle = document.getElementById(styleId);
-      if (existingStyle) {
-        existingStyle.remove();
-      }
-    };
-  }, []);
 
   // Add floating orb state
   const [floatingOrbs, setFloatingOrbs] = useState<Array<{
@@ -354,57 +222,6 @@ const MusicStudioTycoon = () => {
     }, 2500);
   };
 
-  // Enhanced purchase equipment with feedback
-  const enhancedPurchaseEquipment = (equipmentId: string) => {
-    const equipment = availableEquipment.find(e => e.id === equipmentId);
-    if (!equipment) return;
-
-    purchaseEquipment(equipmentId);
-    
-    // Add money orb effect
-    const orbId = `money-${Date.now()}`;
-    setFloatingOrbs(prev => [...prev, {
-      id: orbId,
-      amount: equipment.price,
-      type: 'money'
-    }]);
-
-    setTimeout(() => {
-      setFloatingOrbs(prev => prev.filter(orb => orb.id !== orbId));
-    }, 2500);
-  };
-
-  // Enhanced daily work with XP feedback
-  const handleEnhancedDailyWork = () => {
-    console.log('=== ENHANCED DAILY WORK ===');
-    const result = performDailyWork();
-    
-    if (result?.isComplete && result.review) {
-      console.log('Project completed with review:', result.review);
-      setLastReview(result.review);
-      setShowReviewModal(true);
-      
-      // Add XP orb for completion
-      const orbId = `completion-${Date.now()}`;
-      setFloatingOrbs(prev => [...prev, {
-        id: orbId,
-        amount: result.review.xpGain,
-        type: 'xp'
-      }]);
-
-      setTimeout(() => {
-        setFloatingOrbs(prev => prev.filter(orb => orb.id !== orbId));
-      }, 2500);
-      
-      if (gameState.playerData.xp + result.review.xpGain >= gameState.playerData.xpToNextLevel) {
-        // Delay level up for better UX
-        setTimeout(() => {
-          handleLevelUp();
-        }, 1000);
-      }
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-green-900 text-white relative overflow-hidden">
       {/* Animated background elements */}
@@ -414,20 +231,67 @@ const MusicStudioTycoon = () => {
         <div className="absolute bottom-20 left-1/3 w-20 h-20 bg-green-500/10 rounded-full animate-pulse" style={{ animationDelay: '2s' }}></div>
       </div>
 
-      <EnhancedGameHeader 
-        gameState={gameState}
-        showStudioModal={showStudioModal}
-        setShowStudioModal={setShowStudioModal}
-        showStaffModal={showStaffModal}
-        setShowStaffModal={setShowStaffModal}
-        showRecruitmentModal={showRecruitmentModal}
-        setShowRecruitmentModal={setShowRecruitmentModal}
-        assignStaffToProject={assignStaffToProject}
-        unassignStaffFromProject={unassignStaffFromProject}
-        toggleStaffRest={toggleStaffRest}
-        hireStaff={hireStaff}
-        openTrainingModal={handleOpenTrainingModal}
-      />
+      <div className="bg-gradient-to-r from-black/40 via-purple-900/30 to-black/40 backdrop-blur-sm border-b border-purple-500/30">
+        <div className="flex justify-between items-center p-4">
+          <div className="flex gap-6 items-center">
+            <div className="stat-item text-green-400 font-bold text-lg">
+              <span className="text-sm text-gray-300 mr-2">💰</span>
+              ${gameState.money}
+            </div>
+            <div className="stat-item text-blue-400 font-medium">
+              <span className="text-sm text-gray-300 mr-2">⭐</span>
+              {gameState.reputation} Rep
+            </div>
+            <div className="stat-item text-yellow-400 font-medium">
+              <span className="text-sm text-gray-300 mr-2">📅</span>
+              Day {gameState.currentDay}
+            </div>
+            <div className="stat-item text-orange-400 font-medium">
+              <span className="text-sm text-gray-300 mr-2">👥</span>
+              {gameState.hiredStaff.length} Staff
+            </div>
+            {gameState.playerData.perkPoints > 0 && (
+              <div className="stat-item text-pink-400 font-bold animate-pulse">
+                <span className="text-sm text-gray-300 mr-2">🎯</span>
+                {gameState.playerData.perkPoints} Perk Point{gameState.playerData.perkPoints !== 1 ? 's' : ''}!
+              </div>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-4">
+            {gameState.playerData.level >= 2 && (
+              <>
+                {gameState.hiredStaff.length === 0 ? (
+                  <RecruitmentModal 
+                    gameState={gameState}
+                    showRecruitmentModal={showRecruitmentModal}
+                    setShowRecruitmentModal={setShowRecruitmentModal}
+                    hireStaff={hireStaff}
+                    refreshCandidates={refreshCandidates}
+                  />
+                ) : (
+                  <StaffManagementModal 
+                    gameState={gameState}
+                    showStaffModal={showStaffModal}
+                    setShowStaffModal={setShowStaffModal}
+                    assignStaffToProject={assignStaffToProject}
+                    unassignStaffFromProject={unassignStaffFromProject}
+                    toggleStaffRest={toggleStaffRest}
+                    openTrainingModal={handleOpenTrainingModal}
+                  />
+                )}
+              </>
+            )}
+            
+            <div className="text-right text-sm">
+              <div className="text-white font-bold">Music Studio Tycoon</div>
+              <div className="text-gray-400">
+                {gameState.activeProject ? `Working: ${gameState.activeProject.title}` : 'No Active Project'}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div className="p-2 sm:p-4 space-y-4 sm:space-y-0 sm:flex sm:gap-4 sm:h-[calc(100vh-140px)] relative">
         <div className="w-full sm:w-80 lg:w-96 animate-fade-in">
@@ -443,7 +307,7 @@ const MusicStudioTycoon = () => {
             gameState={gameState}
             focusAllocation={focusAllocation}
             setFocusAllocation={setFocusAllocation}
-            performDailyWork={handleEnhancedDailyWork}
+            performDailyWork={handlePerformDailyWork}
             onMinigameReward={handleMinigameReward}
           />
           
@@ -471,7 +335,7 @@ const MusicStudioTycoon = () => {
             setShowAttributesModal={setShowAttributesModal}
             spendPerkPoint={handleSpendPerkPoint}
             advanceDay={advanceDay}
-            purchaseEquipment={enhancedPurchaseEquipment}
+            purchaseEquipment={purchaseEquipment}
           />
         </div>
       </div>
