@@ -1,27 +1,24 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { GameState } from '@/types/game';
 
 interface StudioModalProps {
   gameState: GameState;
-  showStudioModal: boolean;
-  setShowStudioModal: (show: boolean) => void;
+  isOpen: boolean;
+  onClose: () => void;
+  purchaseEquipment: (equipmentId: string) => void;
 }
 
 export const StudioModal: React.FC<StudioModalProps> = ({
   gameState,
-  showStudioModal,
-  setShowStudioModal
+  isOpen,
+  onClose,
+  purchaseEquipment
 }) => {
   return (
-    <Dialog open={showStudioModal} onOpenChange={setShowStudioModal}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="bg-gray-800/80 hover:bg-gray-700/80 text-white border-gray-600">
-          View Studio 🏠
-        </Button>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-gray-900 border-gray-600 text-white max-w-4xl">
         <DialogHeader>
           <DialogTitle className="text-white">Your Studio</DialogTitle>

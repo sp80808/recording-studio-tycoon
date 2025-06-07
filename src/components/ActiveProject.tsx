@@ -8,6 +8,7 @@ import { GameState, FocusAllocation } from '@/types/game';
 import { MinigameManager, MinigameType } from './minigames/MinigameManager';
 import { shouldAutoTriggerMinigame } from '@/utils/minigameUtils';
 import { AnimatedStatBlobs } from './AnimatedStatBlobs';
+import { OrbAnimationStyles } from './OrbAnimationStyles';
 import { toast } from '@/hooks/use-toast';
 
 interface ActiveProjectProps {
@@ -121,6 +122,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       baseTechnical * (focusAllocation.layering / 100) * 0.4
     );
 
+    console.log('🎯 Setting last gains for animation:', { creativityGain, technicalGain });
     setLastGains({ creativity: creativityGain, technical: technicalGain });
     setShowBlobAnimation(true);
     
@@ -131,135 +133,145 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   };
 
   return (
-    <div className="flex-1 space-y-4 relative">
-      <Card className="bg-gray-800/50 border-gray-600 p-6 backdrop-blur-sm animate-scale-in">
-        <div className="flex justify-between items-start mb-4">
-          <div className="animate-fade-in">
-            <h3 className="text-xl font-bold text-white mb-1">{project.title}</h3>
-            <p className="text-gray-300 text-sm mb-2">{project.genre} • {project.clientType}</p>
-            <div className="flex gap-4 text-sm">
-              <span className="text-green-400 animate-pulse">💰 ${project.payoutBase}</span>
-              <span className="text-blue-400">🎵 {project.genre}</span>
-              <span className="text-purple-400">⭐ {project.difficulty}</span>
-            </div>
-          </div>
-          <div className="text-right animate-fade-in" style={{ animationDelay: '0.1s' }}>
-            <div className="text-yellow-400 font-bold">{project.durationDaysTotal} days total</div>
-            <div className="text-gray-400 text-sm">Work sessions: {project.workSessionCount || 0}</div>
-          </div>
-        </div>
-
-        {/* Auto-triggered Minigame Notification */}
-        {autoTriggeredMinigame && (
-          <div className="mb-4 p-4 bg-gradient-to-r from-purple-900/50 to-blue-900/50 border border-purple-500 rounded-lg animate-scale-in">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="text-yellow-400 font-semibold mb-1">🎯 Production Opportunity Ready!</h4>
-                <p className="text-gray-300 text-sm">{autoTriggeredMinigame.reason}</p>
+    <>
+      <OrbAnimationStyles />
+      <div className="flex-1 space-y-4 relative">
+        <Card className="bg-gray-800/50 border-gray-600 p-6 backdrop-blur-sm animate-scale-in">
+          <div className="flex justify-between items-start mb-4">
+            <div className="animate-fade-in">
+              <h3 className="text-xl font-bold text-white mb-1">{project.title}</h3>
+              <p className="text-gray-300 text-sm mb-2">{project.genre} • {project.clientType}</p>
+              <div className="flex gap-4 text-sm">
+                <span className="text-green-400 animate-pulse">💰 ${project.payoutBase}</span>
+                <span className="text-blue-400">🎵 {project.genre}</span>
+                <span className="text-purple-400">⭐ {project.difficulty}</span>
               </div>
-              <div className="text-2xl animate-bounce">🎮</div>
+            </div>
+            <div className="text-right animate-fade-in" style={{ animationDelay: '0.1s' }}>
+              <div className="text-yellow-400 font-bold">{project.durationDaysTotal} days total</div>
+              <div className="text-gray-400 text-sm">Work sessions: {project.workSessionCount || 0}</div>
+              {/* Add target elements for animations */}
+              <div className="mt-2 space-y-1">
+                <div id="creativity-points" data-creativity-target className="text-blue-400 text-sm">
+                  🎨 {project.accumulatedCPoints} creativity
+                </div>
+                <div id="technical-points" data-technical-target className="text-green-400 text-sm">
+                  ⚙️ {project.accumulatedTPoints} technical
+                </div>
+              </div>
             </div>
           </div>
-        )}
 
-        {/* Current Stage Progress */}
-        <div className="mb-4 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-white font-semibold">
-              Current Stage: {currentStage?.stageName || 'Unknown'}
-            </span>
-            <span className="text-gray-400">
-              {currentStage?.workUnitsCompleted || 0}/{currentStage?.workUnitsBase || 0}
-            </span>
-          </div>
-          <Progress value={currentStageProgress} className="h-3 mb-2 transition-all duration-500" />
-          {currentStage?.completed && (
-            <div className="text-green-400 text-sm animate-scale-in">✓ Stage Complete!</div>
+          {/* Auto-triggered Minigame Notification */}
+          {autoTriggeredMinigame && (
+            <div className="mb-4 p-4 bg-gradient-to-r from-purple-900/50 to-blue-900/50 border border-purple-500 rounded-lg animate-scale-in">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-yellow-400 font-semibold mb-1">🎯 Production Opportunity Ready!</h4>
+                  <p className="text-gray-300 text-sm">{autoTriggeredMinigame.reason}</p>
+                </div>
+                <div className="text-2xl animate-bounce">🎮</div>
+              </div>
+            </div>
           )}
-        </div>
 
-        {/* Overall Project Progress */}
-        <div className="mb-6 animate-fade-in" style={{ animationDelay: '0.3s' }}>
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-white font-semibold">Overall Progress</span>
-            <span className="text-gray-400">{Math.round(overallProgress)}%</span>
-          </div>
-          <Progress value={overallProgress} className="h-3 progress-bar transition-all duration-500" />
-        </div>
-
-        {/* Focus Allocation Sliders */}
-        <div className="space-y-4 mb-6 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-          <h4 className="text-white font-semibold">Focus Allocation</h4>
-          
-          <div className="hover-scale">
+          {/* Current Stage Progress */}
+          <div className="mb-4 animate-fade-in" style={{ animationDelay: '0.2s' }}>
             <div className="flex justify-between items-center mb-2">
-              <label className="text-gray-300">🎭 Performance ({focusAllocation.performance}%)</label>
+              <span className="text-white font-semibold">
+                Current Stage: {currentStage?.stageName || 'Unknown'}
+              </span>
+              <span className="text-gray-400">
+                {currentStage?.workUnitsCompleted || 0}/{currentStage?.workUnitsBase || 0}
+              </span>
             </div>
-            <Slider
-              value={[focusAllocation.performance]}
-              onValueChange={(value) => setFocusAllocation({...focusAllocation, performance: value[0]})}
-              max={100}
-              step={5}
-              className="w-full transition-all duration-200"
-            />
+            <Progress value={currentStageProgress} className="h-3 mb-2 transition-all duration-500" />
+            {currentStage?.completed && (
+              <div className="text-green-400 text-sm animate-scale-in">✓ Stage Complete!</div>
+            )}
           </div>
 
-          <div className="hover-scale">
+          {/* Overall Project Progress */}
+          <div className="mb-6 animate-fade-in" style={{ animationDelay: '0.3s' }}>
             <div className="flex justify-between items-center mb-2">
-              <label className="text-gray-300">🎤 Sound Capture ({focusAllocation.soundCapture}%)</label>
+              <span className="text-white font-semibold">Overall Progress</span>
+              <span className="text-gray-400">{Math.round(overallProgress)}%</span>
             </div>
-            <Slider
-              value={[focusAllocation.soundCapture]}
-              onValueChange={(value) => setFocusAllocation({...focusAllocation, soundCapture: value[0]})}
-              max={100}
-              step={5}
-              className="w-full transition-all duration-200"
-            />
+            <Progress value={overallProgress} className="h-3 progress-bar transition-all duration-500" />
           </div>
 
-          <div className="hover-scale">
-            <div className="flex justify-between items-center mb-2">
-              <label className="text-gray-300">🎚️ Layering ({focusAllocation.layering}%)</label>
+          {/* Focus Allocation Sliders */}
+          <div className="space-y-4 mb-6 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+            <h4 className="text-white font-semibold">Focus Allocation</h4>
+            
+            <div className="hover-scale">
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-gray-300">🎭 Performance ({focusAllocation.performance}%)</label>
+              </div>
+              <Slider
+                value={[focusAllocation.performance]}
+                onValueChange={(value) => setFocusAllocation({...focusAllocation, performance: value[0]})}
+                max={100}
+                step={5}
+                className="w-full transition-all duration-200"
+              />
             </div>
-            <Slider
-              value={[focusAllocation.layering]}
-              onValueChange={(value) => setFocusAllocation({...focusAllocation, layering: value[0]})}
-              max={100}
-              step={5}
-              className="w-full transition-all duration-200"
-            />
+
+            <div className="hover-scale">
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-gray-300">🎤 Sound Capture ({focusAllocation.soundCapture}%)</label>
+              </div>
+              <Slider
+                value={[focusAllocation.soundCapture]}
+                onValueChange={(value) => setFocusAllocation({...focusAllocation, soundCapture: value[0]})}
+                max={100}
+                step={5}
+                className="w-full transition-all duration-200"
+              />
+            </div>
+
+            <div className="hover-scale">
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-gray-300">🎚️ Layering ({focusAllocation.layering}%)</label>
+              </div>
+              <Slider
+                value={[focusAllocation.layering]}
+                onValueChange={(value) => setFocusAllocation({...focusAllocation, layering: value[0]})}
+                max={100}
+                step={5}
+                className="w-full transition-all duration-200"
+              />
+            </div>
           </div>
-        </div>
 
-        <Button 
-          onClick={handleWork}
-          disabled={gameState.playerData.dailyWorkCapacity <= 0 || (currentStage?.completed && project.currentStageIndex >= project.stages.length - 1)}
-          className={`w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 py-3 text-lg font-bold game-button transition-all duration-300 ${
-            pulseAnimation ? 'animate-pulse ring-4 ring-yellow-400/50' : ''
-          } ${autoTriggeredMinigame ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700' : ''}`}
-        >
-          {autoTriggeredMinigame ? (
-            <>🎮 Start Production Challenge!</>
-          ) : gameState.playerData.dailyWorkCapacity > 0 ? (
-            `🎵 Work on Project (${gameState.playerData.dailyWorkCapacity} energy left)`
-          ) : (
-            '😴 No Energy Left (Advance Day to Restore)'
-          )}
-        </Button>
-      </Card>
+          <Button 
+            onClick={handleWork}
+            disabled={gameState.playerData.dailyWorkCapacity <= 0 || (currentStage?.completed && project.currentStageIndex >= project.stages.length - 1)}
+            className={`w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 py-3 text-lg font-bold game-button transition-all duration-300 ${
+              pulseAnimation ? 'animate-pulse ring-4 ring-yellow-400/50' : ''
+            } ${autoTriggeredMinigame ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700' : ''}`}
+          >
+            {autoTriggeredMinigame ? (
+              <>🎮 Start Production Challenge!</>
+            ) : gameState.playerData.dailyWorkCapacity > 0 ? (
+              `🎵 Work on Project (${gameState.playerData.dailyWorkCapacity} energy left)`
+            ) : (
+              '😴 No Energy Left (Advance Day to Restore)'
+            )}
+          </Button>
+        </Card>
 
-      <MinigameManager
-        isOpen={showMinigame}
-        onClose={() => {
-          setShowMinigame(false);
-          setAutoTriggeredMinigame(null);
-        }}
-        gameType={selectedMinigame}
-        onReward={handleMinigameReward}
-      />
+        <MinigameManager
+          isOpen={showMinigame}
+          onClose={() => {
+            setShowMinigame(false);
+            setAutoTriggeredMinigame(null);
+          }}
+          gameType={selectedMinigame}
+          onReward={handleMinigameReward}
+        />
 
-      {/* Enhanced Animation Container */}
-      <div className="absolute inset-0 pointer-events-none z-10">
+        {/* Enhanced Animation Container */}
         {showBlobAnimation && (
           <AnimatedStatBlobs
             creativityGain={lastGains.creativity}
@@ -269,6 +281,6 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           />
         )}
       </div>
-    </div>
+    </>
   );
 };

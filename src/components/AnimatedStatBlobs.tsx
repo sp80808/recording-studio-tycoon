@@ -38,11 +38,16 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
 
       console.log('📦 Container rect:', containerRect);
 
-      // Find target elements
-      const creativityTarget = document.getElementById('creativity-points');
-      const technicalTarget = document.getElementById('technical-points');
+      // Find target elements with more specific selectors
+      const creativityTarget = document.querySelector('[data-creativity-target]') || document.getElementById('creativity-points');
+      const technicalTarget = document.querySelector('[data-technical-target]') || document.getElementById('technical-points');
 
-      console.log('🎯 Target elements found:', { creativityTarget: !!creativityTarget, technicalTarget: !!technicalTarget });
+      console.log('🎯 Target elements found:', { 
+        creativityTarget: !!creativityTarget, 
+        technicalTarget: !!technicalTarget,
+        creativitySelector: creativityTarget?.id || creativityTarget?.getAttribute('data-creativity-target'),
+        technicalSelector: technicalTarget?.id || technicalTarget?.getAttribute('data-technical-target')
+      });
 
       // Create creativity blobs
       if (creativityGain > 0 && creativityTarget) {
@@ -50,7 +55,7 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
         const targetX = targetRect.left - containerRect.left + targetRect.width / 2;
         const targetY = targetRect.top - containerRect.top + targetRect.height / 2;
 
-        console.log('💙 Creating creativity blobs at target:', { targetX, targetY });
+        console.log('💙 Creating creativity blobs at target:', { targetX, targetY, targetRect, containerRect });
 
         // Create multiple blobs for better visual effect
         const blobCount = Math.min(creativityGain, 8); // Max 8 blobs
@@ -68,6 +73,8 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
             delay: i * 100
           });
         }
+      } else if (creativityGain > 0) {
+        console.log('❌ Creativity target not found for creativity gain:', creativityGain);
       }
 
       // Create technical blobs
@@ -76,7 +83,7 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
         const targetX = targetRect.left - containerRect.left + targetRect.width / 2;
         const targetY = targetRect.top - containerRect.top + targetRect.height / 2;
 
-        console.log('💚 Creating technical blobs at target:', { targetX, targetY });
+        console.log('💚 Creating technical blobs at target:', { targetX, targetY, targetRect, containerRect });
 
         const blobCount = Math.min(technicalGain, 8);
         const valuePerBlob = Math.ceil(technicalGain / blobCount);
@@ -93,21 +100,36 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
             delay: i * 100 + (creativityGain > 0 ? 500 : 0) // Offset technical blobs if both types exist
           });
         }
+      } else if (technicalGain > 0) {
+        console.log('❌ Technical target not found for technical gain:', technicalGain);
       }
 
       console.log(`✨ Created ${newBlobs.length} blobs:`, newBlobs.map(b => `${b.id}: +${b.value}`));
 
-      setBlobs(newBlobs);
-      setAnimating(true);
+      if (newBlobs.length > 0) {
+        setBlobs(newBlobs);
+        setAnimating(true);
 
-      // Complete animation after all blobs finish
-      const totalDuration = Math.max(...newBlobs.map(b => b.delay)) + 1500; // 1.5s animation + delays
-      setTimeout(() => {
-        console.log('🏁 Animation complete');
-        setAnimating(false);
-        setBlobs([]);
+        // Complete animation after all blobs finish
+        const totalDuration = Math.max(...newBlobs.map(b => b.delay)) + 1500; // 1.5s animation + delays
+        setTimeout(() => {
+          console.log('🏁 Animation complete');
+          setAnimating(false);
+          setBlobs([]);
+          onComplete();
+        }, totalDuration);
+      } else {
+        console.log('❌ No blobs created, calling onComplete immediately');
         onComplete();
-      }, totalDuration);
+      }
+    } else {
+      console.log('❌ Animation conditions not met:', {
+        hasGains: creativityGain > 0 || technicalGain > 0,
+        hasContainer: !!containerRef.current,
+        creativityGain,
+        technicalGain
+      });
+      onComplete();
     }
   }, [creativityGain, technicalGain, containerRef, onComplete]);
 
