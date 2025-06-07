@@ -93,17 +93,34 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const overallProgress = totalWorkUnits > 0 ? (completedWorkUnits / totalWorkUnits) * 100 : 0;
 
   const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number) => {
-    console.log('Minigame rewards:', { creativityBonus, technicalBonus, xpBonus });
+    console.log('🎮 Minigame rewards received:', { creativityBonus, technicalBonus, xpBonus });
+    
     if (onMinigameReward) {
       onMinigameReward(creativityBonus, technicalBonus, xpBonus);
     }
+    
+    // Close minigame and clear auto-trigger
     setShowMinigame(false);
     setAutoTriggeredMinigame(null);
+    
+    // Show rewarding toast
+    toast({
+      title: "🎉 Production Challenge Complete!",
+      description: `+${creativityBonus} creativity, +${technicalBonus} technical, +${xpBonus} XP`,
+      duration: 3000
+    });
+
+    // Trigger a work session automatically after minigame completion
+    console.log('🔄 Auto-triggering work session after minigame completion...');
+    setTimeout(() => {
+      performDailyWork();
+    }, 1000);
   };
 
   const handleWork = () => {
     // Check for auto-triggered minigame opportunity
     if (autoTriggeredMinigame) {
+      console.log('🎮 Starting auto-triggered minigame:', autoTriggeredMinigame.type);
       setSelectedMinigame(autoTriggeredMinigame.type);
       setShowMinigame(true);
       return;
@@ -126,11 +143,13 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     setLastGains({ creativity: creativityGain, technical: technicalGain });
     setShowBlobAnimation(true);
     
-    // Slight delay before calling actual work function for better UX
-    setTimeout(() => {
-      performDailyWork();
-    }, 100);
+    // Call actual work function
+    performDailyWork();
   };
+
+  // Check if current stage is complete and ready to advance
+  const isCurrentStageComplete = currentStage && currentStage.workUnitsCompleted >= currentStage.workUnitsBase;
+  const isProjectComplete = project.stages.every(stage => stage.completed);
 
   return (
     <>
@@ -150,7 +169,6 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             <div className="text-right animate-fade-in" style={{ animationDelay: '0.1s' }}>
               <div className="text-yellow-400 font-bold">{project.durationDaysTotal} days total</div>
               <div className="text-gray-400 text-sm">Work sessions: {project.workSessionCount || 0}</div>
-              {/* Add target elements for animations */}
               <div className="mt-2 space-y-1">
                 <div id="creativity-points" data-creativity-target className="text-blue-400 text-sm">
                   🎨 {project.accumulatedCPoints} creativity
@@ -171,6 +189,21 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   <p className="text-gray-300 text-sm">{autoTriggeredMinigame.reason}</p>
                 </div>
                 <div className="text-2xl animate-bounce">🎮</div>
+              </div>
+            </div>
+          )}
+
+          {/* Stage Completion Notification */}
+          {isCurrentStageComplete && !isProjectComplete && (
+            <div className="mb-4 p-4 bg-gradient-to-r from-green-900/50 to-emerald-900/50 border border-green-500 rounded-lg animate-scale-in">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-green-400 font-semibold mb-1">✅ Stage Complete!</h4>
+                  <p className="text-gray-300 text-sm">
+                    {currentStage.stageName} finished! Continue working to advance to the next stage.
+                  </p>
+                </div>
+                <div className="text-2xl animate-bounce">🎉</div>
               </div>
             </div>
           )}
@@ -246,12 +279,14 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
           <Button 
             onClick={handleWork}
-            disabled={gameState.playerData.dailyWorkCapacity <= 0 || (currentStage?.completed && project.currentStageIndex >= project.stages.length - 1)}
+            disabled={gameState.playerData.dailyWorkCapacity <= 0 || isProjectComplete}
             className={`w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 py-3 text-lg font-bold game-button transition-all duration-300 ${
               pulseAnimation ? 'animate-pulse ring-4 ring-yellow-400/50' : ''
             } ${autoTriggeredMinigame ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700' : ''}`}
           >
-            {autoTriggeredMinigame ? (
+            {isProjectComplete ? (
+              '🎉 Project Complete!'
+            ) : autoTriggeredMinigame ? (
               <>🎮 Start Production Challenge!</>
             ) : gameState.playerData.dailyWorkCapacity > 0 ? (
               `🎵 Work on Project (${gameState.playerData.dailyWorkCapacity} energy left)`

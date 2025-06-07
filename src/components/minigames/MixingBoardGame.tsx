@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
@@ -28,6 +28,8 @@ export const MixingBoardGame: React.FC<MixingBoardGameProps> = ({
   const [timeLeft, setTimeLeft] = useState(15);
   const [gameActive, setGameActive] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
+  const [isDragging, setIsDragging] = useState<string | null>(null);
+  const containerRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   const initializeTracks = useCallback(() => {
     const trackNames = ['Drums', 'Bass', 'Vocals', 'Synths'];
@@ -65,20 +67,25 @@ export const MixingBoardGame: React.FC<MixingBoardGameProps> = ({
         if (prev <= 1) {
           setGameActive(false);
           clearInterval(timer);
-          
-          // Calculate final score
-          const correctTracks = tracks.filter(track => track.isInTargetZone).length;
-          const scoreMultiplier = correctTracks === tracks.length ? 20 : 
-                                correctTracks >= tracks.length / 2 ? 10 : 5;
-          const finalScore = correctTracks * scoreMultiplier;
-          
-          setTimeout(() => onComplete(finalScore), 500);
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
-  }, [tracks, onComplete, initializeTracks]);
+  }, [initializeTracks]);
+
+  // Complete game when time runs out
+  useEffect(() => {
+    if (gameStarted && !gameActive && timeLeft === 0) {
+      const correctTracks = tracks.filter(track => track.isInTargetZone).length;
+      const scoreMultiplier = correctTracks === tracks.length ? 20 : 
+                            correctTracks >= tracks.length / 2 ? 10 : 5;
+      const finalScore = correctTracks * scoreMultiplier;
+      
+      console.log(`Mixing game complete! Correct tracks: ${correctTracks}/${tracks.length}, Score: ${finalScore}`);
+      setTimeout(() => onComplete(finalScore), 500);
+    }
+  }, [gameStarted, gameActive, timeLeft, tracks, onComplete]);
 
   const updateTrackVolume = (trackId: string, volume: number) => {
     setTracks(prev => prev.map(track => {
@@ -93,6 +100,47 @@ export const MixingBoardGame: React.FC<MixingBoardGameProps> = ({
       return track;
     }));
   };
+
+  const handleBarClick = (trackId: string, event: React.MouseEvent<HTMLDivElement>) => {
+    const container = containerRefs.current[trackId];
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const clickY = event.clientY - rect.top;
+    const containerHeight = rect.height;
+    const newVolume = Math.max(0, Math.min(100, 100 - (clickY / containerHeight) * 100));
+    
+    updateTrackVolume(trackId, Math.round(newVolume));
+  };
+
+  const handleMouseDown = (trackId: string) => {
+    setIsDragging(trackId);
+  };
+
+  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    
+    const container = containerRefs.current[isDragging];
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const mouseY = event.clientY - rect.top;
+    const containerHeight = rect.height;
+    const newVolume = Math.max(0, Math.min(100, 100 - (mouseY / containerHeight) * 100));
+    
+    updateTrackVolume(isDragging, Math.round(newVolume));
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(null);
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => document.removeEventListener('mouseup', handleMouseUp);
+    }
+  }, [isDragging]);
 
   const getSliderStyle = (track: Track) => {
     return track.isInTargetZone ? 'accent-green-500' : 'accent-gray-500';
@@ -145,11 +193,20 @@ export const MixingBoardGame: React.FC<MixingBoardGameProps> = ({
               <div className="text-center mb-4">
                 <div className={`w-6 h-6 rounded-full ${track.color} mx-auto mb-2`}></div>
                 <h4 className="font-bold text-lg">{track.name}</h4>
+                <div className="text-xs text-gray-400 mt-1">
+                  Target: {Math.round(track.targetZoneStart)}-{Math.round(track.targetZoneEnd)}
+                </div>
               </div>
 
-              {/* Visual target zone indicator */}
-              <div className="relative mb-4 h-40 bg-gray-700 rounded-lg overflow-hidden">
-                {/* Target zone highlight */}
+              {/* Enhanced Visual Level Display */}
+              <div 
+                className="relative mb-4 h-40 bg-gray-700 rounded-lg overflow-hidden cursor-pointer select-none"
+                ref={el => containerRefs.current[track.id] = el}
+                onClick={(e) => handleBarClick(track.id, e)}
+                onMouseMove={handleMouseMove}
+                onMouseDown={() => handleMouseDown(track.id)}
+              >
+                {/* Target zone highlight with label */}
                 <div 
                   className="absolute w-full bg-green-500/30 border-2 border-green-400"
                   style={{
@@ -157,7 +214,9 @@ export const MixingBoardGame: React.FC<MixingBoardGameProps> = ({
                     height: `${track.targetZoneEnd - track.targetZoneStart}%`
                   }}
                 >
-                  <div className="text-xs text-green-300 p-1 font-bold">TARGET</div>
+                  <div className="text-xs text-green-300 p-1 font-bold text-center">
+                    TARGET ({Math.round(track.targetZoneStart)}-{Math.round(track.targetZoneEnd)})
+                  </div>
                 </div>
                 
                 {/* Current level indicator */}
@@ -171,8 +230,19 @@ export const MixingBoardGame: React.FC<MixingBoardGameProps> = ({
                   }}
                 />
                 
+                {/* Draggable handle */}
+                <div 
+                  className={`absolute w-full h-2 transition-all duration-200 cursor-grab ${
+                    isDragging === track.id ? 'cursor-grabbing' : ''
+                  } ${track.isInTargetZone ? 'bg-green-200' : 'bg-red-200'}`}
+                  style={{
+                    bottom: `${track.currentVolume}%`,
+                    transform: 'translateY(50%)'
+                  }}
+                />
+                
                 {/* Volume scale */}
-                <div className="absolute right-0 top-0 h-full flex flex-col justify-between text-xs text-gray-400 pr-1">
+                <div className="absolute right-0 top-0 h-full flex flex-col justify-between text-xs text-gray-400 pr-1 pointer-events-none">
                   <span>100</span>
                   <span>50</span>
                   <span>0</span>
