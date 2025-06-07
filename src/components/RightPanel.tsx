@@ -1,17 +1,16 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { Card } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { GameState, PlayerAttributes } from '@/types/game';
-import { availableEquipment } from '@/data/equipment';
-import { canPurchaseEquipment } from '@/utils/gameUtils';
 import { XPProgressBar } from '@/components/XPProgressBar';
 import { SkillProgressDisplay } from '@/components/SkillProgressDisplay';
 import { AttributesModal } from '@/components/modals/AttributesModal';
 import { StudioModal } from '@/components/modals/StudioModal';
+import { ArrowUp, Zap, ShoppingCart, Clock } from 'lucide-react';
+import { canPurchaseEquipment } from '@/utils/gameUtils';
+import { availableEquipment } from '@/data/equipment';
 
 interface RightPanelProps {
   gameState: GameState;
@@ -34,166 +33,163 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   advanceDay,
   purchaseEquipment
 }) => {
-  // Filter equipment to only show purchasable items
-  const purchasableEquipment = availableEquipment.filter(equipment => {
-    const purchaseCheck = canPurchaseEquipment(equipment, gameState);
-    return purchaseCheck.canPurchase;
-  });
+  const [showStudioModal, setShowStudioModal] = useState(false);
 
   return (
-    <div className="space-y-4 h-full flex flex-col">
-      {/* Player Info Card */}
-      <Card className="bg-gray-800 border-gray-600">
-        <CardHeader className="pb-2">
+    <div className="space-y-4 animate-fade-in">
+      {/* Player Progress Card */}
+      <Card className="bg-gray-800/50 border-gray-600 p-4 backdrop-blur-sm">
+        <div className="space-y-3">
           <div className="flex justify-between items-center">
-            <CardTitle className="text-white text-sm">Player Progress</CardTitle>
-            <Badge variant="secondary" className="bg-blue-600 text-white">
-              Level {gameState.playerData.level}
-            </Badge>
+            <h3 className="text-lg font-bold text-white">Your Progress</h3>
+            <div className="text-yellow-400 font-bold">Level {gameState.playerData.level}</div>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <XPProgressBar 
+          
+          <XPProgressBar
             currentXP={gameState.playerData.xp}
-            xpToNextLevel={gameState.playerData.xpToNextLevel}
+            xpToNext={gameState.playerData.xpToNextLevel}
             level={gameState.playerData.level}
           />
-          
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="text-gray-300">
-              <span className="text-green-400">${gameState.money}</span>
-            </div>
-            <div className="text-gray-300">
-              <span className="text-blue-400">{gameState.reputation} Rep</span>
-            </div>
-            <div className="text-gray-300">
-              Perk Points: <span className="text-yellow-400">{gameState.playerData.perkPoints}</span>
-            </div>
-            <div className="text-gray-300">
-              Energy: <span className="text-purple-400">{gameState.playerData.dailyWorkCapacity}</span>
-            </div>
+
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => setShowSkillsModal(true)}
+              variant="outline" 
+              size="sm"
+              className="flex-1 bg-gray-800/80 hover:bg-gray-700/80 text-white border-gray-600"
+            >
+              Skills
+            </Button>
+            <Button 
+              onClick={() => setShowAttributesModal(true)}
+              variant="outline" 
+              size="sm"
+              className="flex-1 bg-gray-800/80 hover:bg-gray-700/80 text-white border-gray-600 relative"
+            >
+              <ArrowUp className="w-4 h-4 mr-1" />
+              Attributes
+              {gameState.playerData.perkPoints > 0 && (
+                <span className="absolute -top-1 -right-1 bg-yellow-500 text-black text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold animate-pulse">
+                  {gameState.playerData.perkPoints}
+                </span>
+              )}
+            </Button>
           </div>
-        </CardContent>
+        </div>
       </Card>
 
-      {/* Tabs */}
-      <Tabs defaultValue="equipment" className="flex-1 flex flex-col">
-        <TabsList className="grid w-full grid-cols-3 bg-gray-700">
-          <TabsTrigger value="equipment" className="text-white data-[state=active]:bg-gray-600">
-            Equipment
-          </TabsTrigger>
-          <TabsTrigger value="skills" className="text-white data-[state=active]:bg-gray-600">
-            Skills
-          </TabsTrigger>
-          <TabsTrigger value="day" className="text-white data-[state=active]:bg-gray-600">
-            Day {gameState.currentDay}
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="equipment" className="flex-1 overflow-hidden">
-          <Card className="h-full bg-gray-800 border-gray-600">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-white text-sm">Equipment Shop</CardTitle>
-            </CardHeader>
-            <CardContent className="h-full overflow-y-auto">
-              <div className="space-y-3">
-                {purchasableEquipment.length === 0 ? (
-                  <p className="text-gray-400 text-sm">No equipment available for purchase at your current skill level.</p>
-                ) : (
-                  purchasableEquipment.map(equipment => (
-                    <Card key={equipment.id} className="p-3 bg-gray-700 border-gray-500">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex-1">
-                          <h4 className="text-white font-semibold text-sm">{equipment.name}</h4>
-                          <p className="text-gray-300 text-xs">{equipment.description}</p>
-                        </div>
-                        <div className="text-right ml-2">
-                          <div className="text-green-400 font-bold text-sm">${equipment.price}</div>
-                          <Badge variant="outline" className="text-xs mt-1">
-                            {equipment.category}
-                          </Badge>
+      {/* Equipment Shop Card */}
+      <Card className="bg-gray-800/50 border-gray-600 p-4 backdrop-blur-sm">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 mb-3">
+            <ShoppingCart className="w-5 h-5 text-blue-400" />
+            <h3 className="text-lg font-bold text-white">Equipment Shop</h3>
+          </div>
+          
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {availableEquipment
+              .filter(equipment => {
+                const purchaseCheck = canPurchaseEquipment(equipment, gameState);
+                // Only show items that can be purchased (hide locked items)
+                return purchaseCheck.canPurchase;
+              })
+              .map(equipment => {
+                const isOwned = gameState.ownedEquipment.some(owned => owned.id === equipment.id);
+                
+                return (
+                  <div key={equipment.id} className="p-3 bg-gray-700/50 rounded border border-gray-600 hover:bg-gray-700 transition-colors">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{equipment.icon}</span>
+                        <div>
+                          <h4 className="font-bold text-white text-sm">{equipment.name}</h4>
+                          <p className="text-xs text-gray-400">{equipment.category}</p>
                         </div>
                       </div>
-                      
-                      {/* Equipment bonuses */}
-                      <div className="mb-2">
+                      <div className="text-right">
+                        <div className="text-green-400 font-bold">${equipment.price}</div>
+                      </div>
+                    </div>
+                    
+                    <p className="text-xs text-gray-300 mb-2">{equipment.description}</p>
+                    
+                    {equipment.bonuses && (
+                      <div className="text-xs text-gray-400 mb-2">
+                        {equipment.bonuses.qualityBonus && (
+                          <span className="text-blue-400">+{equipment.bonuses.qualityBonus}% Quality </span>
+                        )}
                         {equipment.bonuses.creativityBonus && (
-                          <div className="text-xs text-purple-400">+{equipment.bonuses.creativityBonus}% Creativity</div>
+                          <span className="text-purple-400">+{equipment.bonuses.creativityBonus}% Creativity </span>
                         )}
                         {equipment.bonuses.technicalBonus && (
-                          <div className="text-xs text-blue-400">+{equipment.bonuses.technicalBonus}% Technical</div>
+                          <span className="text-green-400">+{equipment.bonuses.technicalBonus}% Technical </span>
                         )}
-                        {equipment.bonuses.genreBonus && Object.entries(equipment.bonuses.genreBonus).map(([genre, bonus]) => (
-                          <div key={genre} className="text-xs text-yellow-400">+{bonus} {genre}</div>
-                        ))}
                       </div>
-
-                      <Button 
-                        onClick={() => purchaseEquipment(equipment.id)}
-                        disabled={gameState.money < equipment.price}
-                        className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-sm py-1"
-                      >
-                        {gameState.money < equipment.price ? 'Insufficient Funds' : 'Purchase'}
-                      </Button>
-                    </Card>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="skills" className="flex-1">
-          <SkillProgressDisplay
-            studioSkills={gameState.studioSkills}
-            showModal={showSkillsModal}
-            setShowModal={setShowSkillsModal}
-            showAttributesModal={showAttributesModal}
-            setShowAttributesModal={setShowAttributesModal}
-            playerData={gameState.playerData}
-            spendPerkPoint={spendPerkPoint}
-          />
-        </TabsContent>
-
-        <TabsContent value="day" className="flex-1">
-          <Card className="h-full bg-gray-800 border-gray-600">
-            <CardHeader>
-              <CardTitle className="text-white">Day {gameState.currentDay}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-gray-300 space-y-2">
-                <div>Active Projects: {gameState.activeProject ? 1 : 0}</div>
-                <div>Staff: {gameState.hiredStaff.length}</div>
-                {gameState.hiredStaff.length > 0 && (
-                  <div className="text-sm">
-                    Daily Salaries: ${gameState.hiredStaff.reduce((total, staff) => total + staff.salary, 0)}
+                    )}
+                    
+                    <Button
+                      onClick={() => purchaseEquipment(equipment.id)}
+                      disabled={gameState.money < equipment.price || isOwned}
+                      size="sm"
+                      className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                    >
+                      {isOwned ? 'Owned' : 
+                       gameState.money < equipment.price ? 'Cannot Afford' : 
+                       `Buy $${equipment.price}`}
+                    </Button>
                   </div>
-                )}
-              </div>
-              
-              <Button 
-                onClick={advanceDay}
-                className="w-full bg-blue-600 hover:bg-blue-700"
-              >
-                Advance Day
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                );
+              })}
+          </div>
+          
+          <Button 
+            onClick={() => setShowStudioModal(true)}
+            variant="outline"
+            className="w-full bg-gray-800/80 hover:bg-gray-700/80 text-white border-gray-600"
+          >
+            <ShoppingCart className="w-4 h-4 mr-2" />
+            View All Equipment
+          </Button>
+        </div>
+      </Card>
+
+      {/* Actions Card */}
+      <Card className="bg-gray-800/50 border-gray-600 p-4 backdrop-blur-sm">
+        <div className="space-y-3">
+          <h3 className="text-lg font-bold text-white flex items-center gap-2">
+            <Clock className="w-5 h-5 text-yellow-400" />
+            Daily Actions
+          </h3>
+          
+          <Button 
+            onClick={advanceDay}
+            className="w-full bg-blue-600 hover:bg-blue-700 game-button"
+          >
+            <Zap className="w-4 h-4 mr-2" />
+            Next Day
+          </Button>
+        </div>
+      </Card>
 
       {/* Modals */}
-      <AttributesModal 
+      <SkillProgressDisplay
+        gameState={gameState}
+        showModal={showSkillsModal}
+        setShowModal={setShowSkillsModal}
+      />
+
+      <AttributesModal
         isOpen={showAttributesModal}
         onClose={() => setShowAttributesModal(false)}
         playerData={gameState.playerData}
         spendPerkPoint={spendPerkPoint}
       />
 
-      <StudioModal 
-        isOpen={showSkillsModal}
-        onClose={() => setShowSkillsModal(false)}
-        studioSkills={gameState.studioSkills}
+      <StudioModal
+        showModal={showStudioModal}
+        setShowModal={setShowStudioModal}
+        gameState={gameState}
+        purchaseEquipment={purchaseEquipment}
       />
     </div>
   );

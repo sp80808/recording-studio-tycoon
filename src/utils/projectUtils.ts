@@ -80,6 +80,7 @@ export const generateCandidates = (count: number): StaffMember[] => {
         bonus: 10 + Math.floor(Math.random() * 15) // 10-25% bonus
       } : null,
       energy: 100,
+      mood: 75, // Start with good mood
       salary: 80 + Math.floor(Math.random() * 120), // $80-200 per week
       status: 'Idle',
       assignedProjectId: null

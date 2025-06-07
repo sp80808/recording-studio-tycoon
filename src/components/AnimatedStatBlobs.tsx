@@ -29,20 +29,28 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
   const [animating, setAnimating] = useState(false);
 
   useEffect(() => {
+    console.log('🎨 AnimatedStatBlobs effect triggered:', { creativityGain, technicalGain });
+    
     if ((creativityGain > 0 || technicalGain > 0) && containerRef.current) {
       const container = containerRef.current;
       const containerRect = container.getBoundingClientRect();
       const newBlobs: StatBlob[] = [];
 
+      console.log('📦 Container rect:', containerRect);
+
       // Find target elements
       const creativityTarget = document.getElementById('creativity-points');
       const technicalTarget = document.getElementById('technical-points');
+
+      console.log('🎯 Target elements found:', { creativityTarget: !!creativityTarget, technicalTarget: !!technicalTarget });
 
       // Create creativity blobs
       if (creativityGain > 0 && creativityTarget) {
         const targetRect = creativityTarget.getBoundingClientRect();
         const targetX = targetRect.left - containerRect.left + targetRect.width / 2;
         const targetY = targetRect.top - containerRect.top + targetRect.height / 2;
+
+        console.log('💙 Creating creativity blobs at target:', { targetX, targetY });
 
         // Create multiple blobs for better visual effect
         const blobCount = Math.min(creativityGain, 8); // Max 8 blobs
@@ -68,6 +76,8 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
         const targetX = targetRect.left - containerRect.left + targetRect.width / 2;
         const targetY = targetRect.top - containerRect.top + targetRect.height / 2;
 
+        console.log('💚 Creating technical blobs at target:', { targetX, targetY });
+
         const blobCount = Math.min(technicalGain, 8);
         const valuePerBlob = Math.ceil(technicalGain / blobCount);
 
@@ -85,12 +95,15 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
         }
       }
 
+      console.log(`✨ Created ${newBlobs.length} blobs:`, newBlobs.map(b => `${b.id}: +${b.value}`));
+
       setBlobs(newBlobs);
       setAnimating(true);
 
       // Complete animation after all blobs finish
       const totalDuration = Math.max(...newBlobs.map(b => b.delay)) + 1500; // 1.5s animation + delays
       setTimeout(() => {
+        console.log('🏁 Animation complete');
         setAnimating(false);
         setBlobs([]);
         onComplete();
@@ -98,7 +111,12 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
     }
   }, [creativityGain, technicalGain, containerRef, onComplete]);
 
-  if (!animating || blobs.length === 0) return null;
+  if (!animating || blobs.length === 0) {
+    console.log('❌ Not animating or no blobs:', { animating, blobCount: blobs.length });
+    return null;
+  }
+
+  console.log('🎬 Rendering blobs:', blobs.length);
 
   return (
     <div className="absolute inset-0 pointer-events-none z-50">

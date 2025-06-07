@@ -21,8 +21,11 @@ export const useStageWork = (
   } | null>(null);
 
   const createOrb = useCallback((type: 'creativity' | 'technical', amount: number) => {
-    console.log(`Creating ${type} orb with amount: ${amount}`);
-    if (!orbContainerRef.current) return;
+    console.log(`🎯 Creating ${type} orb with amount: ${amount}`);
+    if (!orbContainerRef.current) {
+      console.log('❌ No orb container found');
+      return;
+    }
 
     const orb = document.createElement('div');
     orb.className = `orb ${type}`;
@@ -62,14 +65,15 @@ export const useStageWork = (
   }, []);
 
   const performDailyWork = useCallback(() => {
-    console.log('=== PERFORMING DAILY WORK ===');
+    console.log('🚀 === PERFORMING DAILY WORK ===');
     
     if (!gameState.activeProject) {
-      console.log('No active project');
+      console.log('❌ No active project');
       return;
     }
 
     if (gameState.playerData.dailyWorkCapacity <= 0) {
+      console.log('❌ No energy left');
       toast({
         title: "No Energy Left",
         description: "You need to advance to the next day to restore your energy.",
@@ -79,10 +83,11 @@ export const useStageWork = (
     }
 
     const project = gameState.activeProject;
-    console.log(`Working on project: ${project.title}`);
+    console.log(`🎵 Working on project: ${project.title}`);
+    console.log(`📊 Project stages:`, project.stages.map((s, i) => `${i}: ${s.stageName} (${s.workUnitsCompleted}/${s.workUnitsBase})`));
     
     if (!project.stages || project.stages.length === 0) {
-      console.log('Project has no stages');
+      console.log('❌ Project has no stages');
       return;
     }
 
@@ -92,9 +97,11 @@ export const useStageWork = (
     );
 
     const currentStage = project.stages[currentStageIndex];
-    console.log(`Current stage: ${currentStage.stageName} (index: ${currentStageIndex})`);
+    console.log(`📍 Current stage: ${currentStage.stageName} (index: ${currentStageIndex})`);
+    console.log(`📈 Stage progress: ${currentStage.workUnitsCompleted}/${currentStage.workUnitsBase}`);
 
     if (currentStage.completed) {
+      console.log('✅ Current stage already completed');
       toast({
         title: "Stage Already Complete",
         description: "This stage has been completed. The project will advance automatically.",
@@ -103,10 +110,12 @@ export const useStageWork = (
     }
 
     const newWorkSessionCount = (project.workSessionCount || 0) + 1;
+    console.log(`🔢 Work session count: ${project.workSessionCount} -> ${newWorkSessionCount}`);
 
     // Check for auto-triggered minigames
     const autoTrigger = shouldAutoTriggerMinigame(project, gameState, focusAllocation, newWorkSessionCount);
     if (autoTrigger) {
+      console.log(`🎮 Auto-triggered minigame: ${autoTrigger.minigameType} - ${autoTrigger.triggerReason}`);
       setAutoTriggeredMinigame({
         type: autoTrigger.minigameType,
         reason: autoTrigger.triggerReason
@@ -122,11 +131,15 @@ export const useStageWork = (
     // Calculate base points with player attribute multipliers
     const baseCreativityWork = gameState.playerData.dailyWorkCapacity * gameState.playerData.attributes.creativeIntuition;
     const baseTechnicalWork = gameState.playerData.dailyWorkCapacity * gameState.playerData.attributes.technicalAptitude;
+    console.log(`💪 Base work capacity: ${gameState.playerData.dailyWorkCapacity}`);
+    console.log(`🎨 Base creativity work: ${baseCreativityWork} (capacity × ${gameState.playerData.attributes.creativeIntuition})`);
+    console.log(`⚙️ Base technical work: ${baseTechnicalWork} (capacity × ${gameState.playerData.attributes.technicalAptitude})`);
 
     // Apply player attribute bonuses
     const creativityMultiplier = getCreativityMultiplier(gameState);
     const technicalMultiplier = getTechnicalMultiplier(gameState);
     const focusEffectiveness = getFocusEffectiveness(gameState);
+    console.log(`🔥 Multipliers - Creativity: ${creativityMultiplier}, Technical: ${technicalMultiplier}, Focus: ${focusEffectiveness}`);
 
     // Apply focus allocation with focus mastery bonus
     let creativityGain = Math.floor(
@@ -142,7 +155,8 @@ export const useStageWork = (
       )
     );
 
-    console.log(`Player base gains - Creativity: ${creativityGain}, Technical: ${technicalGain}`);
+    console.log(`🎯 Focus allocation - Performance: ${focusAllocation.performance}%, Sound: ${focusAllocation.soundCapture}%, Layering: ${focusAllocation.layering}%`);
+    console.log(`📊 After focus allocation - Creativity: ${creativityGain}, Technical: ${technicalGain}`);
 
     // Apply studio skill bonuses for the project's genre
     const genreSkill = gameState.studioSkills[project.genre];
@@ -153,7 +167,7 @@ export const useStageWork = (
       creativityGain += Math.floor(creativityGain * (creativityBonus / 100));
       technicalGain += Math.floor(technicalGain * (technicalBonus / 100));
       
-      console.log(`After skill bonuses - Creativity: ${creativityGain}, Technical: ${technicalGain}`);
+      console.log(`🎸 Genre (${project.genre}) skill bonuses applied - Creativity: ${creativityGain}, Technical: ${technicalGain}`);
     }
 
     // Apply equipment bonuses
@@ -162,10 +176,11 @@ export const useStageWork = (
     technicalGain += Math.floor(technicalGain * (equipmentBonuses.technical / 100));
     creativityGain += equipmentBonuses.genre;
     
-    console.log(`After equipment bonuses - Creativity: ${creativityGain}, Technical: ${technicalGain}`);
+    console.log(`🎛️ After equipment bonuses - Creativity: ${creativityGain}, Technical: ${technicalGain}`);
 
     // Add staff contributions with mood effects
     const assignedStaff = gameState.hiredStaff.filter(s => s.assignedProjectId === project.id && s.status === 'Working');
+    console.log(`👥 Assigned staff count: ${assignedStaff.length}`);
     
     assignedStaff.forEach(staff => {
       if (staff.energy < 20) {
@@ -173,7 +188,7 @@ export const useStageWork = (
         const penalty = 0.3;
         creativityGain += Math.floor(staff.primaryStats.creativity * 0.1 * penalty);
         technicalGain += Math.floor(staff.primaryStats.technical * 0.1 * penalty);
-        console.log(`Staff ${staff.name} working with low energy (penalty applied)`);
+        console.log(`😴 Staff ${staff.name} working with low energy (penalty applied)`);
       } else {
         // Apply mood effectiveness
         const moodMultiplier = getMoodEffectiveness(staff.mood);
@@ -186,41 +201,49 @@ export const useStageWork = (
           const bonus = staff.genreAffinity.bonus / 100;
           staffCreativity += Math.floor(staffCreativity * bonus);
           staffTechnical += Math.floor(staffTechnical * bonus);
-          console.log(`Staff ${staff.name} has genre affinity for ${project.genre}`);
+          console.log(`🎯 Staff ${staff.name} has genre affinity for ${project.genre}`);
         }
         
         creativityGain += staffCreativity;
         technicalGain += staffTechnical;
-        console.log(`Staff ${staff.name} contributed: +${staffCreativity} creativity, +${staffTechnical} technical (mood: ${staff.mood})`);
+        console.log(`👤 Staff ${staff.name} contributed: +${staffCreativity} creativity, +${staffTechnical} technical (mood: ${staff.mood})`);
       }
     });
 
-    console.log(`FINAL GAINS - Creativity: ${creativityGain}, Technical: ${technicalGain}`);
+    console.log(`🎯 FINAL GAINS - Creativity: ${creativityGain}, Technical: ${technicalGain}`);
 
     // Create orb animations
     createOrb('creativity', creativityGain);
     createOrb('technical', technicalGain);
 
-    // Calculate work units completed for current stage
-    const workUnitsCompleted = Math.min(
-      currentStage.workUnitsCompleted + Math.floor((creativityGain + technicalGain) / 10),
+    // Calculate work units completed for current stage - THIS IS THE CRITICAL FIX
+    const totalPointsGenerated = creativityGain + technicalGain;
+    const workUnitsToAdd = Math.floor(totalPointsGenerated / 10); // Convert points to work units
+    const newWorkUnitsCompleted = Math.min(
+      currentStage.workUnitsCompleted + workUnitsToAdd,
       currentStage.workUnitsBase
     );
 
+    console.log(`⚡ Total points generated: ${totalPointsGenerated}`);
+    console.log(`🔨 Work units to add: ${workUnitsToAdd} (points ÷ 10)`);
+    console.log(`📈 Work units: ${currentStage.workUnitsCompleted} -> ${newWorkUnitsCompleted} (max: ${currentStage.workUnitsBase})`);
+
     // Check if stage is completed
-    const stageCompleted = workUnitsCompleted >= currentStage.workUnitsBase;
+    const stageCompleted = newWorkUnitsCompleted >= currentStage.workUnitsBase;
     let newCurrentStageIndex = currentStageIndex;
     
     if (stageCompleted && !currentStage.completed) {
       newCurrentStageIndex = Math.min(currentStageIndex + 1, project.stages.length - 1);
+      console.log(`✅ Stage completed! Moving to stage index: ${newCurrentStageIndex}`);
     }
 
-    // Update the current stage
+    // Update the current stage - THIS IS THE CRITICAL UPDATE
     const updatedStages = project.stages.map((stage, index) => {
       if (index === currentStageIndex) {
+        console.log(`🔄 Updating stage ${index}: ${stage.workUnitsCompleted} -> ${newWorkUnitsCompleted}, completed: ${stageCompleted}`);
         return {
           ...stage,
-          workUnitsCompleted,
+          workUnitsCompleted: newWorkUnitsCompleted,
           completed: stageCompleted
         };
       }
@@ -236,37 +259,41 @@ export const useStageWork = (
       workSessionCount: newWorkSessionCount
     };
 
-    console.log(`Project C points: ${project.accumulatedCPoints} -> ${updatedProject.accumulatedCPoints}`);
-    console.log(`Project T points: ${project.accumulatedTPoints} -> ${updatedProject.accumulatedTPoints}`);
+    console.log(`📋 Project C points: ${project.accumulatedCPoints} -> ${updatedProject.accumulatedCPoints}`);
+    console.log(`📋 Project T points: ${project.accumulatedTPoints} -> ${updatedProject.accumulatedTPoints}`);
+    console.log(`📋 Updated stages:`, updatedProject.stages.map((s, i) => `${i}: ${s.stageName} (${s.workUnitsCompleted}/${s.workUnitsBase}) ${s.completed ? '✅' : '⏳'}`));
 
     // Check if project is complete
     const allStagesComplete = updatedProject.stages.every(stage => stage.completed);
     if (allStagesComplete) {
-      console.log('PROJECT COMPLETE!');
+      console.log('🎉 PROJECT COMPLETE!');
       const review = completeProject(updatedProject, addStaffXP);
       return { review, isComplete: true };
     }
 
     // Update game state with mood changes
-    setGameState(prev => ({
-      ...prev,
-      activeProject: updatedProject,
-      playerData: {
-        ...prev.playerData,
-        dailyWorkCapacity: prev.playerData.dailyWorkCapacity - 1
-      },
-      hiredStaff: prev.hiredStaff.map(s => {
-        if (s.assignedProjectId === project.id && s.status === 'Working') {
-          // Decrease mood slightly after work, decrease energy
-          return { 
-            ...s, 
-            energy: Math.max(0, s.energy - 15),
-            mood: Math.max(0, s.mood - 2) // Small mood decrease from work
-          };
-        }
-        return s;
-      })
-    }));
+    setGameState(prev => {
+      console.log('🔄 Updating game state...');
+      return {
+        ...prev,
+        activeProject: updatedProject,
+        playerData: {
+          ...prev.playerData,
+          dailyWorkCapacity: prev.playerData.dailyWorkCapacity - 1
+        },
+        hiredStaff: prev.hiredStaff.map(s => {
+          if (s.assignedProjectId === project.id && s.status === 'Working') {
+            // Decrease mood slightly after work, decrease energy
+            return { 
+              ...s, 
+              energy: Math.max(0, s.energy - 15),
+              mood: Math.max(0, s.mood - 2) // Small mood decrease from work
+            };
+          }
+          return s;
+        })
+      };
+    });
 
     // Show stage completion notification
     if (stageCompleted) {
@@ -278,7 +305,7 @@ export const useStageWork = (
     } else {
       toast({
         title: "Work Progress",
-        description: `Stage progress: ${workUnitsCompleted}/${currentStage.workUnitsBase} work units`,
+        description: `Stage progress: ${newWorkUnitsCompleted}/${currentStage.workUnitsBase} work units (+${workUnitsToAdd} this session)`,
       });
     }
     
