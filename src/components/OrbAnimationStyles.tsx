@@ -3,7 +3,7 @@ import React from 'react';
 
 export const OrbAnimationStyles: React.FC = () => {
   return (
-    <style jsx global>{`
+    <style>{`
       @keyframes blob-float {
         0% {
           transform: translate(0, 0) scale(0.8);
