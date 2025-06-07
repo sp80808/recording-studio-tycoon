@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { GameState, FocusAllocation } from '@/types/game';
 import { generateNewProjects, generateCandidates } from '@/utils/projectUtils';
@@ -11,7 +12,7 @@ export const useGameState = () => {
       xp: 0,
       level: 1,
       xpToNextLevel: 100,
-      perkPoints: 0,
+      perkPoints: 3, // Added starting perk points for testing
       dailyWorkCapacity: 5,
       attributes: {
         focusMastery: 1,

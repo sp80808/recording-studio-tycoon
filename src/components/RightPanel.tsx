@@ -2,11 +2,11 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { GameState, PlayerAttributes } from '@/types/game';
 import { XPProgressBar } from '@/components/XPProgressBar';
 import { SkillProgressDisplay } from '@/components/SkillProgressDisplay';
-import { AttributesModal } from '@/components/modals/AttributesModal';
+import { PlayerAttributesModal } from '@/components/modals/PlayerAttributesModal';
 import { StudioModal } from '@/components/modals/StudioModal';
 import { ArrowUp, Zap, ShoppingCart, Clock } from 'lucide-react';
 import { canPurchaseEquipment } from '@/utils/gameUtils';
@@ -179,12 +179,11 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           </DialogHeader>
           <SkillProgressDisplay
             skills={gameState.studioSkills}
-            className="mt-4"
           />
         </DialogContent>
       </Dialog>
 
-      <AttributesModal
+      <PlayerAttributesModal
         isOpen={showAttributesModal}
         onClose={() => setShowAttributesModal(false)}
         playerData={gameState.playerData}

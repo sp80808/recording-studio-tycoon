@@ -128,12 +128,17 @@ export const useStageWork = (
       });
     }
 
-    // Calculate base points with player attribute multipliers
-    const baseCreativityWork = gameState.playerData.dailyWorkCapacity * gameState.playerData.attributes.creativeIntuition;
-    const baseTechnicalWork = gameState.playerData.dailyWorkCapacity * gameState.playerData.attributes.technicalAptitude;
-    console.log(`💪 Base work capacity: ${gameState.playerData.dailyWorkCapacity}`);
-    console.log(`🎨 Base creativity work: ${baseCreativityWork} (capacity × ${gameState.playerData.attributes.creativeIntuition})`);
-    console.log(`⚙️ Base technical work: ${baseTechnicalWork} (capacity × ${gameState.playerData.attributes.technicalAptitude})`);
+    // FIXED: Improved base work calculation with better scaling
+    const baseWorkCapacity = Math.max(gameState.playerData.dailyWorkCapacity, 1);
+    const attributeMultiplier = 1 + (gameState.playerData.attributes.creativeIntuition - 1) * 0.5 + (gameState.playerData.attributes.technicalAptitude - 1) * 0.5;
+    
+    // Enhanced base points calculation
+    const baseCreativityWork = Math.floor(baseWorkCapacity * 8 * attributeMultiplier); // Increased base multiplier
+    const baseTechnicalWork = Math.floor(baseWorkCapacity * 8 * attributeMultiplier); // Increased base multiplier
+    
+    console.log(`💪 Base work capacity: ${baseWorkCapacity}, Attribute multiplier: ${attributeMultiplier.toFixed(2)}`);
+    console.log(`🎨 Base creativity work: ${baseCreativityWork}`);
+    console.log(`⚙️ Base technical work: ${baseTechnicalWork}`);
 
     // Apply player attribute bonuses
     const creativityMultiplier = getCreativityMultiplier(gameState);
@@ -141,7 +146,7 @@ export const useStageWork = (
     const focusEffectiveness = getFocusEffectiveness(gameState);
     console.log(`🔥 Multipliers - Creativity: ${creativityMultiplier}, Technical: ${technicalMultiplier}, Focus: ${focusEffectiveness}`);
 
-    // Apply focus allocation with focus mastery bonus
+    // Apply focus allocation with enhanced effectiveness
     let creativityGain = Math.floor(
       baseCreativityWork * creativityMultiplier * focusEffectiveness * (
         (focusAllocation.performance / 100) * 0.8 + 
@@ -186,15 +191,15 @@ export const useStageWork = (
       if (staff.energy < 20) {
         // Low energy penalty
         const penalty = 0.3;
-        creativityGain += Math.floor(staff.primaryStats.creativity * 0.1 * penalty);
-        technicalGain += Math.floor(staff.primaryStats.technical * 0.1 * penalty);
+        creativityGain += Math.floor(staff.primaryStats.creativity * 0.5 * penalty); // Increased staff contribution
+        technicalGain += Math.floor(staff.primaryStats.technical * 0.5 * penalty);
         console.log(`😴 Staff ${staff.name} working with low energy (penalty applied)`);
       } else {
         // Apply mood effectiveness
         const moodMultiplier = getMoodEffectiveness(staff.mood);
         
-        let staffCreativity = Math.floor(staff.primaryStats.creativity * 0.2 * moodMultiplier);
-        let staffTechnical = Math.floor(staff.primaryStats.technical * 0.2 * moodMultiplier);
+        let staffCreativity = Math.floor(staff.primaryStats.creativity * 0.8 * moodMultiplier); // Increased staff contribution
+        let staffTechnical = Math.floor(staff.primaryStats.technical * 0.8 * moodMultiplier);
         
         // Apply staff genre affinity bonus
         if (staff.genreAffinity && staff.genreAffinity.genre === project.genre) {
@@ -216,16 +221,16 @@ export const useStageWork = (
     createOrb('creativity', creativityGain);
     createOrb('technical', technicalGain);
 
-    // Calculate work units completed for current stage - THIS IS THE CRITICAL FIX
+    // FIXED: More reasonable work units calculation
     const totalPointsGenerated = creativityGain + technicalGain;
-    const workUnitsToAdd = Math.floor(totalPointsGenerated / 10); // Convert points to work units
+    const workUnitsToAdd = Math.floor(totalPointsGenerated / 5); // Changed from 10 to 5 for better progression
     const newWorkUnitsCompleted = Math.min(
       currentStage.workUnitsCompleted + workUnitsToAdd,
       currentStage.workUnitsBase
     );
 
     console.log(`⚡ Total points generated: ${totalPointsGenerated}`);
-    console.log(`🔨 Work units to add: ${workUnitsToAdd} (points ÷ 10)`);
+    console.log(`🔨 Work units to add: ${workUnitsToAdd} (points ÷ 5)`);
     console.log(`📈 Work units: ${currentStage.workUnitsCompleted} -> ${newWorkUnitsCompleted} (max: ${currentStage.workUnitsBase})`);
 
     // Check if stage is completed
@@ -237,43 +242,34 @@ export const useStageWork = (
       console.log(`✅ Stage completed! Moving to stage index: ${newCurrentStageIndex}`);
     }
 
-    // Update the current stage - THIS IS THE CRITICAL UPDATE
-    const updatedStages = project.stages.map((stage, index) => {
-      if (index === currentStageIndex) {
-        console.log(`🔄 Updating stage ${index}: ${stage.workUnitsCompleted} -> ${newWorkUnitsCompleted}, completed: ${stageCompleted}`);
-        return {
-          ...stage,
-          workUnitsCompleted: newWorkUnitsCompleted,
-          completed: stageCompleted
-        };
-      }
-      return stage;
-    });
-
-    const updatedProject = {
-      ...project,
-      stages: updatedStages,
-      accumulatedCPoints: project.accumulatedCPoints + creativityGain,
-      accumulatedTPoints: project.accumulatedTPoints + technicalGain,
-      currentStageIndex: newCurrentStageIndex,
-      workSessionCount: newWorkSessionCount
-    };
-
-    console.log(`📋 Project C points: ${project.accumulatedCPoints} -> ${updatedProject.accumulatedCPoints}`);
-    console.log(`📋 Project T points: ${project.accumulatedTPoints} -> ${updatedProject.accumulatedTPoints}`);
-    console.log(`📋 Updated stages:`, updatedProject.stages.map((s, i) => `${i}: ${s.stageName} (${s.workUnitsCompleted}/${s.workUnitsBase}) ${s.completed ? '✅' : '⏳'}`));
-
-    // Check if project is complete
-    const allStagesComplete = updatedProject.stages.every(stage => stage.completed);
-    if (allStagesComplete) {
-      console.log('🎉 PROJECT COMPLETE!');
-      const review = completeProject(updatedProject, addStaffXP);
-      return { review, isComplete: true };
-    }
-
-    // Update game state with mood changes
+    // FIXED: Immutable state update for React re-rendering
     setGameState(prev => {
-      console.log('🔄 Updating game state...');
+      console.log('🔄 Updating game state with immutable update...');
+      
+      // Deep copy the active project to avoid mutation
+      const updatedProject = {
+        ...prev.activeProject!,
+        stages: prev.activeProject!.stages.map((stage, index) => {
+          if (index === currentStageIndex) {
+            console.log(`🔄 Updating stage ${index}: ${stage.workUnitsCompleted} -> ${newWorkUnitsCompleted}, completed: ${stageCompleted}`);
+            return {
+              ...stage,
+              workUnitsCompleted: newWorkUnitsCompleted,
+              completed: stageCompleted
+            };
+          }
+          return stage;
+        }),
+        accumulatedCPoints: prev.activeProject!.accumulatedCPoints + creativityGain,
+        accumulatedTPoints: prev.activeProject!.accumulatedTPoints + technicalGain,
+        currentStageIndex: newCurrentStageIndex,
+        workSessionCount: newWorkSessionCount
+      };
+
+      console.log(`📋 Project C points: ${prev.activeProject!.accumulatedCPoints} -> ${updatedProject.accumulatedCPoints}`);
+      console.log(`📋 Project T points: ${prev.activeProject!.accumulatedTPoints} -> ${updatedProject.accumulatedTPoints}`);
+      console.log(`📋 Updated stages:`, updatedProject.stages.map((s, i) => `${i}: ${s.stageName} (${s.workUnitsCompleted}/${s.workUnitsBase}) ${s.completed ? '✅' : '⏳'}`));
+
       return {
         ...prev,
         activeProject: updatedProject,
@@ -294,6 +290,29 @@ export const useStageWork = (
         })
       };
     });
+
+    // Check if project is complete
+    const allStagesComplete = project.stages.every((stage, index) => 
+      index === currentStageIndex ? stageCompleted : stage.completed
+    );
+    
+    if (allStagesComplete) {
+      console.log('🎉 PROJECT COMPLETE!');
+      // Create a temporary updated project for completion
+      const finalProject = {
+        ...project,
+        stages: project.stages.map((stage, index) => {
+          if (index === currentStageIndex) {
+            return { ...stage, workUnitsCompleted: newWorkUnitsCompleted, completed: stageCompleted };
+          }
+          return stage;
+        }),
+        accumulatedCPoints: project.accumulatedCPoints + creativityGain,
+        accumulatedTPoints: project.accumulatedTPoints + technicalGain
+      };
+      const review = completeProject(finalProject, addStaffXP);
+      return { review, isComplete: true };
+    }
 
     // Show stage completion notification
     if (stageCompleted) {
