@@ -12,10 +12,32 @@ export const SkillProgressDisplay: React.FC<SkillProgressDisplayProps> = ({
   skills,
   className = ""
 }) => {
+  // Safety check to prevent runtime errors
+  if (!skills || typeof skills !== 'object') {
+    console.warn('SkillProgressDisplay: skills prop is not a valid object:', skills);
+    return (
+      <div className={`skill-progress-display ${className}`}>
+        <h3 className="text-lg font-bold text-white mb-4">Studio Skills</h3>
+        <p className="text-gray-400">No skills data available</p>
+      </div>
+    );
+  }
+
+  const skillsArray = Object.values(skills);
+  
+  if (skillsArray.length === 0) {
+    return (
+      <div className={`skill-progress-display ${className}`}>
+        <h3 className="text-lg font-bold text-white mb-4">Studio Skills</h3>
+        <p className="text-gray-400">No skills learned yet</p>
+      </div>
+    );
+  }
+
   return (
     <div className={`skill-progress-display space-y-3 ${className}`}>
       <h3 className="text-lg font-bold text-white mb-4">Studio Skills</h3>
-      {Object.values(skills).map(skill => (
+      {skillsArray.map(skill => (
         <div key={skill.name} className="bg-gray-800/50 p-3 rounded-lg border border-gray-600">
           <div className="flex items-center justify-between mb-2">
             <span className="text-white font-medium">{skill.name}</span>

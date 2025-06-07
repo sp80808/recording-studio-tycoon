@@ -172,11 +172,17 @@ export const RightPanel: React.FC<RightPanelProps> = ({
       </Card>
 
       {/* Modals */}
-      <SkillProgressDisplay
-        gameState={gameState}
-        showModal={showSkillsModal}
-        setShowModal={setShowSkillsModal}
-      />
+      <Dialog open={showSkillsModal} onOpenChange={setShowSkillsModal}>
+        <DialogContent className="bg-gray-900 border-gray-600 text-white max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-white">Studio Skills</DialogTitle>
+          </DialogHeader>
+          <SkillProgressDisplay
+            skills={gameState.studioSkills}
+            className="mt-4"
+          />
+        </DialogContent>
+      </Dialog>
 
       <AttributesModal
         isOpen={showAttributesModal}
@@ -186,8 +192,8 @@ export const RightPanel: React.FC<RightPanelProps> = ({
       />
 
       <StudioModal
-        showModal={showStudioModal}
-        setShowModal={setShowStudioModal}
+        isOpen={showStudioModal}
+        onClose={() => setShowStudioModal(false)}
         gameState={gameState}
         purchaseEquipment={purchaseEquipment}
       />
