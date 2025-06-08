@@ -19,19 +19,19 @@ export const EquipmentList: React.FC<EquipmentListProps> = ({
   );
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-bold text-white">🛒 Equipment Shop</h3>
+    <div className="flex flex-col h-full">
+      <h3 className="text-lg font-bold text-white mb-4">🛒 Equipment Shop</h3>
       
       {unownedEquipment.length === 0 ? (
-        <Card className="p-4 bg-gray-800/50 border-gray-600">
+        <Card className="p-4 bg-gray-800/50 border-gray-600 flex-1 flex items-center justify-center">
           <div className="text-center text-gray-400">
             <div className="text-2xl mb-2">✅</div>
             <p>All equipment purchased!</p>
           </div>
         </Card>
       ) : (
-        <div className="space-y-2 max-h-64 overflow-y-auto">
-          {unownedEquipment.slice(0, 3).map((equipment) => {
+        <div className="flex-1 overflow-y-auto space-y-2">
+          {unownedEquipment.map((equipment) => {
             const canAfford = gameState.money >= equipment.price;
             
             return (

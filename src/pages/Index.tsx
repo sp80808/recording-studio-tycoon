@@ -34,6 +34,7 @@ const MusicStudioTycoon = () => {
 
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showTrainingModal, setShowTrainingModal] = useState(false);
+  const [showStaffModal, setShowStaffModal] = useState(false);
 
   const removeNotification = (id: string) => {
     setGameState(prev => ({
@@ -42,9 +43,16 @@ const MusicStudioTycoon = () => {
     }));
   };
 
+  const handleManageStaff = () => {
+    setShowStaffModal(true);
+  };
+
   return (
     <GameLayout>
-      <GameHeader gameState={gameState} />
+      <GameHeader 
+        gameState={gameState} 
+        onManageStaff={gameState.hiredStaff.length > 0 ? handleManageStaff : undefined}
+      />
 
       <MainGameContent
         gameState={gameState}

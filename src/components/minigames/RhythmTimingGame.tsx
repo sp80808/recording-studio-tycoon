@@ -96,23 +96,24 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
   const hitBeat = useCallback(() => {
     if (!gameActive) return;
 
-    const targetZoneStart = 300;
-    const targetZoneEnd = 350;
+    const perfectZone = 325; // Center of target zone
+    const perfectRange = 15; // Perfect hit range
+    const goodRange = settings.targetZone / 2; // Good hit range
 
     setBeats(prev => {
       const hitBeats = prev.filter(beat => 
         !beat.hit && 
-        beat.position >= targetZoneStart - settings.targetZone/2 && 
-        beat.position <= targetZoneEnd + settings.targetZone/2
+        beat.position >= perfectZone - goodRange && 
+        beat.position <= perfectZone + goodRange
       );
 
       if (hitBeats.length > 0) {
         const closestBeat = hitBeats.reduce((closest, beat) => 
-          Math.abs(beat.position - 325) < Math.abs(closest.position - 325) ? beat : closest
+          Math.abs(beat.position - perfectZone) < Math.abs(closest.position - perfectZone) ? beat : closest
         );
 
-        const distance = Math.abs(closestBeat.position - 325);
-        const isPerfect = distance < 15;
+        const distance = Math.abs(closestBeat.position - perfectZone);
+        const isPerfect = distance < perfectRange;
         const points = isPerfect ? 100 : distance < 30 ? 50 : 25;
 
         setScore(s => s + points + (combo * 10));
@@ -157,9 +158,18 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
         ref={gameAreaRef}
         className="relative h-32 bg-gray-800 rounded-lg border-2 border-gray-600 overflow-hidden mb-4"
       >
-        {/* Target zone */}
+        {/* Target zone with perfect timing indicator */}
         <div className="absolute left-72 top-0 w-12 h-full bg-green-500/30 border-2 border-green-400 flex items-center justify-center">
           <div className="text-green-400 font-bold text-xs">HIT</div>
+        </div>
+
+        {/* Perfect timing line - shows exactly where to hit for perfect score */}
+        <div 
+          className="absolute top-0 h-full w-0.5 bg-yellow-400 shadow-lg z-10"
+          style={{ left: '325px' }}
+        >
+          <div className="absolute -top-1 -left-2 w-5 h-1 bg-yellow-400 animate-pulse"></div>
+          <div className="absolute -bottom-1 -left-2 w-5 h-1 bg-yellow-400 animate-pulse"></div>
         </div>
 
         {/* Beats */}
@@ -205,7 +215,9 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
           </div>
         ) : (
           <div className="space-y-2">
-            <div className="text-sm text-gray-300">Press SPACE when beats hit the green zone!</div>
+            <div className="text-sm text-gray-300">
+              Press SPACE when beats hit the <span className="text-yellow-400 font-bold">yellow line</span> for PERFECT timing!
+            </div>
             <Button onClick={hitBeat} className="bg-orange-600 hover:bg-orange-700 w-full">
               HIT (SPACE)
             </Button>
