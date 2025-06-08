@@ -44,7 +44,7 @@ export const availableEquipment: EraAvailableEquipment[] = [
   {
     id: 'tape_machine_4track',
     name: 'Tascam "Track-or-Treat" 4-Track',
-    category: 'recorder',
+    category: 'instrument',
     price: 800,
     historicalPrice: 240,
     availableFrom: 1967,
@@ -58,7 +58,7 @@ export const availableEquipment: EraAvailableEquipment[] = [
   {
     id: 'mixing_board_60s',
     name: 'Neve "Never-Enough-Knobs" 1073',
-    category: 'mixer',
+    category: 'outboard',
     price: 2500,
     historicalPrice: 750,
     availableFrom: 1970,
@@ -109,6 +109,20 @@ export const availableEquipment: EraAvailableEquipment[] = [
     eraDescription: 'A studio staple for vocals and instruments',
     bonuses: { qualityBonus: 40, genreBonus: { 'Rock': 4, 'Pop': 3, 'Jazz': 5 } },
     icon: '🎤',
+    isVintage: true
+  },
+  {
+    id: 'fairchild_660',
+    name: 'Fairchild 660',
+    category: 'outboard',
+    price: 5000,
+    historicalPrice: 1500,
+    availableFrom: 1959,
+    availableUntil: 1975,
+    description: 'A legendary compressor known for its smooth and warm sound',
+    eraDescription: 'A studio staple for vocals and instruments',
+    bonuses: { qualityBonus: 35, technicalBonus: 15, genreBonus: { 'Rock': 4, 'Pop': 3, 'Jazz': 5 } },
+    icon: '⚙️',
     isVintage: true
   },
 
