@@ -16,10 +16,11 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useSaveSystem } from '@/contexts/SaveSystemContext';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { gameAudio as audioSystem } from '@/utils/audioSystem';
+
 const MusicStudioTycoon = () => {
   const { gameState, setGameState, focusAllocation, setFocusAllocation, initializeGameState } = useGameState();
   const { settings } = useSettings();
-  const { saveGame, loadGame, hasSaveGame } = useSaveSystem();
+  const { saveGame, loadGame, hasSavedGame } = useSaveSystem();
   
   // Splash screen and game initialization state
   const [showSplashScreen, setShowSplashScreen] = useState(true);
@@ -42,7 +43,8 @@ const MusicStudioTycoon = () => {
     selectedStaffForTraining,
     setSelectedStaffForTraining,
     lastReview,
-    orbContainerRef
+    orbContainerRef,
+    contactArtist
   } = useGameLogic(gameState, setGameState, focusAllocation);
 
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -55,16 +57,16 @@ const MusicStudioTycoon = () => {
   // Initialize background music
   useBackgroundMusic();
 
-  // Check for existing save game on component mount
+  // Check for existing save game on mount
   useEffect(() => {
-    const checkSaveGame = async () => {
-      if (await hasSaveGame()) {
+    const checkSaveGame = () => {
+      if (hasSavedGame()) {
         setShowSplashScreen(false);
         setGameInitialized(true);
       }
     };
     checkSaveGame();
-  }, [hasSaveGame]);
+  }, [hasSavedGame]);
 
   // Handle starting a new game with selected era
   const handleStartNewGame = (era: Era) => {
@@ -194,7 +196,7 @@ const MusicStudioTycoon = () => {
       <SplashScreen
         onStartGame={handleStartNewGame}
         onLoadGame={handleLoadGame}
-        hasSaveGame={hasSaveGame()}
+        hasSaveGame={hasSavedGame()}
       />
     );
   }

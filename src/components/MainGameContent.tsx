@@ -24,6 +24,7 @@ interface MainGameContentProps {
   toggleStaffRest: (staffId: string) => void;
   openTrainingModal: (staff: StaffMember) => void;
   orbContainerRef: React.RefObject<HTMLDivElement>;
+  contactArtist: (artistId: string, offer: number) => void;
 }
 
 export const MainGameContent: React.FC<MainGameContentProps> = ({
@@ -43,7 +44,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   unassignStaffFromProject,
   toggleStaffRest,
   openTrainingModal,
-  orbContainerRef
+  orbContainerRef,
+  contactArtist
 }) => {
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [showAttributesModal, setShowAttributesModal] = useState(false);
@@ -123,6 +125,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             unassignStaffFromProject={unassignStaffFromProject}
             toggleStaffRest={toggleStaffRest}
             openTrainingModal={openTrainingModal}
+            contactArtist={contactArtist}
           />
         </div>
       </div>

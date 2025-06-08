@@ -18,7 +18,7 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
   const [isPlaying, setIsPlaying] = useState(false);
   const { settings } = useSettings();
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const trackCount = 5; // We have 5 BGM tracks
+  const trackCount = 8; // We have 8 BGM tracks
   const originalVolumeRef = useRef<number>(0.5); // Store original volume
   const fadeIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -112,7 +112,7 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
       audioRef.current.currentTime = 0;
 
       // Load new track
-      audioRef.current.src = `/src/audio/music/Tycoon BGM ${trackNumber}.mp3`;
+      audioRef.current.src = `/src/audio/music/tycoon-bgm${trackNumber}.mp3`;
       
       await audioRef.current.play();
       setCurrentTrack(trackNumber);

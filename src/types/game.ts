@@ -1,4 +1,6 @@
 // Game type definitions
+import { Chart, ArtistContact, MarketTrend } from './charts';
+
 export interface PlayerAttributes {
   focusMastery: number;
   creativeIntuition: number;
@@ -137,6 +139,14 @@ export interface GameState {
   playerBands: Band[]; // Player's own bands
   availableSessionMusicians: SessionMusician[];
   activeOriginalTrack: OriginalTrackProject | null;
+  // Charts system data
+  chartsData?: {
+    charts: Chart[];
+    contactedArtists: ArtistContact[];
+    marketTrends: MarketTrend[];
+    discoveredArtists: any[]; // Artists found in charts
+    lastChartUpdate: number; // Day when charts were last updated
+  };
 }
 
 export interface GameNotification {

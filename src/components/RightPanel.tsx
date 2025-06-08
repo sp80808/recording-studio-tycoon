@@ -8,6 +8,7 @@ import { RecruitmentModal } from '@/components/modals/RecruitmentModal';
 import { StaffManagementModal } from '@/components/modals/StaffManagementModal';
 import { EquipmentList } from '@/components/EquipmentList';
 import { BandManagement } from '@/components/BandManagement';
+import { ChartsPanel } from '@/components/ChartsPanel';
 
 interface RightPanelProps {
   gameState: GameState;
@@ -28,6 +29,8 @@ interface RightPanelProps {
   unassignStaffFromProject: (staffId: string) => void;
   toggleStaffRest: (staffId: string) => void;
   openTrainingModal: (staff: StaffMember) => void;
+  // Charts props
+  contactArtist: (artistId: string, offer: number) => void;
 }
 
 export const RightPanel: React.FC<RightPanelProps> = ({
@@ -47,9 +50,10 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   assignStaffToProject,
   unassignStaffFromProject,
   toggleStaffRest,
-  openTrainingModal
+  openTrainingModal,
+  contactArtist
 }) => {
-  const [activeTab, setActiveTab] = useState<'studio' | 'skills' | 'bands' | 'staff'>('studio');
+  const [activeTab, setActiveTab] = useState<'studio' | 'skills' | 'bands' | 'staff' | 'charts'>('studio');
   const [showRecruitmentModal, setShowRecruitmentModal] = useState(false);
   const [showStaffModal, setShowStaffModal] = useState(false);
 
@@ -63,7 +67,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
       <div className="flex mb-4 bg-gray-800 rounded-lg p-1">
         <button
           onClick={() => setActiveTab('studio')}
-          className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+          className={`flex-1 py-2 px-2 rounded-md text-xs font-medium transition-colors ${
             activeTab === 'studio'
               ? 'bg-blue-600 text-white'
               : 'text-gray-400 hover:text-white'
@@ -73,7 +77,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         </button>
         <button
           onClick={() => setActiveTab('skills')}
-          className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+          className={`flex-1 py-2 px-2 rounded-md text-xs font-medium transition-colors ${
             activeTab === 'skills'
               ? 'bg-blue-600 text-white'
               : 'text-gray-400 hover:text-white'
@@ -83,7 +87,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         </button>
         <button
           onClick={() => setActiveTab('staff')}
-          className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+          className={`flex-1 py-2 px-2 rounded-md text-xs font-medium transition-colors ${
             activeTab === 'staff'
               ? 'bg-blue-600 text-white'
               : 'text-gray-400 hover:text-white'
@@ -93,13 +97,23 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         </button>
         <button
           onClick={() => setActiveTab('bands')}
-          className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+          className={`flex-1 py-2 px-2 rounded-md text-xs font-medium transition-colors ${
             activeTab === 'bands'
               ? 'bg-blue-600 text-white'
               : 'text-gray-400 hover:text-white'
           }`}
         >
           🎸 Bands
+        </button>
+        <button
+          onClick={() => setActiveTab('charts')}
+          className={`flex-1 py-2 px-2 rounded-md text-xs font-medium transition-colors ${
+            activeTab === 'charts'
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          📈 Charts
         </button>
       </div>
 
@@ -214,6 +228,24 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           onStartTour={startTour}
           onCreateOriginalTrack={createOriginalTrack}
         />
+      )}
+
+      {activeTab === 'charts' && gameState.playerData.level >= 1 && (
+        <ChartsPanel
+          gameState={gameState}
+          onContactArtist={contactArtist}
+        />
+      )}
+
+      {activeTab === 'charts' && gameState.playerData.level < 1 && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-white">📈 Industry Charts</h2>
+          <div className="text-center text-gray-400 py-8">
+            <div className="text-4xl mb-2">🔒</div>
+            <div className="text-sm">Charts access unlocks at Level 1</div>
+            <div className="text-xs mt-1">Complete projects to access industry charts!</div>
+          </div>
+        </div>
       )}
 
       <SkillsModal
