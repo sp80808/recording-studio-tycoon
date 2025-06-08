@@ -6,7 +6,7 @@ import { Chart, ChartEntry, MarketTrend } from '@/types/charts';
 import { GameState } from '@/types/game';
 import { generateCharts, generateMarketTrends, calculateContactCost, isArtistContactable } from '@/data/chartsData';
 import { ArtistContactModal } from './modals/ArtistContactModal';
-import { Play, Pause, TrendingUp, Clock, Star, ArrowUp, ArrowDown, Minus } from 'lucide-react';
+import { Play, Pause, Volume2, TrendingUp, Clock, Star, ArrowUp, ArrowDown, Minus } from 'lucide-react';
 
 interface ChartsPanelProps {
   gameState: GameState;
@@ -253,10 +253,10 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
 
   const getMovementIcon = (movement: ChartEntry['movement']) => {
     switch (movement) {
-      case 'up': return '↗️';
-      case 'down': return '↘️';
+      case 'up': return <ArrowUp className="h-3 w-3" />;
+      case 'down': return <ArrowDown className="h-3 w-3" />;
       case 'new': return '🆕';
-      default: return '➡️';
+      default: return <Minus className="h-3 w-3" />;
     }
   };
 
@@ -366,7 +366,7 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
                       </div>
                     </div>
 
-                    {/* Genre Emoji & Audio Control */}
+                    {/* Genre Emoji & Audio Control - Enhanced Design */}
                     <div className="flex flex-col items-center gap-2 min-w-[80px]">
                       <div className="text-xl">{getGenreEmoji(entry.song.genre)}</div>
                       <Button
@@ -374,40 +374,43 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
                         variant="ghost"
                         onClick={() => playAudioClip(entry)}
                         disabled={!hasAudio}
-                        className={`h-10 w-10 rounded-full p-0 transition-all relative ${
+                        className={`h-12 w-12 rounded-full p-0 transition-all relative group/btn ${
                           isPlaying 
-                            ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg animate-pulse' 
+                            ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-600/25 animate-pulse' 
                             : hasAudio 
-                              ? 'bg-gray-600 hover:bg-gray-500 text-gray-200' 
+                              ? 'bg-gray-600 hover:bg-gray-500 text-gray-200 hover:shadow-md' 
                               : 'bg-gray-800 text-gray-500 cursor-not-allowed'
                         }`}
                         title={hasAudio ? `Play preview: ${segment.displayTime}` : 'No preview available'}
                       >
-                        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                        {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                         {hasAudio && !isPlaying && (
-                          <div className="absolute -top-1 -right-1 h-3 w-3 bg-blue-500 rounded-full text-[8px] flex items-center justify-center font-bold text-white">
+                          <div className="absolute -top-1 -right-1 h-4 w-4 bg-blue-500 rounded-full text-[9px] flex items-center justify-center font-bold text-white shadow-sm">
                             {segment.segmentNumber}
                           </div>
                         )}
+                        {isPlaying && (
+                          <div className="absolute -inset-1 rounded-full border-2 border-green-400 animate-ping opacity-75"></div>
+                        )}
                       </Button>
                       
-                      {/* Progress Bar */}
+                      {/* Enhanced Progress Bar */}
                       {hasAudio && (progress > 0 || isPlaying) && (
-                        <div className="w-12 h-1 bg-gray-600 rounded-full overflow-hidden">
+                        <div className="w-14 h-1.5 bg-gray-600 rounded-full overflow-hidden shadow-inner">
                           <div 
                             className={`h-full transition-all duration-75 ${
-                              isPlaying ? 'bg-green-400' : 'bg-gray-400'
+                              isPlaying ? 'bg-green-400 shadow-sm' : 'bg-gray-400'
                             }`}
                             style={{ width: `${progress}%` }}
                           />
                         </div>
                       )}
                       
-                      {/* Segment Time Display */}
+                      {/* Segment Time Display - Enhanced */}
                       {hasAudio && (
                         <div className="text-[9px] text-gray-500 text-center leading-tight px-1">
-                          <div className="font-medium">Seg {segment.segment}</div>
-                          <div className="text-gray-600">{segment.startTime}s-{segment.startTime + segment.duration}s</div>
+                          <div className="font-medium">Seg {segment.segmentNumber}</div>
+                          <div className="text-gray-600">{segment.displayTime}</div>
                         </div>
                       )}
                     </div>
@@ -426,7 +429,7 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
                         <div className="flex items-center gap-1 ml-2">
                           <Star className="h-3 w-3 text-yellow-500" />
                           <span className="text-xs text-gray-400">
-                            {entry.song.artist.popularity}
+                            {entry.song.artist.popularity}/100
                           </span>
                         </div>
                       </div>
