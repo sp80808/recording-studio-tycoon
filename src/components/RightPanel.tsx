@@ -52,7 +52,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   toggleStaffRest,
   openTrainingModal
 }) => {
-  const [activeTab, setActiveTab] = useState<'studio' | 'skills' | 'bands' | 'charts' | 'staff'>('studio');
+  const [activeTab, setActiveTab] = useState<'studio' | 'skills' | 'bands' | 'charts' | 'staff' | 'era'>('studio');
 
   const handleAdvanceDay = () => {
     advanceDay();
@@ -112,6 +112,16 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         >
           📈 Charts
         </button>
+        <button
+          onClick={() => setActiveTab('era')}
+          className={`flex-1 py-2 px-2 rounded-md text-xs font-medium transition-colors ${
+            activeTab === 'era'
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          📅 Era Progress
+        </button>
       </div>
 
       {/* Tab Content */}
@@ -122,8 +132,6 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           <Button onClick={handleAdvanceDay} className="w-full bg-purple-600 hover:bg-purple-700 text-white">
             Advance Day
           </Button>
-          
-          <EraProgress gameState={gameState} triggerEraTransition={triggerEraTransition} />
           
           <EquipmentList purchaseEquipment={purchaseEquipment} gameState={gameState} />
         </div>
@@ -282,6 +290,13 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             <div className="text-sm">Charts access unlocks at Level 1</div>
             <div className="text-xs mt-1">Complete projects to access industry charts!</div>
           </div>
+        </div>
+      )}
+
+      {activeTab === 'era' && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-white">📅 Era Progress</h2>
+          <EraProgress gameState={gameState} triggerEraTransition={triggerEraTransition} />
         </div>
       )}
 

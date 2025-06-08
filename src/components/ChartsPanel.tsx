@@ -54,44 +54,96 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
     };
   }, []);
 
-  // Audio clip mapping based on genre and era with enhanced variation
+  // Audio clip mapping with extensive cross-genre mixing for maximum variety
   const getAudioClip = (entry: ChartEntry): string | null => {
     const genre = entry.song.genre.toLowerCase();
     const era = gameState.currentEra;
     
-    // Enhanced audio map with cross-genre experimentation for more variety
+    // Comprehensive audio map with intelligent cross-genre blending
     const audioMap: { [key: string]: string[] } = {
       'rock': ['60s-chart-track5.mp3', '80s-Power-Chord1.mp3', '80s-Power-Chord2.mp3', '00sAlt-Rock-Energy1.mp3', '00sNu-Metal-Vibe2.mp3'],
-      'pop': ['60s-Pop2.mp3', '80schart-anthem1.mp3', '00sStreaming-Ready1.mp3', '80s-Power-Chord1.mp3'], // Mix some rock for pop-rock
-      'electronic': ['80s-Synthesizer1.mp3', '2000s-Electronic1.mp3', '00sElectronic-Hybrid2.mp3', '80schart-anthem1.mp3'], // Mix some pop for electro-pop
-      'hip-hop': ['80s-Power-Chord2.mp3', '00sNu-Metal-Vibe2.mp3', '00sElectronic-Hybrid2.mp3'], // Mix electronic for modern hip-hop
-      'r&b': ['00s-rnb1.mp3', '00s-rnb2.mp3', '00s-rnb3.mp3', '60s-Pop2.mp3'], // Mix some pop for contemporary R&B
-      'country': ['2000s-Country3.mp3', '60s-chart-track5.mp3', '80s-Power-Chord1.mp3'], // Mix rock for country-rock
-      'jazz': ['60s-chart-track5.mp3', '00s-rnb1.mp3'], // Use similar smooth tracks
-      'indie': ['00sAlt-Rock-Energy1.mp3', '80s-Synthesizer1.mp3', '60s-Pop2.mp3'], // Mix for indie variety
-      'alternative': ['00sNu-Metal-Vibe2.mp3', '00sAlt-Rock-Energy1.mp3', '80s-Power-Chord2.mp3']
+      'pop': ['60s-Pop2.mp3', '80schart-anthem1.mp3', '00sStreaming-Ready1.mp3', '80s-Power-Chord1.mp3', '00s-rnb2.mp3'], // Pop-rock and pop-R&B crossover
+      'electronic': ['80s-Synthesizer1.mp3', '2000s-Electronic1.mp3', '00sElectronic-Hybrid2.mp3', '80schart-anthem1.mp3', '00sNu-Metal-Vibe2.mp3'], // Electronic rock fusion
+      'hip-hop': ['80s-Power-Chord2.mp3', '00sNu-Metal-Vibe2.mp3', '00sElectronic-Hybrid2.mp3', '00s-rnb3.mp3', '2000s-Electronic1.mp3'], // Hip-hop with various production styles
+      'r&b': ['00s-rnb1.mp3', '00s-rnb2.mp3', '00s-rnb3.mp3', '60s-Pop2.mp3', '80schart-anthem1.mp3'], // Contemporary R&B with pop influences
+      'country': ['2000s-Country3.mp3', '60s-chart-track5.mp3', '80s-Power-Chord1.mp3', '00sAlt-Rock-Energy1.mp3'], // Country-rock crossover
+      'jazz': ['60s-chart-track5.mp3', '00s-rnb1.mp3', '00s-rnb2.mp3'], // Smooth jazz and contemporary jazz-R&B
+      'indie': ['00sAlt-Rock-Energy1.mp3', '80s-Synthesizer1.mp3', '60s-Pop2.mp3', '60s-chart-track5.mp3'], // Indie variety
+      'alternative': ['00sNu-Metal-Vibe2.mp3', '00sAlt-Rock-Energy1.mp3', '80s-Power-Chord2.mp3', '00sElectronic-Hybrid2.mp3'],
+      'metal': ['00sNu-Metal-Vibe2.mp3', '80s-Power-Chord2.mp3', '80s-Power-Chord1.mp3'],
+      'punk': ['80s-Power-Chord2.mp3', '00sAlt-Rock-Energy1.mp3', '00sNu-Metal-Vibe2.mp3'],
+      'dance': ['80s-Synthesizer1.mp3', '2000s-Electronic1.mp3', '00sElectronic-Hybrid2.mp3', '80schart-anthem1.mp3'],
+      'funk': ['00s-rnb2.mp3', '80s-Power-Chord1.mp3', '00s-rnb3.mp3'],
+      'soul': ['00s-rnb1.mp3', '00s-rnb3.mp3', '60s-Pop2.mp3'],
+      'blues': ['60s-chart-track5.mp3', '80s-Power-Chord1.mp3', '00s-rnb1.mp3'],
+      'folk': ['60s-chart-track5.mp3', '2000s-Country3.mp3', '60s-Pop2.mp3'],
+      'reggae': ['00s-rnb2.mp3', '80s-Power-Chord1.mp3', '60s-Pop2.mp3']
     };
 
-    const clips = audioMap[genre] || audioMap['rock']; // Fallback to rock
+    // Get clips for the genre, with fallback to similar genres
+    let clips = audioMap[genre];
+    
+    if (!clips || clips.length === 0) {
+      // Advanced fallback system based on genre similarity
+      const fallbackMap: { [key: string]: string } = {
+        'classical': 'jazz',
+        'ambient': 'electronic',
+        'techno': 'electronic',
+        'house': 'electronic',
+        'trap': 'hip-hop',
+        'rap': 'hip-hop',
+        'gospel': 'r&b',
+        'ska': 'punk',
+        'grunge': 'alternative',
+        'hardcore': 'metal',
+        'new wave': 'electronic',
+        'synthpop': 'electronic',
+        'disco': 'dance'
+      };
+      
+      const fallbackGenre = fallbackMap[genre] || 'pop';
+      clips = audioMap[fallbackGenre] || audioMap['pop'];
+    }
+
     if (clips && clips.length > 0) {
-      // Use position and artist name to create more variation
-      const seed = entry.position + entry.song.artist.name.length + entry.song.title.length;
-      const clipIndex = seed % clips.length;
+      // Enhanced seed calculation for more varied selection
+      const artistSeed = entry.song.artist.name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+      const titleSeed = entry.song.title.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+      const complexSeed = entry.position + 
+                         entry.song.artist.popularity + 
+                         artistSeed + 
+                         titleSeed + 
+                         entry.weeksOnChart * 3;
+      
+      const clipIndex = complexSeed % clips.length;
       return clips[clipIndex];
     }
+    
     return null;
   };
 
-  // Calculate playback segment for variety
-  const getPlaybackSegment = (entry: ChartEntry) => {
-    // Use position and song ID to deterministically calculate start time
-    const seed = entry.position + entry.song.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-    const segmentCount = 4; // Divide clips into 4 segments of ~25 seconds each
+  // Calculate which 25-second segment to play for maximum variety
+  const getPlaybackSegment = (entry: ChartEntry, clipDuration: number = 120): { startTime: number, duration: number, segment: number } => {
+    // Create a more sophisticated seed for deterministic but varied selection
+    const seed = entry.song.title.length + 
+                 entry.position + 
+                 entry.song.artist.popularity + 
+                 entry.song.artist.name.charCodeAt(0) + 
+                 entry.weeksOnChart;
+    
+    // Calculate overlapping segments for smoother transitions and more variety
+    const segmentDuration = 25;
+    const overlapTime = 5; // 5 seconds overlap between segments
+    const maxPossibleSegments = Math.floor((clipDuration - segmentDuration) / overlapTime) + 1;
+    const segmentCount = Math.max(1, Math.min(6, maxPossibleSegments)); // Cap at 6 segments max
+    
     const segmentIndex = seed % segmentCount;
+    const startTime = Math.min(segmentIndex * overlapTime, clipDuration - segmentDuration);
     
     return {
-      startTime: segmentIndex * 25, // Start at 0s, 25s, 50s, or 75s
-      duration: 25 // Play for 25 seconds
+      startTime: Math.max(0, startTime),
+      duration: segmentDuration,
+      segment: segmentIndex + 1
     };
   };
 
@@ -113,6 +165,7 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
     // If clicking the same track, just pause
     if (currentlyPlaying === trackId) {
       setCurrentlyPlaying(null);
+      setPlaybackProgress(prev => ({ ...prev, [trackId]: 0 }));
       return;
     }
 
@@ -121,26 +174,33 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
       audioRef.current = audio;
 
       audio.addEventListener('loadedmetadata', () => {
-        // Set start time if the clip is long enough
-        if (audio.duration > segment.startTime + 10) { // Ensure at least 10s available
-          audio.currentTime = segment.startTime;
+        // Calculate actual clip duration for better segment handling
+        const actualClipDuration = audio.duration;
+        const adjustedSegment = getPlaybackSegment(entry, actualClipDuration);
+        
+        // Set start time with safety checks
+        const safeStartTime = Math.min(adjustedSegment.startTime, actualClipDuration - adjustedSegment.duration);
+        if (actualClipDuration > safeStartTime + 5) { // Ensure at least 5s available
+          audio.currentTime = safeStartTime;
+        } else {
+          audio.currentTime = 0; // Fallback to beginning if clip is too short
         }
         
         setCurrentlyPlaying(trackId);
         audio.play();
 
-        let segmentStartTime = audio.currentTime;
-        let segmentDuration = segment.duration;
+        const playbackStartTime = audio.currentTime;
+        const targetDuration = Math.min(adjustedSegment.duration, actualClipDuration - playbackStartTime);
 
-        // Update progress and handle segment-based playback
+        // Enhanced progress tracking with better timing
         progressIntervalRef.current = setInterval(() => {
-          if (audio.currentTime && audio.duration) {
-            const elapsed = audio.currentTime - segmentStartTime;
-            const progress = Math.min((elapsed / segmentDuration) * 100, 100);
+          if (audio.currentTime && audio.duration && !audio.paused) {
+            const elapsed = audio.currentTime - playbackStartTime;
+            const progress = Math.min((elapsed / targetDuration) * 100, 100);
             setPlaybackProgress(prev => ({ ...prev, [trackId]: progress }));
 
-            // Stop after our segment duration
-            if (elapsed >= segmentDuration) {
+            // Stop after our segment duration or if near end of clip
+            if (elapsed >= targetDuration || audio.currentTime >= audio.duration - 0.5) {
               audio.pause();
               setCurrentlyPlaying(null);
               setPlaybackProgress(prev => ({ ...prev, [trackId]: 0 }));
@@ -149,7 +209,7 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
               }
             }
           }
-        }, 100);
+        }, 50); // More frequent updates for smoother progress
       });
 
       audio.addEventListener('ended', () => {
@@ -160,13 +220,16 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
         }
       });
 
-      audio.addEventListener('error', () => {
-        console.warn(`Could not load audio clip: ${clipName}`);
+      audio.addEventListener('error', (e) => {
+        console.warn(`Could not load audio clip: ${clipName}`, e);
         setCurrentlyPlaying(null);
+        setPlaybackProgress(prev => ({ ...prev, [trackId]: 0 }));
       });
 
     } catch (error) {
-      console.warn(`Audio playback error: ${error}`);
+      console.warn(`Audio playback error for ${clipName}:`, error);
+      setCurrentlyPlaying(null);
+      setPlaybackProgress(prev => ({ ...prev, [trackId]: 0 }));
     }
   };
 
@@ -284,40 +347,53 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
                       </div>
                     </div>
 
-                    {/* Audio Control */}
+                    {/* Enhanced Audio Control */}
                     <div className="flex flex-col items-center gap-2">
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={() => playAudioClip(entry)}
                         disabled={!hasAudio}
-                        className={`h-10 w-10 rounded-full p-0 transition-all relative ${
+                        className={`h-12 w-12 rounded-full p-0 transition-all relative group/btn ${
                           isPlaying 
-                            ? 'bg-green-600 hover:bg-green-700 text-white animate-pulse' 
+                            ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-600/25 animate-pulse' 
                             : hasAudio 
-                              ? 'bg-gray-600 hover:bg-gray-500 text-gray-200' 
+                              ? 'bg-gray-600 hover:bg-gray-500 text-gray-200 hover:shadow-md' 
                               : 'bg-gray-800 text-gray-500 cursor-not-allowed'
                         }`}
-                        title={hasAudio ? `Play preview (${Math.floor(getPlaybackSegment(entry).startTime)}s segment)` : 'No preview available'}
+                        title={hasAudio ? 
+                          `Play ${getPlaybackSegment(entry).duration}s preview starting at ${getPlaybackSegment(entry).startTime}s` : 
+                          'No preview available'
+                        }
                       >
-                        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                        {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                         {hasAudio && !isPlaying && (
-                          <div className="absolute -top-1 -right-1 h-3 w-3 bg-blue-400 rounded-full text-[8px] flex items-center justify-center font-bold">
-                            {Math.floor(getPlaybackSegment(entry).startTime / 25) + 1}
+                          <div className="absolute -top-1 -right-1 h-4 w-4 bg-blue-500 rounded-full text-[9px] flex items-center justify-center font-bold text-white shadow-sm">
+                            {getPlaybackSegment(entry).segment}
                           </div>
                         )}
+                        {isPlaying && (
+                          <div className="absolute -inset-1 rounded-full border-2 border-green-400 animate-ping opacity-75"></div>
+                        )}
                       </Button>
-                      {hasAudio && progress > 0 && (
-                        <div className="w-12 h-1 bg-gray-600 rounded-full overflow-hidden">
+                      
+                      {/* Enhanced Progress Bar */}
+                      {hasAudio && (progress > 0 || isPlaying) && (
+                        <div className="w-14 h-1.5 bg-gray-600 rounded-full overflow-hidden shadow-inner">
                           <div 
-                            className="h-full bg-green-400 transition-all duration-100"
+                            className={`h-full transition-all duration-75 ${
+                              isPlaying ? 'bg-green-400 shadow-sm' : 'bg-gray-400'
+                            }`}
                             style={{ width: `${progress}%` }}
                           />
                         </div>
                       )}
+                      
+                      {/* Segment Info */}
                       {hasAudio && (
-                        <div className="text-[10px] text-gray-500 text-center leading-tight">
-                          {Math.floor(getPlaybackSegment(entry).startTime)}s
+                        <div className="text-[9px] text-gray-500 text-center leading-tight px-1">
+                          <div className="font-medium">Seg {getPlaybackSegment(entry).segment}</div>
+                          <div className="text-gray-600">{getPlaybackSegment(entry).startTime}s-{getPlaybackSegment(entry).startTime + getPlaybackSegment(entry).duration}s</div>
                         </div>
                       )}
                     </div>
