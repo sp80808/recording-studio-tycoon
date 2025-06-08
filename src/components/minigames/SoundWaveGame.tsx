@@ -36,9 +36,11 @@ export const SoundWaveGame: React.FC<SoundWaveGameProps> = ({
     const waveTypes = ['sine', 'triangle', 'square', 'sawtooth'];
     const currentWaveType = waveTypes[Math.floor(Math.random() * waveTypes.length)];
     
-    // Simpler frequency and amplitude for easier matching
-    const frequency = 0.02 + (currentLevel * 0.005); // Slower oscillation
-    const amplitude = 30 + (currentLevel * 5); // Smaller amplitude
+    // FIXED: Limited frequency range to prevent overly complex waves
+    const baseFrequency = 0.015; // Base frequency
+    const maxFrequency = 0.035; // Maximum frequency cap
+    const frequency = Math.min(baseFrequency + (currentLevel * 0.003), maxFrequency);
+    const amplitude = 25 + (currentLevel * 3); // Reasonable amplitude
     const centerY = height / 2;
 
     for (let x = 0; x <= width; x += 1) { // More points for smoother drawing
