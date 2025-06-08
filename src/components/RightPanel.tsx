@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -34,15 +33,34 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   purchaseEquipment
 }) => {
   const [showStudioModal, setShowStudioModal] = useState(false);
+  const [recentPurchase, setRecentPurchase] = useState<string | null>(null);
+
+  const handlePurchaseEquipment = (equipmentId: string) => {
+    const equipment = availableEquipment.find(e => e.id === equipmentId);
+    if (equipment) {
+      purchaseEquipment(equipmentId);
+      setRecentPurchase(equipment.name);
+      setTimeout(() => setRecentPurchase(null), 3000);
+    }
+  };
+
+  // Calculate if player is close to leveling up
+  const xpProgress = (gameState.playerData.xp / gameState.playerData.xpToNextLevel) * 100;
+  const isNearLevelUp = xpProgress > 80;
 
   return (
     <div className="space-y-4 animate-fade-in">
       {/* Player Progress Card */}
-      <Card className="bg-gray-800/50 border-gray-600 p-4 backdrop-blur-sm">
+      <Card className={`bg-gray-800/50 border-gray-600 p-4 backdrop-blur-sm transition-all duration-300 ${isNearLevelUp ? 'ring-2 ring-yellow-400/50 shadow-lg shadow-yellow-400/20' : ''}`}>
         <div className="space-y-3">
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-bold text-white">Your Progress</h3>
-            <div className="text-yellow-400 font-bold">Level {gameState.playerData.level}</div>
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              {isNearLevelUp && <span className="animate-pulse">🔥</span>}
+              Your Progress
+            </h3>
+            <div className={`font-bold ${isNearLevelUp ? 'text-yellow-400 animate-pulse' : 'text-yellow-400'}`}>
+              Level {gameState.playerData.level}
+            </div>
           </div>
           
           <XPProgressBar
@@ -56,20 +74,21 @@ export const RightPanel: React.FC<RightPanelProps> = ({
               onClick={() => setShowSkillsModal(true)}
               variant="outline" 
               size="sm"
-              className="flex-1 bg-gray-800/80 hover:bg-gray-700/80 text-white border-gray-600"
+              className="flex-1 bg-gray-800/80 hover:bg-gray-700/80 text-white border-gray-600 hover:scale-105 transition-transform"
             >
+              <Zap className="w-4 h-4 mr-1" />
               Skills
             </Button>
             <Button 
               onClick={() => setShowAttributesModal(true)}
               variant="outline" 
               size="sm"
-              className="flex-1 bg-gray-800/80 hover:bg-gray-700/80 text-white border-gray-600 relative"
+              className="flex-1 bg-gray-800/80 hover:bg-gray-700/80 text-white border-gray-600 relative hover:scale-105 transition-transform"
             >
               <ArrowUp className="w-4 h-4 mr-1" />
               Attributes
               {gameState.playerData.perkPoints > 0 && (
-                <span className="absolute -top-1 -right-1 bg-yellow-500 text-black text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold animate-pulse">
+                <span className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-black text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold animate-bounce shadow-lg">
                   {gameState.playerData.perkPoints}
                 </span>
               )}
@@ -84,20 +103,23 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           <div className="flex items-center gap-2 mb-3">
             <ShoppingCart className="w-5 h-5 text-blue-400" />
             <h3 className="text-lg font-bold text-white">Equipment Shop</h3>
+            {recentPurchase && (
+              <span className="text-xs text-green-400 animate-pulse">✅ {recentPurchase} purchased!</span>
+            )}
           </div>
           
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {availableEquipment
               .filter(equipment => {
                 const purchaseCheck = canPurchaseEquipment(equipment, gameState);
-                // Only show items that can be purchased (hide locked items)
                 return purchaseCheck.canPurchase;
               })
               .map(equipment => {
                 const isOwned = gameState.ownedEquipment.some(owned => owned.id === equipment.id);
+                const justPurchased = recentPurchase === equipment.name;
                 
                 return (
-                  <div key={equipment.id} className="p-3 bg-gray-700/50 rounded border border-gray-600 hover:bg-gray-700 transition-colors">
+                  <div key={equipment.id} className={`p-3 bg-gray-700/50 rounded border border-gray-600 hover:bg-gray-700 transition-all duration-300 hover:scale-102 ${justPurchased ? 'ring-2 ring-green-400 bg-green-900/20' : ''}`}>
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center gap-2">
                         <span className="text-lg">{equipment.icon}</span>
@@ -128,14 +150,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                     )}
                     
                     <Button
-                      onClick={() => purchaseEquipment(equipment.id)}
+                      onClick={() => handlePurchaseEquipment(equipment.id)}
                       disabled={gameState.money < equipment.price || isOwned}
                       size="sm"
-                      className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                      className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed hover:scale-105 transition-transform"
                     >
-                      {isOwned ? 'Owned' : 
-                       gameState.money < equipment.price ? 'Cannot Afford' : 
-                       `Buy $${equipment.price}`}
+                      {isOwned ? '✅ Owned' : 
+                       gameState.money < equipment.price ? '💸 Cannot Afford' : 
+                       `🛒 Buy $${equipment.price}`}
                     </Button>
                   </div>
                 );
@@ -163,10 +185,10 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           
           <Button 
             onClick={advanceDay}
-            className="w-full bg-blue-600 hover:bg-blue-700 game-button"
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 game-button hover:scale-105 transition-all duration-300"
           >
             <Zap className="w-4 h-4 mr-2" />
-            Next Day
+            Next Day ⏰
           </Button>
         </div>
       </Card>

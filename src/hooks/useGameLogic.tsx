@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { GameState, StaffMember, PlayerAttributes } from '@/types/game';
 import { toast } from '@/hooks/use-toast';
@@ -12,7 +11,7 @@ import { useStageWork } from '@/hooks/useStageWork';
 import { useGameActions } from '@/hooks/useGameActions';
 
 export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>, focusAllocation: any) => {
-  const { levelUpPlayer, spendPerkPoint } = usePlayerProgression(gameState, setGameState);
+  const { levelUpPlayer, spendPerkPoint, checkAndHandleLevelUp } = usePlayerProgression(gameState, setGameState);
   const { hireStaff, assignStaffToProject, unassignStaffFromProject, toggleStaffRest, addStaffXP, openTrainingModal } = useStaffManagement(gameState, setGameState);
   const { startProject, completeProject } = useProjectManagement(gameState, setGameState);
   const { advanceDay, refreshCandidates } = useGameActions(gameState, setGameState);
@@ -22,7 +21,7 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
 
   const { performDailyWork, orbContainerRef, autoTriggeredMinigame, clearAutoTriggeredMinigame } = useStageWork(gameState, setGameState, focusAllocation, completeProject, addStaffXP, advanceDay);
 
-  // Handle minigame rewards by updating project points
+  // Handle minigame rewards by updating project points and checking for level ups
   const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number) => {
     if (gameState.activeProject) {
       setGameState(prev => ({
@@ -39,9 +38,15 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
       }));
 
       toast({
-        title: "Production Bonus!",
+        title: "🎯 Production Bonus!",
         description: `+${creativityBonus} creativity, +${technicalBonus} technical, +${xpBonus} XP`,
+        duration: 3000
       });
+
+      // Check for level up after a short delay to let state update
+      setTimeout(() => {
+        checkAndHandleLevelUp();
+      }, 100);
     }
   };
 
@@ -52,9 +57,19 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
       console.log('Project completed with review:', result.review);
       setLastReview(result.review);
       
-      if (gameState.playerData.xp + result.review.xpGain >= gameState.playerData.xpToNextLevel) {
-        levelUpPlayer();
-      }
+      // Update XP and check for level up
+      setGameState(prev => ({
+        ...prev,
+        playerData: {
+          ...prev.playerData,
+          xp: prev.playerData.xp + result.review.xpGain
+        }
+      }));
+
+      // Check for level up after XP gain
+      setTimeout(() => {
+        checkAndHandleLevelUp();
+      }, 100);
     }
   };
 
@@ -162,8 +177,9 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
     setGameState(updatedGameState);
 
     toast({
-      title: "Attribute Upgraded!",
+      title: "⚡ Attribute Upgraded!",
       description: `${String(attribute).replace(/([A-Z])/g, ' $1').trim()} increased!`,
+      duration: 3000
     });
   };
 
