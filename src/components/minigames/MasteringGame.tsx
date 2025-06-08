@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
+import { gameAudio } from '@/utils/audioSystem';
 
 interface MasteringGameProps {
   onComplete: (score: number) => void;

@@ -19,9 +19,14 @@ export const XPProgressBar: React.FC<XPProgressBarProps> = ({
   showNumbers = true,
   animated = true
 }) => {
-  // Ensure we don't exceed 100% and handle edge cases
-  const safeCurrentXP = Math.max(0, Math.min(currentXP, xpToNext));
-  const progressPercentage = Math.min(100, (safeCurrentXP / xpToNext) * 100);
+  // FIXED: Prevent NaN by ensuring xpToNext is never 0
+  const safeXpToNext = Math.max(1, xpToNext || 1); // Ensure at least 1
+  const safeCurrentXP = Math.max(0, Math.min(currentXP || 0, safeXpToNext));
+  
+  // FIXED: Safe division that prevents NaN
+  const progressPercentage = safeXpToNext > 0 ? 
+    Math.min(100, Math.max(0, (safeCurrentXP / safeXpToNext) * 100)) : 0;
+  
   const isNearLevelUp = progressPercentage > 80;
   
   return (
@@ -32,7 +37,7 @@ export const XPProgressBar: React.FC<XPProgressBarProps> = ({
           Level {level}
         </span>
         {showNumbers && (
-          <span className="text-xs text-gray-400">{safeCurrentXP}/{xpToNext} XP</span>
+          <span className="text-xs text-gray-400">{safeCurrentXP}/{safeXpToNext} XP</span>
         )}
       </div>
       

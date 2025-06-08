@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
+import { gameAudio } from '@/utils/audioSystem';
 
 interface Track {
   id: string;
@@ -63,6 +64,9 @@ export const MixingBoardGame: React.FC<MixingBoardGameProps> = ({
     setTimeLeft(15);
     initializeTracks();
 
+    // Initialize audio system
+    gameAudio.initialize();
+
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
@@ -86,6 +90,13 @@ export const MixingBoardGame: React.FC<MixingBoardGameProps> = ({
                           correctTracks >= tracks.length / 2 ? 10 : 5;
     const finalScore = correctTracks * scoreMultiplier;
     
+    // Play completion sound based on performance
+    if (correctTracks === tracks.length) {
+      gameAudio.playPerfectMix();
+    } else {
+      gameAudio.playCompleteProject();
+    }
+    
     console.log(`Mixing game complete! Correct tracks: ${correctTracks}/${tracks.length}, Score: ${finalScore}`);
     setTimeout(() => onComplete(finalScore), 500);
   }, [tracks, onComplete, gameCompleted]);
@@ -100,7 +111,17 @@ export const MixingBoardGame: React.FC<MixingBoardGameProps> = ({
   const updateTrackVolume = (trackId: string, volume: number) => {
     setTracks(prev => prev.map(track => {
       if (track.id === trackId) {
+        const wasInZone = track.isInTargetZone;
         const isInTargetZone = volume >= track.targetZoneStart && volume <= track.targetZoneEnd;
+        
+        // Play sounds for zone entry/exit
+        if (isInTargetZone && !wasInZone) {
+          gameAudio.playZoneEnter();
+        }
+        
+        // Play subtle slider movement sound
+        gameAudio.playSliderMove();
+        
         return { 
           ...track, 
           currentVolume: volume,
@@ -119,6 +140,9 @@ export const MixingBoardGame: React.FC<MixingBoardGameProps> = ({
     const clickY = event.clientY - rect.top;
     const containerHeight = rect.height;
     const newVolume = Math.max(0, Math.min(100, 100 - (clickY / containerHeight) * 100));
+    
+    // Play click sound
+    gameAudio.playClick();
     
     updateTrackVolume(trackId, Math.round(newVolume));
   };

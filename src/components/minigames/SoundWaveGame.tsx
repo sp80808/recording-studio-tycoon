@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { gameAudio } from '@/utils/audioSystem';
 
 interface WavePoint {
   x: number;
@@ -30,11 +31,34 @@ export const SoundWaveGame: React.FC<SoundWaveGameProps> = ({
     const points: WavePoint[] = [];
     const width = 400;
     const height = 150;
-    const frequency = currentLevel * 0.02;
-    const amplitude = 50 + (currentLevel * 10);
+    
+    // FIXED: Generate simpler, more recognizable waveforms
+    const waveTypes = ['sine', 'triangle', 'square', 'sawtooth'];
+    const currentWaveType = waveTypes[Math.floor(Math.random() * waveTypes.length)];
+    
+    // Simpler frequency and amplitude for easier matching
+    const frequency = 0.02 + (currentLevel * 0.005); // Slower oscillation
+    const amplitude = 30 + (currentLevel * 5); // Smaller amplitude
+    const centerY = height / 2;
 
-    for (let x = 0; x < width; x += 2) {
-      const y = height/2 + Math.sin(x * frequency) * amplitude * Math.sin(x * 0.01);
+    for (let x = 0; x <= width; x += 1) { // More points for smoother drawing
+      let y = centerY;
+      
+      switch (currentWaveType) {
+        case 'sine':
+          y = centerY + Math.sin(x * frequency) * amplitude;
+          break;
+        case 'triangle':
+          y = centerY + (2 * amplitude / Math.PI) * Math.asin(Math.sin(x * frequency));
+          break;
+        case 'square':
+          y = centerY + amplitude * Math.sign(Math.sin(x * frequency));
+          break;
+        case 'sawtooth':
+          y = centerY + amplitude * (2 * ((x * frequency) % 1) - 1);
+          break;
+      }
+      
       points.push({ x, y });
     }
 
@@ -69,23 +93,41 @@ export const SoundWaveGame: React.FC<SoundWaveGameProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // FIXED: Ensure canvas fills the full area
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw grid
+    // FIXED: Draw grid that fills the entire canvas
     ctx.strokeStyle = '#374151';
-    ctx.lineWidth = 1;
-    for (let x = 0; x < canvas.width; x += 20) {
+    ctx.lineWidth = 0.5;
+    const gridSize = 20;
+    
+    // Vertical grid lines
+    for (let x = 0; x <= canvas.width; x += gridSize) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, canvas.height);
       ctx.stroke();
     }
-    for (let y = 0; y < canvas.height; y += 20) {
+    
+    // Horizontal grid lines
+    for (let y = 0; y <= canvas.height; y += gridSize) {
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(canvas.width, y);
       ctx.stroke();
     }
+
+    // Draw center line for reference
+    ctx.strokeStyle = '#6b7280';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height / 2);
+    ctx.lineTo(canvas.width, canvas.height / 2);
+    ctx.stroke();
 
     // Draw target wave
     if (targetWave.length > 0) {
@@ -111,6 +153,13 @@ export const SoundWaveGame: React.FC<SoundWaveGameProps> = ({
       ctx.stroke();
     }
   }, [targetWave, playerWave]);
+
+  // FIXED: Redraw on window resize to maintain full canvas coverage
+  useEffect(() => {
+    const handleResize = () => drawWaves();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [drawWaves]);
 
   useEffect(() => {
     drawWaves();
@@ -148,12 +197,19 @@ export const SoundWaveGame: React.FC<SoundWaveGameProps> = ({
     let totalError = 0;
     let comparisons = 0;
 
-    for (const playerPoint of playerWave) {
-      const nearestTarget = targetWave.reduce((nearest, target) => 
-        Math.abs(target.x - playerPoint.x) < Math.abs(nearest.x - playerPoint.x) ? target : nearest
+    // FIXED: Better accuracy calculation with normalized comparison
+    const samplePoints = Math.min(targetWave.length, 20); // Sample fewer points for better UX
+    
+    for (let i = 0; i < samplePoints; i++) {
+      const targetIndex = Math.floor((i / samplePoints) * targetWave.length);
+      const targetPoint = targetWave[targetIndex];
+      
+      // Find closest player point
+      const nearestPlayer = playerWave.reduce((nearest, playerPoint) => 
+        Math.abs(playerPoint.x - targetPoint.x) < Math.abs(nearest.x - targetPoint.x) ? playerPoint : nearest
       );
 
-      const error = Math.abs(nearestTarget.y - playerPoint.y);
+      const error = Math.abs(nearestPlayer.y - targetPoint.y);
       totalError += error;
       comparisons++;
     }
@@ -163,6 +219,16 @@ export const SoundWaveGame: React.FC<SoundWaveGameProps> = ({
     const levelScore = Math.floor(accuracy * currentLevel);
 
     setScore(prev => prev + levelScore);
+
+    // FIXED: Add sound feedback based on accuracy
+    if (accuracy > 80) {
+      gameAudio.playWaveformMatch();
+      gameAudio.playSuccess();
+    } else if (accuracy > 60) {
+      gameAudio.playWaveformMatch();
+    } else {
+      gameAudio.playError();
+    }
 
     if (accuracy > 75) {
       setCurrentLevel(prev => prev + 1);

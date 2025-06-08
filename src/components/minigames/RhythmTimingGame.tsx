@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { gameAudio } from '@/utils/audioSystem';
 
 interface RhythmTimingGameProps {
   onComplete: (score: number) => void;
@@ -46,6 +47,9 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
     setTimeLeft(30);
     setBeats([]);
 
+    // Initialize audio system
+    gameAudio.initialize();
+
     // Spawn beats
     beatIntervalRef.current = setInterval(() => {
       const newBeat: Beat = {
@@ -55,6 +59,9 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
         perfect: false
       };
       setBeats(prev => [...prev, newBeat]);
+      
+      // Play metronome sound for each beat spawn
+      gameAudio.playMetronome();
     }, settings.beatInterval);
 
     // Game timer
@@ -73,6 +80,9 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
     setGameActive(false);
     if (beatIntervalRef.current) clearInterval(beatIntervalRef.current);
     if (gameTimerRef.current) clearInterval(gameTimerRef.current);
+    
+    // Play completion sound
+    gameAudio.playCompleteProject();
     
     setTimeout(() => {
       onComplete(score);
@@ -119,12 +129,23 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
         setScore(s => s + points + (combo * 10));
         setCombo(c => c + 1);
 
+        // Play appropriate hit sound
+        if (isPerfect) {
+          gameAudio.playPerfectHit();
+        } else {
+          gameAudio.playGoodHit();
+        }
+
         return prev.map(beat =>
           beat.id === closestBeat.id
             ? { ...beat, hit: true, perfect: isPerfect }
             : beat
         );
       } else {
+        // Play miss sound and reset combo
+        if (combo > 0) {
+          gameAudio.playError();
+        }
         setCombo(0);
         return prev;
       }

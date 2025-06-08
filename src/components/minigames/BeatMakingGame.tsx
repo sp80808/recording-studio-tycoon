@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { gameAudio } from '@/utils/audioSystem';
 
 interface BeatMakingGameProps {
   onComplete: (score: number) => void;
@@ -19,11 +20,36 @@ export const BeatMakingGame: React.FC<BeatMakingGameProps> = ({ onComplete, onCl
 
   const trackNames = ['Kick', 'Snare', 'Hi-Hat', 'Open Hat'];
   const trackColors = ['bg-red-500', 'bg-blue-500', 'bg-yellow-500', 'bg-green-500'];
+  const trackSounds = [
+    () => gameAudio.playKick(),
+    () => gameAudio.playSnare(), 
+    () => gameAudio.playHiHat(),
+    () => gameAudio.playOpenHat()
+  ];
+
+  // Initialize audio on first interaction
+  useEffect(() => {
+    const initAudio = async () => {
+      await gameAudio.initialize();
+    };
+    initAudio();
+  }, []);
 
   useEffect(() => {
     if (isPlaying) {
       intervalRef.current = setInterval(() => {
-        setCurrentStep(prev => (prev + 1) % 8);
+        setCurrentStep(prev => {
+          const newStep = (prev + 1) % 8;
+          
+          // Play sounds for active beats on this step
+          beats.forEach((track, trackIndex) => {
+            if (track[newStep]) {
+              trackSounds[trackIndex]();
+            }
+          });
+          
+          return newStep;
+        });
       }, 250);
     } else {
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -32,7 +58,7 @@ export const BeatMakingGame: React.FC<BeatMakingGameProps> = ({ onComplete, onCl
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isPlaying]);
+  }, [isPlaying, beats]);
 
   useEffect(() => {
     gameIntervalRef.current = setInterval(() => {
@@ -56,6 +82,12 @@ export const BeatMakingGame: React.FC<BeatMakingGameProps> = ({ onComplete, onCl
       newBeats[trackIndex] = [...newBeats[trackIndex]];
       newBeats[trackIndex][stepIndex] = !newBeats[trackIndex][stepIndex];
       
+      // Play sound when toggling on
+      if (newBeats[trackIndex][stepIndex]) {
+        trackSounds[trackIndex]();
+        gameAudio.playClick();
+      }
+      
       // Calculate score based on pattern complexity
       const activeBeats = newBeats.flat().filter(Boolean).length;
       setScore(activeBeats * 5);
@@ -74,6 +106,7 @@ export const BeatMakingGame: React.FC<BeatMakingGameProps> = ({ onComplete, onCl
       track.filter(Boolean).length >= 2
     ) ? 50 : 0;
     
+    gameAudio.playSuccess();
     onComplete(score + patternBonus);
   };
 
