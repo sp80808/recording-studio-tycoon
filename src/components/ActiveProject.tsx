@@ -17,7 +17,7 @@ interface ActiveProjectProps {
   focusAllocation: FocusAllocation;
   setFocusAllocation: (allocation: FocusAllocation) => void;
   performDailyWork: () => { isComplete: boolean; review?: any } | undefined;
-  onMinigameReward?: (creativityBonus: number, technicalBonus: number, xpBonus: number) => void;
+  onMinigameReward?: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => void;
   onProjectComplete?: () => void;
 }
 
@@ -119,10 +119,10 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const overallProgress = totalWorkUnits > 0 ? (completedWorkUnits / totalWorkUnits) * 100 : 0;
 
   const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number) => {
-    console.log('🎮 Minigame rewards received:', { creativityBonus, technicalBonus, xpBonus });
+    console.log('🎮 Minigame rewards received:', { creativityBonus, technicalBonus, xpBonus, minigameType: selectedMinigame });
     
     if (onMinigameReward) {
-      onMinigameReward(creativityBonus, technicalBonus, xpBonus);
+      onMinigameReward(creativityBonus, technicalBonus, xpBonus, selectedMinigame);
     }
     
     // Mark this stage as having completed a minigame
@@ -174,10 +174,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     setLastGains({ creativity: creativityGain, technical: technicalGain });
     setShowBlobAnimation(true);
     
-    // Call actual work function and check for project completion
+    // Call actual work function
     const result = performDailyWork();
     
-    // Trigger celebration if project is complete
     if (result?.isComplete) {
       console.log('🎉 Project completed! Triggering celebration...');
       setTimeout(() => {

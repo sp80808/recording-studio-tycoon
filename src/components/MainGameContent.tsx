@@ -14,7 +14,7 @@ interface MainGameContentProps {
   setFocusAllocation: React.Dispatch<React.SetStateAction<FocusAllocation>>;
   startProject: (project: Project) => void;
   performDailyWork: () => { isComplete: boolean; review?: any } | undefined;
-  onMinigameReward: (creativityBonus: number, technicalBonus: number, xpBonus: number) => void;
+  onMinigameReward: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => void;
   spendPerkPoint: (attribute: keyof PlayerAttributes) => void;
   advanceDay: () => void;
   purchaseEquipment: (equipmentId: string) => void;

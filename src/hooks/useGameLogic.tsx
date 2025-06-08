@@ -27,7 +27,7 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
   const { performDailyWork, orbContainerRef, autoTriggeredMinigame, clearAutoTriggeredMinigame } = useStageWork(gameState, setGameState, focusAllocation, completeProject, addStaffXP, advanceDay);
 
   // Handle minigame rewards by updating project points and checking for level ups
-  const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number) => {
+  const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => {
     if (gameState.activeProject) {
       setGameState(prev => ({
         ...prev,
@@ -38,7 +38,8 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
         } : null,
         playerData: {
           ...prev.playerData,
-          xp: prev.playerData.xp + xpBonus
+          xp: prev.playerData.xp + xpBonus,
+          lastMinigameType: minigameType || prev.playerData.lastMinigameType
         }
       }));
 

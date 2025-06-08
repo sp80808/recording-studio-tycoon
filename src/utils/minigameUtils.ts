@@ -198,9 +198,12 @@ export const shouldAutoTriggerMinigame = (
   const isLastStage = project.currentStageIndex >= project.stages.length - 2;
   const stageProgress = currentStage ? (currentStage.workUnitsCompleted / currentStage.workUnitsBase) : 0;
   
-  // Anti-spam logic: prevent back-to-back minigames in early game
+  // ENHANCED Anti-spam logic: prevent back-to-back minigames
   const isEarlyGame = gameState.playerData.level < 4;
   const lastWorkSession = project.workSessionCount || 0;
+  
+  // Track the last minigame type to prevent repetition
+  const lastMinigameType = gameState.playerData.lastMinigameType || '';
   
   // In early game, require minimum gap between minigames per project
   if (isEarlyGame && lastWorkSession < 3) {
@@ -214,34 +217,39 @@ export const shouldAutoTriggerMinigame = (
     return null;
   }
   
+  // IMPROVED: Prevent same minigame type from triggering repeatedly
+  const availableTypes = triggers.filter(trigger => trigger.minigameType !== lastMinigameType);
+  const selectedTriggers = availableTypes.length > 0 ? availableTypes : triggers;
+  
   // Select a trigger based on variety - not always the highest priority
-  let selectedTrigger = triggers[0];
+  let selectedTrigger = selectedTriggers[0];
   
-  // Add some randomness to trigger selection to ensure variety
-  if (triggers.length > 1 && Math.random() < 0.4) {
-    selectedTrigger = triggers[1]; // Sometimes pick the second highest priority
+  // Add more randomness to trigger selection to ensure variety
+  if (selectedTriggers.length > 1) {
+    const randomIndex = Math.floor(Math.random() * Math.min(selectedTriggers.length, 3));
+    selectedTrigger = selectedTriggers[randomIndex];
   }
   
-  // Enhanced auto-trigger logic
+  // Enhanced auto-trigger logic with stricter conditions
   // Always trigger on final stages with high-priority minigames (but respect early game limits)
-  if (isLastStage && selectedTrigger.priority >= 8 && (!isEarlyGame || lastWorkSession >= 4)) {
+  if (isLastStage && selectedTrigger.priority >= 9 && (!isEarlyGame || lastWorkSession >= 5)) {
     return selectedTrigger;
   }
   
-  // Trigger when stage is 75%+ complete (with early game protection)
-  if (stageProgress >= 0.75 && selectedTrigger.priority >= 7 && (!isEarlyGame || workCount >= 3)) {
+  // Trigger when stage is 85%+ complete (increased threshold)
+  if (stageProgress >= 0.85 && selectedTrigger.priority >= 8 && (!isEarlyGame || workCount >= 4)) {
     return selectedTrigger;
   }
   
-  // Trigger every 3-4 work sessions for high priority minigames (increased frequency in early game)
-  const highPriorityInterval = isEarlyGame ? 4 : 2;
-  if (selectedTrigger.priority >= 9 && workCount % highPriorityInterval === 0) {
+  // INCREASED intervals to reduce spam - trigger every 4-6 work sessions for high priority minigames
+  const highPriorityInterval = isEarlyGame ? 6 : 4;
+  if (selectedTrigger.priority >= 9 && workCount % highPriorityInterval === 0 && workCount > 0) {
     return selectedTrigger;
   }
   
-  // Trigger every 4-5 work sessions for medium priority (increased interval in early game)
-  const mediumPriorityInterval = isEarlyGame ? 5 : 3;
-  if (selectedTrigger.priority >= 6 && workCount % mediumPriorityInterval === 0) {
+  // Trigger every 6-8 work sessions for medium priority (much increased interval)
+  const mediumPriorityInterval = isEarlyGame ? 8 : 6;
+  if (selectedTrigger.priority >= 7 && workCount % mediumPriorityInterval === 0 && workCount > 0) {
     return selectedTrigger;
   }
 

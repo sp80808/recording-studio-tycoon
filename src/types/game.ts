@@ -16,6 +16,7 @@ export interface PlayerData {
   attributes: PlayerAttributes;
   dailyWorkCapacity: number;
   reputation: number;
+  lastMinigameType?: string; // Track last completed minigame to prevent repetition
 }
 
 export interface StudioSkill {
