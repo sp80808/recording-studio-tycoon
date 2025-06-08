@@ -7,10 +7,13 @@ import { SoundWaveGame } from './SoundWaveGame';
 import { BeatMakingGame } from './BeatMakingGame';
 import { VocalRecordingGame } from './VocalRecordingGame';
 import { MasteringGame } from './MasteringGame';
+import { EffectChainGame } from './EffectChainGame';
+import { AcousticTreatmentGame } from './AcousticTreatmentGame';
+import { InstrumentLayeringGame } from './InstrumentLayeringGame';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { toast } from '@/hooks/use-toast';
 
-export type MinigameType = 'rhythm' | 'mixing' | 'waveform' | 'beatmaking' | 'vocal' | 'mastering';
+export type MinigameType = 'rhythm' | 'mixing' | 'waveform' | 'beatmaking' | 'vocal' | 'mastering' | 'effectchain' | 'acoustic' | 'layering';
 
 interface MinigameManagerProps {
   isOpen: boolean;
@@ -61,6 +64,18 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         creativityBonus = Math.floor(score / 15);
         technicalBonus = Math.floor(score / 6);
         break;
+      case 'effectchain':
+        creativityBonus = Math.floor(score / 8);
+        technicalBonus = Math.floor(score / 10);
+        break;
+      case 'acoustic':
+        creativityBonus = Math.floor(score / 12);
+        technicalBonus = Math.floor(score / 8);
+        break;
+      case 'layering':
+        creativityBonus = Math.floor(score / 9);
+        technicalBonus = Math.floor(score / 11);
+        break;
     }
 
     onReward(creativityBonus, technicalBonus, xpBonus);
@@ -97,6 +112,12 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         return <VocalRecordingGame {...gameProps} />;
       case 'mastering':
         return <MasteringGame {...gameProps} />;
+      case 'effectchain':
+        return <EffectChainGame {...gameProps} />;
+      case 'acoustic':
+        return <AcousticTreatmentGame {...gameProps} />;
+      case 'layering':
+        return <InstrumentLayeringGame {...gameProps} />;
       default:
         return null;
     }

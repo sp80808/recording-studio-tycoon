@@ -15,6 +15,7 @@ export interface PlayerData {
   perkPoints: number;
   attributes: PlayerAttributes;
   dailyWorkCapacity: number;
+  reputation: number;
 }
 
 export interface StudioSkill {
@@ -74,10 +75,12 @@ export interface StaffMember {
   trainingCourse?: string;
 }
 
+export type EquipmentCategory = 'microphone' | 'monitor' | 'interface' | 'outboard' | 'instrument' | 'software' | 'recorder' | 'mixer';
+
 export interface Equipment {
   id: string;
   name: string;
-  category: 'microphone' | 'monitor' | 'interface' | 'outboard' | 'instrument' | 'software';
+  category: EquipmentCategory;
   price: number;
   description: string;
   bonuses: {
@@ -119,6 +122,7 @@ import { Band, SessionMusician, OriginalTrackProject } from './bands';
 
 export interface GameState {
   money: number;
+  currentEra: string; // Current Era ID
   reputation: number;
   currentDay: number;
   currentYear: number; // Current year in the game world

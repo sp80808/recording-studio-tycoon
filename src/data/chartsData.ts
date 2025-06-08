@@ -46,7 +46,8 @@ const generateArtist = (id: string, genre: MusicGenre): Artist => {
       max: popularity * 200
     },
     specialties: [genre],
-    socialMediaFollowers: popularity * 10000
+    socialMediaFollowers: popularity * 10000,
+    description: 'A talented musician in the ' + genre + ' genre.'
   };
 };
 
@@ -62,7 +63,8 @@ const generateSong = (id: string, artist: Artist): Song => {
     releaseDate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000), // Within last 30 days
     quality: Math.floor(Math.random() * 40) + 60, // 60-100 quality for chart songs
     hypeScore: Math.floor(Math.random() * 100) + 1,
-    playerProduced: false
+    playerProduced: false,
+    studio: 'Your Studio'
   };
 };
 
@@ -98,10 +100,13 @@ const generateChartEntries = (count: number, chartGenre?: MusicGenre): ChartEntr
   return entries;
 };
 
-// Generate main charts for the game
-export const generateCharts = (playerLevel: number): Chart[] => {
+// Generate main charts for the game, considering the current era
+export const generateCharts = (playerLevel: number, currentEra: string): Chart[] => {
   const charts: Chart[] = [];
-  
+
+  // TODO: Define available genres based on the current era (replace with actual era data)
+  const availableGenres = genres; // For now, all genres are available
+
   // Main Hot 100 Chart (available from level 1)
   charts.push({
     id: 'hot100',
@@ -113,7 +118,7 @@ export const generateCharts = (playerLevel: number): Chart[] => {
     region: 'national',
     minLevelToAccess: 1
   });
-  
+
   // Local Charts (available from level 1)
   charts.push({
     id: 'local',
@@ -125,9 +130,9 @@ export const generateCharts = (playerLevel: number): Chart[] => {
     region: 'local',
     minLevelToAccess: 1
   });
-  
+
   // Genre-specific charts (unlock as player progresses)
-  if (playerLevel >= 3) {
+  if (playerLevel >= 3 && availableGenres.includes('rock')) {
     charts.push({
       id: 'rock',
       name: 'Rock Charts',
@@ -140,8 +145,8 @@ export const generateCharts = (playerLevel: number): Chart[] => {
       minLevelToAccess: 3
     });
   }
-  
-  if (playerLevel >= 4) {
+
+  if (playerLevel >= 4 && availableGenres.includes('pop')) {
     charts.push({
       id: 'pop',
       name: 'Pop Charts',
@@ -154,8 +159,8 @@ export const generateCharts = (playerLevel: number): Chart[] => {
       minLevelToAccess: 4
     });
   }
-  
-  if (playerLevel >= 5) {
+
+  if (playerLevel >= 5 && availableGenres.includes('hip-hop')) {
     charts.push({
       id: 'hiphop',
       name: 'Hip-Hop Charts',
@@ -168,8 +173,8 @@ export const generateCharts = (playerLevel: number): Chart[] => {
       minLevelToAccess: 5
     });
   }
-  
-  if (playerLevel >= 6) {
+
+  if (playerLevel >= 6 && availableGenres.includes('electronic')) {
     charts.push({
       id: 'electronic',
       name: 'Electronic Charts',
@@ -182,10 +187,9 @@ export const generateCharts = (playerLevel: number): Chart[] => {
       minLevelToAccess: 6
     });
   }
-  
+
   return charts;
 };
-
 // Generate market trends
 export const generateMarketTrends = (): MarketTrend[] => {
   return genres.map(genre => {

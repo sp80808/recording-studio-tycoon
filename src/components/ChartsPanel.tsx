@@ -21,15 +21,15 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
 
   // Generate charts when component mounts or player level changes
   useEffect(() => {
-    const charts = generateCharts(gameState.playerData.level);
+    const charts = generateCharts(gameState.playerData.level, gameState.currentEra);
     const accessibleCharts = charts.filter(chart => chart.minLevelToAccess <= gameState.playerData.level);
     setAvailableCharts(accessibleCharts);
-    
+
     // Set default chart if current selection is not available
     if (!accessibleCharts.find(c => c.id === selectedChart)) {
       setSelectedChart(accessibleCharts[0]?.id || 'hot100');
     }
-  }, [gameState.playerData.level, selectedChart]);
+  }, [gameState.playerData.level, gameState.currentEra, selectedChart]);
 
   // Generate market trends
   useEffect(() => {
@@ -57,10 +57,10 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
   };
 
   const handleContactArtist = (entry: ChartEntry) => {
-    if (!isArtistContactable(entry, gameState.playerData.level, gameState.playerData.reputation || 0)) {
+    if (!isArtistContactable(entry, gameState.playerData.level, gameState.playerData.reputation)) {
       return;
     }
-    
+
     setSelectedArtist(entry);
     setShowContactModal(true);
   };
@@ -111,18 +111,18 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
               </Badge>
             </div>
           </div>
-          
+
           <p className="text-sm text-gray-400 mb-4">{currentChart.description}</p>
 
           {/* Chart Entries */}
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {currentChart.entries.slice(0, 20).map((entry, index) => {
               const contactCost = calculateContactCost(
-                entry.position, 
-                entry.song.artist.popularity, 
-                gameState.playerData.reputation || 0
+                entry.position,
+                entry.song.artist.popularity,
+                gameState.playerData.reputation
               );
-              const canContact = isArtistContactable(entry, gameState.playerData.level, gameState.playerData.reputation || 0);
+              const canContact = isArtistContactable(entry, gameState.playerData.level, gameState.playerData.reputation);
               const canAfford = gameState.money >= contactCost;
 
               return (
@@ -134,17 +134,20 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
                     <div className="text-lg font-bold text-white w-8">
                       {entry.position}
                     </div>
-                    
+
                     <div className={`text-lg ${getMovementColor(entry.movement)}`}>
                       {getMovementIcon(entry.movement)}
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-white truncate">
                         {entry.song.title}
                       </div>
                       <div className="text-sm text-gray-400 truncate">
                         {entry.song.artist.name}
+                      </div>
+                      <div className="text-xs text-gray-500 truncate">
+                        {entry.song.artist.description}
                       </div>
                       <div className="flex items-center gap-2 text-xs text-gray-500">
                         <span className="capitalize">{entry.song.genre}</span>
@@ -177,8 +180,8 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
                     </div>
                     {!canContact && (
                       <div className="text-xs text-red-400">
-                        {entry.position <= 10 ? 'Req. Level 8+' : 
-                         entry.position <= 25 ? 'Req. Level 5+' : 'Req. Reputation'}
+                        {entry.position <= 10 ? 'Req. Level 8+' :
+                          entry.position <= 25 ? 'Req. Level 5+' : 'Req. Reputation'}
                       </div>
                     )}
                   </div>

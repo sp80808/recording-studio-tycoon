@@ -137,6 +137,40 @@ export const getTriggeredMinigames = (
     });
   }
 
+  // EFFECT CHAIN BUILDING - For production stages with effects processing
+  if (stageName.includes('production') || stageName.includes('effects') || stageName.includes('processing')) {
+    triggers.push({
+      minigameType: 'effectchain',
+      triggerReason: 'Effects processing stage - build the perfect effect chain!',
+      priority: 8,
+      focusThreshold: { type: 'layering', min: 40 }
+    });
+  }
+
+  // INSTRUMENT LAYERING - For arrangement and orchestration stages
+  if (stageName.includes('arrangement') || stageName.includes('orchestration') || 
+      stageName.includes('layering') || stageName.includes('composition') ||
+      (focusAllocation.layering >= 60 && stageName.includes('production'))) {
+    triggers.push({
+      minigameType: 'layering',
+      triggerReason: 'Arrangement stage detected - layer instruments for the perfect mix!',
+      priority: 8,
+      focusThreshold: { type: 'layering', min: 45 }
+    });
+  }
+
+  // Genre-specific layering triggers
+  if ((['Electronic', 'Hip-hop'].includes(project.genre) && stageName.includes('production')) ||
+      (project.genre === 'Rock' && stageName.includes('overdub')) ||
+      (project.genre === 'Pop' && stageName.includes('arrangement'))) {
+    triggers.push({
+      minigameType: 'layering',
+      triggerReason: `${project.genre} layering challenge - balance the frequencies!`,
+      priority: 7,
+      focusThreshold: { type: 'layering', min: 40 }
+    });
+  }
+
   // High difficulty project fallback
   if (project.difficulty >= 7 && stageProgress >= 0.75 && triggers.length === 0) {
     triggers.push({

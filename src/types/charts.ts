@@ -19,6 +19,7 @@ export interface Artist {
   };
   specialties: string[];
   socialMediaFollowers: number;
+  description?: string; // Short bio or description of the artist
 }
 
 export interface Song {
@@ -31,6 +32,7 @@ export interface Song {
   hypeScore: number; // 0-100
   playerProduced?: boolean;
   studioId?: string;
+  studio?: string;
 }
 
 export interface ChartEntry {
@@ -51,10 +53,11 @@ export interface Chart {
   genre?: MusicGenre; // undefined = all genres
   updateFrequency: number; // days
   influence: number; // industry importance (0-100)
-  region: 'local' | 'regional' | 'national' | 'international';
+  region: ChartRegion;
   minLevelToAccess: number;
 }
 
+export type ChartRegion = 'local' | 'regional' | 'national' | 'international';
 export interface MarketTrend {
   genre: MusicGenre;
   popularity: number; // 0-100

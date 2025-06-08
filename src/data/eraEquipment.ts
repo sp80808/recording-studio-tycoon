@@ -69,6 +69,48 @@ export const availableEquipment: EraAvailableEquipment[] = [
     skillRequirement: { skill: 'Rock', level: 3 },
     isVintage: true
   },
+  {
+    id: 'fender_stratocaster',
+    name: 'Fender Stratocaster',
+    category: 'instrument',
+    price: 1200,
+    historicalPrice: 400,
+    availableFrom: 1954,
+    availableUntil: 2025,
+    description: 'The iconic guitar that shaped rock and roll',
+    eraDescription: 'A versatile instrument for any guitarist',
+    bonuses: { genreBonus: { 'Rock': 5, 'Blues': 4, 'Pop': 2 } },
+    icon: '🎸',
+    isVintage: true
+  },
+  {
+    id: 'vox_ac30',
+    name: 'Vox AC30',
+    category: 'instrument',
+    price: 1500,
+    historicalPrice: 500,
+    availableFrom: 1958,
+    availableUntil: 2025,
+    description: 'The amp that defined the British Invasion',
+    eraDescription: 'The sound of the Beatles and the Rolling Stones',
+    bonuses: { genreBonus: { 'Rock': 5, 'Pop': 3, 'Blues': 4 } },
+    icon: '🎸',
+    isVintage: true
+  },
+  {
+    id: 'telefunken_u47',
+    name: 'Telefunken U47',
+    category: 'microphone',
+    price: 3000,
+    historicalPrice: 1000,
+    availableFrom: 1946,
+    availableUntil: 1970,
+    description: 'A legendary microphone known for its warm and smooth sound',
+    eraDescription: 'A studio staple for vocals and instruments',
+    bonuses: { qualityBonus: 40, genreBonus: { 'Rock': 4, 'Pop': 3, 'Jazz': 5 } },
+    icon: '🎤',
+    isVintage: true
+  },
 
   // Basic Monitoring
   {
