@@ -163,7 +163,9 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
   const handleOpenTrainingModal = (staff: StaffMember) => {
     if (openTrainingModal(staff)) {
       setSelectedStaffForTraining(staff);
+      return true; // Indicates modal should open
     }
+    return false;
   };
 
   // Enhanced spendPerkPoint function
@@ -297,6 +299,7 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
     lastReview,
     orbContainerRef,
     autoTriggeredMinigame,
-    clearAutoTriggeredMinigame
+    clearAutoTriggeredMinigame,
+    contactArtist
   };
 };

@@ -68,6 +68,13 @@ const MusicStudioTycoon = () => {
     checkSaveGame();
   }, [hasSavedGame]);
 
+  // Auto-open training modal when staff is selected for training
+  useEffect(() => {
+    if (selectedStaffForTraining) {
+      setShowTrainingModal(true);
+    }
+  }, [selectedStaffForTraining]);
+
   // Handle starting a new game with selected era
   const handleStartNewGame = (era: Era) => {
     const newGameState = initializeGameState({

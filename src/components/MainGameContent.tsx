@@ -22,7 +22,7 @@ interface MainGameContentProps {
   assignStaffToProject: (staffId: string) => void;
   unassignStaffFromProject: (staffId: string) => void;
   toggleStaffRest: (staffId: string) => void;
-  openTrainingModal: (staff: StaffMember) => void;
+  openTrainingModal: (staff: StaffMember) => boolean;
   orbContainerRef: React.RefObject<HTMLDivElement>;
   contactArtist: (artistId: string, offer: number) => void;
 }

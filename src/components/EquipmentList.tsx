@@ -46,11 +46,21 @@ export const EquipmentList: React.FC<EquipmentListProps> = ({
     return getEraAdjustedPrice(equipment, gameState.currentYear || 2024, gameState.equipmentMultiplier || 1.0);
   };
 
+  // Sort equipment by price (cheapest first)
+  const sortedEquipment = unownedEquipment.sort((a, b) => {
+    const priceA = getAdjustedPrice(a);
+    const priceB = getAdjustedPrice(b);
+    return priceA - priceB;
+  });
+
   return (
     <div className="flex flex-col h-full">
-      <h3 className="text-lg font-bold text-white mb-4">🛒 Equipment Shop</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-bold text-white">🛒 Equipment Shop</h3>
+        <span className="text-xs text-gray-400">💰 Sorted by price</span>
+      </div>
       
-      {unownedEquipment.length === 0 ? (
+      {sortedEquipment.length === 0 ? (
         <Card className="p-4 bg-gray-800/50 border-gray-600 flex-1 flex items-center justify-center">
           <div className="text-center text-gray-400">
             <div className="text-2xl mb-2">✅</div>
@@ -59,7 +69,7 @@ export const EquipmentList: React.FC<EquipmentListProps> = ({
         </Card>
       ) : (
         <div className="flex-1 overflow-y-auto space-y-2">
-          {unownedEquipment.map((equipment) => {
+          {sortedEquipment.map((equipment) => {
             const adjustedPrice = getAdjustedPrice(equipment);
             const canAfford = gameState.money >= adjustedPrice;
             const isVintage = equipment.isVintage && (gameState.currentYear || 2024) > (equipment.availableUntil || equipment.availableFrom + 20);
