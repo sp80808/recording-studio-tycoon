@@ -38,7 +38,7 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
     let creativityBonus = 0;
     let technicalBonus = 0;
     // Dramatically reduced XP scaling to prevent exponential progression
-    let xpBonus = Math.floor(Math.max(1, score / 50)); // Reduced from /10 to /50
+    const xpBonus = Math.floor(Math.max(1, score / 50)); // Reduced from /10 to /50
 
     switch (gameType) {
       case 'rhythm':

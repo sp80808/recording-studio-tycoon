@@ -456,7 +456,7 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
             <h4 className="font-semibold text-blue-300 mb-2">Genre Guidelines</h4>
             <div className="space-y-1 text-xs text-blue-200">
               {getGenreHints().slice(0, 2).map((hint, index) => (
-                <div key={index}>• {hint.replace(/[🎤🥁🎸🎹🎵📍🔊🌊🔄⚡]/g, '')}</div>
+                <div key={index}>• {hint.replace(/[🎤🥁🎸🎹🎵📍🔊🌊🔄⚡]/gu, '')}</div>
               ))}
             </div>
           </Card>

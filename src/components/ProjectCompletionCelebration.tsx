@@ -30,12 +30,12 @@ export const ProjectCompletionCelebration: React.FC<ProjectCompletionCelebration
       // Show text with delay
       const textTimer = setTimeout(() => setShowText(true), 300);
 
-      // Auto-close after animation
+      // Auto-close after shorter animation (reduced from 4000ms to 2500ms)
       const closeTimer = setTimeout(() => {
         setShowText(false);
         setParticles([]);
         onComplete();
-      }, 4000);
+      }, 2500);
 
       return () => {
         clearTimeout(textTimer);
@@ -76,10 +76,21 @@ export const ProjectCompletionCelebration: React.FC<ProjectCompletionCelebration
     return genreColors[genre] || 'from-purple-500 to-blue-500';
   };
 
+  // Handle early dismissal on click
+  const handleDismiss = () => {
+    setShowText(false);
+    setParticles([]);
+    onComplete();
+  };
+
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 z-50 pointer-events-none">
+    <div 
+      className="fixed inset-0 z-50 cursor-pointer"
+      onClick={handleDismiss}
+      title="Click to dismiss"
+    >
       {/* Particles */}
       {particles.map(particle => (
         <div
@@ -96,7 +107,7 @@ export const ProjectCompletionCelebration: React.FC<ProjectCompletionCelebration
 
       {/* Main celebration text */}
       {showText && (
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center animate-celebration-bounce">
             <div className={`text-8xl mb-4 bg-gradient-to-r ${getGenreColor(genre)} bg-clip-text text-transparent font-bold`}>
               {getGenreEmoji(genre)}
@@ -110,12 +121,15 @@ export const ProjectCompletionCelebration: React.FC<ProjectCompletionCelebration
             <div className={`text-lg font-semibold mt-2 bg-gradient-to-r ${getGenreColor(genre)} bg-clip-text text-transparent`}>
               {genre} Production
             </div>
+            <div className="text-sm text-gray-400 mt-4 animate-pulse">
+              Click anywhere to continue
+            </div>
           </div>
         </div>
       )}
 
       {/* Background overlay */}
-      <div className="absolute inset-0 bg-black/20 animate-fade-in" />
+      <div className="absolute inset-0 bg-black/20 animate-fade-in pointer-events-none" />
     </div>
   );
 };
