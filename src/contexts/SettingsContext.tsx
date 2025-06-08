@@ -27,7 +27,8 @@ const defaultSettings: GameSettings = {
   musicEnabled: true,
   tutorialCompleted: false,
   autoSave: true,
-  difficulty: 'medium'
+  difficulty: 'medium',
+  theme: 'default'
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
