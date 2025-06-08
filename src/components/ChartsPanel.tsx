@@ -50,17 +50,18 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
   // Audio clip mapping with extensive cross-genre mixing for maximum variety
   const getAudioClip = (entry: ChartEntry): string | null => {
     const genre = entry.song.genre.toLowerCase();
+    const era = gameState.currentEra;
     
     // Comprehensive audio map with intelligent cross-genre blending
     const audioMap: { [key: string]: string[] } = {
       'rock': ['60s-chart-track5.mp3', '80s-Power-Chord1.mp3', '80s-Power-Chord2.mp3', '00sAlt-Rock-Energy1.mp3', '00sNu-Metal-Vibe2.mp3'],
-      'pop': ['60s-Pop2.mp3', '80schart-anthem1.mp3', '00sStreaming-Ready1.mp3', '80s-Power-Chord1.mp3', '00s-rnb2.mp3'],
-      'electronic': ['80s-Synthesizer1.mp3', '2000s-Electronic1.mp3', '00sElectronic-Hybrid2.mp3', '80schart-anthem1.mp3', '00sNu-Metal-Vibe2.mp3'],
-      'hip-hop': ['80s-Power-Chord2.mp3', '00sNu-Metal-Vibe2.mp3', '00sElectronic-Hybrid2.mp3', '00s-rnb3.mp3', '2000s-Electronic1.mp3'],
-      'r&b': ['00s-rnb1.mp3', '00s-rnb2.mp3', '00s-rnb3.mp3', '60s-Pop2.mp3', '80schart-anthem1.mp3'],
-      'country': ['2000s-Country3.mp3', '60s-chart-track5.mp3', '80s-Power-Chord1.mp3', '00sAlt-Rock-Energy1.mp3'],
-      'jazz': ['60s-chart-track5.mp3', '00s-rnb1.mp3', '00s-rnb2.mp3'],
-      'indie': ['00sAlt-Rock-Energy1.mp3', '80s-Synthesizer1.mp3', '60s-Pop2.mp3', '60s-chart-track5.mp3'],
+      'pop': ['60s-Pop2.mp3', '80schart-anthem1.mp3', '00sStreaming-Ready1.mp3', '80s-Power-Chord1.mp3', '00s-rnb2.mp3'], // Pop-rock and pop-R&B crossover
+      'electronic': ['80s-Synthesizer1.mp3', '2000s-Electronic1.mp3', '00sElectronic-Hybrid2.mp3', '80schart-anthem1.mp3', '00sNu-Metal-Vibe2.mp3'], // Electronic rock fusion
+      'hip-hop': ['80s-Power-Chord2.mp3', '00sNu-Metal-Vibe2.mp3', '00sElectronic-Hybrid2.mp3', '00s-rnb3.mp3', '2000s-Electronic1.mp3'], // Hip-hop with various production styles
+      'r&b': ['00s-rnb1.mp3', '00s-rnb2.mp3', '00s-rnb3.mp3', '60s-Pop2.mp3', '80schart-anthem1.mp3'], // Contemporary R&B with pop influences
+      'country': ['2000s-Country3.mp3', '60s-chart-track5.mp3', '80s-Power-Chord1.mp3', '00sAlt-Rock-Energy1.mp3'], // Country-rock crossover
+      'jazz': ['60s-chart-track5.mp3', '00s-rnb1.mp3', '00s-rnb2.mp3'], // Smooth jazz and contemporary jazz-R&B
+      'indie': ['00sAlt-Rock-Energy1.mp3', '80s-Synthesizer1.mp3', '60s-Pop2.mp3', '60s-chart-track5.mp3'], // Indie variety
       'alternative': ['00sNu-Metal-Vibe2.mp3', '00sAlt-Rock-Energy1.mp3', '80s-Power-Chord2.mp3', '00sElectronic-Hybrid2.mp3'],
       'metal': ['00sNu-Metal-Vibe2.mp3', '80s-Power-Chord2.mp3', '80s-Power-Chord1.mp3'],
       'punk': ['80s-Power-Chord2.mp3', '00sAlt-Rock-Energy1.mp3', '00sNu-Metal-Vibe2.mp3'],
@@ -252,10 +253,10 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
 
   const getMovementIcon = (movement: ChartEntry['movement']) => {
     switch (movement) {
-      case 'up': return <ArrowUp className="h-3 w-3" />;
-      case 'down': return <ArrowDown className="h-3 w-3" />;
+      case 'up': return '↗️';
+      case 'down': return '↘️';
       case 'new': return '🆕';
-      default: return <Minus className="h-3 w-3" />;
+      default: return '➡️';
     }
   };
 
@@ -404,8 +405,9 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
                       
                       {/* Segment Time Display */}
                       {hasAudio && (
-                        <div className="text-[8px] text-gray-500 text-center font-mono">
-                          {segment.displayTime}
+                        <div className="text-[9px] text-gray-500 text-center leading-tight px-1">
+                          <div className="font-medium">Seg {segment.segment}</div>
+                          <div className="text-gray-600">{segment.startTime}s-{segment.startTime + segment.duration}s</div>
                         </div>
                       )}
                     </div>
