@@ -6,7 +6,7 @@ const clientTypes = ['Independent', 'Record Label', 'Commercial', 'Streaming'] a
 // Early-game project templates (grounded names)
 const earlyGameTemplates = [
   {
-    titleTemplate: 'Local Band Demo',
+    titleTemplates: ['Local Band Demo', 'Garage Band Recording', 'Indie Demo Session'],
     genre: 'Rock',
     clientType: 'Independent',
     difficulty: 2,
@@ -20,7 +20,7 @@ const earlyGameTemplates = [
     baseDuration: 4
   },
   {
-    titleTemplate: 'Coffee Shop Sessions',
+    titleTemplates: ['Coffee Shop Sessions', 'Acoustic Evening', 'Songwriter Demo'],
     genre: 'Acoustic',
     clientType: 'Independent',
     difficulty: 1,
@@ -33,7 +33,7 @@ const earlyGameTemplates = [
     baseDuration: 3
   },
   {
-    titleTemplate: 'Bedroom Pop Track',
+    titleTemplates: ['Bedroom Pop Track', 'Lo-Fi Vibes', 'DIY Pop Recording'],
     genre: 'Pop',
     clientType: 'Independent',
     difficulty: 2,
@@ -47,7 +47,7 @@ const earlyGameTemplates = [
     baseDuration: 4
   },
   {
-    titleTemplate: 'Underground Cipher',
+    titleTemplates: ['Underground Cipher', 'Street Rap Demo', 'Local Hip-Hop Track'],
     genre: 'Hip-hop',
     clientType: 'Independent',
     difficulty: 3,
@@ -61,7 +61,7 @@ const earlyGameTemplates = [
     baseDuration: 5
   },
   {
-    titleTemplate: 'Electronic Experiment',
+    titleTemplates: ['Electronic Experiment', 'Synth Demo', 'Digital Soundscape'],
     genre: 'Electronic',
     clientType: 'Independent',
     difficulty: 3,
@@ -79,7 +79,7 @@ const earlyGameTemplates = [
 // Mid-to-late game project templates (more epic names)
 const advancedGameTemplates = [
   {
-    titleTemplate: 'Symphony of Code',
+    titleTemplates: ['Symphony of Code', 'Digital Orchestra', 'Cyber Symphony'],
     genre: 'Electronic',
     clientType: 'Commercial',
     difficulty: 8,
@@ -94,7 +94,7 @@ const advancedGameTemplates = [
     baseDuration: 12
   },
   {
-    titleTemplate: 'Bass Drop Empire',
+    titleTemplates: ['Bass Drop Empire', 'Electronic Anthem', 'Festival Banger'],
     genre: 'Electronic',
     clientType: 'Commercial',
     difficulty: 6,
@@ -108,7 +108,7 @@ const advancedGameTemplates = [
     baseDuration: 8
   },
   {
-    titleTemplate: 'Neon Dreams',
+    titleTemplates: ['Neon Dreams', 'Synthwave Journey', 'Retro Future'],
     genre: 'Electronic',
     clientType: 'Streaming',
     difficulty: 5,
@@ -122,7 +122,7 @@ const advancedGameTemplates = [
     baseDuration: 7
   },
   {
-    titleTemplate: 'Corporate Harmony',
+    titleTemplates: ['Corporate Harmony', 'Brand Anthem', 'Commercial Melody'],
     genre: 'Pop',
     clientType: 'Commercial',
     difficulty: 4,
@@ -136,7 +136,7 @@ const advancedGameTemplates = [
     baseDuration: 6
   },
   {
-    titleTemplate: 'Rock Anthem',
+    titleTemplates: ['Rock Anthem', 'Power Ballad', 'Stadium Rocker'],
     genre: 'Rock',
     clientType: 'Record Label',
     difficulty: 4,
@@ -154,6 +154,7 @@ const advancedGameTemplates = [
 
 export const generateNewProjects = (count: number, playerLevel: number = 1): Project[] => {
   const projects: Project[] = [];
+  const usedTitles = new Set<string>();
   
   // Choose appropriate template pool based on player level
   const isEarlyGame = playerLevel < 5;
@@ -161,64 +162,77 @@ export const generateNewProjects = (count: number, playerLevel: number = 1): Pro
   const weightedPool = isEarlyGame ? earlyGameTemplates : advancedGameTemplates;
   
   for (let i = 0; i < count; i++) {
-    // 70% chance to use level-appropriate templates, 30% chance for variety
-    const useAppropriateLevel = Math.random() < 0.7;
-    const selectedPool = useAppropriateLevel ? weightedPool : templatePool;
-    const template = selectedPool[Math.floor(Math.random() * selectedPool.length)];
+    let attempts = 0;
+    let project: Project;
     
-    const difficultyVariation = Math.random() * 2 - 1; // -1 to +1
-    let finalDifficulty = Math.max(1, Math.min(10, template.difficulty + Math.floor(difficultyVariation)));
+    do {
+      // 70% chance to use level-appropriate templates, 30% chance for variety
+      const useAppropriateLevel = Math.random() < 0.7;
+      const selectedPool = useAppropriateLevel ? weightedPool : templatePool;
+      const template = selectedPool[Math.floor(Math.random() * selectedPool.length)];
+      
+      // Pick a random title from the template's title array
+      const titleIndex = Math.floor(Math.random() * template.titleTemplates.length);
+      const selectedTitle = template.titleTemplates[titleIndex];
+      
+      const difficultyVariation = Math.random() * 2 - 1; // -1 to +1
+      let finalDifficulty = Math.max(1, Math.min(10, template.difficulty + Math.floor(difficultyVariation)));
+      
+      // Cap difficulty for early game
+      if (isEarlyGame) {
+        finalDifficulty = Math.min(finalDifficulty, 4);
+      }
+      
+      // Create stages with variation
+      const stages: ProjectStage[] = template.baseStages.map(stageTemplate => ({
+        stageName: stageTemplate.stageName,
+        focusAreas: stageTemplate.focusAreas,
+        workUnitsBase: Math.max(4, stageTemplate.workUnitsBase + Math.floor(Math.random() * 4 - 2)),
+        workUnitsCompleted: 0,
+        completed: false
+      }));
+
+      // Calculate dynamic pricing based on difficulty and market conditions
+      const marketMultiplier = 0.8 + Math.random() * 0.4; // 0.8 to 1.2
+      const difficultyMultiplier = 1 + (finalDifficulty - 1) * 0.15; // Scales with difficulty
+      
+      const finalPayout = Math.floor(template.basePayout * marketMultiplier * difficultyMultiplier);
+      const finalRep = Math.floor(template.baseRep * difficultyMultiplier);
+      const finalDuration = Math.max(3, template.baseDuration + Math.floor(Math.random() * 3 - 1));
+
+      // Generate required skills based on genre and difficulty
+      const requiredSkills: Record<string, number> = {};
+      requiredSkills[template.genre] = Math.max(1, Math.floor(finalDifficulty / 2));
+
+      // Determine match rating based on difficulty relative to player level
+      const matchRating: 'Poor' | 'Good' | 'Excellent' = 
+        finalDifficulty <= playerLevel ? 'Excellent' :
+        finalDifficulty <= playerLevel + 2 ? 'Good' : 'Poor';
+
+      project = {
+        id: `project-${Date.now()}-${i}`,
+        title: selectedTitle,
+        genre: template.genre,
+        clientType: template.clientType,
+        difficulty: finalDifficulty,
+        payoutBase: finalPayout,
+        repGainBase: finalRep,
+        durationDaysTotal: finalDuration,
+        requiredSkills,
+        matchRating,
+        stages,
+        currentStageIndex: 0,
+        completedStages: [],
+        accumulatedCPoints: 0,
+        accumulatedTPoints: 0,
+        workSessionCount: 0
+      };
+
+      attempts++;
+    } while (usedTitles.has(project.title) && attempts < 50); // Prevent infinite loops
     
-    // Cap difficulty for early game
-    if (isEarlyGame) {
-      finalDifficulty = Math.min(finalDifficulty, 4);
-    }
-    
-    // Create stages with variation
-    const stages: ProjectStage[] = template.baseStages.map(stageTemplate => ({
-      stageName: stageTemplate.stageName,
-      focusAreas: stageTemplate.focusAreas,
-      workUnitsBase: Math.max(4, stageTemplate.workUnitsBase + Math.floor(Math.random() * 4 - 2)),
-      workUnitsCompleted: 0,
-      completed: false
-    }));
-
-    // Calculate dynamic pricing based on difficulty and market conditions
-    const marketMultiplier = 0.8 + Math.random() * 0.4; // 0.8 to 1.2
-    const difficultyMultiplier = 1 + (finalDifficulty - 1) * 0.15; // Scales with difficulty
-    
-    const finalPayout = Math.floor(template.basePayout * marketMultiplier * difficultyMultiplier);
-    const finalRep = Math.floor(template.baseRep * difficultyMultiplier);
-    const finalDuration = Math.max(3, template.baseDuration + Math.floor(Math.random() * 3 - 1));
-
-    // Generate required skills based on genre and difficulty
-    const requiredSkills: Record<string, number> = {};
-    requiredSkills[template.genre] = Math.max(1, Math.floor(finalDifficulty / 2));
-
-    // Determine match rating based on difficulty relative to player level
-    const matchRating: 'Poor' | 'Good' | 'Excellent' = 
-      finalDifficulty <= playerLevel ? 'Excellent' :
-      finalDifficulty <= playerLevel + 2 ? 'Good' : 'Poor';
-
-    const project: Project = {
-      id: `project-${Date.now()}-${i}`,
-      title: template.titleTemplate,
-      genre: template.genre,
-      clientType: template.clientType,
-      difficulty: finalDifficulty,
-      payoutBase: finalPayout,
-      repGainBase: finalRep,
-      durationDaysTotal: finalDuration,
-      requiredSkills,
-      matchRating,
-      stages,
-      currentStageIndex: 0,
-      completedStages: [],
-      accumulatedCPoints: 0,
-      accumulatedTPoints: 0,
-      workSessionCount: 0
-    };
-
+    // Add the unique title to our set and the project to our list
+    usedTitles.add(project.title);
     projects.push(project);
   }
   

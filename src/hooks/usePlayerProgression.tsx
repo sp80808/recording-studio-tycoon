@@ -2,65 +2,70 @@
 import { useCallback } from 'react';
 import { GameState, PlayerAttributes } from '@/types/game';
 import { toast } from '@/hooks/use-toast';
-import { spendPerkPoint as utilSpendPerkPoint } from '@/utils/gameUtils';
 
 export const usePlayerProgression = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
+  
+  const calculateXPToNextLevel = (level: number): number => {
+    return 100 + (level - 1) * 50; // Base 100, +50 per level
+  };
+
   const checkAndHandleLevelUp = useCallback(() => {
-    if (gameState.playerData.xp >= gameState.playerData.xpToNextLevel) {
-      const levelsGained = Math.floor(gameState.playerData.xp / gameState.playerData.xpToNextLevel);
-      const remainingXP = gameState.playerData.xp % gameState.playerData.xpToNextLevel;
-      const newLevel = gameState.playerData.level + levelsGained;
+    const { playerData } = gameState;
+    let newLevel = playerData.level;
+    let newXP = playerData.xp;
+    let newPerkPoints = playerData.perkPoints;
+    let leveledUp = false;
+
+    // Handle multiple level ups
+    while (newXP >= calculateXPToNextLevel(newLevel)) {
+      newXP -= calculateXPToNextLevel(newLevel);
+      newLevel++;
+      newPerkPoints += 2; // 2 perk points per level
+      leveledUp = true;
       
+      toast({
+        title: "🎉 Level Up!",
+        description: `Welcome to Level ${newLevel}! +2 Perk Points earned!`,
+        duration: 4000
+      });
+    }
+
+    if (leveledUp) {
       setGameState(prev => ({
         ...prev,
         playerData: {
           ...prev.playerData,
           level: newLevel,
-          xp: remainingXP,
-          perkPoints: prev.playerData.perkPoints + levelsGained,
-          xpToNextLevel: 100 + (newLevel - 1) * 50 // Scaling XP requirement
+          xp: newXP,
+          xpToNextLevel: calculateXPToNextLevel(newLevel),
+          perkPoints: newPerkPoints,
+          dailyWorkCapacity: prev.playerData.attributes.focusMastery + 3 + newLevel - 1 // Increase capacity with level
         }
       }));
-
-      toast({
-        title: "🎉 Level Up!",
-        description: `You are now level ${newLevel}! You gained ${levelsGained} perk point${levelsGained > 1 ? 's' : ''}!`,
-        duration: 4000
-      });
-
-      return true;
     }
-    return false;
-  }, [gameState.playerData, setGameState]);
+  }, [gameState, setGameState]);
 
   const levelUpPlayer = useCallback(() => {
-    setGameState(prev => ({
-      ...prev,
-      playerData: {
-        ...prev.playerData,
-        level: prev.playerData.level + 1,
-        perkPoints: prev.playerData.perkPoints + 1,
-        xpToNextLevel: prev.playerData.xpToNextLevel + 50
-      }
-    }));
-
-    toast({
-      title: "Level Up!",
-      description: `You are now level ${gameState.playerData.level + 1}! You gained a perk point.`,
-    });
-  }, [gameState.playerData.level, setGameState]);
+    checkAndHandleLevelUp();
+  }, [checkAndHandleLevelUp]);
 
   const spendPerkPoint = useCallback((attribute: keyof PlayerAttributes): GameState => {
-    if (gameState.playerData.perkPoints <= 0) {
-      return gameState;
+    const updatedGameState = {
+      ...gameState,
+      playerData: {
+        ...gameState.playerData,
+        perkPoints: gameState.playerData.perkPoints - 1,
+        attributes: {
+          ...gameState.playerData.attributes,
+          [attribute]: gameState.playerData.attributes[attribute] + 1
+        }
+      }
+    };
+
+    // Update daily work capacity if focusMastery was upgraded
+    if (attribute === 'focusMastery') {
+      updatedGameState.playerData.dailyWorkCapacity = updatedGameState.playerData.attributes.focusMastery + 3 + updatedGameState.playerData.level - 1;
     }
-
-    const updatedGameState = utilSpendPerkPoint(gameState, attribute);
-
-    toast({
-      title: "Attribute Upgraded!",
-      description: `${String(attribute)} increased to ${updatedGameState.playerData.attributes[attribute]}`,
-    });
 
     return updatedGameState;
   }, [gameState]);
