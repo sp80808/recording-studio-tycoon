@@ -13,7 +13,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Scissors, Play, Pause, RotateCcw } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Scissors, Play, Pause, RotateCcw, Clock } from 'lucide-react';
 
 interface TapeSplicingGameProps {
   onComplete: (score: number) => void;
