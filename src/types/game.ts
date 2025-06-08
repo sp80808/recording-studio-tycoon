@@ -119,6 +119,10 @@ export interface GameState {
   money: number;
   reputation: number;
   currentDay: number;
+  currentYear: number; // Current year in the game world
+  selectedEra: string; // Era ID that was selected at game start
+  eraStartYear: number; // Year when the current era started
+  equipmentMultiplier: number; // Price multiplier for equipment in this era
   playerData: PlayerData;
   studioSkills: Record<string, StudioSkill>;
   ownedUpgrades: string[];

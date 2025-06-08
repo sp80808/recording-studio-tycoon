@@ -1,7 +1,14 @@
 
 import { Equipment } from '@/types/game';
 
-export const availableEquipment: Equipment[] = [
+export interface EraAvailableEquipment extends Equipment {
+  availableFrom: number; // Year when equipment becomes available
+  availableUntil?: number; // Year when equipment becomes obsolete (optional)
+  eraDescription?: string; // Era-specific description
+  isVintage?: boolean; // If true, becomes more expensive over time
+}
+
+export const availableEquipment: EraAvailableEquipment[] = [
   // Microphones
   {
     id: 'basic_mic',

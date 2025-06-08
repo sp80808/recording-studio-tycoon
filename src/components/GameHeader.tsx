@@ -7,11 +7,10 @@ import { XPProgressBar } from '@/components/XPProgressBar';
 
 interface GameHeaderProps {
   gameState: GameState;
-  onManageStaff?: () => void;
   onOpenSettings?: () => void;
 }
 
-export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onManageStaff, onOpenSettings }) => {
+export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSettings }) => {
   return (
     <Card className="bg-gray-900/90 border-gray-600 p-4 backdrop-blur-sm">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -52,18 +51,6 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onManageStaff
               className="bg-gray-600/20 border-gray-500 text-gray-300 hover:bg-gray-600/30"
             >
               ⚙️
-            </Button>
-          )}
-
-          {/* Manage Staff Button - moved here from bottom */}
-          {gameState.hiredStaff.length > 0 && onManageStaff && (
-            <Button
-              onClick={onManageStaff}
-              variant="outline"
-              size="sm"
-              className="bg-blue-600/20 border-blue-500 text-blue-300 hover:bg-blue-600/30"
-            >
-              👥 Manage Staff ({gameState.hiredStaff.length})
             </Button>
           )}
 

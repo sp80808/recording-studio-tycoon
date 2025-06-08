@@ -8,6 +8,8 @@ import { TrainingModal } from '@/components/modals/TrainingModal';
 import { GameModals } from '@/components/GameModals';
 import { SettingsModal } from '@/components/modals/SettingsModal';
 import { TutorialModal } from '@/components/TutorialModal';
+import { SplashScreen } from '@/components/SplashScreen';
+import { Era } from '@/components/EraSelectionModal';
 import { useGameState } from '@/hooks/useGameState';
 import { useGameLogic } from '@/hooks/useGameLogic';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -15,9 +17,13 @@ import { useSaveSystem } from '@/contexts/SaveSystemContext';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { gameAudio as audioSystem } from '@/utils/audioSystem';
 const MusicStudioTycoon = () => {
-  const { gameState, setGameState, focusAllocation, setFocusAllocation } = useGameState();
+  const { gameState, setGameState, focusAllocation, setFocusAllocation, initializeGameState } = useGameState();
   const { settings } = useSettings();
-  const { saveGame, loadGame } = useSaveSystem();
+  const { saveGame, loadGame, hasSaveGame } = useSaveSystem();
+  
+  // Splash screen and game initialization state
+  const [showSplashScreen, setShowSplashScreen] = useState(true);
+  const [gameInitialized, setGameInitialized] = useState(false);
   
   const {
     startProject,
@@ -48,6 +54,60 @@ const MusicStudioTycoon = () => {
 
   // Initialize background music
   useBackgroundMusic();
+
+  // Check for existing save game on component mount
+  useEffect(() => {
+    const checkSaveGame = async () => {
+      if (await hasSaveGame()) {
+        setShowSplashScreen(false);
+        setGameInitialized(true);
+      }
+    };
+    checkSaveGame();
+  }, [hasSaveGame]);
+
+  // Handle starting a new game with selected era
+  const handleStartNewGame = (era: Era) => {
+    const newGameState = initializeGameState({
+      startingMoney: era.startingMoney,
+      selectedEra: era.id,
+      eraStartYear: era.startYear,
+      currentYear: era.startYear,
+      equipmentMultiplier: era.equipmentMultiplier
+    });
+    
+    setGameState(newGameState);
+    setShowSplashScreen(false);
+    setGameInitialized(true);
+    
+    // Show tutorial for new players
+    const hasPlayedBefore = localStorage.getItem('recordingStudioTycoon_hasPlayed');
+    if (!hasPlayedBefore && !settings.tutorialCompleted) {
+      setShowTutorialModal(true);
+    }
+
+    if (settings.sfxEnabled) {
+      audioSystem.playUISound('success');
+    }
+  };
+
+  // Handle loading existing game
+  const handleLoadGame = async () => {
+    try {
+      const loadedState = await loadGame();
+      if (loadedState) {
+        setGameState(loadedState);
+        setShowSplashScreen(false);
+        setGameInitialized(true);
+        
+        if (settings.sfxEnabled) {
+          audioSystem.playUISound('success');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load game:', error);
+    }
+  };
 
   // Check if this is first time playing for tutorial
   useEffect(() => {
@@ -89,10 +149,6 @@ const MusicStudioTycoon = () => {
     }));
   };
 
-  const handleManageStaff = () => {
-    setShowStaffModal(true);
-  };
-
   const handleOpenSettings = () => {
     setShowSettingsModal(true);
     if (settings.sfxEnabled) {
@@ -132,11 +188,28 @@ const MusicStudioTycoon = () => {
     }
   };
 
+  // Show splash screen if game is not initialized
+  if (showSplashScreen && !gameInitialized) {
+    return (
+      <SplashScreen
+        onStartGame={handleStartNewGame}
+        onLoadGame={handleLoadGame}
+        hasSaveGame={hasSaveGame()}
+      />
+    );
+  }
+
+  // Don't render main game until initialized
+  if (!gameInitialized) {
+    return <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="text-white">Loading...</div>
+    </div>;
+  }
+
   return (
     <GameLayout>
       <GameHeader 
         gameState={gameState} 
-        onManageStaff={gameState.hiredStaff.length > 0 ? handleManageStaff : undefined}
         onOpenSettings={handleOpenSettings}
       />
 

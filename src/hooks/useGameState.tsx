@@ -3,11 +3,31 @@ import { GameState, FocusAllocation } from '@/types/game';
 import { generateNewProjects, generateCandidates } from '@/utils/projectUtils';
 import { generateSessionMusicians } from '@/utils/bandUtils';
 
+interface EraInitOptions {
+  startingMoney: number;
+  selectedEra: string;
+  eraStartYear: number;
+  currentYear: number;
+  equipmentMultiplier: number;
+}
+
 export const useGameState = () => {
-  const [gameState, setGameState] = useState<GameState>({
-    money: 2000,
+  const [gameState, setGameState] = useState<GameState | null>(null);
+
+  const [focusAllocation, setFocusAllocation] = useState<FocusAllocation>({
+    performance: 50,
+    soundCapture: 50,
+    layering: 50
+  });
+
+  const createDefaultGameState = (options?: Partial<EraInitOptions>): GameState => ({
+    money: options?.startingMoney || 2000,
     reputation: 10,
     currentDay: 2,
+    currentYear: options?.currentYear || 2024,
+    selectedEra: options?.selectedEra || 'modern',
+    eraStartYear: options?.eraStartYear || 2024,
+    equipmentMultiplier: options?.equipmentMultiplier || 1.0,
     playerData: {
       xp: 0,
       level: 1,
@@ -61,33 +81,39 @@ export const useGameState = () => {
     activeOriginalTrack: null
   });
 
-  const [focusAllocation, setFocusAllocation] = useState<FocusAllocation>({
-    performance: 50,
-    soundCapture: 50,
-    layering: 50
-  });
-
-  const initGame = () => {
-    const initialProjects = generateNewProjects(3, 1); // Pass player level
+  const initializeGameState = (options?: Partial<EraInitOptions>): GameState => {
+    const newGameState = createDefaultGameState(options);
+    const initialProjects = generateNewProjects(3, 1);
     const initialCandidates = generateCandidates(3);
     const initialSessionMusicians = generateSessionMusicians(5);
     
-    setGameState(prev => ({
-      ...prev,
+    return {
+      ...newGameState,
       availableProjects: initialProjects,
       availableCandidates: initialCandidates,
       availableSessionMusicians: initialSessionMusicians
-    }));
+    };
   };
 
+  // Initialize with default state if no era is selected (for backward compatibility)
   useEffect(() => {
-    initGame();
+    if (!gameState) {
+      const defaultState = initializeGameState();
+      setGameState(defaultState);
+    }
   }, []);
 
   return {
-    gameState,
-    setGameState,
+    gameState: gameState || createDefaultGameState(),
+    setGameState: (state: GameState | ((prev: GameState) => GameState)) => {
+      if (typeof state === 'function') {
+        setGameState(prev => state(prev || createDefaultGameState()));
+      } else {
+        setGameState(state);
+      }
+    },
     focusAllocation,
-    setFocusAllocation
+    setFocusAllocation,
+    initializeGameState
   };
 };
