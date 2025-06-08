@@ -1,5 +1,15 @@
+/**
+ * @fileoverview Save system context with version tracking and compatibility checking
+ * @version 0.3.0
+ * @author Recording Studio Tycoon Development Team
+ * @created 2025-06-01
+ * @modified 2025-06-08
+ * @lastModifiedBy GitHub Copilot
+ */
+
 import React, { createContext, useContext, useEffect, ReactNode } from 'react';
 import { useSettings } from './SettingsContext';
+import { getVersionInfo, compareVersions } from '../utils/versionUtils';
 
 interface SaveSystemContextType {
   saveGame: (gameState: any) => void;
@@ -27,14 +37,16 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
 
   const saveGame = (gameState: any) => {
     try {
+      const versionInfo = getVersionInfo();
       const saveData = {
         gameState,
         timestamp: Date.now(),
-        version: '1.0.0'
+        ...versionInfo,
+        saveFormat: 'v2' // For future migration tracking
       };
       
       localStorage.setItem('recordingStudioTycoonSave', JSON.stringify(saveData));
-      console.log('Game saved successfully');
+      console.log(`Game saved successfully - Version ${versionInfo.version}`);
     } catch (error) {
       console.error('Failed to save game:', error);
     }
@@ -46,7 +58,21 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
       if (!savedData) return null;
       
       const parsed = JSON.parse(savedData);
-      console.log('Game loaded successfully');
+      const currentVersionInfo = getVersionInfo();
+      
+      // Version compatibility checking
+      if (parsed.version && parsed.version !== currentVersionInfo.version) {
+        const versionComparison = compareVersions(parsed.version, currentVersionInfo.version);
+        if (versionComparison < 0) {
+          console.warn(`Loading save from older version: ${parsed.version} -> ${currentVersionInfo.version}`);
+          // Future: Add migration logic here
+        } else if (versionComparison > 0) {
+          console.warn(`Loading save from newer version: ${parsed.version} -> ${currentVersionInfo.version}`);
+          // Handle downgrade scenario
+        }
+      }
+      
+      console.log(`Game loaded successfully - Save Version: ${parsed.version || 'legacy'}`);
       return parsed.gameState;
     } catch (error) {
       console.error('Failed to load game:', error);
