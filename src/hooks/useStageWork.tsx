@@ -1,4 +1,3 @@
-
 import { useCallback, useRef, useState } from 'react';
 import { GameState, FocusAllocation, Project } from '@/types/game';
 import { calculateStudioSkillBonus, getEquipmentBonuses } from '@/utils/gameUtils';
@@ -229,6 +228,15 @@ export const useStageWork = ({
     // Create orb animations
     createOrb('creativity', creativityGain);
     createOrb('technical', technicalGain);
+
+    // Log values for debugging stage progression
+    console.log(`🐞 DEBUG - Current Stage workUnitsBase: ${currentStage.workUnitsBase}`);
+    console.log(`🐞 DEBUG - Creativity Gain: ${creativityGain}`);
+    console.log(`🐞 DEBUG - Technical Gain: ${technicalGain}`);
+    console.log(`🐞 DEBUG - Total Points Generated: ${totalPointsGenerated}`);
+    console.log(`🐞 DEBUG - Work Units to Add: ${workUnitsToAdd}`);
+    console.log(`🐞 DEBUG - Current Stage workUnitsCompleted (before): ${currentStage.workUnitsCompleted}`);
+
 
     // FIXED: More reasonable work units calculation
     const totalPointsGenerated = creativityGain + technicalGain;
