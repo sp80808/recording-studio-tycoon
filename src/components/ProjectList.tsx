@@ -17,8 +17,8 @@ export const ProjectList: React.FC<ProjectListProps> = ({
   startProject
 }) => {
   return (
-    <div className="w-80 space-y-4">
-      <div className="flex items-center justify-between">
+    <Card className="bg-gray-900/90 border-gray-600 p-4 h-full flex flex-col backdrop-blur-sm animate-slide-in-left">
+      <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-white">Available Projects</h2>
         <Button 
           onClick={() => setGameState(prev => ({ 
@@ -33,7 +33,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
       </div>
 
       {gameState.activeProject && (
-        <Card className="p-4 bg-blue-900/80 border-blue-400 backdrop-blur-sm">
+        <Card className="p-4 bg-blue-900/80 border-blue-400 backdrop-blur-sm mb-4">
           <div className="text-sm text-blue-200 mb-2">Currently working on a project.</div>
           <div className="text-xs text-gray-300">Complete it before taking another.</div>
           
@@ -52,7 +52,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
         </Card>
       )}
 
-      <div className="space-y-3 max-h-96 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto space-y-3">
         {gameState.availableProjects.map(project => (
           <Card key={project.id} className="p-4 bg-gray-900/90 border-gray-600 hover:bg-gray-800/90 transition-colors backdrop-blur-sm">
             <div className="flex justify-between items-start mb-2">
@@ -77,6 +77,6 @@ export const ProjectList: React.FC<ProjectListProps> = ({
           </Card>
         ))}
       </div>
-    </div>
+    </Card>
   );
 };

@@ -6,7 +6,7 @@ import { Chart, ChartEntry, MarketTrend } from '@/types/charts';
 import { GameState } from '@/types/game';
 import { generateCharts, generateMarketTrends, calculateContactCost, isArtistContactable } from '@/data/chartsData';
 import { ArtistContactModal } from './modals/ArtistContactModal';
-import { Play, Pause, TrendingUp, Clock, Star, ArrowUp, ArrowDown, Minus } from 'lucide-react';
+import { Play, Pause, Volume2, TrendingUp, Clock, Star, ArrowUp, ArrowDown, Minus } from 'lucide-react';
 
 interface ChartsPanelProps {
   gameState: GameState;
@@ -24,7 +24,7 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Genre emoji mapping for visual appeal
+  // Genre emoji mapping
   const getGenreEmoji = (genre: string) => {
     const emojiMap: { [key: string]: string } = {
       'pop': '🎵',
@@ -47,20 +47,176 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
     return emojiMap[genre.toLowerCase()] || '🎵';
   };
 
+  // Genre emoji mapping
+  const getGenreEmoji = (genre: string) => {
+    const emojiMap: { [key: string]: string } = {
+      'pop': '🎵',
+      'rock': '🎸',
+      'hip-hop': '🎤',
+      'electronic': '🎛️',
+      'jazz': '🎺',
+      'classical': '🎼',
+      'country': '🤠',
+      'r&b': '🎶',
+      'reggae': '🌴',
+      'folk': '🪕',
+      'blues': '🎷',
+      'punk': '⚡',
+      'metal': '🔥',
+      'indie': '🎭',
+      'alternative': '🌟',
+      'funk': '🕺'
+    };
+    return emojiMap[genre.toLowerCase()] || '🎵';
+  };
+
+  // Audio clip mapping and segment functionality
+  const getAudioClip = (entry: ChartEntry) => {
+    const genreMap: { [key: string]: string[] } = {
+      'pop': ['pop_track_1.mp3', 'pop_track_2.mp3', 'pop_track_3.mp3'],
+      'rock': ['rock_track_1.mp3', 'rock_track_2.mp3'],
+      'hip-hop': ['hiphop_track_1.mp3', 'hiphop_track_2.mp3'],
+      'electronic': ['electronic_track_1.mp3', 'electronic_track_2.mp3'],
+      'jazz': ['jazz_track_1.mp3'],
+      'r&b': ['rnb_track_1.mp3'],
+      'country': ['country_track_1.mp3'],
+      'classical': ['classical_track_1.mp3']
+    };
+    
+    const tracks = genreMap[entry.song.genre.toLowerCase()] || genreMap['pop'];
+    const seed = entry.song.title.length + entry.song.artist.name.length + entry.position;
+    const selectedTrack = tracks[seed % tracks.length];
+    
+    return `/src/audio/chart_clips/${selectedTrack}`;
+  };
+
+  // Get playback segment with timestamps
+  const getPlaybackSegment = (entry: ChartEntry) => {
+    const seed = entry.song.title.charCodeAt(0) + entry.song.artist.name.charCodeAt(0) + entry.position;
+    const segmentNumber = (seed % 6) + 1; // 6 segments max
+    const startTime = (segmentNumber - 1) * 25; // 25-second segments with 5-second overlap
+    const endTime = startTime + 25;
+    
+    return {
+      segmentNumber,
+      startTime,
+      endTime,
+      displayTime: `${Math.floor(startTime / 60)}:${(startTime % 60).toString().padStart(2, '0')}-${Math.floor(endTime / 60)}:${(endTime % 60).toString().padStart(2, '0')}`
+    };
+  };
+
+  const playAudioClip = async (entry: ChartEntry) => {
+    try {
+      if (currentlyPlaying === entry.song.id) {
+        // Stop current playback
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current = null;
+        }
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+        }
+        setCurrentlyPlaying(null);
+        setPlaybackProgress(prev => ({ ...prev, [entry.song.id]: 0 }));
+        return;
+      }
+
+      // Stop any current playback
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+
+      const audioClip = getAudioClip(entry);
+      const segment = getPlaybackSegment(entry);
+      
+      audioRef.current = new Audio(audioClip);
+      audioRef.current.currentTime = segment.startTime;
+      
+      setCurrentlyPlaying(entry.song.id);
+      setPlaybackProgress(prev => ({ ...prev, [entry.song.id]: 0 }));
+
+      audioRef.current.onended = () => {
+        setCurrentlyPlaying(null);
+        setPlaybackProgress(prev => ({ ...prev, [entry.song.id]: 0 }));
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+        }
+      };
+
+      // Progress tracking
+      progressIntervalRef.current = setInterval(() => {
+        if (audioRef.current) {
+          const currentTime = audioRef.current.currentTime;
+          const progress = ((currentTime - segment.startTime) / 25) * 100;
+          setPlaybackProgress(prev => ({ ...prev, [entry.song.id]: Math.max(0, Math.min(100, progress)) }));
+          
+          // Stop at segment end
+          if (currentTime >= segment.endTime) {
+            audioRef.current.pause();
+            setCurrentlyPlaying(null);
+            setPlaybackProgress(prev => ({ ...prev, [entry.song.id]: 0 }));
+            if (progressIntervalRef.current) {
+              clearInterval(progressIntervalRef.current);
+            }
+          }
+        }
+      }, 50);
+
+      await audioRef.current.play();
+    } catch (error) {
+      console.warn('Audio playback failed:', error);
+      setCurrentlyPlaying(null);
+    }
+  };
+
+  // Generate charts when component mounts or player level changes
+  useEffect(() => {
+    const charts = generateCharts(gameState.playerData.level, gameState.currentEra);
+    const accessibleCharts = charts.filter(chart => chart.minLevelToAccess <= gameState.playerData.level);
+    setAvailableCharts(accessibleCharts);
+
+    // Set default chart if current selection is not available
+    if (!accessibleCharts.find(c => c.id === selectedChart)) {
+      setSelectedChart(accessibleCharts[0]?.id || 'hot100');
+    }
+  }, [gameState.playerData.level, gameState.currentEra, selectedChart]);
+
+  // Generate market trends
+  useEffect(() => {
+    setMarketTrends(generateMarketTrends());
+  }, []);
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+    };
+  }, []);
+
   // Audio clip mapping with extensive cross-genre mixing for maximum variety
   const getAudioClip = (entry: ChartEntry): string | null => {
     const genre = entry.song.genre.toLowerCase();
+    const era = gameState.currentEra;
     
     // Comprehensive audio map with intelligent cross-genre blending
     const audioMap: { [key: string]: string[] } = {
       'rock': ['60s-chart-track5.mp3', '80s-Power-Chord1.mp3', '80s-Power-Chord2.mp3', '00sAlt-Rock-Energy1.mp3', '00sNu-Metal-Vibe2.mp3'],
-      'pop': ['60s-Pop2.mp3', '80schart-anthem1.mp3', '00sStreaming-Ready1.mp3', '80s-Power-Chord1.mp3', '00s-rnb2.mp3'],
-      'electronic': ['80s-Synthesizer1.mp3', '2000s-Electronic1.mp3', '00sElectronic-Hybrid2.mp3', '80schart-anthem1.mp3', '00sNu-Metal-Vibe2.mp3'],
-      'hip-hop': ['80s-Power-Chord2.mp3', '00sNu-Metal-Vibe2.mp3', '00sElectronic-Hybrid2.mp3', '00s-rnb3.mp3', '2000s-Electronic1.mp3'],
-      'r&b': ['00s-rnb1.mp3', '00s-rnb2.mp3', '00s-rnb3.mp3', '60s-Pop2.mp3', '80schart-anthem1.mp3'],
-      'country': ['2000s-Country3.mp3', '60s-chart-track5.mp3', '80s-Power-Chord1.mp3', '00sAlt-Rock-Energy1.mp3'],
-      'jazz': ['60s-chart-track5.mp3', '00s-rnb1.mp3', '00s-rnb2.mp3'],
-      'indie': ['00sAlt-Rock-Energy1.mp3', '80s-Synthesizer1.mp3', '60s-Pop2.mp3', '60s-chart-track5.mp3'],
+      'pop': ['60s-Pop2.mp3', '80schart-anthem1.mp3', '00sStreaming-Ready1.mp3', '80s-Power-Chord1.mp3', '00s-rnb2.mp3'], // Pop-rock and pop-R&B crossover
+      'electronic': ['80s-Synthesizer1.mp3', '2000s-Electronic1.mp3', '00sElectronic-Hybrid2.mp3', '80schart-anthem1.mp3', '00sNu-Metal-Vibe2.mp3'], // Electronic rock fusion
+      'hip-hop': ['80s-Power-Chord2.mp3', '00sNu-Metal-Vibe2.mp3', '00sElectronic-Hybrid2.mp3', '00s-rnb3.mp3', '2000s-Electronic1.mp3'], // Hip-hop with various production styles
+      'r&b': ['00s-rnb1.mp3', '00s-rnb2.mp3', '00s-rnb3.mp3', '60s-Pop2.mp3', '80schart-anthem1.mp3'], // Contemporary R&B with pop influences
+      'country': ['2000s-Country3.mp3', '60s-chart-track5.mp3', '80s-Power-Chord1.mp3', '00sAlt-Rock-Energy1.mp3'], // Country-rock crossover
+      'jazz': ['60s-chart-track5.mp3', '00s-rnb1.mp3', '00s-rnb2.mp3'], // Smooth jazz and contemporary jazz-R&B
+      'indie': ['00sAlt-Rock-Energy1.mp3', '80s-Synthesizer1.mp3', '60s-Pop2.mp3', '60s-chart-track5.mp3'], // Indie variety
       'alternative': ['00sNu-Metal-Vibe2.mp3', '00sAlt-Rock-Energy1.mp3', '80s-Power-Chord2.mp3', '00sElectronic-Hybrid2.mp3'],
       'metal': ['00sNu-Metal-Vibe2.mp3', '80s-Power-Chord2.mp3', '80s-Power-Chord1.mp3'],
       'punk': ['80s-Power-Chord2.mp3', '00sAlt-Rock-Energy1.mp3', '00sNu-Metal-Vibe2.mp3'],
@@ -114,30 +270,28 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
     return null;
   };
 
-  // Calculate which 25-second segment to play with timestamps for maximum variety
-  const getPlaybackSegment = (entry: ChartEntry): { startTime: number, endTime: number, segmentNumber: number, displayTime: string } => {
-    // Create a sophisticated seed for deterministic but varied selection
-    const seed = entry.song.title.charCodeAt(0) + 
-                 entry.song.artist.name.charCodeAt(0) + 
+  // Calculate which 25-second segment to play for maximum variety
+  const getPlaybackSegment = (entry: ChartEntry, clipDuration: number = 120): { startTime: number, duration: number, segment: number } => {
+    // Create a more sophisticated seed for deterministic but varied selection
+    const seed = entry.song.title.length + 
                  entry.position + 
                  entry.song.artist.popularity + 
+                 entry.song.artist.name.charCodeAt(0) + 
                  entry.weeksOnChart;
     
-    // Calculate overlapping segments with 25-second duration
+    // Calculate overlapping segments for smoother transitions and more variety
     const segmentDuration = 25;
     const overlapTime = 5; // 5 seconds overlap between segments
-    const segmentNumber = (seed % 6) + 1; // 6 segments max
-    const startTime = (segmentNumber - 1) * overlapTime;
-    const endTime = startTime + segmentDuration;
+    const maxPossibleSegments = Math.floor((clipDuration - segmentDuration) / overlapTime) + 1;
+    const segmentCount = Math.max(1, Math.min(6, maxPossibleSegments)); // Cap at 6 segments max
     
-    const formatTime = (seconds: number) => 
-      `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`;
+    const segmentIndex = seed % segmentCount;
+    const startTime = Math.min(segmentIndex * overlapTime, clipDuration - segmentDuration);
     
     return {
-      startTime,
-      endTime,
-      segmentNumber,
-      displayTime: `${formatTime(startTime)}-${formatTime(endTime)}`
+      startTime: Math.max(0, startTime),
+      duration: segmentDuration,
+      segment: segmentIndex + 1
     };
   };
 
@@ -168,24 +322,33 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
       audioRef.current = audio;
 
       audio.addEventListener('loadedmetadata', () => {
+        // Calculate actual clip duration for better segment handling
+        const actualClipDuration = audio.duration;
+        const adjustedSegment = getPlaybackSegment(entry, actualClipDuration);
+        
         // Set start time with safety checks
-        const safeStartTime = Math.min(segment.startTime, audio.duration - 25);
-        audio.currentTime = Math.max(0, safeStartTime);
+        const safeStartTime = Math.min(adjustedSegment.startTime, actualClipDuration - adjustedSegment.duration);
+        if (actualClipDuration > safeStartTime + 5) { // Ensure at least 5s available
+          audio.currentTime = safeStartTime;
+        } else {
+          audio.currentTime = 0; // Fallback to beginning if clip is too short
+        }
         
         setCurrentlyPlaying(trackId);
         audio.play();
 
         const playbackStartTime = audio.currentTime;
+        const targetDuration = Math.min(adjustedSegment.duration, actualClipDuration - playbackStartTime);
 
         // Enhanced progress tracking with better timing
         progressIntervalRef.current = setInterval(() => {
           if (audio.currentTime && audio.duration && !audio.paused) {
             const elapsed = audio.currentTime - playbackStartTime;
-            const progress = Math.min((elapsed / 25) * 100, 100);
+            const progress = Math.min((elapsed / targetDuration) * 100, 100);
             setPlaybackProgress(prev => ({ ...prev, [trackId]: progress }));
 
-            // Stop after 25 seconds or if near end of clip
-            if (elapsed >= 25 || audio.currentTime >= segment.endTime || audio.currentTime >= audio.duration - 0.5) {
+            // Stop after our segment duration or if near end of clip
+            if (elapsed >= targetDuration || audio.currentTime >= audio.duration - 0.5) {
               audio.pause();
               setCurrentlyPlaying(null);
               setPlaybackProgress(prev => ({ ...prev, [trackId]: 0 }));
@@ -194,7 +357,7 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
               }
             }
           }
-        }, 50);
+        }, 50); // More frequent updates for smoother progress
       });
 
       audio.addEventListener('ended', () => {
@@ -218,44 +381,14 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
     }
   };
 
-  // Generate charts when component mounts or player level changes
-  useEffect(() => {
-    const charts = generateCharts(gameState.playerData.level, gameState.currentEra);
-    const accessibleCharts = charts.filter(chart => chart.minLevelToAccess <= gameState.playerData.level);
-    setAvailableCharts(accessibleCharts);
-
-    // Set default chart if current selection is not available
-    if (!accessibleCharts.find(c => c.id === selectedChart)) {
-      setSelectedChart(accessibleCharts[0]?.id || 'hot100');
-    }
-  }, [gameState.playerData.level, gameState.currentEra, selectedChart]);
-
-  // Generate market trends
-  useEffect(() => {
-    setMarketTrends(generateMarketTrends());
-  }, []);
-
-  // Cleanup audio on unmount
-  useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
-    };
-  }, []);
-
   const currentChart = availableCharts.find(chart => chart.id === selectedChart);
 
   const getMovementIcon = (movement: ChartEntry['movement']) => {
     switch (movement) {
-      case 'up': return <ArrowUp className="h-3 w-3" />;
-      case 'down': return <ArrowDown className="h-3 w-3" />;
+      case 'up': return '↗️';
+      case 'down': return '↘️';
       case 'new': return '🆕';
-      default: return <Minus className="h-3 w-3" />;
+      default: return '➡️';
     }
   };
 
@@ -326,7 +459,7 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
 
           <p className="text-sm text-gray-400 mb-4">{currentChart.description}</p>
 
-          {/* Chart Entries - Enhanced Layout like Billboard */}
+          {/* Chart Entries */}
           <div className="space-y-3 max-h-80 overflow-y-auto">
             {currentChart.entries.slice(0, 20).map((entry, index) => {
               const contactCost = calculateContactCost(
@@ -340,107 +473,117 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
               const isPlaying = currentlyPlaying === trackId;
               const hasAudio = getAudioClip(entry) !== null;
               const progress = playbackProgress[trackId] || 0;
-              const segment = getPlaybackSegment(entry);
 
               return (
                 <Card
                   key={trackId}
-                  className="p-3 bg-gray-700/30 border-gray-600/50 hover:bg-gray-700/50 transition-all duration-200 group"
+                  className="p-4 bg-gray-700/30 border-gray-600/50 hover:bg-gray-700/50 transition-all duration-200 group"
                 >
                   <div className="flex items-center gap-4">
-                    {/* Chart Position & Movement - Billboard Style */}
-                    <div className="flex flex-col items-center min-w-[50px]">
-                      <div className="text-2xl font-bold text-white mb-1">
+                    {/* Position & Movement */}
+                    <div className="flex flex-col items-center gap-1 min-w-[60px]">
+                      <div className="text-2xl font-bold text-white">
                         {entry.position}
                       </div>
                       <div className={`text-sm flex items-center gap-1 ${getMovementColor(entry.movement)}`}>
                         {getMovementIcon(entry.movement)}
                         {entry.positionChange !== 0 && (
-                          <span className="text-xs font-medium">
+                          <span className="text-xs">
                             {Math.abs(entry.positionChange)}
                           </span>
                         )}
                       </div>
                     </div>
 
-                    {/* Genre Emoji & Audio Control */}
-                    <div className="flex flex-col items-center gap-2 min-w-[80px]">
-                      <div className="text-xl">{getGenreEmoji(entry.song.genre)}</div>
+                    {/* Enhanced Audio Control */}
+                    <div className="flex flex-col items-center gap-2">
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={() => playAudioClip(entry)}
                         disabled={!hasAudio}
-                        className={`h-10 w-10 rounded-full p-0 transition-all relative ${
+                        className={`h-12 w-12 rounded-full p-0 transition-all relative group/btn ${
                           isPlaying 
-                            ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg animate-pulse' 
+                            ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-600/25 animate-pulse' 
                             : hasAudio 
-                              ? 'bg-gray-600 hover:bg-gray-500 text-gray-200' 
+                              ? 'bg-gray-600 hover:bg-gray-500 text-gray-200 hover:shadow-md' 
                               : 'bg-gray-800 text-gray-500 cursor-not-allowed'
                         }`}
-                        title={hasAudio ? `Play preview: ${segment.displayTime}` : 'No preview available'}
+                        title={hasAudio ? 
+                          `Play ${getPlaybackSegment(entry).duration}s preview starting at ${getPlaybackSegment(entry).startTime}s` : 
+                          'No preview available'
+                        }
                       >
-                        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                        {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                         {hasAudio && !isPlaying && (
-                          <div className="absolute -top-1 -right-1 h-3 w-3 bg-blue-500 rounded-full text-[8px] flex items-center justify-center font-bold text-white">
-                            {segment.segmentNumber}
+                          <div className="absolute -top-1 -right-1 h-4 w-4 bg-blue-500 rounded-full text-[9px] flex items-center justify-center font-bold text-white shadow-sm">
+                            {getPlaybackSegment(entry).segment}
                           </div>
+                        )}
+                        {isPlaying && (
+                          <div className="absolute -inset-1 rounded-full border-2 border-green-400 animate-ping opacity-75"></div>
                         )}
                       </Button>
                       
-                      {/* Progress Bar */}
+                      {/* Enhanced Progress Bar */}
                       {hasAudio && (progress > 0 || isPlaying) && (
-                        <div className="w-12 h-1 bg-gray-600 rounded-full overflow-hidden">
+                        <div className="w-14 h-1.5 bg-gray-600 rounded-full overflow-hidden shadow-inner">
                           <div 
                             className={`h-full transition-all duration-75 ${
-                              isPlaying ? 'bg-green-400' : 'bg-gray-400'
+                              isPlaying ? 'bg-green-400 shadow-sm' : 'bg-gray-400'
                             }`}
                             style={{ width: `${progress}%` }}
                           />
                         </div>
                       )}
                       
-                      {/* Segment Time Display */}
+                      {/* Segment Info */}
                       {hasAudio && (
-                        <div className="text-[8px] text-gray-500 text-center font-mono">
-                          {segment.displayTime}
+                        <div className="text-[9px] text-gray-500 text-center leading-tight px-1">
+                          <div className="font-medium">Seg {getPlaybackSegment(entry).segment}</div>
+                          <div className="text-gray-600">{getPlaybackSegment(entry).startTime}s-{getPlaybackSegment(entry).startTime + getPlaybackSegment(entry).duration}s</div>
                         </div>
                       )}
                     </div>
 
-                    {/* Song & Artist Info - Prominent Display */}
+                    {/* Track Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between mb-1">
+                      <div className="flex items-start justify-between mb-2">
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-lg font-bold text-white truncate group-hover:text-blue-300 transition-colors mb-1">
+                          <h4 className="font-semibold text-white truncate group-hover:text-blue-300 transition-colors">
                             {entry.song.title}
                           </h4>
-                          <p className="text-base text-gray-300 truncate font-medium">
+                          <p className="text-sm text-gray-300 truncate">
                             {entry.song.artist.name}
                           </p>
                         </div>
                         <div className="flex items-center gap-1 ml-2">
                           <Star className="h-3 w-3 text-yellow-500" />
                           <span className="text-xs text-gray-400">
-                            {entry.song.artist.popularity}
+                            {entry.song.artist.popularity}/100
                           </span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3 text-xs text-gray-500">
-                        <Badge variant="outline" className="text-xs px-2 py-0 capitalize flex items-center gap-1">
-                          {getGenreEmoji(entry.song.genre)} {entry.song.genre}
-                        </Badge>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          <span>{entry.weeksOnChart}w</span>
-                        </div>
-                        {entry.peakPosition !== entry.position && (
+                      <div className="text-xs text-gray-500 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs px-2 py-0 capitalize">
+                            {entry.song.genre}
+                          </Badge>
                           <div className="flex items-center gap-1">
-                            <TrendingUp className="h-3 w-3" />
-                            <span>Peak #{entry.peakPosition}</span>
+                            <Clock className="h-3 w-3" />
+                            <span>{entry.weeksOnChart}w on chart</span>
                           </div>
-                        )}
+                          {entry.peakPosition !== entry.position && (
+                            <div className="flex items-center gap-1">
+                              <TrendingUp className="h-3 w-3" />
+                              <span>Peak #{entry.peakPosition}</span>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-gray-400 truncate">
+                          {entry.song.artist.description}
+                        </p>
                       </div>
                     </div>
 
@@ -482,17 +625,16 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
             {marketTrends.slice(0, 6).map(trend => (
               <div
                 key={trend.genre}
-                className="p-2 bg-gray-700/50 rounded text-sm flex items-center justify-between"
+                className="p-2 bg-gray-700/50 rounded text-sm"
               >
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{getGenreEmoji(trend.genre)}</span>
+                <div className="flex items-center justify-between">
                   <span className="capitalize text-gray-300">{trend.genre}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-white font-medium">{trend.popularity}%</span>
-                  <span className={trend.growth > 0 ? 'text-green-400' : trend.growth < 0 ? 'text-red-400' : 'text-gray-400'}>
-                    {trend.growth > 0 ? '↗' : trend.growth < 0 ? '↘' : '→'}
-                  </span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-white">{trend.popularity}%</span>
+                    <span className={trend.growth > 0 ? 'text-green-400' : trend.growth < 0 ? 'text-red-400' : 'text-gray-400'}>
+                      {trend.growth > 0 ? '↗' : trend.growth < 0 ? '↘' : '→'}
+                    </span>
+                  </div>
                 </div>
               </div>
             ))}
@@ -508,7 +650,7 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
             <div className="text-xs space-y-1">
               {gameState.playerData.level < 3 && <div>• Rock Charts at Level 3</div>}
               {gameState.playerData.level < 4 && <div>• Pop Charts at Level 4</div>}
-              {gameState.playerData.level < 5 && <div>• Hip-hop Charts at Level 5</div>}
+              {gameState.playerData.level < 5 && <div>• Hip-Hop Charts at Level 5</div>}
               {gameState.playerData.level < 6 && <div>• Electronic Charts at Level 6</div>}
               {gameState.playerData.level < 8 && <div>• Top 10 Artist Access at Level 8</div>}
             </div>

@@ -6,7 +6,7 @@ import { SkillsModal } from '@/components/modals/SkillsModal';
 import { AttributesModal } from '@/components/modals/AttributesModal';
 import { EquipmentList } from '@/components/EquipmentList';
 import { BandManagement } from '@/components/BandManagement';
-import { ChartsPanel } from '@/components/ChartsPanel';
+import { ChartsPanel_enhanced as ChartsPanel } from '@/components/ChartsPanel_enhanced';
 import { EraProgress } from '@/components/EraProgress';
 
 interface RightPanelProps {

@@ -15,6 +15,7 @@ The current focus is on Phase 2: Charts & Industry Integration. This involves im
 2. Create an artist database with dynamic availability.
 3. Develop a communication system foundation for artist contact.
 4. Implement a basic project matching algorithm and response time simulation.
+5. Plan and implement the track release, promotion, review, and hype system.
 
 ## Active Decisions and Considerations
 
