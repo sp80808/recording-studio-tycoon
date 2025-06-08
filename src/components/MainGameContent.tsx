@@ -57,6 +57,22 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
     type: 'xp' | 'money' | 'skill';
   }>>([]);
 
+  // Placeholder functions for band management (these should come from props or hooks)
+  const createBand = (bandName: string, memberIds: string[]) => {
+    console.log('Creating band:', bandName, memberIds);
+    // TODO: Implement band creation logic
+  };
+
+  const startTour = (bandId: string) => {
+    console.log('Starting tour for band:', bandId);
+    // TODO: Implement tour logic
+  };
+
+  const createOriginalTrack = (bandId: string) => {
+    console.log('Creating original track for band:', bandId);
+    // TODO: Implement original track creation logic
+  };
+
   return (
     <>
       <div className="p-2 sm:p-4 space-y-4 sm:space-y-0 sm:flex sm:gap-4 sm:h-[calc(100vh-140px)] relative">
@@ -102,6 +118,9 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             spendPerkPoint={spendPerkPoint}
             advanceDay={advanceDay}
             purchaseEquipment={purchaseEquipment}
+            createBand={createBand}
+            startTour={startTour}
+            createOriginalTrack={createOriginalTrack}
           />
         </div>
       </div>

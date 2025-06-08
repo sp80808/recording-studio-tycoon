@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { GameState, StaffMember, PlayerAttributes } from '@/types/game';
 import { toast } from '@/hooks/use-toast';
 import { availableTrainingCourses } from '@/data/training';
