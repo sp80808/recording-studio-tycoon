@@ -61,6 +61,27 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				'sunrise-studio': {
+					background: '#FAF9F6',
+					panel: '#E0D8C4',
+					accentOrange: '#FFA500',
+					accentCoral: '#FF7F50',
+					accentYellow: '#FFDA63',
+				},
+				'neon-nights': {
+					background: '#4B0082',
+					panel: '#333333',
+					accentBlue: '#7DF9FF',
+					accentMagenta: '#FF00FF',
+					accentGreen: '#39FF14',
+				},
+				'retro-arcade': {
+					background: '#808080',
+					panel: '#D3D3D3',
+					accentRed: '#FF0000',
+					accentYellow: '#FFFF00',
+					accentCyan: '#00FFFF',
 				}
 			},
 			borderRadius: {

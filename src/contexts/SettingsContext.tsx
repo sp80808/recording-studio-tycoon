@@ -10,6 +10,7 @@ export interface GameSettings {
   tutorialCompleted: boolean;
   autoSave: boolean;
   difficulty: 'easy' | 'medium' | 'hard';
+  theme: 'default' | 'sunrise-studio' | 'neon-nights' | 'retro-arcade';
 }
 
 interface SettingsContextType {
