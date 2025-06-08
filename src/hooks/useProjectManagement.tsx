@@ -55,7 +55,7 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
       money: prev.money + payout,
       reputation: prev.reputation + repGain,
       activeProject: null,
-      availableProjects: [...prev.availableProjects, ...generateNewProjects(1)],
+      availableProjects: [...prev.availableProjects, ...generateNewProjects(1, prev.playerData.level)], // Pass player level
       playerData: {
         ...prev.playerData,
         xp: prev.playerData.xp + xpGain

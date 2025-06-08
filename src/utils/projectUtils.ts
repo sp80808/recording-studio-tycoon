@@ -1,99 +1,50 @@
-
 import { Project, ProjectStage, StaffMember } from '@/types/game';
 
 const genres = ['Rock', 'Pop', 'Electronic', 'Hip-hop', 'Acoustic'] as const;
 const clientTypes = ['Independent', 'Record Label', 'Commercial', 'Streaming'] as const;
 
-// Enhanced project templates based on the brainstormed ideas
-const projectTemplates = [
-  // Original templates
+// Early-game project templates (grounded names)
+const earlyGameTemplates = [
   {
-    titleTemplate: 'Summer Vibes',
-    genre: 'Pop',
-    clientType: 'Record Label',
-    difficulty: 3,
-    baseStages: [
-      { stageName: 'Pre-production', workUnitsBase: 8, focusAreas: ['performance', 'soundCapture'] },
-      { stageName: 'Recording', workUnitsBase: 12, focusAreas: ['soundCapture', 'layering'] },
-      { stageName: 'Mixing', workUnitsBase: 10, focusAreas: ['layering', 'performance'] },
-      { stageName: 'Mastering', workUnitsBase: 6, focusAreas: ['performance', 'soundCapture'] }
-    ],
-    basePayout: 500,
-    baseRep: 5,
-    baseDuration: 5
-  },
-  {
-    titleTemplate: 'Midnight Drive',
-    genre: 'Electronic',
-    clientType: 'Independent',
-    difficulty: 4,
-    baseStages: [
-      { stageName: 'Sound Design', workUnitsBase: 10, focusAreas: ['layering', 'performance'] },
-      { stageName: 'Sequencing', workUnitsBase: 14, focusAreas: ['performance', 'layering'] },
-      { stageName: 'Arrangement', workUnitsBase: 12, focusAreas: ['soundCapture', 'layering'] },
-      { stageName: 'Final Mix', workUnitsBase: 8, focusAreas: ['layering', 'performance'] }
-    ],
-    basePayout: 400,
-    baseRep: 4,
-    baseDuration: 6
-  },
-  
-  // New enhanced project templates
-  {
-    titleTemplate: 'Neon Dreams',
-    genre: 'Electronic',
-    clientType: 'Streaming',
-    difficulty: 5,
-    baseStages: [
-      { stageName: 'Concept & Sound Design', workUnitsBase: 12, focusAreas: ['layering', 'performance'] },
-      { stageName: 'Recording & Layering', workUnitsBase: 16, focusAreas: ['soundCapture', 'layering'] },
-      { stageName: 'Mixing & Mastering', workUnitsBase: 14, focusAreas: ['layering', 'performance'] }
-    ],
-    basePayout: 700,
-    baseRep: 7,
-    baseDuration: 7
-  },
-  {
-    titleTemplate: 'Acoustic Confessions',
-    genre: 'Acoustic',
+    titleTemplate: 'Local Band Demo',
+    genre: 'Rock',
     clientType: 'Independent',
     difficulty: 2,
     baseStages: [
-      { stageName: 'Pre-production & Arrangement', workUnitsBase: 6, focusAreas: ['performance', 'soundCapture'] },
-      { stageName: 'Live Recording Sessions', workUnitsBase: 10, focusAreas: ['soundCapture', 'performance'] },
-      { stageName: 'Subtle Production & Final Mix', workUnitsBase: 8, focusAreas: ['layering', 'soundCapture'] }
+      { stageName: 'Setup & Recording', workUnitsBase: 8, focusAreas: ['soundCapture', 'performance'] },
+      { stageName: 'Basic Mixing', workUnitsBase: 10, focusAreas: ['layering', 'soundCapture'] },
+      { stageName: 'Demo Master', workUnitsBase: 6, focusAreas: ['performance', 'layering'] }
     ],
-    basePayout: 350,
+    basePayout: 300,
     baseRep: 3,
     baseDuration: 4
   },
   {
-    titleTemplate: 'Bass Drop Empire',
-    genre: 'Electronic',
-    clientType: 'Commercial',
-    difficulty: 6,
+    titleTemplate: 'Coffee Shop Sessions',
+    genre: 'Acoustic',
+    clientType: 'Independent',
+    difficulty: 1,
     baseStages: [
-      { stageName: 'Beat Programming & Sound Design', workUnitsBase: 14, focusAreas: ['layering', 'performance'] },
-      { stageName: 'Arrangement & Build-ups', workUnitsBase: 16, focusAreas: ['performance', 'layering'] },
-      { stageName: 'Mixing & Master', workUnitsBase: 12, focusAreas: ['layering', 'soundCapture'] }
+      { stageName: 'Live Recording', workUnitsBase: 6, focusAreas: ['soundCapture', 'performance'] },
+      { stageName: 'Light Production', workUnitsBase: 8, focusAreas: ['layering', 'soundCapture'] }
     ],
-    basePayout: 850,
-    baseRep: 8,
-    baseDuration: 8
+    basePayout: 250,
+    baseRep: 2,
+    baseDuration: 3
   },
   {
-    titleTemplate: 'Corporate Harmony',
+    titleTemplate: 'Bedroom Pop Track',
     genre: 'Pop',
-    clientType: 'Commercial',
-    difficulty: 4,
+    clientType: 'Independent',
+    difficulty: 2,
     baseStages: [
-      { stageName: 'Client Consultation & Concept', workUnitsBase: 8, focusAreas: ['performance', 'soundCapture'] },
-      { stageName: 'Multiple Variations & Testing', workUnitsBase: 12, focusAreas: ['layering', 'performance'] },
-      { stageName: 'Final Production & Delivery', workUnitsBase: 10, focusAreas: ['soundCapture', 'layering'] }
+      { stageName: 'Home Recording', workUnitsBase: 7, focusAreas: ['performance', 'soundCapture'] },
+      { stageName: 'Lo-Fi Production', workUnitsBase: 9, focusAreas: ['layering', 'performance'] },
+      { stageName: 'Vintage Master', workUnitsBase: 5, focusAreas: ['soundCapture', 'layering'] }
     ],
-    basePayout: 600,
-    baseRep: 6,
-    baseDuration: 6
+    basePayout: 350,
+    baseRep: 3,
+    baseDuration: 4
   },
   {
     titleTemplate: 'Underground Cipher',
@@ -110,6 +61,24 @@ const projectTemplates = [
     baseDuration: 5
   },
   {
+    titleTemplate: 'Electronic Experiment',
+    genre: 'Electronic',
+    clientType: 'Independent',
+    difficulty: 3,
+    baseStages: [
+      { stageName: 'Sound Design Basics', workUnitsBase: 9, focusAreas: ['layering', 'performance'] },
+      { stageName: 'Simple Sequencing', workUnitsBase: 11, focusAreas: ['performance', 'layering'] },
+      { stageName: 'Digital Master', workUnitsBase: 7, focusAreas: ['soundCapture', 'layering'] }
+    ],
+    basePayout: 375,
+    baseRep: 3,
+    baseDuration: 4
+  }
+];
+
+// Mid-to-late game project templates (more epic names)
+const advancedGameTemplates = [
+  {
     titleTemplate: 'Symphony of Code',
     genre: 'Electronic',
     clientType: 'Commercial',
@@ -125,18 +94,46 @@ const projectTemplates = [
     baseDuration: 12
   },
   {
-    titleTemplate: 'Midnight Sessions',
-    genre: 'Acoustic',
-    clientType: 'Record Label',
+    titleTemplate: 'Bass Drop Empire',
+    genre: 'Electronic',
+    clientType: 'Commercial',
+    difficulty: 6,
+    baseStages: [
+      { stageName: 'Beat Programming & Sound Design', workUnitsBase: 14, focusAreas: ['layering', 'performance'] },
+      { stageName: 'Arrangement & Build-ups', workUnitsBase: 16, focusAreas: ['performance', 'layering'] },
+      { stageName: 'Mixing & Master', workUnitsBase: 12, focusAreas: ['layering', 'soundCapture'] }
+    ],
+    basePayout: 850,
+    baseRep: 8,
+    baseDuration: 8
+  },
+  {
+    titleTemplate: 'Neon Dreams',
+    genre: 'Electronic',
+    clientType: 'Streaming',
     difficulty: 5,
     baseStages: [
-      { stageName: 'Session Planning & Setup', workUnitsBase: 8, focusAreas: ['soundCapture', 'performance'] },
-      { stageName: 'Live Recording Night', workUnitsBase: 14, focusAreas: ['soundCapture', 'layering'] },
-      { stageName: 'Post-Production & Editing', workUnitsBase: 12, focusAreas: ['layering', 'performance'] }
+      { stageName: 'Concept & Sound Design', workUnitsBase: 12, focusAreas: ['layering', 'performance'] },
+      { stageName: 'Recording & Layering', workUnitsBase: 16, focusAreas: ['soundCapture', 'layering'] },
+      { stageName: 'Mixing & Mastering', workUnitsBase: 14, focusAreas: ['layering', 'performance'] }
     ],
-    basePayout: 750,
+    basePayout: 700,
     baseRep: 7,
     baseDuration: 7
+  },
+  {
+    titleTemplate: 'Corporate Harmony',
+    genre: 'Pop',
+    clientType: 'Commercial',
+    difficulty: 4,
+    baseStages: [
+      { stageName: 'Client Consultation & Concept', workUnitsBase: 8, focusAreas: ['performance', 'soundCapture'] },
+      { stageName: 'Multiple Variations & Testing', workUnitsBase: 12, focusAreas: ['layering', 'performance'] },
+      { stageName: 'Final Production & Delivery', workUnitsBase: 10, focusAreas: ['soundCapture', 'layering'] }
+    ],
+    basePayout: 600,
+    baseRep: 6,
+    baseDuration: 6
   },
   {
     titleTemplate: 'Rock Anthem',
@@ -152,31 +149,30 @@ const projectTemplates = [
     basePayout: 650,
     baseRep: 6,
     baseDuration: 8
-  },
-  {
-    titleTemplate: 'Urban Freestyle',
-    genre: 'Hip-hop',
-    clientType: 'Streaming',
-    difficulty: 3,
-    baseStages: [
-      { stageName: 'Beat Creation', workUnitsBase: 8, focusAreas: ['layering', 'performance'] },
-      { stageName: 'Vocal Recording', workUnitsBase: 10, focusAreas: ['soundCapture', 'performance'] },
-      { stageName: 'Mixing & Effects', workUnitsBase: 8, focusAreas: ['layering', 'soundCapture'] },
-      { stageName: 'Final Master', workUnitsBase: 6, focusAreas: ['layering', 'performance'] }
-    ],
-    basePayout: 450,
-    baseRep: 4,
-    baseDuration: 5
   }
 ];
 
-export const generateNewProjects = (count: number): Project[] => {
+export const generateNewProjects = (count: number, playerLevel: number = 1): Project[] => {
   const projects: Project[] = [];
   
+  // Choose appropriate template pool based on player level
+  const isEarlyGame = playerLevel < 5;
+  const templatePool = isEarlyGame ? earlyGameTemplates : [...earlyGameTemplates, ...advancedGameTemplates];
+  const weightedPool = isEarlyGame ? earlyGameTemplates : advancedGameTemplates;
+  
   for (let i = 0; i < count; i++) {
-    const template = projectTemplates[Math.floor(Math.random() * projectTemplates.length)];
+    // 70% chance to use level-appropriate templates, 30% chance for variety
+    const useAppropriateLevel = Math.random() < 0.7;
+    const selectedPool = useAppropriateLevel ? weightedPool : templatePool;
+    const template = selectedPool[Math.floor(Math.random() * selectedPool.length)];
+    
     const difficultyVariation = Math.random() * 2 - 1; // -1 to +1
-    const finalDifficulty = Math.max(1, Math.min(10, template.difficulty + Math.floor(difficultyVariation)));
+    let finalDifficulty = Math.max(1, Math.min(10, template.difficulty + Math.floor(difficultyVariation)));
+    
+    // Cap difficulty for early game
+    if (isEarlyGame) {
+      finalDifficulty = Math.min(finalDifficulty, 4);
+    }
     
     // Create stages with variation
     const stages: ProjectStage[] = template.baseStages.map(stageTemplate => ({
@@ -199,10 +195,10 @@ export const generateNewProjects = (count: number): Project[] => {
     const requiredSkills: Record<string, number> = {};
     requiredSkills[template.genre] = Math.max(1, Math.floor(finalDifficulty / 2));
 
-    // Determine match rating based on difficulty
+    // Determine match rating based on difficulty relative to player level
     const matchRating: 'Poor' | 'Good' | 'Excellent' = 
-      finalDifficulty <= 3 ? 'Excellent' :
-      finalDifficulty <= 6 ? 'Good' : 'Poor';
+      finalDifficulty <= playerLevel ? 'Excellent' :
+      finalDifficulty <= playerLevel + 2 ? 'Good' : 'Poor';
 
     const project: Project = {
       id: `project-${Date.now()}-${i}`,
@@ -214,8 +210,8 @@ export const generateNewProjects = (count: number): Project[] => {
       repGainBase: finalRep,
       durationDaysTotal: finalDuration,
       requiredSkills,
-      stages,
       matchRating,
+      stages,
       currentStageIndex: 0,
       completedStages: [],
       accumulatedCPoints: 0,

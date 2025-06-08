@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -35,15 +34,38 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     reason: string;
   } | null>(null);
   const [pulseAnimation, setPulseAnimation] = useState(false);
+  const [completedMinigamesForStage, setCompletedMinigamesForStage] = useState<Set<string>>(new Set());
+
+  // Clear auto-triggered minigame when project changes or stage advances
+  useEffect(() => {
+    if (gameState.activeProject) {
+      const currentStageKey = `${gameState.activeProject.id}-${gameState.activeProject.currentStageIndex}`;
+      const previousStageKey = Array.from(completedMinigamesForStage).find(key => 
+        key.startsWith(`${gameState.activeProject!.id}-`) && key !== currentStageKey
+      );
+      
+      // If we've moved to a new stage, clear the auto-triggered minigame
+      if (previousStageKey && !completedMinigamesForStage.has(currentStageKey)) {
+        setAutoTriggeredMinigame(null);
+        setPulseAnimation(false);
+      }
+    }
+  }, [gameState.activeProject?.currentStageIndex, completedMinigamesForStage]);
 
   // Auto-trigger minigames based on project stage and equipment
   useEffect(() => {
-    if (gameState.activeProject && !showMinigame) {
+    if (gameState.activeProject && !showMinigame && !autoTriggeredMinigame) {
       const workCount = gameState.activeProject.workSessionCount || 0;
+      const currentStageKey = `${gameState.activeProject.id}-${gameState.activeProject.currentStageIndex}`;
+      
+      // Don't trigger if we've already completed a minigame for this stage
+      if (completedMinigamesForStage.has(currentStageKey)) {
+        return;
+      }
+
       const trigger = shouldAutoTriggerMinigame(gameState.activeProject, gameState, focusAllocation, workCount);
       
-      if (trigger && !autoTriggeredMinigame) {
-        // Check if we're in the final stage or specific conditions are met
+      if (trigger) {
         const currentStage = gameState.activeProject.stages[gameState.activeProject.currentStageIndex];
         const isLastStage = gameState.activeProject.currentStageIndex >= gameState.activeProject.stages.length - 2;
         const stageProgress = currentStage ? (currentStage.workUnitsCompleted / currentStage.workUnitsBase) : 0;
@@ -55,7 +77,6 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             reason: trigger.triggerReason
           });
           
-          // Add pulsing animation to work button to draw attention
           setPulseAnimation(true);
           setTimeout(() => setPulseAnimation(false), 3000);
           
@@ -67,7 +88,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
         }
       }
     }
-  }, [gameState.activeProject, focusAllocation, showMinigame, autoTriggeredMinigame]);
+  }, [gameState.activeProject, focusAllocation, showMinigame, autoTriggeredMinigame, completedMinigamesForStage]);
 
   if (!gameState.activeProject) {
     return (
@@ -99,9 +120,14 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       onMinigameReward(creativityBonus, technicalBonus, xpBonus);
     }
     
+    // Mark this stage as having completed a minigame
+    const currentStageKey = `${project.id}-${project.currentStageIndex}`;
+    setCompletedMinigamesForStage(prev => new Set([...prev, currentStageKey]));
+    
     // Close minigame and clear auto-trigger
     setShowMinigame(false);
     setAutoTriggeredMinigame(null);
+    setPulseAnimation(false);
     
     // Show rewarding toast
     toast({
@@ -301,6 +327,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           onClose={() => {
             setShowMinigame(false);
             setAutoTriggeredMinigame(null);
+            setPulseAnimation(false);
           }}
           gameType={selectedMinigame}
           onReward={handleMinigameReward}

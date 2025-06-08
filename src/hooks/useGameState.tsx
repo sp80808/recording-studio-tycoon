@@ -12,7 +12,7 @@ export const useGameState = () => {
       xp: 0,
       level: 1,
       xpToNextLevel: 100,
-      perkPoints: 3, // Added starting perk points for testing
+      perkPoints: 3,
       dailyWorkCapacity: 5,
       attributes: {
         focusMastery: 1,
@@ -64,7 +64,7 @@ export const useGameState = () => {
   });
 
   const initGame = () => {
-    const initialProjects = generateNewProjects(3);
+    const initialProjects = generateNewProjects(3, 1); // Pass player level
     const initialCandidates = generateCandidates(3);
     setGameState(prev => ({
       ...prev,

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -28,6 +27,7 @@ export const MixingBoardGame: React.FC<MixingBoardGameProps> = ({
   const [timeLeft, setTimeLeft] = useState(15);
   const [gameActive, setGameActive] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
+  const [gameCompleted, setGameCompleted] = useState(false);
   const [isDragging, setIsDragging] = useState<string | null>(null);
   const containerRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
@@ -59,6 +59,7 @@ export const MixingBoardGame: React.FC<MixingBoardGameProps> = ({
   const startGame = useCallback(() => {
     setGameActive(true);
     setGameStarted(true);
+    setGameCompleted(false);
     setTimeLeft(15);
     initializeTracks();
 
@@ -74,18 +75,27 @@ export const MixingBoardGame: React.FC<MixingBoardGameProps> = ({
     }, 1000);
   }, [initializeTracks]);
 
+  const completeGame = useCallback(() => {
+    if (gameCompleted) return; // Prevent double completion
+    
+    setGameCompleted(true);
+    setGameActive(false);
+    
+    const correctTracks = tracks.filter(track => track.isInTargetZone).length;
+    const scoreMultiplier = correctTracks === tracks.length ? 20 : 
+                          correctTracks >= tracks.length / 2 ? 10 : 5;
+    const finalScore = correctTracks * scoreMultiplier;
+    
+    console.log(`Mixing game complete! Correct tracks: ${correctTracks}/${tracks.length}, Score: ${finalScore}`);
+    setTimeout(() => onComplete(finalScore), 500);
+  }, [tracks, onComplete, gameCompleted]);
+
   // Complete game when time runs out
   useEffect(() => {
-    if (gameStarted && !gameActive && timeLeft === 0) {
-      const correctTracks = tracks.filter(track => track.isInTargetZone).length;
-      const scoreMultiplier = correctTracks === tracks.length ? 20 : 
-                            correctTracks >= tracks.length / 2 ? 10 : 5;
-      const finalScore = correctTracks * scoreMultiplier;
-      
-      console.log(`Mixing game complete! Correct tracks: ${correctTracks}/${tracks.length}, Score: ${finalScore}`);
-      setTimeout(() => onComplete(finalScore), 500);
+    if (gameStarted && !gameActive && timeLeft === 0 && !gameCompleted) {
+      completeGame();
     }
-  }, [gameStarted, gameActive, timeLeft, tracks, onComplete]);
+  }, [gameStarted, gameActive, timeLeft, gameCompleted, completeGame]);
 
   const updateTrackVolume = (trackId: string, volume: number) => {
     setTracks(prev => prev.map(track => {
@@ -146,17 +156,31 @@ export const MixingBoardGame: React.FC<MixingBoardGameProps> = ({
     return track.isInTargetZone ? 'accent-green-500' : 'accent-gray-500';
   };
 
+  const handleSubmitEarly = () => {
+    if (gameActive && !gameCompleted) {
+      completeGame();
+    }
+  };
+
   return (
     <Card className="p-6 bg-gray-900/95 border-blue-500/50 text-white max-w-4xl mx-auto">
       <div className="text-center mb-6">
         <h3 className="text-2xl font-bold mb-2">🎛️ Mixing Balance Challenge</h3>
         <p className="text-gray-300">Get each track's level into the green target zone!</p>
         
-        {gameStarted && (
-          <div className="flex justify-center items-center mt-4">
+        {gameStarted && !gameCompleted && (
+          <div className="flex justify-center items-center gap-4 mt-4">
             <div className={`text-2xl font-bold ${timeLeft <= 5 ? 'text-red-400 animate-pulse' : 'text-blue-400'}`}>
               ⏱️ {timeLeft}s
             </div>
+            {gameActive && (
+              <Button 
+                onClick={handleSubmitEarly}
+                className="bg-green-600 hover:bg-green-700 text-sm px-4 py-2"
+              >
+                Submit Mix
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -165,13 +189,13 @@ export const MixingBoardGame: React.FC<MixingBoardGameProps> = ({
         <div className="text-center space-y-4">
           <p className="text-gray-300">
             You have 15 seconds to position each track's volume slider within its target zone.
-            The zone will light up green when you're in the right spot!
+            The zone will light up green when you're in the right spot! You can submit early if you're confident.
           </p>
           <Button onClick={startGame} className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-3">
             Start Mixing Challenge
           </Button>
         </div>
-      ) : !gameActive && timeLeft === 0 ? (
+      ) : gameCompleted || (!gameActive && timeLeft === 0) ? (
         <div className="text-center space-y-4">
           <div className="text-2xl font-bold text-yellow-400">Mixing Complete!</div>
           <div className="space-y-2">
