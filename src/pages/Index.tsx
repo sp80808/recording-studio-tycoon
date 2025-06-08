@@ -44,7 +44,8 @@ const MusicStudioTycoon = () => {
     setSelectedStaffForTraining,
     lastReview,
     orbContainerRef,
-    contactArtist
+    contactArtist,
+    triggerEraTransition
   } = useGameLogic(gameState, setGameState, focusAllocation);
 
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -241,6 +242,7 @@ const MusicStudioTycoon = () => {
         openTrainingModal={handleOpenTrainingModal}
         orbContainerRef={orbContainerRef}
         contactArtist={contactArtist}
+        triggerEraTransition={triggerEraTransition}
       />
 
       <TrainingModal

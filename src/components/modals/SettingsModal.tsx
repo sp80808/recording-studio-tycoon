@@ -193,6 +193,40 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
 
+          {/* Theme Settings */}
+          <div className="space-y-6">
+            <h3 className="text-xl font-semibold text-white border-b border-gray-600 pb-2">
+              🎨 Theme Settings
+            </h3>
+            
+            {/* Theme Selector */}
+            <div className="space-y-2">
+              <label className="text-white font-medium">Game Theme</label>
+              <Select
+                value={settings.theme}
+                onValueChange={(value: 'default' | 'sunrise-studio' | 'neon-nights' | 'retro-arcade') => updateSettings({ theme: value })}
+              >
+                <SelectTrigger className="w-full bg-gray-800 border-gray-600 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-600">
+                  <SelectItem value="default" className="text-white hover:bg-gray-700">
+                    Default
+                  </SelectItem>
+                  <SelectItem value="sunrise-studio" className="text-white hover:bg-gray-700">
+                    Sunrise Studio
+                  </SelectItem>
+                  <SelectItem value="neon-nights" className="text-white hover:bg-gray-700">
+                    Neon Nights
+                  </SelectItem>
+                  <SelectItem value="retro-arcade" className="text-white hover:bg-gray-700">
+                    Retro Arcade
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           {/* Action Buttons */}
           <div className="space-y-4 pt-6 border-t border-gray-600">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

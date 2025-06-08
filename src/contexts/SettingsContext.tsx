@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useTheme } from 'next-themes';
 import { gameAudio } from '@/utils/audioSystem';
 
 export interface GameSettings {
@@ -47,6 +48,7 @@ interface SettingsProviderProps {
 
 export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) => {
   const [settings, setSettings] = useState<GameSettings>(defaultSettings);
+  const { setTheme } = useTheme();
 
   // Load settings from localStorage on mount
   useEffect(() => {
@@ -64,6 +66,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   // Save settings to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('gameSettings', JSON.stringify(settings));
+    setTheme(settings.theme);
     
     // Update audio system settings
     gameAudio.updateSettings({
@@ -73,7 +76,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
       sfxEnabled: settings.sfxEnabled,
       musicEnabled: settings.musicEnabled
     });
-  }, [settings]);
+  }, [settings.masterVolume, settings.sfxVolume, settings.musicVolume, settings.sfxEnabled, settings.musicEnabled, settings.theme]);
 
   const updateSettings = (newSettings: Partial<GameSettings>) => {
     setSettings(prev => ({ ...prev, ...newSettings }));

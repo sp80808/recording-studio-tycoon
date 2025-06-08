@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { GameState, StaffMember, PlayerAttributes } from '@/types/game';
 import { toast } from '@/hooks/use-toast';
@@ -16,7 +17,7 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
   const { levelUpPlayer, spendPerkPoint, checkAndHandleLevelUp } = usePlayerProgression(gameState, setGameState);
   const { hireStaff, assignStaffToProject, unassignStaffFromProject, toggleStaffRest, addStaffXP, openTrainingModal } = useStaffManagement(gameState, setGameState);
   const { startProject, completeProject } = useProjectManagement(gameState, setGameState);
-  const { advanceDay, refreshCandidates } = useGameActions(gameState, setGameState);
+  const { advanceDay, refreshCandidates, triggerEraTransition } = useGameActions(gameState, setGameState);
 
   const { createBand, startTour, createOriginalTrack, processTourIncome } = useBandManagement(gameState, setGameState);
 
@@ -74,7 +75,11 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
       setTimeout(() => {
         checkAndHandleLevelUp();
       }, 100);
+      
+      // Return project completion info for celebration trigger
+      return { isComplete: true, review: result.review };
     }
+    return result;
   };
 
   const purchaseEquipment = (equipmentId: string) => {
@@ -300,6 +305,7 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
     orbContainerRef,
     autoTriggeredMinigame,
     clearAutoTriggeredMinigame,
-    contactArtist
+    contactArtist,
+    triggerEraTransition
   };
 };

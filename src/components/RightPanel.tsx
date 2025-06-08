@@ -7,6 +7,7 @@ import { AttributesModal } from '@/components/modals/AttributesModal';
 import { EquipmentList } from '@/components/EquipmentList';
 import { BandManagement } from '@/components/BandManagement';
 import { ChartsPanel } from '@/components/ChartsPanel';
+import { EraProgress } from '@/components/EraProgress';
 
 interface RightPanelProps {
   gameState: GameState;
@@ -16,6 +17,7 @@ interface RightPanelProps {
   setShowAttributesModal: React.Dispatch<React.SetStateAction<boolean>>;
   spendPerkPoint: (attribute: keyof PlayerAttributes) => void;
   advanceDay: () => void;
+  triggerEraTransition: () => void; // Add era transition function
   purchaseEquipment: (equipmentId: string) => void;
   createBand: (bandName: string, memberIds: string[]) => void;
   startTour: (bandId: string) => void;
@@ -37,6 +39,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   setShowAttributesModal,
   spendPerkPoint,
   advanceDay,
+  triggerEraTransition,
   purchaseEquipment,
   createBand,
   startTour,
@@ -115,9 +118,13 @@ export const RightPanel: React.FC<RightPanelProps> = ({
       {activeTab === 'studio' && (
         <div className="space-y-4">
           <h2 className="text-xl font-bold text-white">Studio Actions</h2>
+          
           <Button onClick={handleAdvanceDay} className="w-full bg-purple-600 hover:bg-purple-700 text-white">
             Advance Day
           </Button>
+          
+          <EraProgress gameState={gameState} triggerEraTransition={triggerEraTransition} />
+          
           <EquipmentList purchaseEquipment={purchaseEquipment} gameState={gameState} />
         </div>
       )}

@@ -5,6 +5,7 @@ import { ProjectList } from '@/components/ProjectList';
 import { ActiveProject } from '@/components/ActiveProject';
 import { RightPanel } from '@/components/RightPanel';
 import { FloatingXPOrb } from '@/components/FloatingXPOrb';
+import { EraTransitionAnimation } from '@/components/EraTransitionAnimation';
 
 interface MainGameContentProps {
   gameState: GameState;
@@ -12,7 +13,7 @@ interface MainGameContentProps {
   focusAllocation: FocusAllocation;
   setFocusAllocation: React.Dispatch<React.SetStateAction<FocusAllocation>>;
   startProject: (project: Project) => void;
-  performDailyWork: () => void;
+  performDailyWork: () => { isComplete: boolean; review?: any } | undefined;
   onMinigameReward: (creativityBonus: number, technicalBonus: number, xpBonus: number) => void;
   spendPerkPoint: (attribute: keyof PlayerAttributes) => void;
   advanceDay: () => void;
@@ -25,6 +26,7 @@ interface MainGameContentProps {
   openTrainingModal: (staff: StaffMember) => boolean;
   orbContainerRef: React.RefObject<HTMLDivElement>;
   contactArtist: (artistId: string, offer: number) => void;
+  triggerEraTransition: () => { fromEra?: string; toEra?: string } | void;
 }
 
 export const MainGameContent: React.FC<MainGameContentProps> = ({
@@ -45,15 +47,27 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   toggleStaffRest,
   openTrainingModal,
   orbContainerRef,
-  contactArtist
+  contactArtist,
+  triggerEraTransition
 }) => {
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [showAttributesModal, setShowAttributesModal] = useState(false);
+  const [showEraTransition, setShowEraTransition] = useState(false);
+  const [eraTransitionInfo, setEraTransitionInfo] = useState<{ fromEra: string; toEra: string } | null>(null);
   const [floatingOrbs, setFloatingOrbs] = useState<Array<{
     id: string;
     amount: number;
     type: 'xp' | 'money' | 'skill';
   }>>([]);
+
+  // Enhanced era transition handler
+  const handleEraTransition = () => {
+    const result = triggerEraTransition();
+    if (result && result.fromEra && result.toEra) {
+      setEraTransitionInfo({ fromEra: result.fromEra, toEra: result.toEra });
+      setShowEraTransition(true);
+    }
+  };
 
   // Placeholder functions for band management (these should come from props or hooks)
   const createBand = (bandName: string, memberIds: string[]) => {
@@ -126,9 +140,23 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             toggleStaffRest={toggleStaffRest}
             openTrainingModal={openTrainingModal}
             contactArtist={contactArtist}
+            triggerEraTransition={handleEraTransition}
           />
         </div>
       </div>
+
+      {/* Era Transition Animation */}
+      {showEraTransition && eraTransitionInfo && (
+        <EraTransitionAnimation
+          isVisible={showEraTransition}
+          fromEra={eraTransitionInfo.fromEra}
+          toEra={eraTransitionInfo.toEra}
+          onComplete={() => {
+            setShowEraTransition(false);
+            setEraTransitionInfo(null);
+          }}
+        />
+      )}
     </>
   );
 };

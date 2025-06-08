@@ -154,22 +154,6 @@ export const availableEquipment: EraAvailableEquipment[] = [
     isVintage: true
   },
 
-  // Basic Monitoring
-  {
-    id: 'basic_60s_speakers',
-    name: 'Altec "All-Tech-No-Soul" 604E',
-    category: 'monitor',
-    price: 400,
-    historicalPrice: 120,
-    availableFrom: 1960,
-    availableUntil: 1980,
-    description: 'Big, bold, and occasionally accurate',
-    eraDescription: 'The sound of classic studio monitoring',
-    bonuses: { qualityBonus: 10, technicalBonus: 5 },
-    icon: '🔊',
-    isVintage: true
-  },
-
   // === 1970s Era Equipment ===
   
   {

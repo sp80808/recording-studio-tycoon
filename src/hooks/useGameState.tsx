@@ -24,16 +24,18 @@ export const useGameState = () => {
     money: options?.startingMoney || 2000,
     reputation: 10,
     currentDay: 2,
-    currentYear: options?.currentYear || 2024,
-    selectedEra: options?.selectedEra || 'modern',
-    eraStartYear: options?.eraStartYear || 2024,
-    equipmentMultiplier: options?.equipmentMultiplier || 1.0,
+    currentYear: options?.currentYear || 1960, // Start in 1960s era
+    currentEra: 'analog60s', // Start with analog era
+    selectedEra: options?.selectedEra || 'analog60s',
+    eraStartYear: options?.eraStartYear || 1960,
+    equipmentMultiplier: options?.equipmentMultiplier || 0.3, // Lower prices in 1960s
     playerData: {
       xp: 0,
       level: 1,
       xpToNextLevel: 100,
       perkPoints: 3,
       dailyWorkCapacity: 5,
+      reputation: 10, // Add reputation to PlayerData
       attributes: {
         focusMastery: 1,
         creativeIntuition: 1,
