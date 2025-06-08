@@ -1,4 +1,5 @@
-import { Project, ProjectStage } from '@/types/game';
+
+import { Project, ProjectStage, StaffMember } from '@/types/game';
 
 const genres = ['Rock', 'Pop', 'Electronic', 'Hip-hop', 'Acoustic'] as const;
 const clientTypes = ['Independent', 'Record Label', 'Commercial', 'Streaming'] as const;
@@ -12,10 +13,10 @@ const projectTemplates = [
     clientType: 'Record Label',
     difficulty: 3,
     baseStages: [
-      { stageName: 'Pre-production', workUnitsBase: 8 },
-      { stageName: 'Recording', workUnitsBase: 12 },
-      { stageName: 'Mixing', workUnitsBase: 10 },
-      { stageName: 'Mastering', workUnitsBase: 6 }
+      { stageName: 'Pre-production', workUnitsBase: 8, focusAreas: ['performance', 'soundCapture'] },
+      { stageName: 'Recording', workUnitsBase: 12, focusAreas: ['soundCapture', 'layering'] },
+      { stageName: 'Mixing', workUnitsBase: 10, focusAreas: ['layering', 'performance'] },
+      { stageName: 'Mastering', workUnitsBase: 6, focusAreas: ['performance', 'soundCapture'] }
     ],
     basePayout: 500,
     baseRep: 5,
@@ -27,10 +28,10 @@ const projectTemplates = [
     clientType: 'Independent',
     difficulty: 4,
     baseStages: [
-      { stageName: 'Sound Design', workUnitsBase: 10 },
-      { stageName: 'Sequencing', workUnitsBase: 14 },
-      { stageName: 'Arrangement', workUnitsBase: 12 },
-      { stageName: 'Final Mix', workUnitsBase: 8 }
+      { stageName: 'Sound Design', workUnitsBase: 10, focusAreas: ['layering', 'performance'] },
+      { stageName: 'Sequencing', workUnitsBase: 14, focusAreas: ['performance', 'layering'] },
+      { stageName: 'Arrangement', workUnitsBase: 12, focusAreas: ['soundCapture', 'layering'] },
+      { stageName: 'Final Mix', workUnitsBase: 8, focusAreas: ['layering', 'performance'] }
     ],
     basePayout: 400,
     baseRep: 4,
@@ -44,9 +45,9 @@ const projectTemplates = [
     clientType: 'Streaming',
     difficulty: 5,
     baseStages: [
-      { stageName: 'Concept & Sound Design', workUnitsBase: 12 },
-      { stageName: 'Recording & Layering', workUnitsBase: 16 },
-      { stageName: 'Mixing & Mastering', workUnitsBase: 14 }
+      { stageName: 'Concept & Sound Design', workUnitsBase: 12, focusAreas: ['layering', 'performance'] },
+      { stageName: 'Recording & Layering', workUnitsBase: 16, focusAreas: ['soundCapture', 'layering'] },
+      { stageName: 'Mixing & Mastering', workUnitsBase: 14, focusAreas: ['layering', 'performance'] }
     ],
     basePayout: 700,
     baseRep: 7,
@@ -58,9 +59,9 @@ const projectTemplates = [
     clientType: 'Independent',
     difficulty: 2,
     baseStages: [
-      { stageName: 'Pre-production & Arrangement', workUnitsBase: 6 },
-      { stageName: 'Live Recording Sessions', workUnitsBase: 10 },
-      { stageName: 'Subtle Production & Final Mix', workUnitsBase: 8 }
+      { stageName: 'Pre-production & Arrangement', workUnitsBase: 6, focusAreas: ['performance', 'soundCapture'] },
+      { stageName: 'Live Recording Sessions', workUnitsBase: 10, focusAreas: ['soundCapture', 'performance'] },
+      { stageName: 'Subtle Production & Final Mix', workUnitsBase: 8, focusAreas: ['layering', 'soundCapture'] }
     ],
     basePayout: 350,
     baseRep: 3,
@@ -72,9 +73,9 @@ const projectTemplates = [
     clientType: 'Commercial',
     difficulty: 6,
     baseStages: [
-      { stageName: 'Beat Programming & Sound Design', workUnitsBase: 14 },
-      { stageName: 'Arrangement & Build-ups', workUnitsBase: 16 },
-      { stageName: 'Mixing & Master', workUnitsBase: 12 }
+      { stageName: 'Beat Programming & Sound Design', workUnitsBase: 14, focusAreas: ['layering', 'performance'] },
+      { stageName: 'Arrangement & Build-ups', workUnitsBase: 16, focusAreas: ['performance', 'layering'] },
+      { stageName: 'Mixing & Master', workUnitsBase: 12, focusAreas: ['layering', 'soundCapture'] }
     ],
     basePayout: 850,
     baseRep: 8,
@@ -86,9 +87,9 @@ const projectTemplates = [
     clientType: 'Commercial',
     difficulty: 4,
     baseStages: [
-      { stageName: 'Client Consultation & Concept', workUnitsBase: 8 },
-      { stageName: 'Multiple Variations & Testing', workUnitsBase: 12 },
-      { stageName: 'Final Production & Delivery', workUnitsBase: 10 }
+      { stageName: 'Client Consultation & Concept', workUnitsBase: 8, focusAreas: ['performance', 'soundCapture'] },
+      { stageName: 'Multiple Variations & Testing', workUnitsBase: 12, focusAreas: ['layering', 'performance'] },
+      { stageName: 'Final Production & Delivery', workUnitsBase: 10, focusAreas: ['soundCapture', 'layering'] }
     ],
     basePayout: 600,
     baseRep: 6,
@@ -100,9 +101,9 @@ const projectTemplates = [
     clientType: 'Independent',
     difficulty: 3,
     baseStages: [
-      { stageName: 'Beat Production & Sampling', workUnitsBase: 10 },
-      { stageName: 'Recording & Vocal Production', workUnitsBase: 12 },
-      { stageName: 'Mix & Street Release', workUnitsBase: 8 }
+      { stageName: 'Beat Production & Sampling', workUnitsBase: 10, focusAreas: ['layering', 'performance'] },
+      { stageName: 'Recording & Vocal Production', workUnitsBase: 12, focusAreas: ['soundCapture', 'performance'] },
+      { stageName: 'Mix & Street Release', workUnitsBase: 8, focusAreas: ['layering', 'soundCapture'] }
     ],
     basePayout: 400,
     baseRep: 4,
@@ -114,10 +115,10 @@ const projectTemplates = [
     clientType: 'Commercial',
     difficulty: 8,
     baseStages: [
-      { stageName: 'Thematic Composition', workUnitsBase: 16 },
-      { stageName: 'Orchestration & Programming', workUnitsBase: 20 },
-      { stageName: 'Interactive Implementation', workUnitsBase: 18 },
-      { stageName: 'Final Mix & Mastering', workUnitsBase: 14 }
+      { stageName: 'Thematic Composition', workUnitsBase: 16, focusAreas: ['performance', 'layering'] },
+      { stageName: 'Orchestration & Programming', workUnitsBase: 20, focusAreas: ['layering', 'soundCapture'] },
+      { stageName: 'Interactive Implementation', workUnitsBase: 18, focusAreas: ['performance', 'layering'] },
+      { stageName: 'Final Mix & Mastering', workUnitsBase: 14, focusAreas: ['layering', 'soundCapture'] }
     ],
     basePayout: 1200,
     baseRep: 12,
@@ -129,9 +130,9 @@ const projectTemplates = [
     clientType: 'Record Label',
     difficulty: 5,
     baseStages: [
-      { stageName: 'Session Planning & Setup', workUnitsBase: 8 },
-      { stageName: 'Live Recording Night', workUnitsBase: 14 },
-      { stageName: 'Post-Production & Editing', workUnitsBase: 12 }
+      { stageName: 'Session Planning & Setup', workUnitsBase: 8, focusAreas: ['soundCapture', 'performance'] },
+      { stageName: 'Live Recording Night', workUnitsBase: 14, focusAreas: ['soundCapture', 'layering'] },
+      { stageName: 'Post-Production & Editing', workUnitsBase: 12, focusAreas: ['layering', 'performance'] }
     ],
     basePayout: 750,
     baseRep: 7,
@@ -143,10 +144,10 @@ const projectTemplates = [
     clientType: 'Record Label',
     difficulty: 4,
     baseStages: [
-      { stageName: 'Songwriting & Arrangement', workUnitsBase: 10 },
-      { stageName: 'Tracking & Recording', workUnitsBase: 14 },
-      { stageName: 'Mixing & Production', workUnitsBase: 12 },
-      { stageName: 'Mastering & Polish', workUnitsBase: 8 }
+      { stageName: 'Songwriting & Arrangement', workUnitsBase: 10, focusAreas: ['performance', 'soundCapture'] },
+      { stageName: 'Tracking & Recording', workUnitsBase: 14, focusAreas: ['soundCapture', 'layering'] },
+      { stageName: 'Mixing & Production', workUnitsBase: 12, focusAreas: ['layering', 'performance'] },
+      { stageName: 'Mastering & Polish', workUnitsBase: 8, focusAreas: ['soundCapture', 'layering'] }
     ],
     basePayout: 650,
     baseRep: 6,
@@ -158,10 +159,10 @@ const projectTemplates = [
     clientType: 'Streaming',
     difficulty: 3,
     baseStages: [
-      { stageName: 'Beat Creation', workUnitsBase: 8 },
-      { stageName: 'Vocal Recording', workUnitsBase: 10 },
-      { stageName: 'Mixing & Effects', workUnitsBase: 8 },
-      { stageName: 'Final Master', workUnitsBase: 6 }
+      { stageName: 'Beat Creation', workUnitsBase: 8, focusAreas: ['layering', 'performance'] },
+      { stageName: 'Vocal Recording', workUnitsBase: 10, focusAreas: ['soundCapture', 'performance'] },
+      { stageName: 'Mixing & Effects', workUnitsBase: 8, focusAreas: ['layering', 'soundCapture'] },
+      { stageName: 'Final Master', workUnitsBase: 6, focusAreas: ['layering', 'performance'] }
     ],
     basePayout: 450,
     baseRep: 4,
@@ -180,6 +181,7 @@ export const generateNewProjects = (count: number): Project[] => {
     // Create stages with variation
     const stages: ProjectStage[] = template.baseStages.map(stageTemplate => ({
       stageName: stageTemplate.stageName,
+      focusAreas: stageTemplate.focusAreas,
       workUnitsBase: Math.max(4, stageTemplate.workUnitsBase + Math.floor(Math.random() * 4 - 2)),
       workUnitsCompleted: 0,
       completed: false
@@ -193,6 +195,15 @@ export const generateNewProjects = (count: number): Project[] => {
     const finalRep = Math.floor(template.baseRep * difficultyMultiplier);
     const finalDuration = Math.max(3, template.baseDuration + Math.floor(Math.random() * 3 - 1));
 
+    // Generate required skills based on genre and difficulty
+    const requiredSkills: Record<string, number> = {};
+    requiredSkills[template.genre] = Math.max(1, Math.floor(finalDifficulty / 2));
+
+    // Determine match rating based on difficulty
+    const matchRating: 'Poor' | 'Good' | 'Excellent' = 
+      finalDifficulty <= 3 ? 'Excellent' :
+      finalDifficulty <= 6 ? 'Good' : 'Poor';
+
     const project: Project = {
       id: `project-${Date.now()}-${i}`,
       title: template.titleTemplate,
@@ -202,8 +213,11 @@ export const generateNewProjects = (count: number): Project[] => {
       payoutBase: finalPayout,
       repGainBase: finalRep,
       durationDaysTotal: finalDuration,
+      requiredSkills,
       stages,
+      matchRating,
       currentStageIndex: 0,
+      completedStages: [],
       accumulatedCPoints: 0,
       accumulatedTPoints: 0,
       workSessionCount: 0
