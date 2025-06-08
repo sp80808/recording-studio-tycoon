@@ -1,4 +1,5 @@
 import { Project, ProjectStage, StaffMember } from '@/types/game';
+import { generateAIBand } from '@/utils/bandUtils';
 
 const genres = ['Rock', 'Pop', 'Electronic', 'Hip-hop', 'Acoustic'] as const;
 const clientTypes = ['Independent', 'Record Label', 'Commercial', 'Streaming'] as const;
@@ -209,6 +210,9 @@ export const generateNewProjects = (count: number, playerLevel: number = 1): Pro
         finalDifficulty <= playerLevel ? 'Excellent' :
         finalDifficulty <= playerLevel + 2 ? 'Good' : 'Poor';
 
+      // Generate associated AI band
+      const associatedBand = generateAIBand(template.genre);
+
       project = {
         id: `project-${Date.now()}-${i}`,
         title: selectedTitle,
@@ -225,7 +229,8 @@ export const generateNewProjects = (count: number, playerLevel: number = 1): Pro
         completedStages: [],
         accumulatedCPoints: 0,
         accumulatedTPoints: 0,
-        workSessionCount: 0
+        workSessionCount: 0,
+        associatedBandId: associatedBand.id
       };
 
       attempts++;

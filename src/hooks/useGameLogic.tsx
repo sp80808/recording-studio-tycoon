@@ -9,12 +9,15 @@ import { useProjectManagement } from '@/hooks/useProjectManagement';
 import { usePlayerProgression } from '@/hooks/usePlayerProgression';
 import { useStageWork } from '@/hooks/useStageWork';
 import { useGameActions } from '@/hooks/useGameActions';
+import { useBandManagement } from '@/hooks/useBandManagement';
 
 export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>, focusAllocation: any) => {
   const { levelUpPlayer, spendPerkPoint, checkAndHandleLevelUp } = usePlayerProgression(gameState, setGameState);
   const { hireStaff, assignStaffToProject, unassignStaffFromProject, toggleStaffRest, addStaffXP, openTrainingModal } = useStaffManagement(gameState, setGameState);
   const { startProject, completeProject } = useProjectManagement(gameState, setGameState);
   const { advanceDay, refreshCandidates } = useGameActions(gameState, setGameState);
+
+  const { createBand, startTour, createOriginalTrack, processTourIncome } = useBandManagement(gameState, setGameState);
 
   const [selectedStaffForTraining, setSelectedStaffForTraining] = useState<StaffMember | null>(null);
   const [lastReview, setLastReview] = useState<any>(null);
@@ -183,12 +186,18 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
     });
   };
 
+  // Enhanced advanceDay to include tour processing
+  const handleAdvanceDay = useCallback(() => {
+    processTourIncome();
+    advanceDay();
+  }, [processTourIncome, advanceDay]);
+
   return {
     startProject,
     handlePerformDailyWork,
     handleMinigameReward,
     handleSpendPerkPoint,
-    advanceDay,
+    advanceDay: handleAdvanceDay,
     purchaseEquipment,
     hireStaff,
     refreshCandidates,

@@ -1,4 +1,3 @@
-
 // Game type definitions
 export interface PlayerAttributes {
   focusMastery: number;
@@ -49,6 +48,7 @@ export interface Project {
   completedStages: number[];
   lastWorkDay?: number; // Track when work was last performed
   workSessionCount: number; // Track how many work sessions have been completed
+  associatedBandId?: string;
 }
 
 export interface StaffMember {
@@ -113,6 +113,8 @@ export interface TrainingCourse {
   requiredLevel: number;
 }
 
+import { Band, SessionMusician, OriginalTrackProject } from './bands';
+
 export interface GameState {
   money: number;
   reputation: number;
@@ -127,6 +129,10 @@ export interface GameState {
   availableCandidates: StaffMember[];
   lastSalaryDay: number;
   notifications: GameNotification[];
+  bands: Band[]; // All bands (AI and player-created)
+  playerBands: Band[]; // Player's own bands
+  availableSessionMusicians: SessionMusician[];
+  activeOriginalTrack: OriginalTrackProject | null;
 }
 
 export interface GameNotification {

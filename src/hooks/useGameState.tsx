@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { GameState, FocusAllocation } from '@/types/game';
 import { generateNewProjects, generateCandidates } from '@/utils/projectUtils';
+import { generateSessionMusicians } from '@/utils/bandUtils';
 
 export const useGameState = () => {
   const [gameState, setGameState] = useState<GameState>({
@@ -54,7 +54,11 @@ export const useGameState = () => {
     hiredStaff: [],
     availableCandidates: [],
     lastSalaryDay: 0,
-    notifications: []
+    notifications: [],
+    bands: [],
+    playerBands: [],
+    availableSessionMusicians: [],
+    activeOriginalTrack: null
   });
 
   const [focusAllocation, setFocusAllocation] = useState<FocusAllocation>({
@@ -66,10 +70,13 @@ export const useGameState = () => {
   const initGame = () => {
     const initialProjects = generateNewProjects(3, 1); // Pass player level
     const initialCandidates = generateCandidates(3);
+    const initialSessionMusicians = generateSessionMusicians(5);
+    
     setGameState(prev => ({
       ...prev,
       availableProjects: initialProjects,
-      availableCandidates: initialCandidates
+      availableCandidates: initialCandidates,
+      availableSessionMusicians: initialSessionMusicians
     }));
   };
 
