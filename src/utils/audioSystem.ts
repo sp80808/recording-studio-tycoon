@@ -663,6 +663,33 @@ class GameAudioSystem {
     oscillator.start();
     oscillator.stop(this.audioContext.currentTime + 0.03);
   }
+
+  // GENERAL UI SOUNDS
+  async playUISound(soundType: string) {
+    switch (soundType) {
+      case 'buttonClick':
+        await this.playClick();
+        break;
+      case 'success':
+        await this.playSuccess();
+        break;
+      case 'levelUp':
+        await this.playLevelUp();
+        break;
+      case 'purchase':
+        await this.playEquipmentPurchase();
+        break;
+      case 'error':
+        await this.playError();
+        break;
+      case 'hover':
+        await this.playButtonHover();
+        break;
+      default:
+        // Fall back to basic click sound for unknown types
+        await this.playClick();
+    }
+  }
 }
 
 // Global instance

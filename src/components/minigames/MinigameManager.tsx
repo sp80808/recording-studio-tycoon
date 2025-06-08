@@ -7,6 +7,7 @@ import { SoundWaveGame } from './SoundWaveGame';
 import { BeatMakingGame } from './BeatMakingGame';
 import { VocalRecordingGame } from './VocalRecordingGame';
 import { MasteringGame } from './MasteringGame';
+import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { toast } from '@/hooks/use-toast';
 
 export type MinigameType = 'rhythm' | 'mixing' | 'waveform' | 'beatmaking' | 'vocal' | 'mastering';
@@ -25,6 +26,7 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
   onReward
 }) => {
   const [showGame, setShowGame] = useState(true);
+  const backgroundMusic = useBackgroundMusic();
 
   const handleGameComplete = (score: number) => {
     setShowGame(false);
@@ -90,7 +92,7 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
       case 'waveform':
         return <SoundWaveGame {...gameProps} />;
       case 'beatmaking':
-        return <BeatMakingGame {...gameProps} />;
+        return <BeatMakingGame {...gameProps} backgroundMusic={backgroundMusic} />;
       case 'vocal':
         return <VocalRecordingGame {...gameProps} />;
       case 'mastering':

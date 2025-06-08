@@ -89,7 +89,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 onValueChange={(value) => handleVolumeChange('master', value[0])}
                 max={1}
                 step={0.1}
-                className="w-full"
+                className="w-full [&_.bg-primary]:bg-green-500 [&_.border-primary]:border-green-500 [&_.bg-secondary]:bg-gray-700"
               />
             </div>
 
@@ -110,7 +110,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 onValueChange={(value) => handleVolumeChange('sfx', value[0])}
                 max={1}
                 step={0.1}
-                className="w-full"
+                className="w-full [&_.bg-primary]:bg-green-500 [&_.border-primary]:border-green-500 [&_.bg-secondary]:bg-gray-700"
                 disabled={!settings.sfxEnabled}
               />
             </div>
@@ -132,7 +132,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 onValueChange={(value) => handleVolumeChange('music', value[0])}
                 max={1}
                 step={0.1}
-                className="w-full"
+                className="w-full [&_.bg-primary]:bg-green-500 [&_.border-primary]:border-green-500 [&_.bg-secondary]:bg-gray-700"
                 disabled={!settings.musicEnabled}
               />
             </div>
@@ -199,7 +199,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <Button
                 onClick={handleResetSettings}
                 variant="outline"
-                className="w-full border-gray-600 text-white hover:bg-gray-800"
+                className="w-full border-gray-600 text-gray-200 hover:bg-gray-800 hover:text-white"
               >
                 Reset Settings
               </Button>
@@ -208,7 +208,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <Button
                   onClick={handleResetGame}
                   variant="destructive"
-                  className="w-full"
+                  className="w-full bg-red-600 hover:bg-red-700 text-white"
                 >
                   Reset Game Progress
                 </Button>

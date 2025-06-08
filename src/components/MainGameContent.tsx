@@ -25,6 +25,8 @@ interface MainGameContentProps {
   unassignStaffFromProject: (staffId: string) => void;
   toggleStaffRest: (staffId: string) => void;
   openTrainingModal: (staff: StaffMember) => void;
+  showRecruitmentModal: boolean;
+  setShowRecruitmentModal: (show: boolean) => void;
   orbContainerRef: React.RefObject<HTMLDivElement>;
 }
 
@@ -45,6 +47,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   unassignStaffFromProject,
   toggleStaffRest,
   openTrainingModal,
+  showRecruitmentModal,
+  setShowRecruitmentModal,
   orbContainerRef
 }) => {
   const [showSkillsModal, setShowSkillsModal] = useState(false);
@@ -56,6 +60,14 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
     amount: number;
     type: 'xp' | 'money' | 'skill';
   }>>([]);
+
+  // Handle opening recruitment modal from external trigger
+  const handleOpenRecruitment = () => {
+    setShowRecruitmentModal(true);
+    if (onOpenRecruitment) {
+      onOpenRecruitment();
+    }
+  };
 
   // Placeholder functions for band management (these should come from props or hooks)
   const createBand = (bandName: string, memberIds: string[]) => {

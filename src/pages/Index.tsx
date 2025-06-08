@@ -13,8 +13,7 @@ import { useGameLogic } from '@/hooks/useGameLogic';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSaveSystem } from '@/contexts/SaveSystemContext';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
-import { audioSystem } from '@/utils/audioSystem';
-
+import { gameAudio as audioSystem } from '@/utils/audioSystem';
 const MusicStudioTycoon = () => {
   const { gameState, setGameState, focusAllocation, setFocusAllocation } = useGameState();
   const { settings } = useSettings();
@@ -43,6 +42,7 @@ const MusicStudioTycoon = () => {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showTrainingModal, setShowTrainingModal] = useState(false);
   const [showStaffModal, setShowStaffModal] = useState(false);
+  const [showRecruitmentModal, setShowRecruitmentModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showTutorialModal, setShowTutorialModal] = useState(false);
 
@@ -100,6 +100,13 @@ const MusicStudioTycoon = () => {
     }
   };
 
+  const handleOpenRecruitment = () => {
+    setShowRecruitmentModal(true);
+    if (settings.sfxEnabled) {
+      audioSystem.playUISound('buttonClick');
+    }
+  };
+
   // Enhanced action handlers with sound effects
   const handleProjectStart = (project: any) => {
     const result = startProject(project);
@@ -138,6 +145,7 @@ const MusicStudioTycoon = () => {
         gameState={gameState} 
         onManageStaff={gameState.hiredStaff.length > 0 ? handleManageStaff : undefined}
         onOpenSettings={handleOpenSettings}
+        onOpenRecruitment={handleOpenRecruitment}
       />
 
       <MainGameContent
@@ -178,7 +186,7 @@ const MusicStudioTycoon = () => {
 
       <TutorialModal
         isOpen={showTutorialModal}
-        onClose={handleTutorialComplete}
+        onComplete={handleTutorialComplete}
       />
 
       <NotificationSystem

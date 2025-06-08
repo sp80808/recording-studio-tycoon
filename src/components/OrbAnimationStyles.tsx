@@ -9,22 +9,26 @@ export const OrbAnimationStyles: React.FC = () => {
           transform: translate(0, 0) scale(0.8);
           opacity: 0;
         }
-        20% {
-          transform: translate(0, 0) scale(1);
+        15% {
+          transform: translate(0, 0) scale(1.1);
           opacity: 1;
         }
-        80% {
+        25% {
+          transform: translate(calc(var(--target-x, 0) * 0.2), calc(var(--target-y, 0) * 0.2)) scale(1);
+          opacity: 1;
+        }
+        85% {
           transform: translate(var(--target-x, 0), var(--target-y, 0)) scale(1);
           opacity: 1;
         }
         100% {
-          transform: translate(var(--target-x, 0), var(--target-y, 0)) scale(0.5);
+          transform: translate(var(--target-x, 0), var(--target-y, 0)) scale(0.6);
           opacity: 0;
         }
       }
 
       .animate-blob-float {
-        animation: blob-float 1.5s ease-out forwards;
+        animation: blob-float 1.8s ease-out forwards;
       }
 
       .orb {

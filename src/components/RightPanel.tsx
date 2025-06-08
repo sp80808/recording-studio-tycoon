@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { GameState, PlayerAttributes } from '@/types/game';
+import { GameState, PlayerAttributes, StaffMember } from '@/types/game';
 import { SkillsModal } from '@/components/modals/SkillsModal';
 import { AttributesModal } from '@/components/modals/AttributesModal';
+import { RecruitmentModal } from '@/components/modals/RecruitmentModal';
+import { StaffManagementModal } from '@/components/modals/StaffManagementModal';
 import { EquipmentList } from '@/components/EquipmentList';
 import { BandManagement } from '@/components/BandManagement';
 
@@ -19,6 +21,13 @@ interface RightPanelProps {
   createBand: (bandName: string, memberIds: string[]) => void;
   startTour: (bandId: string) => void;
   createOriginalTrack: (bandId: string) => void;
+  // Staff management props
+  hireStaff: (candidateIndex: number) => boolean;
+  refreshCandidates: () => void;
+  assignStaffToProject: (staffId: string) => void;
+  unassignStaffFromProject: (staffId: string) => void;
+  toggleStaffRest: (staffId: string) => void;
+  openTrainingModal: (staff: StaffMember) => void;
 }
 
 export const RightPanel: React.FC<RightPanelProps> = ({

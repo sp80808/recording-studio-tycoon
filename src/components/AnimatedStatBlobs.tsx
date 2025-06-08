@@ -58,7 +58,7 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
         console.log('💙 Creating creativity blobs at target:', { targetX, targetY, targetRect, containerRect });
 
         // Create multiple blobs for better visual effect
-        const blobCount = Math.min(creativityGain, 8); // Max 8 blobs
+        const blobCount = Math.min(creativityGain, 12); // Increased from 8 to 12 for more impressive effect
         const valuePerBlob = Math.ceil(creativityGain / blobCount);
 
         for (let i = 0; i < blobCount; i++) {
@@ -70,7 +70,7 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
             startY: Math.random() * 100 + 50,
             targetX,
             targetY,
-            delay: i * 100
+            delay: i * 80 // Faster sequence timing
           });
         }
       } else if (creativityGain > 0) {
@@ -85,7 +85,7 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
 
         console.log('💚 Creating technical blobs at target:', { targetX, targetY, targetRect, containerRect });
 
-        const blobCount = Math.min(technicalGain, 8);
+        const blobCount = Math.min(technicalGain, 12); // Increased from 8 to 12 for more impressive effect
         const valuePerBlob = Math.ceil(technicalGain / blobCount);
 
         for (let i = 0; i < blobCount; i++) {
@@ -97,7 +97,7 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
             startY: Math.random() * 100 + 50,
             targetX,
             targetY,
-            delay: i * 100 + (creativityGain > 0 ? 500 : 0) // Offset technical blobs if both types exist
+            delay: i * 80 + (creativityGain > 0 ? 600 : 0) // Faster sequence, longer offset
           });
         }
       } else if (technicalGain > 0) {
@@ -111,7 +111,7 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
         setAnimating(true);
 
         // Complete animation after all blobs finish
-        const totalDuration = Math.max(...newBlobs.map(b => b.delay)) + 1500; // 1.5s animation + delays
+        const totalDuration = Math.max(...newBlobs.map(b => b.delay)) + 1800; // Updated for new animation timing
         setTimeout(() => {
           console.log('🏁 Animation complete');
           setAnimating(false);

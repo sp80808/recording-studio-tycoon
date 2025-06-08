@@ -9,6 +9,8 @@ interface BackgroundMusicManager {
   nextTrack: () => void;
   pauseMusic: () => void;
   resumeMusic: () => void;
+  fadeVolume: (targetVolume: number, duration?: number) => Promise<void>;
+  restoreVolume: (duration?: number) => Promise<void>;
 }
 
 export const useBackgroundMusic = (): BackgroundMusicManager => {
@@ -17,6 +19,8 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
   const { settings } = useSettings();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const trackCount = 5; // We have 5 BGM tracks
+  const originalVolumeRef = useRef<number>(0.5); // Store original volume
+  const fadeIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Initialize audio element
@@ -36,15 +40,68 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
         audioRef.current.pause();
         audioRef.current = null;
       }
+      if (fadeIntervalRef.current) {
+        clearInterval(fadeIntervalRef.current);
+        fadeIntervalRef.current = null;
+      }
     };
   }, []);
 
   // Update volume when settings change
   useEffect(() => {
     if (audioRef.current) {
-      audioRef.current.volume = settings.musicEnabled ? settings.musicVolume : 0;
+      const newVolume = settings.musicEnabled ? settings.musicVolume : 0;
+      audioRef.current.volume = newVolume;
+      originalVolumeRef.current = settings.musicVolume; // Store the original volume
     }
   }, [settings.musicVolume, settings.musicEnabled]);
+
+  const fadeVolume = async (targetVolume: number, duration: number = 1000): Promise<void> => {
+    return new Promise((resolve) => {
+      if (!audioRef.current || !settings.musicEnabled) {
+        resolve();
+        return;
+      }
+
+      const startVolume = audioRef.current.volume;
+      const volumeDiff = targetVolume - startVolume;
+      const steps = 50; // Number of fade steps
+      const stepDuration = duration / steps;
+      const volumeStep = volumeDiff / steps;
+      let currentStep = 0;
+
+      // Clear any existing fade
+      if (fadeIntervalRef.current) {
+        clearInterval(fadeIntervalRef.current);
+      }
+
+      fadeIntervalRef.current = setInterval(() => {
+        if (!audioRef.current) {
+          resolve();
+          return;
+        }
+
+        currentStep++;
+        const newVolume = startVolume + (volumeStep * currentStep);
+        
+        if (currentStep >= steps) {
+          audioRef.current.volume = targetVolume;
+          if (fadeIntervalRef.current) {
+            clearInterval(fadeIntervalRef.current);
+            fadeIntervalRef.current = null;
+          }
+          resolve();
+        } else {
+          audioRef.current.volume = Math.max(0, Math.min(1, newVolume));
+        }
+      }, stepDuration);
+    });
+  };
+
+  const restoreVolume = async (duration: number = 1000): Promise<void> => {
+    const targetVolume = settings.musicEnabled ? originalVolumeRef.current : 0;
+    return fadeVolume(targetVolume, duration);
+  };
 
   const playTrack = async (trackNumber: number) => {
     if (!audioRef.current || !settings.musicEnabled) return;
@@ -104,6 +161,8 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
     playTrack,
     nextTrack,
     pauseMusic,
-    resumeMusic
+    resumeMusic,
+    fadeVolume,
+    restoreVolume
   };
 };

@@ -164,6 +164,22 @@ export const shouldAutoTriggerMinigame = (
   const isLastStage = project.currentStageIndex >= project.stages.length - 2;
   const stageProgress = currentStage ? (currentStage.workUnitsCompleted / currentStage.workUnitsBase) : 0;
   
+  // Anti-spam logic: prevent back-to-back minigames in early game
+  const isEarlyGame = gameState.playerData.level < 4;
+  const lastWorkSession = project.workSessionCount || 0;
+  
+  // In early game, require minimum gap between minigames per project
+  if (isEarlyGame && lastWorkSession < 3) {
+    console.log('🚫 Early game anti-spam: preventing minigame (need at least 3 work sessions)');
+    return null;
+  }
+  
+  // Prevent triggering on consecutive work sessions in early game
+  if (isEarlyGame && workCount < 2) {
+    console.log('🚫 Early game anti-spam: preventing consecutive minigame triggers');
+    return null;
+  }
+  
   // Select a trigger based on variety - not always the highest priority
   let selectedTrigger = triggers[0];
   
@@ -173,23 +189,25 @@ export const shouldAutoTriggerMinigame = (
   }
   
   // Enhanced auto-trigger logic
-  // Always trigger on final stages with high-priority minigames
-  if (isLastStage && selectedTrigger.priority >= 8) {
+  // Always trigger on final stages with high-priority minigames (but respect early game limits)
+  if (isLastStage && selectedTrigger.priority >= 8 && (!isEarlyGame || lastWorkSession >= 4)) {
     return selectedTrigger;
   }
   
-  // Trigger when stage is 75%+ complete
-  if (stageProgress >= 0.75 && selectedTrigger.priority >= 7) {
+  // Trigger when stage is 75%+ complete (with early game protection)
+  if (stageProgress >= 0.75 && selectedTrigger.priority >= 7 && (!isEarlyGame || workCount >= 3)) {
     return selectedTrigger;
   }
   
-  // Trigger every 2-3 work sessions for high priority minigames
-  if (selectedTrigger.priority >= 9 && workCount % 2 === 0) {
+  // Trigger every 3-4 work sessions for high priority minigames (increased frequency in early game)
+  const highPriorityInterval = isEarlyGame ? 4 : 2;
+  if (selectedTrigger.priority >= 9 && workCount % highPriorityInterval === 0) {
     return selectedTrigger;
   }
   
-  // Trigger every 3 work sessions for medium priority
-  if (selectedTrigger.priority >= 6 && workCount % 3 === 0) {
+  // Trigger every 4-5 work sessions for medium priority (increased interval in early game)
+  const mediumPriorityInterval = isEarlyGame ? 5 : 3;
+  if (selectedTrigger.priority >= 6 && workCount % mediumPriorityInterval === 0) {
     return selectedTrigger;
   }
 

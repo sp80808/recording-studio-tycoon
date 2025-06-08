@@ -14,9 +14,23 @@ export const EquipmentList: React.FC<EquipmentListProps> = ({
   purchaseEquipment,
   gameState
 }) => {
-  const unownedEquipment = availableEquipment.filter(
-    equipment => !gameState.ownedEquipment.some(owned => owned.id === equipment.id)
-  );
+  // Filter equipment by ownership and requirements
+  const unownedEquipment = availableEquipment.filter(equipment => {
+    // Already owned check
+    if (gameState.ownedEquipment.some(owned => owned.id === equipment.id)) {
+      return false;
+    }
+    
+    // Skill requirement check
+    if (equipment.skillRequirement) {
+      const skill = gameState.studioSkills[equipment.skillRequirement.skill];
+      if (!skill || skill.level < equipment.skillRequirement.level) {
+        return false; // Hide equipment if skill requirement not met
+      }
+    }
+    
+    return true;
+  });
 
   return (
     <div className="flex flex-col h-full">
@@ -43,6 +57,11 @@ export const EquipmentList: React.FC<EquipmentListProps> = ({
                       <div>
                         <h4 className="font-semibold text-white text-sm">{equipment.name}</h4>
                         <p className="text-xs text-gray-400">{equipment.description}</p>
+                        {equipment.skillRequirement && (
+                          <div className="text-xs text-blue-400 mt-1">
+                            📈 Requires {equipment.skillRequirement.skill} Level {equipment.skillRequirement.level}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
