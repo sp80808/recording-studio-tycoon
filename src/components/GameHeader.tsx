@@ -9,10 +9,9 @@ interface GameHeaderProps {
   gameState: GameState;
   onManageStaff?: () => void;
   onOpenSettings?: () => void;
-  onOpenRecruitment?: () => void;
 }
 
-export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onManageStaff, onOpenSettings, onOpenRecruitment }) => {
+export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onManageStaff, onOpenSettings }) => {
   return (
     <Card className="bg-gray-900/90 border-gray-600 p-4 backdrop-blur-sm">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -44,18 +43,6 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onManageStaff
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Recruitment Center Button - show when level >= 2 */}
-          {gameState.playerData.level >= 2 && onOpenRecruitment && (
-            <Button
-              onClick={onOpenRecruitment}
-              variant="outline"
-              size="sm"
-              className="bg-purple-600/20 border-purple-500 text-purple-300 hover:bg-purple-600/30"
-            >
-              👥 Recruitment Center
-            </Button>
-          )}
-
           {/* Settings Button */}
           {onOpenSettings && (
             <Button

@@ -100,13 +100,6 @@ const MusicStudioTycoon = () => {
     }
   };
 
-  const handleOpenRecruitment = () => {
-    setShowRecruitmentModal(true);
-    if (settings.sfxEnabled) {
-      audioSystem.playUISound('buttonClick');
-    }
-  };
-
   // Enhanced action handlers with sound effects
   const handleProjectStart = (project: any) => {
     const result = startProject(project);
@@ -145,7 +138,6 @@ const MusicStudioTycoon = () => {
         gameState={gameState} 
         onManageStaff={gameState.hiredStaff.length > 0 ? handleManageStaff : undefined}
         onOpenSettings={handleOpenSettings}
-        onOpenRecruitment={handleOpenRecruitment}
       />
 
       <MainGameContent

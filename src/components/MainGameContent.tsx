@@ -5,8 +5,6 @@ import { ProjectList } from '@/components/ProjectList';
 import { ActiveProject } from '@/components/ActiveProject';
 import { RightPanel } from '@/components/RightPanel';
 import { FloatingXPOrb } from '@/components/FloatingXPOrb';
-import { RecruitmentModal } from '@/components/modals/RecruitmentModal';
-import { StaffManagementModal } from '@/components/modals/StaffManagementModal';
 
 interface MainGameContentProps {
   gameState: GameState;
@@ -25,8 +23,6 @@ interface MainGameContentProps {
   unassignStaffFromProject: (staffId: string) => void;
   toggleStaffRest: (staffId: string) => void;
   openTrainingModal: (staff: StaffMember) => void;
-  showRecruitmentModal: boolean;
-  setShowRecruitmentModal: (show: boolean) => void;
   orbContainerRef: React.RefObject<HTMLDivElement>;
 }
 
@@ -47,27 +43,15 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   unassignStaffFromProject,
   toggleStaffRest,
   openTrainingModal,
-  showRecruitmentModal,
-  setShowRecruitmentModal,
   orbContainerRef
 }) => {
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [showAttributesModal, setShowAttributesModal] = useState(false);
-  const [showStaffModal, setShowStaffModal] = useState(false);
-  const [showRecruitmentModal, setShowRecruitmentModal] = useState(false);
   const [floatingOrbs, setFloatingOrbs] = useState<Array<{
     id: string;
     amount: number;
     type: 'xp' | 'money' | 'skill';
   }>>([]);
-
-  // Handle opening recruitment modal from external trigger
-  const handleOpenRecruitment = () => {
-    setShowRecruitmentModal(true);
-    if (onOpenRecruitment) {
-      onOpenRecruitment();
-    }
-  };
 
   // Placeholder functions for band management (these should come from props or hooks)
   const createBand = (bandName: string, memberIds: string[]) => {
@@ -133,34 +117,15 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             createBand={createBand}
             startTour={startTour}
             createOriginalTrack={createOriginalTrack}
+            hireStaff={hireStaff}
+            refreshCandidates={refreshCandidates}
+            assignStaffToProject={assignStaffToProject}
+            unassignStaffFromProject={unassignStaffFromProject}
+            toggleStaffRest={toggleStaffRest}
+            openTrainingModal={openTrainingModal}
           />
         </div>
       </div>
-
-      {/* Staff Management */}
-      {gameState.playerData.level >= 2 && (
-        <>
-          {gameState.hiredStaff.length === 0 ? (
-            <RecruitmentModal 
-              gameState={gameState}
-              showRecruitmentModal={showRecruitmentModal}
-              setShowRecruitmentModal={setShowRecruitmentModal}
-              hireStaff={hireStaff}
-              refreshCandidates={refreshCandidates}
-            />
-          ) : (
-            <StaffManagementModal 
-              gameState={gameState}
-              showStaffModal={showStaffModal}
-              setShowStaffModal={setShowStaffModal}
-              assignStaffToProject={assignStaffToProject}
-              unassignStaffFromProject={unassignStaffFromProject}
-              toggleStaffRest={toggleStaffRest}
-              openTrainingModal={openTrainingModal}
-            />
-          )}
-        </>
-      )}
     </>
   );
 };
