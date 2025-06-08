@@ -6,14 +6,23 @@ import { getCreativityMultiplier, getTechnicalMultiplier, getFocusEffectiveness 
 import { shouldAutoTriggerMinigame } from '@/utils/minigameUtils';
 import { toast } from '@/hooks/use-toast';
 
-export const useStageWork = (
-  gameState: GameState,
-  setGameState: React.Dispatch<React.SetStateAction<GameState>>,
-  focusAllocation: FocusAllocation,
-  completeProject: (project: Project, addStaffXP: (staffId: string, amount: number) => void) => any,
-  addStaffXP: (staffId: string, amount: number) => void,
+interface UseStageWorkProps {
+  gameState: GameState;
+  setGameState: React.Dispatch<React.SetStateAction<GameState>>;
+  focusAllocation: FocusAllocation;
+  completeProject: (project: Project, addStaffXP: (staffId: string, amount: number) => void) => any;
+  addStaffXP: (staffId: string, amount: number) => void;
   advanceDay: () => void
-) => {
+}
+
+export const useStageWork = ({
+  gameState,
+  setGameState,
+  focusAllocation,
+  completeProject,
+  addStaffXP,
+  advanceDay
+}: UseStageWorkProps) => {
   const orbContainerRef = useRef<HTMLDivElement>(null);
   const [autoTriggeredMinigame, setAutoTriggeredMinigame] = useState<{
     type: string;
@@ -30,7 +39,7 @@ export const useStageWork = (
     const orb = document.createElement('div');
     orb.className = `orb ${type}`;
     orb.textContent = `+${amount}`;
-
+    
     const startX = Math.random() * 200 + 50;
     const startY = Math.random() * 100 + 50;
     orb.style.left = `${startX}px`;
@@ -45,8 +54,8 @@ export const useStageWork = (
         const containerRect = orbContainerRef.current!.getBoundingClientRect();
         const targetX = rect.left - containerRect.left + rect.width / 2;
         const targetY = rect.top - containerRect.top + rect.height / 2;
-
-        orb.style.transform = `translate(${targetX - startX}px, ${targetY - startY}px) scale(0.8)`;
+        
+        orb.style.transform = `translate(${targetX - startX}px, ${targetY - startY}px scale(0.8)`;
         orb.style.opacity = '0';
       }
     }, 100);

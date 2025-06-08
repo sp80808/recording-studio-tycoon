@@ -179,12 +179,12 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     
     if (result?.isComplete) {
       console.log('🎉 Project completed! Triggering celebration...');
+      setShowCelebration(true);
       setTimeout(() => {
-        setShowCelebration(true);
         if (onProjectComplete) {
           onProjectComplete();
         }
-      }, 1500); // Small delay to let other animations settle
+      }, 1500);
     }
   };
 

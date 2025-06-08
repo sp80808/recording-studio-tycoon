@@ -85,7 +85,8 @@ export const useGameState = () => {
 
   const initializeGameState = (options?: Partial<EraInitOptions>): GameState => {
     const newGameState = createDefaultGameState(options);
-    const initialProjects = generateNewProjects(3, 1);
+    const currentEra = newGameState.currentEra;
+    const initialProjects = generateNewProjects(3, 1, currentEra);
     const initialCandidates = generateCandidates(3);
     const initialSessionMusicians = generateSessionMusicians(5);
     

@@ -23,7 +23,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
         <Button 
           onClick={() => setGameState(prev => ({ 
             ...prev, 
-            availableProjects: [...prev.availableProjects, ...generateNewProjects(1)] 
+            availableProjects: [...prev.availableProjects, ...generateNewProjects(1, prev.playerData.level, prev.currentEra)] 
           }))}
           size="sm"
           className="bg-blue-600 hover:bg-blue-700 text-white"

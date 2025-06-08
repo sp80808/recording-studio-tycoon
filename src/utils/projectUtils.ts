@@ -1,5 +1,6 @@
 import { Project, ProjectStage, StaffMember } from '@/types/game';
 import { generateAIBand } from '@/utils/bandUtils';
+import { ERA_DEFINITIONS, getGenrePopularity } from '@/utils/eraProgression';
 
 const genres = ['Rock', 'Pop', 'Electronic', 'Hip-hop', 'Acoustic'] as const;
 const clientTypes = ['Independent', 'Record Label', 'Commercial', 'Streaming'] as const;
@@ -34,42 +35,42 @@ const earlyGameTemplates = [
     baseDuration: 3
   },
   {
-    titleTemplates: ['Bedroom Pop Track', 'Lo-Fi Vibes', 'DIY Pop Recording'],
-    genre: 'Pop',
+    titleTemplates: ['Folk Harmony Sessions', 'Country Ballad Recording', 'Bluegrass Live Taping'],
+    genre: 'Folk',
     clientType: 'Independent',
     difficulty: 2,
     baseStages: [
-      { stageName: 'Home Recording', workUnitsBase: 7, focusAreas: ['performance', 'soundCapture'] },
-      { stageName: 'Lo-Fi Production', workUnitsBase: 9, focusAreas: ['layering', 'performance'] },
-      { stageName: 'Vintage Master', workUnitsBase: 5, focusAreas: ['soundCapture', 'layering'] }
+      { stageName: 'Acoustic Setup', workUnitsBase: 7, focusAreas: ['performance', 'soundCapture'] },
+      { stageName: 'Multi-Vocal Recording', workUnitsBase: 9, focusAreas: ['layering', 'performance'] },
+      { stageName: 'Traditional Mix', workUnitsBase: 5, focusAreas: ['soundCapture', 'layering'] }
     ],
     basePayout: 350,
     baseRep: 3,
     baseDuration: 4
   },
   {
-    titleTemplates: ['Underground Cipher', 'Street Rap Demo', 'Local Hip-Hop Track'],
-    genre: 'Hip-hop',
+    titleTemplates: ['Soul Vocal Session', 'Motown-Style Recording', 'R&B Groove Track'],
+    genre: 'Soul',
     clientType: 'Independent',
     difficulty: 3,
     baseStages: [
-      { stageName: 'Beat Production & Sampling', workUnitsBase: 10, focusAreas: ['layering', 'performance'] },
-      { stageName: 'Recording & Vocal Production', workUnitsBase: 12, focusAreas: ['soundCapture', 'performance'] },
-      { stageName: 'Mix & Street Release', workUnitsBase: 8, focusAreas: ['layering', 'soundCapture'] }
+      { stageName: 'Rhythm Section Setup', workUnitsBase: 10, focusAreas: ['soundCapture', 'performance'] },
+      { stageName: 'Lead Vocal Recording', workUnitsBase: 12, focusAreas: ['performance', 'soundCapture'] },
+      { stageName: 'Horn Section Overdubs', workUnitsBase: 8, focusAreas: ['layering', 'performance'] }
     ],
     basePayout: 400,
     baseRep: 4,
     baseDuration: 5
   },
   {
-    titleTemplates: ['Electronic Experiment', 'Synth Demo', 'Digital Soundscape'],
-    genre: 'Electronic',
+    titleTemplates: ['Jazz Session Recording', 'Big Band Live Session', 'Trumpet & Piano Duo'],
+    genre: 'Jazz',
     clientType: 'Independent',
     difficulty: 3,
     baseStages: [
-      { stageName: 'Sound Design Basics', workUnitsBase: 9, focusAreas: ['layering', 'performance'] },
-      { stageName: 'Simple Sequencing', workUnitsBase: 11, focusAreas: ['performance', 'layering'] },
-      { stageName: 'Digital Master', workUnitsBase: 7, focusAreas: ['soundCapture', 'layering'] }
+      { stageName: 'Live Setup & Mic Placement', workUnitsBase: 9, focusAreas: ['soundCapture', 'performance'] },
+      { stageName: 'Live Recording Session', workUnitsBase: 11, focusAreas: ['performance', 'soundCapture'] },
+      { stageName: 'Analog Mix & Press', workUnitsBase: 7, focusAreas: ['soundCapture', 'layering'] }
     ],
     basePayout: 375,
     baseRep: 3,
@@ -153,14 +154,27 @@ const advancedGameTemplates = [
   }
 ];
 
-export const generateNewProjects = (count: number, playerLevel: number = 1): Project[] => {
+export const generateNewProjects = (count: number, playerLevel: number = 1, currentEra: string = 'analog60s'): Project[] => {
   const projects: Project[] = [];
   const usedTitles = new Set<string>();
   
-  // Choose appropriate template pool based on player level
+  // Get available genres for current era
+  const currentEraDefinition = ERA_DEFINITIONS.find(era => era.id === currentEra);
+  const availableGenres = currentEraDefinition?.availableGenres || ['Rock', 'Folk', 'Soul', 'Motown', 'Country', 'Jazz'];
+  
+  // Filter templates by era-appropriate genres
+  const eraAppropriateTemplates = earlyGameTemplates.filter(template => 
+    availableGenres.includes(template.genre)
+  );
+  
+  const advancedEraTemplates = advancedGameTemplates.filter(template => 
+    availableGenres.includes(template.genre)
+  );
+  
+  // Choose appropriate template pool based on player level and era
   const isEarlyGame = playerLevel < 5;
-  const templatePool = isEarlyGame ? earlyGameTemplates : [...earlyGameTemplates, ...advancedGameTemplates];
-  const weightedPool = isEarlyGame ? earlyGameTemplates : advancedGameTemplates;
+  const templatePool = isEarlyGame ? eraAppropriateTemplates : [...eraAppropriateTemplates, ...advancedEraTemplates];
+  const weightedPool = isEarlyGame ? eraAppropriateTemplates : advancedEraTemplates;
   
   for (let i = 0; i < count; i++) {
     let attempts = 0;
@@ -193,12 +207,14 @@ export const generateNewProjects = (count: number, playerLevel: number = 1): Pro
         completed: false
       }));
 
-      // Calculate dynamic pricing based on difficulty and market conditions
+      // Calculate dynamic pricing based on difficulty, market conditions, and era popularity
+      const genrePopularity = getGenrePopularity(template.genre, currentEra);
       const marketMultiplier = 0.8 + Math.random() * 0.4; // 0.8 to 1.2
       const difficultyMultiplier = 1 + (finalDifficulty - 1) * 0.15; // Scales with difficulty
+      const eraPopularityMultiplier = genrePopularity / 100; // Convert to 0-1 scale
       
-      const finalPayout = Math.floor(template.basePayout * marketMultiplier * difficultyMultiplier);
-      const finalRep = Math.floor(template.baseRep * difficultyMultiplier);
+      const finalPayout = Math.floor(template.basePayout * marketMultiplier * difficultyMultiplier * eraPopularityMultiplier);
+      const finalRep = Math.floor(template.baseRep * difficultyMultiplier * eraPopularityMultiplier);
       const finalDuration = Math.max(3, template.baseDuration + Math.floor(Math.random() * 3 - 1));
 
       // Generate required skills based on genre and difficulty

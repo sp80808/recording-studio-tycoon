@@ -275,6 +275,8 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
 
     setSelectedArtist(entry);
     setShowContactModal(true);
+
+    onContactArtist(entry.song.artist.id, 100);
   };
 
   const handleSubmitContact = (offer: number) => {

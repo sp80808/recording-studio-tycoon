@@ -1,11 +1,13 @@
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { GameState, FocusAllocation, StaffMember, PlayerAttributes, Project } from '@/types/game';
 import { ProjectList } from '@/components/ProjectList';
 import { ActiveProject } from '@/components/ActiveProject';
 import { RightPanel } from '@/components/RightPanel';
 import { FloatingXPOrb } from '@/components/FloatingXPOrb';
 import { EraTransitionAnimation } from '@/components/EraTransitionAnimation';
+import { HistoricalNewsModal } from '@/components/HistoricalNewsModal';
+import { checkForNewEvents, applyEventEffects, HistoricalEvent } from '@/utils/historicalEvents';
 
 interface MainGameContentProps {
   gameState: GameState;
@@ -54,11 +56,32 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   const [showAttributesModal, setShowAttributesModal] = useState(false);
   const [showEraTransition, setShowEraTransition] = useState(false);
   const [eraTransitionInfo, setEraTransitionInfo] = useState<{ fromEra: string; toEra: string } | null>(null);
+  const [showHistoricalNews, setShowHistoricalNews] = useState(false);
+  const [currentHistoricalEvent, setCurrentHistoricalEvent] = useState<HistoricalEvent | null>(null);
+  const [lastCheckedDay, setLastCheckedDay] = useState(0);
   const [floatingOrbs, setFloatingOrbs] = useState<Array<{
     id: string;
     amount: number;
     type: 'xp' | 'money' | 'skill';
   }>>([]);
+
+  // Check for new historical events when day advances
+  useEffect(() => {
+    const newEvents = checkForNewEvents(gameState, lastCheckedDay);
+    if (newEvents.length > 0) {
+      // Show the first new event
+      const event = newEvents[0];
+      setCurrentHistoricalEvent(event);
+      setShowHistoricalNews(true);
+      
+      // Apply event effects
+      const updatedGameState = applyEventEffects(event, gameState);
+      setGameState(updatedGameState);
+      
+      // Update last checked day
+      setLastCheckedDay(gameState.currentDay);
+    }
+  }, [gameState.currentDay, gameState.currentEra, lastCheckedDay, setGameState]);
 
   // Enhanced era transition handler
   const handleEraTransition = () => {
@@ -157,6 +180,16 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           }}
         />
       )}
+
+      {/* Historical News Modal */}
+      <HistoricalNewsModal
+        event={currentHistoricalEvent}
+        isOpen={showHistoricalNews}
+        onClose={() => {
+          setShowHistoricalNews(false);
+          setCurrentHistoricalEvent(null);
+        }}
+      />
     </>
   );
 };

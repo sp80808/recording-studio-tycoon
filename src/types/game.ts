@@ -157,9 +157,10 @@ export interface GameState {
 export interface GameNotification {
   id: string;
   message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
+  type: 'info' | 'success' | 'warning' | 'error' | 'historical';
   timestamp: number;
   duration?: number;
+  priority?: 'low' | 'medium' | 'high';
 }
 
 export interface FocusAllocation {
