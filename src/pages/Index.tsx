@@ -233,6 +233,7 @@ const MusicStudioTycoon = () => {
         toggleStaffRest={toggleStaffRest}
         openTrainingModal={handleOpenTrainingModal}
         orbContainerRef={orbContainerRef}
+        contactArtist={contactArtist}
       />
 
       <TrainingModal

@@ -36,6 +36,12 @@
    - Fixed focus allocation compatibility issues
    - File: `/src/utils/minigameUtils.ts`
 
+6. **Background Music Timing Optimization** - Fixed audio delay issue
+   - Implemented singleton pattern for background music hook
+   - Music now starts on splash screen interaction instead of after tutorial
+   - Updated SplashScreen.tsx to trigger music on user interaction
+   - Files: `/src/hooks/useBackgroundMusic.tsx`, `/src/components/SplashScreen.tsx`
+
 ### 🚧 Next Immediate Tasks (Priority Order)
 
 #### 1. Testing & Integration (High Priority)

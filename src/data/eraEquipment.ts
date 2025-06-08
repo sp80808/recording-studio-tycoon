@@ -125,6 +125,34 @@ export const availableEquipment: EraAvailableEquipment[] = [
     icon: '⚙️',
     isVintage: true
   },
+  {
+    id: 'les_paul',
+    name: 'Gibson Les Paul',
+    category: 'instrument',
+    price: 1300,
+    historicalPrice: 450,
+    availableFrom: 1952,
+    availableUntil: 2025,
+    description: 'A classic electric guitar known for its sustain and thick tone',
+    eraDescription: 'A favorite among rock and blues guitarists',
+    bonuses: { genreBonus: { 'Rock': 5, 'Blues': 4, 'Pop': 2 } },
+    icon: '🎸',
+    isVintage: true
+  },
+  {
+    id: 'altec_604e',
+    name: 'Altec "All-Tech-No-Soul" 604E',
+    category: 'monitor',
+    price: 400,
+    historicalPrice: 120,
+    availableFrom: 1960,
+    availableUntil: 1980,
+    description: 'Big, bold, and occasionally accurate',
+    eraDescription: 'The sound of classic studio monitoring',
+    bonuses: { qualityBonus: 10, technicalBonus: 5 },
+    icon: '🔊',
+    isVintage: true
+  },
 
   // Basic Monitoring
   {

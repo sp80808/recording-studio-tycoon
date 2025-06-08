@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { EraSelectionModal, Era, AVAILABLE_ERAS } from '@/components/EraSelectionModal';
+import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 
 interface SplashScreenProps {
   onStartGame: (era: Era) => void;
@@ -16,6 +17,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
 }) => {
   const [showEraSelection, setShowEraSelection] = useState(false);
   const [currentTip, setCurrentTip] = useState(0);
+  const backgroundMusic = useBackgroundMusic();
 
   const gameTips = [
     "💡 Higher skill levels unlock better equipment and more lucrative projects!",
@@ -37,7 +39,19 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
   }, []);
 
   const handleStartNewGame = () => {
+    // Ensure music starts playing on user interaction
+    if (!backgroundMusic.isPlaying) {
+      backgroundMusic.playTrack(1);
+    }
     setShowEraSelection(true);
+  };
+
+  const handleLoadGame = () => {
+    // Ensure music starts playing on user interaction
+    if (!backgroundMusic.isPlaying) {
+      backgroundMusic.playTrack(1);
+    }
+    onLoadGame();
   };
 
   const handleEraSelection = (era: Era) => {
@@ -101,7 +115,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
 
             {hasSaveGame && (
               <Button
-                onClick={onLoadGame}
+                onClick={handleLoadGame}
                 variant="outline"
                 className="w-full bg-gray-700/30 border-gray-600 text-gray-300 hover:bg-gray-600/50 py-3"
               >

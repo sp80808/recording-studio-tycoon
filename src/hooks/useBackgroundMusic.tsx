@@ -13,57 +13,56 @@ interface BackgroundMusicManager {
   restoreVolume: (duration?: number) => Promise<void>;
 }
 
+// Global singleton state for background music
+let globalAudioRef: HTMLAudioElement | null = null;
+let globalFadeIntervalRef: NodeJS.Timeout | null = null;
+let globalCurrentTrack = 1;
+let globalIsPlaying = false;
+let globalOriginalVolume = 0.5;
+
 export const useBackgroundMusic = (): BackgroundMusicManager => {
-  const [currentTrack, setCurrentTrack] = useState(1);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTrack, setCurrentTrack] = useState(globalCurrentTrack);
+  const [isPlaying, setIsPlaying] = useState(globalIsPlaying);
   const { settings } = useSettings();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const trackCount = 8; // We have 8 BGM tracks
-  const originalVolumeRef = useRef<number>(0.5); // Store original volume
-  const fadeIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Initialize audio element
-    if (!audioRef.current) {
-      audioRef.current = new Audio();
-      audioRef.current.loop = false;
-      audioRef.current.volume = settings.musicVolume;
+    // Initialize audio element only once globally
+    if (!globalAudioRef) {
+      globalAudioRef = new Audio();
+      globalAudioRef.loop = false;
+      globalAudioRef.volume = settings.musicVolume;
+      globalOriginalVolume = settings.musicVolume;
 
       // Auto-advance to next track when current one ends
-      audioRef.current.addEventListener('ended', () => {
+      globalAudioRef.addEventListener('ended', () => {
         nextTrack();
       });
     }
 
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-      if (fadeIntervalRef.current) {
-        clearInterval(fadeIntervalRef.current);
-        fadeIntervalRef.current = null;
-      }
+      // Only cleanup when all components using this hook are unmounted
+      // This prevents premature cleanup when switching between components
     };
   }, []);
 
   // Update volume when settings change
   useEffect(() => {
-    if (audioRef.current) {
+    if (globalAudioRef) {
       const newVolume = settings.musicEnabled ? settings.musicVolume : 0;
-      audioRef.current.volume = newVolume;
-      originalVolumeRef.current = settings.musicVolume; // Store the original volume
+      globalAudioRef.volume = newVolume;
+      globalOriginalVolume = settings.musicVolume; // Store the original volume
     }
   }, [settings.musicVolume, settings.musicEnabled]);
 
   const fadeVolume = async (targetVolume: number, duration: number = 1000): Promise<void> => {
     return new Promise((resolve) => {
-      if (!audioRef.current || !settings.musicEnabled) {
+      if (!globalAudioRef || !settings.musicEnabled) {
         resolve();
         return;
       }
 
-      const startVolume = audioRef.current.volume;
+      const startVolume = globalAudioRef.volume;
       const volumeDiff = targetVolume - startVolume;
       const steps = 50; // Number of fade steps
       const stepDuration = duration / steps;
@@ -71,12 +70,12 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
       let currentStep = 0;
 
       // Clear any existing fade
-      if (fadeIntervalRef.current) {
-        clearInterval(fadeIntervalRef.current);
+      if (globalFadeIntervalRef) {
+        clearInterval(globalFadeIntervalRef);
       }
 
-      fadeIntervalRef.current = setInterval(() => {
-        if (!audioRef.current) {
+      globalFadeIntervalRef = setInterval(() => {
+        if (!globalAudioRef) {
           resolve();
           return;
         }
@@ -85,36 +84,38 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
         const newVolume = startVolume + (volumeStep * currentStep);
         
         if (currentStep >= steps) {
-          audioRef.current.volume = targetVolume;
-          if (fadeIntervalRef.current) {
-            clearInterval(fadeIntervalRef.current);
-            fadeIntervalRef.current = null;
+          globalAudioRef.volume = targetVolume;
+          if (globalFadeIntervalRef) {
+            clearInterval(globalFadeIntervalRef);
+            globalFadeIntervalRef = null;
           }
           resolve();
         } else {
-          audioRef.current.volume = Math.max(0, Math.min(1, newVolume));
+          globalAudioRef.volume = Math.max(0, Math.min(1, newVolume));
         }
       }, stepDuration);
     });
   };
 
   const restoreVolume = async (duration: number = 1000): Promise<void> => {
-    const targetVolume = settings.musicEnabled ? originalVolumeRef.current : 0;
+    const targetVolume = settings.musicEnabled ? globalOriginalVolume : 0;
     return fadeVolume(targetVolume, duration);
   };
 
   const playTrack = async (trackNumber: number) => {
-    if (!audioRef.current || !settings.musicEnabled) return;
+    if (!globalAudioRef || !settings.musicEnabled) return;
 
     try {
       // Stop current track
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+      globalAudioRef.pause();
+      globalAudioRef.currentTime = 0;
 
       // Load new track
-      audioRef.current.src = `/src/audio/music/tycoon-bgm${trackNumber}.mp3`;
+      globalAudioRef.src = `/src/audio/music/tycoon-bgm${trackNumber}.mp3`;
       
-      await audioRef.current.play();
+      await globalAudioRef.play();
+      globalCurrentTrack = trackNumber;
+      globalIsPlaying = true;
       setCurrentTrack(trackNumber);
       setIsPlaying(true);
       
@@ -125,20 +126,22 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
   };
 
   const nextTrack = () => {
-    const next = currentTrack >= trackCount ? 1 : currentTrack + 1;
+    const next = globalCurrentTrack >= trackCount ? 1 : globalCurrentTrack + 1;
     playTrack(next);
   };
 
   const pauseMusic = () => {
-    if (audioRef.current && isPlaying) {
-      audioRef.current.pause();
+    if (globalAudioRef && globalIsPlaying) {
+      globalAudioRef.pause();
+      globalIsPlaying = false;
       setIsPlaying(false);
     }
   };
 
   const resumeMusic = () => {
-    if (audioRef.current && !isPlaying && settings.musicEnabled) {
-      audioRef.current.play().then(() => {
+    if (globalAudioRef && !globalIsPlaying && settings.musicEnabled) {
+      globalAudioRef.play().then(() => {
+        globalIsPlaying = true;
         setIsPlaying(true);
       }).catch(error => {
         console.warn('Failed to resume music:', error);
@@ -146,14 +149,24 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
     }
   };
 
-  // Auto-start music when enabled
+  // Auto-start music when enabled or when component mounts
   useEffect(() => {
-    if (settings.musicEnabled && !isPlaying) {
-      playTrack(currentTrack);
-    } else if (!settings.musicEnabled && isPlaying) {
+    if (settings.musicEnabled && !globalIsPlaying) {
+      playTrack(globalCurrentTrack);
+    } else if (!settings.musicEnabled && globalIsPlaying) {
       pauseMusic();
     }
   }, [settings.musicEnabled]);
+
+  // Start music immediately when hook initializes (if enabled)
+  useEffect(() => {
+    if (settings.musicEnabled && globalAudioRef && !globalIsPlaying) {
+      // Small delay to ensure audio context is ready
+      setTimeout(() => {
+        playTrack(globalCurrentTrack);
+      }, 100);
+    }
+  }, []); // Only run once on mount
 
   return {
     currentTrack,
