@@ -62,6 +62,7 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
         return;
       }
 
+
       const startVolume = globalAudioRef.volume;
       const volumeDiff = targetVolume - startVolume;
       const steps = 50; // Number of fade steps
@@ -103,15 +104,24 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
   };
 
   const playTrack = async (trackNumber: number) => {
+    if (globalIsLoadingTrack) {
+      console.warn('BGM: Track loading already in progress. Skipping request.');
+      return;
+    }
     if (!globalAudioRef || !settings.musicEnabled) return;
 
+    globalIsLoadingTrack = true;
     try {
       // Stop current track
-      globalAudioRef.pause();
-      globalAudioRef.currentTime = 0;
+      if (globalAudioRef.src) { // Check if a source is already set
+        globalAudioRef.pause();
+        globalAudioRef.currentTime = 0;
+      }
 
       // Load new track
-      globalAudioRef.src = `/src/audio/music/tycoon-bgm${trackNumber}.mp3`;
+      const trackPath = `/src/audio/music/tycoon-bgm${trackNumber}.mp3`;
+      console.log(`BGM: Attempting to load track ${trackNumber} from ${trackPath}`);
+      globalAudioRef.src = trackPath;
       
       await globalAudioRef.play();
       globalCurrentTrack = trackNumber;
@@ -119,9 +129,14 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
       setCurrentTrack(trackNumber);
       setIsPlaying(true);
       
-      console.log(`Playing BGM track ${trackNumber}`);
+      console.log(`BGM: Successfully playing track ${trackNumber}`);
     } catch (error) {
-      console.warn(`Failed to play BGM track ${trackNumber}:`, error);
+      console.warn(`BGM: Failed to play track ${trackNumber}:`, error);
+      // Potentially reset isPlaying state here if needed, though current logic might handle it
+      globalIsPlaying = false;
+      setIsPlaying(false);
+    } finally {
+      globalIsLoadingTrack = false;
     }
   };
 
