@@ -1,3 +1,4 @@
+
 // Game type definitions
 import { Chart, ArtistContact, MarketTrend } from './charts';
 
@@ -17,6 +18,7 @@ export interface PlayerData {
   dailyWorkCapacity: number;
   reputation: number;
   lastMinigameType?: string; // Track last completed minigame to prevent repetition
+  completedProjects: number; // Add this property
 }
 
 export interface StudioSkill {
@@ -131,6 +133,7 @@ export interface GameState {
   eraStartYear: number; // Year when the current era started
   equipmentMultiplier: number; // Price multiplier for equipment in this era
   playerData: PlayerData;
+  studioName: string; // Add this property
   studioSkills: Record<string, StudioSkill>;
   ownedUpgrades: string[];
   ownedEquipment: Equipment[];
@@ -168,3 +171,44 @@ export interface FocusAllocation {
   soundCapture: number;
   layering: number;
 }
+
+// Initial game state
+export const initialGameState: GameState = {
+  money: 5000,
+  currentEra: '2000s',
+  reputation: 0,
+  currentDay: 1,
+  currentYear: 2000,
+  selectedEra: '2000s',
+  eraStartYear: 2000,
+  equipmentMultiplier: 1,
+  studioName: 'Your Studio',
+  playerData: {
+    xp: 0,
+    level: 1,
+    xpToNextLevel: 100,
+    perkPoints: 0,
+    completedProjects: 0,
+    attributes: {
+      focusMastery: 1,
+      creativeIntuition: 1,
+      technicalAptitude: 1,
+      businessAcumen: 1
+    },
+    dailyWorkCapacity: 3,
+    reputation: 0
+  },
+  studioSkills: {},
+  ownedUpgrades: [],
+  ownedEquipment: [],
+  availableProjects: [],
+  activeProject: null,
+  hiredStaff: [],
+  availableCandidates: [],
+  lastSalaryDay: 0,
+  notifications: [],
+  bands: [],
+  playerBands: [],
+  availableSessionMusicians: [],
+  activeOriginalTrack: null
+};

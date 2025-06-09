@@ -48,6 +48,7 @@ export interface OriginalTrackProject {
   accumulatedCPoints: number;
   accumulatedTPoints: number;
   workSessionCount: number;
+  daysElapsed: number;
 }
 
 export interface OriginalTrackStage {

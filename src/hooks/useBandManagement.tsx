@@ -121,7 +121,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
       ),
       hiredStaff: prev.hiredStaff.map(staff =>
         band.memberIds.includes(staff.id)
-          ? { ...staff, status: 'Idle' as const } // Changed from 'On Tour' to valid status
+          ? { ...staff, status: 'Idle' as const }
           : staff
       )
     }));
@@ -160,13 +160,8 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
       id: `original_${Date.now()}`,
       title: `${band.bandName} - New Track`,
       bandId: bandId,
-      trackTitle: `${band.bandName} - New Track`,
-      genre: band.genre,
-      startDate: gameState.currentDay,
-      estimatedDays: 7,
-      stage: 'writing' as const,
       sessionMusicianIds: [],
-      mode: 'original' as const,
+      mode: 'band' as const,
       stages: [],
       currentStageIndex: 0,
       daysElapsed: 0,
@@ -185,7 +180,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
       description: `${band.bandName} is working on a new track!`,
       duration: 3000
     });
-  }, [gameState.playerBands, gameState.activeProject, gameState.currentDay, setGameState]);
+  }, [gameState.playerBands, gameState.activeProject, setGameState]);
 
   const processTourIncome = useCallback(() => {
     let totalIncome = 0;

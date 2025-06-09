@@ -177,14 +177,21 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     // Call actual work function
     const result = performDailyWork();
     
-    if (result?.isComplete) {
+    // Only show celebration if project is actually complete
+    if (result?.isComplete && result.review) {
       console.log('🎉 Project completed! Triggering celebration...');
-      setShowCelebration(true);
+      // Small delay to ensure state is updated before showing celebration
       setTimeout(() => {
+        setShowCelebration(true);
+      }, 500);
+      
+      // Auto-hide celebration after shorter duration
+      setTimeout(() => {
+        setShowCelebration(false);
         if (onProjectComplete) {
           onProjectComplete();
         }
-      }, 1500);
+      }, 3000);
     }
   };
 
