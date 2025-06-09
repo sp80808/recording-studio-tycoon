@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -52,6 +53,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   triggerEraTransition
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [showEraModal, setShowEraModal] = useState(false);
 
   return (
     <Card className="bg-gray-800/50 border-gray-600 backdrop-blur-sm animate-fade-in">
@@ -95,16 +97,18 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           {activeTab === 'overview' && (
             <>
               <PlayerAttributesModal 
-                gameState={gameState}
                 showAttributesModal={showAttributesModal}
                 setShowAttributesModal={setShowAttributesModal}
                 spendPerkPoint={spendPerkPoint}
+                playerData={gameState.playerData}
               />
               
-              <EraProgressModal 
-                gameState={gameState}
-                triggerEraTransition={triggerEraTransition}
-              />
+              <Button
+                onClick={() => setShowEraModal(true)}
+                className="w-full bg-purple-600 hover:bg-purple-700 mb-4"
+              >
+                🌟 Era Progress
+              </Button>
               
               <Button 
                 onClick={advanceDay}
@@ -144,6 +148,13 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           )}
         </div>
       </div>
+
+      <EraProgressModal 
+        isOpen={showEraModal}
+        onClose={() => setShowEraModal(false)}
+        gameState={gameState}
+        triggerEraTransition={triggerEraTransition}
+      />
     </Card>
   );
 };
