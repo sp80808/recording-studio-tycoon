@@ -1,5 +1,23 @@
 
-import { EraAvailableEquipment } from '@/types/game';
+import { GameState } from '@/types/game';
+
+export interface EraAvailableEquipment {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  description: string;
+  bonuses: {
+    qualityBonus?: number;
+    creativityBonus?: number;
+    technicalBonus?: number;
+    speedBonus?: number;
+    genreBonus?: Record<string, number>;
+  };
+  icon: string;
+  availableFrom: string;
+  skillRequirement?: Record<string, number>;
+}
 
 export const equipment: EraAvailableEquipment[] = [
   // Microphones

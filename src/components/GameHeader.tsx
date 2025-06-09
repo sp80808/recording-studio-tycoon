@@ -29,6 +29,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
   openTrainingModal
 }) => {
   const [showStaffModal, setShowStaffModal] = useState(false);
+  const studioName = gameState.studioName || 'Your Studio';
 
   return (
     <>
@@ -38,7 +39,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
           <div className="flex items-center gap-4">
             <div>
               <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                🎵 {gameState.studioName}
+                🎵 {studioName}
                 {gameState.playerData.level >= 10 && <Star className="h-5 w-5 text-yellow-400" />}
               </h1>
               <p className="text-gray-400 text-sm">
@@ -112,8 +113,8 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
       </Card>
 
       <StaffManagementModal
-        isOpen={showStaffModal}
-        onClose={() => setShowStaffModal(false)}
+        showStaffModal={showStaffModal}
+        setShowStaffModal={setShowStaffModal}
         gameState={gameState}
         hireStaff={hireStaff}
         refreshCandidates={refreshCandidates}

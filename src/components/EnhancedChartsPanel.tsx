@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +14,18 @@ interface EnhancedChartsPanelProps {
   onContactArtist: (artistId: string, offer: number) => void;
 }
 
-export const EnhancedChartsPanel: React.FC<EnhancedChartsPanelProps> = ({ gameState, onContactArtist }) => {
+export const EnhancedChartsPanel: React.FC<EnhancedChartsPanelProps> = ({
+  gameState,
+  onContactArtist
+}) => {
+  const [selectedGenre, setSelectedGenre] = useState<string>('All');
+  const [playingTrack, setPlayingTrack] = useState<string | null>(null);
+  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+
+  // Get completed projects count - fallback to 0 if property doesn't exist
+  const completedProjectsCount = gameState.completedProjects?.length || 
+    gameState.playerData?.completedProjects || 0;
+
   const [availableCharts, setAvailableCharts] = useState<Chart[]>([]);
   const [selectedChart, setSelectedChart] = useState<string>('hot100');
   const [marketTrends, setMarketTrends] = useState<MarketTrend[]>([]);
@@ -183,29 +193,26 @@ export const EnhancedChartsPanel: React.FC<EnhancedChartsPanelProps> = ({ gameSt
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header with industry influence */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-xl font-bold text-white flex items-center gap-2">
-            📈 Industry Charts
-            {playerInfluence > 50 && <Star className="h-5 w-5 text-yellow-400" />}
-          </h3>
-          <p className="text-sm text-gray-400">
-            Your Industry Influence: {Math.round(playerInfluence)}%
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-blue-400 border-blue-400">
-            Level {gameState.playerData.level}
-          </Badge>
-          {playerInfluence > 75 && (
-            <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black">
-              Industry Leader
-            </Badge>
-          )}
-        </div>
-      </div>
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold text-white flex items-center gap-2">
+        📈 Industry Charts
+        <Badge variant="outline" className="text-xs">
+          Level {gameState.playerData.level}
+        </Badge>
+      </h2>
+
+      {/* Progressive unlock message */}
+      {gameState.playerData.level < 3 && (
+        <Card className="p-4 bg-gradient-to-r from-purple-900/30 to-blue-900/30 border-purple-500/50">
+          <div className="text-center">
+            <div className="text-4xl mb-2">🔒</div>
+            <div className="text-yellow-400 font-semibold mb-1">Charts Partially Locked</div>
+            <div className="text-gray-300 text-sm">
+              Complete {3 - completedProjectsCount} more projects to unlock full charts access
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Enhanced Chart Selector */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">

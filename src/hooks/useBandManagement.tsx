@@ -2,7 +2,6 @@
 import { useCallback } from 'react';
 import { GameState } from '@/types/game';
 import { Band } from '@/types/bands';
-import { generateBandName } from '@/utils/bandUtils';
 import { toast } from '@/hooks/use-toast';
 
 export const useBandManagement = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
@@ -51,6 +50,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
       fame: 0,
       notoriety: 0,
       pastReleases: [],
+      isPlayerCreated: true,
       tourStatus: {
         isOnTour: false,
         daysRemaining: 0,
@@ -121,7 +121,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
       ),
       hiredStaff: prev.hiredStaff.map(staff =>
         band.memberIds.includes(staff.id)
-          ? { ...staff, status: 'On Tour' as const }
+          ? { ...staff, status: 'Idle' as const } // Changed from 'On Tour' to valid status
           : staff
       )
     }));
@@ -146,7 +146,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
       return;
     }
 
-    if (gameState.activeProject || gameState.activeOriginalTrack) {
+    if (gameState.activeProject) {
       toast({
         title: "Studio Busy",
         description: "Complete your current project first.",
@@ -155,15 +155,24 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
       return;
     }
 
-    // Create an original track project
+    // Create a simplified original track project
     const originalTrack = {
       id: `original_${Date.now()}`,
+      title: `${band.bandName} - New Track`,
       bandId: bandId,
       trackTitle: `${band.bandName} - New Track`,
       genre: band.genre,
       startDate: gameState.currentDay,
       estimatedDays: 7,
-      stage: 'writing' as const
+      stage: 'writing' as const,
+      sessionMusicianIds: [],
+      mode: 'original' as const,
+      stages: [],
+      currentStageIndex: 0,
+      daysElapsed: 0,
+      workSessionCount: 0,
+      accumulatedCPoints: 0,
+      accumulatedTPoints: 0
     };
 
     setGameState(prev => ({
@@ -176,7 +185,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
       description: `${band.bandName} is working on a new track!`,
       duration: 3000
     });
-  }, [gameState.playerBands, gameState.activeProject, gameState.activeOriginalTrack, gameState.currentDay, setGameState]);
+  }, [gameState.playerBands, gameState.activeProject, gameState.currentDay, setGameState]);
 
   const processTourIncome = useCallback(() => {
     let totalIncome = 0;

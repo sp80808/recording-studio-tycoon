@@ -1,31 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { GameLayout } from '@/components/GameLayout';
+import React, { useState, useEffect, useCallback } from 'react';
+import { GameState, initialGameState, FocusAllocation } from '@/types/game';
 import { GameHeader } from '@/components/GameHeader';
-import { MainGameContent } from '@/components/MainGameContent';
-import { NotificationSystem } from '@/components/NotificationSystem';
-import { TrainingModal } from '@/components/modals/TrainingModal';
-import { GameModals } from '@/components/GameModals';
+import { LeftPanel } from '@/components/LeftPanel';
+import { RightPanel } from '@/components/RightPanel';
 import { SettingsModal } from '@/components/modals/SettingsModal';
-import { TutorialModal } from '@/components/TutorialModal';
-import { SplashScreen } from '@/components/SplashScreen';
-import { Era } from '@/components/EraSelectionModal';
-import { useGameState } from '@/hooks/useGameState';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useGameLogic } from '@/hooks/useGameLogic';
-import { useSettings } from '@/contexts/SettingsContext';
-import { useSaveSystem } from '@/contexts/SaveSystemContext';
-import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
-import { gameAudio as audioSystem } from '@/utils/audioSystem';
-import { EnhancedGameLayout } from '@/components/EnhancedGameLayout';
+import { EnhancedAnimationStyles } from '@/components/EnhancedAnimationStyles';
+import { StaffMember } from '@/types/game';
 
-const MusicStudioTycoon = () => {
-  const { gameState, setGameState, focusAllocation, setFocusAllocation, initializeGameState } = useGameState();
-  const { settings } = useSettings();
-  const { saveGame, loadGame, hasSavedGame } = useSaveSystem();
-  
-  // Splash screen and game initialization state
-  const [showSplashScreen, setShowSplashScreen] = useState(true);
-  const [gameInitialized, setGameInitialized] = useState(false);
-  
+export default function Index() {
+  const [gameState, setGameState] = useLocalStorage<GameState>('gameState', initialGameState);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showSkillsModal, setShowSkillsModal] = useState(false);
+  const [showAttributesModal, setShowAttributesModal] = useState(false);
+  const [focusAllocation, setFocusAllocation] = useState<FocusAllocation>({
+    performance: 33,
+    soundCapture: 33,
+    layering: 34
+  });
+
   const {
     startProject,
     handlePerformDailyWork,
@@ -44,240 +38,81 @@ const MusicStudioTycoon = () => {
     setSelectedStaffForTraining,
     lastReview,
     orbContainerRef,
+    autoTriggeredMinigame,
+    clearAutoTriggeredMinigame,
     contactArtist,
     triggerEraTransition
   } = useGameLogic(gameState, setGameState, focusAllocation);
 
-  const [showReviewModal, setShowReviewModal] = useState(false);
-  const [showTrainingModal, setShowTrainingModal] = useState(false);
-  const [showStaffModal, setShowStaffModal] = useState(false);
-  const [showRecruitmentModal, setShowRecruitmentModal] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [showTutorialModal, setShowTutorialModal] = useState(false);
-
-  // Initialize background music
-  useBackgroundMusic();
-
-  // Check for existing save game on mount
+  // Load initial candidates on mount
   useEffect(() => {
-    const checkSaveGame = () => {
-      if (hasSavedGame()) {
-        setShowSplashScreen(false);
-        setGameInitialized(true);
-      }
-    };
-    checkSaveGame();
-  }, [hasSavedGame]);
-
-  // Auto-open training modal when staff is selected for training
-  useEffect(() => {
-    if (selectedStaffForTraining) {
-      setShowTrainingModal(true);
+    if (!gameState.availableCandidates || gameState.availableCandidates.length === 0) {
+      refreshCandidates();
     }
-  }, [selectedStaffForTraining]);
-
-  // Handle starting a new game with selected era
-  const handleStartNewGame = (era: Era) => {
-    const newGameState = initializeGameState({
-      startingMoney: era.startingMoney,
-      selectedEra: era.id,
-      eraStartYear: era.startYear,
-      currentYear: era.startYear,
-      equipmentMultiplier: era.equipmentMultiplier
-    });
-    
-    setGameState(newGameState);
-    setShowSplashScreen(false);
-    setGameInitialized(true);
-    
-    // Show tutorial for new players
-    const hasPlayedBefore = localStorage.getItem('recordingStudioTycoon_hasPlayed');
-    if (!hasPlayedBefore && !settings.tutorialCompleted) {
-      setShowTutorialModal(true);
-    }
-
-    if (settings.sfxEnabled) {
-      audioSystem.playUISound('success');
-    }
-  };
-
-  // Handle loading existing game
-  const handleLoadGame = async () => {
-    try {
-      const loadedState = await loadGame();
-      if (loadedState) {
-        setGameState(loadedState);
-        setShowSplashScreen(false);
-        setGameInitialized(true);
-        
-        if (settings.sfxEnabled) {
-          audioSystem.playUISound('success');
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load game:', error);
-    }
-  };
-
-  // Check if this is first time playing for tutorial
-  useEffect(() => {
-    const hasPlayedBefore = localStorage.getItem('recordingStudioTycoon_hasPlayed');
-    if (!hasPlayedBefore && !settings.tutorialCompleted) {
-      setShowTutorialModal(true);
-    }
-  }, [settings.tutorialCompleted]);
-
-  // Set up auto-save triggers for key game actions
-  useEffect(() => {
-    if (settings.autoSave) {
-      // Auto-save on level up
-      const currentLevel = gameState.playerData.level;
-      const savedLevel = localStorage.getItem('recordingStudioTycoon_lastLevel');
-      if (savedLevel && parseInt(savedLevel) < currentLevel) {
-        saveGame(gameState);
-        localStorage.setItem('recordingStudioTycoon_lastLevel', currentLevel.toString());
-      }
-    }
-  }, [gameState.playerData.level, settings.autoSave, saveGame, gameState]);
-
-  // Play UI sounds for various actions
-  useEffect(() => {
-    if (settings.sfxEnabled) {
-      // Level up sound
-      const lastKnownLevel = parseInt(localStorage.getItem('recordingStudioTycoon_lastKnownLevel') || '1');
-      if (gameState.playerData.level > lastKnownLevel) {
-        audioSystem.playUISound('levelUp');
-        localStorage.setItem('recordingStudioTycoon_lastKnownLevel', gameState.playerData.level.toString());
-      }
-    }
-  }, [gameState.playerData.level, settings.sfxEnabled]);
-
-  const removeNotification = (id: string) => {
-    setGameState(prev => ({
-      ...prev,
-      notifications: prev.notifications.filter(n => n.id !== id)
-    }));
-  };
-
-  const handleOpenSettings = () => {
-    setShowSettingsModal(true);
-    if (settings.sfxEnabled) {
-      audioSystem.playUISound('buttonClick');
-    }
-  };
-
-  // Enhanced action handlers with sound effects
-  const handleProjectStart = (project: any) => {
-    const result = startProject(project);
-    if (settings.sfxEnabled) {
-      audioSystem.playUISound('success');
-    }
-    return result;
-  };
-
-  const handleEquipmentPurchase = (equipmentId: string) => {
-    const result = purchaseEquipment(equipmentId);
-    if (settings.sfxEnabled) {
-      audioSystem.playUISound('purchase');
-    }
-    return result;
-  };
-
-  const handleStaffHire = (candidateIndex: number) => {
-    const result = hireStaff(candidateIndex);
-    if (settings.sfxEnabled) {
-      audioSystem.playUISound('success');
-    }
-    return result;
-  };
-
-  const handleTutorialComplete = () => {
-    setShowTutorialModal(false);
-    if (settings.sfxEnabled) {
-      audioSystem.playUISound('success');
-    }
-  };
-
-  // Show splash screen if game is not initialized
-  if (showSplashScreen && !gameInitialized) {
-    return (
-      <SplashScreen
-        onStartGame={handleStartNewGame}
-        onLoadGame={handleLoadGame}
-        hasSaveGame={hasSavedGame()}
-      />
-    );
-  }
-
-  // Don't render main game until initialized
-  if (!gameInitialized) {
-    return <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-      <div className="text-white">Loading...</div>
-    </div>;
-  }
+  }, []);
 
   return (
-    <EnhancedGameLayout gameState={gameState} theme="studio">
-      <GameHeader 
-        gameState={gameState} 
-        onOpenSettings={handleOpenSettings}
-      />
-
-      <MainGameContent
-        gameState={gameState}
-        setGameState={setGameState}
-        focusAllocation={focusAllocation}
-        setFocusAllocation={setFocusAllocation}
-        startProject={handleProjectStart}
-        performDailyWork={handlePerformDailyWork}
-        onMinigameReward={handleMinigameReward}
-        spendPerkPoint={handleSpendPerkPoint}
-        advanceDay={advanceDay}
-        purchaseEquipment={handleEquipmentPurchase}
-        hireStaff={handleStaffHire}
-        refreshCandidates={refreshCandidates}
-        assignStaffToProject={assignStaffToProject}
-        unassignStaffFromProject={unassignStaffFromProject}
-        toggleStaffRest={toggleStaffRest}
-        openTrainingModal={handleOpenTrainingModal}
-        orbContainerRef={orbContainerRef}
-        contactArtist={contactArtist}
-        triggerEraTransition={triggerEraTransition}
-      />
-
-      <TrainingModal
-        isOpen={showTrainingModal}
-        onClose={() => {
-          setShowTrainingModal(false);
-          setSelectedStaffForTraining(null);
-        }}
-        staff={selectedStaffForTraining}
-        gameState={gameState}
-        sendStaffToTraining={sendStaffToTraining}
-      />
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <EnhancedAnimationStyles />
+      
+      <div className="container mx-auto p-4 space-y-4">
+        <GameHeader 
+          gameState={gameState} 
+          onOpenSettings={() => setShowSettings(true)}
+          hireStaff={hireStaff}
+          refreshCandidates={refreshCandidates}
+          assignStaffToProject={assignStaffToProject}
+          unassignStaffFromProject={unassignStaffFromProject}
+          toggleStaffRest={toggleStaffRest}
+          openTrainingModal={handleOpenTrainingModal}
+        />
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <LeftPanel gameState={gameState} startProject={startProject} />
+          
+          <div className="md:col-span-2">
+            {React.cloneElement(
+              <div ref={orbContainerRef}></div>,
+              {}
+            )}
+          </div>
+          
+          <RightPanel
+            gameState={gameState}
+            showSkillsModal={showSkillsModal}
+            setShowSkillsModal={setShowSkillsModal}
+            showAttributesModal={showAttributesModal}
+            setShowAttributesModal={setShowAttributesModal}
+            spendPerkPoint={handleSpendPerkPoint}
+            advanceDay={advanceDay}
+            triggerEraTransition={triggerEraTransition}
+            purchaseEquipment={purchaseEquipment}
+            createBand={(bandName, memberIds) => {
+              console.log('Creating band with:', bandName, memberIds);
+            }}
+            startTour={(bandId) => {
+              console.log('Starting tour for band ID:', bandId);
+            }}
+            createOriginalTrack={(bandId) => {
+              console.log('Creating original track for band ID:', bandId);
+            }}
+            contactArtist={contactArtist}
+            hireStaff={hireStaff}
+            refreshCandidates={refreshCandidates}
+            assignStaffToProject={assignStaffToProject}
+            unassignStaffFromProject={unassignStaffFromProject}
+            toggleStaffRest={toggleStaffRest}
+            openTrainingModal={handleOpenTrainingModal}
+          />
+        </div>
+      </div>
 
       <SettingsModal
-        isOpen={showSettingsModal}
-        onClose={() => setShowSettingsModal(false)}
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        gameState={gameState}
+        setGameState={setGameState}
       />
-
-      <TutorialModal
-        isOpen={showTutorialModal}
-        onComplete={handleTutorialComplete}
-      />
-
-      <NotificationSystem
-        notifications={gameState.notifications}
-        removeNotification={removeNotification}
-      />
-
-      <GameModals
-        showReviewModal={showReviewModal}
-        setShowReviewModal={setShowReviewModal}
-        lastReview={lastReview}
-      />
-    </EnhancedGameLayout>
+    </div>
   );
-};
-
-export default MusicStudioTycoon;
+}
