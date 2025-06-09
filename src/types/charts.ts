@@ -20,6 +20,12 @@ export interface Artist {
   specialties: string[];
   socialMediaFollowers: number;
   description?: string; // Short bio or description of the artist
+  availability: {
+    status: 'available' | 'busy' | 'on-tour' | 'in-studio';
+    availableFrom?: number; // Game day when available
+    responseTime: number; // Days to respond to requests
+    currentProject?: string; // Project ID if currently working
+  };
 }
 
 export interface Song {
