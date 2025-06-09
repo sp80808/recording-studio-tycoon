@@ -87,6 +87,7 @@
 
 - **Additional Content**:
   - More equipment categories and eras
+  New Mini Games
   - Extended chart types and regions
   - Enhanced tutorial system for new features
 - Implement Basic Trends:

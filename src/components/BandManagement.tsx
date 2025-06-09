@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { GameState } from '@/types/game';
 import { Band } from '@/types/bands';
 import { CreateBandModal } from './modals/CreateBandModal';
+import { RecordTrackModal } from './modals/RecordTrackModal';
 import { canGoOnTour } from '@/utils/bandUtils';
 import { toast } from '@/hooks/use-toast';
 
@@ -22,6 +23,8 @@ export const BandManagement: React.FC<BandManagementProps> = ({
   onCreateOriginalTrack
 }) => {
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showRecordTrackModal, setShowRecordTrackModal] = useState(false);
+  const [selectedBandForTrack, setSelectedBandForTrack] = useState<Band | null>(null);
 
   const canCreateBand = gameState.playerData.level >= 4 && gameState.hiredStaff.length >= 1;
 
@@ -145,7 +148,10 @@ export const BandManagement: React.FC<BandManagementProps> = ({
             <div className="flex gap-2">
               <Button
                 size="sm"
-                onClick={() => onCreateOriginalTrack(band.id)}
+                onClick={() => {
+                  setSelectedBandForTrack(band);
+                  setShowRecordTrackModal(true);
+                }}
                 disabled={gameState.activeProject !== null || gameState.activeOriginalTrack !== null || band.tourStatus.isOnTour}
                 className="flex-1 bg-green-600 hover:bg-green-700"
               >
@@ -172,6 +178,18 @@ export const BandManagement: React.FC<BandManagementProps> = ({
         gameState={gameState}
         onCreateBand={onCreateBand}
       />
+
+      {selectedBandForTrack && (
+        <RecordTrackModal
+          isOpen={showRecordTrackModal}
+          onClose={() => {
+            setShowRecordTrackModal(false);
+            setSelectedBandForTrack(null);
+          }}
+          band={selectedBandForTrack}
+          onCreateOriginalTrack={onCreateOriginalTrack}
+        />
+      )}
     </div>
   );
 };
