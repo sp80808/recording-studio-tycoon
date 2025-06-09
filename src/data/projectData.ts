@@ -2,61 +2,58 @@
 import { Project } from '@/types/game';
 
 export const generateInitialProjects = (playerLevel: number): Project[] => {
-  const baseProjects: Omit<Project, 'id'>[] = [
+  const projects: Project[] = [
     {
-      title: 'Demo Recording',
+      id: '60s-rock-1',
+      title: 'Local Band Demo',
       genre: 'Rock',
-      clientType: 'Local Band',
       difficulty: 1,
-      durationDaysTotal: 3,
+      description: 'Record a simple demo for a local rock band',
       payoutBase: 500,
-      repGainBase: 10,
-      requiredSkills: { recording: 1 },
-      stages: [
-        {
-          stageName: 'Setup',
-          focusAreas: ['technical'],
-          workUnitsBase: 5,
-          workUnitsCompleted: 0,
-          completed: false
-        }
-      ],
-      matchRating: 'Good',
+      creativityRequired: 20,
+      technicalRequired: 15,
       accumulatedCPoints: 0,
       accumulatedTPoints: 0,
-      currentStageIndex: 0,
-      completedStages: [],
-      workSessionCount: 0
+      isComplete: false,
+      clientName: 'The Garage Rockers',
+      eraRequirement: 'analog60s'
     },
     {
-      title: 'Podcast Recording',
-      genre: 'Spoken Word',
-      clientType: 'Podcaster',
+      id: '60s-folk-1',
+      title: 'Folk Singer Single',
+      genre: 'Folk',
       difficulty: 1,
-      durationDaysTotal: 2,
-      payoutBase: 300,
-      repGainBase: 5,
-      requiredSkills: { recording: 1 },
-      stages: [
-        {
-          stageName: 'Recording',
-          focusAreas: ['technical'],
-          workUnitsBase: 3,
-          workUnitsCompleted: 0,
-          completed: false
-        }
-      ],
-      matchRating: 'Excellent',
+      description: 'Record an intimate folk single',
+      payoutBase: 400,
+      creativityRequired: 25,
+      technicalRequired: 10,
       accumulatedCPoints: 0,
       accumulatedTPoints: 0,
-      currentStageIndex: 0,
-      completedStages: [],
-      workSessionCount: 0
+      isComplete: false,
+      clientName: 'Sarah Moonlight',
+      eraRequirement: 'analog60s'
+    },
+    {
+      id: '60s-soul-1',
+      title: 'Soul Ballad Recording',
+      genre: 'Soul',
+      difficulty: 2,
+      description: 'Capture the emotion of a powerful soul ballad',
+      payoutBase: 750,
+      creativityRequired: 30,
+      technicalRequired: 25,
+      accumulatedCPoints: 0,
+      accumulatedTPoints: 0,
+      isComplete: false,
+      clientName: 'Marcus Williams',
+      eraRequirement: 'analog60s'
     }
   ];
 
-  return baseProjects.map((project, index) => ({
-    ...project,
-    id: `project_${Date.now()}_${index}`
-  }));
+  // Return projects appropriate for player level
+  return projects.filter(project => project.difficulty <= Math.max(1, playerLevel));
+};
+
+export const get60sProjects = (): Project[] => {
+  return generateInitialProjects(1);
 };

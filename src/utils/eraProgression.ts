@@ -155,6 +155,11 @@ export const calculateYearFromDay = (currentDay: number, startYear: number, era:
   return startYear + yearsElapsed;
 };
 
+export const getCurrentEraYear = (gameState: GameState): number => {
+  const currentEra = ERA_DEFINITIONS.find(era => era.id === gameState.currentEra) || ERA_DEFINITIONS[0];
+  return calculateYearFromDay(gameState.currentDay, currentEra.startYear, gameState.currentEra);
+};
+
 export const checkEraTransitionAvailable = (gameState: GameState): EraDefinition | null => {
   const currentEraIndex = ERA_DEFINITIONS.findIndex(era => era.id === gameState.currentEra);
   if (currentEraIndex === -1 || currentEraIndex >= ERA_DEFINITIONS.length - 1) {

@@ -1,11 +1,8 @@
 
 import React, { useState } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { GameState } from '@/types/game';
+import { GameState, StaffMember } from '@/types/game';
 import { StaffManagementModal } from './modals/StaffManagementModal';
-import { Settings, Users, Calendar, DollarSign, Star, Zap } from 'lucide-react';
+import { Button } from './ui/button';
 
 interface GameHeaderProps {
   gameState: GameState;
@@ -15,7 +12,7 @@ interface GameHeaderProps {
   assignStaffToProject: (staffId: string) => void;
   unassignStaffFromProject: (staffId: string) => void;
   toggleStaffRest: (staffId: string) => void;
-  openTrainingModal: (staff: any) => boolean;
+  openTrainingModal: (staff: StaffMember) => boolean;
 }
 
 export const GameHeader: React.FC<GameHeaderProps> = ({
@@ -29,93 +26,37 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
   openTrainingModal
 }) => {
   const [showStaffModal, setShowStaffModal] = useState(false);
-  const studioName = gameState.studioName || 'Your Studio';
 
   return (
-    <>
-      <Card className="bg-gray-900/95 border-gray-600 p-4 backdrop-blur-sm">
-        <div className="flex items-center justify-between">
-          {/* Left side - Studio name and basic info */}
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                🎵 {studioName}
-                {gameState.playerData.level >= 10 && <Star className="h-5 w-5 text-yellow-400" />}
-              </h1>
-              <p className="text-gray-400 text-sm">
-                Era: {gameState.currentEra} • Day {gameState.currentDay}
-              </p>
-            </div>
-          </div>
-
-          {/* Center - Key stats */}
-          <div className="hidden md:flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-green-400" />
-              <span className="text-white font-medium">${gameState.money.toLocaleString()}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Zap className="h-4 w-4 text-blue-400" />
-              <span className="text-white">Level {gameState.playerData.level}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Star className="h-4 w-4 text-purple-400" />
-              <span className="text-white">{gameState.playerData.reputation || 0} Rep</span>
-            </div>
-          </div>
-
-          {/* Right side - Action buttons */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowStaffModal(true)}
-              className="hidden sm:flex items-center gap-2"
-            >
-              <Users className="h-4 w-4" />
-              Staff ({gameState.hiredStaff?.length || 0})
-            </Button>
-            
-            {gameState.playerData.level >= 5 && (
-              <Badge variant="outline" className="text-yellow-400 border-yellow-400">
-                Era Transition Available
-              </Badge>
-            )}
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onOpenSettings}
-              className="text-gray-400 hover:text-white"
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
+    <div className="bg-gray-900/90 backdrop-blur-sm border-b border-gray-700 p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold text-white">Music Studio Tycoon</h1>
+          <div className="text-sm text-gray-400">
+            Day {gameState.currentDay} • {gameState.currentEra} • ${gameState.money.toLocaleString()}
           </div>
         </div>
-
-        {/* Mobile stats row */}
-        <div className="md:hidden mt-3 flex items-center justify-between text-sm">
-          <div className="flex items-center gap-4">
-            <span className="text-green-400">${gameState.money.toLocaleString()}</span>
-            <span className="text-blue-400">Lv.{gameState.playerData.level}</span>
-            <span className="text-purple-400">{gameState.playerData.reputation || 0} Rep</span>
-          </div>
+        
+        <div className="flex items-center gap-2">
           <Button
-            variant="outline"
-            size="sm"
             onClick={() => setShowStaffModal(true)}
-            className="flex items-center gap-1"
+            className="bg-green-600 hover:bg-green-700"
           >
-            <Users className="h-3 w-3" />
-            {gameState.hiredStaff?.length || 0}
+            👥 Staff
+          </Button>
+          <Button
+            onClick={onOpenSettings}
+            className="bg-gray-600 hover:bg-gray-700"
+          >
+            ⚙️ Settings
           </Button>
         </div>
-      </Card>
+      </div>
 
       <StaffManagementModal
-        showStaffModal={showStaffModal}
-        setShowStaffModal={setShowStaffModal}
         gameState={gameState}
+        isOpen={showStaffModal}
+        onClose={() => setShowStaffModal(false)}
         hireStaff={hireStaff}
         refreshCandidates={refreshCandidates}
         assignStaffToProject={assignStaffToProject}
@@ -123,6 +64,6 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
         toggleStaffRest={toggleStaffRest}
         openTrainingModal={openTrainingModal}
       />
-    </>
+    </div>
   );
 };
