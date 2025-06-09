@@ -6,7 +6,7 @@ import { SkillsModal } from '@/components/modals/SkillsModal';
 import { AttributesModal } from '@/components/modals/AttributesModal';
 import { EquipmentList } from '@/components/EquipmentList';
 import { BandManagement } from '@/components/BandManagement';
-import { ChartsPanel_enhanced as ChartsPanel_enhanced } from '@/components/ChartsPanel_enhanced';
+import { ChartsPanel } from '@/components/ChartsPanel';
 
 interface RightPanelProps {
   gameState: GameState;
@@ -264,8 +264,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         />
       )}
 
-      {activeTab === 'charts' && gameState.playerData.level >= 1 && (
-<ChartsPanel_enhanced
+      {activeTab === 'charts' && gameState.playerData.level >= 1 && (                  <ChartsPanel
           gameState={gameState}
           onContactArtist={contactArtist}
         />
