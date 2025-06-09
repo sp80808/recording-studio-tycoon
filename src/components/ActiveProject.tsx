@@ -205,7 +205,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     <>
       <OrbAnimationStyles />
       <div className="flex-1 space-y-4 relative">
-        <Card className="bg-gray-800/90 border-gray-600 p-6 backdrop-blur-sm animate-scale-in">
+        <Card className="bg-gray-800/50 border-gray-600 p-6 backdrop-blur-sm animate-scale-in">
           <div className="flex justify-between items-start mb-4">
             <div className="animate-fade-in">
               <h3 className="text-xl font-bold text-white mb-1">{project.title}</h3>

@@ -97,7 +97,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
           </div>
 
           {/* Game Tip Carousel */}
-          <Card className="bg-gray-800/80 border-gray-600 p-4 mb-8">
+          <Card className="bg-gray-800/30 border-gray-600 p-4 mb-8">
             <div className="text-yellow-400 text-sm font-medium mb-2">Pro Tip:</div>
             <div className="text-gray-300 text-sm h-12 flex items-center justify-center">
               {gameTips[currentTip]}
