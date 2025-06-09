@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { GameLayout } from '@/components/GameLayout';
 import { GameHeader } from '@/components/GameHeader';
@@ -16,6 +15,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useSaveSystem } from '@/contexts/SaveSystemContext';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { gameAudio as audioSystem } from '@/utils/audioSystem';
+import { EnhancedGameLayout } from '@/components/EnhancedGameLayout';
 
 const MusicStudioTycoon = () => {
   const { gameState, setGameState, focusAllocation, setFocusAllocation, initializeGameState } = useGameState();
@@ -217,7 +217,7 @@ const MusicStudioTycoon = () => {
   }
 
   return (
-    <GameLayout>
+    <EnhancedGameLayout gameState={gameState} theme="studio">
       <GameHeader 
         gameState={gameState} 
         onOpenSettings={handleOpenSettings}
@@ -276,7 +276,7 @@ const MusicStudioTycoon = () => {
         setShowReviewModal={setShowReviewModal}
         lastReview={lastReview}
       />
-    </GameLayout>
+    </EnhancedGameLayout>
   );
 };
 

@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useEffect } from 'react';
 import { GameState, FocusAllocation, StaffMember, PlayerAttributes, Project } from '@/types/game';
 import { ProjectList } from '@/components/ProjectList';
@@ -8,6 +7,7 @@ import { FloatingXPOrb } from '@/components/FloatingXPOrb';
 import { EraTransitionAnimation } from '@/components/EraTransitionAnimation';
 import { HistoricalNewsModal } from '@/components/HistoricalNewsModal';
 import { checkForNewEvents, applyEventEffects, HistoricalEvent } from '@/utils/historicalEvents';
+import { EnhancedProjectList } from '@/components/EnhancedProjectList';
 
 interface MainGameContentProps {
   gameState: GameState;
@@ -112,7 +112,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
     <>
       <div className="p-2 sm:p-4 space-y-4 sm:space-y-0 sm:flex sm:gap-4 sm:h-[calc(100vh-140px)] relative">
         <div className="w-full sm:w-80 lg:w-96 animate-fade-in">
-          <ProjectList 
+          <EnhancedProjectList 
             gameState={gameState}
             setGameState={setGameState}
             startProject={startProject}
