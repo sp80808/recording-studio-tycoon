@@ -229,17 +229,15 @@ export const useStageWork = ({
     createOrb('creativity', creativityGain);
     createOrb('technical', technicalGain);
 
+    // FIXED: More reasonable work units calculation
+    const totalPointsGenerated = creativityGain + technicalGain;
+
     // Log values for debugging stage progression
     console.log(`🐞 DEBUG - Current Stage workUnitsBase: ${currentStage.workUnitsBase}`);
     console.log(`🐞 DEBUG - Creativity Gain: ${creativityGain}`);
     console.log(`🐞 DEBUG - Technical Gain: ${technicalGain}`);
     console.log(`🐞 DEBUG - Total Points Generated: ${totalPointsGenerated}`);
-    console.log(`🐞 DEBUG - Work Units to Add: ${workUnitsToAdd}`);
     console.log(`🐞 DEBUG - Current Stage workUnitsCompleted (before): ${currentStage.workUnitsCompleted}`);
-
-
-    // FIXED: More reasonable work units calculation
-    const totalPointsGenerated = creativityGain + technicalGain;
     const workUnitsToAdd = Math.floor(totalPointsGenerated / 5); // Changed from 10 to 5 for better progression
     const newWorkUnitsCompleted = Math.min(
       currentStage.workUnitsCompleted + workUnitsToAdd,

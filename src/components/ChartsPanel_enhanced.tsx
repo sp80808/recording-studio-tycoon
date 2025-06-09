@@ -13,7 +13,7 @@ interface ChartsPanelProps {
   onContactArtist: (artistId: string, offer: number) => void;
 }
 
-export const ChartsPanel_enhanced: React.FC<ChartsPanelProps> = ({ gameState, onContactArtist }) => {
+export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactArtist }) => {
   const [availableCharts, setAvailableCharts] = useState<Chart[]>([]);
   const [selectedChart, setSelectedChart] = useState<string>('hot100');
   const [marketTrends, setMarketTrends] = useState<MarketTrend[]>([]);
