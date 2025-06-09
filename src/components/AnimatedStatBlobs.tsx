@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 
 interface StatBlob {
@@ -30,7 +29,8 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
 
   useEffect(() => {
     console.log('🎨 AnimatedStatBlobs effect triggered:', { creativityGain, technicalGain });
-    
+    let animationTimeoutId: NodeJS.Timeout | null = null;
+
     if ((creativityGain > 0 || technicalGain > 0) && containerRef.current) {
       const container = containerRef.current;
       const containerRect = container.getBoundingClientRect();
@@ -112,7 +112,7 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
 
         // Complete animation after all blobs finish
         const totalDuration = Math.max(...newBlobs.map(b => b.delay)) + 1800; // Updated for new animation timing
-        setTimeout(() => {
+        animationTimeoutId = setTimeout(() => {
           console.log('🏁 Animation complete');
           setAnimating(false);
           setBlobs([]);
@@ -129,9 +129,30 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
         creativityGain,
         technicalGain
       });
-      onComplete();
+      // Ensure onComplete is called if no animation is triggered but was expected
+      // This prevents the parent component from waiting indefinitely if gains are 0 or container is missing
+      if (creativityGain === 0 && technicalGain === 0) {
+        onComplete();
+      }
     }
-  }, [creativityGain, technicalGain, containerRef, onComplete]);
+
+    // Cleanup function
+    return () => {
+      if (animationTimeoutId) {
+        clearTimeout(animationTimeoutId);
+        console.log('🧹 Animation timeout cleared on unmount/re-effect');
+        // If unmounting during animation, ensure onComplete is called
+        // and state is reset to prevent updates on unmounted component.
+        // Check if animating to avoid calling onComplete multiple times if it already ran.
+        if (animating) {
+            setAnimating(false);
+            setBlobs([]);
+            onComplete(); 
+            console.log('🧹 Called onComplete and reset state during cleanup as animation was active.');
+        }
+      }
+    };
+  }, [creativityGain, technicalGain, containerRef, onComplete, animating]); // Added animating to dependency array
 
   if (!animating || blobs.length === 0) {
     console.log('❌ Not animating or no blobs:', { animating, blobCount: blobs.length });

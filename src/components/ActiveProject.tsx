@@ -44,6 +44,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   } | null>(null);
   const [pulseAnimation, setPulseAnimation] = useState(false);
   const [completedMinigamesForStage, setCompletedMinigamesForStage] = useState<Set<string>>(new Set());
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Clear auto-triggered minigame when project changes or stage advances
   useEffect(() => {
@@ -189,12 +190,19 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
         genre: project.genre
       });
       setShowCelebration(true);
-      setTimeout(() => {
-        if (onProjectComplete) {
-          onProjectComplete();
-        }
-      }, 1500);
+      // The ProjectCompletionCelebration component will call its onComplete,
+      // which is wired to handleProjectCelebrationComplete below.
+      // No direct setTimeout here for onProjectComplete.
     }
+  };
+
+  const handleProjectCelebrationComplete = () => {
+    console.log('🎊 Celebration complete, calling onProjectComplete');
+    if (onProjectComplete) {
+      onProjectComplete(); // This should trigger review modal and project cleanup
+    }
+    setShowCelebration(false); // Hide celebration component
+    setCompletedProjectData(null); // Clear completed project data
   };
 
   // Check if current stage is complete and ready to advance
@@ -204,7 +212,27 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   return (
     <>
       <OrbAnimationStyles />
-      <div className="flex-1 space-y-4 relative">
+      {showBlobAnimation && containerRef.current && (
+        <AnimatedStatBlobs
+          creativityGain={lastGains.creativity}
+          technicalGain={lastGains.technical}
+          onComplete={() => {
+            console.log('🎨 Blob animation complete.');
+            setShowBlobAnimation(false);
+            setLastGains({ creativity: 0, technical: 0 });
+          }}
+          containerRef={containerRef}
+        />
+      )}
+      {showCelebration && completedProjectData && (
+        <ProjectCompletionCelebration
+          isVisible={showCelebration}
+          projectTitle={completedProjectData.title}
+          genre={completedProjectData.genre}
+          onComplete={handleProjectCelebrationComplete} // Wire this up
+        />
+      )}
+      <div ref={containerRef} className="flex-1 space-y-4 relative">
         <Card className="bg-gray-800/50 border-gray-600 p-6 backdrop-blur-sm animate-scale-in">
           <div className="flex justify-between items-start mb-4">
             <div className="animate-fade-in">
@@ -373,10 +401,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             isVisible={showCelebration}
             projectTitle={completedProjectData.title}
             genre={completedProjectData.genre}
-            onComplete={() => {
-              setShowCelebration(false);
-              setCompletedProjectData(null);
-            }}
+            onComplete={handleProjectCelebrationComplete}
           />
         )}
       </div>

@@ -123,7 +123,11 @@ const generateArtist = (id: string, genre: MusicGenre): Artist => {
     },
     specialties: [genre],
     socialMediaFollowers: popularity * 10000,
-    description: 'A talented musician in the ' + genre + ' genre.'
+    description: 'A talented musician in the ' + genre + ' genre.',
+    availability: {
+      status: 'available',
+      responseTime: Math.floor(Math.random() * 7) + 1
+    }
   };
 };
 
