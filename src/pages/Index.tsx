@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
-import { GameState, initialGameState, Project, StaffMember, PlayerAttributes, Band } from '@/types/game';
+import { GameState, initialGameState, Project, StaffMember, PlayerAttributes, FocusAllocation } from '@/types/game';
+import type { Band } from '@/types/bands';
 import { useGameState } from '@/hooks/useGameState';
 import { SplashScreen } from '@/components/SplashScreen';
 import { EraSelectionModal } from '@/components/modals/EraSelectionModal';
@@ -33,7 +35,11 @@ export default function Index() {
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [showEraProgressModal, setShowEraProgressModal] = useState(false);
   const [showCreateBandModal, setShowCreateBandModal] = useState(false);
-  const [focusAllocation, setFocusAllocation] = useState({ creativity: 50, technical: 50 });
+  const [focusAllocation, setFocusAllocation] = useState<FocusAllocation>({ 
+    performance: 33, 
+    soundCapture: 33, 
+    layering: 34 
+  });
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const { toast } = useToast();
 
@@ -66,8 +72,8 @@ export default function Index() {
   const workOnProject = (creativityPoints: number, technicalPoints: number) => {
     if (!activeProject) return;
 
-    const cPoints = Math.min(creativityPoints, activeProject.daysRemaining);
-    const tPoints = Math.min(technicalPoints, activeProject.daysRemaining);
+    const cPoints = Math.min(creativityPoints, activeProject.daysRemaining || 10);
+    const tPoints = Math.min(technicalPoints, activeProject.daysRemaining || 10);
 
     updateGameState((prev) => {
       if (!activeProject) return prev;
@@ -76,7 +82,7 @@ export default function Index() {
         ...activeProject,
         accumulatedCPoints: activeProject.accumulatedCPoints + cPoints,
         accumulatedTPoints: activeProject.accumulatedTPoints + tPoints,
-        daysRemaining: activeProject.daysRemaining - Math.max(cPoints, tPoints),
+        daysRemaining: (activeProject.daysRemaining || 10) - Math.max(cPoints, tPoints),
         workSessionCount: (activeProject.workSessionCount || 0) + 1,
       };
 
@@ -84,7 +90,7 @@ export default function Index() {
 
       return {
         ...prev,
-        projects: prev.projects ? [...prev.projects, updatedProject] : [updatedProject],
+        projects: [...prev.projects, updatedProject],
       };
     });
   };
@@ -98,14 +104,14 @@ export default function Index() {
 
       const updatedProject: Project = {
         ...activeProject,
-        currentStage: activeProject.currentStage + 1,
+        currentStage: (activeProject.currentStage || 0) + 1,
       };
 
       setActiveProject(updatedProject);
 
       return {
         ...prev,
-        projects: prev.projects ? [...prev.projects, updatedProject] : [updatedProject],
+        projects: [...prev.projects, updatedProject],
       };
     });
   };
@@ -135,12 +141,13 @@ export default function Index() {
 
   // Trigger a minigame
   const triggerMinigame = (type: string, reason: string) => {
-    updateGameState({
+    updateGameState((prev) => ({
+      ...prev,
       autoTriggeredMinigame: {
         type: type,
         reason: reason,
       },
-    });
+    }));
   };
 
   // Buy equipment
@@ -174,11 +181,13 @@ export default function Index() {
         ...candidate,
         isAvailable: true,
         isResting: false,
+        skills: candidate.skills || {},
       };
 
       return {
         ...prev,
         staff: [...prev.staff, newStaff],
+        hiredStaff: [...prev.hiredStaff, newStaff],
         staffCandidates: prev.staffCandidates.filter((_, index) => index !== candidateIndex),
         money: prev.money - candidate.salary,
       };
@@ -200,8 +209,8 @@ export default function Index() {
           return {
             ...s,
             skills: {
-              ...s.skills,
-              [skill]: s.skills[skill] + 1,
+              ...(s.skills || {}),
+              [skill]: (s.skills?.[skill] || 0) + 1,
             },
           };
         }
@@ -283,7 +292,7 @@ export default function Index() {
         if (s.id === staffId) {
           return {
             ...s,
-            isResting: !s.isResting,
+            isResting: !(s.isResting || false),
           };
         }
         return s;
@@ -297,9 +306,10 @@ export default function Index() {
   };
 
   // Open training modal
-  const openTrainingModal = (staff: StaffMember) => {
+  const openTrainingModal = (staff: StaffMember): boolean => {
     setSelectedStaff(staff);
     setShowTrainingModal(true);
+    return true;
   };
 
   // Spend perk point
@@ -316,7 +326,10 @@ export default function Index() {
 
       const updatedPlayerData = {
         ...prev.playerData,
-        [attribute]: prev.playerData[attribute] + 1,
+        attributes: {
+          ...prev.playerData.attributes,
+          [attribute]: prev.playerData.attributes[attribute] + 1,
+        },
         perkPoints: prev.playerData.perkPoints - 1,
       };
 
@@ -333,7 +346,7 @@ export default function Index() {
   };
 
   // Create band
-  const createBand = () => {
+  const createBand = (bandName: string, memberIds: string[]) => {
     setShowCreateBandModal(true);
   };
 
@@ -342,7 +355,7 @@ export default function Index() {
     updateGameState((prev) => {
       const updatedBand = {
         ...band,
-        members: [...band.members, member],
+        memberIds: [...band.memberIds, member.id],
       };
 
       return {
@@ -404,13 +417,12 @@ export default function Index() {
             {/* Left Panel */}
             <LeftPanel 
               gameState={gameState}
-              setGameState={setGameState}
             />
 
             {/* Main Game Content */}
             <MainGameContent
               gameState={gameState}
-              setGameState={setGameState}
+              setGameState={updateGameState}
               focusAllocation={focusAllocation}
               setFocusAllocation={setFocusAllocation}
               activeProject={activeProject}
@@ -438,7 +450,7 @@ export default function Index() {
             {/* Right Panel */}
             <RightPanel
               gameState={gameState}
-              setGameState={setGameState}
+              setGameState={updateGameState}
               hireStaff={hireStaff}
               refreshCandidates={refreshCandidates}
               assignStaffToProject={assignStaffToProject}
@@ -454,8 +466,6 @@ export default function Index() {
 
       {/* Game Modals */}
       <GameModals
-        gameState={gameState}
-        setGameState={setGameState}
         showSettings={showSettings}
         setShowSettings={setShowSettings}
         showTrainingModal={showTrainingModal}

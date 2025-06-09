@@ -1,6 +1,7 @@
 
 // Game type definitions
 import { Chart, ArtistContact, MarketTrend } from './charts';
+import type { Band, SessionMusician, OriginalTrackProject } from './bands';
 
 export interface PlayerAttributes {
   focusMastery: number;
@@ -79,6 +80,11 @@ export interface StaffMember {
   assignedProjectId: string | null;
   trainingEndDay?: number;
   trainingCourse?: string;
+  // Add missing properties
+  skills?: Record<string, number>;
+  isAvailable?: boolean;
+  isResting?: boolean;
+  projectId?: string | null;
 }
 
 export type EquipmentCategory = 'microphone' | 'monitor' | 'interface' | 'outboard' | 'instrument' | 'software' | 'recorder' | 'mixer';
@@ -124,8 +130,6 @@ export interface TrainingCourse {
   requiredLevel: number;
 }
 
-import { Band, SessionMusician, OriginalTrackProject } from './bands';
-
 export interface GameState {
   money: number;
   currentEra: string; // Current Era ID
@@ -151,12 +155,12 @@ export interface GameState {
   availableSessionMusicians: SessionMusician[];
   activeOriginalTrack: OriginalTrackProject | null;
   // Add missing properties from Index.tsx
-  staff?: StaffMember[];
-  staffCandidates?: StaffMember[];
-  equipment?: string[];
-  projects?: Project[];
-  studioLevel?: number;
-  originalTracks?: number;
+  staff: StaffMember[];
+  staffCandidates: StaffMember[];
+  equipment: string[];
+  projects: Project[];
+  studioLevel: number;
+  originalTracks: number;
   autoTriggeredMinigame?: any;
   // Charts system data
   chartsData?: {
@@ -183,8 +187,8 @@ export interface FocusAllocation {
   layering: number;
 }
 
-// Export Band from bands module
-export { Band } from './bands';
+// Export Band from bands module with proper type export
+export type { Band } from './bands';
 
 // Initial game state
 export const initialGameState: GameState = {

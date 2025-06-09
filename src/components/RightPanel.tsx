@@ -15,8 +15,8 @@ interface RightPanelProps {
   assignStaffToProject: (staffId: string) => void;
   unassignStaffFromProject: (staffId: string) => void;
   toggleStaffRest: (staffId: string) => void;
-  openTrainingModal: (staff: StaffMember) => boolean; // Changed return type to boolean
-  createBand: () => void; // Changed signature to no parameters
+  openTrainingModal: (staff: StaffMember) => boolean;
+  createBand: (bandName: string, memberIds: string[]) => void;
   spendPerkPoint: (attribute: keyof PlayerAttributes) => void;
 }
 
@@ -35,6 +35,11 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   const [showAttributesModal, setShowAttributesModal] = useState(false);
   const [showStaffModal, setShowStaffModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+
+  const handleCreateBand = () => {
+    // For now, just call createBand with empty parameters to open the modal
+    createBand('', []);
+  };
 
   return (
     <div className="w-80 bg-gray-900/90 backdrop-blur-sm border-l border-gray-700 flex flex-col">
@@ -57,7 +62,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           </Button>
           
           <Button
-            onClick={createBand}
+            onClick={handleCreateBand}
             className="w-full bg-purple-600 hover:bg-purple-700"
           >
             🎸 Create Band
@@ -106,8 +111,6 @@ export const RightPanel: React.FC<RightPanelProps> = ({
       />
 
       <StaffManagementModal
-        isOpen={showStaffModal}
-        onClose={() => setShowStaffModal(false)}
         gameState={gameState}
         hireStaff={hireStaff}
         refreshCandidates={refreshCandidates}
@@ -115,6 +118,8 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         unassignStaffFromProject={unassignStaffFromProject}
         toggleStaffRest={toggleStaffRest}
         openTrainingModal={openTrainingModal}
+        isOpen={showStaffModal}
+        onClose={() => setShowStaffModal(false)}
       />
 
       <SettingsModal
