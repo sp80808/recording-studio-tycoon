@@ -19,6 +19,7 @@ export interface PlayerData {
   reputation: number;
   lastMinigameType?: string; // Track last completed minigame to prevent repetition
   completedProjects: number; // Add this property
+  experience: number; // Add experience property
 }
 
 export interface StudioSkill {
@@ -55,6 +56,8 @@ export interface Project {
   lastWorkDay?: number; // Track when work was last performed
   workSessionCount: number; // Track how many work sessions have been completed
   associatedBandId?: string;
+  daysRemaining?: number; // Add optional daysRemaining property
+  currentStage?: number; // Add optional currentStage property
 }
 
 export interface StaffMember {
@@ -147,6 +150,14 @@ export interface GameState {
   playerBands: Band[]; // Player's own bands
   availableSessionMusicians: SessionMusician[];
   activeOriginalTrack: OriginalTrackProject | null;
+  // Add missing properties from Index.tsx
+  staff?: StaffMember[];
+  staffCandidates?: StaffMember[];
+  equipment?: string[];
+  projects?: Project[];
+  studioLevel?: number;
+  originalTracks?: number;
+  autoTriggeredMinigame?: any;
   // Charts system data
   chartsData?: {
     charts: Chart[];
@@ -172,6 +183,9 @@ export interface FocusAllocation {
   layering: number;
 }
 
+// Export Band from bands module
+export { Band } from './bands';
+
 // Initial game state
 export const initialGameState: GameState = {
   money: 5000,
@@ -189,6 +203,7 @@ export const initialGameState: GameState = {
     xpToNextLevel: 100,
     perkPoints: 0,
     completedProjects: 0,
+    experience: 0,
     attributes: {
       focusMastery: 1,
       creativeIntuition: 1,
@@ -210,5 +225,11 @@ export const initialGameState: GameState = {
   bands: [],
   playerBands: [],
   availableSessionMusicians: [],
-  activeOriginalTrack: null
+  activeOriginalTrack: null,
+  staff: [],
+  staffCandidates: [],
+  equipment: [],
+  projects: [],
+  studioLevel: 1,
+  originalTracks: 0
 };

@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useEffect } from 'react';
 import { GameState, FocusAllocation, StaffMember, PlayerAttributes, Project } from '@/types/game';
 import { ProjectList } from '@/components/ProjectList';
@@ -29,6 +30,10 @@ interface MainGameContentProps {
   orbContainerRef: React.RefObject<HTMLDivElement>;
   contactArtist: (artistId: string, offer: number) => void;
   triggerEraTransition: () => { fromEra?: string; toEra?: string } | void;
+  // Band management functions
+  createBand: (bandName: string, memberIds: string[]) => void;
+  startTour: (bandId: string) => void;
+  createOriginalTrack: (bandId: string) => void;
 }
 
 export const MainGameContent: React.FC<MainGameContentProps> = ({
@@ -50,7 +55,10 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   openTrainingModal,
   orbContainerRef,
   contactArtist,
-  triggerEraTransition
+  triggerEraTransition,
+  createBand,
+  startTour,
+  createOriginalTrack
 }) => {
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [showAttributesModal, setShowAttributesModal] = useState(false);
@@ -92,20 +100,10 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
     }
   };
 
-  // Placeholder functions for band management (these should come from props or hooks)
-  const createBand = (bandName: string, memberIds: string[]) => {
-    console.log('Creating band:', bandName, memberIds);
-    // TODO: Implement band creation logic
-  };
-
-  const startTour = (bandId: string) => {
-    console.log('Starting tour for band:', bandId);
-    // TODO: Implement tour logic
-  };
-
-  const createOriginalTrack = (bandId: string) => {
-    console.log('Creating original track for band:', bandId);
-    // TODO: Implement original track creation logic
+  // Wrapper function to match the expected signature for RightPanel
+  const handleCreateBand = () => {
+    // Open a modal or use default values for now
+    createBand('New Band', []);
   };
 
   return (
@@ -146,24 +144,15 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         <div className="w-full sm:w-80 lg:w-96 animate-fade-in" style={{ animationDelay: '0.4s' }}>
           <RightPanel 
             gameState={gameState}
-            showSkillsModal={showSkillsModal}
-            setShowSkillsModal={setShowSkillsModal}
-            showAttributesModal={showAttributesModal}
-            setShowAttributesModal={setShowAttributesModal}
-            spendPerkPoint={spendPerkPoint}
-            advanceDay={advanceDay}
-            purchaseEquipment={purchaseEquipment}
-            createBand={createBand}
-            startTour={startTour}
-            createOriginalTrack={createOriginalTrack}
+            setGameState={setGameState}
             hireStaff={hireStaff}
             refreshCandidates={refreshCandidates}
             assignStaffToProject={assignStaffToProject}
             unassignStaffFromProject={unassignStaffFromProject}
             toggleStaffRest={toggleStaffRest}
             openTrainingModal={openTrainingModal}
-            contactArtist={contactArtist}
-            triggerEraTransition={handleEraTransition}
+            createBand={handleCreateBand}
+            spendPerkPoint={spendPerkPoint}
           />
         </div>
       </div>

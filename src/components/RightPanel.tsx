@@ -15,8 +15,8 @@ interface RightPanelProps {
   assignStaffToProject: (staffId: string) => void;
   unassignStaffFromProject: (staffId: string) => void;
   toggleStaffRest: (staffId: string) => void;
-  openTrainingModal: (staff: StaffMember) => void;
-  createBand: () => void;
+  openTrainingModal: (staff: StaffMember) => boolean; // Changed return type to boolean
+  createBand: () => void; // Changed signature to no parameters
   spendPerkPoint: (attribute: keyof PlayerAttributes) => void;
 }
 
@@ -83,7 +83,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">Experience:</span>
-              <span className="text-white">{gameState.playerData.experience}</span>
+              <span className="text-white">{gameState.playerData.xp}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">Reputation:</span>
@@ -120,8 +120,6 @@ export const RightPanel: React.FC<RightPanelProps> = ({
       <SettingsModal
         isOpen={showSettingsModal}
         onClose={() => setShowSettingsModal(false)}
-        gameState={gameState}
-        setGameState={setGameState}
       />
     </div>
   );
