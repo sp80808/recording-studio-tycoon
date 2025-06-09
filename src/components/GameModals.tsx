@@ -1,60 +1,133 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { GameState, StaffMember } from '@/types/game';
+import { SettingsModal } from '@/components/modals/SettingsModal';
+import { TrainingModal } from '@/components/modals/TrainingModal';
+import { StaffManagementModal } from '@/components/modals/StaffManagementModal';
+import { PlayerAttributesModal } from '@/components/modals/PlayerAttributesModal';
+import { CreateBandModal } from '@/components/modals/CreateBandModal';
+import type { Band } from '@/types/bands';
 
 interface GameModalsProps {
-  showReviewModal: boolean;
-  setShowReviewModal: (show: boolean) => void;
-  lastReview: any;
+  gameState: GameState;
+  setGameState: (newState: Partial<GameState> | ((prev: GameState) => GameState)) => void;
+  showSettings: boolean;
+  setShowSettings: React.Dispatch<React.SetStateAction<boolean>>;
+  showTrainingModal: boolean;
+  setShowTrainingModal: React.Dispatch<React.SetStateAction<boolean>>;
+  selectedStaff: StaffMember | null;
+  trainStaff: (staff: StaffMember, skill: string) => void;
+  showStaffModal: boolean;
+  setShowStaffModal: React.Dispatch<React.SetStateAction<boolean>>;
+  hireStaff: (candidateIndex: number) => boolean;
+  refreshCandidates: () => void;
+  assignStaffToProject: (staffId: string) => void;
+  unassignStaffFromProject: (staffId: string) => void;
+  toggleStaffRest: (staffId: string) => void;
+  openTrainingModal: (staff: StaffMember) => boolean;
+  showAttributesModal: boolean;
+  setShowAttributesModal: React.Dispatch<React.SetStateAction<boolean>>;
+  spendPerkPoint: (attribute: string) => void;
+  showBandModal: boolean;
+  setShowBandModal: React.Dispatch<React.SetStateAction<boolean>>;
+  createBand: (bandName: string, memberIds: string[]) => void;
+  selectedBand: Band | null;
+  setSelectedBand: React.Dispatch<React.SetStateAction<Band | null>>;
+  recruitMember: (band: Band, member: StaffMember) => void;
+  showRecruitmentModal: boolean;
+  setShowRecruitmentModal: React.Dispatch<React.SetStateAction<boolean>>;
+  showStudioModal: boolean;
+  setShowStudioModal: React.Dispatch<React.SetStateAction<boolean>>;
+  upgradeStudio: (studioId: string) => void;
+  showSkillsModal: boolean;
+  setShowSkillsModal: React.Dispatch<React.SetStateAction<boolean>>;
+  showEraProgressModal: boolean;
+  setShowEraProgressModal: React.Dispatch<React.SetStateAction<boolean>>;
+  showCreateBandModal: boolean;
+  setShowCreateBandModal: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export const GameModals: React.FC<GameModalsProps> = ({
-  showReviewModal,
-  setShowReviewModal,
-  lastReview
+  gameState,
+  setGameState,
+  showSettings,
+  setShowSettings,
+  showTrainingModal,
+  setShowTrainingModal,
+  selectedStaff,
+  trainStaff,
+  showStaffModal,
+  setShowStaffModal,
+  hireStaff,
+  refreshCandidates,
+  assignStaffToProject,
+  unassignStaffFromProject,
+  toggleStaffRest,
+  openTrainingModal,
+  showAttributesModal,
+  setShowAttributesModal,
+  spendPerkPoint,
+  showBandModal,
+  setShowBandModal,
+  createBand,
+  selectedBand,
+  setSelectedBand,
+  recruitMember,
+  showRecruitmentModal,
+  setShowRecruitmentModal,
+  showStudioModal,
+  setShowStudioModal,
+  upgradeStudio,
+  showSkillsModal,
+  setShowSkillsModal,
+  showEraProgressModal,
+  setShowEraProgressModal,
+  showCreateBandModal,
+  setShowCreateBandModal
 }) => {
   return (
-    <Dialog open={showReviewModal} onOpenChange={setShowReviewModal}>
-      <DialogContent className="bg-gray-900 border-gray-600 text-white mx-4 max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-white text-lg">Project Complete! 🎉</DialogTitle>
-        </DialogHeader>
-        {lastReview && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white">{lastReview.projectTitle}</h3>
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div>
-                <div className="text-2xl mb-2">💙</div>
-                <div className="font-bold text-white">{lastReview.creativityPoints}</div>
-                <div className="text-sm text-gray-400">Creativity</div>
-              </div>
-              <div>
-                <div className="text-2xl mb-2">💚</div>
-                <div className="font-bold text-white">{lastReview.technicalPoints}</div>
-                <div className="text-sm text-gray-400">Technical</div>
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl mb-2">⭐</div>
-              <div className="text-xl font-bold text-white">Quality Score: {lastReview.qualityScore}%</div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-300">Payment:</span>
-                <span className="text-green-400 font-bold">${lastReview.payout}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-300">Reputation:</span>
-                <span className="text-blue-400 font-bold">+{lastReview.repGain}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-300">Experience:</span>
-                <span className="text-purple-400 font-bold">+{lastReview.xpGain} XP</span>
-              </div>
-            </div>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+    <>
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+      />
+
+      {showTrainingModal && selectedStaff && (
+        <TrainingModal
+          isOpen={showTrainingModal}
+          onClose={() => setShowTrainingModal(false)}
+          staff={selectedStaff}
+          onTrainStaff={(skill) => trainStaff(selectedStaff, skill)}
+        />
+      )}
+
+      <StaffManagementModal
+        gameState={gameState}
+        isOpen={showStaffModal}
+        onClose={() => setShowStaffModal(false)}
+        hireStaff={hireStaff}
+        refreshCandidates={refreshCandidates}
+        assignStaffToProject={assignStaffToProject}
+        unassignStaffFromProject={unassignStaffFromProject}
+        toggleStaffRest={toggleStaffRest}
+        openTrainingModal={openTrainingModal}
+      />
+
+      <PlayerAttributesModal
+        isOpen={showAttributesModal}
+        onClose={() => setShowAttributesModal(false)}
+        spendPerkPoint={spendPerkPoint}
+        playerData={gameState.playerData}
+      />
+
+      {showCreateBandModal && (
+        <CreateBandModal
+          isOpen={showCreateBandModal}
+          onClose={() => setShowCreateBandModal(false)}
+          onCreateBand={createBand}
+          availableMembers={gameState.hiredStaff}
+        />
+      )}
+    </>
   );
 };

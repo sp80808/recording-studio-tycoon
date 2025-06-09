@@ -24,8 +24,8 @@ const getEnergyColor = (energy: number) => {
 
 interface StaffManagementModalProps {
   gameState: GameState;
-  showStaffModal: boolean;
-  setShowStaffModal: (show: boolean) => void;
+  isOpen: boolean;
+  onClose: () => void;
   hireStaff: (candidateIndex: number) => boolean;
   refreshCandidates: () => void;
   assignStaffToProject: (staffId: string) => void;
@@ -36,8 +36,8 @@ interface StaffManagementModalProps {
 
 export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
   gameState,
-  showStaffModal,
-  setShowStaffModal,
+  isOpen,
+  onClose,
   hireStaff,
   refreshCandidates,
   assignStaffToProject,
@@ -49,7 +49,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
   const availableStaff = gameState.hiredStaff?.filter(s => s.assignedProjectId !== gameState.activeProject?.id) || [];
 
   return (
-    <Dialog open={showStaffModal} onOpenChange={setShowStaffModal}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-gray-900 border-gray-600 text-white max-w-5xl">
         <DialogHeader>
           <DialogTitle className="text-white flex items-center gap-2">
