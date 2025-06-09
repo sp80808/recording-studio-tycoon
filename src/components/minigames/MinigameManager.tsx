@@ -1,134 +1,71 @@
 
-import React, { useState } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import React from 'react';
+import { BeatMakingGame } from './BeatMakingGame';
 import { RhythmTimingGame } from './RhythmTimingGame';
 import { MixingBoardGame } from './MixingBoardGame';
 import { SoundWaveGame } from './SoundWaveGame';
-import { BeatMakingGame } from './BeatMakingGame';
 import { VocalRecordingGame } from './VocalRecordingGame';
-import { MasteringGame } from './MasteringGame';
 import { EffectChainGame } from './EffectChainGame';
-import { AcousticTreatmentGame } from './AcousticTreatmentGame';
 import { InstrumentLayeringGame } from './InstrumentLayeringGame';
-import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
-import { toast } from '@/hooks/use-toast';
+import { MasteringGame } from './MasteringGame';
+import { AcousticTreatmentGame } from './AcousticTreatmentGame';
+import { MidiProgrammingGame } from './MidiProgrammingGame';
+import { SamplingSequencingGame } from './SamplingSequencingGame';
+import { TapeSplicingGame } from './TapeSplicingGame';
 
-export type MinigameType = 'rhythm' | 'mixing' | 'waveform' | 'beatmaking' | 'vocal' | 'mastering' | 'effectchain' | 'acoustic' | 'layering';
-
-interface MinigameManagerProps {
-  isOpen: boolean;
+export interface MinigameManagerProps {
+  minigameType: string;
+  onComplete: (score: number) => void;
   onClose: () => void;
-  gameType: MinigameType;
-  onReward: (creativityBonus: number, technicalBonus: number, xpBonus: number) => void;
+  gameState: any;
+  focusAllocation: any;
 }
 
 export const MinigameManager: React.FC<MinigameManagerProps> = ({
-  isOpen,
+  minigameType,
+  onComplete,
   onClose,
-  gameType,
-  onReward
+  gameState,
+  focusAllocation
 }) => {
-  const [showGame, setShowGame] = useState(true);
-  const backgroundMusic = useBackgroundMusic();
-
-  const handleGameComplete = (score: number) => {
-    setShowGame(false);
-    
-    // Calculate rewards based on score and game type
-    let creativityBonus = 0;
-    let technicalBonus = 0;
-    // Dramatically reduced XP scaling to prevent exponential progression
-    const xpBonus = Math.floor(Math.max(1, score / 50)); // Reduced from /10 to /50
-
-    switch (gameType) {
+  const renderMinigame = () => {
+    switch (minigameType) {
+      case 'creativity':
+      case 'beat-making':
+        return <BeatMakingGame onComplete={onComplete} onClose={onClose} />;
+      case 'technical':
       case 'rhythm':
-        creativityBonus = Math.floor(score / 8);
-        technicalBonus = Math.floor(score / 12);
-        break;
+        return <RhythmTimingGame onComplete={onComplete} onClose={onClose} />;
       case 'mixing':
-        creativityBonus = Math.floor(score / 12);
-        technicalBonus = Math.floor(score / 8);
-        break;
-      case 'waveform':
-        creativityBonus = Math.floor(score / 10);
-        technicalBonus = Math.floor(score / 10);
-        break;
-      case 'beatmaking':
-        creativityBonus = Math.floor(score / 6);
-        technicalBonus = Math.floor(score / 15);
-        break;
+        return <MixingBoardGame onComplete={onComplete} onClose={onClose} />;
+      case 'sound-wave':
+        return <SoundWaveGame onComplete={onComplete} onClose={onClose} />;
       case 'vocal':
-        creativityBonus = Math.floor(score / 7);
-        technicalBonus = Math.floor(score / 11);
-        break;
-      case 'mastering':
-        creativityBonus = Math.floor(score / 15);
-        technicalBonus = Math.floor(score / 6);
-        break;
-      case 'effectchain':
-        creativityBonus = Math.floor(score / 8);
-        technicalBonus = Math.floor(score / 10);
-        break;
-      case 'acoustic':
-        creativityBonus = Math.floor(score / 12);
-        technicalBonus = Math.floor(score / 8);
-        break;
+        return <VocalRecordingGame onComplete={onComplete} onClose={onClose} />;
+      case 'effects':
+        return <EffectChainGame onComplete={onComplete} onClose={onClose} />;
       case 'layering':
-        creativityBonus = Math.floor(score / 9);
-        technicalBonus = Math.floor(score / 11);
-        break;
-    }
-
-    onReward(creativityBonus, technicalBonus, xpBonus);
-
-    toast({
-      title: "Minigame Complete!",
-      description: `Earned +${creativityBonus} creativity, +${technicalBonus} technical, +${xpBonus} XP`,
-    });
-  };
-
-  const handleClose = () => {
-    setShowGame(true);
-    onClose();
-  };
-
-  const renderGame = () => {
-    if (!showGame) return null;
-
-    const gameProps = {
-      onComplete: handleGameComplete,
-      onClose: handleClose
-    };
-
-    switch (gameType) {
-      case 'rhythm':
-        return <RhythmTimingGame {...gameProps} />;
-      case 'mixing':
-        return <MixingBoardGame {...gameProps} />;
-      case 'waveform':
-        return <SoundWaveGame {...gameProps} />;
-      case 'beatmaking':
-        return <BeatMakingGame {...gameProps} backgroundMusic={backgroundMusic} />;
-      case 'vocal':
-        return <VocalRecordingGame {...gameProps} />;
+        return <InstrumentLayeringGame onComplete={onComplete} onClose={onClose} />;
       case 'mastering':
-        return <MasteringGame {...gameProps} />;
-      case 'effectchain':
-        return <EffectChainGame {...gameProps} />;
+        return <MasteringGame onComplete={onComplete} onClose={onClose} />;
       case 'acoustic':
-        return <AcousticTreatmentGame {...gameProps} />;
-      case 'layering':
-        return <InstrumentLayeringGame {...gameProps} />;
+        return <AcousticTreatmentGame onComplete={onComplete} onClose={onClose} />;
+      case 'midi':
+        return <MidiProgrammingGame onComplete={onComplete} onClose={onClose} />;
+      case 'sampling':
+        return <SamplingSequencingGame onComplete={onComplete} onClose={onClose} />;
+      case 'tape':
+        return <TapeSplicingGame onComplete={onComplete} onClose={onClose} />;
       default:
-        return null;
+        return <BeatMakingGame onComplete={onComplete} onClose={onClose} />;
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl bg-transparent border-0 p-0">
-        {renderGame()}
-      </DialogContent>
-    </Dialog>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-gray-900 rounded-lg p-6 max-w-4xl max-h-[90vh] overflow-auto">
+        {renderMinigame()}
+      </div>
+    </div>
   );
 };

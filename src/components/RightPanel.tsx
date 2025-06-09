@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -6,7 +7,7 @@ import { SkillsModal } from '@/components/modals/SkillsModal';
 import { AttributesModal } from '@/components/modals/AttributesModal';
 import { EquipmentList } from '@/components/EquipmentList';
 import { BandManagement } from '@/components/BandManagement';
-import { ChartsPanel_enhanced as ChartsPanel_enhanced } from '@/components/ChartsPanel_enhanced';
+import { EnhancedChartsPanel } from '@/components/EnhancedChartsPanel';
 
 interface RightPanelProps {
   gameState: GameState;
@@ -16,7 +17,7 @@ interface RightPanelProps {
   setShowAttributesModal: React.Dispatch<React.SetStateAction<boolean>>;
   spendPerkPoint: (attribute: keyof PlayerAttributes) => void;
   advanceDay: () => void;
-  triggerEraTransition: () => void; // Add era transition function
+  triggerEraTransition: () => void;
   purchaseEquipment: (equipmentId: string) => void;
   createBand: (bandName: string, memberIds: string[]) => void;
   startTour: (bandId: string) => void;
@@ -265,7 +266,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
       )}
 
       {activeTab === 'charts' && gameState.playerData.level >= 1 && (
-<ChartsPanel_enhanced
+        <EnhancedChartsPanel
           gameState={gameState}
           onContactArtist={contactArtist}
         />
