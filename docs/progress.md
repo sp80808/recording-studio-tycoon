@@ -24,7 +24,8 @@
 - ✅ **Focus allocation compatibility** - All systems work with existing performance/soundCapture/layering mechanics
 
 ### Phase 2B: Charts & Industry Integration (✅ 90% Complete - June 8, 2025)
-- ✅ **Charts System UI Rollback** - Simplified layout implemented in `ChartsPanel.tsx`, preserving audio preview and artist contact features.
+- ✅ **Charts System UI** - Simplified layout implemented in `ChartsPanel.tsx` with chart selection via dropdown menu, preserving audio preview and artist contact features.
+- ✅ **Dynamic Name Generation** - Implemented dynamic song title generation and integrated the band name generator for chart artist names.
 - ✅ **Audio Preview System** - 25-second intelligent segments with cross-genre mixing
 - ✅ **Artist Contact System** - Level-gated contacts with cost calculation and success rates
 - ✅ **Market Trends Analysis** - Real-time genre popularity and growth indicators

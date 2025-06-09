@@ -14,6 +14,9 @@ The current focus is on Phase 2: Charts & Industry Integration. This involves im
     - Enhanced chart entry cards with hover effects (lift and shadow).
     - Improved audio playback button animations and progress bar transition in the ChartsPanel.
 - Rolled back Charts Panel UI to a simpler layout, preserving audio playback and artist contact features.
+- Implemented dynamic song title generation for chart entries.
+- Integrated the existing band name generator for chart artist names.
+- Changed the Charts Panel chart selection from buttons to a dropdown menu.
 
 ## Next Steps
 

@@ -8,6 +8,7 @@ import { FloatingXPOrb } from '@/components/FloatingXPOrb';
 import { EraTransitionAnimation } from '@/components/EraTransitionAnimation';
 import { HistoricalNewsModal } from '@/components/HistoricalNewsModal';
 import { checkForNewEvents, applyEventEffects, HistoricalEvent } from '@/utils/historicalEvents';
+import { useBandManagement } from '@/hooks/useBandManagement';
 
 interface MainGameContentProps {
   gameState: GameState;
@@ -92,21 +93,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
     }
   };
 
-  // Placeholder functions for band management (these should come from props or hooks)
-  const createBand = (bandName: string, memberIds: string[]) => {
-    console.log('Creating band:', bandName, memberIds);
-    // TODO: Implement band creation logic
-  };
-
-  const startTour = (bandId: string) => {
-    console.log('Starting tour for band:', bandId);
-    // TODO: Implement tour logic
-  };
-
-  const createOriginalTrack = (bandId: string) => {
-    console.log('Creating original track for band:', bandId);
-    // TODO: Implement original track creation logic
-  };
+  // Band Management Integration
+  const { createBand, startTour, createOriginalTrack, processTourIncome } = useBandManagement(gameState, setGameState);
 
   return (
     <>

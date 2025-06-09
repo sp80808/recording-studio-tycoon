@@ -298,18 +298,19 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
       </div>
 
       {/* Chart Selector */}
-      <div className="flex flex-wrap gap-2">
-        {availableCharts.map(chart => (
-          <Button
-            key={chart.id}
-            onClick={() => setSelectedChart(chart.id)}
-            variant={selectedChart === chart.id ? 'default' : 'outline'}
-            size="sm"
-            className={selectedChart === chart.id ? 'bg-blue-600 hover:bg-blue-700' : ''}
-          >
-            {chart.name}
-          </Button>
-        ))}
+      <div className="w-48"> {/* Adjust width as needed */}
+        <Select onValueChange={setSelectedChart} value={selectedChart}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select a chart" />
+          </SelectTrigger>
+          <SelectContent>
+            {availableCharts.map(chart => (
+              <SelectItem key={chart.id} value={chart.id}>
+                {chart.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Chart Display */}
