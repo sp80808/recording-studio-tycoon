@@ -1,5 +1,6 @@
 // Chart data generation and management for the Charts System
 import { Chart, ChartEntry, Artist, Song, MarketTrend, MusicGenre } from '@/types/charts';
+import { ERA_DEFINITIONS, getGenrePopularity } from '@/utils/eraProgression';
 
 // Sample artist names for chart generation
 const artistNames = [
@@ -25,7 +26,55 @@ const songTitles = [
   'Velvet Touch', 'Golden Light', 'Infinite Sky', 'Sound of Freedom'
 ];
 
-const genres: MusicGenre[] = ['rock', 'pop', 'hip-hop', 'electronic', 'country', 'alternative', 'r&b'];
+const genres: MusicGenre[] = ['rock', 'pop', 'hip-hop', 'electronic', 'country', 'alternative', 'r&b', 'jazz', 'classical', 'folk'];
+
+// Helper function to get era-appropriate genres
+const getEraAppropriateGenres = (currentEra: string): MusicGenre[] => {
+  const era = ERA_DEFINITIONS.find(e => e.id === currentEra);
+  if (!era) {
+    // Fallback to modern genres if era not found
+    return genres;
+  }
+
+  // Map era genre names to MusicGenre types
+  const genreMapping: Record<string, MusicGenre> = {
+    'Rock': 'rock',
+    'Pop': 'pop',
+    'Hip-Hop': 'hip-hop',
+    'Electronic': 'electronic',
+    'Country': 'country',
+    'Alternative': 'alternative',
+    'R&B': 'r&b',
+    'Jazz': 'jazz',
+    'Classical': 'classical',
+    'Folk': 'folk',
+    'Soul': 'r&b', // Map Soul to R&B
+    'Motown': 'r&b', // Map Motown to R&B
+    'New Wave': 'alternative', // Map New Wave to Alternative
+    'Hair Metal': 'rock', // Map Hair Metal to Rock
+    'Punk': 'alternative', // Map Punk to Alternative
+    'Disco': 'pop', // Map Disco to Pop
+    'Pop-punk': 'alternative', // Map Pop-punk to Alternative
+    'Emo': 'alternative', // Map Emo to Alternative
+    'Indie': 'alternative', // Map Indie to Alternative
+    'Digital': 'electronic', // Map Digital to Electronic
+    'EDM': 'electronic', // Map EDM to Electronic
+    'Trap': 'hip-hop', // Map Trap to Hip-Hop
+    'Indie Pop': 'pop', // Map Indie Pop to Pop
+    'Lo-fi': 'electronic', // Map Lo-fi to Electronic
+    'TikTok Pop': 'pop' // Map TikTok Pop to Pop
+  };
+
+  const mappedGenres = era.availableGenres
+    .map(genre => genreMapping[genre])
+    .filter((genre): genre is MusicGenre => genre !== undefined);
+
+  // Always include rock and pop as baseline genres for chart diversity
+  if (!mappedGenres.includes('rock')) mappedGenres.push('rock');
+  if (!mappedGenres.includes('pop')) mappedGenres.push('pop');
+
+  return mappedGenres.length > 0 ? mappedGenres : genres;
+};
 
 // Generate a random artist
 const generateArtist = (id: string, genre: MusicGenre): Artist => {
