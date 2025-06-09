@@ -1,7 +1,7 @@
 {
   "name": "recording-studio-tycoon",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "module",
   "description": "Music industry simulation game with historical progression and minigames",
   "author": "Recording Studio Tycoon Development Team",

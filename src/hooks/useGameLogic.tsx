@@ -121,14 +121,6 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
       ownedEquipment: [...updatedGameState.ownedEquipment, equipment]
     };
 
-    // Add success notification
-    updatedGameState = addNotification(
-      updatedGameState,
-      `${equipment.name} purchased and equipped!`,
-      'success',
-      3000
-    );
-
     setGameState(updatedGameState);
 
     toast({

@@ -2,28 +2,31 @@
 import { Chart, ChartEntry, Artist, Song, MarketTrend, MusicGenre } from '@/types/charts';
 import { ERA_DEFINITIONS, getGenrePopularity } from '@/utils/eraProgression';
 
-// Sample artist names for chart generation
-const artistNames = [
-  'The Midnight Rebels', 'Luna Skywalker', 'Electric Dreams', 'Neon Nights',
-  'Crystal Vision', 'Urban Legends', 'Digital Hearts', 'Sonic Bloom',
-  'Velvet Thunder', 'Phoenix Rising', 'Midnight Sun', 'Stellar Groove',
-  'Cosmic Echo', 'Silver Lining', 'Retro Future', 'Bass Revolution',
-  'Harmony Heights', 'Voltage Drop', 'Rhythm Factory', 'Sound Wave',
-  'Metro Pulse', 'Night Drive', 'Sunset Boulevard', 'Frequency',
-  'Audio Clash', 'Beat Machine', 'Synth City', 'Reverb Station',
-  'Echo Chamber', 'Sound Barrier', 'Wavelength', 'Amplitude',
-  'Decibel Dreams', 'Sonic Boom', 'Audio Wave', 'Beat Drop'
+import { generateBandName } from '../utils/bandUtils'; // Import the band name generator
+
+// Word lists for generating song titles
+const songAdjectives = [
+  'Summer', 'Electric', 'Midnight', 'Neon', 'City', 'Dancing', 'Digital', 'Crystal',
+  'Cosmic', 'Starlight', 'Thunder', 'Silver', 'Velvet', 'Golden', 'Infinite', 'Sound of',
+  'Retro', 'Urban', 'Night', 'Electric', 'Sunset', 'Crystal', 'Midnight', 'Neon',
+  'Digital', 'Cosmic', 'Thunder', 'Silver', 'Velvet', 'Golden', 'Infinite', 'Sound of',
+  'Lost', 'Broken', 'Rising', 'Falling', 'Secret', 'Hidden', 'Ancient', 'Modern',
+  'Sweet', 'Bitter', 'Lonely', 'Happy', 'Sad', 'Crazy', 'Wild', 'Free', 'New', 'Old'
 ];
 
-const songTitles = [
-  'Summer Nights', 'Electric Love', 'Midnight Highway', 'Neon Dreams',
-  'City Lights', 'Dancing Shadows', 'Digital Heart', 'Crystal Rain',
-  'Cosmic Journey', 'Starlight Express', 'Thunder Road', 'Silver Sky',
-  'Velvet Moon', 'Golden Hour', 'Infinite Loop', 'Sound of Tomorrow',
-  'Retro Vibes', 'Urban Jungle', 'Night Fever', 'Electric Storm',
-  'Sunset Drive', 'Crystal Clear', 'Midnight Express', 'Neon Glow',
-  'Digital Dreams', 'Cosmic Love', 'Thunder Strike', 'Silver Dreams',
-  'Velvet Touch', 'Golden Light', 'Infinite Sky', 'Sound of Freedom'
+const songNouns = [
+  'Nights', 'Love', 'Highway', 'Dreams', 'Lights', 'Shadows', 'Heart', 'Rain',
+  'Journey', 'Express', 'Road', 'Sky', 'Moon', 'Hour', 'Loop', 'Tomorrow',
+  'Vibes', 'Jungle', 'Fever', 'Storm', 'Drive', 'Clear', 'Express', 'Glow',
+  'Dreams', 'Love', 'Strike', 'Dreams', 'Touch', 'Light', 'Sky', 'Freedom',
+  'Time', 'Place', 'Face', 'Space', 'Song', 'Beat', 'Rhythm', 'Melody', 'Harmony',
+  'World', 'Life', 'Fire', 'Ice', 'Water', 'Air', 'Ground', 'Stars', 'Sun', 'Moon'
+];
+
+const songVerbs = [
+  'Running', 'Dancing', 'Singing', 'Flying', 'Falling', 'Rising', 'Shining', 'Burning',
+  'Dreaming', 'Walking', 'Talking', 'Listening', 'Feeling', 'Believing', 'Seeing', 'Knowing',
+  'Going', 'Coming', 'Leaving', 'Staying', 'Living', 'Dying', 'Loving', 'Hating'
 ];
 
 const genres: MusicGenre[] = ['rock', 'pop', 'hip-hop', 'electronic', 'country', 'alternative', 'r&b', 'jazz', 'classical', 'folk'];
@@ -76,9 +79,33 @@ const getEraAppropriateGenres = (currentEra: string): MusicGenre[] => {
   return mappedGenres.length > 0 ? mappedGenres : genres;
 };
 
+// Generate a random song title
+const generateSongTitle = (): string => {
+  const pattern = Math.random();
+  
+  if (pattern < 0.4) { // Adjective + Noun (40%)
+    const adj = songAdjectives[Math.floor(Math.random() * songAdjectives.length)];
+    const noun = songNouns[Math.floor(Math.random() * songNouns.length)];
+    return `${adj} ${noun}`;
+  } else if (pattern < 0.7) { // Noun + Verb-ing (30%)
+    const noun = songNouns[Math.floor(Math.random() * songNouns.length)];
+    const verb = songVerbs[Math.floor(Math.random() * songVerbs.length)];
+    return `${noun} ${verb}`;
+  } else if (pattern < 0.9) { // Adjective + Adjective + Noun (20%)
+    const adj1 = songAdjectives[Math.floor(Math.random() * songAdjectives.length)];
+    const adj2 = songAdjectives[Math.floor(Math.random() * songAdjectives.length)];
+    const noun = songNouns[Math.floor(Math.random() * songNouns.length)];
+    return `${adj1} ${adj2} ${noun}`;
+  } else { // Simple Noun (10%)
+    const noun = songNouns[Math.floor(Math.random() * songNouns.length)];
+    return noun;
+  }
+};
+
+
 // Generate a random artist
 const generateArtist = (id: string, genre: MusicGenre): Artist => {
-  const name = artistNames[Math.floor(Math.random() * artistNames.length)];
+  const name = generateBandName(); // Use the band name generator
   const popularity = Math.floor(Math.random() * 100) + 1;
   
   return {
@@ -102,7 +129,7 @@ const generateArtist = (id: string, genre: MusicGenre): Artist => {
 
 // Generate a random song
 const generateSong = (id: string, artist: Artist): Song => {
-  const title = songTitles[Math.floor(Math.random() * songTitles.length)];
+  const title = generateSongTitle(); // Use the new song title generator
   
   return {
     id,

@@ -1,3 +1,4 @@
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'; // Assuming Select component is available
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -347,14 +348,12 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
               return (
                 <Card
                   key={trackId}
-                  className="p-3 bg-gray-700/30 border-gray-600/50 hover:bg-gray-700/50 transition-all duration-200 group"
+                  className="p-3 bg-gray-700/30 border-gray-600/50 hover:bg-gray-700/50 transition-all duration-200"
                 >
-                  <div className="flex items-center gap-4">
-                    {/* Chart Position & Movement - Billboard Style */}
-                    <div className="flex flex-col items-center min-w-[50px]">
-                      <div className="text-2xl font-bold text-white mb-1">
-                        {entry.position}
-                      </div>
+                  <div className="flex items-center justify-between gap-4">
+                    {/* Chart Position & Movement */}
+                    <div className="flex items-center gap-2 min-w-[80px]">
+                      <div className="text-xl font-bold text-white">{entry.position}.</div>
                       <div className={`text-sm flex items-center gap-1 ${getMovementColor(entry.movement)}`}>
                         {getMovementIcon(entry.movement)}
                         {entry.positionChange !== 0 && (
@@ -365,72 +364,19 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
                       </div>
                     </div>
 
-                    {/* Genre Emoji & Audio Control */}
-                    <div className="flex flex-col items-center gap-2 min-w-[80px]">
-                      <div className="text-xl">{getGenreEmoji(entry.song.genre)}</div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => playAudioClip(entry)}
-                        disabled={!hasAudio}
-                        className={`h-10 w-10 rounded-full p-0 transition-all relative ${
-                          isPlaying 
-                            ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg animate-pulse' 
-                            : hasAudio 
-                              ? 'bg-gray-600 hover:bg-gray-500 text-gray-200' 
-                              : 'bg-gray-800 text-gray-500 cursor-not-allowed'
-                        }`}
-                        title={hasAudio ? `Play preview: ${segment.displayTime}` : 'No preview available'}
-                      >
-                        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                        {hasAudio && !isPlaying && (
-                          <div className="absolute -top-1 -right-1 h-3 w-3 bg-blue-500 rounded-full text-[8px] flex items-center justify-center font-bold text-white">
-                            {segment.segmentNumber}
-                          </div>
-                        )}
-                      </Button>
-                      
-                      {/* Progress Bar */}
-                      {hasAudio && (progress > 0 || isPlaying) && (
-                        <div className="w-12 h-1 bg-gray-600 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full transition-all duration-75 ${
-                              isPlaying ? 'bg-green-400' : 'bg-gray-400'
-                            }`}
-                            style={{ width: `${progress}%` }}
-                          />
-                        </div>
-                      )}
-                      
-                      {/* Segment Time Display */}
-                      {hasAudio && (
-                        <div className="text-[8px] text-gray-500 text-center font-mono">
-                          {segment.displayTime}
-                        </div>
-                      )}
+                    {/* Song & Artist Info */}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-lg font-bold text-white truncate">
+                        {entry.song.title}
+                      </h4>
+                      <p className="text-sm text-gray-300 truncate">
+                        {entry.song.artist.name}
+                      </p>
                     </div>
 
-                    {/* Song & Artist Info - Prominent Display */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between mb-1">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-lg font-bold text-white truncate group-hover:text-blue-300 transition-colors mb-1">
-                            {entry.song.title}
-                          </h4>
-                          <p className="text-base text-gray-300 truncate font-medium">
-                            {entry.song.artist.name}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1 ml-2">
-                          <Star className="h-3 w-3 text-yellow-500" />
-                          <span className="text-xs text-gray-400">
-                            {entry.song.artist.popularity}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 text-xs text-gray-500">
-                        <Badge variant="outline" className="text-xs px-2 py-0 capitalize flex items-center gap-1">
+                    {/* Genre, Weeks, Peak */}
+                    <div className="flex items-center gap-3 text-xs text-gray-500 min-w-[150px] justify-end">
+                       <Badge variant="outline" className="text-xs px-2 py-0 capitalize flex items-center gap-1">
                           {getGenreEmoji(entry.song.genre)} {entry.song.genre}
                         </Badge>
                         <div className="flex items-center gap-1">
@@ -443,11 +389,45 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
                             <span>Peak #{entry.peakPosition}</span>
                           </div>
                         )}
-                      </div>
                     </div>
 
-                    {/* Contact Section */}
-                    <div className="flex flex-col items-end gap-2 min-w-[120px]">
+                    {/* Audio Control */}
+                    <div className="flex flex-col items-center gap-2 min-w-[60px]">
+                       <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => playAudioClip(entry)}
+                        disabled={!hasAudio}
+                        className={`h-8 w-8 rounded-full p-0 transition-all relative ${
+                          isPlaying
+                            ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg animate-pulse'
+                            : hasAudio
+                              ? 'bg-gray-600 hover:bg-gray-500 text-gray-200'
+                              : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                        }`}
+                        title={hasAudio ? `Play preview: ${segment.displayTime}` : 'No preview available'}
+                      >
+                        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                         {hasAudio && !isPlaying && (
+                          <div className="absolute -top-1 -right-1 h-3 w-3 bg-blue-500 rounded-full text-[8px] flex items-center justify-center font-bold text-white">
+                            {segment.segmentNumber}
+                          </div>
+                        )}
+                      </Button>
+                       {hasAudio && (progress > 0 || isPlaying) && (
+                        <div className="w-8 h-1 bg-gray-600 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full transition-all duration-75 ${
+                              isPlaying ? 'bg-green-400' : 'bg-gray-400'
+                            }`}
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Contact Button */}
+                    <div className="min-w-[100px] text-right">
                       {canContact && (
                         <Button
                           size="sm"
@@ -455,18 +435,15 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
                           disabled={!canAfford}
                           className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-xs px-3"
                         >
-                          Contact Artist
+                          Contact
                         </Button>
                       )}
-                      <div className="text-xs text-gray-400 text-right">
-                        <div className="font-semibold">${contactCost.toLocaleString()}</div>
-                        {!canContact && (
-                          <div className="text-red-400 mt-1">
+                       {!canContact && (
+                          <div className="text-red-400 text-xs mt-1">
                             {entry.position <= 10 ? 'Req. Level 8+' :
                               entry.position <= 25 ? 'Req. Level 5+' : 'Req. Reputation'}
                           </div>
                         )}
-                      </div>
                     </div>
                   </div>
                 </Card>

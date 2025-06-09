@@ -34,6 +34,10 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const [lastGains, setLastGains] = useState<{ creativity: number; technical: number }>({ creativity: 0, technical: 0 });
   const [showBlobAnimation, setShowBlobAnimation] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [completedProjectData, setCompletedProjectData] = useState<{
+    title: string;
+    genre: string;
+  } | null>(null);
   const [autoTriggeredMinigame, setAutoTriggeredMinigame] = useState<{
     type: MinigameType;
     reason: string;
@@ -179,6 +183,11 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     
     if (result?.isComplete) {
       console.log('🎉 Project completed! Triggering celebration...');
+      // Capture project data BEFORE it gets nullified by completeProject
+      setCompletedProjectData({
+        title: project.title,
+        genre: project.genre
+      });
       setShowCelebration(true);
       setTimeout(() => {
         if (onProjectComplete) {
@@ -359,12 +368,15 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
         )}
 
         {/* Project Completion Celebration */}
-        {showCelebration && gameState.activeProject && (
+        {showCelebration && completedProjectData && (
           <ProjectCompletionCelebration 
             isVisible={showCelebration}
-            projectTitle={gameState.activeProject.title}
-            genre={gameState.activeProject.genre}
-            onComplete={() => setShowCelebration(false)}
+            projectTitle={completedProjectData.title}
+            genre={completedProjectData.genre}
+            onComplete={() => {
+              setShowCelebration(false);
+              setCompletedProjectData(null);
+            }}
           />
         )}
       </div>

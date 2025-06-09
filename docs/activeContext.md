@@ -13,14 +13,11 @@ The current focus is on Phase 2: Charts & Industry Integration. This involves im
     - Added subtle scale animations to buttons on active state.
     - Enhanced chart entry cards with hover effects (lift and shadow).
     - Improved audio playback button animations and progress bar transition in the ChartsPanel.
-- Redesigned Charts Panel UI:
-    - Condensed chart entries to show essential information (position, movement, artist, title, weeks on chart).
-    - Implemented expandable details on click to show more information (artist stats, sales, graphs, peak position).
-    - Added a level-gated "Study Track" button within the expandable details.
+- Rolled back Charts Panel UI to a simpler layout, preserving audio playback and artist contact features.
 
 ## Next Steps
 
-1.  Consolidate the three `ChartsPanel` implementations (`ChartsPanel.tsx`, `ChartsPanel_enhanced.tsx`, and `ChartsPanel_backup.tsx`) into a single, optimized `ChartsPanel.tsx` file.
+1.  Continue implementing the basic charts system, including chart generation and updating.
 2.  Implement the basic charts system, including chart generation and updating.
 3.  Create an artist database with dynamic availability.
 4.  Develop a communication system foundation for artist contact.
