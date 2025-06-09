@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { GameState } from '@/types/game';
 import { Chart, ArtistContact } from '@/types/charts';
-import { getChartsForEra, getMarketTrendsForEra, getDiscoveredArtistsForEra } from '@/data/chartsData';
+import { generateCharts, generateMarketTrends } from '@/data/chartsData';
 import { toast } from '@/hooks/use-toast';
 import { ArtistContactModal } from './modals/ArtistContactModal';
 
@@ -29,9 +29,9 @@ export const EnhancedChartsPanel: React.FC<EnhancedChartsPanelProps> = ({
     }
   }, [gameState.chartsData]);
 
-  const charts = gameState.chartsData?.charts || getChartsForEra(gameState.currentEra);
-  const marketTrends = gameState.chartsData?.marketTrends || getMarketTrendsForEra(gameState.currentEra);
-  const discoveredArtists = gameState.chartsData?.discoveredArtists || getDiscoveredArtistsForEra(gameState.currentEra);
+  const charts = gameState.chartsData?.charts || generateCharts(gameState.playerData?.level || 1, gameState.currentEra);
+  const marketTrends = gameState.chartsData?.marketTrends || generateMarketTrends();
+  const discoveredArtists = gameState.chartsData?.discoveredArtists || [];
   const contactedArtists = gameState.chartsData?.contactedArtists || [];
 
   // Calculate unlock progress
@@ -98,13 +98,13 @@ export const EnhancedChartsPanel: React.FC<EnhancedChartsPanelProps> = ({
               <div className="flex items-center gap-3">
                 <span className="text-yellow-400 font-bold text-lg">#{index + 1}</span>
                 <div>
-                  <div className="text-white font-medium">{chart.trackTitle}</div>
-                  <div className="text-gray-400 text-sm">{chart.artistName} • {chart.genre}</div>
+                  <div className="text-white font-medium">{chart.name}</div>
+                  <div className="text-gray-400 text-sm">{chart.description}</div>
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-green-400 font-semibold">{chart.peakPosition}</div>
-                <div className="text-gray-400 text-sm">{chart.weeksOnChart}w</div>
+                <div className="text-green-400 font-semibold">{chart.influence}%</div>
+                <div className="text-gray-400 text-sm">{chart.region}</div>
               </div>
             </div>
           ))}
@@ -117,20 +117,19 @@ export const EnhancedChartsPanel: React.FC<EnhancedChartsPanelProps> = ({
           <h3 className="text-lg font-semibold text-white mb-4">📊 Market Trends</h3>
           <div className="space-y-3">
             {marketTrends.slice(0, 3).map((trend) => (
-              <div key={trend.id} className="p-3 bg-gray-700/50 rounded-lg">
+              <div key={trend.genre} className="p-3 bg-gray-700/50 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-white font-medium">{trend.genre}</span>
                   <span className={`text-sm px-2 py-1 rounded ${
-                    trend.direction === 'rising' ? 'bg-green-600 text-green-100' :
-                    trend.direction === 'falling' ? 'bg-red-600 text-red-100' :
+                    trend.growth > 0 ? 'bg-green-600 text-green-100' :
+                    trend.growth < 0 ? 'bg-red-600 text-red-100' :
                     'bg-yellow-600 text-yellow-100'
                   }`}>
-                    {trend.direction === 'rising' ? '📈' : trend.direction === 'falling' ? '📉' : '➡️'} {trend.direction}
+                    {trend.growth > 0 ? '📈' : trend.growth < 0 ? '📉' : '➡️'} {trend.growth > 0 ? 'rising' : trend.growth < 0 ? 'falling' : 'stable'}
                   </span>
                 </div>
-                <p className="text-gray-400 text-sm">{trend.description}</p>
                 <div className="text-blue-400 text-sm mt-1">
-                  Market influence: {trend.influence}%
+                  Popularity: {trend.popularity}%
                 </div>
               </div>
             ))}
@@ -139,7 +138,7 @@ export const EnhancedChartsPanel: React.FC<EnhancedChartsPanelProps> = ({
       )}
 
       {/* Artist Discovery */}
-      {artistContactUnlocked && (
+      {artistContactUnlocked && discoveredArtists.length > 0 && (
         <Card className="p-4 bg-gray-800/50 border-gray-600">
           <h3 className="text-lg font-semibold text-white mb-4">🎤 Discovered Artists</h3>
           <div className="space-y-3">
@@ -178,9 +177,9 @@ export const EnhancedChartsPanel: React.FC<EnhancedChartsPanelProps> = ({
           setShowContactModal(false);
           setSelectedArtist(null);
         }}
-        artist={selectedArtist}
+        chartEntry={selectedArtist}
+        gameState={gameState}
         onSubmit={handleSubmitContact}
-        playerMoney={gameState.money}
       />
     </div>
   );

@@ -1,160 +1,128 @@
 
 import React, { useState } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { GameState } from '@/types/game';
+import { GameState, PlayerAttributes, StaffMember } from '@/types/game';
 import { PlayerAttributesModal } from './modals/PlayerAttributesModal';
-import { EraProgressModal } from './modals/EraProgressModal';
-import { EquipmentList } from './EquipmentList';
-import { BandManagement } from './BandManagement';
-import { EnhancedChartsPanel } from './EnhancedChartsPanel';
+import { StaffManagementModal } from './modals/StaffManagementModal';
+import { SettingsModal } from './modals/SettingsModal';
+import { Button } from './ui/button';
+import { Card } from './ui/card';
 
 interface RightPanelProps {
   gameState: GameState;
-  showSkillsModal: boolean;
-  setShowSkillsModal: React.Dispatch<React.SetStateAction<boolean>>;
-  showAttributesModal: boolean;
-  setShowAttributesModal: React.Dispatch<React.SetStateAction<boolean>>;
-  spendPerkPoint: (attribute: keyof import("@/types/game").PlayerAttributes) => void;
-  advanceDay: () => void;
-  purchaseEquipment: (equipmentId: string) => void;
-  createBand: (bandName: string, memberIds: string[]) => void;
-  startTour: (bandId: string) => void;
-  createOriginalTrack: (bandId: string) => void;
+  setGameState: (state: GameState | ((prev: GameState) => GameState)) => void;
   hireStaff: (candidateIndex: number) => boolean;
   refreshCandidates: () => void;
   assignStaffToProject: (staffId: string) => void;
   unassignStaffFromProject: (staffId: string) => void;
   toggleStaffRest: (staffId: string) => void;
-  openTrainingModal: (staff: any) => boolean;
-  contactArtist: (artistId: string, offer: number) => void;
-  triggerEraTransition: () => { fromEra?: string; toEra?: string } | void;
+  openTrainingModal: (staff: StaffMember) => void;
+  createBand: () => void;
+  spendPerkPoint: (attribute: keyof PlayerAttributes) => void;
 }
 
 export const RightPanel: React.FC<RightPanelProps> = ({
   gameState,
-  showSkillsModal,
-  setShowSkillsModal,
-  showAttributesModal,
-  setShowAttributesModal,
-  spendPerkPoint,
-  advanceDay,
-  purchaseEquipment,
-  createBand,
-  startTour,
-  createOriginalTrack,
+  setGameState,
   hireStaff,
   refreshCandidates,
   assignStaffToProject,
   unassignStaffFromProject,
   toggleStaffRest,
   openTrainingModal,
-  contactArtist,
-  triggerEraTransition
+  createBand,
+  spendPerkPoint
 }) => {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [showEraModal, setShowEraModal] = useState(false);
+  const [showAttributesModal, setShowAttributesModal] = useState(false);
+  const [showStaffModal, setShowStaffModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   return (
-    <Card className="bg-gray-800/50 border-gray-600 backdrop-blur-sm animate-fade-in">
-      <div className="p-4">
-        <div className="flex flex-wrap gap-1 mb-4">
+    <div className="w-80 bg-gray-900/90 backdrop-blur-sm border-l border-gray-700 flex flex-col">
+      <div className="p-4 border-b border-gray-700">
+        <h2 className="text-lg font-semibold text-white mb-4">Quick Actions</h2>
+        
+        <div className="space-y-2">
           <Button
-            variant={activeTab === 'overview' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveTab('overview')}
-            className="text-xs"
+            onClick={() => setShowAttributesModal(true)}
+            className="w-full bg-blue-600 hover:bg-blue-700"
           >
-            📊 Overview
+            🎯 Player Attributes
           </Button>
+          
           <Button
-            variant={activeTab === 'equipment' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveTab('equipment')}
-            className="text-xs"
+            onClick={() => setShowStaffModal(true)}
+            className="w-full bg-green-600 hover:bg-green-700"
           >
-            🎛️ Equipment
+            👥 Staff Management
           </Button>
+          
           <Button
-            variant={activeTab === 'bands' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveTab('bands')}
-            className="text-xs"
+            onClick={createBand}
+            className="w-full bg-purple-600 hover:bg-purple-700"
           >
-            🎸 Bands
+            🎸 Create Band
           </Button>
+          
           <Button
-            variant={activeTab === 'charts' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveTab('charts')}
-            className="text-xs"
+            onClick={() => setShowSettingsModal(true)}
+            className="w-full bg-gray-600 hover:bg-gray-700"
           >
-            📈 Charts
+            ⚙️ Settings
           </Button>
-        </div>
-
-        <div className="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto">
-          {activeTab === 'overview' && (
-            <>
-              <PlayerAttributesModal 
-                showAttributesModal={showAttributesModal}
-                setShowAttributesModal={setShowAttributesModal}
-                spendPerkPoint={spendPerkPoint}
-                playerData={gameState.playerData}
-              />
-              
-              <Button
-                onClick={() => setShowEraModal(true)}
-                className="w-full bg-purple-600 hover:bg-purple-700 mb-4"
-              >
-                🌟 Era Progress
-              </Button>
-              
-              <Button 
-                onClick={advanceDay}
-                className="w-full bg-green-600 hover:bg-green-700 py-3 text-lg font-bold"
-                disabled={gameState.playerData.dailyWorkCapacity > 0}
-              >
-                {gameState.playerData.dailyWorkCapacity > 0 ? (
-                  `⏰ End Day (${gameState.playerData.dailyWorkCapacity} energy left)`
-                ) : (
-                  '🌅 Advance to Next Day'
-                )}
-              </Button>
-            </>
-          )}
-
-          {activeTab === 'equipment' && (
-            <EquipmentList 
-              gameState={gameState}
-              purchaseEquipment={purchaseEquipment}
-            />
-          )}
-
-          {activeTab === 'bands' && (
-            <BandManagement
-              gameState={gameState}
-              onCreateBand={createBand}
-              onStartTour={startTour}
-              onCreateOriginalTrack={createOriginalTrack}
-            />
-          )}
-
-          {activeTab === 'charts' && (
-            <EnhancedChartsPanel
-              gameState={gameState}
-              onContactArtist={contactArtist}
-            />
-          )}
         </div>
       </div>
 
-      <EraProgressModal 
-        isOpen={showEraModal}
-        onClose={() => setShowEraModal(false)}
-        gameState={gameState}
-        triggerEraTransition={triggerEraTransition}
+      {/* Player Stats */}
+      <div className="p-4">
+        <Card className="p-3 bg-gray-800/50 border-gray-600">
+          <h3 className="text-sm font-semibold text-white mb-2">Player Stats</h3>
+          <div className="space-y-1 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-400">Level:</span>
+              <span className="text-white">{gameState.playerData.level}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">Experience:</span>
+              <span className="text-white">{gameState.playerData.experience}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">Reputation:</span>
+              <span className="text-white">{gameState.playerData.reputation}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">Money:</span>
+              <span className="text-green-400">${gameState.money.toLocaleString()}</span>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Modals */}
+      <PlayerAttributesModal
+        isOpen={showAttributesModal}
+        onClose={() => setShowAttributesModal(false)}
+        spendPerkPoint={spendPerkPoint}
+        playerData={gameState.playerData}
       />
-    </Card>
+
+      <StaffManagementModal
+        isOpen={showStaffModal}
+        onClose={() => setShowStaffModal(false)}
+        gameState={gameState}
+        hireStaff={hireStaff}
+        refreshCandidates={refreshCandidates}
+        assignStaffToProject={assignStaffToProject}
+        unassignStaffFromProject={unassignStaffFromProject}
+        toggleStaffRest={toggleStaffRest}
+        openTrainingModal={openTrainingModal}
+      />
+
+      <SettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+        gameState={gameState}
+        setGameState={setGameState}
+      />
+    </div>
   );
 };

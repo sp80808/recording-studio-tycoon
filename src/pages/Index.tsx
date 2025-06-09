@@ -1,179 +1,496 @@
-
-import React, { useState, useEffect } from 'react';
-import { GameLayout } from '@/components/GameLayout';
-import { MainGameContent } from '@/components/MainGameContent';
-import { GameHeader } from '@/components/GameHeader';
-import { SettingsModal } from '@/components/modals/SettingsModal';
-import { EraSelectionModal } from '@/components/EraSelectionModal';
-import { SplashScreen } from '@/components/SplashScreen';
-import { TutorialModal } from '@/components/TutorialModal';
+import React, { useState, useEffect, useCallback } from 'react';
+import { GameState, initialGameState, Project, StaffMember, PlayerAttributes, Band } from '@/types/game';
 import { useGameState } from '@/hooks/useGameState';
-import { useGameLogic } from '@/hooks/useGameLogic';
-import { FocusAllocation } from '@/types/game';
-import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
+import { SplashScreen } from '@/components/SplashScreen';
+import { EraSelectionModal } from '@/components/modals/EraSelectionModal';
+import { TutorialModal } from '@/components/modals/TutorialModal';
+import { GameHeader } from '@/components/GameHeader';
+import { LeftPanel } from '@/components/LeftPanel';
+import { MainGameContent } from '@/components/MainGameContent';
+import { RightPanel } from '@/components/RightPanel';
+import { GameModals } from '@/components/GameModals';
+import { generateInitialProjects } from '@/data/projectData';
+import { generateStaffCandidates } from '@/data/staffData';
+import { useToast } from '@/hooks/use-toast';
 
-const Index = () => {
-  const { gameState, setGameState } = useGameState();
+interface IndexProps {
+}
+
+export default function Index() {
+  const { gameState, updateGameState, resetGameState } = useGameState();
   const [showSplash, setShowSplash] = useState(true);
   const [showEraSelection, setShowEraSelection] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [focusAllocation, setFocusAllocation] = useState<FocusAllocation>({
-    performance: 34,
-    soundCapture: 33,
-    layering: 33
-  });
+  const [showTrainingModal, setShowTrainingModal] = useState(false);
+  const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
+  const [showStaffModal, setShowStaffModal] = useState(false);
+  const [showAttributesModal, setShowAttributesModal] = useState(false);
+  const [showBandModal, setShowBandModal] = useState(false);
+  const [selectedBand, setSelectedBand] = useState<Band | null>(null);
+  const [showRecruitmentModal, setShowRecruitmentModal] = useState(false);
+  const [showStudioModal, setShowStudioModal] = useState(false);
+  const [showSkillsModal, setShowSkillsModal] = useState(false);
+  const [showEraProgressModal, setShowEraProgressModal] = useState(false);
+  const [showCreateBandModal, setShowCreateBandModal] = useState(false);
+  const [focusAllocation, setFocusAllocation] = useState({ creativity: 50, technical: 50 });
+  const [activeProject, setActiveProject] = useState<Project | null>(null);
+  const { toast } = useToast();
 
-  // Background music
-  useBackgroundMusic();
-
-  // Game logic hook
-  const {
-    startProject,
-    handlePerformDailyWork,
-    handleMinigameReward,
-    handleSpendPerkPoint,
-    advanceDay,
-    purchaseEquipment,
-    hireStaff,
-    refreshCandidates,
-    assignStaffToProject,
-    unassignStaffFromProject,
-    toggleStaffRest,
-    handleOpenTrainingModal,
-    orbContainerRef,
-    contactArtist,
-    triggerEraTransition
-  } = useGameLogic(gameState, setGameState, focusAllocation);
-
-  // Handle splash screen completion
-  const handleSplashComplete = () => {
-    setShowSplash(false);
-    setShowEraSelection(true);
-  };
-
-  // Handle era selection
+  // Era selection
   const handleEraSelect = (era: string) => {
-    const eraStartYears: Record<string, number> = {
-      '1960s': 1960,
-      '1970s': 1970,
-      '1980s': 1980,
-      '1990s': 1990,
-      '2000s': 2000,
-      '2010s': 2010,
-      '2020s': 2020
-    };
-
-    setGameState(prev => ({
-      ...prev,
-      selectedEra: era,
-      currentEra: era,
-      currentYear: eraStartYears[era] || 2000,
-      eraStartYear: eraStartYears[era] || 2000
-    }));
-    
+    updateGameState({ currentEra: era });
     setShowEraSelection(false);
     setShowTutorial(true);
   };
 
-  // Auto-save effect
-  useEffect(() => {
-    const interval = setInterval(() => {
-      localStorage.setItem('musicStudioTycoon_gameState', JSON.stringify(gameState));
-    }, 30000); // Auto-save every 30 seconds
+  // Generate initial projects
+  const generateProjects = useCallback(() => {
+    const newProjects = generateInitialProjects(gameState.playerData.level);
+    updateGameState((prev) => ({
+      ...prev,
+      availableProjects: [...prev.availableProjects, ...newProjects],
+    }));
+  }, [gameState.playerData.level, updateGameState]);
 
-    return () => clearInterval(interval);
-  }, [gameState]);
-
-  // Don't render main content until era is selected
-  if (showSplash || showEraSelection || showTutorial) {
-    return (
-      <>
-        {showSplash && (
-          <SplashScreen 
-            onComplete={handleSplashComplete}
-          />
-        )}
-        
-        {showEraSelection && (
-          <EraSelectionModal
-            isOpen={showEraSelection}
-            onEraSelect={handleEraSelect}
-          />
-        )}
-        
-        {showTutorial && (
-          <TutorialModal
-            isOpen={showTutorial}
-            onClose={() => setShowTutorial(false)}
-          />
-        )}
-      </>
-    );
-  }
-
-  // Placeholder functions for band management
-  const createBand = (bandName: string, memberIds: string[]) => {
-    console.log('Creating band:', bandName, memberIds);
-    // TODO: Implement band creation logic
+  // Start a project
+  const startProject = (project: Project) => {
+    setActiveProject(project);
+    updateGameState((prev) => ({
+      ...prev,
+      availableProjects: prev.availableProjects.filter((p) => p.id !== project.id),
+    }));
   };
 
-  const startTour = (bandId: string) => {
-    console.log('Starting tour for band:', bandId);
-    // TODO: Implement tour logic
+  // Work on a project
+  const workOnProject = (creativityPoints: number, technicalPoints: number) => {
+    if (!activeProject) return;
+
+    const cPoints = Math.min(creativityPoints, activeProject.daysRemaining);
+    const tPoints = Math.min(technicalPoints, activeProject.daysRemaining);
+
+    updateGameState((prev) => {
+      if (!activeProject) return prev;
+
+      const updatedProject: Project = {
+        ...activeProject,
+        accumulatedCPoints: activeProject.accumulatedCPoints + cPoints,
+        accumulatedTPoints: activeProject.accumulatedTPoints + tPoints,
+        daysRemaining: activeProject.daysRemaining - Math.max(cPoints, tPoints),
+        workSessionCount: (activeProject.workSessionCount || 0) + 1,
+      };
+
+      setActiveProject(updatedProject);
+
+      return {
+        ...prev,
+        projects: prev.projects ? [...prev.projects, updatedProject] : [updatedProject],
+      };
+    });
   };
 
-  const createOriginalTrack = (bandId: string) => {
-    console.log('Creating original track for band:', bandId);
-    // TODO: Implement original track creation logic
+  // Complete a stage
+  const completeStage = () => {
+    if (!activeProject) return;
+
+    updateGameState((prev) => {
+      if (!activeProject) return prev;
+
+      const updatedProject: Project = {
+        ...activeProject,
+        currentStage: activeProject.currentStage + 1,
+      };
+
+      setActiveProject(updatedProject);
+
+      return {
+        ...prev,
+        projects: prev.projects ? [...prev.projects, updatedProject] : [updatedProject],
+      };
+    });
+  };
+
+  // Complete a project
+  const completeProject = () => {
+    if (!activeProject) return;
+
+    updateGameState((prev) => {
+      const payout = activeProject.payoutBase;
+      const experienceGain = activeProject.difficulty * 100;
+
+      return {
+        ...prev,
+        money: prev.money + payout,
+        playerData: {
+          ...prev.playerData,
+          experience: prev.playerData.experience + experienceGain,
+          completedProjects: prev.playerData.completedProjects + 1,
+        },
+      };
+    });
+
+    setActiveProject(null);
+    generateProjects();
+  };
+
+  // Trigger a minigame
+  const triggerMinigame = (type: string, reason: string) => {
+    updateGameState({
+      autoTriggeredMinigame: {
+        type: type,
+        reason: reason,
+      },
+    });
+  };
+
+  // Buy equipment
+  const buyEquipment = (equipmentId: string) => {
+    updateGameState((prev) => ({
+      ...prev,
+      equipment: [...prev.equipment, equipmentId],
+      money: prev.money - 1000,
+    }));
+  };
+
+  // Hire staff
+  const hireStaff = (candidateIndex: number): boolean => {
+    const candidate = gameState.staffCandidates[candidateIndex];
+    if (!candidate) {
+      console.error(`No staff candidate at index ${candidateIndex}`);
+      return false;
+    }
+
+    if (gameState.money < candidate.salary) {
+      toast({
+        title: "Insufficient Funds",
+        description: `You cannot afford to hire ${candidate.name}.`,
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    updateGameState((prev) => {
+      const newStaff = {
+        ...candidate,
+        isAvailable: true,
+        isResting: false,
+      };
+
+      return {
+        ...prev,
+        staff: [...prev.staff, newStaff],
+        staffCandidates: prev.staffCandidates.filter((_, index) => index !== candidateIndex),
+        money: prev.money - candidate.salary,
+      };
+    });
+
+    toast({
+      title: "Staff Hired",
+      description: `${candidate.name} has been hired!`,
+    });
+
+    return true;
+  };
+
+  // Train staff
+  const trainStaff = (staff: StaffMember, skill: string) => {
+    updateGameState((prev) => {
+      const updatedStaff = prev.staff.map((s) => {
+        if (s.id === staff.id) {
+          return {
+            ...s,
+            skills: {
+              ...s.skills,
+              [skill]: s.skills[skill] + 1,
+            },
+          };
+        }
+        return s;
+      });
+
+      return {
+        ...prev,
+        staff: updatedStaff,
+      };
+    });
+  };
+
+  // Upgrade studio
+  const upgradeStudio = (studioId: string) => {
+    updateGameState((prev) => ({
+      ...prev,
+      studioLevel: prev.studioLevel + 1,
+    }));
+  };
+
+  // Refresh staff candidates
+  const refreshCandidates = () => {
+    const newCandidates = generateStaffCandidates(3);
+    updateGameState((prev) => ({
+      ...prev,
+      staffCandidates: newCandidates,
+    }));
+  };
+
+  // Assign staff to project
+  const assignStaffToProject = (staffId: string) => {
+    if (!activeProject) return;
+
+    updateGameState((prev) => {
+      const updatedStaff = prev.staff.map((s) => {
+        if (s.id === staffId) {
+          return {
+            ...s,
+            projectId: activeProject.id,
+            isAvailable: false,
+          };
+        }
+        return s;
+      });
+
+      return {
+        ...prev,
+        staff: updatedStaff,
+      };
+    });
+  };
+
+  // Unassign staff from project
+  const unassignStaffFromProject = (staffId: string) => {
+    updateGameState((prev) => {
+      const updatedStaff = prev.staff.map((s) => {
+        if (s.id === staffId) {
+          return {
+            ...s,
+            projectId: null,
+            isAvailable: true,
+          };
+        }
+        return s;
+      });
+
+      return {
+        ...prev,
+        staff: updatedStaff,
+      };
+    });
+  };
+
+  // Toggle staff rest
+  const toggleStaffRest = (staffId: string) => {
+    updateGameState((prev) => {
+      const updatedStaff = prev.staff.map((s) => {
+        if (s.id === staffId) {
+          return {
+            ...s,
+            isResting: !s.isResting,
+          };
+        }
+        return s;
+      });
+
+      return {
+        ...prev,
+        staff: updatedStaff,
+      };
+    });
+  };
+
+  // Open training modal
+  const openTrainingModal = (staff: StaffMember) => {
+    setSelectedStaff(staff);
+    setShowTrainingModal(true);
+  };
+
+  // Spend perk point
+  const spendPerkPoint = (attribute: keyof PlayerAttributes) => {
+    updateGameState((prev) => {
+      if (prev.playerData.perkPoints <= 0) {
+        toast({
+          title: "No Perk Points",
+          description: "You don't have any perk points to spend.",
+          variant: "destructive",
+        });
+        return prev;
+      }
+
+      const updatedPlayerData = {
+        ...prev.playerData,
+        [attribute]: prev.playerData[attribute] + 1,
+        perkPoints: prev.playerData.perkPoints - 1,
+      };
+
+      toast({
+        title: "Perk Point Spent",
+        description: `Your ${attribute} has increased!`,
+      });
+
+      return {
+        ...prev,
+        playerData: updatedPlayerData,
+      };
+    });
+  };
+
+  // Create band
+  const createBand = () => {
+    setShowCreateBandModal(true);
+  };
+
+  // Recruit member
+  const recruitMember = (band: Band, member: StaffMember) => {
+    updateGameState((prev) => {
+      const updatedBand = {
+        ...band,
+        members: [...band.members, member],
+      };
+
+      return {
+        ...prev,
+        bands: [...prev.bands, updatedBand],
+      };
+    });
+  };
+
+  // Create original track
+  const createOriginalTrack = () => {
+    updateGameState((prev) => ({
+      ...prev,
+      originalTracks: prev.originalTracks + 1,
+    }));
   };
 
   return (
-    <GameLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        <GameHeader 
-          gameState={gameState} 
-          onOpenSettings={() => setShowSettings(true)}
-          hireStaff={hireStaff}
-          refreshCandidates={refreshCandidates}
-          assignStaffToProject={assignStaffToProject}
-          unassignStaffFromProject={unassignStaffFromProject}
-          toggleStaffRest={toggleStaffRest}
-          openTrainingModal={handleOpenTrainingModal}
-        />
-        
-        <MainGameContent
-          gameState={gameState}
-          setGameState={setGameState}
-          focusAllocation={focusAllocation}
-          setFocusAllocation={setFocusAllocation}
-          startProject={startProject}
-          performDailyWork={handlePerformDailyWork}
-          onMinigameReward={handleMinigameReward}
-          spendPerkPoint={handleSpendPerkPoint}
-          advanceDay={advanceDay}
-          purchaseEquipment={purchaseEquipment}
-          hireStaff={hireStaff}
-          refreshCandidates={refreshCandidates}
-          assignStaffToProject={assignStaffToProject}
-          unassignStaffFromProject={unassignStaffFromProject}
-          toggleStaffRest={toggleStaffRest}
-          openTrainingModal={handleOpenTrainingModal}
-          orbContainerRef={orbContainerRef}
-          contactArtist={contactArtist}
-          triggerEraTransition={triggerEraTransition}
-          createBand={createBand}
-          startTour={startTour}
-          createOriginalTrack={createOriginalTrack}
-        />
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
+      {/* Splash Screen */}
+      {showSplash && (
+        <SplashScreen onComplete={() => setShowSplash(false)} />
+      )}
 
-        <SettingsModal
-          isOpen={showSettings}
-          onClose={() => setShowSettings(false)}
+      {/* Era Selection Modal */}
+      {showEraSelection && (
+        <EraSelectionModal
+          isOpen={showEraSelection}
+          onClose={() => setShowEraSelection(false)}
+          onEraSelect={handleEraSelect}
         />
-      </div>
-    </GameLayout>
+      )}
+
+      {/* Tutorial Modal */}
+      {showTutorial && (
+        <TutorialModal
+          isOpen={showTutorial}
+          onClose={() => setShowTutorial(false)}
+        />
+      )}
+
+      {/* Main Game Interface */}
+      {!showSplash && !showEraSelection && !showTutorial && (
+        <div className="flex flex-col h-screen">
+          {/* Game Header */}
+          <GameHeader 
+            gameState={gameState}
+            onOpenSettings={() => setShowSettings(true)}
+            hireStaff={hireStaff}
+            refreshCandidates={refreshCandidates}
+            assignStaffToProject={assignStaffToProject}
+            unassignStaffFromProject={unassignStaffFromProject}
+            toggleStaffRest={toggleStaffRest}
+            openTrainingModal={openTrainingModal}
+          />
+
+          {/* Main Content */}
+          <div className="flex-1 flex overflow-hidden">
+            {/* Left Panel */}
+            <LeftPanel 
+              gameState={gameState}
+              setGameState={setGameState}
+            />
+
+            {/* Main Game Content */}
+            <MainGameContent
+              gameState={gameState}
+              setGameState={setGameState}
+              focusAllocation={focusAllocation}
+              setFocusAllocation={setFocusAllocation}
+              activeProject={activeProject}
+              setActiveProject={setActiveProject}
+              completeProject={completeProject}
+              startProject={startProject}
+              workOnProject={workOnProject}
+              completeStage={completeStage}
+              generateProjects={generateProjects}
+              triggerMinigame={triggerMinigame}
+              buyEquipment={buyEquipment}
+              hireStaff={hireStaff}
+              trainStaff={trainStaff}
+              upgradeStudio={upgradeStudio}
+              refreshCandidates={refreshCandidates}
+              assignStaffToProject={assignStaffToProject}
+              unassignStaffFromProject={unassignStaffFromProject}
+              toggleStaffRest={toggleStaffRest}
+              openTrainingModal={openTrainingModal}
+              spendPerkPoint={spendPerkPoint}
+              createBand={createBand}
+              createOriginalTrack={createOriginalTrack}
+            />
+
+            {/* Right Panel */}
+            <RightPanel
+              gameState={gameState}
+              setGameState={setGameState}
+              hireStaff={hireStaff}
+              refreshCandidates={refreshCandidates}
+              assignStaffToProject={assignStaffToProject}
+              unassignStaffFromProject={unassignStaffFromProject}
+              toggleStaffRest={toggleStaffRest}
+              openTrainingModal={openTrainingModal}
+              createBand={createBand}
+              spendPerkPoint={spendPerkPoint}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Game Modals */}
+      <GameModals
+        gameState={gameState}
+        setGameState={setGameState}
+        showSettings={showSettings}
+        setShowSettings={setShowSettings}
+        showTrainingModal={showTrainingModal}
+        setShowTrainingModal={setShowTrainingModal}
+        selectedStaff={selectedStaff}
+        trainStaff={trainStaff}
+        showStaffModal={showStaffModal}
+        setShowStaffModal={setShowStaffModal}
+        hireStaff={hireStaff}
+        refreshCandidates={refreshCandidates}
+        assignStaffToProject={assignStaffToProject}
+        unassignStaffFromProject={unassignStaffFromProject}
+        toggleStaffRest={toggleStaffRest}
+        openTrainingModal={openTrainingModal}
+        showAttributesModal={showAttributesModal}
+        setShowAttributesModal={setShowAttributesModal}
+        spendPerkPoint={spendPerkPoint}
+        showBandModal={showBandModal}
+        setShowBandModal={setShowBandModal}
+        createBand={createBand}
+        selectedBand={selectedBand}
+        setSelectedBand={setSelectedBand}
+        recruitMember={recruitMember}
+        showRecruitmentModal={showRecruitmentModal}
+        setShowRecruitmentModal={setShowRecruitmentModal}
+        showStudioModal={showStudioModal}
+        setShowStudioModal={setShowStudioModal}
+        upgradeStudio={upgradeStudio}
+        showSkillsModal={showSkillsModal}
+        setShowSkillsModal={setShowSkillsModal}
+        showEraProgressModal={showEraProgressModal}
+        setShowEraProgressModal={setShowEraProgressModal}
+        showCreateBandModal={showCreateBandModal}
+        setShowCreateBandModal={setShowCreateBandModal}
+      />
+    </div>
   );
-};
-
-export default Index;
+}
