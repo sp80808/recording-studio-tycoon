@@ -159,6 +159,18 @@ export const getTriggeredMinigames = (
     });
   }
 
+  // ACOUSTIC TREATMENT - For setup stages, acoustic projects, and room optimization
+  if ((stageName.includes('setup') || stageName.includes('acoustic') || stageName.includes('room')) ||
+      (project.genre === 'Acoustic' && stageName.includes('preparation')) ||
+      (gameState.playerData.level >= 5 && stageName.includes('recording'))) {
+    triggers.push({
+      minigameType: 'acoustic',
+      triggerReason: 'Room setup stage - optimize your acoustic treatment!',
+      priority: 7,
+      focusThreshold: { type: 'soundCapture', min: 30 }
+    });
+  }
+
   // Genre-specific layering triggers
   if ((['Electronic', 'Hip-hop'].includes(project.genre) && stageName.includes('production')) ||
       (project.genre === 'Rock' && stageName.includes('overdub')) ||

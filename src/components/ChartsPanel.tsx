@@ -165,7 +165,7 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
     }
 
     try {
-      const audio = new Audio(`/src/audio/chart_clips/${clipName}`);
+      const audio = new Audio(`/audio/chart_clips/${clipName}`);
       audioRef.current = audio;
 
       audio.addEventListener('loadedmetadata', () => {

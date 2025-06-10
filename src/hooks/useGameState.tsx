@@ -80,7 +80,14 @@ export const useGameState = () => {
     bands: [],
     playerBands: [],
     availableSessionMusicians: [],
-    activeOriginalTrack: null
+    activeOriginalTrack: null,
+    chartsData: {
+      charts: [],
+      contactedArtists: [],
+      marketTrends: [],
+      discoveredArtists: [],
+      lastChartUpdate: 0
+    }
   });
 
   const initializeGameState = (options?: Partial<EraInitOptions>): GameState => {
