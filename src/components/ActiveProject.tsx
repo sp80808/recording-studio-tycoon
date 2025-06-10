@@ -55,7 +55,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       
       // If we've moved to a new stage, clear the auto-triggered minigame
       if (previousStageKey && !completedMinigamesForStage.has(currentStageKey)) {
-        setAutoTriggeredMinigame(null);
+        if (clearAutoTriggeredMinigame) {
+          clearAutoTriggeredMinigame();
+        }
         setPulseAnimation(false);
       }
     }
