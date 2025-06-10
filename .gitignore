@@ -10,7 +10,7 @@ coverage/
 dist/
 build/
 
-# Misc
+# Miscellaneous
 .DS_Store
 .env
 .env.local
@@ -33,20 +33,14 @@ yarn-error.log*
 # TypeScript
 *.tsbuildinfo
 
-# Optional npm cache directory
+# Optional directories
 .npm
-
-# Optional eslint cache
 .eslintcache
-
-# Optional REPL history
 .node_repl_history
-
-# Output of 'npm pack'
 *.tgz
-
-# Yarn Integrity file
 .yarn-integrity
+.netlify
 
-# Local Netlify folder
-.netlify 
+# Large files and directories
+*.zip
+prototypes/ 
