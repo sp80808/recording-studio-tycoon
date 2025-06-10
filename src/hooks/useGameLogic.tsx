@@ -4,6 +4,7 @@ import { GameState, StaffMember, PlayerAttributes } from '@/types/game';
 import { toast } from '@/hooks/use-toast';
 import { availableTrainingCourses } from '@/data/training';
 import { canPurchaseEquipment, addNotification, applyEquipmentEffects } from '@/utils/gameUtils';
+import { playSound } from '@/utils/soundUtils';
 import { getAvailableEquipmentForYear } from '@/data/eraEquipment';
 import { useStaffManagement } from '@/hooks/useStaffManagement';
 import { useProjectManagement } from '@/hooks/useProjectManagement';
@@ -103,6 +104,7 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
     const purchaseCheck = canPurchaseEquipment(equipment, gameState);
     if (!purchaseCheck.canPurchase) {
       console.log(`Purchase blocked: ${purchaseCheck.reason}`);
+      playSound('error.wav', 0.5);
       toast({
         title: "Cannot Purchase",
         description: purchaseCheck.reason,
@@ -110,6 +112,9 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
       });
       return;
     }
+
+    // Play purchase sound
+    playSound('purchase.wav', 0.6);
 
     // Apply equipment effects and update state
     let updatedGameState = applyEquipmentEffects(equipment, gameState);

@@ -1,7 +1,15 @@
 import { useCallback, useRef, useState } from 'react';
 import { GameState, FocusAllocation, Project } from '@/types/game';
-import { calculateStudioSkillBonus, getEquipmentBonuses } from '@/utils/gameUtils';
-import { getCreativityMultiplier, getTechnicalMultiplier, getFocusEffectiveness } from '@/utils/playerUtils';
+// calculateStudioSkillBonus and getEquipmentBonuses are now used within projectUtils
+import { getCreativityMultiplier, getTechnicalMultiplier, getFocusEffectiveness, getMoodEffectiveness } from '@/utils/playerUtils'; // Added getMoodEffectiveness
+import {
+  calculateBaseWorkPoints,
+  applyFocusAndMultipliers,
+  applyStudioSkillBonusesToWorkPoints,
+  applyEquipmentBonusesToWorkPoints,
+  calculateStaffWorkContribution,
+  WorkPoints
+} from '@/utils/projectUtils'; // Import new project utils
 import { shouldAutoTriggerMinigame } from '@/utils/minigameUtils';
 import { toast } from '@/hooks/use-toast';
 
@@ -66,11 +74,7 @@ export const useStageWork = ({
     }, 1500);
   }, []);
 
-  const getMoodEffectiveness = useCallback((mood: number) => {
-    if (mood < 40) return 0.75; // 25% penalty for low mood
-    if (mood > 75) return 1.1; // 10% bonus for high mood
-    return 1.0; // Normal effectiveness
-  }, []);
+  // getMoodEffectiveness is now imported from playerUtils
 
   const performDailyWork = useCallback((): { review: any; isComplete: boolean } | undefined => {
     console.log('🚀 === PERFORMING DAILY WORK ===');
@@ -141,89 +145,56 @@ export const useStageWork = ({
     const attributeMultiplier = 1 + (gameState.playerData.attributes.creativeIntuition - 1) * 0.5 + (gameState.playerData.attributes.technicalAptitude - 1) * 0.5;
     
     // Enhanced base points calculation
-    const baseCreativityWork = Math.floor(baseWorkCapacity * 8 * attributeMultiplier); // Increased base multiplier
-    const baseTechnicalWork = Math.floor(baseWorkCapacity * 8 * attributeMultiplier); // Increased base multiplier
-    
-    console.log(`💪 Base work capacity: ${baseWorkCapacity}, Attribute multiplier: ${attributeMultiplier.toFixed(2)}`);
-    console.log(`🎨 Base creativity work: ${baseCreativityWork}`);
-    console.log(`⚙️ Base technical work: ${baseTechnicalWork}`);
+    // Calculate base work points from player stats
+    let workPoints: WorkPoints = calculateBaseWorkPoints(
+      gameState.playerData.dailyWorkCapacity,
+      gameState.playerData.attributes
+    );
+    console.log(`💪 Base work points - C: ${workPoints.creativity}, T: ${workPoints.technical}`);
 
-    // Apply player attribute bonuses
+    // Apply player attribute multipliers and focus allocation
     const creativityMultiplier = getCreativityMultiplier(gameState);
     const technicalMultiplier = getTechnicalMultiplier(gameState);
     const focusEffectiveness = getFocusEffectiveness(gameState);
-    console.log(`🔥 Multipliers - Creativity: ${creativityMultiplier}, Technical: ${technicalMultiplier}, Focus: ${focusEffectiveness}`);
-
-    // Apply focus allocation with enhanced effectiveness
-    let creativityGain = Math.floor(
-      baseCreativityWork * creativityMultiplier * focusEffectiveness * (
-        (focusAllocation.performance / 100) * 0.8 + 
-        (focusAllocation.layering / 100) * 0.6
-      )
+    console.log(`🔥 Multipliers - Creativity: ${creativityMultiplier.toFixed(2)}, Technical: ${technicalMultiplier.toFixed(2)}, Focus: ${focusEffectiveness.toFixed(2)}`);
+    
+    workPoints = applyFocusAndMultipliers(
+      workPoints,
+      focusAllocation,
+      creativityMultiplier,
+      technicalMultiplier,
+      focusEffectiveness
     );
-    let technicalGain = Math.floor(
-      baseTechnicalWork * technicalMultiplier * focusEffectiveness * (
-        (focusAllocation.soundCapture / 100) * 0.8 + 
-        (focusAllocation.layering / 100) * 0.4
-      )
+    console.log(`📊 After focus & multipliers - C: ${workPoints.creativity}, T: ${workPoints.technical}`);
+    
+    // Apply studio skill bonuses
+    workPoints = applyStudioSkillBonusesToWorkPoints(
+      workPoints,
+      project.genre,
+      gameState.studioSkills
     );
-
-    console.log(`🎯 Focus allocation - Performance: ${focusAllocation.performance}%, Sound: ${focusAllocation.soundCapture}%, Layering: ${focusAllocation.layering}%`);
-    console.log(`📊 After focus allocation - Creativity: ${creativityGain}, Technical: ${technicalGain}`);
-
-    // Apply studio skill bonuses for the project's genre
-    const genreSkill = gameState.studioSkills[project.genre];
-    if (genreSkill) {
-      const creativityBonus = calculateStudioSkillBonus(genreSkill, 'creativity');
-      const technicalBonus = calculateStudioSkillBonus(genreSkill, 'technical');
-      
-      creativityGain += Math.floor(creativityGain * (creativityBonus / 100));
-      technicalGain += Math.floor(technicalGain * (technicalBonus / 100));
-      
-      console.log(`🎸 Genre (${project.genre}) skill bonuses applied - Creativity: ${creativityGain}, Technical: ${technicalGain}`);
-    }
+    console.log(`🎸 After skill bonuses - C: ${workPoints.creativity}, T: ${workPoints.technical}`);
 
     // Apply equipment bonuses
-    const equipmentBonuses = getEquipmentBonuses(gameState.ownedEquipment, project.genre);
-    creativityGain += Math.floor(creativityGain * (equipmentBonuses.creativity / 100));
-    technicalGain += Math.floor(technicalGain * (equipmentBonuses.technical / 100));
-    creativityGain += equipmentBonuses.genre;
-    
-    console.log(`🎛️ After equipment bonuses - Creativity: ${creativityGain}, Technical: ${technicalGain}`);
+    workPoints = applyEquipmentBonusesToWorkPoints(
+      workPoints,
+      gameState.ownedEquipment,
+      project.genre
+    );
+    console.log(`🎛️ After equipment bonuses - C: ${workPoints.creativity}, T: ${workPoints.technical}`);
 
-    // Add staff contributions with mood effects
+    // Add staff contributions
     const assignedStaff = gameState.hiredStaff.filter(s => s.assignedProjectId === project.id && s.status === 'Working');
     console.log(`👥 Assigned staff count: ${assignedStaff.length}`);
+    workPoints = calculateStaffWorkContribution(
+      workPoints,
+      assignedStaff,
+      project.genre,
+      getMoodEffectiveness // Imported from playerUtils
+    );
+    console.log(`🎯 FINAL GAINS - C: ${workPoints.creativity}, T: ${workPoints.technical}`);
     
-    assignedStaff.forEach(staff => {
-      if (staff.energy < 20) {
-        // Low energy penalty
-        const penalty = 0.3;
-        creativityGain += Math.floor(staff.primaryStats.creativity * 0.5 * penalty); // Increased staff contribution
-        technicalGain += Math.floor(staff.primaryStats.technical * 0.5 * penalty);
-        console.log(`😴 Staff ${staff.name} working with low energy (penalty applied)`);
-      } else {
-        // Apply mood effectiveness
-        const moodMultiplier = getMoodEffectiveness(staff.mood);
-        
-        let staffCreativity = Math.floor(staff.primaryStats.creativity * 0.8 * moodMultiplier); // Increased staff contribution
-        let staffTechnical = Math.floor(staff.primaryStats.technical * 0.8 * moodMultiplier);
-        
-        // Apply staff genre affinity bonus
-        if (staff.genreAffinity && staff.genreAffinity.genre === project.genre) {
-          const bonus = staff.genreAffinity.bonus / 100;
-          staffCreativity += Math.floor(staffCreativity * bonus);
-          staffTechnical += Math.floor(staffTechnical * bonus);
-          console.log(`🎯 Staff ${staff.name} has genre affinity for ${project.genre}`);
-        }
-        
-        creativityGain += staffCreativity;
-        technicalGain += staffTechnical;
-        console.log(`👤 Staff ${staff.name} contributed: +${staffCreativity} creativity, +${staffTechnical} technical (mood: ${staff.mood})`);
-      }
-    });
-
-    console.log(`🎯 FINAL GAINS - Creativity: ${creativityGain}, Technical: ${technicalGain}`);
+    const { creativity: creativityGain, technical: technicalGain } = workPoints;
 
     // Create orb animations
     createOrb('creativity', creativityGain);
@@ -344,7 +315,7 @@ export const useStageWork = ({
     }
     
     return { review: null, isComplete: false };
-  }, [gameState, focusAllocation, createOrb, setGameState, completeProject, addStaffXP, getMoodEffectiveness]);
+  }, [gameState, focusAllocation, createOrb, setGameState, completeProject, addStaffXP]); // Removed getMoodEffectiveness from deps as it's imported
 
   return {
     performDailyWork,

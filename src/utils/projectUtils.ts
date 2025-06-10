@@ -1,6 +1,9 @@
-import { Project, ProjectStage, StaffMember } from '@/types/game';
+import { Project, ProjectStage, StaffMember, FocusAllocation, StudioSkill, Equipment, PlayerAttributes } from '@/types/game'; // Changed OwnedEquipment to Equipment
 import { generateAIBand } from '@/utils/bandUtils';
 import { ERA_DEFINITIONS, getGenrePopularity } from '@/utils/eraProgression';
+import { calculateStudioSkillBonus, getEquipmentBonuses } from './gameUtils'; // Import from gameUtils
+// Assuming getMoodEffectiveness will be moved to playerUtils or passed as arg
+// For now, let's define a placeholder or expect it as an argument for calculateStaffWorkContribution
 
 const genres = ['Rock', 'Pop', 'Electronic', 'Hip-hop', 'Acoustic'] as const;
 const clientTypes = ['Independent', 'Record Label', 'Commercial', 'Streaming'] as const;
@@ -315,4 +318,115 @@ export const getProjectRequirements = (project: Project) => {
   };
   
   return requirements;
+};
+
+// Helper type for work points
+export interface WorkPoints {
+  creativity: number;
+  technical: number;
+}
+
+export const calculateBaseWorkPoints = (
+  dailyWorkCapacity: number,
+  attributes: { creativeIntuition: number; technicalAptitude: number }
+): WorkPoints => {
+  const baseWorkCapacity = Math.max(dailyWorkCapacity, 1);
+  const attributeMultiplier =
+    1 +
+    (attributes.creativeIntuition - 1) * 0.5 +
+    (attributes.technicalAptitude - 1) * 0.5;
+  
+  // Enhanced base points calculation (matches useStageWork)
+  const baseCreativityWork = Math.floor(baseWorkCapacity * 8 * attributeMultiplier);
+  const baseTechnicalWork = Math.floor(baseWorkCapacity * 8 * attributeMultiplier);
+
+  return { creativity: baseCreativityWork, technical: baseTechnicalWork };
+};
+
+export const applyFocusAndMultipliers = (
+  basePoints: WorkPoints,
+  focusAllocation: FocusAllocation,
+  creativityMultiplier: number,
+  technicalMultiplier: number,
+  focusEffectiveness: number
+): WorkPoints => {
+  // Apply focus allocation with enhanced effectiveness (matches useStageWork)
+  const creativityGain = Math.floor(
+    basePoints.creativity * creativityMultiplier * focusEffectiveness * (
+      (focusAllocation.performance / 100) * 0.8 + 
+      (focusAllocation.layering / 100) * 0.6
+    )
+  );
+  const technicalGain = Math.floor(
+    basePoints.technical * technicalMultiplier * focusEffectiveness * (
+      (focusAllocation.soundCapture / 100) * 0.8 + 
+      (focusAllocation.layering / 100) * 0.4
+    )
+  );
+  return { creativity: creativityGain, technical: technicalGain };
+};
+
+export const applyStudioSkillBonusesToWorkPoints = (
+  currentPoints: WorkPoints,
+  projectGenre: string,
+  studioSkills: { [key: string]: StudioSkill }
+): WorkPoints => {
+  let { creativity, technical } = currentPoints;
+  const genreSkill = studioSkills[projectGenre];
+
+  if (genreSkill) {
+    const creativityBonusPercent = calculateStudioSkillBonus(genreSkill, 'creativity');
+    const technicalBonusPercent = calculateStudioSkillBonus(genreSkill, 'technical');
+    
+    creativity += Math.floor(creativity * (creativityBonusPercent / 100));
+    technical += Math.floor(technical * (technicalBonusPercent / 100));
+  }
+  return { creativity, technical };
+};
+
+export const applyEquipmentBonusesToWorkPoints = (
+  currentPoints: WorkPoints,
+  ownedEquipment: Equipment[], // Changed OwnedEquipment to Equipment
+  projectGenre: string
+): WorkPoints => {
+  let { creativity, technical } = currentPoints;
+  const equipmentBonuses = getEquipmentBonuses(ownedEquipment, projectGenre);
+
+  creativity += Math.floor(creativity * (equipmentBonuses.creativity / 100));
+  technical += Math.floor(technical * (equipmentBonuses.technical / 100));
+  creativity += equipmentBonuses.genre; // Direct points bonus for genre
+
+  return { creativity, technical };
+};
+
+// Placeholder for getMoodEffectiveness if not moved yet, or assume it's passed.
+// For this refactoring, we'll assume it's passed to calculateStaffWorkContribution.
+export const calculateStaffWorkContribution = (
+  currentPoints: WorkPoints,
+  assignedStaff: StaffMember[],
+  projectGenre: string,
+  getMoodEffectiveness: (mood: number) => number // Pass as argument
+): WorkPoints => {
+  let { creativity, technical } = currentPoints;
+
+  assignedStaff.forEach(staff => {
+    if (staff.energy < 20) {
+      const penalty = 0.3;
+      creativity += Math.floor(staff.primaryStats.creativity * 0.5 * penalty);
+      technical += Math.floor(staff.primaryStats.technical * 0.5 * penalty);
+    } else {
+      const moodMultiplier = getMoodEffectiveness(staff.mood);
+      let staffCreativity = Math.floor(staff.primaryStats.creativity * 0.8 * moodMultiplier);
+      let staffTechnical = Math.floor(staff.primaryStats.technical * 0.8 * moodMultiplier);
+
+      if (staff.genreAffinity && staff.genreAffinity.genre === projectGenre) {
+        const bonus = staff.genreAffinity.bonus / 100;
+        staffCreativity += Math.floor(staffCreativity * bonus);
+        staffTechnical += Math.floor(staffTechnical * bonus);
+      }
+      creativity += staffCreativity;
+      technical += staffTechnical;
+    }
+  });
+  return { creativity, technical };
 };

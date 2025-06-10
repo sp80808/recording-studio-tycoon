@@ -12,6 +12,7 @@ import { AcousticTreatmentGame } from './AcousticTreatmentGame';
 import { InstrumentLayeringGame } from './InstrumentLayeringGame';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { toast } from '@/hooks/use-toast';
+import { playSound } from '@/utils/soundUtils';
 
 export type MinigameType = 'rhythm' | 'mixing' | 'waveform' | 'beatmaking' | 'vocal' | 'mastering' | 'effectchain' | 'acoustic' | 'layering';
 

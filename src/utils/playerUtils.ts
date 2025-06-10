@@ -36,3 +36,9 @@ export const getTotalWorkCapacity = (gameState: GameState): number => {
   
   return baseCapacity + staffCapacity;
 };
+
+export const getMoodEffectiveness = (mood: number): number => {
+  if (mood < 40) return 0.75; // 25% penalty for low mood
+  if (mood > 75) return 1.1; // 10% bonus for high mood
+  return 1.0; // Normal effectiveness
+};
