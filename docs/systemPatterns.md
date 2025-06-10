@@ -48,3 +48,53 @@ The Charts System follows a modular architecture with distinct components for ch
    - The TrendAnalyzer tracks genre popularity based on chart data.
    - It identifies seasonal trends and predicts future trends.
    - The trend data is stored in the ChartDataStore and displayed in the ChartsPanel.
+
+## System Patterns: Minigame System
+
+## System Architecture
+
+The Minigame System follows a modular architecture to support various minigame types and future expansions.
+
+### Key Components
+
+- MinigameManager: Manages the lifecycle of minigames, including starting, updating, and scoring.
+- BaseMinigame: An abstract class or interface for defining common minigame properties and methods.
+- Specific Minigame Modules: Individual implementations for each minigame type (e.g., VocalTuningGame, LayeringGame, EffectChainGame, AcousticGame, LiveRecordingGame).
+- DifficultyManager: Calculates and adjusts minigame difficulty based on player skill, equipment, and staff assistance.
+- RewardSystem: Determines and awards player rewards based on minigame performance.
+- SkillProgression: Tracks player mastery and unlocks new techniques.
+
+## Key Technical Decisions
+
+- Modular design for easy addition of new minigames.
+- Data-driven configuration for minigame parameters and difficulty.
+- Real-time audio and visual feedback for engaging gameplay.
+- Performance optimization for smooth execution.
+
+## Design Patterns
+
+- Factory Pattern: The MinigameManager uses a factory to create instances of specific minigame modules.
+- Observer Pattern: UI components observe the active minigame for updates.
+- Strategy Pattern: The DifficultyManager uses different strategies for calculating difficulty.
+
+## Component Relationships
+
+- The MinigameManager interacts with specific minigame modules.
+- Minigame modules use data from the DifficultyManager and RewardSystem.
+- The UI displays information from the active minigame and SkillProgression.
+
+## Critical Implementation Paths
+
+1. Minigame Initialization:
+   - The MinigameManager receives a request to start a minigame with specific configuration.
+   - It creates an instance of the requested minigame module using the factory.
+   - The minigame module initializes its state and assets based on the configuration.
+
+2. Gameplay Loop:
+   - The MinigameManager updates the active minigame based on game time and player input.
+   - The minigame module processes input, updates its internal state, and provides real-time feedback.
+
+3. Scoring and Rewards:
+   - When the minigame ends, the minigame module calculates the player's score.
+   - The RewardSystem determines the appropriate rewards based on the score and other factors.
+   - The SkillProgression updates the player's mastery and unlocks any new techniques.

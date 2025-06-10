@@ -126,7 +126,7 @@ const generateArtist = (id: string, genre: MusicGenre): Artist => {
     description: 'A talented musician in the ' + genre + ' genre.',
     availability: {
       status: 'available',
-      responseTime: Math.floor(Math.random() * 7) + 1
+      responseTime: Math.floor(Math.random() * 7) + 1 // Random response time between 1 and 7 days
     }
   };
 };
