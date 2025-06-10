@@ -1,184 +1,168 @@
+export interface GameState {
+  currentDay: number;
+  currentEra: string;
+  eraStartYear: number;
+  currentYear: number;
+  money: number;
+  reputation: number;
+  playerData: PlayerData;
+  staff: StaffMember[];
+  hiredStaff: StaffMember[];
+  staffCandidates: StaffMember[];
+  availableProjects: Project[];
+  activeProject: Project | null;
+  projects: Project[];
+  equipment: string[];
+  studioLevel: number;
+  notifications: Notification[];
+  availableCandidates: StaffMember[];
+  equipmentMultiplier: number;
+  playerBands: Band[];
+  originalTracks: number;
+  activeOriginalTrack: any;
+  chartsData: ChartsData | null;
+  ownedEquipment: Equipment[];
+  availableEras: Era[];
+  autoTriggeredMinigame: AutoTriggeredMinigame | null;
+}
 
-// Game type definitions
-import { Chart, ArtistContact, MarketTrend } from './charts';
-import type { Band, SessionMusician, OriginalTrackProject } from './bands';
+export interface AutoTriggeredMinigame {
+  type: string;
+  reason: string;
+}
 
-export interface PlayerAttributes {
-  focusMastery: number;
-  creativeIntuition: number;
-  technicalAptitude: number;
-  businessAcumen: number;
+export interface ChartsData {
+  currentChart: ChartEntry[];
+  discoveredArtists: Artist[];
+  contactedArtists: ArtistContact[];
+}
+
+export interface ArtistContact {
+  artistId: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  requestDate: Date;
+  opportunityId: string;
+  negotiationPhase: string;
+}
+
+export interface ChartEntry {
+  position: number;
+  artist: string;
+  title: string;
+  weeksOnChart: number;
+  peakPosition: number;
+  trend: 'up' | 'down' | 'stable';
+}
+
+export interface Artist {
+  id: string;
+  name: string;
+  genre: string;
+  demandLevel: number;
+  priceRange: {
+    min: number;
+    max: number;
+  };
+  stats: {
+    vocals: number;
+    instrumentation: number;
+    composition: number;
+    stagePresence: number;
+  };
+  availability: 'available' | 'negotiating' | 'unavailable';
+}
+
+export interface Era {
+  id: string;
+  name: string;
+  description: string;
+  startYear: number;
+  endYear: number;
+  requiredLevel: number;
+  requiredReputation: number;
+  requiredProjects: number;
+  availableEquipment: string[];
 }
 
 export interface PlayerData {
-  xp: number;
   level: number;
-  xpToNextLevel: number;
+  xp: number;
   perkPoints: number;
   attributes: PlayerAttributes;
+  completedProjects: number;
+  lastMinigameType?: string;
   dailyWorkCapacity: number;
-  reputation: number;
-  lastMinigameType?: string; // Track last completed minigame to prevent repetition
-  completedProjects: number; // Add this property
-  experience: number; // Add experience property
 }
 
-export interface StudioSkill {
+export interface PlayerAttributes {
+  creativity: number;
+  technical: number;
+  focusMastery: number;
+  charisma: number;
+}
+
+export interface StaffMember {
+  id: string;
   name: string;
-  level: number;
-  xp: number;
-  xpToNext: number;
+  role: string;
+  salary: number;
+  skills?: StaffSkills;
+  primaryStats: PrimaryStats;
+  isAvailable: boolean;
+  isResting?: boolean;
+  energy: number;
+  projectId?: string | null;
+  trainingCourse?: string;
+  trainingEndDay?: number;
+  status: 'Idle' | 'Working' | 'Training' | 'Resting';
 }
 
-export interface ProjectStage {
-  stageName: string;
-  focusAreas: string[];
-  workUnitsBase: number;
-  workUnitsCompleted: number;
-  completed: boolean;
+export interface StaffSkills {
+  creativity?: number;
+  technical?: number;
+  speed?: number;
+}
+
+export interface PrimaryStats {
+  creativity: number;
+  technical: number;
 }
 
 export interface Project {
   id: string;
   title: string;
   genre: string;
-  clientType: string;
   difficulty: number;
-  durationDaysTotal: number;
+  description: string;
   payoutBase: number;
-  repGainBase: number;
-  requiredSkills: Record<string, number>;
-  stages: ProjectStage[];
-  matchRating: 'Poor' | 'Good' | 'Excellent';
+  creativityRequired: number;
+  technicalRequired: number;
   accumulatedCPoints: number;
   accumulatedTPoints: number;
-  currentStageIndex: number;
-  completedStages: number[];
-  lastWorkDay?: number; // Track when work was last performed
-  workSessionCount: number; // Track how many work sessions have been completed
-  associatedBandId?: string;
-  daysRemaining?: number; // Add optional daysRemaining property
-  currentStage?: number; // Add optional currentStage property
-}
-
-export interface StaffMember {
-  id: string;
-  name: string;
-  role: 'Engineer' | 'Producer' | 'Songwriter';
-  primaryStats: {
-    creativity: number;
-    technical: number;
-    speed: number;
-  };
-  xpInRole: number;
-  levelInRole: number;
-  genreAffinity: { genre: string; bonus: number } | null;
-  energy: number;
-  mood: number; // 0-100, affects work effectiveness
-  salary: number;
-  status: 'Idle' | 'Working' | 'Resting' | 'Training';
-  assignedProjectId: string | null;
-  trainingEndDay?: number;
-  trainingCourse?: string;
-  // Add missing properties
-  skills?: Record<string, number>;
-  isAvailable?: boolean;
-  isResting?: boolean;
+  isComplete: boolean;
+  clientName: string;
+  eraRequirement?: string;
+  daysRemaining?: number;
+  workSessionCount?: number;
+  currentStage?: number;
   projectId?: string | null;
 }
-
-export type EquipmentCategory = 'microphone' | 'monitor' | 'interface' | 'outboard' | 'instrument' | 'software' | 'recorder' | 'mixer';
 
 export interface Equipment {
   id: string;
   name: string;
-  category: EquipmentCategory;
+  type: string;
+  era: string;
   price: number;
   description: string;
   bonuses: {
-    genreBonus?: Record<string, number>;
-    qualityBonus?: number;
-    speedBonus?: number;
-    creativityBonus?: number;
-    technicalBonus?: number;
+    creativity?: number;
+    technical?: number;
+    speed?: number;
   };
-  icon: string;
-  skillRequirement?: {
-    skill: string;
-    level: number;
-  };
-}
-
-export interface TrainingCourse {
-  id: string;
-  name: string;
-  description: string;
-  cost: number;
-  duration: number;
-  effects: {
-    statBoosts?: {
-      creativity?: number;
-      technical?: number;
-      speed?: number;
-    };
-    skillXP?: {
-      skill: string;
-      amount: number;
-    };
-    specialEffects?: string[];
-  };
-  requiredLevel: number;
-}
-
-export interface GameState {
-  money: number;
-  currentEra: string; // Current Era ID
-  reputation: number;
-  currentDay: number;
-  currentYear: number; // Current year in the game world
-  selectedEra: string; // Era ID that was selected at game start
-  eraStartYear: number; // Year when the current era started
-  equipmentMultiplier: number; // Price multiplier for equipment in this era
-  playerData: PlayerData;
-  studioName: string; // Add this property
-  studioSkills: Record<string, StudioSkill>;
-  ownedUpgrades: string[];
-  ownedEquipment: Equipment[];
-  availableProjects: Project[];
-  activeProject: Project | null;
-  hiredStaff: StaffMember[];
-  availableCandidates: StaffMember[];
-  lastSalaryDay: number;
-  notifications: GameNotification[];
-  bands: Band[]; // All bands (AI and player-created)
-  playerBands: Band[]; // Player's own bands
-  availableSessionMusicians: SessionMusician[];
-  activeOriginalTrack: OriginalTrackProject | null;
-  // Add missing properties from Index.tsx
-  staff: StaffMember[];
-  staffCandidates: StaffMember[];
-  equipment: string[];
-  projects: Project[];
-  studioLevel: number;
-  originalTracks: number;
-  autoTriggeredMinigame?: any;
-  // Charts system data
-  chartsData?: {
-    charts: Chart[];
-    contactedArtists: ArtistContact[];
-    marketTrends: MarketTrend[];
-    discoveredArtists: any[]; // Artists found in charts
-    lastChartUpdate: number; // Day when charts were last updated
-  };
-}
-
-export interface GameNotification {
-  id: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error' | 'historical';
-  timestamp: number;
-  duration?: number;
-  priority?: 'low' | 'medium' | 'high';
+  maintenanceCost: number;
+  failureRate: number;
+  failureSeverity: string;
 }
 
 export interface FocusAllocation {
@@ -187,53 +171,52 @@ export interface FocusAllocation {
   layering: number;
 }
 
-// Export Band from bands module with proper type export
-export type { Band } from './bands';
+export interface Notification {
+  id: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  timestamp: number;
+  duration?: number;
+}
 
-// Initial game state
 export const initialGameState: GameState = {
-  money: 5000,
-  currentEra: '2000s',
-  reputation: 0,
   currentDay: 1,
-  currentYear: 2000,
-  selectedEra: '2000s',
-  eraStartYear: 2000,
-  equipmentMultiplier: 1,
-  studioName: 'Your Studio',
+  currentEra: 'analog60s',
+  eraStartYear: 1960,
+  currentYear: 1960,
+  money: 5000,
+  reputation: 50,
   playerData: {
-    xp: 0,
     level: 1,
-    xpToNextLevel: 100,
+    xp: 0,
     perkPoints: 0,
-    completedProjects: 0,
-    experience: 0,
     attributes: {
-      focusMastery: 1,
-      creativeIntuition: 1,
-      technicalAptitude: 1,
-      businessAcumen: 1
+      creativity: 5,
+      technical: 5,
+      focusMastery: 5,
+      charisma: 5,
     },
-    dailyWorkCapacity: 3,
-    reputation: 0
+    completedProjects: 0,
+    dailyWorkCapacity: 8
   },
-  studioSkills: {},
-  ownedUpgrades: [],
-  ownedEquipment: [],
+  staff: [],
+  hiredStaff: [],
+  staffCandidates: [],
   availableProjects: [],
   activeProject: null,
-  hiredStaff: [],
-  availableCandidates: [],
-  lastSalaryDay: 0,
-  notifications: [],
-  bands: [],
-  playerBands: [],
-  availableSessionMusicians: [],
-  activeOriginalTrack: null,
-  staff: [],
-  staffCandidates: [],
-  equipment: [],
   projects: [],
+  equipment: [],
   studioLevel: 1,
-  originalTracks: 0
+  notifications: [],
+  availableCandidates: [],
+  equipmentMultiplier: 1,
+  playerBands: [],
+  originalTracks: 0,
+  activeOriginalTrack: null,
+  chartsData: null,
+  ownedEquipment: [],
+  availableEras: [],
+  autoTriggeredMinigame: null
 };
+
+export type GameDispatch = React.Dispatch<Partial<GameState>>;

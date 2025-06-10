@@ -1,22 +1,21 @@
 
-import React, { useRef, useState, useEffect } from 'react';
-import { GameState, FocusAllocation, StaffMember, PlayerAttributes, Project } from '@/types/game';
-import { ProjectList } from '@/components/ProjectList';
-import { ActiveProject } from '@/components/ActiveProject';
-import { RightPanel } from '@/components/RightPanel';
-import { FloatingXPOrb } from '@/components/FloatingXPOrb';
-import { EraTransitionAnimation } from '@/components/EraTransitionAnimation';
-import { HistoricalNewsModal } from '@/components/HistoricalNewsModal';
-import { checkForNewEvents, applyEventEffects, HistoricalEvent } from '@/utils/historicalEvents';
-import { EnhancedProjectList } from '@/components/EnhancedProjectList';
+import React, { useState, useRef } from 'react';
+import { GameState, Project, FocusAllocation } from '@/types/game';
+import { ProjectList } from './ProjectList';
+import { ActiveProject } from './ActiveProject';
+import { EquipmentList } from './EquipmentList';
+import { BandManagement } from './BandManagement';
+import { ChartsPanel } from './ChartsPanel';
+import { EraProgress } from './EraProgress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 
 interface MainGameContentProps {
   gameState: GameState;
-  setGameState: React.Dispatch<React.SetStateAction<GameState>>;
+  setGameState: (state: GameState | ((prev: GameState) => GameState)) => void;
   focusAllocation: FocusAllocation;
-  setFocusAllocation: React.Dispatch<React.SetStateAction<FocusAllocation>>;
+  setFocusAllocation: (allocation: FocusAllocation) => void;
   activeProject: Project | null;
-  setActiveProject: React.Dispatch<React.SetStateAction<Project | null>>;
+  setActiveProject: (project: Project | null) => void;
   completeProject: () => void;
   startProject: (project: Project) => void;
   workOnProject: (creativityPoints: number, technicalPoints: number) => void;
@@ -25,14 +24,14 @@ interface MainGameContentProps {
   triggerMinigame: (type: string, reason: string) => void;
   buyEquipment: (equipmentId: string) => void;
   hireStaff: (candidateIndex: number) => boolean;
-  trainStaff: (staff: StaffMember, skill: string) => void;
+  trainStaff: (staff: any, skill: string) => void;
   upgradeStudio: (studioId: string) => void;
   refreshCandidates: () => void;
   assignStaffToProject: (staffId: string) => void;
   unassignStaffFromProject: (staffId: string) => void;
   toggleStaffRest: (staffId: string) => void;
-  openTrainingModal: (staff: StaffMember) => boolean;
-  spendPerkPoint: (attribute: keyof PlayerAttributes) => void;
+  openTrainingModal: (staff: any) => boolean;
+  spendPerkPoint: (attribute: string) => void;
   createBand: (bandName: string, memberIds: string[]) => void;
   createOriginalTrack: () => void;
 }
@@ -63,139 +62,69 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   createBand,
   createOriginalTrack
 }) => {
-  const orbContainerRef = useRef<HTMLDivElement>(null);
-  const [showSkillsModal, setShowSkillsModal] = useState(false);
-  const [showAttributesModal, setShowAttributesModal] = useState(false);
-  const [showEraTransition, setShowEraTransition] = useState(false);
-  const [eraTransitionInfo, setEraTransitionInfo] = useState<{ fromEra: string; toEra: string } | null>(null);
-  const [showHistoricalNews, setShowHistoricalNews] = useState(false);
-  const [currentHistoricalEvent, setCurrentHistoricalEvent] = useState<HistoricalEvent | null>(null);
-  const [lastCheckedDay, setLastCheckedDay] = useState(0);
-  const [floatingOrbs, setFloatingOrbs] = useState<Array<{
-    id: string;
-    amount: number;
-    type: 'xp' | 'money' | 'skill';
-  }>>([]);
-
-  // Check for new historical events when day advances
-  useEffect(() => {
-    const newEvents = checkForNewEvents(gameState, lastCheckedDay);
-    if (newEvents.length > 0) {
-      // Show the first new event
-      const event = newEvents[0];
-      setCurrentHistoricalEvent(event);
-      setShowHistoricalNews(true);
-      
-      // Apply event effects
-      const updatedGameState = applyEventEffects(event, gameState);
-      setGameState(updatedGameState);
-      
-      // Update last checked day
-      setLastCheckedDay(gameState.currentDay);
-    }
-  }, [gameState.currentDay, gameState.currentEra, lastCheckedDay, setGameState]);
-
-  // Mock functions for missing props
-  const performDailyWork = () => {
-    return { isComplete: false };
-  };
-
-  const onMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => {
-    // Handle minigame rewards
-  };
-
-  const contactArtist = (artistId: string, offer: number) => {
-    // Handle artist contact
-  };
-
-  const triggerEraTransition = () => {
-    // Handle era transition
-    return { fromEra: gameState.currentEra, toEra: 'next' };
-  };
-
-  const startTour = (bandId: string) => {
-    // Handle tour start
-  };
-
-  // Wrapper function to match the expected signature for RightPanel
-  const handleCreateBand = () => {
-    // Open a modal or use default values for now
-    createBand('New Band', []);
-  };
+  const [activeTab, setActiveTab] = useState('projects');
 
   return (
-    <>
-      <div className="p-2 sm:p-4 space-y-4 sm:space-y-0 sm:flex sm:gap-4 sm:h-[calc(100vh-140px)] relative">
-        <div className="w-full sm:w-80 lg:w-96 animate-fade-in">
-          <EnhancedProjectList 
+    <div className="flex-1 bg-gray-800/50 backdrop-blur-sm">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
+        <TabsList className="grid w-full grid-cols-6 bg-gray-900/80">
+          <TabsTrigger value="projects" className="text-white">Projects</TabsTrigger>
+          <TabsTrigger value="studio" className="text-white">Studio</TabsTrigger>
+          <TabsTrigger value="equipment" className="text-white">Equipment</TabsTrigger>
+          <TabsTrigger value="bands" className="text-white">Bands</TabsTrigger>
+          <TabsTrigger value="charts" className="text-white">Charts</TabsTrigger>
+          <TabsTrigger value="era" className="text-white">Era</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="projects" className="p-4 h-full">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
+            <div>
+              <ProjectList
+                gameState={gameState}
+                onStartProject={startProject}
+                onCompleteProject={completeProject}
+                onGenerateProjects={generateProjects}
+              />
+            </div>
+            <div>
+              <ActiveProject
+                gameState={gameState}
+                setGameState={setGameState}
+                focusAllocation={focusAllocation}
+                setFocusAllocation={setFocusAllocation}
+              />
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="studio" className="p-4">
+          <div className="text-white">
+            <h2 className="text-xl font-bold mb-4">Studio Management</h2>
+            <p>Studio upgrade and management features coming soon...</p>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="equipment" className="p-4">
+          <EquipmentList gameState={gameState} onPurchaseEquipment={buyEquipment} />
+        </TabsContent>
+
+        <TabsContent value="bands" className="p-4">
+          <BandManagement
             gameState={gameState}
             setGameState={setGameState}
-            startProject={startProject}
+            onCreateBand={createBand}
+            onCreateOriginalTrack={createOriginalTrack}
           />
-        </div>
+        </TabsContent>
 
-        <div className="flex-1 relative min-h-[400px] sm:min-h-0 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          <ActiveProject 
-            gameState={gameState}
-            focusAllocation={focusAllocation}
-            setFocusAllocation={setFocusAllocation}
-            performDailyWork={performDailyWork}
-            onMinigameReward={onMinigameReward}
-          />
-          
-          <div ref={orbContainerRef} className="absolute inset-0 pointer-events-none z-10"></div>
-          
-          {/* Floating XP/Money orbs */}
-          {floatingOrbs.map(orb => (
-            <FloatingXPOrb
-              key={orb.id}
-              amount={orb.amount}
-              type={orb.type}
-              onComplete={() => {
-                setFloatingOrbs(prev => prev.filter(o => o.id !== orb.id));
-              }}
-            />
-          ))}
-        </div>
+        <TabsContent value="charts" className="p-4">
+          <ChartsPanel gameState={gameState} setGameState={setGameState} />
+        </TabsContent>
 
-        <div className="w-full sm:w-80 lg:w-96 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-          <RightPanel 
-            gameState={gameState}
-            setGameState={setGameState}
-            hireStaff={hireStaff}
-            refreshCandidates={refreshCandidates}
-            assignStaffToProject={assignStaffToProject}
-            unassignStaffFromProject={unassignStaffFromProject}
-            toggleStaffRest={toggleStaffRest}
-            openTrainingModal={openTrainingModal}
-            createBand={handleCreateBand}
-            spendPerkPoint={spendPerkPoint}
-          />
-        </div>
-      </div>
-
-      {/* Era Transition Animation */}
-      {showEraTransition && eraTransitionInfo && (
-        <EraTransitionAnimation
-          isVisible={showEraTransition}
-          fromEra={eraTransitionInfo.fromEra}
-          toEra={eraTransitionInfo.toEra}
-          onComplete={() => {
-            setShowEraTransition(false);
-            setEraTransitionInfo(null);
-          }}
-        />
-      )}
-
-      {/* Historical News Modal */}
-      <HistoricalNewsModal
-        event={currentHistoricalEvent}
-        isOpen={showHistoricalNews}
-        onClose={() => {
-          setShowHistoricalNews(false);
-          setCurrentHistoricalEvent(null);
-        }}
-      />
-    </>
+        <TabsContent value="era" className="p-4">
+          <EraProgress gameState={gameState} setGameState={setGameState} />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };

@@ -3,20 +3,20 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { StaffMember } from '@/types/game';
+import { StaffMember, GameState } from '@/types/game';
 
 interface CreateBandModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreateBand: (bandName: string, memberIds: string[]) => void;
-  staff: StaffMember[];
+  gameState: GameState;
 }
 
 export const CreateBandModal: React.FC<CreateBandModalProps> = ({
   isOpen,
   onClose,
   onCreateBand,
-  staff
+  gameState
 }) => {
   const [bandName, setBandName] = useState('');
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
@@ -46,7 +46,7 @@ export const CreateBandModal: React.FC<CreateBandModalProps> = ({
           <div>
             <p className="text-gray-300 mb-2">Select members:</p>
             <div className="space-y-2">
-              {staff.map(member => (
+              {gameState.hiredStaff.map(member => (
                 <label key={member.id} className="flex items-center space-x-2">
                   <input
                     type="checkbox"

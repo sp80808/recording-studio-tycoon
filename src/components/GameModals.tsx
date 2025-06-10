@@ -125,7 +125,7 @@ export const GameModals: React.FC<GameModalsProps> = ({
           isOpen={showCreateBandModal}
           onClose={() => setShowCreateBandModal(false)}
           onCreateBand={createBand}
-          staff={gameState.hiredStaff}
+          gameState={gameState}
         />
       )}
     </>
