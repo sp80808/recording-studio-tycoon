@@ -9,6 +9,7 @@ import { EraTransitionAnimation } from '@/components/EraTransitionAnimation';
 import { HistoricalNewsModal } from '@/components/HistoricalNewsModal';
 import { checkForNewEvents, applyEventEffects, HistoricalEvent } from '@/utils/historicalEvents';
 import { useBandManagement } from '@/hooks/useBandManagement';
+import { MinigameType } from '@/components/minigames/MinigameManager';
 
 interface MainGameContentProps {
   gameState: GameState;
@@ -30,6 +31,8 @@ interface MainGameContentProps {
   orbContainerRef: React.RefObject<HTMLDivElement>;
   contactArtist: (artistId: string, offer: number) => void;
   triggerEraTransition: () => { fromEra?: string; toEra?: string } | void;
+  autoTriggeredMinigame: { type: MinigameType; reason: string } | null;
+  clearAutoTriggeredMinigame: () => void;
 }
 
 export const MainGameContent: React.FC<MainGameContentProps> = ({
@@ -51,7 +54,9 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   openTrainingModal,
   orbContainerRef,
   contactArtist,
-  triggerEraTransition
+  triggerEraTransition,
+  autoTriggeredMinigame,
+  clearAutoTriggeredMinigame
 }) => {
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [showAttributesModal, setShowAttributesModal] = useState(false);
@@ -114,6 +119,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             setFocusAllocation={setFocusAllocation}
             performDailyWork={performDailyWork}
             onMinigameReward={onMinigameReward}
+            autoTriggeredMinigame={autoTriggeredMinigame}
+            clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
           />
           
           <div ref={orbContainerRef} className="absolute inset-0 pointer-events-none z-10"></div>

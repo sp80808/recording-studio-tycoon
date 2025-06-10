@@ -243,6 +243,8 @@ const MusicStudioTycoon = () => {
         orbContainerRef={orbContainerRef}
         contactArtist={contactArtist}
         triggerEraTransition={triggerEraTransition}
+        autoTriggeredMinigame={autoTriggeredMinigame}
+        clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
       />
 
       <TrainingModal

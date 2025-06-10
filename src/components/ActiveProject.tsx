@@ -5,7 +5,6 @@ import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
 import { GameState, FocusAllocation } from '@/types/game';
 import { MinigameManager, MinigameType } from './minigames/MinigameManager';
-import { shouldAutoTriggerMinigame } from '@/utils/minigameUtils';
 import { AnimatedStatBlobs } from './AnimatedStatBlobs';
 import { OrbAnimationStyles } from './OrbAnimationStyles';
 import { ProjectCompletionCelebration } from './ProjectCompletionCelebration';
@@ -19,6 +18,8 @@ interface ActiveProjectProps {
   performDailyWork: () => { isComplete: boolean; review?: any } | undefined;
   onMinigameReward?: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => void;
   onProjectComplete?: () => void;
+  autoTriggeredMinigame?: { type: MinigameType; reason: string } | null;
+  clearAutoTriggeredMinigame?: () => void;
 }
 
 export const ActiveProject: React.FC<ActiveProjectProps> = ({
@@ -27,7 +28,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   setFocusAllocation,
   performDailyWork,
   onMinigameReward,
-  onProjectComplete
+  onProjectComplete,
+  autoTriggeredMinigame,
+  clearAutoTriggeredMinigame
 }) => {
   const [showMinigame, setShowMinigame] = useState(false);
   const [selectedMinigame, setSelectedMinigame] = useState<MinigameType>('rhythm');
@@ -37,10 +40,6 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const [completedProjectData, setCompletedProjectData] = useState<{
     title: string;
     genre: string;
-  } | null>(null);
-  const [autoTriggeredMinigame, setAutoTriggeredMinigame] = useState<{
-    type: MinigameType;
-    reason: string;
   } | null>(null);
   const [pulseAnimation, setPulseAnimation] = useState(false);
   const [completedMinigamesForStage, setCompletedMinigamesForStage] = useState<Set<string>>(new Set());
@@ -62,43 +61,19 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     }
   }, [gameState.activeProject?.currentStageIndex, completedMinigamesForStage]);
 
-  // Auto-trigger minigames based on project stage and equipment
+  // Handle auto-triggered minigame from useStageWork
   useEffect(() => {
-    if (gameState.activeProject && !showMinigame && !autoTriggeredMinigame) {
-      const workCount = gameState.activeProject.workSessionCount || 0;
-      const currentStageKey = `${gameState.activeProject.id}-${gameState.activeProject.currentStageIndex}`;
+    if (autoTriggeredMinigame && !showMinigame) {
+      setPulseAnimation(true);
+      setTimeout(() => setPulseAnimation(false), 3000);
       
-      // Don't trigger if we've already completed a minigame for this stage
-      if (completedMinigamesForStage.has(currentStageKey)) {
-        return;
-      }
-
-      const trigger = shouldAutoTriggerMinigame(gameState.activeProject, gameState, focusAllocation, workCount);
-      
-      if (trigger) {
-        const currentStage = gameState.activeProject.stages[gameState.activeProject.currentStageIndex];
-        const isLastStage = gameState.activeProject.currentStageIndex >= gameState.activeProject.stages.length - 2;
-        const stageProgress = currentStage ? (currentStage.workUnitsCompleted / currentStage.workUnitsBase) : 0;
-        
-        // Auto-trigger on final stages or when stage is 75%+ complete
-        if (isLastStage || stageProgress >= 0.75) {
-          setAutoTriggeredMinigame({
-            type: trigger.minigameType,
-            reason: trigger.triggerReason
-          });
-          
-          setPulseAnimation(true);
-          setTimeout(() => setPulseAnimation(false), 3000);
-          
-          toast({
-            title: "🎯 Production Opportunity!",
-            description: trigger.triggerReason,
-            duration: 5000
-          });
-        }
-      }
+      toast({
+        title: "🎯 Production Opportunity!",
+        description: autoTriggeredMinigame.reason,
+        duration: 5000
+      });
     }
-  }, [gameState.activeProject, focusAllocation, showMinigame, autoTriggeredMinigame, completedMinigamesForStage]);
+  }, [autoTriggeredMinigame, showMinigame]);
 
   if (!gameState.activeProject) {
     return (
@@ -136,7 +111,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     
     // Close minigame and clear auto-trigger
     setShowMinigame(false);
-    setAutoTriggeredMinigame(null);
+    if (clearAutoTriggeredMinigame) {
+      clearAutoTriggeredMinigame();
+    }
     setPulseAnimation(false);
     
     // Show rewarding toast
@@ -378,7 +355,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           isOpen={showMinigame}
           onClose={() => {
             setShowMinigame(false);
-            setAutoTriggeredMinigame(null);
+            if (clearAutoTriggeredMinigame) {
+              clearAutoTriggeredMinigame();
+            }
             setPulseAnimation(false);
           }}
           gameType={selectedMinigame}
