@@ -221,13 +221,23 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
 
   // Generate charts when component mounts or player level changes
   useEffect(() => {
-    const charts = generateCharts(gameState.playerData.level, gameState.currentEra);
-    const accessibleCharts = charts.filter(chart => chart.minLevelToAccess <= gameState.playerData.level);
-    setAvailableCharts(accessibleCharts);
+    try {
+      const charts = generateCharts(gameState.playerData.level, gameState.currentEra);
+      if (charts && charts.length > 0) {
+        const accessibleCharts = charts.filter(chart => chart.minLevelToAccess <= gameState.playerData.level);
+        setAvailableCharts(accessibleCharts);
 
-    // Set default chart if current selection is not available
-    if (!accessibleCharts.find(c => c.id === selectedChart)) {
-      setSelectedChart(accessibleCharts[0]?.id || 'hot100');
+        // Set default chart if current selection is not available
+        if (!accessibleCharts.find(c => c.id === selectedChart)) {
+          setSelectedChart(accessibleCharts[0]?.id || 'hot100');
+        }
+      } else {
+        console.warn('No charts generated for era:', gameState.currentEra);
+        setAvailableCharts([]);
+      }
+    } catch (error) {
+      console.error('Error generating charts:', error);
+      setAvailableCharts([]);
     }
   }, [gameState.playerData.level, gameState.currentEra, selectedChart]);
 
