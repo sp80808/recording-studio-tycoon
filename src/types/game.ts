@@ -25,6 +25,47 @@ export interface GameState {
   ownedEquipment: Equipment[];
   availableEras: Era[];
   autoTriggeredMinigame: AutoTriggeredMinigame | null;
+  studioSkills: StudioSkills;
+  studioRooms: StudioRoom[];
+  studioUpgrades: StudioUpgrade[];
+}
+
+export interface StudioSkills {
+  recording: number;
+  mixing: number;
+  mastering: number;
+  production: number;
+}
+
+export interface StudioRoom {
+  id: string;
+  name: string;
+  type: 'recording' | 'control' | 'live' | 'vocal_booth' | 'isolation';
+  level: number;
+  equipment: Equipment[];
+  capacity: number;
+  acousticRating: number;
+  maintenanceLevel: number;
+  isUpgrading: boolean;
+  upgradeDaysRemaining?: number;
+}
+
+export interface StudioUpgrade {
+  id: string;
+  name: string;
+  description: string;
+  cost: number;
+  duration: number;
+  requirements: {
+    studioLevel?: number;
+    reputation?: number;
+    completedProjects?: number;
+  };
+  effects: {
+    studioSkillBonus?: Partial<StudioSkills>;
+    equipmentSlots?: number;
+    prestigeBonus?: number;
+  };
 }
 
 export interface AutoTriggeredMinigame {
@@ -36,6 +77,14 @@ export interface ChartsData {
   currentChart: ChartEntry[];
   discoveredArtists: Artist[];
   contactedArtists: ArtistContact[];
+  charts: ChartEntry[];
+  marketTrends: MarketTrend[];
+}
+
+export interface MarketTrend {
+  genre: string;
+  popularity: number;
+  trend: 'rising' | 'falling' | 'stable';
 }
 
 export interface ArtistContact {
@@ -83,6 +132,11 @@ export interface Era {
   requiredReputation: number;
   requiredProjects: number;
   availableEquipment: string[];
+  features?: string[];
+  colors?: {
+    gradient: string;
+  };
+  icon?: string;
 }
 
 export interface PlayerData {
@@ -93,6 +147,7 @@ export interface PlayerData {
   completedProjects: number;
   lastMinigameType?: string;
   dailyWorkCapacity: number;
+  reputation: number;
 }
 
 export interface PlayerAttributes {
@@ -100,6 +155,8 @@ export interface PlayerAttributes {
   technical: number;
   focusMastery: number;
   charisma: number;
+  creativeIntuition: number;
+  technicalAptitude: number;
 }
 
 export interface StaffMember {
@@ -113,9 +170,13 @@ export interface StaffMember {
   isResting?: boolean;
   energy: number;
   projectId?: string | null;
+  assignedProjectId?: string | null;
   trainingCourse?: string;
   trainingEndDay?: number;
   status: 'Idle' | 'Working' | 'Training' | 'Resting';
+  levelInRole: number;
+  xpInRole: number;
+  genreAffinity: string[];
 }
 
 export interface StaffSkills {
@@ -127,6 +188,7 @@ export interface StaffSkills {
 export interface PrimaryStats {
   creativity: number;
   technical: number;
+  speed: number;
 }
 
 export interface Project {
@@ -147,7 +209,6 @@ export interface Project {
   workSessionCount?: number;
   currentStage?: number;
   projectId?: string | null;
-  // New properties for enhanced gameplay
   stages?: ProjectStage[];
   currentStageIndex?: number;
   repGainBase?: number;
@@ -157,6 +218,8 @@ export interface Project {
   completedStages?: ProjectStage[];
   associatedBandId?: string;
   clientType?: string;
+  requiredCPoints?: number;
+  requiredTPoints?: number;
 }
 
 export interface ProjectStage {
@@ -178,10 +241,43 @@ export interface Equipment {
     creativity?: number;
     technical?: number;
     speed?: number;
+    qualityBonus?: number;
+    technicalBonus?: number;
+    creativityBonus?: number;
+    speedBonus?: number;
+    genreBonus?: Record<string, number>;
   };
   maintenanceCost: number;
   failureRate: number;
   failureSeverity: string;
+  category: string;
+  icon: string;
+  skillRequirement?: number;
+}
+
+export interface EraAvailableEquipment {
+  id: string;
+  name: string;
+  type: string;
+  era: string;
+  price: number;
+  description: string;
+  bonuses: {
+    creativity?: number;
+    technical?: number;
+    speed?: number;
+    qualityBonus?: number;
+    technicalBonus?: number;
+    creativityBonus?: number;
+    speedBonus?: number;
+    genreBonus?: Record<string, number>;
+  };
+  maintenanceCost: number;
+  failureRate: number;
+  failureSeverity: string;
+  category: string;
+  icon: string;
+  skillRequirement?: number;
 }
 
 export interface FocusAllocation {
@@ -196,6 +292,24 @@ export interface Notification {
   type: 'info' | 'success' | 'warning' | 'error';
   timestamp: number;
   duration?: number;
+}
+
+export interface GameNotification extends Notification {}
+
+export interface StudioSkill {
+  id: string;
+  name: string;
+  level: number;
+  xp: number;
+  maxXp: number;
+}
+
+export interface Band {
+  id: string;
+  name: string;
+  members: string[];
+  genre: string;
+  popularity: number;
 }
 
 export const initialGameState: GameState = {
@@ -214,9 +328,12 @@ export const initialGameState: GameState = {
       technical: 5,
       focusMastery: 5,
       charisma: 5,
+      creativeIntuition: 5,
+      technicalAptitude: 5,
     },
     completedProjects: 0,
-    dailyWorkCapacity: 8
+    dailyWorkCapacity: 8,
+    reputation: 50
   },
   staff: [],
   hiredStaff: [],
@@ -235,7 +352,15 @@ export const initialGameState: GameState = {
   chartsData: null,
   ownedEquipment: [],
   availableEras: [],
-  autoTriggeredMinigame: null
+  autoTriggeredMinigame: null,
+  studioSkills: {
+    recording: 1,
+    mixing: 1,
+    mastering: 1,
+    production: 1
+  },
+  studioRooms: [],
+  studioUpgrades: []
 };
 
 export type GameDispatch = React.Dispatch<Partial<GameState>>;

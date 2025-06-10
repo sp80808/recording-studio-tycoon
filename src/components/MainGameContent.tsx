@@ -2,8 +2,10 @@
 import React, { useState } from 'react';
 import { GameState, Project, FocusAllocation } from '@/types/game';
 import { ProjectList } from './ProjectList';
-import { ActiveProject } from './ActiveProject';
+import { EnhancedActiveProject } from './EnhancedActiveProject';
+import { StudioManagement } from './StudioManagement';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Music, Building2, Headphones } from 'lucide-react';
 
 interface MainGameContentProps {
   gameState: GameState;
@@ -60,39 +62,79 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState('projects');
 
+  const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number, type: string) => {
+    if (gameState.activeProject) {
+      setGameState(prev => ({
+        ...prev,
+        activeProject: prev.activeProject ? {
+          ...prev.activeProject,
+          accumulatedCPoints: prev.activeProject.accumulatedCPoints + creativityBonus,
+          accumulatedTPoints: prev.activeProject.accumulatedTPoints + technicalBonus
+        } : null,
+        playerData: {
+          ...prev.playerData,
+          xp: prev.playerData.xp + xpBonus
+        }
+      }));
+    }
+  };
+
   return (
-    <div className="flex-1 bg-gray-800/50 backdrop-blur-sm">
+    <div className="flex-1 bg-gradient-to-br from-gray-900/50 via-gray-800/50 to-gray-900/50 backdrop-blur-sm">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-        <TabsList className="grid w-full grid-cols-2 bg-gray-900/80">
-          <TabsTrigger value="projects" className="text-white">Projects</TabsTrigger>
-          <TabsTrigger value="studio" className="text-white">Studio</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 bg-gray-900/90 backdrop-blur-sm border-b border-gray-700/50">
+          <TabsTrigger 
+            value="projects" 
+            className="text-white data-[state=active]:bg-blue-600/20 data-[state=active]:text-blue-300 transition-all duration-200"
+          >
+            <Music className="w-4 h-4 mr-2" />
+            Projects
+          </TabsTrigger>
+          <TabsTrigger 
+            value="recording" 
+            className="text-white data-[state=active]:bg-green-600/20 data-[state=active]:text-green-300 transition-all duration-200"
+          >
+            <Headphones className="w-4 h-4 mr-2" />
+            Recording
+          </TabsTrigger>
+          <TabsTrigger 
+            value="studio" 
+            className="text-white data-[state=active]:bg-purple-600/20 data-[state=active]:text-purple-300 transition-all duration-200"
+          >
+            <Building2 className="w-4 h-4 mr-2" />
+            Studio
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="projects" className="p-4 h-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
-            <div>
-              <ProjectList
-                gameState={gameState}
-                setGameState={setGameState}
-                startProject={startProject}
-              />
-            </div>
-            <div>
-              <ActiveProject
-                gameState={gameState}
-                focusAllocation={focusAllocation}
-                setFocusAllocation={setFocusAllocation}
-                performDailyWork={() => workOnProject(10, 10)}
-              />
-            </div>
+        <TabsContent value="projects" className="p-6 h-full">
+          <div className="h-full">
+            <ProjectList
+              gameState={gameState}
+              setGameState={setGameState}
+              startProject={startProject}
+            />
           </div>
         </TabsContent>
 
-        <TabsContent value="studio" className="p-4">
-          <div className="text-white">
-            <h2 className="text-xl font-bold mb-4">Studio Management</h2>
-            <p>Studio upgrade and management features coming soon...</p>
+        <TabsContent value="recording" className="p-6 h-full">
+          <div className="h-full">
+            <EnhancedActiveProject
+              gameState={gameState}
+              focusAllocation={focusAllocation}
+              setFocusAllocation={setFocusAllocation}
+              performDailyWork={() => workOnProject(10, 10)}
+              onMinigameReward={handleMinigameReward}
+            />
           </div>
+        </TabsContent>
+
+        <TabsContent value="studio" className="p-6 h-full">
+          <StudioManagement
+            gameState={gameState}
+            setGameState={setGameState}
+            buyEquipment={buyEquipment}
+            upgradeStudio={upgradeStudio}
+          />
         </TabsContent>
       </Tabs>
     </div>
