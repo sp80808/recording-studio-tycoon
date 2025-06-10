@@ -10,11 +10,12 @@ import { MasteringGame } from './MasteringGame';
 import { EffectChainGame } from './EffectChainGame';
 import { AcousticTreatmentGame } from './AcousticTreatmentGame';
 import { InstrumentLayeringGame } from './InstrumentLayeringGame';
+import GearMaintenanceGame from './GearMaintenanceGame';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { toast } from '@/hooks/use-toast';
 import { playSound } from '@/utils/soundUtils';
 
-export type MinigameType = 'rhythm' | 'mixing' | 'waveform' | 'beatmaking' | 'vocal' | 'mastering' | 'effectchain' | 'acoustic' | 'layering';
+export type MinigameType = 'rhythm' | 'mixing' | 'waveform' | 'beatmaking' | 'vocal' | 'mastering' | 'effectchain' | 'acoustic' | 'layering' | 'maintenance';
 
 interface MinigameManagerProps {
   isOpen: boolean;
@@ -77,6 +78,10 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
       case 'layering':
         creativityBonus = Math.floor(score / 9);
         technicalBonus = Math.floor(score / 11);
+        break;
+      case 'maintenance':
+        creativityBonus = Math.floor(score / 15);
+        technicalBonus = Math.floor(score / 6);
         break;
     }
 
