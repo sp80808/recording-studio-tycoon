@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -17,7 +16,7 @@ import { calculateContactCost, calculateContactSuccess } from '@/data/chartsData
 interface ArtistContactModalProps {
   isOpen: boolean;
   onClose: () => void;
-  chartEntry: ChartEntry | null;
+  chartEntry: ChartEntry;
   gameState: GameState;
   onSubmit: (offer: number) => void;
 }
@@ -31,8 +30,6 @@ export const ArtistContactModal: React.FC<ArtistContactModalProps> = ({
 }) => {
   const [offerAmount, setOfferAmount] = useState(0);
   const [message, setMessage] = useState('');
-
-  if (!chartEntry) return null;
 
   const artist = chartEntry.song.artist;
   const suggestedCost = calculateContactCost(

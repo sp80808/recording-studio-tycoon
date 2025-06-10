@@ -1,172 +1,302 @@
 
 import React, { useState } from 'react';
-import { GameState, PlayerAttributes, StaffMember } from '@/types/game';
-import { PlayerAttributesModal } from './modals/PlayerAttributesModal';
-import { StaffManagementModal } from './modals/StaffManagementModal';
-import { SettingsModal } from './modals/SettingsModal';
-import { EquipmentList } from './EquipmentList';
-import { BandManagement } from './BandManagement';
-import { ChartsPanel } from './ChartsPanel';
-import { EraProgress } from './EraProgress';
-import { Button } from './ui/button';
-import { Card } from './ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { GameState, PlayerAttributes } from '@/types/game';
+import { SkillsModal } from '@/components/modals/SkillsModal';
+import { AttributesModal } from '@/components/modals/AttributesModal';
+import { EquipmentList } from '@/components/EquipmentList';
+import { BandManagement } from '@/components/BandManagement';
+import { EnhancedChartsPanel } from '@/components/EnhancedChartsPanel';
 
 interface RightPanelProps {
   gameState: GameState;
-  setGameState: (state: GameState | ((prev: GameState) => GameState)) => void;
+  showSkillsModal: boolean;
+  setShowSkillsModal: React.Dispatch<React.SetStateAction<boolean>>;
+  showAttributesModal: boolean;
+  setShowAttributesModal: React.Dispatch<React.SetStateAction<boolean>>;
+  spendPerkPoint: (attribute: keyof PlayerAttributes) => void;
+  advanceDay: () => void;
+  triggerEraTransition: () => void;
+  purchaseEquipment: (equipmentId: string) => void;
+  createBand: (bandName: string, memberIds: string[]) => void;
+  startTour: (bandId: string) => void;
+  createOriginalTrack: (bandId: string) => void;
+  contactArtist: (artistId: string, offer: number) => void;
   hireStaff: (candidateIndex: number) => boolean;
   refreshCandidates: () => void;
   assignStaffToProject: (staffId: string) => void;
   unassignStaffFromProject: (staffId: string) => void;
   toggleStaffRest: (staffId: string) => void;
-  openTrainingModal: (staff: StaffMember) => boolean;
-  createBand: (bandName: string, memberIds: string[]) => void;
-  spendPerkPoint: (attribute: keyof PlayerAttributes) => void;
+  openTrainingModal: (staff: any) => boolean;
 }
 
 export const RightPanel: React.FC<RightPanelProps> = ({
   gameState,
-  setGameState,
+  showSkillsModal,
+  setShowSkillsModal,
+  showAttributesModal,
+  setShowAttributesModal,
+  spendPerkPoint,
+  advanceDay,
+  triggerEraTransition,
+  purchaseEquipment,
+  createBand,
+  startTour,
+  createOriginalTrack,
+  contactArtist,
   hireStaff,
   refreshCandidates,
   assignStaffToProject,
   unassignStaffFromProject,
   toggleStaffRest,
-  openTrainingModal,
-  createBand,
-  spendPerkPoint
+  openTrainingModal
 }) => {
-  const [showAttributesModal, setShowAttributesModal] = useState(false);
-  const [showStaffModal, setShowStaffModal] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<'studio' | 'skills' | 'bands' | 'charts' | 'staff'>('studio');
 
-  const buyEquipment = (equipmentId: string) => {
-    setGameState((prev) => ({
-      ...prev,
-      equipment: [...prev.equipment, equipmentId],
-      money: prev.money - 1000,
-    }));
-  };
-
-  const createOriginalTrack = () => {
-    setGameState((prev) => ({
-      ...prev,
-      originalTracks: prev.originalTracks + 1,
-    }));
+  const handleAdvanceDay = () => {
+    advanceDay();
   };
 
   return (
-    <div className="w-80 bg-gray-900/90 backdrop-blur-sm border-l border-gray-700 flex flex-col">
-      <Tabs defaultValue="actions" className="flex-1">
-        <TabsList className="grid w-full grid-cols-4 bg-gray-800">
-          <TabsTrigger value="actions" className="text-white text-xs">Actions</TabsTrigger>
-          <TabsTrigger value="equipment" className="text-white text-xs">Equipment</TabsTrigger>
-          <TabsTrigger value="bands" className="text-white text-xs">Bands</TabsTrigger>
-          <TabsTrigger value="charts" className="text-white text-xs">Charts</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="actions" className="p-4">
-          <h2 className="text-lg font-semibold text-white mb-4">Quick Actions</h2>
+    <Card className="bg-gray-900/90 border-gray-600 p-4 h-full overflow-y-auto backdrop-blur-sm animate-slide-in-right">
+      {/* Tab Navigation */}
+      <div className="flex mb-4 bg-gray-800 rounded-lg p-1">
+        <button
+          onClick={() => setActiveTab('studio')}
+          className={`flex-1 py-2 px-2 rounded-md text-xs font-medium transition-colors ${
+            activeTab === 'studio'
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          🏢 Studio
+        </button>
+        <button
+          onClick={() => setActiveTab('skills')}
+          className={`flex-1 py-2 px-2 rounded-md text-xs font-medium transition-colors ${
+            activeTab === 'skills'
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          📊 Skills
+        </button>
+        <button
+          onClick={() => setActiveTab('staff')}
+          className={`flex-1 py-2 px-2 rounded-md text-xs font-medium transition-colors ${
+            activeTab === 'staff'
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          👥 Staff
+        </button>
+        <button
+          onClick={() => setActiveTab('bands')}
+          className={`flex-1 py-2 px-2 rounded-md text-xs font-medium transition-colors ${
+            activeTab === 'bands'
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          🎸 Bands
+        </button>
+        <button
+          onClick={() => setActiveTab('charts')}
+          className={`flex-1 py-2 px-2 rounded-md text-xs font-medium transition-colors ${
+            activeTab === 'charts'
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          📈 Charts
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'studio' && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-white">Studio Actions</h2>
           
-          <div className="space-y-2">
-            <Button
-              onClick={() => setShowAttributesModal(true)}
-              className="w-full bg-blue-600 hover:bg-blue-700"
-            >
-              🎯 Player Attributes
-            </Button>
-            
-            <Button
-              onClick={() => setShowStaffModal(true)}
-              className="w-full bg-green-600 hover:bg-green-700"
-            >
-              👥 Staff Management
-            </Button>
-            
-            <Button
-              onClick={() => createBand('', [])}
-              className="w-full bg-purple-600 hover:bg-purple-700"
-            >
-              🎸 Create Band
-            </Button>
-            
-            <Button
-              onClick={() => setShowSettingsModal(true)}
-              className="w-full bg-gray-600 hover:bg-gray-700"
-            >
-              ⚙️ Settings
-            </Button>
+          <Button onClick={handleAdvanceDay} className="w-full bg-purple-600 hover:bg-purple-700 text-white">
+            Advance Day
+          </Button>
+          
+          <EquipmentList purchaseEquipment={purchaseEquipment} gameState={gameState} />
+        </div>
+      )}
+
+      {activeTab === 'skills' && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-white">Player Progression</h2>
+          <div className="text-gray-300">Level: {gameState.playerData.level}</div>
+          <div className="text-gray-300">XP: {gameState.playerData.xp} / {gameState.playerData.xpToNextLevel}</div>
+          <div className="text-green-400">Perk Points: {gameState.playerData.perkPoints}</div>
+
+          <Button onClick={() => setShowAttributesModal(true)} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+            Upgrade Attributes
+          </Button>
+          <Button onClick={() => setShowSkillsModal(true)} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+            View Studio Skills
+          </Button>
+        </div>
+      )}
+
+      {activeTab === 'staff' && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-white">👥 Staff Management</h2>
+          
+          <div className="text-sm text-gray-400 mb-4">
+            Hire and manage studio staff to help with projects
           </div>
 
-          <Card className="p-3 bg-gray-800/50 border-gray-600 mt-4">
-            <h3 className="text-sm font-semibold text-white mb-2">Player Stats</h3>
-            <div className="space-y-1 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Level:</span>
-                <span className="text-white">{gameState.playerData.level}</span>
+          <Button 
+            onClick={refreshCandidates} 
+            className="w-full bg-green-600 hover:bg-green-700 text-white mb-4"
+          >
+            🔄 Refresh Candidates
+          </Button>
+
+          {/* Staff candidates section */}
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold text-white">Available Staff</h3>
+            {gameState.availableCandidates && gameState.availableCandidates.length > 0 ? (
+              gameState.availableCandidates.map((candidate, index) => (
+                <div key={candidate.id || index} className="bg-gray-800 p-3 rounded-lg">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <div className="text-white font-medium">{candidate.name}</div>
+                      <div className="text-gray-400 text-sm">{candidate.role}</div>
+                    </div>
+                    <div className="text-green-400 font-bold">${candidate.salary}/day</div>
+                  </div>
+                  <div className="text-xs text-gray-500 mb-2">
+                    Creativity: {candidate.primaryStats.creativity}, Technical: {candidate.primaryStats.technical}, Speed: {candidate.primaryStats.speed}
+                  </div>
+                  {candidate.genreAffinity && (
+                    <div className="text-xs text-purple-400 mb-2">
+                      Specialty: {candidate.genreAffinity.genre} (+{candidate.genreAffinity.bonus}%)
+                    </div>
+                  )}
+                  <Button 
+                    onClick={() => hireStaff(index)}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-1"
+                    disabled={gameState.money < candidate.salary * 3}
+                  >
+                    {gameState.money >= candidate.salary * 3 ? `Hire for $${candidate.salary * 3}` : 'Insufficient Funds'}
+                  </Button>
+                </div>
+              ))
+            ) : (
+              <div className="text-gray-400 text-center py-4">
+                No candidates available. Click refresh to find new staff!
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Experience:</span>
-                <span className="text-white">{gameState.playerData.xp}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Reputation:</span>
-                <span className="text-white">{gameState.reputation}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Money:</span>
-                <span className="text-green-400">${gameState.money.toLocaleString()}</span>
-              </div>
+            )}
+          </div>
+
+          {/* Hired staff section */}
+          {gameState.hiredStaff && gameState.hiredStaff.length > 0 && (
+            <div className="space-y-2 mt-6">
+              <h3 className="text-lg font-semibold text-white">Current Staff</h3>
+              {gameState.hiredStaff.map(staff => (
+                <div key={staff.id} className="bg-gray-800 p-3 rounded-lg">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <div className="text-white font-medium">{staff.name}</div>
+                      <div className="text-gray-400 text-sm">{staff.role}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-green-400 text-sm">${staff.salary}/day</div>
+                      <div className={`text-xs ${
+                        staff.status === 'Working' ? 'text-blue-400' : 
+                        staff.status === 'Idle' ? 'text-gray-400' : 
+                        staff.status === 'Resting' ? 'text-yellow-400' : 'text-purple-400'
+                      }`}>
+                        {staff.status}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    {staff.status === 'Idle' && (
+                      <Button 
+                        onClick={() => assignStaffToProject(staff.id)}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-1"
+                      >
+                        Assign to Project
+                      </Button>
+                    )}
+                    {staff.status === 'Working' && (
+                      <Button 
+                        onClick={() => unassignStaffFromProject(staff.id)}
+                        className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs py-1"
+                      >
+                        Unassign
+                      </Button>
+                    )}
+                    <Button 
+                      onClick={() => toggleStaffRest(staff.id)}
+                      className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white text-xs py-1"
+                    >
+                      {staff.status === 'Resting' ? 'End Rest' : 'Rest'}
+                    </Button>
+                    {staff.status === 'Idle' && (
+                      <Button 
+                        onClick={() => openTrainingModal(staff)}
+                        className="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-xs py-1"
+                      >
+                        Train
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
-          </Card>
-        </TabsContent>
+          )}
+        </div>
+      )}
 
-        <TabsContent value="equipment" className="p-4">
-          <EquipmentList gameState={gameState} purchaseEquipment={buyEquipment} />
-        </TabsContent>
+      {activeTab === 'bands' && (
+        <BandManagement
+          gameState={gameState}
+          onCreateBand={createBand}
+          onStartTour={startTour}
+          onCreateOriginalTrack={createOriginalTrack}
+        />
+      )}
 
-        <TabsContent value="bands" className="p-4">
-          <BandManagement
-            gameState={gameState}
-            onCreateBand={createBand}
-            onCreateOriginalTrack={createOriginalTrack}
-            onStartTour={() => {}}
-          />
-        </TabsContent>
+      {activeTab === 'charts' && gameState.playerData.level >= 1 && (
+        <EnhancedChartsPanel
+          gameState={gameState}
+          onContactArtist={contactArtist}
+        />
+      )}
 
-        <TabsContent value="charts" className="p-4">
-          <ChartsPanel 
-            gameState={gameState} 
-            onContactArtist={() => {}}
-          />
-        </TabsContent>
-      </Tabs>
+      {activeTab === 'charts' && gameState.playerData.level < 1 && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-white">📈 Industry Charts</h2>
+          <div className="text-center text-gray-400 py-8">
+            <div className="text-4xl mb-2">🔒</div>
+            <div className="text-sm">Charts access unlocks at Level 1</div>
+            <div className="text-xs mt-1">Complete projects to access industry charts!</div>
+          </div>
+        </div>
+      )}
 
-      {/* Modals */}
-      <PlayerAttributesModal
+      <SkillsModal
+        isOpen={showSkillsModal}
+        onClose={() => setShowSkillsModal(false)}
+        studioSkills={gameState.studioSkills}
+      />
+
+      <AttributesModal
         isOpen={showAttributesModal}
         onClose={() => setShowAttributesModal(false)}
-        spendPerkPoint={spendPerkPoint}
         playerData={gameState.playerData}
+        spendPerkPoint={spendPerkPoint}
       />
-
-      <StaffManagementModal
-        gameState={gameState}
-        hireStaff={hireStaff}
-        refreshCandidates={refreshCandidates}
-        assignStaffToProject={assignStaffToProject}
-        unassignStaffFromProject={unassignStaffFromProject}
-        toggleStaffRest={toggleStaffRest}
-        openTrainingModal={openTrainingModal}
-        isOpen={showStaffModal}
-        onClose={() => setShowStaffModal(false)}
-      />
-
-      <SettingsModal
-        isOpen={showSettingsModal}
-        onClose={() => setShowSettingsModal(false)}
-      />
-    </div>
+    </Card>
   );
 };
+
+export default RightPanel;

@@ -13,101 +13,53 @@ import { MidiProgrammingGame } from './MidiProgrammingGame';
 import { SamplingSequencingGame } from './SamplingSequencingGame';
 import { TapeSplicingGame } from './TapeSplicingGame';
 
-export type MinigameType = 
-  | 'creativity' 
-  | 'beat-making' 
-  | 'technical' 
-  | 'rhythm' 
-  | 'mixing' 
-  | 'sound-wave' 
-  | 'waveform'
-  | 'vocal' 
-  | 'effects' 
-  | 'effectchain'
-  | 'layering' 
-  | 'mastering' 
-  | 'acoustic' 
-  | 'midi' 
-  | 'sampling' 
-  | 'tape'
-  | 'beatmaking';
-
 export interface MinigameManagerProps {
-  minigameType?: string;
-  type?: string;
-  gameType?: MinigameType;
-  isOpen?: boolean;
-  onComplete?: (score: number) => void;
-  onReward?: (creativityBonus: number, technicalBonus: number, xpBonus: number) => void;
+  minigameType: string;
+  onComplete: (score: number) => void;
   onClose: () => void;
-  gameState?: any;
-  focusAllocation?: any;
+  gameState: any;
+  focusAllocation: any;
 }
 
 export const MinigameManager: React.FC<MinigameManagerProps> = ({
   minigameType,
-  type,
-  gameType,
-  isOpen = true,
   onComplete,
-  onReward,
   onClose,
   gameState,
   focusAllocation
 }) => {
-  // Determine the actual minigame type from the various prop options
-  const actualType = minigameType || type || gameType || 'creativity';
-
-  const handleComplete = (score: number) => {
-    if (onComplete) {
-      onComplete(score);
-    }
-    if (onReward) {
-      // Convert score to bonuses
-      const creativityBonus = Math.floor(score / 20);
-      const technicalBonus = Math.floor(score / 20);
-      const xpBonus = Math.floor(score / 10);
-      onReward(creativityBonus, technicalBonus, xpBonus);
-    }
-  };
-
   const renderMinigame = () => {
-    switch (actualType) {
+    switch (minigameType) {
       case 'creativity':
       case 'beat-making':
-      case 'beatmaking':
-        return <BeatMakingGame onComplete={handleComplete} onClose={onClose} />;
+        return <BeatMakingGame onComplete={onComplete} onClose={onClose} />;
       case 'technical':
       case 'rhythm':
-        return <RhythmTimingGame onComplete={handleComplete} onClose={onClose} />;
+        return <RhythmTimingGame onComplete={onComplete} onClose={onClose} />;
       case 'mixing':
-        return <MixingBoardGame onComplete={handleComplete} onClose={onClose} />;
+        return <MixingBoardGame onComplete={onComplete} onClose={onClose} />;
       case 'sound-wave':
-      case 'waveform':
-        return <SoundWaveGame onComplete={handleComplete} onClose={onClose} />;
+        return <SoundWaveGame onComplete={onComplete} onClose={onClose} />;
       case 'vocal':
-        return <VocalRecordingGame onComplete={handleComplete} onClose={onClose} />;
+        return <VocalRecordingGame onComplete={onComplete} onClose={onClose} />;
       case 'effects':
-      case 'effectchain':
-        return <EffectChainGame onComplete={handleComplete} onClose={onClose} />;
+        return <EffectChainGame onComplete={onComplete} onClose={onClose} />;
       case 'layering':
-        return <InstrumentLayeringGame onComplete={handleComplete} onClose={onClose} />;
+        return <InstrumentLayeringGame onComplete={onComplete} onClose={onClose} />;
       case 'mastering':
-        return <MasteringGame onComplete={handleComplete} onClose={onClose} />;
+        return <MasteringGame onComplete={onComplete} onClose={onClose} />;
       case 'acoustic':
-        return <AcousticTreatmentGame onComplete={handleComplete} onClose={onClose} />;
+        return <AcousticTreatmentGame onComplete={onComplete} onClose={onClose} />;
       case 'midi':
-        return <MidiProgrammingGame onComplete={handleComplete} onClose={onClose} />;
+        return <MidiProgrammingGame onComplete={onComplete} onClose={onClose} />;
       case 'sampling':
-        return <SamplingSequencingGame onComplete={handleComplete} onClose={onClose} />;
+        return <SamplingSequencingGame onComplete={onComplete} onClose={onClose} />;
       case 'tape':
-        return <TapeSplicingGame onComplete={handleComplete} onClose={onClose} />;
+        return <TapeSplicingGame onComplete={onComplete} onClose={onClose} />;
       default:
-        return <BeatMakingGame onComplete={handleComplete} onClose={onClose} />;
+        return <BeatMakingGame onComplete={onComplete} onClose={onClose} />;
     }
   };
-
-  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">

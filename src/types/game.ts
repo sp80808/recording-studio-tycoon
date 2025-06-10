@@ -1,225 +1,29 @@
+// Game type definitions
+import { Chart, ArtistContact, MarketTrend } from './charts';
 
-export interface GameState {
-  currentDay: number;
-  currentEra: string;
-  eraStartYear: number;
-  currentYear: number;
-  money: number;
-  reputation: number;
-  playerData: PlayerData;
-  staff: StaffMember[];
-  hiredStaff: StaffMember[];
-  staffCandidates: StaffMember[];
-  availableProjects: Project[];
-  activeProject: Project | null;
-  projects: Project[];
-  equipment: string[];
-  studioLevel: number;
-  notifications: Notification[];
-  availableCandidates: StaffMember[];
-  equipmentMultiplier: number;
-  playerBands: Band[];
-  originalTracks: number;
-  activeOriginalTrack: any;
-  chartsData: ChartsData | null;
-  ownedEquipment: Equipment[];
-  availableEras: Era[];
-  autoTriggeredMinigame: AutoTriggeredMinigame | null;
-  studioSkills: StudioSkills;
-  studioRooms: StudioRoom[];
-  studioUpgrades: StudioUpgrade[];
-}
-
-export interface StudioSkills {
-  recording: number;
-  mixing: number;
-  mastering: number;
-  production: number;
-}
-
-export interface StudioRoom {
-  id: string;
-  name: string;
-  type: 'recording' | 'control' | 'live' | 'vocal_booth' | 'isolation';
-  level: number;
-  equipment: Equipment[];
-  capacity: number;
-  acousticRating: number;
-  maintenanceLevel: number;
-  isUpgrading: boolean;
-  upgradeDaysRemaining?: number;
-}
-
-export interface StudioUpgrade {
-  id: string;
-  name: string;
-  description: string;
-  cost: number;
-  duration: number;
-  requirements: {
-    studioLevel?: number;
-    reputation?: number;
-    completedProjects?: number;
-  };
-  effects: {
-    studioSkillBonus?: Partial<StudioSkills>;
-    equipmentSlots?: number;
-    prestigeBonus?: number;
-  };
-}
-
-export interface AutoTriggeredMinigame {
-  type: string;
-  reason: string;
-}
-
-export interface ChartsData {
-  currentChart: ChartEntry[];
-  discoveredArtists: Artist[];
-  contactedArtists: ArtistContact[];
-  charts: ChartEntry[];
-  marketTrends: MarketTrend[];
-}
-
-export interface MarketTrend {
-  genre: string;
-  popularity: number;
-  trend: 'rising' | 'falling' | 'stable';
-}
-
-export interface ArtistContact {
-  artistId: string;
-  status: 'pending' | 'accepted' | 'rejected';
-  requestDate: Date;
-  opportunityId: string;
-  negotiationPhase: string;
-}
-
-export interface ChartEntry {
-  position: number;
-  artist: string;
-  title: string;
-  weeksOnChart: number;
-  peakPosition: number;
-  trend: 'up' | 'down' | 'stable';
-}
-
-export interface Artist {
-  id: string;
-  name: string;
-  genre: string;
-  demandLevel: number;
-  priceRange: {
-    min: number;
-    max: number;
-  };
-  stats: {
-    vocals: number;
-    instrumentation: number;
-    composition: number;
-    stagePresence: number;
-  };
-  availability: 'available' | 'negotiating' | 'unavailable';
-}
-
-export interface Era {
-  id: string;
-  name: string;
-  description: string;
-  startYear: number;
-  endYear: number;
-  requiredLevel: number;
-  requiredReputation: number;
-  requiredProjects: number;
-  availableEquipment: string[];
-  features?: string[];
-  colors?: {
-    gradient: string;
-  };
-  icon?: string;
+export interface PlayerAttributes {
+  focusMastery: number;
+  creativeIntuition: number;
+  technicalAptitude: number;
+  businessAcumen: number;
 }
 
 export interface PlayerData {
-  level: number;
   xp: number;
+  level: number;
+  xpToNextLevel: number;
   perkPoints: number;
   attributes: PlayerAttributes;
-  completedProjects: number;
-  lastMinigameType?: string;
   dailyWorkCapacity: number;
   reputation: number;
+  lastMinigameType?: string; // Track last completed minigame to prevent repetition
 }
 
-export interface PlayerAttributes {
-  creativity: number;
-  technical: number;
-  focusMastery: number;
-  charisma: number;
-  creativeIntuition: number;
-  technicalAptitude: number;
-}
-
-export interface StaffMember {
-  id: string;
+export interface StudioSkill {
   name: string;
-  role: string;
-  salary: number;
-  skills?: StaffSkills;
-  primaryStats: PrimaryStats;
-  isAvailable: boolean;
-  isResting?: boolean;
-  energy: number;
-  projectId?: string | null;
-  assignedProjectId?: string | null;
-  trainingCourse?: string;
-  trainingEndDay?: number;
-  status: 'Idle' | 'Working' | 'Training' | 'Resting';
-  levelInRole: number;
-  xpInRole: number;
-  genreAffinity: string[];
-}
-
-export interface StaffSkills {
-  creativity?: number;
-  technical?: number;
-  speed?: number;
-}
-
-export interface PrimaryStats {
-  creativity: number;
-  technical: number;
-  speed: number;
-}
-
-export interface Project {
-  id: string;
-  title: string;
-  genre: string;
-  difficulty: number;
-  description: string;
-  payoutBase: number;
-  creativityRequired: number;
-  technicalRequired: number;
-  accumulatedCPoints: number;
-  accumulatedTPoints: number;
-  isComplete: boolean;
-  clientName: string;
-  eraRequirement?: string;
-  daysRemaining?: number;
-  workSessionCount?: number;
-  currentStage?: number;
-  projectId?: string | null;
-  stages?: ProjectStage[];
-  currentStageIndex?: number;
-  repGainBase?: number;
-  durationDaysTotal?: number;
-  requiredSkills?: Record<string, number>;
-  matchRating?: 'Poor' | 'Good' | 'Excellent';
-  completedStages?: ProjectStage[];
-  associatedBandId?: string;
-  clientType?: string;
-  requiredCPoints?: number;
-  requiredTPoints?: number;
+  level: number;
+  xp: number;
+  xpToNext: number;
 }
 
 export interface ProjectStage {
@@ -230,54 +34,133 @@ export interface ProjectStage {
   completed: boolean;
 }
 
+export interface Project {
+  id: string;
+  title: string;
+  genre: string;
+  clientType: string;
+  difficulty: number;
+  durationDaysTotal: number;
+  payoutBase: number;
+  repGainBase: number;
+  requiredSkills: Record<string, number>;
+  stages: ProjectStage[];
+  matchRating: 'Poor' | 'Good' | 'Excellent';
+  accumulatedCPoints: number;
+  accumulatedTPoints: number;
+  currentStageIndex: number;
+  completedStages: number[];
+  lastWorkDay?: number; // Track when work was last performed
+  workSessionCount: number; // Track how many work sessions have been completed
+  associatedBandId?: string;
+}
+
+export interface StaffMember {
+  id: string;
+  name: string;
+  role: 'Engineer' | 'Producer' | 'Songwriter';
+  primaryStats: {
+    creativity: number;
+    technical: number;
+    speed: number;
+  };
+  xpInRole: number;
+  levelInRole: number;
+  genreAffinity: { genre: string; bonus: number } | null;
+  energy: number;
+  mood: number; // 0-100, affects work effectiveness
+  salary: number;
+  status: 'Idle' | 'Working' | 'Resting' | 'Training';
+  assignedProjectId: string | null;
+  trainingEndDay?: number;
+  trainingCourse?: string;
+}
+
+export type EquipmentCategory = 'microphone' | 'monitor' | 'interface' | 'outboard' | 'instrument' | 'software' | 'recorder' | 'mixer';
+
 export interface Equipment {
   id: string;
   name: string;
-  type: string;
-  era: string;
+  category: EquipmentCategory;
   price: number;
   description: string;
   bonuses: {
-    creativity?: number;
-    technical?: number;
-    speed?: number;
-    qualityBonus?: number;
-    technicalBonus?: number;
-    creativityBonus?: number;
-    speedBonus?: number;
     genreBonus?: Record<string, number>;
+    qualityBonus?: number;
+    speedBonus?: number;
+    creativityBonus?: number;
+    technicalBonus?: number;
   };
-  maintenanceCost: number;
-  failureRate: number;
-  failureSeverity: string;
-  category: string;
   icon: string;
-  skillRequirement?: number;
+  skillRequirement?: {
+    skill: string;
+    level: number;
+  };
 }
 
-export interface EraAvailableEquipment {
+export interface TrainingCourse {
   id: string;
   name: string;
-  type: string;
-  era: string;
-  price: number;
   description: string;
-  bonuses: {
-    creativity?: number;
-    technical?: number;
-    speed?: number;
-    qualityBonus?: number;
-    technicalBonus?: number;
-    creativityBonus?: number;
-    speedBonus?: number;
-    genreBonus?: Record<string, number>;
+  cost: number;
+  duration: number;
+  effects: {
+    statBoosts?: {
+      creativity?: number;
+      technical?: number;
+      speed?: number;
+    };
+    skillXP?: {
+      skill: string;
+      amount: number;
+    };
+    specialEffects?: string[];
   };
-  maintenanceCost: number;
-  failureRate: number;
-  failureSeverity: string;
-  category: string;
-  icon: string;
-  skillRequirement?: number;
+  requiredLevel: number;
+}
+
+import { Band, SessionMusician, OriginalTrackProject } from './bands';
+
+export interface GameState {
+  money: number;
+  currentEra: string; // Current Era ID
+  reputation: number;
+  currentDay: number;
+  currentYear: number; // Current year in the game world
+  selectedEra: string; // Era ID that was selected at game start
+  eraStartYear: number; // Year when the current era started
+  equipmentMultiplier: number; // Price multiplier for equipment in this era
+  playerData: PlayerData;
+  studioSkills: Record<string, StudioSkill>;
+  ownedUpgrades: string[];
+  ownedEquipment: Equipment[];
+  availableProjects: Project[];
+  activeProject: Project | null;
+  hiredStaff: StaffMember[];
+  availableCandidates: StaffMember[];
+  lastSalaryDay: number;
+  notifications: GameNotification[];
+  bands: Band[]; // All bands (AI and player-created)
+  playerBands: Band[]; // Player's own bands
+  availableSessionMusicians: SessionMusician[];
+  activeOriginalTrack: OriginalTrackProject | null;
+  // Charts system data
+  chartsData?: {
+    charts: Chart[];
+    contactedArtists: ArtistContact[];
+    marketTrends: MarketTrend[];
+    discoveredArtists: any[]; // Artists found in charts
+    lastChartUpdate: number; // Day when charts were last updated
+  };
+}
+
+export interface GameNotification {
+  id: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error' | 'historical';
+  timestamp: number;
+  duration?: number;
+  priority?: 'low' | 'medium' | 'high';
 }
 
 export interface FocusAllocation {
@@ -285,89 +168,3 @@ export interface FocusAllocation {
   soundCapture: number;
   layering: number;
 }
-
-export interface Notification {
-  id: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  timestamp: number;
-  duration?: number;
-}
-
-export interface GameNotification extends Notification {}
-
-export interface StudioSkill {
-  id: string;
-  name: string;
-  level: number;
-  xp: number;
-  maxXp: number;
-  xpToNext: number;
-}
-
-export interface Band {
-  id: string;
-  name: string;
-  members: string[];
-  genre: string;
-  popularity: number;
-  bandName: string;
-  fame: number;
-  notoriety: number;
-  memberIds: string[];
-  tourStatus: string;
-  pastReleases: any[];
-}
-
-export const initialGameState: GameState = {
-  currentDay: 1,
-  currentEra: 'analog60s',
-  eraStartYear: 1960,
-  currentYear: 1960,
-  money: 5000,
-  reputation: 50,
-  playerData: {
-    level: 1,
-    xp: 0,
-    perkPoints: 0,
-    attributes: {
-      creativity: 5,
-      technical: 5,
-      focusMastery: 5,
-      charisma: 5,
-      creativeIntuition: 5,
-      technicalAptitude: 5,
-    },
-    completedProjects: 0,
-    dailyWorkCapacity: 8,
-    reputation: 50
-  },
-  staff: [],
-  hiredStaff: [],
-  staffCandidates: [],
-  availableProjects: [],
-  activeProject: null,
-  projects: [],
-  equipment: [],
-  studioLevel: 1,
-  notifications: [],
-  availableCandidates: [],
-  equipmentMultiplier: 1,
-  playerBands: [],
-  originalTracks: 0,
-  activeOriginalTrack: null,
-  chartsData: null,
-  ownedEquipment: [],
-  availableEras: [],
-  autoTriggeredMinigame: null,
-  studioSkills: {
-    recording: 1,
-    mixing: 1,
-    mastering: 1,
-    production: 1
-  },
-  studioRooms: [],
-  studioUpgrades: []
-};
-
-export type GameDispatch = React.Dispatch<Partial<GameState>>;

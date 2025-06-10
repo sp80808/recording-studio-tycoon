@@ -1,12 +1,11 @@
 
 import React, { useState } from 'react';
-import { GameState, StaffMember } from '@/types/game';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { GameState } from '@/types/game';
 import { StaffManagementModal } from './modals/StaffManagementModal';
-import { EraProgress } from './EraProgress';
-import { Button } from './ui/button';
-import { Dialog, DialogContent, DialogTrigger } from './ui/dialog';
-import { Badge } from './ui/badge';
-import { Coins, Calendar, Users, Settings } from 'lucide-react';
+import { Settings, Users, Calendar, DollarSign, Star, Zap } from 'lucide-react';
 
 interface GameHeaderProps {
   gameState: GameState;
@@ -16,7 +15,7 @@ interface GameHeaderProps {
   assignStaffToProject: (staffId: string) => void;
   unassignStaffFromProject: (staffId: string) => void;
   toggleStaffRest: (staffId: string) => void;
-  openTrainingModal: (staff: StaffMember) => boolean;
+  openTrainingModal: (staff: any) => boolean;
 }
 
 export const GameHeader: React.FC<GameHeaderProps> = ({
@@ -30,96 +29,92 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
   openTrainingModal
 }) => {
   const [showStaffModal, setShowStaffModal] = useState(false);
-  const [showEraModal, setShowEraModal] = useState(false);
 
   return (
-    <div className="bg-gradient-to-r from-gray-900/95 via-gray-800/95 to-gray-900/95 backdrop-blur-sm border-b border-gray-700/50 p-4 shadow-lg">
-      <div className="flex items-center justify-between">
-        {/* Left Section - Title */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-              <span className="text-xl">🎵</span>
-            </div>
+    <>
+      <Card className="bg-gray-900/95 border-gray-600 p-4 backdrop-blur-sm">
+        <div className="flex items-center justify-between">
+          {/* Left side - Studio name and basic info */}
+          <div className="flex items-center gap-4">
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                Music Studio Tycoon
+              <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+                🎵 {gameState.studioName}
+                {gameState.playerData.level >= 10 && <Star className="h-5 w-5 text-yellow-400" />}
               </h1>
-              <div className="text-sm text-gray-400">Professional Recording Studio</div>
+              <p className="text-gray-400 text-sm">
+                Era: {gameState.currentEra} • Day {gameState.currentDay}
+              </p>
             </div>
           </div>
-        </div>
 
-        {/* Center Section - Game Stats */}
-        <div className="flex items-center gap-6">
-          {/* Day Counter with Era Modal */}
-          <Dialog open={showEraModal} onOpenChange={setShowEraModal}>
-            <DialogTrigger asChild>
-              <Button 
-                variant="ghost" 
-                className="flex items-center gap-2 text-white hover:bg-gray-700/50 transition-all duration-200 px-4 py-2 rounded-lg"
-              >
-                <Calendar className="w-4 h-4 text-blue-400" />
-                <div className="text-left">
-                  <div className="text-sm font-medium">Day {gameState.currentDay}</div>
-                  <div className="text-xs text-gray-400">{gameState.currentYear}</div>
-                </div>
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="bg-gray-900 border-gray-700 max-w-2xl">
-              <EraProgress 
-                gameState={gameState}
-                triggerEraTransition={() => setShowEraModal(false)}
-              />
-            </DialogContent>
-          </Dialog>
-
-          {/* Money */}
-          <div className="flex items-center gap-2 bg-green-900/30 border border-green-600/30 rounded-lg px-3 py-2">
-            <Coins className="w-4 h-4 text-green-400" />
-            <span className="text-green-400 font-bold">${gameState.money.toLocaleString()}</span>
+          {/* Center - Key stats */}
+          <div className="hidden md:flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-green-400" />
+              <span className="text-white font-medium">${gameState.money.toLocaleString()}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Zap className="h-4 w-4 text-blue-400" />
+              <span className="text-white">Level {gameState.playerData.level}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Star className="h-4 w-4 text-purple-400" />
+              <span className="text-white">{gameState.playerData.reputation || 0} Rep</span>
+            </div>
           </div>
 
-          {/* Reputation */}
-          <div className="flex items-center gap-2 bg-purple-900/30 border border-purple-600/30 rounded-lg px-3 py-2">
-            <span className="text-purple-400">⭐</span>
-            <span className="text-purple-400 font-medium">{gameState.reputation} Rep</span>
+          {/* Right side - Action buttons */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowStaffModal(true)}
+              className="hidden sm:flex items-center gap-2"
+            >
+              <Users className="h-4 w-4" />
+              Staff ({gameState.hiredStaff?.length || 0})
+            </Button>
+            
+            {gameState.playerData.level >= 5 && (
+              <Badge variant="outline" className="text-yellow-400 border-yellow-400">
+                Era Transition Available
+              </Badge>
+            )}
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onOpenSettings}
+              className="text-gray-400 hover:text-white"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
           </div>
-
-          {/* Player Level */}
-          <Badge className="bg-blue-600/20 text-blue-300 border-blue-600/30 hover:bg-blue-600/30 transition-colors">
-            Level {gameState.playerData.level}
-          </Badge>
         </div>
-        
-        {/* Right Section - Action Buttons */}
-        <div className="flex items-center gap-3">
+
+        {/* Mobile stats row */}
+        <div className="md:hidden mt-3 flex items-center justify-between text-sm">
+          <div className="flex items-center gap-4">
+            <span className="text-green-400">${gameState.money.toLocaleString()}</span>
+            <span className="text-blue-400">Lv.{gameState.playerData.level}</span>
+            <span className="text-purple-400">{gameState.playerData.reputation || 0} Rep</span>
+          </div>
           <Button
-            onClick={() => setShowStaffModal(true)}
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white transition-all duration-200 px-4 py-2 rounded-lg"
-          >
-            <Users className="w-4 h-4" />
-            Staff
-            <Badge variant="secondary" className="ml-1 bg-green-800 text-green-200">
-              {gameState.hiredStaff.length}
-            </Badge>
-          </Button>
-          
-          <Button
-            onClick={onOpenSettings}
             variant="outline"
-            className="flex items-center gap-2 border-gray-600 text-gray-300 hover:bg-gray-700/50 hover:text-white transition-all duration-200"
+            size="sm"
+            onClick={() => setShowStaffModal(true)}
+            className="flex items-center gap-1"
           >
-            <Settings className="w-4 h-4" />
-            Settings
+            <Users className="h-3 w-3" />
+            {gameState.hiredStaff?.length || 0}
           </Button>
         </div>
-      </div>
+      </Card>
 
       <StaffManagementModal
-        gameState={gameState}
         isOpen={showStaffModal}
         onClose={() => setShowStaffModal(false)}
+        gameState={gameState}
         hireStaff={hireStaff}
         refreshCandidates={refreshCandidates}
         assignStaffToProject={assignStaffToProject}
@@ -127,6 +122,6 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
         toggleStaffRest={toggleStaffRest}
         openTrainingModal={openTrainingModal}
       />
-    </div>
+    </>
   );
 };
