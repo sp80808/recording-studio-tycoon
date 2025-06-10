@@ -17,7 +17,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     price: 0,
     description: 'Standard starter microphone that came with your first audio interface',
     bonuses: { qualityBonus: 0 },
-    icon: '🎤'
+    icon: '🎤',
+    availableFrom: 1960
   },
   {
     id: 'shurely_serious_mic',
@@ -27,7 +28,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     description: 'Perfect for loud sources and denying the undeniable. Modest boost to Rock & Acoustic recording quality.',
     bonuses: { genreBonus: { Rock: 2, Acoustic: 1 }, technicalBonus: 5 },
     icon: '🎤',
-    skillRequirement: { skill: 'Rock', level: 1 }
+    skillRequirement: { skill: 'recording', level: 1 },
+    availableFrom: 1960
   },
   {
     id: 'condenser_mic',
@@ -36,7 +38,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     price: 450,
     description: 'High-quality condenser microphone perfect for vocals and acoustic instruments',
     bonuses: { genreBonus: { Acoustic: 2, Pop: 1 }, qualityBonus: 10 },
-    icon: '🎤'
+    icon: '🎤',
+    availableFrom: 1960
   },
   {
     id: 'dynamic_mic',
@@ -45,7 +48,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     price: 320,
     description: 'Robust dynamic microphone ideal for rock and live recordings',
     bonuses: { genreBonus: { Rock: 2, 'Hip-hop': 1 }, qualityBonus: 8 },
-    icon: '🎤'
+    icon: '🎤',
+    availableFrom: 1960
   },
   {
     id: 'neumann_u_wish',
@@ -55,7 +59,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     description: 'Captures every nuance, including the singer\'s breakfast. Significant boost to Vocal Recording Quality & Acoustic instrument clarity.',
     bonuses: { genreBonus: { Acoustic: 4, Pop: 3 }, qualityBonus: 25, creativityBonus: 10 },
     icon: '🎤',
-    skillRequirement: { skill: 'Acoustic', level: 4 }
+    skillRequirement: { skill: 'recording', level: 4 },
+    availableFrom: 1960
   },
   {
     id: 'ribbon_vintage_mic',
@@ -65,7 +70,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     description: 'Smooth as butter, warm as toast. Makes everything sound like it was recorded in the good old days.',
     bonuses: { genreBonus: { Acoustic: 3, Rock: 2 }, creativityBonus: 15, qualityBonus: 12 },
     icon: '🎤',
-    skillRequirement: { skill: 'Acoustic', level: 2 }
+    skillRequirement: { skill: 'recording', level: 2 },
+    availableFrom: 1960
   },
 
   // Outboard Gear
@@ -77,7 +83,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     description: 'Spacious, warm, and occasionally wanders off key. Adds character and creativity during mixing.',
     bonuses: { creativityBonus: 20, qualityBonus: 15, genreBonus: { Acoustic: 2, Electronic: 1 } },
     icon: '⚙️',
-    skillRequirement: { skill: 'Acoustic', level: 2 }
+    skillRequirement: { skill: 'mixing', level: 2 },
+    availableFrom: 1960
   },
   {
     id: 'api_the_wiser',
@@ -87,7 +94,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     description: 'Makes your tracks sit up and pay attention. Boosts clarity and punch during mixing.',
     bonuses: { technicalBonus: 18, qualityBonus: 12, speedBonus: 5 },
     icon: '⚙️',
-    skillRequirement: { skill: 'Rock', level: 2 }
+    skillRequirement: { skill: 'mixing', level: 2 },
+    availableFrom: 1960
   },
   {
     id: 'fairychild_comp',
@@ -97,7 +105,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     description: 'Magically glues tracks together. Improves overall cohesion and technical score.',
     bonuses: { technicalBonus: 25, qualityBonus: 20, genreBonus: { Pop: 2, Rock: 2 } },
     icon: '⚙️',
-    skillRequirement: { skill: 'Pop', level: 3 }
+    skillRequirement: { skill: 'mixing', level: 3 },
+    availableFrom: 1960
   },
   {
     id: 'compressor',
@@ -106,7 +115,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     price: 600,
     description: 'Analog compressor for that warm, professional sound',
     bonuses: { qualityBonus: 20, technicalBonus: 8 },
-    icon: '⚙️'
+    icon: '⚙️',
+    availableFrom: 1960
   },
   {
     id: 'ssl_console_strip',
@@ -116,7 +126,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     description: 'The channel strip that launched a thousand hits. Or at least made them sound better.',
     bonuses: { technicalBonus: 30, qualityBonus: 25, speedBonus: 10, genreBonus: { Pop: 3, Rock: 2 } },
     icon: '⚙️',
-    skillRequirement: { skill: 'Pop', level: 4 }
+    skillRequirement: { skill: 'mixing', level: 4 },
+    availableFrom: 1960
   },
 
   // Instruments
@@ -128,7 +139,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     description: 'Either sounds amazing or completely off. No in-between. Perfect for Electronic music adventures.',
     bonuses: { genreBonus: { Electronic: 5, Pop: 2 }, creativityBonus: 25 },
     icon: '🎹',
-    skillRequirement: { skill: 'Electronic', level: 3 }
+    skillRequirement: { skill: 'recording', level: 3 },
+    availableFrom: 1960
   },
   {
     id: 'fender_bender',
@@ -138,7 +150,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     description: 'Slightly damaged but full of character. Great for Rock and Country vibes.',
     bonuses: { genreBonus: { Rock: 3, Acoustic: 2 }, creativityBonus: 12 },
     icon: '🎸',
-    skillRequirement: { skill: 'Rock', level: 1 }
+    skillRequirement: { skill: 'recording', level: 1 },
+    availableFrom: 1960
   },
   {
     id: 'synthesizer',
@@ -147,7 +160,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     price: 1200,
     description: 'Vintage-style analog synthesizer for electronic music production',
     bonuses: { genreBonus: { Electronic: 3, Pop: 1 }, creativityBonus: 15 },
-    icon: '🎹'
+    icon: '🎹',
+    availableFrom: 1960
   },
   {
     id: 'guitar_amp',
@@ -156,7 +170,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     price: 900,
     description: 'Classic tube amplifier for that perfect rock guitar tone',
     bonuses: { genreBonus: { Rock: 3, Acoustic: 1 }, creativityBonus: 10 },
-    icon: '🎸'
+    icon: '🎸',
+    availableFrom: 1960
   },
   {
     id: 'drum_machine_808',
@@ -166,7 +181,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     description: 'The boom, the bap, the legendary sound that defined Hip-hop. May or may not be an authentic vintage unit.',
     bonuses: { genreBonus: { 'Hip-hop': 4, Electronic: 2 }, creativityBonus: 18, technicalBonus: 10 },
     icon: '🥁',
-    skillRequirement: { skill: 'Hip-hop', level: 2 }
+    skillRequirement: { skill: 'recording', level: 2 },
+    availableFrom: 1960
   },
 
   // Software & Plugins
@@ -177,7 +193,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     price: 600,
     description: 'Industry standard that sometimes feels like working in a shed. Reliable but quirky.',
     bonuses: { speedBonus: 15, technicalBonus: 10, qualityBonus: 8 },
-    icon: '💻'
+    icon: '💻',
+    availableFrom: 1960
   },
   {
     id: 'logic_pro_blem',
@@ -186,7 +203,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     price: 300,
     description: 'Great for Mac users who enjoy solving puzzles while making music.',
     bonuses: { creativityBonus: 15, speedBonus: 10, genreBonus: { Electronic: 2 } },
-    icon: '💻'
+    icon: '💻',
+    availableFrom: 1960
   },
   {
     id: 'ableton_live_wire',
@@ -196,7 +214,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     description: 'Perfect for live performances and studio work. Sometimes gets a bit too energetic.',
     bonuses: { creativityBonus: 20, speedBonus: 15, genreBonus: { Electronic: 3, 'Hip-hop': 1 } },
     icon: '💻',
-    skillRequirement: { skill: 'Electronic', level: 1 }
+    skillRequirement: { skill: 'mixing', level: 1 },
+    availableFrom: 1960
   },
   {
     id: 'autotune_autobot',
@@ -206,7 +225,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     description: 'Robots in disguise... as vocal processors. Makes everyone sound like the future.',
     bonuses: { technicalBonus: 12, genreBonus: { Pop: 2, 'Hip-hop': 2 } },
     icon: '💻',
-    skillRequirement: { skill: 'Pop', level: 1 }
+    skillRequirement: { skill: 'mixing', level: 1 },
+    availableFrom: 1960
   },
 
   // Studio Monitoring
@@ -217,7 +237,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     price: 0,
     description: 'Standard studio monitors that came with your starter setup',
     bonuses: { qualityBonus: 0 },
-    icon: '🔊'
+    icon: '🔊',
+    availableFrom: 1960
   },
   {
     id: 'studio_monitors',
@@ -226,7 +247,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     price: 800,
     description: 'Professional studio monitors for accurate sound reproduction',
     bonuses: { qualityBonus: 15, technicalBonus: 5 },
-    icon: '🔊'
+    icon: '🔊',
+    availableFrom: 1960
   },
   {
     id: 'yamaha_ns_no_way',
@@ -236,7 +258,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     description: 'These monitors reveal truths about your mix you didn\'t want to know. Brutally honest.',
     bonuses: { qualityBonus: 30, technicalBonus: 20, speedBonus: 5 },
     icon: '🔊',
-    skillRequirement: { skill: 'Pop', level: 2 }
+    skillRequirement: { skill: 'mixing', level: 2 },
+    availableFrom: 1960
   },
 
   // Audio Interfaces
@@ -247,7 +270,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     price: 350,
     description: 'Multi-channel audio interface for professional recording',
     bonuses: { qualityBonus: 12, speedBonus: 10 },
-    icon: '🔌'
+    icon: '🔌',
+    availableFrom: 1960
   },
   {
     id: 'apogee_symphony_phony',
@@ -257,7 +281,8 @@ export const availableEquipment: EraAvailableEquipment[] = [
     description: 'Converts analog to digital with the precision of a Swiss watch and the ego of a virtuoso.',
     bonuses: { qualityBonus: 35, technicalBonus: 25, speedBonus: 15 },
     icon: '🔌',
-    skillRequirement: { skill: 'Acoustic', level: 3 }
+    skillRequirement: { skill: 'recording', level: 3 },
+    availableFrom: 1960
   }
 ];
 

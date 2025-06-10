@@ -82,9 +82,14 @@ export const useStageWork = ({
     // Check for minigame triggers
     if (Math.random() < 0.3) {
       const trigger: MinigameTrigger = {
+        id: `mg-${currentStage.type}-${Date.now()}`, // Simple unique ID
         type: currentStage.type,
         reason: 'quality_check',
-        priority: 'medium'
+        priority: 'medium',
+        reward: { // Default reward, can be customized
+          type: 'quality',
+          value: 10 
+        }
       };
       setAutoTriggeredMinigame(trigger);
     }
@@ -96,7 +101,7 @@ export const useStageWork = ({
     }
 
     return { review: null, isComplete: false };
-  }, [gameState, focusAllocation, createOrb, setGameState, completeProject, addStaffXP, getMoodEffectiveness]);
+  }, [gameState, setGameState, completeProject, addStaffXP, getMoodEffectiveness]);
 
   const startWork = useCallback((work: StageWork) => {
     console.log('Starting work:', work);

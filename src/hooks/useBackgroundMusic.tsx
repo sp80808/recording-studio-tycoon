@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { gameAudio } from '@/utils/audioSystem';
 import { useSettings } from '@/contexts/SettingsContext';
 
@@ -44,7 +44,8 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
       // Only cleanup when all components using this hook are unmounted
       // This prevents premature cleanup when switching between components
     };
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.musicVolume]); // Added settings.musicVolume
 
   // Update volume when settings change
   useEffect(() => {
@@ -102,7 +103,7 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
     return fadeVolume(targetVolume, duration);
   };
 
-  const playTrack = async (trackNumber: number) => {
+  const playTrack = useCallback(async (trackNumber: number) => {
     if (!globalAudioRef || !settings.musicEnabled) return;
 
     try {
@@ -123,22 +124,23 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
     } catch (error) {
       console.warn(`Failed to play BGM track ${trackNumber}:`, error);
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.musicEnabled]); // Added settings.musicEnabled
 
-  const nextTrack = () => {
+  const nextTrack = useCallback(() => {
     const next = globalCurrentTrack >= trackCount ? 1 : globalCurrentTrack + 1;
     playTrack(next);
-  };
+  }, [playTrack, trackCount]);
 
-  const pauseMusic = () => {
+  const pauseMusic = useCallback(() => {
     if (globalAudioRef && globalIsPlaying) {
       globalAudioRef.pause();
       globalIsPlaying = false;
       setIsPlaying(false);
     }
-  };
+  }, []); // Added missing dependency array and closing parenthesis for useCallback
 
-  const resumeMusic = () => {
+  const resumeMusic = useCallback(() => {
     if (globalAudioRef && !globalIsPlaying && settings.musicEnabled) {
       globalAudioRef.play().then(() => {
         globalIsPlaying = true;
@@ -147,7 +149,8 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
         console.warn('Failed to resume music:', error);
       });
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.musicEnabled]); // Added settings.musicEnabled
 
   // Auto-start music when enabled or when component mounts
   useEffect(() => {
@@ -156,7 +159,7 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
     } else if (!settings.musicEnabled && globalIsPlaying) {
       pauseMusic();
     }
-  }, [settings.musicEnabled]);
+  }, [settings.musicEnabled, playTrack, pauseMusic]);
 
   // Start music immediately when hook initializes (if enabled)
   useEffect(() => {
@@ -166,7 +169,8 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
         playTrack(globalCurrentTrack);
       }, 100);
     }
-  }, []); // Only run once on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.musicEnabled, playTrack]); // Added settings.musicEnabled and playTrack
 
   return {
     currentTrack,

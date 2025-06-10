@@ -14,6 +14,8 @@ import { toast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { InfoIcon } from 'lucide-react';
+import { StaffAssignmentSection } from './ProjectManagement/StaffAssignmentSection'; // Import StaffAssignmentSection
+import { StaffMember } from '@/types/game'; // Import StaffMember
 
 interface WorkResult {
   isComplete: boolean;
@@ -48,6 +50,60 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   } | null>(null);
   const [pulseAnimation, setPulseAnimation] = useState(false);
   const [completedMinigamesForStage, setCompletedMinigamesForStage] = useState<Set<string>>(new Set());
+
+  // Placeholder staff data for StaffAssignmentSection
+  const [availableStaff, setAvailableStaff] = useState<StaffMember[]>([]);
+  const [assignedStaff, setAssignedStaff] = useState<StaffMember[]>([]);
+
+  // Populate placeholder staff data (example)
+  useEffect(() => {
+    if (gameState.staff && gameState.activeProject) {
+      // This is a simplified example. Real logic would filter based on project assignment.
+      const allStaff = gameState.staff;
+      const currentlyAssignedToThisProject = allStaff.filter(s => 
+        gameState.activeProject?.stages.some(stage => stage.assignedStaff.includes(s.id))
+      );
+      const notAssignedToThisProject = allStaff.filter(s => 
+        !gameState.activeProject?.stages.some(stage => stage.assignedStaff.includes(s.id))
+      );
+      
+      setAvailableStaff(notAssignedToThisProject);
+      setAssignedStaff(currentlyAssignedToThisProject);
+    } else {
+      setAvailableStaff(gameState.staff || []);
+      setAssignedStaff([]);
+    }
+  }, [gameState.staff, gameState.activeProject]);
+
+
+  const handleAssignStaff = (staffId: string) => {
+    // Placeholder: Implement actual assignment logic
+    console.log(`Assigning staff ${staffId} to project ${project?.id}`);
+    setAvailableStaff(prev => prev.filter(s => s.id !== staffId));
+    const staffToAssign = gameState.staff.find(s => s.id === staffId);
+    if (staffToAssign) {
+      setAssignedStaff(prev => [...prev, staffToAssign]);
+    }
+    // This should also update gameState.activeProject.stages[...].assignedStaff
+    // and potentially gameState.staff if their status changes.
+  };
+
+  const handleUnassignStaff = (staffId: string) => {
+    // Placeholder: Implement actual unassignment logic
+    console.log(`Unassigning staff ${staffId} from project ${project?.id}`);
+    setAssignedStaff(prev => prev.filter(s => s.id !== staffId));
+    const staffToUnassign = gameState.staff.find(s => s.id === staffId);
+    if (staffToUnassign) {
+      setAvailableStaff(prev => [...prev, staffToUnassign]);
+    }
+    // This should also update gameState.activeProject.stages[...].assignedStaff
+  };
+
+  const handleAutoOptimizeStaff = () => {
+    // Placeholder: Implement auto-optimization logic
+    console.log(`Auto-optimizing staff for project ${project?.id}`);
+    toast({ title: "Auto-Optimize Clicked", description: "Logic not yet implemented." });
+  };
 
   // Clear auto-triggered minigame when project changes or stage advances
   useEffect(() => {
@@ -453,6 +509,20 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             )}
           </Button>
         </Card>
+
+        {/* Staff Assignment Section */}
+        {project && (
+          <Card className="bg-gray-800/50 border-gray-600 p-6 backdrop-blur-sm animate-fade-in">
+            <StaffAssignmentSection
+              project={project}
+              availableStaff={availableStaff}
+              assignedStaff={assignedStaff}
+              onAssign={handleAssignStaff}
+              onUnassign={handleUnassignStaff}
+              onAutoOptimize={handleAutoOptimizeStaff}
+            />
+          </Card>
+        )}
 
         <MinigameManager
           isOpen={showMinigame}

@@ -18,6 +18,43 @@ export const useProjectManagement = ({ gameState, setGameState }: UseProjectMana
     }));
   }, [setGameState]);
 
+  const completeProject = useCallback((state: GameState) => {
+    if (!state.activeProject) return;
+
+    const project = state.activeProject;
+    const totalQuality = project.qualityScore || 0;
+    const totalEfficiency = project.efficiencyScore || 0;
+
+    // Calculate final score and rewards
+    const finalScore = Math.floor((totalQuality + totalEfficiency) / 2);
+    const payout = Math.floor((project.payoutBase ?? 0) * (finalScore / 100));
+    const repGain = Math.floor((project.repGainBase ?? 0) * (finalScore / 100));
+
+    // Update game state
+    setGameState((prev: GameState) => {
+      const updatedCompletedProjects = prev.completedProjects ? [...prev.completedProjects, project] : [project];
+      return {
+        ...prev,
+        playerData: {
+          ...prev.playerData,
+          money: prev.playerData.money + payout,
+          reputation: prev.playerData.reputation + repGain,
+        },
+        activeProject: null,
+        completedProjects: updatedCompletedProjects,
+      };
+    });
+
+    return {
+      projectTitle: project.title,
+      qualityScore: totalQuality,
+      efficiencyScore: totalEfficiency,
+      finalScore,
+      payout,
+      repGain
+    };
+  }, [setGameState]);
+
   const addWork = useCallback((
     type: 'creativity' | 'technical',
     value: number,
@@ -28,7 +65,8 @@ export const useProjectManagement = ({ gameState, setGameState }: UseProjectMana
 
     setGameState((prev: GameState) => {
       const newState = { ...prev };
-      const currentStage = newState.activeProject!.stages[newState.activeProject!.currentStageIndex];
+      if (!newState.activeProject) return newState; // Ensure activeProject exists
+      const currentStage = newState.activeProject.stages[newState.activeProject.currentStage];
 
       // Add work unit
       const workUnit = addWorkUnit(currentStage, type, value, source, sourceId);
@@ -47,54 +85,24 @@ export const useProjectManagement = ({ gameState, setGameState }: UseProjectMana
         newState.activeProject!.efficiencyScore = (newState.activeProject!.efficiencyScore || 0) + efficiency;
 
         // Move to next stage or complete project
-        if (currentStage.id === newState.activeProject!.stages[newState.activeProject!.stages.length - 1].id) {
-          completeProject(newState);
-        } else {
-          newState.activeProject!.currentStageIndex++;
+        if (newState.activeProject && currentStage.id === newState.activeProject.stages[newState.activeProject.stages.length - 1].id) {
+          completeProject(newState); 
+        } else if (newState.activeProject) {
+          newState.activeProject.currentStage++;
         }
       }
 
       return newState;
     });
-  }, [gameState.activeProject, setGameState]);
-
-  const completeProject = useCallback((state: GameState) => {
-    if (!state.activeProject) return;
-
-    const project = state.activeProject;
-    const totalQuality = project.qualityScore || 0;
-    const totalEfficiency = project.efficiencyScore || 0;
-
-    // Calculate final score and rewards
-    const finalScore = Math.floor((totalQuality + totalEfficiency) / 2);
-    const payout = Math.floor(project.payoutBase * (finalScore / 100));
-    const repGain = Math.floor(project.repGainBase * (finalScore / 100));
-
-    // Update game state
-    setGameState((prev: GameState) => ({
-      ...prev,
-      money: prev.money + payout,
-      reputation: prev.reputation + repGain,
-      activeProject: null,
-      completedProjects: prev.completedProjects + 1
-    }));
-
-    return {
-      projectTitle: project.title,
-      qualityScore: totalQuality,
-      efficiencyScore: totalEfficiency,
-      finalScore,
-      payout,
-      repGain
-    };
-  }, [setGameState]);
+  }, [gameState.activeProject, setGameState, completeProject]); 
 
   const handleMinigameComplete = useCallback((score: number) => {
     if (!activeMinigame || !gameState.activeProject) return;
 
     setGameState((prev: GameState) => {
       const newState = { ...prev };
-      const currentStage = newState.activeProject!.stages[newState.activeProject!.currentStageIndex];
+      if (!newState.activeProject) return newState; // Ensure activeProject exists
+      const currentStage = newState.activeProject.stages[newState.activeProject.currentStage];
 
       // Apply minigame reward
       switch (activeMinigame.reward.type) {
@@ -110,9 +118,13 @@ export const useProjectManagement = ({ gameState, setGameState }: UseProjectMana
       }
 
       // Update minigame trigger cooldown
-      const trigger = currentStage.minigameTriggers.find(t => t.id === activeMinigame.id);
-      if (trigger) {
-        trigger.lastTriggered = Date.now();
+      if (currentStage && 'minigameTriggers' in currentStage && Array.isArray((currentStage as { minigameTriggers: MinigameTrigger[] }).minigameTriggers)) {
+        const triggers = (currentStage as { minigameTriggers: MinigameTrigger[] }).minigameTriggers;
+        const trigger = triggers.find((t: MinigameTrigger) => t.id === activeMinigame.id);
+        if (trigger) {
+          // Assuming lastTriggered is a property that can be set
+          (trigger as MinigameTrigger & { lastTriggered?: number }).lastTriggered = Date.now();
+        }
       }
 
       return newState;
@@ -129,4 +141,4 @@ export const useProjectManagement = ({ gameState, setGameState }: UseProjectMana
     setActiveMinigame,
     handleMinigameComplete
   };
-}; 
+};

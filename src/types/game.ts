@@ -20,6 +20,7 @@ export interface PlayerData {
   attributes: PlayerAttributes;
   dailyWorkCapacity: number;
   lastMinigameType?: string; // Track last completed minigame to prevent repetition
+  playTime: number; // Total play time in milliseconds
 }
 
 export interface StudioSkill {
@@ -27,6 +28,8 @@ export interface StudioSkill {
   xp: number;
   xpToNextLevel: number;
 }
+
+export type StudioSkillName = 'recording' | 'mixing' | 'mastering';
 
 export interface ProjectStage {
   id: string;
@@ -36,6 +39,8 @@ export interface ProjectStage {
   isCompleted: boolean;
   workUnitsBase: number;
   workUnitsCompleted: number;
+  workUnitsRequired: number; // Added this line
+  assignedStaff: string[]; // Added for staff assignment
 }
 
 export interface Project {
@@ -54,6 +59,8 @@ export interface Project {
   clientType?: string; // Added based on usage in ActiveProject
   difficulty?: number; // Added based on usage in ActiveProject
   durationDaysTotal?: number; // Added based on usage in ActiveProject
+  qualityScore?: number;
+  efficiencyScore?: number;
   [key: string]: unknown;
 }
 
@@ -95,14 +102,29 @@ export interface Band {
   experience: number;
 }
 
+export interface EquipmentBonuses {
+  qualityBonus?: number;
+  technicalBonus?: number;
+  creativityBonus?: number;
+  speedBonus?: number;
+  genreBonus?: {
+    [genre: string]: number;
+  };
+  [key: string]: number | { [genre: string]: number } | undefined;
+}
+
 export interface Equipment {
   id: string;
   name: string;
-  type: string;
-  cost: number;
-  effects: {
-    [key: string]: number;
+  category: string; // Renamed from type
+  price: number;    // Renamed from cost
+  description: string;
+  icon: string;
+  skillRequirement?: {
+    skill: StudioSkillName; // Changed from string
+    level: number;
   };
+  bonuses: EquipmentBonuses; // Renamed from effects and typed
 }
 
 export interface TrainingCourse {
@@ -142,9 +164,9 @@ export interface GameState {
   currentDay: number;
   playerData: PlayerData;
   studioSkills: {
-    recording: { level: number; xp: number; xpToNextLevel: number };
-    mixing: { level: number; xp: number; xpToNextLevel: number };
-    mastering: { level: number; xp: number; xpToNextLevel: number };
+    recording: StudioSkill; // Ensure StudioSkill type is used
+    mixing: StudioSkill;    // Ensure StudioSkill type is used
+    mastering: StudioSkill; // Ensure StudioSkill type is used
   };
   bands: Band[];
   activeProject: Project | null;
@@ -265,7 +287,12 @@ export interface MinigameTrigger {
   type: string;
   reason: string;
   priority: 'low' | 'medium' | 'high';
-  [key: string]: unknown; // Changed any to unknown
+  id: string; // Added id
+  reward: { // Added reward structure
+    type: 'quality' | 'speed' | 'xp';
+    [key: string]: unknown; // Allow other reward properties
+  };
+  [key: string]: unknown; // Keep for now for other potential dynamic properties
 }
 
 export interface MinigameTriggerDefinition {
