@@ -302,6 +302,7 @@ export interface StudioSkill {
   level: number;
   xp: number;
   maxXp: number;
+  xpToNext: number;
 }
 
 export interface Band {
@@ -310,6 +311,12 @@ export interface Band {
   members: string[];
   genre: string;
   popularity: number;
+  bandName: string;
+  fame: number;
+  notoriety: number;
+  memberIds: string[];
+  tourStatus: string;
+  pastReleases: any[];
 }
 
 export const initialGameState: GameState = {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { GameState, initialGameState, Project, StaffMember, PlayerAttributes, FocusAllocation } from '@/types/game';
 import type { Band } from '@/types/bands';
@@ -7,15 +8,20 @@ import { useProgressionSystem } from '@/hooks/useProgressionSystem';
 import { SplashScreen } from '@/components/SplashScreen';
 import { EraSelectionModal } from '@/components/modals/EraSelectionModal';
 import { TutorialModal } from '@/components/modals/TutorialModal';
-import { GameHeader } from '@/components/GameHeader';
-import { LeftPanel } from '@/components/LeftPanel';
-import { MainGameContent } from '@/components/MainGameContent';
-import { RightPanel } from '@/components/RightPanel';
 import { GameModals } from '@/components/GameModals';
 import { RewardFeedbackSystem } from '@/components/RewardFeedbackSystem';
 import { generateInitialProjects } from '@/data/projectData';
 import { generateStaffCandidates } from '@/data/staffData';
 import { useToast } from '@/hooks/use-toast';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ProjectList } from '@/components/ProjectList';
+import { EnhancedActiveProject } from '@/components/EnhancedActiveProject';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { EquipmentList } from '@/components/EquipmentList';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { EraProgress } from '@/components/EraProgress';
 
 export default function Index() {
   const { gameState, updateGameState, resetGameState } = useGameState();
@@ -68,6 +74,7 @@ export default function Index() {
     updateGameState((prev) => ({
       ...prev,
       availableProjects: prev.availableProjects.filter((p) => p.id !== project.id),
+      activeProject: project
     }));
     deliverMicroReward('xp', 5, 'Project Started!');
   };
@@ -94,6 +101,7 @@ export default function Index() {
 
       return {
         ...prev,
+        activeProject: updatedProject,
         projects: [...prev.projects, updatedProject],
       };
     });
@@ -120,6 +128,7 @@ export default function Index() {
 
       return {
         ...prev,
+        activeProject: updatedProject,
         projects: [...prev.projects, updatedProject],
       };
     });
@@ -141,9 +150,10 @@ export default function Index() {
       return {
         ...prev,
         money: prev.money + payout,
+        activeProject: null,
         playerData: {
           ...prev.playerData,
-          experience: (prev.playerData.experience || 0) + experienceGain,
+          xp: prev.playerData.xp + experienceGain,
           completedProjects: prev.playerData.completedProjects + 1,
         },
       };
@@ -156,33 +166,28 @@ export default function Index() {
     generateProjects();
   };
 
-  // Trigger a minigame
-  const triggerMinigame = (type: string, reason: string) => {
-    updateGameState((prev) => ({
-      ...prev,
-      autoTriggeredMinigame: {
-        type: type,
-        reason: reason,
-      },
-    }));
+  // Handle minigame reward
+  const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number, type: string) => {
+    if (gameState.activeProject) {
+      updateGameState(prev => ({
+        ...prev,
+        activeProject: prev.activeProject ? {
+          ...prev.activeProject,
+          accumulatedCPoints: prev.activeProject.accumulatedCPoints + creativityBonus,
+          accumulatedTPoints: prev.activeProject.accumulatedTPoints + technicalBonus
+        } : null,
+        playerData: {
+          ...prev.playerData,
+          xp: prev.playerData.xp + xpBonus
+        }
+      }));
+    }
   };
 
-  // Buy equipment
-  const buyEquipment = (equipmentId: string) => {
-    updateGameState((prev) => ({
-      ...prev,
-      equipment: [...prev.equipment, equipmentId],
-      money: prev.money - 1000,
-    }));
-  };
-
-  // Hire staff
+  // Staff management functions
   const hireStaff = (candidateIndex: number): boolean => {
     const candidate = gameState.staffCandidates[candidateIndex];
-    if (!candidate) {
-      console.error(`No staff candidate at index ${candidateIndex}`);
-      return false;
-    }
+    if (!candidate) return false;
 
     if (gameState.money < candidate.salary) {
       toast({
@@ -193,63 +198,17 @@ export default function Index() {
       return false;
     }
 
-    updateGameState((prev) => {
-      const newStaff = {
-        ...candidate,
-        isAvailable: true,
-        isResting: false,
-        skills: candidate.skills || {},
-      };
-
-      return {
-        ...prev,
-        staff: [...prev.staff, newStaff],
-        hiredStaff: [...prev.hiredStaff, newStaff],
-        staffCandidates: prev.staffCandidates.filter((_, index) => index !== candidateIndex),
-        money: prev.money - candidate.salary,
-      };
-    });
-
-    toast({
-      title: "Staff Hired",
-      description: `${candidate.name} has been hired!`,
-    });
+    updateGameState((prev) => ({
+      ...prev,
+      staff: [...prev.staff, candidate],
+      hiredStaff: [...prev.hiredStaff, candidate],
+      staffCandidates: prev.staffCandidates.filter((_, index) => index !== candidateIndex),
+      money: prev.money - candidate.salary,
+    }));
 
     return true;
   };
 
-  // Train staff
-  const trainStaff = (staff: StaffMember, skill: string) => {
-    updateGameState((prev) => {
-      const updatedStaff = prev.staff.map((s) => {
-        if (s.id === staff.id) {
-          return {
-            ...s,
-            skills: {
-              ...(s.skills || {}),
-              [skill]: (s.skills?.[skill] || 0) + 1,
-            },
-          };
-        }
-        return s;
-      });
-
-      return {
-        ...prev,
-        staff: updatedStaff,
-      };
-    });
-  };
-
-  // Upgrade studio
-  const upgradeStudio = (studioId: string) => {
-    updateGameState((prev) => ({
-      ...prev,
-      studioLevel: prev.studioLevel + 1,
-    }));
-  };
-
-  // Refresh staff candidates
   const refreshCandidates = () => {
     const newCandidates = generateStaffCandidates(3);
     updateGameState((prev) => ({
@@ -258,131 +217,69 @@ export default function Index() {
     }));
   };
 
-  // Assign staff to project
   const assignStaffToProject = (staffId: string) => {
     if (!activeProject) return;
-
-    updateGameState((prev) => {
-      const updatedStaff = prev.staff.map((s) => {
-        if (s.id === staffId) {
-          return {
-            ...s,
-            projectId: activeProject.id,
-            isAvailable: false,
-          };
-        }
-        return s;
-      });
-
-      return {
-        ...prev,
-        staff: updatedStaff,
-      };
-    });
+    updateGameState((prev) => ({
+      ...prev,
+      staff: prev.staff.map(s => s.id === staffId ? { ...s, projectId: activeProject.id, isAvailable: false } : s)
+    }));
   };
 
-  // Unassign staff from project
   const unassignStaffFromProject = (staffId: string) => {
-    updateGameState((prev) => {
-      const updatedStaff = prev.staff.map((s) => {
-        if (s.id === staffId) {
-          return {
-            ...s,
-            projectId: null,
-            isAvailable: true,
-          };
-        }
-        return s;
-      });
-
-      return {
-        ...prev,
-        staff: updatedStaff,
-      };
-    });
+    updateGameState((prev) => ({
+      ...prev,
+      staff: prev.staff.map(s => s.id === staffId ? { ...s, projectId: null, isAvailable: true } : s)
+    }));
   };
 
-  // Toggle staff rest
   const toggleStaffRest = (staffId: string) => {
-    updateGameState((prev) => {
-      const updatedStaff = prev.staff.map((s) => {
-        if (s.id === staffId) {
-          return {
-            ...s,
-            isResting: !(s.isResting || false),
-          };
-        }
-        return s;
-      });
-
-      return {
-        ...prev,
-        staff: updatedStaff,
-      };
-    });
+    updateGameState((prev) => ({
+      ...prev,
+      staff: prev.staff.map(s => s.id === staffId ? { ...s, isResting: !s.isResting } : s)
+    }));
   };
 
-  // Open training modal
   const openTrainingModal = (staff: StaffMember): boolean => {
     setSelectedStaff(staff);
     setShowTrainingModal(true);
     return true;
   };
 
-  // Spend perk point
+  const trainStaff = (staff: StaffMember, skill: string) => {
+    updateGameState((prev) => ({
+      ...prev,
+      staff: prev.staff.map(s => s.id === staff.id ? {
+        ...s,
+        skills: { ...(s.skills || {}), [skill]: (s.skills?.[skill] || 0) + 1 }
+      } : s)
+    }));
+  };
+
   const spendPerkPoint = (attribute: keyof PlayerAttributes) => {
     updateGameState((prev) => {
-      if (prev.playerData.perkPoints <= 0) {
-        toast({
-          title: "No Perk Points",
-          description: "You don't have any perk points to spend.",
-          variant: "destructive",
-        });
-        return prev;
-      }
-
-      const updatedPlayerData = {
-        ...prev.playerData,
-        attributes: {
-          ...prev.playerData.attributes,
-          [attribute]: prev.playerData.attributes[attribute] + 1,
-        },
-        perkPoints: prev.playerData.perkPoints - 1,
-      };
-
-      toast({
-        title: "Perk Point Spent",
-        description: `Your ${attribute} has increased!`,
-      });
-
+      if (prev.playerData.perkPoints <= 0) return prev;
       return {
         ...prev,
-        playerData: updatedPlayerData,
+        playerData: {
+          ...prev.playerData,
+          attributes: { ...prev.playerData.attributes, [attribute]: prev.playerData.attributes[attribute] + 1 },
+          perkPoints: prev.playerData.perkPoints - 1,
+        },
       };
     });
   };
 
-  // Create band
   const createBand = (bandName: string, memberIds: string[]) => {
     setShowCreateBandModal(true);
   };
 
-  // Recruit member
   const recruitMember = (band: Band, member: StaffMember) => {
-    updateGameState((prev) => {
-      const updatedBand = {
-        ...band,
-        memberIds: [...band.memberIds, member.id],
-      };
-
-      return {
-        ...prev,
-        bands: [...prev.bands, updatedBand],
-      };
-    });
+    updateGameState((prev) => ({
+      ...prev,
+      playerBands: [...prev.playerBands, { ...band, members: [...band.members, member.id] }],
+    }));
   };
 
-  // Create original track
   const createOriginalTrack = () => {
     updateGameState((prev) => ({
       ...prev,
@@ -390,8 +287,23 @@ export default function Index() {
     }));
   };
 
+  const buyEquipment = (equipmentId: string) => {
+    updateGameState((prev) => ({
+      ...prev,
+      equipment: [...prev.equipment, equipmentId],
+      money: prev.money - 1000,
+    }));
+  };
+
+  const upgradeStudio = (studioId: string) => {
+    updateGameState((prev) => ({
+      ...prev,
+      studioLevel: prev.studioLevel + 1,
+    }));
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-orange-100">
       {/* Reward Feedback System */}
       <RewardFeedbackSystem 
         rewards={loopState.recentRewards}
@@ -420,69 +332,175 @@ export default function Index() {
         />
       )}
 
-      {/* Main Game Interface */}
+      {/* Main Game Interface - THREE COLUMN LAYOUT */}
       {!showSplash && !showEraSelection && !showTutorial && (
         <div className="flex flex-col h-screen">
-          {/* Game Header */}
-          <GameHeader 
-            gameState={gameState}
-            onOpenSettings={() => setShowSettings(true)}
-            hireStaff={hireStaff}
-            refreshCandidates={refreshCandidates}
-            assignStaffToProject={assignStaffToProject}
-            unassignStaffFromProject={unassignStaffFromProject}
-            toggleStaffRest={toggleStaffRest}
-            openTrainingModal={openTrainingModal}
-          />
+          {/* Top Bar - Full Game Stats */}
+          <div className="bg-gradient-to-r from-orange-400 via-yellow-400 to-orange-400 text-white p-4 shadow-lg">
+            <div className="flex items-center justify-between max-w-7xl mx-auto">
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
+                    <span className="text-xl">🎵</span>
+                  </div>
+                  <div>
+                    <h1 className="text-xl font-bold">Recording Studio Tycoon</h1>
+                    <div className="text-sm opacity-90">Professional Studio</div>
+                  </div>
+                </div>
+              </div>
 
-          {/* Main Content */}
-          <div className="flex-1 flex overflow-hidden">
-            {/* Left Panel */}
-            <LeftPanel 
-              gameState={gameState}
-            />
+              <div className="flex items-center gap-6">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" className="text-white hover:bg-orange-500/20">
+                      📅 Day {gameState.currentDay} ({gameState.currentYear})
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-orange-50 border-orange-200">
+                    <EraProgress 
+                      gameState={gameState}
+                      triggerEraTransition={() => {}}
+                    />
+                  </DialogContent>
+                </Dialog>
 
-            {/* Main Game Content */}
-            <MainGameContent
-              gameState={gameState}
-              setGameState={updateGameState}
-              focusAllocation={focusAllocation}
-              setFocusAllocation={setFocusAllocation}
-              activeProject={activeProject}
-              setActiveProject={setActiveProject}
-              completeProject={completeProject}
-              startProject={startProject}
-              workOnProject={workOnProject}
-              completeStage={completeStage}
-              generateProjects={generateProjects}
-              triggerMinigame={triggerMinigame}
-              buyEquipment={buyEquipment}
-              hireStaff={hireStaff}
-              trainStaff={trainStaff}
-              upgradeStudio={upgradeStudio}
-              refreshCandidates={refreshCandidates}
-              assignStaffToProject={assignStaffToProject}
-              unassignStaffFromProject={unassignStaffFromProject}
-              toggleStaffRest={toggleStaffRest}
-              openTrainingModal={openTrainingModal}
-              spendPerkPoint={spendPerkPoint}
-              createBand={createBand}
-              createOriginalTrack={createOriginalTrack}
-            />
+                <div className="flex items-center gap-2 bg-green-600/20 rounded-lg px-3 py-2">
+                  <span>💰</span>
+                  <span className="font-bold">${gameState.money.toLocaleString()}</span>
+                </div>
 
-            {/* Right Panel */}
-            <RightPanel
-              gameState={gameState}
-              setGameState={updateGameState}
-              hireStaff={hireStaff}
-              refreshCandidates={refreshCandidates}
-              assignStaffToProject={assignStaffToProject}
-              unassignStaffFromProject={unassignStaffFromProject}
-              toggleStaffRest={toggleStaffRest}
-              openTrainingModal={openTrainingModal}
-              createBand={createBand}
-              spendPerkPoint={spendPerkPoint}
-            />
+                <div className="flex items-center gap-2 bg-purple-600/20 rounded-lg px-3 py-2">
+                  <span>⭐</span>
+                  <span className="font-bold">{gameState.reputation} Rep</span>
+                </div>
+
+                <div className="flex items-center gap-2 bg-blue-600/20 rounded-lg px-3 py-2">
+                  <span>💡</span>
+                  <span className="font-bold">Level {gameState.playerData.level}</span>
+                </div>
+
+                <div className="flex items-center gap-2 bg-yellow-600/20 rounded-lg px-3 py-2">
+                  <span>👥</span>
+                  <span className="font-bold">{gameState.hiredStaff.length} Staff</span>
+                </div>
+
+                <div className="flex items-center gap-2 bg-orange-600/20 rounded-lg px-3 py-2">
+                  <span>⚡</span>
+                  <span className="font-bold">{gameState.playerData.perkPoints} Points</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Three Column Layout */}
+          <div className="flex-1 flex">
+            {/* LEFT COLUMN - Available Projects */}
+            <div className="w-80 bg-white/90 backdrop-blur-sm border-r border-orange-200 p-4">
+              <ProjectList
+                gameState={gameState}
+                setGameState={updateGameState}
+                startProject={startProject}
+              />
+            </div>
+
+            {/* CENTER COLUMN - Active Project or Placeholder */}
+            <div className="flex-1 bg-gradient-to-br from-orange-50/50 to-yellow-50/50 p-6">
+              {gameState.activeProject ? (
+                <EnhancedActiveProject
+                  gameState={gameState}
+                  focusAllocation={focusAllocation}
+                  setFocusAllocation={setFocusAllocation}
+                  performDailyWork={() => workOnProject(10, 10)}
+                  onMinigameReward={handleMinigameReward}
+                />
+              ) : (
+                <Card className="h-full bg-white/80 border-orange-200 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-6xl mb-4">🎤</div>
+                    <h2 className="text-2xl font-bold text-orange-700 mb-2">No Active Project</h2>
+                    <p className="text-orange-600">Select a project from the left panel to start recording!</p>
+                  </div>
+                </Card>
+              )}
+            </div>
+
+            {/* RIGHT COLUMN - Player Status & Actions */}
+            <div className="w-80 bg-white/90 backdrop-blur-sm border-l border-orange-200 p-4 space-y-4">
+              {/* Your Progress Widget */}
+              <Card className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                <h3 className="text-lg font-bold text-blue-700 mb-3 flex items-center gap-2">
+                  ⭐ Your Progress
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm text-blue-600">Level {gameState.playerData.level}</span>
+                      <span className="text-sm text-blue-600">{gameState.playerData.xp} XP</span>
+                    </div>
+                    <Progress value={gameState.playerData.xp % 100} className="h-2" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={() => setShowSkillsModal(true)} size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700">
+                      🎯 Skills
+                    </Button>
+                    <Button onClick={() => setShowAttributesModal(true)} size="sm" className="flex-1 bg-purple-600 hover:bg-purple-700">
+                      💪 Attributes
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Daily Actions Widget */}
+              <Card className="p-4 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+                <h3 className="text-lg font-bold text-green-700 mb-3 flex items-center gap-2">
+                  📅 Daily Actions
+                </h3>
+                <Button 
+                  onClick={() => updateGameState(prev => ({ ...prev, currentDay: prev.currentDay + 1 }))}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 transition-all duration-200 hover:scale-105 active:scale-98"
+                >
+                  ⏰ Next Day
+                </Button>
+              </Card>
+
+              {/* Equipment Shop Widget */}
+              <Card className="p-4 bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
+                <h3 className="text-lg font-bold text-yellow-700 mb-3 flex items-center gap-2">
+                  🛒 Equipment Shop
+                </h3>
+                <div className="space-y-2 mb-3">
+                  <div className="text-sm text-yellow-600">Featured Items:</div>
+                  <div className="text-xs text-yellow-600">• Vintage Microphone - $1,200</div>
+                  <div className="text-xs text-yellow-600">• Audio Interface - $800</div>
+                  <div className="text-xs text-yellow-600">• Studio Monitors - $1,500</div>
+                </div>
+                <Button 
+                  onClick={() => {}} 
+                  variant="outline" 
+                  className="w-full border-yellow-400 text-yellow-700 hover:bg-yellow-100"
+                >
+                  View All Equipment
+                </Button>
+              </Card>
+
+              {/* Staff Management Buttons */}
+              <div className="space-y-2">
+                <Button
+                  onClick={() => setShowStaffModal(true)}
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white transition-all duration-200 hover:scale-105 active:scale-98"
+                >
+                  👥 My Staff ({gameState.hiredStaff.length})
+                </Button>
+                <Button
+                  onClick={() => setShowRecruitmentModal(true)}
+                  variant="outline"
+                  className="w-full border-orange-400 text-orange-700 hover:bg-orange-100"
+                >
+                  🔍 Recruitment Center
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}
