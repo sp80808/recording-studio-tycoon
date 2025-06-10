@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Equipment } from '@/types/game'; // Assuming Equipment type is available
-import { gameAudio } from '@/utils/audioSystem'; // For sound effects
+import { playSound } from '@/utils/soundUtils';
 
 interface GearMaintenanceGameProps {
-  equipment: Equipment; // The equipment being maintained
-  onComplete: (success: boolean, qualityImpact: number) => void; // Callback when minigame finishes
+  onComplete: (score: number) => void;
+  onClose: () => void;
 }
 
 // Example: Define a simple state for the minigame
