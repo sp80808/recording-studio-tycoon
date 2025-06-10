@@ -1,6 +1,5 @@
 
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from './ui/card';
 
 interface Reward {
@@ -53,29 +52,22 @@ export const RewardFeedbackSystem: React.FC<RewardFeedbackSystemProps> = ({
     <div className="fixed top-20 right-4 z-50 pointer-events-none">
       {/* Streak Counter */}
       {streakCount > 0 && (
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="mb-4"
-        >
+        <div className="mb-4 animate-fade-in">
           <Card className="bg-orange-500/90 border-orange-400 p-2">
             <div className="text-white text-sm font-bold">
               🔥 {streakCount}x Streak
             </div>
           </Card>
-        </motion.div>
+        </div>
       )}
 
       {/* Reward Notifications */}
-      <AnimatePresence>
+      <div className="space-y-2">
         {visibleRewards.map((reward, index) => (
-          <motion.div
+          <div
             key={reward.id}
-            initial={{ x: 300, opacity: 0, scale: 0.8 }}
-            animate={{ x: 0, opacity: 1, scale: 1 }}
-            exit={{ x: 300, opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
-            className="mb-2"
+            className="animate-fade-in"
+            style={{ animationDelay: `${index * 100}ms` }}
           >
             <Card className="bg-gray-900/95 border-gray-600 p-3 min-w-[200px]">
               <div className="flex items-center space-x-2">
@@ -90,9 +82,9 @@ export const RewardFeedbackSystem: React.FC<RewardFeedbackSystemProps> = ({
                 </div>
               </div>
             </Card>
-          </motion.div>
+          </div>
         ))}
-      </AnimatePresence>
+      </div>
     </div>
   );
 };

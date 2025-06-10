@@ -82,7 +82,6 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
               <ProjectList
                 gameState={gameState}
                 startProject={startProject}
-                completeProject={completeProject}
                 generateProjects={generateProjects}
               />
             </div>
@@ -91,6 +90,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                 gameState={gameState}
                 focusAllocation={focusAllocation}
                 setFocusAllocation={setFocusAllocation}
+                performDailyWork={() => workOnProject(10, 10)}
               />
             </div>
           </div>
@@ -112,15 +112,22 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             gameState={gameState}
             onCreateBand={createBand}
             onCreateOriginalTrack={createOriginalTrack}
+            onStartTour={() => {}}
           />
         </TabsContent>
 
         <TabsContent value="charts" className="p-4">
-          <ChartsPanel gameState={gameState} />
+          <ChartsPanel 
+            gameState={gameState} 
+            onContactArtist={() => {}}
+          />
         </TabsContent>
 
         <TabsContent value="era" className="p-4">
-          <EraProgress gameState={gameState} />
+          <EraProgress 
+            gameState={gameState}
+            triggerEraTransition={() => {}}
+          />
         </TabsContent>
       </Tabs>
     </div>
