@@ -1,3 +1,4 @@
+
 export interface GameState {
   currentDay: number;
   currentEra: string;
@@ -146,6 +147,24 @@ export interface Project {
   workSessionCount?: number;
   currentStage?: number;
   projectId?: string | null;
+  // New properties for enhanced gameplay
+  stages?: ProjectStage[];
+  currentStageIndex?: number;
+  repGainBase?: number;
+  durationDaysTotal?: number;
+  requiredSkills?: Record<string, number>;
+  matchRating?: 'Poor' | 'Good' | 'Excellent';
+  completedStages?: ProjectStage[];
+  associatedBandId?: string;
+  clientType?: string;
+}
+
+export interface ProjectStage {
+  stageName: string;
+  focusAreas: string[];
+  workUnitsBase: number;
+  workUnitsCompleted: number;
+  completed: boolean;
 }
 
 export interface Equipment {

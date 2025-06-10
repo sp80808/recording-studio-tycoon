@@ -1,8 +1,9 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { GameState, initialGameState, Project, StaffMember, PlayerAttributes, FocusAllocation } from '@/types/game';
 import type { Band } from '@/types/bands';
 import { useGameState } from '@/hooks/useGameState';
+import { useGameplayLoop } from '@/hooks/useGameplayLoop';
+import { useProgressionSystem } from '@/hooks/useProgressionSystem';
 import { SplashScreen } from '@/components/SplashScreen';
 import { EraSelectionModal } from '@/components/modals/EraSelectionModal';
 import { TutorialModal } from '@/components/modals/TutorialModal';
@@ -11,15 +12,16 @@ import { LeftPanel } from '@/components/LeftPanel';
 import { MainGameContent } from '@/components/MainGameContent';
 import { RightPanel } from '@/components/RightPanel';
 import { GameModals } from '@/components/GameModals';
+import { RewardFeedbackSystem } from '@/components/RewardFeedbackSystem';
 import { generateInitialProjects } from '@/data/projectData';
 import { generateStaffCandidates } from '@/data/staffData';
 import { useToast } from '@/hooks/use-toast';
 
-interface IndexProps {
-}
-
 export default function Index() {
   const { gameState, updateGameState, resetGameState } = useGameState();
+  const { loopState, deliverMicroReward, generateVariedProjects } = useGameplayLoop(gameState, updateGameState);
+  const { milestones, studioUpgrades, purchaseStudioUpgrade } = useProgressionSystem(gameState, updateGameState);
+  
   const [showSplash, setShowSplash] = useState(true);
   const [showEraSelection, setShowEraSelection] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
@@ -50,22 +52,24 @@ export default function Index() {
     setShowTutorial(true);
   };
 
-  // Generate initial projects
+  // Enhanced project generation using the new system
   const generateProjects = useCallback(() => {
-    const newProjects = generateInitialProjects(gameState.playerData.level);
+    const newProjects = generateVariedProjects();
     updateGameState((prev) => ({
       ...prev,
       availableProjects: [...prev.availableProjects, ...newProjects],
     }));
-  }, [gameState.playerData.level, updateGameState]);
+    deliverMicroReward('reputation', 1, 'New Projects Available!');
+  }, [generateVariedProjects, updateGameState, deliverMicroReward]);
 
-  // Start a project
+  // Start a project with micro-reward
   const startProject = (project: Project) => {
     setActiveProject(project);
     updateGameState((prev) => ({
       ...prev,
       availableProjects: prev.availableProjects.filter((p) => p.id !== project.id),
     }));
+    deliverMicroReward('xp', 5, 'Project Started!');
   };
 
   // Work on a project
@@ -93,6 +97,11 @@ export default function Index() {
         projects: [...prev.projects, updatedProject],
       };
     });
+
+    // Micro-reward for work sessions
+    if (Math.random() > 0.7) { // 30% chance for bonus
+      deliverMicroReward('xp', 2, 'Great Session!');
+    }
   };
 
   // Complete a stage
@@ -114,27 +123,35 @@ export default function Index() {
         projects: [...prev.projects, updatedProject],
       };
     });
+
+    deliverMicroReward('xp', 10, 'Stage Complete!');
   };
 
   // Complete a project
   const completeProject = () => {
     if (!activeProject) return;
 
+    const baseXP = activeProject.difficulty * 25;
+    const bonusXP = Math.floor(loopState.streakCount * 5);
+    
     updateGameState((prev) => {
-      const payout = activeProject.payoutBase;
-      const experienceGain = activeProject.difficulty * 100;
+      const payout = activeProject.payoutBase + (loopState.streakCount * 50);
+      const experienceGain = baseXP + bonusXP;
 
       return {
         ...prev,
         money: prev.money + payout,
         playerData: {
           ...prev.playerData,
-          experience: prev.playerData.experience + experienceGain,
+          experience: (prev.playerData.experience || 0) + experienceGain,
           completedProjects: prev.playerData.completedProjects + 1,
         },
       };
     });
 
+    deliverMicroReward('money', activeProject.payoutBase, 'Project Complete!');
+    deliverMicroReward('xp', baseXP, 'Experience Gained!');
+    
     setActiveProject(null);
     generateProjects();
   };
@@ -375,6 +392,12 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
+      {/* Reward Feedback System */}
+      <RewardFeedbackSystem 
+        rewards={loopState.recentRewards}
+        streakCount={loopState.streakCount}
+      />
+
       {/* Splash Screen */}
       {showSplash && (
         <SplashScreen onComplete={() => setShowSplash(false)} />

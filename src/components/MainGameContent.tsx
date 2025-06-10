@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { GameState, Project, FocusAllocation } from '@/types/game';
 import { ProjectList } from './ProjectList';
 import { ActiveProject } from './ActiveProject';
@@ -81,15 +81,14 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             <div>
               <ProjectList
                 gameState={gameState}
-                onStartProject={startProject}
-                onCompleteProject={completeProject}
-                onGenerateProjects={generateProjects}
+                startProject={startProject}
+                completeProject={completeProject}
+                generateProjects={generateProjects}
               />
             </div>
             <div>
               <ActiveProject
                 gameState={gameState}
-                setGameState={setGameState}
                 focusAllocation={focusAllocation}
                 setFocusAllocation={setFocusAllocation}
               />
@@ -105,24 +104,23 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         </TabsContent>
 
         <TabsContent value="equipment" className="p-4">
-          <EquipmentList gameState={gameState} onPurchaseEquipment={buyEquipment} />
+          <EquipmentList gameState={gameState} purchaseEquipment={buyEquipment} />
         </TabsContent>
 
         <TabsContent value="bands" className="p-4">
           <BandManagement
             gameState={gameState}
-            setGameState={setGameState}
             onCreateBand={createBand}
             onCreateOriginalTrack={createOriginalTrack}
           />
         </TabsContent>
 
         <TabsContent value="charts" className="p-4">
-          <ChartsPanel gameState={gameState} setGameState={setGameState} />
+          <ChartsPanel gameState={gameState} />
         </TabsContent>
 
         <TabsContent value="era" className="p-4">
-          <EraProgress gameState={gameState} setGameState={setGameState} />
+          <EraProgress gameState={gameState} />
         </TabsContent>
       </Tabs>
     </div>
