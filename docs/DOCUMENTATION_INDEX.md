@@ -1,16 +1,33 @@
 t<!-- 
   File: DOCUMENTATION_INDEX.md
   Purpose: Central index for all project documentation with version tracking
-  Version: 0.3.0
+  Version: 0.3.1
   Created: 2025-06-08
-  Last Modified: 2025-06-08
+  Last Modified: 2025-06-10
   Status: Active
 -->
 
 # Documentation Index & Version Tracking
 *Recording Studio Tycoon - Complete Documentation Overview*
+*Updated: June 10, 2025 - Post Documentation Reorganization*
 
 ## 📚 Documentation Categories
+
+### 🎯 Current Development (Active)
+| Document | Version | Last Updated | Status | Purpose |
+|----------|---------|--------------|--------|---------|
+| [Current Task](./CURRENT_TASK.md) | 0.3.1 | 2025-06-10 | Active | Current development focus and immediate tasks |
+| [Enhancement Implementation Log](./ENHANCEMENT_IMPLEMENTATION_LOG.md) | 0.3.1 | 2025-06-10 | Active | Detailed implementation progress tracking |
+| [Progress](./progress.md)| 0.3.1 | 2025-06-10 | Active | Overall project progress and milestone tracking |
+
+### 🎮 System Documentation (New - June 10)
+| Document | Version | Last Updated | Status | Purpose |
+|----------|---------|--------------|--------|---------|
+| [Sound System Documentation](./SOUND_SYSTEM_DOCUMENTATION.md) | 1.0.0 | 2025-06-10 | Active | Comprehensive audio system implementation guide |
+| [Visual Polish & Animation System](./VISUAL_POLISH_ANIMATION_SYSTEM.md) | 1.0.0 | 2025-06-10 | Active | Animation patterns and visual feedback systems |
+| [Minigame Design Patterns](./MINIGAME_DESIGN_PATTERNS.md) | 1.0.0 | 2025-06-10 | Active | Minigame architecture and implementation patterns |
+| [Project Management Workflow](./PROJECT_MANAGEMENT_WORKFLOW.md) | 1.0.0 | 2025-06-10 | Active | Project lifecycle and workflow documentation |
+| [Gameplay Enhancement Roadmap](./GAMEPLAY_ENHANCEMENT_ROADMAP.md) | 1.0.0 | 2025-06-10 | Active | Long-term enhancement strategy and timeline |
 
 ### 🏗️ Architecture & Development
 | Document | Version | Last Updated | Status | Purpose |
@@ -23,11 +40,19 @@ t<!--
 ### 🎮 Game Systems Documentation
 | Document | Version | Last Updated | Status | Purpose |
 |----------|---------|--------------|--------|---------|
-| [Game Overview](./GAME_OVERVIEW.md) | 0.2.0 | 2025-06-06 | Active | Master documentation index |
+| [Game Overview](./GAME_OVERVIEW.md) | 0.2.0 | 2025-06-06 | Active | Master game design documentation |
 | [Charts System Implementation](./CHARTS_SYSTEM_IMPLEMENTATION.md) | 0.3.0 | 2025-06-08 | Active | Charts and industry integration guide |
 | [Music Industry Charts](./MUSIC_INDUSTRY_CHARTS.md) | 0.3.0 | 2025-06-08 | Active | Charts system design and implementation |
-| [Enhanced Minigames](./ENHANCED_MINIGAMES_DETAILED.md) | 0.2.0 | 2025-06-08 | Active | Advanced minigame implementations |
-| [Era Based Progression](./ERA_BASED_PROGRESSION_DETAILED.md) | 0.1.0 | 2025-06-05 | Active | Historical timeline and progression system |
+| [Enhanced Minigames Detailed](./ENHANCED_MINIGAMES_DETAILED.md) | 0.2.0 | 2025-06-08 | Active | Advanced minigame implementations |
+| [Enhanced Minigames](./ENHANCED_MINIGAMES.md) | 0.2.0 | 2025-06-08 | Active | Minigame system overview |
+| [Era Based Progression Detailed](./ERA_BASED_PROGRESSION_DETAILED.md) | 0.1.0 | 2025-06-05 | Active | Historical timeline and progression system |
+| [Era Based Progression](./ERA_BASED_PROGRESSION.md) | 0.1.0 | 2025-06-05 | Active | Era progression overview |
+
+### 📋 Integration & Testing
+| Document | Version | Last Updated | Status | Purpose |
+|----------|---------|--------------|--------|---------|
+| [Integration Testing Report](./INTEGRATION_TESTING_REPORT.md) | 0.3.0 | 2025-06-08 | Active | System integration testing results |
+| [Music Timing Fix](./MUSIC_TIMING_FIX.md) | 0.3.0 | 2025-06-08 | Active | Background music timing optimization documentation |
 
 ### 📋 Current Status & Planning
 | Document | Version | Last Updated | Status | Purpose |
@@ -43,13 +68,29 @@ t<!--
 | [A&R Department System](./AR_DEPARTMENT_SYSTEM.md) | 0.1.0 | 2025-06-05 | Draft | Artist development and talent scouting |
 | [Design Notes Original Tracks](./DESIGN_NOTES_ORIGINAL_TRACKS.md) | 0.1.0 | 2025-06-05 | Draft | Band creation and original music systems |
 | [EPK Communication System](./EPK_COMMUNICATION_SYSTEM.md) | 0.1.0 | 2025-06-05 | Draft | Electronic press kit and communication tools |
+| [Advanced Progression Plan](./ADVANCED_PROGRESSION_PLAN.md) | 0.2.0 | 2025-06-07 | Draft | Advanced game progression mechanics |
 
 ### 🔧 Technical Specifications
 | Document | Version | Last Updated | Status | Purpose |
 |----------|---------|--------------|--------|---------|
-| [Charts System Detailed](./CHARTS_SYSTEM_DETAILED.md) | 0.3.0 | 2025-06-08 | Active | Technical implementation details for charts |
+| [Chart Track Audio Implementation Plan](./CHART_TRACK_AUDIO_IMPLEMENTATION_PLAN.md) | 0.3.0 | 2025-06-08 | Active | Audio system implementation guide |
+| [Chart Track Audio Prompts](./CHART_TRACK_AUDIO_PROMPTS.md) | 0.3.0 | 2025-06-08 | Active | Audio generation prompts and templates |
+| [Charts Music Generation Plan](./CHARTS_MUSIC_GENERATION_PLAN.md) | 0.3.0 | 2025-06-08 | Active | Music generation system design |
 | [Era Mechanics Implementation Plan](./ERA_MECHANICS_IMPLEMENTATION_PLAN.md) | 0.1.0 | 2025-06-05 | Draft | Era-specific mechanics implementation |
-| [Audio Implementation Plan](./CHART_TRACK_AUDIO_IMPLEMENTATION_PLAN.md) | 0.3.0 | 2025-06-08 | Active | Audio system implementation guide |
+| [Suno API Integration Plan](./SUNO_API_INTEGRATION_PLAN.md) | 0.2.0 | 2025-06-07 | Draft | AI music generation integration |
+
+---
+
+## 🗂️ Archived Documentation
+*Moved to `docs/old/` folder for historical reference*
+
+- Code Citations and Legacy Documentation
+- Comprehensive Gameplay Expansion (superseded by Gameplay Enhancement Roadmap)
+- Strategic Gameplay Enhancements (superseded by current roadmaps)
+- Game Improvement Roadmap (superseded by Gameplay Enhancement Roadmap)
+- Phase 3 Plan (superseded by Implementation Roadmap)
+- Optimization Plan (integrated into current development standards)
+- Library Integration and Game Design (superseded by current architecture docs)
 
 ---
 

@@ -64,54 +64,90 @@ class GameAudioSystem {
     this.musicGain.gain.setValueAtTime(this.settings.musicEnabled ? this.settings.musicVolume : 0, this.audioContext?.currentTime || 0);
   }
 
-  private async preloadAudioFiles() {
-    const audioFiles = [
-      // Drums
-      { name: 'kick', path: '/src/audio/drums/Ama kick (7).wav' },
-      { name: 'snare', path: '/src/audio/drums/Ama-snare (5).wav' },
-      { name: 'hihat', path: '/src/audio/drums/GS_NT_HAT_04.wav' },
-      { name: 'openhat', path: '/src/audio/drums/MURDA_HAT_OPEN_ZETO.wav' },
-      
-      // UI SFX
-      { name: 'bubble-pop', path: '/src/audio/ui sfx/bubble-pop-sound-316482.mp3' },
-      { name: 'close-menu', path: '/src/audio/ui sfx/close-menu.mp3' },
-      { name: 'notification', path: '/src/audio/ui sfx/emailnotif-190435.mp3' },
-      { name: 'notice', path: '/src/audio/ui sfx/notice-sound-270349.mp3' },
-      { name: 'proj-complete', path: '/src/audio/ui sfx/proj-complete.mp3' },
-      { name: 'purchase', path: '/src/audio/ui sfx/purchase-complete.mp3' },
-      { name: 'staff-warning', path: '/src/audio/ui sfx/staff-unavailable-warning.mp3' },
-      { name: 'stage-complete', path: '/src/audio/ui sfx/stage-complete.mp3' },
-      { name: 'training-complete', path: '/src/audio/ui sfx/training-complete.mp3' },
-      { name: 'unavailable', path: '/src/audio/ui sfx/unavailable-ui-79817.mp3' },
-      
-      // Background Music
-      { name: 'bgm1', path: '/src/audio/music/Tycoon BGM 1.mp3' },
-      { name: 'bgm2', path: '/src/audio/music/Tycoon BGM 2.mp3' },
-      { name: 'bgm3', path: '/src/audio/music/Tycoon BGM 3.mp3' },
-      { name: 'bgm4', path: '/src/audio/music/Tycoon BGM 4.mp3' },
-      { name: 'bgm5', path: '/src/audio/music/Tycoon BGM 5.mp3' }
-    ];
-
-    for (const audio of audioFiles) {
-      try {
-        const response = await fetch(audio.path);
-        const arrayBuffer = await response.arrayBuffer();
-        const audioBuffer = await this.audioContext!.decodeAudioData(arrayBuffer);
-        this.audioBuffers.set(audio.name, audioBuffer);
-      } catch (error) {
-        console.warn(`Failed to load audio file ${audio.name}:`, error);
+  private async loadAndCacheAudio(name: string, path: string): Promise<AudioBuffer | null> {
+    if (!this.audioContext) {
+      console.warn('AudioContext not initialized, cannot load audio.');
+      return null;
+    }
+    if (this.audioBuffers.has(name)) {
+      return this.audioBuffers.get(name)!;
+    }
+    try {
+      // Assuming paths like '/audio/drums/kick.wav' are relative to the public folder
+      const response = await fetch(path); 
+      if (!response.ok) {
+        throw new Error(`Failed to fetch audio ${name} from ${path}: ${response.statusText}`);
       }
+      const arrayBuffer = await response.arrayBuffer();
+      const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+      this.audioBuffers.set(name, audioBuffer);
+      console.log(`Audio loaded and cached: ${name}`);
+      return audioBuffer;
+    } catch (error) {
+      console.warn(`Failed to load audio file ${name} from ${path}:`, error);
+      return null;
     }
   }
 
-  private async playAudioBuffer(name: string, gainNode: GainNode, volume: number = 1, loop: boolean = false): Promise<AudioBufferSourceNode | null> {
-    await this.ensureInitialized();
-    if (!this.audioContext || !gainNode) return null;
+  private async preloadAudioFiles() {
+    // Paths should be relative to the public directory for direct fetching.
+    // Example: '/audio/drums/kick.wav' if 'audio' is in 'public'
+    const audioFiles = [
+      // Drums - Assuming these paths are correct relative to public folder
+      { name: 'kick', path: '/audio/drums/Ama kick (7).wav' }, // Corrected path assumption
+      { name: 'snare', path: '/audio/drums/Ama-snare (5).wav' },
+      { name: 'hihat', path: '/audio/drums/GS_NT_HAT_04.wav' },
+      { name: 'openhat', path: '/audio/drums/MURDA_HAT_OPEN_ZETO.wav' },
+      
+      // UI SFX
+      { name: 'bubble-pop', path: '/audio/ui sfx/bubble-pop-sound-316482.mp3' },
+      { name: 'close-menu', path: '/audio/ui sfx/close-menu.mp3' },
+      { name: 'notification', path: '/audio/ui sfx/emailnotif-190435.mp3' },
+      { name: 'notice', path: '/audio/ui sfx/notice-sound-270349.mp3' },
+      { name: 'proj-complete', path: '/audio/ui sfx/proj-complete.mp3' },
+      { name: 'purchase', path: '/audio/ui sfx/purchase-complete.mp3' },
+      { name: 'staff-warning', path: '/audio/ui sfx/staff-unavailable-warning.mp3' },
+      { name: 'stage-complete', path: '/audio/ui sfx/stage-complete.mp3' },
+      { name: 'training-complete', path: '/audio/ui sfx/training-complete.mp3' },
+      { name: 'unavailable', path: '/audio/ui sfx/unavailable-ui-79817.mp3' },
+      
+      // Background Music
+      { name: 'bgm1', path: '/audio/music/Tycoon BGM 1.mp3' },
+      { name: 'bgm2', path: '/audio/music/Tycoon BGM 2.mp3' },
+      { name: 'bgm3', path: '/audio/music/Tycoon BGM 3.mp3' },
+      { name: 'bgm4', path: '/audio/music/Tycoon BGM 4.mp3' },
+      { name: 'bgm5', path: '/audio/music/Tycoon BGM 5.mp3' }
+    ];
 
-    const buffer = this.audioBuffers.get(name);
+    for (const audio of audioFiles) {
+      await this.loadAndCacheAudio(audio.name, audio.path);
+    }
+  }
+
+  // Public method to play sound, loads on demand if not cached
+  // Name can be a key (for preloaded) or a full path (for on-demand, e.g. chart clips)
+  async playSound(nameOrPath: string, type: 'sfx' | 'music' = 'sfx', volume: number = 1, loop: boolean = false): Promise<AudioBufferSourceNode | null> {
+    await this.ensureInitialized();
+    if (!this.audioContext) return null;
+
+    let buffer = this.audioBuffers.get(nameOrPath);
     if (!buffer) {
-      console.warn(`Audio buffer not found: ${name}`);
+      // If not in cache, assume nameOrPath is a path and try to load it
+      // For chart clips, the path would be like '/audio/chart_clips/clip.mp3'
+      // The 'name' for caching will be the path itself to ensure uniqueness for dynamic files
+      console.log(`Buffer for ${nameOrPath} not found in cache, attempting to load...`);
+      buffer = await this.loadAndCacheAudio(nameOrPath, nameOrPath);
+    }
+
+    if (!buffer) {
+      console.warn(`Audio buffer not found or could not be loaded: ${nameOrPath}`);
       return null;
+    }
+    
+    const gainNode = type === 'music' ? this.musicGain : this.sfxGain;
+    if (!gainNode) {
+        console.warn(`Gain node for type ${type} not available.`);
+        return null;
     }
 
     const source = this.audioContext.createBufferSource();
@@ -125,6 +161,13 @@ class GameAudioSystem {
     gainControl.gain.setValueAtTime(volume, this.audioContext.currentTime);
     
     source.start();
+
+    if (type === 'music') {
+      if (this.currentMusic) {
+        this.currentMusic.stop();
+      }
+      this.currentMusic = source;
+    }
     return source;
   }
 

@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import { GameState, StaffMember } from '@/types/game';
 import { toast } from '@/hooks/use-toast';
 import { availableTrainingCourses } from '@/data/training';
+import { getMoodEffectiveness } from '@/utils/playerUtils'; // Import from playerUtils
 
 export const useStaffManagement = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
   const hireStaff = useCallback((candidateIndex: number): boolean => {
@@ -229,11 +230,7 @@ export const useStaffManagement = (gameState: GameState, setGameState: React.Dis
     return '😞';
   }, []);
 
-  const getMoodEffectiveness = useCallback((mood: number) => {
-    if (mood < 40) return 0.75; // 25% penalty for low mood
-    if (mood > 75) return 1.1; // 10% bonus for high mood
-    return 1.0; // Normal effectiveness
-  }, []);
+  // getMoodEffectiveness is now imported from playerUtils
 
   return {
     hireStaff,

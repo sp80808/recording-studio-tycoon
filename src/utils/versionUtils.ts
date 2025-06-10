@@ -24,15 +24,16 @@ export interface CodeVersion {
 /**
  * Interface for file modification tracking
  */
-export interface FileModification {
-  filePath: string;
-  version: string;
-  modifiedDate: string;
-  modifiedBy: string;
-  changeType: 'created' | 'modified' | 'deprecated' | 'deleted';
-  description: string;
-  lineCount?: number;
-}
+// This interface is no longer used by any active code in this file after removals.
+// export interface FileModification {
+//   filePath: string;
+//   version: string;
+//   modifiedDate: string;
+//   modifiedBy: string;
+//   changeType: 'created' | 'modified' | 'deprecated' | 'deleted';
+//   description: string;
+//   lineCount?: number;
+// }
 
 /**
  * Current version information
@@ -52,8 +53,8 @@ export const VERSION_HISTORY: CodeVersion[] = [
     description: 'Charts & Industry Integration - Major milestone with enhanced charts system',
     filesChanged: [
       'src/components/ChartsPanel.tsx',
-      'src/components/ChartsPanel_enhanced.tsx',
-      'src/components/ChartsPanel_backup.tsx',
+      // 'src/components/ChartsPanel_enhanced.tsx', // Removed as file does not exist
+      // 'src/components/ChartsPanel_backup.tsx', // Removed as file does not exist
       'src/components/EquipmentDetailModal.tsx',
       'src/components/animations/',
       'docs/CODEBASE_ANALYSIS_2025.md'
@@ -122,11 +123,11 @@ export const VERSION_HISTORY: CodeVersion[] = [
 
 // FILE_MODIFICATIONS array and related functions (generateFileHeader, trackFileModification, getFileVersion, getFilesInVersion, generateChangelog)
 // have been removed as they appear unused within the src/ directory and FILE_MODIFICATIONS data was outdated.
+// The FileModification interface is also commented out as it's no longer used by active code in this file.
 
 /**
  * Validate version format (semver)
  */
->>>>>>> REPLACE
 export function isValidVersion(version: string): boolean {
   const semverPattern = /^\d+\.\d+\.\d+$/;
   return semverPattern.test(version);

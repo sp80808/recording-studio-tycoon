@@ -8,8 +8,9 @@ import { GameState } from '@/types/game';
 import { generateCharts, generateMarketTrends, calculateContactCost, isArtistContactable } from '@/data/chartsData';
 import { ArtistContactModal } from './modals/ArtistContactModal';
 import { Play, Pause, TrendingUp, Clock, Star, ArrowUp, ArrowDown, Minus } from 'lucide-react';
-import { ChartDisplay } from './charts/ChartDisplay'; // Import the new component
-import { MarketTrendsDisplay } from './charts/MarketTrendsDisplay'; // Import the new component
+import { ChartDisplay } from './charts/ChartDisplay';
+import { MarketTrendsDisplay } from './charts/MarketTrendsDisplay';
+import { gameAudio } from '@/utils/audioSystem'; // Import gameAudio
 
 interface ChartsPanelProps {
   gameState: GameState;
@@ -24,8 +25,9 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
   const [selectedArtist, setSelectedArtist] = useState<ChartEntry | null>(null);
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
   const [playbackProgress, setPlaybackProgress] = useState<{ [key: string]: number }>({});
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  // audioRef and progressIntervalRef are no longer needed with GameAudioSystem
+  const [currentSourceNode, setCurrentSourceNode] = useState<AudioBufferSourceNode | null>(null);
+
 
   // Genre emoji mapping for visual appeal
   const getGenreEmoji = (genre: string) => {
@@ -149,76 +151,77 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
     if (!clipName) return;
 
     const trackId = `${entry.song.id}-${entry.position}`;
-    const segment = getPlaybackSegment(entry);
-    
-    // Stop current audio if playing
-    if (audioRef.current) {
-      audioRef.current.pause();
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
-    }
+    const segment = getPlaybackSegment(entry); // Still useful for displayTime and segmentNumber
+    const audioPath = `/audio/chart_clips/${clipName}`;
 
-    // If clicking the same track, just pause
+    // Stop current audio if playing
+    if (currentSourceNode) {
+      try {
+        currentSourceNode.stop();
+      } catch (e) {
+        // Ignore errors if already stopped
+      }
+      setCurrentSourceNode(null);
+    }
+    
+    // If clicking the same track that was playing, just stop it
     if (currentlyPlaying === trackId) {
       setCurrentlyPlaying(null);
-      setPlaybackProgress(prev => ({ ...prev, [trackId]: 0 }));
+      // Reset progress (visual only for now, actual playback duration not controlled here yet)
+      setPlaybackProgress(prev => ({ ...prev, [trackId]: 0 })); 
       return;
     }
 
-    try {
-      const audio = new Audio(`/audio/chart_clips/${clipName}`);
-      audioRef.current = audio;
-
-      audio.addEventListener('loadedmetadata', () => {
-        // Set start time with safety checks
-        const safeStartTime = Math.min(segment.startTime, audio.duration - 25);
-        audio.currentTime = Math.max(0, safeStartTime);
-        
+    gameAudio.playSound(audioPath, 'sfx').then(sourceNode => {
+      if (sourceNode) {
+        setCurrentSourceNode(sourceNode);
         setCurrentlyPlaying(trackId);
-        audio.play();
+        // Basic progress simulation: set to 100% after a delay, or handle onended
+        // For true progress, GameAudioSystem would need to provide updates or control
+        setPlaybackProgress(prev => ({ ...prev, [trackId]: 0 })); // Start progress
+        
+        // Simulate progress for 25s or until sound ends
+        // This is a simplified visual progress, not tied to actual audio playback position
+        let progress = 0;
+        const intervalTime = 250; // Update 4 times a second
+        const totalDurationMs = 25 * 1000;
+        const steps = totalDurationMs / intervalTime;
+        let currentStep = 0;
 
-        const playbackStartTime = audio.currentTime;
-
-        // Enhanced progress tracking with better timing
-        progressIntervalRef.current = setInterval(() => {
-          if (audio.currentTime && audio.duration && !audio.paused) {
-            const elapsed = audio.currentTime - playbackStartTime;
-            const progress = Math.min((elapsed / 25) * 100, 100);
-            setPlaybackProgress(prev => ({ ...prev, [trackId]: progress }));
-
-            // Stop after 25 seconds or if near end of clip
-            if (elapsed >= 25 || audio.currentTime >= segment.endTime || audio.currentTime >= audio.duration - 0.5) {
-              audio.pause();
+        const progressInterval = setInterval(() => {
+          currentStep++;
+          progress = (currentStep / steps) * 100;
+          setPlaybackProgress(prev => ({ ...prev, [trackId]: Math.min(progress, 100) }));
+          if (currentStep >= steps) {
+            clearInterval(progressInterval);
+            if (currentlyPlaying === trackId) { // Check if it's still the one playing
               setCurrentlyPlaying(null);
               setPlaybackProgress(prev => ({ ...prev, [trackId]: 0 }));
-              if (progressIntervalRef.current) {
-                clearInterval(progressIntervalRef.current);
-              }
             }
           }
-        }, 50);
-      });
+        }, intervalTime);
 
-      audio.addEventListener('ended', () => {
+        sourceNode.onended = () => {
+          clearInterval(progressInterval);
+          // Only reset if this specific track was the one playing and ended
+          if (currentlyPlaying === trackId) { 
+            setCurrentlyPlaying(null);
+            setPlaybackProgress(prev => ({ ...prev, [trackId]: 0 }));
+          }
+          if (currentSourceNode === sourceNode) {
+            setCurrentSourceNode(null);
+          }
+        };
+      } else {
+        console.warn(`Could not play audio clip: ${clipName}`);
         setCurrentlyPlaying(null);
         setPlaybackProgress(prev => ({ ...prev, [trackId]: 0 }));
-        if (progressIntervalRef.current) {
-          clearInterval(progressIntervalRef.current);
-        }
-      });
-
-      audio.addEventListener('error', (e) => {
-        console.warn(`Could not load audio clip: ${clipName}`, e);
-        setCurrentlyPlaying(null);
-        setPlaybackProgress(prev => ({ ...prev, [trackId]: 0 }));
-      });
-
-    } catch (error) {
+      }
+    }).catch(error => {
       console.warn(`Audio playback error for ${clipName}:`, error);
       setCurrentlyPlaying(null);
       setPlaybackProgress(prev => ({ ...prev, [trackId]: 0 }));
-    }
+    });
   };
 
   // Generate charts when component mounts or player level changes
@@ -251,15 +254,15 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
   // Cleanup audio on unmount
   useEffect(() => {
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
+      if (currentSourceNode) {
+        try {
+          currentSourceNode.stop();
+        } catch(e) { /* ignore */ }
+        setCurrentSourceNode(null);
       }
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
+      // Any active intervals for progress should also be cleared here if not handled by onended
     };
-  }, []);
+  }, [currentSourceNode]); // Add currentSourceNode to dependency array
 
   const currentChart = availableCharts.find(chart => chart.id === selectedChart);
 

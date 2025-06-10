@@ -163,15 +163,16 @@ export const generateNewProjects = (count: number, playerLevel: number = 1, curr
   
   // Get available genres for current era
   const currentEraDefinition = ERA_DEFINITIONS.find(era => era.id === currentEra);
-  const availableGenres = currentEraDefinition?.availableGenres || ['Rock', 'Folk', 'Soul', 'Motown', 'Country', 'Jazz'];
+  const baseAvailableGenres = currentEraDefinition?.availableGenres || ['Rock', 'Folk', 'Soul', 'Motown', 'Country', 'Jazz'];
+  const availableGenresSet = new Set(baseAvailableGenres); // Use a Set for O(1) lookups
   
   // Filter templates by era-appropriate genres
   const eraAppropriateTemplates = earlyGameTemplates.filter(template => 
-    availableGenres.includes(template.genre)
+    availableGenresSet.has(template.genre)
   );
   
   const advancedEraTemplates = advancedGameTemplates.filter(template => 
-    availableGenres.includes(template.genre)
+    availableGenresSet.has(template.genre)
   );
   
   // Choose appropriate template pool based on player level and era
