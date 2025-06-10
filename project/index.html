@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+  <title>Music Studio Tycoon</title>
+</head>
+<body>
+  <div id="game-container">
+    <!-- Top Bar -->
+    <div id="top-bar">
+      <div id="money-display" class="stat-display">
+        <span id="money-value">$1,000</span>
+        <span class="stat-label">Money</span>
+      </div>
+      <div id="reputation-display" class="stat-display">
+        <span id="reputation-value">10</span>
+        <span class="stat-label">Reputation</span>
+      </div>
+      <div id="day-display" class="stat-display">
+        <span id="day-value">Day 1</span>
+        <span class="stat-label">Current Day</span>
+      </div>
+      <div id="completed-display" class="stat-display">
+        <span id="completed-value">0</span>
+        <span class="stat-label">Completed</span>
+      </div>
+      <div id="player-level-container">
+        <div id="player-level-info">
+          <span id="player-level">Level 1</span>
+          <div id="xp-bar-container">
+            <div id="xp-bar"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Game Area -->
+    <div id="game-content">
+      <!-- Left Panel - Available Projects -->
+      <div id="projects-panel" class="panel">
+        <h2>Available Projects</h2>
+        <button id="refresh-projects" class="action-button">Refresh</button>
+        <div id="projects-list"></div>
+      </div>
+
+      <!-- Center Area - Active Project or Studio View -->
+      <div id="studio-area" class="panel">
+        <div id="studio-view">
+          <h2>Music Studio Tycoon</h2>
+          <p>Select a project to begin working!</p>
+          <div id="orbs-container"></div>
+        </div>
+        <div id="active-project-dashboard" style="display: none;">
+          <h2 id="active-project-title">Project Title</h2>
+          <p id="active-project-stage">Stage 1 of 3: Pre-Production</p>
+          
+          <div id="project-points">
+            <div id="creativity-points">
+              <span class="points-icon">💙</span>
+              <span id="creativity-value">0</span>
+              <span class="points-label">Creativity</span>
+            </div>
+            <div id="technical-points">
+              <span class="points-icon">💚</span>
+              <span id="technical-value">0</span>
+              <span class="points-label">Technical</span>
+            </div>
+          </div>
+          
+          <h3>Focus Allocation:</h3>
+          <div id="focus-sliders"></div>
+          
+          <button id="complete-stage" class="action-button">Complete Stage & Proceed</button>
+        </div>
+      </div>
+
+      <!-- Right Panel - Skills and Upgrades -->
+      <div id="right-panel">
+        <div id="skills-panel" class="panel">
+          <h2>Studio Skills</h2>
+          <div id="skills-list"></div>
+        </div>
+        
+        <div id="upgrades-panel" class="panel">
+          <h2>Upgrades</h2>
+          <div id="upgrades-list"></div>
+        </div>
+        
+        <button id="view-staff" class="action-button">View Staff</button>
+      </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-container" class="hidden">
+      <div id="modal-content">
+        <span id="modal-close">&times;</span>
+        <div id="modal-body"></div>
+      </div>
+    </div>
+    
+    <div id="staff-modal" class="hidden">
+      <div class="modal-content">
+        <span class="modal-close">&times;</span>
+        <h2>Studio Staff</h2>
+        <div class="tabs">
+          <button class="tab-button active" data-tab="hired-staff">Hired Staff</button>
+          <button class="tab-button" data-tab="candidates">Candidates</button>
+        </div>
+        <div id="hired-staff" class="tab-content active">
+          <div id="hired-staff-list">No staff hired yet.</div>
+        </div>
+        <div id="candidates" class="tab-content">
+          <div id="candidates-list"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="review-modal" class="hidden">
+      <div class="modal-content">
+        <span class="modal-close">&times;</span>
+        <h2>Project Review</h2>
+        <div id="review-content"></div>
+        <button id="accept-review" class="action-button">Accept</button>
+      </div>
+    </div>
+    
+    <div id="level-up-modal" class="hidden">
+      <div class="modal-content">
+        <span class="modal-close">&times;</span>
+        <h2>Level Up!</h2>
+        <p>Congratulations! You've reached <span id="new-level">Level 2</span>!</p>
+        <p>You've earned <span id="perk-points">1</span> perk point to spend.</p>
+        
+        <h3>Player Attributes</h3>
+        <div id="player-attributes"></div>
+        
+        <button id="close-level-up" class="action-button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module" src="./src/main.ts"></script>
+</body>
+</html>
