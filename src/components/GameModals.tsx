@@ -10,7 +10,6 @@ import type { Band } from '@/types/bands';
 
 interface GameModalsProps {
   gameState: GameState;
-  setGameState: (newState: Partial<GameState> | ((prev: GameState) => GameState)) => void;
   showSettings: boolean;
   setShowSettings: React.Dispatch<React.SetStateAction<boolean>>;
   showTrainingModal: boolean;
@@ -49,7 +48,6 @@ interface GameModalsProps {
 
 export const GameModals: React.FC<GameModalsProps> = ({
   gameState,
-  setGameState,
   showSettings,
   setShowSettings,
   showTrainingModal,
@@ -117,7 +115,7 @@ export const GameModals: React.FC<GameModalsProps> = ({
         isOpen={showAttributesModal}
         onClose={() => setShowAttributesModal(false)}
         spendPerkPoint={spendPerkPoint}
-        playerData={gameState.playerData}
+        playerData={gameState?.playerData}
       />
 
       {showCreateBandModal && (

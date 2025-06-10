@@ -466,6 +466,7 @@ export default function Index() {
 
       {/* Game Modals */}
       <GameModals
+        gameState={gameState}
         showSettings={showSettings}
         setShowSettings={setShowSettings}
         showTrainingModal={showTrainingModal}
