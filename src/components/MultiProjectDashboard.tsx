@@ -182,6 +182,7 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
                       <Progress 
                         value={progress.overallProgress * 100} 
                         className="h-2"
+                        aria-label={`${progress.title} project progress`}
                       />
                       <div className="flex justify-between text-sm text-gray-600">
                         <span>{progress.currentStage}</span>
@@ -264,7 +265,11 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
                         <span>Overall Progress</span>
                         <span>{Math.round((progress?.overallProgress || 0) * 100)}%</span>
                       </div>
-                      <Progress value={(progress?.overallProgress || 0) * 100} className="h-2" />
+                      <Progress 
+                        value={(progress?.overallProgress || 0) * 100} 
+                        className="h-2"
+                        aria-label={`${project.title} overall progress`}
+                      />
                     </div>
                     
                     <div className="text-sm text-gray-600">
