@@ -116,6 +116,15 @@ class GameAudioSystem {
       { name: 'xp-tick', path: '/audio/ui sfx/bubble-pop-sound-316482.mp3' }, // Placeholder, update if specific sound is added
       { name: 'score-tick', path: '/audio/ui sfx/bubble-pop-sound-316482.mp3' }, // Placeholder, update if specific sound is added
       { name: 'start_minigame', path: '/audio/ui sfx/minigame-start.wav'}, // Example for minigame start
+      // Sounds for ProjectReviewModal
+      { name: 'level_up_skill', path: '/audio/ui sfx/bubble-pop-sound-316482.mp3' }, // Placeholder
+      { name: 'review_start', path: '/audio/ui sfx/bubble-pop-sound-316482.mp3' }, // Placeholder
+      { name: 'score_total_tick', path: '/audio/ui sfx/bubble-pop-sound-316482.mp3' }, // Placeholder
+      { name: 'purchase', path: '/audio/ui sfx/bubble-pop-sound-316482.mp3' }, // Placeholder for reward sound
+      { name: 'text_complete', path: '/audio/ui sfx/bubble-pop-sound-316482.mp3' }, // Placeholder
+      { name: 'text_scroll', path: '/audio/ui sfx/bubble-pop-sound-316482.mp3' }, // Placeholder
+      { name: 'review_complete', path: '/audio/ui sfx/bubble-pop-sound-316482.mp3' }, // Placeholder
+
 
       // Music - Example, replace with actual music tracks
       // { name: 'main-theme', path: '/audio/music/main-theme.mp3' },
@@ -778,9 +787,28 @@ const gameAudioSystem = new GameAudioSystem();
 export default gameAudioSystem;
 
 export const playSound = async (soundName: string, volume: number = 1, type: 'sfx' | 'music' = 'sfx', loop: boolean = false) => {
-  if (!gameAudioSystem.isAudioInitialized()) { // This will be corrected in a subsequent step
-    console.warn('Audio system not initialized. Attempting to initialize now. This should ideally be done at app startup.');
+  if (!gameAudioSystem.isAudioInitialized()) {
+    console.warn('Audio system not initialized. Attempting to initialize now. This should ideally be done at app start');
     await gameAudioSystem.initialize();
+    if (!gameAudioSystem.isAudioInitialized()) {
+      console.error("Failed to initialize audio system on demand.");
+      return;
+    }
   }
+  
+  // Delegate to the GameAudioSystem class method with correct argument order
   return gameAudioSystem.playSound(soundName, type, volume, loop);
+};
+
+// Export the instance as a named export for compatibility
+export { gameAudioSystem as gameAudio };
+
+// Example of how to get the underlying AudioContext if needed elsewhere (though direct use should be rare)
+export const getAudioContext = () => {
+  if (!gameAudioSystem.isAudioInitialized()) {
+    console.warn("Audio system not initialized when trying to get context.");
+    // Optionally, you could try to initialize it here too, or return null
+    // await gameAudioSystem.initialize();
+  }
+  return gameAudioSystem['audioContext']; // Accessing private member for specific needs, consider a getter
 };
