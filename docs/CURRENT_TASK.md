@@ -27,7 +27,6 @@
 
 ### ✅ Previously Completed (June 9)
 1. **Fixed Duplicate Notification Issue** - Critical UI/UX improvement
-1. **Fixed Duplicate Notification Issue** - Critical UI/UX improvement
    - **Problem**: Equipment purchase triggered both white notification bubble AND green toast
    - **Solution**: Removed `addNotification()` call, kept only green toast for consistency
    - **File**: `/src/hooks/useGameLogic.tsx` lines 123-129 removed
