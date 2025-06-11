@@ -44,8 +44,9 @@ export const CreateBandModal: React.FC<CreateBandModalProps> = ({
   const handleSubmit = () => {
     if (!bandName.trim()) {
       toast({
-        title: "Band Name Required",
+        title: "🎸 Band Name Required",
         description: "Please enter a name for your band.",
+        className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive"
       });
       return;
@@ -53,8 +54,9 @@ export const CreateBandModal: React.FC<CreateBandModalProps> = ({
 
     if (selectedMembers.length === 0) {
       toast({
-        title: "No Members Selected",
+        title: "👥 No Members Selected",
         description: "Please select at least one staff member for your band.",
+        className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive"
       });
       return;

@@ -53,8 +53,9 @@ export const ArtistContactModal: React.FC<ArtistContactModalProps> = ({
     
     if (artist.availability.status !== 'available' && !artist.availability.availableFrom) {
       toast({
-        title: "Artist Unavailable",
+        title: "🎤 Artist Unavailable",
         description: `${artist.name} is currently ${artist.availability.status} and not accepting new projects.`,
+        className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive"
       });
       return;

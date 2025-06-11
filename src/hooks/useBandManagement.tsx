@@ -101,8 +101,9 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
 
     if (band.tourStatus.isOnTour) {
       toast({
-        title: "Already on Tour",
+        title: "🚌 Already on Tour",
         description: "This band is already touring.",
+        className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive"
       });
       return;
@@ -145,8 +146,9 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
     const band = gameState.playerBands.find(b => b.id === bandId);
     if (!band) {
       toast({
-        title: "Band Not Found",
+        title: "❌ Band Not Found",
         description: "Cannot create track for unknown band.",
+        className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive"
       });
       return;
@@ -154,8 +156,9 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
 
     if (gameState.activeProject || gameState.activeOriginalTrack) {
       toast({
-        title: "Studio Busy",
+        title: "⏳ Studio Busy",
         description: "Complete your current project first.",
+        className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive"
       });
       return;
@@ -180,6 +183,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
     toast({
       title: "🎵 Original Track Started!",
       description: `${band.bandName} is working on a new track!`,
+      className: "bg-gray-800 border-gray-600 text-white",
       duration: 3000
     });
   }, [gameState.playerBands, gameState.activeProject, gameState.activeOriginalTrack, gameState.currentDay, setGameState]);

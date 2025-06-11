@@ -90,6 +90,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       toast({
         title: "🎯 Production Opportunity!",
         description: autoTriggeredMinigame.reason,
+        className: "bg-gray-800 border-gray-600 text-white",
         duration: 5000
       });
       
@@ -146,6 +147,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     toast({
       title: "🎉 Production Challenge Complete!",
       description: `+${creativityBonus} creativity, +${technicalBonus} technical, +${xpBonus} XP`,
+      className: "bg-gray-800 border-gray-600 text-white",
       duration: 3000
     });
 

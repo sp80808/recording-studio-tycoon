@@ -8,8 +8,9 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
   const startProject = useCallback((project: Project) => {
     if (gameState.activeProject) {
       toast({
-        title: "Project Already Active",
+        title: "🎵 Project Already Active",
         description: "Complete your current project before starting another.",
+        className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive"
       });
       return false;
@@ -22,8 +23,9 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
     }));
 
     toast({
-      title: "Project Started!",
+      title: "🎵 Project Started!",
       description: `Now working on: ${project.title}`,
+      className: "bg-gray-800 border-gray-600 text-white",
     });
     return true;
   }, [gameState.activeProject, setGameState]);

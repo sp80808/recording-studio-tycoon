@@ -123,8 +123,9 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
     onReward(creativityBonus, technicalBonus, xpBonus);
 
     toast({
-      title: "Minigame Complete!",
+      title: "🎮 Minigame Complete!",
       description: `Rewards: +${creativityBonus} C, +${technicalBonus} T, +${xpBonus} XP`,
+      className: "bg-gray-800 border-gray-600 text-white",
       variant: success === false ? "destructive" : "default", // Indicate if it wasn't fully successful
     });
     // onClose(); // Call onClose after toast to ensure modal closes

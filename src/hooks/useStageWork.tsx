@@ -87,8 +87,9 @@ export const useStageWork = ({
     if (gameState.playerData.dailyWorkCapacity <= 0) {
       console.log('❌ No energy left');
       toast({
-        title: "No Energy Left",
+        title: "⚡ No Energy Left",
         description: "You need to advance to the next day to restore your energy.",
+        className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive"
       });
       return;
@@ -115,8 +116,9 @@ export const useStageWork = ({
     if (currentStage.completed) {
       console.log('✅ Current stage already completed');
       toast({
-        title: "Stage Already Complete",
+        title: "✅ Stage Already Complete",
         description: "This stage has been completed. The project will advance automatically.",
+        className: "bg-gray-800 border-gray-600 text-white",
       });
       return;
     }
@@ -136,6 +138,7 @@ export const useStageWork = ({
       toast({
         title: "🎮 Production Opportunity!",
         description: autoTrigger.triggerReason,
+        className: "bg-gray-800 border-gray-600 text-white",
         duration: 4000
       });
     }
@@ -308,12 +311,14 @@ export const useStageWork = ({
       toast({
         title: "🎉 Stage Complete!",
         description: `${currentStage.stageName} finished! ${newCurrentStageIndex < project.stages.length ? `Moving to: ${project.stages[newCurrentStageIndex].stageName}` : 'All stages complete!'}`,
+        className: "bg-gray-800 border-gray-600 text-white",
         duration: 4000
       });
     } else {
       toast({
-        title: "Work Progress",
+        title: "📈 Work Progress",
         description: `Stage progress: ${newWorkUnitsCompleted}/${currentStage.workUnitsBase} work units (+${workUnitsToAdd} this session)`,
+        className: "bg-gray-800 border-gray-600 text-white",
       });
     }
     
