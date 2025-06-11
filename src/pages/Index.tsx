@@ -45,7 +45,8 @@ const MusicStudioTycoon = () => {
     lastReview,
     orbContainerRef,
     contactArtist,
-    triggerEraTransition
+    triggerEraTransition,
+    startResearchMod // Destructure startResearchMod
   } = useGameLogic(gameState, setGameState, focusAllocation);
 
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -236,7 +237,7 @@ const MusicStudioTycoon = () => {
   }
 
   return (
-    <GameLayout>
+    <GameLayout currentDay={gameState.currentDay}>
       <GameHeader 
         gameState={gameState} 
         onOpenSettings={handleOpenSettings}
@@ -266,6 +267,12 @@ const MusicStudioTycoon = () => {
         clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
         // setAutoTriggeredMinigame={setAutoTriggeredMinigame} // Pass this if MainGameContent needs to trigger minigames
       />
+      {/* RightPanel needs startResearchMod, but it's not directly used by MainGameContent.
+          It will be passed to RightPanel via its props later.
+          The props for MainGameContent are correct as is.
+          The error was in RightPanelProps definition and its usage.
+          Let's ensure RightPanel receives it.
+      */}
 
       <TrainingModal
         isOpen={showTrainingModal}

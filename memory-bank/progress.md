@@ -15,7 +15,27 @@
     *   Default `mood` added to artist data. Default `condition` added to equipment data and on purchase.
     *   `src/data/equipmentMods.ts` created with initial mod definition.
     *   New historical equipment items (UREI 1176, EMT 140, Fairchild 670, SSL 4000, Lexicon 224 Early) added to `src/data/eraEquipment.ts`.
-    *   Pre-existing TypeScript errors in `src/pages/Index.tsx` (import alias, hook destructuring, state typing) resolved.
+    *   Pre-existing TypeScript errors in `src/pages/Index.tsx`, `src/components/minigames/MinigameManager.tsx`, and `src/components/GameHeader.tsx` resolved.
+*   **Feature Set 1: Living Studio (Visuals & Animation) - Implemented:**
+    *   Recording Animation (릴): Added to `ActiveProject.tsx` and `EnhancedAnimationStyles.tsx`.
+    *   Mixing Animation (🎛️): Added to `ActiveProject.tsx` and `EnhancedAnimationStyles.tsx`.
+    *   Artist Mood Animations (✨/🎵): `MoodIndicator.tsx` component created, animation style added, and integrated into `BandManagement.tsx` for staff members.
+    *   Equipment Status (💨/⚠️): CSS animations created in `EnhancedAnimationStyles.tsx`. UI integration deferred pending identification of owned equipment display location.
+    *   Day/Night Cycle: Implemented in `GameLayout.tsx` and `Index.tsx`.
+*   **Equipment Modification System - Logic Foundation Implemented:**
+    *   `getModifiedEquipment` helper function created in `src/utils/equipmentUtils.ts`.
+    *   `researchedMods` field added to `GameState` and initialized in `useGameState.tsx`.
+    *   `StaffMember` interface updated for research tracking (`status: 'Researching'`, `researchingModId`, `researchEndDay`).
+    *   `startResearchMod` function (handles initiation of research) added to `useStaffManagement.tsx`.
+    *   Research completion logic (updates `researchedMods`, staff status) added to `advanceDay` function in `useGameActions.tsx`.
+    *   Placeholder `ResearchModal.tsx` created and integrated into `RightPanel.tsx` to trigger `startResearchMod`.
+*   **New Minigames (Placeholder Integration):**
+    *   `VocalTuningGame.tsx` created with basic UI and logic.
+    *   `LiveRecordingGame.tsx` created with basic UI and logic.
+    *   Both minigames added to `MinigameType` in `MinigameManager.tsx`.
+    *   Render logic for both added to `MinigameManager.tsx`.
+    *   Trigger conditions for both added to `getTriggeredMinigames` in `minigameUtils.ts`.
+*   **Vercel Speed Insights:** Added `<SpeedInsights />` component to `src/main.tsx`.
 
 ## 2. What Works (Based on Inferred Codebase Structure & Task)
 
@@ -27,11 +47,11 @@
 ## 3. What's Left to Build (Current Task Focus)
 
 **Feature Set 1: Living Studio (Visuals & Animation)**
-*   [ ] Recording Animation (tape machine 릴)
-*   [ ] Mixing Animation (mixing console 🎛️)
-*   [ ] Artist Mood Animations (✨ or 🎵)
-*   [ ] Equipment Status Animations (💨 or ⚠️)
-*   [ ] Day/Night Cycle background transition
+*   [X] Recording Animation (tape machine 릴) - Added to ActiveProject
+*   [X] Mixing Animation (mixing console 🎛️) - Added to ActiveProject
+*   [X] Artist Mood Animations (✨ or 🎵) - MoodIndicator component created and added to BandManagement
+*   [C] Equipment Status Animations (💨 or ⚠️) - CSS styles created; UI integration deferred
+*   [X] Day/Night Cycle background transition - Implemented in GameLayout
 
 **Feature Set 2: Historical Evolution & Equipment Mods**
 *   [X] New 1960s Equipment (Data Added):
@@ -41,18 +61,20 @@
 *   [X] New 1970s Equipment (Data Added):
     *   [X] SSL 4000 series console
     *   [X] Lexicon 224 digital reverb (Early version)
-*   [ ] Equipment Modification System:
-    *   [ ] "Research" action for engineers (Logic and UI).
-    *   [X] Data structures for equipment mods (Types defined, `equipmentMods.ts` created).
+*   [P] Equipment Modification System:
+    *   [P] "Research" action for engineers (Core logic for starting/completing research is done. UI in `ResearchModal.tsx` is placeholder, needs full implementation for equipment/mod selection. Engineer skill checks for research requirements are TODO in `useStaffManagement.tsx`).
+    *   [X] Data structures for equipment mods (Types defined, `equipmentMods.ts` created, `GameState` updated).
     *   [X] UREI 1176 "Rev A / Blue Stripe" mod definition added.
-    *   [ ] UI indication for modified gear.
-    *   [ ] Logic for applying mods and calculating stats.
+    *   [X] Helper function `getModifiedEquipment` created.
+    *   [ ] UI indication for modified gear (Displaying modded name/stats, visual badge).
+    *   [ ] Logic for applying mods (Player action to select a researched mod and apply it to an owned equipment instance).
+    *   [ ] UI for applying mods.
 
 **General Tasks:**
 *   [X] Thorough analysis of existing documentation and code.
 *   [X] Detailed implementation plan.
-*   [ ] Integration of new features into the existing codebase.
-*   [ ] Updating Memory Bank and other relevant documentation as features are implemented.
+*   [P] Integration of new features into the existing codebase (Animations and core mod logic integrated. UI for mod system largely pending).
+*   [P] Updating Memory Bank and other relevant documentation as features are implemented (Memory bank updated for current progress).
 
 ## 4. Known Issues & Blockers
 
@@ -63,3 +85,5 @@
 
 *   **Initial Decision (2025-06-11):** Establish a comprehensive Memory Bank as the first step, per Cline's operational protocol. This ensures all subsequent work is well-grounded.
 *   **Learning (2025-06-11):** The project uses a modern tech stack (React, TypeScript, Vite, Tailwind CSS), which is conducive to building complex UIs and game logic. Custom hooks and Context API are the current state management approach.
+*   **Update (2025-06-11):** Successfully integrated several visual animations (recording, mixing, artist mood, day/night cycle) and laid data/logic groundwork for equipment mods (data structures, research initiation/completion). Fixed several pre-existing TypeScript errors. Added placeholders and basic integration for two new minigames (Vocal Tuning, Live Recording) as per user feedback. Integrated Vercel Speed Insights.
+*   **Next Steps Focus:** Completing the UI for the equipment modification system (research selection, mod application, display of modded gear) and integrating the equipment status animations once a suitable UI location is determined. Flesh out the placeholder minigames.

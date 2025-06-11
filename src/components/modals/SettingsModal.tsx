@@ -6,6 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSettings } from '@/contexts/SettingsContext';
 import { gameAudio } from '@/utils/audioSystem';
+import { useTranslation } from 'react-i18next';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onResetGame 
 }) => {
   const { settings, updateSettings, resetSettings } = useSettings();
+  const { t, i18n } = useTranslation();
 
   if (!isOpen) return null;
 
@@ -61,6 +63,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       gameAudio.playClick();
       onClose();
     }
+  };
+
+  const handleLanguageChange = (lang: string) => {
+    updateSettings({ language: lang });
+    gameAudio.playClick();
   };
 
   return (
@@ -190,6 +197,32 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 checked={settings.tutorialCompleted}
                 onCheckedChange={(checked) => updateSettings({ tutorialCompleted: checked })}
               />
+            </div>
+          </div>
+
+          {/* Language Settings - Placed before Theme Settings for better grouping */}
+          <div className="space-y-6">
+            <h3 className="text-xl font-semibold text-white border-b border-gray-600 pb-2">
+              🌐 {t('language_settings_title', 'Language Settings')}
+            </h3>
+            <div className="space-y-2">
+              <label className="text-white font-medium">{t('select_language_label', 'Select Language')}</label>
+              <Select
+                value={settings.language}
+                onValueChange={handleLanguageChange}
+              >
+                <SelectTrigger className="w-full bg-gray-800 border-gray-600 text-white">
+                  <SelectValue placeholder={t('select_language_placeholder', 'Select a language')} />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-600">
+                  <SelectItem value="en" className="text-white hover:bg-gray-700">
+                    {t('language_english', 'English')}
+                  </SelectItem>
+                  <SelectItem value="pl" className="text-white hover:bg-gray-700">
+                    {t('language_polish', 'Polski')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

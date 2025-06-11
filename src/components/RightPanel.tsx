@@ -4,9 +4,11 @@ import { Card } from '@/components/ui/card';
 import { GameState, PlayerAttributes } from '@/types/game';
 import { SkillsModal } from '@/components/modals/SkillsModal';
 import { AttributesModal } from '@/components/modals/AttributesModal';
+import { ResearchModal } from '@/components/modals/ResearchModal'; // Import ResearchModal
 import { EquipmentList } from '@/components/EquipmentList';
 import { BandManagement } from '@/components/BandManagement';
 import { ChartsPanel } from '@/components/ChartsPanel';
+import { toast } from '@/hooks/use-toast'; // Import toast
 
 interface RightPanelProps {
   gameState: GameState;
@@ -28,6 +30,7 @@ interface RightPanelProps {
   unassignStaffFromProject: (staffId: string) => void;
   toggleStaffRest: (staffId: string) => void;
   openTrainingModal: (staff: any) => boolean;
+  startResearchMod?: (staffId: string, modId: string) => boolean; // Add prop
 }
 
 export const RightPanel: React.FC<RightPanelProps> = ({
@@ -49,9 +52,12 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   assignStaffToProject,
   unassignStaffFromProject,
   toggleStaffRest,
-  openTrainingModal
+  openTrainingModal,
+  startResearchMod // Destructure prop
 }) => {
   const [activeTab, setActiveTab] = useState<'studio' | 'skills' | 'bands' | 'charts' | 'staff'>('studio');
+  const [showResearchModal, setShowResearchModal] = useState(false);
+  const [selectedEngineerForResearch, setSelectedEngineerForResearch] = useState<GameState['hiredStaff'][0] | null>(null);
 
   const handleAdvanceDay = () => {
     advanceDay();
@@ -247,6 +253,17 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                         Train
                       </Button>
                     )}
+                    {staff.role === 'Engineer' && staff.status === 'Idle' && (
+                      <Button
+                        onClick={() => {
+                          setSelectedEngineerForResearch(staff);
+                          setShowResearchModal(true);
+                        }}
+                        className="flex-1 bg-teal-600 hover:bg-teal-700 text-white text-xs py-1"
+                      >
+                        Research Mod
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -293,6 +310,18 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         playerData={gameState.playerData}
         spendPerkPoint={spendPerkPoint}
       />
+      {selectedEngineerForResearch && startResearchMod && (
+        <ResearchModal
+          isOpen={showResearchModal}
+          onClose={() => {
+            setShowResearchModal(false);
+            setSelectedEngineerForResearch(null);
+          }}
+          engineer={selectedEngineerForResearch}
+          gameState={gameState}
+          onStartResearch={startResearchMod}
+        />
+      )}
     </Card>
   );
 };

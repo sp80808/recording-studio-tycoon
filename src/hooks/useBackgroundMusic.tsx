@@ -111,7 +111,7 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
       globalAudioRef.currentTime = 0;
 
       // Load new track
-      globalAudioRef.src = `/src/audio/music/tycoon-bgm${trackNumber}.mp3`;
+      globalAudioRef.src = `/audio/music/tycoon-bgm${trackNumber}.mp3`; // Corrected path
       
       await globalAudioRef.play();
       globalCurrentTrack = trackNumber;

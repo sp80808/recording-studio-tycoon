@@ -33,6 +33,7 @@ interface MainGameContentProps {
   triggerEraTransition: () => { fromEra?: string; toEra?: string } | void;
   autoTriggeredMinigame: { type: MinigameType; reason: string } | null;
   clearAutoTriggeredMinigame: () => void;
+  startResearchMod?: (staffId: string, modId: string) => boolean; // Add prop
 }
 
 export const MainGameContent: React.FC<MainGameContentProps> = ({
@@ -56,7 +57,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   contactArtist,
   triggerEraTransition,
   autoTriggeredMinigame,
-  clearAutoTriggeredMinigame
+  clearAutoTriggeredMinigame,
+  startResearchMod // Destructure prop
 }) => {
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [showAttributesModal, setShowAttributesModal] = useState(false);
@@ -159,6 +161,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             openTrainingModal={openTrainingModal}
             contactArtist={contactArtist}
             triggerEraTransition={handleEraTransition}
+            startResearchMod={startResearchMod} // Pass prop to RightPanel
           />
         </div>
       </div>

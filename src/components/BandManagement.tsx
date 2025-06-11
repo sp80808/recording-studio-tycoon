@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { GameState } from '@/types/game';
+import { GameState, StaffMember } from '@/types/game';
 import { Band } from '@/types/bands';
+import MoodIndicator from './MoodIndicator'; // Import MoodIndicator
 import { CreateBandModal } from './modals/CreateBandModal';
 import { RecordTrackModal } from './modals/RecordTrackModal';
 import { canGoOnTour } from '@/utils/bandUtils';
@@ -117,9 +118,10 @@ export const BandManagement: React.FC<BandManagementProps> = ({
                 {members.map(member => (
                   <span
                     key={member.id}
-                    className="text-xs bg-gray-700 px-2 py-1 rounded"
+                    className="text-xs bg-gray-700 px-2 py-1 rounded flex items-center"
                   >
                     {member.name} ({member.role})
+                    <MoodIndicator mood={member.mood} />
                   </span>
                 ))}
               </div>

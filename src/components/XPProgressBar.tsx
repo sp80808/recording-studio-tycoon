@@ -9,6 +9,7 @@ interface XPProgressBarProps {
   className?: string;
   showNumbers?: boolean;
   animated?: boolean;
+  currentXPLab?: string; // Add prop for XP label
 }
 
 export const XPProgressBar: React.FC<XPProgressBarProps> = ({
@@ -17,7 +18,8 @@ export const XPProgressBar: React.FC<XPProgressBarProps> = ({
   level,
   className = "",
   showNumbers = true,
-  animated = true
+  animated = true,
+  currentXPLab = "XP" // Default to "XP"
 }) => {
   // FIXED: Prevent NaN by ensuring xpToNext is never 0
   const safeXpToNext = Math.max(1, xpToNext || 1); // Ensure at least 1
@@ -37,7 +39,7 @@ export const XPProgressBar: React.FC<XPProgressBarProps> = ({
           Level {level}
         </span>
         {showNumbers && (
-          <span className="text-xs text-gray-400">{safeCurrentXP}/{safeXpToNext} XP</span>
+          <span className="text-xs text-gray-400">{safeCurrentXP}/{safeXpToNext} {currentXPLab}</span>
         )}
       </div>
       

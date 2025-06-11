@@ -9,6 +9,8 @@ import { MasteringGame } from './MasteringGame';
 import { EffectChainGame } from './EffectChainGame';
 import { AcousticTreatmentGame } from './AcousticTreatmentGame';
 import { InstrumentLayeringGame } from './InstrumentLayeringGame';
+import { VocalTuningGame } from './VocalTuningGame';
+import { LiveRecordingGame } from './LiveRecordingGame'; // Import new game
 import GearMaintenanceGame from './GearMaintenanceGame'; // Default import
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { toast } from '@/hooks/use-toast';
@@ -25,7 +27,9 @@ export type MinigameType =
   | 'effectchain' 
   | 'acoustic' 
   | 'layering' 
-  | 'maintenance';
+  | 'maintenance'
+  | 'vocal-tuning'
+  | 'live-recording'; // Added new minigame type
   // Add new minigame types here and ensure they have corresponding entries in minigameTutorials
   // | 'songwriting' // Example: if SongwritingGame becomes a distinct minigame managed here
   // | 'tapeSplicing' // Example
@@ -165,6 +169,10 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         return <AcousticTreatmentGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'layering':
         return <InstrumentLayeringGame {...commonGameProps} onComplete={standardOnComplete} />;
+      case 'vocal-tuning':
+        return <VocalTuningGame {...commonGameProps} onComplete={standardOnComplete} />;
+      case 'live-recording':
+        return <LiveRecordingGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'maintenance':
         if (!equipmentContext) {
           console.error('Equipment context is required for maintenance minigame.');

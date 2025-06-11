@@ -137,6 +137,29 @@ export const getTriggeredMinigames = (
     });
   }
 
+  // VOCAL TUNING MINIGAME - For genres that often use pitch correction, during vocal or mixing stages
+  if (['Pop', 'Hip-Hop', 'R&B'].includes(project.genre) &&
+      (stageName.includes('vocal') || stageName.includes('mixing') || stageName.includes('polish')) &&
+      ownedEquipmentIds.some(id => id.includes('autotune') || id.includes('daw_protools'))) { // Requires Auto-Tune or a capable DAW
+    triggers.push({
+      minigameType: 'vocal-tuning',
+      triggerReason: `Perfect those ${project.genre} vocals with some pitch correction!`,
+      priority: 8, // Similar priority to other production tasks
+      focusThreshold: { type: 'soundCapture', min: 50 } // Corrected to use FocusAllocation key
+    });
+  }
+
+  // LIVE RECORDING COORDINATION - For full band recording stages
+  if ((stageName.includes('live recording') || stageName.includes('full band') || stageName.includes('tracking')) && 
+      (project.genre === 'Rock' || project.genre === 'Jazz' || project.genre === 'Blues' || project.genre === 'Folk')) { // Simplified genre check
+    triggers.push({
+      minigameType: 'live-recording',
+      triggerReason: `Coordinate the live band recording session for this ${project.genre} track!`,
+      priority: 9,
+      focusThreshold: { type: 'performance', min: 60 } // Requires good performance focus
+    });
+  }
+
   // EFFECT CHAIN BUILDING - For production stages with effects processing
   if (stageName.includes('production') || stageName.includes('effects') || stageName.includes('processing')) {
     triggers.push({

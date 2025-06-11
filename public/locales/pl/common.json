@@ -1,0 +1,23 @@
+{
+  "welcome_to_tycoon": "Witaj w Recording Studio Tycoon!",
+  "game_title": "Recording Studio Tycoon",
+  "settings": "Ustawienia",
+  "money": "Pieniądze",
+  "reputation": "Reputacja",
+  "current_day": "Dzień {{day}}",
+  "staff": "Personel",
+  "perk_points": "Punkty Atutów",
+  "level": "Poziom {{level}}",
+  "xp_progress": "{{currentXP}}/{{xpToNextLevel}} PD",
+  "toggle_fullscreen": "Przełącz pełny ekran",
+  "enter_fullscreen": "Włącz pełny ekran",
+  "exit_fullscreen": "Wyłącz pełny ekran",
+  "open_settings": "Otwórz ustawienia",
+  "view_era_progress": "Zobacz postęp ery",
+  "loading": "Ładowanie...",
+  "language_settings_title": "Ustawienia Języka",
+  "select_language_label": "Wybierz Język",
+  "select_language_placeholder": "Wybierz język",
+  "language_english": "Angielski",
+  "language_polish": "Polski"
+}

@@ -16,20 +16,25 @@ const queryClient = new QueryClient();
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <SaveSystemProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-          <SpeedInsights /> {/* Add SpeedInsights component here */}
-        </TooltipProvider>
-      </SaveSystemProvider>
+      <SettingsProvider> {/* Ensure SettingsProvider wraps components that use useSettings */}
+        <SaveSystemProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              {/* Add a main landmark for accessibility */}
+              <main>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </main>
+            </BrowserRouter>
+            <SpeedInsights /> {/* Add SpeedInsights component here */}
+          </TooltipProvider>
+        </SaveSystemProvider>
+      </SettingsProvider>
     </QueryClientProvider>
   );
 };

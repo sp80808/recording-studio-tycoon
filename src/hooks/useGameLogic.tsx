@@ -16,7 +16,7 @@ import { ArtistContact } from '@/types/charts';
 
 export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>, focusAllocation: any) => {
   const { levelUpPlayer, spendPerkPoint, checkAndHandleLevelUp } = usePlayerProgression(gameState, setGameState);
-  const { hireStaff, assignStaffToProject, unassignStaffFromProject, toggleStaffRest, addStaffXP, openTrainingModal } = useStaffManagement(gameState, setGameState);
+  const { hireStaff, assignStaffToProject, unassignStaffFromProject, toggleStaffRest, addStaffXP, openTrainingModal, startResearchMod, sendStaffToTraining: originalSendStaffToTraining } = useStaffManagement(gameState, setGameState); // Destructure startResearchMod, alias sendStaffToTraining
   const { startProject, completeProject } = useProjectManagement(gameState, setGameState);
   const { advanceDay, refreshCandidates, triggerEraTransition } = useGameActions(gameState, setGameState);
 
@@ -312,6 +312,7 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
     autoTriggeredMinigame,
     clearAutoTriggeredMinigame,
     contactArtist,
-    triggerEraTransition
+    triggerEraTransition,
+    startResearchMod // Add startResearchMod here
   };
 };

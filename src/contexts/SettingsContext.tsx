@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useTheme } from 'next-themes';
 import { gameAudio } from '@/utils/audioSystem';
+import i18n from '@/i18n'; // Corrected import
 
 export interface GameSettings {
   masterVolume: number;
@@ -13,6 +14,7 @@ export interface GameSettings {
   difficulty: 'easy' | 'medium' | 'hard';
   theme: 'default' | 'sunrise-studio' | 'neon-nights' | 'retro-arcade';
   seenMinigameTutorials: Record<string, boolean>; // Track seen minigame tutorials
+  language: string; // Added language setting
 }
 
 interface SettingsContextType {
@@ -33,6 +35,7 @@ const defaultSettings: GameSettings = {
   difficulty: 'medium',
   theme: 'default',
   seenMinigameTutorials: {}, // Initialize as empty object
+  language: 'en', // Default language
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -59,28 +62,35 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     if (savedSettings) {
       try {
         const parsed = JSON.parse(savedSettings);
-        // Ensure seenMinigameTutorials is initialized if not present in saved settings
         const initializedSettings = {
           ...defaultSettings,
           ...parsed,
           seenMinigameTutorials: parsed.seenMinigameTutorials || {},
+          language: parsed.language || 'en',
         };
         setSettings(initializedSettings);
+        if (initializedSettings.language) {
+          i18n.changeLanguage(initializedSettings.language);
+        }
       } catch (error) {
         console.warn('Failed to load settings:', error);
         setSettings(defaultSettings); // Fallback to default if parsing fails
       }
     } else {
-      setSettings(defaultSettings); // No saved settings, use defaults
+      setSettings(defaultSettings);
+      i18n.changeLanguage(defaultSettings.language); // Set default language on initial load
     }
-  }, []);
+  }, []); // Removed i18n from dependency array as it's stable
 
   // Save settings to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('gameSettings', JSON.stringify(settings));
     setTheme(settings.theme);
     
-    // Update audio system settings
+    if (i18n.language !== settings.language) {
+      i18n.changeLanguage(settings.language);
+    }
+
     gameAudio.updateSettings({
       masterVolume: settings.masterVolume,
       sfxVolume: settings.sfxVolume,

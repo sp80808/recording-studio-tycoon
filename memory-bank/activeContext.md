@@ -51,16 +51,35 @@
     *   Fairchild 670 Compressor
     *   SSL 4000 Series Console
     *   Lexicon 224 Digital Reverb (Early 1970s version)
-*   Fixed pre-existing TypeScript errors in `src/pages/Index.tsx` related to imports and hook usage.
+*   Fixed pre-existing TypeScript errors in `src/pages/Index.tsx` and `src/components/minigames/MinigameManager.tsx`.
+*   **Feature Set 1: Living Studio (Visuals & Animation) - Partially Implemented:**
+    *   Recording Animation (릴): Added to `ActiveProject.tsx` and `EnhancedAnimationStyles.tsx`.
+    *   Mixing Animation (🎛️): Added to `ActiveProject.tsx` and `EnhancedAnimationStyles.tsx`.
+    *   Artist Moods (✨/🎵): `MoodIndicator.tsx` component created, animation style added, and integrated into `BandManagement.tsx` for staff members.
+    *   Equipment Status (💨/⚠️): CSS animations created in `EnhancedAnimationStyles.tsx`. UI integration deferred.
+    *   Day/Night Cycle: Implemented in `GameLayout.tsx` and `Index.tsx`.
+*   **Equipment Modification System - Initial Logic:**
+    *   `getModifiedEquipment` helper function created in `src/utils/equipmentUtils.ts`.
+    *   `researchedMods` field added to `GameState` and initialized.
+    *   `StaffMember` interface updated for research tracking.
+    *   `startResearchMod` function added to `useStaffManagement.tsx` and plumbed through `useGameLogic` and `Index.tsx` to `RightPanel.tsx`.
+    *   Research completion logic added to `advanceDay` in `useGameActions.tsx`.
+    *   Placeholder `ResearchModal.tsx` created and integrated into `RightPanel.tsx`.
+*   **New Minigames (Placeholders and Basic Integration):**
+    *   `VocalTuningGame.tsx` created with basic structure.
+    *   `LiveRecordingGame.tsx` created with basic structure.
+    *   Both added to `MinigameType` and `MinigameManager.tsx` switch statement.
+    *   Basic trigger logic for both added to `minigameUtils.ts`.
+    *   Fixed various TS errors that arose during these additions.
+*   **Vercel Speed Insights:** Added `<SpeedInsights />` component to `src/main.tsx`.
 
 ## 3. Next Immediate Actions
 
-1.  Implement the **Equipment Modification System logic**:
-    *   "Research" action for engineers (UI and game logic).
-    *   Logic for applying mods to equipment instances.
-    *   UI indication for modified gear.
-2.  Implement **Feature Set 1: Living Studio (Visuals & Animation)**.
-3.  Update Memory Bank (`progress.md`) and other relevant documentation as features are implemented.
+1.  Fully implement the UI and logic within `ResearchModal.tsx` for selecting equipment and mods.
+2.  Implement UI for applying researched mods to owned equipment (e.g., in an equipment detail view for owned items).
+3.  Implement display of modified equipment stats and name in relevant UI locations.
+4.  Implement UI for **Equipment Status Animations** (💨/⚠️) once an owned equipment display location is clear or created.
+5.  Update Memory Bank (`progress.md`) and other relevant documentation as these UI features are implemented.
 
 ## 4. Active Considerations & Potential Challenges
 
