@@ -29,7 +29,7 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
     gameState,
     setGameState,
     focusAllocation,
-    completeProject,
+    // completeProject is no longer passed to useStageWork
     addStaffXP,
     advanceDay
   });
@@ -66,29 +66,18 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
 
   const handlePerformDailyWork = () => {
     console.log('=== HANDLE PERFORM DAILY WORK ===');
-    const result = performDailyWork();
-    if (result?.isComplete && result.review) {
-      console.log('Project completed with review:', result.review);
-      setLastReview(result.review);
-      
-      // Update XP and check for level up
-      setGameState(prev => ({
-        ...prev,
-        playerData: {
-          ...prev.playerData,
-          xp: prev.playerData.xp + result.review.xpGain
-        }
-      }));
-
-      // Check for level up after XP gain
-      setTimeout(() => {
-        checkAndHandleLevelUp();
-      }, 100);
-      
-      // Return project completion info for celebration trigger
-      return { isComplete: true, review: result.review };
+    const result = performDailyWork(); // Now returns { isComplete: boolean, finalProjectData?: Project }
+    
+    if (result?.isComplete && result.finalProjectData) {
+      console.log('Project work units complete. Passing up final project data for celebration:', result.finalProjectData.title);
+      // The actual `completeProject` call (which gives XP, money, etc.)
+      // will happen after the celebration, triggered by ActiveProject.tsx -> Index.tsx
+      // So, we don't setLastReview or update player XP here directly from a review object.
+      // We just pass the signal and data up.
+      return { isComplete: true, finalProjectData: result.finalProjectData };
     }
-    return result;
+    // If not complete, or if somehow isComplete is true but no finalProjectData (should not happen)
+    return result; // This would be { isComplete: false } or undefined
   };
 
   const purchaseEquipment = (equipmentId: string) => {
@@ -313,6 +302,8 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
     clearAutoTriggeredMinigame,
     contactArtist,
     triggerEraTransition,
-    startResearchMod // Add startResearchMod here
+    startResearchMod, // Add startResearchMod here
+    completeProject, // Export completeProject
+    addStaffXP // Export addStaffXP
   };
 };

@@ -17,8 +17,8 @@ interface UseStageWorkProps {
   gameState: GameState;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
   focusAllocation: FocusAllocation;
-  completeProject: (project: Project, addStaffXP: (staffId: string, amount: number) => void) => any;
-  addStaffXP: (staffId: string, amount: number) => void;
+  // completeProject is removed from here, will be called after celebration
+  addStaffXP: (staffId: string, amount: number) => void; // Still needed if staff get XP per work session or stage
   advanceDay: () => void
 }
 
@@ -26,8 +26,8 @@ export const useStageWork = ({
   gameState,
   setGameState,
   focusAllocation,
-  completeProject,
-  addStaffXP,
+  // completeProject, // Removed
+  addStaffXP, // Kept for now, though project completion XP is handled by completeProject
   advanceDay
 }: UseStageWorkProps) => {
   const orbContainerRef = useRef<HTMLDivElement>(null);
@@ -76,7 +76,7 @@ export const useStageWork = ({
 
   // getMoodEffectiveness is now imported from playerUtils
 
-  const performDailyWork = useCallback((): { review: any; isComplete: boolean } | undefined => {
+  const performDailyWork = useCallback((): { finalProjectData?: Project; isComplete: boolean } | undefined => {
     console.log('🚀 === PERFORMING DAILY WORK ===');
     
     if (!gameState.activeProject) {
@@ -283,28 +283,31 @@ export const useStageWork = ({
     );
     
     if (allStagesComplete) {
-      console.log('🎉 PROJECT COMPLETE!');
-      // Create a temporary updated project for completion
-      const finalProject = {
-        ...project,
+      console.log('🎉 PROJECT WORK UNITS COMPLETE! Preparing data for celebration.');
+      const finalProjectData = { // Capture all necessary details for the celebration and eventual completion call
+        ...project, // This is gameState.activeProject at this point
         stages: project.stages.map((stage, index) => {
           if (index === currentStageIndex) {
             return { ...stage, workUnitsCompleted: newWorkUnitsCompleted, completed: stageCompleted };
           }
-          return stage;
+          // Ensure other stages also reflect their latest completed status if somehow missed
+          return stage.completed ? stage : { ...stage, completed: stage.workUnitsCompleted >= stage.workUnitsBase };
         }),
         accumulatedCPoints: project.accumulatedCPoints + creativityGain,
-        accumulatedTPoints: project.accumulatedTPoints + technicalGain
+        accumulatedTPoints: project.accumulatedTPoints + technicalGain,
+        currentStageIndex: newCurrentStageIndex, // Should be the last stage index or project.stages.length
+        workSessionCount: newWorkSessionCount
       };
-      const review = completeProject(finalProject, addStaffXP);
-      return { review, isComplete: true };
+      // DO NOT CALL completeProject here.
+      // Return the project details so the UI can display celebration BEFORE state is wiped.
+      return { finalProjectData, isComplete: true };
     }
 
     // Show stage completion notification
     if (stageCompleted) {
       toast({
         title: "🎉 Stage Complete!",
-        description: `${currentStage.stageName} finished! ${newCurrentStageIndex < project.stages.length ? `Moving to: ${project.stages[newCurrentStageIndex].stageName}` : 'Project ready for completion!'}`,
+        description: `${currentStage.stageName} finished! ${newCurrentStageIndex < project.stages.length ? `Moving to: ${project.stages[newCurrentStageIndex].stageName}` : 'All stages complete!'}`,
         duration: 4000
       });
     } else {
@@ -314,8 +317,8 @@ export const useStageWork = ({
       });
     }
     
-    return { review: null, isComplete: false };
-  }, [gameState, focusAllocation, createOrb, setGameState, completeProject, addStaffXP]); // Removed getMoodEffectiveness from deps as it's imported
+    return { isComplete: false }; // No review object if not complete
+  }, [gameState, focusAllocation, createOrb, setGameState, addStaffXP, advanceDay]); // Removed completeProject, advanceDay was missing
 
   return {
     performDailyWork,

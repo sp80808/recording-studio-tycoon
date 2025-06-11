@@ -6,6 +6,14 @@ import './index.css';
 import { useSettings, SettingsProvider } from './contexts/SettingsContext';
 import { useEffect } from 'react';
 import './i18n'; // Import the i18n configuration
+import { gameAudio } from './utils/audioSystem'; // Import gameAudio
+import { initInteractionListener } from './utils/userInteraction'; // Import interaction listener
+
+// Initialize audio system and interaction listener early
+gameAudio.initialize().then(() => {
+  console.log('Game audio system initialized from main.tsx');
+}).catch(e => console.error("Error initializing game audio system from main.tsx:", e));
+initInteractionListener();
 
 const RootComponent = () => {
   const { settings } = useSettings();

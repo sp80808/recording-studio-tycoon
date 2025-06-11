@@ -11,6 +11,7 @@ import { SplashScreen } from '@/components/SplashScreen';
 import { Era } from '@/components/EraSelectionModal'; // Era type
 import { ERA_DEFINITIONS } from '@/utils/eraProgression'; // ERA_DEFINITIONS for initialization
 import { useGameState } from '@/hooks/useGameState';
+import { Project } from '@/types/game'; // Import Project type
 import { useGameLogic } from '@/hooks/useGameLogic';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSaveSystem } from '@/contexts/SaveSystemContext';
@@ -42,11 +43,13 @@ const MusicStudioTycoon = () => {
     sendStaffToTraining,
     selectedStaffForTraining,
     setSelectedStaffForTraining,
-    lastReview,
+    lastReview, // This might become obsolete or change with the new flow
     orbContainerRef,
     contactArtist,
     triggerEraTransition,
-    startResearchMod // Destructure startResearchMod
+    startResearchMod, // Destructure startResearchMod
+    completeProject, // Ensure this is destructured if not aliased
+    addStaffXP // Ensure this is destructured if not aliased
   } = useGameLogic(gameState, setGameState, focusAllocation);
 
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -102,6 +105,33 @@ const MusicStudioTycoon = () => {
       audioSystem.playUISound('success');
     }
     localStorage.setItem('recordingStudioTycoon_hasPlayed', 'true'); // Mark that game has been started once
+  };
+
+  const handleActualProjectCompletion = (completedProjectData: Project) => {
+    console.log('Index.tsx: Handling actual project completion for:', completedProjectData.title);
+    // Use the destructured completeProject and addStaffXP directly
+    const review = completeProject(completedProjectData, addStaffXP);
+    if (review) {
+      // Potentially update lastReview state here if GameModals uses it
+      // For now, let's assume GameModals might need to be updated or this state is managed differently
+      // setLastReview(review); // If GameModals depends on this for showing review
+      // setShowReviewModal(true); // If review modal should show after this
+      
+      // Update XP and check for level up (this logic was in useGameLogic's handlePerformDailyWork)
+      // It should now happen here, after the project is truly completed and review/XP is known.
+      setGameState(prev => ({
+        ...prev,
+        playerData: {
+          ...prev.playerData,
+          xp: prev.playerData.xp + review.xpGain
+        }
+      }));
+      // TODO: Consider if checkAndHandleLevelUp needs to be called here from usePlayerProgression
+      // For now, assuming the XP update is sufficient and level up checks happen elsewhere or are triggered by XP change.
+    }
+    if (settings.sfxEnabled) {
+      audioSystem.playUISound('success'); // Or a specific project completion finalization sound
+    }
   };
 
   const handleLoadGame = async () => {
@@ -237,7 +267,7 @@ const MusicStudioTycoon = () => {
   }
 
   return (
-    <GameLayout currentDay={gameState.currentDay}>
+    <GameLayout>
       <GameHeader 
         gameState={gameState} 
         onOpenSettings={handleOpenSettings}
@@ -249,7 +279,8 @@ const MusicStudioTycoon = () => {
         focusAllocation={focusAllocation}
         setFocusAllocation={setFocusAllocation}
         startProject={handleProjectStart}
-        performDailyWork={handlePerformDailyWork}
+        performDailyWork={handlePerformDailyWork} // This now returns { isComplete, finalProjectData? }
+        onProjectComplete={handleActualProjectCompletion} // Pass the new handler
         onMinigameReward={handleMinigameReward}
         spendPerkPoint={handleSpendPerkPoint}
         advanceDay={advanceDay}

@@ -152,10 +152,15 @@ export interface GameState {
   equipmentMultiplier: number; // Price multiplier for equipment in this era
   playerData: PlayerData;
   studioSkills: Record<string, StudioSkill>;
-  ownedUpgrades: string[];
+  ownedUpgrades
   ownedEquipment: Equipment[];
   availableProjects: Project[];
-  activeProject: Project | null;
+  
+  // Multi-project system
+  activeProjects: Project[]; // Replace single activeProject with array
+  maxConcurrentProjects: number; // Based on studio level/size
+  activeProject: Project | null; // Keep for backward compatibility during transition
+  
   hiredStaff: StaffMember[];
   availableCandidates: StaffMember[];
   lastSalaryDay: number;
@@ -173,6 +178,21 @@ export interface GameState {
     lastChartUpdate: number; // Day when charts were last updated
   };
   researchedMods: string[]; // Array of researched mod IDs
+  
+  // Automation system
+  automation?: {
+    enabled: boolean;
+    mode: AutomationMode;
+    settings: AutomationSettings;
+    efficiency: { [projectId: string]: number };
+  };
+  
+  // Animation state tracking
+  animations?: {
+    projects: { [projectId: string]: ProjectAnimationState };
+    staff: { [staffId: string]: StaffAnimationState };
+    globalEffects: GlobalAnimationState;
+  };
 }
 
 export interface GameNotification {
@@ -188,4 +208,39 @@ export interface FocusAllocation {
   performance: number;
   soundCapture: number;
   layering: number;
+}
+
+// Multi-project automation types
+export type AutomationMode = 'off' | 'basic' | 'smart' | 'advanced';
+
+export interface AutomationSettings {
+  priorityMode: 'deadline' | 'profit' | 'reputation' | 'balanced';
+  minStaffPerProject: number;
+  maxStaffPerProject: number;
+  workloadDistribution: 'even' | 'focus_one' | 'adaptive';
+  pauseOnIssues: boolean;
+  notifyOnMilestones: boolean;
+}
+
+export interface ProjectAnimationState {
+  isActive: boolean;
+  workIntensity: number; // 0-1, affects animation speed/intensity
+  staffCount: number; // Number of staff working on this project
+  progressPulse: boolean; // Whether to show progress bar pulse
+  lastUpdate: number; // Timestamp of last animation update
+}
+
+export interface StaffAnimationState {
+  currentAction: 'idle' | 'working' | 'moving' | 'focused';
+  workIntensity: number; // 0-1, affects animation speed
+  assignedProjects: string[]; // Project IDs staff is working on
+  focusTransition: boolean; // Whether staff is transitioning between projects
+  lastActionChange: number; // Timestamp of last action change
+}
+
+export interface GlobalAnimationState {
+  studioActivity: number; // 0-1, overall studio activity level
+  projectTransitions: { [projectId: string]: boolean }; // Projects undergoing transitions
+  automationPulse: boolean; // Whether to show automation system activity
+  lastGlobalUpdate: number; // Timestamp of last global animation update
 }

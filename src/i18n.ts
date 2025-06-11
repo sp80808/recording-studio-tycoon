@@ -18,6 +18,8 @@ i18n
     backend: {
       loadPath: '/locales/{{lng}}/{{ns}}.json', // Path to translation files
     },
+    ns: ['common'], // Explicitly define namespaces to load
+    defaultNS: 'common', // Set default namespace to 'common'
     interpolation: {
       escapeValue: false, // React already safes from xss
     },

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { GameState, FocusAllocation } from '@/types/game';
 import { generateNewProjects, generateCandidates } from '@/utils/projectUtils';
 import { generateSessionMusicians } from '@/utils/bandUtils';
+import { ProgressionSystem } from '@/services/ProgressionSystem';
 
 interface EraInitOptions {
   startingMoney: number;
@@ -74,7 +75,10 @@ export const useGameState = () => {
       }
     ],
     availableProjects: [],
-    activeProject: null,
+    activeProject: null, // Keep for backward compatibility
+    // Multi-project system
+    activeProjects: [], // New multi-project array
+    maxConcurrentProjects: 2, // Starting capacity
     hiredStaff: [],
     availableCandidates: [],
     lastSalaryDay: 0,
@@ -90,7 +94,32 @@ export const useGameState = () => {
       discoveredArtists: [],
       lastChartUpdate: 0
     },
-    researchedMods: []
+    researchedMods: [],
+    // Automation system
+    automation: {
+      enabled: false,
+      mode: 'off',
+      settings: {
+        priorityMode: 'balanced',
+        minStaffPerProject: 1,
+        maxStaffPerProject: 3,
+        workloadDistribution: 'adaptive',
+        pauseOnIssues: true,
+        notifyOnMilestones: true
+      },
+      efficiency: {}
+    },
+    // Animation state tracking
+    animations: {
+      projects: {},
+      staff: {},
+      globalEffects: {
+        studioActivity: 0,
+        projectTransitions: {},
+        automationPulse: false,
+        lastGlobalUpdate: Date.now()
+      }
+    }
   });
 
   const initializeGameState = (options?: Partial<EraInitOptions>): GameState => {
@@ -100,11 +129,34 @@ export const useGameState = () => {
     const initialCandidates = generateCandidates(3);
     const initialSessionMusicians = generateSessionMusicians(5);
     
+    // Set initial progression-based values
+    const maxConcurrentProjects = ProgressionSystem.getMaxConcurrentProjects(newGameState);
+    
     return {
       ...newGameState,
       availableProjects: initialProjects,
       availableCandidates: initialCandidates,
-      availableSessionMusicians: initialSessionMusicians
+      availableSessionMusicians: initialSessionMusicians,
+      maxConcurrentProjects
+    };
+  };
+
+  // Update game state to reflect progression changes
+  const updateGameStateWithProgression = (newGameState: GameState): GameState => {
+    const maxConcurrentProjects = ProgressionSystem.getMaxConcurrentProjects(newGameState);
+    const isMultiProjectUnlocked = ProgressionSystem.shouldUnlockMultiProject(newGameState);
+    
+    return {
+      ...newGameState,
+      maxConcurrentProjects,
+      automation: {
+        ...newGameState.automation!,
+        // Enable basic automation when multi-project is unlocked
+        enabled: isMultiProjectUnlocked && newGameState.automation!.enabled,
+        mode: isMultiProjectUnlocked && newGameState.automation!.mode === 'off' 
+          ? 'basic' 
+          : newGameState.automation!.mode
+      }
     };
   };
 
@@ -120,9 +172,12 @@ export const useGameState = () => {
     gameState: gameState || createDefaultGameState(),
     setGameState: (state: GameState | ((prev: GameState) => GameState)) => {
       if (typeof state === 'function') {
-        setGameState(prev => state(prev || createDefaultGameState()));
+        setGameState(prev => {
+          const newState = state(prev || createDefaultGameState());
+          return updateGameStateWithProgression(newState);
+        });
       } else {
-        setGameState(state);
+        setGameState(updateGameStateWithProgression(state));
       }
     },
     focusAllocation,

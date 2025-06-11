@@ -2,7 +2,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { GameState, FocusAllocation, StaffMember, PlayerAttributes, Project } from '@/types/game';
 import { ProjectList } from '@/components/ProjectList';
-import { ActiveProject } from '@/components/ActiveProject';
+import { ProgressiveProjectInterface } from '@/components/ProgressiveProjectInterface';
 import { RightPanel } from '@/components/RightPanel';
 import { FloatingXPOrb } from '@/components/FloatingXPOrb';
 import { EraTransitionAnimation } from '@/components/EraTransitionAnimation';
@@ -17,7 +17,8 @@ interface MainGameContentProps {
   focusAllocation: FocusAllocation;
   setFocusAllocation: React.Dispatch<React.SetStateAction<FocusAllocation>>;
   startProject: (project: Project) => void;
-  performDailyWork: () => { isComplete: boolean; review?: any } | undefined;
+  performDailyWork: () => { isComplete: boolean; finalProjectData?: Project } | undefined; // Updated return type
+  onProjectComplete?: (completedProject: Project) => void; // Added this prop
   onMinigameReward: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => void;
   spendPerkPoint: (attribute: keyof PlayerAttributes) => void;
   advanceDay: () => void;
@@ -43,6 +44,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   setFocusAllocation,
   startProject,
   performDailyWork,
+  onProjectComplete, // Destructure the new prop
   onMinigameReward,
   spendPerkPoint,
   advanceDay,
@@ -115,14 +117,16 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         </div>
 
         <div className="flex-1 relative min-h-[400px] sm:min-h-0 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          <ActiveProject 
+          <ProgressiveProjectInterface 
             gameState={gameState}
-            focusAllocation={focusAllocation}
-            setFocusAllocation={setFocusAllocation}
-            performDailyWork={performDailyWork}
-            onMinigameReward={onMinigameReward}
-            autoTriggeredMinigame={autoTriggeredMinigame}
-            clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
+            setGameState={setGameState}
+            onProjectSelect={(project) => {
+              // Handle project selection - for now just set it as active
+              setGameState(prev => ({
+                ...prev,
+                activeProject: project
+              }));
+            }}
           />
           
           <div ref={orbContainerRef} className="absolute inset-0 pointer-events-none z-10"></div>

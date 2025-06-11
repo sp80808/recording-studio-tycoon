@@ -1,105 +1,78 @@
 # Active Context: Recording Studio Tycoon
 
-**Version:** 0.1
+**Version:** 0.2
 **Date:** 2025-06-11
-**Related Documents:** `projectbrief.md`, `productContext.md`, `systemPatterns.md`, `techContext.md`, `progress.md`
+**Related Documents:** `projectbrief.md`, `productContext.md`, `systemPatterns.md`, `techContext.md`, `progress.md`, `MULTI_PROJECT_AUTOMATION_PLAN.md`, `PROJECT_MANAGEMENT_WORKFLOW.md`
 
 ## 1. Current Task & Focus
 
-**Primary Goal:** Enrich the player experience in "Recording Studio Tycoon" by adding visual flair (animations) and deeper gameplay mechanics (historical equipment, equipment mods), while respecting the existing emoji-stylized design.
+**Primary Goal:** Update the Memory Bank documentation to accurately reflect the planned **Multi-Project Staff Automation System**. This involves integrating insights from `docs/MULTI_PROJECT_AUTOMATION_PLAN.md` and `docs/PROJECT_MANAGEMENT_WORKFLOW.md` into the core Memory Bank files.
 
-**Immediate Steps:**
-1.  **Complete Memory Bank Setup:** Ensure all core Memory Bank files are initialized. (Ongoing)
-2.  **Analyze Existing Documentation & Code:**
-    *   Thoroughly analyze game documentation and existing code structure. The user specified a GitHub URL: `https://github.com/sp80808/recording-studio-tycoon/tree/feature/polished-pre-overhaul/docs`. I will need to assess if the local `docs/` directory is sufficient or if I need to request specific content from this URL if direct access is not possible.
-    *   Pay close attention to data structures for equipment and artists.
-    *   Understand how the game loop and UI are managed.
-3.  **State Confidence Score:** Provide a confidence level (0-10) for integrating new features.
-4.  **Develop Implementation Plan:** Create a Markdown-formatted plan detailing file modifications and new data structures for equipment mods and animations.
-5.  **Implement Feature Set 1: Living Studio (Visuals & Animation)**
-    *   Recording animation (tape machine 릴).
-    *   Mixing animation (mixing console 🎛️).
-    *   Artist mood animations (✨ or 🎵).
-    *   Equipment status animations (💨 or ⚠️).
-    *   Day/Night cycle background transition.
-6.  **Implement Feature Set 2: Historical Evolution & Equipment Mods**
-    *   New 1960s equipment: EMT 140 Plate Reverb, Fairchild 670 compressor.
-    *   New 1070s equipment: SSL 4000 series console, Lexicon 224 digital reverb.
-    *   Equipment Modification System:
-        *   "Research" action for engineers.
-        *   Mods for UREI 1176 compressor (🎛️) -> "Rev A / Blue Stripe".
-        *   UI indication for modified gear.
-7.  **Documentation:** Update relevant documentation files with changes made, especially for new systems like equipment mods.
+**Secondary Goal (Deferred):** Continue implementation of features like the Equipment Modification System UI and remaining visual polish, once documentation is aligned.
+
+**Immediate Steps (Current Documentation Task):**
+1.  **Update `memory-bank/systemPatterns.md`:** Reflect new architecture for multi-project management, staff automation, and animation. (Completed)
+2.  **Update `memory-bank/techContext.md`:** Detail technical implications, state management considerations, and new service patterns. (Completed)
+3.  **Update `memory-bank/productContext.md`:** Incorporate multi-project vision into core gameplay and UX goals. (Completed)
+4.  **Update `memory-bank/projectbrief.md`:** Add multi-project system to key planned features. (Completed)
+5.  **Review and Refine `memory-bank/activeContext.md` (This Document):** Ensure it accurately captures the current documentation focus and next steps. (Ongoing)
+6.  **Review and Refine `memory-bank/progress.md`:** Align its "What's Left to Build" and "Evolution" sections with the new system and documentation updates.
+7.  Address any emergent code issues (e.g., TypeScript errors in `src/components/AnimatedProjectCard.tsx`) after documentation alignment.
 
 ## 2. Recent Changes & Decisions
 
-*   Initialized core Memory Bank files (`projectbrief.md`, `productContext.md`, `systemPatterns.md`, `techContext.md`, `activeContext.md`, `progress.md`).
-*   Completed analysis of existing documentation and relevant codebase sections (data structures, types).
-*   Stated Confidence Score: 9/10.
-*   Developed and presented the Implementation Plan.
-*   **Data Structure Modifications (Completed):**
-    *   Added `mood: number` to `Artist` interface in `src/types/charts.ts`.
-    *   Added default `mood: 70` to artists in `src/data/artistsData.ts`.
-    *   Added `condition: number` to `Equipment` interface in `src/types/game.ts`.
-    *   Ensured new equipment in `src/hooks/useGameLogic.tsx` (purchaseEquipment) initializes with `condition: 100`.
-    *   Added `condition: 100` to all existing equipment definitions in `src/data/eraEquipment.ts`.
-    *   Defined `EquipmentMod` interface and added `appliedModId?: string | null` to `Equipment` interface in `src/types/game.ts`.
-    *   Created `src/data/equipmentMods.ts` with the "UREI 1176 Rev A / Blue Stripe" mod.
-*   **New Historical Equipment (Added to `src/data/eraEquipment.ts`):**
-    *   UREI 1176 Compressor (base item for modding)
-    *   EMT 140 Plate Reverb
-    *   Fairchild 670 Compressor
-    *   SSL 4000 Series Console
-    *   Lexicon 224 Digital Reverb (Early 1970s version)
-*   Fixed pre-existing TypeScript errors in `src/pages/Index.tsx` and `src/components/minigames/MinigameManager.tsx`.
-*   **Feature Set 1: Living Studio (Visuals & Animation) - Partially Implemented:**
-    *   Recording Animation (릴): Added to `ActiveProject.tsx` and `EnhancedAnimationStyles.tsx`.
-    *   Mixing Animation (🎛️): Added to `ActiveProject.tsx` and `EnhancedAnimationStyles.tsx`.
-    *   Artist Moods (✨/🎵): `MoodIndicator.tsx` component created, animation style added, and integrated into `BandManagement.tsx` for staff members.
-    *   Equipment Status (💨/⚠️): CSS animations created in `EnhancedAnimationStyles.tsx`. UI integration deferred.
-    *   Day/Night Cycle: Implemented in `GameLayout.tsx` and `Index.tsx`.
-*   **Equipment Modification System - Initial Logic:**
-    *   `getModifiedEquipment` helper function created in `src/utils/equipmentUtils.ts`.
-    *   `researchedMods` field added to `GameState` and initialized.
-    *   `StaffMember` interface updated for research tracking.
-    *   `startResearchMod` function added to `useStaffManagement.tsx` and plumbed through `useGameLogic` and `Index.tsx` to `RightPanel.tsx`.
-    *   Research completion logic added to `advanceDay` in `useGameActions.tsx`.
-    *   Placeholder `ResearchModal.tsx` created and integrated into `RightPanel.tsx`.
-*   **New Minigames (Placeholders and Basic Integration):**
-    *   `VocalTuningGame.tsx` created with basic structure.
-    *   `LiveRecordingGame.tsx` created with basic structure.
-    *   Both added to `MinigameType` and `MinigameManager.tsx` switch statement.
-    *   Basic trigger logic for both added to `minigameUtils.ts`.
-    *   Fixed various TS errors that arose during these additions.
-*   **Vercel Speed Insights:** Added `<SpeedInsights />` component to `src/main.tsx`.
+*   **Memory Bank Documentation Update (Ongoing):**
+    *   Updated `memory-bank/systemPatterns.md` (Version 0.2) with architectural details of the multi-project automation system.
+    *   Updated `memory-bank/techContext.md` (Version 0.2) with technical considerations for the new system.
+    *   Updated `memory-bank/productContext.md` (Version 0.2) to reflect the product vision including multi-project management.
+    *   Updated `memory-bank/projectbrief.md` (Version 0.2) to include multi-project automation as a key planned feature.
+*   **Previous Development (Pre-Documentation Task):**
+    *   Initialized core Memory Bank files.
+    *   Analyzed existing documentation and codebase.
+    *   Implemented various data structure modifications for mood, condition, and equipment mods.
+    *   Added new historical equipment data.
+    *   Partially implemented "Living Studio" animations (Recording, Mixing, Artist Moods, Day/Night Cycle).
+    *   Implemented initial logic for Equipment Modification System (research start/completion).
+    *   Created placeholders for new minigames.
+    *   Integrated Vercel Speed Insights.
+    *   Fixed audio playback `NotAllowedError`.
+    *   Fixed i18n configuration.
+    *   Fixed project completion flow.
+    *   Made UI/UX improvements (static background, emoji changes).
+    *   **Created comprehensive `docs/MULTI_PROJECT_AUTOMATION_PLAN.md`**.
 
-## 3. Next Immediate Actions
+## 3. Next Immediate Actions (Post-Documentation Update)
 
-1.  Fully implement the UI and logic within `ResearchModal.tsx` for selecting equipment and mods.
-2.  Implement UI for applying researched mods to owned equipment (e.g., in an equipment detail view for owned items).
-3.  Implement display of modified equipment stats and name in relevant UI locations.
-4.  Implement UI for **Equipment Status Animations** (💨/⚠️) once an owned equipment display location is clear or created.
-5.  Update Memory Bank (`progress.md`) and other relevant documentation as these UI features are implemented.
+1.  **Address TypeScript Errors:** Fix errors in `src/components/AnimatedProjectCard.tsx` and any other outstanding issues.
+2.  **Begin Phase 1 of Multi-Project Staff Automation System:** As per `docs/MULTI_PROJECT_AUTOMATION_PLAN.md`:
+    *   **Data Structure Refactoring:** Update `GameState` to support multiple active projects, create `ProjectManager` service, implement project capacity system, update save/load.
+    *   **Basic Multi-Project UI:** Design and implement dashboard layout, project card components, project selection/switching.
+3.  **Equipment Modification System UI Completion:**
+    *   Fully implement `ResearchModal.tsx`.
+    *   Implement UI for applying mods and displaying modified gear.
+4.  **Visual Polish Completion:**
+    *   Implement UI for Equipment Status Animations.
+    *   Integrate active project animations for auto-working staff.
 
 ## 4. Active Considerations & Potential Challenges
 
-*   **External URL Access:** I cannot directly access external URLs. The analysis of documentation from the GitHub link will depend on the content available in the local workspace or information provided by the user.
-*   **Integration Complexity:** Integrating new animation and equipment modification systems into an existing codebase requires careful planning to ensure compatibility and maintainability.
-*   **Data Structure Design:** Designing flexible and extensible data structures for equipment mods is crucial.
-*   **Animation Performance:** Ensuring animations are smooth and don't degrade performance, especially with multiple animated elements.
-*   **UI Clarity:** The UI must clearly communicate new information (e.g., modified equipment, research progress) without cluttering the existing design.
-*   **Respecting Existing Code:** Adhering to established coding patterns and quality standards is paramount.
+*   **Documentation Accuracy:** Ensuring the Memory Bank accurately reflects the comprehensive plans in `MULTI_PROJECT_AUTOMATION_PLAN.md`.
+*   **Complexity of Multi-Project System:** The planned system is large and will touch many parts of the codebase. Phased implementation and thorough testing (as outlined in the plan) are critical.
+*   **State Management Scalability:** The current custom hook/context approach needs to be robust enough for `EnhancedGameState` or alternatives explored.
+*   **UI/UX for Multi-Project View:** Designing an intuitive and clear interface for managing multiple projects and automation settings is a significant challenge.
+*   **Performance:** Maintaining performance with multiple concurrent projects, automated staff actions, and animations will require ongoing optimization.
 
-## 5. Important Patterns & Preferences (from User Instructions)
+## 5. Important Patterns & Preferences (from User Instructions & Plans)
 
-*   **Emoji-Stylized Design:** All visual additions must respect this.
-*   **Historical Detail:** New equipment should be historically significant.
-*   **Clean Code:** Well-commented JavaScript/TypeScript.
-*   **Completeness:** Provide full, complete functions and data object updates. No lazy omissions.
-*   **Iterative Documentation:** Update Memory Bank and other relevant docs as new systems are added.
+*   **Emoji-Stylized Design:** Consistent application.
+*   **Historical Detail:** For equipment and game progression.
+*   **Clean Code:** Well-commented TypeScript.
+*   **Completeness:** Full implementations.
+*   **Iterative Documentation:** Core to Cline's workflow.
+*   **Phased Implementation:** As detailed in `MULTI_PROJECT_AUTOMATION_PLAN.md`.
 
-## 6. Learnings & Project Insights (Initial)
+## 6. Learnings & Project Insights
 
-*   The project has a solid foundation with existing documentation and a structured codebase (inferred from file list and `techContext.md`).
-*   The use of React and TypeScript provides a modern development environment.
-*   The emphasis on Memory Bank documentation by "Cline" (me) is a core part of the workflow.
+*   The project is undertaking a significant expansion with the multi-project automation system.
+*   Detailed planning (as seen in `MULTI_PROJECT_AUTOMATION_PLAN.md`) is crucial for managing such complexity.
+*   Maintaining accurate and up-to-date Memory Bank documentation is paramount for "Cline" to effectively contribute to this evolving project.

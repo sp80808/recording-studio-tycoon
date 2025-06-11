@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
-import { GameState, FocusAllocation } from '@/types/game';
+// GameState and FocusAllocation are imported below with Project
 import { MinigameManager, MinigameType } from './minigames/MinigameManager';
 import { shouldAutoTriggerMinigame } from '@/utils/minigameUtils';
 import { AnimatedStatBlobs } from './AnimatedStatBlobs';
@@ -13,24 +13,30 @@ import { EnhancedAnimationStyles } from './EnhancedAnimationStyles';
 import { toast } from '@/hooks/use-toast';
 import { playSound } from '@/utils/soundUtils';
 
+import { GameState, FocusAllocation, Project } from '@/types/game'; // GameState, FocusAllocation, Project types
+
 interface ActiveProjectProps {
   gameState: GameState;
-  focusAllocation: FocusAllocation;
-  setFocusAllocation: (allocation: FocusAllocation) => void;
-  performDailyWork: () => { isComplete: boolean; review?: any } | undefined;
+  setGameState?: (state: GameState | ((prev: GameState) => GameState)) => void;
+  focusAllocation?: FocusAllocation;
+  setFocusAllocation?: (allocation: FocusAllocation) => void;
+  performDailyWork?: () => { isComplete: boolean; finalProjectData?: Project } | undefined;
   onMinigameReward?: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => void;
-  onProjectComplete?: () => void;
+  onProjectComplete?: (completedProject: Project) => void;
+  onProjectSelect?: (project: Project) => void;
   autoTriggeredMinigame?: { type: MinigameType; reason: string } | null;
   clearAutoTriggeredMinigame?: () => void;
 }
 
 export const ActiveProject: React.FC<ActiveProjectProps> = ({
   gameState,
+  setGameState,
   focusAllocation,
   setFocusAllocation,
   performDailyWork,
   onMinigameReward,
   onProjectComplete,
+  onProjectSelect,
   autoTriggeredMinigame,
   clearAutoTriggeredMinigame
 }) => {
@@ -39,10 +45,13 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const [lastGains, setLastGains] = useState<{ creativity: number; technical: number }>({ creativity: 0, technical: 0 });
   const [showBlobAnimation, setShowBlobAnimation] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [completedProjectData, setCompletedProjectData] = useState<{
+  // This will store the data for the celebration screen
+  const [celebrationDisplayData, setCelebrationDisplayData] = useState<{ 
     title: string;
     genre: string;
   } | null>(null);
+  // This will store the full project object to pass to onProjectComplete after celebration
+  const [projectDataForCompletionCall, setProjectDataForCompletionCall] = useState<Project | null>(null);
   const [pulseAnimation, setPulseAnimation] = useState(false);
   const [completedMinigamesForStage, setCompletedMinigamesForStage] = useState<Set<string>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
@@ -178,29 +187,32 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     setShowBlobAnimation(true);
     
     // Call actual work function
-    const result = performDailyWork();
+    const result = performDailyWork(); // Now returns { isComplete: boolean, finalProjectData?: Project }
     
-    if (result?.isComplete) {
-      console.log('🎉 Project completed! Triggering celebration...');
-      // Play project completion sound
+    if (result?.isComplete && result.finalProjectData) {
+      console.log('🎉 Project work units complete! Triggering celebration for:', result.finalProjectData.title);
       playSound('project_complete.wav', 0.8);
       
-      // Capture project data BEFORE it gets nullified by completeProject
-      setCompletedProjectData({
-        title: project.title,
-        genre: project.genre
+      // Set data for the celebration display
+      setCelebrationDisplayData({
+        title: result.finalProjectData.title,
+        genre: result.finalProjectData.genre
       });
+      // Store the full project data to be used when the celebration is over
+      setProjectDataForCompletionCall(result.finalProjectData);
       setShowCelebration(true);
     }
+    // If not complete, or if somehow isComplete is true but no finalProjectData, do nothing further here.
   };
 
   const handleProjectCelebrationComplete = () => {
-    console.log('🎊 Celebration complete, calling onProjectComplete');
-    if (onProjectComplete) {
-      onProjectComplete();
+    console.log('🎊 Celebration complete. Calling onProjectComplete with stored project data.');
+    if (onProjectComplete && projectDataForCompletionCall) {
+      onProjectComplete(projectDataForCompletionCall);
     }
     setShowCelebration(false);
-    setCompletedProjectData(null);
+    setCelebrationDisplayData(null);
+    setProjectDataForCompletionCall(null); // Clear the stored project data
   };
 
   // Check if current stage is complete and ready to advance
@@ -227,11 +239,11 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       )}
       
       {/* Project Completion Celebration */}
-      {showCelebration && completedProjectData && (
+      {showCelebration && celebrationDisplayData && (
         <ProjectCompletionCelebration
           isVisible={showCelebration}
-          projectTitle={completedProjectData.title}
-          genre={completedProjectData.genre}
+          projectTitle={celebrationDisplayData.title}
+          genre={celebrationDisplayData.genre}
           onComplete={handleProjectCelebrationComplete}
         />
       )}
@@ -244,8 +256,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 {project.title}
                 {gameState.activeProject && !isProjectComplete && (
                   <>
-                    <span className="ml-2 text-2xl animate-spin-reels" role="img" aria-label="recording">릴</span>
-                    <span className="ml-1 text-2xl animate-fader-move" role="img" aria-label="mixing">🎛️</span>
+                    <span className="ml-1 text-2xl animate-fader-move" role="img" aria-label="recording">🎤</span>
                   </>
                 )}
               </h3>
@@ -396,7 +407,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
         </Card>
 
         <MinigameManager
-          isOpen={showMinigame}
+           isOpen={showMinigame}
           onClose={() => {
             setShowMinigame(false);
             if (clearAutoTriggeredMinigame) {
