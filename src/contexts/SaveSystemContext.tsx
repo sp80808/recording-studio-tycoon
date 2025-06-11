@@ -7,7 +7,7 @@
  * @lastModifiedBy Cline
  */
 
-import React, { createContext, useContext, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, ReactNode, useCallback } from 'react';
 import { useSettings } from './SettingsContext';
 import { getVersionInfo, compareVersions } from '../utils/versionUtils';
 
@@ -37,7 +37,7 @@ interface SaveSystemProviderProps {
 export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children }) => {
   const { settings } = useSettings();
 
-  const saveGame = (gameState: any) => {
+  const saveGame = useCallback((gameState: any) => {
     try {
       const versionInfo = getVersionInfo();
       const saveData = {
@@ -52,9 +52,9 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
     } catch (error) {
       console.error('Failed to save game:', error);
     }
-  };
+  }, []);
 
-  const loadGame = (): any | null => {
+  const loadGame = useCallback((): any | null => {
     try {
       const savedData = localStorage.getItem('recordingStudioTycoonSave');
       if (!savedData) return null;
@@ -80,22 +80,22 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
       console.error('Failed to load game:', error);
       return null;
     }
-  };
+  }, []);
 
-  const resetGame = () => {
+  const resetGame = useCallback(() => {
     try {
       localStorage.removeItem('recordingStudioTycoonSave');
       console.log('Game progress reset');
     } catch (error) {
       console.error('Failed to reset game:', error);
     }
-  };
+  }, []);
 
-  const hasSavedGame = (): boolean => {
+  const hasSavedGame = useCallback((): boolean => {
     return localStorage.getItem('recordingStudioTycoonSave') !== null;
-  };
+  }, []);
 
-  const exportGameStateToString = (gameState: any): string | null => {
+  const exportGameStateToString = useCallback((gameState: any): string | null => {
     try {
       const versionInfo = getVersionInfo();
       const saveData = {
@@ -111,9 +111,9 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
       console.error('Failed to export game state to string:', error);
       return null;
     }
-  };
+  }, []);
 
-  const loadGameFromString = (saveString: string): any | null => {
+  const loadGameFromString = useCallback((saveString: string): any | null => {
     try {
       // Basic de-obfuscation: Base64 decode
       const jsonString = atob(saveString); 
@@ -139,7 +139,7 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
       // TODO: Consider adding a user-facing notification for invalid save string
       return null;
     }
-  };
+  }, []);
 
   // Auto-save functionality
   useEffect(() => {

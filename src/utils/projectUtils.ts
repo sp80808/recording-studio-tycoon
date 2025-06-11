@@ -1,6 +1,7 @@
 import { Project, ProjectStage, StaffMember, FocusAllocation, StudioSkill, Equipment, PlayerAttributes } from '@/types/game'; // Changed OwnedEquipment to Equipment
 import { generateAIBand } from '@/utils/bandUtils';
 import { ERA_DEFINITIONS, getGenrePopularity } from '@/utils/eraProgression';
+import { initializeSkillsStaff } from '@/utils/skillUtils'; // Added import
 import { calculateStudioSkillBonus, getEquipmentBonuses } from './gameUtils'; // Import from gameUtils
 // Assuming getMoodEffectiveness will be moved to playerUtils or passed as arg
 // For now, let's define a placeholder or expect it as an argument for calculateStaffWorkContribution
@@ -293,7 +294,8 @@ export const generateCandidates = (count: number): StaffMember[] => {
       mood: 75, // Start with good mood
       salary: 80 + Math.floor(Math.random() * 120), // $80-200 per week
       status: 'Idle',
-      assignedProjectId: null
+      assignedProjectId: null,
+      skills: initializeSkillsStaff() // Initialize staff skills
     };
     
     candidates.push(candidate);

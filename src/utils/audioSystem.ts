@@ -223,6 +223,22 @@ class GameAudioSystem {
     return true;
   }
 
+  // Call this after the first user interaction to ensure AudioContext is running
+  async userGestureSignal(): Promise<boolean> {
+    console.log('User gesture detected, ensuring audio context is active.');
+    const initialized = await this.ensureInitialized();
+    if (initialized && this.audioContext?.state === 'running') {
+      console.log('Audio context is active and running.');
+      // Optionally, auto-play initial background music here if desired
+      // For example: this.playSound('bgm1', 'music', 0.5, true);
+    } else if (initialized) {
+      console.warn('Audio context is initialized but not running. State:', this.audioContext?.state);
+    } else {
+      console.error('Audio context failed to initialize or resume after user gesture.');
+    }
+    return initialized && this.audioContext?.state === 'running';
+  }
+
   // BEAT MAKING SOUNDS
   async playKick() {
     await this.ensureInitialized();

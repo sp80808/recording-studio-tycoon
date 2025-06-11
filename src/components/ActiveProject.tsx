@@ -19,7 +19,7 @@ import {
   getStageFocusRecommendations 
 } from '@/utils/stageUtils';
 
-import { GameState, FocusAllocation, Project } from '@/types/game'; // GameState, FocusAllocation, Project types
+import { GameState, FocusAllocation, Project, PlayerData } from '@/types/game';
 
 interface ActiveProjectProps {
   gameState: GameState;
@@ -61,6 +61,11 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const [pulseAnimation, setPulseAnimation] = useState(false);
   const [completedMinigamesForStage, setCompletedMinigamesForStage] = useState<Set<string>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Unlock condition for Apply Optimal Focus button
+  const managementSkillLevel = gameState.playerData.skills.management?.level || 0;
+  const playerLevel = gameState.playerData.level;
+  const canUseOptimalFocusButton = managementSkillLevel >= 3 || playerLevel >= 5;
 
   // Clear auto-triggered minigame when project changes or stage advances
   useEffect(() => {
@@ -412,7 +417,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 }}
                 max={100}
                 step={5}
-                className={`w-full transition-all duration-200 ${
+                className={`w-full transition-all duration-300 ease-in-out ${
                   Math.abs(focusAllocation.performance - optimalFocus.performance) <= 10 
                     ? '[&_.bg-primary]:bg-green-500 [&_.border-primary]:border-green-600' 
                     : Math.abs(focusAllocation.performance - optimalFocus.performance) <= 25
@@ -448,7 +453,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 }}
                 max={100}
                 step={5}
-                className={`w-full transition-all duration-200 ${
+                className={`w-full transition-all duration-300 ease-in-out ${
                   Math.abs(focusAllocation.soundCapture - optimalFocus.soundCapture) <= 10
                     ? '[&_.bg-primary]:bg-green-500 [&_.border-primary]:border-green-600'
                     : Math.abs(focusAllocation.soundCapture - optimalFocus.soundCapture) <= 25
@@ -484,7 +489,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 }}
                 max={100}
                 step={5}
-                className={`w-full transition-all duration-200 ${
+                className={`w-full transition-all duration-300 ease-in-out ${
                   Math.abs(focusAllocation.layering - optimalFocus.layering) <= 10
                     ? '[&_.bg-primary]:bg-green-500 [&_.border-primary]:border-green-600'
                     : Math.abs(focusAllocation.layering - optimalFocus.layering) <= 25
@@ -526,11 +531,18 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   className: "bg-gray-800 border-gray-600 text-white",
                 });
               }}
+              disabled={!canUseOptimalFocusButton}
               variant="outline"
               size="sm"
-              className="w-full bg-blue-900/30 border-blue-600/50 text-blue-200 hover:bg-blue-800/50"
+              className={`w-full transition-colors duration-200 ${
+                canUseOptimalFocusButton
+                  ? 'bg-blue-900/30 border-blue-600/50 text-blue-200 hover:bg-blue-800/50'
+                  : 'bg-gray-700/30 border-gray-600/50 text-gray-400 cursor-not-allowed'
+              }`}
             >
-              🎯 Apply Optimal Focus for {currentStage.stageName}
+              {canUseOptimalFocusButton
+                ? `🎯 Apply Optimal Focus for ${currentStage.stageName}`
+                : `🎯 Apply Optimal Focus (Lvl 5+ or Mgmt Lvl 3+)`}
             </Button>
           </div>
 

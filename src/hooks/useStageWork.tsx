@@ -222,13 +222,16 @@ export const useStageWork = ({
     const stageEfficiencyBonus = Math.floor(currentStage.workUnitsBase / 10); // Bonus for longer stages
     
     const workUnitsToAdd = Math.max(minProgress, baseWorkUnits + stageEfficiencyBonus);
+    // Ensure at least 1 unit of progress if energy was spent and stage is not complete
+    const actualWorkUnitsToAdd = (workUnitsToAdd === 0 && !currentStage.completed && totalPointsGenerated === 0) ? 1 : workUnitsToAdd;
+
     const newWorkUnitsCompleted = Math.min(
-      currentStage.workUnitsCompleted + workUnitsToAdd,
+      currentStage.workUnitsCompleted + actualWorkUnitsToAdd, // Use actualWorkUnitsToAdd
       currentStage.workUnitsBase
     );
 
     console.log(`⚡ Total points generated: ${totalPointsGenerated}`);
-    console.log(`🔨 Work units to add: ${workUnitsToAdd} (points ÷ 5)`);
+    console.log(`🔨 Work units to add (calculated): ${workUnitsToAdd}, (actual applied): ${actualWorkUnitsToAdd}`);
     console.log(`📈 Work units: ${currentStage.workUnitsCompleted} -> ${newWorkUnitsCompleted} (max: ${currentStage.workUnitsBase})`);
 
     // Check if stage is completed
@@ -326,7 +329,7 @@ export const useStageWork = ({
     } else {
       toast({
         title: "📈 Work Progress",
-        description: `Stage progress: ${newWorkUnitsCompleted}/${currentStage.workUnitsBase} work units (+${workUnitsToAdd} this session)`,
+        description: `Stage progress: ${newWorkUnitsCompleted}/${currentStage.workUnitsBase} work units (+${actualWorkUnitsToAdd} this session)`, // Use actualWorkUnitsToAdd
         className: "bg-gray-800 border-gray-600 text-white",
       });
     }

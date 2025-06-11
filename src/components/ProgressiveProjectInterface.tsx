@@ -12,6 +12,7 @@ import { ProgressionSystem, ProgressionStatus } from '@/services/ProgressionSyst
 import { useMultiProjectManagement } from '@/hooks/useMultiProjectManagement';
 import { MultiProjectDashboard } from '@/components/MultiProjectDashboard';
 import { ActiveProject } from '@/components/ActiveProject';
+import { MinigameType } from '@/components/minigames/MinigameManager';
 
 interface ProgressiveProjectInterfaceProps {
   gameState: GameState;
@@ -22,7 +23,7 @@ interface ProgressiveProjectInterfaceProps {
   onMinigameReward?: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => void;
   onProjectComplete?: (completedProject: Project) => void;
   onProjectSelect?: (project: Project) => void;
-  autoTriggeredMinigame?: { type: any; reason: string } | null;
+  autoTriggeredMinigame?: { type: MinigameType; reason: string } | null;
   clearAutoTriggeredMinigame?: () => void;
 }
 
@@ -227,6 +228,11 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
           focusAllocation={currentFocusAllocation}
           setFocusAllocation={handleSetFocusAllocation}
           onProjectSelect={onProjectSelect}
+          performDailyWork={performDailyWork}
+          onMinigameReward={onMinigameReward}
+          onProjectComplete={onProjectComplete}
+          autoTriggeredMinigame={autoTriggeredMinigame}
+          clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
         />
       </div>
     );
@@ -283,6 +289,11 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
             focusAllocation={currentFocusAllocation}
             setFocusAllocation={handleSetFocusAllocation}
             onProjectSelect={onProjectSelect}
+            performDailyWork={performDailyWork}
+            onMinigameReward={onMinigameReward}
+            onProjectComplete={onProjectComplete}
+            autoTriggeredMinigame={autoTriggeredMinigame}
+            clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
           />
         )}
       </div>

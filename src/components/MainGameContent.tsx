@@ -10,6 +10,7 @@ import { HistoricalNewsModal } from '@/components/HistoricalNewsModal';
 import { checkForNewEvents, applyEventEffects, HistoricalEvent } from '@/utils/historicalEvents';
 import { useBandManagement } from '@/hooks/useBandManagement';
 import { MinigameType } from '@/components/minigames/MinigameManager';
+import { useIsMobile } from '@/hooks/useIsMobile'; // Import useIsMobile
 
 interface MainGameContentProps {
   gameState: GameState;
@@ -74,6 +75,13 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
     amount: number;
     type: 'xp' | 'money' | 'skill';
   }>>([]);
+  const isMobile = useIsMobile();
+  const [activeMobileTab, setActiveMobileTab] = useState(1); // Default to center panel (Studio)
+  const swipeContainerRef = useRef<HTMLDivElement>(null);
+  const touchStartXRef = useRef(0);
+  const touchCurrentXRef = useRef(0);
+  const isSwipingRef = useRef(false);
+  const SWIPE_THRESHOLD = 50; // Minimum pixels for a swipe
 
   // Check for new historical events when day advances
   useEffect(() => {
@@ -105,54 +113,176 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   // Band Management Integration
   const { createBand, startTour, createOriginalTrack, processTourIncome } = useBandManagement(gameState, setGameState);
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartXRef.current = e.touches[0].clientX;
+    touchCurrentXRef.current = e.touches[0].clientX;
+    isSwipingRef.current = true;
+    if (swipeContainerRef.current) {
+      swipeContainerRef.current.style.transition = 'none'; // Disable transition during swipe
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isSwipingRef.current) return;
+    touchCurrentXRef.current = e.touches[0].clientX;
+    const diffX = touchCurrentXRef.current - touchStartXRef.current;
+    if (swipeContainerRef.current) {
+      // Move the content with the swipe, but constrain it
+      const baseTranslate = -activeMobileTab * 100;
+      swipeContainerRef.current.style.transform = `translateX(calc(${baseTranslate}% + ${diffX}px))`;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!isSwipingRef.current) return;
+    isSwipingRef.current = false;
+    const diffX = touchCurrentXRef.current - touchStartXRef.current;
+
+    if (swipeContainerRef.current) {
+      swipeContainerRef.current.style.transition = 'transform 0.3s ease-out'; // Re-enable transition
+    }
+
+    if (Math.abs(diffX) > SWIPE_THRESHOLD) {
+      if (diffX < 0) { // Swiped left
+        setActiveMobileTab(prev => Math.min(prev + 1, 2));
+      } else { // Swiped right
+        setActiveMobileTab(prev => Math.max(prev - 1, 0));
+      }
+    } else {
+      // Snap back if not a full swipe
+      if (swipeContainerRef.current) {
+        swipeContainerRef.current.style.transform = `translateX(-${activeMobileTab * 100}%)`;
+      }
+    }
+  };
+  
+  useEffect(() => {
+    if (isMobile && swipeContainerRef.current) {
+      swipeContainerRef.current.style.transform = `translateX(-${activeMobileTab * 100}%)`;
+    }
+  }, [activeMobileTab, isMobile]);
+
   return (
     <div className="h-full flex flex-col"> {/* Outer container for layout + modals */}
-      <div className="p-2 sm:p-4 sm:flex sm:gap-4 relative flex-grow overflow-hidden"> {/* Main 3-panel layout */}
-        <div className="w-full sm:w-80 lg:w-96 animate-fade-in h-full overflow-y-auto"> {/* Left Panel */}
-          <ProjectList 
-            gameState={gameState}
-            setGameState={setGameState}
-            startProject={startProject}
-          />
-        </div>
+      {isMobile ? (
+        // Mobile View: Swipeable tabs
+        <div className="flex-grow flex flex-col overflow-hidden"> {/* Main container for mobile view */}
+          <div 
+            className="flex-grow flex h-full" // This will be the swipe track
+            ref={swipeContainerRef}
+            style={{ transition: 'transform 0.3s ease-out', width: '300%' }} // 3 tabs
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            {/* Tab 0: ProjectList */}
+            <div className="w-full h-full overflow-y-auto p-2 flex-shrink-0" style={{ width: 'calc(100% / 3)' }}>
+              <ProjectList 
+                gameState={gameState}
+                setGameState={setGameState}
+                startProject={startProject}
+              />
+            </div>
+            
+            {/* Tab 1: Main Interface (Studio) */}
+            <div className="w-full h-full overflow-y-auto p-2 flex-shrink-0 relative flex flex-col" style={{ width: 'calc(100% / 3)' }}>
+              <ProgressiveProjectInterface 
+                gameState={gameState}
+                setGameState={setGameState}
+                focusAllocation={focusAllocation}
+                setFocusAllocation={setFocusAllocation}
+                onProjectSelect={(project) => {
+                  setGameState(prev => ({ ...prev, activeProject: project }));
+                }}
+              />
+              <div ref={orbContainerRef} className="absolute inset-0 pointer-events-none z-10"></div>
+              {floatingOrbs.map(orb => (
+                <FloatingXPOrb
+                  key={orb.id}
+                  amount={orb.amount}
+                  type={orb.type}
+                  onComplete={() => setFloatingOrbs(prev => prev.filter(o => o.id !== orb.id))}
+                />
+              ))}
+            </div>
 
-        <div className="flex-1 relative sm:min-h-0 animate-fade-in flex flex-col h-full overflow-hidden" style={{ animationDelay: '0.2s' }}> {/* Center Panel Wrapper */}
-          <ProgressiveProjectInterface 
-            gameState={gameState}
-            setGameState={setGameState}
-            focusAllocation={focusAllocation}
-            setFocusAllocation={setFocusAllocation}
-            onProjectSelect={(project) => {
-              // Handle project selection - for now just set it as active
-              setGameState(prev => ({
-                ...prev,
-                activeProject: project
-              }));
-            }}
-          />
-          
-          <div ref={orbContainerRef} className="absolute inset-0 pointer-events-none z-10"></div>
-          
-          {/* Floating XP/Money orbs */}
-          {floatingOrbs.map(orb => (
-            <FloatingXPOrb
-              key={orb.id}
-              amount={orb.amount}
-              type={orb.type}
-              onComplete={() => {
-                setFloatingOrbs(prev => prev.filter(o => o.id !== orb.id));
+            {/* Tab 2: RightPanel (Manage) */}
+            <div className="w-full h-full overflow-y-auto p-2 flex-shrink-0" style={{ width: 'calc(100% / 3)' }}>
+              <RightPanel 
+                gameState={gameState}
+                showSkillsModal={showSkillsModal}
+                setShowSkillsModal={setShowSkillsModal}
+                showAttributesModal={showAttributesModal}
+                setShowAttributesModal={setShowAttributesModal}
+                spendPerkPoint={spendPerkPoint}
+                advanceDay={advanceDay}
+                purchaseEquipment={purchaseEquipment}
+                createBand={createBand}
+                startTour={startTour}
+                createOriginalTrack={createOriginalTrack}
+                hireStaff={hireStaff}
+                refreshCandidates={refreshCandidates}
+                assignStaffToProject={assignStaffToProject}
+                unassignStaffFromProject={unassignStaffFromProject}
+                toggleStaffRest={toggleStaffRest}
+                openTrainingModal={openTrainingModal}
+                contactArtist={contactArtist}
+                triggerEraTransition={handleEraTransition}
+                startResearchMod={startResearchMod}
+              />
+            )}
+          </div>
+          {/* Mobile Tab Navigation Dots */}
+          <div className="flex justify-center p-2 border-t border-gray-700 bg-gray-800">
+            {[0, 1, 2].map(index => (
+              <button 
+                key={index}
+                onClick={() => setActiveMobileTab(index)} 
+                className={`w-3 h-3 rounded-full mx-1 ${activeMobileTab === index ? 'bg-blue-500' : 'bg-gray-600'}`}
+                aria-label={`Go to tab ${index + 1}`}
+              />
+            ))}
+          </div>
+        </div>
+      ) : (
+        // Desktop View: 3-panel layout
+        <div className="p-2 sm:p-4 sm:flex sm:gap-4 relative flex-grow overflow-hidden">
+          <div className="w-full sm:w-80 lg:w-96 animate-fade-in h-full overflow-y-auto"> {/* Left Panel */}
+            <ProjectList 
+              gameState={gameState}
+              setGameState={setGameState}
+              startProject={startProject}
+            />
+          </div>
+
+          <div className="flex-1 relative sm:min-h-0 animate-fade-in flex flex-col h-full overflow-hidden" style={{ animationDelay: '0.2s' }}> {/* Center Panel Wrapper */}
+            <ProgressiveProjectInterface 
+              gameState={gameState}
+              setGameState={setGameState}
+              focusAllocation={focusAllocation}
+              setFocusAllocation={setFocusAllocation}
+              onProjectSelect={(project) => {
+                setGameState(prev => ({ ...prev, activeProject: project }));
               }}
             />
-          ))}
-        </div>
+            <div ref={orbContainerRef} className="absolute inset-0 pointer-events-none z-10"></div>
+            {floatingOrbs.map(orb => (
+              <FloatingXPOrb
+                key={orb.id}
+                amount={orb.amount}
+                type={orb.type}
+                onComplete={() => setFloatingOrbs(prev => prev.filter(o => o.id !== orb.id))}
+              />
+            ))}
+          </div>
 
-        <div className="w-full sm:w-80 lg:w-96 animate-fade-in h-full overflow-y-auto" style={{ animationDelay: '0.4s' }}> {/* Right Panel */}
-          <RightPanel 
-            gameState={gameState}
-            showSkillsModal={showSkillsModal}
-            setShowSkillsModal={setShowSkillsModal}
-            showAttributesModal={showAttributesModal}
-            setShowAttributesModal={setShowAttributesModal}
+          <div className="w-full sm:w-80 lg:w-96 animate-fade-in h-full overflow-y-auto" style={{ animationDelay: '0.4s' }}> {/* Right Panel */}
+            <RightPanel 
+              gameState={gameState}
+              showSkillsModal={showSkillsModal}
+              setShowSkillsModal={setShowSkillsModal}
+              showAttributesModal={showAttributesModal}
+              setShowAttributesModal={setShowAttributesModal}
             spendPerkPoint={spendPerkPoint}
             advanceDay={advanceDay}
             purchaseEquipment={purchaseEquipment}
@@ -170,7 +300,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             startResearchMod={startResearchMod} // Pass prop to RightPanel
           />
         </div>
-      </div>
+      )} {/* This closes the ternary operator */}
 
       {/* Era Transition Animation */}
       {showEraTransition && eraTransitionInfo && (

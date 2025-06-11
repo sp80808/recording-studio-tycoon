@@ -78,25 +78,25 @@ const getTutorialStepsForEra = (eraId: string): TutorialStep[] => {
     case 'analog60s':
       eraSpecificIntro = {
         title: "Welcome to the Analog Age! 🎵 (1960s-1970s)",
-        content: "The world of music is buzzing with analog warmth! Start your journey with 4-track recorders and build your studio from the ground up. Vinyl is king!",
+        content: "The world of music is buzzing with analog warmth! You'll be working with 4-track tape machines, analog mixing consoles, and aiming for vinyl releases. Radio promotion is key, and record labels hold significant power. Focus on genres like Rock, Folk, and Soul.",
       };
       break;
     case 'digital80s':
       eraSpecificIntro = {
         title: "The Digital Dawn Arrives! 💾 (1980s-1990s)",
-        content: "Digital technology is revolutionizing music! Embrace MIDI, early samplers, and the rise of CDs. MTV will make or break artists!",
+        content: "Digital technology is here! Explore MIDI sequencing, early digital recorders (ADAT, DAT), and CD production. Music videos on MTV are crucial for marketing. New genres like Synth-pop and Hip-hop are emerging. Independent labels are gaining traction.",
       };
       break;
     case 'internet2000s':
       eraSpecificIntro = {
         title: "Ride the Internet Wave! 💻 (2000s-2010s)",
-        content: "The internet changes everything! DAWs become powerful, file sharing is rampant, and digital distribution opens new doors. Can you adapt?",
+        content: "The internet has disrupted everything. Pro Tools and computer-based recording are standard. MP3s and digital distribution (like iTunes) are the new norm, but piracy is a concern. Social media and YouTube are becoming vital for promotion. Home studios are on the rise.",
       };
       break;
     case 'streaming2020s':
       eraSpecificIntro = {
         title: "Conquer the Streaming Era! 🎧 (2020s+)",
-        content: "Streaming platforms rule the music world! Master AI tools, leverage social media, and navigate the fast-paced landscape of modern music production.",
+        content: "Streaming platforms (like Spotify) dominate music consumption. Algorithmic promotion and playlist placements are critical for discovery. AI-assisted production tools are available, and global collaboration is easier than ever. Short-form video content on platforms like TikTok can make a track viral.",
       };
       break;
     default: // Fallback to a generic welcome if eraId is unknown
