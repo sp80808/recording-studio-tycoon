@@ -7,6 +7,7 @@ import { SettingsProvider, useSettings } from "@/contexts/SettingsContext";
 import { SaveSystemProvider } from "@/contexts/SaveSystemContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import { SpeedInsights } from "@vercel/speed-insights/react"; // Import SpeedInsights
 
 import { useEffect } from "react";
 
@@ -26,6 +27,7 @@ const App = () => {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
+          <SpeedInsights /> {/* Add SpeedInsights component here */}
         </TooltipProvider>
       </SaveSystemProvider>
     </QueryClientProvider>

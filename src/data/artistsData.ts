@@ -17,7 +17,8 @@ export const artistsDatabase: Artist[] = [
     specialties: ['rock', 'alternative'],
     socialMediaFollowers: 500000,
     description: 'A popular rock band known for their energetic live shows.',
-    availability: { status: 'available', responseTime: 3 }
+    availability: { status: 'available', responseTime: 3 },
+    mood: 70
   },
   {
     id: 'artist_2',
@@ -32,7 +33,8 @@ export const artistsDatabase: Artist[] = [
     specialties: ['pop', 'r&b'],
     socialMediaFollowers: 2000000,
     description: 'A chart-topping pop sensation.',
-    availability: { status: 'available', responseTime: 1 }
+    availability: { status: 'available', responseTime: 1 },
+    mood: 70
   },
   {
     id: 'artist_3',
@@ -47,7 +49,8 @@ export const artistsDatabase: Artist[] = [
     specialties: ['hip-hop', 'trap'],
     socialMediaFollowers: 1000000,
     description: 'An influential figure in the hip-hop scene.',
-    availability: { status: 'available', responseTime: 2 }
+    availability: { status: 'available', responseTime: 2 },
+    mood: 70
   },
   {
     id: 'artist_4',
@@ -62,7 +65,8 @@ export const artistsDatabase: Artist[] = [
     specialties: ['electronic', 'house'],
     socialMediaFollowers: 300000,
     description: 'An electronic music producer known for their unique sound.',
-    availability: { status: 'available', responseTime: 4 }
+    availability: { status: 'available', responseTime: 4 },
+    mood: 70
   },
   {
     id: 'artist_5',
@@ -77,7 +81,8 @@ export const artistsDatabase: Artist[] = [
     specialties: ['country', 'folk'],
     socialMediaFollowers: 400000,
     description: 'A rising star in the country music scene.',
-    availability: { status: 'available', responseTime: 3 }
+    availability: { status: 'available', responseTime: 3 },
+    mood: 70
   },
 ];
 

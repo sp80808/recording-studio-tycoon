@@ -98,7 +98,7 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
     const equipment = availableEquipment.find(e => e.id === equipmentId);
     if (!equipment) {
       console.log('Equipment not found');
-      return;
+      return false;
     }
 
     const purchaseCheck = canPurchaseEquipment(equipment, gameState);
@@ -110,7 +110,7 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
         description: purchaseCheck.reason,
         variant: "destructive"
       });
-      return;
+      return false;
     }
 
     // Play purchase sound
@@ -123,7 +123,7 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
     updatedGameState = {
       ...updatedGameState,
       money: updatedGameState.money - equipment.price,
-      ownedEquipment: [...updatedGameState.ownedEquipment, equipment]
+      ownedEquipment: [...updatedGameState.ownedEquipment, { ...equipment, condition: 100 }]
     };
 
     setGameState(updatedGameState);
@@ -132,6 +132,7 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
       title: "Equipment Purchased!",
       description: `${equipment.name} added to your studio.`,
     });
+    return true;
   };
 
   const sendStaffToTraining = (staffId: string, courseId: string) => {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { GameLayout } from '@/components/GameLayout';
 import { GameHeader } from '@/components/GameHeader';
@@ -9,20 +8,21 @@ import { GameModals } from '@/components/GameModals';
 import { SettingsModal } from '@/components/modals/SettingsModal';
 import { TutorialModal } from '@/components/TutorialModal';
 import { SplashScreen } from '@/components/SplashScreen';
-import { Era } from '@/components/EraSelectionModal';
+import { Era } from '@/components/EraSelectionModal'; // Era type
+import { ERA_DEFINITIONS } from '@/utils/eraProgression'; // ERA_DEFINITIONS for initialization
 import { useGameState } from '@/hooks/useGameState';
 import { useGameLogic } from '@/hooks/useGameLogic';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSaveSystem } from '@/contexts/SaveSystemContext';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { gameAudio as audioSystem } from '@/utils/audioSystem';
+import { MinigameType } from '@/components/minigames/MinigameManager'; // Import MinigameType
 
 const MusicStudioTycoon = () => {
   const { gameState, setGameState, focusAllocation, setFocusAllocation, initializeGameState } = useGameState();
   const { settings } = useSettings();
   const { saveGame, loadGame, hasSavedGame } = useSaveSystem();
   
-  // Splash screen and game initialization state
   const [showSplashScreen, setShowSplashScreen] = useState(true);
   const [gameInitialized, setGameInitialized] = useState(false);
   
@@ -50,33 +50,34 @@ const MusicStudioTycoon = () => {
 
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showTrainingModal, setShowTrainingModal] = useState(false);
-  const [showStaffModal, setShowStaffModal] = useState(false);
-  const [showRecruitmentModal, setShowRecruitmentModal] = useState(false);
+  // const [showStaffModal, setShowStaffModal] = useState(false); // Assuming this was intended to be used elsewhere or can be removed if not
+  // const [showRecruitmentModal, setShowRecruitmentModal] = useState(false); // Assuming this was intended to be used elsewhere or can be removed if not
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showTutorialModal, setShowTutorialModal] = useState(false);
+  const [currentEraForTutorial, setCurrentEraForTutorial] = useState<string>(ERA_DEFINITIONS[0].id); // Default to first era
 
-  // Initialize background music
+  // State for auto-triggered minigames
+  const [autoTriggeredMinigame, setAutoTriggeredMinigame] = useState<{ type: MinigameType; reason: string } | null>(null);
+  const clearAutoTriggeredMinigame = () => setAutoTriggeredMinigame(null);
+
   useBackgroundMusic();
 
-  // Check for existing save game on mount
   useEffect(() => {
     const checkSaveGame = () => {
       if (hasSavedGame()) {
         setShowSplashScreen(false);
-        setGameInitialized(true);
+        // Game will be initialized after loading
       }
     };
     checkSaveGame();
   }, [hasSavedGame]);
 
-  // Auto-open training modal when staff is selected for training
   useEffect(() => {
     if (selectedStaffForTraining) {
       setShowTrainingModal(true);
     }
   }, [selectedStaffForTraining]);
 
-  // Handle starting a new game with selected era
   const handleStartNewGame = (era: Era) => {
     const newGameState = initializeGameState({
       startingMoney: era.startingMoney,
@@ -87,10 +88,10 @@ const MusicStudioTycoon = () => {
     });
     
     setGameState(newGameState);
+    setCurrentEraForTutorial(era.id); 
     setShowSplashScreen(false);
     setGameInitialized(true);
     
-    // Show tutorial for new players
     const hasPlayedBefore = localStorage.getItem('recordingStudioTycoon_hasPlayed');
     if (!hasPlayedBefore && !settings.tutorialCompleted) {
       setShowTutorialModal(true);
@@ -99,55 +100,75 @@ const MusicStudioTycoon = () => {
     if (settings.sfxEnabled) {
       audioSystem.playUISound('success');
     }
+    localStorage.setItem('recordingStudioTycoon_hasPlayed', 'true'); // Mark that game has been started once
   };
 
-  // Handle loading existing game
   const handleLoadGame = async () => {
     try {
       const loadedState = await loadGame();
       if (loadedState) {
         setGameState(loadedState);
+        setCurrentEraForTutorial(loadedState.currentEra); 
         setShowSplashScreen(false);
         setGameInitialized(true);
         
         if (settings.sfxEnabled) {
           audioSystem.playUISound('success');
         }
+      } else {
+        // If loadGame returns null (e.g. no save file or error), go back to splash
+        setShowSplashScreen(true);
+        setGameInitialized(false);
       }
     } catch (error) {
       console.error('Failed to load game:', error);
+      setShowSplashScreen(true); // Show splash screen on error to allow starting new game
+      setGameInitialized(false);
     }
   };
 
-  // Check if this is first time playing for tutorial
   useEffect(() => {
+    // This effect handles showing the tutorial if the game is initialized,
+    // tutorial hasn't been completed, and it's the user's first session.
+    // It also ensures currentEraForTutorial is set from gameState if loading a game
+    // where the tutorial wasn't completed.
     const hasPlayedBefore = localStorage.getItem('recordingStudioTycoon_hasPlayed');
-    if (!hasPlayedBefore && !settings.tutorialCompleted) {
-      setShowTutorialModal(true);
+    if (gameInitialized && !settings.tutorialCompleted) {
+      if (gameState && gameState.currentEra) {
+         // If it's a loaded game, gameState.currentEra should be used.
+         // If it's a new game, handleStartNewGame already set currentEraForTutorial.
+        setCurrentEraForTutorial(gameState.currentEra);
+      }
+      // Only show tutorial if it's genuinely the first time (or tutorialCompleted is false)
+      // The 'hasPlayedBefore' check in handleStartNewGame is more specific for *brand new* games.
+      // This effect covers loaded games where tutorial was skipped/not finished.
+      setShowTutorialModal(true); 
     }
-  }, [settings.tutorialCompleted]);
+  }, [settings.tutorialCompleted, gameInitialized, gameState]);
 
-  // Set up auto-save triggers for key game actions
   useEffect(() => {
     if (settings.autoSave) {
-      // Auto-save on level up
       const currentLevel = gameState.playerData.level;
       const savedLevel = localStorage.getItem('recordingStudioTycoon_lastLevel');
       if (savedLevel && parseInt(savedLevel) < currentLevel) {
         saveGame(gameState);
         localStorage.setItem('recordingStudioTycoon_lastLevel', currentLevel.toString());
+      } else if (!savedLevel) { // Save initial level
+        localStorage.setItem('recordingStudioTycoon_lastLevel', currentLevel.toString());
       }
     }
   }, [gameState.playerData.level, settings.autoSave, saveGame, gameState]);
 
-  // Play UI sounds for various actions
   useEffect(() => {
     if (settings.sfxEnabled) {
-      // Level up sound
-      const lastKnownLevel = parseInt(localStorage.getItem('recordingStudioTycoon_lastKnownLevel') || '1');
+      const lastKnownLevel = parseInt(localStorage.getItem('recordingStudioTycoon_lastKnownLevel') || '0');
       if (gameState.playerData.level > lastKnownLevel) {
-        audioSystem.playUISound('levelUp');
+        if (lastKnownLevel !== 0) { // Don't play for initial level 1
+            audioSystem.playUISound('levelUp');
+        }
         localStorage.setItem('recordingStudioTycoon_lastKnownLevel', gameState.playerData.level.toString());
+      } else if (gameState.playerData.level === 1 && lastKnownLevel === 0) { // Set initial known level
+        localStorage.setItem('recordingStudioTycoon_lastKnownLevel', '1');
       }
     }
   }, [gameState.playerData.level, settings.sfxEnabled]);
@@ -166,10 +187,9 @@ const MusicStudioTycoon = () => {
     }
   };
 
-  // Enhanced action handlers with sound effects
-  const handleProjectStart = (project: any) => {
+  const handleProjectStart = (project: any) => { // Consider using a more specific type for project
     const result = startProject(project);
-    if (settings.sfxEnabled) {
+    if (settings.sfxEnabled && result) { // Assuming startProject returns a truthy value on success
       audioSystem.playUISound('success');
     }
     return result;
@@ -177,7 +197,7 @@ const MusicStudioTycoon = () => {
 
   const handleEquipmentPurchase = (equipmentId: string) => {
     const result = purchaseEquipment(equipmentId);
-    if (settings.sfxEnabled) {
+    if (settings.sfxEnabled && result) { // Assuming purchaseEquipment returns a truthy value on success
       audioSystem.playUISound('purchase');
     }
     return result;
@@ -185,7 +205,7 @@ const MusicStudioTycoon = () => {
 
   const handleStaffHire = (candidateIndex: number) => {
     const result = hireStaff(candidateIndex);
-    if (settings.sfxEnabled) {
+    if (settings.sfxEnabled && result) { // Assuming hireStaff returns a truthy value on success
       audioSystem.playUISound('success');
     }
     return result;
@@ -193,12 +213,12 @@ const MusicStudioTycoon = () => {
 
   const handleTutorialComplete = () => {
     setShowTutorialModal(false);
+    // updateSettings({ tutorialCompleted: true }); // This is handled within TutorialModal
     if (settings.sfxEnabled) {
       audioSystem.playUISound('success');
     }
   };
 
-  // Show splash screen if game is not initialized
   if (showSplashScreen && !gameInitialized) {
     return (
       <SplashScreen
@@ -209,10 +229,9 @@ const MusicStudioTycoon = () => {
     );
   }
 
-  // Don't render main game until initialized
   if (!gameInitialized) {
     return <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-      <div className="text-white">Loading...</div>
+      <div className="text-white text-xl">Loading Your Studio...</div>
     </div>;
   }
 
@@ -245,6 +264,7 @@ const MusicStudioTycoon = () => {
         triggerEraTransition={triggerEraTransition}
         autoTriggeredMinigame={autoTriggeredMinigame}
         clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
+        // setAutoTriggeredMinigame={setAutoTriggeredMinigame} // Pass this if MainGameContent needs to trigger minigames
       />
 
       <TrainingModal
@@ -266,6 +286,7 @@ const MusicStudioTycoon = () => {
       <TutorialModal
         isOpen={showTutorialModal}
         onComplete={handleTutorialComplete}
+        eraId={currentEraForTutorial} 
       />
 
       <NotificationSystem
@@ -273,7 +294,7 @@ const MusicStudioTycoon = () => {
         removeNotification={removeNotification}
       />
 
-      <GameModals
+      <GameModals // This component might manage showReviewModal internally or receive it as a prop
         showReviewModal={showReviewModal}
         setShowReviewModal={setShowReviewModal}
         lastReview={lastReview}

@@ -26,6 +26,7 @@ export interface Artist {
     responseTime: number; // Days to respond to requests
     currentProject?: string; // Project ID if currently working
   };
+  mood: number; // 0-100, where 100 is very happy
 }
 
 export interface Song {

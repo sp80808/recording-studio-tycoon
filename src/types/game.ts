@@ -96,6 +96,24 @@ export interface Equipment {
     skill: string;
     level: number;
   };
+  condition: number; // 0-100, where 100 is perfect condition
+  appliedModId?: string | null; // ID of the currently applied mod
+}
+
+export interface EquipmentMod {
+  id: string;
+  name: string; 
+  description: string;
+  modifiesEquipmentId: string; 
+  statChanges: Partial<Equipment['bonuses']>; 
+  iconOverride?: string; 
+  nameSuffix?: string; 
+  researchRequirements: {
+    engineerSkill: string; 
+    engineerSkillLevel: number;
+    researchTime: number; 
+    cost: number;
+  };
 }
 
 export interface TrainingCourse {

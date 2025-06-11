@@ -12,7 +12,7 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
         description: "Complete your current project before starting another.",
         variant: "destructive"
       });
-      return;
+      return false;
     }
 
     setGameState(prev => ({
@@ -25,6 +25,7 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
       title: "Project Started!",
       description: `Now working on: ${project.title}`,
     });
+    return true;
   }, [gameState.activeProject, setGameState]);
 
   const completeProject = useCallback((project: Project, addStaffXP: (staffId: string, amount: number) => void) => {
