@@ -399,9 +399,10 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                     {stageFocusLabels.performance.description}
                   </span>
                 </div>
-                {Math.abs(focusAllocation.performance - optimalFocus.performance) <= 10 && (
+                {/* The Optimal text can be removed or kept as per preference, color change is primary */}
+                {/* {Math.abs(focusAllocation.performance - optimalFocus.performance) <= 10 && (
                   <span className="text-green-400 text-xs">✓ Optimal</span>
-                )}
+                )} */}
               </div>
               <Slider
                 value={[focusAllocation.performance]}
@@ -411,7 +412,13 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 }}
                 max={100}
                 step={5}
-                className="w-full transition-all duration-200"
+                className={`w-full transition-all duration-200 ${
+                  Math.abs(focusAllocation.performance - optimalFocus.performance) <= 10 
+                    ? '[&_.bg-primary]:bg-green-500 [&_.border-primary]:border-green-600' 
+                    : Math.abs(focusAllocation.performance - optimalFocus.performance) <= 25
+                      ? '[&_.bg-primary]:bg-yellow-500 [&_.border-primary]:border-yellow-600'
+                      : '[&_.bg-primary]:bg-blue-600'
+                }`}
               />
               <div className="text-xs text-gray-500 mt-1">
                 💡 {stageFocusLabels.performance.impact}
@@ -429,9 +436,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                     {stageFocusLabels.soundCapture.description}
                   </span>
                 </div>
-                {Math.abs(focusAllocation.soundCapture - optimalFocus.soundCapture) <= 10 && (
+                {/* {Math.abs(focusAllocation.soundCapture - optimalFocus.soundCapture) <= 10 && (
                   <span className="text-green-400 text-xs">✓ Optimal</span>
-                )}
+                )} */}
               </div>
               <Slider
                 value={[focusAllocation.soundCapture]}
@@ -441,7 +448,13 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 }}
                 max={100}
                 step={5}
-                className="w-full transition-all duration-200"
+                className={`w-full transition-all duration-200 ${
+                  Math.abs(focusAllocation.soundCapture - optimalFocus.soundCapture) <= 10
+                    ? '[&_.bg-primary]:bg-green-500 [&_.border-primary]:border-green-600'
+                    : Math.abs(focusAllocation.soundCapture - optimalFocus.soundCapture) <= 25
+                      ? '[&_.bg-primary]:bg-yellow-500 [&_.border-primary]:border-yellow-600'
+                      : '[&_.bg-primary]:bg-blue-600'
+                }`}
               />
               <div className="text-xs text-gray-500 mt-1">
                 💡 {stageFocusLabels.soundCapture.impact}
@@ -459,9 +472,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                     {stageFocusLabels.layering.description}
                   </span>
                 </div>
-                {Math.abs(focusAllocation.layering - optimalFocus.layering) <= 10 && (
+                {/* {Math.abs(focusAllocation.layering - optimalFocus.layering) <= 10 && (
                   <span className="text-green-400 text-xs">✓ Optimal</span>
-                )}
+                )} */}
               </div>
               <Slider
                 value={[focusAllocation.layering]}
@@ -471,7 +484,13 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 }}
                 max={100}
                 step={5}
-                className="w-full transition-all duration-200"
+                className={`w-full transition-all duration-200 ${
+                  Math.abs(focusAllocation.layering - optimalFocus.layering) <= 10
+                    ? '[&_.bg-primary]:bg-green-500 [&_.border-primary]:border-green-600'
+                    : Math.abs(focusAllocation.layering - optimalFocus.layering) <= 25
+                      ? '[&_.bg-primary]:bg-yellow-500 [&_.border-primary]:border-yellow-600'
+                      : '[&_.bg-primary]:bg-blue-600'
+                }`}
               />
               <div className="text-xs text-gray-500 mt-1">
                 💡 {stageFocusLabels.layering.impact}

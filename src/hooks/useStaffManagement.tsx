@@ -1,12 +1,17 @@
 
 import { useCallback } from 'react';
-import { GameState, StaffMember, EquipmentMod } from '@/types/game';
+import { GameState, StaffMember, EquipmentMod, FocusAllocation } from '@/types/game'; // Added FocusAllocation
 import { toast } from '@/hooks/use-toast';
 import { availableTrainingCourses } from '@/data/training';
+import { getStageOptimalFocus } from '@/utils/stageUtils'; // Added for optimal focus calculation
 import { availableMods } from '@/data/equipmentMods';
 import { getMoodEffectiveness } from '@/utils/playerUtils'; // Import from playerUtils
 
-export const useStaffManagement = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
+export const useStaffManagement = (
+  gameState: GameState, 
+  setGameState: React.Dispatch<React.SetStateAction<GameState>>,
+  setFocusAllocation?: React.Dispatch<React.SetStateAction<FocusAllocation>> // Added setFocusAllocation
+) => {
   const hireStaff = useCallback((candidateIndex: number): boolean => {
     const candidate = gameState.availableCandidates[candidateIndex];
     if (!candidate) return false;
@@ -57,6 +62,28 @@ export const useStaffManagement = (gameState: GameState, setGameState: React.Dis
 
     const staff = gameState.hiredStaff.find(s => s.id === staffId);
     if (!staff || staff.status !== 'Idle') return;
+
+    // Auto-set focus allocation
+    if (setFocusAllocation && gameState.activeProject) {
+      const project = gameState.activeProject;
+      const currentStage = project.stages[project.currentStageIndex];
+      if (currentStage) {
+        const optimalFocus = getStageOptimalFocus(currentStage, project.genre);
+        // For now, directly apply stage/genre optimal. 
+        // Future: adjust based on this specific staff member's skills.
+        setFocusAllocation({
+          performance: optimalFocus.performance,
+          soundCapture: optimalFocus.soundCapture,
+          layering: optimalFocus.layering,
+        });
+        toast({
+          title: "🧠 Focus Optimized!",
+          description: `Focus sliders automatically adjusted for ${staff.name} on ${currentStage.stageName}.`,
+          className: "bg-gray-800 border-gray-600 text-white",
+          duration: 3000,
+        });
+      }
+    }
 
     setGameState(prev => ({
       ...prev,

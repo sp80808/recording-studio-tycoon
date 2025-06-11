@@ -1,9 +1,9 @@
 # Current Development Task - Recording Studio Tycoon
 *Updated: June 11, 2025*
 
-## 🎯 Current Focus: Vercel Insights, Animation Polish & Multi-Project System Validation
+## 🎯 Current Focus: Gameplay Depth, UX, Minigames, Automation & Visual Feedback
 
-Following the successful implementation of the Multi-Project Staff Automation System (Phase 1) and significant UI/UX enhancements, the current focus is on resolving deployment-related insights, polishing animations for the new systems, and ensuring robust testing and integration.
+Following the successful implementation of the Multi-Project Staff Automation System (Phase 1) and recent UI/UX enhancements (including text-based save/load), the current focus is on deepening core gameplay mechanics, enhancing user experience with improved automation and visual feedback, and expanding minigame content.
 
 ### ✅ Recently Completed (June 11) - MAJOR MILESTONES
 1.  **Multi-Project Staff Automation System (Phase 1 Core Infrastructure)**
@@ -55,20 +55,24 @@ Following the successful implementation of the Multi-Project Staff Automation Sy
 5.  **Enhanced minigameUtils.ts**.
 6.  **Background Music Timing Optimization**.
 
-### 🚧 Next Immediate Tasks (Priority Order - As per activeContext.md v0.3)
+### 🚧 Next Immediate Tasks (Priority Order - Reflecting New Focus)
 
-1.  **Vercel Speed Insights Resolution (High Priority)**
-    *   [ ] Diagnose and resolve issues preventing Vercel Speed Insights data from appearing.
-    *   [ ] Verify client-side integration (`App.tsx`, `package.json`).
-    *   [ ] Collaborate with user to check deployment environment, console errors, and Vercel project settings if necessary.
+1.  **Automatic Focus Slider Adjustment & Visual Feedback (High Priority)**
+    *   [ ] Enhance optimal focus calculation to consider assigned staff skills.
+    *   [ ] Trigger automatic focus adjustment in `assignStaffToProject` (or equivalent automation logic) by calling `setFocusAllocation`.
+    *   [ ] Implement color-change visual feedback on sliders in `ActiveProject.tsx` to indicate optimal settings.
+    *   [ ] Verify and ensure fully automatic project progression post-staff assignment when automation is active.
 
-2.  **Animation & Visual Polish (High Priority)**
-    *   [ ] Complete `AnimatedProjectCard` component with work intensity indicators, progress animations, and staff activity visualization.
+2.  **Minigame Implementation & Enhancements (High Priority)**
+    *   [ ] Plan and begin implementation of a new minigame (e.g., "Gear Maintenance Minigame" or another based on documentation).
+    *   [ ] Focus on rich "visual playback feedback" for new and existing minigames.
+
+3.  **Animation & Visual Polish (High Priority - Ongoing)**
+    *   [ ] Continue work on `AnimatedProjectCard` with work intensity indicators, progress animations, and staff activity visualization.
     *   [ ] Integrate real-time project state animations with staff automation actions.
     *   [ ] Add smooth transitions for project progression milestones and automation state changes.
-    *   [ ] Implement studio activity heat map visualization (if time permits within this polish phase).
 
-3.  **Testing & Validation (Critical)**
+4.  **Testing & Validation (Critical - Ongoing)**
     *   [ ] Test progression system across all milestone levels (Level 1 → 3 → 5 → 8 → 12).
     *   [ ] Validate staff optimization algorithms with various staff configurations.
     *   [ ] Ensure automation efficiency calculations work correctly across different project types.
@@ -81,20 +85,22 @@ Following the successful implementation of the Multi-Project Staff Automation Sy
     *   [ ] Add accessibility features (ARIA labels, keyboard navigation) where still needed.
 
 5.  **Broader Documentation Review (Ongoing)**
-    *   [ ] Review and update other specified documents in the `docs/` folder for necessary updates related to recent changes or Vercel deployment.
+    *   [ ] Review and update other specified documents in the `docs/` folder for necessary updates related to recent changes.
     *   [ ] Update `docs/DOCUMENTATION_INDEX.md` or determine if it's still needed.
+    *   [ ] Update Memory Bank files (`activeContext.md`, `progress.md`) to reflect new features (automatic sliders, minigame work) as they are implemented.
 
 ### 🎯 Current Project Status (Phase Assessment)
 
 *   **Multi-Project Automation System**: Phase 1 Core Infrastructure ✅ COMPLETE.
+*   **Settings & Save/Load**: Splash screen settings button and Text-based Save/Load system ✅ COMPLETE.
 *   **UI/UX & Accessibility**: Significant enhancements ✅ COMPLETE.
 *   **Advanced Minigames**: ✅ COMPLETE (as per previous status).
 *   **Overall**: The game has taken a major leap forward. Focus is now on stabilizing, polishing the new systems, and preparing for the next wave of features (Advanced Automation - Phase 2).
 
 ### 🚀 Immediate Priorities (Next Development Session)
 
-The immediate goal is to address the Vercel Speed Insights issue, followed by intensive animation polish for the multi-project system and thorough testing.
+The immediate goal is to implement automatic focus slider adjustments with visual feedback, followed by minigame development and continued animation polish.
 
 ---
 
-**Next Session Goal**: Resolve Vercel Speed Insights, make significant progress on Animation Polish for multi-project UI, and begin comprehensive testing of the new systems.
+**Next Session Goal**: Successfully implement automatic focus slider adjustments and visual feedback. Begin planning or implementing the next minigame. Make progress on `AnimatedProjectCard` and other visual polish tasks.

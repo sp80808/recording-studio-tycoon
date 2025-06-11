@@ -22,7 +22,7 @@ import { MinigameType } from '@/components/minigames/MinigameManager'; // Import
 const MusicStudioTycoon = () => {
   const { gameState, setGameState, focusAllocation, setFocusAllocation, initializeGameState } = useGameState();
   const { settings } = useSettings();
-  const { saveGame, loadGame, hasSavedGame, resetGame } = useSaveSystem(); // Added resetGame
+  const { saveGame, loadGame, hasSavedGame, resetGame } = useSaveSystem();
   
   const [showSplashScreen, setShowSplashScreen] = useState(true);
   const [gameInitialized, setGameInitialized] = useState(false);
@@ -50,7 +50,7 @@ const MusicStudioTycoon = () => {
     startResearchMod, // Destructure startResearchMod
     completeProject, // Ensure this is destructured if not aliased
     addStaffXP // Ensure this is destructured if not aliased
-  } = useGameLogic(gameState, setGameState, focusAllocation);
+  } = useGameLogic(gameState, setGameState, focusAllocation, setFocusAllocation); // Pass setFocusAllocation
 
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showTrainingModal, setShowTrainingModal] = useState(false);

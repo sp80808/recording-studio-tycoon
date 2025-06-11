@@ -13,10 +13,17 @@ import { useStageWork } from '@/hooks/useStageWork';
 import { useGameActions } from '@/hooks/useGameActions';
 import { useBandManagement } from '@/hooks/useBandManagement';
 import { ArtistContact } from '@/types/charts';
+import { FocusAllocation } from '@/types/game'; // Import FocusAllocation type
 
-export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>, focusAllocation: any) => {
+export const useGameLogic = (
+  gameState: GameState, 
+  setGameState: React.Dispatch<React.SetStateAction<GameState>>, 
+  focusAllocation: FocusAllocation, // Use imported type
+  setFocusAllocation: React.Dispatch<React.SetStateAction<FocusAllocation>> // Add setFocusAllocation
+) => {
   const { levelUpPlayer, spendPerkPoint, checkAndHandleLevelUp } = usePlayerProgression(gameState, setGameState);
-  const { hireStaff, assignStaffToProject, unassignStaffFromProject, toggleStaffRest, addStaffXP, openTrainingModal, startResearchMod, sendStaffToTraining: originalSendStaffToTraining } = useStaffManagement(gameState, setGameState); // Destructure startResearchMod, alias sendStaffToTraining
+  // Pass setFocusAllocation to useStaffManagement
+  const { hireStaff, assignStaffToProject, unassignStaffFromProject, toggleStaffRest, addStaffXP, openTrainingModal, startResearchMod, sendStaffToTraining: originalSendStaffToTraining } = useStaffManagement(gameState, setGameState, setFocusAllocation); 
   const { startProject, completeProject } = useProjectManagement(gameState, setGameState);
   const { advanceDay, refreshCandidates, triggerEraTransition } = useGameActions(gameState, setGameState);
 

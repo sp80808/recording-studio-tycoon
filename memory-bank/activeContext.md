@@ -68,15 +68,12 @@ Core infrastructure for the multi-project automation system has been successfull
 
 ## 3. Next Immediate Actions (Current Implementation Phase)
 
-1.  **Vercel Speed Insights Resolution (High Priority):**
-    *   Verify client-side integration (`App.tsx`, `package.json`).
-    *   Collaborate with user to check deployment environment, console errors, and Vercel project settings.
-2.  **Animation & Visual Polish (High Priority):**
+1.  **Animation & Visual Polish (High Priority):**
     * Complete `AnimatedProjectCard` component with work intensity indicators, progress animations, and staff activity visualization
     * Integrate real-time project state animations with staff automation actions
     * Add smooth transitions for project progression milestones and automation state changes
     * Implement studio activity heat map visualization
-3.  **Testing & Validation (Critical):**
+2.  **Testing & Validation (Critical):**
     * Test progression system across all milestone levels (Level 1 → 3 → 5 → 8 → 12)
     * Validate staff optimization algorithms with various staff configurations
     * Ensure automation efficiency calculations work correctly across different project types
@@ -100,7 +97,6 @@ Core infrastructure for the multi-project automation system has been successfull
 *   **State Management Scalability:** The current custom hook/context approach needs to be robust enough for `EnhancedGameState` or alternatives explored.
 *   **UI/UX for Multi-Project View:** Designing an intuitive and clear interface for managing multiple projects and automation settings is an ongoing challenge (recent layout changes are a step in this direction).
 *   **Performance:** Maintaining performance with multiple concurrent projects, automated staff actions, and animations will require ongoing optimization.
-*   **Vercel Speed Insights:** Root cause for lack of data needs to be identified and resolved.
 
 ## 5. Important Patterns & Preferences (from User Instructions & Plans)
 
