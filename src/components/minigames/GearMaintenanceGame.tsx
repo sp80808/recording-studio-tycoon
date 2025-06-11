@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { playSound } from '@/utils/soundUtils';
 
 interface GearMaintenanceGameProps {
-  onComplete: (score: number) => void;
+  equipment: { name: string }; // Added equipment prop
+  onComplete: (success: boolean, score: number) => void; // Updated onComplete signature
   onClose: () => void;
 }
 
@@ -36,7 +37,7 @@ const GearMaintenanceGame: React.FC<GearMaintenanceGameProps> = ({ equipment, on
         Math.floor(Math.random() * 80) + 10,
       ]
     }));
-    gameAudio.playSound('notice'); // Sound for minigame start
+    playSound('notice'); // Sound for minigame start
   }, []);
 
   const handleDialChange = (dialIndex: number, direction: 'up' | 'down') => {
@@ -47,13 +48,13 @@ const GearMaintenanceGame: React.FC<GearMaintenanceGameProps> = ({ equipment, on
       newDials[dialIndex] = Math.max(0, Math.min(100, newDials[dialIndex] + (direction === 'up' ? 5 : -5)));
       return { ...prevState, dials: newDials };
     });
-    gameAudio.playSound('buttonClick'); // Sound for dial adjustment
+    playSound('buttonClick'); // Sound for dial adjustment
   };
 
   const handleSubmitAttempt = () => {
     if (minigameState.attemptsLeft <= 0) return;
 
-    gameAudio.playSound('proj-complete'); // Sound for attempt submission
+    playSound('proj-complete'); // Sound for attempt submission
 
     let successfulAdjustments = 0;
     minigameState.dials.forEach((dialValue, index) => {
