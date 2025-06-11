@@ -1,6 +1,6 @@
 # Tech Context: Recording Studio Tycoon
 
-**Version:** 0.2
+**Version:** 0.3
 **Date:** 2025-06-11
 **Related Document:** `projectbrief.md`, `systemPatterns.md`, `MULTI_PROJECT_AUTOMATION_PLAN.md`
 
@@ -14,7 +14,8 @@
     *   Tailwind CSS.
     *   Plain CSS/CSS Modules for component-specific styles.
 *   **Linting/Formatting:** ESLint, Prettier (inferred).
-*   **State Management:** Currently custom React hooks (`useGameState`, `useGameLogic`) and Context API. The introduction of the `EnhancedGameState` for multi-project management (as detailed in `MULTI_PROJECT_AUTOMATION_PLAN.md` and `systemPatterns.md`) will significantly increase state complexity. This necessitates a careful review of the current approach. While the existing system might be extendable, alternatives like Zustand or Jotai could be considered if performance or maintainability become challenging. The `MULTI_PROJECT_AUTOMATION_PLAN.md` suggests batching state updates and optimized update cycles, which will be crucial regardless of the specific library/pattern used.
+*   **Audio System:** Dual audio architecture combining Web Audio API (code-generated sounds) with HTML5 Audio (file-based sounds)
+*   **State Management:** Currently custom React hooks (`useGameState`, `useGameLogic`) and Context API. Enhanced work progression system with stage-specific focus allocation and real-time effectiveness scoring integrated.
 
 ## 2. Development Setup & Workflow
 

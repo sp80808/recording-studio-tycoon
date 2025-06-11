@@ -22,7 +22,7 @@ import { MinigameType } from '@/components/minigames/MinigameManager'; // Import
 const MusicStudioTycoon = () => {
   const { gameState, setGameState, focusAllocation, setFocusAllocation, initializeGameState } = useGameState();
   const { settings } = useSettings();
-  const { saveGame, loadGame, hasSavedGame } = useSaveSystem();
+  const { saveGame, loadGame, hasSavedGame, resetGame } = useSaveSystem(); // Added resetGame
   
   const [showSplashScreen, setShowSplashScreen] = useState(true);
   const [gameInitialized, setGameInitialized] = useState(false);
@@ -59,6 +59,19 @@ const MusicStudioTycoon = () => {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showTutorialModal, setShowTutorialModal] = useState(false);
   const [currentEraForTutorial, setCurrentEraForTutorial] = useState<string>(ERA_DEFINITIONS[0].id); // Default to first era
+  
+  const handleLoadGameStateFromString = (newGameState: any) => {
+    setGameState(newGameState);
+    // Additional logic might be needed here, e.g., re-initializing parts of the UI or game logic
+    // For now, just setting the game state.
+    // Also, ensure currentEraForTutorial is updated if relevant
+    if (newGameState.currentEra) {
+      setCurrentEraForTutorial(newGameState.currentEra);
+    }
+    // Potentially close splash screen if open, set gameInitialized, etc.
+    // This function will primarily be called from in-game settings, so splash screen might not be an issue.
+    // If called from splash settings, then setShowSplashScreen(false) and setGameInitialized(true) would be needed.
+  };
 
   // State for auto-triggered minigames
   const [autoTriggeredMinigame, setAutoTriggeredMinigame] = useState<{ type: MinigameType; reason: string } | null>(null);
@@ -320,6 +333,9 @@ const MusicStudioTycoon = () => {
       <SettingsModal
         isOpen={showSettingsModal}
         onClose={() => setShowSettingsModal(false)}
+        onResetGame={resetGame} // Pass resetGame from useSaveSystem
+        context="ingame" // Explicitly set context for in-game settings
+        onLoadGameStateFromString={handleLoadGameStateFromString} // Pass the new handler
       />
 
       <TutorialModal

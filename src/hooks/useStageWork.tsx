@@ -203,7 +203,7 @@ export const useStageWork = ({
     createOrb('creativity', creativityGain);
     createOrb('technical', technicalGain);
 
-    // FIXED: More reasonable work units calculation
+    // ENHANCED: Improved work units calculation with better scaling
     const totalPointsGenerated = creativityGain + technicalGain;
 
     // Log values for debugging stage progression
@@ -212,7 +212,16 @@ export const useStageWork = ({
     console.log(`🐞 DEBUG - Technical Gain: ${technicalGain}`);
     console.log(`🐞 DEBUG - Total Points Generated: ${totalPointsGenerated}`);
     console.log(`🐞 DEBUG - Current Stage workUnitsCompleted (before): ${currentStage.workUnitsCompleted}`);
-    const workUnitsToAdd = Math.floor(totalPointsGenerated / 5); // Changed from 10 to 5 for better progression
+    
+    // Enhanced work unit calculation:
+    // - Base conversion: points to work units (divide by 3 for faster progression)
+    // - Minimum progress: Always make at least 1 work unit of progress if points > 0
+    // - Stage difficulty scaling: Harder stages (more work units) get bonus efficiency
+    const baseWorkUnits = Math.floor(totalPointsGenerated / 3);
+    const minProgress = totalPointsGenerated > 0 ? 1 : 0;
+    const stageEfficiencyBonus = Math.floor(currentStage.workUnitsBase / 10); // Bonus for longer stages
+    
+    const workUnitsToAdd = Math.max(minProgress, baseWorkUnits + stageEfficiencyBonus);
     const newWorkUnitsCompleted = Math.min(
       currentStage.workUnitsCompleted + workUnitsToAdd,
       currentStage.workUnitsBase

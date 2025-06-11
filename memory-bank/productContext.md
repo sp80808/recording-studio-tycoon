@@ -1,6 +1,6 @@
 # Product Context: Recording Studio Tycoon
 
-**Version:** 0.2
+**Version:** 0.3
 **Date:** 2025-06-11
 **Related Document:** `projectbrief.md`, `MULTI_PROJECT_AUTOMATION_PLAN.md`
 
@@ -22,8 +22,10 @@ The game revolves around a core loop of:
 1.  **Acquisition & Setup:** Acquiring a studio space, purchasing/upgrading equipment.
 2.  **Talent Management:** Scouting, signing, and developing artists and staff (engineers, producers). Staff can eventually be assigned to work autonomously on projects.
 3.  **Production Management:**
-    *   Initially, direct management of recording sessions, mixing, and mastering tracks for single projects.
-    *   Progressively, overseeing multiple concurrent projects, assigning staff, setting priorities, and managing automation settings. This includes managing artist mood, equipment condition, and engineer skills, which will factor into automation efficiency.
+    *   Initially, direct management of recording sessions with enhanced stage-specific focus allocation and real-time effectiveness scoring.
+    *   Genre-aware optimization recommendations that adapt to different musical styles (Rock emphasizes performance, Electronic emphasizes layering).
+    *   Progressively, overseeing multiple concurrent projects with intelligent work progression algorithms.
+    *   Advanced staff automation with priority-based allocation and workload balancing.
 4.  **Release & Promotion:** Releasing music, managing marketing efforts, and climbing the charts.
 5.  **Progression & Expansion:** Reinvesting profits into better equipment, larger facilities, more skilled personnel, and unlocking capabilities like multi-project management and advanced staff automation. Unlocking new eras and technologies over time remains key.
 

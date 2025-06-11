@@ -1,10 +1,10 @@
 /**
  * @fileoverview Save system context with version tracking and compatibility checking
- * @version 0.3.0
+ * @version 0.3.1 
  * @author Recording Studio Tycoon Development Team
  * @created 2025-06-01
- * @modified 2025-06-08
- * @lastModifiedBy GitHub Copilot
+ * @modified 2025-06-11 
+ * @lastModifiedBy Cline
  */
 
 import React, { createContext, useContext, useEffect, ReactNode } from 'react';
@@ -16,6 +16,8 @@ interface SaveSystemContextType {
   loadGame: () => any | null;
   resetGame: () => void;
   hasSavedGame: () => boolean;
+  exportGameStateToString: (gameState: any) => string | null; // New function
+  loadGameFromString: (saveString: string) => any | null; // New function
 }
 
 const SaveSystemContext = createContext<SaveSystemContextType | undefined>(undefined);
@@ -93,6 +95,52 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
     return localStorage.getItem('recordingStudioTycoonSave') !== null;
   };
 
+  const exportGameStateToString = (gameState: any): string | null => {
+    try {
+      const versionInfo = getVersionInfo();
+      const saveData = {
+        gameState,
+        timestamp: Date.now(),
+        ...versionInfo,
+        saveFormat: 'v2_text_export' // Indicate it's a text export
+      };
+      const jsonString = JSON.stringify(saveData);
+      // Basic obfuscation: Base64 encode
+      return btoa(jsonString); 
+    } catch (error) {
+      console.error('Failed to export game state to string:', error);
+      return null;
+    }
+  };
+
+  const loadGameFromString = (saveString: string): any | null => {
+    try {
+      // Basic de-obfuscation: Base64 decode
+      const jsonString = atob(saveString); 
+      const parsed = JSON.parse(jsonString);
+      const currentVersionInfo = getVersionInfo();
+      
+      // Version compatibility checking (similar to loadGame)
+      if (parsed.version && parsed.version !== currentVersionInfo.version) {
+        const versionComparison = compareVersions(parsed.version, currentVersionInfo.version);
+        if (versionComparison < 0) {
+          console.warn(`Loading save from older version (string): ${parsed.version} -> ${currentVersionInfo.version}`);
+          // Future: Add migration logic here
+        } else if (versionComparison > 0) {
+          console.warn(`Loading save from newer version (string): ${parsed.version} -> ${currentVersionInfo.version}`);
+          // Handle downgrade scenario
+        }
+      }
+      
+      console.log(`Game loaded from string successfully - Save Version: ${parsed.version || 'legacy_text'}`);
+      return parsed.gameState;
+    } catch (error) {
+      console.error('Failed to load game from string:', error);
+      // TODO: Consider adding a user-facing notification for invalid save string
+      return null;
+    }
+  };
+
   // Auto-save functionality
   useEffect(() => {
     let autoSaveInterval: NodeJS.Timeout;
@@ -114,7 +162,14 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
   }, [settings.autoSave]);
 
   return (
-    <SaveSystemContext.Provider value={{ saveGame, loadGame, resetGame, hasSavedGame }}>
+    <SaveSystemContext.Provider value={{ 
+      saveGame, 
+      loadGame, 
+      resetGame, 
+      hasSavedGame, 
+      exportGameStateToString, 
+      loadGameFromString 
+    }}>
       {children}
     </SaveSystemContext.Provider>
   );

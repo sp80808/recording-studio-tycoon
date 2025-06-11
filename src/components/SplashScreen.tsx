@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { EraSelectionModal, Era, AVAILABLE_ERAS } from '@/components/EraSelectionModal';
+import { EraSelectionModal, Era } from '@/components/EraSelectionModal'; // AVAILABLE_ERAS removed as it's not used directly here
+import { SettingsModal } from '@/components/modals/SettingsModal'; // Added SettingsModal import
+import { useSettings } from '@/contexts/SettingsContext'; // Added useSettings import
+import { gameAudio } from '@/utils/audioSystem'; // Added gameAudio import
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import { Maximize, Minimize } from 'lucide-react';
@@ -19,10 +22,12 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
   hasSaveGame 
 }) => {
   const [showEraSelection, setShowEraSelection] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false); // Added state for settings modal
   const [currentTip, setCurrentTip] = useState(0);
   const backgroundMusic = useBackgroundMusic();
   const { isFullscreen, toggleFullscreen } = useFullscreen('root');
   const { t } = useTranslation();
+  const { settings } = useSettings(); // Destructure settings
 
   const gameTipKeys = [
     'splash_tip_skills',
@@ -139,6 +144,17 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
               </Button>
             )}
 
+            <Button
+              onClick={() => {
+                if (settings.sfxEnabled) gameAudio.playClick();
+                setShowSettingsModal(true);
+              }}
+              variant="outline"
+              className="w-full bg-gray-700/30 border-gray-600 text-gray-300 hover:bg-gray-600/50 py-3"
+            >
+              ⚙️ {t('splash_btn_settings', 'Settings')}
+            </Button>
+
             <div className="text-xs text-gray-500 mt-6">
               <p>{t('splash_footer_1', 'Choose your era and build the studio of your dreams!')}</p>
               <p className="mt-1">{t('splash_footer_2', 'Each era offers unique challenges, equipment, and music trends.')}</p>
@@ -160,6 +176,15 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
         onSelectEra={handleEraSelection}
         onClose={() => setShowEraSelection(false)}
       />
+
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <SettingsModal
+          isOpen={showSettingsModal}
+          onClose={() => setShowSettingsModal(false)}
+          context="splash" // Pass splash context
+        />
+      )}
     </>
   );
 };

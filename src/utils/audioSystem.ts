@@ -203,12 +203,24 @@ class GameAudioSystem {
 
   private async ensureInitialized() {
     if (!this.isInitialized) {
-      await this.initialize();
+      try {
+        await this.initialize();
+      } catch (error) {
+        console.warn('Audio system initialization failed:', error);
+        return false;
+      }
     }
     
     if (this.audioContext?.state === 'suspended') {
-      await this.audioContext.resume();
+      try {
+        await this.audioContext.resume();
+      } catch (error) {
+        console.warn('Failed to resume audio context:', error);
+        return false;
+      }
     }
+    
+    return true;
   }
 
   // BEAT MAKING SOUNDS

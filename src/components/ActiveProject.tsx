@@ -12,6 +12,12 @@ import { ProjectCompletionCelebration } from './ProjectCompletionCelebration';
 import { EnhancedAnimationStyles } from './EnhancedAnimationStyles';
 import { toast } from '@/hooks/use-toast';
 import { playSound } from '@/utils/soundUtils';
+import { 
+  getStageFocusLabels, 
+  getStageOptimalFocus, 
+  calculateFocusEffectiveness,
+  getStageFocusRecommendations 
+} from '@/utils/stageUtils';
 
 import { GameState, FocusAllocation, Project } from '@/types/game'; // GameState, FocusAllocation, Project types
 
@@ -116,6 +122,12 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   // Calculate progress for current stage
   const currentStage = project.stages[project.currentStageIndex] || project.stages[0];
   const currentStageProgress = currentStage ? (currentStage.workUnitsCompleted / currentStage.workUnitsBase) * 100 : 0;
+
+  // Get stage-specific focus labels and guidance
+  const stageFocusLabels = getStageFocusLabels(currentStage);
+  const optimalFocus = getStageOptimalFocus(currentStage, project.genre);
+  const focusEffectiveness = calculateFocusEffectiveness(focusAllocation, optimalFocus);
+  const stageRecommendations = getStageFocusRecommendations(currentStage);
   
   // Calculate overall project progress
   const totalWorkUnits = project.stages.reduce((total, stage) => total + stage.workUnitsBase, 0);
@@ -313,12 +325,19 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
           {/* Current Stage Progress */}
           <div className="mb-4 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            {/* Enhanced progress display with effectiveness indicator */}
             <div className="flex justify-between items-center mb-2">
-              <span className="text-white font-semibold">
-                Current Stage: {currentStage?.stageName || 'Unknown'}
+              <span className="text-white font-semibold flex items-center gap-2">
+                Current Stage: {currentStage?.stageName}
+                {focusEffectiveness.effectiveness > 0.8 && (
+                  <span className="text-green-400 text-sm animate-pulse">🚀 Optimized!</span>
+                )}
               </span>
-              <span className="text-gray-400">
+              <span className="text-gray-400 flex items-center gap-1">
                 {currentStage?.workUnitsCompleted || 0}/{currentStage?.workUnitsBase || 0}
+                {focusEffectiveness.effectiveness > 0.7 && (
+                  <span className="text-blue-400 text-xs">⚡ Efficient</span>
+                )}
               </span>
             </div>
             <Progress 
@@ -346,11 +365,43 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
           {/* Focus Allocation Sliders */}
           <div className="space-y-4 mb-6 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-            <h4 className="text-white font-semibold">Focus Allocation</h4>
+            <div className="flex justify-between items-center">
+              <h4 className="text-white font-semibold">Focus Allocation</h4>
+              <div className={`text-sm px-2 py-1 rounded ${
+                focusEffectiveness.effectiveness > 0.8 ? 'bg-green-900 text-green-200' :
+                focusEffectiveness.effectiveness > 0.6 ? 'bg-yellow-900 text-yellow-200' :
+                'bg-red-900 text-red-200'
+              }`}>
+                {Math.round(focusEffectiveness.effectiveness * 100)}% effective
+              </div>
+            </div>
             
+            {/* Stage-specific guidance */}
+            <div className="bg-blue-900/30 border border-blue-600/50 rounded-lg p-3 text-sm">
+              <div className="text-blue-200 font-medium mb-1">
+                📋 {currentStage.stageName} - {optimalFocus.reasoning}
+              </div>
+              {stageRecommendations.length > 0 && (
+                <div className="text-blue-300 text-xs">
+                  💡 {stageRecommendations.join(' • ')}
+                </div>
+              )}
+            </div>
+            
+            {/* Performance Slider */}
             <div className="hover-scale">
               <div className="flex justify-between items-center mb-2">
-                <label className="text-gray-300">🎭 Performance ({focusAllocation.performance}%)</label>
+                <div className="flex flex-col">
+                  <label className="text-gray-300 font-medium">
+                    {stageFocusLabels.performance.label} ({focusAllocation.performance}%)
+                  </label>
+                  <span className="text-xs text-gray-400">
+                    {stageFocusLabels.performance.description}
+                  </span>
+                </div>
+                {Math.abs(focusAllocation.performance - optimalFocus.performance) <= 10 && (
+                  <span className="text-green-400 text-xs">✓ Optimal</span>
+                )}
               </div>
               <Slider
                 value={[focusAllocation.performance]}
@@ -362,11 +413,25 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 step={5}
                 className="w-full transition-all duration-200"
               />
+              <div className="text-xs text-gray-500 mt-1">
+                💡 {stageFocusLabels.performance.impact}
+              </div>
             </div>
 
+            {/* Sound Capture Slider */}
             <div className="hover-scale">
               <div className="flex justify-between items-center mb-2">
-                <label className="text-gray-300">🎤 Sound Capture ({focusAllocation.soundCapture}%)</label>
+                <div className="flex flex-col">
+                  <label className="text-gray-300 font-medium">
+                    {stageFocusLabels.soundCapture.label} ({focusAllocation.soundCapture}%)
+                  </label>
+                  <span className="text-xs text-gray-400">
+                    {stageFocusLabels.soundCapture.description}
+                  </span>
+                </div>
+                {Math.abs(focusAllocation.soundCapture - optimalFocus.soundCapture) <= 10 && (
+                  <span className="text-green-400 text-xs">✓ Optimal</span>
+                )}
               </div>
               <Slider
                 value={[focusAllocation.soundCapture]}
@@ -378,11 +443,25 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 step={5}
                 className="w-full transition-all duration-200"
               />
+              <div className="text-xs text-gray-500 mt-1">
+                💡 {stageFocusLabels.soundCapture.impact}
+              </div>
             </div>
 
+            {/* Layering Slider */}
             <div className="hover-scale">
               <div className="flex justify-between items-center mb-2">
-                <label className="text-gray-300">🎚️ Layering ({focusAllocation.layering}%)</label>
+                <div className="flex flex-col">
+                  <label className="text-gray-300 font-medium">
+                    {stageFocusLabels.layering.label} ({focusAllocation.layering}%)
+                  </label>
+                  <span className="text-xs text-gray-400">
+                    {stageFocusLabels.layering.description}
+                  </span>
+                </div>
+                {Math.abs(focusAllocation.layering - optimalFocus.layering) <= 10 && (
+                  <span className="text-green-400 text-xs">✓ Optimal</span>
+                )}
               </div>
               <Slider
                 value={[focusAllocation.layering]}
@@ -394,7 +473,46 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 step={5}
                 className="w-full transition-all duration-200"
               />
+              <div className="text-xs text-gray-500 mt-1">
+                💡 {stageFocusLabels.layering.impact}
+              </div>
             </div>
+
+            {/* Focus suggestions */}
+            {focusEffectiveness.suggestions.length > 0 && (
+              <div className="bg-yellow-900/30 border border-yellow-600/50 rounded-lg p-3">
+                <div className="text-yellow-200 font-medium text-sm mb-1">
+                  💡 Focus Suggestions:
+                </div>
+                <div className="text-yellow-300 text-xs space-y-1">
+                  {focusEffectiveness.suggestions.map((suggestion, index) => (
+                    <div key={index}>• {suggestion}</div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Optimal focus button */}
+            <Button
+              onClick={() => {
+                setFocusAllocation({
+                  performance: optimalFocus.performance,
+                  soundCapture: optimalFocus.soundCapture,
+                  layering: optimalFocus.layering
+                });
+                playSound('notification.wav', 0.4);
+                toast({
+                  title: "🎯 Optimal Focus Applied",
+                  description: `Set focus for ${currentStage.stageName}`,
+                  className: "bg-gray-800 border-gray-600 text-white",
+                });
+              }}
+              variant="outline"
+              size="sm"
+              className="w-full bg-blue-900/30 border-blue-600/50 text-blue-200 hover:bg-blue-800/50"
+            >
+              🎯 Apply Optimal Focus for {currentStage.stageName}
+            </Button>
           </div>
 
           <Button 

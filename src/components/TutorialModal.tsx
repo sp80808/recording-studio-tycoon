@@ -46,7 +46,35 @@ const baseTutorialSteps: TutorialStep[] = [
 
 const getTutorialStepsForEra = (eraId: string): TutorialStep[] => {
   let eraSpecificIntro: TutorialStep;
+  
+  console.log('Tutorial: Getting steps for era ID:', eraId);
+  
   switch (eraId) {
+    case 'classic_rock':
+      eraSpecificIntro = {
+        title: "Welcome to the Rock Revolution! 🎸 (1960s-1970s)",
+        content: "The world of music is buzzing with analog warmth! Start your journey with 4-track recorders and build your studio from the ground up. Vinyl is king!",
+      };
+      break;
+    case 'golden_age':
+      eraSpecificIntro = {
+        title: "The Golden Age Arrives! 📺 (1980s-1990s)",
+        content: "Digital technology is revolutionizing music! Embrace MIDI, early samplers, and the rise of CDs. MTV will make or break artists!",
+      };
+      break;
+    case 'digital_age':
+      eraSpecificIntro = {
+        title: "Ride the Digital Wave! 💿 (2000s-2010s)",
+        content: "The internet changes everything! DAWs become powerful, file sharing is rampant, and digital distribution opens new doors. Can you adapt?",
+      };
+      break;
+    case 'modern':
+      eraSpecificIntro = {
+        title: "Conquer the Modern Era! 📱 (2020s+)",
+        content: "Streaming platforms rule the music world! Master AI tools, leverage social media, and navigate the fast-paced landscape of modern music production.",
+      };
+      break;
+    // Legacy era IDs for backward compatibility
     case 'analog60s':
       eraSpecificIntro = {
         title: "Welcome to the Analog Age! 🎵 (1960s-1970s)",
@@ -76,6 +104,7 @@ const getTutorialStepsForEra = (eraId: string): TutorialStep[] => {
         title: "Welcome to Recording Studio Tycoon! 🎵",
         content: "Build your music empire from a small home studio to a professional recording complex. Complete projects, upgrade equipment, and become the ultimate music mogul!",
       };
+      console.warn('Tutorial: Unknown era ID:', eraId, 'Using default welcome message.');
   }
   return [eraSpecificIntro, ...baseTutorialSteps];
 };

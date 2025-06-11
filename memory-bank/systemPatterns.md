@@ -1,6 +1,6 @@
 # System Patterns: Recording Studio Tycoon
 
-**Version:** 0.2
+**Version:** 0.3
 **Date:** 2025-06-11
 **Related Document:** `projectbrief.md`, `productContext.md`, `MULTI_PROJECT_AUTOMATION_PLAN.md`, `PROJECT_MANAGEMENT_WORKFLOW.md`
 
@@ -10,7 +10,9 @@ The game is a single-player, client-side application built with React and TypeSc
 
 **Key Architectural Considerations:**
 *   **State Management:** A robust state management solution is crucial. Currently uses custom React hooks and Context API. The introduction of `EnhancedGameState` (from `MULTI_PROJECT_AUTOMATION_PLAN.md`) for managing multiple concurrent projects, staff automation states, and animation states will significantly increase complexity, potentially requiring more advanced solutions or careful structuring of existing ones.
-*   **Component-Based UI:** The UI is built using reusable React components for game elements, menus, and the new multi-project dashboard.
+*   **Enhanced Work Progression System:** Stage-specific focus allocation with real-time effectiveness scoring and genre-aware optimization
+*   **Audio System:** Dual audio architecture with code-generated sounds and file-based audio assets
+*   **Component-Based UI:** The UI is built using reusable React components for game elements, menus, and the multi-project dashboard.
 *   **Game Loop & Time Progression:** A central game loop (managed via `useGameLogic` and related hooks) manages time progression, event updates, and AI actions, including the new automated work cycles for staff.
 *   **Data Structures:** Clear and well-defined TypeScript interfaces for game entities (equipment, artists, staff, projects) are essential. The `Project` structure is detailed in `PROJECT_MANAGEMENT_WORKFLOW.md` and will be central to the multi-project system.
 *   **Modularity:** Game systems (e.g., recording, mixing, research, finance, multi-project management, staff automation) are designed as modularly as possible using custom hooks and services.
