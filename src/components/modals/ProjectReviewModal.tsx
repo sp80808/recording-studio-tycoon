@@ -57,7 +57,7 @@ const SkillDisplay: React.FC<SkillDisplayProps> = ({ skillDetail, onAnimationCom
 
     const runAnimations = () => {
       if (animationStep === 0) { // Animate XP bar and level
-        gameAudio.playSound('xp_tick_fast', 'sfx', 0.3);
+        gameAudio.playSound('xp-tick', 'sfx', 0.3); // Changed from xp_tick_fast
         let xpForNextCurrent = skillDetail.xpToNextLevelBefore;
 
         if (skillDetail.levelUps > 0) {
@@ -98,7 +98,7 @@ const SkillDisplay: React.FC<SkillDisplayProps> = ({ skillDetail, onAnimationCom
         }
         setCurrentLevel(skillDetail.finalLevel);
       } else if (animationStep === 1) { // Animate score
-        gameAudio.playSound('score_tick', 'sfx', 0.4);
+        gameAudio.playSound('score-tick', 'sfx', 0.4); // Changed from score_tick
         let currentScoreVal = 0;
         const targetScore = skillDetail.score;
         const scoreSteps = 20;

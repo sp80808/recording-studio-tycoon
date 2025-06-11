@@ -11,7 +11,7 @@ import { OrbAnimationStyles } from './OrbAnimationStyles';
 import { ProjectCompletionCelebration } from './ProjectCompletionCelebration';
 import { EnhancedAnimationStyles } from './EnhancedAnimationStyles';
 import { toast } from '@/hooks/use-toast';
-import { playSound } from '@/utils/soundUtils';
+import { playSound } from '@/utils/audioSystem'; // Updated import
 import { 
   getStageFocusLabels, 
   getStageOptimalFocus, 
@@ -106,7 +106,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       });
       
       // Play notification sound
-      playSound('notification.wav', 0.6);
+      playSound('notification', 0.6); // Assuming 'notification' is a valid sound name in audioSystem.ts
     }
   }, [gameState.activeProject, autoTriggeredMinigame, showMinigame, completedMinigamesForStage]);
 
@@ -143,7 +143,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     console.log('🎮 Minigame rewards received:', { creativityBonus, technicalBonus, xpBonus, minigameType: selectedMinigame });
     
     // Play success sound
-    playSound('success.wav', 0.7);
+    playSound('success', 0.7); // Assuming 'success' is a valid sound name in audioSystem.ts
     
     if (onMinigameReward) {
       onMinigameReward(creativityBonus, technicalBonus, xpBonus, selectedMinigame);
@@ -177,14 +177,14 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
   const handleWork = () => {
     // Play work button click sound
-    playSound('click.wav', 0.5);
+    playSound('ui-click', 0.5);
     
     // Check for auto-triggered minigame opportunity
     if (autoTriggeredMinigame) {
       console.log('🎮 Starting auto-triggered minigame:', autoTriggeredMinigame.type);
       setSelectedMinigame(autoTriggeredMinigame.type);
       setShowMinigame(true);
-      playSound('start_minigame.wav', 0.6);
+      playSound('start_minigame', 0.6); // Assuming 'start_minigame' is a valid sound name
       return;
     }
 
@@ -210,7 +210,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     
     if (result?.isComplete && result.finalProjectData) {
       console.log('🎉 Project work units complete! Triggering celebration for:', result.finalProjectData.title);
-      playSound('project_complete.wav', 0.8);
+      playSound('project-complete', 0.8);
       
       // Set data for the celebration display
       setCelebrationDisplayData({

@@ -94,37 +94,44 @@ class GameAudioSystem {
     // Example: '/audio/drums/kick.wav' if 'audio' is in 'public'
     const audioFiles = [
       // Drums - Assuming these paths are correct relative to public folder
-      { name: 'kick', path: '/audio/drums/Ama kick (7).wav' }, // Corrected path assumption
+      { name: 'kick', path: '/audio/drums/Ama kick (7).wav' }, 
       { name: 'snare', path: '/audio/drums/Ama-snare (5).wav' },
       { name: 'hihat', path: '/audio/drums/GS_NT_HAT_04.wav' },
       { name: 'openhat', path: '/audio/drums/MURDA_HAT_OPEN_ZETO.wav' },
-      
+      { name: 'clap', path: '/audio/drums/GS_NT_CLAP_02.wav' },
+      { name: 'tom', path: '/audio/drums/GS_NT_TOM_01.wav' },
+      { name: 'perc', path: '/audio/drums/GS_NT_PERC_03.wav' },
+      { name: 'crash', path: '/audio/drums/GS_NT_CRASH_01.wav' },
+
       // UI SFX
-      { name: 'bubble-pop', path: '/audio/ui sfx/bubble-pop-sound-316482.mp3' },
-      { name: 'close-menu', path: '/audio/ui sfx/close-menu.mp3' },
-      { name: 'notification', path: '/audio/ui sfx/emailnotif-190435.mp3' },
-      { name: 'notice', path: '/audio/ui sfx/notice-sound-270349.mp3' },
-      { name: 'proj-complete', path: '/audio/ui sfx/proj-complete.mp3' },
-      { name: 'purchase', path: '/audio/ui sfx/purchase-complete.mp3' },
-      { name: 'staff-warning', path: '/audio/ui sfx/staff-unavailable-warning.mp3' },
-      { name: 'stage-complete', path: '/audio/ui sfx/stage-complete.mp3' },
-      { name: 'training-complete', path: '/audio/ui sfx/training-complete.mp3' },
-      { name: 'unavailable', path: '/audio/ui sfx/unavailable-ui-79817.mp3' },
-      
-      // Background Music
-      { name: 'bgm1', path: '/audio/music/tycoon-bgm1.mp3' },
-      { name: 'bgm2', path: '/audio/music/tycoon-bgm2.mp3' },
-      { name: 'bgm3', path: '/audio/music/tycoon-bgm3.mp3' },
-      { name: 'bgm4', path: '/audio/music/tycoon-bgm4.mp3' },
-      { name: 'bgm5', path: '/audio/music/tycoon-bgm5.mp3' },
-      { name: 'bgm6', path: '/audio/music/tycoon-bgm6.mp3' },
-      { name: 'bgm7', path: '/audio/music/tycoon-bgm7.mp3' },
-      { name: 'bgm8', path: '/audio/music/tycoon-bgm8.mp3' }
+      { name: 'ui-click', path: '/audio/ui sfx/bubble-pop-sound-316482.mp3' },
+      { name: 'ui-hover', path: '/audio/ui sfx/button-hover.wav' }, // Example, replace with actual file
+      { name: 'ui-toggle-on', path: '/audio/ui sfx/toggle-on.wav' }, // Example
+      { name: 'ui-toggle-off', path: '/audio/ui sfx/toggle-off.wav' }, // Example
+      { name: 'notification', path: '/audio/ui sfx/short-notification.mp3' }, // Generic notification
+      { name: 'success', path: '/audio/ui sfx/success-fanfare.mp3' }, // Generic success
+      { name: 'error', path: '/audio/ui sfx/error-alert.wav' }, // Generic error
+      { name: 'warning', path: '/audio/ui sfx/warning-chime.wav' }, // Generic warning
+      { name: 'project-complete', path: '/audio/ui sfx/proj-complete.mp3' },
+      { name: 'xp-tick', path: '/audio/ui sfx/bubble-pop-sound-316482.mp3' }, // Placeholder, update if specific sound is added
+      { name: 'score-tick', path: '/audio/ui sfx/bubble-pop-sound-316482.mp3' }, // Placeholder, update if specific sound is added
+      { name: 'start_minigame', path: '/audio/ui sfx/minigame-start.wav'}, // Example for minigame start
+
+      // Music - Example, replace with actual music tracks
+      // { name: 'main-theme', path: '/audio/music/main-theme.mp3' },
+      // { name: 'ambient-loop', path: '/audio/music/ambient-loop.ogg' },
     ];
 
-    for (const audio of audioFiles) {
-      await this.loadAndCacheAudio(audio.name, audio.path);
-    }
+    // Filter out any files that might have been added with empty paths
+    const validAudioFiles = audioFiles.filter(file => file.path && file.path.trim() !== '');
+
+    const loadPromises = validAudioFiles.map(file => this.loadAndCacheAudio(file.name, file.path));
+    await Promise.all(loadPromises);
+  }
+
+  // Public method to check initialization status
+  public isAudioInitialized(): boolean {
+    return this.isInitialized;
   }
 
   // Public method to play sound, loads on demand if not cached
@@ -767,4 +774,13 @@ class GameAudioSystem {
 }
 
 // Global instance
-export const gameAudio = new GameAudioSystem();
+const gameAudioSystem = new GameAudioSystem();
+export default gameAudioSystem;
+
+export const playSound = async (soundName: string, volume: number = 1, type: 'sfx' | 'music' = 'sfx', loop: boolean = false) => {
+  if (!gameAudioSystem.isAudioInitialized()) { // This will be corrected in a subsequent step
+    console.warn('Audio system not initialized. Attempting to initialize now. This should ideally be done at app startup.');
+    await gameAudioSystem.initialize();
+  }
+  return gameAudioSystem.playSound(soundName, type, volume, loop);
+};
