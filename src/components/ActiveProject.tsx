@@ -240,7 +240,15 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
         <Card className="bg-gray-800/50 border-gray-600 p-6 backdrop-blur-sm animate-scale-in">
           <div className="flex justify-between items-start mb-4">
             <div className="animate-fade-in">
-              <h3 className="text-xl font-bold text-white mb-1">{project.title}</h3>
+              <h3 className="text-xl font-bold text-white mb-1">
+                {project.title}
+                {gameState.activeProject && !isProjectComplete && (
+                  <>
+                    <span className="ml-2 text-2xl animate-spin-reels" role="img" aria-label="recording">릴</span>
+                    <span className="ml-1 text-2xl animate-fader-move" role="img" aria-label="mixing">🎛️</span>
+                  </>
+                )}
+              </h3>
               <p className="text-gray-300 text-sm mb-2">{project.genre} • {project.clientType}</p>
               <div className="flex gap-4 text-sm">
                 <span className="text-green-400 animate-pulse">💰 ${project.payoutBase}</span>
@@ -403,4 +411,4 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       </div>
     </>
   );
-}; 
+};

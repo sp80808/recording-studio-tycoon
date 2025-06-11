@@ -59,7 +59,8 @@ export const useGameState = () => {
         price: 0,
         description: 'Standard starter microphone',
         bonuses: { qualityBonus: 0 },
-        icon: '🎤'
+        icon: '🎤',
+        condition: 100 // Add default condition for starting equipment
       },
       {
         id: 'basic_monitors',
@@ -68,7 +69,8 @@ export const useGameState = () => {
         price: 0,
         description: 'Standard studio monitors',
         bonuses: { qualityBonus: 0 },
-        icon: '🔊'
+        icon: '🔊',
+        condition: 100 // Add default condition for starting equipment
       }
     ],
     availableProjects: [],
@@ -87,7 +89,8 @@ export const useGameState = () => {
       marketTrends: [],
       discoveredArtists: [],
       lastChartUpdate: 0
-    }
+    },
+    researchedMods: []
   });
 
   const initializeGameState = (options?: Partial<EraInitOptions>): GameState => {

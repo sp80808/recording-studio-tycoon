@@ -1,8 +1,9 @@
 
 import { useCallback } from 'react';
-import { GameState, StaffMember } from '@/types/game';
+import { GameState, StaffMember, EquipmentMod } from '@/types/game';
 import { toast } from '@/hooks/use-toast';
 import { availableTrainingCourses } from '@/data/training';
+import { availableMods } from '@/data/equipmentMods';
 import { getMoodEffectiveness } from '@/utils/playerUtils'; // Import from playerUtils
 
 export const useStaffManagement = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
@@ -232,6 +233,61 @@ export const useStaffManagement = (gameState: GameState, setGameState: React.Dis
 
   // getMoodEffectiveness is now imported from playerUtils
 
+  const startResearchMod = useCallback((staffId: string, modId: string): boolean => {
+    const staffMember = gameState.hiredStaff.find(s => s.id === staffId);
+    const modToResearch = availableMods.find(m => m.id === modId);
+
+    if (!staffMember) {
+      toast({ title: "Error", description: "Staff member not found.", variant: "destructive" });
+      return false;
+    }
+    if (staffMember.role !== 'Engineer') {
+      toast({ title: "Invalid Role", description: `${staffMember.name} is not an Engineer and cannot research mods.`, variant: "destructive" });
+      return false;
+    }
+    if (!modToResearch) {
+      toast({ title: "Error", description: "Selected mod not found.", variant: "destructive" });
+      return false;
+    }
+    if (staffMember.status !== 'Idle') {
+      toast({ title: "Staff Busy", description: `${staffMember.name} is currently ${staffMember.status.toLowerCase()}.`, variant: "destructive" });
+      return false;
+    }
+    if (gameState.money < modToResearch.researchRequirements.cost) {
+      toast({ title: "Insufficient Funds", description: `Need $${modToResearch.researchRequirements.cost} to start research for ${modToResearch.name}.`, variant: "destructive" });
+      return false;
+    }
+    // TODO: Check engineer skill level against modToResearch.researchRequirements.engineerSkill and engineerSkillLevel
+    // This requires staff members to have specific skills and levels, e.g., staffMember.skills['Electronics'] >= modToResearch.researchRequirements.engineerSkillLevel
+    // For now, we'll skip this check or assume a generic 'technical' stat can be used.
+    // Example check (if staff had a 'technical' stat directly):
+    // if (staffMember.primaryStats.technical < modToResearch.researchRequirements.engineerSkillLevel) {
+    //   toast({ title: "Skill Too Low", description: `${staffMember.name} needs a Technical skill of ${modToResearch.researchRequirements.engineerSkillLevel} for this research.`, variant: "destructive" });
+    //   return false;
+    // }
+
+    setGameState(prev => ({
+      ...prev,
+      money: prev.money - modToResearch.researchRequirements.cost,
+      hiredStaff: prev.hiredStaff.map(s =>
+        s.id === staffId
+          ? {
+              ...s,
+              status: 'Researching' as const,
+              researchingModId: modId,
+              researchEndDay: prev.currentDay + modToResearch.researchRequirements.researchTime,
+            }
+          : s
+      ),
+    }));
+
+    toast({
+      title: "Research Started",
+      description: `${staffMember.name} has started researching ${modToResearch.name}. It will take ${modToResearch.researchRequirements.researchTime} days.`,
+    });
+    return true;
+  }, [gameState, setGameState]);
+
   return {
     hireStaff,
     assignStaffToProject,
@@ -242,6 +298,7 @@ export const useStaffManagement = (gameState: GameState, setGameState: React.Dis
     sendStaffToTraining,
     giveBonusToStaff,
     getMoodEmoji,
-    getMoodEffectiveness
+    getMoodEffectiveness,
+    startResearchMod
   };
 };

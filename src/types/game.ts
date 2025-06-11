@@ -70,10 +70,12 @@ export interface StaffMember {
   energy: number;
   mood: number; // 0-100, affects work effectiveness
   salary: number;
-  status: 'Idle' | 'Working' | 'Resting' | 'Training';
+  status: 'Idle' | 'Working' | 'Resting' | 'Training' | 'Researching';
   assignedProjectId: string | null;
   trainingEndDay?: number;
   trainingCourse?: string;
+  researchingModId?: string | null;
+  researchEndDay?: number;
 }
 
 export type EquipmentCategory = 'microphone' | 'monitor' | 'interface' | 'outboard' | 'instrument' | 'software' | 'recorder' | 'mixer';
@@ -170,6 +172,7 @@ export interface GameState {
     discoveredArtists: any[]; // Artists found in charts
     lastChartUpdate: number; // Day when charts were last updated
   };
+  researchedMods: string[]; // Array of researched mod IDs
 }
 
 export interface GameNotification {

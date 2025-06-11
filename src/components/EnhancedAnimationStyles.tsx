@@ -252,6 +252,31 @@ export const EnhancedAnimationStyles: React.FC = () => {
         opacity: 0;
         transform: translateY(-10px);
       }
+
+      @keyframes spin-reels {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .animate-spin-reels {
+        display: inline-block; /* Ensures transform applies correctly */
+        animation: spin-reels 1.5s linear infinite;
+      }
+
+      @keyframes fader-move {
+        0%, 100% { transform: translateY(0); }
+        25% { transform: translateY(-2px); }
+        75% { transform: translateY(2px); }
+      }
+
+      .animate-fader-move {
+        display: inline-block;
+        animation: fader-move 2s ease-in-out infinite;
+      }
     `}</style>
   );
 };

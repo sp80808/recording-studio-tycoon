@@ -9,6 +9,7 @@ import {
   transitionToEra,
   getEraSpecificEquipmentMultiplier 
 } from '@/utils/eraProgression';
+import { availableMods } from '@/data/equipmentMods';
 
 export const useGameActions = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
   const advanceDay = useCallback(() => {
@@ -21,20 +22,40 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     // Check for era transition opportunity
     const availableTransition = checkEraTransitionAvailable(gameState);
     
-    // Process training completions
+    // Process training and research completions
     const completedTraining: string[] = [];
+    const completedResearch: string[] = [];
+    let newResearchedMods = [...gameState.researchedMods];
+
     const updatedStaff = gameState.hiredStaff.map(staff => {
+      let updatedStaffMember = { ...staff };
       if (staff.status === 'Training' && staff.trainingEndDay && newDay >= staff.trainingEndDay) {
-        completedTraining.push(`${staff.name} completed training!`);
-        return {
-          ...staff,
+        completedTraining.push(`${staff.name} completed training for ${staff.trainingCourse}!`); // Assuming trainingCourse stores the name or ID
+        updatedStaffMember = {
+          ...updatedStaffMember,
           status: 'Idle' as const,
           trainingEndDay: undefined,
           trainingCourse: undefined,
-          energy: 100
+          energy: 100 // Restore energy after training
         };
       }
-      return staff;
+      if (staff.status === 'Researching' && staff.researchEndDay && staff.researchingModId && newDay >= staff.researchEndDay) {
+        const mod = availableMods.find(m => m.id === staff.researchingModId);
+        if (mod) {
+          completedResearch.push(`${staff.name} completed research for ${mod.name}!`);
+          if (!newResearchedMods.includes(mod.id)) {
+            newResearchedMods.push(mod.id);
+          }
+        }
+        updatedStaffMember = {
+          ...updatedStaffMember,
+          status: 'Idle' as const,
+          researchingModId: null,
+          researchEndDay: undefined,
+          energy: Math.max(20, staff.energy - 20) // Research consumes some energy
+        };
+      }
+      return updatedStaffMember;
     });
 
     // Calculate total salaries
@@ -53,6 +74,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       currentYear: newYear,
       equipmentMultiplier: updatedEquipmentMultiplier,
       money: prev.money - totalSalaries, // Deduct salaries
+      researchedMods: newResearchedMods, // Update researched mods
       hiredStaff: updatedStaff.map(s => 
         s.status === 'Resting' 
           ? { ...s, energy: Math.min(100, s.energy + 20) }
@@ -108,7 +130,14 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
 
     completedTraining.forEach(message => {
       toast({
-        title: "Training Complete",
+        title: "Training Complete!",
+        description: message,
+      });
+    });
+
+    completedResearch.forEach(message => {
+      toast({
+        title: "🔬 Research Complete!",
         description: message,
       });
     });
