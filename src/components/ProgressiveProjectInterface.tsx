@@ -18,7 +18,12 @@ interface ProgressiveProjectInterfaceProps {
   setGameState: (state: GameState | ((prev: GameState) => GameState)) => void;
   focusAllocation?: FocusAllocation;
   setFocusAllocation?: (allocation: FocusAllocation) => void;
+  performDailyWork?: () => { isComplete: boolean; finalProjectData?: Project } | undefined;
+  onMinigameReward?: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => void;
+  onProjectComplete?: (completedProject: Project) => void;
   onProjectSelect?: (project: Project) => void;
+  autoTriggeredMinigame?: { type: any; reason: string } | null;
+  clearAutoTriggeredMinigame?: () => void;
 }
 
 export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfaceProps> = ({
@@ -26,7 +31,12 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
   setGameState,
   focusAllocation,
   setFocusAllocation,
-  onProjectSelect
+  performDailyWork,
+  onMinigameReward,
+  onProjectComplete,
+  onProjectSelect,
+  autoTriggeredMinigame,
+  clearAutoTriggeredMinigame
 }) => {
   const [progressionStatus, setProgressionStatus] = useState<ProgressionStatus | null>(null);
   const [showProgressionInfo, setShowProgressionInfo] = useState(false);
@@ -196,7 +206,7 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
   // Render single project view for early game
   const renderSingleProjectView = () => {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 h-full overflow-y-auto p-1">
         {renderProgressionInfo()}
         
         {/* Hint about upcoming multi-project capability */}
@@ -227,7 +237,7 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
     const [showMultiProject, setShowMultiProject] = useState(false);
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 h-full overflow-y-auto p-1">
         {renderProgressionInfo()}
         
         {/* New Feature Announcement */}
@@ -282,7 +292,7 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
   // Render advanced multi-project view for experienced players
   const renderAdvancedMultiProjectView = () => {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 h-full overflow-y-auto p-1">
         {renderProgressionInfo()}
         
         <MultiProjectDashboard

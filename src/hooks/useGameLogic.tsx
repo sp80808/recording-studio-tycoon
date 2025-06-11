@@ -54,6 +54,7 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
       toast({
         title: "🎯 Production Bonus!",
         description: `+${creativityBonus} creativity, +${technicalBonus} technical, +${xpBonus} XP`,
+        className: "bg-gray-800 border-gray-600 text-white",
         duration: 3000
       });
 
@@ -95,8 +96,9 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
       console.log(`Purchase blocked: ${purchaseCheck.reason}`);
       playSound('error.wav', 0.5);
       toast({
-        title: "Cannot Purchase",
+        title: "❌ Cannot Purchase",
         description: purchaseCheck.reason,
+        className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive"
       });
       return false;
@@ -118,8 +120,9 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
     setGameState(updatedGameState);
 
     toast({
-      title: "Equipment Purchased!",
+      title: "💰 Equipment Purchased!",
       description: `${equipment.name} added to your studio.`,
+      className: "bg-gray-800 border-gray-600 text-white",
     });
     return true;
   };
@@ -155,8 +158,9 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
     }));
 
     toast({
-      title: "Training Started",
+      title: "📚 Training Started",
       description: `${staff.name} will complete ${course.name} in ${course.duration} days.`,
+      className: "bg-gray-800 border-gray-600 text-white",
     });
   };
 
@@ -173,8 +177,9 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
     console.log(`Spending perk point on: ${attribute}`);
     if (gameState.playerData.perkPoints <= 0) {
       toast({
-        title: "No Perk Points",
+        title: "❌ No Perk Points",
         description: "Complete projects to earn perk points!",
+        className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive"
       });
       return;
@@ -186,6 +191,7 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
     toast({
       title: "⚡ Attribute Upgraded!",
       description: `${String(attribute).replace(/([A-Z])/g, ' $1').trim()} increased!`,
+      className: "bg-gray-800 border-gray-600 text-white",
       duration: 3000
     });
   };
@@ -203,8 +209,9 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
     // Deduct the offer amount from player's money
     if (gameState.money < offer) {
       toast({
-        title: "Insufficient Funds",
+        title: "💰 Insufficient Funds",
         description: "You don't have enough money to make this offer.",
+        className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive"
       });
       return;
@@ -214,8 +221,9 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
     const artist = gameState.chartsData?.discoveredArtists?.find(a => a.id === artistId);
     if (!artist) {
       toast({
-        title: "Artist Not Found",
+        title: "❌ Artist Not Found",
         description: "Unable to find the specified artist.",
+        className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive"
       });
       return;
@@ -254,6 +262,7 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
       toast({
         title: "🎤 Artist Interested!",
         description: `${artist.name} is interested in working with you! They'll be in touch soon.`,
+        className: "bg-gray-800 border-gray-600 text-white",
         duration: 5000
       });
       
@@ -274,6 +283,7 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
       toast({
         title: "❌ Offer Declined",
         description: `${artist.name} declined your offer. Try again later or consider a higher offer.`,
+        className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive",
         duration: 5000
       });

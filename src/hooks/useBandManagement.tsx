@@ -11,8 +11,9 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
     
     if (!bandName.trim() || memberIds.length === 0) {
       toast({
-        title: "Invalid Band Creation",
+        title: "❌ Invalid Band Creation",
         description: "Band name and at least one member are required.",
+        className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive"
       });
       return;
@@ -22,8 +23,9 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
     const selectedStaff = gameState.hiredStaff.filter(staff => memberIds.includes(staff.id));
     if (selectedStaff.length !== memberIds.length) {
       toast({
-        title: "Invalid Staff Selection",
+        title: "❌ Invalid Staff Selection",
         description: "Some selected staff members are not available.",
+        className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive"
       });
       return;
@@ -66,6 +68,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
     toast({
       title: "🎸 Band Created!",
       description: `${bandName} is ready to make music!`,
+      className: "bg-gray-800 border-gray-600 text-white",
       duration: 3000
     });
 
@@ -78,8 +81,9 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
     const band = gameState.playerBands.find(b => b.id === bandId);
     if (!band) {
       toast({
-        title: "Band Not Found",
+        title: "❌ Band Not Found",
         description: "Cannot start tour for unknown band.",
+        className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive"
       });
       return;
@@ -87,8 +91,9 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
 
     if (band.fame < 50) {
       toast({
-        title: "Not Enough Fame",
+        title: "⭐ Not Enough Fame",
         description: "Your band needs at least 50 fame to go on tour.",
+        className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive"
       });
       return;
@@ -129,6 +134,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
     toast({
       title: "🚌 Tour Started!",
       description: `${band.bandName} is on tour, earning $${dailyIncome} per day!`,
+      className: "bg-gray-800 border-gray-600 text-white",
       duration: 3000
     });
   }, [gameState.playerBands, setGameState]);

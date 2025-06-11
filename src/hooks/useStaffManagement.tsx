@@ -14,8 +14,9 @@ export const useStaffManagement = (gameState: GameState, setGameState: React.Dis
     const signingFee = candidate.salary * 3; // 3x daily salary as signing fee
     if (gameState.money < signingFee) {
       toast({
-        title: "Insufficient Funds",
+        title: "💰 Insufficient Funds",
         description: `Need $${signingFee} to hire ${candidate.name} (3x daily salary signing fee)`,
+        className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive"
       });
       return false;
@@ -35,8 +36,9 @@ export const useStaffManagement = (gameState: GameState, setGameState: React.Dis
     }));
 
     toast({
-      title: "Staff Hired!",
+      title: "👥 Staff Hired!",
       description: `${candidate.name} has joined your studio as a ${candidate.role}.`,
+      className: "bg-gray-800 border-gray-600 text-white",
     });
 
     return true;
@@ -45,8 +47,9 @@ export const useStaffManagement = (gameState: GameState, setGameState: React.Dis
   const assignStaffToProject = useCallback((staffId: string) => {
     if (!gameState.activeProject) {
       toast({
-        title: "No Active Project",
+        title: "❌ No Active Project",
         description: "Start a project before assigning staff.",
+        className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive"
       });
       return;
@@ -65,8 +68,9 @@ export const useStaffManagement = (gameState: GameState, setGameState: React.Dis
     }));
 
     toast({
-      title: "Staff Assigned",
+      title: "📋 Staff Assigned",
       description: `${staff.name} is now working on the project.`,
+      className: "bg-gray-800 border-gray-600 text-white",
     });
   }, [gameState.activeProject, gameState.hiredStaff, setGameState]);
 
@@ -82,8 +86,9 @@ export const useStaffManagement = (gameState: GameState, setGameState: React.Dis
 
     const staff = gameState.hiredStaff.find(s => s.id === staffId);
     toast({
-      title: "Staff Unassigned",
+      title: "📤 Staff Unassigned",
       description: `${staff?.name} is now idle.`,
+      className: "bg-gray-800 border-gray-600 text-white",
     });
   }, [gameState.hiredStaff, setGameState]);
 
@@ -103,8 +108,9 @@ export const useStaffManagement = (gameState: GameState, setGameState: React.Dis
     }));
 
     toast({
-      title: staff.status === 'Idle' ? "Staff Resting" : "Staff Back to Work",
+      title: staff.status === 'Idle' ? "😴 Staff Resting" : "💪 Staff Back to Work",
       description: `${staff.name} is now ${newStatus.toLowerCase()}.`,
+      className: "bg-gray-800 border-gray-600 text-white",
     });
   }, [gameState.hiredStaff, setGameState]);
 
@@ -115,8 +121,9 @@ export const useStaffManagement = (gameState: GameState, setGameState: React.Dis
     const bonusAmount = staff.salary * 2; // 2x daily salary as bonus
     if (gameState.money < bonusAmount) {
       toast({
-        title: "Insufficient Funds",
+        title: "💰 Insufficient Funds",
         description: `Need $${bonusAmount} to give ${staff.name} a bonus.`,
+        className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive"
       });
       return;
@@ -133,8 +140,9 @@ export const useStaffManagement = (gameState: GameState, setGameState: React.Dis
     }));
 
     toast({
-      title: "Bonus Given!",
+      title: "💰 Bonus Given!",
       description: `${staff.name} received a $${bonusAmount} bonus and mood boost!`,
+      className: "bg-gray-800 border-gray-600 text-white",
     });
   }, [gameState.hiredStaff, gameState.money, setGameState]);
 
@@ -148,8 +156,9 @@ export const useStaffManagement = (gameState: GameState, setGameState: React.Dis
 
     if (staff.levelInRole < course.requiredLevel) {
       toast({
-        title: "Level Requirement Not Met",
+        title: "📈 Level Requirement Not Met",
         description: `${staff.name} needs to be level ${course.requiredLevel} to take this course.`,
+        className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive"
       });
       return;
@@ -172,8 +181,9 @@ export const useStaffManagement = (gameState: GameState, setGameState: React.Dis
     }));
 
     toast({
-      title: "Training Started",
+      title: "📚 Training Started",
       description: `${staff.name} will complete ${course.name} in ${course.duration} days.`,
+      className: "bg-gray-800 border-gray-600 text-white",
     });
   }, [gameState, setGameState]);
 
@@ -190,8 +200,9 @@ export const useStaffManagement = (gameState: GameState, setGameState: React.Dis
             const statIncrease = 3;
             
             toast({
-              title: "Staff Level Up!",
+              title: "⭐ Staff Level Up!",
               description: `${s.name} reached level ${newLevel} in ${s.role}!`,
+              className: "bg-gray-800 border-gray-600 text-white",
             });
 
             return {
@@ -216,8 +227,9 @@ export const useStaffManagement = (gameState: GameState, setGameState: React.Dis
   const openTrainingModal = useCallback((staff: StaffMember) => {
     if (gameState.playerData.level < 3) {
       toast({
-        title: "Training Locked",
+        title: "🔒 Training Locked",
         description: "Reach player level 3 to unlock staff training!",
+        className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive"
       });
       return false;
@@ -238,23 +250,23 @@ export const useStaffManagement = (gameState: GameState, setGameState: React.Dis
     const modToResearch = availableMods.find(m => m.id === modId);
 
     if (!staffMember) {
-      toast({ title: "Error", description: "Staff member not found.", variant: "destructive" });
+      toast({ title: "❌ Error", description: "Staff member not found.", className: "bg-gray-800 border-gray-600 text-white", variant: "destructive" });
       return false;
     }
     if (staffMember.role !== 'Engineer') {
-      toast({ title: "Invalid Role", description: `${staffMember.name} is not an Engineer and cannot research mods.`, variant: "destructive" });
+      toast({ title: "⚙️ Invalid Role", description: `${staffMember.name} is not an Engineer and cannot research mods.`, className: "bg-gray-800 border-gray-600 text-white", variant: "destructive" });
       return false;
     }
     if (!modToResearch) {
-      toast({ title: "Error", description: "Selected mod not found.", variant: "destructive" });
+      toast({ title: "❌ Error", description: "Selected mod not found.", className: "bg-gray-800 border-gray-600 text-white", variant: "destructive" });
       return false;
     }
     if (staffMember.status !== 'Idle') {
-      toast({ title: "Staff Busy", description: `${staffMember.name} is currently ${staffMember.status.toLowerCase()}.`, variant: "destructive" });
+      toast({ title: "⏰ Staff Busy", description: `${staffMember.name} is currently ${staffMember.status.toLowerCase()}.`, className: "bg-gray-800 border-gray-600 text-white", variant: "destructive" });
       return false;
     }
     if (gameState.money < modToResearch.researchRequirements.cost) {
-      toast({ title: "Insufficient Funds", description: `Need $${modToResearch.researchRequirements.cost} to start research for ${modToResearch.name}.`, variant: "destructive" });
+      toast({ title: "💰 Insufficient Funds", description: `Need $${modToResearch.researchRequirements.cost} to start research for ${modToResearch.name}.`, className: "bg-gray-800 border-gray-600 text-white", variant: "destructive" });
       return false;
     }
 
@@ -265,8 +277,9 @@ export const useStaffManagement = (gameState: GameState, setGameState: React.Dis
 
     if (engineerSkillValue < requiredSkillLevel) {
       toast({ 
-        title: "Skill Too Low", 
+        title: "📊 Skill Too Low", 
         description: `${staffMember.name} needs ${requiredSkillName} skill of ${requiredSkillLevel} (has ${engineerSkillValue}).`, 
+        className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive" 
       });
       return false;
@@ -288,8 +301,9 @@ export const useStaffManagement = (gameState: GameState, setGameState: React.Dis
     }));
 
     toast({
-      title: "Research Started",
+      title: "🔬 Research Started",
       description: `${staffMember.name} has started researching ${modToResearch.name}. It will take ${modToResearch.researchRequirements.researchTime} days.`,
+      className: "bg-gray-800 border-gray-600 text-white",
     });
     return true;
   }, [gameState, setGameState]);

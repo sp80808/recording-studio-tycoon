@@ -268,14 +268,15 @@ const MusicStudioTycoon = () => {
 
   return (
     <GameLayout>
-      <GameHeader 
-        gameState={gameState} 
-        onOpenSettings={handleOpenSettings}
-      />
-
-      <MainGameContent
-        gameState={gameState}
-        setGameState={setGameState}
+      <div className="flex flex-col h-full">
+        <GameHeader 
+          gameState={gameState} 
+          onOpenSettings={handleOpenSettings}
+        />
+        <div className="flex-grow min-h-0">
+          <MainGameContent
+            gameState={gameState}
+            setGameState={setGameState}
         focusAllocation={focusAllocation}
         setFocusAllocation={setFocusAllocation}
         startProject={handleProjectStart}
@@ -337,6 +338,8 @@ const MusicStudioTycoon = () => {
         setShowReviewModal={setShowReviewModal}
         lastReview={lastReview}
       />
+        </div>
+      </div>
     </GameLayout>
   );
 };

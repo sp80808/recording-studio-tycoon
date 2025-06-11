@@ -19,9 +19,10 @@ import { useTranslation } from 'react-i18next'; // Import useTranslation
 interface GameHeaderProps {
   gameState: GameState;
   onOpenSettings?: () => void;
+  triggerEraTransition?: () => void;
 }
 
-export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSettings }) => {
+export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSettings, triggerEraTransition }) => {
   const [showEraProgress, setShowEraProgress] = useState(false);
   const { isFullscreen, toggleFullscreen } = useFullscreen('root');
   const { t } = useTranslation(); // Initialize useTranslation
@@ -33,20 +34,21 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSetting
 
   return (
     <TooltipProvider delayDuration={300}>
-      <Card className="bg-gray-900/90 border-gray-600 p-4 backdrop-blur-sm">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+      <Card className="bg-gray-900/90 border-gray-600 p-2 backdrop-blur-sm">
+        <div className="flex justify-between items-center gap-4">
+          {/* Left section - Core info */}
+          <div className="flex items-center gap-3 sm:gap-4">
             <Tooltip>
               <TooltipTrigger asChild>
                 <motion.div whileHover={buttonHoverTapAnimation.hover} whileTap={buttonHoverTapAnimation.tap}>
                   <Button
                     variant="outline"
-                    size="icon"
+                    size="sm"
                     onClick={toggleFullscreen}
                     aria-label={isFullscreen ? t('exit_fullscreen_aria_label', 'Exit fullscreen') : t('enter_fullscreen_aria_label', 'Enter fullscreen')}
-                    className="text-white bg-gray-700/50 hover:bg-gray-600/50 border-gray-500"
+                    className="text-white bg-gray-700/50 hover:bg-gray-600/50 border-gray-500 h-8 w-8 p-0"
                   >
-                    {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
+                    {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
                   </Button>
                 </motion.div>
               </TooltipTrigger>
@@ -57,9 +59,9 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSetting
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 cursor-default p-2 rounded-md hover:bg-gray-700/30">
-                  <DollarSign className="text-green-400" size={20} />
-                  <AnimatedCounter value={gameState.money} prefix="$" className="text-green-400 font-bold text-lg" />
+                <div className="flex items-center gap-1 cursor-default px-2 py-1 rounded hover:bg-gray-700/30">
+                  <DollarSign className="text-green-400" size={16} />
+                  <AnimatedCounter value={gameState.money} prefix="$" className="text-green-400 font-bold text-sm" />
                 </div>
               </TooltipTrigger>
               <TooltipContent>
@@ -69,9 +71,9 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSetting
             
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 cursor-default p-2 rounded-md hover:bg-gray-700/30">
-                  <Star className="text-blue-400" size={20} />
-                  <AnimatedCounter value={gameState.reputation} suffix={` ${t('reputation_suffix', 'Rep')}`} className="text-blue-400 font-bold text-lg" />
+                <div className="flex items-center gap-1 cursor-default px-2 py-1 rounded hover:bg-gray-700/30">
+                  <Star className="text-blue-400" size={16} />
+                  <AnimatedCounter value={gameState.reputation} suffix={` Rep`} className="text-blue-400 font-bold text-sm" />
                 </div>
               </TooltipTrigger>
               <TooltipContent>
@@ -84,44 +86,47 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSetting
                 <motion.button
                   whileHover={buttonHoverTapAnimation.hover}
                   whileTap={buttonHoverTapAnimation.tap}
-                  className="text-yellow-400 font-bold hover:bg-yellow-400/10 px-3 py-2 text-lg flex items-center rounded-md bg-transparent border-none"
+                  className="text-yellow-400 font-bold hover:bg-yellow-400/10 px-2 py-1 text-sm flex items-center rounded bg-transparent border-none"
                   onClick={() => setShowEraProgress(true)}
                 >
-                  <CalendarDays size={18} className="mr-2" />
-                  {t('current_day', 'Day {{day}}', { day: gameState.currentDay })}
+                  <CalendarDays size={14} className="mr-1" />
+                  Day {gameState.currentDay}
                 </motion.button>
               </TooltipTrigger>
               <TooltipContent>
                 <p>{t('current_day_tooltip', 'Current Day: {{day}} / View Era Progress', { day: gameState.currentDay })}</p>
               </TooltipContent>
             </Tooltip>
-            
+          </div>
+
+          {/* Right section - Level and controls */}
+          <div className="flex items-center gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 cursor-default p-2 rounded-md hover:bg-gray-700/30">
-                  <Users className="text-purple-400" size={20} />
-                  <span className="text-purple-400 font-bold text-lg">{gameState.hiredStaff.length} {t('staff', 'Staff')}</span>
+                <div className="flex items-center gap-1 cursor-default px-2 py-1 rounded hover:bg-gray-700/30">
+                  <Users className="text-purple-400" size={14} />
+                  <span className="text-purple-400 font-bold text-sm">{gameState.hiredStaff.length}</span>
                 </div>
               </TooltipTrigger>
               <TooltipContent>
                 <p>{t('hired_staff_tooltip', 'Hired Staff: {{count}}', { count: gameState.hiredStaff.length })}</p>
               </TooltipContent>
             </Tooltip>
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 cursor-default p-2 rounded-md hover:bg-gray-700/30">
-                  <Sparkles className="text-orange-400" size={20} />
-                  <span className="text-orange-400 font-bold text-lg">{gameState.playerData.perkPoints} {t('perk_points', 'Perk Points')}</span>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{t('perk_points_tooltip', 'Available Perk Points: {{count}}', { count: gameState.playerData.perkPoints })}</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
 
-          <div className="flex items-center gap-4">
+            {gameState.playerData.perkPoints > 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 cursor-default px-2 py-1 rounded hover:bg-gray-700/30">
+                    <Sparkles className="text-orange-400" size={14} />
+                    <span className="text-orange-400 font-bold text-sm">{gameState.playerData.perkPoints}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{t('perk_points_tooltip', 'Available Perk Points: {{count}}', { count: gameState.playerData.perkPoints })}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+
             {onOpenSettings && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -129,11 +134,11 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSetting
                     <Button
                       onClick={onOpenSettings}
                       variant="outline"
-                      size="icon"
-                      className="bg-gray-700/50 border-gray-500 text-gray-300 hover:bg-gray-600/50"
+                      size="sm"
+                      className="bg-gray-700/50 border-gray-500 text-gray-300 hover:bg-gray-600/50 h-8 w-8 p-0"
                       aria-label={t('open_settings', 'Open Settings')}
                     >
-                      <SettingsIcon size={20} />
+                      <SettingsIcon size={16} />
                     </Button>
                   </motion.div>
                 </TooltipTrigger>
@@ -145,14 +150,15 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSetting
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="text-right cursor-default p-2 rounded-md hover:bg-gray-700/30">
-                  <div className="text-white font-bold text-lg">{t('level', 'Level {{level}}', { level: gameState.playerData.level })}</div>
+                <div className="text-right cursor-default px-2 py-1 rounded hover:bg-gray-700/30">
+                  {/* <div className="text-white font-bold text-sm">Level {gameState.playerData.level}</div> */}
                   <XPProgressBar 
                     currentXP={gameState.playerData.xp} 
                     xpToNext={gameState.playerData.xpToNextLevel}
                     level={gameState.playerData.level}
-                    className="w-32"
-                    currentXPLab={t('xp_suffix', 'XP')} // For potential localization of "XP"
+                    className="w-24"
+                    showNumbers={false}
+                    currentXPLab={t('xp_suffix', 'XP')}
                   />
                 </div>
               </TooltipTrigger>
@@ -171,7 +177,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSetting
         gameState={gameState}
         isOpen={showEraProgress}
         onClose={() => setShowEraProgress(false)}
-        triggerEraTransition={(undefined as any)}
+        triggerEraTransition={triggerEraTransition || (() => {})}
       />
     </TooltipProvider>
   );

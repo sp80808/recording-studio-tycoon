@@ -106,9 +106,9 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   const { createBand, startTour, createOriginalTrack, processTourIncome } = useBandManagement(gameState, setGameState);
 
   return (
-    <>
-      <div className="p-2 sm:p-4 space-y-4 sm:space-y-0 sm:flex sm:gap-4 sm:h-[calc(100vh-140px)] relative">
-        <div className="w-full sm:w-80 lg:w-96 animate-fade-in">
+    <div className="h-full flex flex-col"> {/* Outer container for layout + modals */}
+      <div className="p-2 sm:p-4 sm:flex sm:gap-4 relative flex-grow overflow-hidden"> {/* Main 3-panel layout */}
+        <div className="w-full sm:w-80 lg:w-96 animate-fade-in h-full overflow-y-auto"> {/* Left Panel */}
           <ProjectList 
             gameState={gameState}
             setGameState={setGameState}
@@ -116,7 +116,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           />
         </div>
 
-        <div className="flex-1 relative min-h-[400px] sm:min-h-0 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+        <div className="flex-1 relative sm:min-h-0 animate-fade-in flex flex-col h-full overflow-hidden" style={{ animationDelay: '0.2s' }}> {/* Center Panel Wrapper */}
           <ProgressiveProjectInterface 
             gameState={gameState}
             setGameState={setGameState}
@@ -146,7 +146,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           ))}
         </div>
 
-        <div className="w-full sm:w-80 lg:w-96 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+        <div className="w-full sm:w-80 lg:w-96 animate-fade-in h-full overflow-y-auto" style={{ animationDelay: '0.4s' }}> {/* Right Panel */}
           <RightPanel 
             gameState={gameState}
             showSkillsModal={showSkillsModal}
@@ -194,6 +194,6 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           setCurrentHistoricalEvent(null);
         }}
       />
-    </>
+    </div> // Closes the outer h-full flex flex-col container
   );
 };

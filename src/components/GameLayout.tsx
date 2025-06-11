@@ -13,7 +13,7 @@ export const GameLayout: React.FC<GameLayoutProps> = ({ children }) => {
   const backgroundClass = getBackgroundColorScheme();
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${backgroundClass} text-white relative overflow-hidden`}>
+    <div className={`min-h-screen bg-gradient-to-br ${backgroundClass} text-white relative overflow-hidden flex flex-col`}>
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-10 left-10 w-32 h-32 bg-purple-500/10 rounded-full animate-pulse"></div>
