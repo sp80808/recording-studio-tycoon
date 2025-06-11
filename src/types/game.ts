@@ -1,6 +1,13 @@
 // Game type definitions
 import { Chart, ArtistContact, MarketTrend } from './charts';
 
+// New Skill interface
+export interface Skill {
+  xp: number;
+  level: number;
+  xpToNextLevel: number;
+}
+
 export interface PlayerAttributes {
   focusMastery: number;
   creativeIntuition: number;
@@ -17,6 +24,18 @@ export interface PlayerData {
   dailyWorkCapacity: number;
   reputation: number;
   lastMinigameType?: string; // Track last completed minigame to prevent repetition
+  skills: { // NEW as per core_loop_plan.md
+    songwriting: Skill;
+    rhythm: Skill;
+    tracking: Skill;
+    mixing: Skill;
+    mastering: Skill;
+    tapeSplicing: Skill;
+    vocalComping: Skill;
+    soundDesign: Skill;
+    sampleWarping: Skill;
+    management: Skill;
+  };
 }
 
 export interface StudioSkill {
@@ -76,7 +95,17 @@ export interface StaffMember {
   trainingCourse?: string;
   researchingModId?: string | null;
   researchEndDay?: number;
-  skills?: { [skillName: string]: number }; // e.g., { Electronics: 5, Acoustics: 3 }
+  skills: { // UPDATED as per core_loop_plan.md
+    songwriting: Skill;
+    rhythm: Skill;
+    tracking: Skill;
+    mixing: Skill;
+    mastering: Skill;
+    tapeSplicing: Skill;
+    vocalComping: Skill;
+    soundDesign: Skill;
+    sampleWarping: Skill;
+  };
 }
 
 export type EquipmentCategory = 'microphone' | 'monitor' | 'interface' | 'outboard' | 'instrument' | 'software' | 'recorder' | 'mixer';
@@ -244,4 +273,34 @@ export interface GlobalAnimationState {
   projectTransitions: { [projectId: string]: boolean }; // Projects undergoing transitions
   automationPulse: boolean; // Whether to show automation system activity
   lastGlobalUpdate: number; // Timestamp of last global animation update
+}
+
+// New Project Report interfaces as per core_loop_plan.md
+export interface ProjectReportSkillEntry {
+  skillName: string;
+  initialXp: number;
+  xpGained: number;
+  finalXp: number;
+  initialLevel: number;
+  finalLevel: number;
+  xpToNextLevelBefore: number;
+  xpToNextLevelAfter: number;
+  levelUps: number; // Number of times this skill leveled up
+  score: number; // 0-100, skill contribution to project quality
+}
+
+export interface ProjectReport {
+  projectId: string;
+  projectTitle: string;
+  overallQualityScore: number; // 0-100, final calculated quality
+  moneyGained: number;
+  reputationGained: number;
+  playerManagementXpGained: number; // If staff worked
+  skillBreakdown: ProjectReportSkillEntry[];
+  reviewSnippet: string; // e.g., "Groundbreaking sound design, but the rhythm section feels a little loose."
+  assignedPerson: { // Details of who worked on it
+    type: 'player' | 'staff';
+    id: string;
+    name: string;
+  };
 }

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { GameState, FocusAllocation } from '@/types/game';
+import { GameState, FocusAllocation, PlayerData } from '@/types/game'; // Added PlayerData for skills
 import { generateNewProjects, generateCandidates } from '@/utils/projectUtils';
 import { generateSessionMusicians } from '@/utils/bandUtils';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
+import { initializeSkillsPlayer } from '@/utils/skillUtils'; // Import skill initializer
 
 interface EraInitOptions {
   startingMoney: number;
@@ -42,9 +43,10 @@ export const useGameState = () => {
         creativeIntuition: 1,
         technicalAptitude: 1,
         businessAcumen: 1
-      }
+      },
+      skills: initializeSkillsPlayer(), // Initialize player skills
     },
-    studioSkills: {
+    studioSkills: { // This seems to be old/genre-specific skills, distinct from new player skills
       Rock: { name: 'Rock', level: 1, xp: 0, xpToNext: 20 },
       Pop: { name: 'Pop', level: 1, xp: 0, xpToNext: 20 },
       Electronic: { name: 'Electronic', level: 1, xp: 0, xpToNext: 20 },

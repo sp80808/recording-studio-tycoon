@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; // Added useCallback
 import { GameLayout } from '@/components/GameLayout';
 import { GameHeader } from '@/components/GameHeader';
 import { MainGameContent } from '@/components/MainGameContent';
@@ -11,7 +11,9 @@ import { SplashScreen } from '@/components/SplashScreen';
 import { Era } from '@/components/EraSelectionModal'; // Era type
 import { ERA_DEFINITIONS } from '@/utils/eraProgression'; // ERA_DEFINITIONS for initialization
 import { useGameState } from '@/hooks/useGameState';
-import { Project } from '@/types/game'; // Import Project type
+import { Project, ProjectReport, StaffMember } from '@/types/game'; // Import Project, ProjectReport, StaffMember
+import { generateProjectReview } from '@/utils/projectReviewUtils'; // Import generateProjectReview
+import { ProjectReviewModal } from '@/components/modals/ProjectReviewModal'; // Import ProjectReviewModal (assuming path)
 import { useGameLogic } from '@/hooks/useGameLogic';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSaveSystem } from '@/contexts/SaveSystemContext';
@@ -59,6 +61,7 @@ const MusicStudioTycoon = () => {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showTutorialModal, setShowTutorialModal] = useState(false);
   const [currentEraForTutorial, setCurrentEraForTutorial] = useState<string>(ERA_DEFINITIONS[0].id); // Default to first era
+  const [activeProjectReport, setActiveProjectReport] = useState<ProjectReport | null>(null);
   
   const handleLoadGameStateFromString = (newGameState: any) => {
     setGameState(newGameState);
@@ -120,32 +123,62 @@ const MusicStudioTycoon = () => {
     localStorage.setItem('recordingStudioTycoon_hasPlayed', 'true'); // Mark that game has been started once
   };
 
-  const handleActualProjectCompletion = (completedProjectData: Project) => {
-    console.log('Index.tsx: Handling actual project completion for:', completedProjectData.title);
-    // Use the destructured completeProject and addStaffXP directly
-    const review = completeProject(completedProjectData, addStaffXP);
-    if (review) {
-      // Potentially update lastReview state here if GameModals uses it
-      // For now, let's assume GameModals might need to be updated or this state is managed differently
-      // setLastReview(review); // If GameModals depends on this for showing review
-      // setShowReviewModal(true); // If review modal should show after this
-      
-      // Update XP and check for level up (this logic was in useGameLogic's handlePerformDailyWork)
-      // It should now happen here, after the project is truly completed and review/XP is known.
-      setGameState(prev => ({
-        ...prev,
-        playerData: {
-          ...prev.playerData,
-          xp: prev.playerData.xp + review.xpGain
-        }
-      }));
-      // TODO: Consider if checkAndHandleLevelUp needs to be called here from usePlayerProgression
-      // For now, assuming the XP update is sufficient and level up checks happen elsewhere or are triggered by XP change.
+  const handleShowProjectReview = useCallback((completedProjectData: Project) => {
+    console.log('Index.tsx: Generating review for project:', completedProjectData.title);
+    // Determine assigned person (this is a simplified assumption)
+    // In a more complex setup, MainGameContent or ActiveProject would pass this.
+    let assignedPersonDetails: { type: 'player' | 'staff'; id: string; name: string };
+    const assignedStaff = gameState.hiredStaff.find(s => s.assignedProjectId === completedProjectData.id);
+
+    if (assignedStaff) {
+      assignedPersonDetails = { type: 'staff', id: assignedStaff.id, name: assignedStaff.name };
+    } else {
+      // Default to player if no staff is explicitly assigned to this project ID
+      // This assumes single project assignment for staff.
+      assignedPersonDetails = { type: 'player', id: 'player', name: 'You' };
     }
+    
+    // Placeholder for equipment quality - e.g., average quality of owned equipment or a studio rating
+    const averageEquipmentQuality = gameState.ownedEquipment.length > 0
+      ? gameState.ownedEquipment.reduce((sum, eq) => sum + eq.condition, 0) / gameState.ownedEquipment.length
+      : 50; // Default if no equipment
+
+    const report = generateProjectReview(
+      completedProjectData,
+      assignedPersonDetails,
+      averageEquipmentQuality,
+      gameState.playerData,
+      gameState.hiredStaff
+    );
+    
+    setActiveProjectReport(report);
+    setShowReviewModal(true); // This will trigger the new ProjectReviewModal
+
     if (settings.sfxEnabled) {
-      audioSystem.playUISound('success'); // Or a specific project completion finalization sound
+      audioSystem.playUISound('event'); // Sound for review screen appearing
     }
-  };
+  }, [gameState, settings.sfxEnabled, setGameState]);
+
+
+  const handleFinalizeProjectCompletion = useCallback(() => {
+    if (!activeProjectReport) return;
+
+    console.log('Index.tsx: Finalizing project completion for:', activeProjectReport.projectTitle);
+    completeProject(activeProjectReport); // Call the updated completeProject with the report
+
+    // No need to update player XP here, as completeProject now handles all state updates based on the report.
+    // Also, checkAndHandleLevelUp from usePlayerProgression should be called after gameState updates,
+    // potentially within useGameLogic or triggered by a useEffect watching player XP/level.
+    // For now, we assume useProjectManagement's setGameState will trigger necessary downstream effects.
+
+    setShowReviewModal(false);
+    setActiveProjectReport(null);
+
+    if (settings.sfxEnabled) {
+      audioSystem.playUISound('success'); 
+    }
+  }, [activeProjectReport, completeProject, settings.sfxEnabled, setGameState]);
+
 
   const handleLoadGame = async () => {
     try {
@@ -294,7 +327,7 @@ const MusicStudioTycoon = () => {
         setFocusAllocation={setFocusAllocation}
         startProject={handleProjectStart}
         performDailyWork={handlePerformDailyWork} // This now returns { isComplete, finalProjectData? }
-        onProjectComplete={handleActualProjectCompletion} // Pass the new handler
+        onProjectComplete={handleShowProjectReview} // Changed to show review first
         onMinigameReward={handleMinigameReward}
         spendPerkPoint={handleSpendPerkPoint}
         advanceDay={advanceDay}
@@ -352,8 +385,16 @@ const MusicStudioTycoon = () => {
       <GameModals // This component might manage showReviewModal internally or receive it as a prop
         showReviewModal={showReviewModal}
         setShowReviewModal={setShowReviewModal}
-        lastReview={lastReview}
+        lastReview={lastReview} // This 'lastReview' state might be deprecated or used differently by GameModals
       />
+      {/* New Project Review Modal */}
+      {activeProjectReport && (
+        <ProjectReviewModal
+          isOpen={showReviewModal}
+          onClose={handleFinalizeProjectCompletion} // Finalizes completion when modal is closed
+          report={activeProjectReport}
+        />
+      )}
         </div>
       </div>
     </GameLayout>
