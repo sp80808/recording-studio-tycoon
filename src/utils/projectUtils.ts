@@ -1,8 +1,9 @@
-import { Project, ProjectStage, StaffMember, FocusAllocation, StudioSkill, Equipment, PlayerAttributes } from '@/types/game'; // Changed OwnedEquipment to Equipment
+import { Project, ProjectStage, StaffMember, FocusAllocation, StudioSkill, Equipment, PlayerAttributes, EquipmentMod } from '@/types/game'; // Changed OwnedEquipment to Equipment, Added EquipmentMod
 import { generateAIBand } from '@/utils/bandUtils';
 import { ERA_DEFINITIONS, getGenrePopularity } from '@/utils/eraProgression';
 import { initializeSkillsStaff } from '@/utils/skillUtils'; // Added import
-import { calculateStudioSkillBonus, getEquipmentBonuses } from './gameUtils'; // Import from gameUtils
+import { calculateStudioSkillBonus, getEquipmentBonuses as getBaseEquipmentBonuses } from './gameUtils'; // Import from gameUtils and rename
+import { availableMods } from '@/data/equipmentMods'; // Import available mods
 // Assuming getMoodEffectiveness will be moved to playerUtils or passed as arg
 // For now, let's define a placeholder or expect it as an argument for calculateStaffWorkContribution
 
@@ -266,33 +267,67 @@ export const generateNewProjects = (count: number, playerLevel: number = 1, curr
 };
 
 export const generateCandidates = (count: number): StaffMember[] => {
-  const names = ['Alex Rivera', 'Sam Chen', 'Jordan Blake', 'Casey Smith', 'Taylor Johnson', 'Morgan Davis', 'Riley Parker', 'Avery Wilson', 'Quinn Martinez', 'Sage Thompson'];
+  const names = [
+    'Alex Rivera', 'Sam Chen', 'Jordan Blake', 'Casey Smith', 'Taylor Johnson', 
+    'Morgan Davis', 'Riley Parker', 'Avery Wilson', 'Quinn Martinez', 'Sage Thompson',
+    'Kai Ito', 'Lena Petrova', 'Devon Washington', 'Priya Sharma', 'Mateo Garcia' // New names
+  ];
   const roles: ('Engineer' | 'Producer' | 'Songwriter')[] = ['Engineer', 'Producer', 'Songwriter'];
-  const genres = ['Rock', 'Pop', 'Electronic', 'Hip-hop', 'Acoustic'];
+  const allGenres = ['Rock', 'Pop', 'Electronic', 'Hip-hop', 'Acoustic', 'Jazz', 'Folk', 'Soul']; // Expanded genres for affinity
   const candidates: StaffMember[] = [];
 
   for (let i = 0; i < count; i++) {
     const role = roles[Math.floor(Math.random() * roles.length)];
-    const hasAffinity = Math.random() > 0.6; // 40% chance of genre affinity
+    const archetypeChance = Math.random();
+    let primaryStats: { creativity: number; technical: number; speed: number };
+    let genreAffinity: { genre: string; bonus: number } | null = null;
+    let salary = 80 + Math.floor(Math.random() * 120); // Base salary
+
+    if (archetypeChance < 0.3) { // 30% chance for a Specialist
+      primaryStats = {
+        creativity: 10 + Math.floor(Math.random() * 20), // 10-30
+        technical: 10 + Math.floor(Math.random() * 20), // 10-30
+        speed: 10 + Math.floor(Math.random() * 20)      // 10-30
+      };
+      const specialistStatBoost = 15 + Math.floor(Math.random() * 10); // 15-25 boost
+      const statToBoost = Math.floor(Math.random() * 3);
+      if (statToBoost === 0) primaryStats.creativity += specialistStatBoost;
+      else if (statToBoost === 1) primaryStats.technical += specialistStatBoost;
+      else primaryStats.speed += specialistStatBoost;
+      
+      // Higher chance of affinity and stronger affinity for specialists
+      if (Math.random() < 0.7) { // 70% chance
+        genreAffinity = {
+          genre: allGenres[Math.floor(Math.random() * allGenres.length)],
+          bonus: 20 + Math.floor(Math.random() * 20) // 20-40% bonus
+        };
+      }
+      salary += 50 + Math.floor(Math.random() * 50); // Higher salary for specialists
+    } else { // Generalist (or default)
+      primaryStats = {
+        creativity: 15 + Math.floor(Math.random() * 25), // 15-40 range
+        technical: 15 + Math.floor(Math.random() * 25),
+        speed: 15 + Math.floor(Math.random() * 25)
+      };
+      if (Math.random() < 0.4) { // 40% chance
+        genreAffinity = {
+          genre: allGenres[Math.floor(Math.random() * allGenres.length)],
+          bonus: 10 + Math.floor(Math.random() * 15) // 10-25% bonus
+        };
+      }
+    }
     
     const candidate: StaffMember = {
       id: '', // Will be assigned when hired
       name: names[Math.floor(Math.random() * names.length)],
       role,
-      primaryStats: {
-        creativity: 15 + Math.floor(Math.random() * 25), // 15-40 range
-        technical: 15 + Math.floor(Math.random() * 25),
-        speed: 15 + Math.floor(Math.random() * 25)
-      },
+      primaryStats,
       xpInRole: 0,
       levelInRole: 1,
-      genreAffinity: hasAffinity ? {
-        genre: genres[Math.floor(Math.random() * genres.length)],
-        bonus: 10 + Math.floor(Math.random() * 15) // 10-25% bonus
-      } : null,
+      genreAffinity,
       energy: 100,
       mood: 75, // Start with good mood
-      salary: 80 + Math.floor(Math.random() * 120), // $80-200 per week
+      salary,
       status: 'Idle',
       assignedProjectId: null,
       skills: initializeSkillsStaff() // Initialize staff skills
@@ -389,15 +424,55 @@ export const applyStudioSkillBonusesToWorkPoints = (
 
 export const applyEquipmentBonusesToWorkPoints = (
   currentPoints: WorkPoints,
-  ownedEquipment: Equipment[], // Changed OwnedEquipment to Equipment
+  ownedEquipment: Equipment[],
   projectGenre: string
 ): WorkPoints => {
   let { creativity, technical } = currentPoints;
-  const equipmentBonuses = getEquipmentBonuses(ownedEquipment, projectGenre);
+  
+  // Get base bonuses from equipment
+  const baseBonuses = getBaseEquipmentBonuses(ownedEquipment, projectGenre);
+  
+  let totalCreativityBonusPercent = baseBonuses.creativity;
+  let totalTechnicalBonusPercent = baseBonuses.technical;
+  let totalGenrePointsBonus = baseBonuses.genre;
+  let totalQualityBonus = 0;
+  let totalSpeedBonus = 0;
 
-  creativity += Math.floor(creativity * (equipmentBonuses.creativity / 100));
-  technical += Math.floor(technical * (equipmentBonuses.technical / 100));
-  creativity += equipmentBonuses.genre; // Direct points bonus for genre
+  // Add bonuses from applied mods
+  ownedEquipment.forEach(equip => {
+    if (equip.appliedModId) {
+      const mod = availableMods.find(m => m.id === equip.appliedModId);
+      if (mod && mod.statChanges) {
+        totalCreativityBonusPercent += mod.statChanges.creativityBonus || 0;
+        totalTechnicalBonusPercent += mod.statChanges.technicalBonus || 0;
+        totalQualityBonus += mod.statChanges.qualityBonus || 0; // Assuming mods can also grant flat quality
+        totalSpeedBonus += mod.statChanges.speedBonus || 0; // Assuming mods can also grant flat speed
+
+        if (mod.statChanges.genreBonus && mod.statChanges.genreBonus[projectGenre]) {
+          totalGenrePointsBonus += mod.statChanges.genreBonus[projectGenre];
+        }
+      }
+    }
+  });
+
+  // Apply percentage bonuses
+  creativity += Math.floor(creativity * (totalCreativityBonusPercent / 100));
+  technical += Math.floor(technical * (totalTechnicalBonusPercent / 100));
+  
+  // Apply flat point bonuses (genre points are typically flat, quality/speed might be too)
+  // For simplicity, let's assume genre points are flat creativity for now.
+  // Quality and speed bonuses from mods might affect other calculations not directly work points,
+  // but if they were to influence work points, it would be here.
+  // For now, only genre points from mods directly add to creativity.
+  creativity += totalGenrePointsBonus; 
+  // Note: The original getEquipmentBonuses returned a structure like:
+  // { creativity: percent, technical: percent, genre: flat_points_to_creativity }
+  // We are replicating that, summing percentages and flat points separately.
+
+  // The impact of totalQualityBonus and totalSpeedBonus from mods would typically be applied
+  // elsewhere (e.g., quality in project review, speed in work unit calculation or time reduction).
+  // If they are meant to directly convert to work points, that logic would need to be defined.
+  // For now, they are accumulated but not directly applied to creativity/technical work points here.
 
   return { creativity, technical };
 };

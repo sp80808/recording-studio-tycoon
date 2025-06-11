@@ -1,119 +1,156 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { GameState, StaffMember, Equipment, EquipmentMod } from '@/types/game';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'; // Removed CardFooter as it's not used
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { GameState, StaffMember, EquipmentMod } from '@/types/game';
 import { availableMods } from '@/data/equipmentMods';
-import { useStaffManagement } from '@/hooks/useStaffManagement'; // To use startResearchMod
+import { availableEquipment } from '@/data/equipment'; // To display target equipment name
 
 interface ResearchModalProps {
   isOpen: boolean;
   onClose: () => void;
-  engineer: StaffMember | null;
   gameState: GameState;
-  // Callback to useStaffManagement's startResearchMod or similar
-  onStartResearch: (staffId: string, modId: string) => boolean; 
+  startResearchMod: (staffId: string, modId: string) => boolean;
 }
 
 export const ResearchModal: React.FC<ResearchModalProps> = ({
   isOpen,
   onClose,
-  engineer,
   gameState,
-  onStartResearch,
+  startResearchMod,
 }) => {
-  const [selectedEquipmentId, setSelectedEquipmentId] = useState<string | null>(null);
-  const [selectedModId, setSelectedModId] = useState<string | null>(null);
+  const [selectedMod, setSelectedMod] = useState<EquipmentMod | null>(null);
+  const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
 
-  if (!isOpen || !engineer) return null;
+  const handleSelectMod = (mod: EquipmentMod) => {
+    setSelectedMod(mod);
+    setSelectedStaff(null); // Reset staff selection when mod changes
+  };
 
-  // Filter for equipment that the player owns and is moddable by available mods
-  const moddableOwnedEquipment = gameState.ownedEquipment.filter(ownedEq => 
-    availableMods.some(mod => mod.modifiesEquipmentId === ownedEq.id && !gameState.researchedMods.includes(mod.id))
-  );
+  const handleSelectStaff = (staff: StaffMember) => {
+    setSelectedStaff(staff);
+  };
 
-  const availableModsForSelectedEquipment = selectedEquipmentId
-    ? availableMods.filter(mod => 
-        mod.modifiesEquipmentId === selectedEquipmentId && 
-        !gameState.researchedMods.includes(mod.id)
-      )
-    : [];
-
-  const handleResearch = () => {
-    if (engineer && selectedModId) {
-      const success = onStartResearch(engineer.id, selectedModId);
+  const handleStartResearch = () => {
+    if (selectedMod && selectedStaff) {
+      const success = startResearchMod(selectedStaff.id, selectedMod.id);
       if (success) {
-        onClose(); // Close modal if research started successfully
+        setSelectedMod(null);
+        setSelectedStaff(null);
+        // Optionally close modal on success, or let user start more research
+        // onClose(); 
       }
     }
   };
 
+  const getTargetEquipmentName = (modifiesEquipmentId: string): string => {
+    const equipment = availableEquipment.find(eq => eq.id === modifiesEquipmentId);
+    return equipment ? equipment.name : 'Unknown Equipment';
+  };
+
+  const unresearchedMods = availableMods.filter(mod => !gameState.researchedMods.includes(mod.id));
+  const eligibleEngineers = gameState.hiredStaff.filter(
+    staff => staff.role === 'Engineer' && staff.status === 'Idle'
+  );
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] bg-gray-800 border-gray-700 text-white">
+      <DialogContent className="max-w-3xl bg-gray-800 border-gray-700 text-gray-200">
         <DialogHeader>
-          <DialogTitle>Start Research: {engineer.name}</DialogTitle>
-          <DialogDescription>
-            Select a piece of equipment and a modification for {engineer.name} to research.
-            Ensure they have the required skills and your studio has enough funds.
+          <DialogTitle className="text-yellow-400">🔬 Equipment Modification Research</DialogTitle>
+          <DialogDescription className="text-gray-400">
+            Assign an Engineer to research new equipment modifications.
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid gap-4 py-4">
-          {/* Equipment Selection */}
-          <div className="space-y-2">
-            <label htmlFor="equipment-select" className="text-sm font-medium">Owned Moddable Equipment:</label>
-            {moddableOwnedEquipment.length > 0 ? (
-              <select
-                id="equipment-select"
-                value={selectedEquipmentId || ""}
-                onChange={(e) => {
-                  setSelectedEquipmentId(e.target.value);
-                  setSelectedModId(null); // Reset mod selection when equipment changes
-                }}
-                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
-              >
-                <option value="" disabled>Select equipment...</option>
-                {moddableOwnedEquipment.map(eq => (
-                  <option key={eq.id} value={eq.id}>{eq.name}</option>
-                ))}
-              </select>
-            ) : (
-              <p className="text-sm text-gray-400">No moddable equipment owned or all mods researched.</p>
-            )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 max-h-[60vh] ">
+          {/* Mods List */}
+          <div className="flex flex-col">
+            <h3 className="text-lg font-semibold mb-2 text-gray-200">Available Modifications</h3>
+            <ScrollArea className="flex-grow border border-gray-600 rounded-md p-2 bg-gray-900/70 min-h-[200px]">
+              {unresearchedMods.length === 0 && (
+                <p className="text-gray-400 text-center py-4">No new modifications available for research.</p>
+              )}
+              {unresearchedMods.map((mod) => (
+                <Card
+                  key={mod.id}
+                  className={`mb-2 cursor-pointer transition-all ${
+                    selectedMod?.id === mod.id ? 'ring-2 ring-blue-500 bg-blue-800/50' : 'bg-gray-700/80 hover:bg-gray-700'
+                  }`}
+                  onClick={() => handleSelectMod(mod)}
+                >
+                  <CardHeader className="pb-2 pt-3 px-4">
+                    <CardTitle className="text-base text-yellow-300">{mod.name}</CardTitle>
+                    <CardDescription className="text-xs text-gray-400">
+                      Modifies: {getTargetEquipmentName(mod.modifiesEquipmentId)}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="text-xs text-gray-300 pb-3 px-4">
+                    <p>{mod.description}</p>
+                    <p className="mt-1">Cost: ${mod.researchRequirements.cost}, Time: {mod.researchRequirements.researchTime} days</p>
+                    <p>Requires: {mod.researchRequirements.engineerSkill} Lvl {mod.researchRequirements.engineerSkillLevel}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </ScrollArea>
           </div>
 
-          {/* Mod Selection */}
-          {selectedEquipmentId && availableModsForSelectedEquipment.length > 0 && (
-            <div className="space-y-2">
-              <label htmlFor="mod-select" className="text-sm font-medium">Available Mods for Selected Equipment:</label>
-              <select
-                id="mod-select"
-                value={selectedModId || ""}
-                onChange={(e) => setSelectedModId(e.target.value)}
-                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
-              >
-                <option value="" disabled>Select a mod...</option>
-                {availableModsForSelectedEquipment.map(mod => (
-                  <option key={mod.id} value={mod.id}>
-                    {mod.name} (Cost: ${mod.researchRequirements.cost}, Time: {mod.researchRequirements.researchTime}d)
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          {selectedEquipmentId && availableModsForSelectedEquipment.length === 0 && (
-             <p className="text-sm text-gray-400">No available mods to research for this equipment.</p>
-          )}
-
+          {/* Staff Assignment & Details */}
+          <div className="flex flex-col">
+            <h3 className="text-lg font-semibold mb-2 text-gray-200">Assign Engineer</h3>
+            {selectedMod ? (
+              <>
+                <ScrollArea className="flex-grow border border-gray-600 rounded-md p-2 bg-gray-900/70 min-h-[200px]">
+                  {eligibleEngineers.length === 0 && (
+                    <p className="text-gray-400 text-center py-4">No idle Engineers available.</p>
+                  )}
+                  {eligibleEngineers.map((staff) => {
+                    const skillName = selectedMod.researchRequirements.engineerSkill;
+                    // @ts-ignore TODO: Fix skill type to allow dynamic access
+                    const staffSkillLevel = staff.skills[skillName]?.level || 0;
+                    const canResearch = staffSkillLevel >= selectedMod.researchRequirements.engineerSkillLevel;
+                    return (
+                      <Card
+                        key={staff.id}
+                        className={`mb-2 cursor-pointer transition-all ${
+                          selectedStaff?.id === staff.id ? 'ring-2 ring-green-500 bg-green-800/50' : 'bg-gray-700/80 hover:bg-gray-700'
+                        } ${!canResearch ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        onClick={() => canResearch && handleSelectStaff(staff)}
+                      >
+                        <CardHeader className="pb-2 pt-3 px-4">
+                          <CardTitle className="text-base text-green-300">{staff.name}</CardTitle>
+                          <CardDescription className="text-xs text-gray-400">
+                            {staff.role} - {skillName} Lvl: {staffSkillLevel} (Req: {selectedMod.researchRequirements.engineerSkillLevel})
+                          </CardDescription>
+                        </CardHeader>
+                        {!canResearch && (
+                          <CardContent className="text-xs text-red-400 pb-3 px-4">
+                            Skill too low for this research.
+                          </CardContent>
+                        )}
+                      </Card>
+                    );
+                  })}
+                </ScrollArea>
+                <Button
+                  onClick={handleStartResearch}
+                  disabled={!selectedMod || !selectedStaff || gameState.money < selectedMod.researchRequirements.cost}
+                  className="mt-4 w-full bg-green-600 hover:bg-green-700 text-white"
+                >
+                  Start Research for ${selectedMod.researchRequirements.cost}
+                </Button>
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-full border border-gray-600 rounded-md p-4 bg-gray-900/70">
+                <p className="text-gray-400">Select a modification to see assignable staff.</p>
+              </div>
+            )}
+          </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} className="text-gray-300 border-gray-600 hover:bg-gray-700">Cancel</Button>
-          <Button 
-            onClick={handleResearch} 
-            disabled={!selectedModId || !engineer}
-            className="bg-teal-600 hover:bg-teal-700"
-          >
-            Start Research
+        <DialogFooter className="sm:justify-start pt-4">
+          <Button type="button" variant="outline" onClick={onClose} className="border-gray-600 text-gray-300 hover:bg-gray-700">
+            Close
           </Button>
         </DialogFooter>
       </DialogContent>

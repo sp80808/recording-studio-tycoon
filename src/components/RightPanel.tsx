@@ -5,6 +5,8 @@ import { GameState, PlayerAttributes } from '@/types/game';
 import { SkillsModal } from '@/components/modals/SkillsModal';
 import { AttributesModal } from '@/components/modals/AttributesModal';
 import { ResearchModal } from '@/components/modals/ResearchModal'; // Import ResearchModal
+import { EquipmentModManagementModal } from '@/components/modals/EquipmentModManagementModal'; // Import new modal
+import { availableMods } from '@/data/equipmentMods'; // Import availableMods
 import { EquipmentList } from '@/components/EquipmentList';
 import { BandManagement } from '@/components/BandManagement';
 import { ChartsPanel } from '@/components/ChartsPanel';
@@ -31,6 +33,7 @@ interface RightPanelProps {
   toggleStaffRest: (staffId: string) => void;
   openTrainingModal: (staff: any) => boolean;
   startResearchMod?: (staffId: string, modId: string) => boolean; // Add prop
+  applyModToEquipment?: (equipmentId: string, modId: string | null) => void; // Add new prop
 }
 
 export const RightPanel: React.FC<RightPanelProps> = ({
@@ -53,11 +56,15 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   unassignStaffFromProject,
   toggleStaffRest,
   openTrainingModal,
-  startResearchMod // Destructure prop
+  startResearchMod, // Destructure prop
+  applyModToEquipment // Destructure new prop
 }) => {
   const [activeTab, setActiveTab] = useState<'studio' | 'skills' | 'bands' | 'charts' | 'staff'>('studio');
   const [showResearchModal, setShowResearchModal] = useState(false);
-  const [selectedEngineerForResearch, setSelectedEngineerForResearch] = useState<GameState['hiredStaff'][0] | null>(null);
+  // selectedEngineerForResearch is not strictly needed here if ResearchModal handles its own staff selection from gameState
+  // const [selectedEngineerForResearch, setSelectedEngineerForResearch] = useState<GameState['hiredStaff'][0] | null>(null); 
+  const [showEquipmentModModal, setShowEquipmentModModal] = useState(false);
+  const [selectedEquipmentForModding, setSelectedEquipmentForModding] = useState<GameState['ownedEquipment'][0] | null>(null);
 
   const handleAdvanceDay = () => {
     advanceDay();
@@ -129,6 +136,44 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           </Button>
           
           <EquipmentList purchaseEquipment={purchaseEquipment} gameState={gameState} />
+
+          {/* Owned Equipment Section */}
+          <div className="mt-6">
+            <h3 className="text-lg font-bold text-white mb-3">🛠️ My Gear</h3>
+            {gameState.ownedEquipment.length === 0 ? (
+              <p className="text-sm text-gray-400">You don't own any equipment yet. Purchase some from the shop!</p>
+            ) : (
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                {gameState.ownedEquipment.map(equip => {
+                  const currentMod = equip.appliedModId ? availableMods.find(m => m.id === equip.appliedModId) : null;
+                  return (
+                    <Card key={equip.id} className="p-3 bg-gray-800/60 border-gray-700">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-200">
+                            {equip.icon} {equip.name} 
+                            {currentMod && <span className="text-xs text-yellow-400 ml-1">{currentMod.nameSuffix || `(${currentMod.name})`}</span>}
+                          </p>
+                          <p className="text-xs text-gray-400">Condition: {equip.condition}%</p>
+                        </div>
+                        <Button
+                          size="sm" // Changed from "xs"
+                          variant="outline"
+                          className="text-xs border-blue-500 text-blue-300 hover:bg-blue-500/20 px-2 py-1 h-auto" // Added padding and height classes for smaller feel
+                          onClick={() => {
+                            setSelectedEquipmentForModding(equip);
+                            setShowEquipmentModModal(true);
+                          }}
+                        >
+                          Manage Mods
+                        </Button>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -256,7 +301,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                     {staff.role === 'Engineer' && staff.status === 'Idle' && (
                       <Button
                         onClick={() => {
-                          setSelectedEngineerForResearch(staff);
+                          // setSelectedEngineerForResearch(staff); // ResearchModal will handle staff selection internally
                           setShowResearchModal(true);
                         }}
                         className="flex-1 bg-teal-600 hover:bg-teal-700 text-white text-xs py-1"
@@ -310,16 +355,29 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         playerData={gameState.playerData}
         spendPerkPoint={spendPerkPoint}
       />
-      {selectedEngineerForResearch && startResearchMod && (
+      {/* Render ResearchModal if startResearchMod is available */}
+      {startResearchMod && (
         <ResearchModal
           isOpen={showResearchModal}
           onClose={() => {
             setShowResearchModal(false);
-            setSelectedEngineerForResearch(null);
+            // setSelectedEngineerForResearch(null); // No longer needed as modal handles selection
           }}
-          engineer={selectedEngineerForResearch}
           gameState={gameState}
-          onStartResearch={startResearchMod}
+          startResearchMod={startResearchMod}
+        />
+      )}
+
+      {selectedEquipmentForModding && applyModToEquipment && ( // Ensure applyModToEquipment is available
+        <EquipmentModManagementModal
+          isOpen={showEquipmentModModal}
+          onClose={() => {
+            setShowEquipmentModModal(false);
+            setSelectedEquipmentForModding(null);
+          }}
+          equipment={selectedEquipmentForModding}
+          gameState={gameState}
+          onApplyMod={applyModToEquipment} // Pass the actual function
         />
       )}
     </Card>

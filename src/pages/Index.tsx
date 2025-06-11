@@ -13,7 +13,7 @@ import { ERA_DEFINITIONS } from '@/utils/eraProgression'; // ERA_DEFINITIONS for
 import { useGameState } from '@/hooks/useGameState';
 import { Project, ProjectReport, StaffMember } from '@/types/game'; // Import Project, ProjectReport, StaffMember
 import { generateProjectReview } from '@/utils/projectReviewUtils'; // Import generateProjectReview
-import { ProjectReviewModal } from '@/components/modals/ProjectReviewModal'; // Import ProjectReviewModal (assuming path)
+import { ProjectReviewModal } from '@/components/modals/ProjectReviewModal'; // Corrected import path
 import { useGameLogic } from '@/hooks/useGameLogic';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSaveSystem } from '@/contexts/SaveSystemContext';
@@ -51,7 +51,8 @@ const MusicStudioTycoon = () => {
     triggerEraTransition,
     startResearchMod, // Destructure startResearchMod
     completeProject, // Ensure this is destructured if not aliased
-    addStaffXP // Ensure this is destructured if not aliased
+    addStaffXP, // Ensure this is destructured if not aliased
+    applyModToEquipment // Destructure new function
   } = useGameLogic(gameState, setGameState, focusAllocation, setFocusAllocation); // Pass setFocusAllocation
 
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -320,7 +321,7 @@ const MusicStudioTycoon = () => {
           onOpenSettings={handleOpenSettings}
         />
         <div className="flex-grow min-h-0">
-          <MainGameContent
+            <MainGameContent
             gameState={gameState}
             setGameState={setGameState}
         focusAllocation={focusAllocation}
@@ -343,10 +344,13 @@ const MusicStudioTycoon = () => {
         triggerEraTransition={triggerEraTransition}
         autoTriggeredMinigame={autoTriggeredMinigame}
         clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
+        startResearchMod={startResearchMod} // Pass startResearchMod
+        applyModToEquipment={applyModToEquipment} // Pass applyModToEquipment
         // setAutoTriggeredMinigame={setAutoTriggeredMinigame} // Pass this if MainGameContent needs to trigger minigames
       />
       {/* RightPanel needs startResearchMod, but it's not directly used by MainGameContent.
           It will be passed to RightPanel via its props later.
+>>>>>>> REPLACE
           The props for MainGameContent are correct as is.
           The error was in RightPanelProps definition and its usage.
           Let's ensure RightPanel receives it.

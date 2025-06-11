@@ -55,14 +55,29 @@ Following successful completion of Multi-Project Staff Automation System (Phase 
 
 ## 2. Recent Changes & Major Achievements
 
-*   ✅ **Core Loop Enhancement - Skill System & Animated Project Review (2025-06-11 - Current Session):**
-    *   **Skill System Implementation:** Foundation of skill system with data structures, utilities, and XP curve formula
-    *   **Animated Project Review System:** Initial implementation of animated project reviews with skill-based XP progression
-    *   **Documentation Organization:** Major restructuring of documentation for core loop implementation
-    *   **Modified Files:** `skillUtils.ts`, `projectReviewUtils.ts`, `ProjectReviewModal.tsx`, plus extensive documentation updates
-*   ✅ **Work Progression System Enhancement (2025-06-11 - Prior Session):**
-    *   **Enhanced Work Unit Calculation:** Implemented `Math.floor(totalPointsGenerated / 3)` algorithm with minimum progress guarantee
-    *   **Stage-Specific Focus Labels:** Dynamic focus allocation labels that change based on recording stage (Recording → Mixing → Mastering)
+*   ✅ **Content Expansion & Equipment Modification System - Phase 1 (2025-06-11 - Current Session):**
+    *   **Added New Equipment:** Introduced several "late game" equipment items with unique bonuses and skill requirements to `src/data/equipment.ts`. Ensured all equipment items include `availableFrom` and `condition` properties.
+    *   **Enhanced Staff Variety:** Updated `generateCandidates` in `src/utils/projectUtils.ts` with more names and a basic archetype system ("Specialist" vs "Generalist") for staff generation.
+    *   **Equipment Modification - Core Logic:**
+        *   Added base equipment (`UREI 1176 Compressor`) to support existing mod definitions.
+        *   Updated `applyEquipmentBonusesToWorkPoints` in `src/utils/projectUtils.ts` to factor in bonuses from `appliedModId` on equipment.
+    *   **Equipment Modification - UI Implementation (Research & Management):**
+        *   Created `src/components/modals/ResearchModal.tsx` for players to view available mods and assign engineers to research them.
+        *   Created `src/components/modals/EquipmentModManagementModal.tsx` allowing players to apply researched mods to their owned equipment or remove them.
+        *   Integrated these modals into `src/components/RightPanel.tsx`, including a "My Gear" section to list owned equipment and trigger the mod management modal.
+        *   Propagated the `applyModToEquipment` function from `src/hooks/useGameLogic.tsx` down to `EquipmentModManagementModal` to handle state updates.
+    *   **Critical Error Fixes & Mobile UX (Immediately Prior):**
+        *   Addressed `SaveSystemContext` 500 error and `AudioContext` user gesture requirement.
+        *   Implemented swipe-based navigation for mobile viewports in `MainGameContent.tsx`.
+        *   Created `mobile_porting_plan.md`.
+    *   **Modified Files:** `src/data/equipment.ts`, `src/utils/projectUtils.ts`, `src/components/modals/ResearchModal.tsx`, `src/components/modals/EquipmentModManagementModal.tsx`, `src/components/RightPanel.tsx`, `src/hooks/useGameLogic.tsx`, `src/pages/Index.tsx`, `src/components/MainGameContent.tsx`, `src/contexts/SaveSystemContext.tsx`, `src/utils/audioSystem.ts`, `src/components/SplashScreen.tsx`, `src/hooks/useIsMobile.ts`.
+*   ✅ **Core Loop Enhancement - Skill System & Animated Project Review (Previously on 2025-06-11):**
+    *   **Skill System Implementation:** Foundation of skill system with data structures, utilities, and XP curve formula.
+    *   **Animated Project Review System:** Initial implementation of animated project reviews with skill-based XP progression.
+    *   **Documentation Organization:** Major restructuring of documentation for core loop implementation.
+*   ✅ **Work Progression System Enhancement (Previously on 2025-06-11):**
+    *   **Enhanced Work Unit Calculation:** Implemented `Math.floor(totalPointsGenerated / 3)` algorithm with minimum progress guarantee.
+    *   **Stage-Specific Focus Labels:** Dynamic focus allocation labels that change based on recording stage (Recording → Mixing → Mastering).
     *   **Real-Time Effectiveness Scoring:** Live optimization recommendations with effectiveness percentage display
     *   **Genre-Aware Focus Strategies:** Intelligent focus modifiers based on musical genre (Rock emphasizes performance, Electronic emphasizes layering)
     *   **Visual Progress Indicators:** Enhanced UI with progress bars and one-click optimization features
@@ -111,10 +126,12 @@ Following successful completion of Multi-Project Staff Automation System (Phase 
     * Prepare foundation for AI-powered optimization (Level 8+ feature)
     * Design analytics and reporting system architecture
     * Plan equipment modification integration with multi-project efficiency bonuses
+    *   **Full UI for Equipment Modification:** Ensure all aspects of applying, viewing, and managing mods are intuitive across the UI (e.g., in equipment lists, project setup).
+    *   **Balancing:** Balance new equipment, staff archetypes, and mod bonuses.
 
 ## 4. Active Considerations & Potential Challenges
 
-*   **Documentation Accuracy:** Ensuring the Memory Bank and other specified `docs/` files accurately reflect the current project state.
+*   **Documentation Accuracy:** Ensuring the Memory Bank and other specified `docs/` files accurately reflect the current project state. (Ongoing)
 *   **Complexity of Multi-Project System:** The planned system is large and will touch many parts of the codebase. Phased implementation and thorough testing (as outlined in the plan) are critical.
 *   **State Management Scalability:** The current custom hook/context approach needs to be robust enough for `EnhancedGameState` or alternatives explored.
 *   **UI/UX for Multi-Project View:** Designing an intuitive and clear interface for managing multiple projects and automation settings is an ongoing challenge (recent layout changes are a step in this direction).

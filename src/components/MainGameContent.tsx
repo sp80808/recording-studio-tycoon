@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useEffect } from 'react';
 import { GameState, FocusAllocation, StaffMember, PlayerAttributes, Project } from '@/types/game';
 import { ProjectList } from '@/components/ProjectList';
@@ -36,6 +35,7 @@ interface MainGameContentProps {
   autoTriggeredMinigame: { type: MinigameType; reason: string } | null;
   clearAutoTriggeredMinigame: () => void;
   startResearchMod?: (staffId: string, modId: string) => boolean; // Add prop
+  applyModToEquipment?: (equipmentId: string, modId: string | null) => void; // Add new prop for applying mods
 }
 
 export const MainGameContent: React.FC<MainGameContentProps> = ({
@@ -61,7 +61,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   triggerEraTransition,
   autoTriggeredMinigame,
   clearAutoTriggeredMinigame,
-  startResearchMod // Destructure prop
+  startResearchMod, // Destructure prop
+  applyModToEquipment // Destructure new prop
 }) => {
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [showAttributesModal, setShowAttributesModal] = useState(false);
@@ -191,6 +192,11 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                 setGameState={setGameState}
                 focusAllocation={focusAllocation}
                 setFocusAllocation={setFocusAllocation}
+                performDailyWork={performDailyWork}
+                onMinigameReward={onMinigameReward}
+                onProjectComplete={onProjectComplete}
+                autoTriggeredMinigame={autoTriggeredMinigame}
+                clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
                 onProjectSelect={(project) => {
                   setGameState(prev => ({ ...prev, activeProject: project }));
                 }}
@@ -229,8 +235,9 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                 contactArtist={contactArtist}
                 triggerEraTransition={handleEraTransition}
                 startResearchMod={startResearchMod}
+                applyModToEquipment={applyModToEquipment} // Pass to mobile RightPanel
               />
-            )}
+            </div>
           </div>
           {/* Mobile Tab Navigation Dots */}
           <div className="flex justify-center p-2 border-t border-gray-700 bg-gray-800">
@@ -261,6 +268,11 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
               setGameState={setGameState}
               focusAllocation={focusAllocation}
               setFocusAllocation={setFocusAllocation}
+              performDailyWork={performDailyWork}
+              onMinigameReward={onMinigameReward}
+              onProjectComplete={onProjectComplete}
+              autoTriggeredMinigame={autoTriggeredMinigame}
+              clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
               onProjectSelect={(project) => {
                 setGameState(prev => ({ ...prev, activeProject: project }));
               }}
@@ -283,22 +295,24 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
               setShowSkillsModal={setShowSkillsModal}
               showAttributesModal={showAttributesModal}
               setShowAttributesModal={setShowAttributesModal}
-            spendPerkPoint={spendPerkPoint}
-            advanceDay={advanceDay}
-            purchaseEquipment={purchaseEquipment}
-            createBand={createBand}
-            startTour={startTour}
-            createOriginalTrack={createOriginalTrack}
-            hireStaff={hireStaff}
-            refreshCandidates={refreshCandidates}
-            assignStaffToProject={assignStaffToProject}
-            unassignStaffFromProject={unassignStaffFromProject}
-            toggleStaffRest={toggleStaffRest}
-            openTrainingModal={openTrainingModal}
-            contactArtist={contactArtist}
-            triggerEraTransition={handleEraTransition}
-            startResearchMod={startResearchMod} // Pass prop to RightPanel
-          />
+              spendPerkPoint={spendPerkPoint}
+              advanceDay={advanceDay}
+              purchaseEquipment={purchaseEquipment}
+              createBand={createBand}
+              startTour={startTour}
+              createOriginalTrack={createOriginalTrack}
+              hireStaff={hireStaff}
+              refreshCandidates={refreshCandidates}
+              assignStaffToProject={assignStaffToProject}
+              unassignStaffFromProject={unassignStaffFromProject}
+              toggleStaffRest={toggleStaffRest}
+              openTrainingModal={openTrainingModal}
+              contactArtist={contactArtist}
+              triggerEraTransition={handleEraTransition}
+              startResearchMod={startResearchMod} // Pass prop to RightPanel
+              applyModToEquipment={applyModToEquipment} // Pass to desktop RightPanel
+            />
+          </div>
         </div>
       )} {/* This closes the ternary operator */}
 
