@@ -112,11 +112,14 @@ class GameAudioSystem {
       { name: 'unavailable', path: '/audio/ui sfx/unavailable-ui-79817.mp3' },
       
       // Background Music
-      { name: 'bgm1', path: '/audio/music/Tycoon BGM 1.mp3' },
-      { name: 'bgm2', path: '/audio/music/Tycoon BGM 2.mp3' },
-      { name: 'bgm3', path: '/audio/music/Tycoon BGM 3.mp3' },
-      { name: 'bgm4', path: '/audio/music/Tycoon BGM 4.mp3' },
-      { name: 'bgm5', path: '/audio/music/Tycoon BGM 5.mp3' }
+      { name: 'bgm1', path: '/audio/music/tycoon-bgm1.mp3' },
+      { name: 'bgm2', path: '/audio/music/tycoon-bgm2.mp3' },
+      { name: 'bgm3', path: '/audio/music/tycoon-bgm3.mp3' },
+      { name: 'bgm4', path: '/audio/music/tycoon-bgm4.mp3' },
+      { name: 'bgm5', path: '/audio/music/tycoon-bgm5.mp3' },
+      { name: 'bgm6', path: '/audio/music/tycoon-bgm6.mp3' },
+      { name: 'bgm7', path: '/audio/music/tycoon-bgm7.mp3' },
+      { name: 'bgm8', path: '/audio/music/tycoon-bgm8.mp3' }
     ];
 
     for (const audio of audioFiles) {
