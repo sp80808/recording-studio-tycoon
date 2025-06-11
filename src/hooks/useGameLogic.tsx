@@ -103,7 +103,7 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
     }
 
     // Play purchase sound
-    playSound('purchase.wav', 0.6);
+    playSound('ui sfx/purchase-complete.mp3', 0.6);
 
     // Apply equipment effects and update state
     let updatedGameState = applyEquipmentEffects(equipment, gameState);

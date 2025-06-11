@@ -73,16 +73,16 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
   };
 
   const getProjectStatusColor = (progress: number) => {
-    if (progress < 0.3) return 'bg-red-500';
-    if (progress < 0.7) return 'bg-yellow-500';
-    return 'bg-green-500';
+    if (progress < 0.3) return 'bg-red-600';
+    if (progress < 0.7) return 'bg-yellow-600';
+    return 'bg-green-600';
   };
 
   const getPriorityColor = (priority: number) => {
-    if (priority === 1) return 'bg-red-100 text-red-800';
-    if (priority === 2) return 'bg-orange-100 text-orange-800';
-    if (priority === 3) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-gray-100 text-gray-800';
+    if (priority === 1) return 'bg-red-600 text-white';
+    if (priority === 2) return 'bg-orange-600 text-white';
+    if (priority === 3) return 'bg-yellow-600 text-white';
+    return 'bg-gray-600 text-white';
   };
 
   return (

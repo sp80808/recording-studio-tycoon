@@ -120,6 +120,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           <ProgressiveProjectInterface 
             gameState={gameState}
             setGameState={setGameState}
+            focusAllocation={focusAllocation}
+            setFocusAllocation={setFocusAllocation}
             onProjectSelect={(project) => {
               // Handle project selection - for now just set it as active
               setGameState(prev => ({

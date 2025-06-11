@@ -47,6 +47,7 @@ export const XPProgressBar: React.FC<XPProgressBarProps> = ({
         <Progress 
           value={progressPercentage} 
           className={`h-4 bg-gray-700/50 border border-gray-600 ${animated ? 'transition-all duration-700' : ''}`}
+          aria-label="Player experience progress"
         />
         
         {/* Animated gradient overlay */}

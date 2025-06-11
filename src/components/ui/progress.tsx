@@ -5,7 +5,10 @@ import { cn } from "@/lib/utils"
 
 const Progress = React.forwardRef<
   React.ElementRef<typeof ProgressPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>
+  React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root> & {
+    'aria-label'?: string;
+    'aria-labelledby'?: string;
+  }
 >(({ className, value, ...props }, ref) => (
   <ProgressPrimitive.Root
     ref={ref}
@@ -13,6 +16,11 @@ const Progress = React.forwardRef<
       "relative h-4 w-full overflow-hidden rounded-full bg-secondary",
       className
     )}
+    value={value}
+    max={100}
+    aria-valuemax={100}
+    aria-valuemin={0}
+    aria-valuenow={value || 0}
     {...props}
   >
     <ProgressPrimitive.Indicator

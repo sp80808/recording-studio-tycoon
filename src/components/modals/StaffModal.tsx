@@ -81,7 +81,11 @@ export const StaffModal: React.FC<StaffModalProps> = ({
                     <span className="text-gray-300">Energy</span>
                     <span className={getEnergyColor(staff.energy)}>{staff.energy}/100</span>
                   </div>
-                  <Progress value={staff.energy} className="h-2" />
+                  <Progress 
+                    value={staff.energy} 
+                    className="h-2"
+                    aria-label={`${staff.name} energy level`}
+                  />
                 </div>
                 
                 {staff.genreAffinity && (

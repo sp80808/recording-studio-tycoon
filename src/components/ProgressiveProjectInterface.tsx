@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Star, Lock, TrendingUp, Users, Zap, Info } from 'lucide-react';
-import { GameState, Project, GameNotification } from '@/types/game';
+import { GameState, Project, GameNotification, FocusAllocation } from '@/types/game';
 import { ProgressionSystem, ProgressionStatus } from '@/services/ProgressionSystem';
 import { useMultiProjectManagement } from '@/hooks/useMultiProjectManagement';
 import { MultiProjectDashboard } from '@/components/MultiProjectDashboard';
@@ -16,17 +16,31 @@ import { ActiveProject } from '@/components/ActiveProject';
 interface ProgressiveProjectInterfaceProps {
   gameState: GameState;
   setGameState: (state: GameState | ((prev: GameState) => GameState)) => void;
+  focusAllocation?: FocusAllocation;
+  setFocusAllocation?: (allocation: FocusAllocation) => void;
   onProjectSelect?: (project: Project) => void;
 }
 
 export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfaceProps> = ({
   gameState,
   setGameState,
+  focusAllocation,
+  setFocusAllocation,
   onProjectSelect
 }) => {
   const [progressionStatus, setProgressionStatus] = useState<ProgressionStatus | null>(null);
   const [showProgressionInfo, setShowProgressionInfo] = useState(false);
   const [lastMilestone, setLastMilestone] = useState<number>(0);
+
+  // Provide default focus allocation if not provided
+  const defaultFocusAllocation: FocusAllocation = {
+    performance: 50,
+    soundCapture: 50,
+    layering: 50
+  };
+
+  const currentFocusAllocation = focusAllocation || defaultFocusAllocation;
+  const handleSetFocusAllocation = setFocusAllocation || (() => {});
 
   // Check progression status on game state changes
   useEffect(() => {
@@ -65,34 +79,34 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
     const nextRequirements = ProgressionSystem.getNextUnlockRequirements(gameState);
     
     return (
-      <Card className="mb-6 border-blue-200 bg-blue-50">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center text-lg">
-            <Star className="w-5 h-5 mr-2 text-blue-600" />
-            Studio Progression
+      <Card className="mb-4 border-gray-700 bg-gray-800">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center text-base">
+            <Star className="w-4 h-4 mr-2 text-blue-400" />
+            <span className="text-white">Studio Progression</span>
             <Button
               onClick={() => setShowProgressionInfo(!showProgressionInfo)}
               variant="ghost"
               size="sm"
-              className="ml-auto"
+              className="ml-auto text-gray-400 hover:text-white"
             >
               <Info className="w-4 h-4" />
             </Button>
           </CardTitle>
         </CardHeader>
         
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           {/* Current Milestone */}
           <div className="flex items-center justify-between">
             <div>
-              <div className="font-medium text-blue-900">
+              <div className="font-medium text-white text-sm">
                 {progressionStatus.currentMilestone?.unlockMessage?.split('!')[0] || 'Starting Out'}
               </div>
-              <div className="text-sm text-blue-700">
+              <div className="text-xs text-gray-400">
                 Level {progressionStatus.currentMilestone?.level || 1} Studio
               </div>
             </div>
-            <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+            <Badge className="bg-blue-600 text-white border-blue-500 text-xs">
               Current
             </Badge>
           </div>
@@ -100,28 +114,29 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
           {/* Progress to Next */}
           {progressionStatus.nextMilestone && (
             <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-blue-700">Next Unlock Progress</span>
-                <span className="font-medium text-blue-900">
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-400">Next Unlock Progress</span>
+                <span className="font-medium text-white">
                   {Math.round(progressionStatus.progressToNext * 100)}%
                 </span>
               </div>
               <Progress 
                 value={progressionStatus.progressToNext * 100} 
-                className="h-2 bg-blue-100"
+                className="h-1.5 bg-gray-700"
+                aria-label="Progress to next milestone"
               />
             </div>
           )}
 
           {/* Expandable Details */}
           {showProgressionInfo && (
-            <div className="space-y-3 pt-2 border-t border-blue-200">
+            <div className="space-y-2 pt-2 border-t border-gray-700">
               {/* Current Features */}
               <div>
-                <div className="text-sm font-medium text-blue-900 mb-2">Available Features:</div>
+                <div className="text-xs font-medium text-white mb-1">Available Features:</div>
                 <div className="flex flex-wrap gap-1">
                   {progressionStatus.currentMilestone?.features.map((feature) => (
-                    <Badge key={feature} variant="secondary" className="text-xs">
+                    <Badge key={feature} variant="secondary" className="text-xs bg-gray-700 text-gray-300">
                       {feature}
                     </Badge>
                   ))}
@@ -131,23 +146,23 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
               {/* Next Requirements */}
               {nextRequirements && (
                 <div>
-                  <div className="text-sm font-medium text-blue-900 mb-2">Next Milestone Requirements:</div>
-                  <div className="grid grid-cols-3 gap-3 text-xs">
+                  <div className="text-xs font-medium text-white mb-1">Next Milestone Requirements:</div>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
                     <div className="text-center">
-                      <div className="font-medium">Level</div>
-                      <div className={nextRequirements.currentLevel >= nextRequirements.levelNeeded ? 'text-green-600' : 'text-orange-600'}>
+                      <div className="font-medium text-gray-400">Level</div>
+                      <div className={nextRequirements.currentLevel >= nextRequirements.levelNeeded ? 'text-green-400' : 'text-orange-400'}>
                         {nextRequirements.currentLevel}/{nextRequirements.levelNeeded}
                       </div>
                     </div>
                     <div className="text-center">
-                      <div className="font-medium">Staff</div>
-                      <div className={nextRequirements.currentStaff >= nextRequirements.staffNeeded ? 'text-green-600' : 'text-orange-600'}>
+                      <div className="font-medium text-gray-400">Staff</div>
+                      <div className={nextRequirements.currentStaff >= nextRequirements.staffNeeded ? 'text-green-400' : 'text-orange-400'}>
                         {nextRequirements.currentStaff}/{nextRequirements.staffNeeded}
                       </div>
                     </div>
                     <div className="text-center">
-                      <div className="font-medium">Projects</div>
-                      <div className={nextRequirements.currentProjects >= nextRequirements.projectsNeeded ? 'text-green-600' : 'text-orange-600'}>
+                      <div className="font-medium text-gray-400">Projects</div>
+                      <div className={nextRequirements.currentProjects >= nextRequirements.projectsNeeded ? 'text-green-400' : 'text-orange-400'}>
                         {nextRequirements.currentProjects}/{nextRequirements.projectsNeeded}
                       </div>
                     </div>
@@ -158,13 +173,13 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
               {/* Next Features Preview */}
               {progressionStatus.nextMilestone && (
                 <div>
-                  <div className="text-sm font-medium text-blue-900 mb-2">
+                  <div className="text-xs font-medium text-white mb-1">
                     <Lock className="w-3 h-3 inline mr-1" />
                     Upcoming Features:
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {progressionStatus.nextMilestone.features.map((feature) => (
-                      <Badge key={feature} variant="outline" className="text-xs opacity-60">
+                      <Badge key={feature} variant="outline" className="text-xs border-gray-600 text-gray-400 opacity-60">
                         {feature}
                       </Badge>
                     ))}
@@ -186,9 +201,9 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
         
         {/* Hint about upcoming multi-project capability */}
         {progressionStatus.progressToNext > 0.7 && progressionStatus.nextMilestone && (
-          <Alert className="border-yellow-200 bg-yellow-50">
-            <TrendingUp className="w-4 h-4 text-yellow-600" />
-            <AlertDescription className="text-yellow-800">
+          <Alert className="border-yellow-600 bg-gray-800">
+            <TrendingUp className="w-4 h-4 text-yellow-400" />
+            <AlertDescription className="text-yellow-200">
               <strong>Studio Expansion Coming Soon!</strong> You're close to unlocking multi-project management. 
               Keep growing your studio to handle multiple projects simultaneously.
             </AlertDescription>
@@ -199,6 +214,8 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
         <ActiveProject
           gameState={gameState}
           setGameState={setGameState}
+          focusAllocation={currentFocusAllocation}
+          setFocusAllocation={handleSetFocusAllocation}
           onProjectSelect={onProjectSelect}
         />
       </div>
@@ -214,16 +231,16 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
         {renderProgressionInfo()}
         
         {/* New Feature Announcement */}
-        <Alert className="border-green-200 bg-green-50">
-          <Zap className="w-4 h-4 text-green-600" />
-          <AlertDescription className="text-green-800">
+        <Alert className="border-green-600 bg-gray-800">
+          <Zap className="w-4 h-4 text-green-400" />
+          <AlertDescription className="text-green-200">
             <strong>🎉 Multi-Project Management Unlocked!</strong> Your studio can now handle multiple projects simultaneously. 
             Try the new dashboard to see your expanded capabilities.
           </AlertDescription>
         </Alert>
 
         {/* Choice between views */}
-        <div className="flex items-center justify-center space-x-4 p-4 bg-gray-50 rounded-lg">
+        <div className="flex items-center justify-center space-x-4 p-4 bg-gray-800 rounded-lg border border-gray-700">
           <Button
             onClick={() => setShowMultiProject(false)}
             variant={!showMultiProject ? 'default' : 'outline'}
@@ -253,6 +270,8 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
           <ActiveProject
             gameState={gameState}
             setGameState={setGameState}
+            focusAllocation={currentFocusAllocation}
+            setFocusAllocation={handleSetFocusAllocation}
             onProjectSelect={onProjectSelect}
           />
         )}

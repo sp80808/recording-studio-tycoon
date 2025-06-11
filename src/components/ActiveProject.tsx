@@ -319,7 +319,11 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 {currentStage?.workUnitsCompleted || 0}/{currentStage?.workUnitsBase || 0}
               </span>
             </div>
-            <Progress value={currentStageProgress} className="h-3 mb-2 transition-all duration-500" />
+            <Progress 
+              value={currentStageProgress} 
+              className="h-3 mb-2 transition-all duration-500"
+              aria-label={`${currentStage?.stageName || 'Current stage'} progress`}
+            />
             {currentStage?.completed && (
               <div className="text-green-400 text-sm animate-scale-in">✓ Stage Complete!</div>
             )}
@@ -331,7 +335,11 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
               <span className="text-white font-semibold">Overall Progress</span>
               <span className="text-gray-400">{Math.round(overallProgress)}%</span>
             </div>
-            <Progress value={overallProgress} className="h-3 progress-bar transition-all duration-500" />
+            <Progress 
+              value={overallProgress} 
+              className="h-3 progress-bar transition-all duration-500"
+              aria-label="Overall project progress"
+            />
           </div>
 
           {/* Focus Allocation Sliders */}
