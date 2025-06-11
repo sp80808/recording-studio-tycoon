@@ -257,14 +257,20 @@ export const useStaffManagement = (gameState: GameState, setGameState: React.Dis
       toast({ title: "Insufficient Funds", description: `Need $${modToResearch.researchRequirements.cost} to start research for ${modToResearch.name}.`, variant: "destructive" });
       return false;
     }
-    // TODO: Check engineer skill level against modToResearch.researchRequirements.engineerSkill and engineerSkillLevel
-    // This requires staff members to have specific skills and levels, e.g., staffMember.skills['Electronics'] >= modToResearch.researchRequirements.engineerSkillLevel
-    // For now, we'll skip this check or assume a generic 'technical' stat can be used.
-    // Example check (if staff had a 'technical' stat directly):
-    // if (staffMember.primaryStats.technical < modToResearch.researchRequirements.engineerSkillLevel) {
-    //   toast({ title: "Skill Too Low", description: `${staffMember.name} needs a Technical skill of ${modToResearch.researchRequirements.engineerSkillLevel} for this research.`, variant: "destructive" });
-    //   return false;
-    // }
+
+    // Check engineer skill level
+    const requiredSkillName = modToResearch.researchRequirements.engineerSkill;
+    const requiredSkillLevel = modToResearch.researchRequirements.engineerSkillLevel;
+    const engineerSkillValue = staffMember.skills?.[requiredSkillName] || 0;
+
+    if (engineerSkillValue < requiredSkillLevel) {
+      toast({ 
+        title: "Skill Too Low", 
+        description: `${staffMember.name} needs ${requiredSkillName} skill of ${requiredSkillLevel} (has ${engineerSkillValue}).`, 
+        variant: "destructive" 
+      });
+      return false;
+    }
 
     setGameState(prev => ({
       ...prev,

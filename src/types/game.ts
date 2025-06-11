@@ -76,6 +76,7 @@ export interface StaffMember {
   trainingCourse?: string;
   researchingModId?: string | null;
   researchEndDay?: number;
+  skills?: { [skillName: string]: number }; // e.g., { Electronics: 5, Acoustics: 3 }
 }
 
 export type EquipmentCategory = 'microphone' | 'monitor' | 'interface' | 'outboard' | 'instrument' | 'software' | 'recorder' | 'mixer';
