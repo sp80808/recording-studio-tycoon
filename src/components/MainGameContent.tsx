@@ -35,7 +35,6 @@ interface MainGameContentProps {
   autoTriggeredMinigame: { type: MinigameType; reason: string } | null;
   clearAutoTriggeredMinigame: () => void;
   startResearchMod?: (staffId: string, modId: string) => boolean; // Add prop
-  applyModToEquipment?: (equipmentId: string, modId: string | null) => void; // Add new prop for applying mods
 }
 
 export const MainGameContent: React.FC<MainGameContentProps> = ({
@@ -61,8 +60,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   triggerEraTransition,
   autoTriggeredMinigame,
   clearAutoTriggeredMinigame,
-  startResearchMod, // Destructure prop
-  applyModToEquipment // Destructure new prop
+  startResearchMod // Destructure prop
 }) => {
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [showAttributesModal, setShowAttributesModal] = useState(false);
@@ -235,9 +233,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                 contactArtist={contactArtist}
                 triggerEraTransition={handleEraTransition}
                 startResearchMod={startResearchMod}
-                applyModToEquipment={applyModToEquipment} // Pass to mobile RightPanel
               />
-            </div>
+            </div> {/* Corrected closing tag for this div */}
           </div>
           {/* Mobile Tab Navigation Dots */}
           <div className="flex justify-center p-2 border-t border-gray-700 bg-gray-800">
@@ -254,15 +251,19 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
       ) : (
         // Desktop View: 3-panel layout
         <div className="p-2 sm:p-4 sm:flex sm:gap-4 relative flex-grow overflow-hidden">
-          <div className="w-full sm:w-80 lg:w-96 animate-fade-in h-full overflow-y-auto"> {/* Left Panel */}
-            <ProjectList 
-              gameState={gameState}
-              setGameState={setGameState}
-              startProject={startProject}
-            />
+          {/* Left Panel */}
+          <div className="w-full sm:w-80 lg:w-96 animate-fade-in flex flex-col h-full">
+            <div className="overflow-y-auto flex-grow">
+              <ProjectList 
+                gameState={gameState}
+                setGameState={setGameState}
+                startProject={startProject}
+              />
+            </div>
           </div>
 
-          <div className="flex-1 relative sm:min-h-0 animate-fade-in flex flex-col h-full overflow-hidden" style={{ animationDelay: '0.2s' }}> {/* Center Panel Wrapper */}
+          {/* Center Panel Wrapper */}
+          <div className="flex-1 relative sm:min-h-0 animate-fade-in flex flex-col h-full overflow-hidden" style={{ animationDelay: '0.2s' }}>
             <ProgressiveProjectInterface 
               gameState={gameState}
               setGameState={setGameState}
@@ -288,30 +289,32 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             ))}
           </div>
 
-          <div className="w-full sm:w-80 lg:w-96 animate-fade-in h-full overflow-y-auto" style={{ animationDelay: '0.4s' }}> {/* Right Panel */}
-            <RightPanel 
-              gameState={gameState}
-              showSkillsModal={showSkillsModal}
-              setShowSkillsModal={setShowSkillsModal}
-              showAttributesModal={showAttributesModal}
-              setShowAttributesModal={setShowAttributesModal}
-              spendPerkPoint={spendPerkPoint}
-              advanceDay={advanceDay}
-              purchaseEquipment={purchaseEquipment}
-              createBand={createBand}
-              startTour={startTour}
-              createOriginalTrack={createOriginalTrack}
-              hireStaff={hireStaff}
-              refreshCandidates={refreshCandidates}
-              assignStaffToProject={assignStaffToProject}
-              unassignStaffFromProject={unassignStaffFromProject}
-              toggleStaffRest={toggleStaffRest}
-              openTrainingModal={openTrainingModal}
-              contactArtist={contactArtist}
-              triggerEraTransition={handleEraTransition}
-              startResearchMod={startResearchMod} // Pass prop to RightPanel
-              applyModToEquipment={applyModToEquipment} // Pass to desktop RightPanel
-            />
+          {/* Right Panel */}
+          <div className="w-full sm:w-80 lg:w-96 animate-fade-in flex flex-col h-full" style={{ animationDelay: '0.4s' }}>
+             <div className="overflow-y-auto flex-grow">
+              <RightPanel 
+                gameState={gameState}
+                showSkillsModal={showSkillsModal}
+                setShowSkillsModal={setShowSkillsModal}
+                showAttributesModal={showAttributesModal}
+                setShowAttributesModal={setShowAttributesModal}
+                spendPerkPoint={spendPerkPoint}
+                advanceDay={advanceDay}
+                purchaseEquipment={purchaseEquipment}
+                createBand={createBand}
+                startTour={startTour}
+                createOriginalTrack={createOriginalTrack}
+                hireStaff={hireStaff}
+                refreshCandidates={refreshCandidates}
+                assignStaffToProject={assignStaffToProject}
+                unassignStaffFromProject={unassignStaffFromProject}
+                toggleStaffRest={toggleStaffRest}
+                openTrainingModal={openTrainingModal}
+                contactArtist={contactArtist}
+                triggerEraTransition={handleEraTransition}
+                startResearchMod={startResearchMod} 
+              />
+            </div>
           </div>
         </div>
       )} {/* This closes the ternary operator */}

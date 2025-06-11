@@ -13,8 +13,7 @@ import { useStageWork } from '@/hooks/useStageWork';
 import { useGameActions } from '@/hooks/useGameActions';
 import { useBandManagement } from '@/hooks/useBandManagement';
 import { ArtistContact } from '@/types/charts';
-import { FocusAllocation, EquipmentMod } from '@/types/game'; // Import FocusAllocation type, EquipmentMod
-import { availableMods } from '@/data/equipmentMods'; // Import availableMods
+import { FocusAllocation } from '@/types/game'; // Import FocusAllocation type
 
 export const useGameLogic = (
   gameState: GameState, 
@@ -298,29 +297,6 @@ export const useGameLogic = (
     }
   }, [gameState.money, gameState.reputation, gameState.chartsData, setGameState]);
 
-  const applyModToEquipment = useCallback((equipmentId: string, modId: string | null) => {
-    setGameState(prev => {
-      const ownedEquipment = prev.ownedEquipment.map(equip => {
-        if (equip.id === equipmentId) {
-          const originalName = equip.name.split(' (')[0].split(' +')[0]; // Get base name, removing old suffix
-          let newName = originalName;
-          let iconOverride = undefined; // Placeholder for icon override logic if needed
-
-          if (modId) {
-            const modDetails = availableMods.find(m => m.id === modId);
-            if (modDetails) {
-              newName = `${originalName} ${modDetails.nameSuffix || `(+${modDetails.name})`}`.trim();
-              // iconOverride = modDetails.iconOverride; // If icon override is implemented
-            }
-          }
-          return { ...equip, appliedModId: modId, name: newName /*, icon: iconOverride || equip.icon */ };
-        }
-        return equip;
-      });
-      return { ...prev, ownedEquipment };
-    });
-  }, [setGameState]);
-
   return {
     startProject,
     handlePerformDailyWork,
@@ -345,7 +321,6 @@ export const useGameLogic = (
     triggerEraTransition,
     startResearchMod, // Add startResearchMod here
     completeProject, // Export completeProject
-    addStaffXP, // Export addStaffXP
-    applyModToEquipment // Export new function
+    addStaffXP // Export addStaffXP
   };
 };

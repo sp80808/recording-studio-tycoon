@@ -68,16 +68,6 @@
 *   ✅ **Living Studio Animations**: Recording, Mixing, Artist Moods, Day/Night Cycle
 *   ✅ **Equipment Modification System**: Research logic foundation
 *   ✅ **Responsive Layout Core:** Main game panels now stretch to fill screen height and allow internal scrolling.
-*   ✅ **Content Expansion (Equipment & Staff):** Added new late-game equipment and introduced staff archetypes for more variety.
-*   ✅ **Equipment Modification System (Phase 1 - Core Logic & UI):**
-    *   Integrated mod bonuses into work point calculations.
-    *   Created `ResearchModal` for initiating mod research.
-    *   Created `EquipmentModManagementModal` for applying/removing mods.
-    *   Integrated modals into `RightPanel` with a "My Gear" section.
-    *   Propagated `applyModToEquipment` function for state updates.
-*   ✅ **Critical Error Fixes & Mobile UX Foundation (Previous Task):**
-    *   Addressed `SaveSystemContext` and `AudioContext` critical errors.
-    *   Implemented swipe navigation for mobile and created `mobile_porting_plan.md`.
 *   ✅ **Various Enhancements**: Bug fixes, UI improvements, initial Vercel integration, audio fixes.
 
 ## 3. What's Left to Build (Next Implementation Phases)
@@ -108,12 +98,10 @@
     - [ ] Advanced project filtering and sorting options
 
 **Phase 3: Polish & Specialized Features**
-*   **Equipment Modification System Integration (Phase 2 - Advanced & Polish)**:
-    - [ ] Connect equipment mods with multi-project efficiency bonuses (if applicable beyond direct work points).
-    - [ ] Research automation for equipment improvements (e.g., staff can auto-research available mods).
-    - [ ] Project-specific equipment/mod recommendations UI.
-    *   [ ] **Full UI for Equipment Modification:** Ensure all aspects of applying, viewing, and managing mods are intuitive across the UI (e.g., in equipment lists, project setup). Visual feedback for modified equipment (name suffix, icon override) needs to be consistently displayed.
-    *   [ ] **Balancing:** Balance new equipment, staff archetypes, and mod bonuses.
+*   **Equipment Modification System Integration**:
+    - [ ] Connect equipment mods with multi-project efficiency bonuses
+    - [ ] Research automation for equipment improvements
+    - [ ] Project-specific equipment recommendations
 *   **Enhanced Animations & Feedback**:
     - [ ] Studio activity heat maps showing work intensity
     - [ ] Animated staff movement between projects
@@ -121,10 +109,10 @@
     - [ ] Automation status visual indicators
 
 **Secondary Integration Tasks:**
-*   **Equipment Modification System (UI Completion - from previous plan, now largely covered by Phase 1 & 2 above)**:
-    - [x] Fully implement `ResearchModal.tsx` (Done in Phase 1)
-    - [x] UI for modified equipment in multi-project scenarios (Partially done with "My Gear" and `EquipmentModManagementModal` in Phase 1)
-    - [ ] Integration with automation efficiency calculations (Connects to "multi-project efficiency bonuses" above).
+*   **Equipment Modification System (UI Completion)**:
+    - [ ] Fully implement `ResearchModal.tsx` with multi-project context
+    - [ ] UI for modified equipment in multi-project scenarios
+    - [ ] Integration with automation efficiency calculations
 
 ## 4. Known Issues & Next Steps
 
@@ -158,7 +146,6 @@
 *   **Documentation Alignment (2025-06-11):** Updated all Memory Bank files to reflect new strategic direction
 *   **🎉 MAJOR IMPLEMENTATION (2025-06-11):** **Successfully implemented core Multi-Project Staff Automation System infrastructure.**
 *   **Layout Refinement (2025-06-11):** Overhauled main game layout for improved full-screen space utilization and windowed-mode scrollability.
-*   **Content & Mechanics Expansion (2025-06-11 - Current):** Added new equipment, staff archetypes, and implemented core UI/logic for equipment modification system.
 
 **Key Design Innovations:**
 *   **Automatic Feature Progression**: Players unlock complexity naturally through gameplay advancement
