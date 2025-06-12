@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ProjectReport, ProjectReportSkillEntry } from '@/types/game';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription, // Import DialogDescription
+} from '@/components/ui/dialog'; // Assuming these are from your UI library
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress'; // Assuming Progress component for XP bars
 import { gameAudio } from '@/utils/audioSystem'; // For sound effects
@@ -165,7 +173,7 @@ interface ProjectReviewModalProps {
 }
 
 export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, onClose, report }) => {
-  const [currentSkillIndex, setCurrentSkillIndex] = useState(-1); 
+  const [currentSkillIndex, setCurrentSkillIndex] = useState(-1);
   const [showOverallQuality, setShowOverallQuality] = useState(false);
   const [showRewards, setShowRewards] = useState(false);
   const [showSnippet, setShowSnippet] = useState(false);
@@ -257,100 +265,106 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
   }, [currentSkillIndex, report, isOpen, handleNextAnimation, totalAnimationStages]);
 
 
-  if (!isOpen || !report) {
-    return null;
-  }
+  // Use a unique ID for aria-describedby
+  const descriptionId = "project-review-description";
+
+  if (!isOpen || !report) return null;
 
   return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
-      onClick={(e) => {
-        // Only close modal if Continue button is visible (animation complete)
-        if (showContinueButton) {
-          // Allow closing only when Continue button is available
-          // Still prevent accidental clicks during animation
-          e.preventDefault();
-        } else {
-          // Prevent modal from closing during animation
-          e.preventDefault();
-          e.stopPropagation();
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={(openState) => {
+        // This handles ESC key or other non-button close attempts.
+        // Only allow closing if the continue button is visible (animations done).
+        if (!openState && showContinueButton) {
+          onClose();
         }
+        // If !openState and !showContinueButton, do nothing (prevent close).
+        // If openState is true, it's opening, do nothing.
       }}
     >
-      <style>{`
-        .animate-pulse-strong {
-          animation: pulse-strong 0.7s infinite;
-        }
-        @keyframes pulse-strong {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.7; transform: scale(1.1); }
-        }
-      `}</style>
-      <Card 
-        className="bg-gray-800 border-gray-700 text-white w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl relative z-10"
-        onClick={(e) => {
-          // Prevent event bubbling from card clicks to the backdrop
-          e.stopPropagation();
+      <DialogContent 
+        className="bg-gray-850 border-gray-700 text-gray-50 shadow-xl max-w-2xl w-full rounded-lg z-[60]" // Increased z-index
+        onInteractOutside={(e) => {
+          // Prevent closing when clicking outside if animation is not complete
+          if (!showContinueButton) {
+            e.preventDefault();
+          }
+          // If showContinueButton is true, onOpenChange (from ESC or other) will handle the close.
+          // If user clicks outside AND showContinueButton is true, onOpenChange will be triggered with openState=false.
         }}
+        aria-describedby={descriptionId} // Add aria-describedby for accessibility
       >
-        <CardHeader className="pb-2">
-          <CardTitle className="text-3xl text-yellow-400 font-bold text-center tracking-wider">
-            Project Review: {report.projectTitle}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="overflow-y-auto flex-grow p-6 space-y-3">
-          {report.skillBreakdown.length > 0 && (
-            <div>
-              <h4 className="text-xl font-semibold text-yellow-200 mb-2">Skill Progression ({report.assignedPerson.name})</h4>
-              <ul className="space-y-2">
-                {report.skillBreakdown.map((skillDetail, index) => (
-                  <SkillDisplay 
-                    key={skillDetail.skillName} 
-                    skillDetail={skillDetail}
-                    startAnimation={currentSkillIndex === index}
-                    onAnimationComplete={handleNextAnimation} 
-                  />
-                ))}
-              </ul>
-            </div>
-          )}
-          {showOverallQuality && (
-            <div className="pt-2">
-              <h3 className="text-2xl font-bold text-center text-yellow-300 mb-1">
-                Overall Quality: <AnimatedNumber targetValue={report.overallQualityScore} duration={1000} className="text-3xl" /> / 100
-              </h3>
-              <Progress value={animatedOverallQualityValue} className="h-6 bg-gray-700 [&>*]:bg-green-500 transition-all duration-300" />
-            </div>
-          )}
-          {showRewards && (
-            <div className="pt-2 space-y-1 text-center">
-              <h4 className="text-xl font-semibold text-yellow-200">Rewards</h4>
-              <p className="text-lg">💰 Money: $<AnimatedNumber targetValue={report.moneyGained} duration={1200} /></p>
-              <p className="text-lg">🌟 Reputation: +<AnimatedNumber targetValue={report.reputationGained} duration={1200} /></p>
-              {report.assignedPerson.type === 'staff' && report.playerManagementXpGained > 0 && (
-                <p className="text-lg">🧠 Player Management XP: +<AnimatedNumber targetValue={report.playerManagementXpGained} duration={1200} /></p>
-              )}
-            </div>
-          )}
-          {showSnippet && (
-            <div className="pt-2">
-              <h4 className="text-xl font-semibold text-yellow-200">Summary</h4>
-              <p className="italic text-gray-300 text-center text-lg p-2 border border-dashed border-gray-600 rounded bg-gray-750">
-                "{typedSnippet}"
-              </p>
-            </div>
-          )}
-        </CardContent>
-        <CardFooter className="pt-4">
-          {showContinueButton ? (
-            <Button onClick={onClose} className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold text-lg py-3">
-              Awesome!
-            </Button>
-          ) : (
-            <div className="w-full text-center text-gray-400 italic">Calculating...</div>
-          )}
-        </CardFooter>
-      </Card>
-    </div>
+        <DialogHeader className="pt-6 px-6">
+          <DialogTitle className="text-2xl font-bold text-yellow-400">Project Complete: {report.projectTitle}</DialogTitle>
+          {/* Visible description for screen readers and context */}
+          <DialogDescription id={descriptionId} className="sr-only">
+            Detailed review of your completed project: {report.projectTitle}. Shows skill improvements, overall quality, and rewards gained.
+          </DialogDescription>
+        </DialogHeader>
+        {/* Card wrapper for styling consistency, removed its own onClick handler */}
+        <Card className="bg-transparent border-0 shadow-none">
+          <CardContent className="overflow-y-auto flex-grow p-6 space-y-3">
+            {report.skillBreakdown.length > 0 && (
+              <div>
+                <h4 className="text-xl font-semibold text-yellow-200 mb-2">Skill Progression ({report.assignedPerson.name})</h4>
+                <ul className="space-y-2">
+                  {report.skillBreakdown.map((skillDetail, index) => (
+                    <SkillDisplay 
+                      key={skillDetail.skillName} 
+                      skillDetail={skillDetail}
+                      startAnimation={currentSkillIndex === index}
+                      onAnimationComplete={handleNextAnimation} 
+                    />
+                  ))}
+                </ul>
+              </div>
+            )}
+            {showOverallQuality && (
+              <div className="pt-2">
+                <h3 className="text-2xl font-bold text-center text-yellow-300 mb-1">
+                  Overall Quality: <AnimatedNumber targetValue={report.overallQualityScore} duration={1000} className="text-3xl" /> / 100
+                </h3>
+                <Progress value={animatedOverallQualityValue} className="h-6 bg-gray-700 [&>*]:bg-green-500 transition-all duration-300" />
+              </div>
+            )}
+            {showRewards && (
+              <div className="pt-2 space-y-1 text-center">
+                <h4 className="text-xl font-semibold text-yellow-200">Rewards</h4>
+                <p className="text-lg">💰 Money: $<AnimatedNumber targetValue={report.moneyGained} duration={1200} /></p>
+                <p className="text-lg">🌟 Reputation: +<AnimatedNumber targetValue={report.reputationGained} duration={1200} /></p>
+                {report.assignedPerson.type === 'staff' && report.playerManagementXpGained > 0 && (
+                  <p className="text-lg">🧠 Player Management XP: +<AnimatedNumber targetValue={report.playerManagementXpGained} duration={1200} /></p>
+                )}
+              </div>
+            )}
+            {showSnippet && (
+              <div className="pt-2">
+                <h4 className="text-xl font-semibold text-yellow-200">Summary</h4>
+                <p className="italic text-gray-300 text-center text-lg p-2 border border-dashed border-gray-600 rounded bg-gray-750">
+                  "{typedSnippet}"
+                </p>
+              </div>
+            )}
+          </CardContent>
+          <CardFooter className="pt-4">
+            {showContinueButton ? (
+              <Button 
+                onClick={() => {
+                  // Play sound before calling onClose, as onClose might unmount the component
+                  gameAudio.playSound('button_click', 'ui'); 
+                  onClose();
+                }} 
+                className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold text-lg py-3"
+              >
+                Awesome!
+              </Button>
+            ) : (
+              <div className="w-full text-center text-gray-400 italic">Calculating...</div>
+            )}
+          </CardFooter>
+        </Card>
+      </DialogContent>
+    </Dialog>
   );
 };

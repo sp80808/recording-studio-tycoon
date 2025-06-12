@@ -345,12 +345,6 @@ const MusicStudioTycoon = () => {
         clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
         // setAutoTriggeredMinigame={setAutoTriggeredMinigame} // Pass this if MainGameContent needs to trigger minigames
       />
-      {/* RightPanel needs startResearchMod, but it's not directly used by MainGameContent.
-          It will be passed to RightPanel via its props later.
-          The props for MainGameContent are correct as is.
-          The error was in RightPanelProps definition and its usage.
-          Let's ensure RightPanel receives it.
-      */}
 
       <TrainingModal
         isOpen={showTrainingModal}
@@ -382,11 +376,11 @@ const MusicStudioTycoon = () => {
         removeNotification={removeNotification}
       />
 
-      <GameModals // This component might manage showReviewModal internally or receive it as a prop
+      {/* <GameModals // This component might manage showReviewModal internally or receive it as a prop
         showReviewModal={showReviewModal}
         setShowReviewModal={setShowReviewModal}
         lastReview={lastReview} // This 'lastReview' state might be deprecated or used differently by GameModals
-      />
+      /> */}
       {/* New Project Review Modal */}
       {activeProjectReport && (
         <ProjectReviewModal
