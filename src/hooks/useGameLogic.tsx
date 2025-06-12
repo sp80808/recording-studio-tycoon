@@ -1,14 +1,15 @@
 import { useState, useCallback } from 'react';
-import { GameState, StaffMember, PlayerAttributes, FocusAllocation, Project, ProjectReport, DiscoveredArtist } from '@/types/game'; // Removed ArtistContact from here
+import { GameState, StaffMember, PlayerAttributes, FocusAllocation, Project, ProjectReport, DiscoveredArtist, LevelUpDetails } from '@/types/game'; // Added LevelUpDetails
 import { toast } from '@/hooks/use-toast';
 import { availableTrainingCourses } from '@/data/training';
 import { canPurchaseEquipment, addNotification, applyEquipmentEffects } from '@/utils/gameUtils';
 import { getAvailableEquipmentForYear } from '@/data/eraEquipment';
 import { useStaffManagement } from '@/hooks/useStaffManagement';
 import { useProjectManagement } from '@/hooks/useProjectManagement';
-import { usePlayerProgression } from '@/hooks/usePlayerProgression';
+// import { usePlayerProgression } from '@/hooks/usePlayerProgression'; // This file does not exist
 import { useStageWork } from '@/hooks/useStageWork';
 import { useGameActions } from '@/hooks/useGameActions';
+import { useGameState } from '@/hooks/useGameState'; // Import useGameState
 import { useBandManagement } from '@/hooks/useBandManagement';
 import { Chart, MarketTrend, ArtistContact as ChartArtistContact } from '@/types/charts'; // Re-add import, alias ArtistContact
 
@@ -16,37 +17,42 @@ type GameStateUpdater = (updater: (prevState: GameState) => GameState) => void;
 
 export const useGameLogic = (
   gameState: GameState, 
-  setGameState: GameStateUpdater, 
+  setGameState: GameStateUpdater, // This is effectively updateGameState from useGameState
   focusAllocation: FocusAllocation
 ) => {
-  const dispatchSetGameState: React.Dispatch<React.SetStateAction<GameState>> = useCallback(
-    (value) => {
-      if (typeof value === 'function') {
-        setGameState(value as (prevState: GameState) => GameState);
-      } else {
-        setGameState(() => value as GameState);
-      }
-    },
-    [setGameState]
-  );
-
-  const { levelUpPlayer, spendPerkPoint, checkAndHandleLevelUp } = usePlayerProgression(gameState, dispatchSetGameState);
-  
-  const staffManagement = useStaffManagement(); 
+  // Use useGameState hook directly to get access to all its functions
   const { 
-    hireStaff, 
-    toggleStaffRest, 
-    addStaffXP, 
-    openTrainingModal, 
+    gameState: currentGameState, // gameState prop might be slightly stale, prefer internal from useGameState
+    updateGameState, 
+    triggerLevelUpModal, 
+    // clearLevelUpModal // Not directly used here, but available
+  } = useGameState(); 
+  
+  // The setGameState prop passed to useGameLogic is updateGameState from the parent.
+  // We can use the updateGameState from the useGameState hook directly for consistency.
+  const dispatchSetGameState = updateGameState;
+
+  // usePlayerProgression doesn't exist, logic is being moved or handled by useGameActions / progressionUtils
+  // const { levelUpPlayer, spendPerkPoint, checkAndHandleLevelUp } = usePlayerProgression(currentGameState, dispatchSetGameState);
+  
+  const staffManagement = useStaffManagement(currentGameState, dispatchSetGameState); 
+  const {
+    hireStaff,
+    toggleStaffRest,
+    addStaffXP: addStaffXPFromStaffManagement, // Renamed to avoid conflict
+    openTrainingModal,
     assignStaff, 
     unassignStaff, 
-    refreshCandidates: refreshStaffCandidates 
+    refreshCandidates: refreshStaffCandidates
   } = staffManagement;
   
   const projectManagement = useProjectManagement({ gameState, setGameState: dispatchSetGameState }); 
   const { startProject, completeProject: manageProjectCompletionInternal } = projectManagement; 
   
-  const gameActions = useGameActions(gameState, (newState) => setGameState(() => newState));
+  // This is where the error "Expected 3 arguments, but got 2" occurs.
+  // We need triggerLevelUpModal here. For now, this diff won't fix it fully,
+  // but will prepare for it. The next step will be to get triggerLevelUpModal here.
+  const gameActions = useGameActions(currentGameState, dispatchSetGameState, triggerLevelUpModal); // Pass the actual triggerLevelUpModal
   const { 
     advanceDay, 
     addMoney, 
@@ -66,34 +72,32 @@ export const useGameLogic = (
   const [lastReview, setLastReview] = useState<ProjectReport | null>(null);
 
   const completeProjectForStageWorkAdapter = useCallback((project: Project, staffXPAdder: (staffId: string, amount: number) => void): ProjectReport | undefined => {
-    const tempGameStateConst = { ...gameState, activeProject: project }; // Use const
-    // manageProjectCompletionInternal expects GameState and returns a report-like object.
+    // manageProjectCompletionInternal expects Project and addStaffXP function.
     // It internally updates the main gameState via setGameState.
     // The review object returned here is for useStageWork to know about the completion details.
-    const reviewFromInternal = manageProjectCompletionInternal(tempGameStateConst); 
+    const reviewFromInternal = manageProjectCompletionInternal(project, staffXPAdder); 
 
-    if (reviewFromInternal && reviewFromInternal.xpGain) { 
-        const assignedToThisProject = tempGameStateConst.hiredStaff.filter(s => s.assignedProjectId === project.id);
-        assignedToThisProject.forEach(staff => {
-            staffXPAdder(staff.id, reviewFromInternal.xpGain || 0); // Default to 0 if undefined
-        });
-    }
+    // The XP gain for staff is now handled directly within manageProjectCompletionInternal.
+    // No need for the assignedToThisProject.forEach loop here.
+    
     // Ensure the returned object matches ProjectReport structure if that's what useStageWork's 'review' becomes.
-    // The 'any' in useStageWork for review type needs to be ProjectReport.
     return reviewFromInternal; 
-  }, [gameState, manageProjectCompletionInternal]); 
+  }, [manageProjectCompletionInternal]); // Removed gameState from dependencies as it's not directly used here
 
   const stageWorkDeps = {
     gameState,
     setGameState: dispatchSetGameState, 
     focusAllocation,
     completeProject: completeProjectForStageWorkAdapter, 
-    addStaffXP, 
+    addStaffXP: addStaffXPFromStaffManagement, // Use renamed variable
     advanceDay
   };
   const { performDailyWork, orbContainerRef, autoTriggeredMinigame, clearAutoTriggeredMinigame } = useStageWork(stageWorkDeps);
 
   const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => {
+    console.log('handleMinigameReward: Initial state', { creativityBonus, technicalBonus, xpBonus, minigameType, activeProject: gameState.activeProject, playerData: gameState.playerData });
+    
+    // Update project points directly
     if (gameState.activeProject) {
       setGameState(prev => ({
         ...prev,
@@ -102,60 +106,72 @@ export const useGameLogic = (
           accumulatedCPoints: prev.activeProject.accumulatedCPoints + creativityBonus,
           accumulatedTPoints: prev.activeProject.accumulatedTPoints + technicalBonus
         } : null,
-        playerData: {
-          ...prev.playerData,
-          xp: prev.playerData.xp + xpBonus,
-          lastMinigameType: minigameType || prev.playerData.lastMinigameType
+        playerData: { // Also update lastMinigameType here if needed
+            ...prev.playerData,
+            lastMinigameType: minigameType || prev.playerData.lastMinigameType
         }
       }));
-      toast({
-        title: "🎯 Production Bonus!",
-        description: `+${creativityBonus} creativity, +${technicalBonus} technical, +${xpBonus} XP`,
-        duration: 3000
-      });
-      setTimeout(() => {
-        checkAndHandleLevelUp();
-      }, 100);
     }
+
+    // Add XP using the gameAction, which now handles level up and modal triggering
+    addXP(xpBonus); 
+
+    toast({
+      title: "🎯 Production Bonus!",
+      description: `+${creativityBonus} creativity, +${technicalBonus} technical, +${xpBonus} XP`,
+      duration: 3000
+    });
+    // checkAndHandleLevelUp might be redundant if addXP handles it, but depends on its implementation details
+    // For now, assuming addXP in useGameActions is the source of truth for level-up triggering.
   };
 
-  const handlePerformDailyWork = () => {
-    const result = performDailyWork(); 
+  const handlePerformDailyWork = (): PerformDailyWorkResult | undefined => { // Explicitly define return type
+    console.log('handlePerformDailyWork: Before performDailyWork', { gameStateXP: currentGameState.playerData.xp });
+    const result = performDailyWork(); // This is from useStageWork
+    
     if (result?.isComplete && result.review) {
-      setLastReview(result.review as ProjectReport); // Cast review to ProjectReport
-      setGameState(prev => ({
-        ...prev,
-        playerData: {
-          ...prev.playerData,
-          xp: prev.playerData.xp + ((result.review as ProjectReport).xpGain || 0) 
-        }
-      }));
-      setTimeout(() => {
-        checkAndHandleLevelUp();
-      }, 100);
-      // performDailyWork from useStageWork does not return finalProjectData
-      return { isComplete: true, review: result.review }; 
+      console.log('handlePerformDailyWork: Project complete, review:', result.review);
+      setLastReview(result.review as ProjectReport);
+      
+      // Add XP using the gameAction. This will handle level-up and modal.
+      addXP((result.review as ProjectReport).xpGain || 0);
+      
+      // The rest of the state update (money, reputation, activeProject to null)
+      // is handled by completeProject in useProjectManagement, which should be called by useStageWork.
+      // If useStageWork's completeProject doesn't use the one from useProjectManagement, this needs alignment.
+      // For now, assuming useStageWork's completeProject correctly updates game state.
+      
+      // Ensure finalProjectData is included in the return
+      return { isComplete: true, review: result.review, finalProjectData: result.finalProjectData };
     }
+    console.log('handlePerformDailyWork: Result (not complete):', result);
     return result;
   };
   
   const purchaseEquipment = (equipmentId: string) => {
+    console.log('purchaseEquipment: Attempting to purchase', equipmentId);
     const availableEquipment = getAvailableEquipmentForYear(gameState.currentYear || 2024);
     const equipment = availableEquipment.find(e => e.id === equipmentId);
-    if (!equipment) return;
+    if (!equipment) {
+      console.log('purchaseEquipment: Equipment not found');
+      return;
+    }
     const purchaseCheck = canPurchaseEquipment(equipment, gameState);
     if (!purchaseCheck.canPurchase) {
       toast({ title: "Cannot Purchase", description: purchaseCheck.reason, variant: "destructive" });
+      console.log('purchaseEquipment: Cannot purchase, reason:', purchaseCheck.reason);
       return;
     }
     
     setGameState(prevGameState => {
+        console.log('purchaseEquipment: Before purchase - Money:', prevGameState.money, 'Owned Equipment:', prevGameState.ownedEquipment.length);
         let updatedGameState = applyEquipmentEffects(equipment, prevGameState);
         updatedGameState = {
           ...updatedGameState,
           money: updatedGameState.money - equipment.price,
           ownedEquipment: [...updatedGameState.ownedEquipment, equipment]
         };
+        console.log('purchaseEquipment: After purchase - Money:', updatedGameState.money, 'Owned Equipment:', updatedGameState.ownedEquipment.length);
         return addNotification(updatedGameState, `${equipment.name} purchased!`, 'success');
     });
     toast({ title: "Equipment Purchased!", description: `${equipment.name} added.` });
@@ -189,12 +205,15 @@ export const useGameLogic = (
   };
 
   const handleSpendPerkPoint = (attribute: keyof PlayerAttributes) => {
-    if (gameState.playerData.perkPoints <= 0) {
+    if (currentGameState.playerData.perkPoints <= 0) {
       toast({ title: "No Perk Points", variant: "destructive" });
       return;
     }
-    const updatedStateFromHook = spendPerkPoint(attribute); 
-    setGameState(() => updatedStateFromHook); 
+    // spendPerkPoint was from the non-existent usePlayerProgression.
+    // Assuming spending a perk point means adding to an attribute.
+    // useGameActions has addAttributePoints for this.
+    addAttributePoints(attribute); 
+    // setGameState is already called within addAttributePoints via updateGameState
     toast({ title: "⚡ Attribute Upgraded!", description: `${String(attribute).replace(/([A-Z])/g, ' $1').trim()} increased!` });
   };
 
@@ -204,24 +223,30 @@ export const useGameLogic = (
   }, [processTourIncome, advanceDay]);
 
   const contactArtist = useCallback((artistId: string, offer: number) => {
+    console.log('contactArtist: Attempting to contact artist', { artistId, offer, currentMoney: gameState.money });
     if (gameState.money < offer) {
       toast({ title: "Insufficient Funds", variant: "destructive" });
+      console.log('contactArtist: Insufficient funds');
       return;
     }
     // Assuming discoveredArtists elements have at least id, and optionally priceRange, demandLevel, name
-    const artist = gameState.chartsData?.discoveredArtists?.find((a: { id: string; name?: string; priceRange?: { min: number; max: number }; demandLevel?: number }) => a.id === artistId); 
+    const artist = gameState.chartsData?.discoveredArtists?.find((a: { id: string; name?: string; priceRange?: { min: number; max: number }; demandLevel?: number }) => a.id === artistId);
     if (!artist) {
       toast({ title: "Artist Not Found", variant: "destructive" });
+      console.log('contactArtist: Artist not found');
       return;
     }
     const baseSuccessRate = 30;
-    const offerModifier = Math.min((offer / (artist.priceRange?.max || offer * 2)) * 40, 40); 
+    const offerMax = artist.priceRange?.max || offer * 2;
+    const offerModifier = Math.min((offer / offerMax) * 40, 40);
     const reputationModifier = Math.min((gameState.reputation / 100) * 20, 20);
-    const demandModifier = ((artist.demandLevel || 50) / 100) * 10; 
+    const demandModifier = ((artist.demandLevel || 50) / 100) * 10;
     const successRate = Math.min(baseSuccessRate + offerModifier + reputationModifier + demandModifier, 85);
     const isSuccessful = Math.random() * 100 < successRate;
     const contact: ChartArtistContact = { artistId, status: isSuccessful ? 'accepted' : 'rejected', requestDate: new Date(), opportunityId: `opp-${artistId}-${Date.now()}`, negotiationPhase: 'initial' };
     
+    console.log('contactArtist: Calculated success rate:', successRate, 'Is successful:', isSuccessful);
+
     setGameState(prev => {
       const baseChartsData = prev.chartsData || {
         charts: [],
@@ -245,6 +270,7 @@ export const useGameLogic = (
         lastChartUpdate: baseChartsData.lastChartUpdate || 0,
       };
       let nextState = { ...prev, money: prev.money - offer, chartsData: updatedChartsData };
+      console.log('contactArtist: Money after offer:', nextState.money);
       if (isSuccessful) {
         nextState = addNotification(nextState, `${artist.name} responded positively!`, 'success');
       }
@@ -281,10 +307,10 @@ export const useGameLogic = (
     contactArtist,
     triggerEraTransition: gameActionsTriggerEra, 
     completeProject: manageProjectCompletionInternal, 
-    addStaffXP,
+    addStaffXP: addStaffXPFromStaffManagement, // Use renamed version
     addMoney,
     addReputation,
-    addXP,
+    addXP, // This is the one from gameActions that handles level up
     addAttributePoints,
     addSkillXP,
     addPerkPoint

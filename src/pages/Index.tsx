@@ -19,7 +19,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useSaveSystem } from '@/contexts/SaveSystemContext';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { gameAudio as audioSystem } from '@/utils/audioSystem';
-import { MinigameType } from '@/components/minigames/MinigameManager';
+import { MinigameType } from '@/types/miniGame';
 // Removed duplicate FocusAllocation import
 
 const MusicStudioTycoon = () => {

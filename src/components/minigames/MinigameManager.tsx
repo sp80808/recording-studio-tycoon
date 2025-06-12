@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { RhythmTimingGame } from './RhythmTimingGame';
-import { MixingBoardGame } from './MixingBoardGame';
 import { SoundWaveGame } from './SoundWaveGame';
 import { BeatMakingGame } from './BeatMakingGame';
-import { VocalRecordingGame } from './VocalRecordingGame';
 import { MasteringGame } from './MasteringGame';
 import { EffectChainGame } from './EffectChainGame';
 import { AcousticTreatmentGame } from './AcousticTreatmentGame';
@@ -12,14 +10,11 @@ import { InstrumentLayeringGame } from './InstrumentLayeringGame';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { toast } from '@/hooks/use-toast';
 import { MixingMinigame } from './MixingMinigame';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { gameAudio } from '@/utils/audioSystem';
 import { VocalRecordingMinigame } from './VocalRecordingMinigame';
 import { GuitarPedalBoardGame } from './GuitarPedalBoardGame';
 import { PatchBayGame } from './PatchBayGame';
+import { MinigameType } from '@/types/miniGame'; // Import canonical MinigameType
 
-export type MinigameType = 'rhythm' | 'mixing' | 'waveform' | 'beatmaking' | 'vocal' | 'mastering' | 'effectchain' | 'acoustic' | 'layering' | 'recording' | 'pedalboard' | 'patchbay';
 
 interface MinigameManagerProps {
   isOpen: boolean;
@@ -51,23 +46,23 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
     const xpBonus = Math.floor(Math.max(1, score / 50)); // Reduced from /10 to /50
 
     switch (gameType) {
-      case 'rhythm':
+      case 'rhythm_timing': // Updated to match MinigameType from types/miniGame.ts
         creativityBonus = Math.floor(score / 8);
         technicalBonus = Math.floor(score / 12);
         break;
-      case 'mixing':
+      case 'mixing_board': // Updated
         creativityBonus = Math.floor(score / 12);
         technicalBonus = Math.floor(score / 8);
         break;
-      case 'waveform':
+      case 'sound_wave': // Updated
         creativityBonus = Math.floor(score / 10);
         technicalBonus = Math.floor(score / 10);
         break;
-      case 'beatmaking':
+      case 'beat_making': // Updated
         creativityBonus = Math.floor(score / 6);
         technicalBonus = Math.floor(score / 15);
         break;
-      case 'vocal':
+      case 'vocal_recording': // Updated
         creativityBonus = Math.floor(score / 7);
         technicalBonus = Math.floor(score / 11);
         break;
@@ -75,17 +70,29 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         creativityBonus = Math.floor(score / 15);
         technicalBonus = Math.floor(score / 6);
         break;
-      case 'effectchain':
+      case 'effect_chain':
         creativityBonus = Math.floor(score / 8);
         technicalBonus = Math.floor(score / 10);
         break;
-      case 'acoustic':
+      case 'acoustic_tuning': // Updated
         creativityBonus = Math.floor(score / 12);
         technicalBonus = Math.floor(score / 8);
         break;
-      case 'layering':
+      case 'layering': // This type doesn't exist in types/miniGame.ts, but keeping for now if it's used elsewhere
         creativityBonus = Math.floor(score / 9);
         technicalBonus = Math.floor(score / 11);
+        break;
+      case 'microphone_placement':
+        creativityBonus = Math.floor(score / 10);
+        technicalBonus = Math.floor(score / 7);
+        break;
+      case 'mastering_chain':
+        creativityBonus = Math.floor(score / 15);
+        technicalBonus = Math.floor(score / 5);
+        break;
+      case 'sound_design_synthesis':
+        creativityBonus = Math.floor(score / 5);
+        technicalBonus = Math.floor(score / 15);
         break;
     }
 
@@ -116,19 +123,19 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
     };
 
     switch (gameType) {
-      case 'rhythm':
+      case 'rhythm_timing':
         return <RhythmTimingGame {...gameProps} />;
-      case 'mixing':
+      case 'mixing_board':
         return <MixingMinigame
           onComplete={handleMinigameComplete}
           onClose={handleClose}
           difficulty={difficulty}
         />;
-      case 'waveform':
+      case 'sound_wave':
         return <SoundWaveGame {...gameProps} />;
-      case 'beatmaking':
+      case 'beat_making':
         return <BeatMakingGame {...gameProps} backgroundMusic={backgroundMusic} />;
-      case 'vocal':
+      case 'vocal_recording':
         return <VocalRecordingMinigame
           onComplete={handleMinigameComplete}
           onClose={handleClose}
@@ -136,13 +143,13 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         />;
       case 'mastering':
         return <MasteringGame {...gameProps} />;
-      case 'effectchain':
+      case 'effect_chain':
         return <EffectChainGame {...gameProps} />;
-      case 'acoustic':
+      case 'acoustic_tuning':
         return <AcousticTreatmentGame {...gameProps} />;
-      case 'layering':
+      case 'layering': // This type doesn't exist in types/miniGame.ts, but keeping for now if it's used elsewhere
         return <InstrumentLayeringGame {...gameProps} />;
-      case 'pedalboard':
+      case 'pedalboard': // Assuming 'pedalboard' is a valid MinigameType from types/miniGame.ts
         return (
           <GuitarPedalBoardGame
             onComplete={handleMinigameComplete}
@@ -150,7 +157,7 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
             difficulty={difficulty}
           />
         );
-      case 'patchbay':
+      case 'patchbay': // Assuming 'patchbay' is a valid MinigameType from types/miniGame.ts
         return (
           <PatchBayGame
             onComplete={handleMinigameComplete}
@@ -158,6 +165,9 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
             difficulty={difficulty}
           />
         );
+      case 'microphone_placement':
+        return <AcousticTreatmentGame {...gameProps} />; // Removed difficulty prop
+      // Removed mastering_chain and sound_design_synthesis cases as components are not found
       default:
         return null;
     }

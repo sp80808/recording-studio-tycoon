@@ -1,189 +1,242 @@
-# Minigame System Documentation
+# Recording Studio Tycoon - Mini-Game System
 
 ## Overview
-The minigame system provides interactive challenges that help players learn and practice various aspects of music production while earning rewards and improving their skills.
+The mini-game system provides interactive challenges that teach players about audio engineering concepts while rewarding them with XP, attributes, and reputation. The system is designed to be educational, engaging, and well-paced throughout the game's progression.
 
-## Core Components
+## Minigame Types
 
-### Minigame Types
+### Core Types
 ```typescript
 type MinigameType = 
-  | 'mixing'
-  | 'recording'
-  | 'mastering'
-  | 'pedalboard'
-  | 'patchbay';
+  // Early Game (1950s-1960s)
+  | 'tape_splicing'           // Tape editing and splicing
+  | 'four_track_recording'    // Multi-track recording
+  | 'analog_console'         // Analog mixing console
+  | 'microphone_placement'   // Microphone positioning
+  
+  // Mid Game (1970s-1980s)
+  | 'midi_programming'       // MIDI sequencing
+  | 'digital_mixing'         // Digital mixing
+  | 'sample_editing'         // Sample manipulation
+  | 'sound_design'           // Sound design
+  
+  // Late Game (1990s-2000s)
+  | 'effect_chain'           // Effect processing
+  | 'acoustic_tuning'        // Room acoustics
+  | 'layering'              // Track layering
+  | 'mastering_chain'        // Mastering process
+  
+  // Modern Era (2000s-2010s)
+  | 'hybrid_mixing'          // Hybrid mixing
+  | 'digital_distribution'   // Digital distribution
+  | 'social_media_promotion' // Social media
+  | 'streaming_optimization' // Streaming optimization
+  
+  // Future Era (2020s+)
+  | 'ai_mastering'           // AI-powered mastering
+  | 'sound_design_synthesis' // Advanced synthesis
+  | 'rhythm_timing'          // Rhythm and timing
+  | 'mixing_board'           // Advanced mixing
+  | 'sound_wave'             // Waveform manipulation
+  | 'beat_making'            // Beat creation
+  | 'vocal_recording'        // Vocal recording
+  | 'pedalboard'             // Effects pedals
+  | 'patchbay'               // Signal routing
 ```
 
-### Minigame Manager
-The `MinigameManager` component handles the state and rendering of different minigames based on the type and difficulty provided.
+### Era-Specific Minigames
 
-```typescript
-interface MinigameManagerProps {
-  onComplete: (score: number) => void;
-  onClose: () => void;
-  type: MinigameType;
-  difficulty?: number;
-}
-```
+#### 1950s-1960s (Analog Era)
+- **Tape Splicing**
+  - Edit and splice analog tape
+  - Match waveforms
+  - Create seamless edits
+  - Master tape manipulation
 
-### Base Minigame Interface
-All minigames implement this base interface:
+- **Four Track Recording**
+  - Multi-track recording
+  - Track bouncing
+  - Tape management
+  - Signal routing
 
-```typescript
-interface BaseMinigameProps {
-  onComplete: (score: number) => void;
-  onClose: () => void;
-  difficulty?: number;
-}
-```
+- **Analog Console**
+  - Channel strip operation
+  - EQ adjustment
+  - Fader control
+  - Bus routing
 
-## Minigames
+- **Microphone Placement**
+  - Instrument positioning
+  - Room acoustics
+  - Phase alignment
+  - Stereo techniques
 
-### Mastering Minigame
-The mastering minigame challenges players to match target mastering settings for different genres and styles.
+#### 1970s-1980s (Digital Revolution)
+- **MIDI Programming**
+  - Sequence creation
+  - Note programming
+  - Controller mapping
+  - Timing adjustment
 
-#### Features
-- Multiple presets for different genres and styles
-- Dynamic difficulty scaling
-- Real-time parameter adjustments
-- Visual feedback and scoring system
-- Tutorial system with mastering tips
-- Audio preview functionality
+- **Digital Mixing**
+  - Digital console operation
+  - Plugin management
+  - Automation
+  - Signal processing
 
-#### Difficulty Levels
-1. **Beginner (1)**
-   - Basic volume and EQ adjustments
-   - Simple presets
-   - Longer time limit
-   - Basic scoring system
+- **Sample Editing**
+  - Sample manipulation
+  - Time stretching
+  - Pitch shifting
+  - Loop creation
 
-2. **Intermediate (2)**
-   - Added compression and stereo width
-   - More complex presets
-   - Standard time limit
-   - Enhanced scoring system
+- **Sound Design**
+  - Synthesis
+  - Effects processing
+  - Sound manipulation
+  - Creative techniques
 
-3. **Advanced (3)**
-   - Full parameter control
-   - Complex presets
-   - Shorter time limit
-   - Advanced scoring with bonus points
+#### 1990s-2000s (Computer Audio)
+- **Effect Chain**
+  - Plugin routing
+  - Parameter adjustment
+  - Signal flow
+  - Effect combination
 
-4. **Expert (4)**
-   - All parameters unlocked
-   - Custom presets
-   - Strict time limit
-   - Expert scoring system
+- **Acoustic Treatment**
+  - Room analysis
+  - Treatment placement
+  - Frequency response
+  - Reflection control
 
-#### Integration
-- Connects with project mastering stage
-- Affects project quality and player skills
-- Rewards based on accuracy and speed
+- **Instrument Layering**
+  - Track combination
+  - Frequency balance
+  - Phase alignment
+  - Stereo imaging
 
-### Guitar Pedal Board Minigame
-The guitar pedal board minigame challenges players to create signal chains using different guitar effects pedals.
+- **Mastering Chain**
+  - Final processing
+  - Loudness optimization
+  - Stereo enhancement
+  - Format preparation
 
-#### Features
-- Drag and drop pedal arrangement
-- Multiple pedal types (distortion, delay, reverb, etc.)
-- Dynamic difficulty scaling
-- Real-time audio preview
-- Visual feedback and scoring system
-- Tutorial system with pedal chain tips
+#### 2000s-2010s (Internet Era)
+- **Hybrid Mixing**
+  - Analog/digital combination
+  - Hardware integration
+  - Plugin management
+  - Workflow optimization
 
-#### Difficulty Levels
-1. **Beginner (1)**
-   - Basic pedals (distortion, delay)
-   - Simple chain requirements
-   - Longer time limit
-   - Basic scoring system
+- **Digital Distribution**
+  - Format preparation
+  - Metadata management
+  - Platform optimization
+  - Release strategy
 
-2. **Intermediate (2)**
-   - More pedal types
-   - Moderate chain complexity
-   - Standard time limit
-   - Enhanced scoring system
+- **Social Media Promotion**
+  - Content creation
+  - Platform management
+  - Audience engagement
+  - Analytics tracking
 
-3. **Advanced (3)**
-   - All pedal types
-   - Complex chain requirements
-   - Shorter time limit
-   - Advanced scoring with bonus points
+- **Streaming Optimization**
+  - Loudness compliance
+  - Format optimization
+  - Metadata enhancement
+  - Platform requirements
 
-4. **Expert (4)**
-   - Custom pedal combinations
-   - Expert chain requirements
-   - Strict time limit
-   - Expert scoring system
+#### 2020s+ (Modern Era)
+- **AI Mastering**
+  - AI analysis
+  - Style matching
+  - Quality enhancement
+  - Platform optimization
 
-#### Integration
-- Connects with guitar recording and processing
-- Affects guitar tone quality
-- Rewards based on chain accuracy and creativity
+- **Sound Design Synthesis**
+  - Advanced synthesis
+  - Sound manipulation
+  - Creative processing
+  - Modern techniques
 
-### Patch Bay Minigame
-The patch bay minigame challenges players to create correct signal routing between different studio equipment.
+- **Rhythm Timing**
+  - Beat creation
+  - Groove adjustment
+  - Time manipulation
+  - Pattern programming
 
-#### Features
-- Drag and drop patch connections
-- Multiple equipment types (inputs and outputs)
-- Dynamic difficulty scaling
-- Real-time audio preview
-- Visual feedback and scoring system
-- Tutorial system with routing tips
+- **Mixing Board**
+  - Advanced mixing
+  - Channel management
+  - Effect processing
+  - Automation control
 
-#### Difficulty Levels
-1. **Beginner (1)**
-   - Basic equipment (microphone, preamp)
-   - Simple routing requirements
-   - Longer time limit
-   - Basic scoring system
+## Integration
 
-2. **Intermediate (2)**
-   - More equipment types
-   - Moderate routing complexity
-   - Standard time limit
-   - Enhanced scoring system
+### Project Stages
+- Minigames are triggered automatically as overlays/modals on the last stage of a project
+- Each minigame is contextual to the project type and era
+- Success affects project quality and rewards
 
-3. **Advanced (3)**
-   - All equipment types
-   - Complex routing requirements
-   - Shorter time limit
-   - Advanced scoring with bonus points
+### Player Skills
+- Minigames improve specific skills:
+  - Technical proficiency
+  - Creative ability
+  - Problem-solving
+  - Time management
 
-4. **Expert (4)**
-   - Custom routing combinations
-   - Expert routing requirements
-   - Strict time limit
-   - Expert scoring system
+### Studio Equipment
+- Minigames require specific equipment:
+  - Analog gear (1950s-1960s)
+  - Digital tools (1970s-1980s)
+  - Computer systems (1990s-2000s)
+  - Modern software (2000s+)
 
-#### Integration
-- Connects with studio setup and routing
-- Affects signal flow and recording quality
-- Rewards based on routing accuracy and efficiency
+## Technical Implementation
 
-## Era-Specific Minigames
+### Best Practices
+1. Performance Optimization
+   - Efficient rendering
+   - Resource management
+   - State optimization
+   - Memory usage
 
-### 1950s-1960s
-- Basic recording techniques
-- Simple mixing concepts
-- Early mastering approaches
+2. Data Persistence
+   - Progress tracking
+   - Score management
+   - Achievement storage
+   - Settings retention
 
-### 1970s-1980s
-- Advanced recording methods
-- Multi-track mixing
-- Analog mastering techniques
+3. Accessibility
+   - Keyboard controls
+   - Screen reader support
+   - Color contrast
+   - Text scaling
 
-### 1990s-2000s
-- Digital recording
-- DAW-based mixing
-- Digital mastering
+### Future Enhancements
+1. Virtual Reality Integration
+   - 3D environment
+   - Spatial audio
+   - Interactive controls
+   - Immersive experience
 
-### 2010s-Present
-- Modern recording techniques
-- Advanced mixing concepts
-- Contemporary mastering approaches
+2. AI-Powered Adaptation
+   - Dynamic difficulty
+   - Personalized challenges
+   - Learning optimization
+   - Performance analysis
+
+3. Multiplayer Features
+   - Collaborative challenges
+   - Competitive modes
+   - Shared achievements
+   - Social interaction
+
+4. Advanced Analytics
+   - Performance tracking
+   - Learning assessment
+   - Progress analysis
+   - Improvement suggestions
 
 ## Rewards and Progression
 
@@ -205,20 +258,23 @@ The patch bay minigame challenges players to create correct signal routing betwe
 ## Integration with Main Game
 
 ### Project Stages
-- Recording
-- Mixing
-- Mastering
-- Equipment setup
+- **Recording**: Microphone placement, four track recording
+- **Mixing**: Mixing board, effect chain, hybrid mixing
+- **Mastering**: Mastering chain, AI mastering
+- **Production**: Sound design, sample editing, MIDI programming
+- **Marketing**: Digital distribution, social media promotion
 
 ### Player Skills
-- Technical proficiency
-- Creative ability
-- Equipment knowledge
+- **Technical**: Equipment operation, signal flow
+- **Creative**: Sound design, arrangement
+- **Business**: Marketing, distribution
+- **Production**: Recording, mixing, mastering
 
 ### Studio Equipment
-- Unlock new equipment
-- Improve existing gear
-- Specialized tools
+- **Analog**: Tape machines, mixing consoles
+- **Digital**: DAWs, plugins, interfaces
+- **Modern**: AI tools, streaming platforms
+- **Marketing**: Social media tools, analytics
 
 ## Technical Implementation
 

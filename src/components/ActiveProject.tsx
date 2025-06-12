@@ -3,26 +3,29 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
-import { MinigameManager, MinigameType } from './minigames/MinigameManager';
+import { MinigameManager } from './minigames/MinigameManager'; // Removed MinigameType from here
+import { MinigameType } from '@/types/miniGame'; // Imported MinigameType directly
 import { AnimatedStatBlobs } from './AnimatedStatBlobs';
 import { OrbAnimationStyles } from './OrbAnimationStyles';
 import { ProjectCompletionCelebration } from './ProjectCompletionCelebration';
 import { EnhancedAnimationStyles } from './EnhancedAnimationStyles';
 import { toast } from '@/hooks/use-toast';
 import { gameAudio } from '@/utils/audioSystem';
-import { 
+import {
   getStageFocusLabels,
   calculateFocusEffectiveness,
-  getStageFocusRecommendations 
+  getStageFocusRecommendations
 } from '@/utils/stageUtils';
-import { getOptimalSliderPositions as getStaffOptimalSliderPositions } from '@/utils/staffAssignmentUtils'; 
-import { useGameState } from '@/hooks/useGameState'; 
+import { getOptimalSliderPositions as getStaffOptimalSliderPositions } from '@/utils/staffAssignmentUtils';
+import { useGameState } from '@/hooks/useGameState';
 import { useGameActions } from '@/hooks/useGameActions';
+import { useProjectManagement } from '@/hooks/useProjectManagement';
+import { useStaffManagement } from '@/hooks/useStaffManagement';
 import { GameState, FocusAllocation, Project, PlayerData, StaffMember, ProjectReport } from '@/types/game';
 
 interface ActiveProjectProps {
   onMinigameReward?: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => void;
-  onProjectComplete?: (completedProject: Project) => void; 
+  onProjectComplete?: (completedProject: Project) => void;
   onProjectSelect?: (project: Project) => void;
   autoTriggeredMinigame?: { type: MinigameType; reason: string } | null;
   clearAutoTriggeredMinigame?: () => void;
@@ -34,18 +37,17 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   autoTriggeredMinigame,
   clearAutoTriggeredMinigame
 }) => {
-  const { gameState, updateGameState: updateGameStateFromCtx, focusAllocation, setFocusAllocation } = useGameState(); 
-  const setGameStateDirect = useCallback((newState: GameState) => {
-    updateGameStateFromCtx(() => newState);
-  }, [updateGameStateFromCtx]);
-  const { performDailyWork, updateGameState } = useGameActions(gameState, setGameStateDirect); 
+  const { gameState, updateGameState, focusAllocation, setFocusAllocation } = useGameState(); // Changed setGameState to updateGameState
+  const { performDailyWork } = useGameActions(gameState, updateGameState); // Changed setGameState to updateGameState
+  const { completeProject } = useProjectManagement({ gameState, setGameState: updateGameState }); // Changed setGameState to updateGameState and passed as object
+  const { addStaffXP } = useStaffManagement(gameState, updateGameState); // Changed setGameState to updateGameState
 
   const [showMinigame, setShowMinigame] = useState(false);
-  const [selectedMinigame, setSelectedMinigame] = useState<MinigameType>('rhythm');
+  const [selectedMinigame, setSelectedMinigame] = useState<MinigameType>('rhythm_timing'); // Changed default to match types
   const [lastGains, setLastGains] = useState<{ creativity: number; technical: number }>({ creativity: 0, technical: 0 });
   const [showBlobAnimation, setShowBlobAnimation] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [celebrationDisplayData, setCelebrationDisplayData] = useState<{ 
+  const [celebrationDisplayData, setCelebrationDisplayData] = useState<{
     title: string;
     genre: string;
   } | null>(null);
@@ -55,12 +57,12 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const playerLevel = gameState.playerData.level;
-  const canUseOptimalFocusButton = playerLevel >= 3; 
+  const canUseOptimalFocusButton = playerLevel >= 3;
 
   useEffect(() => {
     if (gameState.activeProject) {
       const currentStageKey = `${gameState.activeProject.id}-${gameState.activeProject.currentStageIndex}`;
-      const previousStageKey = Array.from(completedMinigamesForStage).find(key => 
+      const previousStageKey = Array.from(completedMinigamesForStage).find(key =>
         key.startsWith(`${gameState.activeProject!.id}-`) && key !== currentStageKey
       );
       
@@ -71,7 +73,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
         setPulseAnimation(false);
       }
     }
-  }, [gameState.activeProject?.currentStageIndex, completedMinigamesForStage, clearAutoTriggeredMinigame]);
+  }, [gameState.activeProject?.currentStageIndex, completedMinigamesForStage, clearAutoTriggeredMinigame, gameState.activeProject]); // Added gameState.activeProject to dependencies
 
   useEffect(() => {
     if (gameState.activeProject && !showMinigame && autoTriggeredMinigame) {
@@ -89,7 +91,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       });
       gameAudio.playUISound('notification');
     }
-  }, [gameState.activeProject, autoTriggeredMinigame, showMinigame, completedMinigamesForStage]);
+  }, [gameState.activeProject, autoTriggeredMinigame, showMinigame, completedMinigamesForStage, gameAudio]); // Added gameAudio to dependencies
 
   if (!gameState.activeProject) {
     return (
@@ -118,9 +120,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       ...optimalFocusFromStaff,
       reasoning: optimalFocusFromStaff.reasoning || "Optimal focus based on staff and stage.",
   };
-  const currentFocusAllocation = focusAllocation || { performance: 33, soundCapture: 34, layering: 33 }; 
+  const currentFocusAllocation = focusAllocation || { performance: 33, soundCapture: 34, layering: 33 };
   const focusEffectiveness = calculateFocusEffectiveness(currentFocusAllocation, effectiveOptimalFocusForCalc);
-  const stageRecommendations = getStageFocusRecommendations(currentStage); 
+  const stageRecommendations = getStageFocusRecommendations(currentStage);
   
   const totalWorkUnits = project.stages.reduce((total, stage) => total + stage.workUnitsBase, 0);
   const completedWorkUnits = project.stages.reduce((total, stage) => total + stage.workUnitsCompleted, 0);
@@ -132,7 +134,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     if (onMinigameReward) {
       onMinigameReward(creativityBonus, technicalBonus, xpBonus, selectedMinigame);
     } else {
-        updateGameState(prev => { 
+        updateGameState((prev: GameState) => { // Changed setGameState to updateGameState
             if (!prev.activeProject) return prev;
             return {
                 ...prev,
@@ -160,7 +162,18 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     });
     console.log('🔄 Auto-triggering work session after minigame completion...');
     setTimeout(() => {
-      if (performDailyWork) performDailyWork(); 
+      // Ensure performDailyWork is called with correct arguments and handles its return
+      const result = performDailyWork(project, currentFocusAllocation, assignedStaffToCurrentProject, (state: GameState) => completeProject(state.activeProject!, addStaffXP));
+      if (result?.isComplete && result.finalProjectData) {
+        console.log('🎉 Project work units complete after minigame! Triggering celebration for:', result.finalProjectData.title);
+        gameAudio.playCompleteProject();
+        setCelebrationDisplayData({
+          title: result.finalProjectData.title,
+          genre: result.finalProjectData.genre,
+        });
+        setProjectDataForCompletionCall(result.finalProjectData);
+        setShowCelebration(true);
+      }
     }, 1000);
   };
 
@@ -170,7 +183,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       console.log('🎮 Starting auto-triggered minigame:', autoTriggeredMinigame.type);
       setSelectedMinigame(autoTriggeredMinigame.type);
       setShowMinigame(true);
-      gameAudio.playUISound('notice'); 
+      gameAudio.playUISound('notice');
       return;
     }
 
@@ -178,11 +191,11 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     const baseTechnical = gameState.playerData.attributes.technicalAptitude;
     
     const creativityGain = Math.floor(
-      baseCreativity * (currentFocusAllocation.performance / 100) * 0.8 + 
+      baseCreativity * (currentFocusAllocation.performance / 100) * 0.8 +
       baseCreativity * (currentFocusAllocation.layering / 100) * 0.6
     );
     const technicalGain = Math.floor(
-      baseTechnical * (currentFocusAllocation.soundCapture / 100) * 0.8 + 
+      baseTechnical * (currentFocusAllocation.soundCapture / 100) * 0.8 +
       baseTechnical * (currentFocusAllocation.layering / 100) * 0.4
     );
 
@@ -190,31 +203,29 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     setLastGains({ creativity: creativityGain, technical: technicalGain });
     setShowBlobAnimation(true);
     
-    const result = performDailyWork ? performDailyWork() : undefined; 
+    // Directly call performDailyWork, it will return null if not complete
+    const result = performDailyWork(project, currentFocusAllocation, assignedStaffToCurrentProject, (state: GameState) => completeProject(state.activeProject!, addStaffXP));
     
-    // The performDailyWork from useGameActions.ts returns: { isComplete: boolean; review: null; }
-    // It does NOT return finalProjectData.
-    // If the project is complete (which the placeholder won't indicate yet), use gameState.activeProject.
-    if (result?.isComplete && gameState.activeProject) { 
-        console.log('🎉 Project work units complete! Triggering celebration for:', gameState.activeProject.title);
-        gameAudio.playCompleteProject();
-        setCelebrationDisplayData({
-          title: gameState.activeProject.title,
-          genre: gameState.activeProject.genre,
-        });
-        setProjectDataForCompletionCall(gameState.activeProject); 
-        setShowCelebration(true);
+    if (result?.isComplete && result.finalProjectData) {
+      console.log('🎉 Project work units complete! Triggering celebration for:', result.finalProjectData.title);
+      gameAudio.playCompleteProject();
+      setCelebrationDisplayData({
+        title: result.finalProjectData.title,
+        genre: result.finalProjectData.genre,
+      });
+      setProjectDataForCompletionCall(result.finalProjectData);
+      setShowCelebration(true);
     }
   };
 
   const handleProjectCelebrationComplete = () => {
     console.log('🎊 Celebration complete. Calling onProjectComplete with stored project data.');
     if (onProjectComplete && projectDataForCompletionCall) {
-      onProjectComplete(projectDataForCompletionCall); 
+      onProjectComplete(projectDataForCompletionCall);
     }
     setShowCelebration(false);
     setCelebrationDisplayData(null);
-    setProjectDataForCompletionCall(null); 
+    setProjectDataForCompletionCall(null);
   };
 
   const isCurrentStageComplete = currentStage && currentStage.workUnitsCompleted >= currentStage.workUnitsBase;
@@ -246,7 +257,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       )}
       <div ref={containerRef} className="flex-1 space-y-4 relative overflow-y-auto flex flex-col">
         <Card className="bg-gray-800/50 border-gray-600 p-6 backdrop-blur-sm animate-scale-in flex-grow flex flex-col">
-          <div className="flex-grow space-y-4"> 
+          <div className="flex-grow space-y-4">
             <div className="flex justify-between items-start mb-4">
               <div className="animate-fade-in">
                 <h3 className="text-xl font-bold text-white mb-1">
@@ -275,7 +286,6 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 </div>
               </div>
             </div>
-
             {autoTriggeredMinigame && (
               <div className="mb-4 p-4 bg-gradient-to-r from-purple-900/50 to-blue-900/50 border border-purple-500 rounded-lg animate-scale-in">
                 <div className="flex items-center justify-between">
@@ -315,8 +325,8 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   )}
                 </span>
               </div>
-              <Progress 
-                value={currentStageProgress} 
+              <Progress
+                value={currentStageProgress}
                 className="h-3 mb-2 transition-all duration-500"
                 aria-label={`${currentStage?.stageName || 'Current stage'} progress`}
               />
@@ -329,8 +339,8 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 <span className="text-white font-semibold">Overall Progress</span>
                 <span className="text-gray-400">{Math.round(overallProgress)}%</span>
               </div>
-              <Progress 
-                value={overallProgress} 
+              <Progress
+                value={overallProgress}
                 className="h-3 progress-bar transition-all duration-500"
                 aria-label="Overall project progress"
               />
@@ -376,8 +386,8 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   max={100}
                   step={5}
                   className={`w-full transition-all duration-300 ease-in-out ${
-                    Math.abs(currentFocusAllocation.performance - optimalFocusFromStaff.performance) <= 10 
-                      ? '[&_.bg-primary]:bg-green-500 [&_.border-primary]:border-green-600' 
+                    Math.abs(currentFocusAllocation.performance - optimalFocusFromStaff.performance) <= 10
+                      ? '[&_.bg-primary]:bg-green-500 [&_.border-primary]:border-green-600'
                       : Math.abs(currentFocusAllocation.performance - optimalFocusFromStaff.performance) <= 25
                         ? '[&_.bg-primary]:bg-yellow-500 [&_.border-primary]:border-yellow-600'
                         : '[&_.bg-primary]:bg-blue-600'
@@ -464,7 +474,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
               <Button
                 onClick={() => {
                   const newOptimalFocus = getStaffOptimalSliderPositions(assignedStaffToCurrentProject, currentStage);
-                  setFocusAllocation(newOptimalFocus); 
+                  setFocusAllocation(newOptimalFocus);
                   gameAudio.playUISound('notification');
                   toast({
                     title: "🎯 Staff-Optimized Focus Applied",
@@ -479,7 +489,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   canUseOptimalFocusButton
                     ? assignedStaffToCurrentProject.length > 0
                       ? 'bg-blue-900/30 border-blue-600/50 text-blue-200 hover:bg-blue-800/50'
-                      : 'bg-gray-600/30 border-gray-500/50 text-gray-400 cursor-not-allowed' 
+                      : 'bg-gray-600/30 border-gray-500/50 text-gray-400 cursor-not-allowed'
                     : 'bg-gray-700/30 border-gray-600/50 text-gray-400 cursor-not-allowed'
                 }`}
               >
@@ -490,7 +500,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   : `🎯 Optimal Focus (Player Lvl 3+)`}
               </Button>
             </div>
-            <Button 
+            <Button
               onClick={handleWork}
               disabled={gameState.playerData.dailyWorkCapacity <= 0 || isProjectComplete}
               className={`w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 py-3 text-lg font-bold game-button transition-all duration-300 ${
@@ -507,7 +517,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 '😴 No Energy Left (Advance Day to Restore)'
               )}
             </Button>
-          </div> 
+          </div>
         </Card>
         <MinigameManager
            isOpen={showMinigame}
@@ -521,8 +531,8 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           }}
           gameType={selectedMinigame}
           onReward={handleMinigameReward}
-          onComplete={() => {}} 
-          difficulty={1} 
+          onComplete={() => {}}
+          difficulty={1}
         />
       </div>
     </>

@@ -19,7 +19,15 @@ export type MinigameType =
   | 'tape_splicing'
   | 'microphone_placement'
   | 'mastering_chain'
-  | 'sound_design_synthesis';
+  | 'sound_design_synthesis'
+  | 'layering'
+  | 'pedalboard'
+  | 'patchbay'
+  | 'hybrid_mixing'
+  | 'digital_distribution'
+  | 'social_media_promotion'
+  | 'streaming_optimization'
+  | 'ai_mastering';
 
 export interface MinigameTriggerDefinition {
   type: MinigameType;

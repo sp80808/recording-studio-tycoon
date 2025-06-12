@@ -32,7 +32,7 @@ interface RightPanelProps {
   assignStaffToProject: (staffId: string) => void;
   unassignStaffFromProject: (staffId: string) => void;
   toggleStaffRest: (staffId: string) => void;
-  openTrainingModal: (staff: any) => boolean;
+  openTrainingModal: (staff: StaffMember) => boolean;
   startResearchMod?: (staffId: string, modId: string) => boolean; // Add prop
   applyModToEquipment?: (equipmentId: string, modId: string | null) => void; // Add new prop
 }
@@ -161,9 +161,9 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                           <p className="text-xs text-gray-400">Condition: {equip.condition}%</p>
                         </div>
                         <Button
-                          size="sm" // Changed from "xs"
+                          size="sm"
                           variant="outline"
-                          className="text-xs border-blue-500 text-blue-300 hover:bg-blue-500/20 px-2 py-1 h-auto" // Added padding and height classes for smaller feel
+                          className="text-xs border-blue-500 text-blue-300 hover:bg-blue-500/20 px-2 py-1 h-auto"
                           onClick={() => {
                             setSelectedEquipmentForModding(equip);
                             setShowEquipmentModModal(true);

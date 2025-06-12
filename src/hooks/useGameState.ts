@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { GameState, PlayerData, FocusAllocation, StudioSkill, Project } from '@/types/game';
+import { GameState, PlayerData, FocusAllocation, StudioSkill, Project, LevelUpDetails } from '@/types/game'; // Added LevelUpDetails
 import { saveGame, loadGame, startAutoSave, stopAutoSave } from '@/utils/saveLoadUtils';
 import { generateNewProjects } from '@/utils/projectUtils';
 
@@ -15,6 +15,11 @@ const INITIAL_PLAYER_ATTRIBUTES: PlayerData['attributes'] = {
   creativeIntuition: 1,
   technicalAptitude: 1,
   businessAcumen: 1,
+  creativity: 5, // Initialize new attributes
+  technical: 5,
+  business: 5,
+  charisma: 5,
+  luck: 1,
 };
 
 const INITIAL_PLAYER_DATA: PlayerData = {
@@ -29,9 +34,9 @@ const INITIAL_PLAYER_DATA: PlayerData = {
 };
 
 const INITIAL_STUDIO_SKILLS: Record<string, StudioSkill> = {
-  recording: { name: 'Recording', level: 1, xp: 0, xpToNext: 100 },
-  mixing: { name: 'Mixing', level: 1, xp: 0, xpToNext: 100 },
-  mastering: { name: 'Mastering', level: 1, xp: 0, xpToNext: 100 },
+  recording: { name: 'Recording', level: 1, xp: 0, xpToNext: 100, bonuses: {} },
+  mixing: { name: 'Mixing', level: 1, xp: 0, xpToNext: 100, bonuses: {} },
+  mastering: { name: 'Mastering', level: 1, xp: 0, xpToNext: 100, bonuses: {} },
 };
 
 const INITIAL_FOCUS_ALLOCATION: FocusAllocation = {
@@ -72,6 +77,7 @@ const INITIAL_GAME_STATE: GameState = {
     lastChartUpdate: 0,
   },
   focusAllocation: INITIAL_FOCUS_ALLOCATION,
+  levelUpDetails: null, // Added for the modal
 };
 
 export function useGameState() {
@@ -214,6 +220,18 @@ export function useGameState() {
     });
   }, [updateGameState]);
 
+  const [levelUpModalData, setLevelUpModalData] = useState<LevelUpDetails | null>(null);
+
+  const triggerLevelUpModal = useCallback((details: LevelUpDetails) => {
+    setLevelUpModalData(details);
+    // Potentially play a sound effect here too
+    // gameAudio.playUISound('level-up'); 
+  }, []);
+
+  const clearLevelUpModal = useCallback(() => {
+    setLevelUpModalData(null);
+  }, []);
+
   return {
     gameState,
     focusAllocation: gameState.focusAllocation, // Expose focusAllocation directly
@@ -223,6 +241,9 @@ export function useGameState() {
     startNewGame,
     advanceDay, 
     startProject,
-    addWorkToProject 
+    addWorkToProject,
+    levelUpModalData, // Expose modal data
+    triggerLevelUpModal, // Expose trigger function
+    clearLevelUpModal // Expose clear function
   };
 }

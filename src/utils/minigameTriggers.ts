@@ -1,4 +1,5 @@
-import { GameState, MinigameType, Project, FocusAllocation } from '@/types/game';
+import { GameState, Project, FocusAllocation } from '@/types/game';
+import { MinigameType } from '@/types/miniGame';
 
 interface MinigameTriggerDefinition {
   minigameType: MinigameType;
@@ -8,184 +9,132 @@ interface MinigameTriggerDefinition {
   equipmentRequired?: string[];
   stageRequired?: string[];
   focusThreshold?: { type: keyof FocusAllocation; min: number };
-  skillRequired?: { type: string; level: number };
 }
 
-export const getMinigameTriggers = (gameState: GameState, project: Project): MinigameTriggerDefinition[] => {
-  const triggers: MinigameTriggerDefinition[] = [];
-  const { player, ownedEquipment } = gameState;
-  const ownedEquipmentIds = ownedEquipment.map(eq => eq.id);
-  const currentEra = player.era;
-
-  // Core minigames - available in all eras
-  triggers.push({
-    minigameType: 'rhythm',
+// Update minigame types to match centralized definition
+const minigameTriggers: MinigameTriggerDefinition[] = [
+  {
+    minigameType: 'rhythm_timing',
     triggerReason: 'Perfect timing is crucial for this track',
     priority: 5,
-    era: currentEra,
+    era: 'analog',
     focusThreshold: { type: 'performance', min: 30 }
-  });
-
-  triggers.push({
-    minigameType: 'pitch',
+  },
+  {
+    minigameType: 'vocal_recording',
     triggerReason: 'Vocal pitch correction needed',
     priority: 6,
-    era: currentEra,
+    era: 'analog',
     stageRequired: ['vocal_recording', 'vocal_editing']
-  });
-
-  // Analog Era minigames
-  if (currentEra === 'analog') {
-    if (ownedEquipmentIds.some(id => id.includes('tape'))) {
-      triggers.push({
-        minigameType: 'tape_splicing',
-        triggerReason: 'Tape editing required for this section',
-        priority: 8,
-        era: 'analog',
-        equipmentRequired: ['tape_machine'],
-        skillRequired: { type: 'editing', level: 2 }
-      });
-    }
-
-    if (ownedEquipmentIds.some(id => id.includes('console'))) {
-      triggers.push({
-        minigameType: 'analog_console',
-        triggerReason: 'Mixing on analog console',
-        priority: 2,
-        era: 'analog',
-        equipmentRequired: ['analog_console'],
-        skillRequired: { type: 'mixing', level: 3 },
-        stageRequired: ['mixing', 'mastering']
-      });
-    }
-
-    if (ownedEquipmentIds.some(id => id.includes('four_track'))) {
-      triggers.push({
-        minigameType: 'four_track_recording',
-        triggerReason: 'Four track recording and bouncing challenge',
-        priority: 9,
-        era: 'analog',
-        equipmentRequired: ['four_track_recorder'],
-        skillRequired: { type: 'recording', level: 3 },
-        stageRequired: ['recording', 'editing']
-      });
-    }
+  },
+  {
+    minigameType: 'sound_wave',
+    triggerReason: 'Waveform matching required',
+    priority: 4,
+    era: 'analog',
+    focusThreshold: { type: 'soundCapture', min: 25 }
+  },
+  {
+    minigameType: 'beat_making',
+    triggerReason: 'Beat creation challenge',
+    priority: 7,
+    era: 'digital',
+    focusThreshold: { type: 'layering', min: 35 }
+  },
+  {
+    minigameType: 'mastering',
+    triggerReason: 'Mastering challenge',
+    priority: 8,
+    era: 'digital',
+    stageRequired: ['mastering']
+  },
+  {
+    minigameType: 'effect_chain',
+    triggerReason: 'Effect chain optimization',
+    priority: 6,
+    era: 'digital',
+    focusThreshold: { type: 'soundCapture', min: 30 }
+  },
+  {
+    minigameType: 'acoustic_tuning',
+    triggerReason: 'Acoustic treatment challenge',
+    priority: 5,
+    era: 'analog',
+    focusThreshold: { type: 'performance', min: 25 }
+  },
+  {
+    minigameType: 'microphone_placement',
+    triggerReason: 'Microphone placement challenge',
+    priority: 4,
+    era: 'analog',
+    stageRequired: ['recording']
+  },
+  {
+    minigameType: 'mastering_chain',
+    triggerReason: 'Mastering chain optimization',
+    priority: 7,
+    era: 'digital',
+    stageRequired: ['mastering']
+  },
+  {
+    minigameType: 'sound_design_synthesis',
+    triggerReason: 'Sound design challenge',
+    priority: 6,
+    era: 'digital',
+    focusThreshold: { type: 'layering', min: 30 }
+  },
+  {
+    minigameType: 'pedalboard',
+    triggerReason: 'Pedalboard configuration challenge',
+    priority: 5,
+    era: 'analog',
+    equipmentRequired: ['guitar_pedalboard']
+  },
+  {
+    minigameType: 'patchbay',
+    triggerReason: 'Patchbay routing challenge',
+    priority: 6,
+    era: 'analog',
+    equipmentRequired: ['patchbay']
   }
+];
 
-  // Digital Era minigames
-  if (currentEra === 'digital') {
-    if (ownedEquipmentIds.some(id => id.includes('midi'))) {
-      triggers.push({
-        minigameType: 'midi_programming',
-        triggerReason: 'MIDI Programming Challenge',
-        priority: 2,
-        era: 'digital',
-        equipmentRequired: ['midi_controller', 'digital_workstation'],
-        skillRequired: { type: 'programming', level: 3 },
-        stageRequired: ['recording', 'editing']
-      });
+export const getMinigameTriggers = (gameState: GameState, project: Project): MinigameTriggerDefinition[] => {
+  // Filter triggers based on game state and project requirements
+  return minigameTriggers.filter(trigger => {
+    // Check era compatibility
+    if (trigger.era !== gameState.currentEra) {
+      return false;
     }
 
-    if (ownedEquipmentIds.some(id => id.includes('digital'))) {
-      triggers.push({
-        minigameType: 'hybrid_mixing',
-        triggerReason: 'Digital/Analog hybrid mixing challenge',
-        priority: 8,
-        era: 'digital',
-        equipmentRequired: ['digital_console'],
-        skillRequired: { type: 'mixing', level: 3 }
-      });
-    }
-
-    triggers.push(
-      {
-        type: 'midi_programming',
-        triggerReason: 'MIDI Programming Challenge',
-        priority: 2,
-        era: 'digital',
-        requiredEquipment: ['midi_controller', 'digital_workstation'],
-        requiredSkillLevel: 3,
-        requiredStages: ['recording', 'editing']
-      },
-      {
-        type: 'digital_mixing',
-        triggerReason: 'Digital Mixing Challenge',
-        priority: 3,
-        era: 'digital',
-        requiredEquipment: ['digital_workstation', 'audio_interface'],
-        requiredSkillLevel: 4,
-        requiredStages: ['mixing', 'mastering']
-      },
-      {
-        type: 'sample_editing',
-        triggerReason: 'Sample Editing Challenge',
-        priority: 4,
-        era: 'digital',
-        requiredEquipment: ['digital_workstation', 'sample_library'],
-        requiredSkillLevel: 4,
-        requiredStages: ['editing', 'production']
-      },
-      {
-        type: 'sound_design',
-        triggerReason: 'Sound Design Challenge',
-        priority: 5,
-        era: 'digital',
-        requiredEquipment: ['digital_workstation', 'synthesizer'],
-        requiredSkillLevel: 5,
-        requiredStages: ['production', 'post_production']
-      },
-      {
-        type: 'audio_restoration',
-        triggerReason: 'Audio Restoration Challenge',
-        priority: 3,
-        era: 'digital',
-        requiredEquipment: ['digital_workstation', 'audio_interface'],
-        requiredSkillLevel: 4,
-        requiredStages: ['mixing', 'mastering']
+    // Check equipment requirements
+    if (trigger.equipmentRequired) {
+      const hasRequiredEquipment = trigger.equipmentRequired.every(equipmentId =>
+        gameState.ownedEquipment.some(equipment => equipment.id === equipmentId)
+      );
+      if (!hasRequiredEquipment) {
+        return false;
       }
-    );
-  }
+    }
 
-  // Internet Era minigames
-  if (currentEra === 'internet') {
-    triggers.push({
-      minigameType: 'digital_distribution',
-      triggerReason: 'Optimize release for digital platforms',
-      priority: 6,
-      era: 'internet',
-      skillRequired: { type: 'marketing', level: 2 }
-    });
+    // Check stage requirements
+    if (trigger.stageRequired && project.stages.length > 0) {
+      const currentStage = project.stages[project.currentStageIndex];
+      if (!trigger.stageRequired.includes(currentStage.stageName)) {
+        return false;
+      }
+    }
 
-    triggers.push({
-      minigameType: 'social_media_promotion',
-      triggerReason: 'Create engaging social media content',
-      priority: 5,
-      era: 'internet',
-      skillRequired: { type: 'marketing', level: 1 }
-    });
-  }
+    // Check focus threshold
+    if (trigger.focusThreshold) {
+      const currentFocus = gameState.focusAllocation[trigger.focusThreshold.type];
+      if (typeof currentFocus === 'number' && currentFocus < trigger.focusThreshold.min) {
+        return false;
+      }
+    }
 
-  // Streaming Era minigames
-  if (currentEra === 'streaming') {
-    triggers.push({
-      minigameType: 'streaming_optimization',
-      triggerReason: 'Optimize audio for streaming platforms',
-      priority: 7,
-      era: 'streaming',
-      skillRequired: { type: 'mastering', level: 3 }
-    });
-
-    triggers.push({
-      minigameType: 'ai_mastering',
-      triggerReason: 'AI-assisted mastering challenge',
-      priority: 8,
-      era: 'streaming',
-      equipmentRequired: ['ai_mastering_suite'],
-      skillRequired: { type: 'mastering', level: 4 }
-    });
-  }
-
-  return triggers;
+    return true;
+  });
 };
 
 export const getMinigameRewards = (

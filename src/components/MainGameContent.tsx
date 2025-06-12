@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { GameState, FocusAllocation, StaffMember, PlayerAttributes, Project } from '@/types/game';
+import { GameState, FocusAllocation, StaffMember, PlayerAttributes, Project, ProjectReport } from '@/types/game';
 import { ProjectList } from '@/components/ProjectList';
 import { ProgressiveProjectInterface } from '@/components/ProgressiveProjectInterface';
 import { RightPanel } from '@/components/RightPanel';
@@ -8,7 +8,7 @@ import { EraTransitionAnimation } from '@/components/EraTransitionAnimation';
 import { HistoricalNewsModal } from '@/components/HistoricalNewsModal';
 import { checkForNewEvents, applyEventEffects, HistoricalEvent } from '@/utils/historicalEvents';
 import { useBandManagement } from '@/hooks/useBandManagement';
-import { MinigameType } from '@/components/minigames/MinigameManager';
+import { MinigameType } from '@/types/miniGame';
 import { useIsMobile } from '@/hooks/useIsMobile'; // Import useIsMobile
 
 interface MainGameContentProps {
@@ -17,7 +17,7 @@ interface MainGameContentProps {
   focusAllocation: FocusAllocation;
   setFocusAllocation: React.Dispatch<React.SetStateAction<FocusAllocation>>;
   startProject: (project: Project) => void;
-  performDailyWork: () => { isComplete: boolean; finalProjectData?: Project } | undefined; // Updated return type
+  performDailyWork: () => { isComplete: boolean; finalProjectData: Project | null; review: ProjectReport | undefined | null; } | undefined; // Updated return type
   onProjectComplete?: (completedProject: Project) => void; // Added this prop
   onMinigameReward: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => void;
   spendPerkPoint: (attribute: keyof PlayerAttributes) => void;

@@ -10,14 +10,15 @@ import NotFound from "./pages/NotFound";
 import { SpeedInsights } from "@vercel/speed-insights/react"; // Import SpeedInsights
 import "./styles/staffManagement.css";
 import { useGameState } from "@/hooks/useGameState";
-import { GameState } from "@/types/game";
+import { GameState, LevelUpDetails } from "@/types/game"; // Added LevelUpDetails
+import { LevelUpModal } from "@/components/modals/LevelUpModal"; // Import LevelUpModal
 
 import { useEffect } from "react";
 
 const queryClient = new QueryClient();
 
 const AppContent = () => {
-  const { gameState, updateGameState } = useGameState();
+  const { gameState, updateGameState, levelUpModalData, clearLevelUpModal } = useGameState(); // Added levelUpModalData, clearLevelUpModal
 
   // Wrapper to match SaveSystemProvider's expected setGameState signature
   const setGameState = (stateOrUpdater: GameState | ((prevState: GameState) => GameState)) => {
@@ -43,6 +44,11 @@ const AppContent = () => {
             </Routes>
           </main>
         </BrowserRouter>
+        <LevelUpModal 
+          isOpen={!!levelUpModalData} 
+          levelUpDetails={levelUpModalData} 
+          onClose={clearLevelUpModal} 
+        />
         <SpeedInsights /> {/* Add SpeedInsights component here */}
       </TooltipProvider>
     </SaveSystemProvider>

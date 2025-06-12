@@ -81,19 +81,22 @@ export const StaffManagementPanel: React.FC<StaffManagementPanelProps> = ({ onSt
         name: 'Creativity',
         level: Math.floor(staff.primaryStats.creativity),
         xp: (staff.primaryStats.creativity % 1) * 100,
-        xpToNext: 100
+        xpToNext: 100,
+        bonuses: {} // Added missing bonuses
       },
       technical: {
         name: 'Technical',
         level: Math.floor(staff.primaryStats.technical),
         xp: (staff.primaryStats.technical % 1) * 100,
-        xpToNext: 100
+        xpToNext: 100,
+        bonuses: {} // Added missing bonuses
       },
       speed: {
         name: 'Speed',
         level: Math.floor(staff.primaryStats.speed),
         xp: (staff.primaryStats.speed % 1) * 100,
-        xpToNext: 100
+        xpToNext: 100,
+        bonuses: {} // Added missing bonuses
       }
     };
   };
@@ -198,4 +201,4 @@ export const StaffManagementPanel: React.FC<StaffManagementPanelProps> = ({ onSt
   );
 };
 
-export default StaffManagementPanel; 
+export default StaffManagementPanel;

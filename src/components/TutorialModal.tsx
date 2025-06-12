@@ -52,56 +52,112 @@ const getTutorialStepsForEra = (eraId: string): TutorialStep[] => {
   switch (eraId) {
     case 'classic_rock':
       eraSpecificIntro = {
-        title: "Welcome to the Rock Revolution! 🎸 (1960s-1970s)",
-        content: "The world of music is buzzing with analog warmth! Start your journey with 4-track recorders and build your studio from the ground up. Vinyl is king!",
+        title: "🎸 Welcome to the Rock Revolution! (1960s-1970s)",
+        content: `The world of music is buzzing with analog warmth! You're entering an era where:
+• 4-track tape machines are cutting-edge technology
+• Vinyl records are the primary format
+• Radio promotion is king
+• Record labels hold significant power
+• Artists are pushing creative boundaries
+
+Your journey begins with basic analog equipment. Master the art of tape recording, learn to work within track limitations, and build your reputation in the golden age of rock!`,
       };
       break;
     case 'golden_age':
       eraSpecificIntro = {
-        title: "The Golden Age Arrives! 📺 (1980s-1990s)",
-        content: "Digital technology is revolutionizing music! Embrace MIDI, early samplers, and the rise of CDs. MTV will make or break artists!",
+        title: "💿 The Digital Revolution Begins! (1980s-1990s)",
+        content: `Welcome to the era of digital innovation! You're entering a time where:
+• MIDI and digital recording are transforming music
+• CDs are replacing vinyl as the dominant format
+• MTV is revolutionizing music promotion
+• Independent labels are gaining traction
+• New genres like synth-pop and hip-hop are emerging
+
+Embrace new technologies while maintaining the warmth of analog gear. Learn to work with early digital tools, create music videos, and navigate the changing industry landscape!`,
       };
       break;
     case 'digital_age':
       eraSpecificIntro = {
-        title: "Ride the Digital Wave! 💿 (2000s-2010s)",
-        content: "The internet changes everything! DAWs become powerful, file sharing is rampant, and digital distribution opens new doors. Can you adapt?",
+        title: "💻 The Internet Changes Everything! (2000s-2010s)",
+        content: `The digital age is in full swing! You're entering an era where:
+• DAWs and computer recording are standard
+• MP3s and digital distribution are the norm
+• Social media is becoming vital for promotion
+• Home studios are on the rise
+• File sharing is disrupting traditional sales
+
+Adapt to the new digital landscape, master computer-based production, and learn to leverage online platforms to reach your audience!`,
       };
       break;
     case 'modern':
       eraSpecificIntro = {
-        title: "Conquer the Modern Era! 📱 (2020s+)",
-        content: "Streaming platforms rule the music world! Master AI tools, leverage social media, and navigate the fast-paced landscape of modern music production.",
+        title: "📱 The Streaming Era Arrives! (2020s+)",
+        content: `Welcome to the modern music industry! You're entering an era where:
+• Streaming platforms dominate music consumption
+• AI tools assist in production and mixing
+• Social media is essential for artist discovery
+• Short-form video content drives trends
+• Global collaboration is easier than ever
+
+Master the art of streaming optimization, leverage AI tools effectively, and build a strong online presence to succeed in today's fast-paced music world!`,
       };
       break;
     // Legacy era IDs for backward compatibility
     case 'analog60s':
       eraSpecificIntro = {
-        title: "Welcome to the Analog Age! 🎵 (1960s-1970s)",
-        content: "The world of music is buzzing with analog warmth! You'll be working with 4-track tape machines, analog mixing consoles, and aiming for vinyl releases. Radio promotion is key, and record labels hold significant power. Focus on genres like Rock, Folk, and Soul.",
+        title: "🎵 Welcome to the Analog Age! (1960s-1970s)",
+        content: `The world of music is buzzing with analog warmth! You're entering an era where:
+• 4-track tape machines are cutting-edge technology
+• Vinyl records are the primary format
+• Radio promotion is king
+• Record labels hold significant power
+• Artists are pushing creative boundaries
+
+Your journey begins with basic analog equipment. Master the art of tape recording, learn to work within track limitations, and build your reputation in the golden age of rock!`,
       };
       break;
     case 'digital80s':
       eraSpecificIntro = {
-        title: "The Digital Dawn Arrives! 💾 (1980s-1990s)",
-        content: "Digital technology is here! Explore MIDI sequencing, early digital recorders (ADAT, DAT), and CD production. Music videos on MTV are crucial for marketing. New genres like Synth-pop and Hip-hop are emerging. Independent labels are gaining traction.",
+        title: "💾 The Digital Dawn Arrives! (1980s-1990s)",
+        content: `Welcome to the era of digital innovation! You're entering a time where:
+• MIDI and digital recording are transforming music
+• CDs are replacing vinyl as the dominant format
+• MTV is revolutionizing music promotion
+• Independent labels are gaining traction
+• New genres like synth-pop and hip-hop are emerging
+
+Embrace new technologies while maintaining the warmth of analog gear. Learn to work with early digital tools, create music videos, and navigate the changing industry landscape!`,
       };
       break;
     case 'internet2000s':
       eraSpecificIntro = {
-        title: "Ride the Internet Wave! 💻 (2000s-2010s)",
-        content: "The internet has disrupted everything. Pro Tools and computer-based recording are standard. MP3s and digital distribution (like iTunes) are the new norm, but piracy is a concern. Social media and YouTube are becoming vital for promotion. Home studios are on the rise.",
+        title: "🌐 The Internet Revolution! (2000s-2010s)",
+        content: `The digital age is in full swing! You're entering an era where:
+• DAWs and computer recording are standard
+• MP3s and digital distribution are the norm
+• Social media is becoming vital for promotion
+• Home studios are on the rise
+• File sharing is disrupting traditional sales
+
+Adapt to the new digital landscape, master computer-based production, and learn to leverage online platforms to reach your audience!`,
       };
       break;
     case 'streaming2020s':
       eraSpecificIntro = {
-        title: "Conquer the Streaming Era! 🎧 (2020s+)",
-        content: "Streaming platforms (like Spotify) dominate music consumption. Algorithmic promotion and playlist placements are critical for discovery. AI-assisted production tools are available, and global collaboration is easier than ever. Short-form video content on platforms like TikTok can make a track viral.",
+        title: "🎧 The Streaming Age Begins! (2020s+)",
+        content: `Welcome to the modern music industry! You're entering an era where:
+• Streaming platforms dominate music consumption
+• AI tools assist in production and mixing
+• Social media is essential for artist discovery
+• Short-form video content drives trends
+• Global collaboration is easier than ever
+
+Master the art of streaming optimization, leverage AI tools effectively, and build a strong online presence to succeed in today's fast-paced music world!`,
       };
       break;
     default: // Fallback to a generic welcome if eraId is unknown
       eraSpecificIntro = {
-        title: "Welcome to Recording Studio Tycoon! 🎵",
+        title: "🎵 Welcome to Recording Studio Tycoon!",
         content: "Build your music empire from a small home studio to a professional recording complex. Complete projects, upgrade equipment, and become the ultimate music mogul!",
       };
       console.warn('Tutorial: Unknown era ID:', eraId, 'Using default welcome message.');

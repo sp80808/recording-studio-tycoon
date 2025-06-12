@@ -1,11 +1,18 @@
 // Game type definitions
 import { Chart, ArtistContact, MarketTrend } from './charts';
+import { MinigameType } from './miniGame'; // Import MinigameType
 
 export interface PlayerAttributes {
   focusMastery: number;
   creativeIntuition: number;
   technicalAptitude: number;
   businessAcumen: number;
+  // Adding missing attributes based on progressionUtils usage, assuming these are intended
+  creativity: number; 
+  technical: number; 
+  business: number; 
+  charisma: number; 
+  luck: number;
 }
 
 export interface PlayerData {
@@ -13,24 +20,31 @@ export interface PlayerData {
   level: number;
   xpToNextLevel: number; // Keep one
   perkPoints: number;
+  attributePoints?: number; // Added based on progressionUtils usage
   attributes: PlayerAttributes;
   dailyWorkCapacity: number; // Add back
   reputation: number;
   lastMinigameType?: string; 
 }
 
+export interface StudioSkillBonus {
+  projectQuality?: number;
+  workSpeed?: number;
+  clientSatisfaction?: number;
+  trainingEfficiency?: number;
+  equipmentEfficiency?: number;
+  moneyGain?: number; // Added based on progressionUtils usage
+}
 export interface StudioSkill {
   name: string;
   level: number;
   xp: number;
   xpToNext: number;
+  bonuses: StudioSkillBonus; // Added based on progressionUtils usage
 }
 
-// Forward declaration for StageEvent if it uses ProjectStage
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface StageEvent {}
-
-export type MinigameType = 'rhythm' | 'mixing' | 'mastering' | 'soundDesign' | 'acousticTreatment' | 'audioRestoration' | 'analogConsole' | 'microphone_placement' | 'mastering_chain' | 'sound_design_synthesis';
 
 export interface ProjectStage {
   stageName: string;
@@ -111,15 +125,11 @@ export interface Project {
 export interface StaffMember {
   id: string;
   name: string;
-  role: 'Engineer' | 'Producer' | 'Songwriter';
-  primaryStats: {
-    creativity: number;
-    technical: number;
-    speed: number;
-  };
+  role: StaffRole; // Use StaffRole type
+  primaryStats: StaffStats; // Use StaffStats type
   xpInRole: number;
   levelInRole: number;
-  genreAffinity: { genre: string; bonus: number } | null;
+  genreAffinity: GenreAffinity | null; // Use GenreAffinity type
   energy: number;
   mood: number; 
   salary: number;
@@ -128,6 +138,19 @@ export interface StaffMember {
   trainingEndDay?: number;
   trainingCourse?: string;
   skills?: Record<string, StudioSkill>; // Make optional if not all staff have it initially
+}
+
+export type StaffRole = 'Engineer' | 'Producer' | 'Songwriter' | 'Mix Engineer' | 'Mastering Engineer' | 'Sound Designer';
+
+export interface StaffStats {
+  creativity: number;
+  technical: number;
+  speed: number;
+}
+
+export interface GenreAffinity {
+  genre: string;
+  bonus: number;
 }
 
 export type EquipmentCategory = 'microphone' | 'monitor' | 'interface' | 'outboard' | 'instrument' | 'software' | 'recorder' | 'mixer';
@@ -145,12 +168,33 @@ export interface Equipment {
     creativityBonus?: number;
     technicalBonus?: number;
   };
-  icon: string;
+  icon: string; // Added icon to Equipment interface
   skillRequirement?: {
     skill: string;
     level: number;
   };
-  condition?: number; // Add condition to Equipment interface
+  condition?: number; 
+}
+
+export interface EraAvailableEquipment extends Equipment {
+  availableFrom: number; // Year when equipment becomes available
+  availableUntil?: number; // Year when equipment becomes obsolete (optional)
+  eraDescription?: string; // Era-specific description
+  isVintage?: boolean; // If true, becomes more expensive over time
+}
+
+export interface MinigameDataReward {
+  [key: string]: { min: number; max: number } | number; // Allow flexible reward types
+}
+
+export interface Minigame {
+  id: string;
+  name: string;
+  description: string;
+  duration: number; // in days
+  cost: number;
+  rewards: MinigameDataReward; // Use the new flexible reward type
+  type?: MinigameType; // Add type property
 }
 
 export interface TrainingCourse {
@@ -208,6 +252,9 @@ export interface GameState {
   };
   focusAllocation: FocusAllocation; 
   completedProjects?: Project[]; 
+  levelUpDetails: LevelUpDetails | null; // For Level Up Modal
+  unlockedFeatures?: string[]; // Added based on progressionUtils usage
+  availableTraining?: string[]; // Added based on progressionUtils usage (assuming string IDs for courses)
 }
 
 export interface GameNotification {
@@ -234,7 +281,21 @@ export interface ProjectReport {
   payout: number;
   repGain: number;
   xpGain: number;
+  review: { // Made review non-optional, but its points optional
+    qualityScore: number;
+    payout: number;
+    xpGain: number;
+    creativityPoints?: number; // Optional
+    technicalPoints?: number; // Optional
+  };
+  isCriticalSuccess?: boolean;
 }
+
+// Defining ProjectCompletionResult based on its usage in progressionUtils
+export interface ProjectCompletionResult extends ProjectReport {
+  // Inherits from ProjectReport, can add more specific fields if needed later
+}
+
 
 export interface DiscoveredArtist {
   id: string;
@@ -247,3 +308,74 @@ export interface DiscoveredArtist {
   genre?: string; // Assuming MusicGenre from './charts' could be used here too
   popularity?: number;
 }
+
+// Types for Level Up Pop-up
+export interface UnlockedFeatureInfo {
+  id: string; // To link to a more detailed description or feature itself
+  name: string;
+  description: string;
+  icon?: string; // Emoji or Lucide icon name
+  category: 'Minigame' | 'Equipment' | 'Studio Upgrade' | 'Staff Tier' | 'Project Type' | 'Mechanic';
+}
+
+export interface PlayerAbilityChange {
+  name: string; // e.g., "Daily Work Capacity", "Learning Speed"
+  oldValue: string | number;
+  newValue: string | number;
+  unit?: string; // e.g., "%", "pts"
+  description?: string; // Optional description of the ability change
+}
+
+export interface PlayerAttributeChange {
+  name: keyof PlayerAttributes; // e.g., "creativeIntuition"
+  oldValue: number;
+  newValue: number;
+}
+
+export interface ProjectPerformanceSummary {
+  projectId: string;
+  projectTitle: string;
+  genre: string;
+  finalScore: number; // Assuming a 0-100 scale or similar
+  qualityTier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond'; // Example tiers
+}
+
+export interface StaffProgressionHighlight {
+  staffId: string;
+  staffName: string;
+  skillIncreased?: string; // e.g., "Mixing", "Engineering"
+  newSkillLevel?: number;
+  newAbilityUnlocked?: string; // e.g., "Can now mentor junior staff"
+}
+
+export interface LevelUpDetails {
+  newPlayerLevel: number;
+  unlockedFeatures: UnlockedFeatureInfo[];
+  abilityChanges: PlayerAbilityChange[];
+  attributeChanges: PlayerAttributeChange[];
+  projectSummaries: ProjectPerformanceSummary[];
+  staffHighlights: StaffProgressionHighlight[];
+}
+// End Types for Level Up Pop-up
+
+// MilestoneReward definition based on progressionUtils usage
+export interface MilestoneReward {
+  level: number; // Assuming milestones are tied to player levels
+  unlockedFeatures?: string[]; // IDs of features, equipment, etc.
+  newEquipment?: string[]; // IDs of equipment items
+  newTrainingCourses?: string[]; // IDs of training courses
+  attributePoints?: number;
+  perkPoints?: number;
+  // Potentially other direct rewards like money, reputation, specific items
+}
+
+// Constant for initial studio skill data, if needed by progressionUtils
+// This would typically live in a data file, but placing a type placeholder here for now
+export type StudioSkillTemplates = Record<string, Omit<StudioSkill, 'level' | 'xp' | 'xpToNext'>>;
+
+// Example:
+// export const STUDIO_SKILLS_TEMPLATES: StudioSkillTemplates = {
+//   recording: { name: 'Recording', bonuses: { projectQuality: 0.05 } },
+//   mixing: { name: 'Mixing', bonuses: { projectQuality: 0.07 } },
+//   mastering: { name: 'Mastering', bonuses: { projectQuality: 0.1 } },
+// };

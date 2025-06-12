@@ -1,4 +1,3 @@
-
 import { GameState, Project, FocusAllocation } from '@/types/game';
 import { MinigameType } from '@/components/minigames/MinigameManager';
 

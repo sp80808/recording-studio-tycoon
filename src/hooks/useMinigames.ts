@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useGameState } from './useGameState';
-import { MinigameType } from '@/components/minigames/MinigameManager';
+import { MinigameType } from '@/types/miniGame'; // Corrected import path
 import { toast } from '@/hooks/use-toast';
 import { gameAudio } from '@/utils/audioSystem';
 
@@ -12,72 +12,167 @@ interface MinigameRewards {
 }
 
 const MINIGAME_REWARDS: Record<MinigameType, (score: number) => MinigameRewards> = {
-  mixing: (score) => ({
-    creativityBonus: Math.round(score * 0.3),
-    technicalBonus: Math.round(score * 0.5),
-    xpBonus: Math.round(score * 0.4),
-    moneyBonus: Math.round(score * 10)
-  }),
-  recording: (score) => ({
-    creativityBonus: Math.round(score * 0.4),
-    technicalBonus: Math.round(score * 0.3),
-    xpBonus: Math.round(score * 0.5),
-    moneyBonus: Math.round(score * 8)
-  }),
-  mastering: (score) => ({
-    creativityBonus: Math.round(score * 0.2),
-    technicalBonus: Math.round(score * 0.6),
-    xpBonus: Math.round(score * 0.3),
-    moneyBonus: Math.round(score * 12)
-  }),
-  rhythm: (score) => ({
+  rhythm_timing: (score: number) => ({
     creativityBonus: Math.round(score * 0.5),
     technicalBonus: Math.round(score * 0.2),
     xpBonus: Math.round(score * 0.4),
     moneyBonus: Math.round(score * 6)
   }),
-  waveform: (score) => ({
+  mixing_board: (score: number) => ({
+    creativityBonus: Math.round(score * 0.3),
+    technicalBonus: Math.round(score * 0.5),
+    xpBonus: Math.round(score * 0.4),
+    moneyBonus: Math.round(score * 10)
+  }),
+  sound_wave: (score: number) => ({
     creativityBonus: Math.round(score * 0.3),
     technicalBonus: Math.round(score * 0.4),
     xpBonus: Math.round(score * 0.3),
     moneyBonus: Math.round(score * 7)
   }),
-  beatmaking: (score) => ({
+  beat_making: (score: number) => ({
     creativityBonus: Math.round(score * 0.6),
     technicalBonus: Math.round(score * 0.3),
     xpBonus: Math.round(score * 0.5),
     moneyBonus: Math.round(score * 9)
   }),
-  vocal: (score) => ({
+  vocal_recording: (score: number) => ({
     creativityBonus: Math.round(score * 0.5),
     technicalBonus: Math.round(score * 0.4),
     xpBonus: Math.round(score * 0.4),
     moneyBonus: Math.round(score * 8)
   }),
-  effect_chain: (score: number) => ({ // For GuitarPedalBoardGame, changed key and typed score
-    creativityBonus: Math.round(score * 0.4),
-    technicalBonus: Math.round(score * 0.4), // Adjusted technical bonus to match new entry
+  mastering: (score: number) => ({
+    creativityBonus: Math.round(score * 0.2),
+    technicalBonus: Math.round(score * 0.6),
     xpBonus: Math.round(score * 0.3),
-    moneyBonus: Math.round(score * 7)
+    moneyBonus: Math.round(score * 12)
   }),
-  acoustic: (score) => ({
+  effect_chain: (score: number) => ({
+    creativityBonus: Math.round(score * 0.4),
+    technicalBonus: Math.round(score * 0.4),
+    xpBonus: Math.round(score * 0.3),
+    moneyBonus: Math.round(score * 8)
+  }),
+  acoustic_tuning: (score: number) => ({
     creativityBonus: Math.round(score * 0.5),
     technicalBonus: Math.round(score * 0.3),
     xpBonus: Math.round(score * 0.4),
     moneyBonus: Math.round(score * 6)
   }),
-  layering: (score) => ({
+  midi_programming: (score: number) => ({
+    creativityBonus: Math.round(score * 0.3),
+    technicalBonus: Math.round(score * 0.4),
+    xpBonus: Math.round(score * 0.3),
+    moneyBonus: Math.round(score * 7)
+  }),
+  digital_mixing: (score: number) => ({
+    creativityBonus: Math.round(score * 0.3),
+    technicalBonus: Math.round(score * 0.5),
+    xpBonus: Math.round(score * 0.4),
+    moneyBonus: Math.round(score * 10)
+  }),
+  sample_editing: (score: number) => ({
+    creativityBonus: Math.round(score * 0.4),
+    technicalBonus: Math.round(score * 0.3),
+    xpBonus: Math.round(score * 0.3),
+    moneyBonus: Math.round(score * 7)
+  }),
+  sound_design: (score: number) => ({
+    creativityBonus: Math.round(score * 0.5),
+    technicalBonus: Math.round(score * 0.3),
+    xpBonus: Math.round(score * 0.4),
+    moneyBonus: Math.round(score * 8)
+  }),
+  audio_restoration: (score: number) => ({
+    creativityBonus: Math.round(score * 0.2),
+    technicalBonus: Math.round(score * 0.6),
+    xpBonus: Math.round(score * 0.3),
+    moneyBonus: Math.round(score * 9)
+  }),
+  analog_console: (score: number) => ({
+    creativityBonus: Math.round(score * 0.3),
+    technicalBonus: Math.round(score * 0.5),
+    xpBonus: Math.round(score * 0.4),
+    moneyBonus: Math.round(score * 10)
+  }),
+  four_track_recording: (score: number) => ({
+    creativityBonus: Math.round(score * 0.4),
+    technicalBonus: Math.round(score * 0.2),
+    xpBonus: Math.round(score * 0.3),
+    moneyBonus: Math.round(score * 6)
+  }),
+  tape_splicing: (score: number) => ({
+    creativityBonus: Math.round(score * 0.3),
+    technicalBonus: Math.round(score * 0.3),
+    xpBonus: Math.round(score * 0.2),
+    moneyBonus: Math.round(score * 5)
+  }),
+  microphone_placement: (score: number) => ({
+    creativityBonus: Math.round(score * 0.4),
+    technicalBonus: Math.round(score * 0.4),
+    xpBonus: Math.round(score * 0.4),
+    moneyBonus: Math.round(score * 8)
+  }),
+  mastering_chain: (score: number) => ({
+    creativityBonus: Math.round(score * 0.2),
+    technicalBonus: Math.round(score * 0.7),
+    xpBonus: Math.round(score * 0.3),
+    moneyBonus: Math.round(score * 15)
+  }),
+  sound_design_synthesis: (score: number) => ({
+    creativityBonus: Math.round(score * 0.6),
+    technicalBonus: Math.round(score * 0.2),
+    xpBonus: Math.round(score * 0.5),
+    moneyBonus: Math.round(score * 9)
+  }),
+  layering: (score: number) => ({
     creativityBonus: Math.round(score * 0.6),
     technicalBonus: Math.round(score * 0.4),
     xpBonus: Math.round(score * 0.5),
     moneyBonus: Math.round(score * 10)
   }),
-  // effect_chain is now handled above, this section is effectively merged/replaced
-  patch_bay: (score: number) => ({ // For PatchBayGame, typed score
-    creativityBonus: Math.round(score * 0.3),
-    technicalBonus: Math.round(score * 0.5),
+  pedalboard: (score: number) => ({
+    creativityBonus: Math.round(score * 0.4),
+    technicalBonus: Math.round(score * 0.4),
     xpBonus: Math.round(score * 0.3),
     moneyBonus: Math.round(score * 8)
+  }),
+  patchbay: (score: number) => ({
+    creativityBonus: Math.round(score * 0.3),
+    technicalBonus: Math.round(score * 0.5),
+    xpBonus: Math.round(score * 0.4),
+    moneyBonus: Math.round(score * 10)
+  }),
+  hybrid_mixing: (score: number) => ({
+    creativityBonus: Math.round(score * 0.4),
+    technicalBonus: Math.round(score * 0.4),
+    xpBonus: Math.round(score * 0.4),
+    moneyBonus: Math.round(score * 11)
+  }),
+  digital_distribution: (score: number) => ({
+    creativityBonus: Math.round(score * 0.1),
+    technicalBonus: Math.round(score * 0.2),
+    xpBonus: Math.round(score * 0.2),
+    moneyBonus: Math.round(score * 20)
+  }),
+  social_media_promotion: (score: number) => ({
+    creativityBonus: Math.round(score * 0.2),
+    technicalBonus: Math.round(score * 0.1),
+    xpBonus: Math.round(score * 0.2),
+    moneyBonus: Math.round(score * 18)
+  }),
+  streaming_optimization: (score: number) => ({
+    creativityBonus: Math.round(score * 0.2),
+    technicalBonus: Math.round(score * 0.3),
+    xpBonus: Math.round(score * 0.3),
+    moneyBonus: Math.round(score * 15)
+  }),
+  ai_mastering: (score: number) => ({
+    creativityBonus: Math.round(score * 0.1),
+    technicalBonus: Math.round(score * 0.8),
+    xpBonus: Math.round(score * 0.2),
+    moneyBonus: Math.round(score * 10)
   })
 };
 

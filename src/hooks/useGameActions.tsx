@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { GameState, Project, FocusAllocation, ProjectReport, StaffMember } from '@/types/game';
 import { generateCandidates } from '@/utils/projectUtils';
@@ -11,7 +10,17 @@ import {
 } from '@/utils/eraProgression';
 import { calculateWorkUnitsGained } from '@/utils/projectWorkUtils';
 
-export const useGameActions = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
+// Define a type for the flexible setGameState function
+type SetGameStateFunction = (state: GameState | ((prev: GameState) => GameState)) => void;
+
+// Define the return type for performDailyWork
+interface PerformDailyWorkResult {
+  isComplete: boolean;
+  finalProjectData: Project | null;
+  review: ProjectReport | undefined | null; // Allow undefined or null for review
+}
+
+export const useGameActions = (gameState: GameState, setGameState: SetGameStateFunction) => {
   const advanceDay = useCallback(() => {
     const newDay = gameState.currentDay + 1;
     console.log(`Advancing to day ${newDay}`);
@@ -43,19 +52,19 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     
     // Update equipment multiplier based on year progression
     const updatedEquipmentMultiplier = getEraSpecificEquipmentMultiplier(
-      gameState.currentEra, 
-      gameState.eraStartYear, 
+      gameState.currentEra,
+      gameState.eraStartYear,
       newYear
     );
     
-    setGameState(prev => ({ 
-      ...prev, 
+    setGameState(prev => ({
+      ...prev,
       currentDay: newDay,
       currentYear: newYear,
       equipmentMultiplier: updatedEquipmentMultiplier,
       money: prev.money - totalSalaries, // Deduct salaries
-      hiredStaff: updatedStaff.map(s => 
-        s.status === 'Resting' 
+      hiredStaff: updatedStaff.map(s =>
+        s.status === 'Resting'
           ? { ...s, energy: Math.min(100, s.energy + 20) }
           : s
       ),
@@ -174,14 +183,14 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     focusAllocation: FocusAllocation,
     assignedStaff: StaffMember[],
     completeProject: (state: GameState) => ProjectReport | undefined
-  ) => {
+  ): PerformDailyWorkResult => { // Explicitly define return type
     const updatedProject = { ...currentProject };
     const updatedGameState = { ...gameState };
 
     const currentStage = updatedProject.stages[updatedProject.currentStageIndex];
     if (!currentStage) {
       console.error("No current stage found for active project.");
-      return null;
+      return { isComplete: false, finalProjectData: null, review: null }; // Return defined type
     }
 
     const { creativityGained, technicalGained } = calculateWorkUnitsGained(

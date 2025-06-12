@@ -1,10 +1,12 @@
-
 import { useCallback } from 'react';
 import { GameState, StaffMember } from '@/types/game';
 import { toast } from '@/hooks/use-toast';
 import { availableTrainingCourses } from '@/data/training';
+import { generateCandidates } from '@/utils/projectUtils'; // Corrected import path
 
-export const useStaffManagement = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
+type SetGameStateFunction = (state: GameState | ((prev: GameState) => GameState)) => void;
+
+export const useStaffManagement = (gameState: GameState, setGameState: SetGameStateFunction) => {
   const hireStaff = useCallback((candidateIndex: number): boolean => {
     const candidate = gameState.availableCandidates[candidateIndex];
     if (!candidate) return false;

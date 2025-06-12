@@ -49,18 +49,15 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
   }, [gameTipKeys.length]); // Added dependency
 
   const handleStartNewGame = async () => {
-    await gameAudio.userGestureSignal(); // Activate audio context
-    // Ensure music starts playing on user interaction
-    if (!backgroundMusic.isPlaying && settings.musicEnabled) { // Check if music is enabled in settings
+    await gameAudio.activateAudioContext(); // Changed from userGestureSignal
+    if (!backgroundMusic.isPlaying && settings.musicEnabled) {
       backgroundMusic.playTrack(1);
     }
     setShowEraSelection(true);
   };
-
   const handleLoadGame = async () => {
-    await gameAudio.userGestureSignal(); // Activate audio context
-    // Ensure music starts playing on user interaction
-    if (!backgroundMusic.isPlaying && settings.musicEnabled) { // Check if music is enabled in settings
+    await gameAudio.activateAudioContext(); // Already correct
+    if (!backgroundMusic.isPlaying && settings.musicEnabled) {
       backgroundMusic.playTrack(1);
     }
     onLoadGame();

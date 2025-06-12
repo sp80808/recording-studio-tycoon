@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StaffMember } from '../types/game';
-import { generateCandidates } from '../utils/staffGeneration';
+import { generateStaffMember } from '../utils/staffGeneration';
+import { StaffRole } from '../types/game'; // Import StaffRole
 
 interface HireStaffFormProps {
   onHire: (candidate: StaffMember) => void;
@@ -8,11 +9,21 @@ interface HireStaffFormProps {
 }
 
 export const HireStaffForm: React.FC<HireStaffFormProps> = ({ onHire, onCancel }) => {
-  const [candidates, setCandidates] = useState<StaffMember[]>(generateCandidates(3));
+  const allRoles: StaffRole[] = ['Engineer', 'Producer', 'Songwriter', 'Mix Engineer', 'Mastering Engineer', 'Sound Designer'];
+  const generateInitialCandidates = () => {
+    const newCandidates: StaffMember[] = [];
+    for (let i = 0; i < 3; i++) {
+      const randomRole = allRoles[Math.floor(Math.random() * allRoles.length)];
+      newCandidates.push(generateStaffMember(randomRole));
+    }
+    return newCandidates;
+  };
+
+  const [candidates, setCandidates] = useState<StaffMember[]>(generateInitialCandidates());
   const [selectedCandidate, setSelectedCandidate] = useState<StaffMember | null>(null);
 
   const handleRefresh = () => {
-    setCandidates(generateCandidates(3));
+    setCandidates(generateInitialCandidates());
     setSelectedCandidate(null);
   };
 
@@ -100,4 +111,4 @@ export const HireStaffForm: React.FC<HireStaffFormProps> = ({ onHire, onCancel }
   );
 };
 
-export default HireStaffForm; 
+export default HireStaffForm;
