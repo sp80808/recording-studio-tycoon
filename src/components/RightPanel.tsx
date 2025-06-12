@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { GameState, PlayerAttributes } from '@/types/game';
+import { GameState, PlayerAttributes, StaffMember, Equipment } from '@/types/game';
 import { SkillsModal } from '@/components/modals/SkillsModal';
 import { AttributesModal } from '@/components/modals/AttributesModal';
 import { ResearchModal } from '@/components/modals/ResearchModal'; // Import ResearchModal

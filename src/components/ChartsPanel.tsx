@@ -128,21 +128,14 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
         ))}
       </div>
 
-            className={selectedChart === chart.id ? 'bg-blue-600 hover:bg-blue-700' : ''}
-          >
-            {chart.name}
-          </Button>
-        ))}
-      </div>
-
       {/* Chart Display */}
-      {currentChart && (
+      {currentChartInstance && (
         <Card className="bg-gray-800/50 border-gray-600 p-4">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="font-semibold text-white">{currentChart.name}</h4>
+            <h4 className="font-semibold text-white">{currentChartInstance.name}</h4>
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="text-xs">
-                {currentChart.region}
+                {currentChartInstance.region}
               </Badge>
               <Badge variant="outline" className="text-xs">
                 Updates weekly
@@ -150,11 +143,11 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
             </div>
           </div>
 
-          <p className="text-sm text-gray-400 mb-4">{currentChart.description}</p>
+          <p className="text-sm text-gray-400 mb-4">{currentChartInstance.description}</p>
 
           {/* Chart Entries - Enhanced Layout like Billboard */}
           <div className="space-y-3 max-h-80 overflow-y-auto">
-            {currentChart.entries.slice(0, 20).map((entry) => (
+            {currentChartInstance.entries.slice(0, 20).map((entry) => (
               <ChartEntryRow
                 key={`${entry.song.id}-${entry.position}`}
                 entry={entry}
