@@ -10,6 +10,7 @@ import { availableMods } from '@/data/equipmentMods'; // Import availableMods
 import { EquipmentList } from '@/components/EquipmentList';
 import { BandManagement } from '@/components/BandManagement';
 import { ChartsPanel } from '@/components/ChartsPanel';
+import { StudioProgressionPanel } from '@/components/StudioProgressionPanel'; // Add Studio Progression Panel
 import { toast } from '@/hooks/use-toast'; // Import toast
 
 interface RightPanelProps {
@@ -130,6 +131,9 @@ export const RightPanel: React.FC<RightPanelProps> = ({
       {activeTab === 'studio' && (
         <div className="space-y-4">
           <h2 className="text-xl font-bold text-white">Studio Actions</h2>
+          
+          {/* Studio Progression Panel */}
+          <StudioProgressionPanel gameState={gameState} />
           
           <Button onClick={handleAdvanceDay} className="w-full bg-purple-600 hover:bg-purple-700 text-white">
             Advance Day
@@ -379,6 +383,12 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           gameState={gameState}
           onApplyMod={applyModToEquipment} // Pass the actual function
         />
+      )}
+
+      {activeTab === 'skills' && (
+        <div className="mt-6">
+          <StudioProgressionPanel gameState={gameState} />
+        </div>
       )}
     </Card>
   );
