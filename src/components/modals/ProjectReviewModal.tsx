@@ -262,7 +262,21 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+      onClick={(e) => {
+        // Only close modal if Continue button is visible (animation complete)
+        if (showContinueButton) {
+          // Allow closing only when Continue button is available
+          // Still prevent accidental clicks during animation
+          e.preventDefault();
+        } else {
+          // Prevent modal from closing during animation
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }}
+    >
       <style>{`
         .animate-pulse-strong {
           animation: pulse-strong 0.7s infinite;
@@ -272,7 +286,13 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
           50% { opacity: 0.7; transform: scale(1.1); }
         }
       `}</style>
-      <Card className="bg-gray-800 border-gray-700 text-white w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
+      <Card 
+        className="bg-gray-800 border-gray-700 text-white w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl relative z-10"
+        onClick={(e) => {
+          // Prevent event bubbling from card clicks to the backdrop
+          e.stopPropagation();
+        }}
+      >
         <CardHeader className="pb-2">
           <CardTitle className="text-3xl text-yellow-400 font-bold text-center tracking-wider">
             Project Review: {report.projectTitle}
