@@ -1,6 +1,6 @@
 // Types for the Charts and Industry Integration System
 
-export type MusicGenre = 'rock' | 'pop' | 'hip-hop' | 'electronic' | 'country' | 'alternative' | 'r&b' | 'jazz' | 'classical' | 'folk';
+export type MusicGenre = 'rock' | 'pop' | 'hip-hop' | 'electronic' | 'country' | 'alternative' | 'r&b' | 'jazz' | 'classical' | 'folk' | 'acoustic';
 
 export type ChartMovement = 'up' | 'down' | 'new' | 'steady' | 'returning';
 
@@ -20,6 +20,11 @@ export interface Artist {
   specialties: string[];
   socialMediaFollowers: number;
   description?: string; // Short bio or description of the artist
+  availability: {
+    status: 'available' | 'busy' | 'on-tour' | 'in-studio';
+    responseTime: number; // Days until artist responds
+  };
+  mood: number; // 0-100, affects negotiation and performance
 }
 
 export interface Song {
@@ -55,6 +60,7 @@ export interface Chart {
   influence: number; // industry importance (0-100)
   region: ChartRegion;
   minLevelToAccess: number;
+  lastChartUpdate?: number; // Add lastChartUpdate to Chart interface
 }
 
 export type ChartRegion = 'local' | 'regional' | 'national' | 'international';

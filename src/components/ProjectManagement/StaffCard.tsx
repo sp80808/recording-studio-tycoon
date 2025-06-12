@@ -1,41 +1,45 @@
 import React from 'react';
-import { StaffMember } from '@/types/game'; // Adjusted import path
+import { StaffMember } from '@/types/game';
 
 interface StaffCardProps {
   staff: StaffMember;
-  projectMatch?: number; // Optional as it might not always be calculated or relevant
+  projectMatch?: number; // Optional as per currentTask.md (may not be calculated yet)
   isAssigned: boolean;
-  onAction: () => void; // Generic action, could be assign or unassign
+  onAction: () => void; // Generic action (assign/unassign)
 }
 
-export const StaffCard: React.FC<StaffCardProps> = ({
+const StaffCard: React.FC<StaffCardProps> = ({
   staff,
   projectMatch,
   isAssigned,
   onAction,
 }) => {
   return (
-    <div className={`p-3 border rounded-md shadow-sm ${isAssigned ? 'bg-green-50' : 'bg-white'}`}>
-      <div className="flex justify-between items-center">
-        <h5 className="font-semibold">{staff.name}</h5>
+    <div className={`p-3 mb-2 border rounded-lg shadow ${isAssigned ? 'bg-green-100' : 'bg-white'}`}>
+      <div className="flex items-center justify-between">
+        <div>
+          <h5 className="font-semibold">{staff.name} <span className="text-sm text-gray-600">({staff.role})</span></h5>
+          <p className="text-xs text-gray-500">
+            C: {staff.primaryStats.creativity}, T: {staff.primaryStats.technical}, S: {staff.primaryStats.speed}
+          </p>
+          {projectMatch !== undefined && (
+            <p className="text-xs text-gray-500">Match: {projectMatch}%</p>
+          )}
+        </div>
         <button
           onClick={onAction}
           className={`px-3 py-1 text-sm rounded ${
             isAssigned 
               ? 'bg-red-500 hover:bg-red-600 text-white' 
-              : 'bg-green-500 hover:bg-green-600 text-white'
+              : 'bg-blue-500 hover:bg-blue-600 text-white'
           }`}
         >
           {isAssigned ? 'Unassign' : 'Assign'}
         </button>
       </div>
-      <div className="text-xs text-gray-600 mt-1">
-        {/* Placeholder for staff skills/stats */}
-        <p>Skills: {Object.keys(staff.skills).join(', ') || 'N/A'}</p>
-        {projectMatch !== undefined && (
-          <p>Project Match: {projectMatch}%</p>
-        )}
-      </div>
+      {/* Additional details like energy, mood can be added here later */}
     </div>
   );
 };
+
+export default StaffCard;

@@ -6,9 +6,9 @@ import { MinigameReward, Achievement } from '@/types/game';
 describe('RewardDisplay', () => {
   const mockRewards: MinigameReward[] = [
     {
-      type: 'experience',
+      type: 'xp',
       amount: 100,
-      description: 'Experience gained',
+      description: 'XP gained',
       rarity: 'common'
     },
     {
@@ -48,7 +48,7 @@ describe('RewardDisplay', () => {
     );
 
     // Check rewards
-    expect(screen.getByText('Experience gained')).toBeInTheDocument();
+    expect(screen.getByText('XP gained')).toBeInTheDocument();
     expect(screen.getByText('technical skill improvement')).toBeInTheDocument();
     expect(screen.getByText('100')).toBeInTheDocument();
     expect(screen.getByText('50')).toBeInTheDocument();
@@ -111,7 +111,7 @@ describe('RewardDisplay', () => {
     );
 
     // Check common rarity
-    const commonReward = screen.getByText('Experience gained').closest('div');
+    const commonReward = screen.getByText('XP gained').closest('div');
     expect(commonReward).toHaveClass('bg-gray-100');
     expect(screen.getByText('⭐')).toBeInTheDocument();
 

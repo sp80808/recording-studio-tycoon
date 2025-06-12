@@ -1,4 +1,4 @@
-import { Minigame } from '@/types/game';
+import { MiniGame as Minigame } from '@/types/miniGame';
 
 export const availableMinigames: Minigame[] = [
   {
@@ -76,6 +76,42 @@ export const availableMinigames: Minigame[] = [
     rewards: {
       ear: { min: 1, max: 3 },
       songwriting: { min: 1, max: 2 }
+    }
+  },
+  {
+    id: 'microphone_placement_challenge',
+    name: 'Microphone Placement Challenge',
+    description: 'Optimize microphone positions for different instruments and vocalists.',
+    duration: 1.0, // 1 hour
+    cost: 1.0,
+    rewards: {
+      ear: { min: 2, max: 4 },
+      technical: { min: 2, max: 3 },
+      qualityBonus: { min: 5, max: 10 }
+    }
+  },
+  {
+    id: 'mastering_chain_optimization',
+    name: 'Mastering Chain Optimization',
+    description: 'Fine-tune a mastering signal chain for maximum loudness and clarity without distortion.',
+    duration: 1.5, // 1.5 hours
+    cost: 1.5,
+    rewards: {
+      mastering: { min: 3, max: 5 },
+      technical: { min: 3, max: 4 },
+      qualityBonus: { min: 10, max: 15 }
+    }
+  },
+  {
+    id: 'sound_design_synthesis',
+    name: 'Sound Design Synthesis',
+    description: 'Create unique sounds from scratch using various synthesis techniques.',
+    duration: 1.25, // 1 hour 15 minutes
+    cost: 1.25,
+    rewards: {
+      soundDesign: { min: 3, max: 5 },
+      creativity: { min: 2, max: 4 },
+      inspirationBonus: { min: 5, max: 10 }
     }
   }
 ];

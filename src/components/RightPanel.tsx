@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { GameState, PlayerAttributes, Staff } from '@/types/game';
+import { GameState, PlayerAttributes } from '@/types/game';
 import { SkillsModal } from '@/components/modals/SkillsModal';
 import { AttributesModal } from '@/components/modals/AttributesModal';
+import { ResearchModal } from '@/components/modals/ResearchModal'; // Import ResearchModal
+import { EquipmentModManagementModal } from '@/components/modals/EquipmentModManagementModal'; // Import new modal
+import { availableMods } from '@/data/equipmentMods'; // Import availableMods
 import { EquipmentList } from '@/components/EquipmentList';
 import { BandManagement } from '@/components/BandManagement';
-import { ChartsPanel_enhanced } from '@/components/ChartsPanel_enhanced';
+import { ChartsPanel } from '@/components/ChartsPanel';
+import { StudioProgressionPanel } from '@/components/StudioProgressionPanel'; // Add Studio Progression Panel
+import { toast } from '@/hooks/use-toast'; // Import toast
 
 interface RightPanelProps {
   gameState: GameState;
@@ -27,7 +32,9 @@ interface RightPanelProps {
   assignStaffToProject: (staffId: string) => void;
   unassignStaffFromProject: (staffId: string) => void;
   toggleStaffRest: (staffId: string) => void;
-  openTrainingModal: (staff: Staff) => boolean;
+  openTrainingModal: (staff: any) => boolean;
+  startResearchMod?: (staffId: string, modId: string) => boolean; // Add prop
+  applyModToEquipment?: (equipmentId: string, modId: string | null) => void; // Add new prop
 }
 
 export const RightPanel: React.FC<RightPanelProps> = ({
@@ -49,9 +56,16 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   assignStaffToProject,
   unassignStaffFromProject,
   toggleStaffRest,
-  openTrainingModal
+  openTrainingModal,
+  startResearchMod, // Destructure prop
+  applyModToEquipment // Destructure new prop
 }) => {
   const [activeTab, setActiveTab] = useState<'studio' | 'skills' | 'bands' | 'charts' | 'staff'>('studio');
+  const [showResearchModal, setShowResearchModal] = useState(false);
+  // selectedEngineerForResearch is not strictly needed here if ResearchModal handles its own staff selection from gameState
+  // const [selectedEngineerForResearch, setSelectedEngineerForResearch] = useState<GameState['hiredStaff'][0] | null>(null); 
+  const [showEquipmentModModal, setShowEquipmentModModal] = useState(false);
+  const [selectedEquipmentForModding, setSelectedEquipmentForModding] = useState<GameState['ownedEquipment'][0] | null>(null);
 
   const handleAdvanceDay = () => {
     advanceDay();
@@ -118,11 +132,52 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         <div className="space-y-4">
           <h2 className="text-xl font-bold text-white">Studio Actions</h2>
           
+          {/* Studio Progression Panel */}
+          <StudioProgressionPanel gameState={gameState} />
+          
           <Button onClick={handleAdvanceDay} className="w-full bg-purple-600 hover:bg-purple-700 text-white">
             Advance Day
           </Button>
           
           <EquipmentList purchaseEquipment={purchaseEquipment} gameState={gameState} />
+
+          {/* Owned Equipment Section */}
+          <div className="mt-6">
+            <h3 className="text-lg font-bold text-white mb-3">🛠️ My Gear</h3>
+            {gameState.ownedEquipment.length === 0 ? (
+              <p className="text-sm text-gray-400">You don't own any equipment yet. Purchase some from the shop!</p>
+            ) : (
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                {gameState.ownedEquipment.map(equip => {
+                  const currentMod = equip.appliedModId ? availableMods.find(m => m.id === equip.appliedModId) : null;
+                  return (
+                    <Card key={equip.id} className="p-3 bg-gray-800/60 border-gray-700">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-200">
+                            {equip.icon} {equip.name} 
+                            {currentMod && <span className="text-xs text-yellow-400 ml-1">{currentMod.nameSuffix || `(${currentMod.name})`}</span>}
+                          </p>
+                          <p className="text-xs text-gray-400">Condition: {equip.condition}%</p>
+                        </div>
+                        <Button
+                          size="sm" // Changed from "xs"
+                          variant="outline"
+                          className="text-xs border-blue-500 text-blue-300 hover:bg-blue-500/20 px-2 py-1 h-auto" // Added padding and height classes for smaller feel
+                          onClick={() => {
+                            setSelectedEquipmentForModding(equip);
+                            setShowEquipmentModModal(true);
+                          }}
+                        >
+                          Manage Mods
+                        </Button>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -181,9 +236,9 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                   <Button 
                     onClick={() => hireStaff(index)}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-1"
-                    disabled={gameState.playerData.money < candidate.salary * 3}
+                    disabled={gameState.money < candidate.salary * 3}
                   >
-                    {gameState.playerData.money >= candidate.salary * 3 ? `Hire for $${candidate.salary * 3}` : 'Insufficient Funds'}
+                    {gameState.money >= candidate.salary * 3 ? `Hire for $${candidate.salary * 3}` : 'Insufficient Funds'}
                   </Button>
                 </div>
               ))
@@ -195,10 +250,10 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           </div>
 
           {/* Hired staff section */}
-          {gameState.staff && gameState.staff.length > 0 && (
+          {gameState.hiredStaff && gameState.hiredStaff.length > 0 && (
             <div className="space-y-2 mt-6">
               <h3 className="text-lg font-semibold text-white">Current Staff</h3>
-              {gameState.staff.map((staff: Staff) => (
+              {gameState.hiredStaff.map(staff => (
                 <div key={staff.id} className="bg-gray-800 p-3 rounded-lg">
                   <div className="flex justify-between items-start mb-2">
                     <div>
@@ -208,16 +263,16 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                     <div className="text-right">
                       <div className="text-green-400 text-sm">${staff.salary}/day</div>
                       <div className={`text-xs ${
-                        staff.status === 'working' ? 'text-blue-400' : 
-                        staff.status === 'idle' ? 'text-gray-400' : 
-                        staff.status === 'resting' ? 'text-yellow-400' : 'text-purple-400'
+                        staff.status === 'Working' ? 'text-blue-400' : 
+                        staff.status === 'Idle' ? 'text-gray-400' : 
+                        staff.status === 'Resting' ? 'text-yellow-400' : 'text-purple-400'
                       }`}>
                         {staff.status}
                       </div>
                     </div>
                   </div>
                   <div className="flex gap-2 mt-2">
-                    {staff.status === 'idle' && (
+                    {staff.status === 'Idle' && (
                       <Button 
                         onClick={() => assignStaffToProject(staff.id)}
                         className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-1"
@@ -225,7 +280,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                         Assign to Project
                       </Button>
                     )}
-                    {staff.status === 'working' && (
+                    {staff.status === 'Working' && (
                       <Button 
                         onClick={() => unassignStaffFromProject(staff.id)}
                         className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs py-1"
@@ -237,14 +292,25 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                       onClick={() => toggleStaffRest(staff.id)}
                       className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white text-xs py-1"
                     >
-                      {staff.status === 'resting' ? 'End Rest' : 'Rest'}
+                      {staff.status === 'Resting' ? 'End Rest' : 'Rest'}
                     </Button>
-                    {staff.status === 'idle' && (
+                    {staff.status === 'Idle' && (
                       <Button 
                         onClick={() => openTrainingModal(staff)}
                         className="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-xs py-1"
                       >
                         Train
+                      </Button>
+                    )}
+                    {staff.role === 'Engineer' && staff.status === 'Idle' && (
+                      <Button
+                        onClick={() => {
+                          // setSelectedEngineerForResearch(staff); // ResearchModal will handle staff selection internally
+                          setShowResearchModal(true);
+                        }}
+                        className="flex-1 bg-teal-600 hover:bg-teal-700 text-white text-xs py-1"
+                      >
+                        Research Mod
                       </Button>
                     )}
                   </div>
@@ -264,8 +330,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         />
       )}
 
-      {activeTab === 'charts' && gameState.playerData.level >= 1 && (
-<ChartsPanel_enhanced
+      {activeTab === 'charts' && gameState.playerData.level >= 1 && (                  <ChartsPanel
           gameState={gameState}
           onContactArtist={contactArtist}
         />
@@ -294,6 +359,37 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         playerData={gameState.playerData}
         spendPerkPoint={spendPerkPoint}
       />
+      {/* Render ResearchModal if startResearchMod is available */}
+      {startResearchMod && (
+        <ResearchModal
+          isOpen={showResearchModal}
+          onClose={() => {
+            setShowResearchModal(false);
+            // setSelectedEngineerForResearch(null); // No longer needed as modal handles selection
+          }}
+          gameState={gameState}
+          startResearchMod={startResearchMod}
+        />
+      )}
+
+      {selectedEquipmentForModding && applyModToEquipment && ( // Ensure applyModToEquipment is available
+        <EquipmentModManagementModal
+          isOpen={showEquipmentModModal}
+          onClose={() => {
+            setShowEquipmentModModal(false);
+            setSelectedEquipmentForModding(null);
+          }}
+          equipment={selectedEquipmentForModding}
+          gameState={gameState}
+          onApplyMod={applyModToEquipment} // Pass the actual function
+        />
+      )}
+
+      {activeTab === 'skills' && (
+        <div className="mt-6">
+          <StudioProgressionPanel gameState={gameState} />
+        </div>
+      )}
     </Card>
   );
 };

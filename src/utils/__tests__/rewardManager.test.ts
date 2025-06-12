@@ -4,7 +4,7 @@ import { PlayerProgress, MinigameReward, Achievement } from '@/types/game';
 describe('rewardManager', () => {
   const mockInitialProgress: PlayerProgress = {
     level: 1,
-    experience: 0,
+    xp: 0,
     skills: {
       technical: 0,
       creative: 0,
@@ -24,8 +24,8 @@ describe('rewardManager', () => {
     it('should calculate rewards based on score and difficulty', () => {
       const rewards = calculateMinigameRewards(85, 2, 'mixing');
       
-      expect(rewards).toHaveLength(4); // Experience, Money, Reputation, Skill
-      expect(rewards[0].type).toBe('experience');
+      expect(rewards).toHaveLength(4); // XP, Money, Reputation, Skill
+      expect(rewards[0].type).toBe('xp');
       expect(rewards[1].type).toBe('money');
       expect(rewards[2].type).toBe('reputation');
       expect(rewards[3].type).toBe('skill');
@@ -53,17 +53,17 @@ describe('rewardManager', () => {
   });
 
   describe('applyRewards', () => {
-    it('should apply experience rewards correctly', () => {
+    it('should apply xp rewards correctly', () => {
       const rewards: MinigameReward[] = [{
-        type: 'experience',
+        type: 'xp',
         amount: 100,
-        description: 'Test experience',
+        description: 'Test xp',
         rarity: 'common'
       }];
 
       const newProgress = applyRewards(rewards, mockInitialProgress);
       
-      expect(newProgress.experience).toBe(100);
+      expect(newProgress.xp).toBe(100);
     });
 
     it('should apply reputation rewards with correct distribution', () => {
@@ -97,15 +97,15 @@ describe('rewardManager', () => {
 
     it('should apply rarity multipliers correctly', () => {
       const rewards: MinigameReward[] = [{
-        type: 'experience',
+        type: 'xp',
         amount: 100,
-        description: 'Test experience',
+        description: 'Test xp',
         rarity: 'epic'
       }];
 
       const newProgress = applyRewards(rewards, mockInitialProgress);
       
-      expect(newProgress.experience).toBe(300); // 100 * 3 (epic multiplier)
+      expect(newProgress.xp).toBe(300); // 100 * 3 (epic multiplier)
     });
   });
 

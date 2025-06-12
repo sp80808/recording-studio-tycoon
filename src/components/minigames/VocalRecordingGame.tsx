@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -13,14 +14,9 @@ interface PitchBlock {
 interface VocalRecordingGameProps {
   onComplete: (score: number) => void;
   onClose: () => void;
-  difficulty?: 'easy' | 'medium' | 'hard';
 }
 
-export const VocalRecordingGame: React.FC<VocalRecordingGameProps> = ({ 
-  onComplete, 
-  onClose,
-  difficulty = 'medium' 
-}) => {
+export const VocalRecordingGame: React.FC<VocalRecordingGameProps> = ({ onComplete, onClose }) => {
   const [pitchBlocks, setPitchBlocks] = useState<PitchBlock[]>([]);
   const [cursorPosition, setCursorPosition] = useState(0);
   const [gameActive, setGameActive] = useState(false);
@@ -30,12 +26,65 @@ export const VocalRecordingGame: React.FC<VocalRecordingGameProps> = ({
   const [totalBlocks] = useState(7);
   const intervalRef = useRef<NodeJS.Timeout>();
   const gameContainerRef = useRef<HTMLDivElement>(null);
-  const [isHit, setIsHit] = useState(false);
 
-  const handleHit = useCallback(() => {
+  const initializeGame = () => {
+    const blocks: PitchBlock[] = [];
+    for (let i = 0; i < totalBlocks; i++) {
+      blocks.push({
+        id: `block-${i}`,
+        position: (i + 1) * (100 / (totalBlocks + 1)), // Evenly space blocks
+        hit: false,
+        missed: false
+      });
+    }
+    setPitchBlocks(blocks);
+    setCursorPosition(0);
+    setHitCount(0);
+    setScore(0);
+  };
+
+  const startGame = () => {
+    setGameActive(true);
+    setGameStarted(true);
+    initializeGame();
+
+    // Move cursor across screen
+    intervalRef.current = setInterval(() => {
+      setCursorPosition(prev => {
+        const newPos = prev + 1;
+        if (newPos >= 100) {
+          // Game over
+          setGameActive(false);
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+          }
+          
+          // Calculate final score
+          const accuracy = (hitCount / totalBlocks) * 100;
+          let finalScore = 0;
+          
+          if (accuracy >= 90) {
+            finalScore = 150; // High creativity bonus
+          } else if (accuracy >= 70) {
+            finalScore = 100;
+          } else if (accuracy >= 50) {
+            finalScore = 50;
+          } else {
+            finalScore = 20;
+          }
+          
+          setTimeout(() => onComplete(finalScore), 1000);
+          return 100;
+        }
+        return newPos;
+      });
+    }, 100); // Cursor moves every 100ms for 10 seconds total
+  };
+
+  const handleHit = () => {
     if (!gameActive) return;
 
-    const tolerance = 3;
+    const tolerance = 3; // Hit tolerance (percentage)
     
     setPitchBlocks(prev => {
       let newHitCount = hitCount;
@@ -54,59 +103,9 @@ export const VocalRecordingGame: React.FC<VocalRecordingGameProps> = ({
       
       return updatedBlocks;
     });
-  }, [gameActive, cursorPosition, hitCount]);
+  };
 
-  const initializeGame = useCallback(() => {
-    const blocks: PitchBlock[] = [];
-    for (let i = 0; i < totalBlocks; i++) {
-      blocks.push({
-        id: `block-${i}`,
-        position: (i + 1) * (100 / (totalBlocks + 1)),
-        hit: false,
-        missed: false
-      });
-    }
-    setPitchBlocks(blocks);
-    setCursorPosition(0);
-    setHitCount(0);
-    setScore(0);
-  }, [totalBlocks]);
-
-  const startGame = useCallback(() => {
-    setGameActive(true);
-    setGameStarted(true);
-    initializeGame();
-
-    intervalRef.current = setInterval(() => {
-      setCursorPosition(prev => {
-        const newPos = prev + 1;
-        if (newPos >= 100) {
-          setGameActive(false);
-          if (intervalRef.current) {
-            clearInterval(intervalRef.current);
-          }
-          
-          const accuracy = (hitCount / totalBlocks) * 100;
-          let finalScore = 0;
-          
-          if (accuracy >= 90) {
-            finalScore = 150;
-          } else if (accuracy >= 70) {
-            finalScore = 100;
-          } else if (accuracy >= 50) {
-            finalScore = 50;
-          } else {
-            finalScore = 20;
-          }
-          
-          setTimeout(() => onComplete(finalScore), 1000);
-          return 100;
-        }
-        return newPos;
-      });
-    }, 100);
-  }, [initializeGame, hitCount, totalBlocks, onComplete]);
-
+  // Mark missed blocks
   useEffect(() => {
     if (!gameActive) return;
     
@@ -120,6 +119,7 @@ export const VocalRecordingGame: React.FC<VocalRecordingGameProps> = ({
     );
   }, [cursorPosition, gameActive]);
 
+  // Handle spacebar press
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.code === 'Space' && gameActive) {
@@ -130,7 +130,7 @@ export const VocalRecordingGame: React.FC<VocalRecordingGameProps> = ({
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [gameActive, handleHit]);
+  }, [gameActive, cursorPosition, hitCount]);
 
   useEffect(() => {
     return () => {
@@ -140,15 +140,9 @@ export const VocalRecordingGame: React.FC<VocalRecordingGameProps> = ({
     };
   }, []);
 
-  useEffect(() => {
-    if (isHit) {
-      handleHit();
-    }
-  }, [isHit, handleHit]);
-
-  const getAccuracy = useCallback(() => {
+  const getAccuracy = () => {
     return totalBlocks > 0 ? Math.round((hitCount / totalBlocks) * 100) : 0;
-  }, [hitCount, totalBlocks]);
+  };
 
   return (
     <Card className="w-full max-w-4xl bg-gray-900 border-gray-600 p-6">

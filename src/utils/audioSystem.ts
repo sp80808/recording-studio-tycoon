@@ -29,7 +29,7 @@ class GameAudioSystem {
     if (this.isInitialized) return;
     
     try {
-      this.audioContext = new (window.AudioContext || (window as typeof window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       
       // Create gain nodes for different audio types
       this.masterGain = this.audioContext.createGain();

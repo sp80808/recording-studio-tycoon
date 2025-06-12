@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -30,7 +31,6 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
   const gameAreaRef = useRef<HTMLDivElement>(null);
   const beatIntervalRef = useRef<NodeJS.Timeout>();
   const gameTimerRef = useRef<NodeJS.Timeout>();
-  const [isComplete, setIsComplete] = useState(false);
 
   const difficultySettings = {
     easy: { beatInterval: 1200, speed: 2, targetZone: 80 },
@@ -40,25 +40,75 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
 
   const settings = difficultySettings[difficulty];
 
+  const startGame = useCallback(() => {
+    setGameActive(true);
+    setScore(0);
+    setCombo(0);
+    setTimeLeft(30);
+    setBeats([]);
+
+    // Initialize audio system
+    gameAudio.initialize();
+
+    // Spawn beats
+    beatIntervalRef.current = setInterval(() => {
+      const newBeat: Beat = {
+        id: Date.now().toString(),
+        position: 0,
+        hit: false,
+        perfect: false
+      };
+      setBeats(prev => [...prev, newBeat]);
+      
+      // Play metronome sound for each beat spawn
+      gameAudio.playMetronome();
+    }, settings.beatInterval);
+
+    // Game timer
+    gameTimerRef.current = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          endGame();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, [settings.beatInterval]);
+
   const endGame = useCallback(() => {
     setGameActive(false);
     if (beatIntervalRef.current) clearInterval(beatIntervalRef.current);
     if (gameTimerRef.current) clearInterval(gameTimerRef.current);
     
+    // Play completion sound
     gameAudio.playCompleteProject();
     
     setTimeout(() => {
-      setIsComplete(true);
       onComplete(score);
     }, 1000);
   }, [score, onComplete]);
 
+  // Move beats
+  useEffect(() => {
+    if (!gameActive) return;
+
+    const moveInterval = setInterval(() => {
+      setBeats(prev => prev.map(beat => ({
+        ...beat,
+        position: beat.position + settings.speed
+      })).filter(beat => beat.position < 400));
+    }, 16);
+
+    return () => clearInterval(moveInterval);
+  }, [gameActive, settings.speed]);
+
   const hitBeat = useCallback(() => {
     if (!gameActive) return;
 
-    const perfectZone = 325;
-    const perfectRange = 15;
-    const goodRange = settings.targetZone / 2;
+    const perfectZone = 325; // Center of target zone
+    const perfectRange = 15; // Perfect hit range
+    const goodRange = settings.targetZone / 2; // Good hit range
 
     setBeats(prev => {
       const hitBeats = prev.filter(beat => 
@@ -79,6 +129,7 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
         setScore(s => s + points + (combo * 10));
         setCombo(c => c + 1);
 
+        // Play appropriate hit sound
         if (isPerfect) {
           gameAudio.playPerfectHit();
         } else {
@@ -91,6 +142,7 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
             : beat
         );
       } else {
+        // Play miss sound and reset combo
         if (combo > 0) {
           gameAudio.playError();
         }
@@ -99,37 +151,6 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
       }
     });
   }, [gameActive, combo, settings.targetZone]);
-
-  const startGame = useCallback(() => {
-    setGameActive(true);
-    setScore(0);
-    setCombo(0);
-    setTimeLeft(30);
-    setBeats([]);
-
-    gameAudio.initialize();
-
-    beatIntervalRef.current = setInterval(() => {
-      const newBeat: Beat = {
-        id: Date.now().toString(),
-        position: 0,
-        hit: false,
-        perfect: false
-      };
-      setBeats(prev => [...prev, newBeat]);
-      gameAudio.playMetronome();
-    }, settings.beatInterval);
-
-    gameTimerRef.current = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          endGame();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  }, [settings.beatInterval, endGame]);
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -142,33 +163,6 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
     document.addEventListener('keydown', handleKeyPress);
     return () => document.removeEventListener('keydown', handleKeyPress);
   }, [hitBeat, gameActive]);
-
-  useEffect(() => {
-    if (gameActive) {
-      const interval = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            endGame();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [gameActive, endGame]);
-
-  useEffect(() => {
-    if (gameActive) {
-      const interval = setInterval(() => {
-        setBeats(prev => prev.map(beat => ({
-          ...beat,
-          position: beat.position + settings.speed
-        })).filter(beat => beat.position < 400));
-      }, 16);
-      return () => clearInterval(interval);
-    }
-  }, [gameActive, settings.speed]);
 
   return (
     <Card className="p-6 bg-gray-900/95 border-purple-500/50 text-white max-w-2xl mx-auto">

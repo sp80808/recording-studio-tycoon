@@ -7,6 +7,11 @@ import { EraAvailableEquipment } from '@/data/eraEquipment';
 import { GameState } from '@/types/game';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { Volume2, Zap, Clock, Target, TrendingUp, Info } from 'lucide-react';
+import { EquipmentSpecsDisplay } from './equipment/EquipmentSpecsDisplay'; // Import the new component
+import { GameBonusesDisplay } from './equipment/GameBonusesDisplay'; // Import the new component
+import { FrequencyResponseChart } from './equipment/FrequencyResponseChart'; // Import the new component
+import { DynamicResponseChart } from './equipment/DynamicResponseChart'; // Import the new component
+import { HarmonicDistortionChart } from './equipment/HarmonicDistortionChart'; // Import the new component
 
 interface EquipmentDetailModalProps {
   equipment: EraAvailableEquipment | null;
@@ -170,173 +175,18 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
               </p>
             </Card>
 
-            <Card className="p-4 bg-gray-800/50 border-gray-600">
-              <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
-                <Target className="h-4 w-4" />
-                Technical Specifications
-              </h3>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                {specs.map((spec, index) => (
-                  <div key={index} className="flex justify-between py-1">
-                    <span className="text-gray-400">{spec.label}:</span>
-                    <span className="text-white font-medium">{spec.value}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
+            <EquipmentSpecsDisplay specs={specs} />
 
-            {/* Game Stats */}
-            <Card className="p-4 bg-gray-800/50 border-gray-600">
-              <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
-                Game Bonuses
-              </h3>
-              <div className="space-y-2 text-sm">
-                {equipment.bonuses.qualityBonus && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Quality Bonus:</span>
-                    <span className="text-green-400">+{equipment.bonuses.qualityBonus}</span>
-                  </div>
-                )}
-                {equipment.bonuses.technicalBonus && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Technical Bonus:</span>
-                    <span className="text-blue-400">+{equipment.bonuses.technicalBonus}</span>
-                  </div>
-                )}
-                {equipment.bonuses.creativityBonus && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Creativity Bonus:</span>
-                    <span className={equipment.bonuses.creativityBonus > 0 ? 'text-purple-400' : 'text-red-400'}>
-                      {equipment.bonuses.creativityBonus > 0 ? '+' : ''}{equipment.bonuses.creativityBonus}
-                    </span>
-                  </div>
-                )}
-                {equipment.bonuses.speedBonus && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Speed Bonus:</span>
-                    <span className="text-yellow-400">+{equipment.bonuses.speedBonus}</span>
-                  </div>
-                )}
-                {equipment.bonuses.genreBonus && Object.keys(equipment.bonuses.genreBonus).length > 0 && (
-                  <div>
-                    <div className="text-gray-400 mb-1">Genre Bonuses:</div>
-                    {Object.entries(equipment.bonuses.genreBonus).map(([genre, bonus]) => (
-                      <div key={genre} className="flex justify-between ml-2">
-                        <span className="text-gray-500 capitalize">{genre}:</span>
-                        <span className="text-green-400">+{bonus}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </Card>
+            <GameBonusesDisplay bonuses={equipment.bonuses} />
           </div>
 
           {/* Right Column - Graphs & Visualizations */}
           <div className="space-y-4">
-            {/* Frequency Response */}
-            <Card className="p-4 bg-gray-800/50 border-gray-600">
-              <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
-                <Volume2 className="h-4 w-4" />
-                Frequency Response
-              </h3>
-              <ResponsiveContainer width="100%" height={150}>
-                <LineChart data={frequencyData}>
-                  <XAxis 
-                    dataKey="frequency" 
-                    scale="log" 
-                    domain={[20, 20000]}
-                    tick={{ fontSize: 10, fill: '#9ca3af' }}
-                  />
-                  <YAxis 
-                    domain={[-6, 6]} 
-                    tick={{ fontSize: 10, fill: '#9ca3af' }}
-                    label={{ value: 'dB', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#9ca3af' } }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="response" 
-                    stroke="#3b82f6" 
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-              <p className="text-xs text-gray-500 mt-1">Flat response = accurate reproduction</p>
-            </Card>
+            <FrequencyResponseChart frequencyData={frequencyData} />
 
-            {/* Dynamic Range Visualization */}
-            <Card className="p-4 bg-gray-800/50 border-gray-600">
-              <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
-                <Zap className="h-4 w-4" />
-                Dynamic Response
-              </h3>
-              <ResponsiveContainer width="100%" height={120}>
-                <AreaChart data={dynamicData}>
-                  <XAxis 
-                    dataKey="time" 
-                    tick={{ fontSize: 10, fill: '#9ca3af' }}
-                  />
-                  <YAxis 
-                    domain={[-40, 0]} 
-                    tick={{ fontSize: 10, fill: '#9ca3af' }}
-                    label={{ value: 'dB', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#9ca3af' } }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="input"
-                    stackId="1"
-                    stroke="#ef4444"
-                    fill="#ef4444"
-                    fillOpacity={0.3}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="output"
-                    stackId="2"
-                    stroke="#10b981"
-                    fill="#10b981"
-                    fillOpacity={0.3}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>🔴 Input</span>
-                <span>🟢 Output</span>
-              </div>
-            </Card>
+            <DynamicResponseChart dynamicData={dynamicData} />
 
-            {/* Harmonic Distortion */}
-            <Card className="p-4 bg-gray-800/50 border-gray-600">
-              <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Harmonic Distortion
-              </h3>
-              <ResponsiveContainer width="100%" height={100}>
-                <LineChart data={harmonicsData}>
-                  <XAxis 
-                    dataKey="harmonic" 
-                    tick={{ fontSize: 10, fill: '#9ca3af' }}
-                  />
-                  <YAxis 
-                    domain={[0, 1]} 
-                    tick={{ fontSize: 10, fill: '#9ca3af' }}
-                    label={{ value: '%', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#9ca3af' } }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="level" 
-                    stroke={equipment.isVintage ? "#f59e0b" : "#06b6d4"} 
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-              <p className="text-xs text-gray-500 mt-1">
-                {equipment.isVintage ? 'Vintage warmth & character' : 'Clean & transparent'}
-              </p>
-            </Card>
+            <HarmonicDistortionChart harmonicsData={harmonicsData} isVintage={equipment.isVintage} />
           </div>
         </div>
 

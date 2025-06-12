@@ -1,5 +1,15 @@
-import { GameState, Project, FocusAllocation, MinigameType, MinigameTrigger } from '@/types/game';
-import { v4 as uuidv4 } from 'uuid';
+
+import { GameState, Project, FocusAllocation } from '@/types/game';
+import { MinigameType } from '@/components/minigames/MinigameManager';
+
+export interface MinigameTrigger {
+  minigameType: MinigameType;
+  triggerReason: string;
+  priority: number; // Higher = more important
+  equipmentRequired?: string[];
+  stageRequired?: string[];
+  focusThreshold?: { type: keyof FocusAllocation; min: number };
+}
 
 export const getTriggeredMinigames = (
   project: Project,
@@ -14,6 +24,7 @@ export const getTriggeredMinigames = (
   const ownedEquipmentIds = gameState.ownedEquipment.map(e => e.id);
   const triggers: MinigameTrigger[] = [];
 
+  // Enhanced trigger logic based on stage types and equipment
   const stageName = currentStage.stageName.toLowerCase();
   const isLastStage = project.currentStageIndex >= project.stages.length - 2;
   const stageProgress = currentStage.workUnitsCompleted / currentStage.workUnitsBase;
@@ -22,11 +33,10 @@ export const getTriggeredMinigames = (
   if (ownedEquipmentIds.some(id => id.includes('mic') && !id.includes('basic')) && 
       (stageName.includes('vocal') || stageName.includes('recording') || project.genre === 'Pop')) {
     triggers.push({
-      id: uuidv4(),
-      type: 'vocal',
+      minigameType: 'vocal',
       triggerReason: 'Vocal recording stage detected - nail that perfect take!',
-      difficulty: 10,
-      rewards: calculateMinigameRewards('vocal', 10)
+      priority: 10,
+      focusThreshold: { type: 'performance', min: 40 }
     });
   }
 
@@ -34,11 +44,10 @@ export const getTriggeredMinigames = (
   if ((focusAllocation.performance >= 60 && (stageName.includes('recording') || stageName.includes('performance'))) ||
       (['Rock', 'Hip-hop'].includes(project.genre) && stageName.includes('recording'))) {
     triggers.push({
-      id: uuidv4(),
-      type: 'rhythm',
+      minigameType: 'rhythm',
       triggerReason: `${project.genre} performance stage - perfect your timing!`,
-      difficulty: 8,
-      rewards: calculateMinigameRewards('rhythm', 8)
+      priority: 8,
+      focusThreshold: { type: 'performance', min: 50 }
     });
   }
 
@@ -46,11 +55,10 @@ export const getTriggeredMinigames = (
   if (stageName.includes('mixing') || stageName.includes('layering') || 
       (focusAllocation.layering >= 50 && stageName.includes('production'))) {
     triggers.push({
-      id: uuidv4(),
-      type: 'mixing',
+      minigameType: 'mixing',
       triggerReason: 'Complex mixing stage - time to balance the tracks!',
-      difficulty: 9,
-      rewards: calculateMinigameRewards('mixing', 9)
+      priority: 9,
+      focusThreshold: { type: 'layering', min: 40 }
     });
   }
 
@@ -58,11 +66,10 @@ export const getTriggeredMinigames = (
   if (ownedEquipmentIds.some(id => id.includes('interface') || id.includes('apogee')) && 
       focusAllocation.soundCapture >= 60) {
     triggers.push({
-      id: uuidv4(),
-      type: 'waveform',
+      minigameType: 'waveform',
       triggerReason: 'Professional interface detected - optimize your sound capture!',
-      difficulty: 9,
-      rewards: calculateMinigameRewards('waveform', 9)
+      priority: 9,
+      focusThreshold: { type: 'soundCapture', min: 60 }
     });
   }
 
@@ -70,11 +77,9 @@ export const getTriggeredMinigames = (
   if (['Hip-hop', 'Electronic'].includes(project.genre) && 
       (stageName.includes('production') || stageName.includes('beat') || stageName.includes('sequencing'))) {
     triggers.push({
-      id: uuidv4(),
-      type: 'beatmaking',
+      minigameType: 'beatmaking',
       triggerReason: `${project.genre} beat production - create some killer rhythms!`,
-      difficulty: 8,
-      rewards: calculateMinigameRewards('beatmaking', 8)
+      priority: 8
     });
   }
 
@@ -82,11 +87,9 @@ export const getTriggeredMinigames = (
   if ((stageName.includes('mastering') || stageName.includes('final') || isLastStage) &&
       ownedEquipmentIds.some(id => id.includes('mastering') || id.includes('ssl') || id.includes('yamaha'))) {
     triggers.push({
-      id: uuidv4(),
-      type: 'mastering',
+      minigameType: 'mastering',
       triggerReason: 'Final mastering stage - polish this track to perfection!',
-      difficulty: 10,
-      rewards: calculateMinigameRewards('mastering', 10)
+      priority: 10
     });
   }
 
@@ -97,11 +100,9 @@ export const getTriggeredMinigames = (
       ownedEquipmentIds.some(id => id.includes('synth') || id.includes('moog')) &&
       (stageName.includes('sound design') || stageName.includes('sequencing'))) {
     triggers.push({
-      id: uuidv4(),
-      type: 'waveform',
+      minigameType: 'waveform',
       triggerReason: 'Electronic synthesis stage - craft unique sounds!',
-      difficulty: 8,
-      rewards: calculateMinigameRewards('waveform', 8)
+      priority: 8
     });
   }
 
@@ -110,11 +111,9 @@ export const getTriggeredMinigames = (
       ownedEquipmentIds.some(id => id.includes('fender') || id.includes('guitar')) &&
       stageName.includes('recording')) {
     triggers.push({
-      id: uuidv4(),
-      type: 'rhythm',
+      minigameType: 'rhythm',
       triggerReason: 'Rock recording with guitar gear - time to rock out!',
-      difficulty: 7,
-      rewards: calculateMinigameRewards('rhythm', 7)
+      priority: 7
     });
   }
 
@@ -122,11 +121,9 @@ export const getTriggeredMinigames = (
   if (project.genre === 'Pop' && 
       (stageName.includes('vocal') || stageName.includes('production'))) {
     triggers.push({
-      id: uuidv4(),
-      type: 'vocal',
+      minigameType: 'vocal',
       triggerReason: 'Pop vocal production - capture that commercial sound!',
-      difficulty: 9,
-      rewards: calculateMinigameRewards('vocal', 9)
+      priority: 9
     });
   }
 
@@ -134,22 +131,19 @@ export const getTriggeredMinigames = (
   if (project.genre === 'Acoustic' && 
       stageName.includes('recording')) {
     triggers.push({
-      id: uuidv4(),
-      type: 'waveform',
+      minigameType: 'waveform',
       triggerReason: 'Acoustic recording - capture every nuance!',
-      difficulty: 7,
-      rewards: calculateMinigameRewards('waveform', 7)
+      priority: 7
     });
   }
 
   // EFFECT CHAIN BUILDING - For production stages with effects processing
   if (stageName.includes('production') || stageName.includes('effects') || stageName.includes('processing')) {
     triggers.push({
-      id: uuidv4(),
-      type: 'effectchain',
+      minigameType: 'effectchain',
       triggerReason: 'Effects processing stage - build the perfect effect chain!',
-      difficulty: 8,
-      rewards: calculateMinigameRewards('effectchain', 8)
+      priority: 8,
+      focusThreshold: { type: 'layering', min: 40 }
     });
   }
 
@@ -158,11 +152,10 @@ export const getTriggeredMinigames = (
       stageName.includes('layering') || stageName.includes('composition') ||
       (focusAllocation.layering >= 60 && stageName.includes('production'))) {
     triggers.push({
-      id: uuidv4(),
-      type: 'layering',
+      minigameType: 'layering',
       triggerReason: 'Arrangement stage detected - layer instruments for the perfect mix!',
-      difficulty: 8,
-      rewards: calculateMinigameRewards('layering', 8)
+      priority: 8,
+      focusThreshold: { type: 'layering', min: 45 }
     });
   }
 
@@ -171,27 +164,24 @@ export const getTriggeredMinigames = (
       (project.genre === 'Rock' && stageName.includes('overdub')) ||
       (project.genre === 'Pop' && stageName.includes('arrangement'))) {
     triggers.push({
-      id: uuidv4(),
-      type: 'layering',
+      minigameType: 'layering',
       triggerReason: `${project.genre} layering challenge - balance the frequencies!`,
-      difficulty: 7,
-      rewards: calculateMinigameRewards('layering', 7)
+      priority: 7,
+      focusThreshold: { type: 'layering', min: 40 }
     });
   }
 
   // High difficulty project fallback
   if (project.difficulty >= 7 && stageProgress >= 0.75 && triggers.length === 0) {
     triggers.push({
-      id: uuidv4(),
-      type: 'mixing',
+      minigameType: 'mixing',
       triggerReason: 'High difficulty project nearing completion - master the complex mix!',
-      difficulty: 6,
-      rewards: calculateMinigameRewards('mixing', 6)
+      priority: 6
     });
   }
 
   // Sort by priority (highest first) and return top 3 to avoid overwhelming
-  return triggers.sort((a, b) => b.difficulty - a.difficulty).slice(0, 3);
+  return triggers.sort((a, b) => b.priority - a.priority).slice(0, 3);
 };
 
 export const shouldAutoTriggerMinigame = (
@@ -199,8 +189,8 @@ export const shouldAutoTriggerMinigame = (
   gameState: GameState,
   focusAllocation: FocusAllocation,
   workCount: number
-): MinigameTrigger | null => { // Simplified return type
-  const triggers = getTriggeredMinigames(project, gameState, focusAllocation); // Directly use getTriggeredMinigames
+): MinigameTrigger | null => {
+  const triggers = getTriggeredMinigames(project, gameState, focusAllocation);
   
   if (triggers.length === 0) return null;
 
@@ -228,7 +218,7 @@ export const shouldAutoTriggerMinigame = (
   }
   
   // IMPROVED: Prevent same minigame type from triggering repeatedly
-  const availableTypes = triggers.filter(trigger => trigger.type !== lastMinigameType);
+  const availableTypes = triggers.filter(trigger => trigger.minigameType !== lastMinigameType);
   const selectedTriggers = availableTypes.length > 0 ? availableTypes : triggers;
   
   // Select a trigger based on variety - not always the highest priority
@@ -242,167 +232,26 @@ export const shouldAutoTriggerMinigame = (
   
   // Enhanced auto-trigger logic with stricter conditions
   // Always trigger on final stages with high-priority minigames (but respect early game limits)
-  if (isLastStage && selectedTrigger.difficulty >= 9 && (!isEarlyGame || lastWorkSession >= 5)) {
+  if (isLastStage && selectedTrigger.priority >= 9 && (!isEarlyGame || lastWorkSession >= 5)) {
     return selectedTrigger;
   }
   
   // Trigger when stage is 85%+ complete (increased threshold)
-  if (stageProgress >= 0.85 && selectedTrigger.difficulty >= 8 && (!isEarlyGame || workCount >= 4)) {
+  if (stageProgress >= 0.85 && selectedTrigger.priority >= 8 && (!isEarlyGame || workCount >= 4)) {
     return selectedTrigger;
   }
   
   // INCREASED intervals to reduce spam - trigger every 4-6 work sessions for high priority minigames
   const highPriorityInterval = isEarlyGame ? 6 : 4;
-  if (selectedTrigger.difficulty >= 9 && workCount % highPriorityInterval === 0 && workCount > 0) {
+  if (selectedTrigger.priority >= 9 && workCount % highPriorityInterval === 0 && workCount > 0) {
     return selectedTrigger;
   }
   
   // Trigger every 6-8 work sessions for medium priority (much increased interval)
   const mediumPriorityInterval = isEarlyGame ? 8 : 6;
-  if (selectedTrigger.difficulty >= 7 && workCount % mediumPriorityInterval === 0 && workCount > 0) {
+  if (selectedTrigger.priority >= 7 && workCount % mediumPriorityInterval === 0 && workCount > 0) {
     return selectedTrigger;
   }
 
   return null;
 };
-
-export interface MinigameResult {
-  success: boolean;
-  score: number;
-  rewards: {
-    type: 'quality' | 'efficiency' | 'reputation' | 'money' | 'creativity' | 'technical';
-    value: number;
-  }[];
-}
-
-export const MINIGAME_TYPES = {
-  MIXING: 'mixing',
-  MASTERING: 'mastering',
-  RECORDING: 'recording',
-  ARRANGEMENT: 'arrangement',
-  VOCAL: 'vocal',
-  RHYTHM: 'rhythm',
-  WAVEFORM: 'waveform',
-  BEATMAKING: 'beatmaking',
-  EFFECTCHAIN: 'effectchain',
-  LAYERING: 'layering',
-} as const;
-
-export const MINIGAME_DIFFICULTY_LEVELS = {
-  EASY: 1,
-  MEDIUM: 2,
-  HARD: 3,
-  EXPERT: 4
-} as const;
-
-export function getMinigameTrigger(type: string, difficulty: number): MinigameTrigger {
-  return {
-    id: uuidv4(),
-    type: type as MinigameType, // Cast to MinigameType
-    difficulty,
-    rewards: calculateMinigameRewards(type, difficulty),
-    triggerReason: `A ${type} challenge at difficulty ${difficulty}!` // Default reason
-  };
-}
-
-export function calculateMinigameRewards(type: string, difficulty: number) {
-  const baseRewards = {
-    [MINIGAME_TYPES.MIXING]: [
-      { type: 'quality' as const, value: 10 },
-      { type: 'efficiency' as const, value: 5 }
-    ],
-    [MINIGAME_TYPES.MASTERING]: [
-      { type: 'quality' as const, value: 15 },
-      { type: 'reputation' as const, value: 5 }
-    ],
-    [MINIGAME_TYPES.RECORDING]: [
-      { type: 'quality' as const, value: 12 },
-      { type: 'efficiency' as const, value: 8 }
-    ],
-    [MINIGAME_TYPES.ARRANGEMENT]: [
-      { type: 'quality' as const, value: 8 },
-      { type: 'reputation' as const, value: 10 }
-    ],
-    [MINIGAME_TYPES.VOCAL]: [
-      { type: 'quality' as const, value: 10 },
-      { type: 'reputation' as const, value: 5 }
-    ],
-    [MINIGAME_TYPES.RHYTHM]: [
-      { type: 'efficiency' as const, value: 10 },
-      { type: 'quality' as const, value: 5 }
-    ],
-    [MINIGAME_TYPES.WAVEFORM]: [
-      { type: 'quality' as const, value: 12 },
-      { type: 'efficiency' as const, value: 3 }
-    ],
-    [MINIGAME_TYPES.BEATMAKING]: [
-      { type: 'quality' as const, value: 8 },
-      { type: 'creativity' as const, value: 5 }
-    ],
-    [MINIGAME_TYPES.EFFECTCHAIN]: [
-      { type: 'quality' as const, value: 15 },
-      { type: 'technical' as const, value: 5 }
-    ],
-    [MINIGAME_TYPES.LAYERING]: [
-      { type: 'quality' as const, value: 10 },
-      { type: 'efficiency' as const, value: 5 }
-    ]
-  };
-
-  const rewards = baseRewards[type as keyof typeof baseRewards] || baseRewards[MINIGAME_TYPES.MIXING];
-  return rewards.map((reward: { type: 'quality' | 'efficiency' | 'reputation' | 'money' | 'creativity' | 'technical'; value: number }) => ({
-    ...reward,
-    value: Math.floor(reward.value * (1 + (difficulty - 1) * 0.25))
-  }));
-}
-
-export function evaluateMinigameResult(
-  minigame: MinigameTrigger,
-  score: number,
-  timeBonus: number
-): MinigameResult {
-  const success = score >= minigame.difficulty * 25;
-  const finalScore = Math.floor(score * (1 + timeBonus));
-  
-  return {
-    success,
-    score: finalScore,
-    rewards: success ? minigame.rewards.map(reward => ({
-      ...reward,
-      value: Math.floor(reward.value * (finalScore / 100))
-    })) : []
-  };
-}
-
-export function applyMinigameRewards(gameState: GameState, result: MinigameResult): void {
-  if (!result.success) return;
-
-  result.rewards.forEach(reward => {
-    switch (reward.type) {
-      case 'quality':
-        if (gameState.activeProject) {
-          const currentStage = gameState.activeProject.stages[gameState.activeProject.currentStageIndex];
-          currentStage.qualityMultiplier *= (1 + reward.value / 100);
-        }
-        break;
-      case 'efficiency':
-        if (gameState.activeProject) {
-          const currentStage = gameState.activeProject.stages[gameState.activeProject.currentStageIndex];
-          currentStage.timeMultiplier *= (1 + reward.value / 100);
-        }
-        break;
-      case 'reputation':
-        gameState.playerData.reputation += reward.value;
-        break;
-      case 'money':
-        gameState.playerData.money += reward.value;
-        break;
-      case 'creativity':
-        gameState.playerData.attributes.creativity += reward.value;
-        break;
-      case 'technical':
-        gameState.playerData.attributes.technical += reward.value;
-        break;
-    }
-  });
-}

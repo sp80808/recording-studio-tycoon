@@ -1,9 +1,19 @@
-import { GameState, StudioSkill, Equipment, PlayerAttributes, Project } from '@/types/game';
 
-export const calculateStudioSkillBonus = (gameState: GameState, skillName: string): number => {
-  const skill = gameState.studioSkills[skillName];
-  if (!skill) return 0;
-  return skill.level * 0.1; // 10% bonus per level
+import { GameState, StudioSkill, Equipment, PlayerAttributes } from '@/types/game';
+
+export const calculateStudioSkillBonus = (skill: StudioSkill, type: 'creativity' | 'technical' | 'quality'): number => {
+  const level = skill.level;
+  
+  switch (type) {
+    case 'creativity':
+      return level * 2; // +2% creativity per level
+    case 'technical':
+      return level * 1.5; // +1.5% technical per level  
+    case 'quality':
+      return level * 1; // +1% quality per level
+    default:
+      return 0;
+  }
 };
 
 export const getEquipmentBonuses = (ownedEquipment: Equipment[], genre?: string) => {
@@ -33,8 +43,37 @@ export const getEquipmentBonuses = (ownedEquipment: Equipment[], genre?: string)
   };
 };
 
-export const canPurchaseEquipment = (gameState: GameState, equipment: Equipment): boolean => {
-  return gameState.playerData.money >= equipment.price;
+export const canPurchaseEquipment = (equipment: Equipment, gameState: GameState): { canPurchase: boolean; reason?: string } => {
+  console.log(`Checking purchase for ${equipment.name}:`);
+  console.log(`- Player money: $${gameState.money}`);
+  console.log(`- Equipment cost: $${equipment.price}`);
+  
+  if (gameState.ownedEquipment.some(e => e.id === equipment.id)) {
+    console.log('- Result: Already owned');
+    return { canPurchase: false, reason: 'Already owned' };
+  }
+
+  if (equipment.skillRequirement) {
+    const skill = gameState.studioSkills[equipment.skillRequirement.skill];
+    console.log(`- Skill requirement: ${equipment.skillRequirement.skill} Level ${equipment.skillRequirement.level}`);
+    console.log(`- Player skill level: ${skill?.level || 0}`);
+    
+    if (!skill || skill.level < equipment.skillRequirement.level) {
+      console.log('- Result: Skill requirement not met');
+      return { 
+        canPurchase: false, 
+        reason: `Requires ${equipment.skillRequirement.skill} Level ${equipment.skillRequirement.level}` 
+      };
+    }
+  }
+  
+  if (gameState.money < equipment.price) {
+    console.log('- Result: Insufficient funds');
+    return { canPurchase: false, reason: 'Insufficient funds' };
+  }
+
+  console.log('- Result: Can purchase');
+  return { canPurchase: true };
 };
 
 export const applyEquipmentEffects = (equipment: Equipment, gameState: GameState): GameState => {
@@ -55,23 +94,23 @@ export const applyEquipmentEffects = (equipment: Equipment, gameState: GameState
         
         // Calculate if level increases
         let newLevel = updatedSkills[genre].level;
-        let newXpToNextLevel = updatedSkills[genre].xpToNextLevel;
+        let newXpToNext = updatedSkills[genre].xpToNext;
         let remainingXp = newXp;
         
-        while (remainingXp >= newXpToNextLevel && newLevel < 10) {
-          remainingXp -= newXpToNextLevel;
+        while (remainingXp >= newXpToNext && newLevel < 10) {
+          remainingXp -= newXpToNext;
           newLevel++;
-          newXpToNextLevel = newLevel * 20; // XP required for next level
+          newXpToNext = newLevel * 20; // XP required for next level
         }
         
         updatedSkills[genre] = {
           ...updatedSkills[genre],
           level: newLevel,
           xp: remainingXp,
-          xpToNextLevel: newXpToNextLevel
+          xpToNext: newXpToNext
         };
         
-        console.log(`- ${genre} skill: Level ${updatedSkills[genre].level}, XP: ${remainingXp}/${newXpToNextLevel}`);
+        console.log(`- ${genre} skill: Level ${updatedSkills[genre].level}, XP: ${remainingXp}/${newXpToNext}`);
       }
     });
     
@@ -115,6 +154,20 @@ export const addNotification = (gameState: GameState, message: string, type: 'in
 
   return {
     ...gameState,
+    chartsData: gameState.chartsData ? {
+      ...gameState.chartsData,
+      discoveredArtists: gameState.chartsData.discoveredArtists || [], // Ensure discoveredArtists is an array
+      contactedArtists: gameState.chartsData.contactedArtists || [],
+      charts: gameState.chartsData.charts || [],
+      marketTrends: gameState.chartsData.marketTrends || [],
+      lastChartUpdate: gameState.chartsData.lastChartUpdate || 0,
+    } : { // Initialize if chartsData is undefined
+      charts: [],
+      contactedArtists: [],
+      marketTrends: [],
+      discoveredArtists: [],
+      lastChartUpdate: 0,
+    },
     notifications: [...gameState.notifications, notification]
   };
 };
@@ -137,47 +190,4 @@ export const spendPerkPoint = (gameState: GameState, attribute: keyof PlayerAttr
       attributes: updatedAttributes
     }
   };
-};
-
-export const calculateProjectQuality = (gameState: GameState, project: Project): number => {
-  let quality = 0;
-  // Base quality from equipment
-  gameState.ownedEquipment.forEach(equipment => {
-    quality += equipment.bonuses.qualityBonus || 0;
-  });
-  // Add staff bonuses (if staff system is implemented)
-  // Example: sum up all staff skills relevant to the project genre
-  // (This is a placeholder; adapt as needed for your staff system)
-  // if (project.assignedStaff) {
-  //   project.assignedStaff.forEach(staffId => {
-  //     const staff = gameState.staff.find(s => s.id === staffId);
-  //     if (staff) {
-  //       quality += (staff.skills[project.genre] || 0) * 0.05; // 5% bonus per skill level in genre
-  //     }
-  //   });
-  // }
-  return Math.min(100, Math.max(0, quality));
-};
-
-export const calculateProjectProgress = (project: Project): number => {
-  const totalStages = project.stages.length;
-  const completedStages = project.stages.filter(stage => stage.isCompleted).length;
-  return (completedStages / totalStages) * 100;
-};
-
-export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: 'GBP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(amount);
-};
-
-export const formatPercentage = (value: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'percent',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(value / 100);
 };

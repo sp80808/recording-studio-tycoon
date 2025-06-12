@@ -2,129 +2,155 @@
 import { Chart, ArtistContact, MarketTrend } from './charts';
 
 export interface PlayerAttributes {
-  creativity: number;
-  technical: number;
-  business: number;
-  charisma: number;
+  focusMastery: number;
   creativeIntuition: number;
   technicalAptitude: number;
+  businessAcumen: number;
 }
 
 export interface PlayerData {
-  level: number;
   xp: number;
-  xpToNextLevel: number;
-  money: number;
-  reputation: number;
+  level: number;
+  xpToNextLevel: number; // Keep one
   perkPoints: number;
   attributes: PlayerAttributes;
-  dailyWorkCapacity: number;
-  lastMinigameType?: string; // Track last completed minigame to prevent repetition
-  playTime: number; // Total play time in milliseconds
+  dailyWorkCapacity: number; // Add back
+  reputation: number;
+  lastMinigameType?: string; 
 }
 
 export interface StudioSkill {
+  name: string;
   level: number;
   xp: number;
-  xpToNextLevel: number;
+  xpToNext: number;
 }
 
-export type StudioSkillName = 'recording' | 'mixing' | 'mastering';
+// Forward declaration for StageEvent if it uses ProjectStage
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface StageEvent {}
+
+export type MinigameType = 'rhythm' | 'mixing' | 'mastering' | 'soundDesign' | 'acousticTreatment' | 'audioRestoration' | 'analogConsole' | 'microphone_placement' | 'mastering_chain' | 'sound_design_synthesis';
 
 export interface ProjectStage {
-  id: string;
-  name: string;
-  type: string;
-  progress: number;
-  isCompleted: boolean;
+  stageName: string;
+  focusAreas: string[];
   workUnitsBase: number;
   workUnitsCompleted: number;
-  workUnitsRequired: number; // Added this line
-  assignedStaff: string[]; // Added for staff assignment
+  completed: boolean;
+  workUnitsRequired?: number;
+  id?: string;
+  specialEvents?: StageEvent[]; 
+  stageBonuses?: { creativity?: number; technical?: number }; 
+  requiredSkills?: Record<string, number>; // Was already there, ensure it stays
+  minigameTriggerId?: MinigameType; 
+  qualityMultiplier?: number; 
+  timeMultiplier?: number; 
+  minigameTriggers?: MinigameTrigger[]; // Added for useProjectManagement
 }
+
+export interface WorkUnit {
+  type: 'creativity' | 'technical';
+  value: number;
+  source: 'player' | 'staff';
+  sourceId?: string;
+  timestamp: number;
+}
+
+// Actual definition for StageEvent
+export interface StageEvent {
+  id: string;
+  type: 'minigame' | 'choice';
+  triggerCondition: (stage: ProjectStage) => boolean; // ProjectStage is now defined
+  active: boolean;
+  description: string;
+  choices?: {
+    text: string;
+    effects: { type: 'quality' | 'efficiency' | 'money' | 'reputation' | 'xp'; value: number }[];
+  }[];
+}
+
+export interface MinigameTrigger {
+  id: string;
+  type: MinigameType; // Use existing MinigameType
+  difficulty?: number; // Make optional as per projectWorkUtils errors
+  rewards: { // Changed to 'rewards' (plural) to match usage in projectWorkUtils.ts
+    type: 'quality' | 'speed' | 'xp' | 'efficiency' | 'reputation'; // Added other potential reward types
+    value: number;
+  }[]; // It's an array of rewards
+  triggerReason?: string; // Optional
+  lastTriggered?: number;
+}
+
 
 export interface Project {
   id: string;
   title: string;
-  currentStage: number;
-  stages: ProjectStage[];
   genre: string;
-  isCompleted?: boolean; // Added
-  endDate?: number;      // Added
-  payoutBase?: number;   // Added
-  repGainBase?: number;  // Added
-  workSessionCount?: number; // Added
-  accumulatedCPoints?: number; // Added
-  accumulatedTPoints?: number; // Added
-  clientType?: string; // Added based on usage in ActiveProject
-  difficulty?: number; // Added based on usage in ActiveProject
-  durationDaysTotal?: number; // Added based on usage in ActiveProject
-  qualityScore?: number;
-  efficiencyScore?: number;
-  [key: string]: unknown;
+  clientType: string;
+  difficulty: number;
+  durationDaysTotal: number;
+  payoutBase: number;
+  repGainBase: number;
+  requiredSkills: Record<string, number>;
+  stages: ProjectStage[];
+  matchRating: 'Poor' | 'Good' | 'Excellent';
+  accumulatedCPoints: number;
+  accumulatedTPoints: number;
+  currentStageIndex: number;
+  completedStages: number[];
+  lastWorkDay?: number; 
+  workSessionCount: number; 
+  associatedBandId?: string;
+  qualityScore?: number; 
+  efficiencyScore?: number; 
+  isCompleted?: boolean; 
+  endDate?: number; 
 }
 
-export interface Staff {
+export interface StaffMember {
   id: string;
   name: string;
-  role: string;
-  experience: number;
-  status: 'idle' | 'working' | 'resting';
-  mood: number;
-  assignedProject?: string;
-  skills: {
-    [key: string]: {
-      level: number;
-      xp: number;
-      xpToNextLevel: number;
-    };
-  };
-  salary: number;
+  role: 'Engineer' | 'Producer' | 'Songwriter';
   primaryStats: {
     creativity: number;
     technical: number;
     speed: number;
   };
-  genreAffinity?: {
-    genre: string;
-    bonus: number;
-  };
-  specialization?: string[]; // Added to match StaffMember for compatibility
-  [key: string]: unknown; // Changed any to unknown
+  xpInRole: number;
+  levelInRole: number;
+  genreAffinity: { genre: string; bonus: number } | null;
+  energy: number;
+  mood: number; 
+  salary: number;
+  status: 'Idle' | 'Working' | 'Resting' | 'Training';
+  assignedProjectId: string | null;
+  trainingEndDay?: number;
+  trainingCourse?: string;
+  skills?: Record<string, StudioSkill>; // Make optional if not all staff have it initially
 }
 
-export interface Band {
-  id: string;
-  name: string;
-  genre: string;
-  popularity: number;
-  members: number;
-  experience: number;
-}
-
-export interface EquipmentBonuses {
-  qualityBonus?: number;
-  technicalBonus?: number;
-  creativityBonus?: number;
-  speedBonus?: number;
-  genreBonus?: {
-    [genre: string]: number;
-  };
-  [key: string]: number | { [genre: string]: number } | undefined;
-}
+export type EquipmentCategory = 'microphone' | 'monitor' | 'interface' | 'outboard' | 'instrument' | 'software' | 'recorder' | 'mixer';
 
 export interface Equipment {
   id: string;
   name: string;
-  category: string; // Renamed from type
-  price: number;    // Renamed from cost
+  category: EquipmentCategory;
+  price: number;
   description: string;
+  bonuses: {
+    genreBonus?: Record<string, number>;
+    qualityBonus?: number;
+    speedBonus?: number;
+    creativityBonus?: number;
+    technicalBonus?: number;
+  };
   icon: string;
   skillRequirement?: {
-    skill: StudioSkillName; // Changed from string
+    skill: string;
     level: number;
   };
-  bonuses: EquipmentBonuses; // Renamed from effects and typed
+  condition?: number; // Add condition to Equipment interface
 }
 
 export interface TrainingCourse {
@@ -148,57 +174,40 @@ export interface TrainingCourse {
   requiredLevel: number;
 }
 
-import { Band as BandImport, SessionMusician, OriginalTrackProject } from './bands';
+import { Band, SessionMusician, OriginalTrackProject } from './bands';
 
 export interface GameState {
-  player: {
-    era: 'analog' | 'digital' | 'internet' | 'streaming';
-    skills: {
-      type: string;
-      level: number;
-    }[];
-  };
-  ownedEquipment: Equipment[];
-  currentProject?: Project;
-  projects: Project[];
+  money: number;
+  currentEra: string; 
+  reputation: number;
   currentDay: number;
+  currentYear: number; 
+  selectedEra: string; 
+  eraStartYear: number; 
+  equipmentMultiplier: number; 
   playerData: PlayerData;
-  studioSkills: {
-    recording: StudioSkill; // Ensure StudioSkill type is used
-    mixing: StudioSkill;    // Ensure StudioSkill type is used
-    mastering: StudioSkill; // Ensure StudioSkill type is used
-  };
-  bands: Band[];
-  activeProject: Project | null;
-  staff: Staff[];
-  currentEra: string; // Current Era ID
-  currentYear: number; // Current year in the game world
-  selectedEra: string; // Era ID that was selected at game start
-  eraStartYear: number; // Year when the current era started
-  equipmentMultiplier: number; // Price multiplier for equipment in this era
+  studioSkills: Record<string, StudioSkill>;
   ownedUpgrades: string[];
+  ownedEquipment: Equipment[];
   availableProjects: Project[];
-  availableCandidates: Staff[];
+  activeProject: Project | null;
+  hiredStaff: StaffMember[];
+  availableCandidates: StaffMember[];
   lastSalaryDay: number;
-  notifications: Notification[];
-  playerBands: BandImport[];
+  notifications: GameNotification[];
+  bands: Band[]; 
+  playerBands: Band[]; 
   availableSessionMusicians: SessionMusician[];
   activeOriginalTrack: OriginalTrackProject | null;
-  // Charts system data
   chartsData?: {
     charts: Chart[];
     contactedArtists: ArtistContact[];
     marketTrends: MarketTrend[];
-    discoveredArtists: ArtistContact[]; // Artists found in charts
-    lastChartUpdate: number; // Day when charts were last updated
+    discoveredArtists: DiscoveredArtist[]; 
+    lastChartUpdate: number; 
   };
-  completedProjects: Project[];
-  studioLevel: number;
-  studioReputation: number;
-  studioSpecialization: string[];
-  studioChallenges: string[];
-  studioAchievements: string[];
-  events: GameEvent[];
+  focusAllocation: FocusAllocation; 
+  completedProjects?: Project[]; 
 }
 
 export interface GameNotification {
@@ -214,184 +223,27 @@ export interface FocusAllocation {
   performance: number;
   soundCapture: number;
   layering: number;
+  reasoning?: string; 
 }
 
-export interface StageTemplate {
-  stageName: string;
-  focusAreas: string[];
-  workUnitsBase: number;
-  requiredSkills?: Record<string, number>;
-  stageBonuses?: Record<string, number>;
-  minigameTriggerId?: string; // Added minigameTriggerId
-  specialEvents?: StageEvent[]; // Added specialEvents
+export interface ProjectReport {
+  projectTitle: string;
+  qualityScore: number;
+  efficiencyScore: number;
+  finalScore: number;
+  payout: number;
+  repGain: number;
+  xpGain: number;
 }
 
-export interface ProjectTemplate {
-  id: string;
-  titlePattern: string;
-  genre: string;
-  clientType: string;
-  difficulty: number;
-  durationDaysTotal: number;
-  payoutBase: number;
-  repGainBase: number;
-  era: string;
-  stages: StageTemplate[];
-}
-
-export interface WorkUnit {
-  type: 'creativity' | 'technical';
-  value: number;
-  source: 'player' | 'staff';
-  sourceId?: string;
-  timestamp: number;
-}
-
-export interface StageEvent {
-  id: string;
-  type: 'milestone' | 'challenge' | 'opportunity';
-  title: string;
-  description: string;
-  choices: {
-    text: string;
-    outcome: string;
-    effects: {
-      type: 'quality' | 'efficiency' | 'reputation' | 'money';
-      value: number;
-    }[];
-  }[];
-  active: boolean;
-  triggerCondition: (stage: ProjectStage) => boolean;
-}
-
-export type MinigameType = 
-  | 'rhythm'
-  | 'mixing'
-  | 'waveform'
-  | 'beatmaking'
-  | 'vocal'
-  | 'mastering'
-  | 'effectchain'
-  | 'acoustic'
-  | 'layering'
-  | 'tape_splicing'
-  | 'four_track_recording'
-  | 'midi_programming'
-  | 'digital_mixing'
-  | 'sample_editing'
-  | 'sound_design'
-  | 'audio_restoration'
-  | 'analog_console'; // Added
-
-export interface MinigameTrigger {
-  type: string;
-  reason: string;
-  priority: 'low' | 'medium' | 'high';
-  id: string; // Added id
-  reward: { // Added reward structure
-    type: 'quality' | 'speed' | 'xp';
-    [key: string]: unknown; // Allow other reward properties
-  };
-  [key: string]: unknown; // Keep for now for other potential dynamic properties
-}
-
-export interface MinigameTriggerDefinition {
-  minigameType: MinigameType;
-  triggerReason: string;
-  priority: number;
-  era: 'analog' | 'digital' | 'internet' | 'streaming';
-  equipmentRequired?: string[];
-  stageRequired?: string[];
-  focusThreshold?: { type: keyof FocusAllocation; min: number };
-  skillRequired?: { type: string; level: number };
-}
-
-export interface BaseMinigameProps {
-  type: MinigameType;
-  difficulty: number;
-  onComplete: (score: number) => void;
-  onFail: () => void;
-  onClose: () => void;
-  title?: string;
-  description?: string;
-  children?: React.ReactNode;
-}
-
-export interface MinigameManagerProps {
-  isOpen: boolean;
-  gameType: MinigameType;
-  onReward: (creativityBonus: number, technicalBonus: number, xpBonus: number) => void;
-  onClose: () => void;
-}
-
-export interface Notification {
-  id: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  timestamp: number;
-  duration: number;
-}
-
-export interface StaffMember {
+export interface DiscoveredArtist {
   id: string;
   name: string;
-  skills: { // Changed to match Staff.skills structure
-    [key: string]: {
-      level: number;
-      xp: number;
-      xpToNextLevel: number;
-    };
+  priceRange?: {
+    min: number;
+    max: number;
   };
-  salary: number;
-  specialization?: string[]; // Made optional to match Staff interface
-}
-
-export interface MinigameReward {
-  type: 'experience' | 'money' | 'reputation' | 'skill' | 'equipment';
-  amount: number;
-  description: string;
-  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
-}
-
-export interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  type: 'production' | 'business' | 'special';
-  requirements: {
-    type: string;
-    value: number;
-  }[];
-  rewards: MinigameReward[];
-  unlocked: boolean;
-  progress: number;
-}
-
-export interface PlayerProgress {
-  level: number;
-  experience: number;
-  skills: {
-    technical: number;
-    creative: number;
-    business: number;
-  };
-  achievements: Achievement[];
-  unlockedFeatures: string[];
-  reputation: {
-    local: number;
-    regional: number;
-    national: number;
-    global: number;
-  };
-}
-
-export interface GameEvent {
-  type: string;
-  data: Record<string, unknown>;
-  timestamp: number;
-}
-
-export interface GameAction {
-  type: string;
-  payload: Record<string, unknown>;
+  demandLevel?: number;
+  genre?: string; // Assuming MusicGenre from './charts' could be used here too
+  popularity?: number;
 }

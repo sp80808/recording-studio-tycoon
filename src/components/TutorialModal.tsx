@@ -12,11 +12,8 @@ interface TutorialStep {
   position?: 'top' | 'bottom' | 'left' | 'right';
 }
 
-const tutorialSteps: TutorialStep[] = [
-  {
-    title: "Welcome to Recording Studio Tycoon! 🎵",
-    content: "Build your music empire from a small home studio to a professional recording complex. Complete projects, upgrade equipment, and become the ultimate music mogul!",
-  },
+// Renamed to baseTutorialSteps and removed the first generic welcome step
+const baseTutorialSteps: TutorialStep[] = [
   {
     title: "Your First Project 📝",
     content: "Start by taking on simple recording projects. Each project has multiple stages: Recording, Mixing, Mastering, and more. Complete minigames to earn XP and money!",
@@ -47,20 +44,91 @@ const tutorialSteps: TutorialStep[] = [
   }
 ];
 
+const getTutorialStepsForEra = (eraId: string): TutorialStep[] => {
+  let eraSpecificIntro: TutorialStep;
+  
+  console.log('Tutorial: Getting steps for era ID:', eraId);
+  
+  switch (eraId) {
+    case 'classic_rock':
+      eraSpecificIntro = {
+        title: "Welcome to the Rock Revolution! 🎸 (1960s-1970s)",
+        content: "The world of music is buzzing with analog warmth! Start your journey with 4-track recorders and build your studio from the ground up. Vinyl is king!",
+      };
+      break;
+    case 'golden_age':
+      eraSpecificIntro = {
+        title: "The Golden Age Arrives! 📺 (1980s-1990s)",
+        content: "Digital technology is revolutionizing music! Embrace MIDI, early samplers, and the rise of CDs. MTV will make or break artists!",
+      };
+      break;
+    case 'digital_age':
+      eraSpecificIntro = {
+        title: "Ride the Digital Wave! 💿 (2000s-2010s)",
+        content: "The internet changes everything! DAWs become powerful, file sharing is rampant, and digital distribution opens new doors. Can you adapt?",
+      };
+      break;
+    case 'modern':
+      eraSpecificIntro = {
+        title: "Conquer the Modern Era! 📱 (2020s+)",
+        content: "Streaming platforms rule the music world! Master AI tools, leverage social media, and navigate the fast-paced landscape of modern music production.",
+      };
+      break;
+    // Legacy era IDs for backward compatibility
+    case 'analog60s':
+      eraSpecificIntro = {
+        title: "Welcome to the Analog Age! 🎵 (1960s-1970s)",
+        content: "The world of music is buzzing with analog warmth! You'll be working with 4-track tape machines, analog mixing consoles, and aiming for vinyl releases. Radio promotion is key, and record labels hold significant power. Focus on genres like Rock, Folk, and Soul.",
+      };
+      break;
+    case 'digital80s':
+      eraSpecificIntro = {
+        title: "The Digital Dawn Arrives! 💾 (1980s-1990s)",
+        content: "Digital technology is here! Explore MIDI sequencing, early digital recorders (ADAT, DAT), and CD production. Music videos on MTV are crucial for marketing. New genres like Synth-pop and Hip-hop are emerging. Independent labels are gaining traction.",
+      };
+      break;
+    case 'internet2000s':
+      eraSpecificIntro = {
+        title: "Ride the Internet Wave! 💻 (2000s-2010s)",
+        content: "The internet has disrupted everything. Pro Tools and computer-based recording are standard. MP3s and digital distribution (like iTunes) are the new norm, but piracy is a concern. Social media and YouTube are becoming vital for promotion. Home studios are on the rise.",
+      };
+      break;
+    case 'streaming2020s':
+      eraSpecificIntro = {
+        title: "Conquer the Streaming Era! 🎧 (2020s+)",
+        content: "Streaming platforms (like Spotify) dominate music consumption. Algorithmic promotion and playlist placements are critical for discovery. AI-assisted production tools are available, and global collaboration is easier than ever. Short-form video content on platforms like TikTok can make a track viral.",
+      };
+      break;
+    default: // Fallback to a generic welcome if eraId is unknown
+      eraSpecificIntro = {
+        title: "Welcome to Recording Studio Tycoon! 🎵",
+        content: "Build your music empire from a small home studio to a professional recording complex. Complete projects, upgrade equipment, and become the ultimate music mogul!",
+      };
+      console.warn('Tutorial: Unknown era ID:', eraId, 'Using default welcome message.');
+  }
+  return [eraSpecificIntro, ...baseTutorialSteps];
+};
+
+
 interface TutorialModalProps {
   isOpen: boolean;
   onComplete: () => void;
+  eraId: string; // Added eraId prop
 }
 
-export const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onComplete }) => {
+export const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onComplete, eraId }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const { updateSettings } = useSettings();
+  const [tutorialSteps, setTutorialSteps] = useState<TutorialStep[]>(getTutorialStepsForEra(eraId));
 
   useEffect(() => {
     if (isOpen) {
       gameAudio.initialize();
+      // Update tutorial steps if eraId changes while modal is open (or for initial setup)
+      setTutorialSteps(getTutorialStepsForEra(eraId));
+      setCurrentStep(0); // Reset to first step if era changes
     }
-  }, [isOpen]);
+  }, [isOpen, eraId]);
 
   if (!isOpen) return null;
 
@@ -94,6 +162,19 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onComplete
   };
 
   const step = tutorialSteps[currentStep];
+  
+  // Ensure step is not undefined if tutorialSteps is empty or currentStep is out of bounds
+  if (!step) {
+    // This case should ideally not be reached if tutorialSteps are always populated
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+        <Card className="w-full max-w-2xl bg-gray-900 border-purple-500 p-8 m-4 relative">
+          <div className="text-center text-white">Error: Tutorial step not found.</div>
+          <Button onClick={handleComplete}>Close</Button>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">

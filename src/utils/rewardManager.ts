@@ -1,6 +1,6 @@
-import { MinigameReward, Achievement, PlayerProgress } from '@/types/game';
+import { MinigameReward, Achievement, PlayerProgress, RewardRarity } from '@/types/game';
 
-const REWARD_MULTIPLIERS = {
+const REWARD_MULTIPLIERS: Record<RewardRarity, number> = {
   common: 1,
   uncommon: 1.5,
   rare: 2,
@@ -16,11 +16,11 @@ export const calculateMinigameRewards = (
   const baseReward = score * difficulty;
   const rewards: MinigameReward[] = [];
 
-  // Experience reward (always given)
+  // XP reward (always given)
   rewards.push({
-    type: 'experience',
+    type: 'xp',
     amount: Math.floor(baseReward * 10),
-    description: 'Experience gained from minigame',
+    description: 'XP gained from minigame',
     rarity: 'common'
   });
 
@@ -103,10 +103,10 @@ export const applyRewards = (
     const multiplier = REWARD_MULTIPLIERS[reward.rarity];
 
     switch (reward.type) {
-      case 'experience':
-        newProgress.experience += reward.amount * multiplier;
+      case 'xp':
+        newProgress.xp += reward.amount * multiplier;
         // Level up check
-        while (newProgress.experience >= getRequiredExperience(newProgress.level)) {
+        while (newProgress.xp >= getRequiredXP(newProgress.level)) {
           newProgress.level++;
         }
         break;
@@ -143,7 +143,7 @@ export const applyRewards = (
   return newProgress;
 };
 
-const getRequiredExperience = (level: number): number => {
+const getRequiredXP = (level: number): number => {
   return Math.floor(100 * Math.pow(1.5, level - 1));
 };
 
@@ -165,7 +165,7 @@ export const checkAchievements = (
         { type: 'score', value: 100 }
       ],
       rewards: [{
-        type: 'experience',
+        type: 'xp',
         amount: 1000,
         description: 'Perfect score bonus',
         rarity: 'legendary'

@@ -1,19 +1,18 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { GameState } from '@/types/game';
 import { getAvailableEquipmentForYear, getEraAdjustedPrice, EraAvailableEquipment } from '@/data/eraEquipment';
-import { formatCurrency } from '@/utils/gameUtils';
-import { toast } from '@/hooks/use-toast';
 
 interface EquipmentListProps {
-  gameState: GameState;
   purchaseEquipment: (equipmentId: string) => void;
+  gameState: GameState;
 }
 
 export const EquipmentList: React.FC<EquipmentListProps> = ({
-  gameState,
-  purchaseEquipment
+  purchaseEquipment,
+  gameState
 }) => {
   // Get equipment available for current era/year
   const availableEquipment = getAvailableEquipmentForYear(gameState.currentYear || 2024);
@@ -54,24 +53,6 @@ export const EquipmentList: React.FC<EquipmentListProps> = ({
     return priceA - priceB;
   });
 
-  const handlePurchase = (equipment: EraAvailableEquipment) => {
-    const price = getAdjustedPrice(equipment);
-    if (gameState.playerData.money >= price) {
-      purchaseEquipment(equipment.id);
-      toast({
-        title: "Equipment Purchased",
-        description: `Successfully purchased ${equipment.name} for ${formatCurrency(price)}`,
-        variant: "default"
-      });
-    } else {
-      toast({
-        title: "Cannot Afford",
-        description: `You need ${formatCurrency(price - gameState.playerData.money)} more to purchase ${equipment.name}`,
-        variant: "destructive"
-      });
-    }
-  };
-
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
@@ -90,7 +71,7 @@ export const EquipmentList: React.FC<EquipmentListProps> = ({
         <div className="flex-1 overflow-y-auto space-y-2">
           {sortedEquipment.map((equipment) => {
             const adjustedPrice = getAdjustedPrice(equipment);
-            const canAfford = gameState.playerData.money >= adjustedPrice;
+            const canAfford = gameState.money >= adjustedPrice;
             const isVintage = equipment.isVintage && (gameState.currentYear || 2024) > (equipment.availableUntil || equipment.availableFrom + 20);
             
             return (
@@ -118,26 +99,7 @@ export const EquipmentList: React.FC<EquipmentListProps> = ({
                         )}
                         {equipment.historicalPrice && isVintage && (
                           <div className="text-xs text-yellow-400 mt-1">
-                            💰 Originally {formatCurrency(equipment.historicalPrice)}
-                          </div>
-                        )}
-                        {equipment.bonuses && (
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            {equipment.bonuses.qualityBonus && (
-                              <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">
-                                +{equipment.bonuses.qualityBonus}% Quality
-                              </span>
-                            )}
-                            {equipment.bonuses.creativityBonus && (
-                              <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded">
-                                +{equipment.bonuses.creativityBonus}% Creativity
-                              </span>
-                            )}
-                            {equipment.bonuses.technicalBonus && (
-                              <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded">
-                                +{equipment.bonuses.technicalBonus}% Technical
-                              </span>
-                            )}
+                            💰 Originally ${equipment.historicalPrice} 
                           </div>
                         )}
                       </div>
@@ -145,11 +107,11 @@ export const EquipmentList: React.FC<EquipmentListProps> = ({
                   </div>
                   <div className="text-right">
                     <div className={`font-bold text-sm ${canAfford ? 'text-green-400' : 'text-red-400'}`}>
-                      {formatCurrency(adjustedPrice)}
+                      ${adjustedPrice.toLocaleString()}
                     </div>
                     <Button
                       size="sm"
-                      onClick={() => handlePurchase(equipment)}
+                      onClick={() => purchaseEquipment(equipment.id)}
                       disabled={!canAfford}
                       className="mt-1 text-xs"
                     >

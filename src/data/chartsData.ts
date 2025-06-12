@@ -25,7 +25,7 @@ const songTitles = [
   'Velvet Touch', 'Golden Light', 'Infinite Sky', 'Sound of Freedom'
 ];
 
-const genres: MusicGenre[] = ['rock', 'pop', 'hip-hop', 'electronic', 'country', 'alternative', 'r&b'];
+const genres: MusicGenre[] = ['rock', 'pop', 'hip-hop', 'electronic', 'country', 'alternative', 'r&b', 'jazz', 'classical', 'folk', 'acoustic'];
 
 // Generate a random artist
 const generateArtist = (id: string, genre: MusicGenre): Artist => {
@@ -47,7 +47,9 @@ const generateArtist = (id: string, genre: MusicGenre): Artist => {
     },
     specialties: [genre],
     socialMediaFollowers: popularity * 10000,
-    description: 'A talented musician in the ' + genre + ' genre.'
+    description: 'A talented musician in the ' + genre + ' genre.',
+    availability: { status: 'available', responseTime: Math.floor(Math.random() * 5) + 1 },
+    mood: Math.floor(Math.random() * 50) + 50 // 50-100 mood
   };
 };
 
@@ -78,12 +80,11 @@ const generateChartEntries = (count: number, chartGenre?: MusicGenre): ChartEntr
     const song = generateSong(`song_${i}`, artist);
     
     // Generate realistic chart movement
-    const previousPosition = i + 1 + Math.floor(Math.random() * 10) - 5; // Some variation
-    const positionChange = (previousPosition > 0 ? previousPosition : i + 1) - (i + 1);
+    const positionChange = (Math.floor(Math.random() * 10) - 5); // Some variation
     
     let movement: 'up' | 'down' | 'new' | 'steady' = 'steady';
-    if (positionChange > 2) movement = 'up';
-    else if (positionChange < -2) movement = 'down';
+    if (positionChange > 0) movement = 'up';
+    else if (positionChange < 0) movement = 'down';
     else if (i > count * 0.8) movement = 'new'; // New entries typically at bottom
     
     entries.push({
@@ -93,7 +94,7 @@ const generateChartEntries = (count: number, chartGenre?: MusicGenre): ChartEntr
       positionChange,
       weeksOnChart: Math.floor(Math.random() * 20) + 1,
       peakPosition: Math.floor(Math.random() * (i + 1)) + 1,
-      lastWeekPosition: previousPosition > 0 ? previousPosition : undefined
+      lastWeekPosition: (i + 1) - positionChange > 0 ? (i + 1) - positionChange : undefined
     });
   }
   
@@ -116,7 +117,8 @@ export const generateCharts = (playerLevel: number, currentEra: string): Chart[]
     updateFrequency: 7, // Weekly updates
     influence: 100,
     region: 'national',
-    minLevelToAccess: 1
+    minLevelToAccess: 1,
+    lastChartUpdate: Date.now()
   });
 
   // Local Charts (available from level 1)
@@ -128,7 +130,8 @@ export const generateCharts = (playerLevel: number, currentEra: string): Chart[]
     updateFrequency: 7,
     influence: 30,
     region: 'local',
-    minLevelToAccess: 1
+    minLevelToAccess: 1,
+    lastChartUpdate: Date.now()
   });
 
   // Genre-specific charts (unlock as player progresses)
@@ -142,7 +145,8 @@ export const generateCharts = (playerLevel: number, currentEra: string): Chart[]
       updateFrequency: 7,
       influence: 70,
       region: 'national',
-      minLevelToAccess: 3
+      minLevelToAccess: 3,
+      lastChartUpdate: Date.now()
     });
   }
 
@@ -156,7 +160,8 @@ export const generateCharts = (playerLevel: number, currentEra: string): Chart[]
       updateFrequency: 7,
       influence: 80,
       region: 'national',
-      minLevelToAccess: 4
+      minLevelToAccess: 4,
+      lastChartUpdate: Date.now()
     });
   }
 
@@ -170,7 +175,8 @@ export const generateCharts = (playerLevel: number, currentEra: string): Chart[]
       updateFrequency: 7,
       influence: 75,
       region: 'national',
-      minLevelToAccess: 5
+      minLevelToAccess: 5,
+      lastChartUpdate: Date.now()
     });
   }
 
@@ -184,12 +190,60 @@ export const generateCharts = (playerLevel: number, currentEra: string): Chart[]
       updateFrequency: 7,
       influence: 60,
       region: 'national',
-      minLevelToAccess: 6
+      minLevelToAccess: 6,
+      lastChartUpdate: Date.now()
+    });
+  }
+
+  // New charts for additional genres
+  if (playerLevel >= 7 && availableGenres.includes('jazz')) {
+    charts.push({
+      id: 'jazz',
+      name: 'Jazz Fusion Top 20',
+      description: 'The best in contemporary and classic jazz fusion.',
+      entries: generateChartEntries(20, 'jazz'),
+      genre: 'jazz',
+      updateFrequency: 7,
+      influence: 55,
+      region: 'national',
+      minLevelToAccess: 7,
+      lastChartUpdate: Date.now()
+    });
+  }
+
+  if (playerLevel >= 8 && availableGenres.includes('classical')) {
+    charts.push({
+      id: 'classical',
+      name: 'Classical Crossover',
+      description: 'Orchestral and classical pieces with a modern twist.',
+      entries: generateChartEntries(15, 'classical'),
+      genre: 'classical',
+      updateFrequency: 7,
+      influence: 40,
+      region: 'national',
+      minLevelToAccess: 8,
+      lastChartUpdate: Date.now()
+    });
+  }
+
+  if (playerLevel >= 2 && availableGenres.includes('acoustic')) {
+    charts.push({
+      id: 'acoustic',
+      name: 'Acoustic & Folk Hits',
+      description: 'Unplugged and heartfelt tracks.',
+      entries: generateChartEntries(20, 'acoustic'),
+      genre: 'acoustic',
+      updateFrequency: 7,
+      influence: 65,
+      region: 'national',
+      minLevelToAccess: 2,
+      lastChartUpdate: Date.now()
     });
   }
 
   return charts;
 };
+
 // Generate market trends
 export const generateMarketTrends = (): MarketTrend[] => {
   return genres.map(genre => {
@@ -208,6 +262,30 @@ export const generateMarketTrends = (): MarketTrend[] => {
       ]
     };
   });
+};
+
+// Function to update chart positions (simplified for now)
+export const updateCharts = (currentCharts: Chart[], playerLevel: number, currentEra: string): Chart[] => {
+  return currentCharts.map(chart => {
+    const newEntries = generateChartEntries(chart.entries.length, chart.genre);
+    return {
+      ...chart,
+      entries: newEntries,
+      lastChartUpdate: Date.now() // Update timestamp
+    };
+  });
+};
+
+// Function to get a random chart entry for contact opportunities
+export const getRandomChartEntry = (charts: Chart[], playerLevel: number): ChartEntry | undefined => {
+  const eligibleCharts = charts.filter(chart => playerLevel >= chart.minLevelToAccess);
+  if (eligibleCharts.length === 0) return undefined;
+
+  const randomChart = eligibleCharts[Math.floor(Math.random() * eligibleCharts.length)];
+  const eligibleEntries = randomChart.entries.filter(entry => isArtistContactable(entry, playerLevel, 50)); // Assuming player reputation of 50 for now
+  
+  if (eligibleEntries.length === 0) return undefined;
+  return eligibleEntries[Math.floor(Math.random() * eligibleEntries.length)];
 };
 
 // Calculate contact cost for an artist based on chart position and player reputation

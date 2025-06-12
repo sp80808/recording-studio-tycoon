@@ -1,84 +1,69 @@
 import { useState, useEffect, useCallback } from 'react';
-import { GameState, PlayerData } from '@/types/game';
-import { saveGame, loadGame, setupAutoSave } from '@/utils/saveLoadUtils';
+import { GameState, PlayerData, FocusAllocation, StudioSkill, Project } from '@/types/game';
+import { saveGame, loadGame, startAutoSave, stopAutoSave } from '@/utils/saveLoadUtils';
 import { generateNewProjects } from '@/utils/projectUtils';
 
+// Declare window interface
+declare global {
+  interface Window {
+    gameState: GameState;
+  }
+}
+
+const INITIAL_PLAYER_ATTRIBUTES: PlayerData['attributes'] = {
+  focusMastery: 1, 
+  creativeIntuition: 1,
+  technicalAptitude: 1,
+  businessAcumen: 1,
+};
+
 const INITIAL_PLAYER_DATA: PlayerData = {
-  money: 10000,
-  reputation: 0,
   level: 1,
   xp: 0,
   xpToNextLevel: 100,
   perkPoints: 0,
-  attributes: {
-    creativity: 1,
-    technical: 1,
-    business: 1,
-    charisma: 1, // Added
-    creativeIntuition: 1, // Added
-    technicalAptitude: 1, // Added
-  },
-  dailyWorkCapacity: 100
+  attributes: INITIAL_PLAYER_ATTRIBUTES,
+  dailyWorkCapacity: 100,
+  reputation: 0, 
+  // lastMinigameType is optional
+};
+
+const INITIAL_STUDIO_SKILLS: Record<string, StudioSkill> = {
+  recording: { name: 'Recording', level: 1, xp: 0, xpToNext: 100 },
+  mixing: { name: 'Mixing', level: 1, xp: 0, xpToNext: 100 },
+  mastering: { name: 'Mastering', level: 1, xp: 0, xpToNext: 100 },
+};
+
+const INITIAL_FOCUS_ALLOCATION: FocusAllocation = {
+  performance: 33,
+  soundCapture: 34,
+  layering: 33,
+  reasoning: "Initial default distribution."
 };
 
 const INITIAL_GAME_STATE: GameState = {
-  // Properties from PlayerData (already part of INITIAL_PLAYER_DATA)
+  money: 10000,
+  reputation: 0, // Overall game reputation, distinct from player's personal reputation in PlayerData
   playerData: INITIAL_PLAYER_DATA,
-
-  // Core game state
   currentDay: 1,
-  
-  // Player skills and progression (simplified for initial state)
-  player: {
-    era: 'streaming', // Changed from 'modern' to 'streaming'
-    skills: [
-      { type: 'recording', level: 1 },
-      { type: 'mixing', level: 1 },
-      { type: 'mastering', level: 1 },
-    ],
-  },
-  studioSkills: {
-    recording: { level: 1, xp: 0, xpToNextLevel: 100 },
-    mixing: { level: 1, xp: 0, xpToNextLevel: 100 },
-    mastering: { level: 1, xp: 0, xpToNextLevel: 100 },
-  },
-
-  // Studio assets
+  studioSkills: INITIAL_STUDIO_SKILLS,
   ownedEquipment: [],
   ownedUpgrades: [],
-  studioLevel: 1,
-  studioReputation: 0,
-  studioSpecialization: [],
-  studioChallenges: [],
-  studioAchievements: [],
-
-  // Projects and Bands
-  projects: [],
   availableProjects: [],
   activeProject: null,
-  completedProjects: [],
+  hiredStaff: [],
+  availableCandidates: [],
+  lastSalaryDay: 0,
+  currentEra: 'modern', 
+  currentYear: 2024, 
+  selectedEra: 'modern', 
+  eraStartYear: 2024, 
+  equipmentMultiplier: 1.0, 
+  notifications: [],
   bands: [],
   playerBands: [],
   availableSessionMusicians: [],
   activeOriginalTrack: null,
-
-  // Staff
-  staff: [],
-  availableCandidates: [],
-  lastSalaryDay: 0,
-
-  // Era and Time
-  currentEra: 'modern', // Default to modern era ID
-  currentYear: 2024, // Default start year for modern era
-  selectedEra: 'modern', // Default selected era
-  eraStartYear: 2024, // Default era start year
-  equipmentMultiplier: 1.0, // Default multiplier
-
-  // Notifications and Events
-  notifications: [],
-  events: [],
-
-  // Charts System (optional, initialize as undefined or empty)
   chartsData: {
     charts: [],
     contactedArtists: [],
@@ -86,19 +71,41 @@ const INITIAL_GAME_STATE: GameState = {
     discoveredArtists: [],
     lastChartUpdate: 0,
   },
+  focusAllocation: INITIAL_FOCUS_ALLOCATION,
 };
 
 export function useGameState() {
   const [gameState, setGameState] = useState<GameState>(() => {
-    const savedState = loadGame();
-    return savedState || INITIAL_GAME_STATE;
+    const savedGame = loadGame();
+    if (savedGame) {
+        if (!savedGame.focusAllocation) {
+            savedGame.focusAllocation = INITIAL_FOCUS_ALLOCATION;
+        }
+        // Ensure all parts of PlayerData are present, especially attributes
+        if (!savedGame.playerData || !savedGame.playerData.attributes) {
+            savedGame.playerData = {
+                ...INITIAL_PLAYER_DATA, // Start with defaults
+                ...(savedGame.playerData || {}), // Overlay saved player data
+                attributes: savedGame.playerData?.attributes || INITIAL_PLAYER_ATTRIBUTES, // Ensure attributes
+            };
+        }
+        return savedGame;
+    }
+    return INITIAL_GAME_STATE;
   });
 
-  // Setup autosave
   useEffect(() => {
-    const cleanup = setupAutoSave(gameState);
-    return cleanup;
+    if (typeof window !== 'undefined') {
+      window.gameState = gameState;
+    }
   }, [gameState]);
+
+  useEffect(() => {
+    startAutoSave(); 
+    return () => {
+      stopAutoSave();
+    };
+  }, []);
 
   const updateGameState = useCallback((updater: (prevState: GameState) => GameState) => {
     setGameState(prevState => {
@@ -108,6 +115,13 @@ export function useGameState() {
     });
   }, []);
 
+  const setFocusAllocation = useCallback((newFocus: FocusAllocation) => {
+    updateGameState(prevState => ({
+      ...prevState,
+      focusAllocation: newFocus,
+    }));
+  }, [updateGameState]);
+
   const startNewGame = useCallback(() => {
     setGameState(INITIAL_GAME_STATE);
     saveGame(INITIAL_GAME_STATE);
@@ -115,81 +129,100 @@ export function useGameState() {
 
   const advanceDay = useCallback(() => {
     updateGameState(prevState => {
-      const newState = { ...prevState, currentDay: prevState.currentDay + 1 };
+      let newState = { ...prevState, currentDay: prevState.currentDay + 1 };
       
-      // Generate new projects if needed
-      if (newState.projects.length < 3) {
-        const newProjects = generateNewProjects(newState);
-        newState.projects = [...newState.projects, ...newProjects];
+      if (newState.availableProjects.length < 5) { // Check availableProjects
+        // Correctly call generateNewProjects with count, playerLevel, and currentEra
+        const projectsToGenerate = 5 - newState.availableProjects.length;
+        const newProjects = generateNewProjects(projectsToGenerate, newState.playerData.level, newState.currentEra);
+        newState.availableProjects = [...newState.availableProjects, ...newProjects];
       }
 
-      // Update active project if exists
-      const project = newState.activeProject; // Use 'project' to match error messages
-      if (project) { 
-        // At this point, 'project' should be of type 'Project', not 'Project | null'
-        const currentStageData = project.stages[project.currentStage];
-        
-        // Check if stage is completed
+      if (newState.activeProject) {
+        const activeProjectCopy = { ...newState.activeProject };
+        const currentStageData = activeProjectCopy.stages[activeProjectCopy.currentStageIndex];
+
         if (currentStageData.workUnitsCompleted >= currentStageData.workUnitsBase) {
-          if (project.currentStage < project.stages.length - 1) {
-            // Move to next stage
-            project.currentStage++; // This would be around line 179
+          if (activeProjectCopy.currentStageIndex < activeProjectCopy.stages.length - 1) {
+            newState.activeProject = { 
+              ...activeProjectCopy, 
+              currentStageIndex: activeProjectCopy.currentStageIndex + 1 
+            };
           } else {
-            // Complete project
-            project.isCompleted = true;
-            project.endDate = newState.currentDay;
+            const completedProjectUpdate: Partial<Project> = { 
+              // Mark stages as completed
+              stages: activeProjectCopy.stages.map(s => ({...s, completed: true}))
+            };
+            const completedProject = { ...activeProjectCopy, ...completedProjectUpdate };
             
-            // Award rewards
-            if (project.payoutBase) {
-              newState.playerData.money += project.payoutBase;
-            }
-            if (project.repGainBase) {
-              newState.playerData.reputation += project.repGainBase;
-            }
+            const newPlayerData = { ...newState.playerData };
+            newState.money += completedProject.payoutBase; // GameState money
+            newPlayerData.reputation += completedProject.repGainBase; // PlayerData reputation
             
-            // Clear active project on newState
-            newState.activeProject = null;
+            newState = {
+              ...newState,
+              playerData: newPlayerData,
+              // Consider adding to a completedProjects array if it existed on GameState
+              // availableProjects: [...newState.availableProjects, completedProject], // Or move to a different list
+              activeProject: null,
+            };
           }
         }
       }
-
       return newState;
     });
   }, [updateGameState]);
 
   const startProject = useCallback((projectId: string) => {
     updateGameState(prevState => {
-      const project = prevState.projects.find(p => p.id === projectId);
-      if (!project) return prevState;
+      const projectToStart = prevState.availableProjects.find(p => p.id === projectId);
+      if (!projectToStart) return prevState;
 
       return {
         ...prevState,
-        activeProject: project,
-        projects: prevState.projects.filter(p => p.id !== projectId)
+        activeProject: projectToStart,
+        availableProjects: prevState.availableProjects.filter(p => p.id !== projectId)
       };
     });
   }, [updateGameState]);
 
-  const addWorkToProject = useCallback((workType: 'creativity' | 'technical', value: number) => {
+  const addWorkToProject = useCallback((value: number) => {
     updateGameState(prevState => {
-      if (!prevState.activeProject) return prevState;
+      if (!prevState.activeProject) {
+        return prevState;
+      }
+      const activeProjectCopy = { ...prevState.activeProject };
+      const currentStageIndex = activeProjectCopy.currentStageIndex;
+      
+      const updatedStages = activeProjectCopy.stages.map((stage, index) => {
+        if (index === currentStageIndex) {
+          return {
+            ...stage,
+            workUnitsCompleted: stage.workUnitsCompleted + value,
+          };
+        }
+        return stage;
+      });
 
-      const newState = { ...prevState };
-      const project = newState.activeProject;
-      const currentStage = project.stages[project.currentStage];
-      
-      currentStage.workUnitsCompleted += value;
-      
-      return newState;
+      return {
+        ...prevState,
+        activeProject: {
+          ...activeProjectCopy,
+          stages: updatedStages,
+        },
+      };
     });
   }, [updateGameState]);
 
   return {
     gameState,
-    updateGameState,
+    focusAllocation: gameState.focusAllocation, // Expose focusAllocation directly
+    setFocusAllocation, // Expose specific setter
+    updateGameState, // Generic updater, can be used by useGameActions
+    // Keep specific actions here for now, or confirm they are in useGameActions
     startNewGame,
-    advanceDay,
+    advanceDay, 
     startProject,
-    addWorkToProject
+    addWorkToProject 
   };
 }

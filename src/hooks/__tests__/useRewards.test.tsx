@@ -5,7 +5,7 @@ import { PlayerProgress } from '@/types/game';
 describe('useRewards', () => {
   const mockInitialProgress: PlayerProgress = {
     level: 1,
-    experience: 0,
+    xp: 0,
     skills: {
       technical: 0,
       creative: 0,
@@ -40,7 +40,7 @@ describe('useRewards', () => {
     expect(result.current.recentRewards.length).toBeGreaterThan(0);
     
     // Progress should be updated
-    expect(result.current.playerProgress.experience).toBeGreaterThan(0);
+    expect(result.current.playerProgress.xp).toBeGreaterThan(0);
     expect(result.current.playerProgress.skills.technical).toBeGreaterThan(0);
   });
 
@@ -89,7 +89,7 @@ describe('useRewards', () => {
     });
 
     // Progress should be higher after second completion
-    expect(result.current.playerProgress.experience).toBeGreaterThan(firstProgress.experience);
+    expect(result.current.playerProgress.xp).toBeGreaterThan(firstProgress.xp);
     expect(result.current.playerProgress.skills.technical).toBeGreaterThan(firstProgress.skills.technical);
   });
 

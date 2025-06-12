@@ -23,7 +23,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
         <Button 
           onClick={() => setGameState(prev => ({ 
             ...prev, 
-            availableProjects: [...prev.availableProjects, ...generateNewProjects(prev)] 
+            availableProjects: [...prev.availableProjects, ...generateNewProjects(1, prev.playerData.level, prev.currentEra)] 
           }))}
           size="sm"
           className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -40,12 +40,12 @@ export const ProjectList: React.FC<ProjectListProps> = ({
           {/* Show assigned staff */}
           <div className="mt-2 pt-2 border-t border-blue-400/30">
             <div className="text-xs text-blue-300 mb-1">Assigned Staff:</div>
-            {gameState.staff.filter(s => s.assignedProject === gameState.activeProject?.id).map(staff => (
+            {gameState.hiredStaff.filter(s => s.assignedProjectId === gameState.activeProject?.id).map(staff => (
               <div key={staff.id} className="text-xs text-gray-200">
                 {staff.name} ({staff.role})
               </div>
             ))}
-            {gameState.staff.filter(s => s.assignedProject === gameState.activeProject?.id).length === 0 && (
+            {gameState.hiredStaff.filter(s => s.assignedProjectId === gameState.activeProject?.id).length === 0 && (
               <div className="text-xs text-gray-400">No staff assigned</div>
             )}
           </div>

@@ -1,150 +1,164 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { GameLayout } from '@/components/GameLayout';
 import { GameHeader } from '@/components/GameHeader';
 import { MainGameContent } from '@/components/MainGameContent';
 import { NotificationSystem } from '@/components/NotificationSystem';
 import { TrainingModal } from '@/components/modals/TrainingModal';
-import { GameModals } from '@/components/GameModals';
+// import { GameModals } from '@/components/GameModals'; // GameModals seems to be replaced by individual modals
 import { SettingsModal } from '@/components/modals/SettingsModal';
 import { TutorialModal } from '@/components/TutorialModal';
 import { SplashScreen } from '@/components/SplashScreen';
 import { Era } from '@/components/EraSelectionModal';
+import { ERA_DEFINITIONS } from '@/utils/eraProgression';
 import { useGameState } from '@/hooks/useGameState';
+import { Project, ProjectReport, StaffMember, GameState, FocusAllocation, Equipment } from '@/types/game'; // Added GameState, FocusAllocation, Equipment
+import { generateProjectReview } from '@/utils/projectReviewUtils';
+import { ProjectReviewModal } from '@/components/modals/ProjectReviewModal';
 import { useGameLogic } from '@/hooks/useGameLogic';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSaveSystem } from '@/contexts/SaveSystemContext';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { gameAudio as audioSystem } from '@/utils/audioSystem';
-import { GameState, Project } from '@/types/game';
+import { MinigameType } from '@/components/minigames/MinigameManager';
+// Removed duplicate FocusAllocation import
 
 const MusicStudioTycoon = () => {
-  const { gameState, updateGameState: setGameState, startNewGame } = useGameState();
+  const { 
+    gameState, 
+    focusAllocation: globalFocusAllocation, 
+    setFocusAllocation: setGlobalFocusAllocation, 
+    updateGameState, 
+    startNewGame: resetGameStateToInitial 
+  } = useGameState();
+
   const { settings } = useSettings();
-  const { saveGame, loadGame, hasSavedGame } = useSaveSystem();
+  const { saveGame: saveGameToStorage, loadGame: loadGameFromStorage, hasSavedGame, resetGame: resetSaveSystemGame } = useSaveSystem();
   
-  // Splash screen and game initialization state
   const [showSplashScreen, setShowSplashScreen] = useState(true);
   const [gameInitialized, setGameInitialized] = useState(false);
   
-  const gameLogic = useGameLogic();
-  
-  // Focus allocation state (this was missing)
-  const [focusAllocation, setFocusAllocation] = useState({
-    creativity: 50,
-    technical: 50,
-    performance: 0,
-    soundCapture: 0,
-    layering: 0
-  });
+  // Correctly call useGameLogic with 3 arguments
+  const gameLogic = useGameLogic(gameState, updateGameState, globalFocusAllocation);
 
-  // Additional state for missing features
-  const [selectedStaffForTraining, setSelectedStaffForTraining] = useState(null);
-  const [lastReview, setLastReview] = useState(null);
-  const orbContainerRef = useRef(null);
+  // Ensure all functions from gameLogic are correctly destructured or accessed via gameLogic.
+  const {
+    startProject: logicStartProject,
+    handlePerformDailyWork: logicHandlePerformDailyWork,
+    handleMinigameReward: logicHandleMinigameReward,
+    handleSpendPerkPoint: logicHandleSpendPerkPoint,
+    advanceDay: logicAdvanceDay,
+    purchaseEquipment: logicPurchaseEquipment,
+    hireStaff: logicHireStaff,
+    refreshCandidates: logicRefreshCandidates,
+    assignStaffToProject: logicAssignStaffToProject,
+    unassignStaffFromProject: logicUnassignStaffFromProject,
+    toggleStaffRest: logicToggleStaffRest,
+    handleOpenTrainingModal: logicHandleOpenTrainingModal,
+    sendStaffToTraining: logicSendStaffToTraining,
+    selectedStaffForTraining: logicSelectedStaffForTraining, // This is state, not a function
+    setSelectedStaffForTraining: logicSetSelectedStaffForTraining, // This is state setter
+    lastReview: logicLastReview, // This is state
+    orbContainerRef: logicOrbContainerRef, // This is a ref
+    autoTriggeredMinigame: logicAutoTriggeredMinigame, // This is state
+    clearAutoTriggeredMinigame: logicClearAutoTriggeredMinigame,
+    contactArtist: logicContactArtist,
+    triggerEraTransition: logicTriggerEraTransition, // This expects newEraId: string
+    completeProject: logicCompleteProject,
+    addStaffXP: logicAddStaffXP,
+    addMoney: logicAddMoney,
+    addReputation: logicAddReputation,
+    addXP: logicAddXP,
+    addAttributePoints: logicAddAttributePoints,
+    addSkillXP: logicAddSkillXP,
+    addPerkPoint: logicAddPerkPoint
+  } = gameLogic;
 
-  // Stub implementations for missing functions
-  const startProject = (project: Project) => {
-    console.log('Starting project:', project);
-  };
-
-  const handlePerformDailyWork = () => {
-    console.log('Performing daily work');
-    return { isComplete: false };
-  };
-
-  const handleSpendPerkPoint = () => {
-    console.log('Spending perk point');
-  };
-
-  const advanceDay = () => {
-    console.log('Advancing day');
-  };
-
-  const purchaseEquipment = (equipmentId: string) => {
-    console.log('Purchasing equipment:', equipmentId);
-  };
-
-  const hireStaff = (candidateIndex: number) => {
-    console.log('Hiring staff:', candidateIndex);
-    return true;
-  };
-
-  const refreshCandidates = () => {
-    console.log('Refreshing candidates');
-  };
-
-  const assignStaffToProject = () => {
-    console.log('Assigning staff to project');
-  };
-
-  const unassignStaffFromProject = () => {
-    console.log('Unassigning staff from project');
-  };
-
-  const toggleStaffRest = (staff: any) => {
-    console.log('Toggling staff rest:', staff);
-    return true;
-  };
-
-  const handleOpenTrainingModal = () => {
-    console.log('Opening training modal');
-  };
-
-  const contactArtist = () => {
-    console.log('Contacting artist');
-  };
-
-  const triggerEraTransition = () => {
-    console.log('Triggering era transition');
-  };
-
-  const sendStaffToTraining = () => {
-    console.log('Sending staff to training');
-  };
-
-  const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => {
-    console.log('Minigame reward:', { creativityBonus, technicalBonus, xpBonus, minigameType });
-  };
 
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showTrainingModal, setShowTrainingModal] = useState(false);
-  const [showStaffModal, setShowStaffModal] = useState(false);
-  const [showRecruitmentModal, setShowRecruitmentModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showTutorialModal, setShowTutorialModal] = useState(false);
+  const [currentEraForTutorial, setCurrentEraForTutorial] = useState<string>(ERA_DEFINITIONS[0].id);
+  const [activeProjectReport, setActiveProjectReport] = useState<ProjectReport | null>(null);
+  
+  const handleLoadGameStateFromString = (newGameStateString: string) => {
+    try {
+      const parsedGameState = JSON.parse(newGameStateString) as GameState;
+      updateGameState(() => parsedGameState);
+      if (parsedGameState.currentEra) {
+        setCurrentEraForTutorial(parsedGameState.currentEra);
+      }
+      // Assuming this is called from settings, splash screen is not an issue.
+    } catch (error) {
+      console.error("Failed to parse and load game state from string:", error);
+      // Consider using a toast notification if available globally or via context
+      // toast({ title: "Error", description: "Failed to load game state from string.", variant: "destructive" });
+    }
+  };
 
-  // Initialize background music
-  useBackgroundMusic();
+  const [autoTriggeredMinigame, setAutoTriggeredMinigame] = useState<{ type: MinigameType; reason: string } | null>(null);
+  const clearAutoTriggeredMinigame = () => setAutoTriggeredMinigame(null);
 
-  // Check for existing save game on mount
+  useBackgroundMusic(); // Manages BGM based on gameState.currentEra
+
   useEffect(() => {
-    const checkSaveGame = () => {
-      if (hasSavedGame()) {
+    const checkSaveGame = async () => { // Make async if loadGameFromStorage is async
+      if (await hasSavedGame()) { // Assuming hasSavedGame might be async
         setShowSplashScreen(false);
-        setGameInitialized(true);
+        // Game will be initialized after loading via handleLoadGame
       }
     };
     checkSaveGame();
   }, [hasSavedGame]);
 
-  // Auto-open training modal when staff is selected for training
   useEffect(() => {
-    if (selectedStaffForTraining) {
+    if (logicSelectedStaffForTraining) { // Use destructured variable
       setShowTrainingModal(true);
     }
-  }, [selectedStaffForTraining]);
+  }, [logicSelectedStaffForTraining]);
 
-  // Handle starting a new game with selected era
   const handleStartNewGame = (era: Era) => {
-    console.log('[Index.tsx] handleStartNewGame called with era:', era.displayName);
-    // Use the startNewGame function from useGameState
-    console.log('[Index.tsx] Calling startNewGame()...');
-    startNewGame();
+    resetGameStateToInitial(); 
+    updateGameState(prevState => ({
+      ...prevState, // Keep most of the reset state
+      currentEra: era.id,
+      selectedEra: era.id,
+      eraStartYear: era.startYear,
+      currentYear: era.startYear,
+      money: era.startingMoney,
+      equipmentMultiplier: era.equipmentMultiplier,
+      availableProjects: [], 
+      activeProject: null,
+      hiredStaff: [],
+      playerData: { // Reset player data specifically for the new era
+        ...prevState.playerData, // Keep attributes structure
+        level: 1,
+        xp: 0,
+        xpToNextLevel: 100, // Reset XP to next level
+        perkPoints: 0, // Reset perk points
+        reputation: 0, // Reset player reputation
+        dailyWorkCapacity: 100, // Reset work capacity
+      },
+      notifications: [], // Clear notifications
+      chartsData: { // Reset charts
+        charts: [],
+        contactedArtists: [],
+        marketTrends: [],
+        discoveredArtists: [],
+        lastChartUpdate: 0,
+      },
+      focusAllocation: { // Reset focus
+        performance: 33,
+        soundCapture: 34,
+        layering: 33,
+        reasoning: "Initial default distribution for new game."
+      }
+    }));
     
+    setCurrentEraForTutorial(era.id); 
     setShowSplashScreen(false);
     setGameInitialized(true);
     
-    // Show tutorial for new players
     const hasPlayedBefore = localStorage.getItem('recordingStudioTycoon_hasPlayed');
     if (!hasPlayedBefore && !settings.tutorialCompleted) {
       setShowTutorialModal(true);
@@ -153,61 +167,131 @@ const MusicStudioTycoon = () => {
     if (settings.sfxEnabled) {
       audioSystem.playUISound('success');
     }
+    localStorage.setItem('recordingStudioTycoon_hasPlayed', 'true');
   };
 
-  // Handle loading existing game
+  const handleShowProjectReview = useCallback((completedProjectData: Project) => {
+    console.log('Index.tsx: Generating review for project:', completedProjectData.title);
+    let assignedPersonDetails: { type: 'player' | 'staff'; id: string; name: string };
+    const assignedStaff = gameState.hiredStaff.find(s => s.assignedProjectId === completedProjectData.id);
+
+    if (assignedStaff) {
+      assignedPersonDetails = { type: 'staff', id: assignedStaff.id, name: assignedStaff.name };
+    } else {
+      assignedPersonDetails = { type: 'player', id: 'player', name: 'You' };
+    }
+    
+    // Using equipment price as a proxy for quality, as 'condition' is not on Equipment type
+    const averageEquipmentQuality = gameState.ownedEquipment.length > 0
+      ? gameState.ownedEquipment.reduce((sum, eq: Equipment) => sum + (eq.price / 100), 0) / gameState.ownedEquipment.length 
+      : 50; 
+
+    const report = generateProjectReview(
+      completedProjectData,
+      assignedPersonDetails,
+      averageEquipmentQuality,
+      gameState.playerData,
+      gameState.hiredStaff
+    );
+    
+    setActiveProjectReport(report);
+    setShowReviewModal(true);
+
+    if (settings.sfxEnabled) {
+      audioSystem.playUISound('event');
+    }
+  }, [gameState, settings.sfxEnabled]);
+
+
+  const handleFinalizeProjectCompletion = useCallback(() => {
+    if (!activeProjectReport) return;
+    console.log('Index.tsx: Finalizing project completion for:', activeProjectReport.projectTitle);
+    
+    // completeProject from useProjectManagement expects the GameState.
+    // The activeProjectReport is used to display the review, but the completion logic
+    // in useProjectManagement likely operates on gameState.activeProject.
+    // We need to ensure that when completeProject is called, gameState.activeProject
+    // is the project that activeProjectReport refers to.
+    // This might require that handleShowProjectReview doesn't nullify activeProject yet,
+    // or that completeProject is refactored to take the report or project data directly.
+    // For now, passing gameState as expected by the current signature.
+    if (typeof logicCompleteProject === 'function' && !gameState.activeProject) {
+      console.warn("Attempting to finalize completion but no active project in game state. This might not work as expected.");
+      // Potentially, we could reconstruct a minimal GameState or pass the project from the report
+      // if completeProject was designed to handle that.
+    }
+
+    setShowReviewModal(false);
+    setActiveProjectReport(null);
+
+    if (settings.sfxEnabled) {
+      audioSystem.playUISound('success'); 
+    }
+  }, [activeProjectReport, gameLogic, settings.sfxEnabled]);
+
+
   const handleLoadGame = async () => {
     try {
-      const loadedState = await loadGame();
+      const loadedState = await loadGameFromStorage(); 
       if (loadedState) {
-        setGameState(() => loadedState);
+        updateGameState(() => loadedState); 
+        setCurrentEraForTutorial(loadedState.currentEra); 
         setShowSplashScreen(false);
         setGameInitialized(true);
         
         if (settings.sfxEnabled) {
           audioSystem.playUISound('success');
         }
+      } else {
+        setShowSplashScreen(true);
+        setGameInitialized(false);
       }
     } catch (error) {
       console.error('Failed to load game:', error);
+      setShowSplashScreen(true); 
+      setGameInitialized(false);
     }
   };
 
-  // Check if this is first time playing for tutorial
   useEffect(() => {
     const hasPlayedBefore = localStorage.getItem('recordingStudioTycoon_hasPlayed');
-    if (!hasPlayedBefore && !settings.tutorialCompleted) {
-      setShowTutorialModal(true);
+    if (gameInitialized && !settings.tutorialCompleted) {
+      if (gameState && gameState.currentEra) {
+        setCurrentEraForTutorial(gameState.currentEra);
+      }
+      setShowTutorialModal(true); 
     }
-  }, [settings.tutorialCompleted]);
+  }, [settings.tutorialCompleted, gameInitialized, gameState]);
 
-  // Set up auto-save triggers for key game actions
   useEffect(() => {
-    if (settings.autoSave) {
-      // Auto-save on level up
+    if (settings.autoSave && gameInitialized) { // Only autosave if game is initialized
       const currentLevel = gameState.playerData.level;
       const savedLevel = localStorage.getItem('recordingStudioTycoon_lastLevel');
       if (savedLevel && parseInt(savedLevel) < currentLevel) {
-        saveGame(gameState);
+        saveGameToStorage(gameState); 
+        localStorage.setItem('recordingStudioTycoon_lastLevel', currentLevel.toString());
+      } else if (!savedLevel) { 
         localStorage.setItem('recordingStudioTycoon_lastLevel', currentLevel.toString());
       }
     }
-  }, [gameState.playerData.level, settings.autoSave, saveGame, gameState]);
+  }, [gameState.playerData.level, settings.autoSave, saveGameToStorage, gameState, gameInitialized]);
 
-  // Play UI sounds for various actions
   useEffect(() => {
-    if (settings.sfxEnabled) {
-      // Level up sound
-      const lastKnownLevel = parseInt(localStorage.getItem('recordingStudioTycoon_lastKnownLevel') || '1');
+    if (settings.sfxEnabled && gameInitialized) { // Only play sfx if game is initialized
+      const lastKnownLevel = parseInt(localStorage.getItem('recordingStudioTycoon_lastKnownLevel') || '0');
       if (gameState.playerData.level > lastKnownLevel) {
-        audioSystem.playUISound('levelUp');
+        if (lastKnownLevel !== 0) { 
+            audioSystem.playUISound('levelUp');
+        }
         localStorage.setItem('recordingStudioTycoon_lastKnownLevel', gameState.playerData.level.toString());
+      } else if (gameState.playerData.level === 1 && lastKnownLevel === 0) { 
+        localStorage.setItem('recordingStudioTycoon_lastKnownLevel', '1');
       }
     }
-  }, [gameState.playerData.level, settings.sfxEnabled]);
+  }, [gameState.playerData.level, settings.sfxEnabled, gameInitialized]);
 
   const removeNotification = (id: string) => {
-    setGameState(prev => ({
+    updateGameState(prev => ({
       ...prev,
       notifications: prev.notifications.filter(n => n.id !== id)
     }));
@@ -219,27 +303,27 @@ const MusicStudioTycoon = () => {
       audioSystem.playUISound('buttonClick');
     }
   };
-
-  // Enhanced action handlers with sound effects
-  const handleProjectStart = (project: Project) => {
-    const result = startProject(project);
-    if (settings.sfxEnabled) {
+  
+  // Ensure these handlers use functions from gameLogic
+  const handleProjectStart = (project: Project) => { // Typed project
+    const result = logicStartProject(project); // Use destructured variable
+    if (settings.sfxEnabled && result) { 
       audioSystem.playUISound('success');
     }
     return result;
   };
 
   const handleEquipmentPurchase = (equipmentId: string) => {
-    const result = purchaseEquipment(equipmentId);
-    if (settings.sfxEnabled) {
+    const result = logicPurchaseEquipment(equipmentId); // Use destructured variable
+    if (settings.sfxEnabled && result) { 
       audioSystem.playUISound('purchase');
     }
     return result;
   };
 
-  const handleStaffHire = (candidateIndex: number) => {
-    const result = hireStaff(candidateIndex);
-    if (settings.sfxEnabled) {
+  const handleStaffHire = (candidate: StaffMember) => { // Changed to StaffMember
+    const result = logicHireStaff(candidate); // Use destructured variable
+    if (settings.sfxEnabled && result) { 
       audioSystem.playUISound('success');
     }
     return result;
@@ -252,7 +336,6 @@ const MusicStudioTycoon = () => {
     }
   };
 
-  // Show splash screen if game is not initialized
   if (showSplashScreen && !gameInitialized) {
     return (
       <SplashScreen
@@ -263,61 +346,90 @@ const MusicStudioTycoon = () => {
     );
   }
 
-  // Don't render main game until initialized
   if (!gameInitialized) {
     return <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-      <div className="text-white">Loading...</div>
+      <div className="text-white text-xl">Loading Your Studio...</div>
     </div>;
   }
 
   return (
     <GameLayout>
-      <GameHeader 
-        gameState={gameState} 
-        onOpenSettings={handleOpenSettings}
-      />
-
-      <MainGameContent
-        gameState={gameState}
-        setGameState={setGameState}
-        focusAllocation={focusAllocation}
-        setFocusAllocation={setFocusAllocation}
-        startProject={handleProjectStart}
-        performDailyWork={handlePerformDailyWork}
-        onMinigameReward={handleMinigameReward}
-        spendPerkPoint={handleSpendPerkPoint}
-        advanceDay={advanceDay}
-        purchaseEquipment={handleEquipmentPurchase}
-        hireStaff={handleStaffHire}
-        refreshCandidates={refreshCandidates}
-        assignStaffToProject={assignStaffToProject}
-        unassignStaffFromProject={unassignStaffFromProject}
-        toggleStaffRest={toggleStaffRest}
-        openTrainingModal={handleOpenTrainingModal}
-        orbContainerRef={orbContainerRef}
-        contactArtist={contactArtist}
-        triggerEraTransition={triggerEraTransition}
-      />
+      <div className="flex flex-col h-full">
+        <GameHeader 
+          gameState={gameState} 
+          onOpenSettings={handleOpenSettings}
+        />
+        <div className="flex-grow min-h-0">
+          <MainGameContent
+            // Pass necessary state and actions; MainGameContent might use its own hooks too
+            gameState={gameState} 
+            focusAllocation={globalFocusAllocation}
+            setFocusAllocation={setGlobalFocusAllocation as React.Dispatch<React.SetStateAction<FocusAllocation>>}
+            // Pass updateGameState (which is GameStateUpdater) as setGameState, casting if necessary
+            // MainGameContent expects React.Dispatch<React.SetStateAction<GameState>>
+            setGameState={updateGameState as React.Dispatch<React.SetStateAction<GameState>>}
+            performDailyWork={logicHandlePerformDailyWork}
+            onProjectComplete={handleShowProjectReview}
+            onMinigameReward={logicHandleMinigameReward}
+            spendPerkPoint={logicHandleSpendPerkPoint}
+            advanceDay={logicAdvanceDay}
+            purchaseEquipment={handleEquipmentPurchase} 
+            hireStaff={(candidateIndex: number): boolean => {
+              // Adapter for hireStaff: MainGameContent passes index, logicHireStaff expects StaffMember
+              const candidate = gameState.availableCandidates[candidateIndex];
+              if (candidate) {
+                return logicHireStaff(candidate);
+              }
+              console.error("Candidate not found for hiring at index:", candidateIndex);
+              return false;
+            }} 
+            refreshCandidates={logicRefreshCandidates}
+            assignStaffToProject={(staffId: string): void => {
+              // Adapter for assignStaffToProject: MainGameContent passes only staffId,
+              // logicAssignStaffToProject expects staffId and project.
+              // We need the current active project from gameState.
+              if (gameState.activeProject) {
+                logicAssignStaffToProject(staffId, gameState.activeProject);
+                // Return type of logicAssignStaffToProject is boolean, but MainGameContent expects void.
+                // The boolean result can be ignored here if MainGameContent doesn't use it.
+              } else {
+                console.error("No active project to assign staff to.");
+              }
+            }}
+            unassignStaffFromProject={logicUnassignStaffFromProject}
+            toggleStaffRest={logicToggleStaffRest}
+            openTrainingModal={logicHandleOpenTrainingModal}
+            orbContainerRef={logicOrbContainerRef}
+            contactArtist={logicContactArtist}
+            triggerEraTransition={logicTriggerEraTransition} 
+            autoTriggeredMinigame={autoTriggeredMinigame}
+            clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
+            startProject={handleProjectStart} 
+          />
 
       <TrainingModal
         isOpen={showTrainingModal}
         onClose={() => {
           setShowTrainingModal(false);
-          setSelectedStaffForTraining(null);
+          logicSetSelectedStaffForTraining(null); // Use destructured setter
         }}
-        staff={selectedStaffForTraining}
+        staff={logicSelectedStaffForTraining} // Use destructured state
         gameState={gameState}
-        sendStaffToTraining={sendStaffToTraining}
+        sendStaffToTraining={logicSendStaffToTraining} // Use destructured function
       />
 
       <SettingsModal
         isOpen={showSettingsModal}
         onClose={() => setShowSettingsModal(false)}
+        onResetGame={resetSaveSystemGame} 
+        context="ingame"
+        onLoadGameStateFromString={handleLoadGameStateFromString}
       />
 
       <TutorialModal
         isOpen={showTutorialModal}
         onComplete={handleTutorialComplete}
+        eraId={currentEraForTutorial} 
       />
 
       <NotificationSystem
@@ -325,11 +437,15 @@ const MusicStudioTycoon = () => {
         removeNotification={removeNotification}
       />
 
-      <GameModals
-        showReviewModal={showReviewModal}
-        setShowReviewModal={setShowReviewModal}
-        lastReview={lastReview}
-      />
+      {activeProjectReport && (
+        <ProjectReviewModal
+          isOpen={showReviewModal}
+          onClose={handleFinalizeProjectCompletion}
+          report={activeProjectReport}
+        />
+      )}
+        </div>
+      </div>
     </GameLayout>
   );
 };

@@ -25,11 +25,11 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
 
   const getNotificationColor = (type: string) => {
     switch (type) {
-      case 'success': return 'bg-green-600 border-green-500';
-      case 'warning': return 'bg-yellow-600 border-yellow-500';
-      case 'error': return 'bg-red-600 border-red-500';
-      case 'historical': return 'bg-purple-600 border-purple-500';
-      default: return 'bg-blue-600 border-blue-500';
+      case 'success': return 'bg-gray-800 border-green-500 text-white';
+      case 'warning': return 'bg-gray-800 border-yellow-500 text-white';
+      case 'error': return 'bg-gray-800 border-red-500 text-white';
+      case 'historical': return 'bg-gray-800 border-purple-500 text-white';
+      default: return 'bg-gray-800 border-blue-500 text-white';
     }
   };
 

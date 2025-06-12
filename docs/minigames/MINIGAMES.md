@@ -1,134 +1,224 @@
 # Minigame System Documentation
 
 ## Overview
-
-The minigame system in Recording Studio Tycoon provides interactive challenges that simulate real-world studio tasks, offering skill-based rewards and era-appropriate gameplay. Minigames are dynamically triggered based on project context, player equipment, focus allocation, and the current era.
+The minigame system provides interactive challenges that help players learn and practice various aspects of music production while earning rewards and improving their skills.
 
 ## Core Components
 
-### 1. Minigame Types
+### Minigame Types
 ```typescript
-export type MinigameType = 
-  // Core minigames
-  | 'rhythm'
+type MinigameType = 
   | 'mixing'
-  | 'waveform'
-  | 'beatmaking'
-  | 'vocal'
+  | 'recording'
   | 'mastering'
-  | 'effectchain'
-  | 'acoustic'
-  | 'layering'
-  // Analog Era (1960s-1970s)
-  | 'tape_splicing'
-  | 'four_track_recording'
-  // Digital Era (1980s-1990s)
-  | 'midi_programming'
-  | 'digital_mixing'
-  // Internet Era (2000s-2010s)
-  | 'sample_editing'
-  | 'sound_design'
-  // Streaming Era (2020s+)
-  | 'audio_restoration';
+  | 'pedalboard'
+  | 'patchbay';
 ```
 
-### 2. Minigame Manager
-The `MinigameManager` component serves as the central controller for all minigames, handling:
-- Minigame initialization and cleanup
-- State management
-- Reward distribution
-- UI transitions
-- Difficulty scaling
+### Minigame Manager
+The `MinigameManager` component handles the state and rendering of different minigames based on the type and difficulty provided.
 
 ```typescript
 interface MinigameManagerProps {
-  type: MinigameType;
-  difficulty: number;
   onComplete: (score: number) => void;
-  onFail: () => void;
   onClose: () => void;
-  initialProgress: PlayerProgress;
+  type: MinigameType;
+  difficulty?: number;
 }
 ```
 
-### 3. Base Minigame Interface
+### Base Minigame Interface
 All minigames implement this base interface:
+
 ```typescript
 interface BaseMinigameProps {
-  type: MinigameType;
-  difficulty: number;
   onComplete: (score: number) => void;
-  onFail: () => void;
   onClose: () => void;
-  title?: string;
-  description?: string;
-  children?: React.ReactNode;
+  difficulty?: number;
 }
 ```
+
+## Minigames
+
+### Mastering Minigame
+The mastering minigame challenges players to match target mastering settings for different genres and styles.
+
+#### Features
+- Multiple presets for different genres and styles
+- Dynamic difficulty scaling
+- Real-time parameter adjustments
+- Visual feedback and scoring system
+- Tutorial system with mastering tips
+- Audio preview functionality
+
+#### Difficulty Levels
+1. **Beginner (1)**
+   - Basic volume and EQ adjustments
+   - Simple presets
+   - Longer time limit
+   - Basic scoring system
+
+2. **Intermediate (2)**
+   - Added compression and stereo width
+   - More complex presets
+   - Standard time limit
+   - Enhanced scoring system
+
+3. **Advanced (3)**
+   - Full parameter control
+   - Complex presets
+   - Shorter time limit
+   - Advanced scoring with bonus points
+
+4. **Expert (4)**
+   - All parameters unlocked
+   - Custom presets
+   - Strict time limit
+   - Expert scoring system
+
+#### Integration
+- Connects with project mastering stage
+- Affects project quality and player skills
+- Rewards based on accuracy and speed
+
+### Guitar Pedal Board Minigame
+The guitar pedal board minigame challenges players to create signal chains using different guitar effects pedals.
+
+#### Features
+- Drag and drop pedal arrangement
+- Multiple pedal types (distortion, delay, reverb, etc.)
+- Dynamic difficulty scaling
+- Real-time audio preview
+- Visual feedback and scoring system
+- Tutorial system with pedal chain tips
+
+#### Difficulty Levels
+1. **Beginner (1)**
+   - Basic pedals (distortion, delay)
+   - Simple chain requirements
+   - Longer time limit
+   - Basic scoring system
+
+2. **Intermediate (2)**
+   - More pedal types
+   - Moderate chain complexity
+   - Standard time limit
+   - Enhanced scoring system
+
+3. **Advanced (3)**
+   - All pedal types
+   - Complex chain requirements
+   - Shorter time limit
+   - Advanced scoring with bonus points
+
+4. **Expert (4)**
+   - Custom pedal combinations
+   - Expert chain requirements
+   - Strict time limit
+   - Expert scoring system
+
+#### Integration
+- Connects with guitar recording and processing
+- Affects guitar tone quality
+- Rewards based on chain accuracy and creativity
+
+### Patch Bay Minigame
+The patch bay minigame challenges players to create correct signal routing between different studio equipment.
+
+#### Features
+- Drag and drop patch connections
+- Multiple equipment types (inputs and outputs)
+- Dynamic difficulty scaling
+- Real-time audio preview
+- Visual feedback and scoring system
+- Tutorial system with routing tips
+
+#### Difficulty Levels
+1. **Beginner (1)**
+   - Basic equipment (microphone, preamp)
+   - Simple routing requirements
+   - Longer time limit
+   - Basic scoring system
+
+2. **Intermediate (2)**
+   - More equipment types
+   - Moderate routing complexity
+   - Standard time limit
+   - Enhanced scoring system
+
+3. **Advanced (3)**
+   - All equipment types
+   - Complex routing requirements
+   - Shorter time limit
+   - Advanced scoring with bonus points
+
+4. **Expert (4)**
+   - Custom routing combinations
+   - Expert routing requirements
+   - Strict time limit
+   - Expert scoring system
+
+#### Integration
+- Connects with studio setup and routing
+- Affects signal flow and recording quality
+- Rewards based on routing accuracy and efficiency
 
 ## Era-Specific Minigames
 
-### Analog Era (1960s-1970s)
-1. **Tape Splicing**
-   - Cut and splice analog tape at precise points
-   - Manage limited editing time
-   - Maintain audio quality during edits
+### 1950s-1960s
+- Basic recording techniques
+- Simple mixing concepts
+- Early mastering approaches
 
-2. **Four Track Recording**
-   - Work with limited track count
-   - Manage track bouncing
-   - Balance recording quality
+### 1970s-1980s
+- Advanced recording methods
+- Multi-track mixing
+- Analog mastering techniques
 
-### Digital Era (1980s-1990s)
-1. **MIDI Programming**
-   - Create and edit MIDI sequences
-   - Manage timing and quantization
-   - Control velocity sensitivity
+### 1990s-2000s
+- Digital recording
+- DAW-based mixing
+- Digital mastering
 
-2. **Digital Mixing**
-   - Multi-channel mixing
-   - Advanced EQ and effects
-   - Bus routing and automation
+### 2010s-Present
+- Modern recording techniques
+- Advanced mixing concepts
+- Contemporary mastering approaches
 
-### Internet Era (2000s-2010s)
-1. **Sample Editing**
-   - Waveform visualization
-   - Sample manipulation
-   - Effects processing
-   - Multi-sample management
+## Rewards and Progression
 
-2. **Sound Design**
-   - Multiple synthesis methods
-   - Sound processing
-   - Category-specific design
-   - Advanced tools
+### Skill Improvements
+- Technical skills
+- Creative intuition
+- Equipment proficiency
 
-### Streaming Era (2020s+)
-1. **Audio Restoration**
-   - Noise reduction
-   - Audio repair
-   - Quality enhancement
-   - Modern processing techniques
+### Experience Points
+- Base XP for completion
+- Bonus XP for high scores
+- Difficulty multipliers
 
-## Integration Systems
+### Money Rewards
+- Base reward for completion
+- Bonus for high scores
+- Difficulty multipliers
 
-### 1. Equipment Impact
-- Higher quality equipment provides gameplay advantages
-- Special equipment unlocks unique minigame features
-- Equipment condition affects minigame difficulty
-- Maintenance requirements add strategic depth
+## Integration with Main Game
 
-### 2. Staff Collaboration
-- Staff skills directly impact minigame outcomes
-- Training staff improves collaborative performance
-- Different staff combinations create unique experiences
-- Staff fatigue affects assistance quality
+### Project Stages
+- Recording
+- Mixing
+- Mastering
+- Equipment setup
 
-### 3. Project Integration
-- Minigame performance affects project quality
-- Different project types require different minigames
-- Client preferences influence minigame selection
-- Project deadlines add time pressure elements
+### Player Skills
+- Technical proficiency
+- Creative ability
+- Equipment knowledge
+
+### Studio Equipment
+- Unlock new equipment
+- Improve existing gear
+- Specialized tools
 
 ## Technical Implementation
 

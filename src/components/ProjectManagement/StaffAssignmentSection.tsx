@@ -1,10 +1,9 @@
-import React, { useState, useMemo } from 'react'; // Import useState and useMemo
-import { StaffMember, Project } from '@/types/game'; // Adjusted import path, add Project
-import { StaffCard } from './StaffCard'; // Import StaffCard
-import { calculateStaffProjectMatch } from '@/utils/projectUtils'; // Import utility
+import React, { useState, useMemo } from 'react';
+import { StaffMember } from '@/types/game'; // Assuming StaffMember type is in game.ts
+import StaffCard from './StaffCard'; // Import StaffCard
 
 interface StaffAssignmentSectionProps {
-  project: Project | null; // Changed from projectId to full project object
+  projectId: string;
   availableStaff: StaffMember[];
   assignedStaff: StaffMember[];
   onAssign: (staffId: string) => void;
@@ -12,78 +11,92 @@ interface StaffAssignmentSectionProps {
   onAutoOptimize: () => void;
 }
 
-export const StaffAssignmentSection: React.FC<StaffAssignmentSectionProps> = ({
-  project, // Destructure project instead of projectId
+const StaffAssignmentSection: React.FC<StaffAssignmentSectionProps> = ({
+  projectId,
   availableStaff,
   assignedStaff,
   onAssign,
   onUnassign,
   onAutoOptimize,
 }) => {
-  const [staffFilter, setStaffFilter] = useState('');
+  const [filterText, setFilterText] = useState('');
 
-  const filteredAvailableStaff = useMemo(() => 
-    availableStaff.filter(staff =>
-      staff.name.toLowerCase().includes(staffFilter.toLowerCase())
-    ), [availableStaff, staffFilter]);
-
-  if (!project) {
-    return <div className="p-4 border rounded-lg shadow-sm text-gray-500">No active project to assign staff.</div>;
-  }
+  const filteredAvailableStaff = useMemo(() => {
+    if (!filterText) {
+      return availableStaff;
+    }
+    return availableStaff.filter(
+      (staff) =>
+        staff.name.toLowerCase().includes(filterText.toLowerCase()) ||
+        staff.role.toLowerCase().includes(filterText.toLowerCase())
+    );
+  }, [availableStaff, filterText]);
 
   return (
-    <div className="p-4 border rounded-lg shadow-sm">
-      <h3 className="text-lg font-semibold mb-2">Staff Assignment (Project: {project.title})</h3>
-      
-      <div className="mb-4 flex space-x-2">
-        <button 
-          onClick={onAutoOptimize}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Auto-Optimize Staff
-        </button>
+    <div className="p-4 border rounded-lg shadow-md bg-card text-card-foreground">
+      <h3 className="mb-4 text-lg font-semibold">Staff Assignment (Project: {projectId})</h3>
+
+      <div className="mb-4">
         <input
           type="text"
-          placeholder="Filter staff by name..."
-          className="px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          value={staffFilter}
-          onChange={(e) => setStaffFilter(e.target.value)}
+          placeholder="Filter staff by name or role..."
+          className="w-full p-2 border rounded-md bg-input text-foreground placeholder:text-muted-foreground"
+          value={filterText}
+          onChange={(e) => setFilterText(e.target.value)}
         />
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <h4 className="font-medium mb-1">Available Staff ({filteredAvailableStaff.length})</h4>
-          {filteredAvailableStaff.length === 0 && staffFilter === '' && <p className="text-sm text-gray-500">No staff available.</p>}
-          {filteredAvailableStaff.length === 0 && staffFilter !== '' && <p className="text-sm text-gray-500">No staff match your filter.</p>}
-          <div className="space-y-2 max-h-96 overflow-y-auto"> {/* Added max-h and overflow for long lists */}
-            {filteredAvailableStaff.map(staff => (
+      
+      {/* Available Staff List using StaffCard */}
+      <div className="mb-4">
+        <h4 className="mb-2 font-medium">Available Staff ({filteredAvailableStaff.length})</h4>
+        {filteredAvailableStaff.length > 0 ? (
+          <div className="max-h-60 overflow-y-auto pr-1">
+            {filteredAvailableStaff.map((staff) => (
               <StaffCard
                 key={staff.id}
                 staff={staff}
                 isAssigned={false}
                 onAction={() => onAssign(staff.id)}
-                projectMatch={calculateStaffProjectMatch(staff, project)}
               />
             ))}
           </div>
-        </div>
-        <div>
-          <h4 className="font-medium mb-1">Assigned Staff</h4>
-          {assignedStaff.length === 0 && <p className="text-sm text-gray-500">No staff assigned.</p>}
-          <div className="space-y-2">
-            {assignedStaff.map(staff => (
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {filterText ? 'No staff match your filter.' : 'No staff available.'}
+          </p>
+        )}
+      </div>
+
+      {/* Assigned Staff List using StaffCard */}
+      <div className="mb-4">
+        <h4 className="mb-2 font-medium">Assigned Staff ({assignedStaff.length})</h4>
+        {assignedStaff.length > 0 ? (
+          <div className="max-h-60 overflow-y-auto pr-1">
+            {assignedStaff.map((staff) => (
               <StaffCard
                 key={staff.id}
                 staff={staff}
                 isAssigned={true}
                 onAction={() => onUnassign(staff.id)}
-                projectMatch={calculateStaffProjectMatch(staff, project)}
               />
             ))}
           </div>
-        </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No staff assigned to this project.</p>
+        )}
+      </div>
+
+      {/* Auto-Optimize Button */}
+      <div>
+        <button
+          onClick={onAutoOptimize}
+          className="w-full px-4 py-2 font-semibold text-white bg-green-500 rounded hover:bg-green-600"
+        >
+          Auto-Optimize Assignments
+        </button>
       </div>
     </div>
   );
 };
+
+export default StaffAssignmentSection;

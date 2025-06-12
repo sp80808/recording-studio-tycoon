@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { ChartEntry } from '@/types/charts';
 import { GameState } from '@/types/game';
 import { calculateContactCost, calculateContactSuccess } from '@/data/chartsData';
+import { toast } from '@/hooks/use-toast';
 
 interface ArtistContactModalProps {
   isOpen: boolean;
@@ -47,6 +48,16 @@ export const ArtistContactModal: React.FC<ArtistContactModalProps> = ({
 
   const handleSubmit = () => {
     if (offerAmount <= 0) {
+      return;
+    }
+    
+    if (artist.availability.status !== 'available' && !artist.availability.availableFrom) {
+      toast({
+        title: "🎤 Artist Unavailable",
+        description: `${artist.name} is currently ${artist.availability.status} and not accepting new projects.`,
+        className: "bg-gray-800 border-gray-600 text-white",
+        variant: "destructive"
+      });
       return;
     }
     
@@ -94,8 +105,22 @@ export const ArtistContactModal: React.FC<ArtistContactModalProps> = ({
               <span>{chartEntry.weeksOnChart} weeks charting</span>
             </div>
             
-            <div className="mt-2 text-xs text-gray-500">
-              {artist.socialMediaFollowers.toLocaleString()} social media followers
+            <div className="mt-2 flex items-center gap-2 text-xs">
+              <span className={`font-medium ${
+                artist.availability.status === 'available' ? 'text-green-400' :
+                artist.availability.status === 'busy' ? 'text-yellow-400' :
+                'text-red-400'
+              }`}>
+                {artist.availability.status.toUpperCase()}
+              </span>
+              {artist.availability.availableFrom && (
+                <span className="text-gray-400">
+                  (Available in {artist.availability.availableFrom} days)
+                </span>
+              )}
+              <span className="text-blue-400">
+                Avg. Response: {artist.availability.responseTime} days
+              </span>
             </div>
           </div>
 

@@ -97,17 +97,6 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
     initializeRoom();
   }, [initializeRoom]);
 
-  const endGame = useCallback(() => {
-    if (gameCompleted) return;
-    
-    setGameCompleted(true);
-    const finalScore = calculateFinalScore();
-    setScore(finalScore);
-    
-    gameAudio.playCompleteProject();
-    setTimeout(() => onComplete(finalScore), 1000);
-  }, [gameCompleted, roomGrid, spentBudget, budget, timeLeft, onComplete]);
-
   const startGame = useCallback(() => {
     setGameStarted(true);
     setGameCompleted(false);
@@ -130,7 +119,18 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
         return prev - 1;
       });
     }, 1000);
-  }, [endGame]);
+  }, []);
+
+  const endGame = useCallback(() => {
+    if (gameCompleted) return;
+    
+    setGameCompleted(true);
+    const finalScore = calculateFinalScore();
+    setScore(finalScore);
+    
+    gameAudio.playCompleteProject();
+    setTimeout(() => onComplete(finalScore), 1000);
+  }, [gameCompleted, roomGrid, spentBudget, budget, timeLeft]);
 
   const calculateAcousticScore = () => {
     const placedTreatments = roomGrid.filter(pos => pos.treatment);

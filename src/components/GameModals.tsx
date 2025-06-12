@@ -1,20 +1,20 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-interface ProjectReview {
+interface ReviewData {
   projectTitle: string;
-  creativityPoints: number;
-  technicalPoints: number;
-  qualityScore: number;
+  genre: string;
   payout: number;
-  repGain: number;
-  xpGain: number;
+  reputation: number;
+  creativityPoints?: number;
+  technicalPoints?: number;
 }
 
 interface GameModalsProps {
   showReviewModal: boolean;
   setShowReviewModal: (show: boolean) => void;
-  lastReview: ProjectReview | null;
+  lastReview: ReviewData | null;
 }
 
 export const GameModals: React.FC<GameModalsProps> = ({

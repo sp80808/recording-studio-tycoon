@@ -1,14 +1,15 @@
 
 import { useCallback } from 'react';
-import { GameState } from '@/types/game';
+import { GameState, Project, FocusAllocation, ProjectReport, StaffMember } from '@/types/game';
 import { generateCandidates } from '@/utils/projectUtils';
 import { toast } from '@/hooks/use-toast';
-import { 
-  calculateYearFromDay, 
-  checkEraTransitionAvailable, 
+import {
+  calculateYearFromDay,
+  checkEraTransitionAvailable,
   transitionToEra,
-  getEraSpecificEquipmentMultiplier 
+  getEraSpecificEquipmentMultiplier
 } from '@/utils/eraProgression';
+import { calculateWorkUnitsGained } from '@/utils/projectWorkUtils';
 
 export const useGameActions = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
   const advanceDay = useCallback(() => {
@@ -168,9 +169,77 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     };
   }, [gameState, setGameState]);
 
+  const performDailyWork = useCallback((
+    currentProject: Project,
+    focusAllocation: FocusAllocation,
+    assignedStaff: StaffMember[],
+    completeProject: (state: GameState) => ProjectReport | undefined
+  ) => {
+    const updatedProject = { ...currentProject };
+    const updatedGameState = { ...gameState };
+
+    const currentStage = updatedProject.stages[updatedProject.currentStageIndex];
+    if (!currentStage) {
+      console.error("No current stage found for active project.");
+      return null;
+    }
+
+    const { creativityGained, technicalGained } = calculateWorkUnitsGained(
+      updatedGameState.playerData,
+      focusAllocation,
+      currentStage,
+      assignedStaff
+    );
+
+    updatedProject.accumulatedCPoints += creativityGained;
+    updatedProject.accumulatedTPoints += technicalGained;
+    currentStage.workUnitsCompleted += (creativityGained + technicalGained) / 2; // Average gain for work units
+
+    // Update player's daily work capacity
+    updatedGameState.playerData = {
+      ...updatedGameState.playerData,
+      dailyWorkCapacity: Math.max(0, updatedGameState.playerData.dailyWorkCapacity - 1)
+    };
+
+    // Check for stage completion
+    if (currentStage.workUnitsCompleted >= currentStage.workUnitsBase) {
+      currentStage.completed = true;
+      // Move to next stage or complete project
+      if (updatedProject.currentStageIndex < updatedProject.stages.length - 1) {
+        updatedProject.currentStageIndex += 1;
+        toast({
+          title: "✅ Stage Complete!",
+          description: `${currentStage.stageName} finished! Moving to ${updatedProject.stages[updatedProject.currentStageIndex].stageName}.`,
+          className: "bg-green-800 border-green-600 text-white",
+          duration: 3000
+        });
+      } else {
+        // Project is complete
+        updatedProject.isCompleted = true;
+        updatedProject.endDate = updatedGameState.currentDay;
+        updatedGameState.activeProject = null; // Clear active project
+        
+        // Call completeProject from useProjectManagement
+        const projectReport = completeProject(updatedGameState);
+        
+        return { isComplete: true, finalProjectData: updatedProject, review: projectReport };
+      }
+    }
+
+    setGameState(prev => ({
+      ...prev,
+      activeProject: updatedProject,
+      playerData: updatedGameState.playerData,
+      hiredStaff: assignedStaff // Update staff energy changes
+    }));
+
+    return { isComplete: false, finalProjectData: null, review: null };
+  }, [gameState, setGameState]);
+
   return {
     advanceDay,
     refreshCandidates,
-    triggerEraTransition
+    triggerEraTransition,
+    performDailyWork
   };
 };

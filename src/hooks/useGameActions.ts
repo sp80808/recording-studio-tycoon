@@ -8,13 +8,23 @@ export const useGameActions = (gameState: GameState, setGameState: (state: GameS
     });
   };
 
+  const performDailyWork = () => {
+    // This is a placeholder implementation
+    // The actual implementation should be moved from useGameLogic
+    return {
+      isComplete: false,
+      review: null
+    };
+  };
+
+  const updateGameState = (updater: (prevState: GameState) => GameState) => {
+    setGameState(updater(gameState));
+  };
+
   const collectMoney = (amount: number) => {
     setGameState({
       ...gameState,
-      playerData: {
-        ...gameState.playerData,
-        money: gameState.playerData.money + amount
-      }
+      money: gameState.money + amount // Money is at the root of GameState
     });
   };
 
@@ -80,12 +90,33 @@ export const useGameActions = (gameState: GameState, setGameState: (state: GameS
 
   return {
     advanceDay,
+    performDailyWork,
+    updateGameState,
     collectMoney,
     addMoney,
     addReputation,
     addXP,
     addAttributePoints,
     addSkillXP,
-    addPerkPoint
+    addPerkPoint,
+    triggerEraTransition: (newEraId: string) => { // Placeholder
+      console.log(`Triggering era transition to ${newEraId} (placeholder)`);
+      // Actual logic would update gameState.currentEra, gameState.currentYear,
+      // gameState.equipmentMultiplier, potentially refresh projects/equipment, etc.
+      // This is a complex action and needs to be fully implemented.
+      setGameState({
+        ...gameState,
+        currentEra: newEraId,
+        // Reset or adjust other era-specific parts of the state here
+      });
+    },
+    refreshCandidates: () => { // Placeholder, actual candidate generation might be in staffUtils or staffGeneration
+        console.log("Refreshing candidates (placeholder in useGameActions)");
+        // This should ideally use generateCandidates from staffGeneration
+        // setGameState({
+        //   ...gameState,
+        //   availableCandidates: generateCandidates(3) // Example
+        // });
+    }
   };
-}; 
+};

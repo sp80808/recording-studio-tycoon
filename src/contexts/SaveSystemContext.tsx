@@ -1,32 +1,24 @@
 /**
  * @fileoverview Save system context with version tracking and compatibility checking
- * @version 0.3.0
+ * @version 0.3.1 
  * @author Recording Studio Tycoon Development Team
  * @created 2025-06-01
- * @modified 2025-06-08
- * @lastModifiedBy GitHub Copilot
+ * @modified 2025-06-11 
+ * @lastModifiedBy Cline
  */
 
-import React, { createContext, useContext, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, ReactNode, useCallback } from 'react';
 import { useSettings } from './SettingsContext';
-import { getVersionInfo, compareVersions } from '../utils/versionUtils';
 import { GameState } from '@/types/game';
-
-interface SaveData {
-  gameState: GameState;
-  timestamp: number;
-  version: string;
-  buildDate: string;
-  phase: string;
-  features: string[];
-  saveFormat: string;
-}
+import { saveGame as utilSaveGame, loadGame as utilLoadGame, deleteSave as utilDeleteSave, hasSaveGame as utilHasSaveGame, exportSave as utilExportSave, importSave as utilImportSave } from '../utils/saveLoadUtils';
 
 interface SaveSystemContextType {
   saveGame: (gameState: GameState) => void;
   loadGame: () => GameState | null;
   resetGame: () => void;
   hasSavedGame: () => boolean;
+  exportGameStateToString: (gameState: GameState) => string | null; // New function
+  loadGameFromString: (saveString: string) => GameState | null; // New function
 }
 
 const SaveSystemContext = createContext<SaveSystemContextType | undefined>(undefined);
@@ -41,80 +33,79 @@ export const useSaveSystem = () => {
 
 interface SaveSystemProviderProps {
   children: ReactNode;
+  gameState: GameState;
+  setGameState: (state: GameState | ((prevState: GameState) => GameState)) => void;
 }
 
-export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children }) => {
+export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children, gameState, setGameState }) => {
   const { settings } = useSettings();
 
-  const saveGame = (gameState: GameState) => {
-    try {
-      const versionInfo = getVersionInfo();
-      const saveData: SaveData = {
-        gameState,
-        timestamp: Date.now(),
-        ...versionInfo,
-        saveFormat: 'v2' // For future migration tracking
-      };
-      
-      localStorage.setItem('recordingStudioTycoonSave', JSON.stringify(saveData));
-      console.log(`Game saved successfully - Version ${versionInfo.version}`);
-    } catch (error) {
-      console.error('Failed to save game:', error);
+  const saveGame = useCallback((gameState: GameState) => {
+    if (utilSaveGame(gameState)) {
+      console.log('Game saved successfully via utilSaveGame');
+    } else {
+      console.error('Failed to save game via utilSaveGame');
     }
-  };
+  }, []);
 
-  const loadGame = (): GameState | null => {
+  const loadGame = useCallback((): GameState | null => {
+    const loadedState = utilLoadGame();
+    if (loadedState) {
+      console.log('Game loaded successfully via utilLoadGame');
+    } else {
+      console.warn('No game to load or failed to load via utilLoadGame');
+    }
+    return loadedState;
+  }, []);
+
+  const resetGame = useCallback(() => {
+    if (utilDeleteSave()) {
+      console.log('Game progress reset via utilDeleteSave');
+    } else {
+      console.error('Failed to reset game via utilDeleteSave');
+    }
+  }, []);
+
+  const hasSavedGame = useCallback((): boolean => {
+    return utilHasSaveGame();
+  }, []);
+
+  const exportGameStateToString = useCallback((gameState: GameState): string | null => {
     try {
-      const savedData = localStorage.getItem('recordingStudioTycoonSave');
-      if (!savedData) return null;
-      
-      const parsed = JSON.parse(savedData) as SaveData;
-      const currentVersionInfo = getVersionInfo();
-      
-      // Version compatibility checking
-      if (parsed.version && parsed.version !== currentVersionInfo.version) {
-        const versionComparison = compareVersions(parsed.version, currentVersionInfo.version);
-        if (versionComparison < 0) {
-          console.warn(`Loading save from older version: ${parsed.version} -> ${currentVersionInfo.version}`);
-          // Future: Add migration logic here
-        } else if (versionComparison > 0) {
-          console.warn(`Loading save from newer version: ${parsed.version} -> ${currentVersionInfo.version}`);
-          // Handle downgrade scenario
-        }
-      }
-      
-      console.log(`Game loaded successfully - Save Version: ${parsed.version || 'legacy'}`);
-      return parsed.gameState;
+      const exportedString = utilExportSave();
+      console.log('Game state exported to string successfully via utilExportSave');
+      return exportedString;
     } catch (error) {
-      console.error('Failed to load game:', error);
+      console.error('Failed to export game state to string via utilExportSave:', error);
       return null;
     }
-  };
+  }, []);
 
-  const resetGame = () => {
+  const loadGameFromString = useCallback((saveString: string): GameState | null => {
     try {
-      localStorage.removeItem('recordingStudioTycoonSave');
-      console.log('Game progress reset');
+      utilImportSave(saveString);
+      const loadedState = utilLoadGame(); // Load after import
+      if (loadedState) {
+        console.log('Game loaded from string successfully via utilLoadGame');
+      } else {
+        console.error('Failed to load game from string after import via utilLoadGame');
+      }
+      return loadedState;
     } catch (error) {
-      console.error('Failed to reset game:', error);
+      console.error('Failed to import or load game from string:', error);
+      return null;
     }
-  };
-
-  const hasSavedGame = (): boolean => {
-    return localStorage.getItem('recordingStudioTycoonSave') !== null;
-  };
+  }, []);
 
   // Auto-save functionality
   useEffect(() => {
-    let autoSaveInterval: NodeJS.Timeout;
+    let autoSaveInterval: NodeJS.Timeout | undefined;
     
     if (settings.autoSave) {
-      // Auto-save every 30 seconds
       autoSaveInterval = setInterval(() => {
-        // This will be called from the main game component
-        const event = new CustomEvent('autoSave');
-        window.dispatchEvent(event);
-      }, 30000);
+        utilSaveGame(gameState);
+        console.log('Auto-saved game state.');
+      }, 30000); // Auto-save every 30 seconds
     }
 
     return () => {
@@ -122,10 +113,17 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
         clearInterval(autoSaveInterval);
       }
     };
-  }, [settings.autoSave]);
+  }, [settings.autoSave, gameState]);
 
   return (
-    <SaveSystemContext.Provider value={{ saveGame, loadGame, resetGame, hasSavedGame }}>
+    <SaveSystemContext.Provider value={{ 
+      saveGame, 
+      loadGame, 
+      resetGame, 
+      hasSavedGame, 
+      exportGameStateToString, 
+      loadGameFromString 
+    }}>
       {children}
     </SaveSystemContext.Provider>
   );

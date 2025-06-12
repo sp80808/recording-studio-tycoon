@@ -1,13 +1,19 @@
-
 import React from 'react';
 
 interface GameLayoutProps {
   children: React.ReactNode;
 }
 
+const getBackgroundColorScheme = (): string => {
+  // Always return the original default dark scheme
+  return 'from-gray-900 via-blue-900 to-green-900';
+};
+
 export const GameLayout: React.FC<GameLayoutProps> = ({ children }) => {
+  const backgroundClass = getBackgroundColorScheme();
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-green-900 text-white relative overflow-hidden">
+    <div className={`min-h-screen bg-gradient-to-br ${backgroundClass} text-white relative overflow-hidden flex flex-col`}>
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-10 left-10 w-32 h-32 bg-purple-500/10 rounded-full animate-pulse"></div>

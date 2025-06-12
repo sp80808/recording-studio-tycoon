@@ -226,4 +226,84 @@ Recording Studio Tycoon combines music production simulation with business manag
 - Challenges
 - Sharing
 - Collaboration
-- Events 
+- Events
+
+## Staff Management System
+
+### 1. Staff Types & Roles
+- **Producers**: Lead recording sessions, manage project quality
+- **Engineers**: Handle technical aspects of recording and mixing
+- **Assistants**: Support main staff, handle basic tasks
+- **Interns**: Learn and grow, provide basic support
+
+### 2. Staff Attributes
+- **Skills**: Technical expertise in various areas
+- **Experience**: Years of professional work
+- **Salary**: Base compensation and bonuses
+- **Status**: Current role and availability
+- **Performance**: Track record and quality metrics
+
+### 3. Staff Operations
+- **Hiring**: Recruit new staff members
+  - Review candidate profiles
+  - Assess skills and experience
+  - Negotiate salary
+  - Handle onboarding
+- **Training**: Improve staff skills and capabilities
+  - Skill development programs
+  - Experience-based learning
+  - Performance feedback
+  - Career progression
+- **Assignment**: Deploy staff to appropriate projects
+  - Role matching
+  - Workload balancing
+  - Project requirements
+  - Team composition
+- **Management**: Monitor and optimize staff performance
+  - Performance tracking
+  - Quality metrics
+  - Efficiency analysis
+  - Resource utilization
+
+### 4. Staff Management Interface
+- **Staff Panel**: Overview of all staff members
+  - Current assignments
+  - Performance metrics
+  - Skill levels
+  - Status indicators
+- **Hiring Interface**: Recruit new staff
+  - Candidate profiles
+  - Skill assessments
+  - Salary negotiations
+  - Contract management
+- **Training Center**: Develop staff capabilities
+  - Training programs
+  - Skill development
+  - Performance tracking
+  - Progress monitoring
+- **Assignment System**: Deploy staff effectively
+  - Project matching
+  - Team composition
+  - Workload management
+  - Resource allocation
+
+### 5. Staff Impact on Projects
+- **Quality Influence**: Staff skills affect project outcomes
+- **Efficiency Impact**: Experience level affects work speed
+- **Cost Management**: Salary and training costs
+- **Team Dynamics**: Staff combinations and synergies
+- **Project Success**: Staff contribution to project quality
+
+### 6. Staff Development
+- **Career Progression**: Advancement opportunities
+- **Skill Growth**: Natural improvement through work
+- **Training Programs**: Structured development
+- **Performance Rewards**: Incentives for excellence
+- **Specialization**: Focus on specific areas
+
+### 7. Staff Economics
+- **Salary Management**: Balance compensation
+- **Training Investment**: Cost of development
+- **Performance Bonuses**: Reward excellence
+- **Efficiency Metrics**: Measure staff value
+- **ROI Tracking**: Monitor staff investment returns 

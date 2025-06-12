@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useRewards, UseRewardsReturn } from '@/hooks/useRewards';
-import { RewardDisplay } from '@/components/rewards/RewardDisplay';
-import { MinigameType, Achievement, PlayerProgress, MinigameReward } from '@/types/game';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { RhythmTimingGame } from './RhythmTimingGame';
 import { MixingBoardGame } from './MixingBoardGame';
 import { SoundWaveGame } from './SoundWaveGame';
@@ -12,146 +9,165 @@ import { MasteringGame } from './MasteringGame';
 import { EffectChainGame } from './EffectChainGame';
 import { AcousticTreatmentGame } from './AcousticTreatmentGame';
 import { InstrumentLayeringGame } from './InstrumentLayeringGame';
-import { TapeSplicingGame } from './TapeSplicingGame';
-import { FourTrackRecordingGame } from './FourTrackRecordingGame';
-import { MIDIProgrammingGame } from './MIDIProgrammingGame';
-import { DigitalMixingGame } from './DigitalMixingGame';
-import { SampleEditingGame } from './SampleEditingGame';
-import { SoundDesignGame } from './SoundDesignGame';
-import { AudioRestorationGame } from './AudioRestorationGame';
-// Import MinigameManagerProps from types/game.ts to ensure consistency
-// PlayerProgress is already imported on line 5, so remove duplicate here.
-import { MinigameManagerProps as MinigameManagerPropsType } from '@/types/game'; 
+import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
+import { toast } from '@/hooks/use-toast';
+import { MixingMinigame } from './MixingMinigame';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { gameAudio } from '@/utils/audioSystem';
+import { VocalRecordingMinigame } from './VocalRecordingMinigame';
+import { GuitarPedalBoardGame } from './GuitarPedalBoardGame';
+import { PatchBayGame } from './PatchBayGame';
 
-// Use the imported type for props
-export const MinigameManager: React.FC<MinigameManagerPropsType> = ({
+export type MinigameType = 'rhythm' | 'mixing' | 'waveform' | 'beatmaking' | 'vocal' | 'mastering' | 'effectchain' | 'acoustic' | 'layering' | 'recording' | 'pedalboard' | 'patchbay';
+
+interface MinigameManagerProps {
+  isOpen: boolean;
+  onClose: () => void;
+  gameType: MinigameType;
+  onReward: (creativityBonus: number, technicalBonus: number, xpBonus: number) => void;
+  onComplete: (type: MinigameType, score: number) => void;
+  difficulty: number;
+}
+
+export const MinigameManager: React.FC<MinigameManagerProps> = ({
   isOpen,
+  onClose,
   gameType,
   onReward,
-  onClose,
-  // difficulty and initialProgress are not in MinigameManagerPropsType from types/game.ts
-  // We'll handle them: difficulty can be a local const or optional prop, initialProgress needs a source.
+  onComplete,
+  difficulty
 }) => {
-  const [showRewardsView, setShowRewardsView] = useState(false); // Renamed for clarity
+  const [showGame, setShowGame] = useState(true);
+  const backgroundMusic = useBackgroundMusic();
 
-  // Placeholder for initialProgress. In a real app, this would come from game state context or be passed.
-  const mockInitialProgress: PlayerProgress = { 
-    level: 1, 
-    experience: 0, 
-    skills: { technical: 0, creative: 0, business: 0 }, 
-    achievements: [], 
-    unlockedFeatures: [],
-    reputation: { local: 0, regional: 0, national: 0, global: 0 }
-  };
-  const { playerProgress, recentRewards, recentAchievements, processMinigameCompletion, resetRecentRewards } = useRewards(mockInitialProgress) as UseRewardsReturn;
-  // Note: `playerProgress` from useRewards is available if needed for display or logic.
-  
-  // Default difficulty if not provided via props (as it's not in MinigameManagerPropsType)
-  const difficulty = 1; // Example: default to easy
-  const difficultyString = difficulty <= 1 ? 'easy' : difficulty === 2 ? 'medium' : 'hard';
-
-  // This function is called when a specific minigame component (e.g., RhythmTimingGame) completes.
-  // It processes rewards and then calls the `onReward` prop passed from ActiveProject.
-  const handleGameCompleteInternal = (score: number, creativityBonus = 0, technicalBonus = 0, xpBonus = 0) => {
-    // Calculate generic bonuses if specific ones aren't provided by the minigame
-    const genericCreativityBonus = score * 0.5; // Example
-    const genericTechnicalBonus = score * 0.3;  // Example
-    const genericXpBonus = score * 1;          // Example
-
-    processMinigameCompletion(score, difficulty, gameType); // Use gameType
+  const handleGameComplete = (score: number) => {
+    setShowGame(false);
     
-    // Call the onReward prop (from ActiveProject) with calculated or provided bonuses
-    onReward(
-      creativityBonus || genericCreativityBonus, 
-      technicalBonus || genericTechnicalBonus, 
-      xpBonus || genericXpBonus
-    );
-    setShowRewardsView(true); // Show the reward display screen
+    // Calculate rewards based on score and game type
+    let creativityBonus = 0;
+    let technicalBonus = 0;
+    // Dramatically reduced XP scaling to prevent exponential progression
+    const xpBonus = Math.floor(Math.max(1, score / 50)); // Reduced from /10 to /50
+
+    switch (gameType) {
+      case 'rhythm':
+        creativityBonus = Math.floor(score / 8);
+        technicalBonus = Math.floor(score / 12);
+        break;
+      case 'mixing':
+        creativityBonus = Math.floor(score / 12);
+        technicalBonus = Math.floor(score / 8);
+        break;
+      case 'waveform':
+        creativityBonus = Math.floor(score / 10);
+        technicalBonus = Math.floor(score / 10);
+        break;
+      case 'beatmaking':
+        creativityBonus = Math.floor(score / 6);
+        technicalBonus = Math.floor(score / 15);
+        break;
+      case 'vocal':
+        creativityBonus = Math.floor(score / 7);
+        technicalBonus = Math.floor(score / 11);
+        break;
+      case 'mastering':
+        creativityBonus = Math.floor(score / 15);
+        technicalBonus = Math.floor(score / 6);
+        break;
+      case 'effectchain':
+        creativityBonus = Math.floor(score / 8);
+        technicalBonus = Math.floor(score / 10);
+        break;
+      case 'acoustic':
+        creativityBonus = Math.floor(score / 12);
+        technicalBonus = Math.floor(score / 8);
+        break;
+      case 'layering':
+        creativityBonus = Math.floor(score / 9);
+        technicalBonus = Math.floor(score / 11);
+        break;
+    }
+
+    onReward(creativityBonus, technicalBonus, xpBonus);
+
+    toast({
+      title: "Minigame Complete!",
+      description: `Earned +${creativityBonus} creativity, +${technicalBonus} technical, +${xpBonus} XP`,
+    });
   };
 
-  // This function is called when the reward display screen is closed.
-  const handleRewardsDisplayClose = () => {
-    setShowRewardsView(false);
-    resetRecentRewards();
-    // The main onClose (passed from ActiveProject) is used to close the entire MinigameManager modal.
-    // No need to call onReward here again as it was called in handleGameCompleteInternal.
+  const handleClose = () => {
+    setShowGame(true);
+    onClose();
   };
-  
-  // Placeholder for onFail, if individual games need it.
-  const handleGameFailInternal = () => {
-    console.log(`Minigame ${gameType} failed.`);
-    // Potentially show a failure message or apply penalties
-    onClose(); // Close the minigame manager on failure
+
+  const handleMinigameComplete = (score: number) => {
+    setShowGame(false);
+    onComplete(gameType, score);
   };
 
   const renderGame = () => {
-    // Pass handleGameCompleteInternal as onComplete to individual games
-    // Pass handleGameFailInternal as onFail if the game supports it
-    // Pass gameType as type, and difficulty for games that need it.
-    switch (gameType) { // Use gameType from props
+    if (!showGame) return null;
+
+    const gameProps = {
+      onComplete: handleGameComplete,
+      onClose: handleClose
+    };
+
+    switch (gameType) {
       case 'rhythm':
-        return <RhythmTimingGame onComplete={handleGameCompleteInternal} onClose={onClose} difficulty={difficultyString} />;
+        return <RhythmTimingGame {...gameProps} />;
       case 'mixing':
-        return <MixingBoardGame onComplete={handleGameCompleteInternal} onClose={onClose} />; // Assuming it doesn't need difficulty/type/onFail
+        return <MixingMinigame
+          onComplete={handleMinigameComplete}
+          onClose={handleClose}
+          difficulty={difficulty}
+        />;
       case 'waveform':
-        return <SoundWaveGame onComplete={handleGameCompleteInternal} onClose={onClose} />; // Assuming it doesn't need difficulty/type/onFail
+        return <SoundWaveGame {...gameProps} />;
       case 'beatmaking':
-        // BeatMakingGame might need more props based on previous errors. Assuming type, difficulty, onFail for now.
-        return <BeatMakingGame type={gameType} difficulty={difficultyString} onComplete={handleGameCompleteInternal} onFail={handleGameFailInternal} onClose={onClose} />;
+        return <BeatMakingGame {...gameProps} backgroundMusic={backgroundMusic} />;
       case 'vocal':
-        return <VocalRecordingGame onComplete={handleGameCompleteInternal} onClose={onClose} />; // Assuming it doesn't need difficulty/type/onFail
+        return <VocalRecordingMinigame
+          onComplete={handleMinigameComplete}
+          onClose={handleClose}
+          difficulty={difficulty}
+        />;
       case 'mastering':
-        return <MasteringGame onComplete={handleGameCompleteInternal} onClose={onClose} />; // Assuming it doesn't need difficulty/type/onFail
+        return <MasteringGame {...gameProps} />;
       case 'effectchain':
-        return <EffectChainGame onComplete={handleGameCompleteInternal} onClose={onClose} />; // Assuming it doesn't need difficulty/type/onFail
+        return <EffectChainGame {...gameProps} />;
       case 'acoustic':
-        return <AcousticTreatmentGame onComplete={handleGameCompleteInternal} onClose={onClose} />; // Assuming it doesn't need difficulty/type/onFail
+        return <AcousticTreatmentGame {...gameProps} />;
       case 'layering':
-        return <InstrumentLayeringGame onComplete={handleGameCompleteInternal} onClose={onClose} />; // Assuming it doesn't need difficulty/type/onFail
-      case 'tape_splicing':
-        return <TapeSplicingGame difficulty={difficulty} onComplete={handleGameCompleteInternal} onFail={handleGameFailInternal} onClose={onClose} />;
-      case 'four_track_recording':
-        return <FourTrackRecordingGame difficulty={difficulty} onComplete={handleGameCompleteInternal} onFail={handleGameFailInternal} onClose={onClose} />;
-      case 'midi_programming':
-        return <MIDIProgrammingGame difficulty={difficulty} onComplete={handleGameCompleteInternal} onFail={handleGameFailInternal} onClose={onClose} />;
-      case 'digital_mixing':
-        return <DigitalMixingGame difficulty={difficulty} onComplete={handleGameCompleteInternal} onFail={handleGameFailInternal} onClose={onClose} />;
-      case 'sample_editing':
-        return <SampleEditingGame type={gameType} difficulty={difficulty} onComplete={handleGameCompleteInternal} onFail={handleGameFailInternal} onClose={onClose} />;
-      case 'sound_design':
-        return <SoundDesignGame difficulty={difficulty} onComplete={handleGameCompleteInternal} onFail={handleGameFailInternal} onClose={onClose} />;
-      case 'audio_restoration':
-        return <AudioRestorationGame difficulty={difficulty} onComplete={handleGameCompleteInternal} onFail={handleGameFailInternal} onClose={onClose} />;
+        return <InstrumentLayeringGame {...gameProps} />;
+      case 'pedalboard':
+        return (
+          <GuitarPedalBoardGame
+            onComplete={handleMinigameComplete}
+            onClose={handleClose}
+            difficulty={difficulty}
+          />
+        );
+      case 'patchbay':
+        return (
+          <PatchBayGame
+            onComplete={handleMinigameComplete}
+            onClose={handleClose}
+            difficulty={difficulty}
+          />
+        );
       default:
-        console.warn(`Minigame type "${gameType}" not recognized.`);
         return null;
     }
   };
 
-  if (!isOpen) { // Check isOpen prop to control rendering
-    return null;
-  }
-
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4"
-      >
-        <AnimatePresence>
-          {showRewardsView ? ( // Changed from showRewards
-            <RewardDisplay
-              rewards={recentRewards}
-              achievements={recentAchievements}
-              onClose={handleRewardsDisplayClose} // Changed from handleRewardsClose
-            />
-          ) : (
-            renderGame()
-          )}
-        </AnimatePresence>
-      </motion.div>
-    </div>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-4xl bg-transparent border-0 p-0">
+        {renderGame()}
+      </DialogContent>
+    </Dialog>
   );
 };

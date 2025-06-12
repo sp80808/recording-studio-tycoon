@@ -16,7 +16,10 @@ export type MinigameType =
   | 'audio_restoration'
   | 'analog_console'
   | 'four_track_recording'
-  | 'tape_splicing';
+  | 'tape_splicing'
+  | 'microphone_placement'
+  | 'mastering_chain'
+  | 'sound_design_synthesis';
 
 export interface MinigameTriggerDefinition {
   type: MinigameType;

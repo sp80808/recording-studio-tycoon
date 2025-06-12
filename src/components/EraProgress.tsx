@@ -32,7 +32,11 @@ export const EraProgress: React.FC<EraProgressProps> = ({ gameState, triggerEraT
             <span>Era Progress</span>
             <span>{Math.round(progressPercent)}%</span>
           </div>
-          <Progress value={progressPercent} className="h-2" />
+          <Progress 
+            value={progressPercent} 
+            className="h-2"
+            aria-label="Era progression progress"
+          />
         </div>
 
         {/* Next Era */}
