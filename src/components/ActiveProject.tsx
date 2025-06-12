@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -8,14 +8,17 @@ import { MinigameManager, MinigameType } from './minigames/MinigameManager';
 import { shouldAutoTriggerMinigame } from '@/utils/minigameUtils';
 import { AnimatedStatBlobs } from './AnimatedStatBlobs';
 import { OrbAnimationStyles } from './OrbAnimationStyles';
+import { ProjectCompletionCelebration } from './ProjectCompletionCelebration';
+import { EnhancedAnimationStyles } from './EnhancedAnimationStyles';
 import { toast } from '@/hooks/use-toast';
 
 interface ActiveProjectProps {
   gameState: GameState;
   focusAllocation: FocusAllocation;
   setFocusAllocation: (allocation: FocusAllocation) => void;
-  performDailyWork: () => void;
-  onMinigameReward?: (creativityBonus: number, technicalBonus: number, xpBonus: number) => void;
+  performDailyWork: () => { isComplete: boolean; review?: any } | undefined;
+  onMinigameReward?: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => void;
+  onProjectComplete?: () => void;
 }
 
 export const ActiveProject: React.FC<ActiveProjectProps> = ({
@@ -23,12 +26,14 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   focusAllocation,
   setFocusAllocation,
   performDailyWork,
-  onMinigameReward
+  onMinigameReward,
+  onProjectComplete
 }) => {
   const [showMinigame, setShowMinigame] = useState(false);
   const [selectedMinigame, setSelectedMinigame] = useState<MinigameType>('rhythm');
   const [lastGains, setLastGains] = useState<{ creativity: number; technical: number }>({ creativity: 0, technical: 0 });
   const [showBlobAnimation, setShowBlobAnimation] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
   const [autoTriggeredMinigame, setAutoTriggeredMinigame] = useState<{
     type: MinigameType;
     reason: string;
@@ -114,10 +119,10 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const overallProgress = totalWorkUnits > 0 ? (completedWorkUnits / totalWorkUnits) * 100 : 0;
 
   const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number) => {
-    console.log('🎮 Minigame rewards received:', { creativityBonus, technicalBonus, xpBonus });
+    console.log('🎮 Minigame rewards received:', { creativityBonus, technicalBonus, xpBonus, minigameType: selectedMinigame });
     
     if (onMinigameReward) {
-      onMinigameReward(creativityBonus, technicalBonus, xpBonus);
+      onMinigameReward(creativityBonus, technicalBonus, xpBonus, selectedMinigame);
     }
     
     // Mark this stage as having completed a minigame
@@ -154,7 +159,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
     // Store expected gains for animation (simplified calculation)
     const baseCreativity = gameState.playerData.dailyWorkCapacity * gameState.playerData.attributes.creativeIntuition;
-    const baseTechnical = gameState.playerData.dailyWorkCapacity * gameState.playerData.attributes.technicalAptitude;
+    const baseTechnical = gameState.playerData.attributes.technicalAptitude;
     
     const creativityGain = Math.floor(
       baseCreativity * (focusAllocation.performance / 100) * 0.8 + 
@@ -170,7 +175,17 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     setShowBlobAnimation(true);
     
     // Call actual work function
-    performDailyWork();
+    const result = performDailyWork();
+    
+    if (result?.isComplete) {
+      console.log('🎉 Project completed! Triggering celebration...');
+      setShowCelebration(true);
+      setTimeout(() => {
+        if (onProjectComplete) {
+          onProjectComplete();
+        }
+      }, 1500);
+    }
   };
 
   // Check if current stage is complete and ready to advance
@@ -340,6 +355,16 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             technicalGain={lastGains.technical}
             onComplete={() => setShowBlobAnimation(false)}
             containerRef={{ current: document.querySelector('.relative') as HTMLDivElement }}
+          />
+        )}
+
+        {/* Project Completion Celebration */}
+        {showCelebration && gameState.activeProject && (
+          <ProjectCompletionCelebration 
+            isVisible={showCelebration}
+            projectTitle={gameState.activeProject.title}
+            genre={gameState.activeProject.genre}
+            onComplete={() => setShowCelebration(false)}
           />
         )}
       </div>

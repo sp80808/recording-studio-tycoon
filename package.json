@@ -1,8 +1,10 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "recording-studio-tycoon",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.3.0",
   "type": "module",
+  "description": "Music industry simulation game with historical progression and minigames",
+  "author": "Recording Studio Tycoon Development Team",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

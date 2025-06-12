@@ -7,9 +7,13 @@ import { gameAudio } from '@/utils/audioSystem';
 interface BeatMakingGameProps {
   onComplete: (score: number) => void;
   onClose: () => void;
+  backgroundMusic?: {
+    fadeVolume: (targetVolume: number, duration?: number) => Promise<void>;
+    restoreVolume: (duration?: number) => Promise<void>;
+  };
 }
 
-export const BeatMakingGame: React.FC<BeatMakingGameProps> = ({ onComplete, onClose }) => {
+export const BeatMakingGame: React.FC<BeatMakingGameProps> = ({ onComplete, onClose, backgroundMusic }) => {
   const [beats, setBeats] = useState<boolean[][]>(Array(4).fill(null).map(() => Array(8).fill(false)));
   const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -31,9 +35,20 @@ export const BeatMakingGame: React.FC<BeatMakingGameProps> = ({ onComplete, onCl
   useEffect(() => {
     const initAudio = async () => {
       await gameAudio.initialize();
+      // Fade down background music when beatmaking game starts (slower fade)
+      if (backgroundMusic) {
+        await backgroundMusic.fadeVolume(0.2, 1500); // Fade to 20% volume over 1.5 seconds
+      }
     };
     initAudio();
-  }, []);
+
+    // Cleanup: restore background music volume when component unmounts
+    return () => {
+      if (backgroundMusic) {
+        backgroundMusic.restoreVolume(1500); // Restore over 1.5 seconds
+      }
+    };
+  }, [backgroundMusic]);
 
   useEffect(() => {
     if (isPlaying) {
@@ -96,10 +111,15 @@ export const BeatMakingGame: React.FC<BeatMakingGameProps> = ({ onComplete, onCl
     });
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     setIsPlaying(false);
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (gameIntervalRef.current) clearInterval(gameIntervalRef.current);
+    
+    // Restore background music volume with slower fade
+    if (backgroundMusic) {
+      await backgroundMusic.restoreVolume(1500);
+    }
     
     // Bonus for creating rhythmic patterns
     const patternBonus = beats.some(track => 
@@ -108,6 +128,14 @@ export const BeatMakingGame: React.FC<BeatMakingGameProps> = ({ onComplete, onCl
     
     gameAudio.playSuccess();
     onComplete(score + patternBonus);
+  };
+
+  const handleClose = async () => {
+    // Restore background music volume before closing with slower fade
+    if (backgroundMusic) {
+      await backgroundMusic.restoreVolume(1500);
+    }
+    onClose();
   };
 
   return (
@@ -156,7 +184,7 @@ export const BeatMakingGame: React.FC<BeatMakingGameProps> = ({ onComplete, onCl
         <Button onClick={handleComplete} className="px-6 py-3 bg-blue-600 hover:bg-blue-700">
           🎵 Finish Beat
         </Button>
-        <Button onClick={onClose} variant="outline" className="px-6 py-3">
+        <Button onClick={handleClose} variant="outline" className="px-6 py-3">
           Cancel
         </Button>
       </div>

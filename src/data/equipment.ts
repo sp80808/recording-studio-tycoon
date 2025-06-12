@@ -1,265 +1,348 @@
 
-import { Equipment } from '@/types/game';
+import { EraAvailableEquipment } from '@/types/game';
 
-export const availableEquipment: Equipment[] = [
+export const equipment: EraAvailableEquipment[] = [
   // Microphones
   {
-    id: 'basic_mic',
-    name: 'Basic USB Mic',
+    id: 'sm57',
+    name: 'Shure SM57',
     category: 'microphone',
-    price: 0,
-    description: 'Standard starter microphone that came with your first audio interface',
-    bonuses: { qualityBonus: 0 },
-    icon: '🎤'
-  },
-  {
-    id: 'shurely_serious_mic',
-    name: 'Shurely You Can\'t Be Serious Mic',
-    category: 'microphone',
-    price: 280,
-    description: 'Perfect for loud sources and denying the undeniable. Modest boost to Rock & Acoustic recording quality.',
-    bonuses: { genreBonus: { Rock: 2, Acoustic: 1 }, technicalBonus: 5 },
+    price: 100,
+    description: 'Industry standard dynamic microphone',
+    bonuses: {
+      qualityBonus: 5
+    },
     icon: '🎤',
-    skillRequirement: { skill: 'Rock', level: 1 }
+    availableFrom: '1960s'
   },
   {
-    id: 'condenser_mic',
-    name: 'Professional Condenser Mic',
+    id: 'u87',
+    name: 'Neumann U87',
     category: 'microphone',
-    price: 450,
-    description: 'High-quality condenser microphone perfect for vocals and acoustic instruments',
-    bonuses: { genreBonus: { Acoustic: 2, Pop: 1 }, qualityBonus: 10 },
-    icon: '🎤'
+    price: 3200,
+    description: 'Premium large-diaphragm condenser microphone',
+    bonuses: {
+      genreBonus: { Rock: 15, Acoustic: 20 },
+      technicalBonus: 10
+    },
+    icon: '🎙️',
+    skillRequirement: {
+      recording: 15
+    },
+    availableFrom: '1960s'
   },
   {
-    id: 'dynamic_mic',
-    name: 'Dynamic Recording Mic',
+    id: 'c414',
+    name: 'AKG C414',
     category: 'microphone',
-    price: 320,
-    description: 'Robust dynamic microphone ideal for rock and live recordings',
-    bonuses: { genreBonus: { Rock: 2, 'Hip-hop': 1 }, qualityBonus: 8 },
-    icon: '🎤'
-  },
-  {
-    id: 'neumann_u_wish',
-    name: 'Neumann U-Wish-U-Had-One U80-not-7',
-    category: 'microphone',
-    price: 1500,
-    description: 'Captures every nuance, including the singer\'s breakfast. Significant boost to Vocal Recording Quality & Acoustic instrument clarity.',
-    bonuses: { genreBonus: { Acoustic: 4, Pop: 3 }, qualityBonus: 25, creativityBonus: 10 },
+    price: 1400,
+    description: 'Versatile large-diaphragm condenser microphone',
+    bonuses: {
+      genreBonus: { Acoustic: 15, Pop: 10 },
+      qualityBonus: 8
+    },
     icon: '🎤',
-    skillRequirement: { skill: 'Acoustic', level: 4 }
+    availableFrom: '1970s'
   },
   {
-    id: 'ribbon_vintage_mic',
-    name: 'Ribbon-Me-This Vintage Mic',
+    id: 'sm58',
+    name: 'Shure SM58',
     category: 'microphone',
-    price: 850,
-    description: 'Smooth as butter, warm as toast. Makes everything sound like it was recorded in the good old days.',
-    bonuses: { genreBonus: { Acoustic: 3, Rock: 2 }, creativityBonus: 15, qualityBonus: 12 },
+    price: 100,
+    description: 'Legendary vocal microphone',
+    bonuses: {
+      genreBonus: { Rock: 10, 'Hip-hop': 8 },
+      qualityBonus: 6
+    },
     icon: '🎤',
-    skillRequirement: { skill: 'Acoustic', level: 2 }
+    availableFrom: '1960s'
+  },
+  {
+    id: 'tube-u47',
+    name: 'Neumann U47 Tube',
+    category: 'microphone',
+    price: 8000,
+    description: 'Vintage tube condenser microphone',
+    bonuses: {
+      genreBonus: { Acoustic: 25, Pop: 15 },
+      qualityBonus: 15,
+      creativityBonus: 10
+    },
+    icon: '🎙️',
+    skillRequirement: {
+      recording: 25
+    },
+    availableFrom: '1940s'
+  },
+  {
+    id: 'ribbon-mic',
+    name: 'Coles 4038 Ribbon',
+    category: 'microphone',
+    price: 4500,
+    description: 'Classic ribbon microphone',
+    bonuses: {
+      genreBonus: { Acoustic: 20, Rock: 12 },
+      creativityBonus: 12,
+      qualityBonus: 10
+    },
+    icon: '🎙️',
+    skillRequirement: {
+      recording: 20
+    },
+    availableFrom: '1950s'
   },
 
   // Outboard Gear
   {
-    id: 'telefunken_around',
-    name: 'Telefunken Around Reverb Unit',
+    id: 'la2a',
+    name: 'Teletronix LA-2A',
     category: 'outboard',
-    price: 950,
-    description: 'Spacious, warm, and occasionally wanders off key. Adds character and creativity during mixing.',
-    bonuses: { creativityBonus: 20, qualityBonus: 15, genreBonus: { Acoustic: 2, Electronic: 1 } },
-    icon: '⚙️',
-    skillRequirement: { skill: 'Acoustic', level: 2 }
+    price: 4000,
+    description: 'Legendary tube compressor',
+    bonuses: {
+      creativityBonus: 15,
+      qualityBonus: 12,
+      genreBonus: { Acoustic: 18, Electronic: 8 }
+    },
+    icon: '📻',
+    skillRequirement: {
+      mixing: 18
+    },
+    availableFrom: '1960s'
   },
   {
-    id: 'api_the_wiser',
-    name: 'API The Wiser EQ',
+    id: '1176',
+    name: 'UREI 1176',
     category: 'outboard',
-    price: 750,
-    description: 'Makes your tracks sit up and pay attention. Boosts clarity and punch during mixing.',
-    bonuses: { technicalBonus: 18, qualityBonus: 12, speedBonus: 5 },
-    icon: '⚙️',
-    skillRequirement: { skill: 'Rock', level: 2 }
+    price: 2500,
+    description: 'Classic FET compressor',
+    bonuses: {
+      technicalBonus: 12,
+      qualityBonus: 10,
+      speedBonus: 5
+    },
+    icon: '📻',
+    skillRequirement: {
+      mixing: 15
+    },
+    availableFrom: '1960s'
   },
   {
-    id: 'fairychild_comp',
-    name: 'The Fairychild Compressor',
+    id: 'ssl-comp',
+    name: 'SSL Bus Compressor',
     category: 'outboard',
-    price: 1200,
-    description: 'Magically glues tracks together. Improves overall cohesion and technical score.',
-    bonuses: { technicalBonus: 25, qualityBonus: 20, genreBonus: { Pop: 2, Rock: 2 } },
-    icon: '⚙️',
-    skillRequirement: { skill: 'Pop', level: 3 }
+    price: 3500,
+    description: 'Punchy bus compressor',
+    bonuses: {
+      technicalBonus: 15,
+      qualityBonus: 12,
+      genreBonus: { Pop: 15, Rock: 12 }
+    },
+    icon: '📻',
+    skillRequirement: {
+      mixing: 20
+    },
+    availableFrom: '1980s'
   },
   {
-    id: 'compressor',
-    name: 'Hardware Compressor',
+    id: 'dbx160x',
+    name: 'dbx 160X',
     category: 'outboard',
-    price: 600,
-    description: 'Analog compressor for that warm, professional sound',
-    bonuses: { qualityBonus: 20, technicalBonus: 8 },
-    icon: '⚙️'
+    price: 400,
+    description: 'Affordable compressor/limiter',
+    bonuses: {
+      qualityBonus: 6,
+      technicalBonus: 4
+    },
+    icon: '📻',
+    availableFrom: '1980s'
   },
   {
-    id: 'ssl_console_strip',
-    name: 'SSL Seriously Solid Logic Console Strip',
+    id: 'neve-1073',
+    name: 'Neve 1073',
     category: 'outboard',
-    price: 2200,
-    description: 'The channel strip that launched a thousand hits. Or at least made them sound better.',
-    bonuses: { technicalBonus: 30, qualityBonus: 25, speedBonus: 10, genreBonus: { Pop: 3, Rock: 2 } },
-    icon: '⚙️',
-    skillRequirement: { skill: 'Pop', level: 4 }
+    price: 2800,
+    description: 'Iconic preamp/EQ',
+    bonuses: {
+      technicalBonus: 18,
+      qualityBonus: 15,
+      speedBonus: 8,
+      genreBonus: { Pop: 12, Rock: 15 }
+    },
+    icon: '🎛️',
+    skillRequirement: {
+      mixing: 22
+    },
+    availableFrom: '1970s'
   },
 
   // Instruments
   {
-    id: 'moog_or_less',
-    name: 'Moog-or-Less Analog Synth',
+    id: 'moog-sub37',
+    name: 'Moog Sub 37',
     category: 'instrument',
-    price: 1800,
-    description: 'Either sounds amazing or completely off. No in-between. Perfect for Electronic music adventures.',
-    bonuses: { genreBonus: { Electronic: 5, Pop: 2 }, creativityBonus: 25 },
+    price: 1500,
+    description: 'Analog synthesizer',
+    bonuses: {
+      genreBonus: { Electronic: 20, Pop: 12 },
+      creativityBonus: 15
+    },
     icon: '🎹',
-    skillRequirement: { skill: 'Electronic', level: 3 }
+    skillRequirement: {
+      arranging: 12
+    },
+    availableFrom: '2010s'
   },
   {
-    id: 'fender_bender',
-    name: 'Fender Bender Telecaster',
-    category: 'instrument',
-    price: 800,
-    description: 'Slightly damaged but full of character. Great for Rock and Country vibes.',
-    bonuses: { genreBonus: { Rock: 3, Acoustic: 2 }, creativityBonus: 12 },
-    icon: '🎸',
-    skillRequirement: { skill: 'Rock', level: 1 }
-  },
-  {
-    id: 'synthesizer',
-    name: 'Analog Synthesizer',
+    id: 'strat',
+    name: 'Fender Stratocaster',
     category: 'instrument',
     price: 1200,
-    description: 'Vintage-style analog synthesizer for electronic music production',
-    bonuses: { genreBonus: { Electronic: 3, Pop: 1 }, creativityBonus: 15 },
-    icon: '🎹'
+    description: 'Classic electric guitar',
+    bonuses: {
+      genreBonus: { Rock: 15, Acoustic: 8 },
+      creativityBonus: 10
+    },
+    icon: '🎸',
+    skillRequirement: {
+      arranging: 8
+    },
+    availableFrom: '1950s'
   },
   {
-    id: 'guitar_amp',
-    name: 'Tube Guitar Amplifier',
+    id: 'dx7',
+    name: 'Yamaha DX7',
     category: 'instrument',
-    price: 900,
-    description: 'Classic tube amplifier for that perfect rock guitar tone',
-    bonuses: { genreBonus: { Rock: 3, Acoustic: 1 }, creativityBonus: 10 },
-    icon: '🎸'
+    price: 2000,
+    description: 'Digital FM synthesizer',
+    bonuses: {
+      genreBonus: { Electronic: 18, Pop: 15 },
+      creativityBonus: 12
+    },
+    icon: '🎹',
+    availableFrom: '1980s'
   },
   {
-    id: 'drum_machine_808',
-    name: 'TR-808 Probably Genuine Drum Machine',
+    id: 'les-paul',
+    name: 'Gibson Les Paul',
     category: 'instrument',
-    price: 1350,
-    description: 'The boom, the bap, the legendary sound that defined Hip-hop. May or may not be an authentic vintage unit.',
-    bonuses: { genreBonus: { 'Hip-hop': 4, Electronic: 2 }, creativityBonus: 18, technicalBonus: 10 },
+    price: 2500,
+    description: 'Premium electric guitar',
+    bonuses: {
+      genreBonus: { Rock: 18, Acoustic: 10 },
+      creativityBonus: 12
+    },
+    icon: '🎸',
+    availableFrom: '1950s'
+  },
+  {
+    id: 'mpc2000xl',
+    name: 'Akai MPC2000XL',
+    category: 'instrument',
+    price: 1800,
+    description: 'Hip-hop production sampler',
+    bonuses: {
+      genreBonus: { 'Hip-hop': 25, Electronic: 15 },
+      creativityBonus: 18,
+      technicalBonus: 8
+    },
     icon: '🥁',
-    skillRequirement: { skill: 'Hip-hop', level: 2 }
+    skillRequirement: {
+      programming: 15
+    },
+    availableFrom: '1990s'
   },
 
-  // Software & Plugins
+  // Software
   {
-    id: 'pro_tools_shed',
-    name: 'Pro Tools Shed DAW',
+    id: 'protools',
+    name: 'Pro Tools',
     category: 'software',
     price: 600,
-    description: 'Industry standard that sometimes feels like working in a shed. Reliable but quirky.',
-    bonuses: { speedBonus: 15, technicalBonus: 10, qualityBonus: 8 },
-    icon: '💻'
+    description: 'Industry standard DAW',
+    bonuses: {
+      speedBonus: 15,
+      technicalBonus: 10,
+      qualityBonus: 8
+    },
+    icon: '💻',
+    availableFrom: '1990s'
   },
   {
-    id: 'logic_pro_blem',
-    name: 'Logic Pro-blem X',
-    category: 'software',
-    price: 300,
-    description: 'Great for Mac users who enjoy solving puzzles while making music.',
-    bonuses: { creativityBonus: 15, speedBonus: 10, genreBonus: { Electronic: 2 } },
-    icon: '💻'
-  },
-  {
-    id: 'ableton_live_wire',
-    name: 'Ableton Live Wire',
+    id: 'ableton',
+    name: 'Ableton Live',
     category: 'software',
     price: 450,
-    description: 'Perfect for live performances and studio work. Sometimes gets a bit too energetic.',
-    bonuses: { creativityBonus: 20, speedBonus: 15, genreBonus: { Electronic: 3, 'Hip-hop': 1 } },
+    description: 'Creative music software',
+    bonuses: {
+      creativityBonus: 18,
+      speedBonus: 12,
+      genreBonus: { Electronic: 20 }
+    },
     icon: '💻',
-    skillRequirement: { skill: 'Electronic', level: 1 }
+    availableFrom: '2000s'
   },
   {
-    id: 'autotune_autobot',
-    name: 'Auto-Tune Autobot Plugin',
+    id: 'logic',
+    name: 'Logic Pro',
     category: 'software',
-    price: 280,
-    description: 'Robots in disguise... as vocal processors. Makes everyone sound like the future.',
-    bonuses: { technicalBonus: 12, genreBonus: { Pop: 2, 'Hip-hop': 2 } },
+    price: 200,
+    description: 'Complete music production suite',
+    bonuses: {
+      creativityBonus: 15,
+      speedBonus: 10,
+      genreBonus: { Electronic: 12, 'Hip-hop': 10 }
+    },
     icon: '💻',
-    skillRequirement: { skill: 'Pop', level: 1 }
+    skillRequirement: {
+      programming: 8
+    },
+    availableFrom: '1990s'
+  },
+  {
+    id: 'autotune',
+    name: 'Auto-Tune',
+    category: 'software',
+    price: 400,
+    description: 'Pitch correction software',
+    bonuses: {
+      technicalBonus: 12,
+      genreBonus: { Pop: 15, 'Hip-hop': 20 }
+    },
+    icon: '🎵',
+    skillRequirement: {
+      mixing: 10
+    },
+    availableFrom: '1990s'
   },
 
-  // Studio Monitoring
+  // Monitors
   {
-    id: 'basic_monitors',
-    name: 'Basic Speakers',
+    id: 'ns10',
+    name: 'Yamaha NS-10M',
     category: 'monitor',
-    price: 0,
-    description: 'Standard studio monitors that came with your starter setup',
-    bonuses: { qualityBonus: 0 },
-    icon: '🔊'
-  },
-  {
-    id: 'studio_monitors',
-    name: 'Studio Monitor Pair',
-    category: 'monitor',
-    price: 800,
-    description: 'Professional studio monitors for accurate sound reproduction',
-    bonuses: { qualityBonus: 15, technicalBonus: 5 },
-    icon: '🔊'
-  },
-  {
-    id: 'yamaha_ns_no_way',
-    name: 'Yamaha NS-No-Way Reference Monitors',
-    category: 'monitor',
-    price: 1600,
-    description: 'These monitors reveal truths about your mix you didn\'t want to know. Brutally honest.',
-    bonuses: { qualityBonus: 30, technicalBonus: 20, speedBonus: 5 },
+    price: 500,
+    description: 'Industry reference monitors',
+    bonuses: {
+      qualityBonus: 10
+    },
     icon: '🔊',
-    skillRequirement: { skill: 'Pop', level: 2 }
-  },
-
-  // Audio Interfaces
-  {
-    id: 'audio_interface',
-    name: 'Audio Interface',
-    category: 'interface',
-    price: 350,
-    description: 'Multi-channel audio interface for professional recording',
-    bonuses: { qualityBonus: 12, speedBonus: 10 },
-    icon: '🔌'
+    availableFrom: '1970s'
   },
   {
-    id: 'apogee_symphony_phony',
-    name: 'Apogee Symphony-Phony Interface',
-    category: 'interface',
-    price: 2800,
-    description: 'Converts analog to digital with the precision of a Swiss watch and the ego of a virtuoso.',
-    bonuses: { qualityBonus: 35, technicalBonus: 25, speedBonus: 15 },
-    icon: '🔌',
-    skillRequirement: { skill: 'Acoustic', level: 3 }
+    id: 'genelec',
+    name: 'Genelec 1031A',
+    category: 'monitor',
+    price: 1500,
+    description: 'High-end studio monitors',
+    bonuses: {
+      qualityBonus: 15,
+      technicalBonus: 8
+    },
+    icon: '🔊',
+    skillRequirement: {
+      mixing: 12
+    },
+    availableFrom: '1980s'
   }
 ];
-
-export const equipmentCategories = {
-  all: 'All Equipment',
-  microphone: 'Microphones',
-  monitor: 'Studio Monitoring',
-  interface: 'Audio Interfaces',
-  outboard: 'Outboard Gear',
-  instrument: 'Instruments',
-  software: 'Software & Plugins'
-};

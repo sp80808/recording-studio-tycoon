@@ -1,22 +1,157 @@
 // Sound System for Recording Studio Tycoon
-// Using Web Audio API for real-time sound generation
+// Using Web Audio API with real audio files
+
+interface AudioSettings {
+  masterVolume: number;
+  sfxVolume: number;
+  musicVolume: number;
+  sfxEnabled: boolean;
+  musicEnabled: boolean;
+}
 
 class GameAudioSystem {
   private audioContext: AudioContext | null = null;
   private masterGain: GainNode | null = null;
+  private sfxGain: GainNode | null = null;
+  private musicGain: GainNode | null = null;
   private isInitialized = false;
+  private audioBuffers: Map<string, AudioBuffer> = new Map();
+  private currentMusic: AudioBufferSourceNode | null = null;
+  private settings: AudioSettings = {
+    masterVolume: 0.7,
+    sfxVolume: 0.8,
+    musicVolume: 0.5,
+    sfxEnabled: true,
+    musicEnabled: true
+  };
 
   async initialize() {
     if (this.isInitialized) return;
     
     try {
       this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
+      // Create gain nodes for different audio types
       this.masterGain = this.audioContext.createGain();
+      this.sfxGain = this.audioContext.createGain();
+      this.musicGain = this.audioContext.createGain();
+      
+      // Connect audio graph
+      this.sfxGain.connect(this.masterGain);
+      this.musicGain.connect(this.masterGain);
       this.masterGain.connect(this.audioContext.destination);
-      this.masterGain.gain.setValueAtTime(0.3, this.audioContext.currentTime); // Master volume
+      
+      // Set initial volumes
+      this.updateVolumes();
+      
+      // Load audio settings from localStorage
+      this.loadSettings();
+      
+      // Preload audio files
+      await this.preloadAudioFiles();
+      
       this.isInitialized = true;
     } catch (error) {
       console.warn('Audio context initialization failed:', error);
+    }
+  }
+
+  private updateVolumes() {
+    if (!this.masterGain || !this.sfxGain || !this.musicGain) return;
+    
+    this.masterGain.gain.setValueAtTime(this.settings.masterVolume, this.audioContext?.currentTime || 0);
+    this.sfxGain.gain.setValueAtTime(this.settings.sfxEnabled ? this.settings.sfxVolume : 0, this.audioContext?.currentTime || 0);
+    this.musicGain.gain.setValueAtTime(this.settings.musicEnabled ? this.settings.musicVolume : 0, this.audioContext?.currentTime || 0);
+  }
+
+  private async preloadAudioFiles() {
+    const audioFiles = [
+      // Drums
+      { name: 'kick', path: '/src/audio/drums/Ama kick (7).wav' },
+      { name: 'snare', path: '/src/audio/drums/Ama-snare (5).wav' },
+      { name: 'hihat', path: '/src/audio/drums/GS_NT_HAT_04.wav' },
+      { name: 'openhat', path: '/src/audio/drums/MURDA_HAT_OPEN_ZETO.wav' },
+      
+      // UI SFX
+      { name: 'bubble-pop', path: '/src/audio/ui sfx/bubble-pop-sound-316482.mp3' },
+      { name: 'close-menu', path: '/src/audio/ui sfx/close-menu.mp3' },
+      { name: 'notification', path: '/src/audio/ui sfx/emailnotif-190435.mp3' },
+      { name: 'notice', path: '/src/audio/ui sfx/notice-sound-270349.mp3' },
+      { name: 'proj-complete', path: '/src/audio/ui sfx/proj-complete.mp3' },
+      { name: 'purchase', path: '/src/audio/ui sfx/purchase-complete.mp3' },
+      { name: 'staff-warning', path: '/src/audio/ui sfx/staff-unavailable-warning.mp3' },
+      { name: 'stage-complete', path: '/src/audio/ui sfx/stage-complete.mp3' },
+      { name: 'training-complete', path: '/src/audio/ui sfx/training-complete.mp3' },
+      { name: 'unavailable', path: '/src/audio/ui sfx/unavailable-ui-79817.mp3' },
+      
+      // Background Music
+      { name: 'bgm1', path: '/src/audio/music/Tycoon BGM 1.mp3' },
+      { name: 'bgm2', path: '/src/audio/music/Tycoon BGM 2.mp3' },
+      { name: 'bgm3', path: '/src/audio/music/Tycoon BGM 3.mp3' },
+      { name: 'bgm4', path: '/src/audio/music/Tycoon BGM 4.mp3' },
+      { name: 'bgm5', path: '/src/audio/music/Tycoon BGM 5.mp3' }
+    ];
+
+    for (const audio of audioFiles) {
+      try {
+        const response = await fetch(audio.path);
+        const arrayBuffer = await response.arrayBuffer();
+        const audioBuffer = await this.audioContext!.decodeAudioData(arrayBuffer);
+        this.audioBuffers.set(audio.name, audioBuffer);
+      } catch (error) {
+        console.warn(`Failed to load audio file ${audio.name}:`, error);
+      }
+    }
+  }
+
+  private async playAudioBuffer(name: string, gainNode: GainNode, volume: number = 1, loop: boolean = false): Promise<AudioBufferSourceNode | null> {
+    await this.ensureInitialized();
+    if (!this.audioContext || !gainNode) return null;
+
+    const buffer = this.audioBuffers.get(name);
+    if (!buffer) {
+      console.warn(`Audio buffer not found: ${name}`);
+      return null;
+    }
+
+    const source = this.audioContext.createBufferSource();
+    const gainControl = this.audioContext.createGain();
+    
+    source.buffer = buffer;
+    source.loop = loop;
+    source.connect(gainControl);
+    gainControl.connect(gainNode);
+    
+    gainControl.gain.setValueAtTime(volume, this.audioContext.currentTime);
+    
+    source.start();
+    return source;
+  }
+
+  // Settings management
+  updateSettings(newSettings: Partial<AudioSettings>) {
+    this.settings = { ...this.settings, ...newSettings };
+    this.updateVolumes();
+    this.saveSettings();
+  }
+
+  getSettings(): AudioSettings {
+    return { ...this.settings };
+  }
+
+  private saveSettings() {
+    localStorage.setItem('gameAudioSettings', JSON.stringify(this.settings));
+  }
+
+  private loadSettings() {
+    const saved = localStorage.getItem('gameAudioSettings');
+    if (saved) {
+      try {
+        this.settings = { ...this.settings, ...JSON.parse(saved) };
+        this.updateVolumes();
+      } catch (error) {
+        console.warn('Failed to load audio settings:', error);
+      }
     }
   }
 
@@ -527,6 +662,33 @@ class GameAudioSystem {
     
     oscillator.start();
     oscillator.stop(this.audioContext.currentTime + 0.03);
+  }
+
+  // GENERAL UI SOUNDS
+  async playUISound(soundType: string) {
+    switch (soundType) {
+      case 'buttonClick':
+        await this.playClick();
+        break;
+      case 'success':
+        await this.playSuccess();
+        break;
+      case 'levelUp':
+        await this.playLevelUp();
+        break;
+      case 'purchase':
+        await this.playEquipmentPurchase();
+        break;
+      case 'error':
+        await this.playError();
+        break;
+      case 'hover':
+        await this.playButtonHover();
+        break;
+      default:
+        // Fall back to basic click sound for unknown types
+        await this.playClick();
+    }
   }
 }
 

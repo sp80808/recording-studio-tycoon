@@ -3,11 +3,23 @@ import { useCallback } from 'react';
 import { GameState } from '@/types/game';
 import { generateCandidates } from '@/utils/projectUtils';
 import { toast } from '@/hooks/use-toast';
+import { 
+  calculateYearFromDay, 
+  checkEraTransitionAvailable, 
+  transitionToEra,
+  getEraSpecificEquipmentMultiplier 
+} from '@/utils/eraProgression';
 
 export const useGameActions = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
   const advanceDay = useCallback(() => {
     const newDay = gameState.currentDay + 1;
     console.log(`Advancing to day ${newDay}`);
+    
+    // Calculate new year based on era progression
+    const newYear = calculateYearFromDay(newDay, gameState.eraStartYear, gameState.currentEra);
+    
+    // Check for era transition opportunity
+    const availableTransition = checkEraTransitionAvailable(gameState);
     
     // Process training completions
     const completedTraining: string[] = [];
@@ -28,9 +40,18 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     // Calculate total salaries
     const totalSalaries = gameState.hiredStaff.reduce((total, staff) => total + staff.salary, 0);
     
+    // Update equipment multiplier based on year progression
+    const updatedEquipmentMultiplier = getEraSpecificEquipmentMultiplier(
+      gameState.currentEra, 
+      gameState.eraStartYear, 
+      newYear
+    );
+    
     setGameState(prev => ({ 
       ...prev, 
       currentDay: newDay,
+      currentYear: newYear,
+      equipmentMultiplier: updatedEquipmentMultiplier,
       money: prev.money - totalSalaries, // Deduct salaries
       hiredStaff: updatedStaff.map(s => 
         s.status === 'Resting' 
@@ -42,6 +63,24 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
         dailyWorkCapacity: prev.playerData.attributes.focusMastery + 3 // Reset daily capacity
       }
     }));
+    
+    // Show era transition notification if available
+    if (availableTransition) {
+      toast({
+        title: "🎵 Era Transition Available!",
+        description: `You can now advance to ${availableTransition.name}. Check the Studio tab for transition options.`,
+        duration: 6000
+      });
+    }
+    
+    // Show year progression notifications at key milestones
+    if (newDay % 90 === 0) { // Every ~year
+      toast({
+        title: `📅 Year ${newYear}`,
+        description: `Your studio has been operating for ${Math.floor(newDay / 90)} years. Keep pushing forward!`,
+        duration: 4000
+      });
+    }
     
     // Process salary payments
     if (totalSalaries > 0) {
@@ -98,8 +137,40 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     });
   }, [gameState.money, setGameState]);
 
+  const triggerEraTransition = useCallback(() => {
+    const availableTransition = checkEraTransitionAvailable(gameState);
+    
+    if (!availableTransition) {
+      toast({
+        title: "Era Transition Not Available",
+        description: "You need more reputation, level, or completed projects to advance to the next era.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const fromEra = gameState.currentEra;
+    const toEra = availableTransition.id;
+
+    const newGameState = transitionToEra(gameState, availableTransition);
+    setGameState(newGameState);
+
+    toast({
+      title: "🎉 Era Transition Complete!",
+      description: `Welcome to ${availableTransition.name}! New equipment and opportunities await.`,
+      duration: 6000
+    });
+
+    // Return transition info for animation
+    return {
+      fromEra,
+      toEra
+    };
+  }, [gameState, setGameState]);
+
   return {
     advanceDay,
-    refreshCandidates
+    refreshCandidates,
+    triggerEraTransition
   };
 };

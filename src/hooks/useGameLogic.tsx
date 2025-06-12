@@ -1,31 +1,40 @@
+
 import { useState, useCallback } from 'react';
 import { GameState, StaffMember, PlayerAttributes } from '@/types/game';
 import { toast } from '@/hooks/use-toast';
 import { availableTrainingCourses } from '@/data/training';
 import { canPurchaseEquipment, addNotification, applyEquipmentEffects } from '@/utils/gameUtils';
-import { availableEquipment } from '@/data/equipment';
+import { getAvailableEquipmentForYear } from '@/data/eraEquipment';
 import { useStaffManagement } from '@/hooks/useStaffManagement';
 import { useProjectManagement } from '@/hooks/useProjectManagement';
 import { usePlayerProgression } from '@/hooks/usePlayerProgression';
 import { useStageWork } from '@/hooks/useStageWork';
 import { useGameActions } from '@/hooks/useGameActions';
 import { useBandManagement } from '@/hooks/useBandManagement';
+import { ArtistContact } from '@/types/charts';
 
 export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>, focusAllocation: any) => {
   const { levelUpPlayer, spendPerkPoint, checkAndHandleLevelUp } = usePlayerProgression(gameState, setGameState);
   const { hireStaff, assignStaffToProject, unassignStaffFromProject, toggleStaffRest, addStaffXP, openTrainingModal } = useStaffManagement(gameState, setGameState);
   const { startProject, completeProject } = useProjectManagement(gameState, setGameState);
-  const { advanceDay, refreshCandidates } = useGameActions(gameState, setGameState);
+  const { advanceDay, refreshCandidates, triggerEraTransition } = useGameActions(gameState, setGameState);
 
   const { createBand, startTour, createOriginalTrack, processTourIncome } = useBandManagement(gameState, setGameState);
 
   const [selectedStaffForTraining, setSelectedStaffForTraining] = useState<StaffMember | null>(null);
   const [lastReview, setLastReview] = useState<any>(null);
 
-  const { performDailyWork, orbContainerRef, autoTriggeredMinigame, clearAutoTriggeredMinigame } = useStageWork(gameState, setGameState, focusAllocation, completeProject, addStaffXP, advanceDay);
+  const { performDailyWork, orbContainerRef, autoTriggeredMinigame, clearAutoTriggeredMinigame } = useStageWork({
+    gameState,
+    setGameState,
+    focusAllocation,
+    completeProject,
+    addStaffXP,
+    advanceDay
+  });
 
   // Handle minigame rewards by updating project points and checking for level ups
-  const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number) => {
+  const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => {
     if (gameState.activeProject) {
       setGameState(prev => ({
         ...prev,
@@ -36,7 +45,8 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
         } : null,
         playerData: {
           ...prev.playerData,
-          xp: prev.playerData.xp + xpBonus
+          xp: prev.playerData.xp + xpBonus,
+          lastMinigameType: minigameType || prev.playerData.lastMinigameType
         }
       }));
 
@@ -73,12 +83,17 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
       setTimeout(() => {
         checkAndHandleLevelUp();
       }, 100);
+      
+      // Return project completion info for celebration trigger
+      return { isComplete: true, review: result.review };
     }
+    return result;
   };
 
   const purchaseEquipment = (equipmentId: string) => {
     console.log(`=== PURCHASING EQUIPMENT: ${equipmentId} ===`);
     
+    const availableEquipment = getAvailableEquipmentForYear(gameState.currentYear || 2024);
     const equipment = availableEquipment.find(e => e.id === equipmentId);
     if (!equipment) {
       console.log('Equipment not found');
@@ -161,7 +176,9 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
   const handleOpenTrainingModal = (staff: StaffMember) => {
     if (openTrainingModal(staff)) {
       setSelectedStaffForTraining(staff);
+      return true; // Indicates modal should open
     }
+    return false;
   };
 
   // Enhanced spendPerkPoint function
@@ -192,6 +209,90 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
     advanceDay();
   }, [processTourIncome, advanceDay]);
 
+  // Contact artist for collaboration
+  const contactArtist = useCallback((artistId: string, offer: number) => {
+    console.log(`=== CONTACTING ARTIST: ${artistId} with offer: $${offer} ===`);
+    
+    // Deduct the offer amount from player's money
+    if (gameState.money < offer) {
+      toast({
+        title: "Insufficient Funds",
+        description: "You don't have enough money to make this offer.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Find the artist from the charts data
+    const artist = gameState.chartsData?.discoveredArtists?.find(a => a.id === artistId);
+    if (!artist) {
+      toast({
+        title: "Artist Not Found",
+        description: "Unable to find the specified artist.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Calculate success probability based on offer amount, reputation, and artist preferences
+    const baseSuccessRate = 30; // 30% base chance
+    const offerModifier = Math.min((offer / artist.priceRange.max) * 40, 40); // Up to 40% bonus for good offers
+    const reputationModifier = Math.min((gameState.reputation / 100) * 20, 20); // Up to 20% bonus for reputation
+    const demandModifier = (artist.demandLevel / 100) * 10; // Up to 10% bonus based on artist demand
+    
+    const successRate = Math.min(baseSuccessRate + offerModifier + reputationModifier + demandModifier, 85);
+    const isSuccessful = Math.random() * 100 < successRate;
+
+    // Create artist contact entry
+    const contact: ArtistContact = {
+      artistId: artistId,
+      status: isSuccessful ? 'accepted' : 'rejected',
+      requestDate: new Date(),
+      opportunityId: `opp-${artistId}-${Date.now()}`,
+      negotiationPhase: 'initial'
+    };
+
+    // Deduct money and update game state
+    setGameState(prev => ({
+      ...prev,
+      money: prev.money - offer,
+      chartsData: {
+        ...prev.chartsData,
+        contactedArtists: [...(prev.chartsData?.contactedArtists || []), contact]
+      }
+    }));
+
+    // Show result toast
+    if (isSuccessful) {
+      toast({
+        title: "🎤 Artist Interested!",
+        description: `${artist.name} is interested in working with you! They'll be in touch soon.`,
+        duration: 5000
+      });
+      
+      // Add notification for follow-up
+      const notification = {
+        id: `artist-contact-${Date.now()}`,
+        message: `${artist.name} responded positively to your offer! Check back for collaboration opportunities.`,
+        type: 'success' as const,
+        timestamp: Date.now(),
+        duration: 8000
+      };
+      
+      setGameState(prev => ({
+        ...prev,
+        notifications: [...prev.notifications, notification]
+      }));
+    } else {
+      toast({
+        title: "❌ Offer Declined",
+        description: `${artist.name} declined your offer. Try again later or consider a higher offer.`,
+        variant: "destructive",
+        duration: 5000
+      });
+    }
+  }, [gameState.money, gameState.reputation, gameState.chartsData, setGameState]);
+
   return {
     startProject,
     handlePerformDailyWork,
@@ -211,6 +312,8 @@ export const useGameLogic = (gameState: GameState, setGameState: React.Dispatch<
     lastReview,
     orbContainerRef,
     autoTriggeredMinigame,
-    clearAutoTriggeredMinigame
+    clearAutoTriggeredMinigame,
+    contactArtist,
+    triggerEraTransition
   };
 };

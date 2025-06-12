@@ -28,20 +28,28 @@ export const SoundWaveGame: React.FC<SoundWaveGameProps> = ({
   const [currentLevel, setCurrentLevel] = useState(1);
 
   const generateTargetWave = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    // Get actual canvas dimensions
+    const rect = canvas.getBoundingClientRect();
+    const width = rect.width || 400;
+    const height = rect.height || 200;
+    
     const points: WavePoint[] = [];
-    const width = 400;
-    const height = 150;
     
     // FIXED: Generate simpler, more recognizable waveforms
     const waveTypes = ['sine', 'triangle', 'square', 'sawtooth'];
     const currentWaveType = waveTypes[Math.floor(Math.random() * waveTypes.length)];
     
-    // Simpler frequency and amplitude for easier matching
-    const frequency = 0.02 + (currentLevel * 0.005); // Slower oscillation
-    const amplitude = 30 + (currentLevel * 5); // Smaller amplitude
+    // FIXED: Limited frequency range to prevent overly complex waves
+    const baseFrequency = 0.015; // Base frequency
+    const maxFrequency = 0.035; // Maximum frequency cap
+    const frequency = Math.min(baseFrequency + (currentLevel * 0.003), maxFrequency);
+    const amplitude = Math.min(25 + (currentLevel * 3), height * 0.3); // Reasonable amplitude relative to canvas height
     const centerY = height / 2;
 
-    for (let x = 0; x <= width; x += 1) { // More points for smoother drawing
+    for (let x = 0; x <= width; x += 2) { // Use actual canvas width
       let y = centerY;
       
       switch (currentWaveType) {
@@ -93,12 +101,22 @@ export const SoundWaveGame: React.FC<SoundWaveGameProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // FIXED: Ensure canvas fills the full area
+    // FIXED: Ensure canvas fills the full area with proper scaling
     const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width;
-    canvas.height = rect.height;
+    const dpr = window.devicePixelRatio || 1;
+    
+    // Set actual size in memory (scaled to account for extra pixel density)
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    
+    // Scale the canvas back down using CSS
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+    
+    // Scale the drawing context so everything draws at the higher resolution
+    ctx.scale(dpr, dpr);
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, rect.width, rect.height);
 
     // FIXED: Draw grid that fills the entire canvas
     ctx.strokeStyle = '#374151';
@@ -106,18 +124,18 @@ export const SoundWaveGame: React.FC<SoundWaveGameProps> = ({
     const gridSize = 20;
     
     // Vertical grid lines
-    for (let x = 0; x <= canvas.width; x += gridSize) {
+    for (let x = 0; x <= rect.width; x += gridSize) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
-      ctx.lineTo(x, canvas.height);
+      ctx.lineTo(x, rect.height);
       ctx.stroke();
     }
     
     // Horizontal grid lines
-    for (let y = 0; y <= canvas.height; y += gridSize) {
+    for (let y = 0; y <= rect.height; y += gridSize) {
       ctx.beginPath();
       ctx.moveTo(0, y);
-      ctx.lineTo(canvas.width, y);
+      ctx.lineTo(rect.width, y);
       ctx.stroke();
     }
 
@@ -125,8 +143,8 @@ export const SoundWaveGame: React.FC<SoundWaveGameProps> = ({
     ctx.strokeStyle = '#6b7280';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(0, canvas.height / 2);
-    ctx.lineTo(canvas.width, canvas.height / 2);
+    ctx.moveTo(0, rect.height / 2);
+    ctx.lineTo(rect.width, rect.height / 2);
     ctx.stroke();
 
     // Draw target wave
@@ -273,9 +291,7 @@ export const SoundWaveGame: React.FC<SoundWaveGameProps> = ({
           <div className="border-2 border-gray-600 rounded-lg overflow-hidden">
             <canvas
               ref={canvasRef}
-              width={400}
-              height={200}
-              className="bg-gray-800 cursor-crosshair"
+              className="bg-gray-800 cursor-crosshair w-full h-48 block"
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}

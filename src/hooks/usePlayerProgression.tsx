@@ -6,7 +6,13 @@ import { toast } from '@/hooks/use-toast';
 export const usePlayerProgression = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
   
   const calculateXPToNextLevel = (level: number): number => {
-    return 100 + (level - 1) * 50; // Base 100, +50 per level
+    // Logarithmic progression to prevent exponential scaling
+    // Early levels are reasonable, but higher levels require exponentially more XP
+    const baseXP = 100;
+    const growthFactor = 1.4; // Exponential multiplier
+    const levelOffset = Math.max(0, level - 1);
+    
+    return Math.floor(baseXP * Math.pow(growthFactor, levelOffset * 0.7));
   };
 
   const checkAndHandleLevelUp = useCallback(() => {
@@ -20,7 +26,9 @@ export const usePlayerProgression = (gameState: GameState, setGameState: React.D
     while (newXP >= calculateXPToNextLevel(newLevel)) {
       newXP -= calculateXPToNextLevel(newLevel);
       newLevel++;
-      newPerkPoints += 2; // 2 perk points per level
+      // Reduced perk points to balance progression
+      const perkPointsToAdd = newLevel <= 10 ? 2 : (newLevel <= 25 ? 1 : 0);
+      newPerkPoints += perkPointsToAdd;
       leveledUp = true;
       
       toast({
