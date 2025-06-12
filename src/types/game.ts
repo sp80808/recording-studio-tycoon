@@ -43,8 +43,6 @@ export interface StudioSkill {
   bonuses: StudioSkillBonus; // Added based on progressionUtils usage
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface StageEvent {}
 
 export interface ProjectStage {
   stageName: string;
@@ -173,7 +171,8 @@ export interface Equipment {
     skill: string;
     level: number;
   };
-  condition?: number; 
+  condition?: number;
+  appliedModId?: string | null; // Added appliedModId
 }
 
 export interface EraAvailableEquipment extends Equipment {
@@ -291,10 +290,7 @@ export interface ProjectReport {
   isCriticalSuccess?: boolean;
 }
 
-// Defining ProjectCompletionResult based on its usage in progressionUtils
-export interface ProjectCompletionResult extends ProjectReport {
-  // Inherits from ProjectReport, can add more specific fields if needed later
-}
+// ProjectCompletionResult is now directly ProjectReport, no separate interface needed
 
 
 export interface DiscoveredArtist {

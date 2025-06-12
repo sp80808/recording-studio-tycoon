@@ -1,95 +1,81 @@
-# Recording Studio Tycoon Documentation
+# Recording Studio Tycoon
 
-## Overview
-Recording Studio Tycoon is a comprehensive simulation game that puts players in charge of managing a recording studio through different eras of music production. The game combines business management, technical expertise, and creative decision-making to create an engaging and educational experience.
+A comprehensive music production simulation game where players build and manage their own recording studio, working with artists, producing music, and navigating the music industry across different eras.
 
-## Core Systems
+## Documentation
 
-### 1. Project Management
-- [Project System Documentation](PROJECTS.md)
-  - Project types and templates
-  - Stage progression
-  - Quality control
-  - Client management
+Our documentation is organized into several key sections:
 
-### 2. Equipment System
-- [Equipment System Documentation](EQUIPMENT.md)
-  - Equipment categories
-  - Era-based progression
-  - Purchase and management
-  - Equipment synergy
+### Getting Started
+- [Project Overview](README.md) - This file
+- [Contributing Guidelines](CONTRIBUTING.md)
+- [Project Roadmap](ROADMAP.md)
 
-### 3. Staff System
-- [Staff System Documentation](STAFF.md)
-  - Staff roles and types
-  - Hiring and training
-  - Performance management
-  - Team integration
+### Core Systems
+- [Core Gameplay](CORE_GAMEPLAY.md) - Core gameplay mechanics and features
+- [Save System](SAVE_SYSTEM.md) - Save system implementation
+- [Rewards and Progression](REWARDS_AND_PROGRESSION.md) - Progression systems
+- [Feedback and Automation](FEEDBACK_AND_AUTOMATION.md) - Player feedback systems
 
-### 4. Minigame System
-- [Minigame System Documentation](MINIGAMES.md)
-  - Current minigame types
-  - Implementation plan
-  - Technical requirements
-  - Future enhancements
+### Technical Documentation
+- [Technical Overview](technical.md) - Technical implementation details
+- [Architecture](architecture.md) - System architecture
+- [Product Requirements](product_requirement_docs.md) - Product specifications
+- [API Integration](SUNO_API_INTEGRATION_PLAN.md) - Suno API integration
 
-## Technical Architecture
-- [Architecture Documentation](ARCHITECTURE.md)
-  - System design
-  - File structure
-  - State management
-  - Performance considerations
+### Game Systems
+- [Minigame System](minigames/MINIGAMES.md) - Interactive challenges
+- [Character System](cline_docs/CHARACTER_SYSTEM.md) - Character management
+- [Tutorial System](cline_docs/TutorialDesign.md) - Player tutorials
+- [Charts System](cline_docs/CHARTS_SYSTEM_DETAILED.md) - Music charts
 
-## Getting Started
+### Development
+- [Development Standards](cline_docs/DEVELOPMENT_STANDARDS.md)
+- [Implementation Roadmap](cline_docs/IMPLEMENTATION_ROADMAP.md)
+- [Optimization Plan](cline_docs/OPTIMIZATION_PLAN.md)
+- [Porting Strategy](cline_docs/PORTING_STRATEGY.md)
 
-### Development Setup
-1. Clone the repository
-2. Install dependencies: `npm install`
-3. Start development server: `npm run dev`
-4. Build for production: `npm run build`
+### Era-Based Features
+- [Era Progression](cline_docs/ERA_BASED_PROGRESSION.md)
+- [Era Mechanics](cline_docs/ERA_MECHANICS_IMPLEMENTATION_PLAN.md)
 
-### Project Structure
-```
-src/
-├── components/     # React components
-├── hooks/         # Custom React hooks
-├── utils/         # Utility functions
-├── types/         # TypeScript types
-├── data/          # Game data
-└── styles/        # CSS styles
-```
+### API Documentation
+- [API Overview](api/README.md)
+- [Endpoints](api/endpoints.md)
+- [Authentication](api/authentication.md)
+- [Rate Limits](api/rate_limits.md)
 
-### Key Features
-1. Era-based progression
-2. Dynamic project generation
-3. Staff management
-4. Equipment system
-5. Minigame integration
+### Architecture
+- [Component Architecture](architecture/components.md)
+- [Data Flow](architecture/data_flow.md)
+- [State Management](architecture/state_management.md)
+- [Testing](architecture/testing.md)
+
+### Changelog
+- [2024 Changes](changelog/2024.md)
+- [2023 Changes](changelog/2023.md)
+
+## Quick Links
+
+### Essential Documentation
+- [Documentation Index](DOCUMENTATION_INDEX.md) - Complete documentation index
+- [Development Standards](cline_docs/DEVELOPMENT_STANDARDS.md) - Coding standards
+- [Version History](cline_docs/VERSION_HISTORY.md) - Version tracking
+
+### Game Systems
+- [Minigames](minigames/MINIGAMES.md) - Interactive challenges
+- [Character System](cline_docs/CHARACTER_SYSTEM.md) - Character management
+- [Progression](cline_docs/ProgressionSystems.md) - Player progression
+
+### Technical Resources
+- [API Documentation](api/README.md) - API reference
+- [Architecture](architecture/README.md) - System architecture
+- [Testing](architecture/testing.md) - Testing guidelines
 
 ## Contributing
-Please read our [Contributing Guide](../CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+
+Please read our [Contributing Guidelines](CONTRIBUTING.md) before submitting any changes. We welcome contributions from the community!
 
 ## License
-This project is licensed under the MIT License - see the [LICENSE](../LICENSE) file for details.
 
-## Future Development
-
-### Planned Features
-1. Additional minigame types
-2. Enhanced project templates
-3. Advanced AI systems
-4. Multiplayer features
-
-### Current Focus
-1. Minigame implementation
-2. Project system enhancement
-3. Staff system expansion
-4. Equipment system refinement
-
-## Support
-For support, please open an issue in the GitHub repository or contact the development team.
-
-## Acknowledgments
-- Thanks to all contributors
-- Inspired by classic tycoon games
-- Built with modern web technologies 
+This project is licensed under the MIT License - see the LICENSE file for details. 

@@ -150,13 +150,15 @@ export const getMinigameRewards = (
 
   // Base rewards based on minigame type
   switch (minigameType) {
-    case 'rhythm':
-    case 'pitch':
-    case 'timing':
+    case 'rhythm_timing': // Corrected from 'rhythm' and 'timing'
       baseRewards.technical = 2;
       baseRewards.xp = 1;
       break;
-    case 'mixing':
+    // case 'pitch': // 'pitch' is not a defined MinigameType. Commenting out for now.
+    //   baseRewards.technical = 2; // Or some other logic if it maps to an existing type
+    //   baseRewards.xp = 1;
+    //   break;
+    case 'mixing_board': // Corrected from 'mixing'
       baseRewards.technical = 3;
       baseRewards.creativity = 1;
       baseRewards.xp = 2;
@@ -205,4 +207,4 @@ export const getMinigameRewards = (
     technical: Math.round(baseRewards.technical * difficultyMultiplier * levelMultiplier),
     xp: Math.round(baseRewards.xp * difficultyMultiplier * levelMultiplier)
   };
-}; 
+};

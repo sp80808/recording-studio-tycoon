@@ -1,5 +1,5 @@
 import { GameState, Project, FocusAllocation } from '@/types/game';
-import { MinigameType } from '@/components/minigames/MinigameManager';
+import { MinigameType } from '@/types/miniGame'; // Corrected import path
 
 export interface MinigameTrigger {
   minigameType: MinigameType;
@@ -32,7 +32,7 @@ export const getTriggeredMinigames = (
   if (ownedEquipmentIds.some(id => id.includes('mic') && !id.includes('basic')) && 
       (stageName.includes('vocal') || stageName.includes('recording') || project.genre === 'Pop')) {
     triggers.push({
-      minigameType: 'vocal',
+      minigameType: 'vocal_recording', // Corrected type
       triggerReason: 'Vocal recording stage detected - nail that perfect take!',
       priority: 10,
       focusThreshold: { type: 'performance', min: 40 }
@@ -43,7 +43,7 @@ export const getTriggeredMinigames = (
   if ((focusAllocation.performance >= 60 && (stageName.includes('recording') || stageName.includes('performance'))) ||
       (['Rock', 'Hip-hop'].includes(project.genre) && stageName.includes('recording'))) {
     triggers.push({
-      minigameType: 'rhythm',
+      minigameType: 'rhythm_timing', // Corrected type
       triggerReason: `${project.genre} performance stage - perfect your timing!`,
       priority: 8,
       focusThreshold: { type: 'performance', min: 50 }
@@ -54,7 +54,7 @@ export const getTriggeredMinigames = (
   if (stageName.includes('mixing') || stageName.includes('layering') || 
       (focusAllocation.layering >= 50 && stageName.includes('production'))) {
     triggers.push({
-      minigameType: 'mixing',
+      minigameType: 'mixing_board', // Corrected type
       triggerReason: 'Complex mixing stage - time to balance the tracks!',
       priority: 9,
       focusThreshold: { type: 'layering', min: 40 }
@@ -65,7 +65,7 @@ export const getTriggeredMinigames = (
   if (ownedEquipmentIds.some(id => id.includes('interface') || id.includes('apogee')) && 
       focusAllocation.soundCapture >= 60) {
     triggers.push({
-      minigameType: 'waveform',
+      minigameType: 'sound_wave', // Corrected type
       triggerReason: 'Professional interface detected - optimize your sound capture!',
       priority: 9,
       focusThreshold: { type: 'soundCapture', min: 60 }
@@ -76,7 +76,7 @@ export const getTriggeredMinigames = (
   if (['Hip-hop', 'Electronic'].includes(project.genre) && 
       (stageName.includes('production') || stageName.includes('beat') || stageName.includes('sequencing'))) {
     triggers.push({
-      minigameType: 'beatmaking',
+      minigameType: 'beat_making', // Corrected type
       triggerReason: `${project.genre} beat production - create some killer rhythms!`,
       priority: 8
     });
@@ -99,7 +99,7 @@ export const getTriggeredMinigames = (
       ownedEquipmentIds.some(id => id.includes('synth') || id.includes('moog')) &&
       (stageName.includes('sound design') || stageName.includes('sequencing'))) {
     triggers.push({
-      minigameType: 'waveform',
+      minigameType: 'sound_wave', // Corrected type
       triggerReason: 'Electronic synthesis stage - craft unique sounds!',
       priority: 8
     });
@@ -110,7 +110,7 @@ export const getTriggeredMinigames = (
       ownedEquipmentIds.some(id => id.includes('fender') || id.includes('guitar')) &&
       stageName.includes('recording')) {
     triggers.push({
-      minigameType: 'rhythm',
+      minigameType: 'rhythm_timing', // Corrected type
       triggerReason: 'Rock recording with guitar gear - time to rock out!',
       priority: 7
     });
@@ -120,7 +120,7 @@ export const getTriggeredMinigames = (
   if (project.genre === 'Pop' && 
       (stageName.includes('vocal') || stageName.includes('production'))) {
     triggers.push({
-      minigameType: 'vocal',
+      minigameType: 'vocal_recording', // Corrected type
       triggerReason: 'Pop vocal production - capture that commercial sound!',
       priority: 9
     });
@@ -130,7 +130,7 @@ export const getTriggeredMinigames = (
   if (project.genre === 'Acoustic' && 
       stageName.includes('recording')) {
     triggers.push({
-      minigameType: 'waveform',
+      minigameType: 'sound_wave', // Corrected type
       triggerReason: 'Acoustic recording - capture every nuance!',
       priority: 7
     });
@@ -139,7 +139,7 @@ export const getTriggeredMinigames = (
   // EFFECT CHAIN BUILDING - For production stages with effects processing
   if (stageName.includes('production') || stageName.includes('effects') || stageName.includes('processing')) {
     triggers.push({
-      minigameType: 'effectchain',
+      minigameType: 'effect_chain', // Corrected type
       triggerReason: 'Effects processing stage - build the perfect effect chain!',
       priority: 8,
       focusThreshold: { type: 'layering', min: 40 }
@@ -173,7 +173,7 @@ export const getTriggeredMinigames = (
   // High difficulty project fallback
   if (project.difficulty >= 7 && stageProgress >= 0.75 && triggers.length === 0) {
     triggers.push({
-      minigameType: 'mixing',
+      minigameType: 'mixing_board', // Corrected type
       triggerReason: 'High difficulty project nearing completion - master the complex mix!',
       priority: 6
     });
