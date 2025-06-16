@@ -8,6 +8,24 @@
 - **Staff System**: `useStaffManagement` handles hiring, training, and minigames
 - **Progression**: `usePlayerProgression` manages leveling and milestones
 
+### Phase 2 Advanced Systems (New - 16/06/2025)
+- **Relationship Management (`src/services/relationshipService.ts`)**:
+    - Manages relationship scores (trust, respect) with clients and record labels.
+    - Handles relationship changes based on project outcomes (quality, timeliness, original music success).
+    - Includes logic for blacklisting entities based on severely negative relationships.
+    - Placeholder functions for player-initiated "favors" and a PR event system.
+    - Associated types in `src/types/relationships.ts` (e.g., `RelationshipStats`, `PREvent`).
+- **Tiered Contract Generation (`src/utils/projectUtils.ts`)**:
+    - `generateNewProjects` function updated to accept `GameState`.
+    - Initial logic to source contract providers (Clients, RecordLabels) from `GameState` instead of random generation.
+    - Modifies contract payouts/reputation based on relationship scores with the chosen provider.
+    - `GameState` in `src/types/game.ts` updated to include `clients` and `recordLabels` arrays.
+- **Studio Perks & Specializations (`src/services/studioUpgradeService.ts`)**:
+    - Manages unlocking and applying effects of studio perks.
+    - `applyAllPerkEffects` calculates and stores aggregated modifiers in `GameState.aggregatedPerkModifiers`.
+    - Associated types in `src/types/studioPerks.ts` and `src/types/game.ts` (`AggregatedPerkModifiers`).
+    - UI conceptualization documented in `docs/cline_docs/perkSystemUI.md`.
+
 ### Progression System
 Located in `progressionUtils.ts`, `featureUtils.ts`, and `milestones.ts`
 - Attribute effects (creativity, technical, charisma, business, luck)
@@ -161,6 +179,13 @@ Located in `progressionUtils.ts`, `featureUtils.ts`, and `milestones.ts`
 - Developing attribute/perk effects
 - Planning progression-tied content
 - Building progression UI components
+- **Phase 2 Advanced Systems (Foundational Work - 16/06/2025)**:
+    - Implemented initial backend logic and type definitions for Dynamic Market Trends (previously noted).
+    - Enhanced `RelationshipService` for original music project outcomes, player favors (placeholders), and blacklisting logic.
+    - Updated `projectUtils.ts` for basic tiered contract generation from actual entities.
+    - Reviewed and updated `StudioUpgradeService` for perk effect application; conceptualized Perk UI.
+    - Added relevant types to `types/relationships.ts` and `types/game.ts` for these systems.
+
 
 ### New Features from Prototype v0.3.0
 - **Charts Panel System**: Implemented Billboard-style music industry charts with audio preview, artist contact system, and market trends analysis.
@@ -194,6 +219,7 @@ Located in `progressionUtils.ts`, `featureUtils.ts`, and `milestones.ts`
 - [Project Roadmap](cline_docs/projectRoadmap.md): Goals and progress
 - [Current Task](cline_docs/currentTask.md): Active development focus
 - [Tech Stack](cline_docs/techStack.md): Technologies overview
+- [Perk System UI Conceptualization](cline_docs/perkSystemUI.md): Design for the perk system UI (new - 16/06/2025)
 - [Codebase Analysis 2025](cline_docs/CODEBASE_ANALYSIS_2025.md): Comprehensive system analysis (new)
 - [Version History](cline_docs/VERSION_HISTORY.md): Tracks all significant changes (new)
 - [Project Templates](src/data/projectTemplates.ts): Template definitions

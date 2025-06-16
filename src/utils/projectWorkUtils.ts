@@ -1,11 +1,12 @@
-import { ProjectStage, WorkUnit, StageEvent, MinigameTrigger, StaffMember, PlayerData, FocusAllocation } from '@/types/game'; 
-import { MinigameType } from '@/types/miniGame'; // Import MinigameType from miniGame.ts
+import { ProjectStage, WorkUnit, StageEvent, MinigameTrigger, StaffMember, PlayerData, FocusAllocation, GameState } from '@/types/game'; 
+import { MinigameType } from '@/types/miniGame'; 
 
 export const calculateWorkUnitsGained = (
   playerData: PlayerData,
   focusAllocation: FocusAllocation,
   currentStage: ProjectStage,
-  assignedStaff: StaffMember[]
+  assignedStaff: StaffMember[],
+  gameState: GameState // Ensured gameState parameter is here
 ) => {
   let creativityGain = playerData.dailyWorkCapacity * playerData.attributes.creativeIntuition;
   let technicalGain = playerData.attributes.technicalAptitude;
@@ -18,7 +19,7 @@ export const calculateWorkUnitsGained = (
 
   // Apply staff bonuses
   assignedStaff.forEach(staff => {
-    const moodEffectiveness = staff.mood / 100; // 0-1 scale
+    const moodEffectiveness = (staff.mood ?? 50) / 100; // Default mood to 50 if undefined
     creativityGain += staff.primaryStats.creativity * moodEffectiveness;
     technicalGain += staff.primaryStats.technical * moodEffectiveness;
   });
@@ -39,6 +40,21 @@ export const calculateWorkUnitsGained = (
     technicalGain *= currentStage.timeMultiplier;
   }
 
+  // Apply perk modifiers
+  const perks = gameState.aggregatedPerkModifiers;
+  if (perks) {
+    let stageSpecificQualityModifier = 1.0;
+    if (currentStage.stageName.toLowerCase().includes('recording')) {
+      stageSpecificQualityModifier *= (perks.globalRecordingQualityModifier || 1.0);
+    } else if (currentStage.stageName.toLowerCase().includes('mixing')) {
+      stageSpecificQualityModifier *= (perks.globalMixingQualityModifier || 1.0);
+    } else if (currentStage.stageName.toLowerCase().includes('mastering')) {
+      stageSpecificQualityModifier *= (perks.globalMasteringQualityModifier || 1.0);
+    }
+    creativityGain *= stageSpecificQualityModifier;
+    technicalGain *= stageSpecificQualityModifier;
+  }
+
   return {
     creativityGained: Math.floor(creativityGain),
     technicalGained: Math.floor(technicalGain)
@@ -50,9 +66,7 @@ export const checkMinigameTrigger = (currentStage: ProjectStage, currentDay: num
     return null;
   }
 
-  // Filter for active triggers that haven't been triggered recently
   const availableTriggers = currentStage.minigameTriggers.filter(trigger => {
-    // Example condition: trigger every 3 days if not recently triggered
     return !trigger.lastTriggered || (currentDay - trigger.lastTriggered > 3);
   });
 
@@ -60,38 +74,37 @@ export const checkMinigameTrigger = (currentStage: ProjectStage, currentDay: num
     return null;
   }
 
-  // Select a random trigger from available ones
   const randomIndex = Math.floor(Math.random() * availableTriggers.length);
   return availableTriggers[randomIndex];
 };
 
 export const getMinigameTypeForStage = (stageName: string): MinigameType | null => {
-  switch (stageName) {
-    case 'Recording':
-    case 'Vocal Recording':
-      return 'vocal_recording';
-    case 'Mixing':
-      return 'mixing_board'; // Changed to full MinigameType
-    case 'Mastering':
-      return 'mastering';
-    case 'Sound Design':
-      return 'sound_design';
-    case 'Acoustic Treatment':
-      return 'acoustic_tuning';
-    case 'Audio Restoration':
-      return 'audio_restoration';
-    case 'Analog Console':
-      return 'analog_console';
-    case 'Microphone Placement':
-      return 'microphone_placement';
-    case 'Mastering Chain':
-      return 'mastering_chain';
-    case 'Sound Design Synthesis':
-      return 'sound_design_synthesis';
-    case 'Guitar Pedal Board':
-      return 'pedalboard';
-    case 'Patch Bay Puzzle':
-      return 'patchbay';
+  switch (stageName.toLowerCase()) { // Normalize to lower case for matching
+    case 'recording':
+    case 'vocal recording':
+      return 'vocalRecording'; // Corrected to camelCase
+    case 'mixing':
+      return 'mixingBoard'; // Corrected
+    case 'mastering':
+      return 'mastering'; // Assuming this is correct
+    case 'sound design':
+      return 'soundDesign'; // Corrected
+    case 'acoustic treatment':
+      return 'acousticTuning'; // Corrected
+    case 'audio restoration':
+      return 'audioRestoration'; // Corrected
+    case 'analog console':
+      return 'analogConsole'; // Corrected
+    case 'microphone placement':
+      return 'microphonePlacement'; // Corrected
+    case 'mastering chain':
+      return 'masteringChain'; // Corrected
+    case 'sound design synthesis':
+      return 'soundDesignSynthesis'; // Corrected
+    case 'guitar pedal board':
+      return 'pedalboard'; // Assuming this is correct
+    case 'patch bay puzzle':
+      return 'patchbay'; // Assuming this is correct
     default:
       return null;
   }

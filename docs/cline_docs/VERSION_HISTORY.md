@@ -177,4 +177,42 @@
 
 ---
 
+## [1.0.0] - 2025-03-20
+
+### Added
+- Complete minigame system implementation
+- Enhanced documentation structure
+- Comprehensive documentation index
+- Organized sections by feature
+- Clear navigation and quick links
+- Detailed technical documentation
+
+### Changed
+- Updated minigame types to match current implementation
+- Reorganized documentation for better accessibility
+- Improved changelog structure and format
+- Updated app icon and manifest to use a music symbol emoji (🎵) for a more musical and modern look. Implemented using inline SVG for consistent cross-platform appearance.
+
+### Fixed
+- Documentation inconsistencies
+- Missing minigame type definitions
+- Incorrect file references
+
+## [0.9.0] - 2025-03-15
+
+### Added
+- Initial minigame system implementation
+- Basic documentation structure
+- Core gameplay mechanics
+- Save system implementation
+
+### Changed
+- Updated project structure
+- Improved code organization
+- Enhanced performance
+
+### Fixed
+- Various bug fixes
+- Performance optimizations
+
 *This version history tracks all significant changes, improvements, and milestones in the Recording Studio Tycoon development journey.*

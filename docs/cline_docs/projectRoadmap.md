@@ -8,6 +8,7 @@
 - [x] Add more content (projects, equipment, staff types, minigames, charts)
 - [ ] Implement saving and loading
 - [x] Complete progression system integration
+- [-] Implement Phase 2 Advanced Systems (Dynamic Market, Relationships, Perks)
 
 ## Features
 ### Core Systems
@@ -41,7 +42,12 @@
 - [x] Effect Chain Building Game (advanced audio processing chains)
 - [x] Acoustic Treatment Game (room optimization puzzle)
 - [x] Instrument Layering Game (advanced arrangement challenge)
-- [ ] Lyric Focus Game (songwriting keyword selection)
+- [x] Lyric Focus Game (songwriting keyword selection) (Completed 16/06/2025)
+
+### Phase 2 Advanced Systems
+- [-] Dynamic Market Trends & Sub-Genre Evolution (Initial implementation 16/06/2025)
+- [-] Reputation & Relationship Management (Clients/Artists/Labels) (Initial implementation 16/06/2025)
+- [-] Studio Perks & Specializations (Initial implementation & UI conceptualization 16/06/2025)
 
 ### Progression
 - [x] Milestone rewards
@@ -59,7 +65,7 @@
 - Player attributes and progression
   - Level-based milestone rewards
   - Attribute effects on gameplay mechanics
-  - Perk system for specialization
+  - Perk system for specialization (Initial backend logic in place)
 - Financial system (income, expenses, salaries)
 - Tutorial system with step-by-step guidance
   - Interactive learning paths
@@ -78,17 +84,18 @@
   - Next: Add automated slider positioning based on staff skills
   - Next: Clean up store interface to show only available items
   - Goal: Create streamlined, intuitive workflow across all systems
+- Phase 2 Advanced Systems: Initial backend logic and type definitions implemented for Dynamic Market Trends, Reputation & Relationship Management, and Studio Perks & Specializations. UI conceptualization for Perk System complete. Next steps involve UI implementation for these systems and deeper integration. (16/06/2025)
 - Core loop: Daily work cycle completed and stable; project progression and financial aspects fully functional.
 - Staff management: Complete with minigame system and progression integration.
 - Equipment system: Complete with purchasing and effects fully verified.
 - UI/UX: Tutorial system complete, progression UI in development. Charts Panel, Equipment Detail, and Advanced Animation systems implemented.
-- Content: Basic content and minigames implemented, expanding with progression-tied content. New minigames (Effect Chain, Acoustic Treatment, Instrument Layering) implemented.
-- Progression System: Complete with core features implemented.
+- Content: Basic content and minigames implemented, expanding with progression-tied content. New minigames (Effect Chain, Acoustic Treatment, Instrument Layering, Lyric Focus) implemented.
+- Progression System: Complete with core features implemented. Perk system backend logic initiated as part of Phase 2.
   - ✓ Milestone rewards and attribute effects system
   - ✓ Feature unlocking system with prerequisites
   - ✓ Critical success mechanics based on luck
   - ✓ UI components for progression management
-  - Next: Implement dynamic difficulty scaling and specialization paths
+  - Next: Implement dynamic difficulty scaling and specialization paths. Integrate Perk System UI and effects.
 - Saving/Loading: Not started
 
 ## Completed Tasks
@@ -111,3 +118,5 @@
 - Implemented Effect Chain Building Game.
 - Implemented Acoustic Treatment Game.
 - Implemented Instrument Layering Game.
+- Implemented Lyric Focus Minigame (backend and basic data).
+- Initial backend implementation for Phase 2 Advanced Systems (Dynamic Market Trends, Relationship Management, Studio Perks).

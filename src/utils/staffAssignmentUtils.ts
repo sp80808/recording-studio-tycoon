@@ -1,24 +1,23 @@
-import { StaffMember, Project, ProjectStage, FocusAllocation } from '@/types/game';
+import { StaffMember, Project, ProjectStage, FocusAllocation, StudioSkillType } from '@/types/game';
+import { StageOptimalFocus } from './stageUtils'; // Import StageOptimalFocus
 
 /**
  * Calculates a match score between a staff member and a project.
- * Placeholder logic: Can be expanded to consider skills, roles, genre affinity, etc.
- * @param staff - The staff member.
- * @param project - The project.
- * @returns A match score between 0 and 100.
  */
 export const calculateStaffProjectMatch = (
   staff: StaffMember,
   project: Project
 ): number => {
-  // Placeholder: Basic match based on primary stats and project difficulty
-  let score = 50; // Base score
+  let score = 50;
 
-  if (project.requiredSkills?.creativity && staff.primaryStats.creativity > (project.requiredSkills.creativity / 2)) {
+  const requiredCreativity = project.requiredSkills?.['composition'] || project.requiredSkills?.['soundDesign'] || 0;
+  const requiredTechnical = project.requiredSkills?.['recording'] || project.requiredSkills?.['mixing'] || project.requiredSkills?.['mastering'] || 0;
+
+  if (requiredCreativity > 0 && staff.primaryStats.creativity > (requiredCreativity / 2)) {
     score += Math.min(25, staff.primaryStats.creativity / 4);
   }
 
-  if (project.requiredSkills?.technical && staff.primaryStats.technical > (project.requiredSkills.technical / 2)) {
+  if (requiredTechnical > 0 && staff.primaryStats.technical > (requiredTechnical / 2)) {
     score += Math.min(25, staff.primaryStats.technical / 4);
   }
   
@@ -29,76 +28,89 @@ export const calculateStaffProjectMatch = (
 
 /**
  * Calculates optimal slider positions for staff on a given project stage.
- * Placeholder logic: Needs actual implementation based on game mechanics.
- * @param staffMembers - Array of staff members available for assignment.
- * @param projectStage - The current stage of the project.
- * @returns A FocusAllocation object.
  */
 export const getOptimalSliderPositions = (
   staffMembers: StaffMember[],
   projectStage: ProjectStage
-): FocusAllocation => {
+): StageOptimalFocus => { // Changed return type to StageOptimalFocus
   console.warn(
     'getOptimalSliderPositions is not yet fully implemented. Returning placeholder based on stage focus areas.',
-    staffMembers, // Will be used in future more complex logic
+    staffMembers,
     projectStage
   );
 
-  // Placeholder: Distribute focus based on projectStage.focusAreas
-  // This is a very basic placeholder. Real logic would consider staff skills.
-  const reasoning = "Default distribution based on stage focus areas.";
-  const focusAllocation: FocusAllocation = {
+  let reasoning = "Default distribution based on stage focus areas.";
+  // Initialize with all fields from FocusAllocation, and add reasoning for StageOptimalFocus
+  const focusAllocation: StageOptimalFocus = {
     performance: 33,
     soundCapture: 34,
     layering: 33,
-    reasoning
+    creativity: 33, 
+    technical: 33,  
+    business: 34,   
+    reasoning // Initial reasoning
   };
 
   if (projectStage.focusAreas.length > 0) {
-    // A more sophisticated approach would map projectStage.focusAreas
-    // to performance, soundCapture, layering based on their meaning.
-    // For now, just a simple distribution if specific areas are named.
     if (projectStage.focusAreas.includes('Performance') && projectStage.focusAreas.includes('Sound Quality') && projectStage.focusAreas.includes('Arrangement')) {
-        // Example: if all three are primary focus areas
         focusAllocation.performance = 35;
         focusAllocation.soundCapture = 35;
         focusAllocation.layering = 30;
+        reasoning = "Stage focuses on Performance, Sound Quality, and Arrangement.";
     } else if (projectStage.focusAreas.includes('Vocals') || projectStage.focusAreas.includes('Lead Instrument')) {
         focusAllocation.performance = 40;
         focusAllocation.soundCapture = 30;
         focusAllocation.layering = 30;
+        reasoning = "Stage emphasizes Vocals/Lead Instrument performance.";
     } else if (projectStage.focusAreas.includes('Mixing') || projectStage.focusAreas.includes('Mastering')) {
         focusAllocation.performance = 25;
         focusAllocation.soundCapture = 40;
         focusAllocation.layering = 35;
+        reasoning = "Stage is focused on Mixing/Mastering.";
     }
     // Add more rules based on actual focusArea strings used in projectStages
+    // For example, if a stage focuses on 'Creativity', adjust the creativity slider
+    if (projectStage.focusAreas.includes('Creativity')) {
+        focusAllocation.creativity = 40;
+        focusAllocation.technical = 30;
+        focusAllocation.business = 30;
+        reasoning += " Prioritizing creativity for this stage.";
+    }
   }
 
-  // Ensure total is 100 (simple normalization)
-  const total = focusAllocation.performance + focusAllocation.soundCapture + focusAllocation.layering;
-  if (total !== 100 && total > 0) {
-    focusAllocation.performance = Math.round((focusAllocation.performance / total) * 100);
-    focusAllocation.soundCapture = Math.round((focusAllocation.soundCapture / total) * 100);
-    // Adjust the last one to ensure sum is exactly 100 due to rounding
+  // Normalize primary sliders (performance, soundCapture, layering)
+  const primaryTotal = focusAllocation.performance + focusAllocation.soundCapture + focusAllocation.layering;
+  if (primaryTotal !== 100 && primaryTotal > 0) {
+    const scaleFactor = 100 / primaryTotal;
+    focusAllocation.performance = Math.round(focusAllocation.performance * scaleFactor);
+    focusAllocation.soundCapture = Math.round(focusAllocation.soundCapture * scaleFactor);
     focusAllocation.layering = 100 - focusAllocation.performance - focusAllocation.soundCapture;
-  } else if (total === 0) { // Prevent division by zero if all are 0
+  } else if (primaryTotal === 0) { 
     focusAllocation.performance = 33;
     focusAllocation.soundCapture = 34;
     focusAllocation.layering = 33;
   }
+
+  // Normalize secondary sliders (creativity, technical, business)
+  const secondaryTotal = focusAllocation.creativity + focusAllocation.technical + focusAllocation.business;
+  if (secondaryTotal !== 100 && secondaryTotal > 0) {
+      const scaleFactor = 100 / secondaryTotal;
+      focusAllocation.creativity = Math.round(focusAllocation.creativity * scaleFactor);
+      focusAllocation.technical = Math.round(focusAllocation.technical * scaleFactor);
+      focusAllocation.business = 100 - focusAllocation.creativity - focusAllocation.technical;
+  } else if (secondaryTotal === 0) {
+      focusAllocation.creativity = 33;
+      focusAllocation.technical = 34;
+      focusAllocation.business = 33;
+  }
   
-  focusAllocation.reasoning = reasoning + ` Final distribution: P:${focusAllocation.performance}, S:${focusAllocation.soundCapture}, L:${focusAllocation.layering}.`;
+  focusAllocation.reasoning = reasoning + ` Final distribution: P:${focusAllocation.performance}, S:${focusAllocation.soundCapture}, L:${focusAllocation.layering}, C:${focusAllocation.creativity}, T:${focusAllocation.technical}, B:${focusAllocation.business}.`;
 
   return focusAllocation;
 };
 
 /**
  * Predicts the outcome of a project based on current staff assignments.
- * Placeholder logic: Needs actual implementation.
- * @param assignedStaff - Array of staff members assigned to the project.
- * @param project - The project.
- * @returns An object predicting quality, speed, etc. (structure TBD).
  */
 export const predictProjectOutcome = (
   assignedStaff: StaffMember[],
@@ -115,10 +127,10 @@ export const predictProjectOutcome = (
   let tPoints = 0;
 
   assignedStaff.forEach(staff => {
-    quality += staff.primaryStats.technical / 10;
-    speed += staff.primaryStats.speed / 10;
-    cPoints += staff.primaryStats.creativity;
-    tPoints += staff.primaryStats.technical;
+    quality += (staff.primaryStats.technical || 0) / 10; // Add null check for safety
+    speed += (staff.primaryStats.speed || 0) / 10;
+    cPoints += (staff.primaryStats.creativity || 0);
+    tPoints += (staff.primaryStats.technical || 0);
   });
   
   return { 

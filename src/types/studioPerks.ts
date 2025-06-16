@@ -11,63 +11,61 @@ export type StudioPerkCategory =
   | 'MarketingPromotion'
   | 'BusinessOperations'
   | 'ResearchDevelopment'
-  | 'GenreSpecialization';
+  | 'GenreSpecialization'
+  | 'Marketing'; // Added Marketing
 
 // Define types for unlock conditions
-// This allows for a variety of ways a perk can be unlocked.
 export interface PerkUnlockCondition {
   type: 
-    | 'playerLevel'           // Player reaches a certain level
-    | 'studioReputation'      // Studio reaches a certain reputation
-    | 'completedProjects'     // Total number of completed projects
-    | 'projectsInGenre'       // Number of completed projects in a specific genre
-    | 'staffSkillSum'         // Sum of levels in a specific skill across all staff
-    | 'specificEquipmentOwned'// Own a specific piece of equipment (by ID)
-    | 'specificPerkUnlocked'  // Prerequisite perk (by ID)
-    | 'moneyEarned'           // Total money earned
-    | 'chartSuccesses';       // Number of songs reaching top 10/20/etc.
+    | 'playerLevel'
+    | 'studioReputation'
+    | 'completedProjects'
+    | 'projectsInGenre'
+    | 'staffSkillSum'
+    | 'specificEquipmentOwned'
+    | 'specificPerkUnlocked'
+    | 'moneyEarned'
+    | 'chartSuccesses';
   
-  value: number; // The threshold value for the condition
-  genre?: MusicGenre; // Optional: for 'projectsInGenre'
-  skill?: StudioSkillType; // Optional: for 'staffSkillSum'
-  equipmentId?: string; // Optional: for 'specificEquipmentOwned'
-  perkId?: string; // Optional: for 'specificPerkUnlocked'
+  value: number;
+  genre?: MusicGenre;
+  skill?: StudioSkillType;
+  equipmentId?: string;
+  perkId?: string;
 }
 
 // Define types for perk effects
-// Using a flexible map for effects; keys can be specific game parameters.
-// Example keys: 'mixingQualityBonus', 'staffHappiness', 'contractNegotiationBonus', 'researchSpeed'
-// Values are typically numbers (e.g., percentage bonus as 0.05 for +5%, or flat value)
 export type PerkEffect = {
-  key: string; // e.g., "recordingSkillBonus", "projectAppeal.pop", "staffTrainingSpeed"
-  value: number | string | boolean; // The effect's magnitude or setting
-  operation?: 'add' | 'multiply' | 'set'; // How the value is applied (default: 'add' for numbers, 'set' for others)
-  scope?: string; // Optional scope, e.g., "allStaff", "genre.pop", "equipmentType.microphone"
+  key: string; 
+  value: number | string | boolean; 
+  operation?: 'add' | 'multiply' | 'set'; 
+  scope?: string; 
+  genre?: MusicGenre; // Optional: for genre-specific effects
 };
 
 export interface StudioPerk {
-  id: string; // Unique identifier for the perk, e.g., "advanced_mic_techniques"
-  name: string; // Display name, e.g., "Advanced Mic Techniques"
-  description: string; // In-game description of what the perk does
-  category: StudioPerkCategory; // Helps organize perks in UI
+  id: string; 
+  name: string; 
+  description: string; 
+  category: StudioPerkCategory; 
   
-  icon?: string; // Optional: Emoji or path to an icon image
-  tier: 1 | 2 | 3 | 4 | 5; // Optional: Tier of the perk, for progression or tree structure
+  icon?: string; 
+  tier: 1 | 2 | 3 | 4 | 5; 
   
-  cost?: { // Optional: Cost to unlock/purchase the perk
+  cost?: { 
     money?: number;
-    researchPoints?: number; // If a research system exists
-    perkPoints?: number; // If player earns perk points
+    researchPoints?: number; 
+    perkPoints?: number; 
   };
   
-  unlockConditions: PerkUnlockCondition[]; // Array of conditions, all must be met
+  unlockConditions: PerkUnlockCondition[]; 
   
-  effects: PerkEffect[]; // Array of effects this perk applies
+  effects: PerkEffect[]; 
   
-  prerequisites?: string[]; // Optional: Array of other perk IDs required before this can be unlocked
-  leadsTo?: string[]; // Optional: Array of perk IDs this one unlocks/enables
-  isRepeatable?: boolean; // Can this perk be acquired multiple times (e.g., stackable bonus)
-  maxRepeats?: number; // If repeatable, how many times
+  prerequisites?: string[]; 
+  leadsTo?: string[]; 
+  isRepeatable?: boolean; 
+  maxRepeats?: number; 
 }
 
 // Example of how a perk might look:

@@ -1,15 +1,21 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { GameState, FocusAllocation, StaffMember, PlayerAttributes, Project, ProjectReport } from '@/types/game';
-import { ProjectList } from '@/components/ProjectList';
-import { ProgressiveProjectInterface } from '@/components/ProgressiveProjectInterface';
-import { RightPanel } from '@/components/RightPanel';
+import { GameState, FocusAllocation, StaffMember, PlayerAttributes, Project, ProjectReport, MusicGenre } from '@/types/game'; // Added MusicGenre
+import { ProjectList, ProjectListProps } from '@/components/ProjectList'; // Assuming ProjectListProps is exported
+import { ProgressiveProjectInterface, ProgressiveProjectInterfaceProps } from '@/components/ProgressiveProjectInterface'; // Assuming Props is exported
+import { RightPanel, RightPanelProps } from '@/components/RightPanel'; // Assuming Props is exported
+import { StudioPerksPanel } from '@/components/StudioPerksPanel';
+import { Button } from '@/components/ui/button';
 import { FloatingXPOrb } from '@/components/FloatingXPOrb';
 import { EraTransitionAnimation } from '@/components/EraTransitionAnimation';
 import { HistoricalNewsModal } from '@/components/HistoricalNewsModal';
 import { checkForNewEvents, applyEventEffects, HistoricalEvent } from '@/utils/historicalEvents';
 import { useBandManagement } from '@/hooks/useBandManagement';
 import { MinigameType } from '@/types/miniGame';
-import { useIsMobile } from '@/hooks/useIsMobile'; // Import useIsMobile
+import { useIsMobile } from '@/hooks/useIsMobile';
+
+// Define a more precise type for performDailyWork if its return type is fixed
+type PerformDailyWorkFn = () => { isComplete: boolean; finalProjectData?: Project | null; review?: ProjectReport | null; } | undefined;
+
 
 interface MainGameContentProps {
   gameState: GameState;
@@ -17,8 +23,8 @@ interface MainGameContentProps {
   focusAllocation: FocusAllocation;
   setFocusAllocation: React.Dispatch<React.SetStateAction<FocusAllocation>>;
   startProject: (project: Project) => void;
-  performDailyWork: () => { isComplete: boolean; finalProjectData: Project | null; review: ProjectReport | undefined | null; } | undefined; // Updated return type
-  onProjectComplete?: (completedProject: Project) => void; // Added this prop
+  performDailyWork: PerformDailyWorkFn; // Use the refined type
+  onProjectComplete?: (completedProject: Project, review: ProjectReport | null) => void; // review added
   onMinigameReward: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => void;
   spendPerkPoint: (attribute: keyof PlayerAttributes) => void;
   advanceDay: () => void;
@@ -31,10 +37,10 @@ interface MainGameContentProps {
   openTrainingModal: (staff: StaffMember) => boolean;
   orbContainerRef: React.RefObject<HTMLDivElement>;
   contactArtist: (artistId: string, offer: number) => void;
-  triggerEraTransition: (newEraId: string) => void; // Updated to accept newEraId
+  triggerEraTransition: (newEraId: string) => void;
   autoTriggeredMinigame: { type: MinigameType; reason: string } | null;
   clearAutoTriggeredMinigame: () => void;
-  startResearchMod?: (staffId: string, modId: string) => boolean; // Add prop
+  startResearchMod?: (staffId: string, modId: string) => boolean;
 }
 
 export const MainGameContent: React.FC<MainGameContentProps> = ({
@@ -44,7 +50,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   setFocusAllocation,
   startProject,
   performDailyWork,
-  onProjectComplete, // Destructure the new prop
+  onProjectComplete,
   onMinigameReward,
   spendPerkPoint,
   advanceDay,
@@ -60,7 +66,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   triggerEraTransition,
   autoTriggeredMinigame,
   clearAutoTriggeredMinigame,
-  startResearchMod // Destructure prop
+  startResearchMod
 }) => {
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [showAttributesModal, setShowAttributesModal] = useState(false);
@@ -69,62 +75,50 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   const [showHistoricalNews, setShowHistoricalNews] = useState(false);
   const [currentHistoricalEvent, setCurrentHistoricalEvent] = useState<HistoricalEvent | null>(null);
   const [lastCheckedDay, setLastCheckedDay] = useState(0);
+  const [showStudioPerksPanel, setShowStudioPerksPanel] = useState(false);
   const [floatingOrbs, setFloatingOrbs] = useState<Array<{
     id: string;
     amount: number;
     type: 'xp' | 'money' | 'skill';
   }>>([]);
   const isMobile = useIsMobile();
-  const [activeMobileTab, setActiveMobileTab] = useState(1); // Default to center panel (Studio)
+  const [activeMobileTab, setActiveMobileTab] = useState(1);
   const swipeContainerRef = useRef<HTMLDivElement>(null);
   const touchStartXRef = useRef(0);
   const touchCurrentXRef = useRef(0);
   const isSwipingRef = useRef(false);
-  const SWIPE_THRESHOLD = 50; // Minimum pixels for a swipe
+  const SWIPE_THRESHOLD = 50;
 
-  // Check for new historical events when day advances
   useEffect(() => {
+    if (!gameState) return;
     const newEvents = checkForNewEvents(gameState, lastCheckedDay);
     if (newEvents.length > 0) {
-      // Show the first new event
       const event = newEvents[0];
       setCurrentHistoricalEvent(event);
       setShowHistoricalNews(true);
-      
-      // Apply event effects
       const updatedGameState = applyEventEffects(event, gameState);
       setGameState(updatedGameState);
-      
-      // Update last checked day
       setLastCheckedDay(gameState.currentDay);
     }
-  }, [gameState.currentDay, gameState.currentEra, lastCheckedDay, setGameState]);
+  }, [gameState, lastCheckedDay, setGameState]);
 
-  // Enhanced era transition handler
   const handleEraTransition = () => {
-    // TODO: Implement logic to determine the next era ID.
-    // For now, using a placeholder. This needs to be dynamic.
-    const nextEraId = "placeholder_next_era_id"; // This needs actual logic
+    if (!gameState) return;
+    const nextEraId = "placeholder_next_era_id"; 
     const currentEraId = gameState.currentEra;
-    
-    triggerEraTransition(nextEraId); // Call with the determined nextEraId
-
-    // The visual transition part might need to be adjusted
-    // if triggerEraTransition itself handles all state changes.
-    // For now, keeping the visual cue part.
+    triggerEraTransition(nextEraId);
     setEraTransitionInfo({ fromEra: currentEraId, toEra: nextEraId });
     setShowEraTransition(true);
   };
 
-  // Band Management Integration
-  const { createBand, startTour, createOriginalTrack, processTourIncome } = useBandManagement(gameState, setGameState);
+  const bandManagement = useBandManagement();
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartXRef.current = e.touches[0].clientX;
     touchCurrentXRef.current = e.touches[0].clientX;
     isSwipingRef.current = true;
     if (swipeContainerRef.current) {
-      swipeContainerRef.current.style.transition = 'none'; // Disable transition during swipe
+      swipeContainerRef.current.style.transition = 'none';
     }
   };
 
@@ -133,7 +127,6 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
     touchCurrentXRef.current = e.touches[0].clientX;
     const diffX = touchCurrentXRef.current - touchStartXRef.current;
     if (swipeContainerRef.current) {
-      // Move the content with the swipe, but constrain it
       const baseTranslate = -activeMobileTab * 100;
       swipeContainerRef.current.style.transform = `translateX(calc(${baseTranslate}% + ${diffX}px))`;
     }
@@ -145,17 +138,16 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
     const diffX = touchCurrentXRef.current - touchStartXRef.current;
 
     if (swipeContainerRef.current) {
-      swipeContainerRef.current.style.transition = 'transform 0.3s ease-out'; // Re-enable transition
+      swipeContainerRef.current.style.transition = 'transform 0.3s ease-out';
     }
 
     if (Math.abs(diffX) > SWIPE_THRESHOLD) {
-      if (diffX < 0) { // Swiped left
+      if (diffX < 0) {
         setActiveMobileTab(prev => Math.min(prev + 1, 2));
-      } else { // Swiped right
+      } else {
         setActiveMobileTab(prev => Math.max(prev - 1, 0));
       }
     } else {
-      // Snap back if not a full swipe
       if (swipeContainerRef.current) {
         swipeContainerRef.current.style.transform = `translateX(-${activeMobileTab * 100}%)`;
       }
@@ -168,42 +160,49 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
     }
   }, [activeMobileTab, isMobile]);
 
+  if (!gameState) {
+    return <div>Loading game...</div>;
+  }
+  
+  // Prepare props for ProgressiveProjectInterface, ensuring performDailyWork matches
+  const progressiveProjectInterfaceProps: Omit<ProgressiveProjectInterfaceProps, 'onProjectSelect'> = {
+    gameState,
+    setGameState,
+    focusAllocation,
+    setFocusAllocation,
+    performDailyWork: performDailyWork as ProgressiveProjectInterfaceProps['performDailyWork'], // Cast to expected type
+    onMinigameReward,
+    onProjectComplete: onProjectComplete as ProgressiveProjectInterfaceProps['onProjectComplete'], // Cast
+    autoTriggeredMinigame,
+    clearAutoTriggeredMinigame,
+  };
+
+
   return (
-    <div className="h-full flex flex-col"> {/* Outer container for layout + modals */}
+    <div className="h-full flex flex-col">
       {isMobile ? (
-        // Mobile View: Swipeable tabs
-        <div className="flex-grow flex flex-col overflow-hidden"> {/* Main container for mobile view */}
+        <div className="flex-grow flex flex-col overflow-hidden">
           <div 
-            className="flex-grow flex h-full" // This will be the swipe track
+            className="flex-grow flex h-full"
             ref={swipeContainerRef}
-            style={{ transition: 'transform 0.3s ease-out', width: '300%' }} // 3 tabs
+            style={{ transition: 'transform 0.3s ease-out', width: '300%' }}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
-            {/* Tab 0: ProjectList */}
             <div className="w-full h-full overflow-y-auto p-2 flex-shrink-0" style={{ width: 'calc(100% / 3)' }}>
               <ProjectList 
                 gameState={gameState}
-                setGameState={setGameState}
+                updateGameState={setGameState} 
                 startProject={startProject}
               />
             </div>
             
-            {/* Tab 1: Main Interface (Studio) */}
             <div className="w-full h-full overflow-y-auto p-2 flex-shrink-0 relative flex flex-col" style={{ width: 'calc(100% / 3)' }}>
               <ProgressiveProjectInterface 
-                gameState={gameState}
-                setGameState={setGameState}
-                focusAllocation={focusAllocation}
-                setFocusAllocation={setFocusAllocation}
-                performDailyWork={performDailyWork}
-                onMinigameReward={onMinigameReward}
-                onProjectComplete={onProjectComplete}
-                autoTriggeredMinigame={autoTriggeredMinigame}
-                clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
+                {...progressiveProjectInterfaceProps}
                 onProjectSelect={(project) => {
-                  setGameState(prev => ({ ...prev, activeProject: project }));
+                  setGameState(prev => ({ ...prev!, activeProject: project }));
                 }}
               />
               <div ref={orbContainerRef} className="absolute inset-0 pointer-events-none z-10"></div>
@@ -217,7 +216,6 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
               ))}
             </div>
 
-            {/* Tab 2: RightPanel (Manage) */}
             <div className="w-full h-full overflow-y-auto p-2 flex-shrink-0" style={{ width: 'calc(100% / 3)' }}>
               <RightPanel 
                 gameState={gameState}
@@ -228,9 +226,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                 spendPerkPoint={spendPerkPoint}
                 advanceDay={advanceDay}
                 purchaseEquipment={purchaseEquipment}
-                createBand={createBand}
-                startTour={startTour}
-                createOriginalTrack={createOriginalTrack}
+                createBand={bandManagement.createBand}
+                startTour={bandManagement.startTour}
                 hireStaff={hireStaff}
                 refreshCandidates={refreshCandidates}
                 assignStaffToProject={assignStaffToProject}
@@ -240,10 +237,10 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                 contactArtist={contactArtist}
                 triggerEraTransition={handleEraTransition}
                 startResearchMod={startResearchMod}
+                onOpenStudioPerks={() => setShowStudioPerksPanel(true)}
               />
-            </div> {/* Corrected closing tag for this div */}
+            </div>
           </div>
-          {/* Mobile Tab Navigation Dots */}
           <div className="flex justify-center p-2 border-t border-gray-700 bg-gray-800">
             {[0, 1, 2].map(index => (
               <button 
@@ -256,33 +253,22 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           </div>
         </div>
       ) : (
-        // Desktop View: 3-panel layout
         <div className="p-2 sm:p-4 sm:flex sm:gap-4 relative flex-grow overflow-hidden">
-          {/* Left Panel */}
           <div className="w-full sm:w-80 lg:w-96 animate-fade-in flex flex-col h-full">
             <div className="overflow-y-auto flex-grow">
               <ProjectList 
                 gameState={gameState}
-                setGameState={setGameState}
+                updateGameState={setGameState} 
                 startProject={startProject}
               />
             </div>
           </div>
 
-          {/* Center Panel Wrapper */}
           <div className="flex-1 relative sm:min-h-0 animate-fade-in flex flex-col h-full overflow-hidden" style={{ animationDelay: '0.2s' }}>
             <ProgressiveProjectInterface 
-              gameState={gameState}
-              setGameState={setGameState}
-              focusAllocation={focusAllocation}
-              setFocusAllocation={setFocusAllocation}
-              performDailyWork={performDailyWork}
-              onMinigameReward={onMinigameReward}
-              onProjectComplete={onProjectComplete}
-              autoTriggeredMinigame={autoTriggeredMinigame}
-              clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
+              {...progressiveProjectInterfaceProps}
               onProjectSelect={(project) => {
-                setGameState(prev => ({ ...prev, activeProject: project }));
+                 setGameState(prev => ({ ...prev!, activeProject: project }));
               }}
             />
             <div ref={orbContainerRef} className="absolute inset-0 pointer-events-none z-10"></div>
@@ -296,7 +282,6 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             ))}
           </div>
 
-          {/* Right Panel */}
           <div className="w-full sm:w-80 lg:w-96 animate-fade-in flex flex-col h-full" style={{ animationDelay: '0.4s' }}>
              <div className="overflow-y-auto flex-grow">
               <RightPanel 
@@ -308,9 +293,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                 spendPerkPoint={spendPerkPoint}
                 advanceDay={advanceDay}
                 purchaseEquipment={purchaseEquipment}
-                createBand={createBand}
-                startTour={startTour}
-                createOriginalTrack={createOriginalTrack}
+                createBand={bandManagement.createBand}
+                startTour={bandManagement.startTour}
                 hireStaff={hireStaff}
                 refreshCandidates={refreshCandidates}
                 assignStaffToProject={assignStaffToProject}
@@ -319,14 +303,23 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                 openTrainingModal={openTrainingModal}
                 contactArtist={contactArtist}
                 triggerEraTransition={handleEraTransition}
-                startResearchMod={startResearchMod} 
+                startResearchMod={startResearchMod}
+                onOpenStudioPerks={() => setShowStudioPerksPanel(true)}
               />
             </div>
           </div>
         </div>
-      )} {/* This closes the ternary operator */}
+      )}
 
-      {/* Era Transition Animation */}
+      {showStudioPerksPanel && (
+        <div className="absolute inset-0 bg-black bg-opacity-75 z-40 flex items-center justify-center p-4">
+          <div className="bg-slate-800 p-4 rounded-lg shadow-xl w-full max-w-3xl h-[90vh] max-h-[800px] flex flex-col">
+            <StudioPerksPanel />
+            <Button onClick={() => setShowStudioPerksPanel(false)} className="mt-4 bg-red-600 hover:bg-red-700 self-center px-4 py-2">Close Perks</Button>
+          </div>
+        </div>
+      )}
+
       {showEraTransition && eraTransitionInfo && (
         <EraTransitionAnimation
           isVisible={showEraTransition}
@@ -339,7 +332,6 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         />
       )}
 
-      {/* Historical News Modal */}
       <HistoricalNewsModal
         event={currentHistoricalEvent}
         isOpen={showHistoricalNews}
@@ -348,6 +340,6 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           setCurrentHistoricalEvent(null);
         }}
       />
-    </div> // Closes the outer h-full flex flex-col container
+    </div>
   );
 };

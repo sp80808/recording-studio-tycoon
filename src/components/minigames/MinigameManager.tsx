@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { RhythmTimingGame } from './RhythmTimingGame'; // Removed RhythmTimingGameProps import
+import { RhythmTimingGame } from './RhythmTimingGame';
 import { SoundWaveGame } from './SoundWaveGame';
 import { BeatMakingGame } from './BeatMakingGame';
 import { MasteringGame } from './MasteringGame';
@@ -18,7 +18,7 @@ import { DigitalMixingGame } from './DigitalMixingGame';
 import { HybridMixingGame } from './HybridMixingGame';
 import { MasteringChainGame } from './MasteringChainGame';
 import { AudioRestorationGame } from './AudioRestorationGame';
-import { MidiProgrammingGame } from './MidiProgrammingGame.tsx';
+import { MidiProgrammingGame } from './MidiProgrammingGame';
 import { SamplingSequencingGame } from './SamplingSequencingGame';
 import { DigitalDistributionGame } from './DigitalDistributionGame';
 import { SocialMediaPromotionGame } from './SocialMediaPromotionGame';
@@ -29,17 +29,17 @@ import { FourTrackRecordingGame } from './FourTrackRecordingGame';
 
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { toast } from '@/hooks/use-toast';
-import { MinigameType, MiniGameDifficulty } from '@/types/miniGame';
+import { MinigameType, MiniGameDifficulty } from '@/types/miniGame'; // MiniGameDifficulty is 'beginner' | 'intermediate' | 'advanced'
 import { MusicGenre } from '@/types/charts';
 import { GameState } from '@/types/game';
 
-interface MinigameManagerProps {
+export interface MinigameManagerProps {
   isOpen: boolean;
   onClose: () => void;
   gameType: MinigameType;
   onReward: (creativityBonus: number, technicalBonus: number, xpBonus: number) => void;
   onComplete: (type: MinigameType, score: number) => void;
-  difficulty: number; 
+  difficulty: number; // Expecting a number (e.g., 1-10)
   gameState: GameState; 
 }
 
@@ -49,7 +49,7 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
   gameType,
   onReward,
   onComplete,
-  difficulty, 
+  difficulty, // This is a number
   gameState,
 }) => {
   const [showGame, setShowGame] = useState(true);
@@ -59,34 +59,13 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
     setShowGame(false);
     let creativityBonus = 0;
     let technicalBonus = 0;
-    const xpBonus = Math.floor(Math.max(1, score / 50));
+    const xpBonus = Math.floor(Math.max(1, score / 50)); 
 
     switch (gameType) {
       case 'rhythmTiming': 
         creativityBonus = Math.floor(score / 8); technicalBonus = Math.floor(score / 12); break;
       case 'mixingBoard': 
         creativityBonus = Math.floor(score / 12); technicalBonus = Math.floor(score / 8); break;
-      case 'soundWave': 
-        creativityBonus = Math.floor(score / 10); technicalBonus = Math.floor(score / 10); break;
-      case 'beatMaking': 
-        creativityBonus = Math.floor(score / 6); technicalBonus = Math.floor(score / 15); break;
-      case 'vocalRecording': 
-        creativityBonus = Math.floor(score / 7); technicalBonus = Math.floor(score / 11); break;
-      case 'mastering':
-        creativityBonus = Math.floor(score / 15); technicalBonus = Math.floor(score / 6); break;
-      case 'effectChain':
-        creativityBonus = Math.floor(score / 8); technicalBonus = Math.floor(score / 10); break;
-      case 'acousticTuning': 
-        creativityBonus = Math.floor(score / 12); technicalBonus = Math.floor(score / 8); break;
-      case 'instrumentLayering': 
-        creativityBonus = Math.floor(score / 9); technicalBonus = Math.floor(score / 11); break;
-      case 'microphonePlacement':
-        creativityBonus = Math.floor(score / 10); technicalBonus = Math.floor(score / 7); break;
-      case 'masteringChain':
-        creativityBonus = Math.floor(score / 15); technicalBonus = Math.floor(score / 5); break;
-      case 'lyricFocus': 
-        creativityBonus = Math.floor(score / 7); 
-        break;
       default:
         creativityBonus = Math.floor(score / 10); technicalBonus = Math.floor(score / 10); break;
     }
@@ -96,7 +75,7 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
       title: "Minigame Complete!",
       description: `Score: ${score}. Earned +${creativityBonus}C, +${technicalBonus}T, +${xpBonus}XP`,
     });
-    onClose();
+    onClose(); 
   };
   
   const handleSpecificGameComplete = (result: { success: boolean; score: number } | number) => {
@@ -105,23 +84,36 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
   };
   
   const handleCloseDialog = () => {
-    setShowGame(true);
+    setShowGame(true); 
     onClose();
   };
+
+  // Helper to convert numeric difficulty to the specific string type RhythmTimingGame expects
+  const getRhythmGameDifficultyString = (numDiff: number): 'easy' | 'medium' | 'hard' => {
+    if (numDiff <= 3) return 'easy';
+    if (numDiff <= 7) return 'medium';
+    return 'hard';
+  };
+  
+  // Helper for other games that might expect MiniGameDifficulty ('beginner', etc.)
+  const getGeneralGameDifficultyString = (numDiff: number): MiniGameDifficulty => {
+    if (numDiff <= 3) return 'beginner';
+    if (numDiff <= 7) return 'intermediate';
+    return 'advanced';
+  };
+
 
   const renderGame = () => {
     if (!showGame) return null;
 
-    const commonMinigameProps = {
+    const commonNumericDifficultyProps = {
       onComplete: handleSpecificGameComplete,
       onClose: handleCloseDialog,
-      difficulty: difficulty, 
+      difficulty: difficulty, // Pass the original number
     };
     
     const beatMakingProps = {
-        onComplete: (score: number) => handleSpecificGameComplete(score),
-        onClose: handleCloseDialog,
-        difficulty: difficulty, 
+        ...commonNumericDifficultyProps,
         backgroundMusic: backgroundMusic,
     };
 
@@ -133,51 +125,48 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
       onClose: handleCloseDialog,
       genre: gameState.activeProject?.genre as MusicGenre || 'pop',
       mood: gameState.activeProject?.targetMood || 'upbeat',
-      difficulty: difficulty, 
+      difficulty: difficulty, // Pass numeric difficulty as LyricFocusGame expects a number
     };
 
-    const getRhythmGameDifficulty = (numDiff: number): 'easy' | 'medium' | 'hard' => {
-        if (numDiff <= 3) return 'easy';
-        if (numDiff <= 7) return 'medium';
-        return 'hard';
-    };
 
     switch (gameType) {
       case 'rhythmTiming': 
         return <RhythmTimingGame 
                     onComplete={handleSpecificGameComplete} 
                     onClose={handleCloseDialog} 
-                    difficulty={getRhythmGameDifficulty(difficulty)} 
+                    difficulty={getRhythmGameDifficultyString(difficulty)} // Use specific converter
                 />;
-      case 'mixingBoard': return <MixingMinigame {...commonMinigameProps} />;
-      case 'soundWave': return <SoundWaveGame {...commonMinigameProps} />;
-      case 'beatMaking': return <BeatMakingGame {...beatMakingProps} />;
-      case 'vocalRecording': return <VocalRecordingMinigame {...commonMinigameProps} />;
-      case 'mastering': return <MasteringGame {...commonMinigameProps} />;
-      case 'effectChain': return <EffectChainGame {...commonMinigameProps} genre="rock" />;
-      case 'acousticTuning': return <AcousticTreatmentGame {...commonMinigameProps} recordingType="vocal" />;
-      case 'instrumentLayering': return <InstrumentLayeringGame {...commonMinigameProps} genre="pop" />;
-      case 'pedalboard': return <GuitarPedalBoardGame {...commonMinigameProps} />;
-      case 'patchbay': return <PatchBayGame {...commonMinigameProps} />;
-      case 'microphonePlacement': return <MicrophonePlacementGame {...commonMinigameProps} />;
+      
+      // Games expecting numeric difficulty
       case 'lyricFocus': return <LyricFocusGame {...lyricFocusProps} />;
-      case 'analogConsole': return <AnalogConsoleGame {...commonMinigameProps} />;
-      case 'digitalMixing': return <DigitalMixingGame {...commonMinigameProps} />;
-      case 'hybridMixing': return <HybridMixingGame {...commonMinigameProps} />;
-      case 'masteringChain': return <MasteringChainGame {...commonMinigameProps} />;
-      case 'audioRestoration': return <AudioRestorationGame {...commonMinigameProps} />;
-      case 'midiProgramming': return <MidiProgrammingGame {...commonMinigameProps} />;
-      case 'sampleEditing': return <SamplingSequencingGame {...commonMinigameProps} />;
-      case 'digitalDistribution': return <DigitalDistributionGame {...commonMinigameProps} />;
-      case 'socialMediaPromotion': return <SocialMediaPromotionGame {...commonMinigameProps} />;
-      case 'streamingOptimization': return <StreamingOptimizationGame {...commonMinigameProps} />;
-      case 'aiMastering': return <AIMasteringGame {...commonMinigameProps} />;
-      case 'tapeSplicing': return <TapeSplicingGame {...commonMinigameProps} />;
-      case 'fourTrackRecording': return <FourTrackRecordingGame {...commonMinigameProps} />;
+      case 'mixingBoard': return <MixingMinigame {...commonNumericDifficultyProps} />;
+      case 'soundWave': return <SoundWaveGame {...commonNumericDifficultyProps} />;
+      case 'beatMaking': return <BeatMakingGame {...beatMakingProps} />;
+      case 'vocalRecording': return <VocalRecordingMinigame {...commonNumericDifficultyProps} />;
+      case 'mastering': return <MasteringGame {...commonNumericDifficultyProps} />;
+      case 'effectChain': return <EffectChainGame {...commonNumericDifficultyProps} genre="rock" />;
+      case 'acousticTuning': return <AcousticTreatmentGame {...commonNumericDifficultyProps} recordingType="vocal" />;
+      case 'instrumentLayering': return <InstrumentLayeringGame {...commonNumericDifficultyProps} genre="pop" />;
+      case 'pedalboard': return <GuitarPedalBoardGame {...commonNumericDifficultyProps} />;
+      case 'patchbay': return <PatchBayGame {...commonNumericDifficultyProps} />;
+      case 'microphonePlacement': return <MicrophonePlacementGame {...commonNumericDifficultyProps} />;
+      case 'analogConsole': return <AnalogConsoleGame {...commonNumericDifficultyProps} />;
+      case 'digitalMixing': return <DigitalMixingGame {...commonNumericDifficultyProps} />;
+      case 'hybridMixing': return <HybridMixingGame {...commonNumericDifficultyProps} />;
+      case 'masteringChain': return <MasteringChainGame {...commonNumericDifficultyProps} />;
+      case 'audioRestoration': return <AudioRestorationGame {...commonNumericDifficultyProps} />;
+      case 'midiProgramming': return <MidiProgrammingGame {...commonNumericDifficultyProps} />;
+      case 'sampleEditing': return <SamplingSequencingGame {...commonNumericDifficultyProps} />;
+      case 'digitalDistribution': return <DigitalDistributionGame {...commonNumericDifficultyProps} />;
+      case 'socialMediaPromotion': return <SocialMediaPromotionGame {...commonNumericDifficultyProps} />;
+      case 'streamingOptimization': return <StreamingOptimizationGame {...commonNumericDifficultyProps} />;
+      case 'aiMastering': return <AIMasteringGame {...commonNumericDifficultyProps} />;
+      case 'tapeSplicing': return <TapeSplicingGame {...commonNumericDifficultyProps} />;
+      case 'fourTrackRecording': return <FourTrackRecordingGame {...commonNumericDifficultyProps} />;
       
       default:
         console.warn("Unhandled gameType in MinigameManager renderGame:", gameType);
-        return <div>Minigame "{gameType}" not implemented in manager.</div>;
+        return <div>Minigame "{typeof gameType === 'string' ? gameType : 'Unknown'}" not implemented in manager.</div>;
     }
   };
 

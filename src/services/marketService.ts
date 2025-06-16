@@ -1,37 +1,36 @@
 import { GameState } from '@/types/game';
 import { MarketTrend, SubGenre, MusicGenre, TrendDirection, TrendEvent } from '@/types/charts';
 import { Project } from '@/types/game';
-import { subGenres as importedSubGenres, getSubGenreById as getImportedSubGenreById } from '@/data/subGenreData'; // Import subgenre data
+import { subGenres as importedSubGenres, getSubGenreById as getImportedSubGenreById } from '@/data/subGenreData';
 
-// In-memory store for market trends
 let currentMarketTrends: MarketTrend[] = [];
-// Use subgenres from the dedicated data file
 const allSubGenres: ReadonlyArray<SubGenre> = [...importedSubGenres];
 
-// Helper to initialize some basic trends if needed for development
 const initializeMockData = () => {
-  // allSubGenres is already initialized from the import.
-  // We only need to initialize currentMarketTrends if empty.
   if (currentMarketTrends.length === 0) {
-    const genres: MusicGenre[] = ['pop', 'rock', 'hip-hop', 'electronic', 'country', 'jazz'];
-    const directions: TrendDirection[] = ['rising', 'stable', 'falling', 'emerging'];
+    const genres: MusicGenre[] = ['pop', 'rock', 'hip-hop', 'electronic', 'country', 'jazz', 'r&b', 'folk', 'classical', 'alternative', 'acoustic'];
+    const directions: TrendDirection[] = ['rising', 'stable', 'falling', 'emerging', 'fading'];
     
     genres.forEach((genre, index) => {
-      // Try to find a subgenre for this main genre from our imported list
       const relevantSubGenre = allSubGenres.find(sg => sg.parentGenre === genre);
+      const initialPopularity = Math.floor(Math.random() * 60) + 20; // 20-80
+      const initialGrowthRate = Math.random() * 6 - 3; // -3% to +3%
 
       currentMarketTrends.push({
-        id: `trend-${genre}-${Date.now()}-${index}`, // Ensure unique ID
+        id: `trend-${genre}-${Date.now()}-${index}`,
         genreId: genre,
         subGenreId: relevantSubGenre ? relevantSubGenre.id : undefined,
-        popularity: Math.floor(Math.random() * 70) + 30, 
-        trendDirection: directions[Math.floor(Math.random() * directions.length)],
-        growthRate: Math.random() * 10 - 5, 
-        lastUpdated: Date.now(),
-        growth: Math.random() * 100 - 50,
+        popularity: initialPopularity,
+        trendDirection: directions[Math.floor(Math.random() * directions.length)], // Initial direction can be random
+        growthRate: parseFloat(initialGrowthRate.toFixed(2)),
+        lastUpdated: Date.now(), // Consider using game days
+        // Compatibility fields, can be derived or phased out
+        growth: Math.round(initialGrowthRate * 10), 
         events: [],
-        duration: 30, 
+        duration: 90, // Default duration for a trend phase
         startDay: 1, 
+        projectedDuration: 90,
+        seasonality: Array(12).fill(1.0), // Neutral seasonality
       });
     });
   }
@@ -45,74 +44,86 @@ export const marketService = {
     playerProjectsCompletedSinceLastUpdate: Project[] = [],
     globalEventsHappenedSinceLastUpdate: TrendEvent[] = []
   ): MarketTrend[] => {
-    console.log('MarketService: Updating all market trends...');
+    console.log('MarketService: Updating all market trends for game day:', gameState.currentDay);
     
+    const MAX_POPULARITY = 100;
+    const MIN_POPULARITY = 5;
+    const MAX_GROWTH_RATE = 7.5; // Max % change per update period
+    const MIN_GROWTH_RATE = -7.5;
+
     currentMarketTrends = currentMarketTrends.map(trend => {
       let newPopularity = trend.popularity;
       let newGrowthRate = trend.growthRate;
-      let newTrendDirection = trend.trendDirection;
+      
+      // 1. Apply current growth rate to popularity
+      // Assuming this function is called, e.g., weekly (7 game days)
+      // The growthRate is per update period.
+      newPopularity += newGrowthRate;
 
-      newPopularity += trend.growthRate * (Math.random() * 0.5 + 0.75); 
-      newGrowthRate += (Math.random() * 2 - 1) * 0.5; 
+      // 2. Adjust growth rate (inertia + small random fluctuation + regression to mean)
+      // Random nudge
+      newGrowthRate += (Math.random() * 1 - 0.5); // Smaller random change: -0.5 to +0.5
+      // Regression towards 0 (trends don't grow/fall indefinitely without external factors)
+      newGrowthRate *= 0.95; // Dampening factor
 
+      // 3. Impact of player's successful releases
       playerProjectsCompletedSinceLastUpdate.forEach(project => {
         if (project.genre === trend.genreId && project.qualityScore && project.qualityScore > 70) {
-          newPopularity += project.qualityScore / 20; 
-          newGrowthRate += project.qualityScore / 100;  
-          console.log(`Player project '${project.title}' boosted ${trend.genreId}`);
+          const qualityImpact = project.qualityScore / 100; // 0 to 1
+          newPopularity += qualityImpact * 5; // Max +5 for a 100 quality score project
+          newGrowthRate += qualityImpact * 0.5;  // Max +0.5 to growth rate
+          console.log(`Player project '${project.title}' (Quality: ${project.qualityScore}) boosted ${trend.genreId}`);
         }
       });
 
+      // 4. Impact of global events
       globalEventsHappenedSinceLastUpdate.forEach(event => {
         if (event.affectedGenres.includes(trend.genreId)) {
-          newPopularity += event.impact / 2; 
-          newGrowthRate += event.impact / 10;
+          // Apply event impact more directly to popularity and growth rate
+          newPopularity += event.impact * 0.2; // Event impact spread (e.g. 20% of raw impact value)
+          newGrowthRate += event.impact * 0.05; 
           console.log(`Global event '${event.name}' impacted ${trend.genreId}`);
         }
       });
       
-      newPopularity = Math.max(5, Math.min(100, newPopularity)); 
-      newGrowthRate = Math.max(-10, Math.min(10, newGrowthRate)); 
+      // 5. Clamp popularity and growthRate
+      newPopularity = Math.max(MIN_POPULARITY, Math.min(MAX_POPULARITY, newPopularity));
+      newGrowthRate = Math.max(MIN_GROWTH_RATE, Math.min(MAX_GROWTH_RATE, newGrowthRate));
 
-      if (newGrowthRate > 3) newTrendDirection = 'rising';
-      else if (newGrowthRate < -3) newTrendDirection = 'falling';
-      else if (newPopularity > 80 && newGrowthRate >= 0) newTrendDirection = 'stable'; 
-      else if (newPopularity < 20 && newGrowthRate <= 0) newTrendDirection = 'fading';
-      else if (newPopularity < 30 && newGrowthRate > 1) newTrendDirection = 'emerging';
-      else newTrendDirection = 'stable';
+      // 6. Determine new trendDirection based on current state
+      let newTrendDirection: TrendDirection = 'stable';
+      if (newGrowthRate > 1.5 && newPopularity < 90) newTrendDirection = 'rising';
+      else if (newGrowthRate < -1.5 && newPopularity > 10) newTrendDirection = 'falling';
+      else if (newPopularity < 25 && newGrowthRate > 0.5) newTrendDirection = 'emerging';
+      else if (newPopularity < 15 && newGrowthRate <= 0) newTrendDirection = 'fading';
+      else if (newPopularity >= 85) newTrendDirection = 'stable'; // Peaked
       
       return {
         ...trend,
         popularity: Math.round(newPopularity),
         growthRate: parseFloat(newGrowthRate.toFixed(2)),
         trendDirection: newTrendDirection,
-        lastUpdated: Date.now(),
-        growth: Math.round(newGrowthRate * 10), 
+        lastUpdated: gameState.currentDay, // Use game day
+        growth: Math.round(newGrowthRate * 10), // For compatibility if needed
       };
     });
     
-    console.log('MarketService: Market trends updated.', currentMarketTrends);
+    // TODO: Logic for new trends emerging or old ones dying out completely.
+    // TODO: Consider sub-genre specific evolution linked to parent genre.
+
+    console.log('MarketService: Market trends updated.');
     return [...currentMarketTrends];
   },
 
   getCurrentPopularity: (genreId: MusicGenre, subGenreId?: string): number => {
     let relevantTrend: MarketTrend | undefined;
-
     if (subGenreId) {
-      relevantTrend = currentMarketTrends.find(
-        trend => trend.genreId === genreId && trend.subGenreId === subGenreId
-      );
+      relevantTrend = currentMarketTrends.find(t => t.genreId === genreId && t.subGenreId === subGenreId);
     }
     if (!relevantTrend) {
-      relevantTrend = currentMarketTrends.find(
-        trend => trend.genreId === genreId && !trend.subGenreId 
-      );
+      relevantTrend = currentMarketTrends.find(t => t.genreId === genreId && !t.subGenreId);
     }
-    if (!relevantTrend) {
-        const genericTrend = currentMarketTrends.find(trend => trend.genreId === genreId);
-        return genericTrend?.popularity || 50; 
-    }
-    return relevantTrend.popularity;
+    return relevantTrend?.popularity || 50; // Default popularity
   },
 
   getAllTrends: (): MarketTrend[] => {
@@ -120,10 +131,10 @@ export const marketService = {
   },
 
   getAllSubGenres: (): SubGenre[] => {
-    return [...importedSubGenres]; // Use imported data
+    return [...importedSubGenres];
   },
 
   getSubGenreById: (subGenreId: string): SubGenre | undefined => {
-    return getImportedSubGenreById(subGenreId); // Use imported function
+    return getImportedSubGenreById(subGenreId);
   },
 };

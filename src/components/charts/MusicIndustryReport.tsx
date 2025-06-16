@@ -4,8 +4,9 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowUp, ArrowDown, MinusCircle, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
 import { MarketTrend, TrendDirection, MusicGenre, SubGenre } from '@/types/charts';
-import { useMarketTrends } from '@/hooks/useMarketTrends'; // Assuming this hook will provide the data
-import { marketService } from '@/services/marketService'; // To get subgenre details
+import { useMarketTrends } from '@/hooks/useMarketTrends'; // Import the hook
+import { marketService } from '@/services/marketService'; // Still needed for getSubGenreById
+import { useGameState } from '@/hooks/useGameState'; // Import useGameState
 
 interface MusicIndustryReportProps {
   // Props to control visibility, or it could be a standalone page/section
@@ -23,23 +24,25 @@ const TrendIcon = ({ direction }: { direction: TrendDirection }) => {
 };
 
 export const MusicIndustryReport: React.FC<MusicIndustryReportProps> = () => {
-  // const { allTrends, isLoading, error } = useMarketTrends(); // TODO: Integrate with actual useMarketTrends hook
-  
-  // Using marketService directly for now for placeholder data
-  const allTrends = marketService.getAllTrends(); 
-  const isLoading = false; // Placeholder
-  const error = null; // Placeholder
+  const { updateGameState } = useGameState(); // Get the updater function from the global state hook
+  const { allTrends, isLoading, error, triggerMarketUpdate } = useMarketTrends(updateGameState); 
+  // Now using the hook. triggerMarketUpdate can be called if this component has a refresh button.
+
+  // Example: Button to manually refresh trends (optional)
+  // const handleRefreshTrends = () => {
+  //   triggerMarketUpdate(); // This would call the function from useMarketTrends
+  // };
 
   if (isLoading) {
-    return <div className="p-4">Loading market report...</div>;
+    return <div className="p-4 text-center">Loading market report...</div>;
   }
 
   if (error) {
-    return <div className="p-4 text-red-500">Error loading market report: {error}</div>;
+    return <div className="p-4 text-center text-red-500">Error loading market report: {error}</div>;
   }
 
   if (!allTrends || allTrends.length === 0) {
-    return <div className="p-4">No market trend data available.</div>;
+    return <div className="p-4 text-center">No market trend data available.</div>;
   }
 
   return (
@@ -47,6 +50,11 @@ export const MusicIndustryReport: React.FC<MusicIndustryReportProps> = () => {
       <CardHeader>
         <CardTitle className="text-2xl font-bold text-purple-400">Music Industry Report</CardTitle>
         <CardDescription className="text-slate-400">Current market trends and genre popularity.</CardDescription>
+        {/* Optional: Add a refresh button 
+        <Button onClick={handleRefreshTrends} variant="outline" size="sm" className="mt-2">
+          Refresh Trends
+        </Button>
+        */}
       </CardHeader>
       <CardContent>
         <Table>

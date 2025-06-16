@@ -1,219 +1,103 @@
-// React Hook for Market Trends System
 import { useState, useEffect, useCallback } from 'react';
-import { marketService } from '../services/marketService';
-import {
-  MarketTrendEnhanced,
-  MarketAnalysis,
-  PlayerMarketImpact
-} from '../types/marketTrends';
-import { MusicGenre, MarketTrend as GlobalMarketTrend, TrendDirection, TrendEvent } from '../types/charts';
-import { useGameState } from './useGameState';
-import { GameState } from '@/types/game';
+import { marketService } from '@/services/marketService'; 
+import { MusicGenre, MarketTrend, TrendDirection, TrendEvent, SubGenre } from '@/types/charts'; 
+import { useGameState } from './useGameState'; // To get live game state
+import { GameState, Project } from '@/types/game';
 import { toast } from '@/hooks/use-toast';
 
 export interface UseMarketTrendsReturn {
-  // Current market state
-  allTrends: MarketTrendEnhanced[];
-  marketAnalysis: MarketAnalysis | null;
-  playerImpact: PlayerMarketImpact;
-
-  // Utility functions
-  getCurrentPopularity: (genre: MusicGenre, subGenre?: string) => number;
-  getTrendDirection: (genre: MusicGenre, subGenre?: string) => string;
-  getMarketInfluence: (genre: MusicGenre) => number;
-  getContractValueModifier: (genre: MusicGenre, subGenre?: string) => number;
-  getGenrePopularity: (genre: string) => number; // Added
-  getActiveTrends: () => GlobalMarketTrend[]; // Added
-  getHistoricalTrends: () => GlobalMarketTrend[]; // Added
-
-  // Actions
-  updateTrends: () => void;
-  recordPlayerSuccess: (projectId: string, chartSuccess: number) => void;
-
-  // Loading states
+  allTrends: MarketTrend[];
+  getCurrentPopularity: (genre: MusicGenre, subGenreId?: string) => number;
+  getTrendForGenre: (genre: MusicGenre, subGenreId?: string) => MarketTrend | undefined;
+  triggerMarketUpdate: (playerProjects?: Project[], globalEvents?: TrendEvent[]) => void;
   isLoading: boolean;
   error: string | null;
 }
 
-// This local MarketTrendsState should use the global MarketTrend type
-export interface MarketTrendsState {
-  currentTrends: GlobalMarketTrend[];
-  historicalTrends: GlobalMarketTrend[];
-}
-
 export const useMarketTrends = (
-  setGameState: React.Dispatch<React.SetStateAction<GameState>>
+  // This hook now relies on the global GameState provided by useGameState hook
+  // and an updater function for that global state.
+  // No need to pass initialGameState if useGameState provides the live one.
+  updateGameState: (updater: (prevState: GameState) => GameState) => void
 ): UseMarketTrendsReturn => {
-  const { gameState: gameStateContext } = useGameState();
-  const [allTrends, setAllTrends] = useState<MarketTrendEnhanced[]>([]);
-  const [marketAnalysis, setMarketAnalysis] = useState<MarketAnalysis | null>(null);
-  const [playerImpact, setPlayerImpact] = useState<PlayerMarketImpact>({
-    successfulReleases: [],
-    marketInfluence: 0,
-    trendSetting: [],
-    genreReputation: {} as Record<MusicGenre, number>
-  });
+  const { gameState: liveGameState } = useGameState(); 
+  
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load initial data
-  useEffect(() => {
+  // Derive allTrends directly from the live game state
+  const allTrends = liveGameState.marketTrends?.currentTrends || [];
+
+  const triggerMarketUpdate = useCallback((
+    playerProjectsCompletedSinceLastUpdate: Project[] = [],
+    globalEventsHappenedSinceLastUpdate: TrendEvent[] = []
+  ) => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      setAllTrends(marketService.getAllTrends());
-      setMarketAnalysis(marketService.generateMarketAnalysis());
-      setPlayerImpact(marketService.getPlayerImpact());
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load market trends');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Update trends based on game week progression (using player level as proxy)
-  useEffect(() => {
-    if (gameStateContext?.playerData?.level) {
-      updateTrends();
-    }
-  }, [gameStateContext?.playerData?.level]);
-
-  const getCurrentPopularity = useCallback((genre: MusicGenre, subGenre?: string) => {
-    return marketService.getCurrentPopularity(genre, subGenre as Parameters<typeof marketService.getCurrentPopularity>[1]);
-  }, []);
-
-  const getTrendDirection = useCallback((genre: MusicGenre, subGenre?: string) => {
-    return marketService.getTrendDirection(genre, subGenre as Parameters<typeof marketService.getTrendDirection>[1]);
-  }, []);
-
-  const getMarketInfluence = useCallback((genre: MusicGenre) => {
-    // This seems like a placeholder, ensure marketService.calculateMarketInfluence is robust
-    const mockProject = { genre, id: 'temp', title: 'Mock', clientType: 'Original', difficulty: 1, durationDaysTotal: 30, payoutBase: 1000, repGainBase: 10, requiredSkills: {}, stages: [], matchRating: 'Good', accumulatedCPoints: 0, accumulatedTPoints: 0, currentStageIndex: 0, completedStages: [], workSessionCount: 0 } as const;
-    return marketService.calculateMarketInfluence(mockProject as any); // Cast as any if mockProject doesn't fully match Project type
-  }, []);
-
-  const getContractValueModifier = useCallback((genre: MusicGenre, subGenre?: string) => {
-    return marketService.calculateContractValueModifier(genre, subGenre as Parameters<typeof marketService.calculateContractValueModifier>[1]);
-  }, []);
-
-  const updateTrends = useCallback(() => {
-    try {
-      setIsLoading(true);
-      const currentWeek = gameStateContext?.playerData?.level || 1; // Use level as proxy for week
-      marketService.updateMarketTrends(currentWeek);
-      setAllTrends(marketService.getAllTrends());
-      setMarketAnalysis(marketService.generateMarketAnalysis());
-      setPlayerImpact(marketService.getPlayerImpact());
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update market trends');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [gameStateContext?.playerData?.level]);
-
-  const recordPlayerSuccess = useCallback((projectId: string, chartSuccess: number) => {
-    try {
-      // Assuming gameStateContext.completedProjects exists and is an array of Project
-      const project = gameStateContext?.completedProjects?.find(p => p.id === projectId);
-      if (project) {
-        marketService.recordPlayerSuccess(project, chartSuccess);
-        setPlayerImpact(marketService.getPlayerImpact());
-        setAllTrends(marketService.getAllTrends());
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to record player success');
-    }
-  }, [gameStateContext?.completedProjects]);
-
-  const generateNewTrend = useCallback((): GlobalMarketTrend => {
-    const genres: MusicGenre[] = ['rock', 'pop', 'hip-hop', 'electronic', 'jazz', 'classical', 'country', 'r&b'];
-    const randomGenre = genres[Math.floor(Math.random() * genres.length)];
-    const popularity = Math.floor(Math.random() * 50) + 50; // 50-100
-    const duration = Math.floor(Math.random() * 10) + 5; // 5-15 days
-    const trendDirections: TrendDirection[] = ['rising', 'stable', 'falling', 'emerging', 'fading'];
-
-    const newTrend: GlobalMarketTrend = {
-      id: `trend_${Date.now()}`,
-      genreId: randomGenre,
-      popularity,
-      duration,
-      startDay: gameStateContext.currentDay,
-      trendDirection: trendDirections[Math.floor(Math.random() * trendDirections.length)],
-      growthRate: Math.random() * 10 - 5, 
-      lastUpdated: Date.now(),
-      subGenreId: undefined,
-      seasonality: undefined,
-      peakMonths: undefined,
-      activeEvents: undefined,
-      projectedDuration: duration,
-      growth: Math.random() * 100 - 50, 
-      events: [] as TrendEvent[],
-    };
-    return newTrend;
-  }, [gameStateContext.currentDay]);
-
-  const updateTrendsDaily = useCallback(() => {
-    setGameState(prev => {
-      const activeCurrentTrends = prev.marketTrends.currentTrends.filter(trend =>
-        trend.startDay + trend.duration > prev.currentDay
+      // marketService.updateAllMarketTrends updates its internal state and returns the new trends
+      // This returned value should be used to update the global GameState
+      const updatedTrendsFromService = marketService.updateAllMarketTrends(
+        liveGameState, 
+        playerProjectsCompletedSinceLastUpdate,
+        globalEventsHappenedSinceLastUpdate
       );
 
-      let newCurrentTrends = [...activeCurrentTrends];
-      if (newCurrentTrends.length < 2 && Math.random() < 0.3) {
-        newCurrentTrends.push(generateNewTrend());
-      }
-
-      const newlyExpiredTrends = prev.marketTrends.currentTrends.filter(trend =>
-        trend.startDay + trend.duration <= prev.currentDay
-      );
-
-      const newHistoricalTrends = [
-        ...prev.marketTrends.historicalTrends,
-        ...newlyExpiredTrends
-      ];
-
-      return {
+      updateGameState(prev => ({
         ...prev,
         marketTrends: {
-          currentTrends: newCurrentTrends,
-          historicalTrends: newHistoricalTrends
-        }
-      };
-    });
-  }, [setGameState, generateNewTrend]);
-
+          ...(prev.marketTrends || { currentTrends: [], historicalTrends: [] }), 
+          currentTrends: updatedTrendsFromService,
+          // Note: Historical trends management might also need to be handled here or in marketService
+        },
+      }));
+      setError(null);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update market trends';
+      setError(errorMessage);
+      toast({ title: "Market Update Error", description: errorMessage, variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [liveGameState, updateGameState]);
+  
+  // Example: Periodic update trigger (could be tied to game day advancement in a central game loop)
   useEffect(() => {
-    updateTrendsDaily();
-  }, [gameStateContext.currentDay, updateTrendsDaily]);
+    // This is a placeholder. In a real game loop, you'd call triggerMarketUpdate
+    // based on game time progression (e.g., every 7 game days).
+    // For instance, if a game day advances, a central manager could decide to call this.
+    // Example: if (liveGameState.currentDay % 7 === 0 && liveGameState.currentDay !== 0) {
+    //   console.log("useMarketTrends: Triggering weekly market update for day", liveGameState.currentDay);
+    //   triggerMarketUpdate(); 
+    // }
+  }, [liveGameState.currentDay, triggerMarketUpdate]);
 
-  const getGenrePopularity = useCallback((genre: string) => {
-    const trend = gameStateContext.marketTrends.currentTrends.find(t => t.genreId === genre);
-    return trend ? trend.popularity : 50;
-  }, [gameStateContext.marketTrends.currentTrends]);
 
-  const getActiveTrends = useCallback(() => {
-    return gameStateContext.marketTrends.currentTrends;
-  }, [gameStateContext.marketTrends.currentTrends]);
+  const getCurrentPopularity = useCallback((genre: MusicGenre, subGenreId?: string) => {
+    // This now uses the marketService which reads from its internal (potentially stale) state
+    // or the liveGameState if marketService is refactored to take gameState.
+    // For consistency, it's better if marketService's methods take gameState or if this hook
+    // calculates based on its `allTrends` (derived from liveGameState).
+    const trend = getTrendForGenre(genre, subGenreId);
+    return trend?.popularity || 50; // Default if no specific trend found
+  }, [allTrends]); // Changed dependency to allTrends
 
-  const getHistoricalTrends = useCallback(() => {
-    return gameStateContext.marketTrends.historicalTrends;
-  }, [gameStateContext.marketTrends.historicalTrends]);
+  const getTrendForGenre = useCallback((genre: MusicGenre, subGenreId?: string): MarketTrend | undefined => {
+    let relevantTrend: MarketTrend | undefined;
+    if (subGenreId) {
+      relevantTrend = allTrends.find(t => t.genreId === genre && t.subGenreId === subGenreId);
+    }
+    if (!relevantTrend) {
+      relevantTrend = allTrends.find(t => t.genreId === genre && !t.subGenreId);
+    }
+    return relevantTrend;
+  }, [allTrends]);
 
   return {
     allTrends,
-    marketAnalysis,
-    playerImpact,
     getCurrentPopularity,
-    getTrendDirection,
-    getMarketInfluence,
-    getContractValueModifier,
-    updateTrends,
-    recordPlayerSuccess,
+    getTrendForGenre,
+    triggerMarketUpdate,
     isLoading,
     error,
-    getGenrePopularity, 
-    getActiveTrends, 
-    getHistoricalTrends 
   };
 };

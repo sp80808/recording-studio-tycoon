@@ -18,6 +18,39 @@ export interface RelationshipStats {
   interactionCount: number;
   successfulProjects: number;
   failedProjects: number;
+  isBlacklisted?: boolean; // True if this entity has blacklisted the player
+  activeNegativeBuffs?: string[]; // IDs or keys of temporary negative effects from this relationship
+}
+
+// --- PR Event System Types ---
+
+export type PREventEffectTarget = 'globalReputation' | 'genreReputation' | 'entityRelationship' | 'contractAvailability';
+
+export interface PREventEffect {
+  type: PREventEffectTarget;
+  value: number; // e.g., -10 for reputation, or a multiplier like 0.8
+  durationDays?: number; // How long the effect lasts, undefined for permanent
+  targetEntityId?: string; // For 'entityRelationship'
+  targetGenre?: MusicGenre; // For 'genreReputation' or genre-specific contract availability
+  description?: string; // e.g., "-10 Global Reputation for 30 days"
+}
+
+export interface PREvent {
+  id: string;
+  name: string; // e.g., "Scathing Review in MusicMag", "Label Drops Player"
+  description: string; // Details of the event
+  type: 'positive' | 'negative' | 'neutral';
+  triggerConditions: { // Conditions that can trigger this event
+    relationshipThreshold?: { entityId: string; scoreBelow?: number; scoreAbove?: number };
+    projectOutcome?: { success?: boolean; failure?: boolean; highProfile?: boolean };
+    randomChance?: number; // 0-1 probability
+    // ... other potential triggers
+  };
+  effects: PREventEffect[];
+  isGlobal: boolean; // Does it affect global state or a specific entity relationship?
+  newsHeadline?: string; // For display in an in-game news feed
+  startDate?: number; // Game day when the event started
+  isActive?: boolean; // If the event's effects are currently active
 }
 
 // For entities that offer projects, like individual clients or small companies
@@ -64,5 +97,8 @@ export interface RelationshipArtist extends GameEntity {
 }
 
 // This map could store all relationships in the game state
-export type RelationshipMap = Record<string, RelationshipStats>; 
+export type RelationshipMap = Record<string, RelationshipStats>;
 // The key would be the entityId (Client.id, RecordLabel.id, etc.)
+
+// It might also be useful to have a list of active PR events in the GameState
+// export type ActivePREvents = PREvent[]; // This would go into src/types/game.ts GameState interface
