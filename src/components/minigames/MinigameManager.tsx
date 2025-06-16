@@ -18,7 +18,7 @@ import { DigitalMixingGame } from './DigitalMixingGame';
 import { HybridMixingGame } from './HybridMixingGame';
 import { MasteringChainGame } from './MasteringChainGame';
 import { AudioRestorationGame } from './AudioRestorationGame';
-import { MidiProgrammingGame } from './MidiProgrammingGame';
+import { MidiProgrammingGame } from './MidiProgrammingGame.tsx';
 import { SamplingSequencingGame } from './SamplingSequencingGame';
 import { DigitalDistributionGame } from './DigitalDistributionGame';
 import { SocialMediaPromotionGame } from './SocialMediaPromotionGame';
