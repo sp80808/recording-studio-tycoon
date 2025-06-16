@@ -35,55 +35,55 @@ const StaffCard: React.FC<{
       <Tooltip>
         <TooltipTrigger asChild>
           <Card 
-            className={`p-3 mb-2 transition-all duration-200 cursor-pointer border-l-4 ${
+            className={`p-3 mb-2 transition-all duration-300 cursor-pointer border-l-4 ${
               isAssigned 
                 ? 'bg-green-50 border-l-green-500 hover:bg-green-100' 
                 : 'bg-white border-l-gray-300 hover:bg-gray-50 hover:border-l-blue-400'
-            } ${isHovered ? 'shadow-md transform scale-[1.02]' : 'shadow-sm'}`}
+            } ${isHovered ? 'shadow-lg transform scale-[1.02] translate-y-[-2px]' : 'shadow-sm'}`}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
           >
             <div className="flex justify-between items-center">
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1.5">
                   <h4 className="font-medium text-sm">{staff.name}</h4>
-                  <Badge variant="outline" className={`text-xs ${statusColor}`}>
+                  <Badge variant="outline" className={`text-xs ${statusColor} transition-colors duration-300`}>
                     {staff.status}
                   </Badge>
                 </div>
                 
-                <div className="text-xs text-gray-600 mb-1">
+                <div className="text-xs text-gray-600 mb-2">
                   {staff.role} • Level {staff.levelInRole}
                 </div>
                 
                 <div className="flex items-center gap-2 mb-2">
                   <Badge 
                     variant="outline" 
-                    className={`text-xs ${matchColor} border-current`}
+                    className={`text-xs ${matchColor} border-current transition-colors duration-300`}
                   >
                     <Star className="w-3 h-3 mr-1" />
                     {projectMatch}% {matchDescription}
                   </Badge>
                   {staff.genreAffinity && (
-                    <Badge variant="outline" className="text-xs text-purple-600">
+                    <Badge variant="outline" className="text-xs text-purple-600 transition-colors duration-300">
                       {staff.genreAffinity.genre}
                     </Badge>
                   )}
                 </div>
 
                 {isHovered && (
-                  <div className="text-xs text-gray-500 space-y-1 animate-fade-in">
-                    <div className="flex justify-between">
-                      <span>Creativity:</span>
-                      <span className="font-medium">{staff.primaryStats.creativity}</span>
+                  <div className="text-xs text-gray-500 space-y-1.5 animate-fade-in">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Creativity</span>
+                      <span className="font-medium text-blue-600">{staff.primaryStats.creativity}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Technical:</span>
-                      <span className="font-medium">{staff.primaryStats.technical}</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Technical</span>
+                      <span className="font-medium text-green-600">{staff.primaryStats.technical}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Speed:</span>
-                      <span className="font-medium">{staff.primaryStats.speed}</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Speed</span>
+                      <span className="font-medium text-yellow-600">{staff.primaryStats.speed}</span>
                     </div>
                   </div>
                 )}
@@ -96,7 +96,7 @@ const StaffCard: React.FC<{
                   e.stopPropagation();
                   onAction();
                 }}
-                className="ml-2"
+                className="ml-2 transition-transform duration-200 hover:scale-105"
               >
                 {isAssigned ? "Remove" : "Assign"}
               </Button>

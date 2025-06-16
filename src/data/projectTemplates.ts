@@ -52,11 +52,11 @@ export const projectTemplates: ProjectTemplate[] = [
     stages: [
       {
         stageName: 'Pre-production',
-        focusAreas: ['planning', 'arrangement'],
+        focusAreas: ['planning', 'arrangement', 'songwriting'], // Added songwriting
         workUnitsBase: 3,
-        requiredSkills: { composition: 2 },
+        requiredSkills: { composition: 2 }, // 'composition' might be a StudioSkillType
         stageBonuses: { creativity: 1.2 },
-        minigameTriggerId: 'rhythmTiming'
+        minigameTriggerId: 'lyricFocus' // Changed to lyricFocus
       },
       {
         stageName: 'Recording',
@@ -136,11 +136,11 @@ export const projectTemplates: ProjectTemplate[] = [
     stages: [
       {
         stageName: 'Concept Development',
-        focusAreas: ['planning', 'soundDesign'],
+        focusAreas: ['planning', 'soundDesign', 'songwriting'], // Added songwriting
         workUnitsBase: 5,
         requiredSkills: { composition: 4 },
         stageBonuses: { creativity: 1.5 },
-        minigameTriggerId: 'soundWave'
+        minigameTriggerId: 'lyricFocus' // Changed to lyricFocus
       },
       {
         stageName: 'Production',
@@ -181,12 +181,12 @@ export const projectTemplates: ProjectTemplate[] = [
     era: 'modern',
     stages: [
       {
-        stageName: 'Orchestration',
-        focusAreas: ['composition', 'arrangement'],
+        stageName: 'Orchestration & Theme Development', // Expanded name
+        focusAreas: ['composition', 'arrangement', 'songwriting'], // Added songwriting
         workUnitsBase: 6,
         requiredSkills: { composition: 5 },
         stageBonuses: { creativity: 1.6 },
-        minigameTriggerId: 'instrumentLayering'
+        minigameTriggerId: 'lyricFocus' // Changed to lyricFocus, or could be a sequence
       },
       {
         stageName: 'Recording Session',

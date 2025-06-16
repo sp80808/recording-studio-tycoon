@@ -1,49 +1,37 @@
-# Current Task: Phase 2 Enhancements - Dynamic Market & Reputation Systems
+# Current Task: New Minigame Implementation - Lyric Focus
 
-## Status: Starting Phase 2 (16/06/2025)
+## Status: In Progress (16/06/2025)
 
-## Previously Completed (Staff Assignment & Post-Update Integration)
+## Previously Completed
 - [x] Staff Assignment UX Improvements (Completed 16/06/2025)
 - [x] Store Interface Enhancement (Completed 16/06/2025)
 - [x] Post-Update Review and Refinement (Completed 16/06/2025)
-  - Verified Charts Panel System
-  - Verified Equipment Detail System
-  - Verified Advanced Animation System
-  - Verified New Minigames (Effect Chain, Acoustic Treatment, Instrument Layering)
-  - Updated relevant documentation
 
-## Current Focus: Phase 2 Enhancements
+## Current Focus: Lyric Focus Minigame
 
-### 1. Dynamic Market Trends & Sub-Genre Evolution
-- [ ] Define `MarketTrend` Interface (genreId, subGenreId, popularity, trendDirection)
-- [ ] Define `SubGenre` structure and association with main Genres
-- [ ] Create `MarketService`
-  - [ ] Logic for periodic `MarketTrend` updates (time, player releases, global events)
-  - [ ] Methods to query current popularity for Genre/SubGenre
-- [ ] Integration with Projects & Charts
-  - [ ] Modify Appeal/ChartScore of `OriginalMusicProject` based on trends
-  - [ ] Influence `ContractProject` value based on trends
-- [ ] Conceptualize UI Feedback (e.g., "Music Industry Report" component, `useMarketTrends` hook)
+### Design & Documentation (Phase 1)
+- [x] Brainstormed Lyric Focus minigame concept.
+- [x] Created Minigame Design Document: `docs/minigames/LyricFocusGame.md`.
+- [x] Updated `projectRoadmap.md` to include Lyric Focus game.
 
-### 2. Reputation & Relationship Management (Clients/Artists/Labels)
-- [ ] Define `Client` / `RecordLabel` Interfaces (id, name, relationshipScore, preferredGenres/Moods)
-- [ ] Create `RelationshipService`
-  - [ ] Manage `relationshipScore` for entities
-  - [ ] Methods for `increaseRelationship` / `decreaseRelationship`
-  - [ ] Logic for updates based on project completion, success, favors
-- [ ] Tiered Contract Generation
-  - [ ] Modify `ContractGenerationService` to use relationships for contract offers
-- [ ] Consequences of Low Relationship (blacklisting, negative PR)
+### Implementation (Phase 2)
+- [ ] Define TypeScript interfaces for Lyric Focus game (`Keyword`, `Theme`, `LyricFocusGameState` in `src/types/miniGame.ts`).
+- [ ] Add `'lyricFocus'` to `MinigameType` in `src/types/miniGame.ts`.
+- [ ] Create data for keywords and themes (e.g., in `src/data/minigameData.ts` or a new file).
+- [ ] Develop the `LyricFocusGame.tsx` React component.
+  - [ ] UI for theme display, keyword selection, timer, score.
+  - [ ] Gameplay logic (keyword pool generation, selection handling, scoring).
+- [ ] Integrate with `MinigameManager.tsx`.
+- [ ] Add `minigameTriggerId: 'lyricFocus'` to relevant `ProjectStage` templates in `src/data/projectTemplates.ts`.
+- [ ] Update `src/components/minigames/index.ts` to export the new game.
+- [ ] Update `minigameTutorials` in `src/components/minigames/index.ts` with tutorial content for Lyric Focus.
 
-### 3. Studio Perks & Specializations
-- [ ] Define `StudioPerk` Interface (id, name, description, category, unlockConditions, effects)
-- [ ] Create `StudioUpgradeService`
-  - [ ] Manage available and unlocked perks
-  - [ ] Logic for applying perk effects to game state
-  - [ ] UI for perk tree/list (conceptual)
+### Post-Implementation (Phase 3)
+- [ ] Test Lyric Focus minigame functionality thoroughly.
+- [ ] Balance scoring and difficulty.
+- [ ] Update `codebaseSummary.md` with details of the new minigame component and types.
 
 ## Next Steps
-1. Begin implementation of "Dynamic Market Trends & Sub-Genre Evolution".
-2. Define necessary TypeScript interfaces and data structures.
-3. Develop the `MarketService` for managing market dynamics.
-4. Plan integration points with existing game systems.
+1. Define TypeScript interfaces for the Lyric Focus game.
+2. Add new `MinigameType`.
+3. Create initial data for keywords and themes.

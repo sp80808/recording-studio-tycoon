@@ -1,17 +1,17 @@
 // Game type definitions
 import { Chart, ArtistContact, MarketTrend } from './charts';
-import { MinigameType } from './miniGame';
+import { MinigameType } from './miniGame'; 
 import { 
-  OriginalTrackProject,
-  BandRelease, // Re-add BandRelease import
-  Band as BandTypeFromBands // Alias to avoid naming conflict
+  OriginalTrackProject, 
+  BandRelease, 
+  Band as BandTypeFromBands 
 } from './bands';
-import { Tour, TourStop, TourVenue } from './tours'; // Import Tour types from tours.ts
-import { PerformanceHistoryEntry, PerformanceRating } from './performance'; // Keep if needed elsewhere
+import { PerformanceHistoryEntry, PerformanceRating } from './performance';
+import { Tour, TourStop, TourVenue } from './tours'; 
 
-export type { BandTypeFromBands as Band }; // Re-export Band for other modules
-export type { Tour, TourStop, TourVenue }; // Re-export Tour types
-export type { MinigameType }; // Re-export MinigameType
+export type { BandTypeFromBands as Band }; 
+export type { Tour, TourStop, TourVenue }; 
+export type { MinigameType }; 
 
 export interface PlayerAttributes {
   focusMastery: number;
@@ -40,7 +40,7 @@ export interface PlayerData {
   attributePoints?: number;
   attributes: PlayerAttributes;
   dailyWorkCapacity: number;
-  lastMinigameType?: string;
+  lastMinigameType?: MinigameType;
 }
 
 export interface StudioSkillBonus {
@@ -51,7 +51,15 @@ export interface StudioSkillBonus {
   equipmentEfficiency?: number;
   moneyGain?: number;
 }
-export type StudioSkillType = 'recording' | 'mixing' | 'mastering' | 'production' | 'marketing';
+export type StudioSkillType = 
+  | 'recording' 
+  | 'mixing' 
+  | 'mastering' 
+  | 'production' 
+  | 'marketing'
+  | 'composition'
+  | 'soundDesign'
+  | 'sequencing';
 
 export interface StudioSkill {
   name: StudioSkillType;
@@ -70,7 +78,7 @@ export interface ProjectStage {
   id?: string;
   specialEvents?: StageEvent[];
   stageBonuses?: { creativity?: number; technical?: number };
-  requiredSkills?: Record<string, number>;
+  requiredSkills?: Record<string, number>; 
   minigameTriggerId?: MinigameType;
   qualityMultiplier?: number;
   timeMultiplier?: number;
@@ -100,25 +108,25 @@ export interface StageEvent {
 export interface MinigameTrigger {
   id: string;
   type: MinigameType;
-  difficulty?: number;
+  difficulty?: number; 
   rewards: {
     type: 'quality' | 'speed' | 'xp' | 'efficiency' | 'reputation';
     value: number;
   }[];
   triggerReason?: string;
-  lastTriggered?: number;
+  lastTriggered?: number; 
 }
 
 export interface Project {
   id: string;
   title: string;
-  genre: string;
+  genre: string; 
   clientType: string;
-  difficulty: number;
+  difficulty: number; 
   durationDaysTotal: number;
   payoutBase: number;
   repGainBase: number;
-  requiredSkills: Record<string, number>;
+  requiredSkills: Record<string, number>; 
   stages: ProjectStage[];
   matchRating: 'Poor' | 'Good' | 'Excellent';
   accumulatedCPoints: number;
@@ -128,10 +136,11 @@ export interface Project {
   lastWorkDay?: number;
   workSessionCount: number;
   associatedBandId?: string;
-  qualityScore?: number;
-  efficiencyScore?: number;
-  isCompleted?: boolean;
-  endDate?: number;
+  qualityScore?: number; 
+  efficiencyScore?: number; 
+  isCompleted?: boolean; 
+  endDate?: number; 
+  targetMood?: string; 
 }
 
 export interface StaffMember {
@@ -144,9 +153,9 @@ export interface StaffMember {
   genreAffinity: GenreAffinity | null;
   status: 'Idle' | 'Working' | 'Resting' | 'Training' | 'On Tour';
   salary: number;
-  contractEndDate: number; // This was missing in projectUtils error, ensure it's handled
+  contractEndDate: number; 
   experience: number;
-  skills?: Record<string, StudioSkill>;
+  skills?: Partial<Record<StudioSkillType, StudioSkill>>; 
   assignedProjectId?: string | null;
   mood?: number; 
 }
@@ -160,7 +169,7 @@ export interface StaffStats {
 }
 
 export interface GenreAffinity {
-  genre: string;
+  genre: string; 
   bonus: number;
 }
 
@@ -169,7 +178,7 @@ export type EquipmentCategory = 'microphone' | 'monitor' | 'interface' | 'outboa
 export interface Equipment {
   id: string;
   name: string;
-  category: string;
+  category: string; 
   price: number;
   description: string;
   bonuses: {
@@ -177,20 +186,20 @@ export interface Equipment {
     technicalBonus?: number;
     creativityBonus?: number;
     speedBonus?: number;
-    genreBonus?: Record<string, number>;
+    genreBonus?: Record<string, number>; 
   };
   icon: string;
-  condition: number;
+  condition: number; 
   skillRequirement?: {
-    skill: string;
+    skill: StudioSkillType; 
     level: number;
   };
   appliedModId?: string;
 }
 
 export interface EraAvailableEquipment extends Equipment {
-  availableFrom: number;
-  availableUntil?: number;
+  availableFrom: number; 
+  availableUntil?: number; 
   eraDescription?: string;
   isVintage?: boolean;
   historicalPrice?: number;
@@ -204,10 +213,10 @@ export interface Minigame {
   id: string;
   name: string;
   description: string;
-  duration: number;
-  cost: number;
-  rewards: MinigameDataReward;
-  type?: MinigameType;
+  duration: number; 
+  cost: number; 
+  rewards: MinigameDataReward; 
+  type?: MinigameType; 
 }
 
 export interface TrainingCourse {
@@ -215,34 +224,30 @@ export interface TrainingCourse {
   name: string;
   description: string;
   cost: number;
-  duration: number;
+  duration: number; 
   effects: {
-    statBoosts?: {
-      creativity?: number;
-      technical?: number;
-      speed?: number;
-    };
+    statBoosts?: Partial<StaffStats>;
     skillXP?: {
-      skill: string;
+      skill: StudioSkillType;
       amount: number;
     };
-    specialEffects?: string[];
+    specialEffects?: string[]; 
   };
-  requiredLevel: number;
+  requiredLevel: number; 
 }
 
 export interface GameState {
   money: number;
-  currentEra: string;
+  currentEra: string; 
   reputation: number;
   currentDay: number;
   currentYear: number;
-  selectedEra: string;
-  eraStartYear: number;
-  equipmentMultiplier: number;
+  selectedEra: string; 
+  eraStartYear: number; 
+  equipmentMultiplier: number; 
   playerData: PlayerData;
-  studioSkills: Record<string, StudioSkill>;
-  ownedUpgrades: string[];
+  studioSkills: Record<StudioSkillType, StudioSkill>;
+  ownedUpgrades: string[]; 
   ownedEquipment: Equipment[];
   availableProjects: Project[];
   activeProject: Project | null;
@@ -257,31 +262,31 @@ export interface GameState {
   chartsData?: {
     charts: Chart[];
     contactedArtists: ArtistContact[];
-    marketTrends: MarketTrend[];
+    marketTrends: MarketTrend[]; 
     discoveredArtists: DiscoveredArtist[];
     lastChartUpdate: number;
   };
   focusAllocation: FocusAllocation;
-  completedProjects?: Project[];
+  completedProjects?: Project[]; 
   levelUpDetails: LevelUpDetails | null;
   unlockedFeatures?: string[];
-  availableTraining?: string[];
+  availableTraining?: string[]; 
   availableExpansions: StudioExpansion[];
-  marketTrends: {
-    currentTrends: MarketTrend[];
+  marketTrends: { 
+    currentTrends: MarketTrend[]; 
     historicalTrends: MarketTrend[];
   };
-  venues: TourVenue[]; // Now imported from tours.ts
-  tours: Tour[];       // Now imported from tours.ts
-  lastMinigameTriggers?: Record<string, number>; // Track when each minigame was last triggered
+  venues: TourVenue[]; 
+  tours: Tour[];       
+  lastMinigameTriggers?: Partial<Record<MinigameType, number>>; // Made Partial
 }
 
 export interface GameNotification {
   id: string;
   message: string;
   type: 'info' | 'success' | 'warning' | 'error' | 'historical';
-  timestamp: number;
-  duration?: number;
+  timestamp: number; 
+  duration?: number; 
   priority?: 'low' | 'medium' | 'high';
 }
 
@@ -289,7 +294,7 @@ export interface FocusAllocation {
   performance: number;
   soundCapture: number;
   layering: number;
-  creativity: number;
+  creativity: number; 
   technical: number;
   business: number;
 }
@@ -320,7 +325,7 @@ export interface DiscoveredArtist {
     max: number;
   };
   demandLevel?: number;
-  genre?: string;
+  genre?: string; 
   popularity?: number;
 }
 
@@ -357,7 +362,7 @@ export interface ProjectPerformanceSummary {
 export interface StaffProgressionHighlight {
   staffId: string;
   staffName: string;
-  skillIncreased?: string;
+  skillIncreased?: StudioSkillType;
   newSkillLevel?: number;
   newAbilityUnlocked?: string;
 }
@@ -373,14 +378,14 @@ export interface LevelUpDetails {
 
 export interface MilestoneReward {
   level: number;
-  unlockedFeatures?: string[];
-  newEquipment?: string[];
-  newTrainingCourses?: string[];
+  unlockedFeatures?: string[]; 
+  newEquipment?: string[]; 
+  newTrainingCourses?: string[]; 
   attributePoints?: number;
   perkPoints?: number;
 }
 
-export type StudioSkillTemplates = Record<string, Omit<StudioSkill, 'level' | 'xp' | 'multiplier'>>;
+export type StudioSkillTemplates = Record<string, Omit<StudioSkill, 'level' | 'experience' | 'multiplier'>>;
 
 export interface StudioExpansion {
   id: string;
@@ -388,44 +393,44 @@ export interface StudioExpansion {
   description: string;
   cost: number;
   requirements: {
-    level: number;
+    level: number; 
     reputation: number;
   };
   benefits: {
-    [key: string]: number;
+    [key: string]: number; 
   };
 }
 
 export interface SessionMusician {
   id: string;
   name: string;
-  role: string;
+  role: string; 
   primaryStats: {
     creativity: number;
     technical: number;
   };
-  experience: number;
+  experience: number; 
   dailyRate: number;
 }
 
 export interface StageTemplate {
   stageName: string;
-  focusAreas: string[];
+  focusAreas: string[]; 
   workUnitsBase: number;
-  requiredSkills?: Record<string, number>;
+  requiredSkills?: Partial<Record<StudioSkillType, number>>; // Made Partial
   stageBonuses?: { creativity?: number; technical?: number };
-  minigameTriggerId?: string;
+  minigameTriggerId?: MinigameType; 
 }
 
 export interface ProjectTemplate {
   id: string;
-  titlePattern: string;
-  genre: string;
-  clientType: string;
-  difficulty: number;
+  titlePattern: string; 
+  genre: string; 
+  clientType: string; 
+  difficulty: number; 
   durationDaysTotal: number;
   payoutBase: number;
   repGainBase: number;
-  era: string;
+  era: string; 
   stages: StageTemplate[];
 }

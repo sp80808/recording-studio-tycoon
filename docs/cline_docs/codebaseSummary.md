@@ -49,6 +49,7 @@ Located in `progressionUtils.ts`, `featureUtils.ts`, and `milestones.ts`
   - `EffectChainGame.tsx`: For building audio processing chains.
   - `AcousticTreatmentGame.tsx`: For room optimization.
   - `InstrumentLayeringGame.tsx`: For advanced arrangement challenges.
+  - `LyricFocusGame.tsx`: For selecting keywords to refine lyrical themes.
 
 ### Custom Hooks
 - **Game State**:

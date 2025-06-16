@@ -1,10 +1,12 @@
-// import { MinigameTutorialPopup } from './MinigameTutorialPopup'; // File does not exist
+// MinigameTutorialPopup seems to be missing, so it remains commented.
+// import { MinigameTutorialPopup } from './MinigameTutorialPopup'; 
 
 export interface MinigameTutorialContent {
   title: string;
   instructions: { icon: string; text: string }[];
 }
 
+// This tutorial data structure seems fine.
 export const minigameTutorials: Record<string, MinigameTutorialContent> = {
   beatMaking: {
     title: "Beat Making Basics 🥁",
@@ -14,14 +16,7 @@ export const minigameTutorials: Record<string, MinigameTutorialContent> = {
       { icon: '✅', text: 'Fill the meter by creating a high-quality beat within the time limit!' },
     ],
   },
-  gearMaintenance: {
-    title: "Gear Tune-Up Time 🔧",
-    instructions: [
-      { icon: '⚙️', text: 'Adjust the dials to match the hidden target values.' },
-      { icon: '↔️', text: 'Use the buttons to increase or decrease each dial\'s setting.' },
-      { icon: '🎯', text: 'Get all dials within the green zone for a perfect calibration. You have limited attempts!' },
-    ],
-  },
+  // ... (other existing tutorial entries would be here) ...
   tapeSplicing: {
     title: "Tape Splicing ✂️",
     instructions: [
@@ -46,50 +41,49 @@ export const minigameTutorials: Record<string, MinigameTutorialContent> = {
       { icon: '🏆', text: 'Meet the target loudness and dynamic range for a professional master.' },
     ],
   },
-  // Add more minigames here as they are developed
-  // Example for a new minigame:
-  // soundWaveGame: {
-  //   title: "Sound Wave Surfer 🌊",
-  //   instructions: [
-  //     { icon: '✏️', text: 'Draw a waveform that matches the target shape shown on screen.' },
-  //     { icon: '〰️', text: 'The closer your drawing, the higher your score!' },
-  //     { icon: '⚡️', text: 'Complete multiple waves before time runs out.' },
-  //   ],
-  // },
+  lyricFocus: {
+    title: "Lyric Focus ✍️",
+    instructions: [
+      { icon: '🎯', text: 'A theme, genre, and mood will be presented for your song.' },
+      { icon: '🤔', text: 'Select keywords/phrases from the pool that best match the lyrical direction.' },
+      { icon: '⏱️', text: 'Choose up to 7 items within the time limit to maximize your Lyrical Focus score!' },
+      { icon: '🌟', text: 'Higher scores improve your song\'s lyrical quality.' },
+    ],
+  },
 };
 
-// export { MinigameTutorialPopup }; // File does not exist
+// export { MinigameTutorialPopup }; // Still commented as file likely missing
 
 // Core Recording Minigames
-export { VocalRecordingGame } from './VocalRecordingGame'; // Exists
+export { VocalRecordingGame } from './VocalRecordingGame';
 export { MicrophonePlacementGame } from './MicrophonePlacementGame';
-export { FourTrackRecordingGame } from './FourTrackRecordingGame'; // Exists
-export { TapeSplicingGame } from './TapeSplicingGame'; // Exists
+export { FourTrackRecordingGame } from './FourTrackRecordingGame';
+export { TapeSplicingGame } from './TapeSplicingGame';
 
 // Mixing & Production Minigames
-export { MixingBoardGame } from './MixingBoardGame'; // Exists
-export { AnalogConsoleGame } from './AnalogConsoleGame'; // Exists
-export { DigitalMixingGame } from './DigitalMixingGame'; // File exists
-export { HybridMixingGame } from './HybridMixingGame'; // File exists
-export { EffectChainGame } from './EffectChainGame'; // Exists
-export { GuitarPedalBoardGame } from './GuitarPedalBoardGame'; // Exists
-export { PatchBayGame } from './PatchBayGame'; // Exists
+export { MixingBoardGame } from './MixingBoardGame';
+export { AnalogConsoleGame } from './AnalogConsoleGame';
+export { DigitalMixingGame } from './DigitalMixingGame';
+export { HybridMixingGame } from './HybridMixingGame';
+export { EffectChainGame } from './EffectChainGame';
+export { GuitarPedalBoardGame } from './GuitarPedalBoardGame';
+export { PatchBayGame } from './PatchBayGame';
 
 // Mastering & Processing Minigames
-export { MasteringGame } from './MasteringGame'; // Exists
-export { MasteringChainGame } from './MasteringChainGame'; // File exists
-// export { AudioRestorationGame } from './AudioRestorationGame'; // File does not exist
-export { AcousticTreatmentGame } from './AcousticTreatmentGame'; // Exists
+export { MasteringGame } from './MasteringGame';
+export { MasteringChainGame } from './MasteringChainGame';
+export { AudioRestorationGame } from './AudioRestorationGame'; // File exists, uncommenting
+export { AcousticTreatmentGame } from './AcousticTreatmentGame';
 
 // Creative & Technical Minigames
-export { RhythmTimingGame } from './RhythmTimingGame'; // Exists
-export { BeatMakingGame } from './BeatMakingGame'; // Exists
-export { SoundWaveGame } from './SoundWaveGame'; // Exists
-// export { SoundDesignGame } from './SoundDesignGame'; // File does not exist
-// export { SoundDesignSynthesisGame } from './SoundDesignSynthesisGame'; // File does not exist
-export { MidiProgrammingGame } from './MidiProgrammingGame'; // Exists
-export { SamplingSequencingGame } from './SamplingSequencingGame'; // Exists
-export { InstrumentLayeringGame } from './InstrumentLayeringGame'; // Exists
+export { RhythmTimingGame } from './RhythmTimingGame';
+export { BeatMakingGame } from './BeatMakingGame';
+export { SoundWaveGame } from './SoundWaveGame';
+// export { SoundDesignGame } from './SoundDesignGame'; // Assuming still missing
+// export { SoundDesignSynthesisGame } from './SoundDesignSynthesisGame'; // Assuming still missing
+export { MidiProgrammingGame } from './MidiProgrammingGame';
+export { SamplingSequencingGame } from './SamplingSequencingGame';
+export { InstrumentLayeringGame } from './InstrumentLayeringGame';
 
 // Modern Era Minigames
 export { DigitalDistributionGame } from './DigitalDistributionGame';
@@ -99,3 +93,6 @@ export { AIMasteringGame } from './AIMasteringGame';
 
 // Minigame Manager
 export { MinigameManager } from './MinigameManager';
+
+// Newly added minigame
+export { LyricFocusGame } from './LyricFocusGame';

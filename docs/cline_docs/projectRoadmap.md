@@ -41,6 +41,7 @@
 - [x] Effect Chain Building Game (advanced audio processing chains)
 - [x] Acoustic Treatment Game (room optimization puzzle)
 - [x] Instrument Layering Game (advanced arrangement challenge)
+- [ ] Lyric Focus Game (songwriting keyword selection)
 
 ### Progression
 - [x] Milestone rewards

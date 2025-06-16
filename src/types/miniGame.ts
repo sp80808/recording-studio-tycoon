@@ -37,7 +37,10 @@ export type MinigameType =
   | 'digitalDistribution'
   | 'socialMediaPromotion'
   | 'streamingOptimization'
-  | 'aiMastering';
+  | 'aiMastering'
+  
+  // Songwriting Minigames
+  | 'lyricFocus';
 
 export interface MinigameTrigger {
   type: MinigameType;
@@ -288,4 +291,29 @@ export interface EQMatchResult {
       qAccuracy: number;
     };
   };
+}
+
+// Interfaces for LyricFocusGame
+export interface LyricFocusKeyword {
+  id: string;
+  text: string;
+  relevance: 'high' | 'medium' | 'low' | 'distractor'; // For scoring
+  isGolden?: boolean; // Optional "perfect match" keyword
+}
+
+export interface LyricFocusTheme {
+  id: string;
+  name: string; // e.g., "Summer Romance", "Social Justice Anthem"
+  genre: string; // e.g., "Pop", "Rock" - consider using MusicGenre type from charts.ts
+  mood: string; // e.g., "Upbeat", "Melancholic", "Aggressive"
+  description: string; // Brief description of the theme
+  coreConcepts: string[]; // e.g., ["Love", "Beach", "Freedom"]
+  keywords: LyricFocusKeyword[]; // Pool of keywords for this theme
+}
+
+export interface LyricFocusGameState extends MinigameState {
+  targetTheme: LyricFocusTheme;
+  availableKeywords: LyricFocusKeyword[];
+  selectedKeywords: LyricFocusKeyword[];
+  maxSelections: number;
 }

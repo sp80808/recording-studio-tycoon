@@ -94,7 +94,10 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSetting
                 </motion.button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{t('current_day_tooltip', 'Current Day: {{day}} / View Era Progress', { day: gameState.currentDay })}</p>
+                <p>
+                  {t('current_day_tooltip', 'Current Day: {{day}}', { day: gameState.currentDay })}<br/>
+                  <span className="text-xs text-gray-400">Click to view your current era, progress, and upcoming unlocks.</span>
+                </p>
               </TooltipContent>
             </Tooltip>
           </div>

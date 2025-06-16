@@ -18,6 +18,7 @@
 - Updated minigame types to match current implementation
 - Reorganized documentation for better accessibility
 - Improved changelog structure and format
+- Updated app icon and manifest to use a music symbol emoji (🎵) for a more musical and modern look. All generated icons and manifest entries now reflect this change.
 
 ### Fixed
 - Documentation inconsistencies

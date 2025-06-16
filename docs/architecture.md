@@ -3,6 +3,10 @@
 ## Overview
 This document describes the high-level architecture of the Recording Studio Tycoon game, outlining its main components, their relationships, and the overall workflow.
 
+## UI/UX Update: App Icon
+
+- The app icon and manifest have been updated to use a music symbol emoji (🎵) for a more musical and modern look. This change is reflected in the favicon, PWA icons, and splash/title screens.
+
 ```mermaid
 flowchart TD
     User[Player Interaction] --> UI[User Interface (React Components)]

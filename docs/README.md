@@ -78,4 +78,6 @@ Please read our [Contributing Guidelines](CONTRIBUTING.md) before submitting any
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+- App icon and manifest updated to use a music symbol emoji (🎵) for a more musical and modern look. See changelog for details. 
