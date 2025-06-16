@@ -2,6 +2,16 @@
 
 export type MusicGenre = 'rock' | 'pop' | 'hip-hop' | 'electronic' | 'country' | 'alternative' | 'r&b' | 'jazz' | 'classical' | 'folk';
 
+export type TrendDirection = 'rising' | 'stable' | 'falling' | 'emerging' | 'fading';
+
+export interface SubGenre {
+  id: string;
+  name: string;
+  parentGenre: MusicGenre;
+  description: string;
+  typicalElements: string[];
+}
+
 export type ChartMovement = 'up' | 'down' | 'new' | 'steady' | 'returning';
 
 export interface Artist {
@@ -66,12 +76,21 @@ export interface Chart {
 
 export type ChartRegion = 'local' | 'regional' | 'national' | 'international';
 export interface MarketTrend {
-  genre: MusicGenre;
+  id: string;
+  genreId: MusicGenre;
+  subGenreId?: string;
   popularity: number; // 0-100
+  trendDirection: TrendDirection;
+  growthRate: number; // -10 to +10 (rate of change)
+  lastUpdated: number; // timestamp
   growth: number; // -50 to +50 (percentage change)
-  seasonality: number[]; // 12 months of variation
   events: TrendEvent[];
-  peakMonths: number[]; // months when this genre is most popular
+  duration: number; // days
+  startDay: number; // game day when trend started
+  seasonality?: number[]; // 12 months of variation
+  peakMonths?: number[]; // months when this genre is most popular
+  activeEvents?: TrendEvent[];
+  projectedDuration?: number;
 }
 
 export interface TrendEvent {
