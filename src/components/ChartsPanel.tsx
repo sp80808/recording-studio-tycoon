@@ -10,6 +10,7 @@ import { ArtistContactModal } from './modals/ArtistContactModal';
 import { Play, Pause, TrendingUp, Clock, Star, ArrowUp, ArrowDown, Minus } from 'lucide-react';
 import { ChartDisplay } from './charts/ChartDisplay';
 import { MarketTrendsDisplay } from './charts/MarketTrendsDisplay';
+import { MusicIndustryReport } from './charts/MusicIndustryReport';
 import { gameAudio } from '@/utils/audioSystem'; // Import gameAudio
 
 interface ChartsPanelProps {
@@ -346,6 +347,13 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
       {/* Market Trends */}
       {marketTrends.length > 0 && (
         <MarketTrendsDisplay marketTrends={marketTrends} getGenreEmoji={getGenreEmoji} />
+      )}
+
+      {/* Music Industry Report - Available at level 5+ */}
+      {gameState.playerData.level >= 5 && (
+        <div className="mt-4">
+          <MusicIndustryReport />
+        </div>
       )}
 
       {/* Unlock Information */}
