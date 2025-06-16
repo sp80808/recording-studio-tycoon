@@ -414,7 +414,6 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   )} */}
                 </div>
                 <div className="relative group">
-                  {/* Tooltip removed as staff variable is not available here */}
                   <Slider
                     value={[focusAllocation.performance]}
                     onValueChange={(value) => {

@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { TrendingUp, Zap } from 'lucide-react'; // Removed Users
 import { GameState, Project, GameNotification, FocusAllocation } from '@/types/game';
 import { ProgressionSystem, ProgressionStatus } from '@/services/ProgressionSystem';
-// import { useMultiProjectManagement } from '@/hooks/useMultiProjectManagement'; // Commented out if multiProjectProps is unused
 import { MultiProjectDashboard } from '@/components/MultiProjectDashboard';
 import { ActiveProject } from '@/components/ActiveProject';
 import { MinigameType } from '@/components/minigames/MinigameManager';
@@ -38,7 +37,6 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
 }) => {
   const [progressionStatus, setProgressionStatus] = useState<ProgressionStatus | null>(null);
   // const [showProgressionInfo, setShowProgressionInfo] = useState(false); // Unused
-  const [lastMilestone, setLastMilestone] = useState<number>(0);
   const [showMultiProjectInTransition, setShowMultiProjectInTransition] = useState(false); // Lifted state for renderTransitionView
 
   // Provide default focus allocation if not provided
@@ -77,7 +75,6 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
     setLastMilestone(currentMilestoneLevel);
   }, [gameState.playerData.level, gameState.hiredStaff.length, lastMilestone, setGameState]);
 
-  // const multiProjectProps = useMultiProjectManagement({ gameState, setGameState }); // Result unused
 
   if (!progressionStatus) {
     return <div>Loading...</div>;
