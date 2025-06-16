@@ -1,13 +1,14 @@
 import type { Config } from "tailwindcss";
 import { fontFamily } from 'tailwindcss/defaultTheme';
 import colors from './src/styles/colors';
+import tailwindcssAnimate from 'tailwindcss-animate'; // Changed to ES module import
 
 const config: Config = {
 	darkMode: ["class"],
 	content: [
 		"./pages/**/*.{ts,tsx}",
 		"./components/**/*.{ts,tsx}",
-		"./app/**/*.{ts,tsx}",
+		// "./app/**/*.{ts,tsx}", // Removed as 'app/' directory does not exist
 		"./src/**/*.{ts,tsx}",
 	],
 	prefix: "",
@@ -53,7 +54,7 @@ const config: Config = {
 			}
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [tailwindcssAnimate], // Use the imported module
 } satisfies Config;
 
 export default config;

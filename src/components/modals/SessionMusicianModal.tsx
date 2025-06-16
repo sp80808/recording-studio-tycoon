@@ -66,12 +66,10 @@ export const SessionMusicianModal: React.FC<SessionMusicianModalProps> = ({
                     <div>
                       <h4 className="text-sm font-medium mb-2">Experience</h4>
                       <div className="space-y-1">
-                        {Object.entries(musician.experience).map(([genre, level]) => (
-                          <div key={genre} className="flex justify-between text-sm">
-                            <span className="capitalize">{genre}</span>
-                            <span>Level {level}</span>
-                          </div>
-                        ))}
+                        <div className="flex justify-between text-sm">
+                          <span>Overall</span>
+                          <span>{musician.experience}</span>
+                        </div>
                       </div>
                     </div>
                   </div>

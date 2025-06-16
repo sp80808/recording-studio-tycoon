@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import { useGameState } from './useGameState';
-import { Band, GameState, SessionMusician } from '@/types/game'; // Added SessionMusician
+// import { useGameState } from './useGameState'; // Removed internal call
+import { Band, GameState } from '@/types/game';
 import { MusicGenre } from '@/types/charts';
 import { toast } from '@/components/ui/use-toast';
 
@@ -10,10 +10,14 @@ export interface BandManagement {
   trainBand: (bandId: string) => void;
   fireBandMember: (bandId: string, memberId: string) => void;
   hireSessionMusician: (bandId: string, musicianId: string) => void;
+  addBandMember: (bandId: string, staffId: string) => void; // Added new function
 }
 
-export const useBandManagement = (): BandManagement => {
-  const { gameState, updateGameState } = useGameState();
+// Accept gameState and updateGameState as parameters
+export const useBandManagement = (
+  gameState: GameState,
+  updateGameState: (updater: (prevState: GameState) => GameState) => void
+): BandManagement => {
 
   const createBand = useCallback((bandName: string, memberIds: string[], genre: MusicGenre): void => {
     if (gameState.playerData.level < 4) {
@@ -63,7 +67,7 @@ export const useBandManagement = (): BandManagement => {
       title: "Band Created",
       description: `${bandName} has been formed!`,
     });
-  }, [gameState.playerData.level, updateGameState, genre]);
+  }, [gameState.playerData.level, updateGameState]);
 
   const startTour = useCallback((bandId: string): void => {
     const band = gameState.playerBands.find(b => b.id === bandId);
@@ -106,7 +110,7 @@ export const useBandManagement = (): BandManagement => {
         ...prev.playerData,
         money: prev.playerData.money - tourCost
       },
-      playerBands: prev.playerBands.map((b: Band) => 
+      playerBands: prev.playerBands.map((b: Band) =>
         b.id === bandId ? {
           ...b,
           tourStatus: {
@@ -156,23 +160,19 @@ export const useBandManagement = (): BandManagement => {
         ...prev.playerData,
         money: prev.playerData.money - trainingCost
       },
-      // Assuming band members are StaffMembers and their stats can be improved
-      // This part needs to correctly identify and update staff members if they are part of `hiredStaff`
-      // Or, if Band members have their own stats, update those.
-      // For now, let's assume band members are StaffMembers for stat updates.
-      hiredStaff: prev.hiredStaff.map(staff => 
+      hiredStaff: prev.hiredStaff.map(staff =>
         band.memberIds.includes(staff.id) ? {
           ...staff,
           primaryStats: {
             ...staff.primaryStats,
-            creativity: Math.min(100, staff.primaryStats.creativity + (5 + Math.floor(Math.random()*3))), // Add some variance
+            creativity: Math.min(100, staff.primaryStats.creativity + (5 + Math.floor(Math.random()*3))),
             technical: Math.min(100, staff.primaryStats.technical + (5 + Math.floor(Math.random()*3)))
           },
-          experience: (staff.experience || 0) + 50 // Add some XP
+          experience: (staff.experience || 0) + 50
         } : staff
       ),
-      playerBands: prev.playerBands.map(b => 
-        b.id === bandId ? { ...b, experience: (b.experience || 0) + 100 } : b // Band also gains XP
+      playerBands: prev.playerBands.map(b =>
+        b.id === bandId ? { ...b, experience: (b.experience || 0) + 100 } : b
       )
     }));
 
@@ -180,7 +180,7 @@ export const useBandManagement = (): BandManagement => {
       title: "Training Complete",
       description: `${band.bandName}'s skills and experience have improved!`,
     });
-  }, [gameState.playerBands, gameState.playerData.money, updateGameState]);
+  }, [gameState.playerBands, gameState.playerData.money, updateGameState, gameState.hiredStaff]); // Added gameState.hiredStaff
 
   const fireBandMember = useCallback((bandId: string, memberId: string): void => {
     const band = gameState.playerBands.find(b => b.id === bandId);
@@ -200,13 +200,12 @@ export const useBandManagement = (): BandManagement => {
 
     updateGameState((prev: GameState) => ({
       ...prev,
-      playerBands: prev.playerBands.map((b: Band) => 
+      playerBands: prev.playerBands.map((b: Band) =>
         b.id === bandId ? {
           ...b,
           memberIds: b.memberIds.filter(id => id !== memberId)
         } : b
       )
-      // Also consider making the fired member available again if they were a StaffMember
     }));
 
     toast({
@@ -217,8 +216,8 @@ export const useBandManagement = (): BandManagement => {
 
   const hireSessionMusician = useCallback((bandId: string, musicianId: string): void => {
     const band = gameState.playerBands.find(b => b.id === bandId);
-    const musician = gameState.availableSessionMusicians?.find(m => m.id === musicianId); // Added optional chaining
-    
+    const musician = gameState.availableSessionMusicians?.find(m => m.id === musicianId);
+
     if (!band) {
         toast({ title: "Error", description: "Band not found.", variant: "destructive" });
         return;
@@ -252,13 +251,12 @@ export const useBandManagement = (): BandManagement => {
         ...prev.playerData,
         money: prev.playerData.money - musician.dailyRate
       },
-      playerBands: prev.playerBands.map((b: Band) => 
+      playerBands: prev.playerBands.map((b: Band) =>
         b.id === bandId ? {
           ...b,
-          memberIds: [...b.memberIds, musicianId] // Add musician to band
+          memberIds: [...b.memberIds, musicianId]
         } : b
       ),
-      // Optionally, remove musician from available list or mark as hired
       availableSessionMusicians: prev.availableSessionMusicians?.filter(m => m.id !== musicianId) || []
     }));
 
@@ -268,11 +266,60 @@ export const useBandManagement = (): BandManagement => {
     });
   }, [gameState.playerBands, gameState.availableSessionMusicians, gameState.playerData.money, updateGameState]);
 
+  const addBandMember = useCallback((bandId: string, staffId: string): void => {
+    const band = gameState.playerBands.find(b => b.id === bandId);
+    const staffMember = gameState.hiredStaff.find(s => s.id === staffId);
+
+    if (!band) {
+      toast({ title: "Error", description: "Band not found.", variant: "destructive" });
+      return;
+    }
+    if (!staffMember) {
+      toast({ title: "Error", description: "Staff member not found.", variant: "destructive" });
+      return;
+    }
+    if (band.memberIds.includes(staffId)) {
+      toast({ title: "Already a Member", description: `${staffMember.name} is already in ${band.bandName}.`, variant: "destructive" });
+      return;
+    }
+    if (staffMember.status !== 'Idle') {
+      toast({ title: "Staff Not Idle", description: `${staffMember.name} is currently ${staffMember.status}.`, variant: "destructive" });
+      return;
+    }
+    if (band.tourStatus.isOnTour) {
+      toast({
+        title: "Cannot Add Member",
+        description: `Cannot modify ${band.bandName}'s lineup while they are on tour.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    updateGameState((prev: GameState) => ({
+      ...prev,
+      playerBands: prev.playerBands.map((b: Band) =>
+        b.id === bandId ? {
+          ...b,
+          memberIds: [...b.memberIds, staffId]
+        } : b
+      ),
+      hiredStaff: prev.hiredStaff.map(s =>
+        s.id === staffId ? { ...s, status: 'On Tour' } : s // Assuming 'On Tour' or a new 'On Band' status
+      )
+    }));
+
+    toast({
+      title: "Member Added",
+      description: `${staffMember.name} has joined ${band.bandName}!`,
+    });
+  }, [gameState.playerBands, gameState.hiredStaff, updateGameState]);
+
   return {
     createBand,
     startTour,
     trainBand,
     fireBandMember,
-    hireSessionMusician
+    hireSessionMusician,
+    addBandMember // Added new function
   };
 };

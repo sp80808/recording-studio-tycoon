@@ -1,9 +1,17 @@
 import { GameState, Project } from '@/types/game';
-import { RelationshipStats, RelationshipMap, EntityType } from '@/types/relationships';
+import { RelationshipStats, RelationshipMap } from '@/types/relationships';
 
+/**
+ * Internal storage for all entity relationships in the game
+ */
 let entityRelationships: RelationshipMap = {};
 
-const ensureEntityRelationship = (entityId: string, entityType?: EntityType): RelationshipStats => {
+/**
+ * Ensures a relationship exists for an entity and returns its stats
+ * @param entityId - The unique identifier of the entity
+ * @returns The relationship statistics for the entity
+ */
+const ensureEntityRelationship = (entityId: string): RelationshipStats => {
   if (!entityRelationships[entityId]) {
     entityRelationships[entityId] = {
       relationshipScore: 50,
@@ -41,11 +49,27 @@ export const getAllRelationships = (): RelationshipMap => {
   return { ...entityRelationships };
 };
 
+/**
+ * Service for managing relationships between the player and other entities in the game
+ */
 export const relationshipService = {
+  /**
+   * Gets the relationship stats for an entity
+   * @param entityId - The unique identifier of the entity
+   * @returns The relationship statistics for the entity
+   */
   getRelationship: (entityId: string): RelationshipStats => {
     return ensureEntityRelationship(entityId);
   },
 
+  /**
+   * Increases the relationship score with an entity based on a specific reason
+   * @param entityId - The unique identifier of the entity
+   * @param amount - The base amount to increase the relationship by
+   * @param reason - The reason for the increase (e.g., 'PROJECT_COMPLETED_ON_TIME')
+   * @param _gameState - The current game state
+   * @returns The updated relationship statistics
+   */
   increaseRelationship: (
     entityId: string,
     amount: number,
@@ -108,6 +132,14 @@ export const relationshipService = {
     return { ...currentRel };
   },
 
+  /**
+   * Decreases the relationship score with an entity based on a specific reason
+   * @param entityId - The unique identifier of the entity
+   * @param amount - The base amount to decrease the relationship by
+   * @param reason - The reason for the decrease (e.g., 'PROJECT_LATE')
+   * @param _gameState - The current game state
+   * @returns The updated relationship statistics
+   */
   decreaseRelationship: (
     entityId: string,
     amount: number,
@@ -155,7 +187,7 @@ export const relationshipService = {
     entityRelationships[entityId] = currentRel; // Save intermediate state before blacklisting check
     console.log(`Relationship with ${entityId} decreased by ${scoreDecrease} (Trust: -${trustDecrease}, Respect: -${respectDecrease}) due to ${reason}. New score: ${currentRel.relationshipScore}`);
 
-    const finalRel = relationshipService.checkAndApplyBlacklisting(entityId, { ...currentRel }, _gameState); // Pass a copy
+    const finalRel = relationshipService.checkAndApplyBlacklisting(entityId, { ...currentRel }); // Pass a copy
     entityRelationships[entityId] = finalRel; // Store the final state after blacklisting check
 
     if (finalRel.relationshipScore < 20 && !finalRel.isBlacklisted) {
@@ -166,7 +198,13 @@ export const relationshipService = {
     return { ...finalRel };
   },
 
-  checkAndApplyBlacklisting: (entityId: string, currentRelStats: RelationshipStats, _gameState: GameState): RelationshipStats => {
+  /**
+   * Checks if an entity should be blacklisted based on relationship stats
+   * @param entityId - The unique identifier of the entity
+   * @param currentRelStats - The current relationship statistics
+   * @returns The updated relationship statistics with blacklist status
+   */
+  checkAndApplyBlacklisting: (entityId: string, currentRelStats: RelationshipStats): RelationshipStats => {
     const relCopy = { ...currentRelStats }; // Work on a copy
     const BLACKLIST_THRESHOLD = 10;
     const FAILED_PROJECTS_BLACKLIST_THRESHOLD = 3;
@@ -204,6 +242,13 @@ export const relationshipService = {
     return relCopy;
   },
 
+  /**
+   * Triggers a PR event for an entity
+   * @param eventType - The type of PR event to trigger
+   * @param entityId - The unique identifier of the entity (can be null for global events)
+   * @param _gameState - The current game state
+   * @returns The updated game state
+   */
   triggerPREvent: (eventType: string, entityId: string | null, _gameState: GameState): GameState => {
     console.log(`PR Event triggered: ${eventType}, Entity: ${entityId || 'Global'}`);
     // This function would ideally return a new GameState with the PREvent added
@@ -217,6 +262,11 @@ export const relationshipService = {
     return _gameState; // Placeholder return
   },
 
+  /**
+   * Handles the completion of a project and updates relationships accordingly
+   * @param project - The completed project
+   * @param _gameState - The current game state
+   */
   handleProjectCompletion: (project: Project, _gameState: GameState) => {
     const { contractProviderId, contractProviderType, qualityScore, endDate, deadlineDay, title } = project;
 
@@ -316,11 +366,26 @@ export const relationshipService = {
     }
   },
 
-  initiatePlayerFavor: (entityId: string, favorType: string, _gameState: GameState) => {
+  /**
+   * Initiates a player favor with an entity
+   * @param entityId - The unique identifier of the entity
+   * @param favorType - The type of favor being initiated
+   * @returns An object indicating if the favor can proceed and a message
+   */
+  initiatePlayerFavor: (entityId: string, favorType: string) => {
     console.log(`Player is considering initiating favor of type '${favorType}' with entity ${entityId}.`);
     return { canProceed: true, message: `Favor '${favorType}' can be initiated.` };
   },
 
+  /**
+   * Resolves a player favor with an entity
+   * @param entityId - The unique identifier of the entity
+   * @param favorType - The type of favor being resolved
+   * @param success - Whether the favor was successful
+   * @param _gameState - The current game state
+   * @param magnitude - Optional magnitude of the favor's impact
+   * @returns The updated relationship statistics
+   */
   resolvePlayerFavor: (
     entityId: string,
     favorType: string,

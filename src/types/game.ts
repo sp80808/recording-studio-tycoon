@@ -9,6 +9,7 @@ import {
 import { PerformanceHistoryEntry, PerformanceRating } from './performance';
 import { Tour, TourStop, TourVenue } from './tours';
 import { Client, RecordLabel, PREvent } from './relationships'; // Import Client, RecordLabel, and PREvent
+import { Song } from './songs'; // Import Song type
 
 export type { BandTypeFromBands as Band };
 export type { Tour, TourStop, TourVenue };
@@ -267,6 +268,7 @@ export interface GameState {
   playerBands: BandTypeFromBands[];
   availableSessionMusicians: SessionMusician[];
   activeOriginalTrack: OriginalTrackProject | null;
+  songs: Song[]; // Add songs array to GameState
   chartsData?: {
     charts: Chart[];
     contactedArtists: ArtistContact[];

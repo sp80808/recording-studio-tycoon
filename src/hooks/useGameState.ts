@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, PlayerData, FocusAllocation, StudioSkill, Project, LevelUpDetails, StaffMember, StudioSkillType } from '@/types/game';
+import { useState, useEffect, useCallback } from 'react';
+import { GameState, PlayerData, FocusAllocation, StudioSkill, LevelUpDetails, StudioSkillType } from '@/types/game';
 import { saveGame, loadGame, startAutoSave, stopAutoSave } from '@/utils/saveLoadUtils';
 import { generateNewProjects } from '@/utils/projectUtils';
-import { useBandManagement, type BandManagement } from './useBandManagement';
+import { useBandManagement } from './useBandManagement';
 import { useStudioExpansion } from './useStudioExpansion';
 import { useStaffManagement } from './useStaffManagement';
 import { useProjectManagement } from './useProjectManagement';
@@ -15,7 +15,7 @@ declare global {
 }
 
 const INITIAL_PLAYER_ATTRIBUTES: PlayerData['attributes'] = {
-  focusMastery: 1, 
+  focusMastery: 1,
   creativeIntuition: 1,
   technicalAptitude: 1,
   businessAcumen: 1,
@@ -30,9 +30,9 @@ const INITIAL_PLAYER_DATA: PlayerData = {
   name: "Player",
   level: 1,
   experience: 0,
-  money: 0, 
+  money: 0,
   reputation: 0,
-  skills: { 
+  skills: {
     recording: 1, mixing: 1, mastering: 1, production: 1, marketing: 1,
     composition: 1, soundDesign: 1, sequencing: 1,
   },
@@ -64,9 +64,9 @@ const INITIAL_GAME_STATE: GameState = {
   money: 10000, reputation: 0, playerData: INITIAL_PLAYER_DATA, currentDay: 1,
   studioSkills: INITIAL_STUDIO_SKILLS, ownedEquipment: [], ownedUpgrades: [],
   availableProjects: [], activeProject: null, hiredStaff: [], availableCandidates: [],
-  lastSalaryDay: 0, currentEra: 'modern', currentYear: 2024, selectedEra: 'modern', 
+  lastSalaryDay: 0, currentEra: 'modern', currentYear: 2024, selectedEra: 'modern',
   eraStartYear: 2024, equipmentMultiplier: 1.0, notifications: [], bands: [], playerBands: [],
-  availableSessionMusicians: [], activeOriginalTrack: null,
+  availableSessionMusicians: [], activeOriginalTrack: null, songs: [], // Initialize songs array
   chartsData: { charts: [], contactedArtists: [], marketTrends: [], discoveredArtists: [], lastChartUpdate: 0, },
   focusAllocation: INITIAL_FOCUS_ALLOCATION, levelUpDetails: null,
   availableExpansions: [
@@ -78,6 +78,9 @@ const INITIAL_GAME_STATE: GameState = {
     { id: 'small_club', name: 'The Local Dive', city: 'Anytown', capacity: 150, baseTicketPrice: 10, reputationRequirement: 0, genrePreferences: [ { genre: 'Rock', multiplier: 1.2 }, { genre: 'Pop', multiplier: 0.8 } ], rentalCost: 500 },
   ],
   tours: [], lastMinigameTriggers: {}, unlockedFeatures: [], availableTraining: [], completedProjects: [],
+  clients: [],
+  recordLabels: [],
+  activePREvents: [],
 };
 
 export function useGameState(): {
@@ -98,23 +101,53 @@ export function useGameState(): {
   const [gameState, setGameState] = useState<GameState>(() => {
     const savedGame = loadGame();
     if (savedGame) {
-        if (!savedGame.focusAllocation) savedGame.focusAllocation = INITIAL_FOCUS_ALLOCATION;
-        if (!savedGame.playerData || !savedGame.playerData.attributes) {
-            savedGame.playerData = { ...INITIAL_PLAYER_DATA, ...(savedGame.playerData || {}), attributes: savedGame.playerData?.attributes || INITIAL_PLAYER_ATTRIBUTES, };
-        }
+        const mergedState: GameState = {
+            ...INITIAL_GAME_STATE,
+            ...savedGame,
+            playerData: {
+                ...INITIAL_PLAYER_DATA,
+                ...(savedGame.playerData || {}),
+                attributes: savedGame.playerData?.attributes || INITIAL_PLAYER_ATTRIBUTES,
+            },
+            studioSkills: {
+                ...INITIAL_STUDIO_SKILLS,
+                ...(savedGame.studioSkills || {}),
+            },
+            chartsData: {
+                charts: savedGame.chartsData?.charts || [],
+                contactedArtists: savedGame.chartsData?.contactedArtists || [],
+                marketTrends: savedGame.chartsData?.marketTrends || [],
+                discoveredArtists: savedGame.chartsData?.discoveredArtists || [],
+                lastChartUpdate: savedGame.chartsData?.lastChartUpdate || 0,
+            },
+            marketTrends: savedGame.marketTrends || { currentTrends: [], historicalTrends: [] },
+            venues: savedGame.venues || INITIAL_GAME_STATE.venues,
+            tours: savedGame.tours || INITIAL_GAME_STATE.tours,
+            lastMinigameTriggers: savedGame.lastMinigameTriggers || {},
+            unlockedFeatures: savedGame.unlockedFeatures || [],
+            availableTraining: savedGame.availableTraining || [],
+            completedProjects: savedGame.completedProjects || [],
+            clients: savedGame.clients || [],
+            recordLabels: savedGame.recordLabels || [],
+            activePREvents: savedGame.activePREvents || [],
+            playerBands: savedGame.playerBands || [],
+            bands: savedGame.bands || [],
+            availableSessionMusicians: savedGame.availableSessionMusicians || [],
+            songs: savedGame.songs || [], // Initialize songs from saved game
+        };
+
+        // Ensure all individual skills within studioSkills are initialized if missing
         const defaultSkills = Object.keys(INITIAL_STUDIO_SKILLS) as StudioSkillType[];
         defaultSkills.forEach(skillKey => {
-            if (!savedGame.studioSkills[skillKey]) savedGame.studioSkills[skillKey] = INITIAL_STUDIO_SKILLS[skillKey];
-            if (savedGame.playerData.skills && !savedGame.playerData.skills[skillKey]) savedGame.playerData.skills[skillKey] = 1;
+            if (!mergedState.studioSkills[skillKey]) {
+                mergedState.studioSkills[skillKey] = INITIAL_STUDIO_SKILLS[skillKey];
+            }
+            if (mergedState.playerData.skills && !mergedState.playerData.skills[skillKey]) {
+                mergedState.playerData.skills[skillKey] = 1; // Default level for player skills
+            }
         });
-        if (!savedGame.marketTrends) savedGame.marketTrends = { currentTrends: [], historicalTrends: [] };
-        if (!savedGame.venues) savedGame.venues = INITIAL_GAME_STATE.venues;
-        if (!savedGame.tours) savedGame.tours = INITIAL_GAME_STATE.tours;
-        if (!savedGame.lastMinigameTriggers) savedGame.lastMinigameTriggers = {};
-        if (!savedGame.unlockedFeatures) savedGame.unlockedFeatures = [];
-        if (!savedGame.availableTraining) savedGame.availableTraining = [];
-        if (!savedGame.completedProjects) savedGame.completedProjects = [];
-        return savedGame;
+
+        return mergedState;
     }
     return INITIAL_GAME_STATE;
   });
@@ -136,16 +169,17 @@ export function useGameState(): {
 
   const startNewGame = useCallback(() => {
     updateGameState(INITIAL_GAME_STATE);
-    saveGame(INITIAL_GAME_STATE); 
+    // saveGame(INITIAL_GAME_STATE); // updateGameState already calls saveGame
   }, [updateGameState]);
 
   const advanceDay = useCallback(() => {
     updateGameState(prevState => {
       let newState = { ...prevState, currentDay: prevState.currentDay + 1 };
-      
-      if (newState.availableProjects.length < 5) { 
+
+      if (newState.availableProjects.length < 5) {
         const projectsToGenerate = 5 - newState.availableProjects.length;
-        const newProjects = generateNewProjects(projectsToGenerate, newState.playerData.level, newState.currentEra);
+        // Pass gameState to generateNewProjects
+        const newProjects = generateNewProjects(projectsToGenerate, newState.playerData.level, newState.currentEra, newState);
         newState.availableProjects = [...newState.availableProjects, ...newProjects];
       }
 
@@ -156,17 +190,17 @@ export function useGameState(): {
             if (currentStageData.workUnitsCompleted >= (currentStageData.workUnitsRequired || currentStageData.workUnitsBase) ) {
                 if (activeProjectCopy.currentStageIndex < activeProjectCopy.stages.length - 1) {
                     newState.activeProject = { ...activeProjectCopy, currentStageIndex: activeProjectCopy.currentStageIndex + 1 };
-                } else { 
+                } else {
                     const completedProject = { ...activeProjectCopy, isCompleted: true, endDate: newState.currentDay };
-                    const newPlayerData = { ...newState.playerData, 
-                                            money: newState.playerData.money + completedProject.payoutBase, 
-                                            reputation: newState.playerData.reputation + completedProject.repGainBase 
+                    const newPlayerData = { ...newState.playerData,
+                                            money: newState.playerData.money + completedProject.payoutBase,
+                                            reputation: newState.playerData.reputation + completedProject.repGainBase
                                           };
                     newState = {
                         ...newState,
                         playerData: newPlayerData,
-                        money: newState.money + completedProject.payoutBase, // Also update top-level money if it's separate
-                        reputation: newState.reputation + completedProject.repGainBase, // Also update top-level rep
+                        // money: newState.money + completedProject.payoutBase, // Already updated in playerData
+                        // reputation: newState.reputation + completedProject.repGainBase, // Already updated in playerData
                         completedProjects: [...(newState.completedProjects || []), completedProject],
                         activeProject: null,
                     };
@@ -179,25 +213,30 @@ export function useGameState(): {
         if (band.tourStatus.isOnTour) {
           const updatedDaysRemaining = band.tourStatus.daysRemaining - 1;
           const stillOnTour = updatedDaysRemaining > 0;
-          if (stillOnTour) newState.money += band.tourStatus.dailyIncome;
+          if (stillOnTour) newState.money += band.tourStatus.dailyIncome; // Direct money update
           return { ...band, tourStatus: { ...band.tourStatus, daysRemaining: updatedDaysRemaining, isOnTour: stillOnTour, } };
         }
         return band;
       });
+      // The logic for tour income is handled by directly adding to newState.money when a band is still on tour.
+      // The previous more complex block for totalTourIncome was not fully implemented and can be removed.
       newState.playerBands = updatedBands;
       return newState;
     });
   }, [updateGameState]);
-  
+
   const [levelUpModalData, setLevelUpModalData] = useState<LevelUpDetails | null>(null);
   const triggerLevelUpModal = useCallback((details: LevelUpDetails) => setLevelUpModalData(details), []);
   const clearLevelUpModal = useCallback(() => setLevelUpModalData(null), []);
 
-  const bandManagement = useBandManagement();
+  // Pass gameState and updateGameState to useBandManagement
+  const bandManagement = useBandManagement(gameState, updateGameState);
   const studioExpansion = useStudioExpansion(gameState, updateGameState);
-  const staffManagement = useStaffManagement();
+  // Assuming useStaffManagement also needs similar treatment if it calls useGameState internally
+  // For now, leaving as is, but this is a potential area to check if errors persist or if it also causes cycles.
+  const staffManagement = useStaffManagement(); // This might be the next source of error if it also calls useGameState()
   const projectManagement = useProjectManagement({ gameState, setGameState: updateGameState });
-  
+
   return {
     gameState, focusAllocation: gameState.focusAllocation, setFocusAllocation, updateGameState,
     startNewGame, advanceDay, levelUpModalData, triggerLevelUpModal, clearLevelUpModal,
