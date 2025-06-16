@@ -80,3 +80,30 @@ export const levelUpStaff = (staff: StaffMember): StaffMember => {
     }
   };
 };
+
+const ALL_STAFF_ROLES: StaffRole[] = [
+  'Engineer', 
+  'Producer', 
+  'Songwriter', 
+  'Mix Engineer', 
+  'Mastering Engineer', 
+  'Sound Designer'
+];
+
+export const generateCandidates = (count: number): StaffMember[] => {
+  const candidates: StaffMember[] = [];
+  const availableRoles = [...ALL_STAFF_ROLES]; // Create a mutable copy
+
+  for (let i = 0; i < count; i++) {
+    if (availableRoles.length === 0) {
+      // Reset if we run out of unique roles (e.g., if count > ALL_STAFF_ROLES.length)
+      availableRoles.push(...ALL_STAFF_ROLES);
+    }
+    // Select a random role and remove it from availableRoles to try for unique roles per batch
+    const roleIndex = Math.floor(Math.random() * availableRoles.length);
+    const selectedRole = availableRoles.splice(roleIndex, 1)[0];
+    
+    candidates.push(generateStaffMember(selectedRole));
+  }
+  return candidates;
+};

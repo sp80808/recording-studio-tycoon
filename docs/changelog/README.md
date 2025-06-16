@@ -1,11 +1,11 @@
 # Recording Studio Tycoon - Changelog
 
-This directory contains the changelog for Recording Studio Tycoon, organized by year and version.
+This directory contains the changelog for Recording Studio Tycoon, organized by version.
 
 ## Structure
 
-- `2024.md` - Changes from 2024
-- `2023.md` - Changes from 2023
+- `CHANGELOG.md` - Complete changelog history
+- `LATEST.md` - Most recent changes
 
 ## Format
 
@@ -45,16 +45,13 @@ We follow [Semantic Versioning](https://semver.org/) for our releases:
 
 When adding changelog entries:
 
-1. Add entries to the appropriate year file
-2. Follow the format above
-3. Group related changes
-4. Be specific but concise
-5. Include relevant issue/PR numbers
+1. Add entries to `CHANGELOG.md` in reverse chronological order
+2. Update `LATEST.md` with the most recent changes
+3. Follow the format above
+4. Group related changes
+5. Be specific but concise
+6. Include relevant issue/PR numbers
 
 ## Recent Changes
 
-### 2024
-- See [2024.md](2024.md) for current year changes
-
-### 2023
-- See [2023.md](2023.md) for previous year changes 
+See [LATEST.md](LATEST.md) for the most recent changes. 
