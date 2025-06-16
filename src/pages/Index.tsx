@@ -22,7 +22,7 @@ import { gameAudio as audioSystem } from '@/utils/audioSystem';
 import { MinigameType } from '@/components/minigames/MinigameManager'; // Import MinigameType
 
 const MusicStudioTycoon = () => {
-  const { gameState, setGameState, focusAllocation, setFocusAllocation, initializeGameState } = useGameState();
+  const { gameState, setGameState, initializeGameState } = useGameState(); // REMOVED focusAllocation, setFocusAllocation
   const { settings } = useSettings();
   const { saveGame, loadGame, hasSavedGame, resetGame } = useSaveSystem();
   
@@ -52,7 +52,7 @@ const MusicStudioTycoon = () => {
     startResearchMod, // Destructure startResearchMod
     completeProject, // Ensure this is destructured if not aliased
     addStaffXP // Ensure this is destructured if not aliased
-  } = useGameLogic(gameState, setGameState, focusAllocation, setFocusAllocation); // Pass setFocusAllocation
+  } = useGameLogic(gameState, setGameState); // REMOVED focusAllocation, setFocusAllocation
 
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showTrainingModal, setShowTrainingModal] = useState(false);
@@ -323,8 +323,8 @@ const MusicStudioTycoon = () => {
           <MainGameContent
             gameState={gameState}
             setGameState={setGameState}
-        focusAllocation={focusAllocation}
-        setFocusAllocation={setFocusAllocation}
+        // focusAllocation={focusAllocation} // REMOVED
+        // setFocusAllocation={setFocusAllocation} // REMOVED
         startProject={handleProjectStart}
         performDailyWork={handlePerformDailyWork} // This now returns { isComplete, finalProjectData? }
         onProjectComplete={handleShowProjectReview} // Changed to show review first

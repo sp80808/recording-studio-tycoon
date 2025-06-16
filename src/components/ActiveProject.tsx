@@ -23,9 +23,9 @@ import { GameState, FocusAllocation, Project, PlayerData } from '@/types/game';
 
 interface ActiveProjectProps {
   gameState: GameState;
-  setGameState?: (state: GameState | ((prev: GameState) => GameState)) => void;
-  focusAllocation?: FocusAllocation;
-  setFocusAllocation?: (allocation: FocusAllocation) => void;
+  setGameState: (state: GameState | ((prev: GameState) => GameState)) => void; // Made non-optional as it's crucial for updating project focus
+  // focusAllocation prop is removed, as it will be derived from gameState.activeProject.focusAllocation
+  // setFocusAllocation prop is removed, will be handled by a new specific updater function if manual adjustment is kept, or via setGameState
   performDailyWork?: () => { isComplete: boolean; finalProjectData?: Project } | undefined;
   onMinigameReward?: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => void;
   onProjectComplete?: (completedProject: Project) => void;
@@ -36,9 +36,7 @@ interface ActiveProjectProps {
 
 export const ActiveProject: React.FC<ActiveProjectProps> = ({
   gameState,
-  setGameState,
-  focusAllocation,
-  setFocusAllocation,
+  setGameState, // Now non-optional
   performDailyWork,
   onMinigameReward,
   onProjectComplete,
@@ -128,10 +126,44 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const currentStage = project.stages[project.currentStageIndex] || project.stages[0];
   const currentStageProgress = currentStage ? (currentStage.workUnitsCompleted / currentStage.workUnitsBase) * 100 : 0;
 
-  // Get stage-specific focus labels and guidance
+  // DERIVE projectFocus from gameState.activeProject.focusAllocation
+  const projectFocus = project.focusAllocation || { performance: 33, soundCapture: 33, layering: 34 }; // Fallback if somehow undefined
+
+  // Aggregate skills of staff assigned to this project
+  const assignedStaffToThisProject = gameState.hiredStaff.filter(s => s.assignedProjectId === project.id);
+  let aggregatedSkills: { creativity?: number; technical?: number; arrangement?: number } = {
+    creativity: 0,
+    technical: 0,
+    arrangement: 0,
+  };
+
+  if (assignedStaffToThisProject.length > 0) {
+    let totalCreativity = 0;
+    let totalTechnical = 0;
+    let totalArrangementScore = 0;
+    let staffWithArrangementSkills = 0;
+
+    assignedStaffToThisProject.forEach(staff => {
+      totalCreativity += staff.primaryStats.creativity || 0;
+      totalTechnical += staff.primaryStats.technical || 0;
+      
+      const mixingSkill = staff.skills.mixing?.level || 0;
+      const songwritingSkill = staff.skills.songwriting?.level || 0;
+      if (mixingSkill > 0 || songwritingSkill > 0) {
+        totalArrangementScore += (mixingSkill + songwritingSkill) / 2;
+        staffWithArrangementSkills++;
+      }
+    });
+
+    aggregatedSkills.creativity = totalCreativity / assignedStaffToThisProject.length;
+    aggregatedSkills.technical = totalTechnical / assignedStaffToThisProject.length;
+    aggregatedSkills.arrangement = staffWithArrangementSkills > 0 ? totalArrangementScore / staffWithArrangementSkills : 0;
+  }
+
+  // Get stage-specific focus labels and guidance, now considering staff skills for optimalFocus
   const stageFocusLabels = getStageFocusLabels(currentStage);
-  const optimalFocus = getStageOptimalFocus(currentStage, project.genre);
-  const focusEffectiveness = calculateFocusEffectiveness(focusAllocation, optimalFocus);
+  const optimalFocus = getStageOptimalFocus(currentStage, project.genre, aggregatedSkills); // Pass aggregatedSkills
+  const focusEffectiveness = calculateFocusEffectiveness(projectFocus, optimalFocus); // Use projectFocus
   const stageRecommendations = getStageFocusRecommendations(currentStage);
   
   // Calculate overall project progress
@@ -192,13 +224,14 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     const baseCreativity = gameState.playerData.dailyWorkCapacity * gameState.playerData.attributes.creativeIntuition;
     const baseTechnical = gameState.playerData.attributes.technicalAptitude;
     
+    // Use projectFocus for calculating gains
     const creativityGain = Math.floor(
-      baseCreativity * (focusAllocation.performance / 100) * 0.8 + 
-      baseCreativity * (focusAllocation.layering / 100) * 0.6
+      baseCreativity * (projectFocus.performance / 100) * 0.8 + 
+      baseCreativity * (projectFocus.layering / 100) * 0.6
     );
     const technicalGain = Math.floor(
-      baseTechnical * (focusAllocation.soundCapture / 100) * 0.8 + 
-      baseTechnical * (focusAllocation.layering / 100) * 0.4
+      baseTechnical * (projectFocus.soundCapture / 100) * 0.8 + 
+      baseTechnical * (projectFocus.layering / 100) * 0.4
     );
 
     console.log('🎯 Setting last gains for animation:', { creativityGain, technicalGain });
@@ -402,7 +435,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 <div className="flex justify-between items-center mb-2">
                   <div className="flex flex-col">
                     <label className="text-gray-300 font-medium">
-                      {stageFocusLabels.performance.label} ({focusAllocation.performance}%)
+                      {stageFocusLabels.performance.label} ({projectFocus.performance}%)
                     </label>
                     <span className="text-xs text-gray-400">
                       {stageFocusLabels.performance.description}
@@ -415,17 +448,25 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 </div>
                 <div className="relative group">
                   <Slider
-                    value={[focusAllocation.performance]}
+                    value={[projectFocus.performance]}
                     onValueChange={(value) => {
                       playSound('slider.wav', 0.3);
-                      setFocusAllocation({...focusAllocation, performance: value[0]});
+                      const newFocus = { ...projectFocus, performance: value[0] };
+                      setGameState(prev => ({
+                        ...prev,
+                        activeProject: prev.activeProject ? { ...prev.activeProject, focusAllocation: newFocus } : null,
+                        // Also update in activeProjects array if multi-project is primary
+                        activeProjects: prev.activeProjects.map(p => 
+                          p.id === project.id ? { ...p, focusAllocation: newFocus } : p
+                        ),
+                      }));
                     }}
                     max={100}
                     step={5}
                     className={`w-full transition-all duration-300 ease-in-out ${
-                      Math.abs(focusAllocation.performance - optimalFocus.performance) <= 10 
+                      Math.abs(projectFocus.performance - optimalFocus.performance) <= 10 
                         ? '[&_.bg-primary]:bg-gradient-to-r from-green-400 to-green-600 [&_.border-primary]:border-green-700' 
-                        : Math.abs(focusAllocation.performance - optimalFocus.performance) <= 25
+                        : Math.abs(projectFocus.performance - optimalFocus.performance) <= 25
                           ? '[&_.bg-primary]:bg-gradient-to-r from-yellow-400 to-yellow-600 [&_.border-primary]:border-yellow-700'
                           : '[&_.bg-primary]:bg-gradient-to-r from-blue-400 to-blue-600'
                     }`}
@@ -441,7 +482,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 <div className="flex justify-between items-center mb-2">
                   <div className="flex flex-col">
                     <label className="text-gray-300 font-medium">
-                      {stageFocusLabels.soundCapture.label} ({focusAllocation.soundCapture}%)
+                      {stageFocusLabels.soundCapture.label} ({projectFocus.soundCapture}%)
                     </label>
                     <span className="text-xs text-gray-400">
                       {stageFocusLabels.soundCapture.description}
@@ -454,17 +495,24 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 <div className="relative group">
                   {/* Tooltip removed as staff variable is not available here */}
                   <Slider
-                    value={[focusAllocation.soundCapture]}
+                    value={[projectFocus.soundCapture]}
                     onValueChange={(value) => {
                       playSound('slider.wav', 0.3);
-                      setFocusAllocation({...focusAllocation, soundCapture: value[0]});
+                      const newFocus = { ...projectFocus, soundCapture: value[0] };
+                       setGameState(prev => ({
+                        ...prev,
+                        activeProject: prev.activeProject ? { ...prev.activeProject, focusAllocation: newFocus } : null,
+                        activeProjects: prev.activeProjects.map(p => 
+                          p.id === project.id ? { ...p, focusAllocation: newFocus } : p
+                        ),
+                      }));
                     }}
                     max={100}
                     step={5}
                     className={`w-full transition-all duration-300 ease-in-out ${
-                      Math.abs(focusAllocation.soundCapture - optimalFocus.soundCapture) <= 10
+                      Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 10
                         ? '[&_.bg-primary]:bg-gradient-to-r from-green-400 to-green-600 [&_.border-primary]:border-green-700'
-                        : Math.abs(focusAllocation.soundCapture - optimalFocus.soundCapture) <= 25
+                        : Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 25
                           ? '[&_.bg-primary]:bg-gradient-to-r from-yellow-400 to-yellow-600 [&_.border-primary]:border-yellow-700'
                           : '[&_.bg-primary]:bg-gradient-to-r from-blue-400 to-blue-600'
                     }`}
@@ -480,7 +528,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 <div className="flex justify-between items-center mb-2">
                   <div className="flex flex-col">
                     <label className="text-gray-300 font-medium">
-                      {stageFocusLabels.layering.label} ({focusAllocation.layering}%)
+                      {stageFocusLabels.layering.label} ({projectFocus.layering}%)
                     </label>
                     <span className="text-xs text-gray-400">
                       {stageFocusLabels.layering.description}
@@ -493,17 +541,24 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 <div className="relative group">
                   {/* Tooltip removed as staff variable is not available here */}
                   <Slider
-                    value={[focusAllocation.layering]}
+                    value={[projectFocus.layering]}
                     onValueChange={(value) => {
                       playSound('slider.wav', 0.3);
-                      setFocusAllocation({...focusAllocation, layering: value[0]});
+                      const newFocus = { ...projectFocus, layering: value[0] };
+                      setGameState(prev => ({
+                        ...prev,
+                        activeProject: prev.activeProject ? { ...prev.activeProject, focusAllocation: newFocus } : null,
+                        activeProjects: prev.activeProjects.map(p => 
+                          p.id === project.id ? { ...p, focusAllocation: newFocus } : p
+                        ),
+                      }));
                     }}
                     max={100}
                     step={5}
                     className={`w-full transition-all duration-300 ease-in-out ${
-                      Math.abs(focusAllocation.layering - optimalFocus.layering) <= 10
+                      Math.abs(projectFocus.layering - optimalFocus.layering) <= 10
                         ? '[&_.bg-primary]:bg-gradient-to-r from-green-400 to-green-600 [&_.border-primary]:border-green-700'
-                        : Math.abs(focusAllocation.layering - optimalFocus.layering) <= 25
+                        : Math.abs(projectFocus.layering - optimalFocus.layering) <= 25
                           ? '[&_.bg-primary]:bg-gradient-to-r from-yellow-400 to-yellow-600 [&_.border-primary]:border-yellow-700'
                           : '[&_.bg-primary]:bg-gradient-to-r from-blue-400 to-blue-600'
                     }`}
@@ -531,11 +586,18 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
               {/* Optimal focus button */}
               <Button
                 onClick={() => {
-                  setFocusAllocation({
+                  const newFocus = {
                     performance: optimalFocus.performance,
                     soundCapture: optimalFocus.soundCapture,
-                    layering: optimalFocus.layering
-                  });
+                    layering: optimalFocus.layering,
+                  };
+                  setGameState(prev => ({
+                    ...prev,
+                    activeProject: prev.activeProject ? { ...prev.activeProject, focusAllocation: newFocus } : null,
+                    activeProjects: prev.activeProjects.map(p => 
+                      p.id === project.id ? { ...p, focusAllocation: newFocus } : p
+                    ),
+                  }));
                   playSound('notification.wav', 0.4);
                   toast({
                     title: "🎯 Optimal Focus Applied",

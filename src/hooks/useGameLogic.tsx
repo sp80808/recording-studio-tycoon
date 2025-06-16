@@ -17,13 +17,13 @@ import { FocusAllocation } from '@/types/game'; // Import FocusAllocation type
 
 export const useGameLogic = (
   gameState: GameState, 
-  setGameState: React.Dispatch<React.SetStateAction<GameState>>, 
-  focusAllocation: FocusAllocation, // Use imported type
-  setFocusAllocation: React.Dispatch<React.SetStateAction<FocusAllocation>> // Add setFocusAllocation
+  setGameState: React.Dispatch<React.SetStateAction<GameState>>
+  // focusAllocation: FocusAllocation, // REMOVED
+  // setFocusAllocation: React.Dispatch<React.SetStateAction<FocusAllocation>> // REMOVED
 ) => {
   const { levelUpPlayer, spendPerkPoint, checkAndHandleLevelUp } = usePlayerProgression(gameState, setGameState);
-  // Pass setFocusAllocation to useStaffManagement
-  const { hireStaff, assignStaffToProject, unassignStaffFromProject, toggleStaffRest, addStaffXP, openTrainingModal, startResearchMod, sendStaffToTraining: originalSendStaffToTraining } = useStaffManagement(gameState, setGameState, setFocusAllocation); 
+  // setFocusAllocation REMOVED from useStaffManagement call
+  const { hireStaff, assignStaffToProject, unassignStaffFromProject, toggleStaffRest, addStaffXP, openTrainingModal, startResearchMod, sendStaffToTraining: originalSendStaffToTraining } = useStaffManagement(gameState, setGameState); 
   const { startProject, completeProject } = useProjectManagement(gameState, setGameState);
   const { advanceDay, refreshCandidates, triggerEraTransition } = useGameActions(gameState, setGameState);
 
@@ -35,7 +35,7 @@ export const useGameLogic = (
   const { performDailyWork, orbContainerRef, autoTriggeredMinigame, clearAutoTriggeredMinigame } = useStageWork({
     gameState,
     setGameState,
-    focusAllocation,
+    // focusAllocation, // REMOVED
     // completeProject is no longer passed to useStageWork
     addStaffXP,
     advanceDay

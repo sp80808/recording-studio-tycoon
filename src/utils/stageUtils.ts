@@ -161,40 +161,47 @@ export const getStageFocusLabels = (stage: ProjectStage): StageFocusLabels => {
  * Get optimal focus allocation for a specific stage
  */
 export const getStageOptimalFocus = (
-  stage: ProjectStage, 
+  stage: ProjectStage,
   genre: string,
-  staffSkills?: Record<string, number>
+  staffSkills?: { creativity?: number; technical?: number; arrangement?: number } // More specific type for clarity
 ): StageOptimalFocus => {
   const stageName = stage.stageName.toLowerCase();
-  
+
   // Base recommendations by stage type
   let baseFocus: FocusAllocation;
   let reasoning: string;
-  let skillAdjustments = { performance: 1, soundCapture: 1, layering: 1 };
-  
+  const skillAdjustments = { performance: 1, soundCapture: 1, layering: 1 };
+
   // Apply staff skill adjustments if provided
   if (staffSkills) {
-    // Performance boost from creative skills
-    if (staffSkills.creativity) {
+    // Performance boost from creative skills (e.g., average creativity of assigned staff)
+    if (typeof staffSkills.creativity === 'number') {
+      // Assuming skill level is 1-100, a 0.005 multiplier per point gives up to 50% bonus at 100 skill
+      // Or if skill is average of staff primary stats (1-50), 0.01 multiplier per point.
+      // Let's use a 0.5% boost per point, assuming skills are on a 1-100 scale for this aggregation.
+      // If staff primaryStats (1-50) are averaged, this might be too low.
+      // Let's assume the aggregated skill passed here is normalized or scaled appropriately.
+      // For now, using the original 0.05, assuming staffSkills.creativity is a smaller number (e.g. 1-10).
       skillAdjustments.performance *= 1 + (staffSkills.creativity * 0.05);
     }
-    
+
     // Sound capture boost from technical skills
-    if (staffSkills.technical) {
+    if (typeof staffSkills.technical === 'number') {
       skillAdjustments.soundCapture *= 1 + (staffSkills.technical * 0.05);
     }
-    
+
     // Layering boost from arrangement skills
-    if (staffSkills.arrangement) {
+    if (typeof staffSkills.arrangement === 'number') {
       skillAdjustments.layering *= 1 + (staffSkills.arrangement * 0.05);
     }
-    
-    // Role-specific bonuses
-    if (staffSkills.role === 'Engineer') {
-      skillAdjustments.soundCapture *= 1.1;
-    } else if (staffSkills.role === 'Producer') {
-      skillAdjustments.performance *= 1.1;
-    }
+
+    // Role-specific bonuses - Commented out due to type incompatibility with current staffSkills structure.
+    // This would require staffSkills to include role information or be handled separately.
+    // if (staffSkills.role === 'Engineer') {
+    //   skillAdjustments.soundCapture *= 1.1;
+    // } else if (staffSkills.role === 'Producer') {
+    //   skillAdjustments.performance *= 1.1;
+    // }
   }
 
   if (stageName.includes('setup') || stageName.includes('recording') || stageName.includes('tracking')) {

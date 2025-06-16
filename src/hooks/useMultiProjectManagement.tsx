@@ -1,8 +1,9 @@
 // Multi-Project Management Hook
 import { useCallback, useMemo } from 'react';
-import { GameState, Project, StaffMember, AutomationMode, AutomationSettings } from '@/types/game';
+import { GameState, Project, StaffMember, AutomationMode, AutomationSettings, FocusAllocation } from '@/types/game'; // Added FocusAllocation
 import { ProjectManager, ProjectCapacity, StaffAssignment } from '@/services/ProjectManager';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
+import { getStageOptimalFocus } from '@/utils/stageUtils'; // ADDED
 
 interface UseMultiProjectManagementProps {
   gameState: GameState;
@@ -111,17 +112,69 @@ export const useMultiProjectManagement = ({ gameState, setGameState }: UseMultiP
   const applyOptimalStaffAssignments = useCallback((): void => {
     const assignments = projectManager.optimizeStaffAssignments();
     
-    setGameState(prev => ({
-      ...prev,
-      hiredStaff: prev.hiredStaff.map(staff => {
+    setGameState(prev => {
+      const newHiredStaff = prev.hiredStaff.map(staff => {
         const assignment = assignments.find(a => a.staffId === staff.id);
         return {
           ...staff,
           assignedProjectId: assignment?.projectId || null,
           status: assignment ? 'Working' : 'Idle'
         };
-      })
-    }));
+      });
+
+      const updatedActiveProjects = prev.activeProjects.map(proj => {
+        const assignedStaffToThisProject = newHiredStaff.filter(s => s.assignedProjectId === proj.id);
+        let aggregatedSkills: { creativity?: number; technical?: number; arrangement?: number } = {
+          creativity: 0,
+          technical: 0,
+          arrangement: 0,
+        };
+
+        if (assignedStaffToThisProject.length > 0) {
+          let totalCreativity = 0;
+          let totalTechnical = 0;
+          let totalArrangementScore = 0;
+          let staffWithArrangementSkills = 0;
+
+          assignedStaffToThisProject.forEach(staff => {
+            totalCreativity += staff.primaryStats.creativity || 0;
+            totalTechnical += staff.primaryStats.technical || 0;
+            
+            const mixingSkill = staff.skills.mixing?.level || 0;
+            const songwritingSkill = staff.skills.songwriting?.level || 0;
+            // Consider staff contributing to arrangement if they have either skill
+            if (mixingSkill > 0 || songwritingSkill > 0) {
+              totalArrangementScore += (mixingSkill + songwritingSkill) / 2; // Simple average for now
+              staffWithArrangementSkills++;
+            }
+          });
+
+          aggregatedSkills.creativity = totalCreativity / assignedStaffToThisProject.length;
+          aggregatedSkills.technical = totalTechnical / assignedStaffToThisProject.length;
+          aggregatedSkills.arrangement = staffWithArrangementSkills > 0 ? totalArrangementScore / staffWithArrangementSkills : 0;
+        }
+        
+        const currentStage = proj.stages[proj.currentStageIndex];
+        if (currentStage) {
+          const newOptimalFocus = getStageOptimalFocus(currentStage, proj.genre, aggregatedSkills);
+          return {
+            ...proj,
+            focusAllocation: {
+              performance: newOptimalFocus.performance,
+              soundCapture: newOptimalFocus.soundCapture,
+              layering: newOptimalFocus.layering,
+            } as FocusAllocation, // Ensure type correctness
+          };
+        }
+        return proj;
+      });
+
+      return {
+        ...prev,
+        hiredStaff: newHiredStaff,
+        activeProjects: updatedActiveProjects,
+      };
+    });
   }, [projectManager, setGameState]);
 
   // Execute one round of automated work

@@ -13,8 +13,8 @@ import { MinigameType } from '@/components/minigames/MinigameManager';
 interface ProgressiveProjectInterfaceProps {
   gameState: GameState;
   setGameState: (state: GameState | ((prev: GameState) => GameState)) => void;
-  focusAllocation?: FocusAllocation;
-  setFocusAllocation?: (allocation: FocusAllocation) => void;
+  // focusAllocation?: FocusAllocation; // REMOVED
+  // setFocusAllocation?: (allocation: FocusAllocation) => void; // REMOVED
   performDailyWork?: () => { isComplete: boolean; finalProjectData?: Project } | undefined;
   onMinigameReward?: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => void;
   onProjectComplete?: (completedProject: Project) => void;
@@ -26,8 +26,8 @@ interface ProgressiveProjectInterfaceProps {
 export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfaceProps> = ({
   gameState,
   setGameState,
-  focusAllocation,
-  setFocusAllocation,
+  // focusAllocation, // REMOVED
+  // setFocusAllocation, // REMOVED
   performDailyWork,
   onMinigameReward,
   onProjectComplete,
@@ -36,18 +36,9 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
   clearAutoTriggeredMinigame
 }) => {
   const [progressionStatus, setProgressionStatus] = useState<ProgressionStatus | null>(null);
+  const [lastMilestone, setLastMilestone] = useState<number>(0); // Added this line
   // const [showProgressionInfo, setShowProgressionInfo] = useState(false); // Unused
   const [showMultiProjectInTransition, setShowMultiProjectInTransition] = useState(false); // Lifted state for renderTransitionView
-
-  // Provide default focus allocation if not provided
-  const defaultFocusAllocation: FocusAllocation = {
-    performance: 50,
-    soundCapture: 50,
-    layering: 50
-  };
-
-  const currentFocusAllocation = focusAllocation || defaultFocusAllocation;
-  const handleSetFocusAllocation = setFocusAllocation || (() => {});
 
   // Check progression status on game state changes
   useEffect(() => {
@@ -99,8 +90,8 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
         <ActiveProject
           gameState={gameState}
           setGameState={setGameState}
-          focusAllocation={currentFocusAllocation}
-          setFocusAllocation={handleSetFocusAllocation}
+          // focusAllocation={currentFocusAllocation} // REMOVED
+          // setFocusAllocation={handleSetFocusAllocation} // REMOVED
           onProjectSelect={onProjectSelect}
           performDailyWork={performDailyWork}
           onMinigameReward={onMinigameReward}
@@ -158,8 +149,8 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
           <ActiveProject
             gameState={gameState}
             setGameState={setGameState}
-            focusAllocation={currentFocusAllocation}
-            setFocusAllocation={handleSetFocusAllocation}
+            // focusAllocation={currentFocusAllocation} // REMOVED
+            // setFocusAllocation={handleSetFocusAllocation} // REMOVED
             onProjectSelect={onProjectSelect}
             performDailyWork={performDailyWork}
             onMinigameReward={onMinigameReward}

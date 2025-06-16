@@ -9,8 +9,8 @@ import { getMoodEffectiveness } from '@/utils/playerUtils'; // Import from playe
 
 export const useStaffManagement = (
   gameState: GameState, 
-  setGameState: React.Dispatch<React.SetStateAction<GameState>>,
-  setFocusAllocation?: React.Dispatch<React.SetStateAction<FocusAllocation>> // Added setFocusAllocation
+  setGameState: React.Dispatch<React.SetStateAction<GameState>>
+  // setFocusAllocation?: React.Dispatch<React.SetStateAction<FocusAllocation>> // REMOVED
 ) => {
   const hireStaff = useCallback((candidateIndex: number): boolean => {
     const candidate = gameState.availableCandidates[candidateIndex];
@@ -63,33 +63,9 @@ export const useStaffManagement = (
     const staff = gameState.hiredStaff.find(s => s.id === staffId);
     if (!staff || staff.status !== 'Idle') return;
 
-    // Auto-set focus allocation
-    if (setFocusAllocation && gameState.activeProject) {
-      const project = gameState.activeProject;
-      const currentStage = project.stages[project.currentStageIndex];
-      if (currentStage && staff) {
-        const optimalFocus = getStageOptimalFocus(
-          currentStage, 
-          project.genre,
-          {
-            ...staff.primaryStats,
-            ...staff.skills,
-            role: staff.role
-          }
-        );
-        setFocusAllocation({
-          performance: optimalFocus.performance,
-          soundCapture: optimalFocus.soundCapture,
-          layering: optimalFocus.layering,
-        });
-        toast({
-          title: "🧠 Focus Optimized!",
-          description: `Focus sliders automatically adjusted for ${staff.name} on ${currentStage.stageName}.`,
-          className: "bg-gray-800 border-gray-600 text-white",
-          duration: 3000,
-        });
-      }
-    }
+    // Auto-set focus allocation logic REMOVED from here.
+    // This is now handled by useMultiProjectManagement.tsx when applyOptimalStaffAssignments is called,
+    // which considers all staff on a project.
 
     setGameState(prev => ({
       ...prev,

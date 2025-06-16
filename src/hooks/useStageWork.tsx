@@ -16,7 +16,7 @@ import { toast } from '@/hooks/use-toast';
 interface UseStageWorkProps {
   gameState: GameState;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
-  focusAllocation: FocusAllocation;
+  // focusAllocation: FocusAllocation; // REMOVED
   // completeProject is removed from here, will be called after celebration
   addStaffXP: (staffId: string, amount: number) => void; // Still needed if staff get XP per work session or stage
   advanceDay: () => void
@@ -25,7 +25,7 @@ interface UseStageWorkProps {
 export const useStageWork = ({
   gameState,
   setGameState,
-  focusAllocation,
+  // focusAllocation, // REMOVED
   // completeProject, // Removed
   addStaffXP, // Kept for now, though project completion XP is handled by completeProject
   advanceDay
@@ -96,6 +96,9 @@ export const useStageWork = ({
     }
 
     const project = gameState.activeProject;
+    // Get project-specific focus allocation
+    const currentProjectFocus = project.focusAllocation || { performance: 33, soundCapture: 33, layering: 34 }; // Fallback
+
     console.log(`🎵 Working on project: ${project.title}`);
     console.log(`📊 Project stages:`, project.stages.map((s, i) => `${i}: ${s.stageName} (${s.workUnitsCompleted}/${s.workUnitsBase})`));
     
@@ -126,8 +129,8 @@ export const useStageWork = ({
     const newWorkSessionCount = (project.workSessionCount || 0) + 1;
     console.log(`🔢 Work session count: ${project.workSessionCount} -> ${newWorkSessionCount}`);
 
-    // Check for auto-triggered minigames
-    const autoTrigger = shouldAutoTriggerMinigame(project, gameState, focusAllocation, newWorkSessionCount);
+    // Check for auto-triggered minigames using currentProjectFocus
+    const autoTrigger = shouldAutoTriggerMinigame(project, gameState, currentProjectFocus, newWorkSessionCount);
     if (autoTrigger) {
       console.log(`🎮 Auto-triggered minigame: ${autoTrigger.minigameType} - ${autoTrigger.triggerReason}`);
       setAutoTriggeredMinigame({
@@ -163,7 +166,7 @@ export const useStageWork = ({
     
     workPoints = applyFocusAndMultipliers(
       workPoints,
-      focusAllocation,
+      currentProjectFocus, // Use project-specific focus
       creativityMultiplier,
       technicalMultiplier,
       focusEffectiveness
@@ -223,7 +226,7 @@ export const useStageWork = ({
     
     const workUnitsToAdd = Math.max(minProgress, baseWorkUnits + stageEfficiencyBonus);
     // Ensure at least 1 unit of progress if energy was spent and stage is not complete
-    const actualWorkUnitsToAdd = (workUnitsToAdd === 0 && !currentStage.completed && totalPointsGenerated === 0) ? 1 : workUnitsToAdd;
+    const actualWorkUnitsToAdd = (workUnitsToAdd === 0 && !currentStage.completed && totalPointsGenerated > 0) ? 1 : workUnitsToAdd; // Ensure progress if any points generated
 
     const newWorkUnitsCompleted = Math.min(
       currentStage.workUnitsCompleted + actualWorkUnitsToAdd, // Use actualWorkUnitsToAdd
@@ -335,7 +338,7 @@ export const useStageWork = ({
     }
     
     return { isComplete: false }; // No review object if not complete
-  }, [gameState, focusAllocation, createOrb, setGameState, addStaffXP, advanceDay]); // Removed completeProject, advanceDay was missing
+  }, [gameState, createOrb, setGameState, addStaffXP, advanceDay]); // Removed focusAllocation from dependencies
 
   return {
     performDailyWork,

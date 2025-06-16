@@ -72,6 +72,7 @@ export interface Project {
   lastWorkDay?: number; // Track when work was last performed
   workSessionCount: number; // Track how many work sessions have been completed
   associatedBandId?: string;
+  focusAllocation: FocusAllocation; // ADDED: Stores current focus settings for the project
 }
 
 export interface StaffMember {

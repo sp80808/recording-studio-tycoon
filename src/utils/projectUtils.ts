@@ -252,7 +252,8 @@ export const generateNewProjects = (count: number, playerLevel: number = 1, curr
         accumulatedCPoints: 0,
         accumulatedTPoints: 0,
         workSessionCount: 0,
-        associatedBandId: associatedBand.id
+        associatedBandId: associatedBand.id,
+        focusAllocation: { performance: 33, soundCapture: 33, layering: 34 } // ADDED default focus allocation
       };
 
       attempts++;

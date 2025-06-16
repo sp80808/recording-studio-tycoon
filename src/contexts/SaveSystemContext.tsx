@@ -10,6 +10,7 @@
 import React, { createContext, useContext, useEffect, ReactNode, useCallback } from 'react';
 import { useSettings } from './SettingsContext';
 import { getVersionInfo, compareVersions } from '../utils/versionUtils';
+import { migrateAndInitializeGameState } from '@/utils/gameStateUtils'; // ADDED
 
 interface SaveSystemContextType {
   saveGame: (gameState: any) => void;
@@ -75,7 +76,9 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
       }
       
       console.log(`Game loaded successfully - Save Version: ${parsed.version || 'legacy'}`);
-      return parsed.gameState;
+      // ADDED: Migrate and initialize the loaded game state
+      const migratedGameState = migrateAndInitializeGameState(parsed.gameState);
+      return migratedGameState;
     } catch (error) {
       console.error('Failed to load game:', error);
       return null;
@@ -133,7 +136,9 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
       }
       
       console.log(`Game loaded from string successfully - Save Version: ${parsed.version || 'legacy_text'}`);
-      return parsed.gameState;
+      // ADDED: Migrate and initialize the loaded game state from string
+      const migratedGameState = migrateAndInitializeGameState(parsed.gameState);
+      return migratedGameState;
     } catch (error) {
       console.error('Failed to load game from string:', error);
       // TODO: Consider adding a user-facing notification for invalid save string
