@@ -24,11 +24,24 @@ Located in `progressionUtils.ts`, `featureUtils.ts`, and `milestones.ts`
   - `ActiveProject.tsx`: Current project work (being enhanced)
   - `RightPanel.tsx`: Equipment/skills/attributes view
   - `ChartsPanel.tsx`: Billboard-style music industry charts with audio preview and artist contact.
-  - `EquipmentDetailModal.tsx`: Displays detailed equipment specifications and graphs.
-  - `EraTransitionAnimation.tsx`, `ProjectCompletionCelebration.tsx`: Components for advanced animations.
+  - `src/components/EquipmentDetailModal.tsx`: Displays detailed equipment specifications and graphs.
+  - `src/components/EraTransitionAnimation.tsx`, `src/components/ProjectCompletionCelebration.tsx`: Components for advanced animations.
 - **Project Management UI**:
   - `StaffAssignmentSection.tsx`: Component for assigning staff to projects, includes filtering.
   - `StaffCard.tsx`: Displays individual staff member details for assignment.
+
+### Store Interface (Completed 16/06/2025)
+- **`src/components/EquipmentList.tsx`**: Manages display and purchase of studio equipment.
+  - *Recent Change*: Complete overhaul with advanced filtering, sorting, era-awareness, and rich visual feedback.
+  - *Interaction*: Works with `useGameState` for player money, owned equipment, and current year. Utilizes `src/data/equipment.ts` for equipment data.
+  - *Key Features*:
+    - Tabbed category view
+    - Search functionality
+    - Sorting by price, name, category, year, quality
+    - Era-aware equipment availability and vintage pricing logic
+    - Badges for vintage, premium, modern, and pro equipment
+    - Color-coded pricing based on affordability
+    - Detailed equipment cards with stats, bonuses, and skill requirements
 
 ### Minigames
 - **Core Minigames**: Beat Making, Mixing Board, Mastering, Vocal Recording, Rhythm Timing.
@@ -50,6 +63,9 @@ Located in `progressionUtils.ts`, `featureUtils.ts`, and `milestones.ts`
 - **Audio**:
   - `useBackgroundMusic.tsx`: Manages background music playback.
   - `useSound.ts`: Handles various sound effects.
+  - `useChartAudio.ts`: Manages audio playback for chart song previews.
+- **Charts**:
+  - `useChartPanelData.ts`: Manages data and state for the Charts Panel.
 
 ### Utility Functions
 - **Game Logic**:
@@ -160,11 +176,18 @@ Located in `progressionUtils.ts`, `featureUtils.ts`, and `milestones.ts`
 - Resolved equipment effects not applying
 - Improved clarity on project stage progress
 
+### Staff Assignment UX Improvements (Completed 16/06/2025)
+- **Enhanced StaffAssignmentSection Component**: Complete redesign with advanced filtering, sorting, and visual feedback
+- **Intelligent Staff Matching**: Implemented calculateStaffProjectMatch algorithm with genre affinity, skill alignment, and level considerations
+- **Rich UI Features**: Added tooltips, hover states, performance prediction, and color-coded match indicators
+- **Seamless Integration**: Successfully integrated into ActiveProject.tsx with proper TypeScript compatibility
+- **Visual Enhancements**: Created custom CSS animations and styling for professional user experience
+
 ### Current Focus
-- Enhancing staff assignment UX (direct project window integration)
+- Verifying and refining newly integrated features from prototype v0.3.0
+- Resolving Band system type conflicts (conflicting Band type definitions detected)
 - Adding more project variety
 - Improving progression system visibility
-- Verifying and refining newly integrated features from prototype v0.3.0.
 
 ## Key Documentation
 - [Project Roadmap](cline_docs/projectRoadmap.md): Goals and progress

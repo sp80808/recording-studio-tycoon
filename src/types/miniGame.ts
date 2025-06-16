@@ -1,48 +1,197 @@
 import { PlayerAttributes } from './game';
 
-export type MinigameType =
-  | 'rhythm_timing'
-  | 'mixing_board'
-  | 'sound_wave'
-  | 'beat_making'
-  | 'vocal_recording'
-  | 'mastering'
-  | 'effect_chain'
-  | 'midi_programming'
-  | 'digital_mixing'
-  | 'sample_editing'
-  | 'sound_design'
-  | 'acoustic_tuning'
-  | 'audio_restoration'
-  | 'analog_console'
-  | 'four_track_recording'
-  | 'tape_splicing'
-  | 'microphone_placement'
-  | 'mastering_chain'
-  | 'sound_design_synthesis'
-  | 'layering'
+export type MinigameType = 
+  // Core Recording Minigames
+  | 'vocalRecording'
+  | 'microphonePlacement'
+  | 'fourTrackRecording'
+  | 'tapeSplicing'
+  
+  // Mixing & Production Minigames
+  | 'mixingBoard'
+  | 'analogConsole'
+  | 'digitalMixing'
+  | 'hybridMixing'
+  | 'effectChain'
   | 'pedalboard'
   | 'patchbay'
-  | 'hybrid_mixing'
-  | 'digital_distribution'
-  | 'social_media_promotion'
-  | 'streaming_optimization'
-  | 'ai_mastering';
+  
+  // Mastering & Processing Minigames
+  | 'mastering'
+  | 'masteringChain'
+  | 'audioRestoration'
+  | 'acousticTuning'
+  
+  // Creative & Technical Minigames
+  | 'rhythmTiming'
+  | 'beatMaking'
+  | 'soundWave'
+  | 'soundDesign'
+  | 'soundDesignSynthesis'
+  | 'midiProgramming'
+  | 'sampleEditing'
+  | 'instrumentLayering'
+  | 'layering'
+  
+  // Modern Era Minigames
+  | 'digitalDistribution'
+  | 'socialMediaPromotion'
+  | 'streamingOptimization'
+  | 'aiMastering';
+
+export interface MinigameTrigger {
+  type: MinigameType;
+  difficulty: number;
+  reward: {
+    qualityBonus: number;
+    timeBonus: number;
+    xpBonus: number;
+  };
+}
+
+export interface MinigameResult {
+  success: boolean;
+  score: number;
+  qualityBonus: number;
+  timeBonus: number;
+  xpBonus: number;
+  feedback: string;
+}
+
+export interface MinigameState {
+  isActive: boolean;
+  currentType: MinigameType | null;
+  difficulty: number;
+  timeRemaining: number;
+  score: number;
+  progress: number;
+}
 
 export interface MinigameTriggerDefinition {
   type: MinigameType;
-  triggerReason: string;
-  priority: number;
-  era: 'analog' | 'digital';
-  requiredEquipment: string[];
-  requiredSkillLevel: number;
-  requiredStages: string[];
+  difficulty: number;
+  requiredSkills?: Record<string, number>;
+  reward: {
+    qualityBonus: number;
+    timeBonus: number;
+    xpBonus: number;
+  };
 }
 
-export interface MiniGameProps {
-  onComplete: (score: number) => void;
-  difficulty: number;
+// Minigame-specific interfaces
+export interface VocalRecordingState extends MinigameState {
+  pitchAccuracy: number;
+  timingAccuracy: number;
+  breathControl: number;
+  currentPhrase: number;
+  totalPhrases: number;
 }
+
+export interface MixingBoardState extends MinigameState {
+  channelLevels: Record<string, number>;
+  effects: Record<string, boolean>;
+  panPositions: Record<string, number>;
+  masterLevel: number;
+}
+
+export interface MasteringState extends MinigameState {
+  eqBands: Record<string, number>;
+  compression: {
+    threshold: number;
+    ratio: number;
+    attack: number;
+    release: number;
+  };
+  limiting: {
+    threshold: number;
+    ceiling: number;
+  };
+}
+
+export interface SoundDesignState extends MinigameState {
+  oscillators: Record<string, {
+    waveform: string;
+    frequency: number;
+    amplitude: number;
+  }>;
+  filters: Record<string, {
+    type: string;
+    cutoff: number;
+    resonance: number;
+  }>;
+  effects: Record<string, {
+    type: string;
+    parameters: Record<string, number>;
+  }>;
+}
+
+export interface MidiProgrammingState extends MinigameState {
+  currentPattern: number;
+  totalPatterns: number;
+  noteGrid: boolean[][];
+  velocityGrid: number[][];
+  selectedInstrument: string;
+}
+
+export interface PatchBayState extends MinigameState {
+  connections: Array<{
+    source: string;
+    destination: string;
+    type: string;
+  }>;
+  availablePorts: string[];
+  requiredConnections: Array<{
+    source: string;
+    destination: string;
+    type: string;
+  }>;
+}
+
+export interface DigitalDistributionState extends MinigameState {
+  platforms: Record<string, {
+    selected: boolean;
+    optimization: number;
+    reach: number;
+  }>;
+  marketingBudget: number;
+  targetAudience: Record<string, number>;
+}
+
+export interface SocialMediaPromotionState extends MinigameState {
+  platforms: Record<string, {
+    followers: number;
+    engagement: number;
+    contentQuality: number;
+  }>;
+  campaignBudget: number;
+  targetMetrics: Record<string, number>;
+}
+
+export interface StreamingOptimizationState extends MinigameState {
+  platforms: Record<string, {
+    optimization: number;
+    reach: number;
+    conversion: number;
+  }>;
+  metadata: {
+    title: string;
+    artist: string;
+    genre: string[];
+    mood: string[];
+    tags: string[];
+  };
+}
+
+export interface AIMasteringState extends MinigameState {
+  style: string;
+  intensity: number;
+  referenceTracks: string[];
+  processingChain: Array<{
+    type: string;
+    parameters: Record<string, number>;
+  }>;
+}
+
 export type MiniGameDifficulty = 'beginner' | 'intermediate' | 'advanced';
 export type WaveformType = 'sine' | 'square' | 'triangle';
 

@@ -3,6 +3,12 @@ import { eqMatchingTutorial } from '@/data/tutorials/eqMatchingTutorial';
 import { waveformSculptingTutorial } from '@/data/tutorials/waveformSculptingTutorial';
 import { microphonePlacementTutorial } from '@/data/tutorials/microphonePlacementTutorial';
 import { firstSessionSteps } from '@/data/tutorials/firstSession';
+import { 
+  analogEraTutorial,
+  digitalEraTutorial,
+  internetEraTutorial,
+  modernEraTutorial
+} from '@/data/tutorials/eraTutorials';
 
 // Map of all tutorials by ID
 const allTutorials: { [key: string]: Tutorial } = {
@@ -10,11 +16,23 @@ const allTutorials: { [key: string]: Tutorial } = {
   'waveform-sculpting': waveformSculptingTutorial,
   'microphone-placement': microphonePlacementTutorial,
   'first-session': { id: 'first-session', name: 'First Session', description: '', requiredLevel: 0, steps: firstSessionSteps },
+  'analog-era': analogEraTutorial,
+  'digital-era': digitalEraTutorial,
+  'internet-era': internetEraTutorial,
+  'modern-era': modernEraTutorial,
+};
+
+// Map of era progression
+const eraProgression: Record<string, string> = {
+  'analog-era': 'digital-era',
+  'digital-era': 'internet-era',
+  'internet-era': 'modern-era',
 };
 
 const initialState: TutorialState = {
   currentStep: null,
   completedSteps: new Set<string>(),
+  completedEras: new Set<string>(),
   preferences: {
     tutorialSpeed: 'normal',
     showHighlights: true,
@@ -33,76 +51,87 @@ function findTutorialStep(tutorialId: string | null, stepId: string): TutorialSt
   return steps.find((step: TutorialStep) => step.id === stepId) || null;
 }
 
-export const tutorialReducer = (state: TutorialState, action: TutorialContextAction): TutorialState => {
+function getNextEraTutorial(currentEra: string): string | null {
+  return eraProgression[currentEra] || null;
+}
+
+function shouldShowEraTutorial(state: TutorialState, era: string): boolean {
+  const tutorial = allTutorials[era];
+  if (!tutorial) return false;
+  
+  // Check if player has completed the previous era
+  const previousEra = Object.entries(eraProgression).find(([_, next]) => next === era)?.[0];
+  if (previousEra && !state.completedEras.has(previousEra)) return false;
+  
+  // Check if player has already completed this era's tutorial
+  if (state.completedEras.has(era)) return false;
+  
+  // Check if player meets the level requirement
+  return true; // Level check will be handled by the game state
+}
+
+export function tutorialReducer(state: TutorialState, action: TutorialContextAction): TutorialState {
+  let tutorial: Tutorial | undefined;
+  let currentTutorial: Tutorial | undefined;
+  let currentStepIndex: number;
+  let nextStep: TutorialStep | null;
+  let completedSteps: Set<string>;
+  let completedEras: Set<string>;
+  let nextEra: string | null;
+
   switch (action.type) {
-    case 'SET_ACTIVE_TUTORIAL': {
-      if (typeof action.payload !== 'string') {
-        throw new Error('Invalid payload for SET_ACTIVE_TUTORIAL action');
-      }
+    case 'START_TUTORIAL':
+      tutorial = allTutorials[action.payload.tutorialId];
+      if (!tutorial) return state;
+      
       return {
         ...state,
-        activeTutorialId: action.payload,
-        currentStep: null,
-        completedSteps: new Set<string>(),
-        history: [],
+        activeTutorialId: action.payload.tutorialId,
+        currentStep: tutorial.steps[0],
       };
-    }
-    case 'START_TUTORIAL': {
-      if (typeof action.payload !== 'string') {
-        throw new Error('Invalid payload for START_TUTORIAL action');
+
+    case 'COMPLETE_STEP':
+      currentTutorial = allTutorials[state.activeTutorialId || ''];
+      if (!currentTutorial) return state;
+
+      currentStepIndex = currentTutorial.steps.findIndex(
+        (step: TutorialStep) => step.id === state.currentStep?.id
+      );
+
+      if (currentStepIndex === -1) return state;
+
+      nextStep = currentTutorial.steps[currentStepIndex + 1];
+      completedSteps = new Set(state.completedSteps).add(state.currentStep?.id || '');
+
+      // Check if this was the last step of an era tutorial
+      if (currentStepIndex === currentTutorial.steps.length - 1 && state.activeTutorialId?.endsWith('-era')) {
+        completedEras = new Set(state.completedEras).add(state.activeTutorialId);
+        nextEra = getNextEraTutorial(state.activeTutorialId);
+        
+        return {
+          ...state,
+          completedSteps,
+          completedEras,
+          currentStep: nextStep || null,
+          activeTutorialId: nextEra || null,
+        };
       }
-      if (!state.activeTutorialId) {
-        throw new Error('No active tutorial set. Use SET_ACTIVE_TUTORIAL first.');
-      }
-      const stepId = action.payload;
-      const step = findTutorialStep(state.activeTutorialId, stepId);
-      if (!step) {
-        throw new Error(`Tutorial step ${stepId} not found in tutorial ${state.activeTutorialId}`);
-      }
+
       return {
         ...state,
-        currentStep: step,
-        history: [...state.history, step],
-      };
-    }
-    case 'COMPLETE_STEP': {
-      if (typeof action.payload !== 'string') {
-        throw new Error('Invalid payload for COMPLETE_STEP action');
-      }
-      if (!state.activeTutorialId) {
-        throw new Error('No active tutorial set. Use SET_ACTIVE_TUTORIAL first.');
-      }
-      const stepId = action.payload;
-      const completedSteps = new Set(state.completedSteps);
-      completedSteps.add(stepId);
-      // Find the next step based on the current step's nextSteps
-      const currentStep = state.currentStep;
-      let nextStep: TutorialStep | null = null;
-      if (currentStep && currentStep.nextSteps && currentStep.nextSteps.length > 0) {
-        // Find the first next step that hasn't been completed
-        const nextStepId = currentStep.nextSteps.find(id => !completedSteps.has(id));
-        if (nextStepId) {
-          nextStep = findTutorialStep(state.activeTutorialId, nextStepId);
-        }
-      }
-      return {
-        ...state,
-        currentStep: nextStep,
         completedSteps,
-        history: nextStep ? [...state.history, nextStep] : state.history,
+        currentStep: nextStep || null,
+        activeTutorialId: nextStep ? state.activeTutorialId : null,
       };
-    }
-    case 'SKIP_TUTORIAL': {
+
+    case 'SKIP_TUTORIAL':
       return {
         ...state,
         currentStep: null,
-        history: [],
+        activeTutorialId: null,
       };
-    }
-    case 'UPDATE_PREFERENCES': {
-      if (!action.payload || typeof action.payload !== 'object') {
-        throw new Error('Invalid payload for UPDATE_PREFERENCES action');
-      }
+
+    case 'UPDATE_PREFERENCES':
       return {
         ...state,
         preferences: {
@@ -110,11 +139,29 @@ export const tutorialReducer = (state: TutorialState, action: TutorialContextAct
           ...action.payload,
         },
       };
+
+    case 'CHECK_ERA_PROGRESSION': {
+      const { currentEra, playerLevel } = action.payload;
+      nextEra = getNextEraTutorial(currentEra);
+      
+      if (nextEra && shouldShowEraTutorial(state, nextEra)) {
+        const nextEraTutorial = allTutorials[nextEra];
+        if (nextEraTutorial && playerLevel >= nextEraTutorial.requiredLevel) {
+          return {
+            ...state,
+            activeTutorialId: nextEra,
+            currentStep: nextEraTutorial.steps[0],
+          };
+        }
+      }
+      
+      return state;
     }
+
     default:
       return state;
   }
-};
+}
 
 // Helper function to validate tutorial step requirements
 const validateStepRequirements = (step: TutorialStep, state: TutorialState): boolean => {

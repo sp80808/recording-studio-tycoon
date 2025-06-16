@@ -1,7 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { GameState, PlayerData, FocusAllocation, StudioSkill, Project, LevelUpDetails } from '@/types/game'; // Added LevelUpDetails
+import { GameState, PlayerData, FocusAllocation, StudioSkill, Project, LevelUpDetails, StaffMember } from '@/types/game';
 import { saveGame, loadGame, startAutoSave, stopAutoSave } from '@/utils/saveLoadUtils';
 import { generateNewProjects } from '@/utils/projectUtils';
+import { Band, OriginalTrackProject } from '@/types/bands';
+import { useBandManagement, type BandManagement } from './useBandManagement';
+import { useStudioExpansion } from './useStudioExpansion';
+import { useStaffManagement } from './useStaffManagement';
+import { useProjectManagement } from './useProjectManagement';
 
 // Declare window interface
 declare global {
@@ -23,20 +28,44 @@ const INITIAL_PLAYER_ATTRIBUTES: PlayerData['attributes'] = {
 };
 
 const INITIAL_PLAYER_DATA: PlayerData = {
+  name: "Player",
   level: 1,
+  experience: 0,
+  money: 0,
+  reputation: 0,
+  skills: {
+    recording: 1,
+    mixing: 1,
+    mastering: 1,
+    production: 1,
+    marketing: 1
+  },
   xp: 0,
   xpToNextLevel: 100,
   perkPoints: 0,
   attributes: INITIAL_PLAYER_ATTRIBUTES,
-  dailyWorkCapacity: 100,
-  reputation: 0, 
-  // lastMinigameType is optional
+  dailyWorkCapacity: 100
 };
 
 const INITIAL_STUDIO_SKILLS: Record<string, StudioSkill> = {
-  recording: { name: 'Recording', level: 1, xp: 0, xpToNext: 100, bonuses: {} },
-  mixing: { name: 'Mixing', level: 1, xp: 0, xpToNext: 100, bonuses: {} },
-  mastering: { name: 'Mastering', level: 1, xp: 0, xpToNext: 100, bonuses: {} },
+  recording: {
+    name: 'recording',
+    level: 1,
+    experience: 0,
+    multiplier: 1.0
+  },
+  mixing: {
+    name: 'mixing',
+    level: 1,
+    experience: 0,
+    multiplier: 1.0
+  },
+  mastering: {
+    name: 'mastering',
+    level: 1,
+    experience: 0,
+    multiplier: 1.0
+  }
 };
 
 const INITIAL_FOCUS_ALLOCATION: FocusAllocation = {
@@ -78,9 +107,114 @@ const INITIAL_GAME_STATE: GameState = {
   },
   focusAllocation: INITIAL_FOCUS_ALLOCATION,
   levelUpDetails: null, // Added for the modal
+  availableExpansions: [
+    {
+      id: 'control_room',
+      name: 'Control Room',
+      description: 'Add a professional control room for better mixing and mastering',
+      cost: 50000,
+      requirements: {
+        level: 5,
+        reputation: 50
+      },
+      benefits: {
+        mixingQuality: 1.2,
+        masteringQuality: 1.2
+      }
+    },
+    {
+      id: 'live_room',
+      name: 'Live Room',
+      description: 'Add a spacious live room for full band recordings',
+      cost: 75000,
+      requirements: {
+        level: 7,
+        reputation: 75
+      },
+      benefits: {
+        recordingCapacity: 8,
+        acousticQuality: 1.3
+      }
+    },
+    {
+      id: 'isolation_booth',
+      name: 'Isolation Booth',
+      description: 'Add an isolation booth for vocal and instrument recording',
+      cost: 30000,
+      requirements: {
+        level: 3,
+        reputation: 25
+      },
+      benefits: {
+        vocalQuality: 1.2,
+        isolationQuality: 1.3
+      }
+    },
+    {
+      id: 'lounge',
+      name: 'Artist Lounge',
+      description: 'Add a comfortable lounge for artists to relax and prepare',
+      cost: 25000,
+      requirements: {
+        level: 4,
+        reputation: 30
+      },
+      benefits: {
+        artistMood: 1.2,
+        preparationQuality: 1.2
+      }
+    }
+  ],
+  marketTrends: {
+    currentTrends: [],
+    historicalTrends: []
+  },
+  venues: [
+    {
+      id: 'small_club',
+      name: 'The Local Dive',
+      city: 'Anytown',
+      capacity: 150,
+      baseTicketPrice: 10,
+      reputationRequirement: 0,
+      genrePreferences: [
+        { genre: 'Rock', multiplier: 1.2 },
+        { genre: 'Pop', multiplier: 0.8 }
+      ],
+      rentalCost: 500
+    },
+    {
+      id: 'medium_hall',
+      name: 'City Music Hall',
+      city: 'Metropolis',
+      capacity: 500,
+      baseTicketPrice: 25,
+      reputationRequirement: 100,
+      genrePreferences: [
+        { genre: 'Pop', multiplier: 1.2 },
+        { genre: 'Electronic', multiplier: 1.1 }
+      ],
+      rentalCost: 2000
+    }
+  ],
+  tours: []
 };
 
-export function useGameState() {
+export function useGameState(): {
+  gameState: GameState;
+  focusAllocation: FocusAllocation;
+  setFocusAllocation: (newFocus: FocusAllocation) => void;
+  updateGameState: (updater: (prevState: GameState) => GameState) => void;
+  startNewGame: () => void;
+  advanceDay: () => void;
+  levelUpModalData: LevelUpDetails | null;
+  triggerLevelUpModal: (details: LevelUpDetails) => void;
+  clearLevelUpModal: () => void;
+  bandManagement: ReturnType<typeof useBandManagement>;
+  studioExpansion: ReturnType<typeof useStudioExpansion>;
+  staffManagement: ReturnType<typeof useStaffManagement>;
+  projectManagement: ReturnType<typeof useProjectManagement>;
+} {
   const [gameState, setGameState] = useState<GameState>(() => {
     const savedGame = loadGame();
     if (savedGame) {
@@ -107,15 +241,15 @@ export function useGameState() {
   }, [gameState]);
 
   useEffect(() => {
-    startAutoSave(); 
+    startAutoSave();
     return () => {
       stopAutoSave();
     };
   }, []);
 
-  const updateGameState = useCallback((updater: (prevState: GameState) => GameState) => {
+  const updateGameState = useCallback((updater: GameState | ((prevState: GameState) => GameState)) => {
     setGameState(prevState => {
-      const newState = updater(prevState);
+      const newState = typeof updater === 'function' ? (updater as (prevState: GameState) => GameState)(prevState) : updater;
       saveGame(newState);
       return newState;
     });
@@ -150,12 +284,12 @@ export function useGameState() {
 
         if (currentStageData.workUnitsCompleted >= currentStageData.workUnitsBase) {
           if (activeProjectCopy.currentStageIndex < activeProjectCopy.stages.length - 1) {
-            newState.activeProject = { 
-              ...activeProjectCopy, 
-              currentStageIndex: activeProjectCopy.currentStageIndex + 1 
+            newState.activeProject = {
+              ...activeProjectCopy,
+              currentStageIndex: activeProjectCopy.currentStageIndex + 1
             };
           } else {
-            const completedProjectUpdate: Partial<Project> = { 
+            const completedProjectUpdate: Partial<Project> = {
               // Mark stages as completed
               stages: activeProjectCopy.stages.map(s => ({...s, completed: true}))
             };
@@ -225,25 +359,70 @@ export function useGameState() {
   const triggerLevelUpModal = useCallback((details: LevelUpDetails) => {
     setLevelUpModalData(details);
     // Potentially play a sound effect here too
-    // gameAudio.playUISound('level-up'); 
+    // gameAudio.playUISound('level-up');
   }, []);
 
   const clearLevelUpModal = useCallback(() => {
     setLevelUpModalData(null);
   }, []);
 
+  // Initialize hooks
+  const bandManagement = useBandManagement();
+  const studioExpansion = useStudioExpansion(gameState, updateGameState);
+  const staffManagement = useStaffManagement();
+  const projectManagement = useProjectManagement({ gameState, setGameState: updateGameState });
+
+  // Process tour income at the start of each day
+  useEffect(() => {
+    const processTourIncome = () => {
+      setGameState(prev => {
+        const updatedBands = prev.playerBands.map(band => {
+          if (band.tourStatus.isOnTour) {
+            const updatedDaysRemaining = band.tourStatus.daysRemaining - 1;
+            
+            return {
+              ...band,
+              tourStatus: {
+                ...band.tourStatus,
+                daysRemaining: updatedDaysRemaining,
+                isOnTour: updatedDaysRemaining > 0
+              }
+            };
+          }
+          return band;
+        });
+
+        const totalTourIncome = updatedBands.reduce((total, band) => {
+          if (band.tourStatus.isOnTour) {
+            return total + band.tourStatus.dailyIncome;
+          }
+          return total;
+        }, 0);
+
+        return {
+          ...prev,
+          playerBands: updatedBands,
+          money: prev.money + totalTourIncome
+        };
+      });
+    };
+
+    processTourIncome();
+  }, [gameState.currentDay]);
+
   return {
     gameState,
-    focusAllocation: gameState.focusAllocation, // Expose focusAllocation directly
-    setFocusAllocation, // Expose specific setter
-    updateGameState, // Generic updater, can be used by useGameActions
-    // Keep specific actions here for now, or confirm they are in useGameActions
+    focusAllocation: gameState.focusAllocation,
+    setFocusAllocation,
+    updateGameState,
     startNewGame,
-    advanceDay, 
-    startProject,
-    addWorkToProject,
-    levelUpModalData, // Expose modal data
-    triggerLevelUpModal, // Expose trigger function
-    clearLevelUpModal // Expose clear function
+    advanceDay,
+    levelUpModalData,
+    triggerLevelUpModal,
+    clearLevelUpModal,
+    bandManagement,
+    studioExpansion,
+    staffManagement,
+    projectManagement
   };
 }

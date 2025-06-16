@@ -64,13 +64,34 @@ export interface Chart {
 }
 
 export type ChartRegion = 'local' | 'regional' | 'national' | 'international';
+
+export interface SubGenre {
+  id: string; // e.g., "synth-pop", "trap-rap"
+  name: string; // e.g., "Synth Pop", "Trap Rap"
+  parentGenre: MusicGenre; // The main genre it belongs to
+  description?: string;
+  typicalElements?: string[]; // e.g., ["808s", "Synth Leads", "Reverb Vocals"]
+}
+
+export type TrendDirection = 'rising' | 'stable' | 'falling' | 'emerging' | 'fading';
+
 export interface MarketTrend {
-  genre: MusicGenre;
-  popularity: number; // 0-100
-  growth: number; // -50 to +50 (percentage change)
-  seasonality: number[]; // 12 months of variation
-  events: TrendEvent[];
-  peakMonths: number[]; // months when this genre is most popular
+  id: string;
+  genreId: MusicGenre; // Main genre ID
+  subGenreId?: string; // Optional sub-genre ID, linking to SubGenre.id
+  popularity: number; // 0-100, overall current appeal
+  trendDirection: TrendDirection; // Current direction of the trend
+  growthRate: number; // More specific than just direction, e.g., +5% per month, -2% per month
+  seasonality?: number[]; // Optional: 12 months of variation multipliers (e.g., 0.8 to 1.2)
+  peakMonths?: number[]; // Optional: months when this genre/subgenre is most popular
+  activeEvents?: string[]; // IDs of TrendEvents currently affecting this trend
+  projectedDuration?: number; // Estimated days this trend might last in its current direction
+  lastUpdated: number; // Timestamp of last update
+  // Kept from original for compatibility, can be reviewed later
+  growth: number; // -50 to +50 (percentage change) - can be derived from growthRate or be a simpler representation
+  events: TrendEvent[]; // Consider if activeEvents replaces this or if this is historical
+  duration: number; 
+  startDay: number; 
 }
 
 export interface TrendEvent {

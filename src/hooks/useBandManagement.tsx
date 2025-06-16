@@ -1,85 +1,77 @@
-
 import { useCallback } from 'react';
-import { GameState } from '@/types/game';
-import { Band } from '@/types/bands';
-import { generateBandName } from '@/utils/bandUtils';
-import { toast } from '@/hooks/use-toast';
+import { useGameState } from './useGameState';
+import { Band, GameState } from '@/types/game'; // Import Band from game.ts
+import { toast } from '@/components/ui/use-toast';
 
-export const useBandManagement = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
-  const createBand = useCallback((bandName: string, memberIds: string[]) => {
-    console.log('Creating band:', bandName, 'with members:', memberIds);
-    
-    if (!bandName.trim() || memberIds.length === 0) {
+export interface BandManagement {
+  createBand: (bandName: string, memberIds: string[]) => void;
+  startTour: (bandId: string) => void;
+  trainBand: (bandId: string) => void;
+  fireBandMember: (bandId: string, memberId: string) => void;
+  hireSessionMusician: (bandId: string, musicianId: string) => void;
+}
+
+export const useBandManagement = (): BandManagement => {
+  const { gameState, updateGameState } = useGameState();
+
+  const createBand = useCallback((bandName: string, memberIds: string[]): void => {
+    if (gameState.playerData.level < 4) {
       toast({
-        title: "Invalid Band Creation",
-        description: "Band name and at least one member are required.",
+        title: "Level Requirement",
+        description: "You need to be level 4 to create a band.",
         variant: "destructive"
       });
       return;
     }
 
-    // Check if all selected staff members exist and are available
-    const selectedStaff = gameState.hiredStaff.filter(staff => memberIds.includes(staff.id));
-    if (selectedStaff.length !== memberIds.length) {
+    if (memberIds.length === 0) {
       toast({
-        title: "Invalid Staff Selection",
-        description: "Some selected staff members are not available.",
+        title: "No Members Selected",
+        description: "Please select at least one member for your band.",
         variant: "destructive"
       });
       return;
     }
-
-    // Determine the most common genre among band members
-    const genreMap: Record<string, number> = {};
-    selectedStaff.forEach(staff => {
-      // Use staff's highest skill as their preferred genre
-      const skills = staff.primaryStats;
-      const topSkill = Math.max(skills.creativity, skills.technical);
-      const genre = topSkill === skills.creativity ? 'Rock' : 'Pop'; // Simple mapping
-      genreMap[genre] = (genreMap[genre] || 0) + 1;
-    });
-    
-    const bandGenre = Object.entries(genreMap).reduce((a, b) => 
-      genreMap[a[0]] > genreMap[b[0]] ? a : b
-    )[0] || 'Rock';
 
     const newBand: Band = {
       id: `band_${Date.now()}`,
-      bandName: bandName.trim(),
-      genre: bandGenre,
-      memberIds: memberIds,
+      bandName,
+      genre: 'Rock', // Default genre
+      memberIds,
       fame: 0,
       notoriety: 0,
       pastReleases: [],
+      reputation: 0, // Added
+      experience: 0, // Added
+      fans: 0, // Added
+      performanceHistory: [], // Added
       tourStatus: {
         isOnTour: false,
         daysRemaining: 0,
         dailyIncome: 0
-      }
+      },
+      isPlayerCreated: true
     };
 
-    setGameState(prev => ({
+    updateGameState((prev: GameState) => ({
       ...prev,
       playerBands: [...prev.playerBands, newBand]
     }));
 
     toast({
-      title: "🎸 Band Created!",
-      description: `${bandName} is ready to make music!`,
-      duration: 3000
+      title: "Band Created",
+      description: `${bandName} has been formed!`,
     });
+  }, [gameState.playerData.level, updateGameState]);
 
-    console.log('Band created successfully:', newBand);
-  }, [gameState.hiredStaff, setGameState]);
-
-  const startTour = useCallback((bandId: string) => {
-    console.log('Starting tour for band:', bandId);
-    
+  const startTour = useCallback((bandId: string): void => {
     const band = gameState.playerBands.find(b => b.id === bandId);
-    if (!band) {
+    if (!band) return;
+
+    if (band.tourStatus.isOnTour) {
       toast({
-        title: "Band Not Found",
-        description: "Cannot start tour for unknown band.",
+        title: "Already on Tour",
+        description: "This band is already on tour.",
         variant: "destructive"
       });
       return;
@@ -88,148 +80,171 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
     if (band.fame < 50) {
       toast({
         title: "Not Enough Fame",
-        description: "Your band needs at least 50 fame to go on tour.",
+        description: "Your band needs at least 50 fame points to start a tour.",
         variant: "destructive"
       });
       return;
     }
 
-    if (band.tourStatus.isOnTour) {
+    const tourCost = 5000; // $5000 per day
+    if (gameState.playerData.money < tourCost) {
       toast({
-        title: "Already on Tour",
-        description: "This band is already touring.",
+        title: "Not Enough Money",
+        description: `You need $${tourCost} to start a tour.`,
         variant: "destructive"
       });
       return;
     }
 
-    const dailyIncome = band.fame * 100;
-
-    setGameState(prev => ({
+    updateGameState((prev: GameState) => ({
       ...prev,
-      playerBands: prev.playerBands.map(b =>
-        b.id === bandId
-          ? {
-              ...b,
-              tourStatus: {
-                isOnTour: true,
-                daysRemaining: 5,
-                dailyIncome: dailyIncome
-              }
-            }
-          : b
-      ),
-      hiredStaff: prev.hiredStaff.map(staff =>
-        band.memberIds.includes(staff.id)
-          ? { ...staff, status: 'On Tour' as const }
-          : staff
+      playerData: {
+        ...prev.playerData,
+        money: prev.playerData.money - tourCost
+      },
+      playerBands: prev.playerBands.map((b: Band) => 
+        b.id === bandId ? {
+          ...b,
+          tourStatus: {
+            isOnTour: true,
+            daysRemaining: 7, // Default 7-day tour
+            dailyIncome: b.fame * 100 // $100 per fame point
+          }
+        } : b
       )
     }));
 
     toast({
-      title: "🚌 Tour Started!",
-      description: `${band.bandName} is on tour, earning $${dailyIncome} per day!`,
-      duration: 3000
+      title: "Tour Started",
+      description: `${band.bandName} has started their tour!`,
     });
-  }, [gameState.playerBands, setGameState]);
+  }, [gameState.playerBands, gameState.playerData.money, updateGameState]);
 
-  const createOriginalTrack = useCallback((bandId: string) => {
-    console.log('Creating original track for band:', bandId);
-    
+  const trainBand = useCallback((bandId: string): void => {
     const band = gameState.playerBands.find(b => b.id === bandId);
-    if (!band) {
+    if (!band) return;
+
+    if (band.tourStatus.isOnTour) {
       toast({
-        title: "Band Not Found",
-        description: "Cannot create track for unknown band.",
+        title: "Cannot Train",
+        description: "Cannot train while the band is on tour.",
         variant: "destructive"
       });
       return;
     }
 
-    if (gameState.activeProject || gameState.activeOriginalTrack) {
+    const trainingCost = band.memberIds.length * 1000; // $1000 per member
+    if (gameState.playerData.money < trainingCost) {
       toast({
-        title: "Studio Busy",
-        description: "Complete your current project first.",
+        title: "Not Enough Money",
+        description: `You need $${trainingCost} to train the band.`,
         variant: "destructive"
       });
       return;
     }
 
-    // Create an original track project
-    const originalTrack = {
-      id: `original_${Date.now()}`,
-      bandId: bandId,
-      trackTitle: `${band.bandName} - New Track`,
-      genre: band.genre,
-      startDate: gameState.currentDay,
-      estimatedDays: 7,
-      stage: 'writing' as const
-    };
-
-    setGameState(prev => ({
+    updateGameState((prev: GameState) => ({
       ...prev,
-      activeOriginalTrack: originalTrack
+      playerData: {
+        ...prev.playerData,
+        money: prev.playerData.money - trainingCost
+      },
+      hiredStaff: prev.hiredStaff.map(staff => 
+        band.memberIds.includes(staff.id) ? {
+          ...staff,
+          primaryStats: {
+            ...staff.primaryStats,
+            creativity: Math.min(100, staff.primaryStats.creativity + 5),
+            technical: Math.min(100, staff.primaryStats.technical + 5)
+          }
+        } : staff
+      )
     }));
 
     toast({
-      title: "🎵 Original Track Started!",
-      description: `${band.bandName} is working on a new track!`,
-      duration: 3000
+      title: "Training Complete",
+      description: `${band.bandName}'s skills have improved!`,
     });
-  }, [gameState.playerBands, gameState.activeProject, gameState.activeOriginalTrack, gameState.currentDay, setGameState]);
+  }, [gameState.playerBands, gameState.playerData.money, updateGameState]);
 
-  const processTourIncome = useCallback(() => {
-    let totalIncome = 0;
-    
-    setGameState(prev => {
-      const updatedBands = prev.playerBands.map(band => {
-        if (band.tourStatus.isOnTour && band.tourStatus.daysRemaining > 0) {
-          totalIncome += band.tourStatus.dailyIncome;
-          const newDaysRemaining = band.tourStatus.daysRemaining - 1;
-          
-          if (newDaysRemaining === 0) {
-            // Tour complete, set staff to resting
-            return {
-              ...band,
-              tourStatus: {
-                isOnTour: false,
-                daysRemaining: 0,
-                dailyIncome: 0
-              }
-            };
-          } else {
-            return {
-              ...band,
-              tourStatus: {
-                ...band.tourStatus,
-                daysRemaining: newDaysRemaining
-              }
-            };
-          }
-        }
-        return band;
-      });
+  const fireBandMember = useCallback((bandId: string, memberId: string): void => {
+    const band = gameState.playerBands.find(b => b.id === bandId);
+    if (!band) return;
 
-      return {
-        ...prev,
-        playerBands: updatedBands,
-        money: prev.money + totalIncome
-      };
-    });
-
-    if (totalIncome > 0) {
+    if (band.tourStatus.isOnTour) {
       toast({
-        title: "🎤 Tour Income",
-        description: `Earned $${totalIncome} from touring bands!`,
-        duration: 2000
+        title: "Cannot Fire",
+        description: "Cannot fire members while the band is on tour.",
+        variant: "destructive"
       });
+      return;
     }
-  }, [setGameState]);
+
+    updateGameState((prev: GameState) => ({
+      ...prev,
+      playerBands: prev.playerBands.map((b: Band) => 
+        b.id === bandId ? {
+          ...b,
+          memberIds: b.memberIds.filter(id => id !== memberId)
+        } : b
+      )
+    }));
+
+    toast({
+      title: "Member Fired",
+      description: "The member has been removed from the band.",
+    });
+  }, [gameState.playerBands, updateGameState]);
+
+  const hireSessionMusician = useCallback((bandId: string, musicianId: string): void => {
+    const band = gameState.playerBands.find(b => b.id === bandId);
+    const musician = gameState.availableSessionMusicians.find(m => m.id === musicianId);
+    if (!band || !musician) return;
+
+    if (band.tourStatus.isOnTour) {
+      toast({
+        title: "Cannot Hire",
+        description: "Cannot hire musicians while the band is on tour.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (gameState.playerData.money < musician.dailyRate) {
+      toast({
+        title: "Not Enough Money",
+        description: `You need $${musician.dailyRate} to hire this musician.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    updateGameState((prev: GameState) => ({
+      ...prev,
+      playerData: {
+        ...prev.playerData,
+        money: prev.playerData.money - musician.dailyRate
+      },
+      playerBands: prev.playerBands.map((b: Band) => 
+        b.id === bandId ? {
+          ...b,
+          memberIds: [...b.memberIds, musicianId]
+        } : b
+      ),
+      availableSessionMusicians: prev.availableSessionMusicians.filter(m => m.id !== musicianId)
+    }));
+
+    toast({
+      title: "Musician Hired",
+      description: `${musician.name} has joined ${band.bandName}!`,
+    });
+  }, [gameState.playerBands, gameState.availableSessionMusicians, gameState.playerData.money, updateGameState]);
 
   return {
     createBand,
     startTour,
-    createOriginalTrack,
-    processTourIncome
+    trainBand,
+    fireBandMember,
+    hireSessionMusician
   };
 };

@@ -1,4 +1,4 @@
-import { GameState, PlayerAttributes, Project, ProjectCompletionResult, StudioSkill, MilestoneReward, StudioSkillBonus, UnlockedFeatureInfo, PlayerAbilityChange } from '@/types/game'; // Removed STUDIO_SKILLS, added missing types
+import { GameState, PlayerAttributes, Project, ProjectReport, StudioSkill, MilestoneReward, StudioSkillBonus, UnlockedFeatureInfo, PlayerAbilityChange } from '@/types/game'; // Removed STUDIO_SKILLS, added missing types
 
 // Placeholder for studio skill templates - this would ideally come from a data file
 const STUDIO_SKILL_TEMPLATES: Record<string, { name: string; bonuses: StudioSkillBonus }> = {
@@ -227,7 +227,7 @@ export const checkCriticalSuccess = (criticalChance: number): boolean => {
   return Math.random() * 100 < criticalChance;
 };
 
-export const applyCriticalSuccess = (result: ProjectCompletionResult): ProjectCompletionResult => {
+export const applyCriticalSuccess = (result: ProjectReport): ProjectReport => {
   const CRITICAL_MULTIPLIER = 1.5; // 50% bonus on critical success
   
   return {
@@ -249,9 +249,9 @@ export const applyCriticalSuccess = (result: ProjectCompletionResult): ProjectCo
 
 // Apply attribute effects to project completion
 export const applyAttributesToCompletion = (
-  result: ProjectCompletionResult,
+  result: ProjectReport,
   attributes: PlayerAttributes
-): ProjectCompletionResult => {
+): ProjectReport => {
   const effects = calculateAttributeEffects(attributes);
   let updatedResult = {
     ...result,

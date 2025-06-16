@@ -1,6 +1,6 @@
-# Recording Studio Tycoon - 2024 Changelog
+# Recording Studio Tycoon - Latest Changes
 
-## [1.0.0] - 2024-03-20
+## [1.0.0] - 2025-03-20
 
 ### Added
 - Complete minigame system implementation
@@ -22,20 +22,4 @@
 ### Fixed
 - Documentation inconsistencies
 - Missing minigame type definitions
-- Incorrect file references
-
-## [0.9.0] - 2024-03-15
-
-### Added
-- Initial minigame system framework
-- Basic documentation structure
-- Core gameplay mechanics
-
-### Changed
-- Updated project structure
-- Improved code organization
-
-### Fixed
-- TypeScript type definitions
-- Import/export issues
-- Documentation formatting 
+- Incorrect file references 

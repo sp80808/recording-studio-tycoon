@@ -1,27 +1,28 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { GameState, PlayerAttributes, StaffMember, Equipment } from '@/types/game';
+import { GameState, PlayerAttributes, StaffMember } from '@/types/game';
 import { SkillsModal } from '@/components/modals/SkillsModal';
 import { AttributesModal } from '@/components/modals/AttributesModal';
-import { ResearchModal } from '@/components/modals/ResearchModal'; // Import ResearchModal
-import { EquipmentModManagementModal } from '@/components/modals/EquipmentModManagementModal'; // Import new modal
-import { availableMods } from '@/data/equipmentMods'; // Import availableMods
+import { ResearchModal } from '@/components/modals/ResearchModal';
+import { EquipmentModManagementModal } from '@/components/modals/EquipmentModManagementModal';
+import { availableMods } from '@/data/equipmentMods';
 import { EquipmentList } from '@/components/EquipmentList';
 import { BandManagement } from '@/components/BandManagement';
 import { ChartsPanel } from '@/components/ChartsPanel';
-import { StudioProgressionPanel } from '@/components/StudioProgressionPanel'; // Add Studio Progression Panel
-import { toast } from '@/hooks/use-toast'; // Import toast
+import { StudioProgressionPanel } from '@/components/StudioProgressionPanel';
+import { StudioExpansion } from '@/components/StudioExpansion';
+import { useStudioExpansion } from '@/hooks/useStudioExpansion';
 
 interface RightPanelProps {
   gameState: GameState;
+  setGameState: React.Dispatch<React.SetStateAction<GameState>>;
   showSkillsModal: boolean;
   setShowSkillsModal: React.Dispatch<React.SetStateAction<boolean>>;
   showAttributesModal: boolean;
   setShowAttributesModal: React.Dispatch<React.SetStateAction<boolean>>;
   spendPerkPoint: (attribute: keyof PlayerAttributes) => void;
   advanceDay: () => void;
-  triggerEraTransition: () => void; // Add era transition function
   purchaseEquipment: (equipmentId: string) => void;
   createBand: (bandName: string, memberIds: string[]) => void;
   startTour: (bandId: string) => void;
@@ -33,19 +34,19 @@ interface RightPanelProps {
   unassignStaffFromProject: (staffId: string) => void;
   toggleStaffRest: (staffId: string) => void;
   openTrainingModal: (staff: StaffMember) => boolean;
-  startResearchMod?: (staffId: string, modId: string) => boolean; // Add prop
-  applyModToEquipment?: (equipmentId: string, modId: string | null) => void; // Add new prop
+  startResearchMod?: (staffId: string, modId: string) => boolean;
+  applyModToEquipment?: (equipmentId: string, modId: string | null) => void;
 }
 
 export const RightPanel: React.FC<RightPanelProps> = ({
   gameState,
+  setGameState,
   showSkillsModal,
   setShowSkillsModal,
   showAttributesModal,
   setShowAttributesModal,
   spendPerkPoint,
   advanceDay,
-  triggerEraTransition,
   purchaseEquipment,
   createBand,
   startTour,
@@ -57,15 +58,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   unassignStaffFromProject,
   toggleStaffRest,
   openTrainingModal,
-  startResearchMod, // Destructure prop
-  applyModToEquipment // Destructure new prop
+  startResearchMod,
+  applyModToEquipment,
 }) => {
   const [activeTab, setActiveTab] = useState<'studio' | 'skills' | 'bands' | 'charts' | 'staff'>('studio');
   const [showResearchModal, setShowResearchModal] = useState(false);
-  // selectedEngineerForResearch is not strictly needed here if ResearchModal handles its own staff selection from gameState
-  // const [selectedEngineerForResearch, setSelectedEngineerForResearch] = useState<GameState['hiredStaff'][0] | null>(null); 
   const [showEquipmentModModal, setShowEquipmentModModal] = useState(false);
   const [selectedEquipmentForModding, setSelectedEquipmentForModding] = useState<GameState['ownedEquipment'][0] | null>(null);
+  const { purchaseExpansion } = useStudioExpansion(gameState, setGameState);
 
   const handleAdvanceDay = () => {
     advanceDay();
@@ -132,7 +132,11 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         <div className="space-y-4">
           <h2 className="text-xl font-bold text-white">Studio Actions</h2>
           
-          {/* Studio Progression Panel */}
+          <StudioExpansion
+            gameState={gameState}
+            onPurchaseExpansion={purchaseExpansion}
+          />
+          
           <StudioProgressionPanel gameState={gameState} />
           
           <Button onClick={handleAdvanceDay} className="w-full bg-purple-600 hover:bg-purple-700 text-white">
@@ -294,18 +298,9 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                     >
                       {staff.status === 'Resting' ? 'End Rest' : 'Rest'}
                     </Button>
-                    {staff.status === 'Idle' && (
-                      <Button 
-                        onClick={() => openTrainingModal(staff)}
-                        className="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-xs py-1"
-                      >
-                        Train
-                      </Button>
-                    )}
                     {staff.role === 'Engineer' && staff.status === 'Idle' && (
                       <Button
                         onClick={() => {
-                          // setSelectedEngineerForResearch(staff); // ResearchModal will handle staff selection internally
                           setShowResearchModal(true);
                         }}
                         className="flex-1 bg-teal-600 hover:bg-teal-700 text-white text-xs py-1"
@@ -365,7 +360,6 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           isOpen={showResearchModal}
           onClose={() => {
             setShowResearchModal(false);
-            // setSelectedEngineerForResearch(null); // No longer needed as modal handles selection
           }}
           gameState={gameState}
           startResearchMod={startResearchMod}

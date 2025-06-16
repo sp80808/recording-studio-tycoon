@@ -16,11 +16,13 @@ export interface TutorialStep {
   content: string;
   target: string;
   position: TutorialPosition;
-  interactive?: boolean;
-  action?: TutorialStepAction;
-  actionHint?: string;
-  nextSteps?: string[];
-  requirements?: TutorialStepRequirements;
+  interactive: boolean;
+  action: {
+    type: 'click' | 'select' | 'drag' | 'slide';
+    selector: string;
+  };
+  actionHint: string;
+  nextSteps: string[];
 }
 
 export interface Tutorial {
@@ -42,6 +44,7 @@ export type TutorialProgress = {
 export interface TutorialState {
   currentStep: TutorialStep | null;
   completedSteps: Set<string>;
+  completedEras: Set<string>;
   preferences: {
     tutorialSpeed: 'slow' | 'normal' | 'fast';
     showHighlights: boolean;
@@ -57,18 +60,20 @@ export interface TutorialStepRequirements {
   gameState?: Record<string, unknown>;
 }
 
-
-export interface TutorialContextAction {
-  type: 'START_TUTORIAL' | 'COMPLETE_STEP' | 'SKIP_TUTORIAL' | 'UPDATE_PREFERENCES' | 'SET_ACTIVE_TUTORIAL';
-  payload?: string | Partial<TutorialPreferences>;
-}
+export type TutorialContextAction =
+  | { type: 'START_TUTORIAL'; payload: { tutorialId: string } }
+  | { type: 'COMPLETE_STEP'; payload: string }
+  | { type: 'SKIP_TUTORIAL' }
+  | { type: 'UPDATE_PREFERENCES'; payload: Partial<TutorialPreferences> }
+  | { type: 'CHECK_ERA_PROGRESSION'; payload: { currentEra: string; playerLevel: number } };
 
 export interface TutorialContextType {
   state: TutorialState;
-  startTutorial: (stepId: string) => void;
+  startTutorial: (tutorialId: string) => void;
   completeStep: (stepId: string) => void;
   skipTutorial: () => void;
   updatePreferences: (preferences: Partial<TutorialPreferences>) => void;
+  checkEraProgression: (currentEra: string, playerLevel: number) => void;
 }
 
 export interface TutorialMetrics {

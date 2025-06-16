@@ -19,13 +19,19 @@
 ### UI/UX
 - [x] Main game interface
 - [x] Tutorial system
-- [ ] Staff Assignment Improvements (In Progress)
-  - [ ] Direct assignment from project window
-  - [ ] Smart slider automation
-  - [ ] Quick access workflow
-- [ ] Store Interface Enhancement
-  - [ ] Clean item display
-  - [ ] Smart filtering
+- [x] Staff Assignment Improvements (Completed 16/06/2025)
+  - [x] Enhanced staff assignment interface with filtering and sorting
+  - [x] Project-staff compatibility scoring with visual indicators
+  - [x] Detailed tooltips and hover states
+  - [x] Performance prediction based on assigned team
+  - [x] Integrated staff assignment section in project window
+- [x] Store Interface Enhancement (Completed 16/06/2025)
+  - [x] Clean item display with modern card-based layout
+  - [x] Smart filtering with comprehensive search and categorization
+  - [x] Advanced sorting options (price, name, category, year, quality)
+  - [x] Era-aware equipment availability and vintage pricing
+  - [x] Rich visual feedback with badges and color-coded pricing
+  - [x] Tabbed category view with responsive design
 - [x] Charts Panel System (Billboard-style music industry charts, audio preview, artist contact, market trends)
 - [x] Equipment Detail System (technical specifications, graphs)
 - [x] Advanced Animation System (era transitions, project completion celebrations)

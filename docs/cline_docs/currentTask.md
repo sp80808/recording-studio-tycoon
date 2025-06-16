@@ -1,107 +1,49 @@
-# Current Task: Staff Assignment UX Improvements & Post-Update Integration
+# Current Task: Phase 2 Enhancements - Dynamic Market & Reputation Systems
 
-## Status: In Progress
+## Status: Starting Phase 2 (16/06/2025)
 
-### Staff Assignment UX Improvements
-- [ ] Project Window Staff Integration
-- [ ] Smart Slider Automation
-- [ ] Utility Functions Implementation
-- [ ] UX Enhancements
-- [ ] System Integration
+## Previously Completed (Staff Assignment & Post-Update Integration)
+- [x] Staff Assignment UX Improvements (Completed 16/06/2025)
+- [x] Store Interface Enhancement (Completed 16/06/2025)
+- [x] Post-Update Review and Refinement (Completed 16/06/2025)
+  - Verified Charts Panel System
+  - Verified Equipment Detail System
+  - Verified Advanced Animation System
+  - Verified New Minigames (Effect Chain, Acoustic Treatment, Instrument Layering)
+  - Updated relevant documentation
 
-### Post-Update Review and Refinement
-- [ ] Verify functionality of Charts Panel System
-- [ ] Verify functionality of Equipment Detail System
-- [ ] Verify functionality of Advanced Animation System
-- [ ] Verify functionality of new Minigames (Effect Chain, Acoustic Treatment, Instrument Layering)
-- [ ] Review and update relevant documentation for newly integrated features
+## Current Focus: Phase 2 Enhancements
 
-## Detailed Implementation Plan
+### 1. Dynamic Market Trends & Sub-Genre Evolution
+- [ ] Define `MarketTrend` Interface (genreId, subGenreId, popularity, trendDirection)
+- [ ] Define `SubGenre` structure and association with main Genres
+- [ ] Create `MarketService`
+  - [ ] Logic for periodic `MarketTrend` updates (time, player releases, global events)
+  - [ ] Methods to query current popularity for Genre/SubGenre
+- [ ] Integration with Projects & Charts
+  - [ ] Modify Appeal/ChartScore of `OriginalMusicProject` based on trends
+  - [ ] Influence `ContractProject` value based on trends
+- [ ] Conceptualize UI Feedback (e.g., "Music Industry Report" component, `useMarketTrends` hook)
 
-### 1. Project Window Staff Integration
-- [x] Create StaffAssignmentSection component
-- [x] Implement StaffCard component
-- [x] Add staff filtering capabilities
-- [x] Enable direct assignment/unassignment (via StaffCard and onAssign/onUnassign props)
-- [x] Display relevant staff stats and skills (in StaffCard)
+### 2. Reputation & Relationship Management (Clients/Artists/Labels)
+- [ ] Define `Client` / `RecordLabel` Interfaces (id, name, relationshipScore, preferredGenres/Moods)
+- [ ] Create `RelationshipService`
+  - [ ] Manage `relationshipScore` for entities
+  - [ ] Methods for `increaseRelationship` / `decreaseRelationship`
+  - [ ] Logic for updates based on project completion, success, favors
+- [ ] Tiered Contract Generation
+  - [ ] Modify `ContractGenerationService` to use relationships for contract offers
+- [ ] Consequences of Low Relationship (blacklisting, negative PR)
 
-### 2. Smart Slider Automation
-- [x] Implement calculateStaffProjectMatch utility (initial placeholder in `staffAssignmentUtils.ts`)
-- [x] Create getOptimalSliderPositions function (initial placeholder in `staffAssignmentUtils.ts`, returns `FocusAllocation`)
-- [x] Add auto-optimize button and handler (integrated into `ActiveProject.tsx` using `getOptimalSliderPositions`)
-- [ ] Develop visual feedback system (slider colors partially implemented in `ActiveProject.tsx`)
-
-### 3. Utility Functions
-- [x] calculateStaffProjectMatch (in `staffAssignmentUtils.ts`)
-  - Input: StaffMember, Project
-  - Output: Match score (0-100)
-- [x] getOptimalSliderPositions (in `staffAssignmentUtils.ts`)
-  - Input: StaffMember[], ProjectStage
-  - Output: FocusAllocation object (including `reasoning`)
-- [x] predictProjectOutcome (in `staffAssignmentUtils.ts`)
-  - Input: Current assignments
-  - Output: Quality/speed predictions
-
-### 4. UX Improvements
-- [ ] Tooltip system for staff suitability
-- [ ] Hover states for detailed stats
-- [ ] Visual feedback for auto-optimization
-- [ ] Quick filter controls
-
-### 5. Integration Points
-- [ ] Update useStaffManagement hook
-- [ ] Modify useStageWork calculations
-- [ ] Adjust project status computations
-
-## Recently Integrated Features (from Prototype v0.3.0)
-- **Charts Panel System**: Billboard-style music industry charts with audio preview, artist contact, and market trends.
-- **Equipment Detail System**: Comprehensive technical specifications with frequency response graphs and harmonic distortion visualization.
-- **Advanced Animation System**: Enhanced visual feedback including era transition cinematics and project completion celebrations.
-- **Advanced Minigames Suite**: Effect Chain Building Game, Acoustic Treatment Game, and Instrument Layering Game.
-
-## Success Criteria
-- [ ] Staff assignment workflow reduced to ≤3 clicks
-- [ ] Auto-optimization accuracy ≥90%
-- [ ] Performance maintains <100ms response time with 20 staff
-- [ ] Clear visual feedback on all interactions
-- [ ] All newly integrated features are stable and functional.
-
-## Technical Notes
-```tsx
-// StaffAssignmentSection Props
-interface StaffAssignmentSectionProps {
-  projectId: string;
-  availableStaff: StaffMember[];
-  assignedStaff: StaffMember[];
-  onAssign: (staffId: string) => void;
-  onUnassign: (staffId: string) => void;
-  onAutoOptimize: () => void;
-}
-
-// StaffCard Props
-interface StaffCardProps {
-  staff: StaffMember;
-  projectMatch: number;
-  isAssigned: boolean;
-  onAction: () => void;
-}
-```
+### 3. Studio Perks & Specializations
+- [ ] Define `StudioPerk` Interface (id, name, description, category, unlockConditions, effects)
+- [ ] Create `StudioUpgradeService`
+  - [ ] Manage available and unlocked perks
+  - [ ] Logic for applying perk effects to game state
+  - [ ] UI for perk tree/list (conceptual)
 
 ## Next Steps
-1. Continue with Staff Assignment UX Improvements as planned.
-2. Begin verification and refinement of newly integrated features.
-3. Update `codebaseSummary.md` to reflect the new components and systems.
-
-## Risks & Mitigation
-- Performance issues with many staff:
-  - Implement virtual scrolling
-  - Add debouncing to calculations
-- Complex matching logic:
-  - Start with simple scoring
-  - Gradually add complexity
-- UI clutter:
-  - Use progressive disclosure
-  - Implement clean, minimal design
-- Integration conflicts from prototype:
-  - Thorough testing of all integrated features.
-  - Review code for potential overlaps or breaking changes.
+1. Begin implementation of "Dynamic Market Trends & Sub-Genre Evolution".
+2. Define necessary TypeScript interfaces and data structures.
+3. Develop the `MarketService` for managing market dynamics.
+4. Plan integration points with existing game systems.

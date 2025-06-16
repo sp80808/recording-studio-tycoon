@@ -68,9 +68,9 @@
 - [api/rate_limits.md](api/rate_limits.md) - API rate limits and usage
 
 ## Changelog
-- [changelog/README.md](changelog/README.md) - Changelog overview
-- [changelog/2024.md](changelog/2024.md) - 2024 changelog
-- [changelog/2023.md](changelog/2023.md) - 2023 changelog
+- [changelog/README.md](changelog/README.md) - Changelog overview and format
+- [changelog/CHANGELOG.md](changelog/CHANGELOG.md) - Complete version history
+- [changelog/LATEST.md](changelog/LATEST.md) - Most recent changes
 
 ## Architecture Documentation
 - [architecture/README.md](architecture/README.md) - Architecture overview

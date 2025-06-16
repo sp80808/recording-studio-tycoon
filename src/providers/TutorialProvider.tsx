@@ -1,19 +1,19 @@
 import React, { createContext, useReducer } from 'react';
-import { TutorialState, TutorialAction, TutorialContextType } from '@/types/tutorial';
+import { TutorialState, TutorialContextAction, TutorialContextType } from '@/types/tutorial';
 import { tutorialReducer } from '@/reducers/tutorialReducer';
 
 const initialState: TutorialState = {
   currentStep: null,
   completedSteps: new Set<string>(),
+  completedEras: new Set<string>(),
   preferences: {
     tutorialSpeed: 'normal',
     showHighlights: true,
     showTooltips: true,
     soundEnabled: true,
-    language: 'en', // Added language
-    theme: 'dark', // Added theme
   },
   history: [],
+  activeTutorialId: null,
 };
 
 export const TutorialContext = createContext<TutorialContextType>({
@@ -22,13 +22,14 @@ export const TutorialContext = createContext<TutorialContextType>({
   completeStep: () => {},
   skipTutorial: () => {},
   updatePreferences: () => {},
+  checkEraProgression: () => {},
 });
 
 export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(tutorialReducer, initialState);
 
-  const startTutorial = (stepId: string) => {
-    dispatch({ type: 'START_TUTORIAL', payload: stepId });
+  const startTutorial = (tutorialId: string) => {
+    dispatch({ type: 'START_TUTORIAL', payload: { tutorialId } });
   };
 
   const completeStep = (stepId: string) => {
@@ -43,6 +44,10 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     dispatch({ type: 'UPDATE_PREFERENCES', payload: preferences });
   };
 
+  const checkEraProgression = (currentEra: string, playerLevel: number) => {
+    dispatch({ type: 'CHECK_ERA_PROGRESSION', payload: { currentEra, playerLevel } });
+  };
+
   return (
     <TutorialContext.Provider
       value={{
@@ -51,6 +56,7 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         completeStep,
         skipTutorial,
         updatePreferences,
+        checkEraProgression,
       }}
     >
       {children}

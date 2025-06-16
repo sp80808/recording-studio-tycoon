@@ -44,8 +44,15 @@ export const generateStaffMember = (role: StaffRole): StaffMember => {
   // Adjust stats based on role
   if (roleSkills[role]) {
     roleSkills[role].forEach(skillName => {
-      // This cast is necessary because skillName is a string, but primaryStats expects a keyof StaffStats
-      (primaryStats as any)[skillName] = Math.min(100, (primaryStats as any)[skillName] + 10 + Math.floor(Math.random() * 10)); // Boost relevant stats
+      if (skillName in primaryStats) {
+        const key = skillName as keyof StaffStats;
+        // Ensure the property exists and is a number before arithmetic operation
+        const currentValue = typeof primaryStats[key] === 'number' ? primaryStats[key] : 0;
+        primaryStats[key] = Math.min(100, currentValue + 10 + Math.floor(Math.random() * 10)); // Boost relevant stats
+      }
+      // Skills not in primaryStats (e.g., 'soundDesign', 'arrangement') are currently ignored here.
+      // If these are meant to be initialized or boosted elsewhere (e.g., staff.skills),
+      // that logic would need to be added.
     });
   }
 

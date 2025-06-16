@@ -1,15 +1,5 @@
-
-export interface Band {
-  id: string;
-  bandName: string;
-  genre: string;
-  fame: number;
-  notoriety: number;
-  memberIds: string[]; // Staff member IDs
-  isPlayerCreated: boolean;
-  pastReleases: BandRelease[];
-  tourStatus: TourStatus;
-}
+import { StudioSkill } from './game'; // Assuming StudioSkill is correctly in game.ts or will be
+import { PerformanceHistoryEntry, PerformanceRating } from './performance';
 
 export interface BandRelease {
   id: string;
@@ -40,10 +30,14 @@ export interface SessionMusician {
 export interface OriginalTrackProject {
   id: string;
   title: string;
-  bandId?: string; // For band projects
-  sessionMusicianIds: string[]; // For producer/artist mode
+  bandId?: string;
+  sessionMusicianIds: string[];
   mode: 'band' | 'producer';
-  stages: OriginalTrackStage[];
+  stages: {
+    name: string;
+    progress: number;
+    requiredProgress: number;
+  }[];
   currentStageIndex: number;
   accumulatedCPoints: number;
   accumulatedTPoints: number;
@@ -57,3 +51,51 @@ export interface OriginalTrackStage {
   workUnitsCompleted: number;
   completed: boolean;
 }
+
+// StaffStats and StaffMember might be better in a general staff.ts or game.ts
+export interface StaffStats {
+  creativity: number;
+  technical: number;
+  speed: number;
+}
+
+export interface StaffMember {
+  id: string;
+  name: string;
+  role: string;
+  primaryStats: StaffStats;
+  status: 'Idle' | 'Working' | 'Resting' | 'Training' | 'On Tour';
+  xpInRole: number;
+  levelInRole: number;
+  genreAffinity: {
+    genre: string;
+    bonus: number;
+  } | null;
+  mood: number;
+  salary: number;
+  skills?: Record<string, StudioSkill>;
+}
+
+export interface Band {
+  id: string;
+  bandName: string;
+  genre: string;
+  memberIds: string[];
+  fame: number;
+  notoriety: number;
+  pastReleases: BandRelease[]; // Uses the re-added BandRelease
+  reputation: number;
+  experience: number;
+  fans: number;
+  performanceHistory: PerformanceHistoryEntry[];
+  tourStatus: TourStatus; // Uses the defined TourStatus interface
+  trainingStatus?: {
+    isTraining: boolean;
+    trainingType: string;
+    daysRemaining: number;
+  };
+  isPlayerCreated: boolean;
+}
+
+// TourVenue and TourStop are defined in src/types/tours.ts
+// Tour is defined in src/types/tours.ts

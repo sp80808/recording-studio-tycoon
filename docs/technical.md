@@ -39,6 +39,8 @@
 - **Responsive Design**: Implementing Tailwind CSS for a mobile-first approach and responsive layouts.
 - **Accessibility (A11y)**: Prioritizing accessibility features in UI components and interactions.
 - **Modular File Structure**: Organizing code into `src/components`, `src/hooks`, `src/utils`, `src/data`, `src/types`, `src/services`, etc., for clear separation of concerns.
+- **Service Layer Architecture**: Implementing dedicated service classes for complex game systems (Market Trends, Relationships, Studio Upgrades).
+- **Type-Driven Development**: Extensive use of TypeScript interfaces and types for game entities, ensuring compile-time safety.
 
 ### Design Patterns in Use
 - **Observer Pattern**: For event handling and state changes (e.g., notifications, game events).

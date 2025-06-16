@@ -6,7 +6,7 @@ import { toast } from '@/hooks/use-toast';
 
 interface UseProjectManagementProps {
   gameState: GameState;
-  setGameState: (state: GameState | ((prev: GameState) => GameState)) => void;
+  setGameState: (updater: (prevState: GameState) => GameState) => void;
 }
 
 export const useProjectManagement = ({ gameState, setGameState }: UseProjectManagementProps) => {

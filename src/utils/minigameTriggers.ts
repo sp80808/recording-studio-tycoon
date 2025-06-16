@@ -9,93 +9,161 @@ interface MinigameTriggerDefinition {
   equipmentRequired?: string[];
   stageRequired?: string[];
   focusThreshold?: { type: keyof FocusAllocation; min: number };
+  genreBonus?: string[]; // Genres that get bonus trigger chance
+  cooldown?: number; // Projects before this minigame can trigger again
 }
 
-// Update minigame types to match centralized definition
+// Update minigame triggers to match the new plan
 const minigameTriggers: MinigameTriggerDefinition[] = [
+  // Analog Era Minigames
   {
-    minigameType: 'rhythm_timing',
-    triggerReason: 'Perfect timing is crucial for this track',
-    priority: 5,
+    minigameType: 'tapeSplicing',
+    triggerReason: 'Tape editing and splicing challenge',
+    priority: 8,
     era: 'analog',
-    focusThreshold: { type: 'performance', min: 30 }
+    equipmentRequired: ['tape_machine', 'splicing_block'],
+    stageRequired: ['editing'],
+    focusThreshold: { type: 'soundCapture', min: 30 },
+    cooldown: 2
   },
   {
-    minigameType: 'vocal_recording',
-    triggerReason: 'Vocal pitch correction needed',
-    priority: 6,
+    minigameType: 'fourTrackRecording',
+    triggerReason: 'Multi-track recording challenge',
+    priority: 9,
     era: 'analog',
-    stageRequired: ['vocal_recording', 'vocal_editing']
+    equipmentRequired: ['four_track_recorder'],
+    stageRequired: ['recording'],
+    focusThreshold: { type: 'performance', min: 40 },
+    cooldown: 2
   },
   {
-    minigameType: 'sound_wave',
-    triggerReason: 'Waveform matching required',
-    priority: 4,
+    minigameType: 'microphonePlacement',
+    triggerReason: 'Microphone positioning challenge',
+    priority: 7,
     era: 'analog',
+    equipmentRequired: ['microphone'],
+    stageRequired: ['recording'],
     focusThreshold: { type: 'soundCapture', min: 25 }
   },
   {
-    minigameType: 'beat_making',
-    triggerReason: 'Beat creation challenge',
-    priority: 7,
-    era: 'digital',
-    focusThreshold: { type: 'layering', min: 35 }
+    minigameType: 'analogConsole',
+    triggerReason: 'Analog mixing console challenge',
+    priority: 8,
+    era: 'analog',
+    equipmentRequired: ['analog_console'],
+    stageRequired: ['mixing'],
+    focusThreshold: { type: 'layering', min: 35 },
+    genreBonus: ['Rock', 'Jazz']
   },
+
+  // Digital Era Minigames
   {
-    minigameType: 'mastering',
-    triggerReason: 'Mastering challenge',
+    minigameType: 'digitalMixing',
+    triggerReason: 'Digital mixing challenge',
     priority: 8,
     era: 'digital',
-    stageRequired: ['mastering']
+    equipmentRequired: ['digital_console', 'daw'],
+    stageRequired: ['mixing'],
+    focusThreshold: { type: 'layering', min: 40 },
+    genreBonus: ['Pop', 'Electronic']
   },
   {
-    minigameType: 'effect_chain',
-    triggerReason: 'Effect chain optimization',
-    priority: 6,
-    era: 'digital',
-    focusThreshold: { type: 'soundCapture', min: 30 }
-  },
-  {
-    minigameType: 'acoustic_tuning',
-    triggerReason: 'Acoustic treatment challenge',
-    priority: 5,
-    era: 'analog',
-    focusThreshold: { type: 'performance', min: 25 }
-  },
-  {
-    minigameType: 'microphone_placement',
-    triggerReason: 'Microphone placement challenge',
-    priority: 4,
-    era: 'analog',
-    stageRequired: ['recording']
-  },
-  {
-    minigameType: 'mastering_chain',
-    triggerReason: 'Mastering chain optimization',
+    minigameType: 'midiProgramming',
+    triggerReason: 'MIDI sequencing challenge',
     priority: 7,
     era: 'digital',
-    stageRequired: ['mastering']
+    equipmentRequired: ['midi_controller'],
+    stageRequired: ['sequencing'],
+    focusThreshold: { type: 'creativity', min: 35 },
+    genreBonus: ['Electronic', 'Pop']
   },
   {
-    minigameType: 'sound_design_synthesis',
-    triggerReason: 'Sound design challenge',
+    minigameType: 'sampleEditing',
+    triggerReason: 'Sample manipulation challenge',
     priority: 6,
     era: 'digital',
-    focusThreshold: { type: 'layering', min: 30 }
+    equipmentRequired: ['sampler'],
+    stageRequired: ['production'],
+    focusThreshold: { type: 'creativity', min: 30 },
+    genreBonus: ['Hip-Hop', 'Electronic']
+  },
+
+  // Internet Era Minigames
+  {
+    minigameType: 'effectChain',
+    triggerReason: 'Effect processing challenge',
+    priority: 8,
+    era: 'internet',
+    equipmentRequired: ['effects_rack'],
+    stageRequired: ['production'],
+    focusThreshold: { type: 'creativity', min: 40 }
   },
   {
-    minigameType: 'pedalboard',
-    triggerReason: 'Pedalboard configuration challenge',
-    priority: 5,
-    era: 'analog',
-    equipmentRequired: ['guitar_pedalboard']
+    minigameType: 'masteringChain',
+    triggerReason: 'Mastering process challenge',
+    priority: 9,
+    era: 'internet',
+    equipmentRequired: ['mastering_equipment'],
+    stageRequired: ['mastering'],
+    focusThreshold: { type: 'technical', min: 45 }
   },
   {
-    minigameType: 'patchbay',
-    triggerReason: 'Patchbay routing challenge',
-    priority: 6,
-    era: 'analog',
-    equipmentRequired: ['patchbay']
+    minigameType: 'acousticTuning',
+    triggerReason: 'Room acoustics challenge',
+    priority: 7,
+    era: 'internet',
+    equipmentRequired: ['acoustic_treatment'],
+    stageRequired: ['studio_setup'],
+    focusThreshold: { type: 'technical', min: 35 }
+  },
+
+  // Modern Era Minigames
+  {
+    minigameType: 'hybridMixing',
+    triggerReason: 'Hybrid mixing challenge',
+    priority: 9,
+    era: 'streaming',
+    equipmentRequired: ['analog_console', 'daw'],
+    stageRequired: ['mixing'],
+    focusThreshold: { type: 'layering', min: 45 }
+  },
+  {
+    minigameType: 'digitalDistribution',
+    triggerReason: 'Digital distribution challenge',
+    priority: 8,
+    era: 'streaming',
+    equipmentRequired: ['internet_connection'],
+    stageRequired: ['release_preparation'],
+    focusThreshold: { type: 'business', min: 40 }
+  },
+  {
+    minigameType: 'socialMediaPromotion',
+    triggerReason: 'Social media promotion challenge',
+    priority: 7,
+    era: 'streaming',
+    equipmentRequired: ['social_media_accounts'],
+    stageRequired: ['marketing'],
+    focusThreshold: { type: 'business', min: 35 }
+  },
+
+  // Streaming Era Minigames
+  {
+    minigameType: 'aiMastering',
+    triggerReason: 'AI-powered mastering challenge',
+    priority: 8,
+    era: 'streaming',
+    equipmentRequired: ['ai_mastering_software'],
+    stageRequired: ['mastering'],
+    focusThreshold: { type: 'technical', min: 40 }
+  },
+  {
+    minigameType: 'streamingOptimization',
+    triggerReason: 'Streaming platform optimization challenge',
+    priority: 9,
+    era: 'streaming',
+    equipmentRequired: ['streaming_platform_accounts'],
+    stageRequired: ['release_preparation'],
+    focusThreshold: { type: 'business', min: 45 }
   }
 ];
 
@@ -133,8 +201,47 @@ export const getMinigameTriggers = (gameState: GameState, project: Project): Min
       }
     }
 
+    // Check genre bonus
+    if (trigger.genreBonus && !trigger.genreBonus.includes(project.genre)) {
+      return false;
+    }
+
+    // Check cooldown
+    if (trigger.cooldown) {
+      const lastTriggered = gameState.lastMinigameTriggers?.[trigger.minigameType];
+      if (lastTriggered && gameState.completedProjects - lastTriggered < trigger.cooldown) {
+        return false;
+      }
+    }
+
     return true;
   });
+};
+
+// Helper function to determine minigame frequency based on project size
+export const getMinigameFrequency = (project: Project): number => {
+  switch (project.difficulty) {
+    case 1: return 2; // Small projects: 2 minigames
+    case 2: return 3; // Medium projects: 3 minigames
+    case 3: return 4; // Large projects: 4 minigames
+    default: return 3;
+  }
+};
+
+// Helper function to adjust difficulty based on player level and equipment
+export const adjustMinigameDifficulty = (
+  baseDifficulty: number,
+  playerLevel: number,
+  equipmentQuality: number,
+  projectComplexity: number
+): number => {
+  const levelAdjustment = Math.max(0, (playerLevel - 1) * 0.1); // 10% reduction per level
+  const equipmentAdjustment = Math.max(0, (equipmentQuality - 1) * 0.15); // 15% reduction per quality level
+  const complexityAdjustment = (projectComplexity - 1) * 0.2; // 20% increase per complexity level
+
+  return Math.max(1, Math.min(10,
+    baseDifficulty * (1 - levelAdjustment - equipmentAdjustment + complexityAdjustment)
+  ));
 };
 
 export const getMinigameRewards = (

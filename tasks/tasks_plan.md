@@ -17,14 +17,21 @@
     - [ ] Touch screen support
     - [ ] Keyboard shortcuts
     - [ ] Gamepad support
-- [ ] **Core Gameplay**:
-    - [ ] Staff management system
-    - [ ] Project management
-    - [ ] Resource management
-    - [ ] Skill systems
+- [x] **Core Gameplay**:
+    - [x] Staff management system
+    - [x] Project management
+    - [x] Resource management
+    - [x] Skill systems
     - [ ] Band management
-    - [ ] Equipment upgrades
+    - [x] Equipment upgrades
     - [ ] Studio expansion
+- [x] **Phase 2 Advanced Systems**:
+    - [x] Dynamic Market Trends & Sub-Genre Evolution
+    - [x] Reputation & Relationship Management (Clients/Artists/Labels)
+    - [x] Studio Perks & Specializations
+    - [ ] UI Integration for Phase 2 systems
+    - [ ] Testing and balancing of new mechanics
+    - [ ] Player feedback integration
 - [ ] **Advanced Save System**:
     - [ ] Save data compression
     - [ ] Incremental saves

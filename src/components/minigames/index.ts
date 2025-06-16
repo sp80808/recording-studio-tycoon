@@ -1,4 +1,4 @@
-import { MinigameTutorialPopup } from './MinigameTutorialPopup';
+// import { MinigameTutorialPopup } from './MinigameTutorialPopup'; // File does not exist
 
 export interface MinigameTutorialContent {
   title: string;
@@ -58,4 +58,44 @@ export const minigameTutorials: Record<string, MinigameTutorialContent> = {
   // },
 };
 
-export { MinigameTutorialPopup };
+// export { MinigameTutorialPopup }; // File does not exist
+
+// Core Recording Minigames
+export { VocalRecordingGame } from './VocalRecordingGame'; // Exists
+export { MicrophonePlacementGame } from './MicrophonePlacementGame';
+export { FourTrackRecordingGame } from './FourTrackRecordingGame'; // Exists
+export { TapeSplicingGame } from './TapeSplicingGame'; // Exists
+
+// Mixing & Production Minigames
+export { MixingBoardGame } from './MixingBoardGame'; // Exists
+export { AnalogConsoleGame } from './AnalogConsoleGame'; // Exists
+export { DigitalMixingGame } from './DigitalMixingGame'; // File exists
+export { HybridMixingGame } from './HybridMixingGame'; // File exists
+export { EffectChainGame } from './EffectChainGame'; // Exists
+export { GuitarPedalBoardGame } from './GuitarPedalBoardGame'; // Exists
+export { PatchBayGame } from './PatchBayGame'; // Exists
+
+// Mastering & Processing Minigames
+export { MasteringGame } from './MasteringGame'; // Exists
+export { MasteringChainGame } from './MasteringChainGame'; // File exists
+// export { AudioRestorationGame } from './AudioRestorationGame'; // File does not exist
+export { AcousticTreatmentGame } from './AcousticTreatmentGame'; // Exists
+
+// Creative & Technical Minigames
+export { RhythmTimingGame } from './RhythmTimingGame'; // Exists
+export { BeatMakingGame } from './BeatMakingGame'; // Exists
+export { SoundWaveGame } from './SoundWaveGame'; // Exists
+// export { SoundDesignGame } from './SoundDesignGame'; // File does not exist
+// export { SoundDesignSynthesisGame } from './SoundDesignSynthesisGame'; // File does not exist
+export { MidiProgrammingGame } from './MidiProgrammingGame'; // Exists
+export { SamplingSequencingGame } from './SamplingSequencingGame'; // Exists
+export { InstrumentLayeringGame } from './InstrumentLayeringGame'; // Exists
+
+// Modern Era Minigames
+export { DigitalDistributionGame } from './DigitalDistributionGame';
+export { SocialMediaPromotionGame } from './SocialMediaPromotionGame';
+export { StreamingOptimizationGame } from './StreamingOptimizationGame';
+export { AIMasteringGame } from './AIMasteringGame';
+
+// Minigame Manager
+export { MinigameManager } from './MinigameManager';

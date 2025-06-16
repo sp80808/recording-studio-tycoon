@@ -1,7 +1,7 @@
 # Current State of Development
 
 ## Current Work Focus
-The current focus is on enhancing core gameplay systems, expanding content, and fleshing out the music industry simulation.
+The current focus is on implementing Phase 2 Advanced Systems: Dynamic Market Trends, Reputation & Relationship Management, and Studio Perks & Specializations. These systems add strategic depth and long-term progression to the core gameplay.
 
 ## Active Decisions and Considerations
 - Implemented new minigames and expanded existing ones.
@@ -22,6 +22,39 @@ The current focus is on enhancing core gameplay systems, expanding content, and 
 - Updated `src/utils/projectUtils.ts` with new staff candidate names and roles.
 - Fixed `src/components/minigames/GuitarPedalBoardGame.tsx` by installing `@dnd-kit` packages and adding missing `icon` property.
 - Refactored and fixed `src/components/ActiveProject.tsx` to resolve multiple errors and improve component logic.
+
+## Recent Phase 2 Implementation (16/06/2025)
+**Advanced Systems Implementation**:
+- **Created `src/types/marketTrends.ts`**: Comprehensive type definitions for market trends system including MarketTrend, SubGenre, MarketAnalysis, and PlayerMarketImpact interfaces.
+- **Created `src/services/marketService.ts`**: Market service managing dynamic trends, sub-genre evolution, player impact tracking, and contract value modifiers.
+- **Created `src/types/relationships.ts`**: Relationship system types including ReputableEntity, RelationshipManager, ContractHistory, and industry reputation tracking.
+- **Created `src/services/relationshipService.ts`**: Comprehensive relationship management service handling client/label interactions, contract generation, and reputation systems.
+- **Created `src/types/studioPerks.ts`**: Extensive perk system types including StudioPerk, PerkTree, StudioSpecialization, IndustryPrestige, and milestone systems.
+- **Created `src/services/studioUpgradeService.ts`**: Studio upgrade service managing perk trees, specializations, industry prestige, and achievement milestones.
+- **Created `src/hooks/useMarketTrends.ts`**: React hook for integrating market trends system with UI components (partially complete, needs TypeScript fixes).
+- **Updated documentation**: Updated `docs/architecture.md`, `docs/technical.md`, `tasks/tasks_plan.md`, and `tasks/active_context.md` to reflect new systems.
+
+## Latest Completed Work: Staff Assignment UX Improvements (16/06/2025)
+**Enhanced Staff Assignment Interface**:
+- **Enhanced `src/utils/staffUtils.ts`**: Added comprehensive staff-project matching system with `calculateStaffProjectMatch`, `getStaffMatchColor`, and `getStaffMatchDescription` functions.
+- **Completely redesigned `src/components/StaffAssignmentSection.tsx`**: 
+  - Added advanced filtering by name, role, and genre
+  - Implemented sorting by match score, name, and level
+  - Added detailed tooltips with comprehensive staff information
+  - Created hover states with expanded stats display
+  - Added visual project performance prediction panel
+  - Implemented color-coded match scoring system
+  - Added assignment counters and status indicators
+- **Successfully integrated with `src/components/ActiveProject.tsx`**: Staff assignment section now appears in the active project interface
+- **Created `src/styles/staffAssignment.css`**: Custom animations and styling for enhanced user experience
+- **Key Features Implemented**:
+  - ✅ Tooltips with detailed staff information
+  - ✅ Hover states with expanded details  
+  - ✅ Project-staff compatibility scoring with visual indicators
+  - ✅ Filter/search functionality
+  - ✅ Visual feedback for optimal assignments
+  - ✅ Performance prediction based on assigned team
+  - ✅ Responsive design with proper scrolling areas
 
 ## Next Steps
 1. Continue with development tasks outlined in `tasks/tasks_plan.md`, focusing on the remaining unchecked items.

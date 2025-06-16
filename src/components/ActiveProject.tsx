@@ -9,6 +9,7 @@ import { AnimatedStatBlobs } from './AnimatedStatBlobs';
 import { OrbAnimationStyles } from './OrbAnimationStyles';
 import { ProjectCompletionCelebration } from './ProjectCompletionCelebration';
 import { EnhancedAnimationStyles } from './EnhancedAnimationStyles';
+import { StaffAssignmentSection } from './StaffAssignmentSection';
 import { toast } from '@/hooks/use-toast';
 import { gameAudio } from '@/utils/audioSystem';
 import {
@@ -37,10 +38,10 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   autoTriggeredMinigame,
   clearAutoTriggeredMinigame
 }) => {
-  const { gameState, updateGameState, focusAllocation, setFocusAllocation } = useGameState(); // Changed setGameState to updateGameState
-  const { performDailyWork } = useGameActions(gameState, updateGameState); // Changed setGameState to updateGameState
-  const { completeProject } = useProjectManagement({ gameState, setGameState: updateGameState }); // Changed setGameState to updateGameState and passed as object
-  const { addStaffXP } = useStaffManagement(gameState, updateGameState); // Changed setGameState to updateGameState
+  const { gameState, updateGameState, focusAllocation, setFocusAllocation } = useGameState();
+  const { performDailyWork } = useGameActions(gameState, updateGameState);
+  const { completeProject } = useProjectManagement({ gameState, setGameState: updateGameState });
+  const { addStaffXP, assignStaffToProject, unassignStaffFromProject } = useStaffManagement(gameState, updateGameState);
 
   const [showMinigame, setShowMinigame] = useState(false);
   const [selectedMinigame, setSelectedMinigame] = useState<MinigameType>('rhythm_timing'); // Changed default to match types
@@ -519,6 +520,25 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             </Button>
           </div>
         </Card>
+        
+        {/* Staff Assignment Section */}
+        <StaffAssignmentSection
+          projectId={project.id}
+          project={project}
+          availableStaff={gameState.hiredStaff.filter(staff => !staff.assignedProjectId || staff.assignedProjectId !== project.id)}
+          assignedStaff={assignedStaffToCurrentProject}
+          onAssign={assignStaffToProject}
+          onUnassign={unassignStaffFromProject}
+          onAutoOptimize={() => {
+            // Auto-optimize logic could go here
+            toast({
+              title: "Auto-Optimize",
+              description: "Staff assignment optimization coming soon!",
+              className: "bg-gray-800 border-gray-600 text-white",
+            });
+          }}
+        />
+        
         <MinigameManager
            isOpen={showMinigame}
           onClose={() => {

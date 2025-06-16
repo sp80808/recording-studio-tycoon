@@ -18,6 +18,9 @@ flowchart TD
     GameLogic --> RewardSystem[Reward System]
     GameLogic --> ChartSystem[Charts & Market System]
     GameLogic --> BandSystem[Band & Song Creation System]
+    GameLogic --> MarketTrendsSystem[Dynamic Market Trends System]
+    GameLogic --> RelationshipSystem[Reputation & Relationship Management]
+    GameLogic --> StudioUpgradeSystem[Studio Perks & Specializations]
 
     SaveSystem --> Cloud[Cloud Storage (Supabase)]
     SaveSystem --> Local[Local Storage]
@@ -48,6 +51,20 @@ flowchart TD
     ChartSystem --> MarketTrends[Market Trends]
     ChartSystem --> SongCharts[Song Charts]
     ChartSystem --> GenrePopularity[Genre Popularity]
+
+    MarketTrendsSystem --> SubGenreEvolution[Sub-Genre Evolution]
+    MarketTrendsSystem --> TrendAnalysis[Market Analysis]
+    MarketTrendsSystem --> PlayerMarketImpact[Player Market Impact]
+
+    RelationshipSystem --> ClientManagement[Client Management]
+    RelationshipSystem --> RecordLabelRelations[Record Label Relations]
+    RelationshipSystem --> ContractGeneration[Dynamic Contract Generation]
+    RelationshipSystem --> ReputationTracking[Industry Reputation]
+
+    StudioUpgradeSystem --> PerkTrees[Studio Perk Trees]
+    StudioUpgradeSystem --> Specializations[Studio Specializations]
+    StudioUpgradeSystem --> IndustryPrestige[Industry Prestige System]
+    StudioUpgradeSystem --> MilestoneTracking[Achievement Milestones]
 ```
 
 ## Component Relationships
@@ -64,10 +81,13 @@ flowchart TD
 - **Reward System**: Distributes rewards (XP, money, items) based on player actions and project outcomes.
 - **Charts & Market System**: Simulates the music industry market, including genre trends, song chart performance, and artist contact opportunities.
 - **Band & Song Creation System**: Manages player-created bands, song development, and their journey to chart success.
+- **Dynamic Market Trends System**: Advanced market simulation with sub-genre evolution, trend analysis, and player impact on market dynamics.
+- **Reputation & Relationship Management**: Comprehensive system for managing relationships with clients, record labels, and industry entities.
+- **Studio Perks & Specializations**: Deep progression system allowing studios to unlock perks, specialize in genres, and build industry prestige.
 
 ## Dependencies
 - UI components depend on Game Logic and Game State.
-- Game Logic depends on Game Data, Save System, Audio System, Minigame System, Progression System, Staff System, Project System, Reward System, and Chart System.
+- Game Logic depends on Game Data, Save System, Audio System, Minigame System, Progression System, Staff System, Project System, Reward System, Chart System, Market Trends System, Relationship System, and Studio Upgrade System.
 - Save System depends on Cloud Storage (Supabase) and Local Storage APIs.
 - Minigame System depends on individual minigame components and their specific logic.
 - Progression System depends on player actions and game events.
@@ -76,6 +96,9 @@ flowchart TD
 - Reward System depends on project outcomes and minigame performance.
 - Chart System depends on game events and simulated market dynamics.
 - Band & Song Creation System depends on player actions, staff skills, and market trends.
+- Market Trends System depends on time progression, player successes, and random market events.
+- Relationship System depends on project completion quality, client preferences, and player reputation.
+- Studio Upgrade System depends on player progression, achievements, and unlocked milestones.
 
 ## Workflow of the Solution
 1. **Game Initialization**: On startup, the game loads saved data (or starts a new game), initializes the game state, and sets up the UI.

@@ -17,19 +17,25 @@ export const projectTemplates: ProjectTemplate[] = [
         stageName: 'Basic Recording',
         focusAreas: ['performance', 'soundCapture'],
         workUnitsBase: 1,
-        requiredSkills: { recording: 1 }
+        requiredSkills: { recording: 1 },
+        stageBonuses: { technical: 1.2 },
+        minigameTriggerId: 'vocalRecording'
       },
       {
         stageName: 'Quick Mix',
         focusAreas: ['mixing'],
         workUnitsBase: 1,
-        requiredSkills: { mixing: 1 }
+        requiredSkills: { mixing: 1 },
+        stageBonuses: { technical: 1.3 },
+        minigameTriggerId: 'mixingBoard'
       },
       {
         stageName: 'Final Touches',
         focusAreas: ['mastering'],
         workUnitsBase: 1,
-        requiredSkills: { mastering: 1 }
+        requiredSkills: { mastering: 1 },
+        stageBonuses: { technical: 1.4 },
+        minigameTriggerId: 'mastering'
       }
     ]
   },
@@ -48,25 +54,33 @@ export const projectTemplates: ProjectTemplate[] = [
         stageName: 'Pre-production',
         focusAreas: ['planning', 'arrangement'],
         workUnitsBase: 3,
-        requiredSkills: { composition: 2 }
+        requiredSkills: { composition: 2 },
+        stageBonuses: { creativity: 1.2 },
+        minigameTriggerId: 'rhythmTiming'
       },
       {
         stageName: 'Recording',
         focusAreas: ['performance', 'soundCapture', 'layering'],
         workUnitsBase: 5,
-        stageBonuses: { creativity: 1 }
+        stageBonuses: { creativity: 1.3 },
+        requiredSkills: { recording: 2 },
+        minigameTriggerId: 'vocalRecording'
       },
       {
         stageName: 'Mixing',
         focusAreas: ['mixing'],
         workUnitsBase: 3,
-        requiredSkills: { mixing: 3 }
+        requiredSkills: { mixing: 3 },
+        stageBonuses: { technical: 1.4 },
+        minigameTriggerId: 'mixingBoard'
       },
       {
         stageName: 'Mastering',
         focusAreas: ['mastering'],
         workUnitsBase: 1,
-        requiredSkills: { mastering: 2 }
+        requiredSkills: { mastering: 2 },
+        stageBonuses: { technical: 1.5 },
+        minigameTriggerId: 'mastering'
       }
     ]
   },
@@ -86,19 +100,25 @@ export const projectTemplates: ProjectTemplate[] = [
         stageName: 'Sound Design',
         focusAreas: ['soundDesign', 'layering'],
         workUnitsBase: 4,
-        requiredSkills: { soundDesign: 3 }
+        requiredSkills: { soundDesign: 3 },
+        stageBonuses: { creativity: 1.4 },
+        minigameTriggerId: 'soundWave'
       },
       {
         stageName: 'Sequencing',
         focusAreas: ['performance', 'arrangement'],
         workUnitsBase: 6,
-        stageBonuses: { technical: 1 }
+        stageBonuses: { technical: 1.3 },
+        requiredSkills: { sequencing: 3 },
+        minigameTriggerId: 'midiProgramming'
       },
       {
         stageName: 'Digital Mix',
         focusAreas: ['mixing', 'mastering'],
         workUnitsBase: 4,
-        requiredSkills: { mixing: 3 }
+        requiredSkills: { mixing: 3 },
+        stageBonuses: { technical: 1.4 },
+        minigameTriggerId: 'mixingBoard'
       }
     ]
   },
@@ -118,25 +138,71 @@ export const projectTemplates: ProjectTemplate[] = [
         stageName: 'Concept Development',
         focusAreas: ['planning', 'soundDesign'],
         workUnitsBase: 5,
-        requiredSkills: { composition: 4 }
+        requiredSkills: { composition: 4 },
+        stageBonuses: { creativity: 1.5 },
+        minigameTriggerId: 'soundWave'
       },
       {
         stageName: 'Production',
         focusAreas: ['performance', 'layering', 'soundDesign'],
         workUnitsBase: 8,
-        stageBonuses: { creativity: 2 }
+        stageBonuses: { creativity: 1.4 },
+        requiredSkills: { production: 4 },
+        minigameTriggerId: 'instrumentLayering'
       },
       {
         stageName: 'Advanced Mixing',
         focusAreas: ['mixing', 'mastering'],
         workUnitsBase: 6,
-        requiredSkills: { mixing: 5 }
+        requiredSkills: { mixing: 5 },
+        stageBonuses: { technical: 1.5 },
+        minigameTriggerId: 'mixingBoard'
       },
       {
         stageName: 'Final Delivery',
         focusAreas: ['mastering', 'delivery'],
         workUnitsBase: 4,
-        requiredSkills: { mastering: 4 }
+        requiredSkills: { mastering: 4 },
+        stageBonuses: { technical: 1.6 },
+        minigameTriggerId: 'mastering'
+      }
+    ]
+  },
+  // Special Project Templates
+  {
+    id: 'film_score_modern',
+    titlePattern: '{genre} Film Score',
+    genre: 'Classical',
+    clientType: 'Commercial',
+    difficulty: 8,
+    durationDaysTotal: 20,
+    payoutBase: 3000,
+    repGainBase: 20,
+    era: 'modern',
+    stages: [
+      {
+        stageName: 'Orchestration',
+        focusAreas: ['composition', 'arrangement'],
+        workUnitsBase: 6,
+        requiredSkills: { composition: 5 },
+        stageBonuses: { creativity: 1.6 },
+        minigameTriggerId: 'instrumentLayering'
+      },
+      {
+        stageName: 'Recording Session',
+        focusAreas: ['performance', 'soundCapture'],
+        workUnitsBase: 8,
+        requiredSkills: { recording: 5 },
+        stageBonuses: { technical: 1.5 },
+        minigameTriggerId: 'vocalRecording'
+      },
+      {
+        stageName: 'Post-Production',
+        focusAreas: ['mixing', 'mastering'],
+        workUnitsBase: 6,
+        requiredSkills: { mixing: 5 },
+        stageBonuses: { technical: 1.6 },
+        minigameTriggerId: 'mixingBoard'
       }
     ]
   }
