@@ -13,7 +13,7 @@ import { ChartsPanel } from '@/components/ChartsPanel';
 import { StudioProgressionPanel } from '@/components/StudioProgressionPanel'; // Add Studio Progression Panel
 import { toast } from '@/hooks/use-toast'; // Import toast
 
-interface RightPanelProps {
+export interface RightPanelProps {
   gameState: GameState;
   showSkillsModal: boolean;
   setShowSkillsModal: React.Dispatch<React.SetStateAction<boolean>>;

@@ -414,16 +414,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   )} */}
                 </div>
                 <div className="relative group">
-                  <div className="absolute -top-6 right-0 text-xs text-gray-400 group-hover:opacity-100 opacity-0 transition-opacity">
-                    {staff && (
-                      <span className="flex items-center gap-1">
-                        <span className="text-blue-300">🎤 {staff.name}</span>
-                        {staff.primaryStats?.creativity && (
-                          <span className="text-green-300">+{Math.round((staff.primaryStats.creativity * 0.05) * 100)}%</span>
-                        )}
-                      </span>
-                    )}
-                  </div>
+                  {/* Tooltip removed as staff variable is not available here */}
                   <Slider
                     value={[focusAllocation.performance]}
                     onValueChange={(value) => {
@@ -462,16 +453,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   )} */}
                 </div>
                 <div className="relative group">
-                  <div className="absolute -top-6 right-0 text-xs text-gray-400 group-hover:opacity-100 opacity-0 transition-opacity">
-                    {staff && (
-                      <span className="flex items-center gap-1">
-                        <span className="text-blue-300">🎛️ {staff.name}</span>
-                        {staff.primaryStats?.technical && (
-                          <span className="text-green-300">+{Math.round((staff.primaryStats.technical * 0.05) * 100)}%</span>
-                        )}
-                      </span>
-                    )}
-                  </div>
+                  {/* Tooltip removed as staff variable is not available here */}
                   <Slider
                     value={[focusAllocation.soundCapture]}
                     onValueChange={(value) => {
@@ -510,16 +492,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   )} */}
                 </div>
                 <div className="relative group">
-                  <div className="absolute -top-6 right-0 text-xs text-gray-400 group-hover:opacity-100 opacity-0 transition-opacity">
-                    {staff && (
-                      <span className="flex items-center gap-1">
-                        <span className="text-blue-300">🎚️ {staff.name}</span>
-                        {staff.primaryStats?.arrangement && (
-                          <span className="text-green-300">+{Math.round((staff.primaryStats.arrangement * 0.05) * 100)}%</span>
-                        )}
-                      </span>
-                    )}
-                  </div>
+                  {/* Tooltip removed as staff variable is not available here */}
                   <Slider
                     value={[focusAllocation.layering]}
                     onValueChange={(value) => {

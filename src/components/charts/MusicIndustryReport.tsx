@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowUp, ArrowDown, MinusCircle, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
-import { MarketTrend, TrendDirection, MusicGenre, SubGenre } from '@/types/charts';
+import { MarketTrend, TrendDirection } from '@/types/charts'; // Removed MusicGenre, SubGenre
 import { marketService } from '@/services/marketService';
 
 interface MusicIndustryReportProps {

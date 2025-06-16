@@ -1,7 +1,7 @@
 
 import { useCallback } from 'react';
 import { GameState } from '@/types/game';
-import { Band } from '@/types/bands';
+import { Band } from '@/types/bands'; // OriginalTrackProject and SessionMusician removed
 import { generateBandName } from '@/utils/bandUtils';
 import { toast } from '@/hooks/use-toast';
 

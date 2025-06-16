@@ -46,6 +46,14 @@ export const minigameTutorials: Record<string, MinigameTutorialContent> = {
       { icon: '🏆', text: 'Meet the target loudness and dynamic range for a professional master.' },
     ],
   },
+  lyricFocus: {
+    title: "Lyrical Focus 📝",
+    instructions: [
+      { icon: '🎯', text: 'Select keywords that best match the given theme and mood.' },
+      { icon: '💭', text: 'Choose carefully - some keywords are distractors that lower your score.' },
+      { icon: '⏰', text: 'Work quickly but thoughtfully - time is limited!' },
+    ],
+  },
   // Add more minigames here as they are developed
   // Example for a new minigame:
   // soundWaveGame: {

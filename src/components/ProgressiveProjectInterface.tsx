@@ -3,10 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Users, Zap } from 'lucide-react';
+import { TrendingUp, Zap } from 'lucide-react'; // Removed Users
 import { GameState, Project, GameNotification, FocusAllocation } from '@/types/game';
 import { ProgressionSystem, ProgressionStatus } from '@/services/ProgressionSystem';
-import { useMultiProjectManagement } from '@/hooks/useMultiProjectManagement';
+// import { useMultiProjectManagement } from '@/hooks/useMultiProjectManagement'; // Commented out if multiProjectProps is unused
 import { MultiProjectDashboard } from '@/components/MultiProjectDashboard';
 import { ActiveProject } from '@/components/ActiveProject';
 import { MinigameType } from '@/components/minigames/MinigameManager';
@@ -37,8 +37,9 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
   clearAutoTriggeredMinigame
 }) => {
   const [progressionStatus, setProgressionStatus] = useState<ProgressionStatus | null>(null);
-  const [showProgressionInfo, setShowProgressionInfo] = useState(false);
+  // const [showProgressionInfo, setShowProgressionInfo] = useState(false); // Unused
   const [lastMilestone, setLastMilestone] = useState<number>(0);
+  const [showMultiProjectInTransition, setShowMultiProjectInTransition] = useState(false); // Lifted state for renderTransitionView
 
   // Provide default focus allocation if not provided
   const defaultFocusAllocation: FocusAllocation = {
@@ -76,7 +77,7 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
     setLastMilestone(currentMilestoneLevel);
   }, [gameState.playerData.level, gameState.hiredStaff.length, lastMilestone, setGameState]);
 
-  const multiProjectProps = useMultiProjectManagement({ gameState, setGameState });
+  // const multiProjectProps = useMultiProjectManagement({ gameState, setGameState }); // Result unused
 
   if (!progressionStatus) {
     return <div>Loading...</div>;
@@ -116,7 +117,7 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
 
   // Render transition view when multi-project is newly unlocked
   const renderTransitionView = () => {
-    const [showMultiProject, setShowMultiProject] = useState(false);
+    // const [showMultiProject, setShowMultiProject] = useState(false); // State lifted
 
     return (
       <div className="space-y-6 h-full overflow-y-auto p-1">        
@@ -132,15 +133,15 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
         {/* Choice between views */}
         <div className="flex items-center justify-center space-x-4 p-4 bg-gray-800 rounded-lg border border-gray-700">
           <Button
-            onClick={() => setShowMultiProject(false)}
-            variant={!showMultiProject ? 'default' : 'outline'}
+            onClick={() => setShowMultiProjectInTransition(false)}
+            variant={!showMultiProjectInTransition ? 'default' : 'outline'}
             className="flex items-center"
           >
             Simple View
           </Button>
           <Button
-            onClick={() => setShowMultiProject(true)}
-            variant={showMultiProject ? 'default' : 'outline'}
+            onClick={() => setShowMultiProjectInTransition(true)}
+            variant={showMultiProjectInTransition ? 'default' : 'outline'}
             className="flex items-center"
           >
             <Zap className="w-4 h-4 mr-2" />
@@ -150,7 +151,7 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
         </div>
 
         {/* Render selected view */}
-        {showMultiProject ? (
+        {showMultiProjectInTransition ? (
           <MultiProjectDashboard
             gameState={gameState}
             setGameState={setGameState}
