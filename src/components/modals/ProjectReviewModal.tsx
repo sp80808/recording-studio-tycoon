@@ -304,7 +304,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
         </DialogHeader>
         {/* Card wrapper for styling consistency, removed its own onClick handler */}
         <Card className="bg-transparent border-0 shadow-none">
-          <CardContent className="overflow-y-auto flex-grow p-6 space-y-3">
+          <CardContent className="overflow-y-auto flex-grow p-6 space-y-3 max-h-[70vh] md:max-h-[80vh]">
             {report.skillBreakdown.length > 0 && (
               <div>
                 <h4 className="text-xl font-semibold text-yellow-200 mb-2">Skill Progression ({report.assignedPerson.name})</h4>
