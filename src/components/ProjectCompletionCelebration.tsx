@@ -129,7 +129,7 @@ export const ProjectCompletionCelebration: React.FC<ProjectCompletionCelebration
       )}
 
       {/* Background overlay */}
-      <div className="absolute inset-0 bg-black/20 animate-fade-in pointer-events-none" />
+      <div className="absolute inset-0 bg-black/75 animate-fade-in pointer-events-none" />
     </div>
   );
 };
