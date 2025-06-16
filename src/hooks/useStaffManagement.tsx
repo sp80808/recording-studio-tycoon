@@ -67,10 +67,16 @@ export const useStaffManagement = (
     if (setFocusAllocation && gameState.activeProject) {
       const project = gameState.activeProject;
       const currentStage = project.stages[project.currentStageIndex];
-      if (currentStage) {
-        const optimalFocus = getStageOptimalFocus(currentStage, project.genre);
-        // For now, directly apply stage/genre optimal. 
-        // Future: adjust based on this specific staff member's skills.
+      if (currentStage && staff) {
+        const optimalFocus = getStageOptimalFocus(
+          currentStage, 
+          project.genre,
+          {
+            ...staff.primaryStats,
+            ...staff.skills,
+            role: staff.role
+          }
+        );
         setFocusAllocation({
           performance: optimalFocus.performance,
           soundCapture: optimalFocus.soundCapture,

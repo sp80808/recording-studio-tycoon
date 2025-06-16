@@ -160,12 +160,42 @@ export const getStageFocusLabels = (stage: ProjectStage): StageFocusLabels => {
 /**
  * Get optimal focus allocation for a specific stage
  */
-export const getStageOptimalFocus = (stage: ProjectStage, genre: string): StageOptimalFocus => {
+export const getStageOptimalFocus = (
+  stage: ProjectStage, 
+  genre: string,
+  staffSkills?: Record<string, number>
+): StageOptimalFocus => {
   const stageName = stage.stageName.toLowerCase();
   
   // Base recommendations by stage type
   let baseFocus: FocusAllocation;
   let reasoning: string;
+  let skillAdjustments = { performance: 1, soundCapture: 1, layering: 1 };
+  
+  // Apply staff skill adjustments if provided
+  if (staffSkills) {
+    // Performance boost from creative skills
+    if (staffSkills.creativity) {
+      skillAdjustments.performance *= 1 + (staffSkills.creativity * 0.05);
+    }
+    
+    // Sound capture boost from technical skills
+    if (staffSkills.technical) {
+      skillAdjustments.soundCapture *= 1 + (staffSkills.technical * 0.05);
+    }
+    
+    // Layering boost from arrangement skills
+    if (staffSkills.arrangement) {
+      skillAdjustments.layering *= 1 + (staffSkills.arrangement * 0.05);
+    }
+    
+    // Role-specific bonuses
+    if (staffSkills.role === 'Engineer') {
+      skillAdjustments.soundCapture *= 1.1;
+    } else if (staffSkills.role === 'Producer') {
+      skillAdjustments.performance *= 1.1;
+    }
+  }
 
   if (stageName.includes('setup') || stageName.includes('recording') || stageName.includes('tracking')) {
     baseFocus = { performance: 45, soundCapture: 40, layering: 15 };
@@ -191,10 +221,12 @@ export const getStageOptimalFocus = (stage: ProjectStage, genre: string): StageO
   const genreModifiers = getGenreModifiers(genre);
   
   return {
-    performance: Math.round(baseFocus.performance * genreModifiers.performance),
-    soundCapture: Math.round(baseFocus.soundCapture * genreModifiers.soundCapture),
-    layering: Math.round(baseFocus.layering * genreModifiers.layering),
-    reasoning: `${reasoning}. ${genreModifiers.reasoning}`
+    performance: Math.round(baseFocus.performance * genreModifiers.performance * skillAdjustments.performance),
+    soundCapture: Math.round(baseFocus.soundCapture * genreModifiers.soundCapture * skillAdjustments.soundCapture),
+    layering: Math.round(baseFocus.layering * genreModifiers.layering * skillAdjustments.layering),
+    reasoning: staffSkills 
+      ? `${reasoning}. ${genreModifiers.reasoning} Adjusted for staff skills.`
+      : `${reasoning}. ${genreModifiers.reasoning}`
   };
 };
 

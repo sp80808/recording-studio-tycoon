@@ -413,22 +413,34 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                     <span className="text-green-400 text-xs">✓ Optimal</span>
                   )} */}
                 </div>
-                <Slider
-                  value={[focusAllocation.performance]}
-                  onValueChange={(value) => {
-                    playSound('slider.wav', 0.3);
-                    setFocusAllocation({...focusAllocation, performance: value[0]});
-                  }}
-                  max={100}
-                  step={5}
-                  className={`w-full transition-all duration-300 ease-in-out ${
-                    Math.abs(focusAllocation.performance - optimalFocus.performance) <= 10 
-                      ? '[&_.bg-primary]:bg-green-500 [&_.border-primary]:border-green-600' 
-                      : Math.abs(focusAllocation.performance - optimalFocus.performance) <= 25
-                        ? '[&_.bg-primary]:bg-yellow-500 [&_.border-primary]:border-yellow-600'
-                        : '[&_.bg-primary]:bg-blue-600'
-                  }`}
-                />
+                <div className="relative group">
+                  <div className="absolute -top-6 right-0 text-xs text-gray-400 group-hover:opacity-100 opacity-0 transition-opacity">
+                    {staff && (
+                      <span className="flex items-center gap-1">
+                        <span className="text-blue-300">🎤 {staff.name}</span>
+                        {staff.primaryStats?.creativity && (
+                          <span className="text-green-300">+{Math.round((staff.primaryStats.creativity * 0.05) * 100)}%</span>
+                        )}
+                      </span>
+                    )}
+                  </div>
+                  <Slider
+                    value={[focusAllocation.performance]}
+                    onValueChange={(value) => {
+                      playSound('slider.wav', 0.3);
+                      setFocusAllocation({...focusAllocation, performance: value[0]});
+                    }}
+                    max={100}
+                    step={5}
+                    className={`w-full transition-all duration-300 ease-in-out ${
+                      Math.abs(focusAllocation.performance - optimalFocus.performance) <= 10 
+                        ? '[&_.bg-primary]:bg-gradient-to-r from-green-400 to-green-600 [&_.border-primary]:border-green-700' 
+                        : Math.abs(focusAllocation.performance - optimalFocus.performance) <= 25
+                          ? '[&_.bg-primary]:bg-gradient-to-r from-yellow-400 to-yellow-600 [&_.border-primary]:border-yellow-700'
+                          : '[&_.bg-primary]:bg-gradient-to-r from-blue-400 to-blue-600'
+                    }`}
+                  />
+                </div>
                 <div className="text-xs text-gray-500 mt-1">
                   💡 {stageFocusLabels.performance.impact}
                 </div>
@@ -449,22 +461,34 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                     <span className="text-green-400 text-xs">✓ Optimal</span>
                   )} */}
                 </div>
-                <Slider
-                  value={[focusAllocation.soundCapture]}
-                  onValueChange={(value) => {
-                    playSound('slider.wav', 0.3);
-                    setFocusAllocation({...focusAllocation, soundCapture: value[0]});
-                  }}
-                  max={100}
-                  step={5}
-                  className={`w-full transition-all duration-300 ease-in-out ${
-                    Math.abs(focusAllocation.soundCapture - optimalFocus.soundCapture) <= 10
-                      ? '[&_.bg-primary]:bg-green-500 [&_.border-primary]:border-green-600'
-                      : Math.abs(focusAllocation.soundCapture - optimalFocus.soundCapture) <= 25
-                        ? '[&_.bg-primary]:bg-yellow-500 [&_.border-primary]:border-yellow-600'
-                        : '[&_.bg-primary]:bg-blue-600'
-                  }`}
-                />
+                <div className="relative group">
+                  <div className="absolute -top-6 right-0 text-xs text-gray-400 group-hover:opacity-100 opacity-0 transition-opacity">
+                    {staff && (
+                      <span className="flex items-center gap-1">
+                        <span className="text-blue-300">🎛️ {staff.name}</span>
+                        {staff.primaryStats?.technical && (
+                          <span className="text-green-300">+{Math.round((staff.primaryStats.technical * 0.05) * 100)}%</span>
+                        )}
+                      </span>
+                    )}
+                  </div>
+                  <Slider
+                    value={[focusAllocation.soundCapture]}
+                    onValueChange={(value) => {
+                      playSound('slider.wav', 0.3);
+                      setFocusAllocation({...focusAllocation, soundCapture: value[0]});
+                    }}
+                    max={100}
+                    step={5}
+                    className={`w-full transition-all duration-300 ease-in-out ${
+                      Math.abs(focusAllocation.soundCapture - optimalFocus.soundCapture) <= 10
+                        ? '[&_.bg-primary]:bg-gradient-to-r from-green-400 to-green-600 [&_.border-primary]:border-green-700'
+                        : Math.abs(focusAllocation.soundCapture - optimalFocus.soundCapture) <= 25
+                          ? '[&_.bg-primary]:bg-gradient-to-r from-yellow-400 to-yellow-600 [&_.border-primary]:border-yellow-700'
+                          : '[&_.bg-primary]:bg-gradient-to-r from-blue-400 to-blue-600'
+                    }`}
+                  />
+                </div>
                 <div className="text-xs text-gray-500 mt-1">
                   💡 {stageFocusLabels.soundCapture.impact}
                 </div>
@@ -485,22 +509,34 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                     <span className="text-green-400 text-xs">✓ Optimal</span>
                   )} */}
                 </div>
-                <Slider
-                  value={[focusAllocation.layering]}
-                  onValueChange={(value) => {
-                    playSound('slider.wav', 0.3);
-                    setFocusAllocation({...focusAllocation, layering: value[0]});
-                  }}
-                  max={100}
-                  step={5}
-                  className={`w-full transition-all duration-300 ease-in-out ${
-                    Math.abs(focusAllocation.layering - optimalFocus.layering) <= 10
-                      ? '[&_.bg-primary]:bg-green-500 [&_.border-primary]:border-green-600'
-                      : Math.abs(focusAllocation.layering - optimalFocus.layering) <= 25
-                        ? '[&_.bg-primary]:bg-yellow-500 [&_.border-primary]:border-yellow-600'
-                        : '[&_.bg-primary]:bg-blue-600'
-                  }`}
-                />
+                <div className="relative group">
+                  <div className="absolute -top-6 right-0 text-xs text-gray-400 group-hover:opacity-100 opacity-0 transition-opacity">
+                    {staff && (
+                      <span className="flex items-center gap-1">
+                        <span className="text-blue-300">🎚️ {staff.name}</span>
+                        {staff.primaryStats?.arrangement && (
+                          <span className="text-green-300">+{Math.round((staff.primaryStats.arrangement * 0.05) * 100)}%</span>
+                        )}
+                      </span>
+                    )}
+                  </div>
+                  <Slider
+                    value={[focusAllocation.layering]}
+                    onValueChange={(value) => {
+                      playSound('slider.wav', 0.3);
+                      setFocusAllocation({...focusAllocation, layering: value[0]});
+                    }}
+                    max={100}
+                    step={5}
+                    className={`w-full transition-all duration-300 ease-in-out ${
+                      Math.abs(focusAllocation.layering - optimalFocus.layering) <= 10
+                        ? '[&_.bg-primary]:bg-gradient-to-r from-green-400 to-green-600 [&_.border-primary]:border-green-700'
+                        : Math.abs(focusAllocation.layering - optimalFocus.layering) <= 25
+                          ? '[&_.bg-primary]:bg-gradient-to-r from-yellow-400 to-yellow-600 [&_.border-primary]:border-yellow-700'
+                          : '[&_.bg-primary]:bg-gradient-to-r from-blue-400 to-blue-600'
+                    }`}
+                  />
+                </div>
                 <div className="text-xs text-gray-500 mt-1">
                   💡 {stageFocusLabels.layering.impact}
                 </div>
