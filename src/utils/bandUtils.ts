@@ -1,5 +1,6 @@
-
-import { Band, SessionMusician } from '@/types/bands';
+import { Band, SessionMusician, OriginalTrackProject } from '@/types/bands';
+import { MusicGenre } from '@/types/charts';
+import { marketService } from '@/services/marketService';
 
 const bandAdjectives = [
   'Electric', 'Crimson', 'Midnight', 'Silver', 'Golden', 'Dark', 'Neon', 'Velvet',
@@ -24,21 +25,26 @@ export const generateBandName = (): string => {
   return `${adjective} ${noun}`;
 };
 
-export const generateAIBand = (genre: string): Band => {
+export const generateAIBand = (genre: MusicGenre): Band => {
   return {
-    id: `ai_band_${Date.now()}_${Math.random()}`,
+    id: `ai_band_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
     bandName: generateBandName(),
     genre,
-    fame: 0,
+    fame: Math.floor(Math.random() * 30), // Start with some initial, low fame
     notoriety: 0,
-    memberIds: [],
+    memberIds: [], // AI bands might not have explicit members initially or managed differently
     isPlayerCreated: false,
     pastReleases: [],
+    reputation: Math.floor(Math.random() * 50), // Initial reputation
+    experience: 0, // Initial experience
+    fans: Math.floor(Math.random() * 1000), // Initial fans
+    performanceHistory: [], // Empty history initially
     tourStatus: {
       isOnTour: false,
       daysRemaining: 0,
       dailyIncome: 0
     }
+    // trainingStatus can be omitted as it's optional
   };
 };
 
@@ -54,8 +60,8 @@ export const generateSessionMusicians = (count: number): SessionMusician[] => {
       id: `session_${Date.now()}_${i}`,
       name: sessionMusicianNames[Math.floor(Math.random() * sessionMusicianNames.length)],
       role: roles[Math.floor(Math.random() * roles.length)],
-      creativity: 20 + Math.floor(Math.random() * 30), // 20-50
-      technical: 20 + Math.floor(Math.random() * 30), // 20-50
+      creativity: 20 + Math.floor(Math.random() * 30), 
+      technical: 20 + Math.floor(Math.random() * 30), 
       hireCost: 500
     });
   }
@@ -64,12 +70,34 @@ export const generateSessionMusicians = (count: number): SessionMusician[] => {
 };
 
 export const calculateReviewScore = (
-  baseQuality: number,
-  assignedStaffSkills: number,
-  randomFactor: number = Math.random() * 4 - 2 // -2 to +2
+  project: Pick<OriginalTrackProject, 'genre' | 'subGenreId'>, 
+  baseQuality: number, 
+  assignedStaffSkills: number, 
+  randomFactor: number = Math.random() * 2 - 1 
 ): number => {
-  const score = baseQuality + (assignedStaffSkills / 10) + randomFactor;
-  return Math.max(1, Math.min(10, Math.round(score * 10) / 10)); // Clamp between 1-10
+  const popularity = marketService.getCurrentPopularity(project.genre, project.subGenreId); 
+
+  let popularityModifier = 0;
+  if (popularity >= 80) {
+    popularityModifier = 0.5 + (popularity - 80) / 20; 
+  } else if (popularity >= 60) {
+    popularityModifier = (popularity - 60) / 20; 
+  } else if (popularity >= 40) {
+    popularityModifier = (popularity - 50) / 20; 
+  } else if (popularity >= 20) {
+    popularityModifier = -1.0 + (popularity - 20) / 20; 
+  } else {
+    popularityModifier = -1.5 + (popularity / 20); 
+  }
+  
+  popularityModifier = Math.max(-1.5, Math.min(1.5, popularityModifier));
+
+  const skillContribution = assignedStaffSkills / 20; 
+  const scaledBaseQuality = baseQuality / 10; 
+
+  const score = scaledBaseQuality + skillContribution + popularityModifier + randomFactor; 
+  
+  return Math.max(1, Math.min(10, Math.round(score * 10) / 10));
 };
 
 export const calculateTotalSales = (reviewScore: number, fame: number): number => {
@@ -81,9 +109,9 @@ export const updateBandStats = (band: Band, reviewScore: number): Band => {
   let newNotoriety = band.notoriety;
   
   if (reviewScore > 7) {
-    newFame = Math.min(100, newFame + 10); // Cap at 100
+    newFame = Math.min(100, newFame + 10); 
   } else if (reviewScore < 4) {
-    newNotoriety = Math.min(50, newNotoriety + 5); // Cap at 50
+    newNotoriety = Math.min(50, newNotoriety + 5); 
   }
   
   return {

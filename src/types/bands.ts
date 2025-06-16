@@ -1,5 +1,6 @@
-import { StudioSkill } from './game'; // Assuming StudioSkill is correctly in game.ts or will be
+import { StudioSkill } from './game'; 
 import { PerformanceHistoryEntry, PerformanceRating } from './performance';
+import { MusicGenre } from '@/types/charts'; // Import MusicGenre
 
 export interface BandRelease {
   id: string;
@@ -30,6 +31,8 @@ export interface SessionMusician {
 export interface OriginalTrackProject {
   id: string;
   title: string;
+  genre: MusicGenre; 
+  subGenreId?: string; 
   bandId?: string;
   sessionMusicianIds: string[];
   mode: 'band' | 'producer';
@@ -52,7 +55,6 @@ export interface OriginalTrackStage {
   completed: boolean;
 }
 
-// StaffStats and StaffMember might be better in a general staff.ts or game.ts
 export interface StaffStats {
   creativity: number;
   technical: number;
@@ -68,27 +70,29 @@ export interface StaffMember {
   xpInRole: number;
   levelInRole: number;
   genreAffinity: {
-    genre: string;
+    genre: string; // Consider MusicGenre
     bonus: number;
   } | null;
-  mood: number;
+  mood: number; // Assuming this was intended to be added from previous steps
   salary: number;
-  skills?: Record<string, StudioSkill>;
+  skills?: Record<string, StudioSkill>; // Consider Partial<Record<StudioSkillType, StudioSkill>>
+  contractEndDate?: number; // Added from previous error analysis
+  experience?: number; // Added from previous error analysis
 }
 
 export interface Band {
   id: string;
   bandName: string;
-  genre: string;
-  memberIds: string[];
-  fame: number;
-  notoriety: number;
-  pastReleases: BandRelease[]; // Uses the re-added BandRelease
-  reputation: number;
-  experience: number;
+  genre: MusicGenre; // Use MusicGenre
+  memberIds: string[]; 
+  fame: number; 
+  notoriety: number; 
+  pastReleases: BandRelease[];
+  reputation: number; 
+  experience: number; 
   fans: number;
   performanceHistory: PerformanceHistoryEntry[];
-  tourStatus: TourStatus; // Uses the defined TourStatus interface
+  tourStatus: TourStatus; 
   trainingStatus?: {
     isTraining: boolean;
     trainingType: string;
@@ -97,5 +101,4 @@ export interface Band {
   isPlayerCreated: boolean;
 }
 
-// TourVenue and TourStop are defined in src/types/tours.ts
-// Tour is defined in src/types/tours.ts
+// TourVenue, TourStop, and Tour interfaces are defined in src/types/tours.ts

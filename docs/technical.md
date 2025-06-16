@@ -14,6 +14,18 @@
 - **Charting**: Recharts
 - **Internationalization**: i18next (if implemented)
 
+### App Icon Implementation
+The app uses a music symbol emoji (🎵) as its icon, implemented through an inline SVG in the HTML. This approach:
+- Provides consistent appearance across platforms
+- Eliminates the need for multiple icon files
+- Ensures proper scaling and rendering
+- Simplifies maintenance and updates
+
+The implementation uses a data URI in the HTML:
+```html
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎵</text></svg>" />
+```
+
 ### Development Setup
 1. **Clone the repository**:
    ```bash

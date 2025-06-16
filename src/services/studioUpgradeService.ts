@@ -1,692 +1,225 @@
-// Studio Upgrade Service for Perks & Specializations
-import { 
-  StudioPerk, 
-  PerkCategory, 
-  StudioSpecialization, 
-  PerkTree, 
-  StudioUpgradeState, 
-  UnlockConditions, 
-  PerkEffects, 
-  ActiveEffect,
-  PerkSynergy,
-  StudioMilestone,
-  IndustryPrestige
-} from '../types/studioPerks';
-import { MusicGenre } from '../types/charts';
-import { GameState, Project, ProjectReport } from '../types/game';
+import { GameState } from '@/types/game';
+import { StudioPerk, PerkUnlockCondition, PerkEffect } from '@/types/studioPerks';
+// import { allStudioPerksData } from '@/data/studioPerksData'; // Assuming perk data will be in this file
 
-export class StudioUpgradeService {
-  private perkTrees: Map<PerkCategory, PerkTree> = new Map();
-  private specializations: Map<string, StudioSpecialization> = new Map();
-  private upgradeState: StudioUpgradeState;
-  private milestones: StudioMilestone[] = [];
-  private perkSynergies: PerkSynergy[] = [];
-  private industryPrestige: IndustryPrestige;
-
-  constructor() {
-    this.initializePerkTrees();
-    this.initializeSpecializations();
-    this.initializeMilestones();
-    this.initializeSynergies();
-    this.upgradeState = this.initializeUpgradeState();
-    this.industryPrestige = this.initializePrestige();
+// Placeholder for actual perk data. This should be loaded from a data file.
+const allStudioPerksData: StudioPerk[] = [
+  {
+    id: 'basicAcoustics', name: 'Basic Acoustic Treatment',
+    description: 'Improves recording quality slightly by reducing unwanted room reflections.',
+    category: 'Acoustics', tier: 1,
+    cost: { money: 5000 },
+    unlockConditions: [{ type: 'playerLevel', value: 2 }],
+    effects: [{ key: 'globalRecordingQualityModifier', value: 0.02, operation: 'multiply' }], // +2%
+  },
+  {
+    id: 'negotiation101', name: 'Negotiation 101',
+    description: 'Slightly better contract payouts from clients.',
+    category: 'BusinessOperations', tier: 1,
+    cost: { money: 3000, perkPoints: 1 },
+    unlockConditions: [{ type: 'completedProjects', value: 5 }],
+    effects: [{ key: 'contractPayoutModifier', value: 0.03, operation: 'multiply' }], // +3%
+  },
+  {
+    id: 'talentScoutNetwork', name: 'Talent Scout Network',
+    description: 'Increases the quality and variety of available staff candidates.',
+    category: 'TalentAcquisition', tier: 2,
+    cost: { money: 15000, perkPoints: 2 },
+    unlockConditions: [{ type: 'studioReputation', value: 30 }],
+    effects: [{ key: 'candidateQualityBonus', value: 10, operation: 'add' }], // e.g., +10 to avg candidate skill
+    prerequisites: ['negotiation101']
   }
+];
 
+
+export const studioUpgradeService = {
   /**
-   * Initialize perk trees with sample perks
+   * Gets all available perks for the player, considering unlock conditions and prerequisites.
+   * @param gameState The current game state.
+   * @returns An array of StudioPerk objects that are available to be unlocked/purchased.
    */
-  private initializePerkTrees(): void {
-    // Acoustics Tree
-    const acousticsTree: PerkTree = {
-      category: 'acoustics',
-      name: 'Acoustic Mastery',
-      description: 'Master the art of room acoustics and sound treatment',
-      tiers: [
-        {
-          tier: 1,
-          perks: [
-            {
-              id: 'basic-treatment',
-              name: 'Basic Room Treatment',
-              description: 'Improve room acoustics with basic treatment',
-              category: 'acoustics',
-              tier: 1,
-              unlockConditions: { playerLevel: 5 },
-              effects: {
-                projectQualityBonus: 5,
-                flatBonuses: new Map([['recording_quality', 3]])
-              },
-              cost: { perkPoints: 2, money: 5000 }
-            },
-            {
-              id: 'noise-isolation',
-              name: 'Noise Isolation',
-              description: 'Reduce external noise interference',
-              category: 'acoustics',
-              tier: 1,
-              unlockConditions: { playerLevel: 5 },
-              effects: {
-                projectQualityBonus: 3,
-                percentageBonuses: new Map([['focus_efficiency', 0.1]])
-              },
-              cost: { perkPoints: 2, money: 3000 }
-            }
-          ],
-          tierRequirement: { perksFromPreviousTier: 0 }
-        },
-        {
-          tier: 2,
-          perks: [
-            {
-              id: 'advanced-acoustics',
-              name: 'Advanced Acoustic Design',
-              description: 'Professional-grade acoustic optimization',
-              category: 'acoustics',
-              tier: 2,
-              unlockConditions: { 
-                playerLevel: 15,
-                completedProjectsTotal: 20 
-              },
-              effects: {
-                projectQualityBonus: 10,
-                genreSpecificBonuses: new Map([
-                  ['classical', { qualityBonus: 15, speedBonus: 0, costReduction: 0 }],
-                  ['jazz', { qualityBonus: 12, speedBonus: 0, costReduction: 0 }]
-                ])
-              },
-              prerequisites: ['basic-treatment'],
-              cost: { perkPoints: 5, money: 15000 }
-            }
-          ],
-          tierRequirement: { perksFromPreviousTier: 1 }
-        }
-      ]
-    };
-
-    // Equipment Tree
-    const equipmentTree: PerkTree = {
-      category: 'equipment',
-      name: 'Equipment Mastery',
-      description: 'Maximize equipment efficiency and unlock advanced gear',
-      tiers: [
-        {
-          tier: 1,
-          perks: [
-            {
-              id: 'equipment-care',
-              name: 'Equipment Maintenance',
-              description: 'Proper equipment care extends lifespan',
-              category: 'equipment',
-              tier: 1,
-              unlockConditions: { equipmentValue: 10000 },
-              effects: {
-                equipmentEfficiency: 0.2,
-                operatingCostReduction: 0.1
-              },
-              cost: { perkPoints: 3 }
-            },
-            {
-              id: 'bulk-discount',
-              name: 'Industry Connections',
-              description: 'Better deals on equipment purchases',
-              category: 'equipment',
-              tier: 1,
-              unlockConditions: { completedProjectsTotal: 10 },
-              effects: {
-                equipmentDiscounts: 0.15
-              },
-              cost: { perkPoints: 2 }
-            }
-          ],
-          tierRequirement: { perksFromPreviousTier: 0 }
-        }
-      ]
-    };
-
-    // Talent Acquisition Tree
-    const talentTree: PerkTree = {
-      category: 'talent-acquisition',
-      name: 'Talent Management',
-      description: 'Attract and develop the best talent in the industry',
-      tiers: [
-        {
-          tier: 1,
-          perks: [
-            {
-              id: 'staff-happiness',
-              name: 'Great Work Environment',
-              description: 'Create a positive workplace culture',
-              category: 'talent-acquisition',
-              tier: 1,
-              unlockConditions: { playerLevel: 8 },
-              effects: {
-                staffHappiness: 10,
-                staffTrainingSpeed: 0.2
-              },
-              cost: { perkPoints: 3, money: 5000 }
-            },
-            {
-              id: 'talent-scout',
-              name: 'Talent Scouting',
-              description: 'Find higher quality staff candidates',
-              category: 'talent-acquisition',
-              tier: 1,
-              unlockConditions: { completedProjectsTotal: 15 },
-              effects: {
-                flatBonuses: new Map([['staff_quality_bonus', 5]])
-              },
-              cost: { perkPoints: 4 }
-            }
-          ],
-          tierRequirement: { perksFromPreviousTier: 0 }
-        }
-      ]
-    };
-
-    this.perkTrees.set('acoustics', acousticsTree);
-    this.perkTrees.set('equipment', equipmentTree);
-    this.perkTrees.set('talent-acquisition', talentTree);
-  }
-
-  /**
-   * Initialize studio specializations
-   */
-  private initializeSpecializations(): void {
-    const rockSpecialization: StudioSpecialization = {
-      id: 'rock-specialist',
-      name: 'Rock & Metal Specialist',
-      description: 'Master of heavy, guitar-driven music production',
-      focusGenres: ['rock', 'alternative'],
-      requiredPerks: ['advanced-acoustics', 'equipment-care'],
-      benefits: {
-        genreMastery: new Map([
-          ['rock', 25],
-          ['alternative', 20]
-        ]),
-        exclusiveContracts: ['metal-festival', 'rock-documentary'],
-        industryRecognition: 30,
-        specialEquipment: ['tube-amps', 'vintage-mics'],
-        marketInfluence: 15,
-        mediaAttention: 20
-      },
-      drawbacks: {
-        penalizedGenres: new Map([
-          ['classical', -10],
-          ['jazz', -5]
-        ]),
-        increasedCosts: 0.1
-      },
-      prestigeLevel: 7
-    };
-
-    const popSpecialization: StudioSpecialization = {
-      id: 'pop-hitmaker',
-      name: 'Pop Hitmaker',
-      description: 'Specialist in creating chart-topping pop music',
-      focusGenres: ['pop', 'r&b'],
-      requiredPerks: ['talent-scout', 'bulk-discount'],
-      benefits: {
-        genreMastery: new Map([
-          ['pop', 30],
-          ['r&b', 25]
-        ]),
-        exclusiveContracts: ['major-label-album', 'commercial-campaign'],
-        industryRecognition: 40,
-        specialEquipment: ['auto-tune-pro', 'pop-vocals-chain'],
-        marketInfluence: 25,
-        mediaAttention: 35
-      },
-      prestigeLevel: 8
-    };
-
-    this.specializations.set('rock-specialist', rockSpecialization);
-    this.specializations.set('pop-hitmaker', popSpecialization);
-  }
-
-  private initializeMilestones(): void {
-    this.milestones = [
-      {
-        id: 'first-hit',
-        name: 'First Chart Success',
-        description: 'Get your first song in the charts',
-        category: 'projects',
-        requirement: {
-          type: 'count',
-          target: 'chart_entries',
-          value: 1
-        },
-        reward: {
-          perkPoints: 3,
-          reputation: 10
-        },
-        isRepeatable: false,
-        prestigeValue: 15
-      },
-      {
-        id: 'equipment-collector',
-        name: 'Gear Head',
-        description: 'Own equipment worth $50,000',
-        category: 'equipment',
-        requirement: {
-          type: 'threshold',
-          target: 'equipment_value',
-          value: 50000
-        },
-        reward: {
-          perkPoints: 2,
-          unlockPerk: 'equipment-care'
-        },
-        isRepeatable: false,
-        prestigeValue: 10
+  getAvailablePerks: (gameState: GameState): StudioPerk[] => {
+    const { playerData, ownedUpgrades, completedProjects, studioSkills } = gameState;
+    
+    return allStudioPerksData.filter(perk => {
+      // 1. Check if already owned
+      if (ownedUpgrades.includes(perk.id) && !perk.isRepeatable) {
+        return false;
       }
-    ];
-  }
-
-  private initializeSynergies(): void {
-    this.perkSynergies = [
-      {
-        id: 'acoustic-equipment',
-        name: 'Perfect Room',
-        description: 'Combining advanced acoustics with proper equipment care',
-        requiredPerks: ['advanced-acoustics', 'equipment-care'],
-        bonusEffect: {
-          projectQualityBonus: 8,
-          percentageBonuses: new Map([['recording_efficiency', 0.15]])
-        },
-        prestigeBonus: 5
+      if (perk.isRepeatable && perk.maxRepeats) {
+        const timesOwned = ownedUpgrades.filter(id => id === perk.id).length;
+        if (timesOwned >= perk.maxRepeats) return false;
       }
-    ];
-  }
 
-  private initializeUpgradeState(): StudioUpgradeState {
-    return {
-      unlockedPerks: new Set<string>(),
-      availablePerkPoints: 0,
-      totalPerkPoints: 0,
-      perkCooldowns: new Map<string, number>(),
-      activeEffects: []
-    };
-  }
+      // 2. Check prerequisites (other perks)
+      if (perk.prerequisites && perk.prerequisites.length > 0) {
+        if (!perk.prerequisites.every(prereqId => ownedUpgrades.includes(prereqId))) {
+          return false;
+        }
+      }
 
-  private initializePrestige(): IndustryPrestige {
-    return {
-      level: 0,
-      points: 0,
-      tier: 'unknown',
-      benefits: {
-        contractOfferFrequency: 1.0,
-        contractQualityBonus: 0,
-        mediaAttentionBonus: 0,
-        networkingAdvantage: 0,
-        equipmentAccessBonus: [],
-        staffAttractionBonus: 0
-      },
-      nextTierRequirement: 100
-    };
-  }
+      // 3. Check unlock conditions
+      return perk.unlockConditions.every(condition => 
+        checkCondition(condition, gameState)
+      );
+    });
+  },
 
   /**
-   * Check if a perk can be unlocked
+   * Checks if a specific perk can be unlocked/purchased by the player.
+   * @param perkId The ID of the perk to check.
+   * @param gameState The current game state.
+   * @returns True if the perk can be unlocked, false otherwise.
    */
-  public canUnlockPerk(perkId: string, gameState: GameState): boolean {
-    const perk = this.findPerkById(perkId);
+  canUnlockPerk: (perkId: string, gameState: GameState): boolean => {
+    const perk = allStudioPerksData.find(p => p.id === perkId);
     if (!perk) return false;
 
-    // Check if already unlocked
-    if (this.upgradeState.unlockedPerks.has(perkId)) return false;
+    if (gameState.ownedUpgrades.includes(perk.id) && !perk.isRepeatable) return false;
+    // Add check for maxRepeats if isRepeatable
 
-    // Check cost requirements
-    if (perk.cost.perkPoints > this.upgradeState.availablePerkPoints) return false;
-    if (perk.cost.money && perk.cost.money > gameState.money) return false;
-
-    // Check prerequisites
-    if (perk.prerequisites) {
-      for (const prereq of perk.prerequisites) {
-        if (!this.upgradeState.unlockedPerks.has(prereq)) return false;
-      }
-    }
-
-    // Check unlock conditions
-    return this.checkUnlockConditions(perk.unlockConditions, gameState);
-  }
-
-  private checkUnlockConditions(conditions: UnlockConditions, gameState: GameState): boolean {
-    if (conditions.playerLevel && gameState.playerData.level < conditions.playerLevel) {
+    if (perk.prerequisites && !perk.prerequisites.every(pId => gameState.ownedUpgrades.includes(pId))) {
       return false;
     }
-
-    if (conditions.studioReputationThreshold && gameState.reputation < conditions.studioReputationThreshold) {
-      return false;
-    }
-
-    if (conditions.completedProjectsTotal) {
-      const completedCount = gameState.completedProjects?.length || 0;
-      if (completedCount < conditions.completedProjectsTotal) return false;
-    }
-
-    if (conditions.equipmentValue) {
-      const totalValue = gameState.ownedEquipment.reduce((sum, eq) => sum + eq.price, 0);
-      if (totalValue < conditions.equipmentValue) return false;
-    }
-
-    if (conditions.completedProjectsInGenre) {
-      const genreCount = gameState.completedProjects?.filter(
-        p => p.genre === conditions.completedProjectsInGenre!.genre
-      ).length || 0;
-      if (genreCount < conditions.completedProjectsInGenre.count) return false;
-    }
-
-    return true;
-  }
+    return perk.unlockConditions.every(condition => checkCondition(condition, gameState));
+  },
 
   /**
-   * Unlock a perk
+   * Unlocks/purchases a perk for the player if conditions are met and cost is paid.
+   * This function would modify the GameState.
+   * @param perkId The ID of the perk to unlock.
+   * @param gameState The current game state.
+   * @returns A new GameState object if successful, or null if unlock failed.
+   *          (Or this could directly call updateGameState from a hook)
    */
-  public unlockPerk(perkId: string, gameState: GameState): boolean {
-    if (!this.canUnlockPerk(perkId, gameState)) return false;
-
-    const perk = this.findPerkById(perkId)!;
-    
-    // Deduct costs
-    this.upgradeState.availablePerkPoints -= perk.cost.perkPoints;
-    if (perk.cost.money) {
-      // Would need to modify gameState.money here
+  unlockPerk: (perkId: string, currentGameState: GameState): GameState | null => {
+    const perk = allStudioPerksData.find(p => p.id === perkId);
+    if (!perk || !studioUpgradeService.canUnlockPerk(perkId, currentGameState)) {
+      console.warn(`Cannot unlock perk ${perkId}. Conditions not met or perk already owned.`);
+      return null;
     }
 
-    // Add to unlocked perks
-    this.upgradeState.unlockedPerks.add(perkId);
+    const newGameState = { ...currentGameState }; // Changed to const
 
-    // Apply effects
-    this.applyPerkEffects(perk);
+    // Deduct cost
+    if (perk.cost) {
+      if (perk.cost.money && newGameState.money < perk.cost.money) return null; // Not enough money
+      if (perk.cost.money) newGameState.money -= perk.cost.money;
+      
+      if (perk.cost.perkPoints && newGameState.playerData.perkPoints < perk.cost.perkPoints) return null; // Not enough perk points
+      if (perk.cost.perkPoints) newGameState.playerData.perkPoints -= perk.cost.perkPoints;
+      
+      // Handle researchPoints if that system exists
+    }
 
-    // Check for synergies
-    this.checkAndActivateSynergies();
+    newGameState.ownedUpgrades = [...newGameState.ownedUpgrades, perk.id];
+    
+    // Applying effects would typically happen elsewhere, by systems that read ownedUpgrades.
+    // Or, could be done here if effects are direct state modifications.
+    // For now, just adding to ownedUpgrades.
+    console.log(`Perk ${perk.name} unlocked!`);
+    return newGameState;
+  },
 
-    return true;
-  }
+  /**
+   * Gets all perks owned by the player.
+   * @param gameState The current game state.
+   * @returns An array of StudioPerk objects owned by the player.
+   */
+  getOwnedPerks: (gameState: GameState): StudioPerk[] => {
+    return allStudioPerksData.filter(perk => gameState.ownedUpgrades.includes(perk.id));
+  },
 
-  private applyPerkEffects(perk: StudioPerk): void {
-    const activeEffect: ActiveEffect = {
-      id: `perk-${perk.id}`,
-      name: perk.name,
-      sourceType: 'perk',
-      sourceId: perk.id,
-      effect: perk.effects,
-      stackable: false
+  /**
+   * Applies the effects of all owned perks to the game state.
+   * This is a conceptual function. In practice, individual systems (e.g., project calculation,
+   * staff training) would query owned perks and apply relevant modifiers.
+   * Or, some global modifiers could be aggregated here and stored in GameState.
+   * @param gameState The current game state.
+   * @returns The modified GameState (or just an object of aggregated modifiers).
+   */
+  applyAllPerkEffects: (gameState: GameState): GameState => {
+    const modifiedGameState = { ...gameState }; // Changed to const
+    const ownedPerks = studioUpgradeService.getOwnedPerks(gameState);
+
+    // Example: Aggregate global modifiers
+    // This object is modified, so it should remain 'let' if we intend to build it up.
+    // However, if it's only assigned once and its properties are modified, it can be const.
+    // For simplicity and to satisfy lint, if we are just calculating and returning, it can be const.
+    // Let's assume we are building it up, so this one might be an exception or needs restructuring.
+    // For now, to fix the lint, if it's not reassigned, make it const.
+    // If the intention is to modify properties of globalModifiers, it can be const.
+    const globalModifiers = { // Changed to const, assuming properties are modified, not the object itself.
+      mixingQuality: 1.0,
+      recordingQuality: 1.0,
+      contractPayout: 1.0,
+      // ... other potential global effects
     };
 
-    this.upgradeState.activeEffects.push(activeEffect);
-  }
-
-  private checkAndActivateSynergies(): void {
-    for (const synergy of this.perkSynergies) {
-      // Check if all required perks are unlocked
-      const allPerksUnlocked = synergy.requiredPerks.every(
-        perkId => this.upgradeState.unlockedPerks.has(perkId)
-      );
-
-      if (allPerksUnlocked) {
-        // Check if synergy is already active
-        const synergyExists = this.upgradeState.activeEffects.some(
-          effect => effect.id === `synergy-${synergy.id}`
-        );
-
-        if (!synergyExists) {
-          const synergyEffect: ActiveEffect = {
-            id: `synergy-${synergy.id}`,
-            name: synergy.name,
-            sourceType: 'perk',
-            sourceId: synergy.id,
-            effect: synergy.bonusEffect,
-            stackable: false
-          };
-
-          this.upgradeState.activeEffects.push(synergyEffect);
+    ownedPerks.forEach(perk => {
+      perk.effects.forEach(effect => {
+        // This is highly simplified. A real system needs a robust way to target and apply effects.
+        if (effect.key === 'globalMixingQualityModifier' && typeof effect.value === 'number') {
+          if (effect.operation === 'multiply') globalModifiers.mixingQuality *= (1 + effect.value);
+          else globalModifiers.mixingQuality += effect.value;
         }
-      }
-    }
-  }
-
-  /**
-   * Calculate total bonuses from all active perks
-   */
-  public calculateTotalBonuses(): PerkEffects {
-    const totalEffects: PerkEffects = {
-      flatBonuses: new Map(),
-      percentageBonuses: new Map(),
-      projectQualityBonus: 0,
-      projectSpeedBonus: 0,
-      staffHappiness: 0,
-      contractValueMultiplier: 1,
-      operatingCostReduction: 0,
-      equipmentDiscounts: 0,
-      reputationGainMultiplier: 1
-    };
-
-    for (const effect of this.upgradeState.activeEffects) {
-      this.mergePerkEffects(totalEffects, effect.effect);
-    }
-
-    return totalEffects;
-  }
-
-  private mergePerkEffects(total: PerkEffects, toAdd: PerkEffects): void {
-    // Merge flat bonuses
-    if (toAdd.flatBonuses) {
-      toAdd.flatBonuses.forEach((value, key) => {
-        const current = total.flatBonuses!.get(key) || 0;
-        total.flatBonuses!.set(key, current + value);
+        if (effect.key === 'globalRecordingQualityModifier' && typeof effect.value === 'number') {
+          if (effect.operation === 'multiply') globalModifiers.recordingQuality *= (1 + effect.value);
+          else globalModifiers.recordingQuality += effect.value;
+        }
+        if (effect.key === 'contractPayoutModifier' && typeof effect.value === 'number') {
+            if (effect.operation === 'multiply') globalModifiers.contractPayout *= (1 + effect.value);
+            else globalModifiers.contractPayout += effect.value;
+        }
+        // ... handle other specific effect keys
       });
-    }
-
-    // Merge percentage bonuses
-    if (toAdd.percentageBonuses) {
-      toAdd.percentageBonuses.forEach((value, key) => {
-        const current = total.percentageBonuses!.get(key) || 0;
-        total.percentageBonuses!.set(key, current + value);
-      });
-    }
-
-    // Add numeric bonuses
-    if (toAdd.projectQualityBonus) total.projectQualityBonus! += toAdd.projectQualityBonus;
-    if (toAdd.projectSpeedBonus) total.projectSpeedBonus! += toAdd.projectSpeedBonus;
-    if (toAdd.staffHappiness) total.staffHappiness! += toAdd.staffHappiness;
-    if (toAdd.operatingCostReduction) total.operatingCostReduction! += toAdd.operatingCostReduction;
-    if (toAdd.equipmentDiscounts) total.equipmentDiscounts! += toAdd.equipmentDiscounts;
-
-    // Multiply multipliers
-    if (toAdd.contractValueMultiplier) total.contractValueMultiplier! *= toAdd.contractValueMultiplier;
-    if (toAdd.reputationGainMultiplier) total.reputationGainMultiplier! *= toAdd.reputationGainMultiplier;
-  }
-
-  /**
-   * Award perk points for achievements
-   */
-  public awardPerkPoints(amount: number, reason: string): void {
-    this.upgradeState.availablePerkPoints += amount;
-    this.upgradeState.totalPerkPoints += amount;
-  }
-
-  /**
-   * Process project completion for milestone progress
-   */
-  public processProjectCompletion(project: Project, report: ProjectReport): void {
-    // Check milestones
-    for (const milestone of this.milestones) {
-      if (this.checkMilestoneCompletion(milestone, project, report)) {
-        this.completeMilestone(milestone);
-      }
-    }
-
-    // Award perk points based on project quality
-    let perkPointsEarned = 0;
-    if (report.qualityScore >= 95) perkPointsEarned = 3;
-    else if (report.qualityScore >= 85) perkPointsEarned = 2;
-    else if (report.qualityScore >= 75) perkPointsEarned = 1;
-
-    if (perkPointsEarned > 0) {
-      this.awardPerkPoints(perkPointsEarned, `High quality project: ${project.title}`);
-    }
-
-    // Update prestige
-    this.updatePrestige(report.qualityScore, report.finalScore);
-  }
-
-  private checkMilestoneCompletion(milestone: StudioMilestone, project: Project, report: ProjectReport): boolean {
-    // This is simplified - in a real implementation, you'd track various game statistics
-    switch (milestone.requirement.target) {
-      case 'chart_entries':
-        // Would check if project entered charts
-        return report.finalScore > 85; // Simplified check
-      case 'equipment_value':
-        // Would check against actual equipment value
-        return false; // Needs game state context
-      default:
-        return false;
-    }
-  }
-
-  private completeMilestone(milestone: StudioMilestone): void {
-    if (milestone.reward.perkPoints) {
-      this.awardPerkPoints(milestone.reward.perkPoints, `Milestone: ${milestone.name}`);
-    }
-
-    // Add prestige points
-    this.industryPrestige.points += milestone.prestigeValue;
-    this.updatePrestigeTier();
-  }
-
-  private updatePrestige(qualityScore: number, finalScore: number): void {
-    let prestigeGain = 0;
+    });
     
-    if (finalScore >= 95) prestigeGain = 5;
-    else if (finalScore >= 85) prestigeGain = 3;
-    else if (finalScore >= 75) prestigeGain = 1;
+    // Store or use these aggregated modifiers. For example:
+    // modifiedGameState.aggregatedPerkModifiers = globalModifiers; 
+    // Systems would then use gameState.aggregatedPerkModifiers.mixingQuality etc.
 
-    this.industryPrestige.points += prestigeGain;
-    this.updatePrestigeTier();
+    console.log("Applied perk effects (conceptual):", globalModifiers);
+    return modifiedGameState; // Or return just the modifiers
+  },
+};
+
+/**
+ * Helper function to check if a single unlock condition is met.
+ */
+const checkCondition = (condition: PerkUnlockCondition, gameState: GameState): boolean => {
+  const { playerData, reputation, completedProjects, studioSkills, ownedEquipment } = gameState;
+  
+  switch (condition.type) {
+    case 'playerLevel':
+      return playerData.level >= condition.value;
+    case 'studioReputation':
+      return reputation >= condition.value;
+    case 'completedProjects':
+      return (completedProjects?.length || 0) >= condition.value;
+    case 'projectsInGenre':
+      if (!condition.genre) return false;
+      return (completedProjects?.filter(p => p.genre === condition.genre).length || 0) >= condition.value;
+    case 'staffSkillSum':
+      if (!condition.skill) return false;
+      // This needs access to all staff members' skills
+      // Placeholder:
+      // const totalSkill = gameState.hiredStaff.reduce((sum, staff) => sum + (staff.skills?.[condition.skill!]?.level || 0), 0);
+      // return totalSkill >= condition.value;
+      return true; // Placeholder
+    case 'specificEquipmentOwned':
+      if (!condition.equipmentId) return false;
+      return ownedEquipment.some(eq => eq.id === condition.equipmentId);
+    case 'specificPerkUnlocked':
+      if (!condition.perkId) return false;
+      return gameState.ownedUpgrades.includes(condition.perkId);
+    case 'moneyEarned':
+      // This would require tracking total money earned, not just current money
+      return true; // Placeholder
+    case 'chartSuccesses':
+      // This would require tracking chart history
+      return true; // Placeholder
+    default:
+      return false;
   }
-
-  private updatePrestigeTier(): void {
-    const points = this.industryPrestige.points;
-    
-    if (points >= 1000) {
-      this.industryPrestige.tier = 'legendary';
-      this.industryPrestige.level = 100;
-    } else if (points >= 500) {
-      this.industryPrestige.tier = 'international';
-      this.industryPrestige.level = 80;
-    } else if (points >= 250) {
-      this.industryPrestige.tier = 'national';
-      this.industryPrestige.level = 60;
-    } else if (points >= 100) {
-      this.industryPrestige.tier = 'regional';
-      this.industryPrestige.level = 40;
-    } else if (points >= 25) {
-      this.industryPrestige.tier = 'local';
-      this.industryPrestige.level = 20;
-    }
-
-    // Update benefits based on tier
-    this.updatePrestigeBenefits();
-  }
-
-  private updatePrestigeBenefits(): void {
-    const tier = this.industryPrestige.tier;
-    const benefits = this.industryPrestige.benefits;
-
-    switch (tier) {
-      case 'legendary':
-        benefits.contractOfferFrequency = 3.0;
-        benefits.contractQualityBonus = 50;
-        benefits.mediaAttentionBonus = 100;
-        benefits.networkingAdvantage = 50;
-        benefits.staffAttractionBonus = 25;
-        break;
-      case 'international':
-        benefits.contractOfferFrequency = 2.5;
-        benefits.contractQualityBonus = 30;
-        benefits.mediaAttentionBonus = 60;
-        benefits.networkingAdvantage = 30;
-        benefits.staffAttractionBonus = 15;
-        break;
-      case 'national':
-        benefits.contractOfferFrequency = 2.0;
-        benefits.contractQualityBonus = 20;
-        benefits.mediaAttentionBonus = 40;
-        benefits.networkingAdvantage = 20;
-        benefits.staffAttractionBonus = 10;
-        break;
-      case 'regional':
-        benefits.contractOfferFrequency = 1.5;
-        benefits.contractQualityBonus = 10;
-        benefits.mediaAttentionBonus = 20;
-        benefits.networkingAdvantage = 10;
-        benefits.staffAttractionBonus = 5;
-        break;
-      case 'local':
-        benefits.contractOfferFrequency = 1.2;
-        benefits.contractQualityBonus = 5;
-        benefits.mediaAttentionBonus = 10;
-        benefits.networkingAdvantage = 5;
-        benefits.staffAttractionBonus = 2;
-        break;
-    }
-  }
-
-  private findPerkById(perkId: string): StudioPerk | null {
-    for (const tree of this.perkTrees.values()) {
-      for (const tier of tree.tiers) {
-        const perk = tier.perks.find(p => p.id === perkId);
-        if (perk) return perk;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Get all available perk trees
-   */
-  public getPerkTrees(): PerkTree[] {
-    return Array.from(this.perkTrees.values());
-  }
-
-  /**
-   * Get unlocked perks
-   */
-  public getUnlockedPerks(): string[] {
-    return Array.from(this.upgradeState.unlockedPerks);
-  }
-
-  /**
-   * Get available perk points
-   */
-  public getAvailablePerkPoints(): number {
-    return this.upgradeState.availablePerkPoints;
-  }
-
-  /**
-   * Get current specialization
-   */
-  public getCurrentSpecialization(): StudioSpecialization | null {
-    if (!this.upgradeState.activeSpecialization) return null;
-    return this.specializations.get(this.upgradeState.activeSpecialization) || null;
-  }
-
-  /**
-   * Get industry prestige
-   */
-  public getIndustryPrestige(): IndustryPrestige {
-    return { ...this.industryPrestige };
-  }
-
-  /**
-   * Get current studio upgrade state
-   */
-  public getUpgradeState(): StudioUpgradeState {
-    return { ...this.upgradeState };
-  }
-}
-
-// Singleton instance
-export const studioUpgradeService = new StudioUpgradeService();
+};

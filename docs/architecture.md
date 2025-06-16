@@ -5,7 +5,7 @@ This document describes the high-level architecture of the Recording Studio Tyco
 
 ## UI/UX Update: App Icon
 
-- The app icon and manifest have been updated to use a music symbol emoji (🎵) for a more musical and modern look. This change is reflected in the favicon, PWA icons, and splash/title screens.
+- The app icon and manifest have been updated to use a music symbol emoji (🎵) for a more musical and modern look. This change is implemented using an inline SVG in the HTML, providing a consistent appearance across platforms without the need for generated icon files.
 
 ```mermaid
 flowchart TD

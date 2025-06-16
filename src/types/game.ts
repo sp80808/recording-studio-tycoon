@@ -78,7 +78,7 @@ export interface ProjectStage {
   id?: string;
   specialEvents?: StageEvent[];
   stageBonuses?: { creativity?: number; technical?: number };
-  requiredSkills?: Record<string, number>; 
+  requiredSkills?: Record<string, number>; // This is used by Project, StageTemplate uses the stricter version
   minigameTriggerId?: MinigameType;
   qualityMultiplier?: number;
   timeMultiplier?: number;
@@ -126,7 +126,7 @@ export interface Project {
   durationDaysTotal: number;
   payoutBase: number;
   repGainBase: number;
-  requiredSkills: Record<string, number>; 
+  requiredSkills: Partial<Record<StudioSkillType, number>>; // Changed to Partial
   stages: ProjectStage[];
   matchRating: 'Poor' | 'Good' | 'Excellent';
   accumulatedCPoints: number;
@@ -278,7 +278,7 @@ export interface GameState {
   };
   venues: TourVenue[]; 
   tours: Tour[];       
-  lastMinigameTriggers?: Partial<Record<MinigameType, number>>; // Made Partial
+  lastMinigameTriggers?: Partial<Record<MinigameType, number>>; 
 }
 
 export interface GameNotification {
@@ -417,7 +417,7 @@ export interface StageTemplate {
   stageName: string;
   focusAreas: string[]; 
   workUnitsBase: number;
-  requiredSkills?: Partial<Record<StudioSkillType, number>>; // Made Partial
+  requiredSkills?: Partial<Record<StudioSkillType, number>>; 
   stageBonuses?: { creativity?: number; technical?: number };
   minigameTriggerId?: MinigameType; 
 }
