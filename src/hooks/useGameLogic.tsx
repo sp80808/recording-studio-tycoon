@@ -203,52 +203,30 @@ export const useGameLogic = (
     });
   };
 
-  // Enhanced advanceDay to include automatic project work and tour processing
+  // Enhanced advanceDay to include tour processing and automatic daily work
   const handleAdvanceDay = useCallback(() => {
-    console.log('🚀 === STARTING DAY ADVANCEMENT ===');
-    
-    // Step 1: Automatically perform daily work on active project if available
-    if (gameState.activeProject && gameState.playerData.dailyWorkCapacity > 0) {
-      console.log('🎵 Auto-performing daily work before advancing day...');
+    // First, perform daily work if there's an active project
+    if (gameState.activeProject) {
+      console.log('Auto-performing daily work before advancing day');
       const workResult = performDailyWork();
       
-      // If project was completed, show a notification
-      if (workResult && workResult.isComplete && workResult.finalProjectData) {
+      // If project completes, we'll let the normal flow handle it
+      if (workResult?.isComplete && workResult.finalProjectData) {
         toast({
           title: "🎉 Project Completed!",
-          description: `${workResult.finalProjectData.title} has been completed during the day advancement.`,
+          description: `${workResult.finalProjectData.title} is finished! Check your studio for the review.`,
           className: "bg-gray-800 border-gray-600 text-white",
           duration: 5000
         });
-        
-        // Note: The project completion will be handled by the work result
-        // No need to manually trigger onProjectComplete here
-      } else if (gameState.activeProject) {
-        // Show progress notification
-        const currentStage = gameState.activeProject.stages?.[gameState.activeProject.currentStageIndex || 0];
-        if (currentStage) {
-          toast({
-            title: "🎵 Daily Work Completed",
-            description: `Worked on ${gameState.activeProject.title} - ${currentStage.stageName}`,
-            className: "bg-gray-800 border-gray-600 text-white",
-            duration: 3000
-          });
-        }
       }
-    } else if (gameState.activeProject && gameState.playerData.dailyWorkCapacity <= 0) {
-      console.log('⚡ No energy left for project work');
-    } else {
-      console.log('📝 No active project to work on');
     }
     
-    // Step 2: Process tour income
+    // Process tour income
     processTourIncome();
     
-    // Step 3: Advance the day (handles salaries, training, etc.)
+    // Advance the day (handles salaries, staff training, etc.)
     advanceDay();
-    
-    console.log('✅ === DAY ADVANCEMENT COMPLETE ===');
-  }, [gameState.activeProject, gameState.playerData.dailyWorkCapacity, performDailyWork, processTourIncome, advanceDay]);
+  }, [gameState.activeProject, performDailyWork, processTourIncome, advanceDay]);
 
   // Contact artist for collaboration
   const contactArtist = useCallback((artistId: string, offer: number) => {

@@ -305,6 +305,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             gameState={gameState}
             setGameState={setGameState}
             spendPerkPoint={spendPerkPoint}
+            advanceDay={advanceDay}
             purchaseEquipment={purchaseEquipment}
             hireStaff={hireStaff}
             refreshCandidates={refreshCandidates}
@@ -318,7 +319,6 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             startTour={startTour}
             createOriginalTrack={createOriginalTrack}
             startResearchMod={startResearchMod}
-            advanceDay={advanceDay}
           />
         </div>
       </div>
