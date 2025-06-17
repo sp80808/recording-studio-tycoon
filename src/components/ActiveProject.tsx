@@ -500,10 +500,10 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                     step={5}
                     className={`w-full transition-all duration-300 ease-in-out ${
                       Math.abs(projectFocus.performance - optimalFocus.performance) <= 10 
-                        ? 'text-green-500 [&>span]:bg-green-500 [&>span>span]:bg-green-600 [&>span>button]:border-green-500' 
+                        ? 'slider-optimal' 
                         : Math.abs(projectFocus.performance - optimalFocus.performance) <= 25
-                          ? 'text-yellow-500 [&>span]:bg-yellow-500 [&>span>span]:bg-yellow-600 [&>span>button]:border-yellow-500'
-                          : 'text-blue-500 [&>span]:bg-blue-500 [&>span>span]:bg-blue-600 [&>span>button]:border-blue-500'
+                          ? 'slider-good'
+                          : 'slider-default'
                     }`}
                   />
                 </div>
@@ -546,10 +546,10 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                     step={5}
                     className={`w-full transition-all duration-300 ease-in-out ${
                       Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 10
-                        ? '[&_.bg-primary]:bg-gradient-to-r from-green-400 to-green-600 [&_.border-primary]:border-green-700'
+                        ? 'slider-optimal'
                         : Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 25
-                          ? '[&_.bg-primary]:bg-gradient-to-r from-yellow-400 to-yellow-600 [&_.border-primary]:border-yellow-700'
-                          : '[&_.bg-primary]:bg-gradient-to-r from-blue-400 to-blue-600'
+                          ? 'slider-good'
+                          : 'slider-default'
                     }`}
                   />
                 </div>
@@ -592,10 +592,10 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                     step={5}
                     className={`w-full transition-all duration-300 ease-in-out ${
                       Math.abs(projectFocus.layering - optimalFocus.layering) <= 10
-                        ? '[&_.bg-primary]:bg-gradient-to-r from-green-400 to-green-600 [&_.border-primary]:border-green-700'
+                        ? 'slider-optimal'
                         : Math.abs(projectFocus.layering - optimalFocus.layering) <= 25
-                          ? '[&_.bg-primary]:bg-gradient-to-r from-yellow-400 to-yellow-600 [&_.border-primary]:border-yellow-700'
-                          : '[&_.bg-primary]:bg-gradient-to-r from-blue-400 to-blue-600'
+                          ? 'slider-good'
+                          : 'slider-default'
                     }`}
                   />
                 </div>
