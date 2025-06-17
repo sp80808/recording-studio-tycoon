@@ -1,10 +1,12 @@
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 using RecordingStudioTycoon.GameLogic; // For GameManager, GameStateEnum
 using RecordingStudioTycoon.UI; // For UIManager
 using RecordingStudioTycoon.ScriptableObjects; // For MinigameData
-using RecordingStudioTycoon.DataModels; // For Project, StaffMember (if minigame affects them)
+using RecordingStudioTycoon.DataModels;
 using RecordingStudioTycoon; // For RewardType, RewardManager
+using Project = RecordingStudioTycoon.DataModels.Project;
 
 namespace RecordingStudioTycoon.Systems.Minigame
 {
@@ -19,6 +21,15 @@ namespace RecordingStudioTycoon.Systems.Minigame
 
         private MinigameData _currentMinigame;
         private Project _activeProject; // Store the project associated with the current minigame
+
+        private Project activeProject;
+        private Project currentProject;
+        private Project project;
+        private Project selectedProject;
+        private Project targetProject;
+        private Project projectToComplete;
+        private Project projectToStart;
+        private Project projectToCancel;
 
         private void Awake()
         {

@@ -1,5 +1,7 @@
 using UnityEngine;
 using System;
+using System.Collections.Generic;
+using RecordingStudioTycoon.DataModels;
 using RecordingStudioTycoon.GameLogic; // For GameStateEnum
 using RecordingStudioTycoon.Core; // For AudioManager
 
@@ -214,6 +216,11 @@ namespace RecordingStudioTycoon.UI
             AudioManager.Instance?.SetMusicVolume(volume); // Assuming master volume controls music for now
             AudioManager.Instance?.SetSFXVolume(volume); // And SFX
             Debug.Log($"Master Volume set to: {volume}");
+        }
+
+        public void ShowLevelUpDetails(LevelUpDetails details)
+        {
+            // Implement level up UI logic
         }
     }
 }

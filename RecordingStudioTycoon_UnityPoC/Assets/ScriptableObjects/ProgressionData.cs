@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using RecordingStudioTycoon.DataModels;
 
 [CreateAssetMenu(fileName = "ProgressionData", menuName = "Game Data/Progression Data")]
 public class ProgressionData : ScriptableObject

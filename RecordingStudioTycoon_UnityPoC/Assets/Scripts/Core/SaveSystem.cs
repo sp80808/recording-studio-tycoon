@@ -1,65 +1,34 @@
 using UnityEngine;
 using System.IO;
-using System;
+using System.Runtime.Serialization.Formatters.Binary;
+using RecordingStudioTycoon.GameLogic;
 
 namespace RecordingStudioTycoon.Core
 {
-    public class SaveSystem : MonoBehaviour
+    public static class SaveSystem
     {
-        public static SaveSystem Instance { get; private set; }
+        private static readonly string SAVE_PATH = Path.Combine(Application.persistentDataPath, "savedata.dat");
 
-        private string saveFilePath;
-
-        private void Awake()
+        public static void SaveGame(GameState gameState)
         {
-            if (Instance != null && Instance != this)
+            BinaryFormatter formatter = new BinaryFormatter();
+            using (FileStream stream = new FileStream(SAVE_PATH, FileMode.Create))
             {
-                Destroy(gameObject);
-            }
-            else
-            {
-                Instance = this;
-                DontDestroyOnLoad(gameObject);
-                saveFilePath = Path.Combine(Application.persistentDataPath, "savegame.json");
+                formatter.Serialize(stream, gameState);
             }
         }
 
-        public void SaveGame(GameState gameState)
+        public static GameState LoadGame()
         {
-            try
+            if (File.Exists(SAVE_PATH))
             {
-                string json = JsonUtility.ToJson(gameState, true); // true for pretty print
-                File.WriteAllText(saveFilePath, json);
-                Debug.Log("Game saved successfully to: " + saveFilePath);
-            }
-            catch (Exception e)
-            {
-                Debug.LogError("Failed to save game: " + e.Message);
-            }
-        }
-
-        public GameState LoadGame()
-        {
-            if (File.Exists(saveFilePath))
-            {
-                try
+                BinaryFormatter formatter = new BinaryFormatter();
+                using (FileStream stream = new FileStream(SAVE_PATH, FileMode.Open))
                 {
-                    string json = File.ReadAllText(saveFilePath);
-                    GameState loadedGameState = JsonUtility.FromJson<GameState>(json);
-                    Debug.Log("Game loaded successfully from: " + saveFilePath);
-                    return loadedGameState;
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError("Failed to load game: " + e.Message);
-                    return null;
+                    return (GameState)formatter.Deserialize(stream);
                 }
             }
-            else
-            {
-                Debug.LogWarning("No save file found at: " + saveFilePath);
-                return null;
-            }
+            return null;
         }
     }
 }

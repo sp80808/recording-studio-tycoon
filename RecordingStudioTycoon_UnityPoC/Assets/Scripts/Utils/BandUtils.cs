@@ -1,10 +1,16 @@
+using UnityEngine;
 using System.Collections.Generic;
+using RecordingStudioTycoon.DataModels;
+using RecordingStudioTycoon.GameLogic;
 
-public static class BandUtils
+namespace RecordingStudioTycoon.Utils
 {
-    public static List<SessionMusician> GenerateSessionMusicians(int count)
+    public static class BandUtils
     {
-        // Implement session musician generation logic
-        return new List<SessionMusician>();
+        public static List<SessionMusician> GenerateSessionMusicians(int count, GameState gameState)
+        {
+            // Implement session musician generation logic
+            return new List<SessionMusician>();
+        }
     }
 }

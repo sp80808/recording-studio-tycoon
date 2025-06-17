@@ -1,10 +1,17 @@
+using UnityEngine;
 using System.Collections.Generic;
+using RecordingStudioTycoon.DataModels;
+using RecordingStudioTycoon.GameLogic;
+using RecordingStudioTycoon.Systems.Project;
 
-public static class ProjectUtils
+namespace RecordingStudioTycoon.Utils
 {
-    public static List<Project> GenerateNewProjects(int count, int playerLevel, string currentEra)
+    public static class ProjectUtils
     {
-        // Implement project generation logic
-        return new List<Project>();
+        public static List<Project> GenerateNewProjects(int count, int playerLevel, string currentEra)
+        {
+            // Implement project generation logic
+            return new List<Project>();
+        }
     }
 }

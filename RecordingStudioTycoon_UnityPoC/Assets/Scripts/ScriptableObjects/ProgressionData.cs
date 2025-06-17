@@ -1,17 +1,17 @@
 using UnityEngine;
 using System.Collections.Generic;
+using RecordingStudioTycoon.DataModels;
+using RecordingStudioTycoon.Core;
 
 namespace RecordingStudioTycoon.ScriptableObjects
 {
-    [CreateAssetMenu(fileName = "ProgressionData", menuName = "Game Data/Progression Data")]
+    [CreateAssetMenu(fileName = "ProgressionData", menuName = "Recording Studio Tycoon/Progression Data")]
     public class ProgressionData : ScriptableObject
     {
-        public List<PlayerMilestone> PlayerMilestones; // List of all milestones
-
-        public PlayerMilestone GetPlayerMilestone(int level)
-        {
-            return PlayerMilestones.Find(m => m.Level == level);
-        }
+        public List<UnlockedFeatureInfo> unlockedFeatures;
+        public List<PlayerAbilityChange> playerAbilityChanges;
+        public List<UnlockedFeatureInfo> levelUpFeatures;
+        public List<PlayerAbilityChange> levelUpAbilityChanges;
     }
 
     [System.Serializable]

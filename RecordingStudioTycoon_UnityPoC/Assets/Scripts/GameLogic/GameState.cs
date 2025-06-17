@@ -93,4 +93,4 @@ namespace RecordingStudioTycoon.GameLogic
             highScore = 0;
         }
     }
-} 
+}

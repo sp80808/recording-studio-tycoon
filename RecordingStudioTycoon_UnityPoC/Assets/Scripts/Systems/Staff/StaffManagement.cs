@@ -2,6 +2,9 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using RecordingStudioTycoon.Core; // For GameState access
+using RecordingStudioTycoon.DataModels;
+using RecordingStudioTycoon.GameLogic;
+using Project = RecordingStudioTycoon.DataModels.Project;
 
 namespace RecordingStudioTycoon.Systems.Staff
 {
@@ -10,6 +13,89 @@ namespace RecordingStudioTycoon.Systems.Staff
         public static StaffManagement Instance { get; private set; }
 
         [SerializeField] private StaffData staffData; // Reference to ScriptableObject for staff templates
+
+        private List<StaffMember> staffMembers;
+        private StaffMember selectedStaff;
+        private StaffMember staffToTrain;
+        private StaffMember staffToFire;
+        private StaffMember staffToHire;
+        private StaffMember staffToPromote;
+        private StaffMember staffToDemote;
+        private StaffMember staffToTransfer;
+        private StaffMember staffToAssign;
+        private StaffMember staffToUnassign;
+        private StaffMember staffToEvaluate;
+        private StaffMember staffToReward;
+        private StaffMember staffToPunish;
+        private StaffMember staffToRest;
+        private StaffMember staffToWork;
+        private StaffMember staffToTrain;
+        private StaffMember staffToUpgrade;
+        private StaffMember staffToDowngrade;
+        private StaffMember staffToRetire;
+        private StaffMember staffToReplace;
+        private StaffMember staffToBackup;
+        private StaffMember staffToRestore;
+        private StaffMember staffToExport;
+        private StaffMember staffToImport;
+        private StaffMember staffToClone;
+        private StaffMember staffToDelete;
+        private StaffMember staffToArchive;
+        private StaffMember staffToUnarchive;
+        private StaffMember staffToLock;
+        private StaffMember staffToUnlock;
+        private StaffMember staffToHide;
+        private StaffMember staffToShow;
+        private StaffMember staffToEnable;
+        private StaffMember staffToDisable;
+        private StaffMember staffToActivate;
+        private StaffMember staffToDeactivate;
+        private StaffMember staffToStart;
+        private StaffMember staffToStop;
+        private StaffMember staffToPause;
+        private StaffMember staffToResume;
+        private StaffMember staffToCancel;
+        private StaffMember staffToComplete;
+        private StaffMember staffToFail;
+        private StaffMember staffToPass;
+        private StaffMember staffToSkip;
+        private StaffMember staffToRetry;
+        private StaffMember staffToReset;
+        private StaffMember staffToClear;
+        private StaffMember staffToRefresh;
+        private StaffMember staffToUpdate;
+        private StaffMember staffToSave;
+        private StaffMember staffToLoad;
+        private StaffMember staffToExport;
+        private StaffMember staffToImport;
+        private StaffMember staffToClone;
+        private StaffMember staffToDelete;
+        private StaffMember staffToArchive;
+        private StaffMember staffToUnarchive;
+        private StaffMember staffToLock;
+        private StaffMember staffToUnlock;
+        private StaffMember staffToHide;
+        private StaffMember staffToShow;
+        private StaffMember staffToEnable;
+        private StaffMember staffToDisable;
+        private StaffMember staffToActivate;
+        private StaffMember staffToDeactivate;
+        private StaffMember staffToStart;
+        private StaffMember staffToStop;
+        private StaffMember staffToPause;
+        private StaffMember staffToResume;
+        private StaffMember staffToCancel;
+        private StaffMember staffToComplete;
+        private StaffMember staffToFail;
+        private StaffMember staffToPass;
+        private StaffMember staffToSkip;
+        private StaffMember staffToRetry;
+        private StaffMember staffToReset;
+        private StaffMember staffToClear;
+        private StaffMember staffToRefresh;
+        private StaffMember staffToUpdate;
+        private StaffMember staffToSave;
+        private StaffMember staffToLoad;
 
         private void Awake()
         {
