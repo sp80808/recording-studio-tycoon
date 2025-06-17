@@ -1,7 +1,7 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
-using RecordingStudioTycoon.DataModels;
+
 using RecordingStudioTycoon.DataModels.Projects; // For Project, OriginalTrackProject
 using RecordingStudioTycoon.DataModels.Staff; // For StaffMember, SessionMusician
 using RecordingStudioTycoon.DataModels.Equipment; // For Equipment
@@ -9,6 +9,8 @@ using RecordingStudioTycoon.DataModels.Market; // For MarketState, TrendEvent
 using RecordingStudioTycoon.DataModels.Songs; // For Song, Band
 using RecordingStudioTycoon.DataModels.Tours; // For Venue, Tour
 using RecordingStudioTycoon.DataModels.Characters; // For Artist
+using RecordingStudioTycoon.DataModels.Player; // For PlayerAttributeType
+using RecordingStudioTycoon.DataModels.Skills; // For StudioSkillType
 using RecordingStudioTycoon.DataModels.Progression; // For StudioSkill, AggregatedPerkModifiers, StudioSpecialization, IndustryPrestige, PerkUnlockCondition, PerkEffect, PlayerAbilityChange, ProgressionMilestone
 using RecordingStudioTycoon.Utils; // For SerializableDictionary, ProjectUtils, StaffUtils, BandUtils, ProgressionUtils
 using RecordingStudioTycoon.Core; // For GameStateData
