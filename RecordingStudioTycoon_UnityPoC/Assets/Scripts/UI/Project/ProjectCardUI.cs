@@ -20,6 +20,8 @@ namespace RecordingStudioTycoon.UI.Project
         private Button regenerateReviewButton;
         private Label projectDescriptionLabel;
         private Button regenerateDescriptionButton;
+        private VisualElement descriptionContainer;
+        private Label descriptionHeaderLabel;
 
         private RecordingStudioTycoon.DataModels.Project currentProject;
 
@@ -68,6 +70,47 @@ namespace RecordingStudioTycoon.UI.Project
                 root.Add(regenerateDescriptionButton);
             }
             regenerateDescriptionButton.clicked += async () => await FetchAndDisplayDescription(true);
+
+            // Add description section header and container
+            descriptionHeaderLabel = root.Q<Label>("description-header-label");
+            if (descriptionHeaderLabel == null)
+            {
+                descriptionHeaderLabel = new Label("🎼 Album Description")
+                {
+                    name = "description-header-label",
+                    style = {
+                        unityFontStyleAndWeight = FontStyle.Bold,
+                        fontSize = 16,
+                        marginTop = 10,
+                        marginBottom = 2
+                    }
+                };
+                root.Add(descriptionHeaderLabel);
+            }
+            descriptionContainer = root.Q<VisualElement>("description-container");
+            if (descriptionContainer == null)
+            {
+                descriptionContainer = new VisualElement { name = "description-container" };
+                // Style: rounded corners, light background, padding
+                descriptionContainer.style.backgroundColor = new UnityEngine.Color(0.96f, 0.98f, 1f, 1f);
+                descriptionContainer.style.borderTopLeftRadius = 8;
+                descriptionContainer.style.borderTopRightRadius = 8;
+                descriptionContainer.style.borderBottomLeftRadius = 8;
+                descriptionContainer.style.borderBottomRightRadius = 8;
+                descriptionContainer.style.paddingLeft = 8;
+                descriptionContainer.style.paddingRight = 8;
+                descriptionContainer.style.paddingTop = 6;
+                descriptionContainer.style.paddingBottom = 6;
+                descriptionContainer.style.marginBottom = 8;
+                root.Add(descriptionContainer);
+            }
+            // Move the description label into the container
+            if (projectDescriptionLabel != null && projectDescriptionLabel.parent != descriptionContainer)
+            {
+                projectDescriptionLabel.style.fontSize = 15;
+                projectDescriptionLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+                descriptionContainer.Add(projectDescriptionLabel);
+            }
 
             UpdateUI();
 
@@ -126,12 +169,12 @@ namespace RecordingStudioTycoon.UI.Project
         {
             if (currentProject == null) return;
             projectDescriptionLabel.text = "Loading description...";
+            projectDescriptionLabel.style.opacity = 0f; // For fade-in
             string description = null;
             try
             {
                 if (forceRefresh)
                 {
-                    // Bypass cache by using a unique prompt (add timestamp)
                     description = await TextGenerationManager.Instance.GetDescription("album", currentProject.Name + $" ({System.DateTime.Now.Ticks})");
                 }
                 else
@@ -146,6 +189,22 @@ namespace RecordingStudioTycoon.UI.Project
                 projectDescriptionLabel.style.color = new UnityEngine.Color(1, 0, 0); // Red for error
                 UnityEngine.Debug.LogError($"Error fetching description: {ex.Message}");
             }
+            // Fade-in animation
+            FadeIn(projectDescriptionLabel, 0.5f);
+        }
+
+        // Fade-in animation for description label
+        private async void FadeIn(VisualElement element, float duration)
+        {
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                float t = elapsed / duration;
+                element.style.opacity = t;
+                await System.Threading.Tasks.Task.Yield();
+                elapsed += UnityEngine.Time.deltaTime;
+            }
+            element.style.opacity = 1f;
         }
     }
 }

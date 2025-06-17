@@ -16,6 +16,8 @@ namespace RecordingStudioTycoon.UI
         private Label yearLabel;
         private Label studioDescriptionLabel;
         private Button regenerateDescriptionButton;
+        private VisualElement descriptionContainer;
+        private Label descriptionHeaderLabel;
 
         public delegate void StudioAction();
         public event StudioAction OnOpenStudioPanelClicked; // Example for a button to open this panel
@@ -36,13 +38,46 @@ namespace RecordingStudioTycoon.UI
             GameManager.OnGameStateChanged += UpdateUI;
             UpdateUI(); // Initial UI update
 
-            // Add description label and button
-            studioDescriptionLabel = root.Q<Label>("studio-description-label");
-            if (studioDescriptionLabel == null)
+            // Add description section header and container
+            descriptionHeaderLabel = root.Q<Label>("studio-description-header-label");
+            if (descriptionHeaderLabel == null)
             {
-                studioDescriptionLabel = new Label("Loading description...");
-                studioDescriptionLabel.name = "studio-description-label";
-                root.Add(studioDescriptionLabel);
+                descriptionHeaderLabel = new Label("🏢 Studio Description")
+                {
+                    name = "studio-description-header-label",
+                    style = {
+                        unityFontStyleAndWeight = FontStyle.Bold,
+                        fontSize = 16,
+                        marginTop = 10,
+                        marginBottom = 2
+                    }
+                };
+                root.Add(descriptionHeaderLabel);
+            }
+            descriptionContainer = root.Q<VisualElement>("studio-description-container");
+            if (descriptionContainer == null)
+            {
+                descriptionContainer = new VisualElement { name = "studio-description-container" };
+                // Style: rounded corners, light background, padding
+                descriptionContainer.style.backgroundColor = new UnityEngine.Color(0.96f, 0.98f, 1f, 1f);
+                descriptionContainer.style.borderTopLeftRadius = 8;
+                descriptionContainer.style.borderTopRightRadius = 8;
+                descriptionContainer.style.borderBottomLeftRadius = 8;
+                descriptionContainer.style.borderBottomRightRadius = 8;
+                descriptionContainer.style.paddingLeft = 8;
+                descriptionContainer.style.paddingRight = 8;
+                descriptionContainer.style.paddingTop = 6;
+                descriptionContainer.style.paddingBottom = 6;
+                descriptionContainer.style.marginBottom = 8;
+                root.Add(descriptionContainer);
+            }
+            // Move the description label into the container
+            studioDescriptionLabel = root.Q<Label>("studio-description-label");
+            if (studioDescriptionLabel != null && studioDescriptionLabel.parent != descriptionContainer)
+            {
+                studioDescriptionLabel.style.fontSize = 15;
+                studioDescriptionLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+                descriptionContainer.Add(studioDescriptionLabel);
             }
             regenerateDescriptionButton = root.Q<Button>("regenerate-description-button");
             if (regenerateDescriptionButton == null)
@@ -76,6 +111,7 @@ namespace RecordingStudioTycoon.UI
         private async System.Threading.Tasks.Task FetchAndDisplayDescription(bool forceRefresh)
         {
             studioDescriptionLabel.text = "Loading description...";
+            studioDescriptionLabel.style.opacity = 0f; // For fade-in
             string description = null;
             try
             {
@@ -95,6 +131,22 @@ namespace RecordingStudioTycoon.UI
                 studioDescriptionLabel.style.color = new UnityEngine.Color(1, 0, 0); // Red for error
                 UnityEngine.Debug.LogError($"Error fetching studio description: {ex.Message}");
             }
+            // Fade-in animation
+            FadeIn(studioDescriptionLabel, 0.5f);
+        }
+
+        // Fade-in animation for description label
+        private async void FadeIn(VisualElement element, float duration)
+        {
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                float t = elapsed / duration;
+                element.style.opacity = t;
+                await System.Threading.Tasks.Task.Yield();
+                elapsed += UnityEngine.Time.deltaTime;
+            }
+            element.style.opacity = 1f;
         }
     }
 }

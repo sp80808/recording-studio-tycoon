@@ -127,16 +127,17 @@ namespace RecordingStudioTycoon.UI.Staff
                 if (assignedProject != null)
                 {
                     return assignedProject.Name;
-                    private void OnDisable()
-                    {
-                        if (regenerateBioButton != null)
-                        {
-                            regenerateBioButton.clicked -= async () => await FetchAndDisplayBio(true);
-                        }
-                    }
                 }
             }
             return "Unknown Project";
+        }
+
+        private void OnDisable()
+        {
+            if (regenerateBioButton != null)
+            {
+                regenerateBioButton.clicked -= async () => await FetchAndDisplayBio(true);
+            }
         }
 
         private void OnAssignToProjectButtonClicked(ClickEvent evt)

@@ -218,11 +218,6 @@ namespace RecordingStudioTycoon.Utils
         /// <summary>
         /// Adds a player-produced song to relevant charts and re-sorts them.
         /// </summary>
-        }
-
-        /// <summary>
-        /// Adds a player-produced song to relevant charts and re-sorts them.
-        /// </summary>
         /// <param name="charts">The current list of charts.</param>
         /// <param name="playerSong">The player's song to add.</param>
         /// <param name="currentDay">Current game day.</param>
@@ -232,20 +227,19 @@ namespace RecordingStudioTycoon.Utils
         /// <returns>Updated list of charts.</returns>
         public static List<Chart> AddPlayerSongToCharts(List<Chart> charts, Song playerSong, long currentDay, int bandReputation, SerializableDictionary<MusicGenre, DataModels.Progression.StudioSpecialization> studioSpecializations, SerializableDictionary<string, DataModels.Progression.IndustryPrestige> industryPrestige)
         {
-            // Calculate initial chart potential for the player song, factoring in specialization and prestige
-            float initialPopularity = CalculateSongPopularity(playerSong, GameManager.Instance.GameState.playerBands, GameManager.Instance.GameState.currentMarketTrends, studioSpecializations, industryPrestige);
-            initialPopularity = Mathf.Min(100f, Mathf.Max(1f, initialPopularity)); // Ensure within bounds
-            int initialPosition = Mathf.Max(1, 40 - Mathf.FloorToInt(initialPopularity / 2.5f)); // Higher popularity = lower position (closer to #1)
+            float initialPopularity = CalculateSongPopularity(playerSong, GameManager.Instance?.GameState?.playerBands ?? new List<Band>(), GameManager.Instance?.GameState?.currentMarketTrends ?? new List<MarketTrend>(), studioSpecializations, industryPrestige);
+            initialPopularity = Mathf.Min(100f, Mathf.Max(1f, initialPopularity));
+            int initialPosition = Mathf.Max(1, 40 - Mathf.FloorToInt(initialPopularity / 2.5f));
 
             ChartEntry playerSongChartEntry = new ChartEntry
             {
                 Position = initialPosition,
-                Song = playerSong, // Song is already marked as playerProduced if it came from a player project
+                Song = playerSong,
                 Trend = "new",
                 PositionChange = 0,
                 WeeksOnChart = 0,
                 PeakPosition = initialPosition,
-                LastPosition = 0, // Undefined in TS, 0 in C# for new entry
+                LastPosition = 0
             };
 
             return charts.Select(chart =>
@@ -253,45 +247,39 @@ namespace RecordingStudioTycoon.Utils
                 if (chart.Genre == playerSong.Genre || chart.Id == "hot100")
                 {
                     List<ChartEntry> updatedEntries = new List<ChartEntry>(chart.Entries);
-                    // Ensure the player song is not already in the list before adding
                     if (!updatedEntries.Any(e => e.Song.Id == playerSong.Id))
                     {
                         updatedEntries.Add(playerSongChartEntry);
                     }
 
-                    // Re-sort entries based on calculated popularity, including specialization and prestige
                     updatedEntries.Sort((a, b) =>
                     {
-                        float aPopularity = CalculateSongPopularity(a.Song, allBands, currentMarketTrends, studioSpecializations, industryPrestige);
-                        float bPopularity = CalculateSongPopularity(b.Song, allBands, currentMarketTrends, studioSpecializations, industryPrestige);
-                        return bPopularity.CompareTo(aPopularity); // Higher popularity comes first
+                        float aPopularity = CalculateSongPopularity(a.Song, GameManager.Instance?.GameState?.playerBands ?? new List<Band>(), GameManager.Instance?.GameState?.currentMarketTrends ?? new List<MarketTrend>(), studioSpecializations, industryPrestige);
+                        float bPopularity = CalculateSongPopularity(b.Song, GameManager.Instance?.GameState?.playerBands ?? new List<Band>(), GameManager.Instance?.GameState?.currentMarketTrends ?? new List<MarketTrend>(), studioSpecializations, industryPrestige);
+                        return bPopularity.CompareTo(aPopularity);
                     });
 
-                    // Re-assign positions and update movement
                     List<ChartEntry> finalEntries = new List<ChartEntry>();
-                    int maxChartSize = chart.Id == "hot100" ? 40 : 25; // Keep charts to a reasonable size
+                    int maxChartSize = chart.Id == "hot100" ? 40 : 25;
 
                     foreach (var entry in updatedEntries)
                     {
                         int newPosition = finalEntries.Count + 1;
-                        if (newPosition > maxChartSize) break; // Stop if chart is full
+                        if (newPosition > maxChartSize) break;
 
                         string movement = "steady";
                         int positionChange = 0;
 
-                        // Find the old position if it existed
                         ChartEntry oldEntry = chart.Entries.FirstOrDefault(e => e.Song.Id == entry.Song.Id);
                         int oldPosition = oldEntry != null ? oldEntry.Position : 0;
 
                         if (entry.Song.Id == playerSong.Id && oldEntry == null)
                         {
-                            // This is the newly added player song and it's truly new to this chart
                             movement = "new";
                             positionChange = 0;
                         }
                         else if (oldEntry != null)
                         {
-                            // For existing songs, calculate movement
                             positionChange = oldPosition - newPosition;
                             if (positionChange > 0) movement = "up";
                             else if (positionChange < 0) movement = "down";
@@ -299,8 +287,7 @@ namespace RecordingStudioTycoon.Utils
                         }
                         else
                         {
-                            // This is an AI song that was not on the chart last week but made it this week
-                            movement = "new"; // Treat as new entry if it wasn't there before
+                            movement = "new";
                         }
 
                         finalEntries.Add(new ChartEntry
@@ -309,12 +296,12 @@ namespace RecordingStudioTycoon.Utils
                             Song = entry.Song,
                             Position = newPosition,
                             PeakPosition = oldEntry != null ? Mathf.Min(oldEntry.PeakPosition, newPosition) : newPosition,
-                            WeeksOnChart = oldEntry != null ? oldEntry.WeeksOnChart + 1 : 1, // Increment weeks on chart for existing songs, 1 for new
-                            LastPosition = oldPosition, // Store current position as last week's for next update
+                            WeeksOnChart = oldEntry != null ? oldEntry.WeeksOnChart + 1 : 1,
+                            LastPosition = oldPosition,
                             Trend = movement,
                             PositionChange = positionChange,
-                            AudioClipName = entry.AudioClipName, // Preserve existing audio data
-                            AudioPlaybackSegment = entry.AudioPlaybackSegment // Preserve existing audio data
+                            AudioClipName = entry.AudioClipName,
+                            AudioPlaybackSegment = entry.AudioPlaybackSegment
                         });
                     }
 
@@ -325,7 +312,7 @@ namespace RecordingStudioTycoon.Utils
                         Description = chart.Description,
                         MinLevelToAccess = chart.MinLevelToAccess,
                         Entries = finalEntries,
-                        LastUpdatedDay = currentDay,
+                        LastUpdatedDay = currentDay
                     };
                 }
                 return chart;
@@ -335,15 +322,6 @@ namespace RecordingStudioTycoon.Utils
         /// <summary>
         /// Updates existing charts based on song performance, market trends, etc.
         /// </summary>
-        /// <param name="currentCharts">The current list of charts.</param>
-        /// <param name="playerLevel">Current player level.</param>
-        /// <param name="currentDay">Current game day.</param>
-        /// <param name="allSongs">All active songs in the game (player and AI).</param>
-        /// <param name="allBands">All active bands in the game.</param>
-        /// <param name="currentMarketTrends">Current market trends.</param>
-        /// <param name="studioSpecializations">Player's studio specializations.</param>
-        /// <param name="industryPrestige">Player's industry prestige levels.</param>
-        /// <returns>Updated list of charts.</returns>
         public static List<Chart> UpdateCharts(List<Chart> currentCharts, int playerLevel, long currentDay, List<Song> allSongs, List<Band> allBands, List<MarketTrend> currentMarketTrends, SerializableDictionary<MusicGenre, DataModels.Progression.StudioSpecialization> studioSpecializations, SerializableDictionary<string, DataModels.Progression.IndustryPrestige> industryPrestige)
         {
             return currentCharts.Select(chart =>
@@ -351,40 +329,16 @@ namespace RecordingStudioTycoon.Utils
                 List<ChartEntry> updatedEntries = new List<ChartEntry>();
                 System.Random rand = new System.Random();
 
-                // 1. Update existing entries and filter out songs that fall off the chart
                 foreach (var entry in chart.Entries)
                 {
                     Song song = allSongs.FirstOrDefault(s => s.Id == entry.Song.Id) ?? entry.Song;
-                    Band band = allBands.FirstOrDefault(b => b.Id == song.AssociatedBandId);
-                    MarketTrend genreTrend = currentMarketTrends.FirstOrDefault(t => t.GenreId == song.Genre);
-
-                    // Calculate current popularity based on various factors
-                    float currentPopularity = song.QualityScore * 0.6f + song.InitialBuzz * 0.2f;
-                    if (band != null)
-                    {
-                        currentPopularity += band.Reputation * 0.2f;
-                    }
-                    if (genreTrend != null)
-                    {
-                        currentPopularity += (genreTrend.Popularity - 50f) * 0.1f; // Influence of genre trend
-                    }
-
-                    // Simulate decay over time and random fluctuation
-                    currentPopularity -= (entry.WeeksOnChart * 0.5f); // Decay based on weeks on chart
-                    currentPopularity += ((float)rand.NextDouble() * 5f - 2.5f); // Random fluctuation -2.5 to +2.5
-                    currentPopularity = Mathf.Clamp(currentPopularity, 1f, 100f); // Ensure popularity stays within bounds
-
-                    // Determine if song stays on chart (simplified logic)
-                    // Calculate current popularity based on various factors, including specialization and prestige
+                    
                     float currentPopularity = CalculateSongPopularity(song, allBands, currentMarketTrends, studioSpecializations, industryPrestige);
+                    currentPopularity -= (entry.WeeksOnChart * 0.5f);
+                    currentPopularity += ((float)rand.NextDouble() * 5f - 2.5f);
+                    currentPopularity = Mathf.Clamp(currentPopularity, 1f, 100f);
 
-                    // Simulate decay over time and random fluctuation
-                    currentPopularity -= (entry.WeeksOnChart * 0.5f); // Decay based on weeks on chart
-                    currentPopularity += ((float)rand.NextDouble() * 5f - 2.5f); // Random fluctuation -2.5 to +2.5
-                    currentPopularity = Mathf.Clamp(currentPopularity, 1f, 100f); // Ensure popularity stays within bounds
-
-                    // Determine if song stays on chart (simplified logic)
-                    if (currentPopularity > 10f || entry.Position <= 20) // Keep popular songs or top 20
+                    if (currentPopularity > 10f || entry.Position <= 20)
                     {
                         Song updatedSong = new Song(song.Title, song.Genre, song.Artist, song.QualityScore)
                         {
@@ -393,39 +347,36 @@ namespace RecordingStudioTycoon.Utils
                             AssociatedBandId = song.AssociatedBandId,
                             ReleaseDate = song.ReleaseDate,
                             IsReleased = song.IsReleased,
-                            WeeksOnChart = entry.WeeksOnChart + 1, // Increment weeks on chart
-                            CurrentChartPosition = entry.Position, // Store current position
-                            // totalSales: song.totalSales + calculateSales(currentPopularity, chart.influence), // Placeholder for sales calculation
-                            // performanceHistory: [...song.performanceHistory, { day: currentDay, sales: song.totalSales, chartPosition: entry.position }],
+                            WeeksOnChart = entry.WeeksOnChart + 1,
+                            CurrentChartPosition = entry.Position
                         };
 
                         updatedEntries.Add(new ChartEntry
                         {
                             Id = entry.Id,
                             Song = updatedSong,
-                            Position = entry.Position, // Temporary position before re-sort
+                            Position = entry.Position,
                             PeakPosition = entry.PeakPosition,
                             WeeksOnChart = entry.WeeksOnChart + 1,
-                            LastPosition = entry.Position, // Store current position as last week's
-                            Trend = entry.Trend, // Will be re-calculated after sort
-                            PositionChange = entry.PositionChange, // Will be re-calculated after sort
+                            LastPosition = entry.Position,
+                            Trend = entry.Trend,
+                            PositionChange = entry.PositionChange,
                             AudioClipName = entry.AudioClipName,
                             AudioPlaybackSegment = entry.AudioPlaybackSegment
                         });
                     }
                 }
 
-                // 2. Add newly released songs (player and AI) that are not yet on this chart
                 List<Song> newlyReleasedSongs = allSongs.Where(s =>
                     s.IsReleased &&
-                    s.ReleaseDate == currentDay && // Only add songs released today
+                    s.ReleaseDate == currentDay &&
                     !updatedEntries.Any(entry => entry.Song.Id == s.Id) &&
                     (chart.Genre == s.Genre || chart.Id == "hot100")
                 ).ToList();
 
                 foreach (var newSong in newlyReleasedSongs)
                 {
-                    float initialPopularity = CalculateSongPopularity(newSong, allBands, currentMarketTrends);
+                    float initialPopularity = CalculateSongPopularity(newSong, allBands, currentMarketTrends, studioSpecializations, industryPrestige);
                     int initialPosition = Mathf.Max(1, 40 - Mathf.FloorToInt(initialPopularity / 2.5f));
 
                     updatedEntries.Add(new ChartEntry
@@ -436,35 +387,31 @@ namespace RecordingStudioTycoon.Utils
                         PositionChange = 0,
                         WeeksOnChart = 0,
                         PeakPosition = initialPosition,
-                        LastPosition = 0,
-                        AudioClipName = ChartAudioManager.Instance.GetAudioClipName(new ChartEntry { Song = newSong }, GameManager.Instance.GameState), // Get audio clip name
-                        AudioPlaybackSegment = ChartAudioManager.Instance.GetPlaybackSegment(new ChartEntry { Song = newSong }) // Get playback segment
+                        LastPosition = 0
                     });
                 }
 
-                // 3. Sort entries by calculated popularity and re-assign positions, including specialization and prestige
                 updatedEntries.Sort((a, b) =>
                 {
                     float aPopularity = CalculateSongPopularity(a.Song, allBands, currentMarketTrends, studioSpecializations, industryPrestige);
                     float bPopularity = CalculateSongPopularity(b.Song, allBands, currentMarketTrends, studioSpecializations, industryPrestige);
-                    return bPopularity.CompareTo(aPopularity); // Higher popularity comes first
+                    return bPopularity.CompareTo(aPopularity);
                 });
 
-                // 4. Update positions, movement, and peak position
                 List<ChartEntry> finalEntries = new List<ChartEntry>();
-                int maxChartSize = chart.Id == "hot100" ? 40 : 25; // Keep charts to a reasonable size
+                int maxChartSize = chart.Id == "hot100" ? 40 : 25;
 
                 for (int i = 0; i < updatedEntries.Count; i++)
                 {
                     ChartEntry entry = updatedEntries[i];
                     int newPosition = i + 1;
 
-                    if (newPosition > maxChartSize) break; // Only include songs within the chart size
+                    if (newPosition > maxChartSize) break;
 
                     string movement = "steady";
                     int positionChange = 0;
 
-                    if (entry.LastPosition > 0) // If it had a last week position
+                    if (entry.LastPosition > 0)
                     {
                         positionChange = entry.LastPosition - newPosition;
                         if (positionChange > 0) movement = "up";
@@ -477,7 +424,7 @@ namespace RecordingStudioTycoon.Utils
                     }
                     else
                     {
-                        movement = "returning"; // Or some other logic for re-entry
+                        movement = "returning";
                     }
 
                     finalEntries.Add(new ChartEntry
@@ -486,8 +433,8 @@ namespace RecordingStudioTycoon.Utils
                         Song = entry.Song,
                         Position = newPosition,
                         PeakPosition = Mathf.Min(entry.PeakPosition, newPosition),
-                        WeeksOnChart = entry.WeeksOnChart, // Already incremented or set for new
-                        LastPosition = entry.Position, // Store current position as last week's for next update
+                        WeeksOnChart = entry.WeeksOnChart,
+                        LastPosition = entry.Position,
                         Trend = movement,
                         PositionChange = positionChange,
                         AudioClipName = entry.AudioClipName,
@@ -502,48 +449,40 @@ namespace RecordingStudioTycoon.Utils
                     Description = chart.Description,
                     MinLevelToAccess = chart.MinLevelToAccess,
                     Entries = finalEntries,
-                    LastUpdatedDay = currentDay,
+                    LastUpdatedDay = currentDay
                 };
             }).ToList();
         }
 
-        // Helper for contactability (from TS)
+        // Helper methods
         public static bool IsArtistContactable(ChartEntry chartEntry, int playerLevel, int playerReputation)
         {
-            // Level requirements
-            if (chartEntry.Position <= 10 && playerLevel < 8) return false; // Top 10 require level 8+
-            if (chartEntry.Position <= 25 && playerLevel < 5) return false; // Top 25 require level 5+
+            if (chartEntry.Position <= 10 && playerLevel < 8) return false;
+            if (chartEntry.Position <= 25 && playerLevel < 5) return false;
             
-            // Reputation requirements  
             int minReputation = Mathf.Max(0, (50 - chartEntry.Position) * 10);
             if (playerReputation < minReputation) return false;
             
             return true;
         }
 
-        // Helper for contact cost (from TS)
         public static int CalculateContactCost(int chartPosition, int artistPopularity, int playerReputation)
         {
             const int baseCost = 1000;
-            float positionMultiplier = Mathf.Max(0.5f, 2f - (chartPosition / 50f)); // Higher chart position = higher cost
+            float positionMultiplier = Mathf.Max(0.5f, 2f - (chartPosition / 50f));
             float popularityMultiplier = artistPopularity / 100f;
-            float reputationDiscount = Mathf.Max(0.7f, 1f - (playerReputation / 500f)); // Better reputation = lower cost
+            float reputationDiscount = Mathf.Max(0.7f, 1f - (playerReputation / 500f));
             
             return Mathf.FloorToInt(baseCost * positionMultiplier * popularityMultiplier * reputationDiscount);
         }
 
-        // Helper for contact success (from TS)
         public static float CalculateContactSuccess(int chartPosition, int artistPopularity, int playerReputation, int offerAmount)
         {
-            const float baseSuccess = 0.3f; // 30% base success rate
+            const float baseSuccess = 0.3f;
             
-            // Position factor (easier to contact lower-charting artists)
             float positionFactor = Mathf.Max(0.1f, 1f - (chartPosition / 100f));
-            
-            // Reputation factor
             float reputationFactor = Mathf.Min(2f, 1f + (playerReputation / 200f));
             
-            // Offer factor (higher offer = better chance)
             float expectedOffer = CalculateContactCost(chartPosition, artistPopularity, playerReputation);
             float offerFactor = Mathf.Min(2f, offerAmount / expectedOffer);
             
@@ -554,13 +493,7 @@ namespace RecordingStudioTycoon.Utils
         /// Calculates a song's overall popularity based on its attributes, associated band's reputation,
         /// and current market trends for its genre.
         /// </summary>
-        /// <param name="song">The song to calculate popularity for.</param>
-        /// <param name="allBands">A list of all active bands (player and AI).</param>
-        /// <param name="currentMarketTrends">A list of current market trends.</param>
-        /// <param name="studioSpecializations">Player's studio specializations.</param>
-        /// <param name="industryPrestige">Player's industry prestige levels.</param>
-        /// <returns>The calculated popularity score for the song.</returns>
-        private static float CalculateSongPopularity(Song song, List<Band> allBands, List<MarketTrend> currentMarketTrends, SerializableDictionary<MusicGenre, DataModels.Progression.StudioSpecialization> studioSpecializations, SerializableDictionary<string, DataModels.Progression.IndustryPrestige> industryPrestige)
+        private static float CalculateSongPopularity(Song song, List<Band> allBands, List<MarketTrend> currentMarketTrends, SerializableDictionary<MusicGenre, DataModels.Progression.StudioSpecialization> studioSpecializations = null, SerializableDictionary<string, DataModels.Progression.IndustryPrestige> industryPrestige = null)
         {
             float popularity = song.QualityScore * 0.6f + song.InitialBuzz * 0.2f;
 
@@ -573,27 +506,31 @@ namespace RecordingStudioTycoon.Utils
             MarketTrend genreTrend = currentMarketTrends.FirstOrDefault(t => t.GenreId == song.Genre);
             if (genreTrend != null)
             {
-                popularity += (genreTrend.Popularity - 50f) * 0.1f; // Influence of genre trend
+                popularity += (genreTrend.Popularity - 50f) * 0.1f;
             }
 
-            // Apply Studio Specialization bonus if the song's genre is specialized
-            if (studioSpecializations.TryGetValue((MusicGenre)Enum.Parse(typeof(MusicGenre), song.Genre), out DataModels.Progression.StudioSpecialization specialization))
+            // Apply Studio Specialization bonus if available
+            if (studioSpecializations != null && Enum.TryParse<MusicGenre>(song.Genre, out MusicGenre genre))
             {
-                popularity *= specialization.BonusMultiplier;
-                UnityEngine.Debug.Log($"Applying {specialization.Genre} specialization bonus to song popularity: {specialization.BonusMultiplier}");
+                if (studioSpecializations.TryGetValue(genre, out DataModels.Progression.StudioSpecialization specialization))
+                {
+                    popularity *= specialization.BonusMultiplier;
+                }
             }
 
-            // Apply Industry Prestige bonus (general and genre-specific)
-            if (industryPrestige.TryGetValue("general", out DataModels.Progression.IndustryPrestige generalPrestige))
+            // Apply Industry Prestige bonus if available
+            if (industryPrestige != null)
             {
-                popularity *= generalPrestige.BonusMultiplier;
-                UnityEngine.Debug.Log($"Applying general industry prestige bonus to song popularity: {generalPrestige.BonusMultiplier}");
-            }
-            string genrePrestigeKey = song.Genre.ToLowerInvariant() + "_industry";
-            if (industryPrestige.TryGetValue(genrePrestigeKey, out DataModels.Progression.IndustryPrestige genrePrestige))
-            {
-                popularity *= genrePrestige.BonusMultiplier;
-                UnityEngine.Debug.Log($"Applying {song.Genre} industry prestige bonus to song popularity: {genrePrestige.BonusMultiplier}");
+                if (industryPrestige.TryGetValue("general", out DataModels.Progression.IndustryPrestige generalPrestige))
+                {
+                    popularity *= generalPrestige.BonusMultiplier;
+                }
+                
+                string genrePrestigeKey = song.Genre.ToLowerInvariant() + "_industry";
+                if (industryPrestige.TryGetValue(genrePrestigeKey, out DataModels.Progression.IndustryPrestige genrePrestige))
+                {
+                    popularity *= genrePrestige.BonusMultiplier;
+                }
             }
 
             return Mathf.Clamp(popularity, 1f, 100f);

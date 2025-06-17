@@ -20,6 +20,9 @@ This document describes the high-level architecture of the Recording Studio Tyco
 - Follows phased rollout: album art and text/news first, then logo, TTS, dialogue, accessibility.
 - Uses referrer-based authentication for frontend calls.
 - Error handling, loading states, and caching are part of the integration.
+- News feed panel (MainMenuPanel) displays AI-generated news with icons, separators, scrollable container, fade-in animation, and highlighted latest item.
+- Album/song and studio description panels feature section headers with icons, rounded/light background boxes, larger italicized text, and fade-in animation for updates.
+- All enhancements are implemented with comments for easy future adjustments.
 
 ```mermaid
 flowchart TD

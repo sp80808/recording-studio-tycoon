@@ -2,11 +2,9 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using RecordingStudioTycoon.DataModels.Game;
-using RecordingStudioTycoon.DataModels.Progression;
-using RecordingStudioTycoon.DataModels.Projects;
-using RecordingStudioTycoon.ScriptableObjects;
-using RecordingStudioTycoon.Utils; // For ProgressionUtils
+using RecordingStudioTycoon.DataModels;
+using RecordingStudioTycoon.GameLogic; // For GameManager and GameState
+using RecordingStudioTycoon.Utils; // For any utility functions
 
 namespace RecordingStudioTycoon.Systems.Progression
 {
@@ -14,15 +12,17 @@ namespace RecordingStudioTycoon.Systems.Progression
     {
         public static ProgressionManager Instance { get; private set; }
 
-        [SerializeField] private GameStateSO gameStateSO;
-        [SerializeField] private ProgressionDataSO progressionData; // ScriptableObject for milestones, XP requirements
+        [SerializeField] private ProgressionData progressionData; // Assign ScriptableObject in Inspector
+        [SerializeField] private StudioPerkData studioPerkData; // Assign ScriptableObject in Inspector
+        [SerializeField] private List<EraData> allEras; // Assign all Era ScriptableObjects in Inspector
 
-        // Events for UI updates
-        public event Action<LevelUpDetails> OnPlayerLevelUp;
-        public event Action<ProgressionMilestone> OnMilestoneUnlocked;
-        public event Action OnProgressionUpdated;
+        // Events for progression updates
+        public event Action OnPlayerLevelUp;
+        public event Action OnPerkUnlocked;
+        public event Action OnEraTransition;
+        public event Action OnMilestoneReached;
 
-        private List<ProgressionMilestone> _milestones;
+        private Dictionary<string, StudioPerk> allPerksLookup;
 
         private void Awake()
         {
@@ -39,487 +39,366 @@ namespace RecordingStudioTycoon.Systems.Progression
 
         private void Start()
         {
-            InitializeProgression();
-            // Subscribe to game day advancement if GameManager provides such an event
-            // GameManager.Instance.OnDayAdvanced += OnDayAdvanced;
+            if (progressionData == null)
+            {
+                Debug.LogError("ProgressionData ScriptableObject not assigned to ProgressionManager.");
+                return;
+            }
+            if (studioPerkData == null)
+            {
+                Debug.LogError("StudioPerkData ScriptableObject not assigned to ProgressionManager.");
+                return;
+            }
+            if (allEras == null || allEras.Count == 0)
+            {
+                Debug.LogError("EraData ScriptableObjects not assigned to ProgressionManager.");
+            }
+
+            InitializePerkLookup();
+
+            // Subscribe to game state changes if GameManager provides an event
+            // GameManager.Instance.OnGameStateChanged += OnGameStateChanged; // Example
         }
 
         private void OnDestroy()
         {
-            // Unsubscribe from events to prevent memory leaks
             // if (GameManager.Instance != null)
             // {
-            //     GameManager.Instance.OnDayAdvanced -= OnDayAdvanced;
+            //     GameManager.Instance.OnGameStateChanged -= OnGameStateChanged;
             // }
         }
 
-        private void InitializeProgression()
+        private void InitializePerkLookup()
         {
-            if (progressionData == null)
+            allPerksLookup = new Dictionary<string, StudioPerk>();
+            if (studioPerkData != null && studioPerkData.allPerks != null)
             {
-                Debug.LogError("ProgressionDataSO is not assigned to ProgressionManager.");
-                _milestones = new List<ProgressionMilestone>();
-                return;
-            }
-
-            _milestones = new List<ProgressionMilestone>(progressionData.Milestones);
-
-            // Ensure GameStateSO has player data initialized
-            if (gameStateSO != null)
-            {
-                // If player data is not initialized, do it here or ensure GameManager does it.
-                if (gameStateSO.GameState.PlayerData == null)
+                foreach (var perk in studioPerkData.allPerks)
                 {
-                    gameStateSO.GameState.PlayerData = new PlayerData();
+                    if (!allPerksLookup.ContainsKey(perk.id))
+                    {
+                        allPerksLookup.Add(perk.id, perk);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Duplicate perk ID found: {perk.id}. Skipping.");
+                    }
                 }
-                // Ensure XP to next level is correctly set on start
-                gameStateSO.GameState.PlayerData.XpToNextLevel = ProgressionUtils.CalculatePlayerXpRequirement(gameStateSO.GameState.PlayerData.Level);
             }
-            else
-            {
-                Debug.LogError("GameStateSO is not assigned to ProgressionManager.");
-            }
-
-            OnProgressionUpdated?.Invoke();
         }
 
+        // --- Player Progression (XP & Level) ---
         public void AddXP(int amount)
         {
-            if (gameStateSO == null) return;
+            if (GameManager.Instance == null) return;
 
-            PlayerData playerData = gameStateSO.GameState.PlayerData;
-            int initialPlayerLevel = playerData.Level;
-            int newPlayerLevel = initialPlayerLevel;
-            int currentXp = playerData.Xp + amount;
-            int xpToNext = playerData.XpToNextLevel;
-            int perkPointsGainedThisLevelUp = 0;
-            int attributePointsGainedThisLevelUp = 0;
+            GameState currentGameState = GameManager.Instance.CurrentGameState;
+            currentGameState.playerData.xp += amount;
+            Debug.Log($"Added {amount} XP. Current XP: {currentGameState.playerData.xp}");
 
-            List<UnlockedFeatureInfo> collectedUnlockedFeatures = new List<UnlockedFeatureInfo>();
-            List<PlayerAbilityChange> collectedAbilityChanges = new List<PlayerAbilityChange>();
-            List<PlayerAttributeChange> collectedAttributeChanges = new List<PlayerAttributeChange>();
+            CheckAndHandleLevelUp();
+            GameManager.Instance.UpdateGameState(currentGameState); // Notify GameManager of state change
+        }
 
-            bool levelUpOccurred = false;
+        public void CheckAndHandleLevelUp()
+        {
+            if (GameManager.Instance == null || progressionData == null) return;
 
-            while (currentXp >= xpToNext)
+            GameState currentGameState = GameManager.Instance.CurrentGameState;
+            PlayerData playerData = currentGameState.playerData;
+            
+            int newLevel = playerData.level;
+            int newXP = playerData.xp;
+            int newPerkPoints = playerData.perkPoints;
+            bool leveledUp = false;
+
+            while (newXP >= progressionData.CalculateXPToNextLevel(newLevel))
             {
-                levelUpOccurred = true;
-                currentXp -= xpToNext;
-                newPlayerLevel++;
-                xpToNext = ProgressionUtils.CalculatePlayerXpRequirement(newPlayerLevel);
+                newXP -= progressionData.CalculateXPToNextLevel(newLevel);
+                newLevel++;
+                int perkPointsToAdd = newLevel <= 10 ? 2 : (newLevel <= 25 ? 1 : 0);
+                newPerkPoints += perkPointsToAdd;
+                leveledUp = true;
 
-                ProgressionMilestone milestone = progressionData?.GetPlayerMilestone(newPlayerLevel);
-                if (milestone != null)
+                Debug.Log($"Player Leveled Up to Level {newLevel}! Earned {perkPointsToAdd} Perk Points.");
+                // TODO: Trigger UI notification (e.g., a toast or modal)
+                OnPlayerLevelUp?.Invoke();
+            }
+
+            if (leveledUp)
+            {
+                playerData.level = newLevel;
+                playerData.xp = newXP;
+                playerData.xpToNextLevel = progressionData.CalculateXPToNextLevel(newLevel);
+                playerData.perkPoints = newPerkPoints;
+                // Update daily work capacity based on new level and focus mastery
+                playerData.dailyWorkCapacity = playerData.attributes.focusMastery + 3 + playerData.level - 1;
+                GameManager.Instance.UpdateGameState(currentGameState); // Ensure GameState is updated
+                CheckEraTransition(currentGameState); // Check for era transition after level up
+            }
+        }
+
+        public int GetXPToNextLevel(int currentLevel)
+        {
+            if (progressionData == null) return 0;
+            return progressionData.CalculateXPToNextLevel(currentLevel);
+        }
+
+        // --- Studio Perks & Upgrades ---
+        public bool CanUnlockPerk(string perkId)
+        {
+            if (GameManager.Instance == null || !allPerksLookup.ContainsKey(perkId)) return false;
+
+            StudioPerk perk = allPerksLookup[perkId];
+            GameState gameState = GameManager.Instance.CurrentGameState;
+
+            // Check if already owned (if not repeatable)
+            if (gameState.ownedUpgrades.Contains(perk.id) && !perk.isRepeatable) return false;
+            // Check max repeats
+            if (perk.isRepeatable && perk.maxRepeats > 0)
+            {
+                int timesOwned = gameState.ownedUpgrades.Count(id => id == perk.id);
+                if (timesOwned >= perk.maxRepeats) return false;
+            }
+            // Check prerequisites
+            if (perk.prerequisites != null && perk.prerequisites.Any(prereqId => !gameState.ownedUpgrades.Contains(prereqId)))
+            {
+                return false;
+            }
+            // Check unlock conditions
+            return perk.unlockConditions.All(condition => CheckPerkCondition(condition, gameState));
+        }
+
+        public bool UnlockPerk(string perkId)
+        {
+            if (!CanUnlockPerk(perkId))
+            {
+                Debug.LogWarning($"Cannot unlock perk {perkId}. Conditions not met or already owned.");
+                // TODO: Trigger UI toast/notification for why it failed
+                return false;
+            }
+
+            StudioPerk perk = allPerksLookup[perkId];
+            GameState currentGameState = GameManager.Instance.CurrentGameState;
+
+            // Check and deduct cost
+            if (perk.cost != null)
+            {
+                if (perk.cost.money > 0 && currentGameState.money < perk.cost.money)
                 {
-                    if (milestone.UnlockedFeatures != null)
-                    {
-                        collectedUnlockedFeatures.AddRange(milestone.UnlockedFeatures);
-                    }
-                    if (milestone.AbilityChanges != null)
-                    {
-                        collectedAbilityChanges.AddRange(milestone.AbilityChanges);
-                    }
-                    perkPointsGainedThisLevelUp += milestone.PerkPointsGained;
-                    attributePointsGainedThisLevelUp += milestone.AttributePointsGained;
+                    Debug.LogWarning($"Not enough money to unlock {perk.name}. Needed: {perk.cost.money}, Have: {currentGameState.money}");
+                    return false;
+                }
+                if (perk.cost.perkPoints > 0 && currentGameState.playerData.perkPoints < perk.cost.perkPoints)
+                {
+                    Debug.LogWarning($"Not enough perk points to unlock {perk.name}. Needed: {perk.cost.perkPoints}, Have: {currentGameState.playerData.perkPoints}");
+                    return false;
+                }
 
-                    OnMilestoneUnlocked?.Invoke(milestone); // Notify about milestone unlock
+                currentGameState.money -= perk.cost.money;
+                currentGameState.playerData.perkPoints -= perk.cost.perkPoints;
+            }
+
+            currentGameState.ownedUpgrades.Add(perk.id);
+            ApplyPerkEffects(perk, currentGameState); // Apply effects immediately
+            GameManager.Instance.UpdateGameState(currentGameState); // Update global state
+
+            Debug.Log($"Perk '{perk.name}' unlocked successfully!");
+            OnPerkUnlocked?.Invoke();
+            return true;
+        }
+
+        public List<StudioPerk> GetAvailablePerks()
+        {
+            if (GameManager.Instance == null || studioPerkData == null) return new List<StudioPerk>();
+            return studioPerkData.allPerks.Where(perk => CanUnlockPerk(perk.id)).ToList();
+        }
+
+        public List<StudioPerk> GetOwnedPerks()
+        {
+            if (GameManager.Instance == null) return new List<StudioPerk>();
+            return GameManager.Instance.CurrentGameState.ownedUpgrades
+                .Select(id => allPerksLookup.ContainsKey(id) ? allPerksLookup[id] : null)
+                .Where(perk => perk != null)
+                .ToList();
+        }
+
+        private bool CheckPerkCondition(PerkUnlockCondition condition, GameState gameState)
+        {
+            switch (condition.type)
+            {
+                case ConditionType.PlayerLevel:
+                    return gameState.playerData.level >= condition.value;
+                case ConditionType.StudioReputation:
+                    return gameState.reputation >= condition.value;
+                case ConditionType.CompletedProjects:
+                    return gameState.completedProjects.Count >= condition.value;
+                case ConditionType.ProjectsInGenre:
+                    return gameState.completedProjects.Count(p => p.genre == condition.genre) >= condition.value;
+                case ConditionType.SpecificEquipmentOwned:
+                    return gameState.ownedEquipment.Any(eq => eq.id == condition.equipmentId);
+                case ConditionType.SpecificPerkUnlocked:
+                    return gameState.ownedUpgrades.Contains(condition.perkId);
+                case ConditionType.MoneyEarned:
+                    // This would require tracking total money earned, not just current money
+                    // For now, return true or implement a tracking mechanism
+                    return true; 
+                case ConditionType.ChartSuccesses:
+                    // This would require tracking chart successes
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private void ApplyPerkEffects(StudioPerk perk, GameState gameState)
+        {
+            if (gameState.aggregatedPerkModifiers == null)
+            {
+                gameState.aggregatedPerkModifiers = new AggregatedPerkModifiers();
+            }
+
+            foreach (var effect in perk.effects)
+            {
+                // This is a simplified application. A more robust system would use reflection
+                // or a dedicated effect application class.
+                switch (effect.key)
+                {
+                    case "globalRecordingQualityModifier":
+                        if (effect.operation == EffectOperation.Multiply) gameState.aggregatedPerkModifiers.globalRecordingQualityModifier *= (1 + effect.value);
+                        else if (effect.operation == EffectOperation.Add) gameState.aggregatedPerkModifiers.globalRecordingQualityModifier += effect.value;
+                        break;
+                    case "contractPayoutModifier":
+                        if (effect.operation == EffectOperation.Multiply) gameState.aggregatedPerkModifiers.contractPayoutModifier *= (1 + effect.value);
+                        else if (effect.operation == EffectOperation.Add) gameState.aggregatedPerkModifiers.contractPayoutModifier += effect.value;
+                        break;
+                    case "candidateQualityBonus":
+                        if (effect.operation == EffectOperation.Add) gameState.aggregatedPerkModifiers.candidateQualityBonus += (int)effect.value;
+                        break;
+                    case "projectAppealModifier":
+                        // Handle genre-specific appeal modifiers
+                        if (effect.genre != MusicGenre.Pop) // Assuming Pop is default/all
+                        {
+                            // This needs a proper dictionary or map in AggregatedPerkModifiers
+                            // For now, a placeholder.
+                            Debug.LogWarning($"Genre-specific projectAppealModifier for {effect.genre} not fully implemented in AggregatedPerkModifiers.");
+                        }
+                        else
+                        {
+                            // Apply to all if no specific genre
+                            if (effect.operation == EffectOperation.Add) gameState.aggregatedPerkModifiers.projectAppealModifier["all"] += effect.value;
+                            else if (effect.operation == EffectOperation.Multiply) gameState.aggregatedPerkModifiers.projectAppealModifier["all"] *= (1 + effect.value);
+                        }
+                        break;
+                    // Add other cases for different perk effect keys
+                    default:
+                        Debug.LogWarning($"Unhandled perk effect key: {effect.key}");
+                        break;
                 }
             }
-
-            playerData.Xp = currentXp;
-            playerData.Level = newPlayerLevel;
-            playerData.XpToNextLevel = xpToNext;
-            playerData.PerkPoints += perkPointsGainedThisLevelUp;
-            playerData.AttributePoints += attributePointsGainedThisLevelUp;
-
-            if (levelUpOccurred)
-            {
-                // Apply direct ability changes
-                foreach (var change in collectedAbilityChanges)
-                {
-                    if (change.Name == "Daily Work Capacity" && change.NewValue is int intValue)
-                    {
-                        playerData.DailyWorkCapacity = intValue;
-                    }
-                    // Add other direct ability changes here as needed
-                }
-
-                LevelUpDetails detailsForModal = new LevelUpDetails
-                {
-                    NewPlayerLevel = newPlayerLevel,
-                    UnlockedFeatures = collectedUnlockedFeatures,
-                    AbilityChanges = collectedAbilityChanges,
-                    AttributeChanges = collectedAttributeChanges,
-                    ProjectSummaries = new List<ProjectSummary>(), // Placeholder
-                    StaffHighlights = new List<StaffHighlight>() // Placeholder
-                };
-                OnPlayerLevelUp?.Invoke(detailsForModal); // Trigger event for UI
-            }
-            OnProgressionUpdated?.Invoke();
+            Debug.Log("Aggregated Perk Modifiers after applying perk effects: " + JsonUtility.ToJson(gameState.aggregatedPerkModifiers));
         }
 
-        public void SpendPerkPoint(PlayerAttributeType attribute)
+        // --- Era Transitions & Content Unlocks ---
+        public void CheckEraTransition(GameState gameState)
         {
-            if (gameStateSO == null) return;
+            if (allEras == null || allEras.Count == 0) return;
 
-            PlayerData playerData = gameStateSO.GameState.PlayerData;
+            EraData currentEraData = allEras.Find(e => e.eraId == gameState.currentEra);
+            EraData nextEra = allEras.OrderBy(e => e.minPlayerLevel).FirstOrDefault(e => e.minPlayerLevel > gameState.playerData.level && e.minPlayerLevel <= gameState.playerData.level + 5); // Look ahead a few levels
 
-            if (playerData.PerkPoints > 0)
+            if (nextEra != null && gameState.playerData.level >= nextEra.minPlayerLevel && gameState.currentEra != nextEra.eraId)
             {
-                playerData.PerkPoints--;
-                // This logic should ideally be in a dedicated PlayerAttributes class/struct
-                // For now, direct modification based on enum
-                switch (attribute)
-                {
-                    case PlayerAttributeType.FocusMastery: playerData.Attributes.FocusMastery++; break;
-                    case PlayerAttributeType.CreativeIntuition: playerData.Attributes.CreativeIntuition++; break;
-                    case PlayerAttributeType.TechnicalAptitude: playerData.Attributes.TechnicalAptitude++; break;
-                    case PlayerAttributeType.BusinessAcumen: playerData.Attributes.BusinessAcumen++; break;
-                    case PlayerAttributeType.Creativity: playerData.Attributes.Creativity++; break;
-                    case PlayerAttributeType.Technical: playerData.Technical++; break; // Assuming this is a direct field
-                    case PlayerAttributeType.Business: playerData.Attributes.Business++; break;
-                    case PlayerAttributeType.Charisma: playerData.Attributes.Charisma++; break;
-                    case PlayerAttributeType.Luck: playerData.Attributes.Luck++; break;
-                }
-
-                // Update daily work capacity if focusMastery was upgraded
-                if (attribute == PlayerAttributeType.FocusMastery)
-                {
-                    playerData.DailyWorkCapacity = playerData.Attributes.FocusMastery + 3 + playerData.Level - 1;
-                }
-                OnProgressionUpdated?.Invoke();
+                Debug.Log($"Transitioning to new era: {nextEra.eraName}");
+                gameState.currentEra = nextEra.eraId;
+                ApplyEraUnlocks(nextEra, gameState);
+                OnEraTransition?.Invoke();
+                GameManager.Instance.UpdateGameState(gameState); // Update global state
+                // TODO: Trigger UI notification for era transition
             }
         }
 
-        public void AddAttributePoints(PlayerAttributeType attribute)
+        private void ApplyEraUnlocks(EraData era, GameState gameState)
         {
-            if (gameStateSO == null) return;
-
-            PlayerData playerData = gameStateSO.GameState.PlayerData;
-
-            if (playerData.AttributePoints > 0)
+            foreach (var unlock in era.unlocks)
             {
-                playerData.AttributePoints--;
-                switch (attribute)
-                {
-                    case PlayerAttributeType.FocusMastery: playerData.Attributes.FocusMastery++; break;
-                    case PlayerAttributeType.CreativeIntuition: playerData.Attributes.CreativeIntuition++; break;
-                    case PlayerAttributeType.TechnicalAptitude: playerData.Attributes.TechnicalAptitude++; break;
-                    case PlayerAttributeType.BusinessAcumen: playerData.Attributes.BusinessAcumen++; break;
-                    case PlayerAttributeType.Creativity: playerData.Attributes.Creativity++; break;
-                    case PlayerAttributeType.Technical: playerData.Technical++; break;
-                    case PlayerAttributeType.Business: playerData.Attributes.Business++; break;
-                    case PlayerAttributeType.Charisma: playerData.Attributes.Charisma++; break;
-                    case PlayerAttributeType.Luck: playerData.Attributes.Luck++; break;
-                }
-                OnProgressionUpdated?.Invoke();
+                Debug.Log($"Unlocked: {unlock.description} ({unlock.unlockType}: {unlock.unlockId})");
+                // This is where you'd add logic to actually unlock things in the game
+                // e.g., add equipment to available list, enable new staff roles, etc.
+                // This will likely involve interacting with other managers (e.g., EquipmentManager, StaffManager)
+                // For now, just log the unlock.
             }
         }
 
-        public void AddSkillXP(StudioSkillType skillId, int amount)
+        // --- Achievement Milestones Tracking ---
+        public void CheckMilestones(GameState gameState)
         {
-            if (gameStateSO == null) return;
+            if (progressionData == null || progressionData.milestones == null) return;
 
-            if (gameStateSO.GameState.StudioSkills.ContainsKey(skillId))
+            foreach (var milestone in progressionData.milestones)
             {
-                gameStateSO.GameState.StudioSkills[skillId].Experience += amount;
-                // Add skill level up logic here or in ProgressionUtils
-                Debug.Log($"Added {amount} XP to {skillId}. Current XP: {gameStateSO.GameState.StudioSkills[skillId].Experience}");
-                OnProgressionUpdated?.Invoke();
-            }
-        }
-
-        public void AddPerkPoint()
-        {
-            if (gameStateSO == null) return;
-            gameStateSO.GameState.PlayerData.PerkPoints++;
-            Debug.Log($"Added perk point. Total: {gameStateSO.GameState.PlayerData.PerkPoints}");
-            OnProgressionUpdated?.Invoke();
-        }
-
-        public void TriggerEraTransition(string newEraId)
-        {
-            if (gameStateSO == null) return;
-            Debug.Log($"Triggering era transition to {newEraId} (placeholder)");
-            gameStateSO.GameState.CurrentEra = newEraId;
-            // Potentially update eraStartYear, unlock new content, etc.
-            OnProgressionUpdated?.Invoke();
-        }
-
-        // --- Progression System Logic (Ported from ProgressionSystem.ts) ---
-
-        public ProgressionStatus GetProgressionStatus()
-        {
-            if (gameStateSO == null) return new ProgressionStatus(); // Return default if no game state
-
-            PlayerData playerData = gameStateSO.GameState.PlayerData;
-            int playerLevel = playerData.Level;
-            int staffCount = gameStateSO.GameState.HiredStaff.Count;
-            int projectsCompleted = CalculateCompletedProjects(gameStateSO.GameState);
-
-            ProgressionMilestone currentMilestone = null;
-            ProgressionMilestone nextMilestone = null;
-
-            for (int i = 0; i < _milestones.Count; i++)
-            {
-                ProgressionMilestone milestone = _milestones[i];
-                
-                if (MeetsMilestoneRequirements(milestone, playerLevel, staffCount, projectsCompleted))
+                if (!gameState.completedMilestones.Contains(milestone.level.ToString()) && // Using level as ID for simplicity
+                    MeetsMilestoneRequirements(milestone, gameState))
                 {
-                    currentMilestone = milestone;
-                    nextMilestone = (i + 1 < _milestones.Count) ? _milestones[i + 1] : null;
-                }
-                else
-                {
-                    if (nextMilestone == null)
-                    {
-                        nextMilestone = milestone;
-                    }
-                    break;
+                    gameState.completedMilestones.Add(milestone.level.ToString());
+                    Debug.Log($"Milestone Reached: {milestone.unlockMessage}");
+                    OnMilestoneReached?.Invoke();
+                    // TODO: Trigger UI notification for milestone
                 }
             }
-
-            if (currentMilestone == null)
-            {
-                currentMilestone = _milestones.FirstOrDefault(); // Should be the first milestone
-                nextMilestone = _milestones.Count > 1 ? _milestones[1] : null;
-            }
-
-            float progressToNext = 1f;
-            if (nextMilestone != null)
-            {
-                float levelProgress = Mathf.Min(1f, (float)playerLevel / nextMilestone.Level);
-                float staffProgress = Mathf.Min(1f, (float)staffCount / nextMilestone.StaffCount);
-                float projectProgress = Mathf.Min(1f, (float)projectsCompleted / nextMilestone.ProjectsCompleted);
-                
-                progressToNext = (levelProgress + staffProgress + projectProgress) / 3f;
-            }
-
-            bool isMultiProjectUnlocked = currentMilestone != null && 
-                                          (currentMilestone.Level >= 3 && currentMilestone.StaffCount >= 2);
-
-            string reason = GenerateProgressionReason(playerLevel, staffCount, projectsCompleted, nextMilestone);
-
-            return new ProgressionStatus
-            {
-                IsMultiProjectUnlocked = isMultiProjectUnlocked,
-                CurrentMilestone = currentMilestone,
-                NextMilestone = nextMilestone,
-                ProgressToNext = progressToNext,
-                Reason = reason
-            };
+            GameManager.Instance.UpdateGameState(gameState); // Ensure state is updated after checking milestones
         }
 
-        public int GetMaxConcurrentProjects()
+        private bool MeetsMilestoneRequirements(ProgressionMilestone milestone, GameState gameState)
         {
-            ProgressionStatus status = GetProgressionStatus();
-            
-            if (!status.IsMultiProjectUnlocked)
-            {
-                return 1;
-            }
-
-            ProgressionMilestone milestone = status.CurrentMilestone;
-            if (milestone == null) return 1;
-
-            if (milestone.Level >= 12) return 5;
-            if (milestone.Level >= 8) return 4;
-            if (milestone.Level >= 5) return 3;
-            if (milestone.Level >= 3) return 2;
-            
-            return 1;
+            return gameState.playerData.level >= milestone.level &&
+                   gameState.hiredStaff.Count >= milestone.staffCount &&
+                   gameState.completedProjects.Count >= milestone.projectsCompleted;
         }
 
-        public List<string> GetAvailableAutomationFeatures()
+        public ProgressionMilestone GetCurrentMilestone(GameState gameState)
         {
-            ProgressionStatus status = GetProgressionStatus();
-            
-            if (status.CurrentMilestone == null) return new List<string>();
-            
-            ProgressionMilestone milestone = status.CurrentMilestone;
-            List<string> features = new List<string>();
-
-            if (milestone.Level >= 3)
-            {
-                features.Add("basic_automation");
-                features.Add("dual_projects");
-            }
-            
-            if (milestone.Level >= 5)
-            {
-                features.Add("smart_automation");
-                features.Add("priority_system");
-                features.Add("advanced_dashboard");
-            }
-            
-            if (milestone.Level >= 8)
-            {
-                features.Add("ai_optimization");
-                features.Add("advanced_analytics");
-                features.Add("enterprise_features");
-            }
-            
-            if (milestone.Level >= 12)
-            {
-                features.Add("legendary_automation");
-                features.Add("complete_suite");
-                features.Add("industry_tools");
-            }
-
-            return features;
+            if (progressionData == null || progressionData.milestones == null) return null;
+            return progressionData.milestones
+                .Where(m => MeetsMilestoneRequirements(m, gameState))
+                .OrderByDescending(m => m.level)
+                .FirstOrDefault();
         }
 
-        public bool IsFeatureUnlocked(string feature)
+        public ProgressionMilestone GetNextMilestone(GameState gameState)
         {
-            List<string> availableFeatures = GetAvailableAutomationFeatures();
-            return availableFeatures.Contains(feature);
+            if (progressionData == null || progressionData.milestones == null) return null;
+            return progressionData.milestones
+                .Where(m => !MeetsMilestoneRequirements(m, gameState))
+                .OrderBy(m => m.level)
+                .FirstOrDefault();
         }
 
-        public ProgressionUnlockRequirements GetNextUnlockRequirements()
+        public float GetProgressToNextMilestone(GameState gameState)
         {
-            ProgressionStatus status = GetProgressionStatus();
-            
-            if (status.NextMilestone == null) return null;
+            ProgressionMilestone nextMilestone = GetNextMilestone(gameState);
+            if (nextMilestone == null) return 1f; // Already at max milestone or no next
 
-            PlayerData playerData = gameStateSO.GameState.PlayerData;
-            int playerLevel = playerData.Level;
-            int staffCount = gameStateSO.GameState.HiredStaff.Count;
-            int projectsCompleted = CalculateCompletedProjects(gameStateSO.GameState);
+            float levelProgress = Mathf.Min(1f, (float)gameState.playerData.level / nextMilestone.level);
+            float staffProgress = Mathf.Min(1f, (float)gameState.hiredStaff.Count / nextMilestone.staffCount);
+            float projectProgress = Mathf.Min(1f, (float)gameState.completedProjects.Count / nextMilestone.projectsCompleted);
 
-            return new ProgressionUnlockRequirements
-            {
-                LevelNeeded = status.NextMilestone.Level,
-                StaffNeeded = status.NextMilestone.StaffCount,
-                ProjectsNeeded = status.NextMilestone.ProjectsCompleted,
-                CurrentLevel = playerLevel,
-                CurrentStaff = staffCount,
-                CurrentProjects = projectsCompleted
-            };
+            // Average of relevant progress metrics
+            int validMetrics = 0;
+            float totalProgress = 0;
+
+            if (nextMilestone.level > 0) { totalProgress += levelProgress; validMetrics++; }
+            if (nextMilestone.staffCount > 0) { totalProgress += staffProgress; validMetrics++; }
+            if (nextMilestone.projectsCompleted > 0) { totalProgress += projectProgress; validMetrics++; }
+
+            return validMetrics > 0 ? totalProgress / validMetrics : 0f;
         }
 
-        public MilestoneCheckResult CheckForNewMilestone(GameState oldGameState, GameState newGameState)
-        {
-            ProgressionStatus oldStatus = GetProgressionStatusForState(oldGameState);
-            ProgressionStatus newStatus = GetProgressionStatusForState(newGameState);
-
-            bool hasProgressed = newStatus.CurrentMilestone != null && 
-                                 (oldStatus.CurrentMilestone == null || 
-                                  newStatus.CurrentMilestone.Level > oldStatus.CurrentMilestone.Level);
-
-            return new MilestoneCheckResult
-            {
-                Unlocked = hasProgressed,
-                Milestone = hasProgressed ? newStatus.CurrentMilestone : null
-            };
-        }
-
-        private bool MeetsMilestoneRequirements(ProgressionMilestone milestone, int level, int staffCount, int projectsCompleted)
-        {
-            return level >= milestone.Level && 
-                   staffCount >= milestone.StaffCount && 
-                   projectsCompleted >= milestone.ProjectsCompleted;
-        }
-
-        private int CalculateCompletedProjects(GameState gameState)
-        {
-            // This is a simplified calculation - you may want to track this more explicitly
-            // For now, we'll estimate based on player XP and level progression
-            int baseProjects = Mathf.FloorToInt((float)gameState.PlayerData.Xp / 1000f);
-            int levelBonus = Mathf.FloorToInt((float)gameState.PlayerData.Level / 2f);
-            
-            return Mathf.Max(0, baseProjects + levelBonus);
-        }
-
-        private string GenerateProgressionReason(int level, int staffCount, int projectsCompleted, ProgressionMilestone nextMilestone)
-        {
-            if (nextMilestone == null)
-            {
-                return "You've reached the highest progression level!";
-            }
-
-            List<string> requirements = new List<string>();
-            
-            if (level < nextMilestone.Level)
-            {
-                requirements.Add($"Level {nextMilestone.Level} (currently {level})");
-            }
-            
-            if (staffCount < nextMilestone.StaffCount)
-            {
-                requirements.Add($"{nextMilestone.StaffCount} staff members (currently {staffCount})");
-            }
-            
-            if (projectsCompleted < nextMilestone.ProjectsCompleted)
-            {
-                requirements.Add($"{nextMilestone.ProjectsCompleted} completed projects (currently {projectsCompleted})");
-            }
-
-            if (requirements.Count == 0)
-            {
-                return "Ready for next milestone!";
-            }
-
-            return $"To unlock next features, you need: {string.Join(", ", requirements)}";
-        }
-
-        // Helper to get progression status for a specific GameState instance (used by CheckForNewMilestone)
-        private ProgressionStatus GetProgressionStatusForState(GameState state)
-        {
-            int playerLevel = state.PlayerData.Level;
-            int staffCount = state.HiredStaff.Count;
-            int projectsCompleted = CalculateCompletedProjects(state);
-
-            ProgressionMilestone currentMilestone = null;
-            ProgressionMilestone nextMilestone = null;
-
-            for (int i = 0; i < _milestones.Count; i++)
-            {
-                ProgressionMilestone milestone = _milestones[i];
-                
-                if (MeetsMilestoneRequirements(milestone, playerLevel, staffCount, projectsCompleted))
-                {
-                    currentMilestone = milestone;
-                    nextMilestone = (i + 1 < _milestones.Count) ? _milestones[i + 1] : null;
-                }
-                else
-                {
-                    if (nextMilestone == null)
-                    {
-                        nextMilestone = milestone;
-                    }
-                    break;
-                }
-            }
-
-            if (currentMilestone == null)
-            {
-                currentMilestone = _milestones.FirstOrDefault();
-                nextMilestone = _milestones.Count > 1 ? _milestones[1] : null;
-            }
-
-            float progressToNext = 1f;
-            if (nextMilestone != null)
-            {
-                float levelProgress = Mathf.Min(1f, (float)playerLevel / nextMilestone.Level);
-                float staffProgress = Mathf.Min(1f, (float)staffCount / nextMilestone.StaffCount);
-                float projectProgress = Mathf.Min(1f, (float)projectsCompleted / nextMilestone.ProjectsCompleted);
-                
-                progressToNext = (levelProgress + staffProgress + projectProgress) / 3f;
-            }
-
-            bool isMultiProjectUnlocked = currentMilestone != null && 
-                                          (currentMilestone.Level >= 3 && currentMilestone.StaffCount >= 2);
-
-            string reason = GenerateProgressionReason(playerLevel, staffCount, projectsCompleted, nextMilestone);
-
-            return new ProgressionStatus
-            {
-                IsMultiProjectUnlocked = isMultiProjectUnlocked,
-                CurrentMilestone = currentMilestone,
-                NextMilestone = nextMilestone,
-                ProgressToNext = progressToNext,
-                Reason = reason
-            };
-        }
+        // --- Studio Expansion Purchases ---
+        // This will likely be handled by a separate StudioManager or directly by UI,
+        // but ProgressionManager might provide data or validation.
+        // For now, no direct porting of useStudioExpansion.tsx logic here,
+        // as it primarily modifies GameState directly and triggers toasts.
+        // The data models for Expansion would be needed.
     }
 }

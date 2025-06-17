@@ -2,12 +2,8 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using RecordingStudioTycoon.DataModels.Game;
-using RecordingStudioTycoon.DataModels.Relationships;
-using RecordingStudioTycoon.DataModels.Projects; // For Project and ProjectCompletionReport
-using RecordingStudioTycoon.DataModels.Market; // For MusicGenre
-using RecordingStudioTycoon.ScriptableObjects;
-using RecordingStudioTycoon.Utils; // For SerializableDictionary
+using RecordingStudioTycoon.DataModels;
+using RecordingStudioTycoon.GameLogic; // For GameManager and GameState
 
 namespace RecordingStudioTycoon.Systems.Relationship
 {
@@ -15,16 +11,15 @@ namespace RecordingStudioTycoon.Systems.Relationship
     {
         public static RelationshipManager Instance { get; private set; }
 
-        [SerializeField] private GameStateSO gameStateSO;
-        [SerializeField] private RelationshipDataSO relationshipData; // ScriptableObject for initial entities
+        [SerializeField] private RelationshipData relationshipData; // Assign ScriptableObject in Inspector
 
-        // Events for UI updates
-        public event Action OnRelationshipsUpdated;
-        public event Action<string, int, string> OnRelationshipChanged; // entityId, amount, reason
-        public event Action<string, string> OnEntityBlacklisted; // entityId, reason
+        private Dictionary<string, ReputableEntity> allEntitiesLookup;
+        private Dictionary<string, RelationshipStats> currentRelationships; // Runtime relationship stats
 
-        private Dictionary<string, ReputableEntity> _allEntities; // EntityId -> ReputableEntity
-        private Dictionary<string, RelationshipStats> _entityRelationshipStats; // EntityId -> RelationshipStats
+        // Events for relationship updates
+        public event Action OnRelationshipChanged;
+        public event Action OnReputationChanged;
+        public event Action OnContractGenerated;
 
         private void Awake()
         {
@@ -41,114 +36,121 @@ namespace RecordingStudioTycoon.Systems.Relationship
 
         private void Start()
         {
+            if (relationshipData == null)
+            {
+                Debug.LogError("RelationshipData ScriptableObject not assigned to RelationshipManager.");
+                return;
+            }
+
+            InitializeEntities();
             InitializeRelationships();
-            // Subscribe to game day advancement if GameManager provides such an event
-            // GameManager.Instance.OnDayAdvanced += OnDayAdvanced;
+
+            // Subscribe to game state changes if GameManager provides an event
+            // GameManager.Instance.OnGameStateChanged += OnGameStateChanged; // Example
         }
 
         private void OnDestroy()
         {
-            // Unsubscribe from events to prevent memory leaks
             // if (GameManager.Instance != null)
             // {
-            //     GameManager.Instance.OnDayAdvanced -= OnDayAdvanced;
+            //     GameManager.Instance.OnGameStateChanged -= OnGameStateChanged;
             // }
+        }
+
+        private void InitializeEntities()
+        {
+            allEntitiesLookup = new Dictionary<string, ReputableEntity>();
+            if (relationshipData.initialEntities != null)
+            {
+                foreach (var entity in relationshipData.initialEntities)
+                {
+                    if (!allEntitiesLookup.ContainsKey(entity.id))
+                    {
+                        allEntitiesLookup.Add(entity.id, entity);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Duplicate entity ID found: {entity.id}. Skipping.");
+                    }
+                }
+            }
         }
 
         private void InitializeRelationships()
         {
-            if (relationshipData == null)
+            currentRelationships = new Dictionary<string, RelationshipStats>();
+            // Load initial relationship stats from GameState if available, otherwise use defaults
+            if (GameManager.Instance != null && GameManager.Instance.CurrentGameState.entityRelationships != null)
             {
-                Debug.LogError("RelationshipDataSO is not assigned to RelationshipManager.");
-                _allEntities = new Dictionary<string, ReputableEntity>();
-                _entityRelationshipStats = new Dictionary<string, RelationshipStats>();
+                foreach (var kvp in GameManager.Instance.CurrentGameState.entityRelationships)
+                {
+                    currentRelationships.Add(kvp.Key, kvp.Value);
+                }
+            }
+            else
+            {
+                // Initialize default relationships for all known entities
+                foreach (var entityId in allEntitiesLookup.Keys)
+                {
+                    EnsureEntityRelationship(entityId);
+                }
+            }
+        }
+
+        private RelationshipStats EnsureEntityRelationship(string entityId)
+        {
+            if (!currentRelationships.ContainsKey(entityId))
+            {
+                currentRelationships[entityId] = new RelationshipStats
+                {
+                    relationshipScore = 50f,
+                    trust = 50f,
+                    respect = 50f,
+                    lastInteractionDay = 0,
+                    interactionCount = 0,
+                    successfulProjects = 0,
+                    failedProjects = 0,
+                    isBlacklisted = false
+                };
+            }
+            // Ensure isBlacklisted exists for older saves
+            if (currentRelationships[entityId].isBlacklisted == null)
+            {
+                currentRelationships[entityId].isBlacklisted = false;
+            }
+            return currentRelationships[entityId];
+        }
+
+        // --- Relationship Management ---
+        public void UpdateRelationship(string entityId, float amount, string reason)
+        {
+            if (!allEntitiesLookup.ContainsKey(entityId))
+            {
+                Debug.LogWarning($"Attempted to update relationship for unknown entity: {entityId}");
                 return;
             }
 
-            _allEntities = new Dictionary<string, ReputableEntity>();
-            _entityRelationshipStats = new Dictionary<string, RelationshipStats>();
+            RelationshipStats stats = EnsureEntityRelationship(entityId);
+            GameState gameState = GameManager.Instance.CurrentGameState; // Assuming GameManager is available
 
-            // Load initial entities from ScriptableObject
-            if (relationshipData.InitialEntities != null)
+            if (amount > 0)
             {
-                foreach (var entity in relationshipData.InitialEntities)
-                {
-                    _allEntities[entity.Id] = entity;
-                    _entityRelationshipStats[entity.Id] = entity.Stats ?? new RelationshipStats();
-                    // Ensure IsBlacklisted is correctly set from loaded data
-                    _entityRelationshipStats[entity.Id].IsBlacklisted = entity.IsBlacklisted;
-                }
+                IncreaseRelationship(entityId, amount, reason, stats, gameState);
             }
             else
             {
-                Debug.LogWarning("InitialEntities in RelationshipDataSO is empty. No initial relationships loaded.");
+                DecreaseRelationship(entityId, Mathf.Abs(amount), reason, stats, gameState);
             }
 
-            // Ensure GameStateSO has relationships initialized
-            if (gameStateSO != null)
-            {
-                if (gameStateSO.GameState.Relationships == null)
-                {
-                    gameStateSO.GameState.Relationships = new SerializableDictionary<string, RelationshipStats>();
-                }
-                // Copy initial stats to GameState
-                foreach (var kvp in _entityRelationshipStats)
-                {
-                    gameStateSO.GameState.Relationships[kvp.Key] = kvp.Value;
-                }
-            }
-            else
-            {
-                Debug.LogError("GameStateSO is not assigned to RelationshipManager.");
-            }
-
-            OnRelationshipsUpdated?.Invoke();
+            // Update GameState and notify
+            GameManager.Instance.CurrentGameState.entityRelationships = currentRelationships;
+            GameManager.Instance.UpdateGameState(GameManager.Instance.CurrentGameState);
+            OnRelationshipChanged?.Invoke();
+            Debug.Log($"Relationship with {entityId} updated. New score: {stats.relationshipScore}");
         }
 
-        // This method should be called by GameManager on a periodic basis (e.g., daily)
-        public void DailyRelationshipUpdate(int currentDay)
+        private void IncreaseRelationship(string entityId, float amount, string reason, RelationshipStats stats, GameState gameState)
         {
-            Debug.Log($"RelationshipManager: Performing daily relationship update for day: {currentDay}");
-            // Implement any daily decay, or other periodic relationship changes here
-            // For now, just update lastInteractionDay for all entities that have interacted
-            foreach (var kvp in _entityRelationshipStats)
-            {
-                if (kvp.Value.InteractionCount > 0)
-                {
-                    kvp.Value.LastInteractionDay = currentDay;
-                }
-            }
-            OnRelationshipsUpdated?.Invoke();
-        }
-
-        // --- Relationship Management (Ported from relationshipService.ts) ---
-
-        public ReputableEntity GetEntityById(string entityId)
-        {
-            _allEntities.TryGetValue(entityId, out ReputableEntity entity);
-            return entity;
-        }
-
-        public RelationshipStats GetRelationshipStats(string entityId)
-        {
-            if (!_entityRelationshipStats.ContainsKey(entityId))
-            {
-                // Create default stats if not found
-                _entityRelationshipStats[entityId] = new RelationshipStats();
-                // Also update the ReputableEntity if it exists
-                if (_allEntities.TryGetValue(entityId, out ReputableEntity entity))
-                {
-                    entity.Stats = _entityRelationshipStats[entityId];
-                }
-            }
-            return _entityRelationshipStats[entityId];
-        }
-
-        public void IncreaseRelationship(string entityId, float amount, string reason, int currentDay)
-        {
-            RelationshipStats currentRel = GetRelationshipStats(entityId);
-            if (currentRel.IsBlacklisted) return; // Cannot increase relationship if blacklisted
-
             float scoreIncrease = amount;
             float trustIncrease = 0;
             float respectIncrease = 0;
@@ -163,7 +165,7 @@ namespace RecordingStudioTycoon.Systems.Relationship
                 case "PROJECT_HIGH_QUALITY":
                 case "PROJECT_EXCELLENT_QUALITY":
                     respectIncrease = amount * 0.7f;
-                    trustIncrease = amount * 0.2f;
+                    trustIncrease = amount * 0.3f;
                     break;
                 case "SUCCESSFUL_ORIGINAL_MUSIC_RELEASE_WITH_LABEL":
                     scoreIncrease = amount * 1.5f;
@@ -183,35 +185,27 @@ namespace RecordingStudioTycoon.Systems.Relationship
                     break;
             }
 
-            currentRel.RelationshipScore = Mathf.Min(100, currentRel.RelationshipScore + Mathf.RoundToInt(scoreIncrease));
-            currentRel.Trust = Mathf.Min(100, currentRel.Trust + Mathf.RoundToInt(trustIncrease));
-            currentRel.Respect = Mathf.Min(100, currentRel.Respect + Mathf.RoundToInt(respectIncrease));
-            currentRel.InteractionCount += 1;
-            currentRel.LastInteractionDay = currentDay;
+            stats.relationshipScore = Mathf.Min(100f, stats.relationshipScore + scoreIncrease);
+            stats.trust = Mathf.Min(100f, stats.trust + trustIncrease);
+            stats.respect = Mathf.Min(100f, stats.respect + respectIncrease);
+            stats.interactionCount += 1;
+            stats.lastInteractionDay = gameState.currentDay;
 
             if (reason.StartsWith("PROJECT_") && (reason.Contains("QUALITY") || reason.Contains("EARLY") || reason.Contains("ON_TIME")))
             {
-                currentRel.SuccessfulProjects += 1;
+                stats.successfulProjects += 1;
             }
 
-            // If relationship was bad enough to be blacklisted, a very positive interaction might lift it
-            if (currentRel.IsBlacklisted && currentRel.RelationshipScore > 30 && reason != "BLACKLIST_LIFTED_MANUALLY")
+            if (stats.isBlacklisted && stats.relationshipScore > 30f && reason != "BLACKLIST_LIFTED_MANUALLY")
             {
-                currentRel.IsBlacklisted = false;
+                stats.isBlacklisted = false;
                 Debug.Log($"Blacklist lifted for {entityId} due to improved relations.");
-                // Potentially trigger a positive PR event or notification
             }
-
-            UpdateGameStateRelationships(entityId, currentRel);
-            Debug.Log($"Relationship with {entityId} increased by {scoreIncrease} (Trust: +{trustIncrease}, Respect: +{respectIncrease}) due to {reason}. New score: {currentRel.RelationshipScore}");
-            OnRelationshipChanged?.Invoke(entityId, Mathf.RoundToInt(amount), reason);
+            currentRelationships[entityId] = stats;
         }
 
-        public void DecreaseRelationship(string entityId, float amount, string reason, int currentDay)
+        private void DecreaseRelationship(string entityId, float amount, string reason, RelationshipStats stats, GameState gameState)
         {
-            RelationshipStats currentRel = GetRelationshipStats(entityId);
-            if (currentRel.IsBlacklisted && reason != "BLACKLIST_LIFTED_MANUALLY") return; // Cannot decrease if already blacklisted, unless it's a manual lift
-
             float scoreDecrease = amount;
             float trustDecrease = 0;
             float respectDecrease = 0;
@@ -240,102 +234,203 @@ namespace RecordingStudioTycoon.Systems.Relationship
                     break;
             }
 
-            currentRel.RelationshipScore = Mathf.Max(0, currentRel.RelationshipScore - Mathf.RoundToInt(scoreDecrease));
-            currentRel.Trust = Mathf.Max(0, currentRel.Trust - Mathf.RoundToInt(trustDecrease));
-            currentRel.Respect = Mathf.Max(0, currentRel.Respect - Mathf.RoundToInt(respectDecrease));
-            currentRel.InteractionCount += 1;
-            currentRel.LastInteractionDay = currentDay;
+            stats.relationshipScore = Mathf.Max(0f, stats.relationshipScore - scoreDecrease);
+            stats.trust = Mathf.Max(0f, stats.trust - trustDecrease);
+            stats.respect = Mathf.Max(0f, stats.respect - respectDecrease);
+            stats.interactionCount += 1;
+            stats.lastInteractionDay = gameState.currentDay;
 
             if (reason.StartsWith("PROJECT_") && (reason.Contains("LATE") || reason.Contains("QUALITY")))
             {
-                currentRel.FailedProjects += 1;
+                stats.failedProjects += 1;
             }
 
-            CheckAndApplyBlacklisting(entityId, currentRel); // This will update currentRel.IsBlacklisted if needed
-
-            UpdateGameStateRelationships(entityId, currentRel);
-            Debug.Log($"Relationship with {entityId} decreased by {scoreDecrease} (Trust: -{trustDecrease}, Respect: -{respectDecrease}) due to {reason}. New score: {currentRel.RelationshipScore}");
-            OnRelationshipChanged?.Invoke(entityId, -Mathf.RoundToInt(amount), reason);
-
-            if (currentRel.RelationshipScore < 20 && !currentRel.IsBlacklisted)
-            {
-                // Trigger a low relationship warning PR event
-                TriggerPREvent("LOW_RELATIONSHIP_WARNING", entityId);
-            }
+            currentRelationships[entityId] = stats; // Save intermediate state
+            CheckAndApplyBlacklisting(entityId, stats); // Check for blacklisting
         }
 
-        private void CheckAndApplyBlacklisting(string entityId, RelationshipStats currentRelStats)
+        private void CheckAndApplyBlacklisting(string entityId, RelationshipStats stats)
         {
-            const int BLACKLIST_THRESHOLD = 10;
+            const float BLACKLIST_THRESHOLD = 10f;
             const int FAILED_PROJECTS_BLACKLIST_THRESHOLD = 3;
 
-            if (currentRelStats.IsBlacklisted)
-            {
-                return;
-            }
+            if (stats.isBlacklisted) return;
 
             bool shouldBlacklist = false;
             string blacklistReason = "";
 
-            if (currentRelStats.RelationshipScore <= BLACKLIST_THRESHOLD)
+            if (stats.relationshipScore <= BLACKLIST_THRESHOLD)
             {
                 shouldBlacklist = true;
-                blacklistReason = $"Relationship score dropped to {currentRelStats.RelationshipScore}.";
+                blacklistReason = $"Relationship score dropped to {stats.relationshipScore}.";
             }
-            else if (currentRelStats.FailedProjects >= FAILED_PROJECTS_BLACKLIST_THRESHOLD && currentRelStats.InteractionCount > FAILED_PROJECTS_BLACKLIST_THRESHOLD)
+            else if (stats.failedProjects >= FAILED_PROJECTS_BLACKLIST_THRESHOLD && stats.interactionCount > FAILED_PROJECTS_BLACKLIST_THRESHOLD)
             {
-                float successRatio = currentRelStats.SuccessfulProjects > 0 || currentRelStats.FailedProjects > 0 ? (float)currentRelStats.SuccessfulProjects / (currentRelStats.SuccessfulProjects + currentRelStats.FailedProjects) : 1f;
-                if (currentRelStats.FailedProjects > currentRelStats.SuccessfulProjects && successRatio < 0.25f && currentRelStats.InteractionCount > 5)
+                float successRatio = (stats.successfulProjects > 0 || stats.failedProjects > 0) ? (float)stats.successfulProjects / (stats.successfulProjects + stats.failedProjects) : 1f;
+                if (stats.failedProjects > stats.successfulProjects && successRatio < 0.25f && stats.interactionCount > 5)
                 {
                     shouldBlacklist = true;
-                    blacklistReason = $"{currentRelStats.FailedProjects} failed projects and low success ratio ({(successRatio * 100).ToString("F0")}%).";
+                    blacklistReason = $"{stats.failedProjects} failed projects and low success ratio ({(successRatio * 100).ToString("F0")}%).";
                 }
             }
 
             if (shouldBlacklist)
             {
-                currentRelStats.IsBlacklisted = true;
+                stats.isBlacklisted = true;
                 Debug.LogWarning($"Entity {entityId} has blacklisted the player. Reason: {blacklistReason}");
-                TriggerPREvent("BLACKLISTED_BY_ENTITY", entityId, blacklistReason);
-                OnEntityBlacklisted?.Invoke(entityId, blacklistReason);
+                // TODO: Trigger UI notification for blacklisting
             }
         }
 
-        private void TriggerPREvent(string eventType, string entityId, string reason = "")
+        public ReputableEntity GetEntityById(string entityId)
         {
-            Debug.Log($"PR Event triggered: {eventType}, Entity: {entityId}, Reason: {reason}");
-            // This would typically involve adding a GameNotification or triggering a UI event
-            // For now, just log.
+            allEntitiesLookup.TryGetValue(entityId, out ReputableEntity entity);
+            return entity;
         }
 
-        public void ProcessProjectCompletion(Project project, ProjectCompletionReport report, int currentDay)
+        public float GetRelationshipScore(string entityId)
         {
-            string contractProviderId = project.ContractProviderId;
-            string contractProviderType = project.ContractProviderType;
+            return EnsureEntityRelationship(entityId).relationshipScore;
+        }
 
-            if (string.IsNullOrEmpty(contractProviderId) || string.IsNullOrEmpty(contractProviderType))
+        public string GetRelationshipLevel(string entityId)
+        {
+            float score = GetRelationshipScore(entityId);
+            if (score >= 90) return "Legendary";
+            if (score >= 75) return "Excellent";
+            if (score >= 60) return "Good";
+            if (score >= 40) return "Neutral";
+            if (score >= 20) return "Poor";
+            return "Terrible";
+        }
+
+        public RelationshipBonuses CalculateRelationshipBonuses(string entityId)
+        {
+            RelationshipStats stats = EnsureEntityRelationship(entityId);
+            RelationshipBonuses bonuses = new RelationshipBonuses();
+
+            // Example bonus calculations (can be more complex based on levels/tiers)
+            bonuses.contractValueIncrease = (stats.relationshipScore / 100f) * 0.2f; // Max 20% increase
+            bonuses.projectOfferFrequency = (stats.relationshipScore / 100f) * 0.5f; // Max 50% more frequent
+            bonuses.uniqueProjectChance = (stats.relationshipScore / 100f) * 0.1f; // Max 10% chance
+            bonuses.reputationGainMultiplier = 1f + (stats.respect / 100f) * 0.5f; // Max 50% more reputation gain
+
+            return bonuses;
+        }
+
+        public List<ReputableEntity> GetAllEntities()
+        {
+            return allEntitiesLookup.Values.ToList();
+        }
+
+        public List<ReputableEntity> GetEntitiesByType(EntityType type)
+        {
+            return allEntitiesLookup.Values.Where(e => e.type == type).ToList();
+        }
+
+        public List<ReputableEntity> GetTopRelationships(int limit = 5)
+        {
+            return allEntitiesLookup.Values
+                .OrderByDescending(e => EnsureEntityRelationship(e.id).relationshipScore)
+                .Take(limit)
+                .ToList();
+        }
+
+        public List<MusicGenre> GetPreferredGenres(string entityId)
+        {
+            return GetEntityById(entityId)?.preferredGenres ?? new List<MusicGenre>();
+        }
+
+        public List<Mood> GetPreferredMoods(string entityId)
+        {
+            return GetEntityById(entityId)?.preferredMoods ?? new List<Mood>();
+        }
+
+        public float CalculateContractValueModifier(string entityId, MusicGenre projectGenre, Mood projectMood)
+        {
+            ReputableEntity entity = GetEntityById(entityId);
+            if (entity == null) return 1.0f;
+
+            RelationshipBonuses bonuses = CalculateRelationshipBonuses(entityId);
+            float modifier = 1.0f + bonuses.contractValueIncrease;
+
+            if (entity.preferredGenres.Contains(projectGenre))
             {
-                Debug.Log($"Project {project.Title}: No specific contract provider. No relationship update.");
+                modifier += 0.15f;
+            }
+            if (entity.preferredMoods.Contains(projectMood))
+            {
+                modifier += 0.1f;
+            }
+
+            return Mathf.Max(0.5f, modifier); // Minimum 50% value
+        }
+
+        public List<Contract> GetAvailableContracts(EntityType? entityType = null)
+        {
+            // This is a placeholder. In a real game, contracts would be dynamically generated
+            // based on game state, relationships, era, etc.
+            List<Contract> available = new List<Contract>();
+            foreach (var contract in relationshipData.initialContracts)
+            {
+                if (entityType == null || contract.clientType == entityType)
+                {
+                    // Add logic to filter contracts based on relationship score, player level, etc.
+                    available.Add(contract);
+                }
+            }
+            return available;
+        }
+
+        public void RecordContractCompletion(string entityId, bool success, float quality)
+        {
+            // This method would be called by ProjectManager upon project completion
+            // It needs the actual project data to determine relationship impact
+            Debug.Log($"Recording contract completion for {entityId}. Success: {success}, Quality: {quality}");
+
+            // Mock project data for now, as actual project data is not passed here
+            Project mockProject = new Project
+            {
+                id = "mock-project-" + Guid.NewGuid().ToString(),
+                title = "Mock Contract Project",
+                genre = MusicGenre.Pop, // Placeholder
+                targetMood = Mood.Neutral, // Placeholder
+                type = ProjectType.Contract,
+                clientType = GetEntityById(entityId)?.type ?? EntityType.Client,
+                contractProviderId = entityId,
+                qualityScore = quality,
+                endDate = GameManager.Instance.CurrentGameState.currentDay,
+                deadlineDay = GameManager.Instance.CurrentGameState.currentDay + 7 // Assume on time for mock
+            };
+
+            HandleProjectCompletion(mockProject);
+        }
+
+        public void HandleProjectCompletion(Project project)
+        {
+            string entityId = project.contractProviderId;
+            if (string.IsNullOrEmpty(entityId))
+            {
+                Debug.Log($"Project {project.title}: No specific contract provider. No relationship update.");
                 return;
             }
 
-            string entityId = contractProviderId;
             string qualityReason = "";
             float qualityAmount = 0;
             string timelinessReason = "";
             float timelinessAmount = 0;
 
-            if (report.QualityScore.HasValue)
+            if (project.qualityScore != null)
             {
-                if (report.QualityScore.Value >= 85) { qualityReason = "PROJECT_EXCELLENT_QUALITY"; qualityAmount = 15; }
-                else if (report.QualityScore.Value >= 65) { qualityReason = "PROJECT_GOOD_QUALITY"; qualityAmount = 8; }
-                else if (report.QualityScore.Value < 40) { qualityReason = "PROJECT_POOR_QUALITY"; qualityAmount = 12; }
-                else if (report.QualityScore.Value < 55) { qualityReason = "PROJECT_SUBPAR_QUALITY"; qualityAmount = 6; }
+                if (project.qualityScore >= 85) { qualityReason = "PROJECT_EXCELLENT_QUALITY"; qualityAmount = 15; }
+                else if (project.qualityScore >= 65) { qualityReason = "PROJECT_GOOD_QUALITY"; qualityAmount = 8; }
+                else if (project.qualityScore < 40) { qualityReason = "PROJECT_POOR_QUALITY"; qualityAmount = 12; }
+                else if (project.qualityScore < 55) { qualityReason = "PROJECT_SUBPAR_QUALITY"; qualityAmount = 6; }
             }
 
-            if (project.EndDate.HasValue && project.DeadlineDay.HasValue)
+            if (project.endDate != null && project.deadlineDay != null)
             {
-                int daysDifference = project.DeadlineDay.Value - project.EndDate.Value;
+                int daysDifference = project.deadlineDay.Value - project.endDate.Value;
                 if (daysDifference >= 0)
                 {
                     if (daysDifference > 7) { timelinessReason = "PROJECT_COMPLETED_VERY_EARLY"; timelinessAmount = 10; }
@@ -355,245 +450,133 @@ namespace RecordingStudioTycoon.Systems.Relationship
             {
                 if (qualityReason.Contains("POOR") || qualityReason.Contains("SUBPAR"))
                 {
-                    DecreaseRelationship(entityId, qualityAmount, qualityReason, currentDay);
+                    DecreaseRelationship(entityId, qualityAmount, qualityReason, EnsureEntityRelationship(entityId), GameManager.Instance.CurrentGameState);
                 }
                 else
                 {
-                    IncreaseRelationship(entityId, qualityAmount, qualityReason, currentDay);
+                    IncreaseRelationship(entityId, qualityAmount, qualityReason, EnsureEntityRelationship(entityId), GameManager.Instance.CurrentGameState);
                 }
             }
             if (!string.IsNullOrEmpty(timelinessReason) && timelinessAmount > 0)
             {
                 if (timelinessReason.Contains("LATE"))
                 {
-                    DecreaseRelationship(entityId, timelinessAmount, timelinessReason, currentDay);
+                    DecreaseRelationship(entityId, timelinessAmount, timelinessReason, EnsureEntityRelationship(entityId), GameManager.Instance.CurrentGameState);
                 }
                 else
                 {
-                    IncreaseRelationship(entityId, timelinessAmount, timelinessReason, currentDay);
+                    IncreaseRelationship(entityId, timelinessAmount, timelinessReason, EnsureEntityRelationship(entityId), GameManager.Instance.CurrentGameState);
                 }
             }
 
-            // Handle original music release impact for record labels
-            if (contractProviderType == "recordLabel" && !string.IsNullOrEmpty(project.AssociatedBandId) && !string.IsNullOrEmpty(entityId))
+            // Handle specific logic for record labels and original music releases
+            if (project.clientType == EntityType.RecordLabel && !string.IsNullOrEmpty(project.associatedBandId) && !string.IsNullOrEmpty(entityId))
             {
-                // This part needs access to Band data, which is not yet ported.
-                // For now, we'll use project quality as a proxy.
+                // This part needs actual band and release data, which is not directly available in Project model
+                // For now, this logic is simplified.
                 float releaseSuccessAmount = 0;
                 string releaseReason = "";
-                float successMetricScore = report.QualityScore ?? 0; // Use project quality if no specific release score
+                float successMetricScore = -1;
 
-                if (successMetricScore >= 75)
+                if (project.qualityScore != null)
                 {
-                    releaseReason = "SUCCESSFUL_ORIGINAL_MUSIC_RELEASE_WITH_LABEL";
-                    releaseSuccessAmount = (successMetricScore >= 90) ? 30 : 20;
-                    IncreaseRelationship(entityId, releaseSuccessAmount, releaseReason, currentDay);
+                    successMetricScore = project.qualityScore.Value;
                 }
-                else if (successMetricScore < 40)
+
+                if (successMetricScore != -1)
                 {
-                    releaseReason = "FAILED_ORIGINAL_MUSIC_RELEASE_WITH_LABEL";
-                    releaseSuccessAmount = (successMetricScore < 20) ? 25 : 15;
-                    DecreaseRelationship(entityId, releaseSuccessAmount, releaseReason, currentDay);
-                }
-                else if (successMetricScore >= 50)
-                {
-                    releaseReason = "AVERAGE_ORIGINAL_MUSIC_RELEASE_WITH_LABEL";
-                    releaseSuccessAmount = 5;
-                    IncreaseRelationship(entityId, releaseSuccessAmount, releaseReason, currentDay);
+                    if (successMetricScore >= 75)
+                    {
+                        releaseReason = "SUCCESSFUL_ORIGINAL_MUSIC_RELEASE_WITH_LABEL";
+                        releaseSuccessAmount = (successMetricScore >= 90) ? 30 : 20;
+                        IncreaseRelationship(entityId, releaseSuccessAmount, releaseReason, EnsureEntityRelationship(entityId), GameManager.Instance.CurrentGameState);
+                    }
+                    else if (successMetricScore < 40)
+                    {
+                        releaseReason = "FAILED_ORIGINAL_MUSIC_RELEASE_WITH_LABEL";
+                        releaseSuccessAmount = (successMetricScore < 20) ? 25 : 15;
+                        DecreaseRelationship(entityId, releaseSuccessAmount, releaseReason, EnsureEntityRelationship(entityId), GameManager.Instance.CurrentGameState);
+                    }
+                    else if (successMetricScore >= 50)
+                    {
+                        releaseReason = "AVERAGE_ORIGINAL_MUSIC_RELEASE_WITH_LABEL";
+                        releaseSuccessAmount = 5;
+                        IncreaseRelationship(entityId, releaseSuccessAmount, releaseReason, EnsureEntityRelationship(entityId), GameManager.Instance.CurrentGameState);
+                    }
+                    else
+                    {
+                        Debug.Log($"Original Track Release: {project.title}. Performance (score: {successMetricScore}) was below average. No specific label relationship impact beyond standard project metrics for this release.");
+                    }
                 }
                 else
                 {
-                    Debug.Log($"Original Track Release: {project.Title}. Performance (score: {successMetricScore}) was below average. No specific label relationship impact beyond standard project metrics for this release.");
+                    Debug.LogWarning($"Original Track Release: {project.title}. Could not determine a success metric for label relationship impact.");
                 }
             }
-            OnRelationshipsUpdated?.Invoke();
+            OnRelationshipChanged?.Invoke();
+            OnReputationChanged?.Invoke(); // Reputation might change based on project completion
         }
 
-        public void InitiatePlayerFavor(string entityId, string favorType)
+        public void BlacklistEntity(string entityId, string reason)
         {
-            Debug.Log($"Player is considering initiating favor of type '{favorType}' with entity {entityId}.");
-            // Implement logic to check if favor can proceed (e.g., cooldowns, relationship level)
-        }
-
-        public void ResolvePlayerFavor(string entityId, string favorType, bool success, int currentDay, float magnitude = 10f)
-        {
-            if (success)
+            if (!allEntitiesLookup.ContainsKey(entityId))
             {
-                Debug.Log($"Player successfully completed favor '{favorType}' for {entityId}.");
-                IncreaseRelationship(entityId, magnitude, "PLAYER_FAVOR_COMPLETED", currentDay);
+                Debug.LogWarning($"Attempted to blacklist unknown entity: {entityId}");
+                return;
             }
-            else
-            {
-                Debug.Log($"Player failed or rejected favor '{favorType}' for {entityId}.");
-                DecreaseRelationship(entityId, magnitude, "PLAYER_FAVOR_REJECTED", currentDay);
-            }
+            RelationshipStats stats = EnsureEntityRelationship(entityId);
+            stats.isBlacklisted = true;
+            Debug.Log($"Entity {entityId} blacklisted. Reason: {reason}");
+            GameManager.Instance.CurrentGameState.entityRelationships = currentRelationships;
+            GameManager.Instance.UpdateGameState(GameManager.Instance.CurrentGameState);
+            OnRelationshipChanged?.Invoke();
         }
 
-        public void BlacklistEntity(string entityId, string reason, int currentDay)
-        {
-            RelationshipStats currentRel = GetRelationshipStats(entityId);
-            if (!currentRel.IsBlacklisted)
-            {
-                currentRel.IsBlacklisted = true;
-                currentRel.RelationshipScore = 0; // Set to minimum
-                UpdateGameStateRelationships(entityId, currentRel);
-                Debug.LogWarning($"Manually blacklisted entity {entityId}. Reason: {reason}");
-                OnEntityBlacklisted?.Invoke(entityId, reason);
-                OnRelationshipChanged?.Invoke(entityId, -100, $"Blacklisted: {reason}");
-            }
-        }
-
-        // --- Utility Functions (Ported from useRelationships.ts) ---
-
-        public int GetRelationshipScore(string entityId)
-        {
-            return GetRelationshipStats(entityId).RelationshipScore;
-        }
-
-        public string GetRelationshipLevel(string entityId)
-        {
-            int score = GetRelationshipScore(entityId);
-            if (score >= 90) return "Legendary";
-            if (score >= 75) return "Excellent";
-            if (score >= 60) return "Good";
-            if (score >= 40) return "Neutral";
-            if (score >= 20) return "Poor";
-            return "Terrible";
-        }
-
-        public RelationshipBonuses CalculateRelationshipBonuses(string entityId)
-        {
-            // This is a placeholder. Real logic would depend on relationship level, specific perks, etc.
-            RelationshipBonuses bonuses = new RelationshipBonuses();
-            int score = GetRelationshipScore(entityId);
-
-            if (score >= 75) bonuses.ContractValueIncrease += 0.1f;
-            if (score >= 90) bonuses.ProjectQualityBonus += 0.05f;
-
-            return bonuses;
-        }
-
-        public List<ReputableEntity> GetAllEntities()
-        {
-            // Return a copy of all entities, ensuring their stats are up-to-date from _entityRelationshipStats
-            foreach (var entity in _allEntities.Values)
-            {
-                if (_entityRelationshipStats.TryGetValue(entity.Id, out RelationshipStats stats))
-                {
-                    entity.RelationshipScore = stats.RelationshipScore;
-                    entity.IsBlacklisted = stats.IsBlacklisted;
-                    entity.Stats = stats; // Ensure the full stats object is also updated
-                }
-            }
-            return new List<ReputableEntity>(_allEntities.Values);
-        }
-
-        public List<ReputableEntity> GetEntitiesByType(EntityType type)
-        {
-            return GetAllEntities().Where(entity => entity.Type == type).ToList();
-        }
-
-        public List<ReputableEntity> GetTopRelationships(int limit = 5)
-        {
-            return GetAllEntities()
-                .Where(entity => !entity.IsBlacklisted)
-                .OrderByDescending(entity => entity.RelationshipScore)
-                .Take(limit)
-                .ToList();
-        }
-
-        public List<MusicGenre> GetPreferredGenres(string entityId)
-        {
-            ReputableEntity entity = GetEntityById(entityId);
-            return entity?.PreferredGenres ?? new List<MusicGenre>();
-        }
-
-        public List<string> GetPreferredMoods(string entityId)
-        {
-            ReputableEntity entity = GetEntityById(entityId);
-            return entity?.PreferredMoods ?? new List<string>();
-        }
-
-        public float CalculateContractValueModifier(string entityId, MusicGenre projectGenre, string projectMood)
-        {
-            ReputableEntity entity = GetEntityById(entityId);
-            if (entity == null) return 1.0f;
-
-            RelationshipBonuses bonuses = CalculateRelationshipBonuses(entityId);
-            float modifier = 1.0f + bonuses.ContractValueIncrease;
-
-            // Genre preference bonus
-            if (entity.PreferredGenres.Contains(projectGenre))
-            {
-                modifier += 0.15f;
-            }
-
-            // Mood preference bonus
-            if (entity.PreferredMoods.Contains(projectMood))
-            {
-                modifier += 0.1f;
-            }
-
-            return Mathf.Max(0.5f, modifier); // Minimum 50% value
-        }
-
-        public List<object> GetAvailableContracts(EntityType? entityType = null) // Returns object for now, replace with Contract class
-        {
-            // This would integrate with the contract generation system
-            // For now, return mock data based on relationships
-            List<ReputableEntity> entities = entityType.HasValue ? GetEntitiesByType(entityType.Value) : GetAllEntities();
-            
-            List<object> contracts = new List<object>();
-            foreach (var entity in entities.Where(e => e.RelationshipScore > 10 && !e.IsBlacklisted)) // Not blacklisted
-            {
-                contracts.Add(new {
-                    entityId = entity.Id,
-                    entityName = entity.Name,
-                    relationshipLevel = GetRelationshipLevel(entity.Id),
-                    contractValueModifier = CalculateContractValueModifier(entity.Id, MusicGenre.Pop, "upbeat"), // Mock genre/mood
-                    preferredGenres = entity.PreferredGenres,
-                    estimatedValue = Mathf.FloorToInt(1000 + (entity.RelationshipScore * 50))
-                });
-            }
-            return contracts;
-        }
-
+        // --- Reputation Tracking ---
         public float GetGenreReputation(MusicGenre genre)
         {
-            // This would be a more complex calculation based on successful projects in genre, etc.
-            // For now, return a mock value or average of related entities
-            return 50; // Placeholder
+            // This would require tracking genre-specific reputation, possibly in GameState
+            // For now, return a placeholder or calculate based on relationships with genre-aligned entities
+            return 50f; // Placeholder
         }
 
         public float GetOverallReputation()
         {
-            // This would be a more complex calculation based on all relationships and industry prestige
-            // For now, return an average of all relationship scores
-            if (_entityRelationshipStats.Count == 0) return 0;
-            return _entityRelationshipStats.Values.Average(s => s.RelationshipScore);
+            // This would be an aggregate of all genre reputations or a separate metric
+            // For now, return a placeholder
+            return 50f; // Placeholder
         }
 
-        public List<RelationshipEvent> GetReputationHistory()
+        public List<ReputationHistoryEntry> GetReputationHistory()
         {
-            // This would return a list of historical events that impacted reputation
-            return new List<RelationshipEvent>(); // Placeholder
+            // This would be stored in GameState or a dedicated history object
+            return relationshipData.initialReputationHistory ?? new List<ReputationHistoryEntry>(); // Placeholder
         }
 
-        // Helper to update GameStateSO's relationships dictionary
-        private void UpdateGameStateRelationships(string entityId, RelationshipStats stats)
+        // --- Player Favor System ---
+        public (bool canProceed, string message) InitiatePlayerFavor(string entityId, string favorType)
         {
-            if (gameStateSO != null)
+            Debug.Log($"Player is considering initiating favor of type '{favorType}' with entity {entityId}.");
+            // Add logic to check if favor can be initiated (e.g., cooldowns, relationship level)
+            return (true, $"Favor '{favorType}' can be initiated.");
+        }
+
+        public void ResolvePlayerFavor(string entityId, string favorType, bool success, float magnitude = 10f)
+        {
+            GameState gameState = GameManager.Instance.CurrentGameState;
+            if (success)
             {
-                gameStateSO.GameState.Relationships[entityId] = stats;
-                // Also update the ReputableEntity in _allEntities to reflect the latest stats
-                if (_allEntities.TryGetValue(entityId, out ReputableEntity entity))
-                {
-                    entity.RelationshipScore = stats.RelationshipScore;
-                    entity.IsBlacklisted = stats.IsBlacklisted;
-                    entity.Stats = stats;
-                }
-                OnRelationshipsUpdated?.Invoke();
+                Debug.Log($"Player successfully completed favor '{favorType}' for {entityId}.");
+                IncreaseRelationship(entityId, magnitude, "PLAYER_FAVOR_COMPLETED", EnsureEntityRelationship(entityId), gameState);
             }
+            else
+            {
+                Debug.Log($"Player failed or rejected favor '{favorType}' for {entityId}.");
+                DecreaseRelationship(entityId, magnitude, "PLAYER_FAVOR_REJECTED", EnsureEntityRelationship(entityId), gameState);
+            }
+            GameManager.Instance.CurrentGameState.entityRelationships = currentRelationships;
+            GameManager.Instance.UpdateGameState(GameManager.Instance.CurrentGameState);
+            OnRelationshipChanged?.Invoke();
         }
     }
 }

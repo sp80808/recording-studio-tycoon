@@ -24,6 +24,7 @@ The primary focus of development has shifted to a **full rebuild of the game wit
 - PolAiService extended for text generation (GenerateTextAsync) and album art generation (GenerateAlbumArt).
 - Album art generation implemented and integrated with UI for project/album creation.
 - TextGenerationManager singleton implemented for reviews, news, bios, and descriptions (with caching and prompt templates).
+- News feed and description panels now feature icons, separators, scroll, fade-in animation, box styling, headers, and modern UI/UX polish, with code comments for easy adjustment.
 - Documentation updated for new text generation system.
 - Next: Integrate TextGenerationManager with UI for album/song reviews, news, bios, and descriptions.
 

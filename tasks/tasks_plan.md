@@ -106,7 +106,7 @@
 - [x] Album Art Generation (implemented and integrated with UI)
 - [x] Implement TextGenerationManager for reviews, news, bios, descriptions (with caching)
 - [ ] Integrate TextGenerationManager with UI for album/song reviews
-- [ ] Add UI for news feed (dynamic news)
+- [x] UI/UX enhancements for news feed and description panels: icons, separators, scroll, fade-in animation, box styling, headers, and modern polish, with code comments for easy adjustment.
 - [ ] Add UI for band member bios
 - [ ] Add UI for item/album/song descriptions
 - [ ] Update documentation and UI as features are added

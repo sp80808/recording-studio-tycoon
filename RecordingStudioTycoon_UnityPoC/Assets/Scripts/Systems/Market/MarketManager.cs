@@ -2,10 +2,9 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using RecordingStudioTycoon.DataModels.Market;
-using RecordingStudioTycoon.DataModels.Projects;
-using RecordingStudioTycoon.ScriptableObjects;
-using RecordingStudioTycoon.GameLogic; // Assuming GameState and GameManager are here
+using RecordingStudioTycoon.DataModels;
+using RecordingStudioTycoon.GameLogic; // For GameManager and GameState
+using RecordingStudioTycoon.Utils; // For any utility functions like SubGenre data
 
 namespace RecordingStudioTycoon.Systems.Market
 {
@@ -13,14 +12,16 @@ namespace RecordingStudioTycoon.Systems.Market
     {
         public static MarketManager Instance { get; private set; }
 
-        [SerializeField] private MarketTrendsDataSO marketTrendsData;
-        [SerializeField] private GameStateSO gameStateSO; // Reference to the global GameState ScriptableObject
+        [SerializeField] private MarketTrendData marketTrendData; // Assign ScriptableObject in Inspector
+        [SerializeField] private ChartsData chartsData; // Assign ScriptableObject in Inspector
 
         private List<MarketTrend> currentMarketTrends;
+        private List<Chart> currentCharts;
 
-        // Events for UI updates
+        // Event for when market trends update
         public event Action OnMarketTrendsUpdated;
-        public event Action<MusicGenre, string, int> OnGenrePopularityChanged;
+        // Event for when charts update
+        public event Action OnChartsUpdated;
 
         private void Awake()
         {
@@ -38,8 +39,9 @@ namespace RecordingStudioTycoon.Systems.Market
         private void Start()
         {
             InitializeMarketTrends();
-            // Subscribe to game day advancement if GameManager provides such an event
-            // GameManager.Instance.OnDayAdvanced += OnDayAdvanced; 
+            InitializeCharts();
+            // Subscribe to game day progression if GameManager provides such an event
+            // GameManager.Instance.OnDayAdvanced += OnDayAdvanced; // Example
         }
 
         private void OnDestroy()
@@ -53,191 +55,225 @@ namespace RecordingStudioTycoon.Systems.Market
 
         private void InitializeMarketTrends()
         {
-            if (marketTrendsData == null)
+            if (marketTrendData != null && marketTrendData.initialTrends != null)
             {
-                Debug.LogError("MarketTrendsDataSO is not assigned to MarketManager.");
-                currentMarketTrends = new List<MarketTrend>();
-                return;
-            }
-
-            if (marketTrendsData.InitialMarketTrends != null && marketTrendsData.InitialMarketTrends.Any())
-            {
-                currentMarketTrends = new List<MarketTrend>(marketTrendsData.InitialMarketTrends);
+                currentMarketTrends = new List<MarketTrend>(marketTrendData.initialTrends);
+                Debug.Log("MarketManager: Initialized market trends from ScriptableObject.");
             }
             else
             {
-                // Fallback: Generate mock data if ScriptableObject is empty
-                Debug.LogWarning("InitialMarketTrends in MarketTrendsDataSO is empty. Generating mock data.");
-                GenerateMockMarketTrends();
+                currentMarketTrends = GenerateInitialMarketTrends();
+                Debug.LogWarning("MarketManager: MarketTrendData ScriptableObject not assigned or empty. Generating default trends.");
             }
-
-            // Ensure GameStateSO has market trends initialized
-            if (gameStateSO != null)
-            {
-                if (gameStateSO.GameState.MarketTrends == null)
-                {
-                    gameStateSO.GameState.MarketTrends = new DataModels.Game.MarketState();
-                }
-                gameStateSO.GameState.MarketTrends.CurrentTrends = new List<MarketTrend>(currentMarketTrends);
-                // You might want to add historical trends initialization here too
-            }
-            else
-            {
-                Debug.LogError("GameStateSO is not assigned to MarketManager.");
-            }
-
-            OnMarketTrendsUpdated?.Invoke();
         }
 
-        private void GenerateMockMarketTrends()
+        private List<MarketTrend> GenerateInitialMarketTrends()
         {
-            currentMarketTrends = new List<MarketTrend>();
+            List<MarketTrend> trends = new List<MarketTrend>();
             MusicGenre[] genres = (MusicGenre[])Enum.GetValues(typeof(MusicGenre));
             TrendDirection[] directions = (TrendDirection[])Enum.GetValues(typeof(TrendDirection));
-            
-            System.Random rand = new System.Random();
 
-            foreach (var genre in genres)
+            foreach (MusicGenre genre in genres)
             {
-                // For simplicity, not adding subgenres here initially, but the structure supports it.
-                // You'd need a way to get relevant subgenres for each parent genre.
-                // For now, we'll create a main trend for each genre.
-                int initialPopularity = rand.Next(20, 81); // 20-80
-                float initialGrowthRate = (float)rand.NextDouble() * 6f - 3f; // -3% to +3%
+                // Find a relevant sub-genre if available (simplified for now)
+                // In a real scenario, you'd have a SubGenreManager or similar
+                string subGenreId = null; // Placeholder for sub-genre logic
 
-                currentMarketTrends.Add(new MarketTrend
+                float initialPopularity = UnityEngine.Random.Range(20f, 80f);
+                float initialGrowthRate = UnityEngine.Random.Range(-3f, 3f);
+
+                trends.Add(new MarketTrend
                 {
-                    Id = $"trend-{genre}-{Guid.NewGuid()}",
-                    GenreId = genre,
-                    SubGenreId = "", // No subgenre for now
-                    Popularity = initialPopularity,
-                    TrendDirection = directions[rand.Next(directions.Length)],
-                    GrowthRate = (float)Math.Round(initialGrowthRate, 2),
-                    LastUpdatedDay = 1, // Assuming game starts on day 1
-                    Growth = (int)Math.Round(initialGrowthRate * 10), // For compatibility
-                    Events = new TrendEvent[0],
-                    Duration = 90,
-                    StartDay = 1,
-                    ProjectedDuration = 90,
-                    Seasonality = Enumerable.Repeat(1.0f, 12).ToArray() // Neutral seasonality
+                    id = $"trend-{genre}-{Guid.NewGuid()}",
+                    genreId = genre,
+                    subGenreId = subGenreId,
+                    popularity = initialPopularity,
+                    trendDirection = directions[UnityEngine.Random.Range(0, directions.Length)],
+                    growthRate = initialGrowthRate,
+                    lastUpdatedDay = 1, // Assuming game starts on day 1
+                    growth = Mathf.RoundToInt(initialGrowthRate * 10),
+                    duration = 90,
+                    startDay = 1,
+                    projectedDuration = 90,
+                    seasonality = Enumerable.Repeat(1.0f, 12).ToList() // Neutral seasonality
                 });
+            }
+            return trends;
+        }
+
+        private void InitializeCharts()
+        {
+            if (chartsData != null && chartsData.initialCharts != null)
+            {
+                currentCharts = new List<Chart>(chartsData.initialCharts);
+                Debug.Log("MarketManager: Initialized charts from ScriptableObject.");
+            }
+            else
+            {
+                currentCharts = GenerateInitialCharts();
+                Debug.LogWarning("MarketManager: ChartsData ScriptableObject not assigned or empty. Generating default charts.");
             }
         }
 
-        // This method should be called by GameManager on a periodic basis (e.g., daily, weekly)
-        public void UpdateMarketTrends(List<Project> playerProjectsCompletedSinceLastUpdate, List<TrendEvent> globalEventsHappenedSinceLastUpdate, int currentDay)
+        private List<Chart> GenerateInitialCharts()
         {
-            Debug.Log($"MarketManager: Updating all market trends for game day: {currentDay}");
+            List<Chart> charts = new List<Chart>();
+            // Example: Create a default "Hot 100" chart
+            charts.Add(new Chart
+            {
+                id = "hot100",
+                name = "Hot 100",
+                description = "The most popular songs across all genres.",
+                minLevelToAccess = 1,
+                entries = new List<ChartEntry>(), // Will be populated dynamically
+                primaryGenre = MusicGenre.Pop // Or a more general "All" genre
+            });
+            return charts;
+        }
 
-            const int MAX_POPULARITY = 100;
-            const int MIN_POPULARITY = 5;
-            const float MAX_GROWTH_RATE = 7.5f; // Max % change per update period
+        // This method should be called by GameManager or a central game loop
+        public void UpdateMarketAndCharts(List<Project> completedPlayerProjects, List<TrendEvent> globalEvents)
+        {
+            Debug.Log($"MarketManager: Updating market and charts for game day {GameManager.Instance.CurrentGameState.currentDay}");
+            UpdateAllMarketTrends(completedPlayerProjects, globalEvents);
+            UpdateAllCharts(GameManager.Instance.CurrentGameState.playerData.level, GameManager.Instance.CurrentGameState.currentEra);
+            OnMarketTrendsUpdated?.Invoke();
+            OnChartsUpdated?.Invoke();
+        }
+
+        private void UpdateAllMarketTrends(List<Project> playerProjectsCompleted, List<TrendEvent> globalEvents)
+        {
+            const float MAX_POPULARITY = 100f;
+            const float MIN_POPULARITY = 5f;
+            const float MAX_GROWTH_RATE = 7.5f;
             const float MIN_GROWTH_RATE = -7.5f;
-
-            System.Random rand = new System.Random();
 
             foreach (var trend in currentMarketTrends)
             {
-                float newPopularity = trend.Popularity;
-                float newGrowthRate = trend.GrowthRate;
+                float newPopularity = trend.popularity;
+                float newGrowthRate = trend.growthRate;
 
                 // 1. Apply current growth rate to popularity
                 newPopularity += newGrowthRate;
 
                 // 2. Adjust growth rate (inertia + small random fluctuation + regression to mean)
-                newGrowthRate += ((float)rand.NextDouble() * 1f - 0.5f); // Smaller random change: -0.5 to +0.5
+                newGrowthRate += (UnityEngine.Random.value * 1f - 0.5f); // -0.5 to +0.5
                 newGrowthRate *= 0.95f; // Dampening factor
 
                 // 3. Impact of player's successful releases
-                foreach (var project in playerProjectsCompletedSinceLastUpdate)
+                foreach (var project in playerProjectsCompleted)
                 {
-                    if (project.Genre == trend.GenreId && project.QualityScore.HasValue && project.QualityScore.Value > 70)
+                    if (project.genre.ToString() == trend.genreId.ToString() && project.qualityScore > 70)
                     {
-                        float qualityImpact = project.QualityScore.Value / 100f; // 0 to 1
-                        newPopularity += qualityImpact * 5f; // Max +5 for a 100 quality score project
-                        newGrowthRate += qualityImpact * 0.5f;  // Max +0.5 to growth rate
-                        Debug.Log($"Player project '{project.Title}' (Quality: {project.QualityScore}) boosted {trend.GenreId}");
+                        float qualityImpact = project.qualityScore / 100f;
+                        newPopularity += qualityImpact * 5f;
+                        newGrowthRate += qualityImpact * 0.5f;
+                        Debug.Log($"Player project '{project.title}' (Quality: {project.qualityScore}) boosted {trend.genreId}");
                     }
                 }
 
                 // 4. Impact of global events
-                foreach (var ev in globalEventsHappenedSinceLastUpdate)
+                foreach (var evt in globalEvents)
                 {
-                    if (ev.AffectedGenres.Contains(trend.GenreId))
+                    if (evt.affectedGenres.Contains(trend.genreId))
                     {
-                        newPopularity += ev.Impact * 0.2f; // Event impact spread (e.g. 20% of raw impact value)
-                        newGrowthRate += ev.Impact * 0.05f; 
-                        Debug.Log($"Global event '{ev.Name}' impacted {trend.GenreId}");
+                        newPopularity += evt.impact * 0.2f;
+                        newGrowthRate += evt.impact * 0.05f;
+                        Debug.Log($"Global event '{evt.name}' impacted {trend.genreId}");
                     }
                 }
-                
+
                 // 5. Clamp popularity and growthRate
                 newPopularity = Mathf.Max(MIN_POPULARITY, Mathf.Min(MAX_POPULARITY, newPopularity));
                 newGrowthRate = Mathf.Max(MIN_GROWTH_RATE, Mathf.Min(MAX_GROWTH_RATE, newGrowthRate));
 
-                // 6. Determine new trendDirection based on current state
+                // 6. Determine new trendDirection
                 TrendDirection newTrendDirection = TrendDirection.Stable;
-                if (newGrowthRate > 1.5f && newPopularity < 90) newTrendDirection = TrendDirection.Rising;
-                else if (newGrowthRate < -1.5f && newPopularity > 10) newTrendDirection = TrendDirection.Falling;
-                else if (newPopularity < 25 && newGrowthRate > 0.5f) newTrendDirection = TrendDirection.Emerging;
-                else if (newPopularity < 15 && newGrowthRate <= 0) newTrendDirection = TrendDirection.Fading;
-                else if (newPopularity >= 85) newTrendDirection = TrendDirection.Stable; // Peaked
-                
-                trend.Popularity = Mathf.RoundToInt(newPopularity);
-                trend.GrowthRate = (float)Math.Round(newGrowthRate, 2);
-                trend.TrendDirection = newTrendDirection;
-                trend.LastUpdatedDay = currentDay;
-                trend.Growth = Mathf.RoundToInt(newGrowthRate * 10);
-            }
-            
-            // Update GameStateSO
-            if (gameStateSO != null)
-            {
-                gameStateSO.GameState.MarketTrends.CurrentTrends = new List<MarketTrend>(currentMarketTrends);
-            }
+                if (newGrowthRate > 1.5f && newPopularity < 90f) newTrendDirection = TrendDirection.Rising;
+                else if (newGrowthRate < -1.5f && newPopularity > 10f) newTrendDirection = TrendDirection.Falling;
+                else if (newPopularity < 25f && newGrowthRate > 0.5f) newTrendDirection = TrendDirection.Emerging;
+                else if (newPopularity < 15f && newGrowthRate <= 0f) newTrendDirection = TrendDirection.Fading;
+                else if (newPopularity >= 85f) newTrendDirection = TrendDirection.Stable;
 
-            OnMarketTrendsUpdated?.Invoke();
-            Debug.Log("MarketManager: Market trends updated.");
+                trend.popularity = Mathf.Round(newPopularity);
+                trend.growthRate = (float)Math.Round(newGrowthRate, 2);
+                trend.trendDirection = newTrendDirection;
+                trend.lastUpdatedDay = GameManager.Instance.CurrentGameState.currentDay;
+                trend.growth = Mathf.RoundToInt(newGrowthRate * 10);
+            }
+            Debug.Log("Market trends updated.");
         }
 
-        public int GetCurrentPopularity(MusicGenre genreId, string subGenreId = "")
+        private void UpdateAllCharts(int playerLevel, string currentEra)
         {
-            MarketTrend relevantTrend = GetTrendForGenre(genreId, subGenreId);
-            return relevantTrend?.Popularity ?? 50; // Default popularity
+            // This is a simplified chart update. In a full implementation, this would involve:
+            // 1. Identifying new songs to enter charts (player's songs, AI songs)
+            // 2. Calculating chart positions based on popularity, quality, marketing, etc.
+            // 3. Handling songs falling off charts
+            // 4. Updating peak positions and weeks on chart
+
+            foreach (var chart in currentCharts)
+            {
+                // Filter charts based on player level
+                if (chart.minLevelToAccess > playerLevel)
+                {
+                    chart.entries.Clear(); // Clear entries if not accessible
+                    continue;
+                }
+
+                // For now, let's just simulate some random chart entries or use placeholder data
+                // In a real game, this would be driven by actual song performance
+                chart.entries.Clear(); // Clear previous entries
+                for (int i = 0; i < 10; i++) // Simulate top 10
+                {
+                    chart.entries.Add(new ChartEntry
+                    {
+                        id = $"mock-song-{i}-{Guid.NewGuid()}",
+                        song = new Song { id = $"song-{i}", title = $"Hit Song {i+1}", artist = new Artist { name = $"Artist {i+1}", popularity = UnityEngine.Random.Range(10,100) }, genre = chart.primaryGenre },
+                        position = i + 1,
+                        lastPosition = i + 2, // Simulate falling
+                        peakPosition = i + 1,
+                        weeksOnChart = UnityEngine.Random.Range(1, 10),
+                        influenceScore = UnityEngine.Random.Range(0.1f, 1.0f)
+                    });
+                }
+                chart.entries = chart.entries.OrderBy(e => e.position).ToList();
+            }
+            Debug.Log("Charts updated.");
         }
 
-        public MarketTrend GetTrendForGenre(MusicGenre genreId, string subGenreId = "")
-        {
-            MarketTrend relevantTrend = null;
-            if (!string.IsNullOrEmpty(subGenreId))
-            {
-                relevantTrend = currentMarketTrends.Find(t => t.GenreId == genreId && t.SubGenreId == subGenreId);
-            }
-            if (relevantTrend == null)
-            {
-                relevantTrend = currentMarketTrends.Find(t => t.GenreId == genreId && string.IsNullOrEmpty(t.SubGenreId));
-            }
-            return relevantTrend;
-        }
-
-        public List<MarketTrend> GetAllTrends()
+        public List<MarketTrend> GetAllMarketTrends()
         {
             return new List<MarketTrend>(currentMarketTrends);
         }
 
-        // Placeholder for subgenre data, will need to be loaded from ScriptableObject or similar
-        public List<SubGenre> GetAllSubGenres()
+        public MarketTrend GetTrendForGenre(MusicGenre genre, string subGenreId = null)
         {
-            if (marketTrendsData != null && marketTrendsData.AllSubGenres != null)
+            MarketTrend relevantTrend = null;
+            if (!string.IsNullOrEmpty(subGenreId))
             {
-                return new List<SubGenre>(marketTrendsData.AllSubGenres);
+                relevantTrend = currentMarketTrends.Find(t => t.genreId == genre && t.subGenreId == subGenreId);
             }
-            return new List<SubGenre>();
+            if (relevantTrend == null)
+            {
+                relevantTrend = currentMarketTrends.Find(t => t.genreId == genre && string.IsNullOrEmpty(t.subGenreId));
+            }
+            return relevantTrend;
         }
 
-        public SubGenre GetSubGenreById(string subGenreId)
+        public float GetCurrentPopularity(MusicGenre genre, string subGenreId = null)
         {
-            return GetAllSubGenres().Find(sg => sg.Id == subGenreId);
+            return GetTrendForGenre(genre, subGenreId)?.popularity ?? 50f;
+        }
+
+        public List<Chart> GetAvailableCharts(int playerLevel)
+        {
+            return currentCharts.Where(c => c.minLevelToAccess <= playerLevel).ToList();
+        }
+
+        public Chart GetChartById(string chartId)
+        {
+            return currentCharts.Find(c => c.id == chartId);
         }
     }
 }

@@ -1,24 +1,31 @@
 using UnityEngine;
+using System;
 using System.Collections.Generic;
-using RecordingStudioTycoon.DataModels;
 
-[CreateAssetMenu(fileName = "ProgressionData", menuName = "Game Data/Progression Data")]
-public class ProgressionData : ScriptableObject
+namespace RecordingStudioTycoon.DataModels
 {
-    public List<PlayerMilestone> PlayerMilestones; // List of all milestones
-
-    public PlayerMilestone GetPlayerMilestone(int level)
+    [Serializable]
+    public class ProgressionMilestone
     {
-        return PlayerMilestones.Find(m => m.Level == level);
+        public int level;
+        public int staffCount;
+        public int projectsCompleted;
+        public string unlockMessage;
+        public List<string> features; // List of feature IDs unlocked by this milestone
     }
-}
 
-[System.Serializable]
-public class PlayerMilestone
-{
-    public int Level;
-    public List<UnlockedFeatureInfo> UnlockedFeatures;
-    public List<PlayerAbilityChange> AbilityChanges;
-    public int PerkPointsGained;
-    public int AttributePointsGained;
+    [CreateAssetMenu(fileName = "NewProgressionData", menuName = "ScriptableObjects/Progression Data")]
+    public class ProgressionData : ScriptableObject
+    {
+        public List<ProgressionMilestone> milestones;
+
+        // Method to calculate XP to next level, similar to usePlayerProgression.tsx
+        public int CalculateXPToNextLevel(int currentLevel)
+        {
+            const int baseXP = 100;
+            const float growthFactor = 1.4f;
+            int levelOffset = Mathf.Max(0, currentLevel - 1);
+            return Mathf.FloorToInt(baseXP * Mathf.Pow(growthFactor, levelOffset * 0.7f));
+        }
+    }
 }

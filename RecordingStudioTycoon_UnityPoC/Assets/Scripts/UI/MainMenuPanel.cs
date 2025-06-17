@@ -33,6 +33,10 @@ namespace RecordingStudioTycoon.UI
             if (newsFeedContainer == null)
             {
                 newsFeedContainer = new VisualElement { name = "news-feed-container" };
+                // Set fixed height and enable vertical scrolling
+                newsFeedContainer.style.height = 200;
+                newsFeedContainer.style.overflow = Overflow.Scroll;
+                newsFeedContainer.style.flexDirection = FlexDirection.ColumnReverse; // Newest on top
                 root.Add(newsFeedContainer);
             }
             generateNewsButton = root.Q<Button>("generate-news-button");
@@ -73,23 +77,67 @@ namespace RecordingStudioTycoon.UI
                 newsFeedContainer.Remove(loadingLabel);
                 if (!string.IsNullOrEmpty(news))
                 {
+                    // Create a container for the news item
+                    var newsItemContainer = new VisualElement();
+                    newsItemContainer.style.flexDirection = FlexDirection.Row;
+                    newsItemContainer.style.alignItems = Align.Center;
+                    newsItemContainer.style.marginBottom = 8;
+                    newsItemContainer.style.opacity = 0f; // For fade-in
+
+                    // Add icon (Unicode for cross-platform)
+                    var iconLabel = new Label("📰")
+                    {
+                        style = {
+                            fontSize = 18,
+                            marginRight = 6
+                        }
+                    };
+                    newsItemContainer.Add(iconLabel);
+
+                    // Add news text
                     var newsLabel = new Label(news)
                     {
                         style = {
                             unityFontStyleAndWeight = FontStyle.Bold,
                             fontSize = 14,
-                            marginBottom = 8,
-                            color = new UnityEngine.Color(0.2f,0.2f,0.8f)
+                            color = new UnityEngine.Color(0.2f,0.2f,0.8f),
+                            flexGrow = 1
                         }
                     };
+                    newsItemContainer.Add(newsLabel);
+
+                    // Highlight the latest news item
+                    if (newsItems.Count == 0)
+                    {
+                        newsItemContainer.style.backgroundColor = new UnityEngine.Color(0.9f, 0.95f, 1f, 1f);
+                        newsItemContainer.style.borderBottomLeftRadius = 6;
+                        newsItemContainer.style.borderBottomRightRadius = 6;
+                        newsItemContainer.style.borderTopLeftRadius = 6;
+                        newsItemContainer.style.borderTopRightRadius = 6;
+                    }
+
+                    // Insert a separator (horizontal line)
+                    if (newsItems.Count > 0)
+                    {
+                        var separator = new VisualElement();
+                        separator.style.height = 1;
+                        separator.style.backgroundColor = new UnityEngine.Color(0.8f,0.8f,0.8f,0.7f);
+                        separator.style.marginBottom = 4;
+                        separator.style.marginTop = 4;
+                        newsFeedContainer.Insert(0, separator);
+                    }
+
                     newsItems.Insert(0, newsLabel);
                     if (newsItems.Count > MaxNewsItems)
                     {
                         var last = newsItems[newsItems.Count - 1];
-                        newsFeedContainer.Remove(last);
+                        newsFeedContainer.Remove(last.parent);
                         newsItems.RemoveAt(newsItems.Count - 1);
                     }
-                    newsFeedContainer.Insert(0, newsLabel);
+                    newsFeedContainer.Insert(0, newsItemContainer);
+
+                    // Fade-in animation (manual alpha animation)
+                    FadeIn(newsItemContainer, 0.5f);
                 }
                 else
                 {
@@ -107,6 +155,20 @@ namespace RecordingStudioTycoon.UI
             {
                 isLoadingNews = false;
             }
+        }
+
+        // Fade-in animation for new news items (UI Toolkit workaround)
+        private async void FadeIn(VisualElement element, float duration)
+        {
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                float t = elapsed / duration;
+                element.style.opacity = t;
+                await System.Threading.Tasks.Task.Yield();
+                elapsed += Time.deltaTime;
+            }
+            element.style.opacity = 1f;
         }
     }
 }

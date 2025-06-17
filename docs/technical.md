@@ -90,3 +90,8 @@ This section details the specific technical setup for the Unity game engine and 
 - Caches results in-memory to minimize API calls.
 - UI panels (album/song info, news feed, band member info, item info) call TextGenerationManager for dynamic text content.
 - Handles error states and loading indicators in UI.
+
+## UI/UX Enhancements for PolAI Features
+- News feed panel (MainMenuPanel): Unicode icons, separators, scrollable container, fade-in animation, and highlighted latest item for AI-generated news.
+- Description panels (ProjectCardUI, StudioPanel): Section headers with icons, rounded/light background boxes, larger italicized text, and fade-in animation for AI-generated descriptions.
+- All enhancements are commented in code for easy future adjustment.

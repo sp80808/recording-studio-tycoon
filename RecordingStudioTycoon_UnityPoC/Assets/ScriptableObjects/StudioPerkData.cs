@@ -1,34 +1,89 @@
 using UnityEngine;
-using RecordingStudioTycoon.DataModels.Progression;
-using RecordingStudioTycoon.Utils;
+using System;
 using System.Collections.Generic;
-using RecordingStudioTycoon.Core;
+using RecordingStudioTycoon.DataModels; // For MusicGenre
 
-[CreateAssetMenu(fileName = "StudioPerkData", menuName = "Game Data/Studio Perk Data")]
-public class StudioPerkData : ScriptableObject
+namespace RecordingStudioTycoon.DataModels
 {
-    public List<StudioPerkTree> PerkTrees;
-}
+    [Serializable]
+    public enum PerkCategory
+    {
+        Acoustics, BusinessOperations, TalentAcquisition, Marketing, Production, Engineering, Mixing, Mastering, StaffManagement, ResearchDevelopment, Financial, Reputation
+    }
 
-[System.Serializable]
-public class StudioPerkTree
-{
-    public string Id;
-    public string Name;
-    public List<StudioPerk> Perks;
-}
+    [Serializable]
+    public enum ConditionType
+    {
+        PlayerLevel, StudioReputation, CompletedProjects, ProjectsInGenre, StaffSkillSum, SpecificEquipmentOwned, SpecificPerkUnlocked, MoneyEarned, ChartSuccesses
+    }
 
-[System.Serializable]
-public class StudioPerk
-{
-    public string Id;
-    public string Name;
-    public string Description;
-    public int Cost;
-    public List<string> Prerequisites; // IDs of perks required to unlock this one
-    public List<PerkUnlockCondition> UnlockConditions;
-    public List<PerkEffect> Effects;
-    public bool IsRepeatable;
-    public int MaxRepeats; // 0 for unlimited, >0 for a specific limit
-    public bool IsUnlocked; // This might be managed at runtime in GameState, not static data
+    [Serializable]
+    public class PerkUnlockCondition
+    {
+        public ConditionType type;
+        public float value; // Numeric value for level, reputation, count etc.
+        public MusicGenre genre; // For ProjectsInGenre condition
+        public string equipmentId; // For SpecificEquipmentOwned
+        public string perkId; // For SpecificPerkUnlocked
+    }
+
+    [Serializable]
+    public enum EffectOperation
+    {
+        Add, Multiply, Set
+    }
+
+    [Serializable]
+    public class PerkEffect
+    {
+        public string key; // Corresponds to a property in AggregatedPerkModifiers
+        public float value;
+        public EffectOperation operation;
+        public MusicGenre genre; // For genre-specific effects like projectAppealModifier
+    }
+
+    [Serializable]
+    public class PerkCost
+    {
+        public int money;
+        public int perkPoints;
+    }
+
+    [Serializable]
+    public class StudioPerk
+    {
+        public string id;
+        public string name;
+        public string description;
+        public PerkCategory category;
+        public int tier;
+        public PerkCost cost;
+        public List<PerkUnlockCondition> unlockConditions;
+        public List<PerkEffect> effects;
+        public List<string> prerequisites; // IDs of perks that must be unlocked first
+        public bool isRepeatable;
+        public int maxRepeats;
+    }
+
+    [Serializable]
+    public class PerkTier
+    {
+        public int tierNumber;
+        public List<StudioPerk> perks;
+    }
+
+    [Serializable]
+    public class PerkTree
+    {
+        public string id;
+        public string name;
+        public List<PerkTier> tiers;
+    }
+
+    [CreateAssetMenu(fileName = "NewStudioPerkData", menuName = "ScriptableObjects/Studio Perk Data")]
+    public class StudioPerkData : ScriptableObject
+    {
+        public List<PerkTree> perkTrees;
+        public List<StudioPerk> allPerks; // A flat list of all perks for easy lookup
+    }
 }
