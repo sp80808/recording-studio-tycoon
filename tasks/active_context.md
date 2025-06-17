@@ -15,11 +15,28 @@ The primary focus of development has shifted to a **full rebuild of the game wit
 -   The overall task plan (`tasks/tasks_plan.md`) now explicitly outlines the phases and sub-tasks for the Unity rebuild, indicating initial completion of core logic, data model setup, and initial UI/player interaction enhancements.
 -   Integration with C# SDKs for cloud services (e.g., Firebase, PlayFab) for robust save features is a key consideration for the new Unity save system.
 
+## Current State (Minigame Systems)
+- Scoring and feedback system (ScoringManager) implemented and integrated with minigames and UI.
+- Tutorial overlay system (TutorialManager + TutorialOverlay) implemented and integrated with minigames and UI.
+- Documentation updated for both systems.
+
+## Current State (PolAI Integration)
+- Integration plan and API docs reviewed (`docs/POLAI_API_INTEGRATION_PLAN.md`, `docs/polaiAPIDOCS.md`).
+- Task plan updated for phased rollout (album art, text/news, logo, TTS, etc.).
+
 ## Next Steps
 1.  Continue with the detailed rebuild of game systems within Unity, following the prioritized tasks outlined in `tasks/tasks_plan.md`.
 2.  Focus on implementing the remaining Unity UI elements and integrating them with the C# game logic.
 3.  Systematically migrate or rebuild remaining game features (e.g., Save System, Audio, Minigames) in C# within the Unity environment.
 4.  Regularly review and update all project documentation to maintain alignment with the ongoing Unity development.
+5.  Expand feedback system with actionable tips and color cues.
+6.  Add example tutorial scripts for minigames.
+7.  Continue minigame and UI development as per updated documentation.
+
+## Next Steps (PolAI)
+- Implement PolAiService for API calls (image, text, audio).
+- Begin with album art generation UI and backend.
+- Expand to text/news, logo, TTS, and other features as per plan.
 
 ## Legacy Context Note
 Sections pertaining to the original web-based implementation (e.g., specific web frontend technologies, previous debugging sessions, and detailed web component descriptions) have been phased out or marked as legacy in the primary documentation files to maintain clarity on the current development direction. This includes elements previously detailed in `src/` directories related to React/TypeScript components and services.

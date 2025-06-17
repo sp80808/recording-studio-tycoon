@@ -11,6 +11,13 @@ This document describes the high-level architecture of the Recording Studio Tyco
 
 - The previous detailed plan for porting the existing React-based UI to Unity using ReactUnity (`docs/unity_porting_plan.md`) is now superseded by the decision to undertake a full game rebuild in Unity with C#. While ReactUnity may still be used for certain UI elements, the core game logic and UI framework will be native C# within Unity.
 
+## PolAI (Pollinations.AI) Integration
+- Centralized `PolAiService` module for all API calls (image, text, audio).
+- UI integration for album art, band logo, dynamic news/reviews, TTS, and more.
+- Follows phased rollout: album art and text/news first, then logo, TTS, dialogue, accessibility.
+- Uses referrer-based authentication for frontend calls.
+- Error handling, loading states, and caching are part of the integration.
+
 ```mermaid
 flowchart TD
     User[Player Interaction] --> UnityUI[User Interface (Unity UGUI/UI Toolkit)]

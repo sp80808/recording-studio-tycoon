@@ -22,7 +22,9 @@ namespace RecordingStudioTycoon.GameLogic
         // Dependencies (ScriptableObjects for static data, or other MonoBehaviours/static classes)
         [SerializeField] private ProgressionData _progressionData; // ScriptableObject for milestones, XP requirements
         [SerializeField] private ProjectData _projectData; // ScriptableObject for project templates, candidate generation rules
-        // ... other ScriptableObject dependencies
+        [SerializeField] private EquipmentData _equipmentData; // ScriptableObject for equipment data
+        [SerializeField] private StaffData _staffData; // ScriptableObject for staff templates
+        [SerializeField] private EraData _eraData; // ScriptableObject for era information
 
         private void Awake()
         {
@@ -67,11 +69,18 @@ namespace RecordingStudioTycoon.GameLogic
         private void PerformDailyWork()
         {
             // Placeholder for daily work logic.
-            // This would involve iterating through active projects, staff assignments, etc.
-            // and updating the game state accordingly.
+            // Process active projects
+            if (Systems.Project.ProjectManager.Instance != null)
+            {
+                Systems.Project.ProjectManager.Instance.ProcessActiveProjects();
+            }
+
+            // Process staff daily updates
+            if (Systems.Staff.StaffManagement.Instance != null)
+            {
+                Systems.Staff.StaffManagement.Instance.DailyStaffUpdate();
+            }
             Debug.Log("Performing daily work...");
-            // Example: ProjectManager.Instance.ProcessActiveProjects(_gameState);
-            // Example: StaffManager.Instance.ProcessStaffActions(_gameState);
         }
 
         public void CollectMoney(int amount)

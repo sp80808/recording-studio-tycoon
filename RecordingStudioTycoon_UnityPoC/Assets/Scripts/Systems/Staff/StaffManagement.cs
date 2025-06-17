@@ -38,9 +38,8 @@ namespace RecordingStudioTycoon.Systems.Staff
             {
                 GameManager.Instance.CurrentGameState.hiredStaff.Add(newStaff);
                 GameManager.Instance.CurrentGameState.availableCandidates.RemoveAll(s => s.Id == newStaff.Id);
-                // Placeholder for deducting money - GameManager will handle this
-                // GameManager.Instance.AddMoney(-newStaff.Salary); 
-                Debug.Log($"Hired staff: {newStaff.Name} ({newStaff.Role})");
+                GameManager.Instance.CollectMoney(-newStaff.Salary); // Deduct hiring cost
+                Debug.Log($"Hired staff: {newStaff.Name} ({newStaff.Role}). Cost: {newStaff.Salary}");
             }
             else
             {
@@ -147,8 +146,7 @@ namespace RecordingStudioTycoon.Systems.Staff
                 return;
             }
 
-            // Deduct training cost (placeholder, GameManager should handle money)
-            // GameManager.Instance.AddMoney(-training.Cost);
+            GameManager.Instance.CollectMoney(-training.Cost); // Deduct training cost
             Debug.Log($"Training {staff.Name} in {training.Name}. Cost: {training.Cost}. Duration: {training.DurationDays} days.");
 
             // For simplicity, apply skill increase immediately. In a real game, this would be over time.

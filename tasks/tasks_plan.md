@@ -92,3 +92,24 @@
 - **What's left to build**: All features marked with `[ ]` in the "In-Depth Tasks List" above.
 - **Current status**: Initial setup and core mechanics are functional. Focus is now on enhancing existing systems and implementing planned features.
 - **Known issues**: (To be documented as they arise)
+
+### Minigame Systems
+- [x] Implement scoring and feedback system (ScoringManager)
+- [x] Implement tutorial overlay system (TutorialManager + TutorialOverlay)
+- [x] Update documentation for both systems
+- [ ] Expand feedback system with actionable tips and color cues
+- [ ] Add example tutorial scripts for minigames
+- [ ] Continue minigame and UI development as per updated documentation
+
+### PolAI (Pollinations.AI) Integration
+- [ ] Implement PolAiService for API calls (image, text, audio)
+- [ ] Album Art Generation (Phase 1)
+- [ ] Dynamic News/Reviews (Text Generation, Phase 1)
+- [ ] Band Logo Generation (Phase 2)
+- [ ] Creative Writing Assistance (Lyrics, Phase 2)
+- [ ] TTS for Announcer/Notifications (Phase 2)
+- [ ] Dynamic NPC Dialogue (Phase 3)
+- [ ] Dynamic Event Images (Phase 3)
+- [ ] Accessibility TTS (Phase 3)
+- [ ] Error handling, loading states, and caching
+- [ ] Update documentation and UI as features are added

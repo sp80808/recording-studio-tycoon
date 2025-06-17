@@ -1,0 +1,14 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <ui:VisualElement class="root" name="root">
+        <ui:VisualElement class="main-content" name="main-content">
+            <!-- Dynamic content will be loaded here -->
+        </ui:VisualElement>
+        
+        <!-- Level Up Modal (initially hidden) -->
+        <ui:VisualElement class="modal-container" name="modal-container" style="display: none;">
+            <ui:Label class="modal-title" name="title" text="Level Up!"/>
+            <ui:Label class="modal-description" name="description" text=""/>
+            <ui:Button class="close-button" name="close-button" text="Close"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

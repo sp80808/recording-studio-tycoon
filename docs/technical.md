@@ -64,3 +64,20 @@ This section details the specific technical setup for the Unity game engine and 
 - **Security**: Implementing encryption for save data and secure communication for multiplayer features.
 - **Cross-Platform Compatibility**: Ensuring consistent experience across desktop, web, and mobile (if implemented).
 - **Data Management**: Efficient handling of large save files and incremental updates.
+
+## Minigame Scoring and Feedback System
+- `ScoringManager` (singleton):
+  - Handles score, accuracy, and feedback updates for all minigames.
+  - Exposes events for UI to subscribe to real-time and end-of-minigame updates.
+  - Minigames call `UpdateScore` and `CompleteMinigame` to trigger feedback.
+  - Supports actionable tips and color cues for user actions.
+
+## Tutorial Overlay System
+- `TutorialManager` (singleton):
+  - Manages tutorial steps, progress, and completion state.
+  - Allows minigames to register and start tutorials.
+  - Exposes events for UI to update overlays.
+- `TutorialOverlay` (UI):
+  - Displays tooltips and highlights UI elements for each tutorial step.
+  - Dims background and provides navigation controls.
+  - Finds UI elements by name or tag for highlighting.

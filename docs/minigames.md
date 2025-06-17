@@ -169,6 +169,23 @@ The minigame system in Recording Studio Tycoon provides interactive gameplay ele
    - UI/UX improvements
    - Feedback systems
 
+## Scoring and Feedback System
+
+The minigame system includes a centralized scoring and feedback system:
+- **ScoringManager**: Singleton class that manages real-time and end-of-minigame score updates, accuracy, and feedback.
+- Minigames call `UpdateScore(score, accuracy, feedback)` for real-time updates and `CompleteMinigame(finalScore, accuracy, summary)` at the end.
+- UI components subscribe to `OnScoreUpdated` and `OnMinigameComplete` for live updates.
+- Supports actionable tips and color cues for user actions.
+
+## Tutorial System
+
+The minigame system features a modular tutorial system:
+- **TutorialManager**: Singleton class that manages step-by-step tutorials, progress, and completion state.
+- Tutorials are defined as a list of `TutorialStep` objects, each with a title, content, target UI element, and highlight flag.
+- **TutorialOverlay**: UI component that displays tooltips, highlights UI elements, and dims the background during tutorials.
+- The overlay is triggered by tutorial step changes and can highlight UI elements by name or tag.
+- Navigation controls (next, previous, close) are provided for user guidance.
+
 ## Usage Guidelines
 
 ### Development

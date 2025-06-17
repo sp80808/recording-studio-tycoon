@@ -80,6 +80,46 @@ namespace RecordingStudioTycoon.Systems.Project
             return newProject;
         }
 
+        public void ProcessActiveProjects()
+        {
+            if (GameManager.Instance == null)
+            {
+                Debug.LogError("GameManager not found. Cannot process active projects.");
+                return;
+            }
+
+            // Create a copy to avoid modification during iteration
+            List<RecordingStudioTycoon.DataModels.Project> activeProjects = new List<RecordingStudioTycoon.DataModels.Project>(
+                GameManager.Instance.CurrentGameState.availableProjects.Where(p => p.IsActive).ToList()
+            );
+
+            foreach (RecordingStudioTycoon.DataModels.Project project in activeProjects)
+            {
+                // Determine work amount based on assigned staff, player attributes, etc.
+                // For now, a simple placeholder. This will be refined.
+                float workAmount = CalculateDailyWorkAmount(project);
+                AdvanceProject(project, workAmount);
+            }
+            Debug.Log($"Processed {activeProjects.Count} active projects.");
+        }
+
+        private float CalculateDailyWorkAmount(RecordingStudioTycoon.DataModels.Project project)
+        {
+            float baseWork = 10f; // Base work per day
+            float staffEfficiencyBonus = 0f;
+
+            foreach (string staffId in project.AssignedStaffIds)
+            {
+                StaffMember staff = GameManager.Instance.CurrentGameState.hiredStaff.FirstOrDefault(s => s.Id == staffId);
+                if (staff != null)
+                {
+                    // Example: Staff efficiency and energy contribute to work amount
+                    staffEfficiencyBonus += (staff.Efficiency / 100f) * (staff.Energy / 100f) * 5f; // Example calculation
+                }
+            }
+            return baseWork + staffEfficiencyBonus;
+        }
+
         public void StartProject(string projectId)
         {
             if (GameManager.Instance == null)
