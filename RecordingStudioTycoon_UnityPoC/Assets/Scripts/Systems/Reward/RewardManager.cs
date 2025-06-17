@@ -1,72 +1,65 @@
-using UnityEngine;
 using System;
+using System.Collections.Generic;
+using UnityEngine;
+using RecordingStudioTycoon.DataModels;
+using RecordingStudioTycoon.GameLogic;
 
-namespace RecordingStudioTycoon
+namespace RecordingStudioTycoon.Systems.Reward
 {
-    public enum RewardType
-    {
-        Money,
-        XP,
-        Item
-    }
-
     public class RewardManager : MonoBehaviour
     {
         public static RewardManager Instance { get; private set; }
 
-        // Event for UI to subscribe to for visual feedback
-        public static event Action<RewardType, float> OnRewardGranted;
+        [SerializeField] private List<RewardData> availableRewards;
 
         private void Awake()
         {
             if (Instance != null && Instance != this)
             {
                 Destroy(gameObject);
+                return;
             }
-            else
-            {
-                Instance = this;
-                DontDestroyOnLoad(gameObject);
-            }
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
         }
 
-        /// <summary>
-        /// Grants a specified reward to the player.
-        /// </summary>
-        /// <param name="type">The type of reward (Money, XP, Item).</param>
-        /// <param name="amount">The amount of the reward. For items, this might represent quantity or a specific item ID.</param>
-        public void GrantReward(RewardType type, float amount)
+        public void ProcessProjectReward(string projectId, float qualityScore)
         {
-            Debug.Log($"Granting {amount} {type} reward.");
+            // Calculate rewards based on project completion
+            int xpReward = Mathf.RoundToInt(qualityScore * 50);
+            int moneyReward = Mathf.RoundToInt(qualityScore * 100);
 
-            switch (type)
+            if (GameManager.Instance != null)
             {
-                case RewardType.Money:
-                    Systems.Finance.FinanceManager.Instance?.AddMoney(amount);
-                    Debug.Log($"Player received ${amount}.");
-                    break;
-                case RewardType.XP:
-                    // TODO: Integrate with a PlayerProgressionManager or similar
-                    Debug.Log($"Player received {amount} XP.");
-                    break;
-                case RewardType.Item:
-                    // TODO: Integrate with an InventoryManager or similar
-                    Debug.Log($"Player received {amount} item(s).");
-                    break;
-                default:
-                    Debug.LogWarning($"Unknown reward type: {type}.");
-                    break;
+                GameManager.Instance.AddXP(xpReward);
+                // Add money through game state
+                var gameState = GameManager.Instance.CurrentGameState;
+                gameState.money += moneyReward;
+                
+                Debug.Log($"Project reward: {xpReward} XP, ${moneyReward}");
             }
-
-            OnRewardGranted?.Invoke(type, amount);
         }
 
-        // Example usage (can be removed or modified later)
-        public void TestGrantRewards()
+        public void ProcessDailyReward()
         {
-            GrantReward(RewardType.Money, 100.50f);
-            GrantReward(RewardType.XP, 50f);
-            // GrantReward(RewardType.Item, 1f); // For item, 'amount' could be item ID or quantity
+            // Process daily rewards like passive income, reputation decay, etc.
+            Debug.Log("Processing daily rewards...");
         }
+    }
+
+    [Serializable]
+    public class RewardData
+    {
+        public string id;
+        public string name;
+        public RewardType type;
+        public int value;
+        public string description;
+    }
+
+    [Serializable]
+    public enum RewardType
+    {
+        Money, XP, Reputation, PerkPoints, Equipment
     }
 }

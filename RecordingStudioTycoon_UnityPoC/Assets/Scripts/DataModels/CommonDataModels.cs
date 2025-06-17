@@ -228,4 +228,86 @@ namespace RecordingStudioTycoon.DataModels
         public float changeAmount;
         public string reason;
     }
+
+    [Serializable]
+    public class RelationshipStats
+    {
+        public string entityId;
+        public float relationshipLevel;
+        public RelationshipBonuses bonuses;
+    }
+
+    [Serializable]
+    public class ReputableEntity
+    {
+        public string id;
+        public string name;
+        public EntityType type;
+        public float reputation;
+        public List<MusicGenre> preferredGenres;
+    }
+
+    [Serializable]
+    public class ChartEntry
+    {
+        public string songId;
+        public int position;
+        public int weeksOnChart;
+        public int peakPosition;
+    }
+
+    [Serializable]
+    public class Chart
+    {
+        public string id;
+        public string name;
+        public MusicGenre genre;
+        public List<ChartEntry> entries;
+        public int weekNumber;
+    }
+
+    [Serializable]
+    public class ChartsData
+    {
+        public List<Chart> charts;
+        public int currentWeek;
+    }
+
+    [Serializable]
+    public class MarketTrend
+    {
+        public MusicGenre genre;
+        public TrendDirection direction;
+        public float intensity;
+        public int duration;
+        public string description;
+    }
+
+    [Serializable]
+    public class TrendEvent
+    {
+        public string id;
+        public string name;
+        public string description;
+        public MusicGenre affectedGenre;
+        public float impact;
+        public int duration;
+    }
+
+    [Serializable]
+    public class PerkUnlockCondition
+    {
+        public ConditionType type;
+        public int value;
+        public string additionalData;
+    }
+
+    [Serializable]
+    public class PerkEffect
+    {
+        public string effectType;
+        public EffectOperation operation;
+        public float value;
+        public string description;
+    }
 }
