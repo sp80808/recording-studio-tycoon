@@ -1,33 +1,72 @@
 import { useState, useEffect } from 'react';
 
 /**
- * Custom React hook to detect if a CSS media query matches.
+ * Custom React hook to detect mobile devices using user agent and touch capabilities.
+ * More reliable than screen size since dev tools can trigger false positives.
+ * @returns {boolean} - True if the device is likely mobile, false otherwise.
+ */
+export const useMobileDetection = (): boolean => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const detectMobile = () => {
+      // Check user agent for mobile indicators
+      const userAgent = navigator.userAgent.toLowerCase();
+      const mobileKeywords = [
+        'android', 'webos', 'iphone', 'ipad', 'ipod', 
+        'blackberry', 'windows phone', 'mobile', 'tablet'
+      ];
+      
+      const hasUserAgentMobile = mobileKeywords.some(keyword => 
+        userAgent.includes(keyword)
+      );
+
+      // Check for touch capability
+      const hasTouchCapability = (
+        'ontouchstart' in window ||
+        navigator.maxTouchPoints > 0 ||
+        (navigator as any).msMaxTouchPoints > 0
+      );
+
+      // Check screen size as secondary indicator (but not primary)
+      const hasSmallScreen = window.innerWidth <= 768;
+
+      // Mobile if user agent indicates mobile OR (touch capable AND small screen)
+      const isMobileDevice = hasUserAgentMobile || (hasTouchCapability && hasSmallScreen);
+      
+      // Additional check: if screen is very large (>1024px), probably not mobile even with touch
+      const isLargeScreen = window.innerWidth > 1024;
+      
+      setIsMobile(isMobileDevice && !isLargeScreen);
+    };
+
+    // Initial detection
+    detectMobile();
+
+    // Re-detect on resize (but with user agent as primary factor)
+    window.addEventListener('resize', detectMobile);
+    
+    return () => {
+      window.removeEventListener('resize', detectMobile);
+    };
+  }, []);
+
+  return isMobile;
+};
+
+/**
+ * Legacy media query hook for backwards compatibility
  * @param {string} query - The media query string (e.g., '(max-width: 768px)').
  * @returns {boolean} - True if the media query matches, false otherwise.
- *
- * @example
- * const isMobile = useMediaQuery('(max-width: 768px)');
- * if (isMobile) {
- *   // Render mobile-specific components or apply mobile styles
- * }
  */
 const useMediaQuery = (query: string): boolean => {
-  // State to store whether the media query matches or not.
-  // Initialized to false, will be updated by the effect.
   const [matches, setMatches] = useState(false);
 
   useEffect(() => {
-    // Get a MediaQueryList object for the passed query.
     const mediaQueryList = window.matchMedia(query);
-
-    // Handler function to update the state when the media query status changes.
     const documentChangeHandler = () => setMatches(mediaQueryList.matches);
-
-    // Perform an initial check as soon as the component mounts.
     documentChangeHandler();
-
-    // Subscribe to changes in the media query status.
-    // Uses addEventListener for modern browsers.
+    
     // Includes a try-catch block for older Safari versions that use the deprecated addListener.
     try {
       mediaQueryList.addEventListener('change', documentChangeHandler);

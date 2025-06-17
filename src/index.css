@@ -358,3 +358,173 @@
     -webkit-overflow-scrolling: touch;
   }
 }
+
+/* Fullscreen Mode Scrolling Enhancements */
+:fullscreen {
+  overflow: hidden; /* Prevent body scroll in fullscreen */
+}
+
+:fullscreen .game-layout {
+  height: 100vh;
+  overflow: hidden;
+}
+
+:fullscreen .main-game-content {
+  height: calc(100vh - 60px); /* Account for header height */
+  overflow: hidden;
+}
+
+:fullscreen .right-panel,
+:fullscreen .studio-panel,
+:fullscreen .project-panel {
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Desktop fullscreen specific */
+@media (min-width: 769px) {
+  :fullscreen .desktop-panel {
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+  }
+}
+
+/* Mobile fullscreen specific */
+@media (max-width: 768px) {
+  :fullscreen .mobile-tab-container {
+    height: calc(100vh - 140px); /* Account for header and mobile nav */
+    overflow: hidden;
+  }
+  
+  :fullscreen .mobile-tab-panel {
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Webkit fullscreen compatibility */
+:-webkit-full-screen {
+  overflow: hidden;
+}
+
+:-webkit-full-screen .game-layout {
+  height: 100vh;
+  overflow: hidden;
+}
+
+:-webkit-full-screen .main-game-content {
+  height: calc(100vh - 60px);
+  overflow: hidden;
+}
+
+:-webkit-full-screen .right-panel,
+:-webkit-full-screen .studio-panel,
+:-webkit-full-screen .project-panel {
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mozilla fullscreen compatibility */
+:-moz-full-screen {
+  overflow: hidden;
+}
+
+:-moz-full-screen .game-layout {
+  height: 100vh;
+  overflow: hidden;
+}
+
+:-moz-full-screen .main-game-content {
+  height: calc(100vh - 60px);
+  overflow: hidden;
+}
+
+:-moz-full-screen .right-panel,
+:-moz-full-screen .studio-panel,
+:-moz-full-screen .project-panel {
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Microsoft fullscreen compatibility */
+:-ms-fullscreen {
+  overflow: hidden;
+}
+
+:-ms-fullscreen .game-layout {
+  height: 100vh;
+  overflow: hidden;
+}
+
+:-ms-fullscreen .main-game-content {
+  height: calc(100vh - 60px);
+  overflow: hidden;
+}
+
+:-ms-fullscreen .right-panel,
+:-ms-fullscreen .studio-panel,
+:-ms-fullscreen .project-panel {
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Fullscreen scrollbar styling for better visibility */
+:fullscreen *::-webkit-scrollbar,
+:-webkit-full-screen *::-webkit-scrollbar,
+:-moz-full-screen *::-webkit-scrollbar,
+:-ms-fullscreen *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+:fullscreen *::-webkit-scrollbar-track,
+:-webkit-full-screen *::-webkit-scrollbar-track,
+:-moz-full-screen *::-webkit-scrollbar-track,
+:-ms-fullscreen *::-webkit-scrollbar-track {
+  background: rgba(55, 65, 81, 0.5);
+  border-radius: 4px;
+}
+
+:fullscreen *::-webkit-scrollbar-thumb,
+:-webkit-full-screen *::-webkit-scrollbar-thumb,
+:-moz-full-screen *::-webkit-scrollbar-thumb,
+:-ms-fullscreen *::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.7);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+:fullscreen *::-webkit-scrollbar-thumb:hover,
+:-webkit-full-screen *::-webkit-scrollbar-thumb:hover,
+:-moz-full-screen *::-webkit-scrollbar-thumb:hover,
+:-ms-fullscreen *::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.9);
+}
+
+/* Fullscreen mode visual indicator */
+:fullscreen .game-layout::after,
+:-webkit-full-screen .game-layout::after,
+:-moz-full-screen .game-layout::after,
+:-ms-fullscreen .game-layout::after {
+  content: '';
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  width: 12px;
+  height: 12px;
+  background: rgba(34, 197, 94, 0.6);
+  border-radius: 50%;
+  z-index: 1000;
+  animation: pulse-fullscreen 2s infinite;
+  pointer-events: none;
+}
+
+@keyframes pulse-fullscreen {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+}

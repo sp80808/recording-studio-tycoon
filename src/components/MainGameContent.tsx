@@ -10,6 +10,7 @@ import { checkForNewEvents, applyEventEffects, HistoricalEvent } from '@/utils/h
 import { useBandManagement } from '@/hooks/useBandManagement';
 import { MinigameType } from '@/components/minigames/MinigameManager';
 import useMediaQuery from '@/hooks/useMediaQuery';
+import { useMobileDetection } from '@/hooks/useMediaQuery';
 import MobileArrowNavigation from '@/components/layout/MobileArrowNavigation';
 
 /**
@@ -91,8 +92,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
     type: 'xp' | 'money' | 'skill';
   }>>([]);
 
-  // Mobile detection: True if viewport width is 768px or less.
-  const isMobile = useMediaQuery('(max-width: 768px)');
+  // Mobile detection: Use user agent and touch capabilities instead of screen size
+  const isMobile = useMobileDetection();
   
   // State to manage the active tab index for mobile view.
   // 0: Projects, 1: Studio (main interface), 2: Management (right panel)
@@ -226,7 +227,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
 
   return (
     // Outermost container for the main game content area.
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col main-game-content">
       {/* Render MobileArrowNavigation only on mobile viewports. */}
       {isMobile && (
         <div className="mobile-navigation">
@@ -249,7 +250,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         {/* Panel 1: Project List */}
         {/* On mobile, this is the first tab. On desktop, it's the left column. */}
         <div 
-          className={`h-full overflow-y-auto p-2 ${isMobile ? 'flex-shrink-0 mobile-tab-panel' : 'w-1/4 border-r border-gray-700'}`}
+          className={`h-full overflow-y-auto p-2 project-panel ${isMobile ? 'flex-shrink-0 mobile-tab-panel' : 'w-1/4 border-r border-gray-700 desktop-panel'}`}
           style={isMobile ? { width: `calc(100% / ${mobileTabs.length})`} : {}} // Full width per tab on mobile, fractional on desktop
         >
           <ProjectList 
@@ -262,7 +263,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         {/* Panel 2: Main Interface (Studio) */}
         {/* On mobile, this is the second (default) tab. On desktop, it's the center column. */}
         <div 
-          className={`h-full overflow-y-auto p-2 relative flex flex-col ${isMobile ? 'flex-shrink-0 mobile-tab-panel' : 'w-1/2'}`}
+          className={`h-full overflow-y-auto p-2 relative flex flex-col studio-panel ${isMobile ? 'flex-shrink-0 mobile-tab-panel' : 'w-1/2 desktop-panel'}`}
           style={isMobile ? { width: `calc(100% / ${mobileTabs.length})`} : {}}
         >
           <ProgressiveProjectInterface 
@@ -298,7 +299,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         {/* Panel 3: RightPanel (Management, Staff, Equipment) */}
         {/* On mobile, this is the third tab. On desktop, it's the right column. */}
         <div 
-          className={`h-full overflow-y-auto p-2 ${isMobile ? 'flex-shrink-0 mobile-tab-panel' : 'w-1/4 border-l border-gray-700'}`}
+          className={`h-full overflow-y-auto p-2 right-panel ${isMobile ? 'flex-shrink-0 mobile-tab-panel' : 'w-1/4 border-l border-gray-700 desktop-panel'}`}
           style={isMobile ? { width: `calc(100% / ${mobileTabs.length})`} : {}}
         >
           <RightPanel

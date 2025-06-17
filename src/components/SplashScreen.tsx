@@ -166,7 +166,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
           {/* Version/Credits */}
           <div className="mt-8 pt-4 border-t border-gray-700">
             <p className="text-xs text-gray-500">
-              {t('splash_credits', 'Recording Studio Tycoon v1.0 | Built with ❤️ for music lovers')}
+              {t('splash_credits', 'Recording Studio Tycoon v0.3.1 (alpha) | Built with ❤️ for music lovers')}
             </p>
           </div>
         </Card>

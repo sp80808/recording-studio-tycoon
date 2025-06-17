@@ -284,7 +284,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
       }}
     >
       <DialogContent 
-        className="bg-gray-850 border-gray-700 text-gray-50 shadow-xl max-w-2xl w-full rounded-lg z-[60]" // Increased z-index
+        className="bg-black border-gray-700 text-gray-50 shadow-xl max-w-2xl w-full rounded-lg z-[60]" // Changed to black background
         onInteractOutside={(e) => {
           // Prevent closing when clicking outside if animation is not complete
           if (!showContinueButton) {
