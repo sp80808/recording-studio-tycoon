@@ -4,17 +4,16 @@
 
 ### Technologies Used
 - **Primary Game Engine & Logic**: Unity 3D with C#
-- **Core Game Logic & State Management**: C# (`GameManager.cs`, `GameState.cs`)
+- **Core Game Logic & State Management**: Unity 3D with C# (modular, data-driven, event-driven architecture)
 - **User Interface (Primary)**: Unity's native UI systems (UGUI or UI Toolkit)
-- **User Interface (Secondary/Optional)**: (Removed - no longer using ReactUnity)
 - **Styling**: Unity UI styling (e.g., UXML/USS, native UI components)
-- **State Management**: C# `GameState` and `GameManager` in Unity.
+- **State Management**: Centralized `GameState` (C#) for persistence, managed by `GameManager` and specialized managers.
 - **Routing**: Unity Scene Management, C# navigation logic
 - **Build Tool**: Unity Editor and Build System
 - **Testing**: Unity Test Framework (for C#)
 - **Cloud Integration**: C# SDKs for cloud services (e.g., Firebase, PlayFab) for robust cloud saves and advanced features.
 - **Animations**: Unity Animation System, C# animation control.
-- **Charting**: C# charting libraries or custom Unity UI rendering.
+- **Charting**: C# charting libraries or custom Unity UI rendering, with integrated audio playback.
 - **Internationalization**: Unity Localization System (C#).
 - **Input Handling**: Unity Input System (C#).
 - **Multiplayer**: Unity Networking (e.g., Netcode for GameObjects) or dedicated C# backend services for real-time multiplayer.
@@ -22,39 +21,51 @@
 - **Virtual Reality**: Unity XR Interaction Toolkit (C#).
 - **Mobile Platform**: Unity's multi-platform build capabilities (C#).
 
-### Unity Environment and ReactUnity Integration
-
-This section details the specific technical setup for the Unity game engine and its integration with ReactUnity for UI rendering. While ReactUnity is an *optional* UI framework for specific complex elements, the core game logic and much of the UI will be built natively in C# within Unity.
-
-#### Core Components (C#)
-- **`GameManager.cs`**: A Singleton MonoBehaviour responsible for initializing the game, managing overall game flow, and orchestrating interactions between various game systems. It acts as the primary interface for C# game logic and data, triggering events (`OnGameStateChanged`, `OnPlayerLevelUp`) to notify relevant Unity UI components or ReactUnity elements of state modifications.
-- **`GameState.cs`**: A serializable class (`[System.Serializable]`) that defines the entire game's state. It holds all dynamic data, including player data, studio information, projects, staff, and more. It is managed by `GameManager` and updated by various game systems. Complex data structures like dictionaries are handled using a custom `SerializableDictionary` to ensure proper Unity serialization.
+### Core Components (C#)
+- **`GameManager.cs`**: Acts as the central orchestrator, delegating responsibilities to specialized managers (e.g., `RelationshipManager`, `MinigameManager`, `MarketManager`, `ProgressionManager`, `TourManager`, `FinanceManager`, `RewardManager`, `ChartAudioManager`). It uses new events to communicate state changes and trigger actions across the system.
+- **`GameState.cs`**: Extensively expanded to include new fields for Studio Perks, Era Progression, Focus Allocation, detailed Skill Tracking, Unlocked Features, Training, Expansion, Milestone tracking, Band and Song Management, Studio Specializations, Industry Prestige, and High Score tracking. It remains the centralized data structure for persistence.
+- **`SaveSystem.cs`**: Now includes versioning to ensure backward compatibility and smooth updates across game versions.
+- **Specialized Managers**: New and updated managers (e.g., `RelationshipManager`, `MinigameManager`, `MarketManager`, `ProgressionManager`, `TourManager`, `FinanceManager`, `RewardManager`, `ChartAudioManager`) handle specific game functionalities, delegating responsibilities from `GameManager`. Their method signatures and event parameters have been updated to support new features.
+- **ScriptableObjects**: Increased use of ScriptableObjects for configuration and static game data (e.g., `MarketTrendData`, `ChartsData`, `ProgressionData`, `StudioPerkData`, `EraData`), promoting a data-driven design.
 - **Utility Scripts**: Located in `Assets/Scripts/Utils/`, these static C# classes provide helper functions for various game aspects:
     - `BandUtils.cs`: For generating session musicians and managing band-related data.
     - `ProjectUtils.cs`: For generating new projects based on game state.
     - `ProgressionUtils.cs`: For calculating player XP requirements and managing progression.
     - `StaffUtils.cs`: For generating staff candidates and managing staff-related data.
-
-#### UI Data Flow (C# and Unity UI)
-- **Event-Driven Updates**: `GameManager` triggers C# events (`OnGameStateChanged`, `OnPlayerLevelUp`, `OnGameDataChanged`) when the `GameState` changes. `UIManager` and other Unity UI components subscribe to these events to receive updated game data and refresh their display.
-- **Direct Property Access**: Unity UI components can directly access public properties of `GameManager.Instance` to retrieve current game state information.
-- **Direct Method Calls**: User interactions with Unity UI elements (e.g., button clicks, slider changes) directly trigger public methods on `UIManager` or `GameManager` to perform game actions or modify settings.
+    - `EraProgression.cs`: Manages the progression through different music eras.
+    - `MinigameTriggers.cs`: Handles triggers for various minigames.
+    - `RewardManager.cs`: Manages the distribution of rewards.
+    - `CloudSaveUtils.cs`: Utilities for cloud saving.
+    - `EquipmentUtils.cs`: Utilities for equipment management.
+    - `GameUtils.cs`: General game utilities.
+    - `PlayerUtils.cs`: Utilities for player-related data.
+    - `ProjectReviewUtils.cs`: Utilities for project review.
+    - `ProjectWorkUtils.cs`: Utilities for project work.
+    - `SerializableDictionary.cs`: Custom dictionary for Unity serialization.
 
 ### Development Setup (Unity Specific)
 1.  **Unity Project Setup**: Follow the steps in `userInstructions/setup_unity_reactunity_poc.md` to create and configure the Unity project.
 2.  **Unity Editor**: Develop C# scripts and design UI directly within the Unity Editor. Run the Unity Editor in Play Mode to test game functionality and UI.
 
 ### Key Technical Decisions (Unity Native)
+- **Modular, Data-Driven, and Event-Driven Design**: A clear shift towards a highly modular architecture where `GameManager` orchestrates interactions between specialized, independent managers. Data is primarily driven by ScriptableObjects, and communication between systems is event-driven for loose coupling.
+- **Centralized `GameState` for Persistence**: `GameState.cs` serves as the single, comprehensive source of truth for all dynamic game data, ensuring consistent persistence across sessions with versioning.
+- **Delegation of Responsibilities**: `GameManager` delegates complex functionalities to specialized managers, improving code organization, maintainability, and scalability.
+- **Increased Use of ScriptableObjects**: For static data and configurations, promoting easier content creation and balancing.
+- **Refined Event-Driven Logic**: Especially for the Relationship System and consolidated Market/Chart systems, enabling flexible and responsive interactions.
 - **Separation of Concerns**: Game logic and state management are primarily handled in C# within Unity. UI rendering and interaction are handled by dedicated C# UI scripts and Unity's native UI system.
 - **Single Source of Truth (Game State)**: `GameManager.Instance.GameState` remains the central source of truth for all dynamic game data.
 - **Event-Driven Communication**: Favor C# events for decoupled communication between game systems and UI.
 
 ### Design Patterns in Use
-- **Observer Pattern**: For event handling and state changes (e.g., notifications, game events).
-- **Factory Pattern**: For creating instances of game entities (e.g., staff, projects, equipment).
-- **Singleton Pattern**: For managing global services like the Audio System or Save System.
+- **Observer Pattern**: Extensively used for event handling and state changes (e.g., notifications, game events, updates from specialized managers).
+- **Factory Pattern**: For creating instances of game entities (e.g., staff, projects, equipment, bands, songs).
+- **Singleton Pattern**: For managing global services like `GameManager`, `AudioSystem`, `SaveSystem`, `RelationshipManager`, `MinigameManager`, `MarketManager`, `ProgressionManager`, `TourManager`, `FinanceManager`, `RewardManager`, `ChartAudioManager`.
 - **Strategy Pattern**: For implementing different minigame mechanics or project outcomes.
-- **ScriptableObject Pattern**: For data-driven design, separating data from logic.
+- **ScriptableObject Pattern**: Heavily utilized for data-driven design, separating data from logic and enabling easy configuration and content management.
+- **Command Pattern**: (Potentially for undo/redo or complex player actions).
+- **State Pattern**: (For managing different states of game entities or systems).
+- **Dependency Injection**: (For managing dependencies between services and components).
 
 ### Technical Constraints
 - **Performance**: Optimizing for smooth animations and responsive UI, especially on lower-end devices and mobile platforms.

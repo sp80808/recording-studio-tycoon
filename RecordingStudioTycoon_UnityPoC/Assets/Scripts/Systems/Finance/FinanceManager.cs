@@ -1,6 +1,6 @@
 using UnityEngine;
-using System;
-using RecordingStudioTycoon.GameLogic; // For GameManager and GameState
+using RecordingStudioTycoon.DataModels;
+using RecordingStudioTycoon.GameLogic;
 
 namespace RecordingStudioTycoon.Systems.Finance
 {
@@ -8,96 +8,91 @@ namespace RecordingStudioTycoon.Systems.Finance
     {
         public static FinanceManager Instance { get; private set; }
 
-        // Event for when money changes, so UI can update
-        public event Action<int> OnMoneyChanged;
-
         private void Awake()
         {
             if (Instance != null && Instance != this)
             {
                 Destroy(gameObject);
+                return;
             }
-            else
-            {
-                Instance = this;
-                DontDestroyOnLoad(gameObject);
-            }
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
         }
 
-        // This method should be called by GameManager or a central game loop
         public void ProcessDailyFinances(int currentDay)
-        {
-            Debug.Log($"FinanceManager: Processing daily finances for day {currentDay}");
-            // Example: Deduct daily staff salaries
-            DeductStaffSalaries(currentDay);
-            // Example: Process daily expenses from studio upgrades, rent, etc.
-            // ProcessDailyExpenses(currentDay);
-            // Example: Process daily income from passive sources
-            // ProcessDailyIncome(currentDay);
-        }
-
-        public void AddMoney(int amount, string reason = "General Income")
         {
             if (GameManager.Instance == null) return;
 
-            GameManager.Instance.CurrentGameState.money += amount;
-            Debug.Log($"Added {amount} money. Reason: {reason}. Total: {GameManager.Instance.CurrentGameState.money}");
-            OnMoneyChanged?.Invoke(GameManager.Instance.CurrentGameState.money);
-            GameManager.Instance.UpdateGameState(GameManager.Instance.CurrentGameState); // Notify GameManager of state change
+            var gameState = GameManager.Instance.CurrentGameState;
+
+            // Calculate daily expenses
+            int dailyExpenses = CalculateDailyExpenses(gameState);
+            
+            // Apply daily expenses
+            gameState.money -= dailyExpenses;
+
+            // Process staff salaries
+            ProcessStaffSalaries(gameState);
+
+            // Process equipment maintenance
+            ProcessEquipmentMaintenance(gameState);
+
+            Debug.Log($"Daily finances processed: -${dailyExpenses} expenses");
         }
 
-        public bool DeductMoney(int amount, string reason = "General Expense")
+        private int CalculateDailyExpenses(GameState gameState)
+        {
+            int baseExpenses = 50; // Base studio operating costs
+            int staffExpenses = gameState.staff.Count * 10; // Staff overhead
+            int equipmentExpenses = gameState.equipment.Count * 5; // Equipment maintenance
+
+            return baseExpenses + staffExpenses + equipmentExpenses;
+        }
+
+        private void ProcessStaffSalaries(GameState gameState)
+        {
+            foreach (var staffMember in gameState.staff)
+            {
+                // For now, just subtract a basic salary amount
+                // In a real implementation, this would be based on staff member salary
+                gameState.money -= 100; // Base daily salary
+            }
+        }
+
+        private void ProcessEquipmentMaintenance(GameState gameState)
+        {
+            foreach (var equipment in gameState.equipment)
+            {
+                // Basic equipment maintenance cost
+                gameState.money -= 5;
+            }
+        }
+
+        public void AddRevenue(int amount, string source = "")
+        {
+            if (GameManager.Instance == null) return;
+
+            var gameState = GameManager.Instance.CurrentGameState;
+            gameState.money += amount;
+
+            Debug.Log($"Revenue added: +${amount} from {source}");
+        }
+
+        public bool CanAfford(int cost)
         {
             if (GameManager.Instance == null) return false;
-
-            if (GameManager.Instance.CurrentGameState.money >= amount)
-            {
-                GameManager.Instance.CurrentGameState.money -= amount;
-                Debug.Log($"Deducted {amount} money. Reason: {reason}. Total: {GameManager.Instance.CurrentGameState.money}");
-                OnMoneyChanged?.Invoke(GameManager.Instance.CurrentGameState.money);
-                GameManager.Instance.UpdateGameState(GameManager.Instance.CurrentGameState); // Notify GameManager of state change
-                return true;
-            }
-            else
-            {
-                Debug.LogWarning($"Insufficient funds to deduct {amount} for {reason}. Current money: {GameManager.Instance.CurrentGameState.money}");
-                // TODO: Trigger UI notification for insufficient funds
-                return false;
-            }
+            return GameManager.Instance.CurrentGameState.money >= cost;
         }
 
-        private void DeductStaffSalaries(int currentDay)
+        public bool SpendMoney(int amount, string purpose = "")
         {
-            if (GameManager.Instance == null || GameManager.Instance.CurrentGameState.hiredStaff == null) return;
+            if (!CanAfford(amount)) return false;
 
-            // Assuming salaries are paid weekly (e.g., every 7 days)
-            if (currentDay > 0 && currentDay % 7 == 0)
-            {
-                int totalSalaries = 0;
-                foreach (var staff in GameManager.Instance.CurrentGameState.hiredStaff)
-                {
-                    totalSalaries += staff.salary;
-                }
+            var gameState = GameManager.Instance.CurrentGameState;
+            gameState.money -= amount;
 
-                if (totalSalaries > 0)
-                {
-                    Debug.Log($"Attempting to deduct weekly salaries: {totalSalaries}");
-                    if (DeductMoney(totalSalaries, "Weekly Staff Salaries"))
-                    {
-                        Debug.Log($"Successfully deducted {totalSalaries} for staff salaries.");
-                    }
-                    else
-                    {
-                        Debug.LogError($"Failed to deduct staff salaries. Not enough money!");
-                        // Handle consequences of not paying salaries (e.g., staff mood decrease, leave)
-                    }
-                }
-            }
+            Debug.Log($"Money spent: -${amount} for {purpose}");
+            return true;
         }
-
-        // You can add more specific financial methods here, e.g.:
-        // public void ProcessProjectPayout(Project project) { ... }
-        // public void HandleEquipmentPurchase(Equipment equipment) { ... }
-        // public void HandleStudioExpansionCost(Expansion expansion) { ... }
     }
 }

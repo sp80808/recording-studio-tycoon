@@ -72,8 +72,4 @@ namespace RecordingStudioTycoon.DataModels
         }
     }
 
-    public enum StudioSkillType
-    {
-        recording, mixing, mastering, production, marketing, composition, soundDesign, sequencing
-    }
 }

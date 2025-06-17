@@ -1,11 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
-using RecordingStudioTycoon.DataModels.Staff;
-using RecordingStudioTycoon.DataModels.Projects;
-using RecordingStudioTycoon.DataModels.Skills;
-using RecordingStudioTycoon.ScriptableObjects;
-using RecordingStudioTycoon.GameLogic; // For GameManager and GameState
-using RecordingStudioTycoon.Utils; // For StaffUtils
+using RecordingStudioTycoon.DataModels;
+using RecordingStudioTycoon.Utils;
+using RecordingStudioTycoon.GameLogic;
 
 namespace RecordingStudioTycoon.Systems.Staff
 {
@@ -13,206 +10,173 @@ namespace RecordingStudioTycoon.Systems.Staff
     {
         public static StaffManager Instance { get; private set; }
 
-        [SerializeField] private GameStateSO gameStateSO; // Reference to the global GameState ScriptableObject
-        [SerializeField] private RecordingStudioTycoon.ScriptableObjects.StaffDataSO staffData;
-        
-        // Events for UI updates
-        public event System.Action OnStaffListChanged;
-        public event System.Action<StaffMember> OnStaffHired;
-        public event System.Action<StaffMember> OnStaffFired;
-        public event System.Action<StaffMember, SkillType, int> OnStaffSkillTrained;
+        [SerializeField] private StaffData staffData;
 
         private void Awake()
         {
             if (Instance != null && Instance != this)
             {
                 Destroy(gameObject);
-            }
-            else
-            {
-                Instance = this;
-                DontDestroyOnLoad(gameObject);
-            }
-        }
-
-        void Start()
-        {
-            // Staff list is managed directly in GameState.hiredStaff
-            // No need for a separate currentStaff list in the manager.
-            // LoadInitialStaff(); // This should be handled by GameManager or initial save load
-        }
-
-        public int GetHireCost(StaffType type)
-        {
-            return staffData.GetBaseSalary(type) * 3; // 3 months salary as hiring cost
-        }
-
-        public void HireStaff(StaffType type)
-        {
-            if (gameStateSO == null) return;
-
-            var cost = GetHireCost(type);
-            if (gameStateSO.GameState.Money < cost)
-            {
-                Debug.LogWarning($"Not enough money to hire staff of type {type}. Needed: {cost}, Have: {gameStateSO.GameState.Money}");
-                // UIManager.Instance.ShowToast("Insufficient Funds", "You don't have enough money to hire this staff member.", "destructive");
                 return;
             }
-
-            StaffMember newStaff = StaffUtils.GenerateSingleCandidate(type, gameStateSO.GameState); // Use StaffUtils to generate a new staff member
-            
-            gameStateSO.GameState.Money -= cost;
-            gameStateSO.GameState.HiredStaff.Add(newStaff);
-            
-            OnStaffHired?.Invoke(newStaff);
-            OnStaffListChanged?.Invoke();
-            Debug.Log($"Hired new {type}: {newStaff.Name} (Cost: ${cost})");
-        }
-
-        public void AssignToProject(StaffMember staff, RecordingStudioTycoon.DataModels.Projects.Project project)
-        {
-            if (gameStateSO == null || !gameStateSO.GameState.HiredStaff.Contains(staff)) return;
-
-            staff.AssignedProjectId = project.Id; // Assign project ID
-            staff.IsAvailable = false; // Mark as unavailable
-            staff.Energy = Mathf.Max(50, staff.Energy - 20); // Assignment consumes energy
-            OnStaffListChanged?.Invoke();
-            Debug.Log($"Assigned {staff.Name} to project {project.Title}");
-        }
-        
-        public void UnassignFromProject(StaffMember staff)
-        {
-            if (gameStateSO == null || !gameStateSO.GameState.HiredStaff.Contains(staff)) return;
-
-            staff.AssignedProjectId = null;
-            staff.IsAvailable = true;
-            OnStaffListChanged?.Invoke();
-            Debug.Log($"Unassigned {staff.Name} from project.");
-        }
-
-        public void FireStaff(StaffMember staff)
-        {
-            if (gameStateSO == null || !gameStateSO.GameState.HiredStaff.Contains(staff)) return;
-
-            gameStateSO.GameState.HiredStaff.Remove(staff);
-            OnStaffFired?.Invoke(staff);
-            OnStaffListChanged?.Invoke();
-            Debug.Log($"Fired {staff.Name} ({staff.StaffType})");
-        }
-
-        public void TrainStaff(StaffMember staff, SkillType skill)
-        {
-            if (gameStateSO == null || !gameStateSO.GameState.HiredStaff.Contains(staff)) return;
-            
-            var cost = staffData.GetTrainingCost(skill);
-            if (gameStateSO.GameState.Money >= cost)
-            {
-                gameStateSO.GameState.Money -= cost;
-                staff.Skills[skill] += staffData.GetTrainingAmount(skill);
-                
-                OnStaffSkillTrained?.Invoke(staff, skill, staffData.GetTrainingAmount(skill));
-                OnStaffListChanged?.Invoke();
-                Debug.Log($"{staff.Name} trained in {skill} (Cost: {cost})");
-            }
-            else
-            {
-                Debug.LogWarning($"Not enough money to train {staff.Name} in {skill}. Needed: {cost}, Have: {gameStateSO.GameState.Money}");
-                // UIManager.Instance.ShowToast("Insufficient Funds", "You don't have enough money for this training.", "destructive");
-            }
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
         }
 
         public void DailyStaffUpdate(int currentDay)
         {
-            if (gameStateSO == null) return;
+            if (GameManager.Instance == null) return;
 
-            // Pay salaries on specific days (e.g., every 7 days)
-            if (currentDay % 7 == 0) // Example: weekly salary
+            var gameState = GameManager.Instance.CurrentGameState;
+
+            // Update staff morale, productivity, etc.
+            foreach (var staffMember in gameState.staff)
             {
-                foreach (var staff in gameStateSO.GameState.HiredStaff)
-                {
-                    // Deduct salary from money
-                    if (FinanceManager.Instance != null)
-                    {
-                        FinanceManager.Instance.DeductMoney(staff.Salary, $"Staff Salary: {staff.Name}");
-                    }
-                    else
-                    {
-                        Debug.LogWarning("FinanceManager not found. Cannot deduct staff salary.");
-                        gameStateSO.GameState.Money -= staff.Salary; // Fallback
-                    }
-                }
-                Debug.Log($"Paid staff salaries for day {currentDay}.");
+                UpdateStaffMember(staffMember, currentDay);
             }
 
-            foreach (var staff in gameStateSO.GameState.HiredStaff)
+            Debug.Log("Daily staff update completed");
+        }
+
+        private void UpdateStaffMember(StaffMember staffMember, int currentDay)
+        {
+            // Update morale based on working conditions
+            if (staffMember.morale > 0)
             {
-                // Replenish energy (less if overworked)
-                float recoveryRate = staff.Energy < 30 ? 0.5f : 1f;
-                staff.Energy = Mathf.Min(100, staff.Energy + Mathf.RoundToInt(20 * recoveryRate));
-                
-                // Morale effects
-                if (string.IsNullOrEmpty(staff.AssignedProjectId)) // If not assigned to a project
-                {
-                    staff.Morale = Mathf.Max(50, staff.Morale - 5); // Boredom penalty
-                }
-                else if (staff.Energy < 30)
-                {
-                    staff.Morale = Mathf.Max(30, staff.Morale - 10); // Overwork penalty
-                }
-                else
-                {
-                    staff.Morale = Mathf.Min(100, staff.Morale + 5); // Happy to be working
-                }
-
-                // Calculate efficiency modifier
-                staff.Efficiency = Mathf.RoundToInt(
-                    Mathf.Clamp(
-                        (staff.Morale * 0.6f) + (staff.Energy * 0.4f),
-                        30, 150
-                    )
-                );
-
-                // Apply perk modifiers to staff happiness/efficiency
-                if (gameStateSO.GameState.AggregatedPerkModifiers != null)
-                {
-                    staff.Morale = Mathf.Min(100, staff.Morale + Mathf.RoundToInt(gameStateSO.GameState.AggregatedPerkModifiers.StaffHappinessModifier));
-                    // You could also modify efficiency directly based on other perks
-                }
-
-                // Visual feedback (if applicable, might be handled by UI components)
-                UpdateStaffVisualState(staff);
+                staffMember.morale -= Random.Range(0, 3); // Random morale decay
             }
-            OnStaffListChanged?.Invoke();
+
+            // Update productivity based on morale
+            if (staffMember.morale > 80)
+            {
+                staffMember.productivity = Mathf.Min(100, staffMember.productivity + 1);
+            }
+            else if (staffMember.morale < 30)
+            {
+                staffMember.productivity = Mathf.Max(0, staffMember.productivity - 1);
+            }
+
+            // Update skills slightly over time
+            foreach (var skill in staffMember.skills.Keys)
+            {
+                if (Random.Range(0, 100) < 5) // 5% chance to gain skill experience
+                {
+                    staffMember.skills[skill] = Mathf.Min(100, staffMember.skills[skill] + 1);
+                }
+            }
+
+            Debug.Log($"Updated staff member: {staffMember.name} (Morale: {staffMember.morale}, Productivity: {staffMember.productivity})");
         }
 
         public void RefreshAvailableCandidates(GameState gameState)
         {
-            gameState.AvailableCandidates = StaffUtils.GenerateCandidates(3, gameState);
-            OnStaffListChanged?.Invoke();
-            Debug.Log("Refreshed available staff candidates.");
+            gameState.availableCandidates = StaffUtils.GenerateCandidates(3, gameState);
+            Debug.Log("Available candidates refreshed");
         }
 
-        private void UpdateStaffVisualState(StaffMember staff)
+        public bool HireStaff(StaffMember candidate)
         {
-            // This logic might be better handled by a dedicated UI component that observes staff state
-            // For now, it updates internal staff properties that UI can read.
-            if (staff.Energy < 30)
+            if (GameManager.Instance == null) return false;
+
+            var gameState = GameManager.Instance.CurrentGameState;
+
+            // Check if we can afford the hiring cost
+            int hiringCost = candidate.salary * 2; // Example: 2x salary as hiring cost
+            if (gameState.money < hiringCost) return false;
+
+            // Hire the staff member
+            gameState.money -= hiringCost;
+            gameState.staff.Add(candidate);
+
+            // Remove from available candidates
+            gameState.availableCandidates.Remove(candidate);
+
+            Debug.Log($"Hired {candidate.name} for ${hiringCost}");
+            return true;
+        }
+
+        public bool FireStaff(StaffMember staffMember)
+        {
+            if (GameManager.Instance == null) return false;
+
+            var gameState = GameManager.Instance.CurrentGameState;
+
+            if (gameState.staff.Remove(staffMember))
             {
-                staff.StatusMessage = "Exhausted";
-                // staff.StatusColor = Color.red; // Color is not directly serializable in DataModel
-                staff.CurrentAnimationState = "Tired";
+                // Pay severance (optional)
+                int severanceCost = staffMember.salary / 2;
+                gameState.money -= severanceCost;
+
+                Debug.Log($"Fired {staffMember.name}. Severance: ${severanceCost}");
+                return true;
             }
-            else if (staff.Morale < 50)
+
+            return false;
+        }
+
+        public void AssignStaffToProject(StaffMember staffMember, Project project)
+        {
+            if (staffMember.assignedProjectId != null)
             {
-                staff.StatusMessage = "Unhappy";
-                // staff.StatusColor = Color.yellow;
-                staff.CurrentAnimationState = "Idle";
+                Debug.LogWarning($"{staffMember.name} is already assigned to a project");
+                return;
             }
-            else
+
+            staffMember.assignedProjectId = project.id;
+            Debug.Log($"Assigned {staffMember.name} to project {project.name}");
+        }
+
+        public void UnassignStaffFromProject(StaffMember staffMember)
+        {
+            if (staffMember.assignedProjectId == null) return;
+
+            string previousProject = staffMember.assignedProjectId;
+            staffMember.assignedProjectId = null;
+            Debug.Log($"Unassigned {staffMember.name} from project {previousProject}");
+        }
+
+        public List<StaffMember> GetAvailableStaff()
+        {
+            if (GameManager.Instance == null) return new List<StaffMember>();
+
+            var gameState = GameManager.Instance.CurrentGameState;
+            var availableStaff = new List<StaffMember>();
+
+            foreach (var staffMember in gameState.staff)
             {
-                staff.StatusMessage = string.IsNullOrEmpty(staff.AssignedProjectId) ? "Available" : "Working";
-                // staff.StatusColor = Color.green;
-                staff.CurrentAnimationState = string.IsNullOrEmpty(staff.AssignedProjectId) ? "Idle" : "Working";
+                if (staffMember.assignedProjectId == null)
+                {
+                    availableStaff.Add(staffMember);
+                }
+            }
+
+            return availableStaff;
+        }
+
+        public void PromoteStaff(StaffMember staffMember)
+        {
+            // Increase salary and skills
+            staffMember.salary = Mathf.RoundToInt(staffMember.salary * 1.2f);
+            
+            // Increase all skills slightly
+            var skillKeys = new List<StaffSkill>(staffMember.skills.Keys);
+            foreach (var skill in skillKeys)
+            {
+                staffMember.skills[skill] = Mathf.Min(100, staffMember.skills[skill] + 5);
+            }
+
+            // Boost morale
+            staffMember.morale = Mathf.Min(100, staffMember.morale + 20);
+
+            Debug.Log($"Promoted {staffMember.name}. New salary: ${staffMember.salary}");
+        }
+
+        public void TrainStaff(StaffMember staffMember, StaffSkill skill, int amount)
+        {
+            if (staffMember.skills.ContainsKey(skill))
+            {
+                staffMember.skills[skill] = Mathf.Min(100, staffMember.skills[skill] + amount);
+                Debug.Log($"Trained {staffMember.name} in {skill}. New level: {staffMember.skills[skill]}");
             }
         }
     }

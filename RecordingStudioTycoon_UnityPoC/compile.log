@@ -1,0 +1,57 @@
+Unity Editor version:    6000.1.7f1 (13a8ffad9172)
+Branch:                  6000.1/staging
+Build type:              Release
+Batch mode:              YES
+macOS version:           Version 15.5 (Build 24F74)
+Darwin version:          24.5.0
+Architecture:            arm64
+Running under Rosetta:   NO
+Available memory:        16384 MB
+Date:                    2025-06-17T22:05:26Z
+[Licensing::Module] Trying to connect to existing licensing client channel...
+[Licensing::IpcConnector] Channel LicenseClient-user doesn't exist
+Launching external process: /Applications/Unity/Hub/Editor/6000.1.7f1/Unity.app/Contents/Frameworks/UnityLicensingClient.app/Contents/MacOS/Unity.Licensing.Client
+[Licensing::Module] Successfully launched the LicensingClient (PId: 53796)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-user" at "2025-06-17T22:05:27.45365Z"
+[Licensing::Client] Code 1 while verifying Licensing Client signature (process Id: 53796, path: "/Applications/Unity/Hub/Editor/6000.1.7f1/Unity.app/Contents/Frameworks/UnityLicensingClient.app/Contents/MacOS/Unity.Licensing.Client")
+[Licensing::Module] LicensingClient has failed validation; ignoring
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.16.2+bdef8f5
+  Session Id:              1da5999a9a1a41cba7b68f2be47506c3
+  Correlation Id:          4f31e7c81647113f065a1d8cdce2c7b4
+  External correlation Id: 4632191386719823750
+  Machine Id:              7k9fWMpi0IKZ69QLH52seCboHyQ=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-user" (connect: 0.94s, validation: 0.08s, handshake: 0.02s)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-user-notifications" at "2025-06-17T22:05:27.552794Z"
+[Licensing::Module] Connected to LicensingClient (PId: 53796, launch time: 0.00, total connection time: 1.04s)
+[Licensing::Module] Error: Access token is unavailable; failed to update
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] Serial number assigned to: "5772634042904-UnityPersXXXX"
+[Licensing::Client] Successfully updated license, isAync: True, time: 0.02
+[Licensing::Client] Successfully resolved entitlement details
+Pro License: NO
+Launching external process: /Applications/Unity/Hub/Editor/6000.1.7f1/Unity.app/Contents/Resources/PackageManager/Server/UnityPackageManager
+
+COMMAND LINE ARGUMENTS:
+/Applications/Unity/Hub/Editor/6000.1.7f1/Unity.app/Contents/MacOS/Unity
+-batchmode
+-quit
+-projectPath
+.
+-executeMethod
+UnityEditor.EditorApplication.Exit
+-logFile
+compile.log
+Successfully changed project path to: /Users/user/Downloads/Game - App - Development/Recording Studio Tycoon/RecordingStudioTycoon_UnityPoC
+/Users/user/Downloads/Game - App - Development/Recording Studio Tycoon/RecordingStudioTycoon_UnityPoC
+It looks like another Unity instance is running with this project open.
+
+Multiple Unity instances cannot open the same project.
+
+Project: /Users/user/Downloads/Game - App - Development/Recording Studio Tycoon/RecordingStudioTycoon_UnityPoC
+Fatal Error! It looks like another Unity instance is running with this project open.
+
+Multiple Unity instances cannot open the same project.
+
+Project: /Users/user/Downloads/Game - App - Development/Recording Studio Tycoon/RecordingStudioTycoon_UnityPoC
+[Package Manager] Server process was shutdown

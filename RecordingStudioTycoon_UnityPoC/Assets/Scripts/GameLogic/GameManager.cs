@@ -10,6 +10,7 @@ using RecordingStudioTycoon.DataModels.Songs; // For Song, Band
 using RecordingStudioTycoon.DataModels.Tours; // For Venue, Tour
 using RecordingStudioTycoon.DataModels.Characters; // For Artist
 using RecordingStudioTycoon.Utils; // For SerializableDictionary, ProjectUtils, StaffUtils, BandUtils, ProgressionUtils
+using RecordingStudioTycoon.Core; // For GameStateData
 using RecordingStudioTycoon.Systems.Market;
 using RecordingStudioTycoon.Systems.Progression;
 using RecordingStudioTycoon.Systems.Relationship;
@@ -63,9 +64,9 @@ namespace RecordingStudioTycoon.GameLogic
                 Debug.LogError("GameStateData is not assigned to GameManager. Game state will not be persisted correctly.");
             }
 
-            _gameState.AvailableProjects = ProjectUtils.GenerateNewProjects(3, _gameState.PlayerData.Level, _gameState.CurrentEra);
-            _gameState.AvailableCandidates = StaffUtils.GenerateCandidates(3, _gameState);
-            _gameState.AvailableSessionMusicians = BandUtils.GenerateSessionMusicians(5);
+            _gameState.availableProjects = ProjectUtils.GenerateNewProjects(3, _gameState.playerData.level, _gameState.currentEra);
+            _gameState.availableCandidates = StaffUtils.GenerateCandidates(3, _gameState);
+            _gameState.availableSessionMusicians = BandUtils.GenerateSessionMusicians(5);
 
             Debug.Log("GameManager initialized. Current Day: " + _gameState.currentDay);
             OnGameStateChanged?.Invoke();
@@ -73,9 +74,9 @@ namespace RecordingStudioTycoon.GameLogic
 
         public void AdvanceDay()
         {
-            _gameState.CurrentDay++;
+            _gameState.currentDay++;
             PerformDailyWork();
-            Debug.Log($"Day advanced to: {_gameState.CurrentDay}");
+            Debug.Log($"Day advanced to: {_gameState.currentDay}");
             OnGameStateChanged?.Invoke();
         }
 
@@ -83,12 +84,12 @@ namespace RecordingStudioTycoon.GameLogic
         {
             if (ProjectManager.Instance != null)
             {
-                ProjectManager.Instance.ProcessActiveProjects(_gameState.CurrentDay);
+                ProjectManager.Instance.ProcessActiveProjects(_gameState.currentDay);
             }
 
             if (StaffManager.Instance != null)
             {
-                StaffManager.Instance.DailyStaffUpdate(_gameState.CurrentDay);
+                StaffManager.Instance.DailyStaffUpdate(_gameState.currentDay);
             }
 
             if (MarketManager.Instance != null)
@@ -106,7 +107,7 @@ namespace RecordingStudioTycoon.GameLogic
 
             if (FinanceManager.Instance != null)
             {
-                FinanceManager.Instance.ProcessDailyFinances(_gameState.CurrentDay);
+                FinanceManager.Instance.ProcessDailyFinances(_gameState.currentDay);
             }
 
             Debug.Log("Performing daily work...");
@@ -117,8 +118,8 @@ namespace RecordingStudioTycoon.GameLogic
             if (RelationshipManager.Instance != null)
             {
                 // RelationshipManager.Instance.IncreaseOverallReputation(amount); // Example of a method in RelationshipManager
-                _gameState.Reputation += amount;
-                Debug.Log($"Added {amount} reputation. Total: {_gameState.Reputation}");
+                _gameState.reputation += amount;
+                Debug.Log($"Added {amount} reputation. Total: {_gameState.reputation}");
                 OnGameStateChanged?.Invoke();
             }
             else
@@ -136,8 +137,8 @@ namespace RecordingStudioTycoon.GameLogic
             else
             {
                 Debug.LogWarning("ProgressionManager not found. Cannot add XP.");
-                _gameState.PlayerData.Xp += amount;
-                _gameState.PlayerData.XpToNextLevel = _progressionData.CalculateXPToNextLevel(_gameState.PlayerData.Level); // Use _progressionData
+                _gameState.playerData.xp += amount;
+                _gameState.playerData.xpToNextLevel = _progressionData.CalculateXPToNextLevel(_gameState.playerData.level); // Use _progressionData
                 OnGameStateChanged?.Invoke();
             }
         }
@@ -151,20 +152,20 @@ namespace RecordingStudioTycoon.GameLogic
             else
             {
                 Debug.LogWarning("ProgressionManager not found. Cannot add attribute points.");
-                if (_gameState.PlayerData.AttributePoints > 0)
+                if (_gameState.playerData.attributePoints > 0)
                 {
-                    _gameState.PlayerData.AttributePoints--;
+                    _gameState.playerData.attributePoints--;
                     switch (attributeType)
                     {
-                        case PlayerAttributeType.FocusMastery: _gameState.PlayerData.Attributes.FocusMastery++; break;
-                        case PlayerAttributeType.CreativeIntuition: _gameState.PlayerData.Attributes.CreativeIntuition++; break;
-                        case PlayerAttributeType.TechnicalAptitude: _gameState.PlayerData.Attributes.TechnicalAptitude++; break;
-                        case PlayerAttributeType.BusinessAcumen: _gameState.PlayerData.Attributes.BusinessAcumen++; break;
-                        case PlayerAttributeType.Creativity: _gameState.PlayerData.Attributes.Creativity++; break;
-                        case PlayerAttributeType.Technical: _gameState.PlayerData.Technical++; break;
-                        case PlayerAttributeType.Business: _gameState.PlayerData.Attributes.Business++; break;
-                        case PlayerAttributeType.Charisma: _gameState.PlayerData.Attributes.Charisma++; break;
-                        case PlayerAttributeType.Luck: _gameState.PlayerData.Attributes.Luck++; break;
+                        case PlayerAttributeType.FocusMastery: _gameState.playerData.attributes.focusMastery++; break;
+                        case PlayerAttributeType.CreativeIntuition: _gameState.playerData.attributes.creativeIntuition++; break;
+                        case PlayerAttributeType.TechnicalAptitude: _gameState.playerData.attributes.technicalAptitude++; break;
+                        case PlayerAttributeType.BusinessAcumen: _gameState.playerData.attributes.businessAcumen++; break;
+                        case PlayerAttributeType.Creativity: _gameState.playerData.attributes.creativity++; break;
+                        case PlayerAttributeType.Technical: _gameState.playerData.technical++; break;
+                        case PlayerAttributeType.Business: _gameState.playerData.attributes.business++; break;
+                        case PlayerAttributeType.Charisma: _gameState.playerData.attributes.charisma++; break;
+                        case PlayerAttributeType.Luck: _gameState.playerData.attributes.luck++; break;
                     }
                     OnGameStateChanged?.Invoke();
                 }
@@ -180,10 +181,10 @@ namespace RecordingStudioTycoon.GameLogic
             else
             {
                 Debug.LogWarning("ProgressionManager not found. Cannot add skill XP.");
-                if (_gameState.StudioSkills.ContainsKey(skillId))
+                if (_gameState.studioSkills.ContainsKey(skillId))
                 {
-                    _gameState.StudioSkills[skillId].Experience += amount;
-                    Debug.Log($"Added {amount} XP to {skillId}. Current XP: {_gameState.StudioSkills[skillId].Experience}");
+                    _gameState.studioSkills[skillId].experience += amount;
+                    Debug.Log($"Added {amount} XP to {skillId}. Current XP: {_gameState.studioSkills[skillId].experience}");
                     OnGameStateChanged?.Invoke();
                 }
             }
@@ -198,8 +199,8 @@ namespace RecordingStudioTycoon.GameLogic
             else
             {
                 Debug.LogWarning("ProgressionManager not found. Cannot add perk point.");
-                _gameState.PlayerData.PerkPoints++;
-                Debug.Log($"Added perk point. Total: {_gameState.PlayerData.PerkPoints}");
+                _gameState.playerData.perkPoints++;
+                Debug.Log($"Added perk point. Total: {_gameState.playerData.perkPoints}");
                 OnGameStateChanged?.Invoke();
             }
         }
@@ -213,7 +214,7 @@ namespace RecordingStudioTycoon.GameLogic
             else
             {
                 Debug.LogWarning("ProgressionManager not found. Cannot trigger era transition.");
-                _gameState.CurrentEra = newEraId;
+                _gameState.currentEra = newEraId;
                 OnGameStateChanged?.Invoke();
             }
         }
@@ -227,7 +228,7 @@ namespace RecordingStudioTycoon.GameLogic
             else
             {
                 Debug.LogWarning("StaffManager not found. Cannot refresh candidates.");
-                _gameState.AvailableCandidates = StaffUtils.GenerateCandidates(3, _gameState);
+                _gameState.availableCandidates = StaffUtils.GenerateCandidates(3, _gameState);
                 OnGameStateChanged?.Invoke();
             }
         }
@@ -244,7 +245,7 @@ namespace RecordingStudioTycoon.GameLogic
 
         public void SetFocusAllocation(FocusAllocation newAllocation)
         {
-            _gameState.FocusAllocation = newAllocation;
+            _gameState.focusAllocation = newAllocation;
             OnGameStateChanged?.Invoke();
         }
     }
