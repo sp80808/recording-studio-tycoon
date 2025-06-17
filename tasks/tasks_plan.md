@@ -102,14 +102,11 @@
 - [ ] Continue minigame and UI development as per updated documentation
 
 ### PolAI (Pollinations.AI) Integration
-- [ ] Implement PolAiService for API calls (image, text, audio)
-- [ ] Album Art Generation (Phase 1)
-- [ ] Dynamic News/Reviews (Text Generation, Phase 1)
-- [ ] Band Logo Generation (Phase 2)
-- [ ] Creative Writing Assistance (Lyrics, Phase 2)
-- [ ] TTS for Announcer/Notifications (Phase 2)
-- [ ] Dynamic NPC Dialogue (Phase 3)
-- [ ] Dynamic Event Images (Phase 3)
-- [ ] Accessibility TTS (Phase 3)
-- [ ] Error handling, loading states, and caching
+- [x] Implement PolAiService for API calls (image, text, audio)
+- [x] Album Art Generation (implemented and integrated with UI)
+- [x] Implement TextGenerationManager for reviews, news, bios, descriptions (with caching)
+- [ ] Integrate TextGenerationManager with UI for album/song reviews
+- [ ] Add UI for news feed (dynamic news)
+- [ ] Add UI for band member bios
+- [ ] Add UI for item/album/song descriptions
 - [ ] Update documentation and UI as features are added

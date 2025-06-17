@@ -2,9 +2,7 @@ using UnityEngine;
 using RecordingStudioTycoon.DataModels.Progression;
 using RecordingStudioTycoon.Utils;
 using System.Collections.Generic;
-using System.Collections.Generic;
 using RecordingStudioTycoon.Core;
-using RecordingStudioTycoon.Utils; // For SerializableDictionary
 
 [CreateAssetMenu(fileName = "StudioPerkData", menuName = "Game Data/Studio Perk Data")]
 public class StudioPerkData : ScriptableObject

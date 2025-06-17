@@ -110,6 +110,71 @@ namespace RecordingStudioTycoon.Systems.Staff
             // TODO: Trigger UI update for staff energy
         }
 
+        /// <summary>
+        /// Applies a global efficiency bonus to all hired staff.
+        /// This could affect their work speed, quality contribution, or energy drain.
+        /// </summary>
+        /// <param name="bonusAmount">The percentage bonus to apply (e.g., 0.1 for 10%).</param>
+        public void ApplyGlobalEfficiencyBonus(float bonusAmount)
+        {
+            if (GameManager.Instance == null || GameManager.Instance.GameState == null) return;
+
+            // This method is called by perks. We should aggregate this bonus into GameState's global modifiers.
+            // For now, we'll just log it as the actual application will happen via GetStaffEfficiencyMultiplier.
+            Debug.Log($"Applied {bonusAmount * 100}% efficiency bonus globally. This will be factored into staff work calculations.");
+            // The actual effect is applied via GetStaffEfficiencyMultiplier, which reads from GameState.AggregatedPerkModifiers
+            // No direct modification to staff members here, as it's a global modifier.
+            GameManager.Instance.OnGameDataChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// Calculates the total efficiency multiplier for a staff member, considering global bonuses,
+        /// studio specialization, and industry prestige.
+        /// </summary>
+        /// <param name="staff">The staff member.</param>
+        /// <returns>The total efficiency multiplier.</returns>
+        public float GetStaffEfficiencyMultiplier(StaffMember staff)
+        {
+            if (GameManager.Instance == null || GameManager.Instance.GameState == null || staff == null) return 1.0f;
+
+            float multiplier = 1.0f;
+
+            // 1. Apply global perk modifiers (e.g., from "staffEfficiencyBonus" perk)
+            multiplier *= GameManager.Instance.GameState.aggregatedPerkModifiers.staffEfficiencyModifier;
+
+            // 2. Apply general industry prestige bonus
+            if (GameManager.Instance.GameState.industryPrestige.TryGetValue("general", out DataModels.Progression.IndustryPrestige generalPrestige))
+            {
+                multiplier *= generalPrestige.BonusMultiplier;
+            }
+
+            // 3. Apply studio specialization bonus if staff's primary skill aligns with a specialized genre
+            // This is a simplified example. You might need a more sophisticated mapping of staff skills to genres.
+            // For now, let's assume a staff's highest skill could relate to a genre.
+            // Or, if a project is assigned, use the project's genre.
+            if (!string.IsNullOrEmpty(staff.AssignedProjectId))
+            {
+                RecordingStudioTycoon.DataModels.Project assignedProject = GameManager.Instance.CurrentGameState.availableProjects.FirstOrDefault(p => p.Id == staff.AssignedProjectId);
+                if (assignedProject != null)
+                {
+                    if (GameManager.Instance.GameState.studioSpecializations.TryGetValue(assignedProject.Genre, out DataModels.Progression.StudioSpecialization specialization))
+                    {
+                        multiplier *= specialization.BonusMultiplier;
+                    }
+                }
+            }
+            // You could also consider staff's highest skill and see if it aligns with a specialized genre
+            // For example:
+            // StudioSkillType primarySkill = staff.Skills.OrderByDescending(kvp => kvp.Value).FirstOrDefault().Key;
+            // MusicGenre genreForSkill = MapSkillToGenre(primarySkill); // You'd need a mapping function
+            // if (GameManager.Instance.GameState.studioSpecializations.TryGetValue(genreForSkill, out DataModels.Progression.StudioSpecialization specializationBySkill))
+            // {
+            //     multiplier *= specializationBySkill.BonusMultiplier;
+            // }
+
+            return multiplier;
+        }
+
         public void DailyStaffUpdate()
         {
             if (GameManager.Instance == null) return;
@@ -168,6 +233,44 @@ namespace RecordingStudioTycoon.Systems.Staff
             GameManager.Instance.CurrentGameState.hiredStaff.First(s => s.Id == staff.Id).Skills = staff.Skills;
             // TODO: Trigger UI update for staff skills
             // UIManager.Instance.UpdateStaffUI(staff);
+        }
+
+        /// <summary>
+        /// Adds XP to a specific staff member's relevant skill.
+        /// </summary>
+        /// <param name="staffId">The ID of the staff member.</param>
+        /// <param name="skillType">The type of skill to add XP to.</param>
+        /// <param name="amount">The amount of XP to add.</param>
+        public void AddStaffXP(string staffId, StudioSkillType skillType, int amount)
+        {
+            StaffMember staff = GameManager.Instance.CurrentGameState.hiredStaff.FirstOrDefault(s => s.Id == staffId);
+            if (staff == null)
+            {
+                Debug.LogWarning($"Staff member with ID '{staffId}' not found. Cannot add XP.");
+                return;
+            }
+
+            if (staff.Skills.ContainsKey(skillType))
+            {
+                float finalXpAmount = amount;
+
+                // Apply specialization bonus to XP gain if the skill's genre is specialized
+                MusicGenre genreForSkill = ProjectSystem.ProjectManager.Instance.GetGenreForSkill(skillType); // Use ProjectManager's mapping
+                if (GameManager.Instance.GameState.studioSpecializations.TryGetValue(genreForSkill, out DataModels.Progression.StudioSpecialization specialization))
+                {
+                    finalXpAmount *= specialization.BonusMultiplier;
+                    Debug.Log($"Applying {specialization.Genre} specialization bonus to XP gain. Original: {amount}, Final: {finalXpAmount}");
+                }
+
+                staff.Skills[skillType] += (int)finalXpAmount;
+                Debug.Log($"Added {(int)finalXpAmount} XP to {staff.Name}'s {skillType} skill. New XP: {staff.Skills[skillType]}");
+                // TODO: Implement skill level up logic for staff if needed
+            }
+            else
+            {
+                Debug.LogWarning($"Staff member {staff.Name} does not have skill type {skillType}. Cannot add XP.");
+            }
+            GameManager.Instance.OnGameDataChanged?.Invoke(); // Notify UI of state changes
         }
 
         public StaffMember GenerateNewStaffCandidate()

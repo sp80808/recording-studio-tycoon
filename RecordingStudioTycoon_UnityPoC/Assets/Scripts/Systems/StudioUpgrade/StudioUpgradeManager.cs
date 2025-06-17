@@ -14,7 +14,8 @@ namespace RecordingStudioTycoon.Systems.StudioUpgrade
 
         // Events for UI or other systems to subscribe to
         public static event Action<StudioPerk> OnPerkPurchased;
-        public static event Action<string, int> OnStudioPrestigeChanged; // string for type of prestige, int for amount
+        public static event Action<string, IndustryPrestige> OnIndustryPrestigeChanged; // string for type of prestige, IndustryPrestige object
+        public static event Action<MusicGenre, StudioSpecialization> OnStudioSpecializationChanged; // MusicGenre, StudioSpecialization object
         public static event Action OnStudioUpgraded; // Generic event for any studio upgrade/expansion
 
         private void Awake()
@@ -125,13 +126,21 @@ namespace RecordingStudioTycoon.Systems.StudioUpgrade
                 switch (modifier.Key)
                 {
                     case "studioPrestigeBonus":
-                        GameManager.Instance.GameState.studioPrestige += (int)modifier.Value;
-                        OnStudioPrestigeChanged?.Invoke("general", (int)modifier.Value);
-                        Debug.Log($"Studio prestige increased by {modifier.Value} due to perk '{perk.Name}'.");
+                        // Assuming "general" prestige is affected by this perk
+                        if (GameManager.Instance.GameState.industryPrestige.TryGetValue("general", out IndustryPrestige generalPrestige))
+                        {
+                            generalPrestige.IncreasePrestige((int)modifier.Value);
+                            OnIndustryPrestigeChanged?.Invoke("general", generalPrestige);
+                            Debug.Log($"Studio prestige increased by {modifier.Value} due to perk '{perk.Name}'. New general prestige level: {generalPrestige.Level}.");
+                        }
+                        else
+                        {
+                            Debug.LogWarning("General industry prestige not found in GameState.");
+                        }
                         break;
                     case "staffEfficiencyBonus":
                         // Apply to all staff or specific staff types
-                        // GameManager.Instance.StaffManagement.ApplyGlobalEfficiencyBonus(modifier.Value);
+                        Systems.Staff.StaffManagement.Instance?.ApplyGlobalEfficiencyBonus(modifier.Value);
                         Debug.Log($"Staff efficiency bonus of {modifier.Value} applied due to perk '{perk.Name}'.");
                         break;
                     case "unlockEquipmentSlot":
@@ -192,10 +201,18 @@ namespace RecordingStudioTycoon.Systems.StudioUpgrade
             }
 
             Systems.Finance.FinanceManager.Instance.DeductMoney(cost);
-            GameManager.Instance.GameState.studioPrestige += prestigeIncrease;
+            // Assuming "general" prestige is affected by general upgrades
+            if (GameManager.Instance.GameState.industryPrestige.TryGetValue("general", out IndustryPrestige generalPrestigeUpgrade))
+            {
+                generalPrestigeUpgrade.IncreasePrestige(prestigeIncrease);
+                OnIndustryPrestigeChanged?.Invoke("general", generalPrestigeUpgrade);
+                Debug.Log($"Successfully purchased general studio upgrade: {upgradeId}. General prestige increased by {prestigeIncrease}. New level: {generalPrestigeUpgrade.Level}.");
+            }
+            else
+            {
+                Debug.LogWarning("General industry prestige not found in GameState for general upgrade.");
+            }
             GameManager.Instance.GameState.unlockedUpgrades.Add(upgradeId); // Assuming GameState tracks unlocked upgrades
-            OnStudioPrestigeChanged?.Invoke("general", prestigeIncrease);
-            Debug.Log($"Successfully purchased general studio upgrade: {upgradeId}. Prestige increased by {prestigeIncrease}.");
             UIManager.Instance?.ShowNotification($"Purchased: Studio Upgrade!", NotificationType.Success);
             OnStudioUpgraded?.Invoke(); // Generic upgrade event
             GameManager.Instance.SaveGameData();
@@ -233,6 +250,55 @@ namespace RecordingStudioTycoon.Systems.StudioUpgrade
         /// </summary>
         /// <param name="perkId">The ID of the perk to check.</param>
         /// <returns>True if the perk is unlocked, false otherwise.</returns>
+        /// <summary>
+        /// Adds experience to a specific studio specialization.
+        /// </summary>
+        /// <param name="genre">The music genre for which to add specialization experience.</param>
+        /// <param name="amount">The amount of experience to add.</param>
+        public void AddStudioSpecializationXP(MusicGenre genre, int amount)
+        {
+            if (GameManager.Instance == null || GameManager.Instance.GameState == null) return;
+
+            if (GameManager.Instance.GameState.studioSpecializations.TryGetValue(genre, out StudioSpecialization specialization))
+            {
+                specialization.AddExperience(amount);
+                OnStudioSpecializationChanged?.Invoke(genre, specialization);
+                GameManager.Instance.SaveGameData();
+                Debug.Log($"Added {amount} XP to {genre} specialization. New level: {specialization.Level}.");
+            }
+            else
+            {
+                Debug.LogWarning($"Studio specialization for genre {genre} not found in GameState.");
+            }
+        }
+
+        /// <summary>
+        /// Increases industry prestige for a specific type.
+        /// </summary>
+        /// <param name="type">The type of industry prestige (e.g., "pop_industry", "general").</param>
+        /// <param name="amount">The amount to increase prestige by.</param>
+        public void IncreaseIndustryPrestige(string type, int amount)
+        {
+            if (GameManager.Instance == null || GameManager.Instance.GameState == null) return;
+
+            if (GameManager.Instance.GameState.industryPrestige.TryGetValue(type, out IndustryPrestige prestige))
+            {
+                prestige.IncreasePrestige(amount);
+                OnIndustryPrestigeChanged?.Invoke(type, prestige);
+                GameManager.Instance.SaveGameData();
+                Debug.Log($"Increased {type} industry prestige by {amount}. New level: {prestige.Level}.");
+            }
+            else
+            {
+                Debug.LogWarning($"Industry prestige for type {type} not found in GameState. Initializing new entry.");
+                IndustryPrestige newPrestige = new IndustryPrestige(type);
+                newPrestige.IncreasePrestige(amount); // Apply the initial increase
+                GameManager.Instance.GameState.industryPrestige[type] = newPrestige;
+                OnIndustryPrestigeChanged?.Invoke(type, newPrestige);
+                GameManager.Instance.SaveGameData();
+            }
+        }
+
         public bool IsPerkUnlocked(string perkId)
         {
             StudioPerk perk = GetPerkById(perkId);

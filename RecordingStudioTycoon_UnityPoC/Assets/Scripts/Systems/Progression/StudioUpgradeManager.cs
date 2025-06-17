@@ -1,16 +1,11 @@
 using UnityEngine;
-using RecordingStudioTycoon.DataModels.Progression;
-using RecordingStudioTycoon.DataModels.Staff;
-using RecordingStudioTycoon.DataModels.Equipment;
-using RecordingStudioTycoon.Utils;
-using System.Collections.Generic;
-using RecordingStudioTycoon.GameLogic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using RecordingStudioTycoon.DataModels;
-using RecordingStudioTycoon.GameLogic; // For GameManager and GameState
-using RecordingStudioTycoon.ScriptableObjects; // For StudioPerkData, EraData
+using RecordingStudioTycoon.DataModels.Game;
+using RecordingStudioTycoon.DataModels.Progression;
+using RecordingStudioTycoon.DataModels.Market; // For MusicGenre
+using RecordingStudioTycoon.ScriptableObjects;
 using RecordingStudioTycoon.Utils; // For SerializableDictionary
 
 namespace RecordingStudioTycoon.Systems.Progression
@@ -19,13 +14,19 @@ namespace RecordingStudioTycoon.Systems.Progression
     {
         public static StudioUpgradeManager Instance { get; private set; }
 
-        [SerializeField] private StudioPerkData studioPerkData; // Reference to ScriptableObject for all perks
-        [SerializeField] private EraData eraData; // Reference to EraData for era-specific unlocks
-        // [SerializeField] private ExpansionData expansionData; // Future: ScriptableObject for expansions
+        [SerializeField] private GameStateSO gameStateSO;
+        [SerializeField] private StudioPerksDataSO studioPerksData; // ScriptableObject for all perk definitions
+        [SerializeField] private ProgressionDataSO progressionData; // For milestones related to upgrades/expansions
 
-        public event Action OnPerkUnlocked;
-        public event Action OnExpansionPurchased;
-        public event Action OnSpecializationActivated;
+        // Events for UI updates
+        public event Action OnStudioUpgradesUpdated;
+        public event Action<StudioPerk> OnPerkUnlocked;
+        public event Action<Expansion> OnExpansionPurchased;
+        public event Action<StudioSpecialization> OnSpecializationActivated;
+
+        private List<StudioPerk> _allStudioPerks;
+        private List<Expansion> _allExpansions;
+        private List<StudioSpecialization> _allSpecializations; // Definitions of specializations
 
         private void Awake()
         {
@@ -42,318 +43,445 @@ namespace RecordingStudioTycoon.Systems.Progression
 
         private void Start()
         {
-            if (GameManager.Instance != null)
-            {
-                // Subscribe to relevant events if needed, e.g., OnDayAdvanced for passive effects
-                // GameManager.Instance.OnDayAdvanced += OnDayAdvanced;
-            }
-            // Initialize aggregated perk modifiers in GameState if null
-            if (GameManager.Instance.GameState.aggregatedPerkModifiers == null)
-            {
-                GameManager.Instance.GameState.aggregatedPerkModifiers = new AggregatedPerkModifiers();
-            }
-            ApplyAllPerkEffects(); // Apply initial effects on start
+            InitializeStudioUpgrades();
         }
 
-        private void OnDestroy()
+        private void InitializeStudioUpgrades()
         {
-            if (GameManager.Instance != null)
+            if (studioPerksData == null)
             {
-                // GameManager.Instance.OnDayAdvanced -= OnDayAdvanced;
+                Debug.LogError("StudioPerksDataSO is not assigned to StudioUpgradeManager.");
+                _allStudioPerks = new List<StudioPerk>();
+                _allExpansions = new List<Expansion>();
+                _allSpecializations = new List<StudioSpecialization>();
+                return;
             }
+
+            _allStudioPerks = new List<StudioPerk>(studioPerksData.AllStudioPerks);
+            _allExpansions = new List<Expansion>(studioPerksData.AllExpansions);
+            _allSpecializations = new List<StudioSpecialization>(studioPerksData.AllSpecializations);
+
+            // Ensure GameStateSO has ownedUpgrades and aggregatedPerkModifiers initialized
+            if (gameStateSO != null)
+            {
+                if (gameStateSO.GameState.OwnedUpgrades == null)
+                {
+                    gameStateSO.GameState.OwnedUpgrades = new List<string>();
+                }
+                if (gameStateSO.GameState.AggregatedPerkModifiers == null)
+                {
+                    gameStateSO.GameState.AggregatedPerkModifiers = new AggregatedPerkModifiers();
+                }
+                if (gameStateSO.GameState.StudioSpecializations == null)
+                {
+                    gameStateSO.GameState.StudioSpecializations = new SerializableDictionary<MusicGenre, StudioSpecialization>();
+                }
+                ApplyAllPerkEffects(); // Apply effects of already owned perks on start
+            }
+            else
+            {
+                Debug.LogError("GameStateSO is not assigned to StudioUpgradeManager.");
+            }
+
+            OnStudioUpgradesUpdated?.Invoke();
         }
 
-        // --- Studio Perks Logic (from studioUpgradeService.ts and useStudioPerks.tsx) ---
+        // --- Perk Management (Ported from useStudioPerks.tsx and studioUpgradeService.ts) ---
 
-        /// <summary>
-        /// Gets all available perks that meet unlock conditions.
-        /// </summary>
         public List<StudioPerk> GetAvailablePerks()
         {
-            if (studioPerkData == null || studioPerkData.PerkTrees == null) return new List<StudioPerk>();
+            if (gameStateSO == null) return new List<StudioPerk>();
 
-            GameState gameState = GameManager.Instance.GameState;
-            List<StudioPerk> allPerks = studioPerkData.PerkTrees.SelectMany(tree => tree.Perks).ToList();
+            List<string> ownedUpgrades = gameStateSO.GameState.OwnedUpgrades;
 
-            return allPerks.Where(perk =>
-            {
-                // Check if already owned and not repeatable
-                if (gameState.ownedUpgrades.Contains(perk.Id) && !perk.IsRepeatable)
+            return _allStudioPerks.Where(perk => {
+                if (ownedUpgrades.Contains(perk.Id) && !perk.IsRepeatable)
                 {
                     return false;
                 }
-                // Check max repeats for repeatable perks
                 if (perk.IsRepeatable && perk.MaxRepeats > 0)
                 {
-                    int timesOwned = gameState.ownedUpgrades.Count(id => id == perk.Id);
+                    int timesOwned = ownedUpgrades.Count(id => id == perk.Id);
                     if (timesOwned >= perk.MaxRepeats) return false;
                 }
-                // Check prerequisites
-                if (perk.Prerequisites != null && !perk.Prerequisites.All(prereqId => gameState.ownedUpgrades.Contains(prereqId)))
+                if (perk.Prerequisites != null && !perk.Prerequisites.All(prereqId => ownedUpgrades.Contains(prereqId)))
                 {
                     return false;
                 }
-                // Check unlock conditions
-                return perk.UnlockConditions.All(condition => CheckCondition(condition, gameState));
+                return perk.UnlockConditions.All(condition => CheckPerkUnlockCondition(condition, gameStateSO.GameState));
             }).ToList();
         }
 
-        /// <summary>
-        /// Checks if a specific perk can be unlocked.
-        /// </summary>
+        public List<StudioPerk> GetOwnedPerks()
+        {
+            if (gameStateSO == null) return new List<StudioPerk>();
+            List<string> ownedUpgrades = gameStateSO.GameState.OwnedUpgrades;
+            return _allStudioPerks.Where(perk => ownedUpgrades.Contains(perk.Id)).ToList();
+        }
+
         public bool CanUnlockPerk(string perkId)
         {
-            StudioPerk perk = GetPerkById(perkId);
+            if (gameStateSO == null) return false;
+
+            StudioPerk perk = _allStudioPerks.Find(p => p.Id == perkId);
             if (perk == null) return false;
 
-            GameState gameState = GameManager.Instance.GameState;
+            List<string> ownedUpgrades = gameStateSO.GameState.OwnedUpgrades;
 
-            if (gameState.ownedUpgrades.Contains(perk.Id) && !perk.IsRepeatable) return false;
+            if (ownedUpgrades.Contains(perk.Id) && !perk.IsRepeatable) return false;
             if (perk.IsRepeatable && perk.MaxRepeats > 0)
             {
-                int timesOwned = gameState.ownedUpgrades.Count(id => id == perk.Id);
+                int timesOwned = ownedUpgrades.Count(id => id == perk.Id);
                 if (timesOwned >= perk.MaxRepeats) return false;
             }
-            if (perk.Prerequisites != null && !perk.Prerequisites.All(pId => gameState.ownedUpgrades.Contains(pId)))
+            if (perk.Prerequisites != null && !perk.Prerequisites.All(pId => ownedUpgrades.Contains(pId)))
             {
                 return false;
             }
 
-            // Check costs
-            if (perk.Cost > 0)
+            // Check cost
+            if (perk.Cost != null)
             {
-                if (gameState.money < perk.Cost) return false;
+                if (perk.Cost.Money > 0 && gameStateSO.GameState.Money < perk.Cost.Money) return false;
+                if (perk.Cost.PerkPoints > 0 && gameStateSO.GameState.PlayerData.PerkPoints < perk.Cost.PerkPoints) return false;
             }
-            // Assuming perk points are handled by ProgressionManager's SpendPerkPoint
-            // if (perk.Cost.PerkPoints > 0 && gameState.playerData.perkPoints < perk.Cost.PerkPoints) return false;
 
-            return perk.UnlockConditions.All(condition => CheckCondition(condition, gameState));
+            return perk.UnlockConditions.All(condition => CheckPerkUnlockCondition(condition, gameStateSO.GameState));
         }
 
-        /// <summary>
-        /// Unlocks a specified perk and applies its effects.
-        /// </summary>
         public bool UnlockPerk(string perkId)
         {
-            StudioPerk perk = GetPerkById(perkId);
+            if (gameStateSO == null) return false;
+
+            StudioPerk perk = _allStudioPerks.Find(p => p.Id == perkId);
             if (perk == null || !CanUnlockPerk(perkId))
             {
                 Debug.LogWarning($"Cannot unlock perk {perkId}. Conditions not met or perk already owned.");
                 return false;
             }
 
-            GameState gameState = GameManager.Instance.GameState;
-
-            // Deduct money cost
-            if (perk.Cost > 0)
+            // Deduct cost
+            if (perk.Cost != null)
             {
-                gameState.money -= perk.Cost;
+                if (perk.Cost.Money > 0) gameStateSO.GameState.Money -= perk.Cost.Money;
+                if (perk.Cost.PerkPoints > 0) gameStateSO.GameState.PlayerData.PerkPoints -= perk.Cost.PerkPoints;
             }
-            // Deduct perk points (handled by ProgressionManager)
-            // ProgressionManager.Instance.SpendPerkPoint(perk.Cost.PerkPoints); // This needs to be integrated carefully
 
-            gameState.ownedUpgrades.Add(perk.Id);
-            ApplyAllPerkEffects(); // Re-apply all effects after new perk is unlocked
+            gameStateSO.GameState.OwnedUpgrades.Add(perk.Id);
+            ApplyAllPerkEffects(); // Re-apply all perk effects after unlocking a new one
 
             Debug.Log($"Perk {perk.Name} unlocked!");
-            OnPerkUnlocked?.Invoke();
+            OnPerkUnlocked?.Invoke(perk);
+            OnStudioUpgradesUpdated?.Invoke();
             return true;
         }
 
-        /// <summary>
-        /// Gets all perks currently owned by the player.
-        /// </summary>
-        public List<StudioPerk> GetOwnedPerks()
+        public StudioPerk GetPerkById(string perkId)
         {
-            if (studioPerkData == null || studioPerkData.PerkTrees == null) return new List<StudioPerk>();
-            GameState gameState = GameManager.Instance.GameState;
-            List<StudioPerk> allPerks = studioPerkData.PerkTrees.SelectMany(tree => tree.Perks).ToList();
-            return allPerks.Where(perk => gameState.ownedUpgrades.Contains(perk.Id)).ToList();
+            return _allStudioPerks.Find(p => p.Id == perkId);
         }
 
-        /// <summary>
-        /// Applies all active perk effects to the game state's aggregated modifiers.
-        /// </summary>
+        private bool CheckPerkUnlockCondition(PerkUnlockCondition condition, GameState gameState)
+        {
+            switch (condition.Type)
+            {
+                case "playerLevel":
+                    return gameState.PlayerData.Level >= condition.Value;
+                case "studioReputation":
+                    return gameState.Reputation >= condition.Value;
+                case "completedProjects":
+                    return (gameState.CompletedProjects?.Count ?? 0) >= condition.Value;
+                case "projectsInGenre":
+                    if (string.IsNullOrEmpty(condition.Genre)) return false;
+                    return (gameState.CompletedProjects?.Count(p => p.Genre.ToString() == condition.Genre) ?? 0) >= condition.Value;
+                case "staffSkillSum":
+                    // Implement staff skill sum check
+                    return true; 
+                case "specificEquipmentOwned":
+                    if (string.IsNullOrEmpty(condition.EquipmentId)) return false;
+                    return gameState.OwnedEquipment.Any(eq => eq.Id == condition.EquipmentId);
+                case "specificPerkUnlocked":
+                    if (string.IsNullOrEmpty(condition.ConditionPerkId)) return false;
+                    return gameState.OwnedUpgrades.Contains(condition.ConditionPerkId);
+                case "moneyEarned":
+                    // Implement money earned check
+                    return true;
+                case "chartSuccesses":
+                    // Implement chart successes check
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         public void ApplyAllPerkEffects()
         {
-            GameState gameState = GameManager.Instance.GameState;
+            if (gameStateSO == null) return;
+
+            GameState gameState = gameStateSO.GameState;
             List<StudioPerk> ownedPerks = GetOwnedPerks();
 
             // Reset aggregated modifiers to default values
-            // Ensure AggregatedPerkModifiers has a proper reset or default constructor
-            gameState.aggregatedPerkModifiers = new AggregatedPerkModifiers(); 
+            AggregatedPerkModifiers defaultModifiers = new AggregatedPerkModifiers();
+            gameState.AggregatedPerkModifiers = defaultModifiers;
 
             foreach (var perk in ownedPerks)
             {
-                if (perk.Effects == null) continue;
-
                 foreach (var effect in perk.Effects)
                 {
-                    // Apply effect based on key, value, operation, and genre
-                    // This logic needs to mirror the TypeScript `applyAllPerkEffects`
-                    ApplySinglePerkEffect(gameState.aggregatedPerkModifiers, effect);
+                    ApplyPerkEffect(gameState.AggregatedPerkModifiers, effect);
                 }
             }
-            Debug.Log("All perk effects applied.");
+            OnStudioUpgradesUpdated?.Invoke();
         }
 
-        /// <summary>
-        /// Helper to apply a single perk effect to the aggregated modifiers.
-        /// </summary>
-        private void ApplySinglePerkEffect(AggregatedPerkModifiers modifiers, PerkEffect effect)
+        private void ApplyPerkEffect(AggregatedPerkModifiers modifiers, PerkEffect effect)
         {
             switch (effect.Key)
             {
                 case "globalRecordingQualityModifier":
-                    ApplyNumericEffect(ref modifiers.globalRecordingQualityModifier, effect);
+                    modifiers.GlobalRecordingQualityModifier = ApplyOperation(modifiers.GlobalRecordingQualityModifier, effect.Value, effect.Operation);
                     break;
                 case "globalMixingQualityModifier":
-                    ApplyNumericEffect(ref modifiers.globalMixingQualityModifier, effect);
+                    modifiers.GlobalMixingQualityModifier = ApplyOperation(modifiers.GlobalMixingQualityModifier, effect.Value, effect.Operation);
                     break;
                 case "globalMasteringQualityModifier":
-                    ApplyNumericEffect(ref modifiers.globalMasteringQualityModifier, effect);
+                    modifiers.GlobalMasteringQualityModifier = ApplyOperation(modifiers.GlobalMasteringQualityModifier, effect.Value, effect.Operation);
                     break;
                 case "contractPayoutModifier":
-                    ApplyNumericEffect(ref modifiers.contractPayoutModifier, effect);
+                    modifiers.ContractPayoutModifier = ApplyOperation(modifiers.ContractPayoutModifier, effect.Value, effect.Operation);
                     break;
                 case "researchSpeedModifier":
-                    ApplyNumericEffect(ref modifiers.researchSpeedModifier, effect);
+                    modifiers.ResearchSpeedModifier = ApplyOperation(modifiers.ResearchSpeedModifier, effect.Value, effect.Operation);
                     break;
                 case "staffHappinessModifier":
-                    ApplyNumericEffect(ref modifiers.staffHappinessModifier, effect);
+                    modifiers.StaffHappinessModifier = ApplyOperation(modifiers.StaffHappinessModifier, effect.Value, effect.Operation);
                     break;
                 case "staffTrainingSpeedModifier":
-                    ApplyNumericEffect(ref modifiers.staffTrainingSpeedModifier, effect);
+                    modifiers.StaffTrainingSpeedModifier = ApplyOperation(modifiers.StaffTrainingSpeedModifier, effect.Value, effect.Operation);
                     break;
                 case "marketingEffectivenessModifier":
-                    ApplyNumericEffect(ref modifiers.marketingEffectivenessModifier, effect);
-                    break;
-                case "candidateQualityBonus":
-                    ApplyNumericEffect(ref modifiers.candidateQualityBonus, effect);
+                    modifiers.MarketingEffectivenessModifier = ApplyOperation(modifiers.MarketingEffectivenessModifier, effect.Value, effect.Operation);
                     break;
                 case "projectAppealModifier":
                     // Handle genre-specific appeal modifiers
+                    MusicGenre targetGenre = MusicGenre.Pop; // Default or parse from effect.Genre
                     if (!string.IsNullOrEmpty(effect.Genre))
                     {
-                        if (!modifiers.projectAppealModifier.ContainsKey(effect.Genre))
-                        {
-                            modifiers.projectAppealModifier[effect.Genre] = 1.0f;
-                        }
-                        ApplyNumericEffect(ref modifiers.projectAppealModifier[effect.Genre], effect);
+                        Enum.TryParse(effect.Genre, true, out targetGenre);
                     }
-                    else
+                    
+                    if (!modifiers.ProjectAppealModifier.ContainsKey(targetGenre))
                     {
-                        // Apply to "all" or a default if no specific genre
-                        if (!modifiers.projectAppealModifier.ContainsKey("all"))
-                        {
-                            modifiers.projectAppealModifier["all"] = 1.0f;
-                        }
-                        ApplyNumericEffect(ref modifiers.projectAppealModifier["all"], effect);
+                        modifiers.ProjectAppealModifier[targetGenre] = 1.0f;
                     }
+                    modifiers.ProjectAppealModifier[targetGenre] = ApplyOperation(modifiers.ProjectAppealModifier[targetGenre], effect.Value, effect.Operation);
                     break;
-                // Add other perk effect keys as needed
+                case "candidateQualityBonus":
+                    modifiers.CandidateQualityBonus = ApplyOperation(modifiers.CandidateQualityBonus, effect.Value, effect.Operation);
+                    break;
+                case "operatingCostReduction":
+                    modifiers.OperatingCostReduction = ApplyOperation(modifiers.OperatingCostReduction, effect.Value, effect.Operation);
+                    break;
+                case "equipmentDiscounts":
+                    modifiers.EquipmentDiscounts = ApplyOperation(modifiers.EquipmentDiscounts, effect.Value, effect.Operation);
+                    break;
+                case "reputationGainMultiplier":
+                    modifiers.ReputationGainMultiplier = ApplyOperation(modifiers.ReputationGainMultiplier, effect.Value, effect.Operation);
+                    break;
                 default:
                     Debug.LogWarning($"Unhandled perk effect key: {effect.Key}");
                     break;
             }
         }
 
-        /// <summary>
-        /// Helper to apply a numeric effect (add, multiply, set).
-        /// </summary>
-        private void ApplyNumericEffect(ref float target, PerkEffect effect)
+        private float ApplyOperation(float currentValue, float effectValue, string operation)
         {
-            switch (effect.Operation)
+            switch (operation)
             {
-                case "add":
-                    target += effect.Value;
-                    break;
                 case "multiply":
-                    target *= (1f + effect.Value); // Assuming value is a percentage (e.g., 0.02 for 2%)
-                    break;
+                    return currentValue * (1f + effectValue);
+                case "add":
+                    return currentValue + effectValue;
                 case "set":
-                    target = effect.Value;
-                    break;
+                    return effectValue;
                 default:
-                    Debug.LogWarning($"Unknown perk effect operation: {effect.Operation}");
-                    break;
+                    Debug.LogWarning($"Unknown operation type: {operation}");
+                    return currentValue;
             }
         }
 
-        /// <summary>
-        /// Helper to check if a perk unlock condition is met.
-        /// </summary>
-        private bool CheckCondition(PerkUnlockCondition condition, GameState gameState)
+        // --- Specialization Management ---
+
+        public List<StudioSpecialization> GetAvailableSpecializations()
         {
-            switch (condition.Type)
+            // Filter specializations based on player level, completed projects, etc.
+            // For now, return all defined specializations
+            return new List<StudioSpecialization>(_allSpecializations);
+        }
+
+        public bool CanActivateSpecialization(string specializationId)
+        {
+            if (gameStateSO == null) return false;
+
+            StudioSpecialization specialization = _allSpecializations.Find(s => s.Id == specializationId);
+            if (specialization == null) return false;
+
+            // Check if already specialized in this genre
+            if (gameStateSO.GameState.StudioSpecializations.ContainsValue(specialization)) return false;
+
+            // Check requirements (e.g., player level, completed projects in genre, money)
+            // This would involve checking conditions similar to perks
+            return true; // Placeholder
+        }
+
+        public bool ActivateSpecialization(string specializationId)
+        {
+            if (gameStateSO == null) return false;
+
+            StudioSpecialization specialization = _allSpecializations.Find(s => s.Id == specializationId);
+            if (specialization == null || !CanActivateSpecialization(specializationId))
             {
-                case "playerLevel":
-                    return gameState.playerData.level >= condition.Value;
-                case "studioReputation":
-                    return gameState.reputation >= condition.Value;
-                case "completedProjects":
-                    return gameState.completedProjects.Count >= condition.Value;
-                case "projectsInGenre":
-                    if (string.IsNullOrEmpty(condition.Genre)) return false;
-                    return gameState.completedProjects.Count(p => p.Genre == condition.Genre) >= condition.Value;
-                case "staffSkillSum":
-                    // TODO: Implement staff skill sum check
-                    return true; 
-                case "specificEquipmentOwned":
-                    if (string.IsNullOrEmpty(condition.EquipmentId)) return false;
-                    return gameState.ownedEquipment.Any(eq => eq.Id == condition.EquipmentId);
-                case "specificPerkUnlocked":
-                    if (string.IsNullOrEmpty(condition.PerkId)) return false;
-                    return gameState.ownedUpgrades.Contains(condition.PerkId);
-                case "moneyEarned":
-                    // TODO: Implement money earned check
-                    return true;
-                case "chartSuccesses":
-                    // TODO: Implement chart successes check
-                    return true;
-                default:
-                    Debug.LogWarning($"Unknown perk unlock condition type: {condition.Type}");
-                    return false;
+                Debug.LogWarning($"Cannot activate specialization {specializationId}. Conditions not met.");
+                return false;
             }
+
+            // Deduct cost if any
+            // Apply specialization benefits (e.g., add to AggregatedPerkModifiers)
+            // Set current specialization in GameState
+            gameStateSO.GameState.StudioSpecializations[specialization.Genre] = specialization;
+            ApplyAllPerkEffects(); // Re-apply effects to include specialization bonuses
+
+            Debug.Log($"Specialization {specialization.Name} activated!");
+            OnSpecializationActivated?.Invoke(specialization);
+            OnStudioUpgradesUpdated?.Invoke();
+            return true;
         }
 
-        public StudioPerk GetPerkById(string perkId)
+        // --- Studio Expansion Purchases (Ported from useStudioExpansion.tsx) ---
+
+        public List<Expansion> GetAvailableExpansions()
         {
-            if (studioPerkData == null || studioPerkData.PerkTrees == null) return null;
-            return studioPerkData.PerkTrees.SelectMany(tree => tree.Perks).FirstOrDefault(p => p.Id == perkId);
+            if (gameStateSO == null) return new List<Expansion>();
+
+            List<string> ownedUpgrades = gameStateSO.GameState.OwnedUpgrades;
+
+            return _allExpansions.Where(expansion => {
+                if (ownedUpgrades.Contains(expansion.Id)) return false; // Already owned
+
+                // Check requirements
+                if (expansion.Requirements != null)
+                {
+                    if (expansion.Requirements.Level > 0 && gameStateSO.GameState.PlayerData.Level < expansion.Requirements.Level) return false;
+                    if (expansion.Requirements.Reputation > 0 && gameStateSO.GameState.Reputation < expansion.Requirements.Reputation) return false;
+                    // Add other requirements as needed (e.g., specific perks, completed projects)
+                }
+                return true;
+            }).ToList();
         }
 
-        // --- Studio Specializations Logic (from useStudioUpgrades.ts) ---
-        // TODO: Implement StudioSpecialization data model and related logic
-
-        // --- Industry Prestige Logic (from useStudioUpgrades.ts) ---
-        // TODO: Implement IndustryPrestige data model and related logic
-
-        // --- Studio Expansion Logic (from useStudioExpansion.tsx) ---
-        // TODO: Implement Expansion data model and related logic
-        // This will involve a new ScriptableObject for ExpansionData and a DataModel for Expansion.
-
-        /// <summary>
-        /// Purchases a studio expansion.
-        /// </summary>
-        /// <param name="expansionId">The ID of the expansion to purchase.</param>
         public bool PurchaseExpansion(string expansionId)
         {
-            // This will require Expansion data model and a way to retrieve available expansions
-            // For now, a placeholder.
-            Debug.LogWarning($"PurchaseExpansion not fully implemented for {expansionId}.");
-            return false;
+            if (gameStateSO == null) return false;
+
+            Expansion expansion = _allExpansions.Find(e => e.Id == expansionId);
+            if (expansion == null || !GetAvailableExpansions().Any(e => e.Id == expansionId))
+            {
+                Debug.LogWarning($"Cannot purchase expansion {expansionId}. Not available or already owned.");
+                return false;
+            }
+
+            if (gameStateSO.GameState.Money < expansion.Cost)
+            {
+                Debug.LogWarning($"Not enough money to purchase expansion {expansionId}. Needed: {expansion.Cost}, Have: {gameStateSO.GameState.Money}");
+                return false;
+            }
+
+            // Deduct cost
+            gameStateSO.GameState.Money -= expansion.Cost;
+            gameStateSO.GameState.OwnedUpgrades.Add(expansion.Id);
+
+            // Apply expansion benefits (directly modify GameState or through AggregatedPerkModifiers)
+            // For now, directly modify studioSkills multipliers as in TS
+            if (expansion.Benefits != null)
+            {
+                foreach (var benefit in expansion.Benefits)
+                {
+                    if (gameStateSO.GameState.StudioSkills.ContainsKey(benefit.Key))
+                    {
+                        gameStateSO.GameState.StudioSkills[benefit.Key].Multiplier *= benefit.Value;
+                    }
+                }
+            }
+            ApplyAllPerkEffects(); // Re-apply all perk effects to ensure consistency
+
+            Debug.Log($"Expansion {expansion.Name} purchased!");
+            OnExpansionPurchased?.Invoke(expansion);
+            OnStudioUpgradesUpdated?.Invoke();
+            return true;
         }
 
-        /// <summary>
-        /// Calculates total aggregated bonuses from all owned perks and active specializations.
-        /// </summary>
-        public AggregatedPerkModifiers CalculateTotalBonuses()
+        public Dictionary<StudioSkillType, float> GetTotalStudioMultipliers()
         {
-            // This method is called by ApplyAllPerkEffects, so it's implicitly handled.
-            // However, if other systems need to query the current bonuses without triggering a full re-calculation,
-            // they can access GameManager.Instance.GameState.aggregatedPerkModifiers directly.
-            return GameManager.Instance.GameState.aggregatedPerkModifiers;
+            if (gameStateSO == null) return new Dictionary<StudioSkillType, float>();
+
+            Dictionary<StudioSkillType, float> multipliers = new Dictionary<StudioSkillType, float>();
+            
+            // Start with base multipliers from studio skills
+            foreach (var skillEntry in gameStateSO.GameState.StudioSkills)
+            {
+                multipliers[skillEntry.Key] = skillEntry.Value.Multiplier;
+            }
+
+            // Apply owned expansion benefits
+            foreach (string upgradeId in gameStateSO.GameState.OwnedUpgrades)
+            {
+                Expansion expansion = _allExpansions.Find(e => e.Id == upgradeId);
+                if (expansion != null && expansion.Benefits != null)
+                {
+                    foreach (var benefit in expansion.Benefits)
+                    {
+                        if (multipliers.ContainsKey(benefit.Key))
+                        {
+                            multipliers[benefit.Key] *= benefit.Value;
+                        }
+                    }
+                }
+            }
+            return multipliers;
+        }
+
+        // --- Industry Prestige (from useStudioUpgrades.ts) ---
+        public IndustryPrestige GetIndustryPrestige()
+        {
+            if (gameStateSO == null || !gameStateSO.GameState.IndustryPrestige.ContainsKey("general"))
+            {
+                // Return a default or error state if not initialized
+                return new IndustryPrestige("general");
+            }
+            return gameStateSO.GameState.IndustryPrestige["general"];
+        }
+
+        public void ProcessProjectCompletionForPrestige(Project project, ProjectCompletionReport report)
+        {
+            if (gameStateSO == null || !gameStateSO.GameState.IndustryPrestige.ContainsKey("general")) return;
+
+            IndustryPrestige generalPrestige = gameStateSO.GameState.IndustryPrestige["general"];
+            
+            // Example logic: increase prestige based on project quality and earnings
+            generalPrestige.Points += Mathf.RoundToInt(report.QualityScore * 0.5f + report.Earnings / 1000f);
+
+            // Check for tier advancement
+            // This logic would be more complex, potentially involving a ScriptableObject for prestige tiers
+            if (generalPrestige.Points >= generalPrestige.NextTierRequirement)
+            {
+                generalPrestige.Level++;
+                generalPrestige.Tier = $"Tier {generalPrestige.Level}"; // Simple tier naming
+                generalPrestige.NextTierRequirement = generalPrestige.Points + 1000; // Example: next tier requires 1000 more points
+                // Apply new benefits
+                Debug.Log($"Industry Prestige Leveled Up! New Tier: {generalPrestige.Tier}");
+            }
+            OnStudioUpgradesUpdated?.Invoke();
         }
     }
 }

@@ -1,15 +1,16 @@
 using System;
 using System.Collections.Generic;
 using RecordingStudioTycoon.DataModels;
-using RecordingStudioTycoon.Core;
-using UnityEngine;
-using RecordingStudioTycoon.Utils;
-using RecordingStudioTycoon_UnityPoC.Assets.Scripts.DataModels;
-using RecordingStudioTycoon.DataModels.Studio;
-using RecordingStudioTycoon.DataModels.Projects;
 using RecordingStudioTycoon.DataModels.Staff;
+using RecordingStudioTycoon.DataModels.Projects;
 using RecordingStudioTycoon.DataModels.Equipment;
-using RecordingStudioTycoon.DataModels.Relationships;
+using RecordingStudioTycoon.DataModels.Market;
+using StudioSkillType = RecordingStudioTycoon.DataModels.Progression.StudioSkillType;
+using StudioSpecialization = RecordingStudioTycoon.DataModels.Progression.StudioSpecialization;
+using IndustryPrestige = RecordingStudioTycoon.DataModels.Progression.IndustryPrestige;
+using StaffMember = RecordingStudioTycoon.DataModels.Staff.StaffMember;
+using RecordingStudioTycoon.DataModels.Equipment;
+using RecordingStudioTycoon.DataModels.Market;
 
 namespace RecordingStudioTycoon.GameLogic
 {
@@ -45,14 +46,15 @@ namespace RecordingStudioTycoon.GameLogic
         public List<UnlockedFeatureInfo> unlockedFeatures;
         public List<Training> availableTraining;
         public List<Expansion> availableExpansions;
-        public List<MarketTrend> currentMarketTrends; // Replaces MarketTrends class
-        public List<MarketTrend> historicalMarketTrends; // To store historical data if needed
+        public MarketState MarketTrends; // Replaces currentMarketTrends and historicalMarketTrends
         public List<Venue> venues;
         public List<Tour> tours;
         public SerializableDictionary<string, int> lastMinigameTriggers;
         public AggregatedPerkModifiers aggregatedPerkModifiers;
         public SerializableDictionary<string, float> globalModifiers;
         public SerializableDictionary<string, RelationshipStats> relationships; // Entity ID -> detailed RelationshipStats
+        public SerializableDictionary<MusicGenre, StudioSpecialization> studioSpecializations;
+        public SerializableDictionary<string, IndustryPrestige> industryPrestige;
         public int highScore;
 
         public GameState()
@@ -94,13 +96,19 @@ namespace RecordingStudioTycoon.GameLogic
             unlockedFeatures = new List<UnlockedFeatureInfo>();
             availableTraining = new List<Training>();
             availableExpansions = new List<Expansion>();
-            currentMarketTrends = new List<MarketTrend>(); // Initialize as empty, MarketManager will populate
-            historicalMarketTrends = new List<MarketTrend>();
+            MarketTrends = new MarketState(); // Initialize the new MarketState
             venues = new List<Venue>();
             tours = new List<Tour>();
             lastMinigameTriggers = new SerializableDictionary<string, int>();
             aggregatedPerkModifiers = new AggregatedPerkModifiers();
             relationships = new SerializableDictionary<string, RelationshipStats>(); // Initialize new relationship dictionary
+            studioSpecializations = new SerializableDictionary<MusicGenre, StudioSpecialization>();
+            foreach (MusicGenre genreType in Enum.GetValues(typeof(MusicGenre)))
+            {
+                studioSpecializations[genreType] = new StudioSpecialization(genreType);
+            }
+            industryPrestige = new SerializableDictionary<string, IndustryPrestige>();
+            industryPrestige["general"] = new IndustryPrestige("general"); // Initialize general prestige
             highScore = 0;
         }
     }

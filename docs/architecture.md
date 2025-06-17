@@ -13,7 +13,10 @@ This document describes the high-level architecture of the Recording Studio Tyco
 
 ## PolAI (Pollinations.AI) Integration
 - Centralized `PolAiService` module for all API calls (image, text, audio).
+- **Album art generation**: Implemented and integrated with UI for generating and assigning album art to projects/albums using PolAI image API.
+- `TextGenerationManager` singleton manages all text generation requests (reviews, news, bios, descriptions), handles prompt engineering, caching, and error handling.
 - UI integration for album art, band logo, dynamic news/reviews, TTS, and more.
+- TextGenerationManager connects to UI panels for album/song reviews, news feed, band member bios, and item descriptions, providing async, cached text content.
 - Follows phased rollout: album art and text/news first, then logo, TTS, dialogue, accessibility.
 - Uses referrer-based authentication for frontend calls.
 - Error handling, loading states, and caching are part of the integration.

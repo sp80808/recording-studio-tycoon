@@ -164,8 +164,19 @@ namespace RecordingStudioTycoon.Systems.Minigame
                 project.CurrentQuality += qualityBonus;
                 Debug.Log($"Applied {qualityBonus} quality bonus to project {project.Name}. New quality: {project.CurrentQuality}");
 
-                // TODO: Grant staff XP based on their participation/performance in the minigame
-                // This would involve passing assigned staff to the minigame or retrieving them from the project.
+                // Grant staff XP based on their participation/performance in the minigame
+                if (project.AssignedStaffIds != null && project.AssignedStaffIds.Any())
+                {
+                    int xpPerStaff = _currentMinigame.BaseRewardXP / project.AssignedStaffIds.Count;
+                    foreach (string staffId in project.AssignedStaffIds)
+                    {
+                        // Assuming minigames primarily contribute to a general skill or a skill related to the minigame type
+                        // For simplicity, let's grant XP to a generic 'production' skill or a skill related to the minigame's primary focus.
+                        // A more complex system might map minigame type to specific skills.
+                        Systems.Staff.StaffManagement.Instance?.AddStaffXP(staffId, DataModels.Staff.StudioSkillType.production, xpPerStaff);
+                    }
+                    Debug.Log($"Granted {xpPerStaff} XP to each of {project.AssignedStaffIds.Count} assigned staff members for minigame success.");
+                }
             }
             else
             {

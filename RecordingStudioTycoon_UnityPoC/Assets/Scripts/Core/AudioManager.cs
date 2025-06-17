@@ -1,28 +1,67 @@
 using UnityEngine;
-using System;
+using UnityEngine.Audio;
 using System.Collections.Generic;
-using RecordingStudioTycoon.GameLogic; // For GameStateEnum
+using System.Collections;
+using RecordingStudioTycoon.Utils;
 
 namespace RecordingStudioTycoon.Core
 {
+    /// <summary>
+    /// Manages all audio in the game including background music, sound effects, and spatial audio
+    /// </summary>
     public class AudioManager : MonoBehaviour
     {
-        public static AudioManager Instance { get; private set; }
+        [Header("Audio Mixer")]
+        [SerializeField] private AudioMixer masterMixer;
+        [SerializeField] private AudioMixerGroup musicGroup;
+        [SerializeField] private AudioMixerGroup sfxGroup;
+        [SerializeField] private AudioMixerGroup ambientGroup;
+        [SerializeField] private AudioMixerGroup uiGroup;
 
         [Header("Audio Sources")]
-        [SerializeField] private AudioSource _musicSource;
-        [SerializeField] private AudioSource _sfxSource;
+        [SerializeField] private AudioSource musicSource;
+        [SerializeField] private AudioSource ambientSource;
+        [SerializeField] private AudioSource[] sfxSources = new AudioSource[10];
 
-        [Header("Audio Clips")]
-        [SerializeField] private AudioClip[] _backgroundMusicClips;
-        [SerializeField] private AudioClip[] _inGameMusicClips; // New: Music specifically for InGame state
-        [SerializeField] private AudioClip[] _minigameMusicClips; // New: Music specifically for Minigame state
-        [SerializeField] private AudioClip[] _uiSfxClips;
-        [SerializeField] private AudioClip[] _inGameSfxClips; // New: In-game sound effects
-        [SerializeField] private AudioClip[] _minigameSfxClips;
+        [Header("Music Settings")]
+        [SerializeField] private AudioClip[] backgroundTracks;
+        [SerializeField] private float musicFadeTime = 2f;
+        [SerializeField] private bool shuffleMusic = true;
 
-        private Dictionary<string, AudioClip> _uiSfxMap = new Dictionary<string, AudioClip>();
-        private Dictionary<string, AudioClip> _minigameSfxMap = new Dictionary<string, AudioClip>();
+        [Header("UI Audio")]
+        [SerializeField] private AudioClip buttonClickSound;
+        [SerializeField] private AudioClip buttonHoverSound;
+        [SerializeField] private AudioClip notificationSound;
+        [SerializeField] private AudioClip levelUpSound;
+        [SerializeField] private AudioClip projectCompleteSound;
+        [SerializeField] private AudioClip purchaseSound;
+        [SerializeField] private AudioClip errorSound;
+
+        [Header("Game Audio")]
+        [SerializeField] private AudioClip[] recordingAmbient;
+        [SerializeField] private AudioClip[] mixingAmbient;
+        [SerializeField] private AudioClip[] equipmentSounds;
+
+        [Header("Volume Settings")]
+        [SerializeField, Range(0f, 1f)] private float masterVolume = 1f;
+        [SerializeField, Range(0f, 1f)] private float musicVolume = 0.7f;
+        [SerializeField, Range(0f, 1f)] private float sfxVolume = 0.8f;
+        [SerializeField, Range(0f, 1f)] private float ambientVolume = 0.5f;
+        [SerializeField, Range(0f, 1f)] private float uiVolume = 0.6f;
+
+        // Private fields
+        private Dictionary<string, AudioClip> audioClips = new Dictionary<string, AudioClip>();
+        private Queue<AudioSource> availableSFXSources = new Queue<AudioSource>();
+        private int currentMusicIndex = 0;
+        private bool isMusicFading = false;
+        private Coroutine musicPlayCoroutine;
+
+        // Singleton
+        public static AudioManager Instance { get; private set; }
+
+        // Events
+        public static System.Action<string> OnSoundPlayed;
+        public static System.Action<string> OnMusicChanged;
 
         private void Awake()
         {
@@ -31,257 +70,474 @@ namespace RecordingStudioTycoon.Core
                 Destroy(gameObject);
                 return;
             }
+
             Instance = this;
             DontDestroyOnLoad(gameObject);
-
+            
             InitializeAudioSources();
-            PopulateAudioClipMaps();
-            // Subscribe to GameState changes for music transitions
-            GameManager.OnGameStateChanged += HandleGameStateChanged;
+            LoadAudioClips();
         }
+
+        private void Start()
+        {
+            ApplyVolumeSettings();
+            StartBackgroundMusic();
+        }
+
+        #region Initialization
 
         private void InitializeAudioSources()
         {
-            if (_musicSource == null)
+            // Setup music source
+            if (musicSource == null)
             {
-                _musicSource = gameObject.AddComponent<AudioSource>();
-                _musicSource.loop = true; // Music usually loops
-                _musicSource.playOnAwake = false;
+                musicSource = gameObject.AddComponent<AudioSource>();
             }
-            if (_sfxSource == null)
+            musicSource.outputAudioMixerGroup = musicGroup;
+            musicSource.loop = false;
+            musicSource.playOnAwake = false;
+
+            // Setup ambient source
+            if (ambientSource == null)
             {
-                _sfxSource = gameObject.AddComponent<AudioSource>();
-                _sfxSource.loop = false; // SFX usually don't loop
-                _sfxSource.playOnAwake = false;
+                ambientSource = gameObject.AddComponent<AudioSource>();
+            }
+            ambientSource.outputAudioMixerGroup = ambientGroup;
+            ambientSource.loop = true;
+            ambientSource.playOnAwake = false;
+
+            // Setup SFX sources
+            for (int i = 0; i < sfxSources.Length; i++)
+            {
+                if (sfxSources[i] == null)
+                {
+                    sfxSources[i] = gameObject.AddComponent<AudioSource>();
+                }
+                sfxSources[i].outputAudioMixerGroup = sfxGroup;
+                sfxSources[i].playOnAwake = false;
+                availableSFXSources.Enqueue(sfxSources[i]);
             }
         }
 
-        private void PopulateAudioClipMaps()
+        private void LoadAudioClips()
         {
-            foreach (var clip in _uiSfxClips)
+            // Load UI sounds
+            RegisterClip("ui_button_click", buttonClickSound);
+            RegisterClip("ui_button_hover", buttonHoverSound);
+            RegisterClip("ui_notification", notificationSound);
+            RegisterClip("ui_level_up", levelUpSound);
+            RegisterClip("ui_project_complete", projectCompleteSound);
+            RegisterClip("ui_purchase", purchaseSound);
+            RegisterClip("ui_error", errorSound);
+
+            // Load game sounds
+            for (int i = 0; i < recordingAmbient.Length; i++)
             {
-                if (!_uiSfxMap.ContainsKey(clip.name))
+                RegisterClip($"ambient_recording_{i}", recordingAmbient[i]);
+            }
+
+            for (int i = 0; i < mixingAmbient.Length; i++)
+            {
+                RegisterClip($"ambient_mixing_{i}", mixingAmbient[i]);
+            }
+
+            for (int i = 0; i < equipmentSounds.Length; i++)
+            {
+                RegisterClip($"equipment_{i}", equipmentSounds[i]);
+            }
+        }
+
+        private void RegisterClip(string id, AudioClip clip)
+        {
+            if (clip != null && !audioClips.ContainsKey(id))
+            {
+                audioClips[id] = clip;
+            }
+        }
+
+        #endregion
+
+        #region Music Control
+
+        public void StartBackgroundMusic()
+        {
+            if (backgroundTracks.Length == 0) return;
+
+            if (shuffleMusic)
+            {
+                currentMusicIndex = Random.Range(0, backgroundTracks.Length);
+            }
+
+            PlayMusic(backgroundTracks[currentMusicIndex]);
+        }
+
+        public void PlayMusic(AudioClip clip, bool fadeIn = true)
+        {
+            if (clip == null) return;
+
+            if (musicPlayCoroutine != null)
+            {
+                StopCoroutine(musicPlayCoroutine);
+            }
+
+            musicPlayCoroutine = StartCoroutine(PlayMusicCoroutine(clip, fadeIn));
+        }
+
+        public void PlayMusic(string trackName, bool fadeIn = true)
+        {
+            if (audioClips.ContainsKey(trackName))
+            {
+                PlayMusic(audioClips[trackName], fadeIn);
+            }
+        }
+
+        public void StopMusic(bool fadeOut = true)
+        {
+            if (musicPlayCoroutine != null)
+            {
+                StopCoroutine(musicPlayCoroutine);
+            }
+
+            if (fadeOut)
+            {
+                StartCoroutine(FadeOutMusic());
+            }
+            else
+            {
+                musicSource.Stop();
+            }
+        }
+
+        public void NextTrack()
+        {
+            if (backgroundTracks.Length <= 1) return;
+
+            currentMusicIndex = (currentMusicIndex + 1) % backgroundTracks.Length;
+            PlayMusic(backgroundTracks[currentMusicIndex]);
+        }
+
+        public void PreviousTrack()
+        {
+            if (backgroundTracks.Length <= 1) return;
+
+            currentMusicIndex = currentMusicIndex - 1;
+            if (currentMusicIndex < 0)
+                currentMusicIndex = backgroundTracks.Length - 1;
+
+            PlayMusic(backgroundTracks[currentMusicIndex]);
+        }
+
+        private IEnumerator PlayMusicCoroutine(AudioClip clip, bool fadeIn)
+        {
+            // Fade out current music if playing
+            if (musicSource.isPlaying && fadeIn)
+            {
+                yield return StartCoroutine(FadeOutMusic());
+            }
+
+            // Set new clip and play
+            musicSource.clip = clip;
+            musicSource.Play();
+
+            OnMusicChanged?.Invoke(clip.name);
+
+            // Fade in new music
+            if (fadeIn)
+            {
+                yield return StartCoroutine(FadeInMusic());
+            }
+
+            // Wait for music to finish, then play next track
+            yield return new WaitWhile(() => musicSource.isPlaying);
+
+            // Auto-play next track if background music is enabled
+            if (backgroundTracks.Length > 1)
+            {
+                NextTrack();
+            }
+        }
+
+        private IEnumerator FadeInMusic()
+        {
+            isMusicFading = true;
+            float startVolume = 0f;
+            musicSource.volume = startVolume;
+
+            while (musicSource.volume < musicVolume)
+            {
+                musicSource.volume += musicVolume * Time.deltaTime / musicFadeTime;
+                yield return null;
+            }
+
+            musicSource.volume = musicVolume;
+            isMusicFading = false;
+        }
+
+        private IEnumerator FadeOutMusic()
+        {
+            isMusicFading = true;
+            float startVolume = musicSource.volume;
+
+            while (musicSource.volume > 0)
+            {
+                musicSource.volume -= startVolume * Time.deltaTime / musicFadeTime;
+                yield return null;
+            }
+
+            musicSource.volume = 0f;
+            musicSource.Stop();
+            isMusicFading = false;
+        }
+
+        #endregion
+
+        #region Sound Effects
+
+        public void PlaySFX(AudioClip clip, float volume = 1f, float pitch = 1f)
+        {
+            if (clip == null) return;
+
+            AudioSource source = GetAvailableSFXSource();
+            if (source != null)
+            {
+                source.clip = clip;
+                source.volume = volume * sfxVolume;
+                source.pitch = pitch;
+                source.Play();
+
+                OnSoundPlayed?.Invoke(clip.name);
+                StartCoroutine(ReturnSFXSource(source, clip.length / pitch));
+            }
+        }
+
+        public void PlaySFX(string clipId, float volume = 1f, float pitch = 1f)
+        {
+            if (audioClips.ContainsKey(clipId))
+            {
+                PlaySFX(audioClips[clipId], volume, pitch);
+            }
+            else
+            {
+                Debug.LogWarning($"Audio clip '{clipId}' not found!");
+            }
+        }
+
+        public void PlayUISFX(string clipId)
+        {
+            PlaySFX(clipId, uiVolume);
+        }
+
+        public void PlaySFX3D(AudioClip clip, Vector3 position, float volume = 1f, float pitch = 1f)
+        {
+            if (clip == null) return;
+
+            GameObject tempAudioGO = new GameObject("TempAudio");
+            tempAudioGO.transform.position = position;
+
+            AudioSource tempSource = tempAudioGO.AddComponent<AudioSource>();
+            tempSource.clip = clip;
+            tempSource.volume = volume * sfxVolume;
+            tempSource.pitch = pitch;
+            tempSource.spatialBlend = 1f; // 3D sound
+            tempSource.outputAudioMixerGroup = sfxGroup;
+            tempSource.Play();
+
+            OnSoundPlayed?.Invoke(clip.name);
+            Destroy(tempAudioGO, clip.length / pitch);
+        }
+
+        private AudioSource GetAvailableSFXSource()
+        {
+            if (availableSFXSources.Count > 0)
+            {
+                return availableSFXSources.Dequeue();
+            }
+
+            // If no available sources, find one that's not playing
+            foreach (var source in sfxSources)
+            {
+                if (!source.isPlaying)
                 {
-                    _uiSfxMap.Add(clip.name, clip);
+                    return source;
                 }
             }
-            // Populate in-game SFX map
-            foreach (var clip in _inGameSfxClips)
-            {
-                if (!_uiSfxMap.ContainsKey(clip.name)) // Using _uiSfxMap for now, consider a separate map if needed
-                {
-                    _uiSfxMap.Add(clip.name, clip);
-                }
-            }
-            foreach (var clip in _minigameSfxClips)
-            {
-                if (!_minigameSfxMap.ContainsKey(clip.name))
-                {
-                    _minigameSfxMap.Add(clip.name, clip);
-                }
-            }
+
+            // All sources are busy, use the first one
+            return sfxSources[0];
         }
 
-        /// <summary>
-        /// Plays a background music clip.
-        /// </summary>
-        /// <param name="clip">The AudioClip to play.</param>
-        /// <param name="loop">Whether the music should loop. Defaults to true.</param>
-        public void PlayBackgroundMusic(AudioClip clip, bool loop = true)
+        private IEnumerator ReturnSFXSource(AudioSource source, float delay)
         {
-            if (clip == null)
-            {
-                Debug.LogWarning("Attempted to play null background music clip.");
-                return;
-            }
-            // Implement cross-fading for smoother transitions
-            if (_musicSource.isPlaying)
-            {
-                if (_musicSource.clip == clip) return; // Already playing this music
-
-                // Simple cross-fade: stop current, play new. For real cross-fade, use Coroutines.
-                _musicSource.Stop();
-            }
-
-            _musicSource.clip = clip;
-            _musicSource.loop = loop;
-            _musicSource.Play();
-            Debug.Log($"Playing background music: {clip.name}");
+            yield return new WaitForSeconds(delay);
+            availableSFXSources.Enqueue(source);
         }
 
-        /// <summary>
-        /// Plays a random background music clip from the assigned array for the MainMenu state.
-        /// </summary>
-        public void PlayMainMenuMusic()
+        #endregion
+
+        #region Ambient Audio
+
+        public void PlayAmbient(AudioClip clip, float volume = 1f, bool loop = true)
         {
-            if (_backgroundMusicClips.Length > 0)
-            {
-                int randomIndex = UnityEngine.Random.Range(0, _backgroundMusicClips.Length);
-                PlayBackgroundMusic(_backgroundMusicClips[randomIndex]);
-            }
-            else
-            {
-                Debug.LogWarning("No Main Menu background music clips assigned to AudioManager.");
-            }
+            if (clip == null) return;
+
+            ambientSource.clip = clip;
+            ambientSource.volume = volume * ambientVolume;
+            ambientSource.loop = loop;
+            ambientSource.Play();
         }
 
-        /// <summary>
-        /// Plays an in-game sound effect by name.
-        /// </summary>
-        /// <param name="sfxName">The name of the in-game sound effect clip.</param>
-        /// <param name="volumeScale">Optional volume scale.</param>
-        public void PlayInGameSFX(string sfxName, float volumeScale = 1f)
+        public void PlayAmbient(string clipId, float volume = 1f, bool loop = true)
         {
-            if (_uiSfxMap.TryGetValue(sfxName, out AudioClip clip)) // Using _uiSfxMap for now, consider a separate map if needed
+            if (audioClips.ContainsKey(clipId))
             {
-                PlaySFX(clip, volumeScale);
-            }
-            else
-            {
-                Debug.LogWarning($"In-Game SFX '{sfxName}' not found in map.");
+                PlayAmbient(audioClips[clipId], volume, loop);
             }
         }
 
-        /// <summary>
-        /// Plays a random in-game music clip from the assigned array.
-        /// </summary>
-        public void PlayInGameMusic()
+        public void StopAmbient()
         {
-            if (_inGameMusicClips.Length > 0)
-            {
-                int randomIndex = UnityEngine.Random.Range(0, _inGameMusicClips.Length);
-                PlayBackgroundMusic(_inGameMusicClips[randomIndex]);
-            }
-            else
-            {
-                Debug.LogWarning("No In-Game music clips assigned to AudioManager.");
-            }
+            ambientSource.Stop();
         }
 
-        /// <summary>
-        /// Plays a random minigame music clip from the assigned array.
-        /// </summary>
-        public void PlayMinigameMusic()
+        public void FadeAmbient(float targetVolume, float duration = 2f)
         {
-            if (_minigameMusicClips.Length > 0)
-            {
-                int randomIndex = UnityEngine.Random.Range(0, _minigameMusicClips.Length);
-                PlayBackgroundMusic(_minigameMusicClips[randomIndex]);
-            }
-            else
-            {
-                Debug.LogWarning("No Minigame music clips assigned to AudioManager.");
-            }
+            StartCoroutine(FadeAmbientCoroutine(targetVolume, duration));
         }
 
-        /// <summary>
-        /// Stops the current background music.
-        /// </summary>
-        public void StopBackgroundMusic()
+        private IEnumerator FadeAmbientCoroutine(float targetVolume, float duration)
         {
-            _musicSource.Stop();
-            Debug.Log("Background music stopped.");
+            float startVolume = ambientSource.volume;
+            float time = 0f;
+
+            while (time < duration)
+            {
+                time += Time.deltaTime;
+                float normalizedTime = time / duration;
+                ambientSource.volume = Mathf.Lerp(startVolume, targetVolume * ambientVolume, normalizedTime);
+                yield return null;
+            }
+
+            ambientSource.volume = targetVolume * ambientVolume;
         }
 
-        /// <summary>
-        /// Plays a sound effect.
-        /// </summary>
-        /// <param name="clip">The AudioClip to play.</param>
-        /// <param name="volumeScale">Optional volume scale for this specific sound effect.</param>
-        public void PlaySFX(AudioClip clip, float volumeScale = 1f)
+        #endregion
+
+        #region Volume Control
+
+        public void SetMasterVolume(float volume)
         {
-            if (clip == null)
-            {
-                Debug.LogWarning("Attempted to play null SFX clip.");
-                return;
-            }
-            _sfxSource.PlayOneShot(clip, volumeScale);
-            Debug.Log($"Playing SFX: {clip.name}");
+            masterVolume = Mathf.Clamp01(volume);
+            masterMixer.SetFloat("MasterVolume", ConvertToDecibel(masterVolume));
+            PlayerPrefs.SetFloat("MasterVolume", masterVolume);
         }
 
-        /// <summary>
-        /// Plays a UI sound effect by name.
-        /// </summary>
-        /// <param name="sfxName">The name of the UI sound effect clip.</param>
-        /// <param name="volumeScale">Optional volume scale.</param>
-        public void PlayUISFX(string sfxName, float volumeScale = 1f)
-        {
-            if (_uiSfxMap.TryGetValue(sfxName, out AudioClip clip))
-            {
-                PlaySFX(clip, volumeScale);
-            }
-            else
-            {
-                Debug.LogWarning($"UI SFX '{sfxName}' not found in map.");
-            }
-        }
-
-        /// <summary>
-        /// Plays a minigame sound effect by name.
-        /// </summary>
-        /// <param name="sfxName">The name of the minigame sound effect clip.</param>
-        /// <param name="volumeScale">Optional volume scale.</param>
-        public void PlayMinigameSFX(string sfxName, float volumeScale = 1f)
-        {
-            if (_minigameSfxMap.TryGetValue(sfxName, out AudioClip clip))
-            {
-                PlaySFX(clip, volumeScale);
-            }
-            else
-            {
-                Debug.LogWarning($"Minigame SFX '{sfxName}' not found in map.");
-            }
-        }
-
-        /// <summary>
-        /// Sets the master volume for music.
-        /// </summary>
-        /// <param name="volume">Volume level (0.0 to 1.0).</param>
         public void SetMusicVolume(float volume)
         {
-            _musicSource.volume = Mathf.Clamp01(volume);
+            musicVolume = Mathf.Clamp01(volume);
+            masterMixer.SetFloat("MusicVolume", ConvertToDecibel(musicVolume));
+            if (!isMusicFading)
+            {
+                musicSource.volume = musicVolume;
+            }
+            PlayerPrefs.SetFloat("MusicVolume", musicVolume);
         }
 
-        /// <summary>
-        /// Sets the master volume for sound effects.
-        /// </summary>
-        /// <param name="volume">Volume level (0.0 to 1.0).</param>
         public void SetSFXVolume(float volume)
         {
-            _sfxSource.volume = Mathf.Clamp01(volume);
+            sfxVolume = Mathf.Clamp01(volume);
+            masterMixer.SetFloat("SFXVolume", ConvertToDecibel(sfxVolume));
+            PlayerPrefs.SetFloat("SFXVolume", sfxVolume);
         }
 
-        // You can add more advanced features like:
-        // - Fading music in/out (requires Coroutines)
-        // - Pitch variation for SFX
-        // - Audio mixer group integration
-        // - Saving/loading volume settings
-
-        private void HandleGameStateChanged(GameStateEnum previousState, GameStateEnum newState)
+        public void SetAmbientVolume(float volume)
         {
-            switch (newState)
+            ambientVolume = Mathf.Clamp01(volume);
+            masterMixer.SetFloat("AmbientVolume", ConvertToDecibel(ambientVolume));
+            ambientSource.volume = ambientVolume;
+            PlayerPrefs.SetFloat("AmbientVolume", ambientVolume);
+        }
+
+        public void SetUIVolume(float volume)
+        {
+            uiVolume = Mathf.Clamp01(volume);
+            masterMixer.SetFloat("UIVolume", ConvertToDecibel(uiVolume));
+            PlayerPrefs.SetFloat("UIVolume", uiVolume);
+        }
+
+        private void ApplyVolumeSettings()
+        {
+            // Load saved settings
+            masterVolume = PlayerPrefs.GetFloat("MasterVolume", masterVolume);
+            musicVolume = PlayerPrefs.GetFloat("MusicVolume", musicVolume);
+            sfxVolume = PlayerPrefs.GetFloat("SFXVolume", sfxVolume);
+            ambientVolume = PlayerPrefs.GetFloat("AmbientVolume", ambientVolume);
+            uiVolume = PlayerPrefs.GetFloat("UIVolume", uiVolume);
+
+            // Apply to mixer
+            SetMasterVolume(masterVolume);
+            SetMusicVolume(musicVolume);
+            SetSFXVolume(sfxVolume);
+            SetAmbientVolume(ambientVolume);
+            SetUIVolume(uiVolume);
+        }
+
+        private float ConvertToDecibel(float value)
+        {
+            return value > 0 ? 20f * Mathf.Log10(value) : -80f;
+        }
+
+        #endregion
+
+        #region Public API
+
+        public float GetMasterVolume() => masterVolume;
+        public float GetMusicVolume() => musicVolume;
+        public float GetSFXVolume() => sfxVolume;
+        public float GetAmbientVolume() => ambientVolume;
+        public float GetUIVolume() => uiVolume;
+
+        public bool IsMusicPlaying() => musicSource.isPlaying;
+        public bool IsAmbientPlaying() => ambientSource.isPlaying;
+
+        public string GetCurrentTrackName()
+        {
+            return musicSource.clip ? musicSource.clip.name : "None";
+        }
+
+        public void MuteAll(bool mute)
+        {
+            masterMixer.SetFloat("MasterVolume", mute ? -80f : ConvertToDecibel(masterVolume));
+        }
+
+        #endregion
+
+        #region Editor and Debug
+
+        [ContextMenu("Play Random SFX")]
+        private void PlayRandomSFX()
+        {
+            if (audioClips.Count > 0)
             {
-                case GameStateEnum.MainMenu:
-                    PlayMainMenuMusic();
-                    break;
-                case GameStateEnum.InGame:
-                    PlayInGameMusic();
-                    break;
-                case GameStateEnum.Minigame:
-                    PlayMinigameMusic();
-                    break;
-                case GameStateEnum.Paused:
-                case GameStateEnum.GameOver:
-                case GameStateEnum.EraTransition:
-                case GameStateEnum.Settings:
-                    StopBackgroundMusic(); // Or play specific music for these states
-                    break;
+                var clips = new List<AudioClip>(audioClips.Values);
+                var randomClip = clips[Random.Range(0, clips.Count)];
+                PlaySFX(randomClip);
             }
         }
 
-        private void OnDestroy()
+        [ContextMenu("Next Music Track")]
+        private void DebugNextTrack()
         {
-            GameManager.OnGameStateChanged -= HandleGameStateChanged;
+            NextTrack();
         }
+
+        private void OnValidate()
+        {
+            if (Application.isPlaying)
+            {
+                ApplyVolumeSettings();
+            }
+        }
+
+        #endregion
     }
 }

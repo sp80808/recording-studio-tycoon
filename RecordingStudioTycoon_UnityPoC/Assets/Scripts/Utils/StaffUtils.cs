@@ -1,15 +1,11 @@
 using UnityEngine;
-using RecordingStudioTycoon.DataModels.Staff;
-using RecordingStudioTycoon.DataModels.Skills;
-using RecordingStudioTycoon.GameLogic;
 using System.Collections.Generic;
+using System.Linq;
 using RecordingStudioTycoon.DataModels;
-using RecordingStudioTycoon.ScriptableObjects;
-using System.Collections.Generic;
-using RecordingStudioTycoon.DataModels; // Ensure StaffMember, Training, StudioSkillType, StudioSkill are accessible
+using RecordingStudioTycoon.DataModels.Staff;
+using RecordingStudioTycoon.DataModels.Progression;
 using RecordingStudioTycoon.GameLogic;
-using RecordingStudioTycoon.Core;
-using RecordingStudioTycoon.Utils; // For SerializableDictionary
+using StaffMember = RecordingStudioTycoon.DataModels.Staff.StaffMember;
 
 namespace RecordingStudioTycoon.Utils
 {

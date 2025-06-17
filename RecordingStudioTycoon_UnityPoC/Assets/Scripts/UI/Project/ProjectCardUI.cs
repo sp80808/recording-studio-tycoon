@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 using RecordingStudioTycoon.DataModels;
+using RecordingStudioTycoon.Systems;
 
 namespace RecordingStudioTycoon.UI.Project
 {
@@ -15,6 +16,10 @@ namespace RecordingStudioTycoon.UI.Project
         private Label projectStageLabel;
         private Label assignedStaffLabel;
         private Button assignStaffButton;
+        private Label projectReviewLabel;
+        private Button regenerateReviewButton;
+        private Label projectDescriptionLabel;
+        private Button regenerateDescriptionButton;
 
         private RecordingStudioTycoon.DataModels.Project currentProject;
 
@@ -32,9 +37,45 @@ namespace RecordingStudioTycoon.UI.Project
             assignedStaffLabel = root.Q<Label>("assigned-staff-label");
             assignStaffButton = root.Q<Button>("assign-staff-button");
 
+            // Add review label and button
+            projectReviewLabel = root.Q<Label>("project-review-label");
+            if (projectReviewLabel == null)
+            {
+                projectReviewLabel = new Label("Loading review...");
+                projectReviewLabel.name = "project-review-label";
+                root.Add(projectReviewLabel);
+            }
+            regenerateReviewButton = root.Q<Button>("regenerate-review-button");
+            if (regenerateReviewButton == null)
+            {
+                regenerateReviewButton = new Button { text = "Regenerate Review", name = "regenerate-review-button" };
+                root.Add(regenerateReviewButton);
+            }
+            regenerateReviewButton.clicked += async () => await FetchAndDisplayReview(true);
+
+            // Add description label and button
+            projectDescriptionLabel = root.Q<Label>("project-description-label");
+            if (projectDescriptionLabel == null)
+            {
+                projectDescriptionLabel = new Label("Loading description...");
+                projectDescriptionLabel.name = "project-description-label";
+                root.Add(projectDescriptionLabel);
+            }
+            regenerateDescriptionButton = root.Q<Button>("regenerate-description-button");
+            if (regenerateDescriptionButton == null)
+            {
+                regenerateDescriptionButton = new Button { text = "Regenerate Description", name = "regenerate-description-button" };
+                root.Add(regenerateDescriptionButton);
+            }
+            regenerateDescriptionButton.clicked += async () => await FetchAndDisplayDescription(true);
+
             UpdateUI();
 
             assignStaffButton?.RegisterCallback<ClickEvent>(OnAssignStaffButtonClicked);
+
+            // Fetch and display review and description
+            _ = FetchAndDisplayReview(false);
+            _ = FetchAndDisplayDescription(false);
         }
 
         public void UpdateUI()
@@ -53,6 +94,58 @@ namespace RecordingStudioTycoon.UI.Project
             Debug.Log($"Assign Staff button clicked for project: {currentProject.Name}");
             // TODO: Trigger a modal or panel for staff assignment
             // UIManager.Instance.ShowStaffAssignmentModal(currentProject);
+        }
+
+        private async System.Threading.Tasks.Task FetchAndDisplayReview(bool forceRefresh)
+        {
+            if (currentProject == null) return;
+            projectReviewLabel.text = "Loading review...";
+            string review = null;
+            try
+            {
+                if (forceRefresh)
+                {
+                    // Bypass cache by using a unique prompt (add timestamp)
+                    review = await TextGenerationManager.Instance.GetReview(currentProject.Name, currentProject.BandName, currentProject.Genre + $" ({System.DateTime.Now.Ticks})");
+                }
+                else
+                {
+                    review = await TextGenerationManager.Instance.GetReview(currentProject.Name, currentProject.BandName, currentProject.Genre);
+                }
+                projectReviewLabel.text = !string.IsNullOrEmpty(review) ? review : "No review available.";
+            }
+            catch (System.Exception ex)
+            {
+                projectReviewLabel.text = "Error loading review.";
+                projectReviewLabel.style.color = new UnityEngine.Color(1, 0, 0); // Red for error
+                UnityEngine.Debug.LogError($"Error fetching review: {ex.Message}");
+            }
+        }
+
+        private async System.Threading.Tasks.Task FetchAndDisplayDescription(bool forceRefresh)
+        {
+            if (currentProject == null) return;
+            projectDescriptionLabel.text = "Loading description...";
+            string description = null;
+            try
+            {
+                if (forceRefresh)
+                {
+                    // Bypass cache by using a unique prompt (add timestamp)
+                    description = await TextGenerationManager.Instance.GetDescription("album", currentProject.Name + $" ({System.DateTime.Now.Ticks})");
+                }
+                else
+                {
+                    description = await TextGenerationManager.Instance.GetDescription("album", currentProject.Name);
+                }
+                projectDescriptionLabel.text = !string.IsNullOrEmpty(description) ? description : "No description available.";
+            }
+            catch (System.Exception ex)
+            {
+                projectDescriptionLabel.text = "Error loading description.";
+                projectDescriptionLabel.style.color = new UnityEngine.Color(1, 0, 0); // Red for error
+                UnityEngine.Debug.LogError($"Error fetching description: {ex.Message}");
+            }
         }
     }
 }

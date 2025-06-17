@@ -4,7 +4,12 @@ using System.Linq;
 using RecordingStudioTycoon.DataModels;
 using RecordingStudioTycoon.GameLogic;
 using RecordingStudioTycoon.Utils; // For SerializableDictionary
-using RecordingStudioTycoon.Core; // For RewardType, RewardManager
+using RecordingStudioTycoon.Core; // For RewardType
+using RecordingStudioTycoon.Systems.Reward; // For RewardManager
+using RecordingStudioTycoon.Systems.Relationship; // For RelationshipManager
+using RecordingStudioTycoon.Systems.Market; // For MarketManager
+using RecordingStudioTycoon.Systems.Progression; // For ProgressionManager
+using RecordingStudioTycoon.Systems.Finance; // For FinanceManager
 
 namespace RecordingStudioTycoon.Systems.Project
 {
@@ -27,7 +32,7 @@ namespace RecordingStudioTycoon.Systems.Project
             }
         }
 
-        public RecordingStudioTycoon.DataModels.Project CreateNewProject(string templateId)
+        public RecordingStudioTycoon.DataModels.Projects.Project CreateNewProject(string templateId)
         {
             if (projectData == null || projectData.ProjectTemplates == null || projectData.ProjectTemplates.Length == 0)
             {
@@ -35,27 +40,27 @@ namespace RecordingStudioTycoon.Systems.Project
                 return null;
             }
 
-            ProjectTemplate template = System.Array.Find(projectData.ProjectTemplates, t => t.Id == templateId);
+            ProjectTemplate template = Array.Find(projectData.ProjectTemplates, t => t.Id == templateId);
             if (template == null)
             {
                 Debug.LogError($"Project template with ID '{templateId}' not found.");
                 return null;
             }
 
-            RecordingStudioTycoon.DataModels.Project newProject = new RecordingStudioTycoon.DataModels.Project
+            RecordingStudioTycoon.DataModels.Projects.Project newProject = new RecordingStudioTycoon.DataModels.Projects.Project
             {
-                Id = System.Guid.NewGuid().ToString(),
-                Name = template.Name,
+                Id = Guid.NewGuid().ToString(),
+                Title = template.Name, // Renamed from Name to Title for consistency
                 Genre = template.Genre,
                 Status = "Concept",
                 Quality = 0,
                 Progress = 0,
                 MaxProgress = template.MaxProgress,
-                RewardMoney = template.BaseRewardMoney,
-                RewardXP = template.BaseRewardXP,
+                PayoutBase = template.BaseRewardMoney, // Renamed from RewardMoney to PayoutBase
+                XpReward = template.BaseRewardXP, // Renamed from RewardXP to XpReward
                 RequiredSkills = new List<string>(template.RequiredSkills),
                 Difficulty = template.Difficulty,
-                CurrentStage = RecordingStudioTycoon.DataModels.ProjectStage.PreProduction.ToString(), // Set initial stage
+                CurrentStage = RecordingStudioTycoon.DataModels.Projects.ProjectStage.PreProduction.ToString(), // Set initial stage
                 CurrentDayProgress = 0,
                 TotalDaysToComplete = template.TotalDaysToComplete,
                 IsActive = false,
@@ -65,32 +70,37 @@ namespace RecordingStudioTycoon.Systems.Project
                 ClientSatisfaction = 50, // Default satisfaction
                 Budget = template.Budget,
                 Milestones = new List<string>(template.Milestones),
-                ContractId = System.Guid.NewGuid().ToString()
+                ContractId = Guid.NewGuid().ToString(),
+                ContractProviderId = template.ClientName, // Assuming client name is the provider ID for now
+                ContractProviderType = "client", // Default to client
+                QualityScore = 0, // Initialize quality score
+                EndDate = null, // Initialize nullable fields
+                DeadlineDay = null // Initialize nullable fields
             };
 
-            if (GameManager.Instance != null)
+            if (GameManager.Instance != null && GameManager.Instance.GameState != null)
             {
-                GameManager.Instance.CurrentGameState.availableProjects.Add(newProject);
-                Debug.Log($"Created new project: {newProject.Name}");
+                GameManager.Instance.GameState.AvailableProjects.Add(newProject);
+                Debug.Log($"Created new project: {newProject.Title}");
             }
             else
             {
-                Debug.LogError("GameManager instance not found. Cannot add new project to GameState.");
+                Debug.LogError("GameManager or GameState instance not found. Cannot add new project to GameState.");
             }
             return newProject;
         }
 
-        public void ProcessActiveProjects()
+        public void ProcessActiveProjects(int currentDay)
         {
-            if (GameManager.Instance == null)
+            if (GameManager.Instance == null || GameManager.Instance.GameState == null)
             {
-                Debug.LogError("GameManager not found. Cannot process active projects.");
+                Debug.LogError("GameManager or GameState not found. Cannot process active projects.");
                 return;
             }
 
             // Create a copy to avoid modification during iteration
-            List<RecordingStudioTycoon.DataModels.Project> activeProjects = new List<RecordingStudioTycoon.DataModels.Project>(
-                GameManager.Instance.CurrentGameState.availableProjects.Where(p => p.IsActive).ToList()
+            List<RecordingStudioTycoon.DataModels.Projects.Project> activeProjects = new List<RecordingStudioTycoon.DataModels.Projects.Project>(
+                GameManager.Instance.GameState.AvailableProjects.Where(p => p.IsActive).ToList()
             );
 
             foreach (RecordingStudioTycoon.DataModels.Project project in activeProjects)
@@ -110,7 +120,7 @@ namespace RecordingStudioTycoon.Systems.Project
 
             foreach (string staffId in project.AssignedStaffIds)
             {
-                StaffMember staff = GameManager.Instance.CurrentGameState.hiredStaff.FirstOrDefault(s => s.Id == staffId);
+                StaffMember staff = GameManager.Instance.GameState.HiredStaff.FirstOrDefault(s => s.Id == staffId);
                 if (staff != null)
                 {
                     // Example: Staff efficiency and energy contribute to work amount
@@ -120,35 +130,52 @@ namespace RecordingStudioTycoon.Systems.Project
             return baseWork + staffEfficiencyBonus;
         }
 
-        public void StartProject(string projectId)
+        public void StartProject(string projectId) // This should be handled by a MultiProjectManager or similar
         {
-            if (GameManager.Instance == null)
+            if (GameManager.Instance == null || GameManager.Instance.GameState == null)
             {
-                Debug.LogError("GameManager not found. Cannot start project.");
+                Debug.LogError("GameManager or GameState not found. Cannot start project.");
                 return;
             }
 
-            RecordingStudioTycoon.DataModels.Project projectToStart = GameManager.Instance.CurrentGameState.availableProjects.FirstOrDefault(p => p.Id == projectId);
+            RecordingStudioTycoon.DataModels.Projects.Project projectToStart = GameManager.Instance.GameState.AvailableProjects.FirstOrDefault(p => p.Id == projectId);
             if (projectToStart == null)
             {
                 Debug.LogError($"Project with ID '{projectId}' not found in available projects.");
                 return;
             }
 
-            if (GameManager.Instance.CurrentGameState.activeProject != null)
+            // Check max concurrent projects from ProgressionManager
+            if (ProgressionManager.Instance != null)
             {
-                Debug.LogWarning($"Another project '{GameManager.Instance.CurrentGameState.activeProject.Name}' is already active. Cannot start '{projectToStart.Name}'.");
-                return;
+                int maxConcurrent = ProgressionManager.Instance.GetMaxConcurrentProjects();
+                int currentActive = GameManager.Instance.GameState.AvailableProjects.Count(p => p.IsActive);
+                if (currentActive >= maxConcurrent)
+                {
+                    Debug.LogWarning($"Cannot start '{projectToStart.Title}'. Maximum concurrent projects ({maxConcurrent}) reached.");
+                    // UIManager.Instance.ShowToast("Max projects reached!", "You need to upgrade your studio to handle more projects.", "destructive");
+                    return;
+                }
+            }
+            else
+            {
+                Debug.LogWarning("ProgressionManager not found. Max concurrent projects check skipped.");
+                if (GameManager.Instance.GameState.ActiveProject != null)
+                {
+                    Debug.LogWarning($"Another project '{GameManager.Instance.GameState.ActiveProject.Title}' is already active. Cannot start '{projectToStart.Title}'.");
+                    return;
+                }
             }
 
-            GameManager.Instance.CurrentGameState.activeProject = projectToStart;
+            GameManager.Instance.GameState.ActiveProject = projectToStart;
             projectToStart.IsActive = true;
             projectToStart.Status = "Active";
-            Debug.Log($"Started project: {projectToStart.Name}");
+            projectToStart.StartDate = GameManager.Instance.GameState.CurrentDay; // Set start date
+            Debug.Log($"Started project: {projectToStart.Title}");
             // UIManager.Instance.ShowActiveProjectUI(projectToStart); // Assuming UIManager has this method
         }
 
-        public void AdvanceProject(RecordingStudioTycoon.DataModels.Project project, float workAmount)
+        public void AdvanceProject(RecordingStudioTycoon.DataModels.Projects.Project project, float workAmount)
         {
             if (project == null || !project.IsActive)
             {
@@ -163,7 +190,7 @@ namespace RecordingStudioTycoon.Systems.Project
             project.Quality += (int)qualityContribution;
             project.CurrentDayProgress += (int)workAmount; // Track daily progress for stage transitions
 
-            Debug.Log($"Advanced project {project.Name}. Progress: {project.Progress}/{project.MaxProgress}, Quality: {project.Quality}");
+            Debug.Log($"Advanced project {project.Title}. Progress: {project.Progress}/{project.MaxProgress}, Quality: {project.Quality}");
 
             // Check for stage transitions
             CheckProjectStageTransition(project);
@@ -174,40 +201,40 @@ namespace RecordingStudioTycoon.Systems.Project
             }
         }
 
-        private void CheckProjectStageTransition(RecordingStudioTycoon.DataModels.Project project)
+        private void CheckProjectStageTransition(RecordingStudioTycoon.DataModels.Projects.Project project)
         {
-            RecordingStudioTycoon.DataModels.ProjectStage currentStageEnum;
-            if (System.Enum.TryParse(project.CurrentStage, out currentStageEnum))
+            RecordingStudioTycoon.DataModels.Projects.ProjectStage currentStageEnum;
+            if (Enum.TryParse(project.CurrentStage, out currentStageEnum))
             {
-                RecordingStudioTycoon.DataModels.ProjectStage nextStage = currentStageEnum;
+                RecordingStudioTycoon.DataModels.Projects.ProjectStage nextStage = currentStageEnum;
 
                 switch (currentStageEnum)
                 {
-                    case RecordingStudioTycoon.DataModels.ProjectStage.PreProduction:
+                    case RecordingStudioTycoon.DataModels.Projects.ProjectStage.PreProduction:
                         if (project.CurrentDayProgress >= 50) // Example condition for stage transition
                         {
-                            nextStage = RecordingStudioTycoon.DataModels.ProjectStage.Recording;
+                            nextStage = RecordingStudioTycoon.DataModels.Projects.ProjectStage.Recording;
                         }
                         break;
-                    case RecordingStudioTycoon.DataModels.ProjectStage.Recording:
+                    case RecordingStudioTycoon.DataModels.Projects.ProjectStage.Recording:
                         if (project.CurrentDayProgress >= 100)
                         {
-                            nextStage = RecordingStudioTycoon.DataModels.ProjectStage.Mixing;
+                            nextStage = RecordingStudioTycoon.DataModels.Projects.ProjectStage.Mixing;
                         }
                         break;
-                    case RecordingStudioTycoon.DataModels.ProjectStage.Mixing:
+                    case RecordingStudioTycoon.DataModels.Projects.ProjectStage.Mixing:
                         if (project.CurrentDayProgress >= 150)
                         {
-                            nextStage = RecordingStudioTycoon.DataModels.ProjectStage.Mastering;
+                            nextStage = RecordingStudioTycoon.DataModels.Projects.ProjectStage.Mastering;
                         }
                         break;
-                    case RecordingStudioTycoon.DataModels.ProjectStage.Mastering:
+                    case RecordingStudioTycoon.DataModels.Projects.ProjectStage.Mastering:
                         if (project.CurrentDayProgress >= 200)
                         {
-                            nextStage = RecordingStudioTycoon.DataModels.ProjectStage.Release;
+                            nextStage = RecordingStudioTycoon.DataModels.Projects.ProjectStage.Release;
                         }
                         break;
-                    case RecordingStudioTycoon.DataModels.ProjectStage.Release:
+                    case RecordingStudioTycoon.DataModels.Projects.ProjectStage.Release:
                         // Release is typically the final stage before completion
                         break;
                 }
@@ -216,27 +243,27 @@ namespace RecordingStudioTycoon.Systems.Project
                 {
                     project.CurrentStage = nextStage.ToString();
                     project.CurrentDayProgress = 0; // Reset daily progress for new stage
-                    Debug.Log($"Project {project.Name} transitioned to stage: {project.CurrentStage}");
+                    Debug.Log($"Project {project.Title} transitioned to stage: {project.CurrentStage}");
                     // TODO: Trigger UI update for stage change
                 }
             }
         }
 
-        private float GetQualityContribution(RecordingStudioTycoon.DataModels.Project project)
+        private float GetQualityContribution(RecordingStudioTycoon.DataModels.Projects.Project project)
         {
             float totalContribution = 0f;
-            if (GameManager.Instance == null) return totalContribution;
+            if (GameManager.Instance == null || GameManager.Instance.GameState == null) return totalContribution;
 
             // Staff contribution
             foreach (string staffId in project.AssignedStaffIds)
             {
-                StaffMember staff = GameManager.Instance.CurrentGameState.hiredStaff.FirstOrDefault(s => s.Id == staffId);
+                StaffMember staff = GameManager.Instance.GameState.HiredStaff.FirstOrDefault(s => s.Id == staffId);
                 if (staff != null)
                 {
                     // Example: Staff skill and morale/energy influence quality
                     float skillBonus = 0;
                     // Assuming project.CurrentStage maps to a skill type
-                    if (System.Enum.TryParse(project.CurrentStage, true, out StudioSkillType requiredSkillType))
+                    if (Enum.TryParse(project.CurrentStage, true, out StudioSkillType requiredSkillType))
                     {
                         skillBonus = staff.Skills.GetValueOrDefault(requiredSkillType, 0);
                     }
@@ -247,14 +274,30 @@ namespace RecordingStudioTycoon.Systems.Project
                 }
             }
 
-            // Equipment contribution (placeholder)
+            // Equipment contribution
             // This would involve iterating through ownedEquipment and checking if it's assigned/relevant to the project
-            // totalContribution += GameManager.Instance.CurrentGameState.equipmentMultiplier;
+            totalContribution += GameManager.Instance.GameState.EquipmentMultiplier;
+
+            // Apply aggregated perk modifiers from StudioUpgradeManager
+            if (StudioUpgradeManager.Instance != null)
+            {
+                AggregatedPerkModifiers modifiers = GameManager.Instance.GameState.AggregatedPerkModifiers;
+                totalContribution *= modifiers.GlobalRecordingQualityModifier; // Example for recording stage
+                totalContribution *= modifiers.GlobalMixingQualityModifier; // Example for mixing stage
+                totalContribution *= modifiers.GlobalMasteringQualityModifier; // Example for mastering stage
+                totalContribution += modifiers.ProjectQualityBonus; // Flat bonus
+                
+                // Apply genre-specific bonuses
+                if (modifiers.ProjectAppealModifier.TryGetValue(project.Genre, out float genreAppealModifier))
+                {
+                    totalContribution *= genreAppealModifier;
+                }
+            }
 
             return totalContribution;
         }
 
-        public void CompleteProject(RecordingStudioTycoon.DataModels.Project project)
+        public void CompleteProject(RecordingStudioTycoon.DataModels.Projects.Project project)
         {
             if (project == null)
             {
@@ -264,19 +307,20 @@ namespace RecordingStudioTycoon.Systems.Project
 
             project.IsActive = false;
             project.Status = "Completed";
-            GameManager.Instance.CurrentGameState.activeProject = null;
-            GameManager.Instance.CurrentGameState.availableProjects.Remove(project);
-            GameManager.Instance.CurrentGameState.completedProjects.Add(project);
+            project.EndDate = GameManager.Instance.GameState.CurrentDay; // Set completion date
+            GameManager.Instance.GameState.ActiveProject = null;
+            GameManager.Instance.GameState.AvailableProjects.Remove(project);
+            GameManager.Instance.GameState.CompletedProjects.Add(project);
 
-            Debug.Log($"Project {project.Name} completed! Final Quality: {project.Quality}");
+            Debug.Log($"Project {project.Title} completed! Final Quality: {project.Quality}");
 
             // Calculate final outcome and grant rewards
-            CalculateFinalProjectOutcome(project);
+            ProjectCompletionReport report = CalculateFinalProjectOutcome(project);
 
             // Unassign staff from this project
             foreach (string staffId in project.AssignedStaffIds)
             {
-                StaffMember staff = GameManager.Instance.CurrentGameState.hiredStaff.FirstOrDefault(s => s.Id == staffId);
+                StaffMember staff = GameManager.Instance.GameState.HiredStaff.FirstOrDefault(s => s.Id == staffId);
                 if (staff != null)
                 {
                     staff.AssignedProjectId = null;
@@ -284,62 +328,105 @@ namespace RecordingStudioTycoon.Systems.Project
                 }
             }
             project.AssignedStaffIds.Clear(); // Clear assigned staff IDs from the project
+
+            // Update relationships and progression based on project completion
+            if (RelationshipManager.Instance != null)
+            {
+                RelationshipManager.Instance.ProcessProjectCompletion(project, report, GameManager.Instance.GameState.CurrentDay);
+            }
+            if (StudioUpgradeManager.Instance != null)
+            {
+                StudioUpgradeManager.Instance.ProcessProjectCompletionForPrestige(project, report);
+            }
+            if (ProgressionManager.Instance != null)
+            {
+                ProgressionManager.Instance.AddXP(report.XpGained); // Grant XP through ProgressionManager
+            }
+            if (FinanceManager.Instance != null)
+            {
+                FinanceManager.Instance.AddMoney(report.Earnings, "Project Completion");
+            }
         }
 
-        private void CalculateFinalProjectOutcome(RecordingStudioTycoon.DataModels.Project project)
+        private ProjectCompletionReport CalculateFinalProjectOutcome(RecordingStudioTycoon.DataModels.Projects.Project project)
         {
-            if (GameManager.Instance == null || RewardManager.Instance == null) return;
+            if (GameManager.Instance == null) return new ProjectCompletionReport();
 
             // Example: Rewards based on quality
-            int finalMoneyReward = project.RewardMoney;
-            int finalXPReward = project.RewardXP;
+            float finalMoneyReward = project.PayoutBase;
+            int finalXPReward = project.XpReward;
+            float finalQualityScore = project.Quality;
 
+            // Apply quality modifiers
             if (project.Quality >= 80)
             {
-                finalMoneyReward = (int)(finalMoneyReward * 1.5f);
+                finalMoneyReward *= 1.5f;
                 finalXPReward = (int)(finalXPReward * 1.5f);
                 Debug.Log("Excellent project quality! Bonus rewards granted.");
             }
             else if (project.Quality < 50)
             {
-                finalMoneyReward = (int)(finalMoneyReward * 0.5f);
+                finalMoneyReward *= 0.5f;
                 finalXPReward = (int)(finalXPReward * 0.5f);
                 Debug.Log("Poor project quality. Reduced rewards.");
             }
 
-            RewardManager.Instance.GrantReward(RewardType.Money, finalMoneyReward);
-            RewardManager.Instance.GrantReward(RewardType.XP, finalXPReward);
+            // Apply perk modifiers to earnings
+            if (GameManager.Instance.GameState.AggregatedPerkModifiers != null)
+            {
+                finalMoneyReward *= GameManager.Instance.GameState.AggregatedPerkModifiers.ContractPayoutModifier;
+            }
 
-            // TODO: Update market trends, band reputation, client satisfaction based on project outcome
-            // MarketManager.Instance.UpdateMarketTrends(project.Genre, project.Quality);
-            // BandAndSongManager.Instance.UpdateBandReputation(project.AssignedBandId, project.Quality);
+            // Create a report
+            ProjectCompletionReport report = new ProjectCompletionReport
+            {
+                QualityScore = finalQualityScore,
+                FinalScore = finalQualityScore, // Can be different if other factors apply
+                Earnings = Mathf.RoundToInt(finalMoneyReward),
+                XpGained = finalXPReward,
+                CompletionTime = GameManager.Instance.GameState.CurrentDay,
+                StageReports = new List<ProjectStageReport>() // Populate with actual stage reports if available
+            };
+
+            // Grant rewards via RewardManager (if it exists)
+            if (RewardManager.Instance != null)
+            {
+                RewardManager.Instance.GrantReward(RewardType.Money, report.Earnings);
+                RewardManager.Instance.GrantReward(RewardType.XP, report.XpGained);
+            }
+            else
+            {
+                Debug.LogWarning("RewardManager not found. Rewards not granted.");
+            }
+
+            return report;
         }
 
-        public void CancelProject(string projectId)
+        public void CancelProject(string projectId) // This should be handled by a MultiProjectManager or similar
         {
-            if (GameManager.Instance == null)
+            if (GameManager.Instance == null || GameManager.Instance.GameState == null)
             {
-                Debug.LogError("GameManager not found. Cannot cancel project.");
+                Debug.LogError("GameManager or GameState not found. Cannot cancel project.");
                 return;
             }
 
-            RecordingStudioTycoon.DataModels.Project projectToCancel = GameManager.Instance.CurrentGameState.availableProjects.FirstOrDefault(p => p.Id == projectId);
+            RecordingStudioTycoon.DataModels.Projects.Project projectToCancel = GameManager.Instance.GameState.AvailableProjects.FirstOrDefault(p => p.Id == projectId);
             if (projectToCancel == null)
             {
                 Debug.LogError($"Project with ID '{projectId}' not found in available projects.");
                 return;
             }
 
-            GameManager.Instance.CurrentGameState.availableProjects.Remove(projectToCancel);
-            if (GameManager.Instance.CurrentGameState.activeProject == projectToCancel)
+            GameManager.Instance.GameState.AvailableProjects.Remove(projectToCancel);
+            if (GameManager.Instance.GameState.ActiveProject == projectToCancel)
             {
-                GameManager.Instance.CurrentGameState.activeProject = null;
+                GameManager.Instance.GameState.ActiveProject = null;
             }
 
             // Unassign staff from this project
             foreach (string staffId in projectToCancel.AssignedStaffIds)
             {
-                StaffMember staff = GameManager.Instance.CurrentGameState.hiredStaff.FirstOrDefault(s => s.Id == staffId);
+                StaffMember staff = GameManager.Instance.GameState.HiredStaff.FirstOrDefault(s => s.Id == staffId);
                 if (staff != null)
                 {
                     staff.AssignedProjectId = null;
@@ -348,7 +435,7 @@ namespace RecordingStudioTycoon.Systems.Project
             }
             projectToCancel.AssignedStaffIds.Clear(); // Clear assigned staff IDs from the project
 
-            Debug.Log($"Project {projectToCancel.Name} cancelled.");
+            Debug.Log($"Project {projectToCancel.Title} cancelled.");
         }
     }
 }

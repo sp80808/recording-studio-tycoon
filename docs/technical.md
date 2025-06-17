@@ -81,3 +81,12 @@ This section details the specific technical setup for the Unity game engine and 
   - Displays tooltips and highlights UI elements for each tutorial step.
   - Dims background and provides navigation controls.
   - Finds UI elements by name or tag for highlighting.
+
+## PolAI Integration: Image and Text Generation
+- `PolAiService` exposes `GenerateAlbumArt` for async album art generation via Pollinations.AI image API, integrated with `AlbumArtGeneratorUI` for user-driven album art creation and assignment.
+- `PolAiService` exposes `GenerateTextAsync(string prompt)` for async text generation via Pollinations.AI API.
+- `TextGenerationManager` (singleton) provides async, cached methods for generating reviews, news, bios, and descriptions.
+- Uses prompt templates for each use case (review, news, bio, description).
+- Caches results in-memory to minimize API calls.
+- UI panels (album/song info, news feed, band member info, item info) call TextGenerationManager for dynamic text content.
+- Handles error states and loading indicators in UI.

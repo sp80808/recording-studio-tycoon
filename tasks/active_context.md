@@ -21,8 +21,11 @@ The primary focus of development has shifted to a **full rebuild of the game wit
 - Documentation updated for both systems.
 
 ## Current State (PolAI Integration)
-- Integration plan and API docs reviewed (`docs/POLAI_API_INTEGRATION_PLAN.md`, `docs/polaiAPIDOCS.md`).
-- Task plan updated for phased rollout (album art, text/news, logo, TTS, etc.).
+- PolAiService extended for text generation (GenerateTextAsync) and album art generation (GenerateAlbumArt).
+- Album art generation implemented and integrated with UI for project/album creation.
+- TextGenerationManager singleton implemented for reviews, news, bios, and descriptions (with caching and prompt templates).
+- Documentation updated for new text generation system.
+- Next: Integrate TextGenerationManager with UI for album/song reviews, news, bios, and descriptions.
 
 ## Next Steps
 1.  Continue with the detailed rebuild of game systems within Unity, following the prioritized tasks outlined in `tasks/tasks_plan.md`.

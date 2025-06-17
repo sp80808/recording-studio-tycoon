@@ -3,6 +3,7 @@ using UnityEngine.UIElements;
 using RecordingStudioTycoon.DataModels;
 using RecordingStudioTycoon.GameLogic;
 using RecordingStudioTycoon.Systems.Staff;
+using RecordingStudioTycoon.Systems;
 
 namespace RecordingStudioTycoon.UI.Staff
 {
@@ -23,6 +24,8 @@ namespace RecordingStudioTycoon.UI.Staff
         private VisualElement efficiencyBar;
         private VisualElement moodBar;
         private VisualElement energyBar;
+        private Label staffBioLabel;
+        private Button regenerateBioButton;
 
         private StaffMember currentStaff;
 
@@ -46,10 +49,29 @@ namespace RecordingStudioTycoon.UI.Staff
             moodBar = root.Q<VisualElement>("mood-bar");
             energyBar = root.Q<VisualElement>("energy-bar");
 
+            // Add bio label and button
+            staffBioLabel = root.Q<Label>("staff-bio-label");
+            if (staffBioLabel == null)
+            {
+                staffBioLabel = new Label("Loading bio...");
+                staffBioLabel.name = "staff-bio-label";
+                root.Add(staffBioLabel);
+            }
+            regenerateBioButton = root.Q<Button>("regenerate-bio-button");
+            if (regenerateBioButton == null)
+            {
+                regenerateBioButton = new Button { text = "Regenerate Bio", name = "regenerate-bio-button" };
+                root.Add(regenerateBioButton);
+            }
+            regenerateBioButton.clicked += async () => await FetchAndDisplayBio(true);
+
             UpdateUI();
 
             assignToProjectButton?.RegisterCallback<ClickEvent>(OnAssignToProjectButtonClicked);
             unassignFromProjectButton?.RegisterCallback<ClickEvent>(OnUnassignFromProjectButtonClicked);
+
+            // Fetch and display bio
+            _ = FetchAndDisplayBio(false);
         }
 
         public void UpdateUI()
@@ -105,6 +127,13 @@ namespace RecordingStudioTycoon.UI.Staff
                 if (assignedProject != null)
                 {
                     return assignedProject.Name;
+                    private void OnDisable()
+                    {
+                        if (regenerateBioButton != null)
+                        {
+                            regenerateBioButton.clicked -= async () => await FetchAndDisplayBio(true);
+                        }
+                    }
                 }
             }
             return "Unknown Project";
@@ -130,6 +159,23 @@ namespace RecordingStudioTycoon.UI.Staff
                     GameManager.Instance.OnGameStateChanged?.Invoke(); // Notify for broader state change
                 }
             }
+        }
+
+        private async System.Threading.Tasks.Task FetchAndDisplayBio(bool forceRefresh)
+        {
+            if (currentStaff == null) return;
+            staffBioLabel.text = "Loading bio...";
+            string bio = null;
+            if (forceRefresh)
+            {
+                // Bypass cache by using a unique prompt (add timestamp)
+                bio = await TextGenerationManager.Instance.GetBio(currentStaff.Name, currentStaff.Role + $" ({System.DateTime.Now.Ticks})", currentStaff.Genre);
+            }
+            else
+            {
+                bio = await TextGenerationManager.Instance.GetBio(currentStaff.Name, currentStaff.Role, currentStaff.Genre);
+            }
+            staffBioLabel.text = !string.IsNullOrEmpty(bio) ? bio : "No bio available.";
         }
     }
 }

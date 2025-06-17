@@ -82,5 +82,41 @@ namespace RecordingStudioTycoon.Systems.Finance
             if (GameManager.Instance == null || GameManager.Instance.GameState == null) return false;
             return GameManager.Instance.GameState.money >= amount;
         }
+
+        /// <summary>
+        /// Calculates a financial bonus multiplier based on studio specialization and industry prestige.
+        /// </summary>
+        /// <param name="genre">The genre of the project/income source, for specialization bonuses.</param>
+        /// <returns>A float multiplier for financial gains.</returns>
+        public float GetFinancialBonusMultiplier(DataModels.Market.MusicGenre genre)
+        {
+            if (GameManager.Instance == null || GameManager.Instance.GameState == null) return 1.0f;
+
+            float multiplier = 1.0f;
+
+            // Apply Studio Specialization bonus
+            if (GameManager.Instance.GameState.studioSpecializations.TryGetValue(genre, out DataModels.Progression.StudioSpecialization specialization))
+            {
+                multiplier *= (1.0f + (specialization.BonusMultiplier - 1.0f) * 0.5f); // Half the specialization bonus for financial gain
+                Debug.Log($"Applying {specialization.Genre} specialization financial bonus: {multiplier}");
+            }
+
+            // Apply general Industry Prestige bonus
+            if (GameManager.Instance.GameState.industryPrestige.TryGetValue("general", out DataModels.Progression.IndustryPrestige generalPrestige))
+            {
+                multiplier *= (1.0f + (generalPrestige.BonusMultiplier - 1.0f) * 0.5f); // Half the general prestige bonus for financial gain
+                Debug.Log($"Applying general industry prestige financial bonus: {multiplier}");
+            }
+
+            // Apply genre-specific Industry Prestige bonus
+            string genrePrestigeKey = genre.ToString().ToLowerInvariant() + "_industry";
+            if (GameManager.Instance.GameState.industryPrestige.TryGetValue(genrePrestigeKey, out DataModels.Progression.IndustryPrestige genrePrestige))
+            {
+                multiplier *= (1.0f + (genrePrestige.BonusMultiplier - 1.0f) * 0.5f); // Half the genre prestige bonus for financial gain
+                Debug.Log($"Applying {genre} industry prestige financial bonus: {multiplier}");
+            }
+
+            return multiplier;
+        }
     }
 }

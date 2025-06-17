@@ -137,7 +137,11 @@ namespace RecordingStudioTycoon.Systems.ProjectSystem
         {
             // Placeholder for quality calculation logic
             // This would involve assigned staff skills, equipment, studio perks, etc.
-            float quality = 1.0f; // Base quality
+            float baseQuality = 1.0f; // Base quality
+            float staffContribution = 0f;
+            float specializationMultiplier = 1.0f;
+            float prestigeMultiplier = 1.0f;
+
             if (project.AssignedStaffIds != null && project.AssignedStaffIds.Any())
             {
                 foreach (string staffId in project.AssignedStaffIds)
@@ -146,22 +150,44 @@ namespace RecordingStudioTycoon.Systems.ProjectSystem
                     if (staff != null)
                     {
                         // Add staff's relevant skill level to quality based on current stage
-                        quality += GetStaffSkillContribution(staff, project.CurrentStage) * 0.01f;
+                        staffContribution += GetStaffSkillContribution(staff, project.CurrentStage) * 0.01f;
 
                         // Factor in staff mood and energy
-                        // Assuming mood and energy are 0-100. Normalize to 0-1 range for multiplier.
                         float moodMultiplier = staff.Mood / 100f;
                         float energyMultiplier = staff.Energy / 100f;
 
-                        // Apply a combined multiplier. Adjust weights as needed.
-                        quality *= (0.5f + 0.5f * moodMultiplier); // Mood has a significant impact
-                        quality *= (0.75f + 0.25f * energyMultiplier); // Energy has a smaller, but noticeable impact
+                        baseQuality *= (0.5f + 0.5f * moodMultiplier); // Mood has a significant impact
+                        baseQuality *= (0.75f + 0.25f * energyMultiplier); // Energy has a smaller, but noticeable impact
                     }
                 }
             }
+
+            // Apply Studio Specialization bonus
+            if (GameManager.Instance.GameState.studioSpecializations.TryGetValue(project.Genre, out StudioSpecialization specialization))
+            {
+                specializationMultiplier = specialization.BonusMultiplier;
+                Debug.Log($"Applying {specialization.Genre} specialization bonus: {specializationMultiplier}");
+            }
+
+            // Apply Industry Prestige bonus (general and genre-specific)
+            if (GameManager.Instance.GameState.industryPrestige.TryGetValue("general", out IndustryPrestige generalPrestige))
+            {
+                prestigeMultiplier *= generalPrestige.BonusMultiplier;
+                Debug.Log($"Applying general industry prestige bonus: {generalPrestige.BonusMultiplier}");
+            }
+            string genrePrestigeKey = project.Genre.ToString().ToLowerInvariant() + "_industry";
+            if (GameManager.Instance.GameState.industryPrestige.TryGetValue(genrePrestigeKey, out IndustryPrestige genrePrestige))
+            {
+                prestigeMultiplier *= genrePrestige.BonusMultiplier;
+                Debug.Log($"Applying {project.Genre} industry prestige bonus: {genrePrestige.BonusMultiplier}");
+            }
+
+            // Combine all factors
+            float finalQuality = (baseQuality + staffContribution) * specializationMultiplier * prestigeMultiplier;
+
             // TODO: Add equipment contribution based on assigned equipment to the project
             // TODO: Add minigame performance contribution (this would likely come from MinigameManager directly updating project quality)
-            return quality;
+            return finalQuality;
         }
 
         private int GetStaffSkillContribution(StaffMember staff, ProjectStage stage)
@@ -266,7 +292,13 @@ namespace RecordingStudioTycoon.Systems.ProjectSystem
                     if (staff != null)
                     {
                         StaffManagement.Instance.UnassignStaffFromProject(staff, project);
-                        // TODO: Grant staff XP based on their contribution to the project
+                        // Grant staff XP based on their contribution to the project
+                        // For simplicity, grant a portion of project XP to each assigned staff member
+                        int staffXpShare = finalXPReward / project.AssignedStaffIds.Count;
+                        // Determine the relevant skill type for XP based on the project's genre or stage
+                        // For now, let's assume a generic skill or the primary skill for the project's genre
+                        StudioSkillType relevantSkill = GetPrimarySkillForGenre(project.Genre);
+                        StaffManagement.Instance.AddStaffXP(staff.Id, relevantSkill, staffXpShare);
                     }
                 }
 
@@ -287,15 +319,17 @@ namespace RecordingStudioTycoon.Systems.ProjectSystem
         {
             // This is a placeholder for nuanced project outcome calculations.
             // Factors to consider:
+            // Factors to consider:
             // - project.CurrentQuality vs project.RequiredQuality
             // - Market trends (from MarketManager)
             // - Band reputation (from BandAndSongManager)
             // - Staff specialization and morale during the project
             // - Equipment quality used
             // - Minigame performance
+            // - Studio Specialization and Industry Prestige
             float outcomeMultiplier = 1.0f;
 
-            // Example: Quality influence
+            // 1. Quality influence
             if (project.CurrentQuality >= project.RequiredQuality)
             {
                 outcomeMultiplier *= 1.2f; // Bonus for meeting/exceeding quality
@@ -305,8 +339,49 @@ namespace RecordingStudioTycoon.Systems.ProjectSystem
                 outcomeMultiplier *= 0.8f; // Penalty for low quality
             }
 
-            // TODO: Integrate MarketManager.Instance.GetCurrentMarketTrends()
-            // TODO: Integrate BandAndSongManager.Instance.GetBandReputation(project.BandId)
+            // 2. Market trends influence
+            if (Systems.Market.MarketManager.Instance != null)
+            {
+                MarketTrend genreTrend = Systems.Market.MarketManager.Instance.GetTrendForGenre(project.Genre.ToString());
+                if (genreTrend != null)
+                {
+                    // Positive impact if genre is popular/rising, negative if falling/fading
+                    float trendImpact = (genreTrend.Popularity - 50f) / 100f; // Normalize to -0.5 to 0.5
+                    outcomeMultiplier += trendImpact * 0.1f; // Small impact from trend
+                }
+            }
+
+            // 3. Band reputation influence (if applicable)
+            if (!string.IsNullOrEmpty(project.associatedBandId))
+            {
+                Band associatedBand = GameManager.Instance.GameState.playerBands.FirstOrDefault(b => b.Id == project.associatedBandId);
+                if (associatedBand != null)
+                {
+                    float reputationImpact = associatedBand.Reputation / 100f; // Normalize to 0-1
+                    outcomeMultiplier += reputationImpact * 0.15f; // Moderate impact from band reputation
+                }
+            }
+
+            // 4. Studio Specialization and Industry Prestige influence on outcome
+            if (GameManager.Instance.GameState.studioSpecializations.TryGetValue(project.Genre, out StudioSpecialization specialization))
+            {
+                outcomeMultiplier *= (1.0f + (specialization.BonusMultiplier - 1.0f) * 0.5f); // Half the specialization bonus for outcome
+                Debug.Log($"Project outcome influenced by {specialization.Genre} specialization. Multiplier: {outcomeMultiplier}");
+            }
+
+            if (GameManager.Instance.GameState.industryPrestige.TryGetValue("general", out IndustryPrestige generalPrestige))
+            {
+                outcomeMultiplier *= (1.0f + (generalPrestige.BonusMultiplier - 1.0f) * 0.5f); // Half the general prestige bonus for outcome
+                Debug.Log($"Project outcome influenced by general industry prestige. Multiplier: {outcomeMultiplier}");
+            }
+
+            string genrePrestigeKey = project.Genre.ToString().ToLowerInvariant() + "_industry";
+            if (GameManager.Instance.GameState.industryPrestige.TryGetValue(genrePrestigeKey, out IndustryPrestige genrePrestige))
+            {
+                outcomeMultiplier *= (1.0f + (genrePrestige.BonusMultiplier - 1.0f) * 0.5f); // Half the genre prestige bonus for outcome
+                Debug.Log($"Project outcome influenced by {project.Genre} industry prestige. Multiplier: {outcomeMultiplier}");
+            }
+
             // TODO: Integrate staff morale/fatigue impact
             // TODO: Integrate equipment quality impact
             // TODO: Integrate minigame performance impact
@@ -327,6 +402,64 @@ namespace RecordingStudioTycoon.Systems.ProjectSystem
             ProjectTemplate template = projectData.ProjectTemplates[UnityEngine.Random.Range(0, projectData.ProjectTemplates.Count)];
             Debug.Log($"Generated new project template: {template.Name} ({template.Genre})");
             return template;
+        }
+
+        /// <summary>
+        /// Helper method to determine the primary skill type for a given music genre.
+        /// This is a simplified mapping and can be expanded.
+        /// </summary>
+        /// <param name="genre">The music genre.</param>
+        /// <returns>The primary StudioSkillType associated with the genre.</returns>
+        private StudioSkillType GetPrimarySkillForGenre(MusicGenre genre)
+        {
+            switch (genre)
+            {
+                case MusicGenre.Pop:
+                case MusicGenre.HipHop:
+                case MusicGenre.RAndB:
+                    return StudioSkillType.Production;
+                case MusicGenre.Rock:
+                case MusicGenre.Alternative:
+                case MusicGenre.Country:
+                    return StudioSkillType.Recording;
+                case MusicGenre.Electronic:
+                    return StudioSkillType.SoundDesign;
+                case MusicGenre.Jazz:
+                case MusicGenre.Classical:
+                case MusicGenre.Folk:
+                case MusicGenre.Acoustic:
+                    return StudioSkillType.Composition;
+                default:
+                    return StudioSkillType.Production; // Default or a generic skill
+            }
+        }
+
+        /// <summary>
+        /// Helper method to determine the primary music genre for a given skill type.
+        /// This is a simplified mapping and can be expanded.
+        /// </summary>
+        /// <param name="skillType">The studio skill type.</param>
+        /// <returns>The primary MusicGenre associated with the skill type.</returns>
+        public MusicGenre GetGenreForSkill(StudioSkillType skillType)
+        {
+            switch (skillType)
+            {
+                case StudioSkillType.Production:
+                case StudioSkillType.Marketing: // Marketing can be broad, but often tied to popular genres
+                    return MusicGenre.Pop;
+                case StudioSkillType.Recording:
+                case StudioSkillType.Mixing:
+                case StudioSkillType.Mastering:
+                    return MusicGenre.Rock; // These skills are fundamental across many, but can be tied to a "core" genre
+                case StudioSkillType.SoundDesign:
+                    return MusicGenre.Electronic;
+                case StudioSkillType.Composition:
+                    return MusicGenre.Classical; // Or Jazz, Folk, Acoustic
+                case StudioSkillType.Business:
+                case StudioSkillType.Technical:
+                default:
+                    return MusicGenre.Pop; // Default or a generic genre
+            }
         }
     }
 }

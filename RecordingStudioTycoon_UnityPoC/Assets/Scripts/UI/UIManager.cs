@@ -46,6 +46,7 @@ namespace RecordingStudioTycoon.UI
             GameManager.OnGameStateChanged += HandleGameStateChanged;
             GameManager.OnGameDataChanged += UpdateHUD; // Subscribe to generic game data changes
             GameManager.OnPlayerLevelUp += HandlePlayerLevelUp; // Subscribe to level up event
+            Systems.Finance.FinanceManager.OnMoneyChanged += HandleMoneyChanged; // Subscribe to money changes
         }
 
         private void OnDisable()
@@ -53,6 +54,7 @@ namespace RecordingStudioTycoon.UI
             GameManager.OnGameStateChanged -= HandleGameStateChanged;
             GameManager.OnGameDataChanged -= UpdateHUD;
             GameManager.OnPlayerLevelUp -= HandlePlayerLevelUp;
+            Systems.Finance.FinanceManager.OnMoneyChanged -= HandleMoneyChanged;
         }
 
         private void Start()
@@ -221,6 +223,11 @@ namespace RecordingStudioTycoon.UI
         public void ShowLevelUpDetails(LevelUpDetails details)
         {
             // Implement level up UI logic
+        }
+
+        private void HandleMoneyChanged(float newMoney)
+        {
+            UpdateHUD(); // Simply call UpdateHUD to refresh money display
         }
     }
 }
