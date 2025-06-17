@@ -3,105 +3,60 @@
 ## Development Environment and Stack
 
 ### Technologies Used
-- **Frontend**: React with TypeScript
-- **Styling**: Tailwind CSS, Shadcn UI
-- **State Management**: Zustand (or React Context API for simpler states)
-- **Routing**: React Router DOM
-- **Build Tool**: Vite
-- **Testing**: Jest, React Testing Library
-- **Cloud Integration**: Supabase (for cloud saves, advanced save features)
-- **Animations**: Framer Motion
-- **Charting**: Recharts
-- **Internationalization**: i18next (if implemented)
-- **UI/UX**: Potential libraries for responsive design, accessibility, and performance optimization.
-- **Input Handling**: Libraries for keyboard shortcuts and gamepad support.
-- **Multiplayer**: WebSockets (e.g., Socket.IO) or a real-time backend service (e.g., Supabase Realtime, Firebase).
-- **Advanced AI**: Machine learning libraries (e.g., TensorFlow.js) for dynamic difficulty, adaptive challenges, and smart NPCs.
-- **Virtual Reality**: WebXR API or a VR framework (e.g., A-Frame, React VR).
-- **Mobile Platform**: React Native or Capacitor for cross-platform mobile deployment.
+- **Primary Game Engine & Logic**: Unity 3D with C#
+- **Core Game Logic & State Management**: C# (`GameManager.cs`, `GameState.cs`)
+- **User Interface (Primary)**: Unity's native UI systems (UGUI or UI Toolkit)
+- **User Interface (Secondary/Optional)**: (Removed - no longer using ReactUnity)
+- **Styling**: Unity UI styling (e.g., UXML/USS, native UI components)
+- **State Management**: C# `GameState` and `GameManager` in Unity.
+- **Routing**: Unity Scene Management, C# navigation logic
+- **Build Tool**: Unity Editor and Build System
+- **Testing**: Unity Test Framework (for C#)
+- **Cloud Integration**: C# SDKs for cloud services (e.g., Firebase, PlayFab) for robust cloud saves and advanced features.
+- **Animations**: Unity Animation System, C# animation control.
+- **Charting**: C# charting libraries or custom Unity UI rendering.
+- **Internationalization**: Unity Localization System (C#).
+- **Input Handling**: Unity Input System (C#).
+- **Multiplayer**: Unity Networking (e.g., Netcode for GameObjects) or dedicated C# backend services for real-time multiplayer.
+- **Advanced AI**: C# AI implementations within Unity (e.g., Unity ML-Agents, custom behavior trees).
+- **Virtual Reality**: Unity XR Interaction Toolkit (C#).
+- **Mobile Platform**: Unity's multi-platform build capabilities (C#).
 
-### App Icon Implementation
-The app uses a music symbol emoji (🎵) as its icon, implemented through an inline SVG in the HTML. This approach:
-- Provides consistent appearance across platforms
-- Eliminates the need for multiple icon files
-- Ensures proper scaling and rendering
-- Simplifies maintenance and updates
+### Unity Environment and ReactUnity Integration
 
-The implementation uses a data URI in the HTML:
-```html
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎵</text></svg>" />
-```
+This section details the specific technical setup for the Unity game engine and its integration with ReactUnity for UI rendering. While ReactUnity is an *optional* UI framework for specific complex elements, the core game logic and much of the UI will be built natively in C# within Unity.
 
-### Project Management System
-The enhanced project management system includes:
+#### Core Components (C#)
+- **`GameManager.cs`**: A Singleton MonoBehaviour responsible for initializing the game, managing overall game flow, and orchestrating interactions between various game systems. It acts as the primary interface for C# game logic and data, triggering events (`OnGameStateChanged`, `OnPlayerLevelUp`) to notify relevant Unity UI components or ReactUnity elements of state modifications.
+- **`GameState.cs`**: A serializable class (`[System.Serializable]`) that defines the entire game's state. It holds all dynamic data, including player data, studio information, projects, staff, and more. It is managed by `GameManager` and updated by various game systems. Complex data structures like dictionaries are handled using a custom `SerializableDictionary` to ensure proper Unity serialization.
+- **Utility Scripts**: Located in `Assets/Scripts/Utils/`, these static C# classes provide helper functions for various game aspects:
+    - `BandUtils.cs`: For generating session musicians and managing band-related data.
+    - `ProjectUtils.cs`: For generating new projects based on game state.
+    - `ProgressionUtils.cs`: For calculating player XP requirements and managing progression.
+    - `StaffUtils.cs`: For generating staff candidates and managing staff-related data.
 
-#### ProjectList Component
-- **Type Safety**: Improved TypeScript type definitions for genres and subgenres
-- **Market Integration**: Enhanced market trend analysis and display
-- **Error Handling**: Robust error handling for market trend calculations
-- **Performance**: Optimized project refresh functionality
-- **State Management**: Streamlined state updates and data flow
+#### UI Data Flow (C# and Unity UI)
+- **Event-Driven Updates**: `GameManager` triggers C# events (`OnGameStateChanged`, `OnPlayerLevelUp`, `OnGameDataChanged`) when the `GameState` changes. `UIManager` and other Unity UI components subscribe to these events to receive updated game data and refresh their display.
+- **Direct Property Access**: Unity UI components can directly access public properties of `GameManager.Instance` to retrieve current game state information.
+- **Direct Method Calls**: User interactions with Unity UI elements (e.g., button clicks, slider changes) directly trigger public methods on `UIManager` or `GameManager` to perform game actions or modify settings.
 
-#### Key Features
-- Dynamic project generation based on player level and era
-- Real-time market trend analysis
-- Genre and subgenre type safety
-- Efficient project refresh mechanism
-- Integrated error handling and validation
+### Development Setup (Unity Specific)
+1.  **Unity Project Setup**: Follow the steps in `userInstructions/setup_unity_reactunity_poc.md` to create and configure the Unity project.
+2.  **Unity Editor**: Develop C# scripts and design UI directly within the Unity Editor. Run the Unity Editor in Play Mode to test game functionality and UI.
 
-#### Implementation Details
-```typescript
-interface ProjectListProps {
-  gameState: GameState;
-  startProject: (project: Project) => void;
-  updateGameState: (updater: (prevState: GameState) => GameState) => void;
-}
-
-// Market trend integration
-const { getTrendForGenre } = useMarketTrends(updateGameState);
-
-// Project refresh with type safety
-const handleRefreshProjects = () => {
-  updateGameState(prev => ({ 
-    ...prev, 
-    availableProjects: [...generateNewProjects(5, prev.playerData.level, prev.currentEra)]
-  }));
-};
-```
-
-### Development Setup
-1. **Clone the repository**:
-   ```bash
-   git clone [repository-url]
-   cd recording-studio-tycoon
-   ```
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-3. **Run the development server**:
-   ```bash
-   npm run dev
-   ```
-   The application will be accessible at `http://localhost:5173` (or another port if 5173 is in use).
-
-### Key Technical Decisions
-- **Component-Based Architecture**: Leveraging React's component model for modular and reusable UI elements
-- **TypeScript**: Enhancing code quality, maintainability, and developer experience through static typing
-- **Atomic Design Principles**: Organizing UI components into atoms, molecules, organisms, templates, and pages for scalability
-- **Functional Components and Hooks**: Utilizing React Hooks for stateful logic and side effects in functional components
-- **Type Safety**: Implementing strict type checking for all components and data structures
-- **Error Handling**: Comprehensive error handling and validation throughout the application
+### Key Technical Decisions (Unity Native)
+- **Separation of Concerns**: Game logic and state management are primarily handled in C# within Unity. UI rendering and interaction are handled by dedicated C# UI scripts and Unity's native UI system.
+- **Single Source of Truth (Game State)**: `GameManager.Instance.GameState` remains the central source of truth for all dynamic game data.
+- **Event-Driven Communication**: Favor C# events for decoupled communication between game systems and UI.
 
 ### Design Patterns in Use
 - **Observer Pattern**: For event handling and state changes (e.g., notifications, game events).
 - **Factory Pattern**: For creating instances of game entities (e.g., staff, projects, equipment).
 - **Singleton Pattern**: For managing global services like the Audio System or Save System.
 - **Strategy Pattern**: For implementing different minigame mechanics or project outcomes.
-- **Provider Pattern (React Context)**: For providing global data and functions to component trees without prop drilling.
+- **ScriptableObject Pattern**: For data-driven design, separating data from logic.
 
 ### Technical Constraints
-- **Browser Compatibility**: Targeting modern web browsers (Chrome, Firefox, Safari, Edge).
 - **Performance**: Optimizing for smooth animations and responsive UI, especially on lower-end devices and mobile platforms.
 - **Scalability**: Designing systems to accommodate future content expansions (new eras, equipment, minigames, locations, events) and potential multiplayer features.
 - **Maintainability**: Writing clean, well-documented, and testable code.

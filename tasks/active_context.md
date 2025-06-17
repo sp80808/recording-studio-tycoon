@@ -1,33 +1,36 @@
 # Current State of Development
 
 ## Current Work Focus
-The current focus is on planning and integrating a comprehensive set of new features and improvements into the project roadmap. This includes significant enhancements to the save system, UI/UX, core gameplay, minigames, expanded content, band/song/charts functionality, and future considerations like multiplayer, advanced AI, VR, and mobile optimization.
+The primary focus of development has shifted to a **full rebuild of the game within the Unity engine using C# and native Unity UI**. This strategic decision aims to leverage Unity's native capabilities for enhanced flexibility, performance, and a more robust game development experience, moving beyond the previous web-based game engine and ReactUnity.
+
+## Key Progress on Full Unity Rebuild (C#)
+-   **Core Game Logic Rebuilt**: The fundamental `GameManager.cs` and `GameState.cs` have been successfully rebuilt in C#. This includes the initial structure and basic game loop implementation, establishing the core framework for all subsequent game systems.
+-   **ScriptableObject and DataModel Files Created**: Essential `ScriptableObject` assets and foundational data model C# files have been created. This lays the groundwork for a data-driven design approach within Unity, allowing for flexible and organized management of game data.
+-   **UI Manager Created**: `UIManager.cs` has been created to manage UI panel visibility, HUD updates, and basic settings.
+-   **Player Character and Interaction Enhanced**: `PlayerCharacter.cs` has been updated for animation state management, and `PlayerInteraction.cs` has been created to handle interaction logic with environmental objects.
+-   **Interactable Objects Enhanced**: `Interactable.cs` now supports various interaction types and visual cues.
 
 ## Active Decisions and Considerations
-- Implemented new minigames and expanded existing ones.
-- Added new equipment types and categories.
-- Introduced more diverse artists and expanded music genres.
-- Enhanced chart generation and market trend simulation.
-- Expanded staff candidate pool and roles.
-- Refactored `ActiveProject.tsx` for better maintainability and to resolve dependency issues.
-- Updated core memory files (`docs/product_requirement_docs.md`, `docs/architecture.md`, `docs/technical.md`, `tasks/tasks_plan.md`, `tasks/active_context.md`) to reflect the expanded scope and planning.
+-   The project's architectural documentation (`docs/unity_architectural_plan.md`) and technical documentation (`docs/technical.md`) have been updated to thoroughly reflect this full Unity C# rebuild and the exclusive use of native Unity UI, deprecating previous web-based approaches and ReactUnity.
+-   The overall task plan (`tasks/tasks_plan.md`) now explicitly outlines the phases and sub-tasks for the Unity rebuild, indicating initial completion of core logic, data model setup, and initial UI/player interaction enhancements.
+-   Integration with C# SDKs for cloud services (e.g., Firebase, PlayFab) for robust save features is a key consideration for the new Unity save system.
+
+## Next Steps
+1.  Continue with the detailed rebuild of game systems within Unity, following the prioritized tasks outlined in `tasks/tasks_plan.md`.
+2.  Focus on implementing the remaining Unity UI elements and integrating them with the C# game logic.
+3.  Systematically migrate or rebuild remaining game features (e.g., Save System, Audio, Minigames) in C# within the Unity environment.
+4.  Regularly review and update all project documentation to maintain alignment with the ongoing Unity development.
+
+## Legacy Context Note
+Sections pertaining to the original web-based implementation (e.g., specific web frontend technologies, previous debugging sessions, and detailed web component descriptions) have been phased out or marked as legacy in the primary documentation files to maintain clarity on the current development direction. This includes elements previously detailed in `src/` directories related to React/TypeScript components and services.
 
 ## Recent Changes
-- Updated `src/types/game.ts` and `src/types/miniGame.ts` with new minigame types.
-- Added new minigames to `src/data/minigames.ts`.
-- Added new equipment to `src/data/equipment.ts`.
-- Updated `src/types/charts.ts` with new `MusicGenre` and `Artist` properties.
-- Expanded `src/data/artistsData.ts` with more artists.
-- Enhanced `src/data/chartsData.ts` with new chart types and logic.
-- Updated `src/utils/projectUtils.ts` with new staff candidate names and roles.
-- Fixed `src/components/minigames/GuitarPedalBoardGame.tsx` by installing `@dnd-kit` packages and adding missing `icon` property.
-- Refactored and fixed `src/components/ActiveProject.tsx` to resolve multiple errors and improve component logic.
-- Created `src/hooks/useSongManagement.tsx` for song creation and release mechanics.
-- Exported `Song` type from `src/types/game.ts`.
-- Created `src/hooks/useSongManagement.tsx` for song creation and release mechanics.
-- Exported `Song` type from `src/types/game.ts`.
-- Created `src/hooks/useSongManagement.tsx` for song creation and release mechanics.
-- Exported `Song` type from `src/types/game.ts`.
+- Removed ReactUnity UI files (`RecordingStudioTycoon_UnityPoC/react-ui/src/components/MainMenu.tsx`, `HUD.tsx`, `PauseMenu.tsx`, `GameOver.tsx`, `index.tsx`).
+- Created `RecordingStudioTycoon_UnityPoC/Assets/Scripts/UI/UIManager.cs` for native Unity UI management.
+- Modified `RecordingStudioTycoon_UnityPoC/Assets/Scripts/GameLogic/GameManager.cs` to expose player XP and Level.
+- Enhanced `RecordingStudioTycoon_UnityPoC/Assets/Scripts/Gameplay/Environment/Interactable.cs` with `InteractionType` enum and flexible `Interact` method.
+- Created `RecordingStudioTycoon_UnityPoC/Assets/Scripts/Gameplay/Player/PlayerInteraction.cs` for centralized player interaction logic.
+- Modified `RecordingStudioTycoon_UnityPoC/Assets/Scripts/Gameplay/Player/PlayerCharacter.cs` to remove interaction logic, delegating it to `PlayerInteraction.cs`.
 
 ## Recent Phase 2 Implementation (16/06/2025)
 **Advanced Systems Implementation**:
@@ -43,7 +46,7 @@ The current focus is on planning and integrating a comprehensive set of new feat
 ## Latest Completed Work: Staff Assignment UX Improvements (16/06/2025)
 **Enhanced Staff Assignment Interface**:
 - **Enhanced `src/utils/staffUtils.ts`**: Added comprehensive staff-project matching system with `calculateStaffProjectMatch`, `getStaffMatchColor`, and `getStaffMatchDescription` functions.
-- **Completely redesigned `src/components/StaffAssignmentSection.tsx`**: 
+- **Completely redesigned `src/components/StaffAssignmentSection.tsx`**:
   - Added advanced filtering by name, role, and genre
   - Implemented sorting by match score, name, and level
   - Added detailed tooltips with comprehensive staff information
@@ -55,18 +58,12 @@ The current focus is on planning and integrating a comprehensive set of new feat
 - **Created `src/styles/staffAssignment.css`**: Custom animations and styling for enhanced user experience
 - **Key Features Implemented**:
   - ✅ Tooltips with detailed staff information
-  - ✅ Hover states with expanded details  
+  - ✅ Hover states with expanded details
   - ✅ Project-staff compatibility scoring with visual indicators
   - ✅ Filter/search functionality
   - ✅ Visual feedback for optimal assignments
   - ✅ Performance prediction based on assigned team
   - ✅ Responsive design with proper scrolling areas
-
-## Next Steps
-1. Continue with detailed planning and architectural design for all new features.
-2. Prioritize and break down tasks into actionable sprints based on the updated `tasks/tasks_plan.md`.
-3. Regularly review and update all memory documentation as planning and development progresses.
-4. Begin implementation of the highest priority features once planning is complete and approved.
 
 ## Debugging Session: Fixing Type Errors and File Inconsistencies (12/06/2025)
 **Objective**: Resolve TypeScript errors and inconsistencies arising from parallel development streams.

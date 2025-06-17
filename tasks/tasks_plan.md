@@ -15,7 +15,10 @@
     - [ ] Save analytics
     - [ ] Conflict resolution
     - [ ] Backup system
-- [ ] **UI/UX Enhancements**:
+- [x] **UI/UX Enhancements (Unity Native)**:
+    - [x] Implement UI Interactivity and Feedback (animations, audio feedback via AudioManager).
+    - [x] Ensure HUD dynamically updates vital player information (money, day, year, XP, level).
+    - [x] Implement basic settings functionality (volume control sliders).
     - [ ] Responsive design improvements
     - [ ] Accessibility features
     - [ ] Performance optimizations
@@ -23,7 +26,30 @@
     - [ ] Touch screen support
     - [ ] Keyboard shortcuts
     - [ ] Gamepad support
-- [ ] **Core Gameplay**:
+- [x] **Full Unity Rebuild (C#)**:
+    - [x] Rebuild Core Game Logic (GameManager, GameState) - Initial structure and basic loop implemented.
+    - [x] Create ScriptableObject and DataModel files.
+    - [x] Rebuild UI/UX (Unity UI Toolkit/UGUI, exclusively native C#)
+    - [ ] Rebuild Save System (C# with Cloud Integration)
+    - [ ] Rebuild Audio System (Unity Audio)
+    - [ ] Rebuild Minigame System (C#)
+    - [ ] Rebuild Progression System (C#)
+    - [ ] Rebuild Staff Management System (C#)
+    - [ ] Rebuild Project Management System (C#)
+    - [ ] Rebuild Reward System (C#)
+    - [ ] Rebuild Charts & Market System (C#)
+    - [ ] Rebuild Dynamic Market Trends System (C#)
+    - [ ] Rebuild Reputation & Relationship Management (C#)
+    - [ ] Rebuild Studio Perks & Specializations (C#)
+    - [ ] Integrate Unity Input System
+    - [ ] Implement Unity Localization System
+    - [ ] Optimize Performance for Unity C# environment
+- [x] **Core Gameplay (Unity C#)**:
+    - [x] Player Character: Sophisticated animation state management (idle, walk, run, interaction).
+    - [x] Player Character: Detailed interaction logic with Interactable objects.
+    - [x] Interactive Environmental Objects: Support various interaction types (UseEquipment, OpenDoor, UpgradeStudio, etc.).
+    - [x] Interactive Environmental Objects: Implement visual cues (highlight effect).
+    - [x] Ensure interactions trigger appropriate C# system methods.
     - [ ] Band management
     - [ ] Studio expansion
 - [ ] **Phase 2 Systems**:

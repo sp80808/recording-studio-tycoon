@@ -1,0 +1,20 @@
+{
+    "name": "Unity.InternalAPIEngineBridge.001",
+    "rootNamespace": "",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "Unity",
+            "expression": "6000.1.0f1",
+            "define": "SRPBATCHINGENABLED_CHECK_AVAILABLE"
+        }
+    ],
+    "noEngineReferences": false
+}

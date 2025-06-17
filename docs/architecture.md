@@ -1,45 +1,48 @@
 # System Architecture
 
 ## Overview
-This document describes the high-level architecture of the Recording Studio Tycoon game, outlining its main components, their relationships, and the overall workflow.
+This document describes the high-level architecture of the Recording Studio Tycoon game. It now outlines a comprehensive rebuild within the Unity game engine using C#, aiming for enhanced flexibility, performance, and native integration beyond a web-based game engine. The core components, their relationships, and the overall workflow will reflect this Unity-centric approach.
 
-## UI/UX Update: App Icon
+## UI/UX Update: App Icon (Legacy Web Version)
 
-- The app icon and manifest have been updated to use a music symbol emoji (🎵) for a more musical and modern look. This change is implemented using an inline SVG in the HTML, providing a consistent appearance across platforms without the need for generated icon files.
+- The app icon and manifest for the *original web version* use a music symbol emoji (🎵) for a more musical and modern look. This change is implemented using an inline SVG in the HTML, providing a consistent appearance across platforms without the need for generated icon files.
+
+## Unity UI Porting Plan (Deprecated - Replaced by Full C# Rebuild)
+
+- The previous detailed plan for porting the existing React-based UI to Unity using ReactUnity (`docs/unity_porting_plan.md`) is now superseded by the decision to undertake a full game rebuild in Unity with C#. While ReactUnity may still be used for certain UI elements, the core game logic and UI framework will be native C# within Unity.
 
 ```mermaid
 flowchart TD
-    User[Player Interaction] --> UI[User Interface (React Components)]
-    UI --> GameLogic[Game Logic (Hooks & Utilities)]
-    GameLogic --> GameState[Game State Management (Zustand/Context)]
-    GameLogic --> Data[Game Data (JSON/TS files)]
-    GameLogic --> SaveSystem[Save System (Local/Cloud, Advanced Features)]
-    GameLogic --> AudioSystem[Audio System]
-    GameLogic --> MinigameSystem[Minigame System (Expanded)]
-    GameLogic --> ProgressionSystem[Progression System (Expanded Content)]
-    GameLogic --> StaffSystem[Staff Management System]
-    GameLogic --> ProjectSystem[Project Management System]
-    GameLogic --> RewardSystem[Reward System]
-    GameLogic --> ChartSystem[Charts & Market System (Player Song Integration)]
-    GameLogic --> BandSystem[Band & Song Creation System]
-    GameLogic --> MarketTrendsSystem[Dynamic Market Trends System]
-    GameLogic --> RelationshipSystem[Reputation & Relationship Management]
-    GameLogic --> StudioUpgradeSystem[Studio Perks & Specializations]
-    GameLogic --> UIManager[UI/UX Manager (Responsive, Accessible)]
-    GameLogic --> MultiplayerSystem[Multiplayer System (Future)]
-    GameLogic --> AISystem[Advanced AI System (Future)]
-    GameLogic --> VRSystem[VR Support (Future)]
-    GameLogic --> MobileOptimization[Mobile Platform Optimization (Future)]
+    User[Player Interaction] --> UnityUI[User Interface (Unity UGUI/UI Toolkit)]
+    UnityUI --> GameManager[Game Manager (C#)]
+    GameManager --> GameState[Game State (C# Data Structures)]
+    GameManager --> SaveSystem[Save System (C#)]
+    GameManager --> Data[Game Data (ScriptableObjects/C# Classes)]
+    GameManager --> AudioSystem[Audio System (Unity Audio)]
+    GameManager --> MinigameSystem[Minigame System (C#)]
+    GameManager --> ProgressionSystem[Progression System (C#)]
+    GameManager --> StaffSystem[Staff Management System (C#)]
+    GameManager --> ProjectSystem[Project Management System (C#)]
+    GameManager --> RewardSystem[Reward System (C#)]
+    GameManager --> ChartSystem[Charts & Market System (C#)]
+    GameManager --> BandSystem[Band & Song Creation System (C#)]
+    GameManager --> MarketTrendsSystem[Dynamic Market Trends System (C#)]
+    GameManager --> RelationshipSystem[Reputation & Relationship Management (C#)]
+    GameManager --> StudioUpgradeSystem[Studio Perks & Specializations (C#)]
+    GameManager --> InputSystem[Input System (Unity Input)]
+    GameManager --> UIManager[UI/UX Manager (C#)]
+    GameManager --> LocalizationSystem[Localization (C#)]
+    GameManager --> PerformanceOptimization[Performance Optimization (C#)]
 
-    SaveSystem --> Cloud[Cloud Storage (Supabase)]
     SaveSystem --> Local[Local Storage]
+    SaveSystem --> Cloud[Cloud Storage (e.g., Firebase, PlayFab - C# SDKs)]
 
     AudioSystem --> SFX[Sound Effects]
     AudioSystem --> BGM[Background Music]
     AudioSystem --> MinigameAudio[Minigame Specific Audio]
 
-    MinigameSystem --> MinigameComponents[Individual Minigame Components]
-    MinigameSystem --> MinigameLogic[Minigame Specific Logic]
+    MinigameSystem --> MinigameComponents[Individual Minigame Components (C#)]
+    MinigameSystem --> MinigameLogic[Minigame Specific Logic (C#)]
 
     ProgressionSystem --> EraProgression[Era Progression]
     ProgressionSystem --> PlayerProgression[Player XP & Skills]
@@ -77,51 +80,39 @@ flowchart TD
 ```
 
 ## Component Relationships
-- **User Interface (UI)**: Built with React, it provides the visual and interactive elements for the player. It interacts with the Game Logic to display information and trigger actions.
-- **Game Logic**: Contains the core game rules, calculations, and state transitions. It orchestrates interactions between various systems.
-- **Game State Management**: Manages the global state of the game, ensuring data consistency across components.
-- **Game Data**: Static data for equipment, staff, projects, etc., stored in structured files.
-- **Save System**: Handles saving and loading game progress to local storage and cloud storage (Supabase), with advanced features like multiple slots, versioning, auto-save, encryption, compression, incremental saves, export/import, analytics, conflict resolution, and backup.
-- **User Interface (UI) / UX Manager**: Manages responsive design, accessibility, performance, mobile-friendly controls, keyboard shortcuts, and gamepad support.
-- **Core Gameplay Enhancements**: Includes modules for band management and studio expansion.
-- **Phase 2 Systems Integration**: Ensures full UI integration, extensive testing and balancing, and player feedback integration for advanced systems.
-- **Minigame System**: Manages various interactive minigames, their logic, and integration with the main game loop, including new minigames for equipment maintenance, staff training, band practice, studio maintenance, and customer service.
-- **Expanded Content System**: Manages integration of new locations, special events, and seasonal/holiday content.
-- **Band & Song Creation System**: Manages player-created bands, song development, and their journey to chart success, including integration of player songs into charts and a chart progression/influence system.
-- **Future Systems (Multiplayer, AI, VR, Mobile)**: High-level components for potential future expansion.
-- **Audio System**: Manages all in-game audio, including background music, sound effects, and minigame-specific audio.
-- **Progression System**: Tracks player and studio progress, manages era transitions, and unlocks new content.
-- **Staff Management System**: Handles staff hiring, training, skill development, and assignment to projects, including new specialized roles.
-- **Project Management System**: Oversees the lifecycle of music projects, from creation to completion and release, including original song production.
-- **Reward System**: Distributes rewards (XP, money, items) based on player actions and project outcomes.
-- **Charts & Market System**: Simulates the music industry market, including genre trends, song chart performance, and artist contact opportunities.
-- **Dynamic Market Trends System**: Advanced market simulation with sub-genre evolution, trend analysis, and player impact on market dynamics.
-- **Reputation & Relationship Management**: Comprehensive system for managing relationships with clients, record labels, and industry entities.
-- **Studio Perks & Specializations**: Deep progression system allowing studios to unlock perks, specialize in genres, and build industry prestige.
+- **User Interface (Unity UI)**: The UI will be rebuilt primarily using Unity's native UI systems (UGUI or UI Toolkit). ReactUnity may be used selectively for specific complex elements if beneficial, but the core UI framework will be native C# within Unity. It interacts directly with C# game logic components.
+- **Game Manager (C#)**: The central orchestrator of all game logic and state. `GameManager.cs` will manage game flow, system interactions, and serve as the primary interface for all game actions and data access. All core game systems will be implemented in C# and managed by `GameManager`.
+- **Game State (C#)**: `GameState.cs` will continue to define the comprehensive data structure for the entire game's state, managed and updated by the `GameManager` and other C# game systems. Serialization will be handled natively by Unity or custom C# serialization.
+- **Game Data (C#)**: Static game data (equipment, staff, projects, progression) will be defined using Unity ScriptableObjects and custom C# classes, providing a robust and performant data management system.
+- **Save System (C#)**: The save system will be re-implemented in C#, leveraging Unity's capabilities and potentially C# SDKs for cloud services (e.g., Firebase, PlayFab) for advanced features. This will replace the previous Supabase integration for core game saves.
+- **Audio System (Unity Audio)**: All audio management (SFX, BGM, minigame audio) will be handled natively within Unity's Audio System.
+- **Minigame System (C#)**: Minigames and their logic will be fully rebuilt in C# within Unity, leveraging Unity's physics and rendering capabilities.
+- **Progression System (C#)**: Player and studio progression, era transitions, and content unlocks will be driven by C# logic.
+- **Staff Management System (C#)**: Staff hiring, training, skill development, and assignment will be implemented in C#.
+- **Project Management System (C#)**: The lifecycle of music projects will be managed by C# logic.
+- **Reward System (C#)**: Rewards (XP, money, items) will be calculated and distributed by C# logic.
+- **Charts & Market System (C#)**: The music industry market simulation, including genre trends and song chart performance, will be rebuilt in C#.
+- **Dynamic Market Trends System (C#)**: Advanced market simulation logic will be in C#.
+- **Reputation & Relationship Management (C#)**: This system will be implemented in C#.
+- **Studio Perks & Specializations (C#)**: The deep progression system for studio perks and specializations will be in C#.
+- **Input System (Unity Input)**: All user input (keyboard, mouse, gamepad) will be handled via Unity's native Input System.
+- **UI/UX Manager (C#)**: A C# component to manage responsive design, accessibility, performance, and overall UI/UX within Unity.
+- **Localization System (C#)**: A C# implementation for multi-language support.
+- **Performance Optimization (C#)**: Continuous optimization efforts will focus on C# code and Unity engine features.
 
 ## Dependencies
-- UI components depend on Game Logic and Game State, and the new UI/UX Manager.
-- Game Logic depends on Game Data, Save System, Audio System, Minigame System, Progression System, Staff System, Project System, Reward System, Chart System, Market Trends System, Relationship System, Studio Upgrade System, and potentially Multiplayer, AI, VR, and Mobile Optimization systems.
-- Save System depends on Cloud Storage (Supabase) and Local Storage APIs, with expanded dependencies for encryption, compression, and conflict resolution.
-- Minigame System depends on individual minigame components and their specific logic, including new minigame types.
-- Progression System depends on player actions and game events, and the Expanded Content System.
-- Staff System depends on staff data and training configurations, and new training minigames.
-- Project System depends on project templates and staff availability, and band management.
-- Reward System depends on project outcomes and minigame performance.
-- Chart System depends on game events and simulated market dynamics, and player song integration.
-- Band & Song Creation System depends on player actions, staff skills, market trends, and chart integration.
-- Market Trends System depends on time progression, player successes, and random market events.
-- Relationship System depends on project completion quality, client preferences, and player reputation.
-- Studio Upgrade System depends on player progression, achievements, and unlocked milestones.
-- Phase 2 Systems Integration depends on all Phase 2 systems and UI components.
-- Multiplayer, AI, VR, and Mobile Optimization systems will have their own dependencies as they are developed.
+- All core game systems (Game Logic, Game State, Save System, Audio System, Minigame System, Progression System, Staff System, Project System, Reward System, Chart System, Market Trends System, Relationship System, Studio Upgrade System, Input System, UI/UX Manager, Localization System, Performance Optimization) will primarily depend on Unity Engine APIs and C# libraries.
+- UI components (UnityUI or ReactUnity) will primarily interact with the C# `GameManager` and `GameState`.
+- Cloud saving may depend on C# SDKs for chosen cloud providers (e.g., Firebase, PlayFab).
+- External data might be loaded from JSON or other formats, parsed by C#.
 
 ## Workflow of the Solution
-1. **Game Initialization**: On startup, the game loads saved data (or starts a new game), initializes the game state, and sets up the UI.
-2. **Player Actions**: Players interact with the UI to manage their studio, hire staff, start projects, play minigames, etc.
-3. **Game Logic Processing**: Player actions trigger updates in the Game Logic, which processes the changes, updates the game state, and triggers relevant system interactions (e.g., staff work, project progress, reward calculation).
-4. **State Updates & UI Re-render**: Changes in the game state cause the UI to re-render, reflecting the current status of the studio, projects, and staff.
-5. **Background Systems**: Systems like Audio, Progression, Charts, and Save System operate in the background, providing continuous feedback, managing long-term progress, and ensuring data persistence.
-6. **Minigame Engagement**: When a minigame is initiated, the Minigame System takes over, providing interactive challenges that influence project quality and player skills.
-7. **Event Handling**: Dynamic events (market shifts, staff challenges) are introduced by the Game Logic, requiring player adaptation and strategic decisions.
-8. **Game Loop**: The game continuously cycles through player input, logic processing, and UI updates, creating a dynamic and interactive experience.
+1. **Unity Engine Initialization**: On startup, Unity initializes, loads scenes, and activates core C# MonoBehaviours like `GameManager`.
+2. **Game Initialization (C#)**: `GameManager` loads saved game data (or creates a new default state), initializes the `GameState`, and sets up all C# game systems.
+3. **Player Actions (Unity Input & UI)**: Players interact with Unity-native UI elements or ReactUnity components (which call C# methods). Input is processed by Unity's Input System and directed to relevant C# game logic.
+4. **Game Logic Processing (C#)**: Player actions trigger methods in `GameManager` and other C# game systems. This C# logic processes changes, updates the `GameState`, and performs calculations (e.g., staff work, project progress, reward calculation).
+5. **State Updates & UI Rendering (C# & Unity UI)**: Changes in the `GameState` are reflected directly in Unity's UI components, or communicated to ReactUnity components for re-rendering, ensuring real-time visual feedback.
+6. **Background Systems (C#)**: C# implementations of Audio, Progression, Charts, and Save System operate continuously, managing long-term progress and data persistence within the Unity environment.
+7. **Minigame Engagement (C# & Unity)**: Minigames are initiated and controlled by C# logic, leveraging Unity's scene management and physics, influencing game outcomes.
+8. **Event Handling (C#)**: Dynamic events and challenges are managed and triggered by C# game logic.
+9. **Game Loop (Unity)**: The Unity game engine continuously executes the game loop, driven by C# scripts for input processing, logic updates, rendering, and physics, providing a robust and interactive experience.
