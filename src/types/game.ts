@@ -6,7 +6,6 @@ import {
   BandRelease,
   Band as BandTypeFromBands
 } from './bands';
-import { PerformanceHistoryEntry, PerformanceRating } from './performance';
 import { Tour, TourStop, TourVenue } from './tours';
 import { Client, RecordLabel, PREvent } from './relationships'; // Import Client, RecordLabel, and PREvent
 import { Song } from './songs'; // Import Song type
@@ -15,6 +14,7 @@ export type { BandTypeFromBands as Band };
 export type { Tour, TourStop, TourVenue };
 export type { MinigameType };
 export type { OriginalTrackProject };
+export type { BandRelease }; // Re-export BandRelease
 export type { MusicGenre }; // Re-export MusicGenre
 
 export interface PlayerAttributes {

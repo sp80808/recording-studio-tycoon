@@ -234,7 +234,7 @@ export function useGameState(): {
   const studioExpansion = useStudioExpansion(gameState, updateGameState);
   // Assuming useStaffManagement also needs similar treatment if it calls useGameState internally
   // For now, leaving as is, but this is a potential area to check if errors persist or if it also causes cycles.
-  const staffManagement = useStaffManagement(); // This might be the next source of error if it also calls useGameState()
+  const staffManagement = useStaffManagement(gameState, updateGameState);
   const projectManagement = useProjectManagement({ gameState, setGameState: updateGameState });
 
   return {

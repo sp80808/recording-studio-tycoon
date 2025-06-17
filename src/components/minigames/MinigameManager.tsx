@@ -18,7 +18,7 @@ import { DigitalMixingGame } from './DigitalMixingGame';
 import { HybridMixingGame } from './HybridMixingGame';
 import { MasteringChainGame } from './MasteringChainGame';
 import { AudioRestorationGame } from './AudioRestorationGame';
-import { MidiProgrammingGame } from './MidiProgrammingGame';
+import { MidiProgrammingGame } from './MidiProgrammingGame.tsx';
 import { SamplingSequencingGame } from './SamplingSequencingGame';
 import { DigitalDistributionGame } from './DigitalDistributionGame';
 import { SocialMediaPromotionGame } from './SocialMediaPromotionGame';
@@ -29,7 +29,7 @@ import { FourTrackRecordingGame } from './FourTrackRecordingGame';
 
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { toast } from '@/hooks/use-toast';
-import { MinigameType, MiniGameDifficulty } from '@/types/miniGame'; // MiniGameDifficulty is 'beginner' | 'intermediate' | 'advanced'
+import { MinigameType } from '@/types/miniGame';
 import { MusicGenre } from '@/types/charts';
 import { GameState } from '@/types/game';
 
@@ -95,12 +95,6 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
     return 'hard';
   };
   
-  // Helper for other games that might expect MiniGameDifficulty ('beginner', etc.)
-  const getGeneralGameDifficultyString = (numDiff: number): MiniGameDifficulty => {
-    if (numDiff <= 3) return 'beginner';
-    if (numDiff <= 7) return 'intermediate';
-    return 'advanced';
-  };
 
 
   const renderGame = () => {

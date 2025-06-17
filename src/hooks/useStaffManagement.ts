@@ -1,21 +1,15 @@
 import { useCallback } from 'react';
-import { useGameState } from './useGameState';
-import { StaffMember, Project } from '@/types/game';
+import { GameState, StaffMember, Project } from '@/types/game';
 import {
   updateStaffStatus,
-  canAssignToProject,
   assignStaffToProject,
-  canTrainStaff,
   startStaffTraining,
   calculateHiringCost,
   canHireStaff,
-  calculateSkillGain,
-  updateStaffEnergy
 } from '@/utils/staffManagement';
 import { generateCandidates } from '@/utils/staffGeneration';
 
-export const useStaffManagement = () => {
-  const { gameState, updateGameState } = useGameState();
+export const useStaffManagement = (gameState: GameState, updateGameState: (updater: (prevState: GameState) => GameState) => void) => {
 
   // Update all staff members' status and energy
   const updateAllStaff = useCallback(() => {
@@ -131,17 +125,15 @@ export const useStaffManagement = () => {
     startTraining,
     hireStaff,
     refreshCandidates,
-    addStaffXP: useCallback((staffId: string, xp: number) => { // Placeholder
+    addStaffXP: useCallback((staffId: string, xp: number) => {
       updateGameState(prevState => {
-        // Find staff and add XP. This is a simplified placeholder.
-        // Actual implementation should consider skill-specific XP or role XP.
-        const staffToUpdate = prevState.hiredStaff.find(s => s.id === staffId);
+        const staffToUpdate = prevState.hiredStaff.find((s: StaffMember) => s.id === staffId);
         if (staffToUpdate) {
           console.log(`Adding ${xp} XP to ${staffToUpdate.name} (placeholder)`);
           // Example: staffToUpdate.xpInRole += xp;
           // This part needs to be fleshed out based on how XP is tracked.
         }
-        return prevState; // Return prevState as no actual state change is implemented here yet
+        return prevState;
       });
     }, [updateGameState]),
     openTrainingModal: useCallback((staff: StaffMember) => { // Placeholder
