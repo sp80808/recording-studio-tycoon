@@ -9,31 +9,27 @@ namespace RecordingStudioTycoon.Systems.Minigame
         [System.Serializable]
         public class MasteringChain
         {
-            public float eqLow;
-            public float eqMid;
-            public float eqHigh;
-            public float compression;
-            public float limiting;
-            public float stereoWidth;
-            public float saturation;
-            public float finalGain;
+            public float inputGain;
+            public float[] eqBands;
+            public float[] multibandCompressor;
+            public float[] stereoImager;
+            public float[] limiter;
+            public float outputGain;
+            public bool isBypassed;
         }
 
-        [SerializeField] private float targetLoudness = -14f; // LUFS
-        [SerializeField] private float targetDynamicRange = 8f; // dB
-        [SerializeField] private float targetStereoWidth = 1.2f;
-        [SerializeField] private float eqTolerance = 0.1f;
-        [SerializeField] private float compressionTolerance = 0.1f;
-        [SerializeField] private float limitingTolerance = 0.1f;
-        [SerializeField] private float widthTolerance = 0.1f;
-        [SerializeField] private float saturationTolerance = 0.1f;
+        [SerializeField] private int eqBandCount = 5;
         [SerializeField] private float gainTolerance = 0.1f;
+        [SerializeField] private float eqTolerance = 0.1f;
+        [SerializeField] private float compressorTolerance = 0.1f;
+        [SerializeField] private float stereoImagerTolerance = 0.1f;
+        [SerializeField] private float limiterTolerance = 0.1f;
 
         private MasteringChain currentChain;
         private MasteringChain targetChain;
-        private float currentLoudness;
-        private float currentDynamicRange;
-        private string selectedPreset;
+        private string selectedTool;
+
+        private readonly string[] availableTools = { "gain", "eq", "compressor", "stereo", "limiter" };
 
         private void Awake()
         {
@@ -45,22 +41,66 @@ namespace RecordingStudioTycoon.Systems.Minigame
         public override void Initialize(int difficulty)
         {
             base.Initialize(difficulty);
-            GenerateTargetSettings();
+            GenerateTargetChain();
             ResetChain();
         }
 
-        private void GenerateTargetSettings()
+        private void GenerateTargetChain()
         {
             targetChain = new MasteringChain
             {
-                eqLow = Random.Range(-3f, 3f),
-                eqMid = Random.Range(-3f, 3f),
-                eqHigh = Random.Range(-3f, 3f),
-                compression = Random.Range(0f, 1f),
-                limiting = Random.Range(0f, 1f),
-                stereoWidth = Random.Range(1f, 1.5f),
-                saturation = Random.Range(0f, 1f),
-                finalGain = Random.Range(-3f, 3f)
+                inputGain = Random.Range(0.5f, 1.5f),
+                eqBands = GenerateEqBands(),
+                multibandCompressor = GenerateMultibandCompressor(),
+                stereoImager = GenerateStereoImager(),
+                limiter = GenerateLimiter(),
+                outputGain = Random.Range(0.5f, 1.5f),
+                isBypassed = false
+            };
+        }
+
+        private float[] GenerateEqBands()
+        {
+            var bands = new float[eqBandCount];
+            for (int i = 0; i < eqBandCount; i++)
+            {
+                bands[i] = Random.Range(-6f, 6f);
+            }
+            return bands;
+        }
+
+        private float[] GenerateMultibandCompressor()
+        {
+            return new float[] {
+                Random.Range(0f, 1f), // low threshold
+                Random.Range(0f, 1f), // low ratio
+                Random.Range(0f, 1f), // mid threshold
+                Random.Range(0f, 1f), // mid ratio
+                Random.Range(0f, 1f), // high threshold
+                Random.Range(0f, 1f), // high ratio
+                Random.Range(0f, 1f), // attack
+                Random.Range(0f, 1f), // release
+                Random.Range(0f, 1f)  // makeup gain
+            };
+        }
+
+        private float[] GenerateStereoImager()
+        {
+            return new float[] {
+                Random.Range(0f, 1f), // width
+                Random.Range(0f, 1f), // balance
+                Random.Range(0f, 1f), // phase
+                Random.Range(0f, 1f)  // mono mix
+            };
+        }
+
+        private float[] GenerateLimiter()
+        {
+            return new float[] {
+                Random.Range(0f, 1f), // threshold
+                Random.Range(0f, 1f), // release
+                Random.Range(0f, 1f), // lookahead
+                Random.Range(0f, 1f)  // ceiling
             };
         }
 
@@ -68,98 +108,125 @@ namespace RecordingStudioTycoon.Systems.Minigame
         {
             currentChain = new MasteringChain
             {
-                eqLow = 0f,
-                eqMid = 0f,
-                eqHigh = 0f,
-                compression = 0f,
-                limiting = 0f,
-                stereoWidth = 1f,
-                saturation = 0f,
-                finalGain = 0f
+                inputGain = 1f,
+                eqBands = new float[eqBandCount],
+                multibandCompressor = new float[9],
+                stereoImager = new float[4],
+                limiter = new float[4],
+                outputGain = 1f,
+                isBypassed = false
             };
-            currentLoudness = -60f;
-            currentDynamicRange = 20f;
+            selectedTool = "gain";
         }
 
         public override void ProcessInput()
         {
-            // EQ controls
-            if (Input.GetKey(KeyCode.Q)) currentChain.eqLow += Time.deltaTime * 10f;
-            if (Input.GetKey(KeyCode.W)) currentChain.eqLow -= Time.deltaTime * 10f;
-            if (Input.GetKey(KeyCode.A)) currentChain.eqMid += Time.deltaTime * 10f;
-            if (Input.GetKey(KeyCode.S)) currentChain.eqMid -= Time.deltaTime * 10f;
-            if (Input.GetKey(KeyCode.Z)) currentChain.eqHigh += Time.deltaTime * 10f;
-            if (Input.GetKey(KeyCode.X)) currentChain.eqHigh -= Time.deltaTime * 10f;
+            // Tool selection
+            if (Input.GetKeyDown(KeyCode.Alpha1)) selectedTool = "gain";
+            if (Input.GetKeyDown(KeyCode.Alpha2)) selectedTool = "eq";
+            if (Input.GetKeyDown(KeyCode.Alpha3)) selectedTool = "compressor";
+            if (Input.GetKeyDown(KeyCode.Alpha4)) selectedTool = "stereo";
+            if (Input.GetKeyDown(KeyCode.Alpha5)) selectedTool = "limiter";
 
-            // Compression and limiting
-            if (Input.GetKey(KeyCode.C))
+            switch (selectedTool)
             {
-                currentChain.compression = Mathf.Clamp01(currentChain.compression + Time.deltaTime);
-            }
-            if (Input.GetKey(KeyCode.V))
-            {
-                currentChain.limiting = Mathf.Clamp01(currentChain.limiting + Time.deltaTime);
+                case "gain":
+                    if (Input.GetKey(KeyCode.Q)) currentChain.inputGain = Mathf.Clamp(currentChain.inputGain - Time.deltaTime, 0f, 2f);
+                    if (Input.GetKey(KeyCode.W)) currentChain.inputGain = Mathf.Clamp(currentChain.inputGain + Time.deltaTime, 0f, 2f);
+                    if (Input.GetKey(KeyCode.A)) currentChain.outputGain = Mathf.Clamp(currentChain.outputGain - Time.deltaTime, 0f, 2f);
+                    if (Input.GetKey(KeyCode.S)) currentChain.outputGain = Mathf.Clamp(currentChain.outputGain + Time.deltaTime, 0f, 2f);
+                    break;
+                case "eq":
+                    if (Input.GetKey(KeyCode.Q)) currentChain.eqBands[0] = Mathf.Clamp(currentChain.eqBands[0] - Time.deltaTime * 10f, -12f, 12f);
+                    if (Input.GetKey(KeyCode.W)) currentChain.eqBands[0] = Mathf.Clamp(currentChain.eqBands[0] + Time.deltaTime * 10f, -12f, 12f);
+                    if (Input.GetKey(KeyCode.A)) currentChain.eqBands[1] = Mathf.Clamp(currentChain.eqBands[1] - Time.deltaTime * 10f, -12f, 12f);
+                    if (Input.GetKey(KeyCode.S)) currentChain.eqBands[1] = Mathf.Clamp(currentChain.eqBands[1] + Time.deltaTime * 10f, -12f, 12f);
+                    if (Input.GetKey(KeyCode.D)) currentChain.eqBands[2] = Mathf.Clamp(currentChain.eqBands[2] - Time.deltaTime * 10f, -12f, 12f);
+                    if (Input.GetKey(KeyCode.F)) currentChain.eqBands[2] = Mathf.Clamp(currentChain.eqBands[2] + Time.deltaTime * 10f, -12f, 12f);
+                    if (Input.GetKey(KeyCode.G)) currentChain.eqBands[3] = Mathf.Clamp(currentChain.eqBands[3] - Time.deltaTime * 10f, -12f, 12f);
+                    if (Input.GetKey(KeyCode.H)) currentChain.eqBands[3] = Mathf.Clamp(currentChain.eqBands[3] + Time.deltaTime * 10f, -12f, 12f);
+                    if (Input.GetKey(KeyCode.J)) currentChain.eqBands[4] = Mathf.Clamp(currentChain.eqBands[4] - Time.deltaTime * 10f, -12f, 12f);
+                    if (Input.GetKey(KeyCode.K)) currentChain.eqBands[4] = Mathf.Clamp(currentChain.eqBands[4] + Time.deltaTime * 10f, -12f, 12f);
+                    break;
+                case "compressor":
+                    if (Input.GetKey(KeyCode.Q)) currentChain.multibandCompressor[0] = Mathf.Clamp01(currentChain.multibandCompressor[0] - Time.deltaTime);
+                    if (Input.GetKey(KeyCode.W)) currentChain.multibandCompressor[0] = Mathf.Clamp01(currentChain.multibandCompressor[0] + Time.deltaTime);
+                    if (Input.GetKey(KeyCode.A)) currentChain.multibandCompressor[1] = Mathf.Clamp01(currentChain.multibandCompressor[1] - Time.deltaTime);
+                    if (Input.GetKey(KeyCode.S)) currentChain.multibandCompressor[1] = Mathf.Clamp01(currentChain.multibandCompressor[1] + Time.deltaTime);
+                    if (Input.GetKey(KeyCode.D)) currentChain.multibandCompressor[2] = Mathf.Clamp01(currentChain.multibandCompressor[2] - Time.deltaTime);
+                    if (Input.GetKey(KeyCode.F)) currentChain.multibandCompressor[2] = Mathf.Clamp01(currentChain.multibandCompressor[2] + Time.deltaTime);
+                    if (Input.GetKey(KeyCode.G)) currentChain.multibandCompressor[3] = Mathf.Clamp01(currentChain.multibandCompressor[3] - Time.deltaTime);
+                    if (Input.GetKey(KeyCode.H)) currentChain.multibandCompressor[3] = Mathf.Clamp01(currentChain.multibandCompressor[3] + Time.deltaTime);
+                    if (Input.GetKey(KeyCode.J)) currentChain.multibandCompressor[4] = Mathf.Clamp01(currentChain.multibandCompressor[4] - Time.deltaTime);
+                    if (Input.GetKey(KeyCode.K)) currentChain.multibandCompressor[4] = Mathf.Clamp01(currentChain.multibandCompressor[4] + Time.deltaTime);
+                    if (Input.GetKey(KeyCode.L)) currentChain.multibandCompressor[5] = Mathf.Clamp01(currentChain.multibandCompressor[5] - Time.deltaTime);
+                    if (Input.GetKey(KeyCode.Semicolon)) currentChain.multibandCompressor[5] = Mathf.Clamp01(currentChain.multibandCompressor[5] + Time.deltaTime);
+                    if (Input.GetKey(KeyCode.Z)) currentChain.multibandCompressor[6] = Mathf.Clamp01(currentChain.multibandCompressor[6] - Time.deltaTime);
+                    if (Input.GetKey(KeyCode.X)) currentChain.multibandCompressor[6] = Mathf.Clamp01(currentChain.multibandCompressor[6] + Time.deltaTime);
+                    if (Input.GetKey(KeyCode.C)) currentChain.multibandCompressor[7] = Mathf.Clamp01(currentChain.multibandCompressor[7] - Time.deltaTime);
+                    if (Input.GetKey(KeyCode.V)) currentChain.multibandCompressor[7] = Mathf.Clamp01(currentChain.multibandCompressor[7] + Time.deltaTime);
+                    if (Input.GetKey(KeyCode.B)) currentChain.multibandCompressor[8] = Mathf.Clamp01(currentChain.multibandCompressor[8] - Time.deltaTime);
+                    if (Input.GetKey(KeyCode.N)) currentChain.multibandCompressor[8] = Mathf.Clamp01(currentChain.multibandCompressor[8] + Time.deltaTime);
+                    break;
+                case "stereo":
+                    if (Input.GetKey(KeyCode.Q)) currentChain.stereoImager[0] = Mathf.Clamp01(currentChain.stereoImager[0] - Time.deltaTime);
+                    if (Input.GetKey(KeyCode.W)) currentChain.stereoImager[0] = Mathf.Clamp01(currentChain.stereoImager[0] + Time.deltaTime);
+                    if (Input.GetKey(KeyCode.A)) currentChain.stereoImager[1] = Mathf.Clamp01(currentChain.stereoImager[1] - Time.deltaTime);
+                    if (Input.GetKey(KeyCode.S)) currentChain.stereoImager[1] = Mathf.Clamp01(currentChain.stereoImager[1] + Time.deltaTime);
+                    if (Input.GetKey(KeyCode.D)) currentChain.stereoImager[2] = Mathf.Clamp01(currentChain.stereoImager[2] - Time.deltaTime);
+                    if (Input.GetKey(KeyCode.F)) currentChain.stereoImager[2] = Mathf.Clamp01(currentChain.stereoImager[2] + Time.deltaTime);
+                    if (Input.GetKey(KeyCode.G)) currentChain.stereoImager[3] = Mathf.Clamp01(currentChain.stereoImager[3] - Time.deltaTime);
+                    if (Input.GetKey(KeyCode.H)) currentChain.stereoImager[3] = Mathf.Clamp01(currentChain.stereoImager[3] + Time.deltaTime);
+                    break;
+                case "limiter":
+                    if (Input.GetKey(KeyCode.Q)) currentChain.limiter[0] = Mathf.Clamp01(currentChain.limiter[0] - Time.deltaTime);
+                    if (Input.GetKey(KeyCode.W)) currentChain.limiter[0] = Mathf.Clamp01(currentChain.limiter[0] + Time.deltaTime);
+                    if (Input.GetKey(KeyCode.A)) currentChain.limiter[1] = Mathf.Clamp01(currentChain.limiter[1] - Time.deltaTime);
+                    if (Input.GetKey(KeyCode.S)) currentChain.limiter[1] = Mathf.Clamp01(currentChain.limiter[1] + Time.deltaTime);
+                    if (Input.GetKey(KeyCode.D)) currentChain.limiter[2] = Mathf.Clamp01(currentChain.limiter[2] - Time.deltaTime);
+                    if (Input.GetKey(KeyCode.F)) currentChain.limiter[2] = Mathf.Clamp01(currentChain.limiter[2] + Time.deltaTime);
+                    if (Input.GetKey(KeyCode.G)) currentChain.limiter[3] = Mathf.Clamp01(currentChain.limiter[3] - Time.deltaTime);
+                    if (Input.GetKey(KeyCode.H)) currentChain.limiter[3] = Mathf.Clamp01(currentChain.limiter[3] + Time.deltaTime);
+                    break;
             }
 
-            // Stereo width
-            if (Input.GetKey(KeyCode.D))
+            // Bypass
+            if (Input.GetKeyDown(KeyCode.Space))
             {
-                currentChain.stereoWidth = Mathf.Clamp(currentChain.stereoWidth + Time.deltaTime, 0.5f, 2f);
-            }
-            if (Input.GetKey(KeyCode.F))
-            {
-                currentChain.stereoWidth = Mathf.Clamp(currentChain.stereoWidth - Time.deltaTime, 0.5f, 2f);
+                currentChain.isBypassed = !currentChain.isBypassed;
             }
 
-            // Saturation
-            if (Input.GetKey(KeyCode.G))
-            {
-                currentChain.saturation = Mathf.Clamp01(currentChain.saturation + Time.deltaTime);
-            }
-            if (Input.GetKey(KeyCode.H))
-            {
-                currentChain.saturation = Mathf.Clamp01(currentChain.saturation - Time.deltaTime);
-            }
-
-            // Final gain
-            if (Input.GetKey(KeyCode.T))
-            {
-                currentChain.finalGain += Time.deltaTime * 10f;
-            }
-            if (Input.GetKey(KeyCode.Y))
-            {
-                currentChain.finalGain -= Time.deltaTime * 10f;
-            }
-
-            UpdateAudioMetrics();
             UpdateProgress();
-        }
-
-        private void UpdateAudioMetrics()
-        {
-            // Simulate audio metrics based on chain settings
-            currentLoudness = -14f + (currentChain.finalGain * 2f);
-            currentDynamicRange = 20f - (currentChain.compression * 10f) - (currentChain.limiting * 5f);
         }
 
         private void UpdateProgress()
         {
             float chainProgress = 0f;
-            chainProgress += Mathf.Abs(currentChain.eqLow - targetChain.eqLow) < eqTolerance ? 1f : 0f;
-            chainProgress += Mathf.Abs(currentChain.eqMid - targetChain.eqMid) < eqTolerance ? 1f : 0f;
-            chainProgress += Mathf.Abs(currentChain.eqHigh - targetChain.eqHigh) < eqTolerance ? 1f : 0f;
-            chainProgress += Mathf.Abs(currentChain.compression - targetChain.compression) < compressionTolerance ? 1f : 0f;
-            chainProgress += Mathf.Abs(currentChain.limiting - targetChain.limiting) < limitingTolerance ? 1f : 0f;
-            chainProgress += Mathf.Abs(currentChain.stereoWidth - targetChain.stereoWidth) < widthTolerance ? 1f : 0f;
-            chainProgress += Mathf.Abs(currentChain.saturation - targetChain.saturation) < saturationTolerance ? 1f : 0f;
-            chainProgress += Mathf.Abs(currentChain.finalGain - targetChain.finalGain) < gainTolerance ? 1f : 0f;
+            chainProgress += Mathf.Abs(currentChain.inputGain - targetChain.inputGain) < gainTolerance ? 1f : 0f;
+            chainProgress += Mathf.Abs(currentChain.outputGain - targetChain.outputGain) < gainTolerance ? 1f : 0f;
+            chainProgress += currentChain.isBypassed == targetChain.isBypassed ? 1f : 0f;
 
-            float metricsProgress = 0f;
-            metricsProgress += Mathf.Abs(currentLoudness - targetLoudness) < 1f ? 1f : 0f;
-            metricsProgress += Mathf.Abs(currentDynamicRange - targetDynamicRange) < 1f ? 1f : 0f;
-            metricsProgress += Mathf.Abs(currentChain.stereoWidth - targetStereoWidth) < widthTolerance ? 1f : 0f;
+            for (int i = 0; i < eqBandCount; i++)
+            {
+                chainProgress += Mathf.Abs(currentChain.eqBands[i] - targetChain.eqBands[i]) < eqTolerance ? 1f : 0f;
+            }
 
-            progress = (chainProgress / 8f + metricsProgress / 3f) / 2f;
+            for (int i = 0; i < 9; i++)
+            {
+                chainProgress += Mathf.Abs(currentChain.multibandCompressor[i] - targetChain.multibandCompressor[i]) < compressorTolerance ? 1f : 0f;
+            }
+
+            for (int i = 0; i < 4; i++)
+            {
+                chainProgress += Mathf.Abs(currentChain.stereoImager[i] - targetChain.stereoImager[i]) < stereoImagerTolerance ? 1f : 0f;
+            }
+
+            for (int i = 0; i < 4; i++)
+            {
+                chainProgress += Mathf.Abs(currentChain.limiter[i] - targetChain.limiter[i]) < limiterTolerance ? 1f : 0f;
+            }
+
+            progress = chainProgress / (3f + eqBandCount + 9f + 4f + 4f);
         }
 
         public override void CalculateScore()

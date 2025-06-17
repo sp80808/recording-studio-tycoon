@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using RecordingStudioTycoon.DataModels;
 using RecordingStudioTycoon.Core;
 using UnityEngine;
+using RecordingStudioTycoon.Utils; // For SerializableDictionary
 
 namespace RecordingStudioTycoon.GameLogic
 {

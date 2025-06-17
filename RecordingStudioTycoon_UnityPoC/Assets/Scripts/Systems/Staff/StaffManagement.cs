@@ -4,7 +4,9 @@ using System.Linq;
 using RecordingStudioTycoon.Core; // For GameState access
 using RecordingStudioTycoon.DataModels;
 using RecordingStudioTycoon.GameLogic;
-using Project = RecordingStudioTycoon.DataModels.Project;
+using RecordingStudioTycoon.Utils; // For SerializableDictionary
+// Remove the alias to avoid conflict if the namespace is also named Project
+// using Project = RecordingStudioTycoon.DataModels.Project;
 
 namespace RecordingStudioTycoon.Systems.Staff
 {
@@ -48,7 +50,7 @@ namespace RecordingStudioTycoon.Systems.Staff
             }
         }
 
-        public void AssignStaffToProject(StaffMember staff, Project project)
+        public void AssignStaffToProject(StaffMember staff, RecordingStudioTycoon.DataModels.Project project)
         {
             if (staff == null || project == null)
             {
@@ -59,7 +61,7 @@ namespace RecordingStudioTycoon.Systems.Staff
             // Unassign from previous project if any
             if (!string.IsNullOrEmpty(staff.AssignedProjectId))
             {
-                Project oldProject = GameManager.Instance.CurrentGameState.availableProjects.FirstOrDefault(p => p.Id == staff.AssignedProjectId);
+                RecordingStudioTycoon.DataModels.Project oldProject = GameManager.Instance.CurrentGameState.availableProjects.FirstOrDefault(p => p.Id == staff.AssignedProjectId);
                 if (oldProject != null)
                 {
                     oldProject.AssignedStaffIds.Remove(staff.Id);
@@ -75,7 +77,7 @@ namespace RecordingStudioTycoon.Systems.Staff
             Debug.Log($"Assigned {staff.Name} to project: {project.Name}");
         }
 
-        public void UnassignStaffFromProject(StaffMember staff, Project project)
+        public void UnassignStaffFromProject(StaffMember staff, RecordingStudioTycoon.DataModels.Project project)
         {
             if (staff == null || project == null)
             {

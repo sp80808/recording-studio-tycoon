@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using RecordingStudioTycoon.Core;
 using RecordingStudioTycoon.DataModels;
+using RecordingStudioTycoon.Utils;
 
 [CreateAssetMenu(fileName = "StaffData", menuName = "Game Data/Staff Data")]
 public class StaffData : ScriptableObject

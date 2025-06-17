@@ -6,7 +6,9 @@ using RecordingStudioTycoon.UI; // For UIManager
 using RecordingStudioTycoon.ScriptableObjects; // For MinigameData
 using RecordingStudioTycoon.DataModels;
 using RecordingStudioTycoon; // For RewardType, RewardManager
-using Project = RecordingStudioTycoon.DataModels.Project;
+using RecordingStudioTycoon.Utils; // For SerializableDictionary
+// Remove the alias to avoid conflict if the namespace is also named Project
+// using Project = RecordingStudioTycoon.DataModels.Project;
 
 namespace RecordingStudioTycoon.Systems.Minigame
 {
@@ -14,13 +16,13 @@ namespace RecordingStudioTycoon.Systems.Minigame
     {
         public static MinigameManager Instance { get; private set; }
 
-        public event Action<MinigameData, Project> OnMinigameStarted;
-        public event Action<MinigameData, bool, Project, object> OnMinigameEnded; // MinigameData, success, project, outcomeData
+        public event Action<MinigameData, RecordingStudioTycoon.DataModels.Project> OnMinigameStarted;
+        public event Action<MinigameData, bool, RecordingStudioTycoon.DataModels.Project, object> OnMinigameEnded; // MinigameData, success, project, outcomeData
 
         [SerializeField] public MinigameData[] availableMinigames; // Array of all MinigameData ScriptableObjects
 
         private MinigameData _currentMinigame;
-        private Project _activeProject; // Store the project associated with the current minigame
+        private RecordingStudioTycoon.DataModels.Project _activeProject; // Store the project associated with the current minigame
 
         private void Awake()
         {
@@ -41,7 +43,7 @@ namespace RecordingStudioTycoon.Systems.Minigame
         /// <param name="minigameId">The ID of the minigame to start.</param>
         /// <param name="project">The project associated with this minigame.</param>
         /// <returns>True if the minigame was successfully started, false otherwise.</returns>
-        public bool StartMinigame(string minigameId, Project project)
+        public bool StartMinigame(string minigameId, RecordingStudioTycoon.DataModels.Project project)
         {
             if (GameManager.Instance == null)
             {
@@ -101,7 +103,7 @@ namespace RecordingStudioTycoon.Systems.Minigame
         /// <param name="success">Whether the minigame was successfully completed.</param>
         /// <param name="project">The project associated with this minigame.</param>
         /// <param name="outcomeData">Optional data related to the minigame's outcome (e.g., score, quality bonus).</param>
-        public void EndMinigame(bool success, Project project, object outcomeData = null)
+        public void EndMinigame(bool success, RecordingStudioTycoon.DataModels.Project project, object outcomeData = null)
         {
             if (_currentMinigame == null || project == null)
             {
@@ -137,7 +139,7 @@ namespace RecordingStudioTycoon.Systems.Minigame
         /// <param name="success">Whether the minigame was successful.</param>
         /// <param name="project">The project associated with this minigame.</param>
         /// <param name="outcomeData">Data from the minigame's completion.</param>
-        private void ApplyMinigameOutcome(bool success, Project project, object outcomeData)
+        private void ApplyMinigameOutcome(bool success, RecordingStudioTycoon.DataModels.Project project, object outcomeData)
         {
             if (GameManager.Instance == null || project == null) return;
 
@@ -183,7 +185,7 @@ namespace RecordingStudioTycoon.Systems.Minigame
         /// Placeholder for a basic Rhythm Timing minigame logic.
         /// </summary>
         /// <param name="project">The project associated with this minigame.</param>
-        private void RunRhythmTimingMinigame(Project project)
+        private void RunRhythmTimingMinigame(RecordingStudioTycoon.DataModels.Project project)
         {
             Debug.Log($"Running Rhythm Timing Minigame for project {project.Name}...");
             // Simulate some "gameplay" time

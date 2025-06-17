@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using RecordingStudioTycoon.Core;
+using RecordingStudioTycoon.Utils; // For SerializableDictionary
 
 [CreateAssetMenu(fileName = "MarketTrendData", menuName = "Game Data/Market Trend Data")]
 public class MarketTrendData : ScriptableObject
