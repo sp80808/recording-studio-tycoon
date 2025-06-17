@@ -1,9 +1,10 @@
 using UnityEngine;
 using UnityEngine.UIElements;
-using RecordingStudioTycoon.DataModels;
 using RecordingStudioTycoon.GameLogic;
 using RecordingStudioTycoon.Systems.Staff;
-using RecordingStudioTycoon.Systems;
+using RecordingStudioTycoon.Systems.Project; // For Project
+using RecordingStudioTycoon.DataModels.Staff; // For StaffMember
+using RecordingStudioTycoon.Systems.TextGeneration; // For TextGenerationManager
 
 namespace RecordingStudioTycoon.UI.Staff
 {
@@ -57,10 +58,9 @@ namespace RecordingStudioTycoon.UI.Staff
                 staffBioLabel.name = "staff-bio-label";
                 root.Add(staffBioLabel);
             }
-            regenerateBioButton = root.Q<Button>("regenerate-bio-button");
+            regenerateBioButton = new Button { text = "Regenerate Bio", name = "regenerate-bio-button" };
             if (regenerateBioButton == null)
             {
-                regenerateBioButton = new Button { text = "Regenerate Bio", name = "regenerate-bio-button" };
                 root.Add(regenerateBioButton);
             }
             regenerateBioButton.clicked += async () => await FetchAndDisplayBio(true);
@@ -123,7 +123,7 @@ namespace RecordingStudioTycoon.UI.Staff
         {
             if (GameManager.Instance != null && !string.IsNullOrEmpty(currentStaff.AssignedProjectId))
             {
-                RecordingStudioTycoon.DataModels.Project assignedProject = GameManager.Instance.CurrentGameState.availableProjects.Find(p => p.Id == currentStaff.AssignedProjectId);
+                Project assignedProject = GameManager.Instance.CurrentGameState.availableProjects.Find(p => p.Id == currentStaff.AssignedProjectId);
                 if (assignedProject != null)
                 {
                     return assignedProject.Name;
@@ -150,12 +150,12 @@ namespace RecordingStudioTycoon.UI.Staff
         private void OnUnassignFromProjectButtonClicked(ClickEvent evt)
         {
             Debug.Log($"Unassign from Project button clicked for staff: {currentStaff.Name}");
-            if (StaffManagement.Instance != null && GameManager.Instance != null && !string.IsNullOrEmpty(currentStaff.AssignedProjectId))
+            if (StaffManager.Instance != null && GameManager.Instance != null && !string.IsNullOrEmpty(currentStaff.AssignedProjectId))
             {
-                RecordingStudioTycoon.DataModels.Project assignedProject = GameManager.Instance.CurrentGameState.availableProjects.Find(p => p.Id == currentStaff.AssignedProjectId);
+                Project assignedProject = GameManager.Instance.CurrentGameState.availableProjects.Find(p => p.Id == currentStaff.AssignedProjectId);
                 if (assignedProject != null)
                 {
-                    StaffManagement.Instance.UnassignStaffFromProject(currentStaff, assignedProject);
+                    StaffManager.Instance.UnassignStaffFromProject(currentStaff, assignedProject);
                     UpdateUI(); // Update UI after unassignment
                     GameManager.Instance.OnGameStateChanged?.Invoke(); // Notify for broader state change
                 }

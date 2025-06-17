@@ -1,18 +1,10 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
-using RecordingStudioTycoon.DataModels; // For MusicGenre, EquipmentData, etc.
+using RecordingStudioTycoon.DataModels; // For MusicGenre, EraUnlock
 
 namespace RecordingStudioTycoon.DataModels
 {
-    [Serializable]
-    public class EraUnlock
-    {
-        public string unlockId; // Unique ID for the unlocked item/feature
-        public string unlockType; // e.g., "Equipment", "StaffRole", "Minigame", "ProjectTemplate", "PerkTree"
-        public string description; // Description of what is unlocked
-    }
-
     [CreateAssetMenu(fileName = "NewEraData", menuName = "ScriptableObjects/Era Data")]
     public class EraData : ScriptableObject
     {

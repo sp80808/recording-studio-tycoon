@@ -2,9 +2,11 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using RecordingStudioTycoon.DataModels;
 using RecordingStudioTycoon.GameLogic; // For GameManager and GameState
-using RecordingStudioTycoon.Utils; // For any utility functions
+using RecordingStudioTycoon.DataModels; // For MusicGenre, EraUnlock, LevelUpDetails, UnlockedFeatureInfo, Training, Expansion, AggregatedPerkModifiers
+using RecordingStudioTycoon.DataModels.Projects; // For Project
+using RecordingStudioTycoon.DataModels.Staff; // For PlayerData, StaffMember, StudioSkill
+using RecordingStudioTycoon.DataModels.Progression; // For ProgressionMilestone, PerkUnlockCondition, PerkEffect, StudioPerk, StudioSkillType, PlayerAttributeType, StudioSpecialization, IndustryPrestige
 
 namespace RecordingStudioTycoon.Systems.Progression
 {
@@ -16,7 +18,6 @@ namespace RecordingStudioTycoon.Systems.Progression
         [SerializeField] private StudioPerkData studioPerkData; // Assign ScriptableObject in Inspector
         [SerializeField] private List<EraData> allEras; // Assign all Era ScriptableObjects in Inspector
 
-        // Events for progression updates
         public event Action OnPlayerLevelUp;
         public event Action OnPerkUnlocked;
         public event Action OnEraTransition;
@@ -55,17 +56,11 @@ namespace RecordingStudioTycoon.Systems.Progression
             }
 
             InitializePerkLookup();
-
-            // Subscribe to game state changes if GameManager provides an event
-            // GameManager.Instance.OnGameStateChanged += OnGameStateChanged; // Example
         }
 
         private void OnDestroy()
         {
-            // if (GameManager.Instance != null)
-            // {
-            //     GameManager.Instance.OnGameStateChanged -= OnGameStateChanged;
-            // }
+            // Unsubscribe from events to prevent memory leaks
         }
 
         private void InitializePerkLookup()
@@ -87,7 +82,6 @@ namespace RecordingStudioTycoon.Systems.Progression
             }
         }
 
-        // --- Player Progression (XP & Level) ---
         public void AddXP(int amount)
         {
             if (GameManager.Instance == null) return;
@@ -97,7 +91,7 @@ namespace RecordingStudioTycoon.Systems.Progression
             Debug.Log($"Added {amount} XP. Current XP: {currentGameState.playerData.xp}");
 
             CheckAndHandleLevelUp();
-            GameManager.Instance.UpdateGameState(currentGameState); // Notify GameManager of state change
+            GameManager.Instance.UpdateGameState(currentGameState);
         }
 
         public void CheckAndHandleLevelUp()
@@ -121,7 +115,6 @@ namespace RecordingStudioTycoon.Systems.Progression
                 leveledUp = true;
 
                 Debug.Log($"Player Leveled Up to Level {newLevel}! Earned {perkPointsToAdd} Perk Points.");
-                // TODO: Trigger UI notification (e.g., a toast or modal)
                 OnPlayerLevelUp?.Invoke();
             }
 
@@ -131,10 +124,9 @@ namespace RecordingStudioTycoon.Systems.Progression
                 playerData.xp = newXP;
                 playerData.xpToNextLevel = progressionData.CalculateXPToNextLevel(newLevel);
                 playerData.perkPoints = newPerkPoints;
-                // Update daily work capacity based on new level and focus mastery
                 playerData.dailyWorkCapacity = playerData.attributes.focusMastery + 3 + playerData.level - 1;
-                GameManager.Instance.UpdateGameState(currentGameState); // Ensure GameState is updated
-                CheckEraTransition(currentGameState); // Check for era transition after level up
+                GameManager.Instance.UpdateGameState(currentGameState);
+                CheckEraTransition(currentGameState);
             }
         }
 
@@ -144,7 +136,6 @@ namespace RecordingStudioTycoon.Systems.Progression
             return progressionData.CalculateXPToNextLevel(currentLevel);
         }
 
-        // --- Studio Perks & Upgrades ---
         public bool CanUnlockPerk(string perkId)
         {
             if (GameManager.Instance == null || !allPerksLookup.ContainsKey(perkId)) return false;
@@ -152,20 +143,16 @@ namespace RecordingStudioTycoon.Systems.Progression
             StudioPerk perk = allPerksLookup[perkId];
             GameState gameState = GameManager.Instance.CurrentGameState;
 
-            // Check if already owned (if not repeatable)
             if (gameState.ownedUpgrades.Contains(perk.id) && !perk.isRepeatable) return false;
-            // Check max repeats
             if (perk.isRepeatable && perk.maxRepeats > 0)
             {
                 int timesOwned = gameState.ownedUpgrades.Count(id => id == perk.id);
                 if (timesOwned >= perk.maxRepeats) return false;
             }
-            // Check prerequisites
             if (perk.prerequisites != null && perk.prerequisites.Any(prereqId => !gameState.ownedUpgrades.Contains(prereqId)))
             {
                 return false;
             }
-            // Check unlock conditions
             return perk.unlockConditions.All(condition => CheckPerkCondition(condition, gameState));
         }
 
@@ -174,14 +161,12 @@ namespace RecordingStudioTycoon.Systems.Progression
             if (!CanUnlockPerk(perkId))
             {
                 Debug.LogWarning($"Cannot unlock perk {perkId}. Conditions not met or already owned.");
-                // TODO: Trigger UI toast/notification for why it failed
                 return false;
             }
 
             StudioPerk perk = allPerksLookup[perkId];
             GameState currentGameState = GameManager.Instance.CurrentGameState;
 
-            // Check and deduct cost
             if (perk.cost != null)
             {
                 if (perk.cost.money > 0 && currentGameState.money < perk.cost.money)
@@ -200,8 +185,8 @@ namespace RecordingStudioTycoon.Systems.Progression
             }
 
             currentGameState.ownedUpgrades.Add(perk.id);
-            ApplyPerkEffects(perk, currentGameState); // Apply effects immediately
-            GameManager.Instance.UpdateGameState(currentGameState); // Update global state
+            ApplyPerkEffects(perk, currentGameState);
+            GameManager.Instance.UpdateGameState(currentGameState);
 
             Debug.Log($"Perk '{perk.name}' unlocked successfully!");
             OnPerkUnlocked?.Invoke();
@@ -240,11 +225,8 @@ namespace RecordingStudioTycoon.Systems.Progression
                 case ConditionType.SpecificPerkUnlocked:
                     return gameState.ownedUpgrades.Contains(condition.perkId);
                 case ConditionType.MoneyEarned:
-                    // This would require tracking total money earned, not just current money
-                    // For now, return true or implement a tracking mechanism
                     return true; 
                 case ConditionType.ChartSuccesses:
-                    // This would require tracking chart successes
                     return true;
                 default:
                     return false;
@@ -260,8 +242,6 @@ namespace RecordingStudioTycoon.Systems.Progression
 
             foreach (var effect in perk.effects)
             {
-                // This is a simplified application. A more robust system would use reflection
-                // or a dedicated effect application class.
                 switch (effect.key)
                 {
                     case "globalRecordingQualityModifier":
@@ -276,21 +256,16 @@ namespace RecordingStudioTycoon.Systems.Progression
                         if (effect.operation == EffectOperation.Add) gameState.aggregatedPerkModifiers.candidateQualityBonus += (int)effect.value;
                         break;
                     case "projectAppealModifier":
-                        // Handle genre-specific appeal modifiers
-                        if (effect.genre != MusicGenre.Pop) // Assuming Pop is default/all
+                        if (effect.genre != MusicGenre.Pop)
                         {
-                            // This needs a proper dictionary or map in AggregatedPerkModifiers
-                            // For now, a placeholder.
                             Debug.LogWarning($"Genre-specific projectAppealModifier for {effect.genre} not fully implemented in AggregatedPerkModifiers.");
                         }
                         else
                         {
-                            // Apply to all if no specific genre
                             if (effect.operation == EffectOperation.Add) gameState.aggregatedPerkModifiers.projectAppealModifier["all"] += effect.value;
                             else if (effect.operation == EffectOperation.Multiply) gameState.aggregatedPerkModifiers.projectAppealModifier["all"] *= (1 + effect.value);
                         }
                         break;
-                    // Add other cases for different perk effect keys
                     default:
                         Debug.LogWarning($"Unhandled perk effect key: {effect.key}");
                         break;
@@ -299,13 +274,12 @@ namespace RecordingStudioTycoon.Systems.Progression
             Debug.Log("Aggregated Perk Modifiers after applying perk effects: " + JsonUtility.ToJson(gameState.aggregatedPerkModifiers));
         }
 
-        // --- Era Transitions & Content Unlocks ---
         public void CheckEraTransition(GameState gameState)
         {
             if (allEras == null || allEras.Count == 0) return;
 
             EraData currentEraData = allEras.Find(e => e.eraId == gameState.currentEra);
-            EraData nextEra = allEras.OrderBy(e => e.minPlayerLevel).FirstOrDefault(e => e.minPlayerLevel > gameState.playerData.level && e.minPlayerLevel <= gameState.playerData.level + 5); // Look ahead a few levels
+            EraData nextEra = allEras.OrderBy(e => e.minPlayerLevel).FirstOrDefault(e => e.minPlayerLevel > gameState.playerData.level && e.minPlayerLevel <= gameState.playerData.level + 5);
 
             if (nextEra != null && gameState.playerData.level >= nextEra.minPlayerLevel && gameState.currentEra != nextEra.eraId)
             {
@@ -313,8 +287,7 @@ namespace RecordingStudioTycoon.Systems.Progression
                 gameState.currentEra = nextEra.eraId;
                 ApplyEraUnlocks(nextEra, gameState);
                 OnEraTransition?.Invoke();
-                GameManager.Instance.UpdateGameState(gameState); // Update global state
-                // TODO: Trigger UI notification for era transition
+                GameManager.Instance.UpdateGameState(gameState);
             }
         }
 
@@ -323,30 +296,24 @@ namespace RecordingStudioTycoon.Systems.Progression
             foreach (var unlock in era.unlocks)
             {
                 Debug.Log($"Unlocked: {unlock.description} ({unlock.unlockType}: {unlock.unlockId})");
-                // This is where you'd add logic to actually unlock things in the game
-                // e.g., add equipment to available list, enable new staff roles, etc.
-                // This will likely involve interacting with other managers (e.g., EquipmentManager, StaffManager)
-                // For now, just log the unlock.
             }
         }
 
-        // --- Achievement Milestones Tracking ---
         public void CheckMilestones(GameState gameState)
         {
             if (progressionData == null || progressionData.milestones == null) return;
 
             foreach (var milestone in progressionData.milestones)
             {
-                if (!gameState.completedMilestones.Contains(milestone.level.ToString()) && // Using level as ID for simplicity
+                if (!gameState.completedMilestones.Contains(milestone.level.ToString()) &&
                     MeetsMilestoneRequirements(milestone, gameState))
                 {
                     gameState.completedMilestones.Add(milestone.level.ToString());
                     Debug.Log($"Milestone Reached: {milestone.unlockMessage}");
                     OnMilestoneReached?.Invoke();
-                    // TODO: Trigger UI notification for milestone
                 }
             }
-            GameManager.Instance.UpdateGameState(gameState); // Ensure state is updated after checking milestones
+            GameManager.Instance.UpdateGameState(gameState);
         }
 
         private bool MeetsMilestoneRequirements(ProgressionMilestone milestone, GameState gameState)
@@ -377,13 +344,12 @@ namespace RecordingStudioTycoon.Systems.Progression
         public float GetProgressToNextMilestone(GameState gameState)
         {
             ProgressionMilestone nextMilestone = GetNextMilestone(gameState);
-            if (nextMilestone == null) return 1f; // Already at max milestone or no next
-
+            if (nextMilestone == null) return 1f;
+            
             float levelProgress = Mathf.Min(1f, (float)gameState.playerData.level / nextMilestone.level);
             float staffProgress = Mathf.Min(1f, (float)gameState.hiredStaff.Count / nextMilestone.staffCount);
             float projectProgress = Mathf.Min(1f, (float)gameState.completedProjects.Count / nextMilestone.projectsCompleted);
 
-            // Average of relevant progress metrics
             int validMetrics = 0;
             float totalProgress = 0;
 
@@ -393,12 +359,5 @@ namespace RecordingStudioTycoon.Systems.Progression
 
             return validMetrics > 0 ? totalProgress / validMetrics : 0f;
         }
-
-        // --- Studio Expansion Purchases ---
-        // This will likely be handled by a separate StudioManager or directly by UI,
-        // but ProgressionManager might provide data or validation.
-        // For now, no direct porting of useStudioExpansion.tsx logic here,
-        // as it primarily modifies GameState directly and triggers toasts.
-        // The data models for Expansion would be needed.
     }
 }

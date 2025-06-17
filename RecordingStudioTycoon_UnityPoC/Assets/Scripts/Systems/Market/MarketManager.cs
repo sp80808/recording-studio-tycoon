@@ -2,9 +2,11 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using RecordingStudioTycoon.DataModels;
 using RecordingStudioTycoon.GameLogic; // For GameManager and GameState
-using RecordingStudioTycoon.Utils; // For any utility functions like SubGenre data
+using RecordingStudioTycoon.DataModels; // For MarketTrend, TrendEvent, Chart, ChartEntry, MusicGenre, TrendDirection
+using RecordingStudioTycoon.DataModels.Projects; // For Project
+using RecordingStudioTycoon.DataModels.Songs; // For Song
+using RecordingStudioTycoon.DataModels.Characters; // For Artist
 
 namespace RecordingStudioTycoon.Systems.Market
 {
@@ -18,9 +20,7 @@ namespace RecordingStudioTycoon.Systems.Market
         private List<MarketTrend> currentMarketTrends;
         private List<Chart> currentCharts;
 
-        // Event for when market trends update
         public event Action OnMarketTrendsUpdated;
-        // Event for when charts update
         public event Action OnChartsUpdated;
 
         private void Awake()
@@ -40,17 +40,11 @@ namespace RecordingStudioTycoon.Systems.Market
         {
             InitializeMarketTrends();
             InitializeCharts();
-            // Subscribe to game day progression if GameManager provides such an event
-            // GameManager.Instance.OnDayAdvanced += OnDayAdvanced; // Example
         }
 
         private void OnDestroy()
         {
             // Unsubscribe from events to prevent memory leaks
-            // if (GameManager.Instance != null)
-            // {
-            //     GameManager.Instance.OnDayAdvanced -= OnDayAdvanced;
-            // }
         }
 
         private void InitializeMarketTrends()
@@ -75,9 +69,7 @@ namespace RecordingStudioTycoon.Systems.Market
 
             foreach (MusicGenre genre in genres)
             {
-                // Find a relevant sub-genre if available (simplified for now)
-                // In a real scenario, you'd have a SubGenreManager or similar
-                string subGenreId = null; // Placeholder for sub-genre logic
+                string subGenreId = null;
 
                 float initialPopularity = UnityEngine.Random.Range(20f, 80f);
                 float initialGrowthRate = UnityEngine.Random.Range(-3f, 3f);
@@ -90,12 +82,12 @@ namespace RecordingStudioTycoon.Systems.Market
                     popularity = initialPopularity,
                     trendDirection = directions[UnityEngine.Random.Range(0, directions.Length)],
                     growthRate = initialGrowthRate,
-                    lastUpdatedDay = 1, // Assuming game starts on day 1
+                    lastUpdatedDay = 1,
                     growth = Mathf.RoundToInt(initialGrowthRate * 10),
                     duration = 90,
                     startDay = 1,
                     projectedDuration = 90,
-                    seasonality = Enumerable.Repeat(1.0f, 12).ToList() // Neutral seasonality
+                    seasonality = Enumerable.Repeat(1.0f, 12).ToList()
                 });
             }
             return trends;
@@ -118,20 +110,18 @@ namespace RecordingStudioTycoon.Systems.Market
         private List<Chart> GenerateInitialCharts()
         {
             List<Chart> charts = new List<Chart>();
-            // Example: Create a default "Hot 100" chart
             charts.Add(new Chart
             {
                 id = "hot100",
                 name = "Hot 100",
                 description = "The most popular songs across all genres.",
                 minLevelToAccess = 1,
-                entries = new List<ChartEntry>(), // Will be populated dynamically
-                primaryGenre = MusicGenre.Pop // Or a more general "All" genre
+                entries = new List<ChartEntry>(),
+                primaryGenre = MusicGenre.Pop
             });
             return charts;
         }
 
-        // This method should be called by GameManager or a central game loop
         public void UpdateMarketAndCharts(List<Project> completedPlayerProjects, List<TrendEvent> globalEvents)
         {
             Debug.Log($"MarketManager: Updating market and charts for game day {GameManager.Instance.CurrentGameState.currentDay}");
@@ -153,26 +143,22 @@ namespace RecordingStudioTycoon.Systems.Market
                 float newPopularity = trend.popularity;
                 float newGrowthRate = trend.growthRate;
 
-                // 1. Apply current growth rate to popularity
                 newPopularity += newGrowthRate;
 
-                // 2. Adjust growth rate (inertia + small random fluctuation + regression to mean)
-                newGrowthRate += (UnityEngine.Random.value * 1f - 0.5f); // -0.5 to +0.5
-                newGrowthRate *= 0.95f; // Dampening factor
+                newGrowthRate += (UnityEngine.Random.value * 1f - 0.5f);
+                newGrowthRate *= 0.95f;
 
-                // 3. Impact of player's successful releases
                 foreach (var project in playerProjectsCompleted)
                 {
-                    if (project.genre.ToString() == trend.genreId.ToString() && project.qualityScore > 70)
+                    if (project.genre == trend.genreId && project.qualityScore > 70)
                     {
-                        float qualityImpact = project.qualityScore / 100f;
+                        float qualityImpact = project.qualityScore.Value / 100f;
                         newPopularity += qualityImpact * 5f;
                         newGrowthRate += qualityImpact * 0.5f;
                         Debug.Log($"Player project '{project.title}' (Quality: {project.qualityScore}) boosted {trend.genreId}");
                     }
                 }
 
-                // 4. Impact of global events
                 foreach (var evt in globalEvents)
                 {
                     if (evt.affectedGenres.Contains(trend.genreId))
@@ -183,11 +169,9 @@ namespace RecordingStudioTycoon.Systems.Market
                     }
                 }
 
-                // 5. Clamp popularity and growthRate
                 newPopularity = Mathf.Max(MIN_POPULARITY, Mathf.Min(MAX_POPULARITY, newPopularity));
                 newGrowthRate = Mathf.Max(MIN_GROWTH_RATE, Mathf.Min(MAX_GROWTH_RATE, newGrowthRate));
 
-                // 6. Determine new trendDirection
                 TrendDirection newTrendDirection = TrendDirection.Stable;
                 if (newGrowthRate > 1.5f && newPopularity < 90f) newTrendDirection = TrendDirection.Rising;
                 else if (newGrowthRate < -1.5f && newPopularity > 10f) newTrendDirection = TrendDirection.Falling;
@@ -206,32 +190,23 @@ namespace RecordingStudioTycoon.Systems.Market
 
         private void UpdateAllCharts(int playerLevel, string currentEra)
         {
-            // This is a simplified chart update. In a full implementation, this would involve:
-            // 1. Identifying new songs to enter charts (player's songs, AI songs)
-            // 2. Calculating chart positions based on popularity, quality, marketing, etc.
-            // 3. Handling songs falling off charts
-            // 4. Updating peak positions and weeks on chart
-
             foreach (var chart in currentCharts)
             {
-                // Filter charts based on player level
                 if (chart.minLevelToAccess > playerLevel)
                 {
-                    chart.entries.Clear(); // Clear entries if not accessible
+                    chart.entries.Clear();
                     continue;
                 }
 
-                // For now, let's just simulate some random chart entries or use placeholder data
-                // In a real game, this would be driven by actual song performance
-                chart.entries.Clear(); // Clear previous entries
-                for (int i = 0; i < 10; i++) // Simulate top 10
+                chart.entries.Clear();
+                for (int i = 0; i < 10; i++)
                 {
                     chart.entries.Add(new ChartEntry
                     {
                         id = $"mock-song-{i}-{Guid.NewGuid()}",
                         song = new Song { id = $"song-{i}", title = $"Hit Song {i+1}", artist = new Artist { name = $"Artist {i+1}", popularity = UnityEngine.Random.Range(10,100) }, genre = chart.primaryGenre },
                         position = i + 1,
-                        lastPosition = i + 2, // Simulate falling
+                        lastPosition = i + 2,
                         peakPosition = i + 1,
                         weeksOnChart = UnityEngine.Random.Range(1, 10),
                         influenceScore = UnityEngine.Random.Range(0.1f, 1.0f)

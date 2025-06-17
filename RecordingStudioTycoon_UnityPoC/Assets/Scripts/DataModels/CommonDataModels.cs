@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using RecordingStudioTycoon.Utils;
 
 namespace RecordingStudioTycoon.DataModels
 {
@@ -163,5 +164,68 @@ namespace RecordingStudioTycoon.DataModels
         public int perkPointsEarned;
         public List<string> unlockedFeatures;
         public List<string> newEraUnlocks;
+    }
+
+
+    // Additional missing types for compilation
+    [Serializable]
+    public class GameStateData
+    {
+        public int currentDay;
+        public float money;
+        public int level;
+        public List<string> completedProjects;
+    }
+
+    [Serializable]
+    public class StudioSkill
+    {
+        public StudioSkillType Name;
+        public float Level;
+        public float Experience;
+        public float Multiplier;
+        public int XpToNextLevel;
+        
+        public StudioSkill()
+        {
+            Level = 1;
+            Experience = 0;
+            Multiplier = 1;
+            XpToNextLevel = 100;
+        }
+    }
+
+    [Serializable]
+    public class MarketState
+    {
+        public List<MarketTrend> currentTrends;
+        public List<TrendEvent> activeEvents;
+        public int weekNumber;
+    }
+
+    [Serializable]
+    public class AggregatedPerkModifiers
+    {
+        public SerializableDictionary<string, float> modifiers;
+    }
+
+    [Serializable]
+    public enum IndustryPrestige
+    {
+        Unknown, Local, Regional, National, International, Legendary
+    }
+
+    [Serializable]
+    public enum StudioSpecialization
+    {
+        None, Recording, Mixing, Mastering, Production, AllRounder
+    }
+
+    [Serializable]
+    public class PlayerAbilityChange
+    {
+        public PlayerAttributeType attribute;
+        public float changeAmount;
+        public string reason;
     }
 }

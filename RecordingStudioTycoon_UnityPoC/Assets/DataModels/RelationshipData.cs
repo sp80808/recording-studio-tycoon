@@ -1,21 +1,10 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using RecordingStudioTycoon.DataModels; // For MusicGenre, Mood, EntityType, RelationshipBonuses, ReputationScore, ReputationHistoryEntry
 
 namespace RecordingStudioTycoon.DataModels
 {
-    [Serializable]
-    public enum EntityType
-    {
-        Artist, RecordLabel, Client
-    }
-
-    [Serializable]
-    public enum Mood
-    {
-        Upbeat, Melancholy, Aggressive, Chill, Experimental, Neutral
-    }
-
     [Serializable]
     public class RelationshipStats
     {
@@ -29,17 +18,6 @@ namespace RecordingStudioTycoon.DataModels
         public bool isBlacklisted;
     }
 
-    [Serializable]
-    public class RelationshipBonuses
-    {
-        public float contractValueIncrease;
-        public float projectOfferFrequency;
-        public float uniqueProjectChance;
-        public float reputationGainMultiplier;
-        // Add other bonuses as needed
-    }
-
-    [Serializable]
     public class ReputableEntity
     {
         public string id;
@@ -68,21 +46,6 @@ namespace RecordingStudioTycoon.DataModels
         public List<string> requiredSkills; // e.g., "Mixing", "Mastering"
         public bool isExclusive;
         public int durationDays; // How long the contract is active for
-    }
-
-    [Serializable]
-    public class ReputationScore
-    {
-        public MusicGenre genre;
-        public float score;
-    }
-
-    [Serializable]
-    public class ReputationHistoryEntry
-    {
-        public int gameDay;
-        public float overallReputation;
-        public List<ReputationScore> genreReputations;
     }
 
     [CreateAssetMenu(fileName = "NewRelationshipData", menuName = "ScriptableObjects/Relationship Data")]

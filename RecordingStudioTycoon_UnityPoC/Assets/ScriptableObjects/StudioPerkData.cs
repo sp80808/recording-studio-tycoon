@@ -1,23 +1,10 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
-using RecordingStudioTycoon.DataModels; // For MusicGenre
+using RecordingStudioTycoon.DataModels; // For MusicGenre, PerkCategory, ConditionType, EffectOperation, PerkCost, PerkUnlockCondition, PerkEffect
 
 namespace RecordingStudioTycoon.DataModels
 {
-    [Serializable]
-    public enum PerkCategory
-    {
-        Acoustics, BusinessOperations, TalentAcquisition, Marketing, Production, Engineering, Mixing, Mastering, StaffManagement, ResearchDevelopment, Financial, Reputation
-    }
-
-    [Serializable]
-    public enum ConditionType
-    {
-        PlayerLevel, StudioReputation, CompletedProjects, ProjectsInGenre, StaffSkillSum, SpecificEquipmentOwned, SpecificPerkUnlocked, MoneyEarned, ChartSuccesses
-    }
-
-    [Serializable]
     public class PerkUnlockCondition
     {
         public ConditionType type;
@@ -27,13 +14,6 @@ namespace RecordingStudioTycoon.DataModels
         public string perkId; // For SpecificPerkUnlocked
     }
 
-    [Serializable]
-    public enum EffectOperation
-    {
-        Add, Multiply, Set
-    }
-
-    [Serializable]
     public class PerkEffect
     {
         public string key; // Corresponds to a property in AggregatedPerkModifiers
@@ -42,14 +22,6 @@ namespace RecordingStudioTycoon.DataModels
         public MusicGenre genre; // For genre-specific effects like projectAppealModifier
     }
 
-    [Serializable]
-    public class PerkCost
-    {
-        public int money;
-        public int perkPoints;
-    }
-
-    [Serializable]
     public class StudioPerk
     {
         public string id;
@@ -65,14 +37,12 @@ namespace RecordingStudioTycoon.DataModels
         public int maxRepeats;
     }
 
-    [Serializable]
     public class PerkTier
     {
         public int tierNumber;
         public List<StudioPerk> perks;
     }
 
-    [Serializable]
     public class PerkTree
     {
         public string id;

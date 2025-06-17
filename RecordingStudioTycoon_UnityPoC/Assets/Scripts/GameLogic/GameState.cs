@@ -5,16 +5,14 @@ using RecordingStudioTycoon.DataModels.Staff;
 using RecordingStudioTycoon.DataModels.Projects;
 using RecordingStudioTycoon.DataModels.Equipment;
 using RecordingStudioTycoon.DataModels.Market;
-using StudioSkillType = RecordingStudioTycoon.DataModels.Progression.StudioSkillType;
-using StudioSpecialization = RecordingStudioTycoon.DataModels.Progression.StudioSpecialization;
-using IndustryPrestige = RecordingStudioTycoon.DataModels.Progression.IndustryPrestige;
-using StaffMember = RecordingStudioTycoon.DataModels.Staff.StaffMember;
-using RecordingStudioTycoon.DataModels.Equipment;
-using RecordingStudioTycoon.DataModels.Market;
+using RecordingStudioTycoon.DataModels.Songs;
+using RecordingStudioTycoon.DataModels.Tours;
+using RecordingStudioTycoon.DataModels.Characters;
+using RecordingStudioTycoon.Utils; // For SerializableDictionary
 
 namespace RecordingStudioTycoon.GameLogic
 {
-    [System.Serializable]
+    [Serializable]
     public class GameState
     {
         public int money;
@@ -29,8 +27,8 @@ namespace RecordingStudioTycoon.GameLogic
         public SerializableDictionary<StudioSkillType, StudioSkill> studioSkills;
         public List<string> ownedUpgrades;
         public List<Equipment> ownedEquipment;
-        public List<RecordingStudioTycoon.DataModels.Project> availableProjects; // Fully qualify Project
-        public RecordingStudioTycoon.DataModels.Project activeProject; // Fully qualify Project
+        public List<Project> availableProjects;
+        public Project activeProject;
         public List<StaffMember> hiredStaff;
         public List<StaffMember> availableCandidates;
         public int lastSalaryDay;
@@ -41,18 +39,18 @@ namespace RecordingStudioTycoon.GameLogic
         public OriginalTrackProject activeOriginalTrack;
         public ChartsData chartsData;
         public FocusAllocation focusAllocation;
-        public List<RecordingStudioTycoon.DataModels.Project> completedProjects; // Fully qualify Project
+        public List<Project> completedProjects;
         public LevelUpDetails levelUpDetails;
         public List<UnlockedFeatureInfo> unlockedFeatures;
         public List<Training> availableTraining;
         public List<Expansion> availableExpansions;
-        public MarketState MarketTrends; // Replaces currentMarketTrends and historicalMarketTrends
+        public MarketState MarketTrends;
         public List<Venue> venues;
         public List<Tour> tours;
         public SerializableDictionary<string, int> lastMinigameTriggers;
         public AggregatedPerkModifiers aggregatedPerkModifiers;
         public SerializableDictionary<string, float> globalModifiers;
-        public SerializableDictionary<string, RelationshipStats> relationships; // Entity ID -> detailed RelationshipStats
+        public SerializableDictionary<string, RelationshipStats> relationships;
         public SerializableDictionary<MusicGenre, StudioSpecialization> studioSpecializations;
         public SerializableDictionary<string, IndustryPrestige> industryPrestige;
         public int highScore;
@@ -79,7 +77,7 @@ namespace RecordingStudioTycoon.GameLogic
                 new Equipment { Id = "basic_mic", Name = "Basic USB Mic", Category = "microphone", Price = 0, Description = "Standard starter microphone", Bonuses = new SerializableDictionary<string, float> { { "qualityBonus", 0f } }, Icon = "🎤", Condition = 100 },
                 new Equipment { Id = "basic_monitors", Name = "Basic Speakers", Category = "monitor", Price = 0, Description = "Standard studio monitors", Bonuses = new SerializableDictionary<string, float> { { "qualityBonus", 0f } }, Icon = "🔊", Condition = 100 }
             };
-            availableProjects = new List<RecordingStudioTycoon.DataModels.Project>(); // Fully qualify Project
+            availableProjects = new List<Project>();
             activeProject = null;
             hiredStaff = new List<StaffMember>();
             availableCandidates = new List<StaffMember>();
@@ -91,24 +89,24 @@ namespace RecordingStudioTycoon.GameLogic
             activeOriginalTrack = null;
             chartsData = new ChartsData();
             focusAllocation = new FocusAllocation();
-            completedProjects = new List<RecordingStudioTycoon.DataModels.Project>(); // Fully qualify Project
+            completedProjects = new List<Project>();
             levelUpDetails = null;
             unlockedFeatures = new List<UnlockedFeatureInfo>();
             availableTraining = new List<Training>();
             availableExpansions = new List<Expansion>();
-            MarketTrends = new MarketState(); // Initialize the new MarketState
+            MarketTrends = new MarketState();
             venues = new List<Venue>();
             tours = new List<Tour>();
             lastMinigameTriggers = new SerializableDictionary<string, int>();
             aggregatedPerkModifiers = new AggregatedPerkModifiers();
-            relationships = new SerializableDictionary<string, RelationshipStats>(); // Initialize new relationship dictionary
+            relationships = new SerializableDictionary<string, RelationshipStats>();
             studioSpecializations = new SerializableDictionary<MusicGenre, StudioSpecialization>();
             foreach (MusicGenre genreType in Enum.GetValues(typeof(MusicGenre)))
             {
-                studioSpecializations[genreType] = new StudioSpecialization(genreType);
+                studioSpecializations[genreType] = StudioSpecialization.None;
             }
             industryPrestige = new SerializableDictionary<string, IndustryPrestige>();
-            industryPrestige["general"] = new IndustryPrestige("general"); // Initialize general prestige
+            industryPrestige["general"] = IndustryPrestige.Unknown;
             highScore = 0;
         }
     }
