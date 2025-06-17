@@ -15,5 +15,6 @@ export interface Song {
   currentChartPosition: number | null; // Null if not on charts
   performanceHistory: { day: number; sales: number; chartPosition: number | null }[];
   isReleased: boolean;
+  playerProduced?: boolean; // Added to indicate if the song was produced by the player
   // Add more properties as needed, e.g., staff involved, equipment used, minigame scores
 }

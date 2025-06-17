@@ -6,7 +6,7 @@ import { getCreativityMultiplier, getTechnicalMultiplier, getFocusEffectiveness 
 import { shouldAutoTriggerMinigame } from '@/utils/minigameUtils';
 import { toast } from '@/hooks/use-toast';
 
-interface UseStageWorkProps {
+export interface UseStageWorkProps { // Added export
   gameState: GameState;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
   focusAllocation: FocusAllocation;

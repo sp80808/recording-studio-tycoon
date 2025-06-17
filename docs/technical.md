@@ -9,10 +9,16 @@
 - **Routing**: React Router DOM
 - **Build Tool**: Vite
 - **Testing**: Jest, React Testing Library
-- **Cloud Integration**: Supabase (for cloud saves, potentially other backend features)
+- **Cloud Integration**: Supabase (for cloud saves, advanced save features)
 - **Animations**: Framer Motion
 - **Charting**: Recharts
 - **Internationalization**: i18next (if implemented)
+- **UI/UX**: Potential libraries for responsive design, accessibility, and performance optimization.
+- **Input Handling**: Libraries for keyboard shortcuts and gamepad support.
+- **Multiplayer**: WebSockets (e.g., Socket.IO) or a real-time backend service (e.g., Supabase Realtime, Firebase).
+- **Advanced AI**: Machine learning libraries (e.g., TensorFlow.js) for dynamic difficulty, adaptive challenges, and smart NPCs.
+- **Virtual Reality**: WebXR API or a VR framework (e.g., A-Frame, React VR).
+- **Mobile Platform**: React Native or Capacitor for cross-platform mobile deployment.
 
 ### App Icon Implementation
 The app uses a music symbol emoji (🎵) as its icon, implemented through an inline SVG in the HTML. This approach:
@@ -96,7 +102,10 @@ const handleRefreshProjects = () => {
 
 ### Technical Constraints
 - **Browser Compatibility**: Targeting modern web browsers (Chrome, Firefox, Safari, Edge).
-- **Performance**: Optimizing for smooth animations and responsive UI, especially on lower-end devices.
-- **Scalability**: Designing systems to accommodate future content expansions (new eras, equipment, minigames).
+- **Performance**: Optimizing for smooth animations and responsive UI, especially on lower-end devices and mobile platforms.
+- **Scalability**: Designing systems to accommodate future content expansions (new eras, equipment, minigames, locations, events) and potential multiplayer features.
 - **Maintainability**: Writing clean, well-documented, and testable code.
-- **Offline Support**: Limited offline functionality for core gameplay, with cloud sync requiring internet.
+- **Offline Support**: Enhanced offline functionality for core gameplay, with cloud sync requiring internet.
+- **Security**: Implementing encryption for save data and secure communication for multiplayer features.
+- **Cross-Platform Compatibility**: Ensuring consistent experience across desktop, web, and mobile (if implemented).
+- **Data Management**: Efficient handling of large save files and incremental updates.

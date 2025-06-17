@@ -19,7 +19,7 @@ export const useBandManagement = (
   updateGameState: (updater: (prevState: GameState) => GameState) => void
 ): BandManagement => {
 
-  const createBand = useCallback((bandName: string, memberIds: string[], genre: MusicGenre): void => {
+  const createBand = useCallback((bandName: string, memberIds: string[], genre?: MusicGenre): void => {
     if (gameState.playerData.level < 4) {
       toast({
         title: "Level Requirement",
@@ -38,10 +38,11 @@ export const useBandManagement = (
       return;
     }
 
+    const defaultGenre: MusicGenre = 'pop'; // Default genre for initial implementation
     const newBand: Band = {
       id: `band_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`, // Ensure more unique ID
       bandName,
-      genre,
+      genre: genre || defaultGenre, // Use provided genre or default
       memberIds,
       fame: 0,
       notoriety: 0,

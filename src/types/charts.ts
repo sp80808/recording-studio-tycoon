@@ -27,18 +27,7 @@ export interface Artist {
   mood: number; // 0-100, affects negotiation and performance
 }
 
-export interface Song {
-  id: string;
-  title: string;
-  artist: Artist;
-  genre: MusicGenre;
-  releaseDate: Date;
-  quality: number; // 0-100
-  hypeScore: number; // 0-100
-  playerProduced?: boolean;
-  studioId?: string;
-  studio?: string;
-}
+import { Song } from './songs'; // Import Song from the dedicated songs type file
 
 export interface ChartEntry {
   position: number;
@@ -87,11 +76,11 @@ export interface MarketTrend {
   activeEvents?: string[]; // IDs of TrendEvents currently affecting this trend
   projectedDuration?: number; // Estimated days this trend might last in its current direction
   lastUpdated: number; // Timestamp of last update
-  // Kept from original for compatibility, can be reviewed later
+  // Retained for compatibility with existing data generation, though new fields are more descriptive
   growth: number; // -50 to +50 (percentage change) - can be derived from growthRate or be a simpler representation
   events: TrendEvent[]; // Consider if activeEvents replaces this or if this is historical
-  duration: number; 
-  startDay: number; 
+  duration: number;
+  startDay: number;
 }
 
 export interface TrendEvent {

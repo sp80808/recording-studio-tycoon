@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { GameState, StaffMember, PlayerAttributes, FocusAllocation, Project, ProjectReport, DiscoveredArtist, LevelUpDetails } from '@/types/game'; // Added LevelUpDetails
+import { useState, useCallback, Dispatch, SetStateAction } from 'react'; // Added Dispatch, SetStateAction
+import { GameState, StaffMember, PlayerAttributes, FocusAllocation, Project, ProjectReport, DiscoveredArtist, LevelUpDetails, Band, PerformDailyWorkResult, MinigameType } from '@/types/game'; // Added PerformDailyWorkResult, MinigameType, Band
 import { toast } from '@/hooks/use-toast';
 import { availableTrainingCourses } from '@/data/training';
 import { canPurchaseEquipment, addNotification, applyEquipmentEffects } from '@/utils/gameUtils';
@@ -7,11 +7,12 @@ import { getAvailableEquipmentForYear } from '@/data/eraEquipment';
 import { useStaffManagement } from '@/hooks/useStaffManagement';
 import { useProjectManagement } from '@/hooks/useProjectManagement';
 // import { usePlayerProgression } from '@/hooks/usePlayerProgression'; // This file does not exist
-import { useStageWork } from '@/hooks/useStageWork';
+import { useStageWork, UseStageWorkProps } from '@/hooks/useStageWork'; // Import UseStageWorkProps
 import { useGameActions } from '@/hooks/useGameActions';
 import { useGameState } from '@/hooks/useGameState'; // Import useGameState
 import { useBandManagement } from '@/hooks/useBandManagement';
 import { Chart, MarketTrend, ArtistContact as ChartArtistContact } from '@/types/charts'; // Re-add import, alias ArtistContact
+import { updateCharts } from '@/data/chartsData'; // Import updateCharts
 
 type GameStateUpdater = (updater: (prevState: GameState) => GameState) => void;
 
@@ -66,7 +67,8 @@ export const useGameLogic = (
   } = gameActions; 
 
   const bandManagement = useBandManagement(gameState, dispatchSetGameState); 
-  const { processTourIncome } = bandManagement; 
+  // Removed processTourIncome as it's not directly exposed by useBandManagement
+  // // Removed processTourIncome as it's not directly exposed by useBandManagement
 
   const [selectedStaffForTraining, setSelectedStaffForTraining] = useState<StaffMember | null>(null);
   const [lastReview, setLastReview] = useState<ProjectReport | null>(null);
@@ -84,11 +86,11 @@ export const useGameLogic = (
     return reviewFromInternal; 
   }, [manageProjectCompletionInternal]); // Removed gameState from dependencies as it's not directly used here
 
-  const stageWorkDeps = {
+  const stageWorkDeps: UseStageWorkProps = { // Explicitly type stageWorkDeps
     gameState,
-    setGameState: dispatchSetGameState, 
+    setGameState: dispatchSetGameState as Dispatch<SetStateAction<GameState>>, // Cast to correct type
     focusAllocation,
-    completeProject: completeProjectForStageWorkAdapter, 
+    completeProject: completeProjectForStageWorkAdapter,
     addStaffXP: addStaffXPFromStaffManagement, // Use renamed variable
     advanceDay
   };
@@ -108,7 +110,7 @@ export const useGameLogic = (
         } : null,
         playerData: { // Also update lastMinigameType here if needed
             ...prev.playerData,
-            lastMinigameType: minigameType || prev.playerData.lastMinigameType
+            lastMinigameType: (minigameType as MinigameType) || prev.playerData.lastMinigameType // Cast to MinigameType
         }
       }));
     }
@@ -218,9 +220,34 @@ export const useGameLogic = (
   };
 
   const handleAdvanceDay = useCallback(() => {
-    if(processTourIncome) processTourIncome(); 
     advanceDay();
-  }, [processTourIncome, advanceDay]);
+
+    // Update charts daily
+    setGameState(prev => {
+      const updatedCharts = updateCharts(
+        prev.chartsData?.charts || [],
+        prev.playerData.level,
+        prev.currentDay,
+        prev.songs,
+        prev.playerBands // Assuming playerBands contains all bands for now
+      );
+
+      return {
+        ...prev,
+        chartsData: {
+          ...(prev.chartsData || {
+            availableCharts: [],
+            contactedArtists: [],
+            marketTrends: [],
+            discoveredArtists: [],
+            lastChartUpdate: 0,
+          }),
+          charts: updatedCharts,
+          lastChartUpdate: prev.currentDay,
+        },
+      };
+    });
+  }, [advanceDay, setGameState]);
 
   const contactArtist = useCallback((artistId: string, offer: number) => {
     console.log('contactArtist: Attempting to contact artist', { artistId, offer, currentMoney: gameState.money });

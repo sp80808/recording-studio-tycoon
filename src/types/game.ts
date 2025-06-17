@@ -16,6 +16,7 @@ export type { MinigameType };
 export type { OriginalTrackProject };
 export type { BandRelease }; // Re-export BandRelease
 export type { MusicGenre }; // Re-export MusicGenre
+export type { Song }; // Re-export Song type
 
 export interface PlayerAttributes {
   focusMastery: number;
@@ -347,6 +348,12 @@ export interface ProjectReport {
   isCriticalSuccess?: boolean;
   // skillBreakdown?: ProjectReportSkillEntry[]; // Add if it's part of the top-level report
   // reviewSnippet?: string; // Add if it's part of the top-level report
+}
+
+export interface PerformDailyWorkResult {
+  isComplete: boolean;
+  review?: ProjectReport | null; // Allow null for review
+  finalProjectData: Project | null; // Allow null for finalProjectData
 }
 
 export interface DiscoveredArtist {

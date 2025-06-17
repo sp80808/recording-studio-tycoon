@@ -1,5 +1,7 @@
 // Chart data generation and management for the Charts System
-import { Chart, ChartEntry, Artist, Song, MarketTrend, MusicGenre } from '@/types/charts';
+import { Chart, ChartEntry, Artist, MarketTrend, MusicGenre, TrendDirection, TrendEvent, ChartMovement } from '@/types/charts';
+import { Song } from '@/types/songs';
+import { Band } from '@/types/bands';
 
 // Sample artist names for chart generation
 const artistNames = [
@@ -25,7 +27,7 @@ const songTitles = [
   'Velvet Touch', 'Golden Light', 'Infinite Sky', 'Sound of Freedom'
 ];
 
-const genres: MusicGenre[] = ['rock', 'pop', 'hip-hop', 'electronic', 'country', 'alternative', 'r&b', 'jazz', 'classical', 'folk', 'acoustic'];
+export const allMusicGenres: MusicGenre[] = ['rock', 'pop', 'hip-hop', 'electronic', 'country', 'alternative', 'r&b', 'jazz', 'classical', 'folk', 'acoustic'];
 
 // Generate a random artist
 const generateArtist = (id: string, genre: MusicGenre): Artist => {
@@ -60,13 +62,17 @@ const generateSong = (id: string, artist: Artist): Song => {
   return {
     id,
     title,
-    artist,
     genre: artist.genre,
-    releaseDate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000), // Within last 30 days
     quality: Math.floor(Math.random() * 40) + 60, // 60-100 quality for chart songs
-    hypeScore: Math.floor(Math.random() * 100) + 1,
-    playerProduced: false,
-    studio: 'Your Studio'
+    productionValue: Math.floor(Math.random() * 40) + 60,
+    releaseDate: Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000, // Within last 30 days
+    associatedBandId: artist.id, // Using artist ID as associatedBandId for AI songs
+    initialBuzz: Math.floor(Math.random() * 100) + 1,
+    chartEntryPotential: Math.floor(Math.random() * 100) + 1,
+    totalSales: 0,
+    currentChartPosition: null,
+    performanceHistory: [],
+    isReleased: true, // AI songs are already released
   };
 };
 
@@ -75,7 +81,7 @@ const generateChartEntries = (count: number, chartGenre?: MusicGenre): ChartEntr
   const entries: ChartEntry[] = [];
   
   for (let i = 0; i < count; i++) {
-    const genre = chartGenre || genres[Math.floor(Math.random() * genres.length)];
+    const genre = chartGenre || allMusicGenres[Math.floor(Math.random() * allMusicGenres.length)];
     const artist = generateArtist(`artist_${i}`, genre);
     const song = generateSong(`song_${i}`, artist);
     
@@ -106,7 +112,7 @@ export const generateCharts = (playerLevel: number, currentEra: string): Chart[]
   const charts: Chart[] = [];
 
   // TODO: Define available genres based on the current era (replace with actual era data)
-  const availableGenres = genres; // For now, all genres are available
+  const availableGenres = allMusicGenres; // For now, all genres are available
 
   // Main Hot 100 Chart (available from level 1)
   charts.push({
@@ -246,32 +252,281 @@ export const generateCharts = (playerLevel: number, currentEra: string): Chart[]
 
 // Generate market trends
 export const generateMarketTrends = (): MarketTrend[] => {
-  return genres.map(genre => {
+  return allMusicGenres.map(genre => {
     const popularity = Math.floor(Math.random() * 100) + 1;
-    const growth = Math.floor(Math.random() * 100) - 50; // -50 to +50
+    const growthRate = parseFloat(((Math.random() * 10) - 5).toFixed(2)); // -5 to +5
+    const trendDirection: TrendDirection = growthRate > 0.5 ? 'rising' : growthRate < -0.5 ? 'falling' : 'stable';
     
     return {
-      genre,
+      id: `trend_${genre}_${Date.now()}`,
+      genreId: genre,
       popularity,
-      growth,
-      seasonality: Array.from({ length: 12 }, () => Math.random() * 0.4 + 0.8), // 0.8 to 1.2 multiplier
-      events: [],
+      trendDirection,
+      growthRate,
+      seasonality: Array.from({ length: 12 }, () => parseFloat((Math.random() * 0.4 + 0.8).toFixed(2))), // 0.8 to 1.2 multiplier
       peakMonths: [
         Math.floor(Math.random() * 12),
         Math.floor(Math.random() * 12)
-      ]
+      ],
+      activeEvents: [],
+      projectedDuration: Math.floor(Math.random() * 30) + 7, // 7 to 36 days
+      lastUpdated: Date.now(),
+      // Retaining for compatibility, though new fields are more descriptive
+      growth: growthRate * 10, // Simple conversion for existing 'growth' field
+      events: [], // Assuming 'activeEvents' is the primary field now
+      duration: Math.floor(Math.random() * 60) + 30, // Example duration in days
+      startDay: 1, // Example start day
     };
   });
 };
 
 // Function to update chart positions (simplified for now)
-export const updateCharts = (currentCharts: Chart[], playerLevel: number, currentEra: string): Chart[] => {
+export const addPlayerSongToCharts = (charts: Chart[], song: Song, currentDay: number, bandReputation: number): Chart[] => {
+  const newChartEntries: ChartEntry[] = [];
+
+  // Calculate initial chart potential for the player song
+  // This is a simplified model. Factors like song quality, initial buzz, band reputation,
+  // and market trends should influence this more realistically.
+  const initialPopularity = Math.min(100, Math.max(1, song.quality * 0.5 + song.initialBuzz * 0.3 + bandReputation * 0.2));
+  const initialPosition = Math.max(1, 40 - Math.floor(initialPopularity / 2.5)); // Higher popularity = lower position (closer to #1)
+
+  const playerSongChartEntry: ChartEntry = {
+    position: initialPosition,
+    song: { ...song, playerProduced: true }, // Mark as player produced
+    movement: 'new',
+    positionChange: 0,
+    weeksOnChart: 0,
+    peakPosition: initialPosition,
+    lastWeekPosition: undefined,
+  };
+
+  // Add to relevant charts
+  return charts.map(chart => {
+    if (chart.genre === song.genre || chart.id === 'hot100') {
+      const updatedEntries = [...chart.entries, playerSongChartEntry];
+      // Re-sort entries based on a simplified popularity metric (e.g., quality + initialBuzz)
+      updatedEntries.sort((a, b) => {
+        const aPopularity = a.song.quality + (a.song.initialBuzz || 0);
+        const bPopularity = b.song.quality + (b.song.initialBuzz || 0);
+        return bPopularity - aPopularity; // Higher popularity comes first
+      });
+
+      // Re-assign positions and update movement
+      const finalEntries = updatedEntries.map((entry, index) => {
+        const newPosition = index + 1;
+        let movement: ChartMovement = 'steady';
+        let positionChange = 0;
+
+        if (entry.song.id === song.id) {
+          // This is the newly added player song
+          movement = 'new';
+          positionChange = 0;
+        } else {
+          // For existing songs, calculate movement
+          const oldPosition = entry.position;
+          positionChange = oldPosition - newPosition;
+          if (positionChange > 0) movement = 'up';
+          else if (positionChange < 0) movement = 'down';
+          else movement = 'steady';
+        }
+
+        return {
+          ...entry,
+          position: newPosition,
+          movement,
+          positionChange,
+          weeksOnChart: entry.weeksOnChart + (entry.song.id === song.id ? 0 : 1), // Increment weeks on chart for existing songs
+          peakPosition: Math.min(entry.peakPosition, newPosition),
+          lastWeekPosition: oldPosition,
+        };
+      });
+
+      return {
+        ...chart,
+        entries: finalEntries,
+        lastChartUpdate: currentDay,
+      };
+    }
+    return chart;
+  });
+};
+
+export const addPlayerSongToCharts = (charts: Chart[], song: Song, currentDay: number, bandReputation: number): Chart[] => {
+  const newChartEntries: ChartEntry[] = [];
+
+  // Calculate initial chart potential for the player song
+  // This is a simplified model. Factors like song quality, initial buzz, band reputation,
+  // and market trends should influence this more realistically.
+  const initialPopularity = Math.min(100, Math.max(1, song.quality * 0.5 + (song.initialBuzz || 0) * 0.3 + bandReputation * 0.2));
+  const initialPosition = Math.max(1, 40 - Math.floor(initialPopularity / 2.5)); // Higher popularity = lower position (closer to #1)
+
+  const playerSongChartEntry: ChartEntry = {
+    position: initialPosition,
+    song: { ...song, playerProduced: true }, // Mark as player produced
+    movement: 'new',
+    positionChange: 0,
+    weeksOnChart: 0,
+    peakPosition: initialPosition,
+    lastWeekPosition: undefined,
+  };
+
+  // Add to relevant charts
+  return charts.map(chart => {
+    if (chart.genre === song.genre || chart.id === 'hot100') {
+      const updatedEntries = [...chart.entries, playerSongChartEntry];
+      // Re-sort entries based on a simplified popularity metric (e.g., quality + initialBuzz)
+      updatedEntries.sort((a, b) => {
+        const aPopularity = a.song.quality + (a.song.initialBuzz || 0);
+        const bPopularity = b.song.quality + (b.song.initialBuzz || 0);
+        return bPopularity - aPopularity; // Higher popularity comes first
+      });
+
+      // Re-assign positions and update movement
+      const finalEntries = updatedEntries.map((entry, index) => {
+        const newPosition = index + 1;
+        let movement: ChartMovement = 'steady';
+        let positionChange = 0;
+
+        // Check if the song was on the chart last week
+        const wasOnChartLastWeek = entry.lastWeekPosition !== undefined;
+
+        if (entry.song.id === song.id) {
+          // This is the newly added player song
+          movement = 'new';
+          positionChange = 0;
+        } else {
+          // For existing songs, calculate movement
+          const oldPosition = entry.position; // Use current position as old position for calculation
+          positionChange = oldPosition - newPosition;
+          if (positionChange > 0) movement = 'up';
+          else if (positionChange < 0) movement = 'down';
+          else movement = 'steady';
+        }
+
+        return {
+          ...entry,
+          position: newPosition,
+          movement,
+          positionChange,
+          weeksOnChart: entry.weeksOnChart + (entry.song.id === song.id ? 0 : 1), // Increment weeks on chart for existing songs
+          peakPosition: Math.min(entry.peakPosition, newPosition),
+          lastWeekPosition: oldPosition, // Store current position as last week's for next update
+        };
+      });
+
+      return {
+        ...chart,
+        entries: finalEntries,
+        lastChartUpdate: currentDay,
+      };
+    }
+    return chart;
+  });
+};
+
+export const updateCharts = (currentCharts: Chart[], playerLevel: number, currentDay: number, allSongs: Song[], allBands: Band[]): Chart[] => {
   return currentCharts.map(chart => {
-    const newEntries = generateChartEntries(chart.entries.length, chart.genre);
+    let updatedEntries = [...chart.entries];
+
+    // 1. Update existing entries
+    updatedEntries = updatedEntries.map(entry => {
+      const song = allSongs.find(s => s.id === entry.song.id) || entry.song;
+      const band = allBands.find(b => b.id === song.associatedBandId);
+
+      // Simplified popularity calculation for progression
+      // This should be more complex, considering market trends, genre popularity, etc.
+      let currentPopularity = song.quality * 0.6 + (song.initialBuzz || 0) * 0.2;
+      if (band) {
+        currentPopularity += band.reputation * 0.2;
+      }
+      
+      // Simulate decay over time
+      currentPopularity -= (entry.weeksOnChart * 0.5); // Decay based on weeks on chart
+      currentPopularity = Math.max(1, currentPopularity); // Ensure popularity doesn't drop below 1
+
+      // Update song's internal chart position and sales (if applicable)
+      const updatedSong: Song = {
+        ...song,
+        currentChartPosition: entry.position,
+        // totalSales: song.totalSales + calculateSales(currentPopularity, chart.influence), // Placeholder for sales calculation
+        performanceHistory: [...song.performanceHistory, { day: currentDay, sales: song.totalSales, chartPosition: entry.position }],
+      };
+
+      return {
+        ...entry,
+        song: updatedSong,
+        weeksOnChart: entry.weeksOnChart + 1,
+      };
+    });
+
+    // 2. Add newly released player songs that are not yet on this chart
+    const newlyReleasedPlayerSongs = allSongs.filter(s =>
+      s.isReleased &&
+      s.playerProduced &&
+      s.releaseDate === currentDay && // Only add songs released today
+      !updatedEntries.some(entry => entry.song.id === s.id) &&
+      (chart.genre === s.genre || chart.id === 'hot100')
+    );
+
+    newlyReleasedPlayerSongs.forEach(newSong => {
+      const band = allBands.find(b => b.id === newSong.associatedBandId);
+      const initialPopularity = Math.min(100, Math.max(1, newSong.quality * 0.5 + (newSong.initialBuzz || 0) * 0.3 + (band?.reputation || 0) * 0.2));
+      const initialPosition = Math.max(1, 40 - Math.floor(initialPopularity / 2.5));
+
+      updatedEntries.push({
+        position: initialPosition,
+        song: { ...newSong, currentChartPosition: initialPosition },
+        movement: 'new',
+        positionChange: 0,
+        weeksOnChart: 0,
+        peakPosition: initialPosition,
+        lastWeekPosition: undefined,
+      });
+    });
+
+    // 3. Sort entries by calculated popularity and re-assign positions
+    updatedEntries.sort((a, b) => {
+      const aPopularity = a.song.quality + (a.song.initialBuzz || 0) + (allBands.find(band => band.id === a.song.associatedBandId)?.reputation || 0);
+      const bPopularity = b.song.quality + (b.song.initialBuzz || 0) + (allBands.find(band => band.id === b.song.associatedBandId)?.reputation || 0);
+      return bPopularity - aPopularity; // Higher popularity comes first
+    });
+
+    // 4. Update positions, movement, and peak position
+    const finalEntries: ChartEntry[] = [];
+    const maxChartSize = chart.id === 'hot100' ? 40 : 25; // Keep charts to a reasonable size
+
+    updatedEntries.forEach((entry, index) => {
+      const newPosition = index + 1;
+      let movement: ChartMovement = 'steady';
+      let positionChange = 0;
+
+      if (entry.lastWeekPosition) {
+        positionChange = entry.lastWeekPosition - newPosition;
+        if (positionChange > 0) movement = 'up';
+        else if (positionChange < 0) movement = 'down';
+        else movement = 'steady';
+      } else if (entry.weeksOnChart === 0) {
+        movement = 'new';
+      } else {
+        movement = 'returning'; // Or some other logic for re-entry
+      }
+
+      if (newPosition <= maxChartSize) { // Only include songs within the chart size
+        finalEntries.push({
+          ...entry,
+          position: newPosition,
+          movement,
+          positionChange,
+          peakPosition: Math.min(entry.peakPosition, newPosition),
+          lastWeekPosition: entry.position, // Store current position as last week's for next update
+        });
+      }
+    });
+
     return {
       ...chart,
-      entries: newEntries,
-      lastChartUpdate: Date.now() // Update timestamp
+      entries: finalEntries,
+      lastChartUpdate: currentDay,
     };
   });
 };

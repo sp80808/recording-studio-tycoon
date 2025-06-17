@@ -8,12 +8,14 @@ import { GameState, StaffMember } from '@/types/game';
 import { Band } from '@/types/bands';
 import { generateBandName } from '@/utils/bandUtils';
 import { toast } from '@/hooks/use-toast';
+import { MusicGenre } from '@/types/charts';
+import { allMusicGenres } from '@/data/chartsData';
 
 interface CreateBandModalProps {
   isOpen: boolean;
   onClose: () => void;
   gameState: GameState;
-  onCreateBand: (bandName: string, memberIds: string[]) => void;
+  onCreateBand: (bandName: string, memberIds: string[], genre: MusicGenre) => void;
 }
 
 export const CreateBandModal: React.FC<CreateBandModalProps> = ({
@@ -24,6 +26,7 @@ export const CreateBandModal: React.FC<CreateBandModalProps> = ({
 }) => {
   const [bandName, setBandName] = useState('');
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [selectedGenre, setSelectedGenre] = useState<MusicGenre>(allMusicGenres[0]);
 
   const availableStaff = gameState.hiredStaff.filter(staff => 
     !gameState.playerBands.some(band => band.memberIds.includes(staff.id))
@@ -61,10 +64,11 @@ export const CreateBandModal: React.FC<CreateBandModalProps> = ({
       });
       return;
     }
-
-    onCreateBand(bandName.trim(), selectedMembers);
-    setBandName('');
-    setSelectedMembers([]);
+ 
+     onCreateBand(bandName.trim(), selectedMembers, selectedGenre);
+     setBandName('');
+     setSelectedMembers([]);
+     setSelectedGenre(allMusicGenres[0]);
     onClose();
   };
 
@@ -98,10 +102,26 @@ export const CreateBandModal: React.FC<CreateBandModalProps> = ({
               </Button>
             </div>
           </div>
-
-          <div>
-            <Label>Select Band Members</Label>
-            <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
+ 
+           <div>
+            <Label htmlFor="genre">Band Genre</Label>
+            <select
+              id="genre"
+              value={selectedGenre}
+              onChange={(e) => setSelectedGenre(e.target.value as MusicGenre)}
+              className="mt-1 block w-full p-2 border border-gray-600 rounded-md shadow-sm bg-gray-700 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            >
+              {allMusicGenres.map((genre) => (
+                <option key={genre} value={genre}>
+                  {genre.charAt(0).toUpperCase() + genre.slice(1)}
+                </option>
+              ))}
+            </select>
+          </div>
+ 
+           <div>
+             <Label>Select Band Members</Label>
+             <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
               {availableStaff.map(staff => (
                 <div
                   key={staff.id}
