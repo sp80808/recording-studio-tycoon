@@ -110,13 +110,32 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
   if (!gameState.activeProject) {
     return (
-      <Card className="flex-1 bg-gray-800/90 border-gray-600 p-6 backdrop-blur-sm">
-        <div className="text-center text-gray-400 animate-fade-in">
-          <div className="text-6xl mb-4 animate-pulse">🎵</div>
-          <h3 className="text-xl font-bold mb-2">No Active Project</h3>
-          <p>Select a project from the left panel to start working</p>
+      <div className="flex-1 space-y-4">
+        {/* Studio Header */}
+        <div className="bg-gradient-to-r from-purple-900/30 to-blue-900/30 border border-purple-500/30 rounded-lg p-3">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🎵</span>
+            <div>
+              <h2 className="text-lg font-bold text-white">Studio Workspace</h2>
+              <p className="text-sm text-gray-300">Work on your projects here</p>
+            </div>
+          </div>
         </div>
-      </Card>
+        
+        <Card className="flex-1 bg-gray-800/90 border-gray-600 p-6 backdrop-blur-sm">
+          <div className="text-center text-gray-400 animate-fade-in">
+            <div className="text-6xl mb-4 animate-pulse">🎵</div>
+            <h3 className="text-xl font-bold mb-2 text-white">No Active Project</h3>
+            <p className="mb-4">Select a project from the "Projects" tab to start working</p>
+            <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4 text-sm text-blue-300">
+              <p className="font-semibold mb-2">📱 How to get started:</p>
+              <p>1. Switch to the "Projects" tab (swipe left or use arrows)</p>
+              <p>2. Choose a project and click "Start Project"</p>
+              <p>3. Return to this "Studio" tab to work on it</p>
+            </div>
+          </div>
+        </Card>
+      </div>
     );
   }
 
@@ -302,6 +321,22 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       
       {/* Make this div scrollable and ensure it fills height */}
       <div ref={containerRef} className="flex-1 space-y-4 relative overflow-y-auto flex flex-col">
+        {/* Studio Header */}
+        <div className="bg-gradient-to-r from-purple-900/30 to-blue-900/30 border border-purple-500/30 rounded-lg p-3 mb-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🎵</span>
+              <div>
+                <h2 className="text-lg font-bold text-white">Studio Workspace</h2>
+                <p className="text-sm text-gray-300">Work on your current project</p>
+              </div>
+            </div>
+            <div className="text-sm text-gray-400">
+              Project {project.currentStageIndex + 1}/{project.stages.length} stages
+            </div>
+          </div>
+        </div>
+        
         {/* The Card should not prevent scrolling; its height can be auto based on content */}
         <Card className="bg-gray-800/50 border-gray-600 p-6 backdrop-blur-sm animate-scale-in flex-grow flex flex-col">
           {/* Added flex-grow and flex flex-col to allow inner content to manage space */}
@@ -465,10 +500,10 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                     step={5}
                     className={`w-full transition-all duration-300 ease-in-out ${
                       Math.abs(projectFocus.performance - optimalFocus.performance) <= 10 
-                        ? '[&_.bg-primary]:bg-gradient-to-r from-green-400 to-green-600 [&_.border-primary]:border-green-700' 
+                        ? 'text-green-500 [&>span]:bg-green-500 [&>span>span]:bg-green-600 [&>span>button]:border-green-500' 
                         : Math.abs(projectFocus.performance - optimalFocus.performance) <= 25
-                          ? '[&_.bg-primary]:bg-gradient-to-r from-yellow-400 to-yellow-600 [&_.border-primary]:border-yellow-700'
-                          : '[&_.bg-primary]:bg-gradient-to-r from-blue-400 to-blue-600'
+                          ? 'text-yellow-500 [&>span]:bg-yellow-500 [&>span>span]:bg-yellow-600 [&>span>button]:border-yellow-500'
+                          : 'text-blue-500 [&>span]:bg-blue-500 [&>span>span]:bg-blue-600 [&>span>button]:border-blue-500'
                     }`}
                   />
                 </div>

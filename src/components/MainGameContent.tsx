@@ -152,7 +152,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   };
 
   // Band Management Integration
-  const { createBand, startTour, createOriginalTrack, processTourIncome } = useBandManagement(gameState, setGameState);
+  const { createBand, startTour, createOriginalTrack } = useBandManagement(gameState, setGameState);
 
 
   /**
@@ -229,15 +229,17 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
     <div className="h-full flex flex-col">
       {/* Render MobileArrowNavigation only on mobile viewports. */}
       {isMobile && (
-        <MobileArrowNavigation
-          tabs={mobileTabs}
-          activeTabId={mobileTabs[activeMobileTabIndex].id} // Pass the ID of the current active tab
-          onNavigate={handleMobileNavigate} // Pass the handler for arrow clicks
-        />
+        <div className="mobile-navigation">
+          <MobileArrowNavigation
+            tabs={mobileTabs}
+            activeTabId={mobileTabs[activeMobileTabIndex].id} // Pass the ID of the current active tab
+            onNavigate={handleMobileNavigate} // Pass the handler for arrow clicks
+          />
+        </div>
       )}
       {/* Container for the tab panels. Flex direction and overflow differ for mobile vs. desktop. */}
       <div 
-        className={`flex-grow flex ${isMobile ? 'overflow-hidden' : ''}`}
+        className={`flex-grow flex ${isMobile ? 'mobile-tab-container' : ''}`}
         ref={isMobile ? swipeContainerRef : null} // Apply swipe container ref only on mobile
         style={isMobile ? { transition: 'transform 0.3s ease-out', width: `${mobileTabs.length * 100}%` } : {}} // Style for swipe track on mobile
         onTouchStart={isMobile ? handleTouchStart : undefined} // Attach touch handlers only on mobile
@@ -247,7 +249,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         {/* Panel 1: Project List */}
         {/* On mobile, this is the first tab. On desktop, it's the left column. */}
         <div 
-          className={`h-full overflow-y-auto p-2 ${isMobile ? 'flex-shrink-0 w-full' : 'w-1/4 border-r border-gray-700'}`}
+          className={`h-full overflow-y-auto p-2 ${isMobile ? 'flex-shrink-0 mobile-tab-panel' : 'w-1/4 border-r border-gray-700'}`}
           style={isMobile ? { width: `calc(100% / ${mobileTabs.length})`} : {}} // Full width per tab on mobile, fractional on desktop
         >
           <ProjectList 
@@ -260,7 +262,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         {/* Panel 2: Main Interface (Studio) */}
         {/* On mobile, this is the second (default) tab. On desktop, it's the center column. */}
         <div 
-          className={`h-full overflow-y-auto p-2 relative flex flex-col ${isMobile ? 'flex-shrink-0 w-full' : 'w-1/2'}`}
+          className={`h-full overflow-y-auto p-2 relative flex flex-col ${isMobile ? 'flex-shrink-0 mobile-tab-panel' : 'w-1/2'}`}
           style={isMobile ? { width: `calc(100% / ${mobileTabs.length})`} : {}}
         >
           <ProgressiveProjectInterface 
@@ -296,7 +298,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         {/* Panel 3: RightPanel (Management, Staff, Equipment) */}
         {/* On mobile, this is the third tab. On desktop, it's the right column. */}
         <div 
-          className={`h-full overflow-y-auto p-2 ${isMobile ? 'flex-shrink-0 w-full' : 'w-1/4 border-l border-gray-700'}`}
+          className={`h-full overflow-y-auto p-2 ${isMobile ? 'flex-shrink-0 mobile-tab-panel' : 'w-1/4 border-l border-gray-700'}`}
           style={isMobile ? { width: `calc(100% / ${mobileTabs.length})`} : {}}
         >
           <RightPanel
@@ -315,7 +317,6 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             createBand={createBand}
             startTour={startTour}
             createOriginalTrack={createOriginalTrack}
-            processTourIncome={processTourIncome}
             startResearchMod={startResearchMod}
           />
         </div>

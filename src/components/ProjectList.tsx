@@ -34,15 +34,21 @@ export const ProjectList: React.FC<ProjectListProps> = ({
 
       {gameState.activeProject && (
         <Card className="p-4 bg-blue-900/80 border-blue-400 backdrop-blur-sm mb-4">
-          <div className="text-sm text-blue-200 mb-2">Currently working on a project.</div>
-          <div className="text-xs text-gray-300">Complete it before taking another.</div>
+          <div className="text-sm text-blue-200 mb-2 font-semibold">📋 Project Status</div>
+          <div className="text-sm text-white mb-1">Working on: {gameState.activeProject.title}</div>
+          <div className="text-xs text-blue-300 mb-2">
+            Stage {gameState.activeProject.currentStageIndex + 1} of {gameState.activeProject.stages.length}
+          </div>
+          <div className="text-xs text-gray-300 bg-blue-900/40 p-2 rounded border-l-2 border-blue-400">
+            💡 Tip: Switch to the "Studio" tab to work on this project
+          </div>
           
           {/* Show assigned staff */}
-          <div className="mt-2 pt-2 border-t border-blue-400/30">
+          <div className="mt-3 pt-2 border-t border-blue-400/30">
             <div className="text-xs text-blue-300 mb-1">Assigned Staff:</div>
             {gameState.hiredStaff.filter(s => s.assignedProjectId === gameState.activeProject?.id).map(staff => (
               <div key={staff.id} className="text-xs text-gray-200">
-                {staff.name} ({staff.role})
+                👤 {staff.name} ({staff.role})
               </div>
             ))}
             {gameState.hiredStaff.filter(s => s.assignedProjectId === gameState.activeProject?.id).length === 0 && (

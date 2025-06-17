@@ -143,7 +143,7 @@ const SkillDisplay: React.FC<SkillDisplayProps> = ({ skillDetail, onAnimationCom
   return (
     <li className="text-sm p-2 bg-gray-750 rounded shadow">
       <div className="flex justify-between items-center mb-1">
-        <span className={`font-semibold capitalize ${levelUpFlash ? 'text-yellow-300 animate-pulse-strong' : ''}`}>
+        <span className={`font-semibold capitalize ${levelUpFlash ? 'text-yellow-300 animate-pulse-strong' : 'text-white'}`}>
           {skillDetail.skillName}: Lvl {currentLevel}
         </span>
         <span className={`font-bold text-lg ${score > 80 ? 'text-green-400' : score > 60 ? 'text-yellow-400' : 'text-red-400'}`}>
@@ -155,7 +155,7 @@ const SkillDisplay: React.FC<SkillDisplayProps> = ({ skillDetail, onAnimationCom
           className="bg-blue-500 h-full transition-all duration-500 ease-out" 
           style={{ width: `${xpBarProgress}%` }}
         />
-        <span className="absolute inset-0 flex items-center justify-center text-xs text-white font-bold mix-blend-difference">
+        <span className="absolute inset-0 flex items-center justify-center text-xs text-white font-bold drop-shadow-md">
            {xpText} / {skillDetail.finalLevel === currentLevel ? skillDetail.xpToNextLevelAfter : calculateXpToNextLevel(currentLevel)} XP
         </span>
       </div>
@@ -331,10 +331,10 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
             {showRewards && (
               <div className="pt-2 space-y-1 text-center">
                 <h4 className="text-xl font-semibold text-yellow-200">Rewards</h4>
-                <p className="text-lg">💰 Money: $<AnimatedNumber targetValue={report.moneyGained} duration={1200} /></p>
-                <p className="text-lg">🌟 Reputation: +<AnimatedNumber targetValue={report.reputationGained} duration={1200} /></p>
+                <p className="text-lg text-white">💰 Money: $<AnimatedNumber targetValue={report.moneyGained} duration={1200} /></p>
+                <p className="text-lg text-white">🌟 Reputation: +<AnimatedNumber targetValue={report.reputationGained} duration={1200} /></p>
                 {report.assignedPerson.type === 'staff' && report.playerManagementXpGained > 0 && (
-                  <p className="text-lg">🧠 Player Management XP: +<AnimatedNumber targetValue={report.playerManagementXpGained} duration={1200} /></p>
+                  <p className="text-lg text-white">🧠 Player Management XP: +<AnimatedNumber targetValue={report.playerManagementXpGained} duration={1200} /></p>
                 )}
               </div>
             )}

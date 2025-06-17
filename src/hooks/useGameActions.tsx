@@ -82,7 +82,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       ),
       playerData: {
         ...prev.playerData,
-        dailyWorkCapacity: prev.playerData.attributes.focusMastery + 3 // Reset daily capacity
+        dailyWorkCapacity: prev.playerData.attributes.focusMastery + 3 + prev.playerData.level - 1 // Reset daily capacity
       }
     }));
     

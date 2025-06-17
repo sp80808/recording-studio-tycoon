@@ -214,3 +214,31 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 }
+
+/* Mobile-specific styles for better touch interaction */
+.mobile-tab-panel {
+  -webkit-overflow-scrolling: touch;
+  overflow-scrolling: touch;
+}
+
+/* Ensure proper mobile viewport */
+@media (max-width: 768px) {
+  .mobile-navigation {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(31, 41, 55, 0.95);
+    backdrop-filter: blur(10px);
+  }
+  
+  .mobile-tab-container {
+    height: calc(100vh - 120px); /* Account for navigation and header */
+    overflow: hidden;
+  }
+  
+  .mobile-tab-panel {
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}

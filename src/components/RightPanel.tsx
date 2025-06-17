@@ -15,60 +15,75 @@ import { toast } from '@/hooks/use-toast'; // Import toast
 
 export interface RightPanelProps {
   gameState: GameState;
-  showSkillsModal: boolean;
-  setShowSkillsModal: React.Dispatch<React.SetStateAction<boolean>>;
-  showAttributesModal: boolean;
-  setShowAttributesModal: React.Dispatch<React.SetStateAction<boolean>>;
+  setGameState: React.Dispatch<React.SetStateAction<GameState>>;
   spendPerkPoint: (attribute: keyof PlayerAttributes) => void;
-  advanceDay: () => void;
-  triggerEraTransition: () => void; // Add era transition function
   purchaseEquipment: (equipmentId: string) => void;
-  createBand: (bandName: string, memberIds: string[]) => void;
-  startTour: (bandId: string) => void;
-  createOriginalTrack: (bandId: string) => void;
-  contactArtist: (artistId: string, offer: number) => void;
   hireStaff: (candidateIndex: number) => boolean;
   refreshCandidates: () => void;
   assignStaffToProject: (staffId: string) => void;
   unassignStaffFromProject: (staffId: string) => void;
   toggleStaffRest: (staffId: string) => void;
   openTrainingModal: (staff: any) => boolean;
-  startResearchMod?: (staffId: string, modId: string) => boolean; // Add prop
-  applyModToEquipment?: (equipmentId: string, modId: string | null) => void; // Add new prop
+  contactArtist: (artistId: string, offer: number) => void;
+  onEraTransition: () => { fromEra?: string; toEra?: string } | void;
+  createBand: (bandName: string, memberIds: string[]) => void;
+  startTour: (bandId: string) => void;
+  createOriginalTrack: (bandId: string) => void;
+  startResearchMod?: (staffId: string, modId: string) => boolean;
 }
 
 export const RightPanel: React.FC<RightPanelProps> = ({
   gameState,
-  showSkillsModal,
-  setShowSkillsModal,
-  showAttributesModal,
-  setShowAttributesModal,
+  setGameState,
   spendPerkPoint,
-  advanceDay,
-  triggerEraTransition,
   purchaseEquipment,
-  createBand,
-  startTour,
-  createOriginalTrack,
-  contactArtist,
   hireStaff,
   refreshCandidates,
   assignStaffToProject,
   unassignStaffFromProject,
   toggleStaffRest,
   openTrainingModal,
-  startResearchMod, // Destructure prop
-  applyModToEquipment // Destructure new prop
+  contactArtist,
+  onEraTransition,
+  createBand,
+  startTour,
+  createOriginalTrack,
+  startResearchMod
 }) => {
   const [activeTab, setActiveTab] = useState<'studio' | 'skills' | 'bands' | 'charts' | 'staff'>('studio');
+  const [showSkillsModal, setShowSkillsModal] = useState(false);
+  const [showAttributesModal, setShowAttributesModal] = useState(false);
   const [showResearchModal, setShowResearchModal] = useState(false);
-  // selectedEngineerForResearch is not strictly needed here if ResearchModal handles its own staff selection from gameState
-  // const [selectedEngineerForResearch, setSelectedEngineerForResearch] = useState<GameState['hiredStaff'][0] | null>(null); 
   const [showEquipmentModModal, setShowEquipmentModModal] = useState(false);
   const [selectedEquipmentForModding, setSelectedEquipmentForModding] = useState<GameState['ownedEquipment'][0] | null>(null);
 
   const handleAdvanceDay = () => {
-    advanceDay();
+    // Implement advance day functionality
+    setGameState(prev => ({
+      ...prev,
+      currentDay: prev.currentDay + 1
+    }));
+  };
+
+  const handleEraTransition = () => {
+    const result = onEraTransition();
+    if (result && result.fromEra && result.toEra) {
+      toast({
+        title: "Era Transition",
+        description: `Transitioning from ${result.fromEra} to ${result.toEra}`,
+      });
+    }
+  };
+
+  const applyModToEquipment = (equipmentId: string, modId: string | null) => {
+    setGameState(prev => ({
+      ...prev,
+      ownedEquipment: prev.ownedEquipment.map(eq => 
+        eq.id === equipmentId 
+          ? { ...eq, appliedModId: modId }
+          : eq
+      )
+    }));
   };
 
   return (
@@ -160,17 +175,20 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                           </p>
                           <p className="text-xs text-gray-400">Condition: {equip.condition}%</p>
                         </div>
-                        <Button
-                          size="sm" // Changed from "xs"
-                          variant="outline"
-                          className="text-xs border-blue-500 text-blue-300 hover:bg-blue-500/20 px-2 py-1 h-auto" // Added padding and height classes for smaller feel
-                          onClick={() => {
-                            setSelectedEquipmentForModding(equip);
-                            setShowEquipmentModModal(true);
-                          }}
-                        >
-                          Manage Mods
-                        </Button>
+                        {/* Only show Mods button if any mods are researched */}
+                        {gameState.researchedMods && gameState.researchedMods.length > 0 && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs border-gray-600 text-gray-300 hover:bg-gray-700/50 hover:text-white px-2 py-1 h-auto bg-gray-800/50"
+                            onClick={() => {
+                              setSelectedEquipmentForModding(equip);
+                              setShowEquipmentModModal(true);
+                            }}
+                          >
+                            Mods
+                          </Button>
+                        )}
                       </div>
                     </Card>
                   );
