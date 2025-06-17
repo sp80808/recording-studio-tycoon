@@ -2,7 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using RecordingStudioTycoon.ScriptableObjects; // For EraData
-using RecordingStudioTycoon.DataModels; // For UnlockedFeatureInfo, PlayerAbilityChange, PlayerAttributeChange, StudioSkill
+using RecordingStudioTycoon.DataModels; // For UnlockedFeatureInfo, PlayerAbilityChange, PlayerAttributeChange, StudioSkill, StudioSkillType, PlayerData, PlayerAttributes
 using RecordingStudioTycoon.GameLogic;
 using RecordingStudioTycoon.Core;
 using RecordingStudioTycoon.Utils; // For SerializableDictionary

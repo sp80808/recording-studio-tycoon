@@ -6,7 +6,7 @@ using RecordingStudioTycoon.DataModels; // Added for Project, ProjectTemplate, S
 using RecordingStudioTycoon.ScriptableObjects; // Added for ProjectData
 using RecordingStudioTycoon.Systems.Staff; // For StaffManagement interaction
 using RecordingStudioTycoon.UI; // For UIManager interaction
-using RecordingStudioTycoon; // For RewardType, RewardManager
+using RecordingStudioTycoon.Systems.Scoring; // For RewardType, RewardManager
 
 namespace RecordingStudioTycoon.Systems.ProjectSystem
 {
@@ -29,7 +29,7 @@ namespace RecordingStudioTycoon.Systems.ProjectSystem
             }
         }
 
-        public Project CreateNewProject(ProjectTemplate template)
+        public RecordingStudioTycoon.DataModels.Project CreateNewProject(ProjectTemplate template)
         {
             if (template == null)
             {
@@ -37,7 +37,7 @@ namespace RecordingStudioTycoon.Systems.ProjectSystem
                 return null;
             }
 
-            Project newProject = new Project
+            RecordingStudioTycoon.DataModels.Project newProject = new RecordingStudioTycoon.DataModels.Project
             {
                 Id = System.Guid.NewGuid().ToString(),
                 Name = template.Name,
@@ -74,7 +74,7 @@ namespace RecordingStudioTycoon.Systems.ProjectSystem
             return newProject;
         }
 
-        public void AdvanceProject(Project project, float workAmount)
+        public void AdvanceProject(RecordingStudioTycoon.DataModels.Project project, float workAmount)
         {
             if (project == null)
             {
@@ -133,7 +133,7 @@ namespace RecordingStudioTycoon.Systems.ProjectSystem
             Debug.Log($"Project {project.Name} - Stage: {project.CurrentStage}, Stage Progress: {project.StageProgress}%, Overall Progress: {project.OverallProgress}%");
         }
 
-        private float GetQualityContribution(Project project)
+        private float GetQualityContribution(RecordingStudioTycoon.DataModels.Project project)
         {
             // Placeholder for quality calculation logic
             // This would involve assigned staff skills, equipment, studio perks, etc.
@@ -204,7 +204,7 @@ namespace RecordingStudioTycoon.Systems.ProjectSystem
             }
         }
 
-        private void UpdateOverallProjectProgress(Project project)
+        private void UpdateOverallProjectProgress(RecordingStudioTycoon.DataModels.Project project)
         {
             // Assuming 5 active stages (Pre-Production to Release)
             int totalActiveStages = 5;
@@ -218,7 +218,7 @@ namespace RecordingStudioTycoon.Systems.ProjectSystem
             }
         }
 
-        public void CompleteProject(Project project)
+        public void CompleteProject(RecordingStudioTycoon.DataModels.Project project)
         {
             if (project == null)
             {
@@ -283,7 +283,7 @@ namespace RecordingStudioTycoon.Systems.ProjectSystem
             }
         }
 
-        private float CalculateFinalProjectOutcome(Project project)
+        private float CalculateFinalProjectOutcome(RecordingStudioTycoon.DataModels.Project project)
         {
             // This is a placeholder for nuanced project outcome calculations.
             // Factors to consider:

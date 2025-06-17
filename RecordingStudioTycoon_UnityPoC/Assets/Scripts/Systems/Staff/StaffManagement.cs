@@ -5,8 +5,6 @@ using RecordingStudioTycoon.Core; // For GameState access
 using RecordingStudioTycoon.DataModels;
 using RecordingStudioTycoon.GameLogic;
 using RecordingStudioTycoon.Utils; // For SerializableDictionary
-// Remove the alias to avoid conflict if the namespace is also named Project
-// using Project = RecordingStudioTycoon.DataModels.Project;
 
 namespace RecordingStudioTycoon.Systems.Staff
 {

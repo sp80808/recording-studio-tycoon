@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using RecordingStudioTycoon.Core;
-using RecordingStudioTycoon.Utils;
+using RecordingStudioTycoon.Utils; // For SerializableDictionary
 
 namespace RecordingStudioTycoon.DataModels
 {

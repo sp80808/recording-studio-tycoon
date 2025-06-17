@@ -1,6 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
-using RecordingStudioTycoon.DataModels;
+using RecordingStudioTycoon.DataModels; // Ensure StaffMember, Training, StudioSkillType, StudioSkill are accessible
 using RecordingStudioTycoon.GameLogic;
 using RecordingStudioTycoon.Core;
 using RecordingStudioTycoon.Utils; // For SerializableDictionary

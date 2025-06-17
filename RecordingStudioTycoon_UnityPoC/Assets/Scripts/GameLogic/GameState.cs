@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using RecordingStudioTycoon.DataModels;
+using RecordingStudioTycoon.DataModels; // Ensure all data models are accessible
 using RecordingStudioTycoon.Core;
 using UnityEngine;
 using RecordingStudioTycoon.Utils; // For SerializableDictionary
@@ -22,8 +22,8 @@ namespace RecordingStudioTycoon.GameLogic
         public SerializableDictionary<StudioSkillType, StudioSkill> studioSkills;
         public List<string> ownedUpgrades;
         public List<Equipment> ownedEquipment;
-        public List<Project> availableProjects;
-        public Project activeProject;
+        public List<RecordingStudioTycoon.DataModels.Project> availableProjects; // Fully qualify Project
+        public RecordingStudioTycoon.DataModels.Project activeProject; // Fully qualify Project
         public List<StaffMember> hiredStaff;
         public List<StaffMember> availableCandidates;
         public int lastSalaryDay;
@@ -34,7 +34,7 @@ namespace RecordingStudioTycoon.GameLogic
         public OriginalTrackProject activeOriginalTrack;
         public ChartsData chartsData;
         public FocusAllocation focusAllocation;
-        public List<Project> completedProjects;
+        public List<RecordingStudioTycoon.DataModels.Project> completedProjects; // Fully qualify Project
         public LevelUpDetails levelUpDetails;
         public List<UnlockedFeatureInfo> unlockedFeatures;
         public List<Training> availableTraining;
@@ -69,7 +69,7 @@ namespace RecordingStudioTycoon.GameLogic
                 new Equipment { Id = "basic_mic", Name = "Basic USB Mic", Category = "microphone", Price = 0, Description = "Standard starter microphone", Bonuses = new SerializableDictionary<string, float> { { "qualityBonus", 0f } }, Icon = "🎤", Condition = 100 },
                 new Equipment { Id = "basic_monitors", Name = "Basic Speakers", Category = "monitor", Price = 0, Description = "Standard studio monitors", Bonuses = new SerializableDictionary<string, float> { { "qualityBonus", 0f } }, Icon = "🔊", Condition = 100 }
             };
-            availableProjects = new List<Project>();
+            availableProjects = new List<RecordingStudioTycoon.DataModels.Project>(); // Fully qualify Project
             activeProject = null;
             hiredStaff = new List<StaffMember>();
             availableCandidates = new List<StaffMember>();
@@ -81,7 +81,7 @@ namespace RecordingStudioTycoon.GameLogic
             activeOriginalTrack = null;
             chartsData = new ChartsData();
             focusAllocation = new FocusAllocation();
-            completedProjects = new List<Project>();
+            completedProjects = new List<RecordingStudioTycoon.DataModels.Project>(); // Fully qualify Project
             levelUpDetails = null;
             unlockedFeatures = new List<UnlockedFeatureInfo>();
             availableTraining = new List<Training>();

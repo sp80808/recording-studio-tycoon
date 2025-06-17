@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using RecordingStudioTycoon.Core;
 using RecordingStudioTycoon.DataModels;
-using RecordingStudioTycoon.Utils;
+using RecordingStudioTycoon.Utils; // For SerializableDictionary
 
 [CreateAssetMenu(fileName = "EraData", menuName = "Game Data/Era Data")]
 public class EraData : ScriptableObject

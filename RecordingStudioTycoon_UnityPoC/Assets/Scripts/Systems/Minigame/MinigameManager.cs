@@ -5,10 +5,8 @@ using RecordingStudioTycoon.GameLogic; // For GameManager, GameStateEnum
 using RecordingStudioTycoon.UI; // For UIManager
 using RecordingStudioTycoon.ScriptableObjects; // For MinigameData
 using RecordingStudioTycoon.DataModels;
-using RecordingStudioTycoon; // For RewardType, RewardManager
+using RecordingStudioTycoon.Core; // For RewardType, RewardManager
 using RecordingStudioTycoon.Utils; // For SerializableDictionary
-// Remove the alias to avoid conflict if the namespace is also named Project
-// using Project = RecordingStudioTycoon.DataModels.Project;
 
 namespace RecordingStudioTycoon.Systems.Minigame
 {
