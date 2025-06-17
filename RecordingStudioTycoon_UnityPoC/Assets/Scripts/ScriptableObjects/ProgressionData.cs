@@ -1,25 +1,12 @@
-using UnityEngine;
-using System.Collections.Generic;
-using RecordingStudioTycoon.DataModels;
-using RecordingStudioTycoon.Core;
+// This file is a duplicate of ProgressionData.cs located at Assets/ScriptableObjects/ProgressionData.cs
+// It has been replaced with this placeholder to avoid duplicate definition errors (CS0101).
+// Please remove this file from the project or ignore it during compilation.
 
 namespace RecordingStudioTycoon.ScriptableObjects
 {
-    public class ProgressionData : ScriptableObject
+    // Empty class to prevent compilation errors if referenced
+    public class ProgressionDataPlaceholder
     {
-        public List<UnlockedFeatureInfo> unlockedFeatures;
-        public List<PlayerAbilityChange> playerAbilityChanges;
-        public List<UnlockedFeatureInfo> levelUpFeatures;
-        public List<PlayerAbilityChange> levelUpAbilityChanges;
+        // This class is intentionally empty.
     }
-
-    [System.Serializable]
-    public class PlayerMilestone
-    {
-        public int Level;
-        public List<UnlockedFeatureInfo> UnlockedFeatures; // This type needs to be defined or moved
-        public List<PlayerAbilityChange> AbilityChanges; // This type needs to be defined or moved
-        public int PerkPointsGained;
-        public int AttributePointsGained;
-    }
-} 
+}

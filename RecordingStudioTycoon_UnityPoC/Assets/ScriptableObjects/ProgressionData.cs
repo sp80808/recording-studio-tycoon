@@ -1,5 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
+using RecordingStudioTycoon.DataModels;
+using RecordingStudioTycoon.Core;
+using RecordingStudioTycoon.DataModels.Progression;
 
 namespace RecordingStudioTycoon.ScriptableObjects
 {
@@ -16,6 +19,12 @@ namespace RecordingStudioTycoon.ScriptableObjects
         public List<string> UnlockedProjectTypes;
         public List<string> UnlockedMinigames;
         
+        // Additional fields from merged content
+        public List<UnlockedFeatureInfo> unlockedFeaturesList;
+        public List<PlayerAbilityChange> playerAbilityChanges;
+        public List<UnlockedFeatureInfo> levelUpFeatures;
+        public List<PlayerAbilityChange> levelUpAbilityChanges;
+        
         public ProgressionData()
         {
             Level = 1;
@@ -28,5 +37,15 @@ namespace RecordingStudioTycoon.ScriptableObjects
             UnlockedProjectTypes = new List<string>();
             UnlockedMinigames = new List<string>();
         }
+    }
+    
+    [System.Serializable]
+    public class PlayerMilestone
+    {
+        public int Level;
+        public List<UnlockedFeatureInfo> UnlockedFeatures;
+        public List<PlayerAbilityChange> AbilityChanges;
+        public int PerkPointsGained;
+        public int AttributePointsGained;
     }
 }

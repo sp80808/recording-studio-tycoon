@@ -1,25 +1,12 @@
-using System.Collections.Generic;
-using UnityEngine;
+// This file is a duplicate of ProjectData.cs located at Assets/ScriptableObjects/ProjectData.cs
+// It has been replaced with this placeholder to avoid duplicate definition errors (CS0101).
+// Please remove this file from the project or ignore it during compilation.
 
 namespace RecordingStudioTycoon.ScriptableObjects
 {
-    public class ProjectData : ScriptableObject
+    // Empty class to prevent compilation errors if referenced
+    public class ProjectDataPlaceholder
     {
-        public List<ProjectTemplate> ProjectTemplates;
+        // This class is intentionally empty.
     }
-
-    [System.Serializable]
-    public class ProjectTemplate
-    {
-        public string Id;
-        public string Name;
-        public string Genre;
-        public int BaseQuality;
-        public int BaseRewardMoney;
-        public int BaseRewardXP;
-        public int BaseDifficulty;
-        public List<string> RequiredSkills;
-        public List<string> Tags;
-        public string Description;
-    }
-} 
+}

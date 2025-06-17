@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using RecordingStudioTycoon.DataModels.Market;
+using RecordingStudioTycoon.DataModels;
 
 namespace RecordingStudioTycoon.ScriptableObjects
 {

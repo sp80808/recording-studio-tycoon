@@ -1,11 +1,12 @@
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.UIElements;
+using TMPro;
 using RecordingStudioTycoon.DataModels.Progression;
 using RecordingStudioTycoon.GameLogic;
-using UnityEngine.UIElements;
 using RecordingStudioTycoon.DataModels;
 using LevelUpDetails = RecordingStudioTycoon.DataModels.Progression.LevelUpDetails;
 using RecordingStudioTycoon.ScriptableObjects;
-using UnityEngine.UIElements;
 
 public class LevelUpModal : MonoBehaviour
 {

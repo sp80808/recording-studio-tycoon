@@ -1,5 +1,7 @@
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.UIElements;
+using TMPro;
 using RecordingStudioTycoon.GameLogic;
 using RecordingStudioTycoon.Systems.Staff;
 using RecordingStudioTycoon.Systems.Project; // For Project

@@ -1,4 +1,5 @@
 using UnityEngine;
+using RecordingStudioTycoon.GameLogic;
 using RecordingStudioTycoon.Gameplay.Environment; // For Interactable
 using RecordingStudioTycoon.Core; // For GameManager.Instance (placeholder)
 using RecordingStudioTycoon.UI; // For UIManager.Instance (placeholder)

@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using RecordingStudioTycoon.DataModels.Charts;
-using RecordingStudioTycoon.DataModels.Game;
+using RecordingStudioTycoon.GameLogic;
 using RecordingStudioTycoon.DataModels.Market;
 using RecordingStudioTycoon.ScriptableObjects;
 using RecordingStudioTycoon.Utils; // For ChartsGenerator

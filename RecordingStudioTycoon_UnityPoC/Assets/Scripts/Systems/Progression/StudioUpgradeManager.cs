@@ -3,7 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using RecordingStudioTycoon.DataModels; // For ProjectCompletionReport
-using RecordingStudioTycoon.DataModels.Game;
+using RecordingStudioTycoon.GameLogic;
+using StudioSkillType = RecordingStudioTycoon.DataModels.Skills.StudioSkillType;
+using Expansion = RecordingStudioTycoon.DataModels.Progression.Expansion;
 using RecordingStudioTycoon.DataModels.Progression;
 using RecordingStudioTycoon.DataModels.Market; // For MusicGenre
 using RecordingStudioTycoon.GameLogic; // For GameState

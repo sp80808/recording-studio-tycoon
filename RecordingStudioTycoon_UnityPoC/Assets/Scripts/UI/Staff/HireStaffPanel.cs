@@ -1,5 +1,7 @@
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.UIElements;
+using TMPro;
 using RecordingStudioTycoon.DataModels.Staff;
 using RecordingStudioTycoon.ScriptableObjects;
 using RecordingStudioTycoon.GameLogic;

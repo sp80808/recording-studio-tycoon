@@ -5,6 +5,7 @@ using UnityEngine;
 using RecordingStudioTycoon.DataModels;
 using RecordingStudioTycoon.DataModels.Market;
 using RecordingStudioTycoon.GameLogic;
+using RecordingStudioTycoon.DataModels.Songs;
 
 namespace RecordingStudioTycoon.Utils
 {
@@ -72,12 +73,12 @@ namespace RecordingStudioTycoon.Utils
         /// <param name="minQuality">Minimum quality score for the song.</param>
         /// <param name="maxQuality">Maximum quality score for the song.</param>
         /// <returns>A new Song object.</returns>
-        public static Song GenerateAISong(Artist artist, int minQuality = 60, int maxQuality = 100)
+        public static RecordingStudioTycoon.DataModels.Songs.Song GenerateAISong(Artist artist, int minQuality = 60, int maxQuality = 100)
         {
             System.Random rand = new System.Random();
             string title = _songTitles[rand.Next(0, _songTitles.Length)];
             
-            return new Song
+            return new RecordingStudioTycoon.DataModels.Songs.Song
             {
                 Id = Guid.NewGuid().ToString(),
                 Title = title,
@@ -108,7 +109,7 @@ namespace RecordingStudioTycoon.Utils
             {
                 string genre = chartGenre ?? AllMusicGenres[rand.Next(0, AllMusicGenres.Length)];
                 Artist artist = GenerateAIArtist(genre);
-                Song song = GenerateAISong(artist);
+                RecordingStudioTycoon.DataModels.Songs.Song song = GenerateAISong(artist);
                 song.ReleaseDate = currentDay > 0 ? currentDay - rand.Next(0, 30) : 0;
 
                 int positionChange = rand.Next(-5, 6);
@@ -225,7 +226,7 @@ namespace RecordingStudioTycoon.Utils
         /// <param name="studioSpecializations">Player's studio specializations.</param>
         /// <param name="industryPrestige">Player's industry prestige levels.</param>
         /// <returns>Updated list of charts.</returns>
-        public static List<Chart> AddPlayerSongToCharts(List<Chart> charts, Song playerSong, long currentDay, int bandReputation, SerializableDictionary<MusicGenre, DataModels.Progression.StudioSpecialization> studioSpecializations, SerializableDictionary<string, DataModels.Progression.IndustryPrestige> industryPrestige)
+        public static List<Chart> AddPlayerSongToCharts(List<Chart> charts, RecordingStudioTycoon.DataModels.Songs.Song playerSong, long currentDay, int bandReputation, SerializableDictionary<MusicGenre, DataModels.Progression.StudioSpecialization> studioSpecializations, SerializableDictionary<string, DataModels.Progression.IndustryPrestige> industryPrestige)
         {
             float initialPopularity = CalculateSongPopularity(playerSong, GameManager.Instance?.GameState?.playerBands ?? new List<Band>(), GameManager.Instance?.GameState?.currentMarketTrends ?? new List<MarketTrend>(), studioSpecializations, industryPrestige);
             initialPopularity = Mathf.Min(100f, Mathf.Max(1f, initialPopularity));
@@ -322,7 +323,7 @@ namespace RecordingStudioTycoon.Utils
         /// <summary>
         /// Updates existing charts based on song performance, market trends, etc.
         /// </summary>
-        public static List<Chart> UpdateCharts(List<Chart> currentCharts, int playerLevel, long currentDay, List<Song> allSongs, List<Band> allBands, List<MarketTrend> currentMarketTrends, SerializableDictionary<MusicGenre, DataModels.Progression.StudioSpecialization> studioSpecializations, SerializableDictionary<string, DataModels.Progression.IndustryPrestige> industryPrestige)
+        public static List<Chart> UpdateCharts(List<Chart> currentCharts, int playerLevel, long currentDay, List<RecordingStudioTycoon.DataModels.Songs.Song> allSongs, List<Band> allBands, List<MarketTrend> currentMarketTrends, SerializableDictionary<MusicGenre, DataModels.Progression.StudioSpecialization> studioSpecializations, SerializableDictionary<string, DataModels.Progression.IndustryPrestige> industryPrestige)
         {
             return currentCharts.Select(chart =>
             {
@@ -331,7 +332,7 @@ namespace RecordingStudioTycoon.Utils
 
                 foreach (var entry in chart.Entries)
                 {
-                    Song song = allSongs.FirstOrDefault(s => s.Id == entry.Song.Id) ?? entry.Song;
+                    RecordingStudioTycoon.DataModels.Songs.Song song = allSongs.FirstOrDefault(s => s.Id == entry.Song.Id) ?? entry.Song;
                     
                     float currentPopularity = CalculateSongPopularity(song, allBands, currentMarketTrends, studioSpecializations, industryPrestige);
                     currentPopularity -= (entry.WeeksOnChart * 0.5f);
@@ -340,7 +341,7 @@ namespace RecordingStudioTycoon.Utils
 
                     if (currentPopularity > 10f || entry.Position <= 20)
                     {
-                        Song updatedSong = new Song(song.Title, song.Genre, song.Artist, song.QualityScore)
+                        RecordingStudioTycoon.DataModels.Songs.Song updatedSong = new RecordingStudioTycoon.DataModels.Songs.Song(song.Title, song.Genre, song.Artist, song.QualityScore)
                         {
                             Id = song.Id,
                             InitialBuzz = song.InitialBuzz,
@@ -367,7 +368,7 @@ namespace RecordingStudioTycoon.Utils
                     }
                 }
 
-                List<Song> newlyReleasedSongs = allSongs.Where(s =>
+                List<RecordingStudioTycoon.DataModels.Songs.Song> newlyReleasedSongs = allSongs.Where(s =>
                     s.IsReleased &&
                     s.ReleaseDate == currentDay &&
                     !updatedEntries.Any(entry => entry.Song.Id == s.Id) &&
@@ -493,7 +494,7 @@ namespace RecordingStudioTycoon.Utils
         /// Calculates a song's overall popularity based on its attributes, associated band's reputation,
         /// and current market trends for its genre.
         /// </summary>
-        private static float CalculateSongPopularity(Song song, List<Band> allBands, List<MarketTrend> currentMarketTrends, SerializableDictionary<MusicGenre, DataModels.Progression.StudioSpecialization> studioSpecializations = null, SerializableDictionary<string, DataModels.Progression.IndustryPrestige> industryPrestige = null)
+        private static float CalculateSongPopularity(RecordingStudioTycoon.DataModels.Songs.Song song, List<Band> allBands, List<MarketTrend> currentMarketTrends, SerializableDictionary<MusicGenre, DataModels.Progression.StudioSpecialization> studioSpecializations = null, SerializableDictionary<string, DataModels.Progression.IndustryPrestige> industryPrestige = null)
         {
             float popularity = song.QualityScore * 0.6f + song.InitialBuzz * 0.2f;
 

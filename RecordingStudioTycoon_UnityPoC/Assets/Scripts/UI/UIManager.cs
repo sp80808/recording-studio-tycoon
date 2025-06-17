@@ -1,5 +1,8 @@
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 using System.Collections.Generic;
+using RecordingStudioTycoon.GameLogic;
 
 namespace RecordingStudioTycoon.UI
 {

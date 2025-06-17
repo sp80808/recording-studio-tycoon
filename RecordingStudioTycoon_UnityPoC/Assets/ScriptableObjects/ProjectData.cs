@@ -18,6 +18,9 @@ namespace RecordingStudioTycoon.ScriptableObjects
         public int UnlockLevel;
         public bool IsUnlocked;
         
+        // Additional field from merged content
+        public List<ProjectTemplate> ProjectTemplates;
+        
         public ProjectData()
         {
             ProjectTypeId = "project_default";
@@ -32,5 +35,20 @@ namespace RecordingStudioTycoon.ScriptableObjects
             UnlockLevel = 1;
             IsUnlocked = false;
         }
+    }
+    
+    [System.Serializable]
+    public class ProjectTemplate
+    {
+        public string Id;
+        public string Name;
+        public string Genre;
+        public int BaseQuality;
+        public int BaseRewardMoney;
+        public int BaseRewardXP;
+        public int BaseDifficulty;
+        public List<string> RequiredSkills;
+        public List<string> Tags;
+        public string Description;
     }
 }

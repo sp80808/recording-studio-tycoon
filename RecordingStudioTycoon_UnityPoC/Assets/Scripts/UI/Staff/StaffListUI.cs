@@ -1,5 +1,7 @@
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.UIElements;
+using TMPro;
 using System.Linq;
 
 using RecordingStudioTycoon.Systems.Staff;

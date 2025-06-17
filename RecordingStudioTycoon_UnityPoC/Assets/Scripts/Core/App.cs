@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using RecordingStudioTycoon.GameLogic;
 
 namespace RecordingStudioTycoon.Core
 {

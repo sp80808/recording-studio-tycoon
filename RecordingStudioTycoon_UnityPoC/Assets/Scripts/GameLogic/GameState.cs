@@ -1,8 +1,12 @@
 using System;
 using System.Collections.Generic;
 using RecordingStudioTycoon.DataModels;
-using RecordingStudioTycoon.DataModels.Staff;
-using RecordingStudioTycoon.DataModels.Projects;
+using StudioSkillType = RecordingStudioTycoon.DataModels.Skills.StudioSkillType;
+using SessionMusician = RecordingStudioTycoon.DataModels.Staff.SessionMusician;
+using OriginalTrackProject = RecordingStudioTycoon.DataModels.Projects.OriginalTrackProject;
+using FocusAllocation = RecordingStudioTycoon.DataModels.Projects.FocusAllocation;
+using Training = RecordingStudioTycoon.DataModels.Staff.Training;
+using Expansion = RecordingStudioTycoon.DataModels.Progression.Expansion;
 using RecordingStudioTycoon.DataModels.Equipment;
 using RecordingStudioTycoon.DataModels.Market;
 using RecordingStudioTycoon.DataModels.Songs;
