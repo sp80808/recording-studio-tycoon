@@ -3,7 +3,6 @@ using UnityEngine;
 
 namespace RecordingStudioTycoon.ScriptableObjects
 {
-    [CreateAssetMenu(fileName = "ProjectData", menuName = "Game Data/Project Data")]
     public class ProjectData : ScriptableObject
     {
         public List<ProjectTemplate> ProjectTemplates;

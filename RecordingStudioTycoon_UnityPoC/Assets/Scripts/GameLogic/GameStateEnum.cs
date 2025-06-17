@@ -1,10 +1,14 @@
-public enum GameStateEnum
+namespace RecordingStudioTycoon.GameLogic
 {
-    MainMenu,
-    InGame,
-    Paused,
-    Minigame,
-    GameOver,
-    EraTransition,
-    Settings
+    public enum GameStateEnum
+    {
+        MainMenu,
+        Loading,
+        InGame,
+        Paused,
+        GameOver,
+        Cutscene,
+        Tutorial,
+        Minigame
+    }
 }

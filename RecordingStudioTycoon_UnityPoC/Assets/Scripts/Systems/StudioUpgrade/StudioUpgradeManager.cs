@@ -2,6 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using RecordingStudioTycoon.GameLogic; // For GameState
+using RecordingStudioTycoon.DataModels; // For MusicGenre
 using RecordingStudioTycoon.UI; // For UIManager
 
 namespace RecordingStudioTycoon.Systems.StudioUpgrade

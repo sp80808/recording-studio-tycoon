@@ -4,6 +4,8 @@ using RecordingStudioTycoon.DataModels.Staff;
 using RecordingStudioTycoon.ScriptableObjects;
 using RecordingStudioTycoon.GameLogic;
 
+using RecordingStudioTycoon.Systems.Staff;
+
 public class HireStaffPanel : MonoBehaviour
 {
     [SerializeField] private UIDocument uiDocument;

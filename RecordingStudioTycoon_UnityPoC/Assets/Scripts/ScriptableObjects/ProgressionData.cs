@@ -5,7 +5,6 @@ using RecordingStudioTycoon.Core;
 
 namespace RecordingStudioTycoon.ScriptableObjects
 {
-    [CreateAssetMenu(fileName = "ProgressionData", menuName = "Recording Studio Tycoon/Progression Data")]
     public class ProgressionData : ScriptableObject
     {
         public List<UnlockedFeatureInfo> unlockedFeatures;

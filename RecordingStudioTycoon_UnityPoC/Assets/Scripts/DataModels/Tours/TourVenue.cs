@@ -1,74 +1,35 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
+using RecordingStudioTycoon.Utils;
 
 namespace RecordingStudioTycoon.DataModels.Tours
 {
-    [Serializable]
+    [System.Serializable]
     public class TourVenue
     {
         public string id;
         public string name;
-        public string city;
+        public string location;
         public int capacity;
-        public int baseTicketPrice;
+        public int baseCost;
         public int reputationRequirement;
-        public List<GenrePreference> genrePreferences;
-        public int rentalCost;
-
+        public SerializableDictionary<string, float> bonuses; // e.g., "fanGainMultiplier": 1.2
+        public bool isUnlocked;
+        public string description;
+        public int prestigeLevel; // 1-5, how prestigious the venue is
+        
         public TourVenue()
         {
             id = Guid.NewGuid().ToString();
-            name = "";
-            city = "";
-            capacity = 0;
-            baseTicketPrice = 0;
-            reputationRequirement = 0;
-            genrePreferences = new List<GenrePreference>();
-            rentalCost = 0;
-        }
-
-        public TourVenue(string venueName, string venueCity, int venueCapacity, int ticketPrice, int repRequirement, int rental)
-        {
-            id = Guid.NewGuid().ToString();
-            name = venueName;
-            city = venueCity;
-            capacity = venueCapacity;
-            baseTicketPrice = ticketPrice;
-            reputationRequirement = repRequirement;
-            genrePreferences = new List<GenrePreference>();
-            rentalCost = rental;
-        }
-
-        public float GetGenreMultiplier(string genre)
-        {
-            foreach (var preference in genrePreferences)
-            {
-                if (preference.genre.Equals(genre, StringComparison.OrdinalIgnoreCase))
-                {
-                    return preference.multiplier;
-                }
-            }
-            return 1.0f; // Default multiplier if genre not found
-        }
-    }
-
-    [Serializable]
-    public class GenrePreference
-    {
-        public string genre;
-        public float multiplier;
-
-        public GenrePreference()
-        {
-            genre = "";
-            multiplier = 1.0f;
-        }
-
-        public GenrePreference(string genreName, float genreMultiplier)
-        {
-            genre = genreName;
-            multiplier = genreMultiplier;
+            name = "Local Club";
+            location = "Hometown";
+            capacity = 200;
+            baseCost = 500;
+            reputationRequirement = 10;
+            bonuses = new SerializableDictionary<string, float>();
+            isUnlocked = false;
+            description = "A small local venue for up-and-coming bands.";
+            prestigeLevel = 1;
         }
     }
 }

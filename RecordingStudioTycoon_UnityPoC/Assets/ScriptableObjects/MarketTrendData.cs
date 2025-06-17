@@ -1,42 +1,34 @@
 using UnityEngine;
-using System;
 using System.Collections.Generic;
-using RecordingStudioTycoon.DataModels; // For MusicGenre, TrendDirection
 
-namespace RecordingStudioTycoon.DataModels
+namespace RecordingStudioTycoon.ScriptableObjects
 {
-    [Serializable]
-    public class MarketTrend
-    {
-        public string id;
-        public MusicGenre genreId;
-        public string subGenreId; // Optional, for specific sub-genres
-        public float popularity; // 0-100
-        public TrendDirection trendDirection;
-        public float growthRate; // Percentage change per update period
-        public int lastUpdatedDay; // Game day of last update
-        public int growth; // For compatibility, can be derived
-        public int duration; // Default duration for a trend phase
-        public int startDay;
-        public int projectedDuration;
-        public List<float> seasonality; // Monthly seasonality multipliers
-    }
-
-    [Serializable]
-    public class TrendEvent
-    {
-        public string name;
-        public string description;
-        public List<MusicGenre> affectedGenres;
-        public float impact; // Positive or negative impact on popularity/growth
-        public int durationDays;
-        public int startDay;
-    }
-
-    [CreateAssetMenu(fileName = "NewMarketTrendData", menuName = "ScriptableObjects/Market Trend Data")]
+    [CreateAssetMenu(fileName = "MarketTrendData", menuName = "RecordingStudioTycoon/MarketTrendData", order = 7)]
     public class MarketTrendData : ScriptableObject
     {
-        public List<MarketTrend> initialTrends;
-        public List<TrendEvent> globalEvents; // Pre-defined global events
+        public string TrendId;
+        public string TrendName;
+        public string Description;
+        public float BaseImpact;
+        public int DurationDays;
+        public List<string> AffectedGenres;
+        public List<string> AffectedSubGenres;
+        public int UnlockLevel;
+        public bool IsUnlocked;
+        public float Probability; // 0-1, chance of this trend occurring
+        
+        public MarketTrendData()
+        {
+            TrendId = "trend_popularity_boost";
+            TrendName = "Popularity Boost";
+            Description = "A sudden increase in popularity for specific music genres.";
+            BaseImpact = 0.2f;
+            DurationDays = 30;
+            AffectedGenres = new List<string>();
+            AffectedSubGenres = new List<string>();
+            UnlockLevel = 1;
+            IsUnlocked = false;
+            Probability = 0.3f;
+        }
     }
 }

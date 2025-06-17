@@ -4,7 +4,7 @@ using RecordingStudioTycoon.GameLogic;
 using RecordingStudioTycoon.Systems.Staff;
 using RecordingStudioTycoon.Systems.Project; // For Project
 using RecordingStudioTycoon.DataModels.Staff; // For StaffMember
-using RecordingStudioTycoon.Systems.TextGeneration; // For TextGenerationManager
+using RecordingStudioTycoon.Systems; // For TextGenerationManager
 
 namespace RecordingStudioTycoon.UI.Staff
 {

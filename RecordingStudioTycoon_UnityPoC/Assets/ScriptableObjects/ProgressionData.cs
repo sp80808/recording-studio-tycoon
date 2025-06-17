@@ -1,32 +1,32 @@
 using UnityEngine;
-using System;
 using System.Collections.Generic;
-using RecordingStudioTycoon.DataModels; // For StudioSkillType, PlayerAttributeType
 
-namespace RecordingStudioTycoon.DataModels
+namespace RecordingStudioTycoon.ScriptableObjects
 {
-    [Serializable]
-    public class ProgressionMilestone
-    {
-        public int level;
-        public int staffCount;
-        public int projectsCompleted;
-        public string unlockMessage;
-        public List<string> features; // List of feature IDs unlocked by this milestone
-    }
-
-    [CreateAssetMenu(fileName = "NewProgressionData", menuName = "ScriptableObjects/Progression Data")]
+    [CreateAssetMenu(fileName = "ProgressionData", menuName = "RecordingStudioTycoon/ProgressionData", order = 3)]
     public class ProgressionData : ScriptableObject
     {
-        public List<ProgressionMilestone> milestones;
-
-        // Method to calculate XP to next level, similar to usePlayerProgression.tsx
-        public int CalculateXPToNextLevel(int currentLevel)
+        public int Level;
+        public string LevelName;
+        public string Description;
+        public int ExperienceRequired;
+        public List<string> UnlockedFeatures;
+        public List<string> UnlockedEquipment;
+        public List<string> UnlockedPerks;
+        public List<string> UnlockedProjectTypes;
+        public List<string> UnlockedMinigames;
+        
+        public ProgressionData()
         {
-            const int baseXP = 100;
-            const float growthFactor = 1.4f;
-            int levelOffset = Mathf.Max(0, currentLevel - 1);
-            return Mathf.FloorToInt(baseXP * Mathf.Pow(growthFactor, levelOffset * 0.7f));
+            Level = 1;
+            LevelName = "Beginner Studio";
+            Description = "A starting level for new recording studios.";
+            ExperienceRequired = 100;
+            UnlockedFeatures = new List<string>();
+            UnlockedEquipment = new List<string>();
+            UnlockedPerks = new List<string>();
+            UnlockedProjectTypes = new List<string>();
+            UnlockedMinigames = new List<string>();
         }
     }
 }

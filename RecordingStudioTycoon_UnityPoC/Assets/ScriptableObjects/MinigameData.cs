@@ -1,20 +1,34 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-[CreateAssetMenu(fileName = "MinigameData", menuName = "Game Data/Minigame Data")]
-public class MinigameData : ScriptableObject
+namespace RecordingStudioTycoon.ScriptableObjects
 {
-    public List<MinigameTemplate> MinigameTemplates;
-}
-
-[System.Serializable]
-public class MinigameTemplate
-{
-    public string Id;
-    public string Name;
-    public string Description;
-    public int BaseDifficulty;
-    public int BaseRewardXP;
-    public int BaseRewardMoney;
-    public string AssociatedSkill; // e.g., "recording", "mixing"
+    [CreateAssetMenu(fileName = "MinigameData", menuName = "RecordingStudioTycoon/MinigameData", order = 1)]
+    public class MinigameData : ScriptableObject
+    {
+        public string MinigameId;
+        public string MinigameName;
+        public string Description;
+        public string SceneName;
+        public float BaseDifficulty;
+        public int UnlockLevel;
+        public bool IsUnlocked;
+        public List<string> RequiredEquipment;
+        public List<string> RequiredSkills;
+        public float DurationMultiplier; // How long this minigame takes compared to standard time
+        
+        public MinigameData()
+        {
+            MinigameId = "minigame_default";
+            MinigameName = "Default Minigame";
+            Description = "A default minigame for the recording studio.";
+            SceneName = "MinigameScene";
+            BaseDifficulty = 1.0f;
+            UnlockLevel = 1;
+            IsUnlocked = false;
+            RequiredEquipment = new List<string>();
+            RequiredSkills = new List<string>();
+            DurationMultiplier = 1.0f;
+        }
+    }
 }

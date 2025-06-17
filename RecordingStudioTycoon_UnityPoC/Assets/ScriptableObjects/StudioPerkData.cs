@@ -1,59 +1,31 @@
 using UnityEngine;
-using System;
 using System.Collections.Generic;
-using RecordingStudioTycoon.DataModels; // For MusicGenre, PerkCategory, ConditionType, EffectOperation, PerkCost, PerkUnlockCondition, PerkEffect
+using RecordingStudioTycoon.Utils;
 
-namespace RecordingStudioTycoon.DataModels
+namespace RecordingStudioTycoon.ScriptableObjects
 {
-    public class PerkUnlockCondition
-    {
-        public ConditionType type;
-        public float value; // Numeric value for level, reputation, count etc.
-        public MusicGenre genre; // For ProjectsInGenre condition
-        public string equipmentId; // For SpecificEquipmentOwned
-        public string perkId; // For SpecificPerkUnlocked
-    }
-
-    public class PerkEffect
-    {
-        public string key; // Corresponds to a property in AggregatedPerkModifiers
-        public float value;
-        public EffectOperation operation;
-        public MusicGenre genre; // For genre-specific effects like projectAppealModifier
-    }
-
-    public class StudioPerk
-    {
-        public string id;
-        public string name;
-        public string description;
-        public PerkCategory category;
-        public int tier;
-        public PerkCost cost;
-        public List<PerkUnlockCondition> unlockConditions;
-        public List<PerkEffect> effects;
-        public List<string> prerequisites; // IDs of perks that must be unlocked first
-        public bool isRepeatable;
-        public int maxRepeats;
-    }
-
-    public class PerkTier
-    {
-        public int tierNumber;
-        public List<StudioPerk> perks;
-    }
-
-    public class PerkTree
-    {
-        public string id;
-        public string name;
-        public List<PerkTier> tiers;
-    }
-
-    [CreateAssetMenu(fileName = "NewStudioPerkData", menuName = "ScriptableObjects/Studio Perk Data")]
+    [CreateAssetMenu(fileName = "StudioPerkData", menuName = "RecordingStudioTycoon/StudioPerkData", order = 8)]
     public class StudioPerkData : ScriptableObject
     {
-        public List<PerkTree> perkTrees;
-        public List<StudioPerk> allPerks; // A flat list of all perks for easy lookup
+        public string PerkId;
+        public string PerkName;
+        public string Description;
+        public int UnlockLevel;
+        public bool IsUnlocked;
+        public SerializableDictionary<string, float> Modifiers;
+        public List<string> AffectedAreas; // e.g., "RecordingQuality", "MixingEfficiency"
+        public int CostToUnlock; // In-game currency or points needed to unlock
+        
+        public StudioPerkData()
+        {
+            PerkId = "perk_quality_boost";
+            PerkName = "Quality Boost";
+            Description = "Increases the quality of all recordings by a small percentage.";
+            UnlockLevel = 2;
+            IsUnlocked = false;
+            Modifiers = new SerializableDictionary<string, float>();
+            AffectedAreas = new List<string>();
+            CostToUnlock = 1000;
+        }
     }
 }

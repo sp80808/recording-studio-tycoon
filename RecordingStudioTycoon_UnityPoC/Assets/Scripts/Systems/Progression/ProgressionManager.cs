@@ -1,5 +1,5 @@
 using UnityEngine;
-using RecordingStudioTycoon.DataModels;
+using RecordingStudioTycoon.DataModels.Progression;
 using RecordingStudioTycoon.GameLogic;
 
 namespace RecordingStudioTycoon.Systems.Progression

@@ -1,99 +1,85 @@
 using UnityEngine;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
-using System;
+using RecordingStudioTycoon.GameLogic;
 
-public class SaveSystem : MonoBehaviour
+namespace RecordingStudioTycoon.Core
 {
-    [SerializeField] private GameStateSO gameState;
-    [SerializeField] private SettingsSO settings;
-    
-    private string savePath => $"{Application.persistentDataPath}/save.dat";
-    private const int CurrentVersion = 1;
-
-    public void SaveGame()
+    public class SaveSystem : MonoBehaviour
     {
-        try
+        // Singleton instance
+        private static SaveSystem _instance;
+        public static SaveSystem Instance
         {
-            var state = new SaveData {
-                version = CurrentVersion,
-                gameState = gameState.CurrentState,
-                settings = new SettingsData {
-                    theme = settings.CurrentTheme
-                },
-                timestamp = DateTime.Now
-            };
+            get { return _instance; }
+        }
 
-            using (var stream = File.Open(savePath, FileMode.Create))
+        // Save file path
+        private string SavePath => Path.Combine(Application.persistentDataPath, "gameSave.dat");
+
+        void Awake()
+        {
+            // Ensure only one instance exists
+            if (_instance == null)
             {
-                var formatter = new BinaryFormatter();
-                formatter.Serialize(stream, state);
-                Debug.Log($"Game saved successfully to {savePath}");
+                _instance = this;
+                DontDestroyOnLoad(gameObject);
+            }
+            else
+            {
+                Destroy(gameObject);
             }
         }
-        catch (Exception e)
-        {
-            Debug.LogError($"Save failed: {e.Message}");
-        }
-    }
 
-    public void LoadGame()
-    {
-        if (!File.Exists(savePath))
+        // Save the game state
+        public void SaveGame(GameState gameState)
         {
-            Debug.Log("No save file found");
-            return;
-        }
-
-        try
-        {
-            using (var stream = File.Open(savePath, FileMode.Open))
+            BinaryFormatter formatter = new BinaryFormatter();
+            using (FileStream stream = new FileStream(SavePath, FileMode.Create))
             {
-                var formatter = new BinaryFormatter();
-                SaveData data = (SaveData)formatter.Deserialize(stream);
-                
-                // Handle version differences
-                if (data.version < CurrentVersion)
+                formatter.Serialize(stream, gameState);
+            }
+            Debug.Log("Game saved to: " + SavePath);
+        }
+
+        // Load the game state
+        public GameState LoadGame()
+        {
+            if (File.Exists(SavePath))
+            {
+                BinaryFormatter formatter = new BinaryFormatter();
+                using (FileStream stream = new FileStream(SavePath, FileMode.Open))
                 {
-                    Debug.LogWarning($"Migrating save from version {data.version} to {CurrentVersion}");
-                    // Add migration logic here if needed
+                    GameState gameState = formatter.Deserialize(stream) as GameState;
+                    Debug.Log("Game loaded from: " + SavePath);
+                    return gameState;
                 }
-
-                gameState.SetGameState(data.gameState);
-                settings.SetTheme(data.settings.theme);
-                Debug.Log($"Game loaded from {savePath} (v{data.version})");
+            }
+            else
+            {
+                Debug.LogWarning("No save file found at: " + SavePath);
+                return null;
             }
         }
-        catch (Exception e)
+
+        // Delete the save file
+        public void DeleteSave()
         {
-            Debug.LogError($"Load failed: {e.Message}");
-            // Optionally create default save if load fails
+            if (File.Exists(SavePath))
+            {
+                File.Delete(SavePath);
+                Debug.Log("Save file deleted: " + SavePath);
+            }
+            else
+            {
+                Debug.LogWarning("No save file to delete at: " + SavePath);
+            }
         }
-    }
 
-    [System.Serializable]
-    private class SaveData
-    {
-        public int version;
-        public DateTime timestamp;
-        public GameState gameState;
-        public SettingsData settings;
-    }
-
-    [System.Serializable]
-    private class SettingsData
-    {
-        public string theme;
-    }
-
-    // Auto-save on application pause/quitting
-    private void OnApplicationPause(bool pauseStatus)
-    {
-        if (pauseStatus) SaveGame();
-    }
-
-    private void OnApplicationQuit()
-    {
-        SaveGame();
+        // Check if a save file exists
+        public bool HasSaveFile()
+        {
+            return File.Exists(SavePath);
+        }
     }
 }

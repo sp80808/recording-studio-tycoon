@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using System.Linq;
 
+using RecordingStudioTycoon.Systems.Staff;
+
 public class StaffListUI : MonoBehaviour
 {
     [SerializeField] private UIDocument uiDocument;

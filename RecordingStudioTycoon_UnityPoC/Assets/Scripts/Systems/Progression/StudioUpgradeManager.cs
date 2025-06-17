@@ -2,9 +2,11 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using RecordingStudioTycoon.DataModels; // For ProjectCompletionReport
 using RecordingStudioTycoon.DataModels.Game;
 using RecordingStudioTycoon.DataModels.Progression;
 using RecordingStudioTycoon.DataModels.Market; // For MusicGenre
+using RecordingStudioTycoon.GameLogic; // For GameState
 using RecordingStudioTycoon.ScriptableObjects;
 using RecordingStudioTycoon.Utils; // For SerializableDictionary
 
@@ -15,18 +17,18 @@ namespace RecordingStudioTycoon.Systems.Progression
         public static StudioUpgradeManager Instance { get; private set; }
 
         [SerializeField] private GameStateSO gameStateSO;
-        [SerializeField] private StudioPerksDataSO studioPerksData; // ScriptableObject for all perk definitions
-        [SerializeField] private ProgressionDataSO progressionData; // For milestones related to upgrades/expansions
+        [SerializeField] private RecordingStudioTycoon.ScriptableObjects.StudioPerksDataSO studioPerksData; // ScriptableObject for all perk definitions
+        [SerializeField] private RecordingStudioTycoon.ScriptableObjects.ProgressionDataSO progressionData; // For milestones related to upgrades/expansions
 
         // Events for UI updates
         public event Action OnStudioUpgradesUpdated;
         public event Action<StudioPerk> OnPerkUnlocked;
-        public event Action<Expansion> OnExpansionPurchased;
-        public event Action<StudioSpecialization> OnSpecializationActivated;
+        public event Action<RecordingStudioTycoon.DataModels.Progression.Expansion> OnExpansionPurchased;
+        public event Action<RecordingStudioTycoon.DataModels.Progression.StudioSpecialization> OnSpecializationActivated;
 
         private List<StudioPerk> _allStudioPerks;
-        private List<Expansion> _allExpansions;
-        private List<StudioSpecialization> _allSpecializations; // Definitions of specializations
+        private List<RecordingStudioTycoon.DataModels.Progression.Expansion> _allExpansions;
+        private List<RecordingStudioTycoon.DataModels.Progression.StudioSpecialization> _allSpecializations; // Definitions of specializations
 
         private void Awake()
         {

@@ -1,233 +1,161 @@
 using UnityEngine;
-using System;
 using System.Collections.Generic;
-using RecordingStudioTycoon.DataModels;
-using RecordingStudioTycoon.GameLogic; // For GameStateEnum
-using RecordingStudioTycoon.Core; // For AudioManager
 
 namespace RecordingStudioTycoon.UI
 {
     public class UIManager : MonoBehaviour
     {
-        public static UIManager Instance { get; private set; }
-
-        [Header("UI Panels")]
-        [SerializeField] private CanvasGroup _mainMenuPanel;
-        [SerializeField] private CanvasGroup _hudPanel;
-        [SerializeField] private CanvasGroup _pauseMenuPanel;
-        [SerializeField] private CanvasGroup _gameOverPanel;
-        [SerializeField] private CanvasGroup _settingsPanel; // New settings panel
-
-        // References to UI Text elements for HUD (to be assigned in Inspector)
-        [Header("HUD UI Elements")]
-        [SerializeField] private TMPro.TextMeshProUGUI _moneyText;
-        [SerializeField] private TMPro.TextMeshProUGUI _dayText;
-        [SerializeField] private TMPro.TextMeshProUGUI _yearText;
-        [SerializeField] private TMPro.TextMeshProUGUI _xpText;
-        [SerializeField] private TMPro.TextMeshProUGUI _levelText;
-
-        // References to UI Sliders for Settings (to be assigned in Inspector)
-        [Header("Settings UI Elements")]
-        [SerializeField] private UnityEngine.UI.Slider _masterVolumeSlider;
-
-        private void Awake()
+        // Singleton instance
+        private static UIManager _instance;
+        public static UIManager Instance
         {
-            if (Instance != null && Instance != this)
+            get { return _instance; }
+        }
+
+        // UI Panels and Screens
+        public GameObject MainMenuPanel;
+        public GameObject InGameUIPanel;
+        public GameObject PauseMenuPanel;
+        public GameObject GameOverPanel;
+        public GameObject SettingsPanel;
+        public GameObject LevelUpModal;
+
+        // Current active panel
+        private GameObject _currentActivePanel;
+
+        void Awake()
+        {
+            // Ensure only one instance exists
+            if (_instance == null)
+            {
+                _instance = this;
+                DontDestroyOnLoad(gameObject);
+            }
+            else
             {
                 Destroy(gameObject);
-                return;
             }
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
         }
 
-        private void OnEnable()
+        void Start()
         {
-            GameManager.OnGameStateChanged += HandleGameStateChanged;
-            GameManager.OnGameDataChanged += UpdateHUD; // Subscribe to generic game data changes
-            GameManager.OnPlayerLevelUp += HandlePlayerLevelUp; // Subscribe to level up event
-            Systems.Finance.FinanceManager.OnMoneyChanged += HandleMoneyChanged; // Subscribe to money changes
+            // Initialize UI
+            InitializeUI();
         }
 
-        private void OnDisable()
+        private void InitializeUI()
         {
-            GameManager.OnGameStateChanged -= HandleGameStateChanged;
-            GameManager.OnGameDataChanged -= UpdateHUD;
-            GameManager.OnPlayerLevelUp -= HandlePlayerLevelUp;
-            Systems.Finance.FinanceManager.OnMoneyChanged -= HandleMoneyChanged;
-        }
+            // Set initial UI state based on game state
+            // For now, we'll just log initialization
+            Debug.Log("UI Manager initialized.");
 
-        private void Start()
-        {
-            // Initialize UI visibility based on current game state
-            HandleGameStateChanged(GameStateEnum.None, GameManager.Instance.CurrentGameState); // Pass None as previous state for initial setup
-            UpdateHUD(); // Initial HUD update
-            
-            // Initialize settings slider values
-            if (_masterVolumeSlider != null && AudioManager.Instance != null)
+            // Hide all panels initially
+            HideAllPanels();
+
+            // Show the main menu by default (or based on game state)
+            if (MainMenuPanel != null)
             {
-                // Assuming AudioManager has a way to get current volume, or a default
-                _masterVolumeSlider.value = 0.5f; // Default value, should load from save
-                _masterVolumeSlider.onValueChanged.AddListener(SetMasterVolume);
+                MainMenuPanel.SetActive(true);
+                _currentActivePanel = MainMenuPanel;
             }
         }
 
-        private void HandleGameStateChanged(GameStateEnum previousState, GameStateEnum newState)
+        private void HideAllPanels()
         {
-            // Fade out all panels first
-            FadeOutPanel(_mainMenuPanel);
-            FadeOutPanel(_hudPanel);
-            FadeOutPanel(_pauseMenuPanel);
-            FadeOutPanel(_gameOverPanel);
-            FadeOutPanel(_settingsPanel);
+            if (MainMenuPanel != null) MainMenuPanel.SetActive(false);
+            if (InGameUIPanel != null) InGameUIPanel.SetActive(false);
+            if (PauseMenuPanel != null) PauseMenuPanel.SetActive(false);
+            if (GameOverPanel != null) GameOverPanel.SetActive(false);
+            if (SettingsPanel != null) SettingsPanel.SetActive(false);
+            if (LevelUpModal != null) LevelUpModal.SetActive(false);
+        }
 
-            // Activate and fade in the relevant panel based on the new state
-            switch (newState)
+        public void ShowPanel(GameObject panelToShow)
+        {
+            if (_currentActivePanel != null && _currentActivePanel != panelToShow)
             {
-                case GameStateEnum.MainMenu:
-                    FadeInPanel(_mainMenuPanel);
-                    break;
-                case GameStateEnum.InGame:
-                    FadeInPanel(_hudPanel);
-                    break;
-                case GameStateEnum.Paused:
-                    FadeInPanel(_pauseMenuPanel);
-                    break;
-                case GameStateEnum.GameOver:
-                    FadeInPanel(_gameOverPanel);
-                    break;
-                case GameStateEnum.Settings:
-                    FadeInPanel(_settingsPanel);
-                    break;
-                // Add other states as needed
+                _currentActivePanel.SetActive(false);
             }
-            Debug.Log($"UIManager: Switched to {newState} UI.");
-        }
 
-        private void FadeInPanel(CanvasGroup panel)
-        {
-            if (panel != null)
+            if (panelToShow != null)
             {
-                panel.gameObject.SetActive(true);
-                panel.alpha = 0f;
-                StartCoroutine(FadeCanvasGroup(panel, 1f, 0.5f)); // Fade to full opacity in 0.5 seconds
+                panelToShow.SetActive(true);
+                _currentActivePanel = panelToShow;
             }
         }
 
-        private void FadeOutPanel(CanvasGroup panel)
+        public void ShowMainMenu()
         {
-            if (panel != null && panel.gameObject.activeSelf)
-            {
-                StartCoroutine(FadeCanvasGroup(panel, 0f, 0.3f, () => panel.gameObject.SetActive(false))); // Fade out in 0.3 seconds, then deactivate
-            }
+            ShowPanel(MainMenuPanel);
         }
 
-        private System.Collections.IEnumerator FadeCanvasGroup(CanvasGroup canvasGroup, float targetAlpha, float duration, Action onComplete = null)
+        public void ShowInGameUI()
         {
-            float startAlpha = canvasGroup.alpha;
-            float timer = 0f;
-
-            while (timer < duration)
-            {
-                timer += Time.deltaTime;
-                canvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, timer / duration);
-                yield return null;
-            }
-            canvasGroup.alpha = targetAlpha; // Ensure final alpha is set
-            onComplete?.Invoke();
+            ShowPanel(InGameUIPanel);
         }
 
-        public void UpdateHUD()
+        public void ShowPauseMenu()
         {
-            if (GameManager.Instance != null && GameManager.Instance.GameState != null)
-            {
-                _moneyText.text = $"Money: ${Systems.Finance.FinanceManager.Instance.CurrentMoney}";
-                _dayText.text = $"Day: {GameManager.Instance.CurrentDay}, Year: {GameManager.Instance.CurrentYear}";
-                _xpText.text = $"XP: {GameManager.Instance.PlayerXp}";
-                _levelText.text = $"Level: {GameManager.Instance.PlayerLevel}";
-            }
+            ShowPanel(PauseMenuPanel);
         }
 
-        private void HandlePlayerLevelUp(LevelUpDetails details)
+        public void ShowGameOver()
         {
-            Debug.Log($"UIManager: Player Leveled Up to {details.NewPlayerLevel}!");
-            AudioManager.Instance?.PlayUISFX("level-up-sound"); // Assuming a level-up sound exists
-            // Potentially show a level-up animation or modal here
-        }
-
-        // UI Interaction Methods (called by Unity UI Buttons/Sliders)
-        public void StartNewGame()
-        {
-            GameManager.Instance?.ResetGameData(); // Reset and then start new
-            GameManager.Instance?.SetState(GameStateEnum.InGame);
-            AudioManager.Instance?.PlayUISFX("bubble-pop-sound-316482");
-        }
-
-        public void LoadGame()
-        {
-            GameManager.Instance?.LoadGameData();
-            GameManager.Instance?.SetState(GameStateEnum.InGame);
-            AudioManager.Instance?.PlayUISFX("bubble-pop-sound-316482");
+            ShowPanel(GameOverPanel);
         }
 
         public void ShowSettings()
         {
-            GameManager.Instance?.SetState(GameStateEnum.Settings);
-            AudioManager.Instance?.PlayUISFX("bubble-pop-sound-316482");
+            ShowPanel(SettingsPanel);
         }
 
-        public void AdvanceDay()
+        public void ShowLevelUpModal()
         {
-            GameManager.Instance?.AdvanceDay();
-            AudioManager.Instance?.PlayUISFX("cash-register-purchase-87313");
+            if (LevelUpModal != null)
+            {
+                LevelUpModal.SetActive(true);
+                // Note: Modal might overlay on current panel, so we don't hide the current panel
+            }
         }
 
-        public void PauseGame()
+        public void HideLevelUpModal()
         {
-            GameManager.Instance?.SetState(GameStateEnum.Paused);
-            AudioManager.Instance?.PlayUISFX("bubble-pop-sound-316482");
+            if (LevelUpModal != null)
+            {
+                LevelUpModal.SetActive(false);
+            }
         }
 
-        public void ResumeGame()
+        // Update UI based on game state
+        public void UpdateUIForGameState(GameStateEnum gameState)
         {
-            GameManager.Instance?.SetState(GameStateEnum.InGame);
-            AudioManager.Instance?.PlayUISFX("bubble-pop-sound-316482");
-        }
-
-        public void SaveGame()
-        {
-            GameManager.Instance?.SaveGameData();
-            AudioManager.Instance?.PlayUISFX("bubble-pop-sound-316482");
-        }
-
-        public void QuitToMainMenu()
-        {
-            GameManager.Instance?.SetState(GameStateEnum.MainMenu);
-            AudioManager.Instance?.PlayUISFX("bubble-pop-sound-316482");
-        }
-
-        public void RestartGame()
-        {
-            GameManager.Instance?.ResetGameData();
-            GameManager.Instance?.SetState(GameStateEnum.MainMenu);
-            AudioManager.Instance?.PlayUISFX("bubble-pop-sound-316482");
-        }
-
-        public void SetMasterVolume(float volume)
-        {
-            AudioManager.Instance?.SetMusicVolume(volume); // Assuming master volume controls music for now
-            AudioManager.Instance?.SetSFXVolume(volume); // And SFX
-            Debug.Log($"Master Volume set to: {volume}");
-        }
-
-        public void ShowLevelUpDetails(LevelUpDetails details)
-        {
-            // Implement level up UI logic
-        }
-
-        private void HandleMoneyChanged(float newMoney)
-        {
-            UpdateHUD(); // Simply call UpdateHUD to refresh money display
+            switch (gameState)
+            {
+                case GameStateEnum.MainMenu:
+                    ShowMainMenu();
+                    break;
+                case GameStateEnum.InGame:
+                    ShowInGameUI();
+                    break;
+                case GameStateEnum.Paused:
+                    ShowPauseMenu();
+                    break;
+                case GameStateEnum.GameOver:
+                    ShowGameOver();
+                    break;
+                case GameStateEnum.Settings:
+                    ShowSettings();
+                    break;
+                case GameStateEnum.Tutorial:
+                    Debug.Log("Tutorial state UI not implemented yet.");
+                    break;
+                case GameStateEnum.Loading:
+                    Debug.Log("Loading state UI not implemented yet.");
+                    break;
+                default:
+                    Debug.LogWarning("Unhandled game state for UI: " + gameState.ToString());
+                    break;
+            }
         }
     }
 }

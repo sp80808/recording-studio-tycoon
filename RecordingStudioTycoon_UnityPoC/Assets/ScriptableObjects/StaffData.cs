@@ -1,34 +1,35 @@
 using UnityEngine;
 using System.Collections.Generic;
-using RecordingStudioTycoon.Core;
-using RecordingStudioTycoon.DataModels;
-using RecordingStudioTycoon.Utils; // For SerializableDictionary
+using RecordingStudioTycoon.Utils;
 
-[CreateAssetMenu(fileName = "StaffData", menuName = "Game Data/Staff Data")]
-public class StaffData : ScriptableObject
+namespace RecordingStudioTycoon.ScriptableObjects
 {
-    public List<StaffMemberTemplate> StaffMemberTemplates;
-    public List<SessionMusicianTemplate> SessionMusicianTemplates;
-}
-
-[System.Serializable]
-public class StaffMemberTemplate
-{
-    public string Id;
-    public string Name;
-    public string Role;
-    public int BaseSalary;
-    public SerializableDictionary<StudioSkillType, int> BaseSkills;
-    public int BaseMood;
-    public int BaseEnergy;
-}
-
-[System.Serializable]
-public class SessionMusicianTemplate
-{
-    public string Id;
-    public string Name;
-    public string Instrument;
-    public int BaseSkillLevel;
-    public int BaseFee;
+    [CreateAssetMenu(fileName = "StaffData", menuName = "RecordingStudioTycoon/StaffData", order = 5)]
+    public class StaffData : ScriptableObject
+    {
+        public string StaffRoleId;
+        public string RoleName;
+        public string Description;
+        public int BaseSalary;
+        public int UnlockLevel;
+        public bool IsUnlocked;
+        public SerializableDictionary<string, int> BaseSkills;
+        public List<string> PossibleTrainings;
+        public int MaxAssignableProjects;
+        public float EfficiencyMultiplier;
+        
+        public StaffData()
+        {
+            StaffRoleId = "staff_engineer";
+            RoleName = "Sound Engineer";
+            Description = "A skilled professional responsible for recording and mixing audio.";
+            BaseSalary = 2000;
+            UnlockLevel = 1;
+            IsUnlocked = false;
+            BaseSkills = new SerializableDictionary<string, int>();
+            PossibleTrainings = new List<string>();
+            MaxAssignableProjects = 2;
+            EfficiencyMultiplier = 1.0f;
+        }
+    }
 }

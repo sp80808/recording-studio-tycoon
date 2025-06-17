@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
+using RecordingStudioTycoon.Core;
 
 namespace RecordingStudioTycoon.DataModels
 {

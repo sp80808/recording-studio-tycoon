@@ -1,6 +1,7 @@
 using UnityEngine;
 using RecordingStudioTycoon.GameLogic;
 using RecordingStudioTycoon.DataModels;
+using LevelUpDetails = RecordingStudioTycoon.DataModels.Progression.LevelUpDetails;
 using RecordingStudioTycoon.DataModels.Progression;
 using UnityEngine.Events;
 

@@ -1,12 +1,36 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-[CreateAssetMenu(fileName = "ProjectData", menuName = "Game Data/Project Data")]
-public class ProjectData : ScriptableObject
+namespace RecordingStudioTycoon.ScriptableObjects
 {
-    public List<ProjectTemplate> ProjectTemplates;
-    // ... other project-related static data
+    [CreateAssetMenu(fileName = "ProjectData", menuName = "RecordingStudioTycoon/ProjectData", order = 2)]
+    public class ProjectData : ScriptableObject
+    {
+        public string ProjectTypeId;
+        public string ProjectTypeName;
+        public string Description;
+        public int BaseComplexity;
+        public int BaseDurationDays;
+        public int BaseBudget;
+        public List<string> RequiredSkills;
+        public List<string> RequiredEquipment;
+        public List<string> Stages;
+        public int UnlockLevel;
+        public bool IsUnlocked;
+        
+        public ProjectData()
+        {
+            ProjectTypeId = "project_default";
+            ProjectTypeName = "Default Project";
+            Description = "A default project type for the recording studio.";
+            BaseComplexity = 3;
+            BaseDurationDays = 14;
+            BaseBudget = 5000;
+            RequiredSkills = new List<string>();
+            RequiredEquipment = new List<string>();
+            Stages = new List<string>();
+            UnlockLevel = 1;
+            IsUnlocked = false;
+        }
+    }
 }
-
-[System.Serializable]
-public class ProjectTemplate { /* ... define properties for ProjectTemplate ... */ }

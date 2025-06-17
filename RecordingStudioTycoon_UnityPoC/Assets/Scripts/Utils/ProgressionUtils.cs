@@ -8,7 +8,8 @@ using RecordingStudioTycoon.ScriptableObjects;
 using System;
 using System.Collections.Generic;
 using RecordingStudioTycoon.ScriptableObjects; // For EraData
-using RecordingStudioTycoon.DataModels; // For UnlockedFeatureInfo, PlayerAbilityChange, PlayerAttributeChange, StudioSkill, StudioSkillType, PlayerData, PlayerAttributes
+using RecordingStudioTycoon.DataModels; // For UnlockedFeatureInfo, PlayerAbilityChange, StudioSkill, StudioSkillType, PlayerData, PlayerAttributes
+using RecordingStudioTycoon.DataModels.Progression; // For PlayerAttributeChange
 using RecordingStudioTycoon.GameLogic;
 using RecordingStudioTycoon.Core;
 using RecordingStudioTycoon.Utils; // For SerializableDictionary
