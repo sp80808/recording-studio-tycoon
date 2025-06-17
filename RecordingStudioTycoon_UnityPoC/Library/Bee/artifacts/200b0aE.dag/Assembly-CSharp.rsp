@@ -492,6 +492,7 @@
 "Assets/Scripts/DataModels/Charts/ChartEntry.cs"
 "Assets/Scripts/DataModels/Charts/Song.cs"
 "Assets/Scripts/DataModels/ChartsData.cs"
+"Assets/Scripts/DataModels/CommonDataModels.cs"
 "Assets/Scripts/DataModels/Contract.cs"
 "Assets/Scripts/DataModels/ContractHistory.cs"
 "Assets/Scripts/DataModels/EntityType.cs"

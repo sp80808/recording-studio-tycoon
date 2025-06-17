@@ -2,6 +2,8 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using RecordingStudioTycoon.DataModels; // For MusicGenre
+using RecordingStudioTycoon.DataModels.Songs; // For Song
+using RecordingStudioTycoon.DataModels.Characters; // For Artist
 
 namespace RecordingStudioTycoon.DataModels
 {

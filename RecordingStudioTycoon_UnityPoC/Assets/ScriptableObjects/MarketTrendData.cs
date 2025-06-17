@@ -1,21 +1,10 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using RecordingStudioTycoon.DataModels; // For MusicGenre, TrendDirection
 
 namespace RecordingStudioTycoon.DataModels
 {
-    [Serializable]
-    public enum MusicGenre
-    {
-        Pop, Rock, HipHop, Electronic, Country, Jazz, R_n_B, Folk, Classical, Alternative, Acoustic, Indie, Metal, Punk, Dance, Funk, Soul, Blues, Reggae
-    }
-
-    [Serializable]
-    public enum TrendDirection
-    {
-        Rising, Stable, Falling, Emerging, Fading
-    }
-
     [Serializable]
     public class MarketTrend
     {

@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using RecordingStudioTycoon.DataModels; // For StudioSkillType, PlayerAttributeType
 
 namespace RecordingStudioTycoon.DataModels
 {
