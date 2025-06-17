@@ -30,6 +30,7 @@ export interface RightPanelProps {
   startTour: (bandId: string) => void;
   createOriginalTrack: (bandId: string) => void;
   startResearchMod?: (staffId: string, modId: string) => boolean;
+  advanceDay: () => void; // Add advanceDay prop
 }
 
 export const RightPanel: React.FC<RightPanelProps> = ({
@@ -48,7 +49,8 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   createBand,
   startTour,
   createOriginalTrack,
-  startResearchMod
+  startResearchMod,
+  advanceDay
 }) => {
   const [activeTab, setActiveTab] = useState<'studio' | 'skills' | 'bands' | 'charts' | 'staff'>('studio');
   const [showSkillsModal, setShowSkillsModal] = useState(false);
@@ -58,11 +60,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   const [selectedEquipmentForModding, setSelectedEquipmentForModding] = useState<GameState['ownedEquipment'][0] | null>(null);
 
   const handleAdvanceDay = () => {
-    // Implement advance day functionality
-    setGameState(prev => ({
-      ...prev,
-      currentDay: prev.currentDay + 1
-    }));
+    advanceDay(); // Use the proper advanceDay function from props
   };
 
   const handleEraTransition = () => {
@@ -150,9 +148,17 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           {/* Studio Progression Panel */}
           <StudioProgressionPanel gameState={gameState} />
           
-          <Button onClick={handleAdvanceDay} className="w-full bg-purple-600 hover:bg-purple-700 text-white">
-            Advance Day
-          </Button>
+          <div className="space-y-2">
+            <Button onClick={handleAdvanceDay} className="w-full bg-purple-600 hover:bg-purple-700 text-white">
+              🌅 Advance Day {gameState.activeProject ? '& Work' : ''}
+            </Button>
+            <p className="text-xs text-gray-400 text-center">
+              {gameState.activeProject 
+                ? 'Automatically work on current project and advance to next day' 
+                : 'Advance to the next day (pay salaries, complete training, etc.)'
+              }
+            </p>
+          </div>
           
           <EquipmentList purchaseEquipment={purchaseEquipment} gameState={gameState} />
 

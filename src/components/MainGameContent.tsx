@@ -318,6 +318,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             startTour={startTour}
             createOriginalTrack={createOriginalTrack}
             startResearchMod={startResearchMod}
+            advanceDay={advanceDay}
           />
         </div>
       </div>
