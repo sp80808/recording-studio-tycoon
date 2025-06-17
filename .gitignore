@@ -43,4 +43,12 @@ yarn-error.log*
 
 # Large files and directories
 *.zip
-prototypes/ 
+prototypes/
+
+RecordingStudioTycoon_UnityPoC/Library/
+RecordingStudioTycoon_UnityPoC/Temp/
+RecordingStudioTycoon_UnityPoC/Logs/
+RecordingStudioTycoon_UnityPoC/Obj/
+RecordingStudioTycoon_UnityPoC/Build/
+RecordingStudioTycoon_UnityPoC/Builds/
+RecordingStudioTycoon_UnityPoC/UserSettings/ 
