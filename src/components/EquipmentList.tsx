@@ -24,18 +24,11 @@ export const EquipmentList: React.FC<EquipmentListProps> = ({
       return false;
     }
     
-    // Skill requirement check - but be more lenient for historical progression
+    // Skill requirement check - hide equipment that requires skills/levels not yet achieved
     if (equipment.skillRequirement) {
       const skill = gameState.studioSkills[equipment.skillRequirement.skill];
       if (!skill || skill.level < equipment.skillRequirement.level) {
-        // For historical eras (before 2000), allow basic equipment even if skill level isn't met
-        // This ensures players can always progress
-        const isHistoricalEra = (gameState.currentYear || 2024) < 2000;
-        const isBasicEquipment = equipment.skillRequirement.level <= 2;
-        
-        if (!(isHistoricalEra && isBasicEquipment)) {
-          return false;
-        }
+        return false; // Hide locked equipment completely
       }
     }
     

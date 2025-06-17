@@ -88,13 +88,13 @@ const SkillDisplay: React.FC<SkillDisplayProps> = ({ skillDetail, onAnimationCom
                   setLevelUpFlash(false);
                   levelsToAnimate--;
                   animateLevelByLevel();
-                }, 300)); 
-              }, 400)); 
+                }, 150)); // Reduced from 300
+              }, 200)); // Reduced from 400 
             } else {
               setXpText(skillDetail.finalXp);
               setXpBarProgress(skillDetail.xpToNextLevelAfter > 0 ? (skillDetail.finalXp / skillDetail.xpToNextLevelAfter) * 100 : 0);
               animationStep++;
-              timeouts.push(setTimeout(runAnimations, 500));
+              timeouts.push(setTimeout(runAnimations, 250)); // Reduced from 500
             }
           };
           animateLevelByLevel();
@@ -102,7 +102,7 @@ const SkillDisplay: React.FC<SkillDisplayProps> = ({ skillDetail, onAnimationCom
           setXpText(skillDetail.finalXp);
           setXpBarProgress(skillDetail.xpToNextLevelAfter > 0 ? (skillDetail.finalXp / skillDetail.xpToNextLevelAfter) * 100 : 0);
           animationStep++;
-          timeouts.push(setTimeout(runAnimations, 500));
+          timeouts.push(setTimeout(runAnimations, 250)); // Reduced from 500
         }
         setCurrentLevel(skillDetail.finalLevel);
       } else if (animationStep === 1) { // Animate score
@@ -119,7 +119,7 @@ const SkillDisplay: React.FC<SkillDisplayProps> = ({ skillDetail, onAnimationCom
             setScore(targetScore);
             clearInterval(scoreIntervalId);
             animationStep++;
-            timeouts.push(setTimeout(runAnimations, 200));
+            timeouts.push(setTimeout(runAnimations, 100)); // Reduced from 200
           } else {
             setScore(currentScoreVal);
           }
@@ -129,7 +129,7 @@ const SkillDisplay: React.FC<SkillDisplayProps> = ({ skillDetail, onAnimationCom
       }
     };
     
-    timeouts.push(setTimeout(runAnimations, 100)); 
+    timeouts.push(setTimeout(runAnimations, 50)); // Reduced from 100 
 
     return () => {
         timeouts.forEach(clearTimeout);
@@ -198,7 +198,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
       setTypedSnippet("");
       
       gameAudio.playSound('review_start', 'sfx', 0.7); 
-      setTimeout(() => setCurrentSkillIndex(0), 500); 
+      setTimeout(() => setCurrentSkillIndex(0), 250); // Reduced from 500 
     }
   }, [isOpen, report]);
 
@@ -331,10 +331,10 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
             {showRewards && (
               <div className="pt-2 space-y-1 text-center">
                 <h4 className="text-xl font-semibold text-yellow-200">Rewards</h4>
-                <p className="text-lg text-white">💰 Money: $<AnimatedNumber targetValue={report.moneyGained} duration={1200} /></p>
-                <p className="text-lg text-white">🌟 Reputation: +<AnimatedNumber targetValue={report.reputationGained} duration={1200} /></p>
+                <p className="text-lg text-white">💰 Money: $<AnimatedNumber targetValue={report.moneyGained} duration={600} /></p>
+                <p className="text-lg text-white">🌟 Reputation: +<AnimatedNumber targetValue={report.reputationGained} duration={600} /></p>
                 {report.assignedPerson.type === 'staff' && report.playerManagementXpGained > 0 && (
-                  <p className="text-lg text-white">🧠 Player Management XP: +<AnimatedNumber targetValue={report.playerManagementXpGained} duration={1200} /></p>
+                  <p className="text-lg text-white">🧠 Player Management XP: +<AnimatedNumber targetValue={report.playerManagementXpGained} duration={600} /></p>
                 )}
               </div>
             )}
