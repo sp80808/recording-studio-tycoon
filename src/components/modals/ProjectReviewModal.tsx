@@ -12,6 +12,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress'; // Assuming Progress component for XP bars
 import { gameAudio } from '@/utils/audioSystem'; // For sound effects
+import { X } from 'lucide-react'; // For skip button icon
 
 interface AnimatedNumberProps {
   targetValue: number;

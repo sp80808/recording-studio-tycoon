@@ -231,38 +231,38 @@
 }
 
 .slider-default {
-  --slider-bg: rgb(59, 130, 246); /* blue-500 */
-  --slider-bg-dark: rgb(37, 99, 235); /* blue-600 */
-  --slider-border: rgb(29, 78, 216); /* blue-700 */
-  --slider-shadow: rgba(59, 130, 246, 0.3);
+  --slider-bg: rgb(239, 68, 68); /* red-500 for non-optimal */
+  --slider-bg-dark: rgb(220, 38, 38); /* red-600 */
+  --slider-border: rgb(185, 28, 28); /* red-700 */
+  --slider-shadow: rgba(239, 68, 68, 0.3);
 }
 
-/* Apply slider colors dynamically */
-.slider-optimal [data-radix-slider-range],
-.slider-good [data-radix-slider-range],
-.slider-default [data-radix-slider-range] {
-  background: linear-gradient(90deg, var(--slider-bg), var(--slider-bg-dark));
+/* Apply slider colors dynamically using CSS custom properties */
+.slider-optimal .bg-primary,
+.slider-good .bg-primary,
+.slider-default .bg-primary {
+  background: linear-gradient(90deg, var(--slider-bg), var(--slider-bg-dark)) !important;
   transition: all 0.3s ease-in-out;
 }
 
-.slider-optimal [data-radix-slider-thumb],
-.slider-good [data-radix-slider-thumb],
-.slider-default [data-radix-slider-thumb] {
-  border-color: var(--slider-border);
+.slider-optimal .border-primary,
+.slider-good .border-primary,
+.slider-default .border-primary {
+  border-color: var(--slider-border) !important;
   box-shadow: 0 4px 12px var(--slider-shadow);
   transition: all 0.2s ease-in-out;
 }
 
-.slider-optimal [data-radix-slider-thumb]:hover,
-.slider-good [data-radix-slider-thumb]:hover,
-.slider-default [data-radix-slider-thumb]:hover {
+.slider-optimal .border-primary:hover,
+.slider-good .border-primary:hover,
+.slider-default .border-primary:hover {
   box-shadow: 0 6px 16px var(--slider-shadow);
   transform: scale(1.05);
 }
 
-.slider-optimal [data-radix-slider-thumb]:active,
-.slider-good [data-radix-slider-thumb]:active,
-.slider-default [data-radix-slider-thumb]:active {
+.slider-optimal .border-primary:active,
+.slider-good .border-primary:active,
+.slider-default .border-primary:active {
   transform: scale(1.1);
   box-shadow: 0 8px 20px var(--slider-shadow);
 }

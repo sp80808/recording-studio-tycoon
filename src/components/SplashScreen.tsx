@@ -10,6 +10,12 @@ import { useFullscreen } from '@/hooks/useFullscreen';
 import { Maximize, Minimize } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+// Get version from README
+const getGameVersion = () => {
+  // This will be replaced with the actual version from README during build
+  return '0.3.1';
+};
+
 interface SplashScreenProps {
   onStartGame: (era: Era) => void;
   onLoadGame: () => void;
@@ -166,7 +172,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
           {/* Version/Credits */}
           <div className="mt-8 pt-4 border-t border-gray-700">
             <p className="text-xs text-gray-500">
-              {t('splash_credits', 'Recording Studio Tycoon v0.3.1 (alpha) | Built with ❤️ for music lovers')}
+              Recording Studio Tycoon v{getGameVersion()} (alpha) | Built with ❤️ for music lovers
             </p>
           </div>
         </Card>
