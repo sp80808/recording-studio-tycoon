@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using RecordingStudioTycoon.Core;
 
 [CreateAssetMenu(fileName = "StudioPerkData", menuName = "Game Data/Studio Perk Data")]
 public class StudioPerkData : ScriptableObject

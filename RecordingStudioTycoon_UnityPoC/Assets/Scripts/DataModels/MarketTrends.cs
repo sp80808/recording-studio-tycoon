@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using RecordingStudioTycoon.Core;
 
 namespace RecordingStudioTycoon.DataModels
 {
@@ -17,4 +18,4 @@ namespace RecordingStudioTycoon.DataModels
             CurrentTrendModifiers = new SerializableDictionary<string, float>();
         }
     }
-} 
+}

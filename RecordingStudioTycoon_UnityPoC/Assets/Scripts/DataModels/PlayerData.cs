@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using RecordingStudioTycoon.Core;
 
 namespace RecordingStudioTycoon.DataModels
 {
@@ -74,4 +75,4 @@ namespace RecordingStudioTycoon.DataModels
     {
         recording, mixing, mastering, production, marketing, composition, soundDesign, sequencing
     }
-} 
+}

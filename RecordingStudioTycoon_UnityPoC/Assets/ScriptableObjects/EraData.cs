@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
+using RecordingStudioTycoon.Core;
+using RecordingStudioTycoon.DataModels;
 
 [CreateAssetMenu(fileName = "EraData", menuName = "Game Data/Era Data")]
 public class EraData : ScriptableObject

@@ -22,15 +22,6 @@ namespace RecordingStudioTycoon.Systems.Minigame
         private MinigameData _currentMinigame;
         private Project _activeProject; // Store the project associated with the current minigame
 
-        private Project activeProject;
-        private Project currentProject;
-        private Project project;
-        private Project selectedProject;
-        private Project targetProject;
-        private Project projectToComplete;
-        private Project projectToStart;
-        private Project projectToCancel;
-
         private void Awake()
         {
             if (Instance != null && Instance != this)

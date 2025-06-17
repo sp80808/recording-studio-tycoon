@@ -2,11 +2,13 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using RecordingStudioTycoon.Core; // For GameManager, GameState access
+using RecordingStudioTycoon.DataModels; // Added for Project, ProjectTemplate, StaffMember, ProjectStage etc.
+using RecordingStudioTycoon.ScriptableObjects; // Added for ProjectData
 using RecordingStudioTycoon.Systems.Staff; // For StaffManagement interaction
 using RecordingStudioTycoon.UI; // For UIManager interaction
 using RecordingStudioTycoon; // For RewardType, RewardManager
 
-namespace RecordingStudioTycoon.Systems.Project
+namespace RecordingStudioTycoon.Systems.ProjectSystem
 {
     public class ProjectManager : MonoBehaviour
     {
