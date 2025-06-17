@@ -17,10 +17,18 @@ namespace RecordingStudioTycoon.DataModels
         public int Experience;
         public SerializableDictionary<StudioSkillType, int> Skills; // Dictionary of skills and their levels/experience
         public string AssignedProjectId; // Null if not assigned to a project
-        public int Efficiency;
-        public int Morale;
-        public int Stamina; // For daily work capacity
-        public bool IsAvailable;
+        public int Efficiency = 100;
+        public int Morale = 100;
+        public int Stamina = 100; // For daily work capacity
+        public bool IsAvailable = true;
+        public Project AssignedProject; // Current project assignment
+        public float WorkSpeedModifier = 1f; // Affected by mood/stamina
+        public DateTime LastWorkedDate;
+        
+        // Visual feedback properties
+        public string CurrentAnimationState = "Idle";
+        public string StatusMessage = "";
+        public Color StatusColor = Color.white;
         public List<string> Traits; // e.g., "Fast Learner", "Demotivated"
         public string Icon;
 

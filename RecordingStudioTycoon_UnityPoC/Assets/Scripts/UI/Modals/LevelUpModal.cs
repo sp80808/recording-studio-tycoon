@@ -1,4 +1,9 @@
 using UnityEngine;
+using RecordingStudioTycoon.DataModels.Progression;
+using RecordingStudioTycoon.GameLogic;
+using UnityEngine.UIElements;
+using RecordingStudioTycoon.DataModels;
+using RecordingStudioTycoon.ScriptableObjects;
 using UnityEngine.UIElements;
 
 public class LevelUpModal : MonoBehaviour

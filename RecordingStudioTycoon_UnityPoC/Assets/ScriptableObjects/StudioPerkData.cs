@@ -1,4 +1,7 @@
 using UnityEngine;
+using RecordingStudioTycoon.DataModels.Progression;
+using RecordingStudioTycoon.Utils;
+using System.Collections.Generic;
 using System.Collections.Generic;
 using RecordingStudioTycoon.Core;
 using RecordingStudioTycoon.Utils; // For SerializableDictionary
@@ -25,6 +28,9 @@ public class StudioPerk
     public string Description;
     public int Cost;
     public List<string> Prerequisites; // IDs of perks required to unlock this one
-    public SerializableDictionary<string, float> Modifiers; // e.g., "projectQualityBonus": 0.1
-    public bool IsUnlocked;
+    public List<PerkUnlockCondition> UnlockConditions;
+    public List<PerkEffect> Effects;
+    public bool IsRepeatable;
+    public int MaxRepeats; // 0 for unlimited, >0 for a specific limit
+    public bool IsUnlocked; // This might be managed at runtime in GameState, not static data
 }

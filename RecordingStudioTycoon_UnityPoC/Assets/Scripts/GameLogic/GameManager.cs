@@ -83,17 +83,18 @@ namespace RecordingStudioTycoon.GameLogic
             Debug.Log("Performing daily work...");
         }
 
-        public void CollectMoney(int amount)
-        {
-            _gameState.money += amount;
-            Debug.Log($"Collected {amount} money. Total: {_gameState.money}");
-            OnGameStateChanged?.Invoke();
-        }
+        // Removed direct money manipulation. Use FinanceManager.Instance.AddMoney/DeductMoney instead.
+        // public void CollectMoney(int amount)
+        // {
+        //     _gameState.money += amount;
+        //     Debug.Log($"Collected {amount} money. Total: {_gameState.money}");
+        //     OnGameStateChanged?.Invoke();
+        // }
 
-        public void AddMoney(int amount)
-        {
-            CollectMoney(amount); // Direct call, as in TS
-        }
+        // public void AddMoney(int amount)
+        // {
+        //     CollectMoney(amount); // Direct call, as in TS
+        // }
 
         public void AddReputation(int amount)
         {

@@ -38,7 +38,7 @@ namespace RecordingStudioTycoon.Systems.Staff
             {
                 GameManager.Instance.CurrentGameState.hiredStaff.Add(newStaff);
                 GameManager.Instance.CurrentGameState.availableCandidates.RemoveAll(s => s.Id == newStaff.Id);
-                GameManager.Instance.CollectMoney(-newStaff.Salary); // Deduct hiring cost
+                Systems.Finance.FinanceManager.Instance.DeductMoney(newStaff.Salary); // Deduct hiring cost
                 Debug.Log($"Hired staff: {newStaff.Name} ({newStaff.Role}). Cost: {newStaff.Salary}");
             }
             else
@@ -145,8 +145,8 @@ namespace RecordingStudioTycoon.Systems.Staff
                 Debug.LogError("GameManager instance not found. Cannot train staff.");
                 return;
             }
-
-            GameManager.Instance.CollectMoney(-training.Cost); // Deduct training cost
+            
+            Systems.Finance.FinanceManager.Instance.DeductMoney(training.Cost); // Deduct training cost
             Debug.Log($"Training {staff.Name} in {training.Name}. Cost: {training.Cost}. Duration: {training.DurationDays} days.");
 
             // For simplicity, apply skill increase immediately. In a real game, this would be over time.

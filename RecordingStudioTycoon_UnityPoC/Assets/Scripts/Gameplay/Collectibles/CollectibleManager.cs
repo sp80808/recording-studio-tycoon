@@ -45,7 +45,7 @@ namespace RecordingStudioTycoon.Gameplay.Collectibles
                 switch (type)
                 {
                     case CollectibleType.MoneyOrb:
-                        RewardManager.Instance.GrantReward(RewardType.Money, amount);
+                        Systems.Finance.FinanceManager.Instance.AddMoney(amount);
                         break;
                     case CollectibleType.XPOB:
                         RewardManager.Instance.GrantReward(RewardType.XP, amount);

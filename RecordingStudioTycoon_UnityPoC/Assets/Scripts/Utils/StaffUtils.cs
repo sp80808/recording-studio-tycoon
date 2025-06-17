@@ -1,4 +1,10 @@
 using UnityEngine;
+using RecordingStudioTycoon.DataModels.Staff;
+using RecordingStudioTycoon.DataModels.Skills;
+using RecordingStudioTycoon.GameLogic;
+using System.Collections.Generic;
+using RecordingStudioTycoon.DataModels;
+using RecordingStudioTycoon.ScriptableObjects;
 using System.Collections.Generic;
 using RecordingStudioTycoon.DataModels; // Ensure StaffMember, Training, StudioSkillType, StudioSkill are accessible
 using RecordingStudioTycoon.GameLogic;

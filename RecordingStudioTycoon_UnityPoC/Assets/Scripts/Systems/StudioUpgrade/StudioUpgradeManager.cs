@@ -81,15 +81,15 @@ namespace RecordingStudioTycoon.Systems.StudioUpgrade
             }
 
             // Check cost
-            if (GameManager.Instance.Money < perkToPurchase.Cost)
+            if (!Systems.Finance.FinanceManager.Instance.HasEnoughMoney(perkToPurchase.Cost))
             {
-                Debug.LogWarning($"Insufficient funds to purchase perk '{perkToPurchase.Name}'. Cost: {perkToPurchase.Cost}, Available: {GameManager.Instance.Money}");
+                Debug.LogWarning($"Insufficient funds to purchase perk '{perkToPurchase.Name}'. Cost: {perkToPurchase.Cost}, Available: {Systems.Finance.FinanceManager.Instance.CurrentMoney}");
                 UIManager.Instance?.ShowNotification($"Insufficient funds for {perkToPurchase.Name}.", NotificationType.Error);
                 return false;
             }
 
             // Deduct money
-            GameManager.Instance.DeductMoney(perkToPurchase.Cost);
+            Systems.Finance.FinanceManager.Instance.DeductMoney(perkToPurchase.Cost);
 
             // Unlock perk in GameState (assuming GameState manages this)
             // This would typically involve updating a list of unlocked perks in GameState
@@ -157,14 +157,14 @@ namespace RecordingStudioTycoon.Systems.StudioUpgrade
         {
             if (GameManager.Instance == null) return false;
 
-            if (GameManager.Instance.Money < cost)
+            if (!Systems.Finance.FinanceManager.Instance.HasEnoughMoney(cost))
             {
-                Debug.LogWarning($"Insufficient funds for expansion '{expansionId}'. Cost: {cost}, Available: {GameManager.Instance.Money}");
+                Debug.LogWarning($"Insufficient funds for expansion '{expansionId}'. Cost: {cost}, Available: {Systems.Finance.FinanceManager.Instance.CurrentMoney}");
                 UIManager.Instance?.ShowNotification($"Insufficient funds for studio expansion.", NotificationType.Error);
                 return false;
             }
 
-            GameManager.Instance.DeductMoney(cost);
+            Systems.Finance.FinanceManager.Instance.DeductMoney(cost);
             GameManager.Instance.GameState.unlockedExpansions.Add(expansionId); // Assuming GameState tracks unlocked expansions
             Debug.Log($"Successfully purchased studio expansion: {expansionId}");
             UIManager.Instance?.ShowNotification($"Purchased: Studio Expansion!", NotificationType.Success);
@@ -184,14 +184,14 @@ namespace RecordingStudioTycoon.Systems.StudioUpgrade
         {
             if (GameManager.Instance == null) return false;
 
-            if (GameManager.Instance.Money < cost)
+            if (!Systems.Finance.FinanceManager.Instance.HasEnoughMoney(cost))
             {
-                Debug.LogWarning($"Insufficient funds for general upgrade '{upgradeId}'. Cost: {cost}, Available: {GameManager.Instance.Money}");
+                Debug.LogWarning($"Insufficient funds for general upgrade '{upgradeId}'. Cost: {cost}, Available: {Systems.Finance.FinanceManager.Instance.CurrentMoney}");
                 UIManager.Instance?.ShowNotification($"Insufficient funds for studio upgrade.", NotificationType.Error);
                 return false;
             }
 
-            GameManager.Instance.DeductMoney(cost);
+            Systems.Finance.FinanceManager.Instance.DeductMoney(cost);
             GameManager.Instance.GameState.studioPrestige += prestigeIncrease;
             GameManager.Instance.GameState.unlockedUpgrades.Add(upgradeId); // Assuming GameState tracks unlocked upgrades
             OnStudioPrestigeChanged?.Invoke("general", prestigeIncrease);

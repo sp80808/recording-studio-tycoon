@@ -139,7 +139,7 @@ namespace RecordingStudioTycoon.UI
         {
             if (GameManager.Instance != null && GameManager.Instance.GameState != null)
             {
-                _moneyText.text = $"Money: ${GameManager.Instance.Money}";
+                _moneyText.text = $"Money: ${Systems.Finance.FinanceManager.Instance.CurrentMoney}";
                 _dayText.text = $"Day: {GameManager.Instance.CurrentDay}, Year: {GameManager.Instance.CurrentYear}";
                 _xpText.text = $"XP: {GameManager.Instance.PlayerXp}";
                 _levelText.text = $"Level: {GameManager.Instance.PlayerLevel}";

@@ -17,8 +17,12 @@ namespace RecordingStudioTycoon.UI.Staff
         private Label staffMoodLabel;
         private Label staffEnergyLabel;
         private Label staffAssignedProjectLabel;
+        private VisualElement statusIndicator;
         private Button assignToProjectButton;
         private Button unassignFromProjectButton;
+        private VisualElement efficiencyBar;
+        private VisualElement moodBar;
+        private VisualElement energyBar;
 
         private StaffMember currentStaff;
 
@@ -35,8 +39,12 @@ namespace RecordingStudioTycoon.UI.Staff
             staffMoodLabel = root.Q<Label>("staff-mood-label");
             staffEnergyLabel = root.Q<Label>("staff-energy-label");
             staffAssignedProjectLabel = root.Q<Label>("staff-assigned-project-label");
+            statusIndicator = root.Q<VisualElement>("status-indicator");
             assignToProjectButton = root.Q<Button>("assign-to-project-button");
             unassignFromProjectButton = root.Q<Button>("unassign-from-project-button");
+            efficiencyBar = root.Q<VisualElement>("efficiency-bar");
+            moodBar = root.Q<VisualElement>("mood-bar");
+            energyBar = root.Q<VisualElement>("energy-bar");
 
             UpdateUI();
 
@@ -51,12 +59,42 @@ namespace RecordingStudioTycoon.UI.Staff
             staffNameLabel.text = currentStaff.Name;
             staffRoleLabel.text = currentStaff.Role;
             staffLevelLabel.text = $"Level: {currentStaff.Level}";
+            
+            // Mood display with color coding
             staffMoodLabel.text = $"Mood: {currentStaff.Mood}%";
-            staffEnergyLabel.text = $"Energy: {currentStaff.Energy}%";
-            staffAssignedProjectLabel.text = string.IsNullOrEmpty(currentStaff.AssignedProjectId) ? "Unassigned" : $"Assigned: {GetAssignedProjectName()}";
+            staffMoodLabel.style.color = currentStaff.Mood < 50 ? 
+                new Color(1, 0.5f, 0) : // Orange for low mood
+                new Color(0, 1, 0);     // Green for good mood
 
-            assignToProjectButton.style.display = string.IsNullOrEmpty(currentStaff.AssignedProjectId) ? DisplayStyle.Flex : DisplayStyle.None;
-            unassignFromProjectButton.style.display = string.IsNullOrEmpty(currentStaff.AssignedProjectId) ? DisplayStyle.None : DisplayStyle.Flex;
+            // Energy display with color coding  
+            staffEnergyLabel.text = $"Energy: {currentStaff.Stamina}%";
+            staffEnergyLabel.style.color = currentStaff.Stamina < 30 ?
+                new Color(1, 0, 0) :    // Red for exhausted
+                new Color(0, 1, 0);     // Green for good energy
+
+            // Status message and project assignment
+            staffAssignedProjectLabel.text = currentStaff.StatusMessage;
+            staffAssignedProjectLabel.style.color = currentStaff.StatusColor;
+
+            // Visual feedback for current state
+            root.style.backgroundColor = new StyleColor(currentStaff.StatusColor * 0.2f);
+            statusIndicator.style.backgroundColor = currentStaff.StatusColor;
+            
+            // Update progress bars
+            efficiencyBar.style.width = new StyleLength(new Length(currentStaff.Efficiency, LengthUnit.Percent));
+            moodBar.style.width = new StyleLength(new Length(currentStaff.Mood, LengthUnit.Percent));
+            energyBar.style.width = new StyleLength(new Length(currentStaff.Stamina, LengthUnit.Percent));
+            
+            // Tooltips for detailed info
+            efficiencyBar.tooltip = $"Efficiency: {currentStaff.Efficiency}%";
+            moodBar.tooltip = $"Mood: {currentStaff.Mood}%";
+            energyBar.tooltip = $"Energy: {currentStaff.Stamina}%";
+
+            // Button visibility
+            assignToProjectButton.style.display = 
+                currentStaff.AssignedProject == null ? DisplayStyle.Flex : DisplayStyle.None;
+            unassignFromProjectButton.style.display = 
+                currentStaff.AssignedProject != null ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
         private string GetAssignedProjectName()

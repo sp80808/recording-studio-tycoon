@@ -1,4 +1,7 @@
 using UnityEngine;
+using RecordingStudioTycoon.GameLogic;
+using RecordingStudioTycoon.DataModels;
+using RecordingStudioTycoon.DataModels.Progression;
 using UnityEngine.Events;
 
 [CreateAssetMenu(fileName = "GameState", menuName = "Recording Studio Tycoon/Game State")]

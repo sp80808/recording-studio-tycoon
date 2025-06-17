@@ -42,7 +42,7 @@ namespace RecordingStudioTycoon
             switch (type)
             {
                 case RewardType.Money:
-                    // TODO: Integrate with a PlayerEconomyManager or similar
+                    Systems.Finance.FinanceManager.Instance?.AddMoney(amount);
                     Debug.Log($"Player received ${amount}.");
                     break;
                 case RewardType.XP:

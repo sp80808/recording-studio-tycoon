@@ -1,4 +1,6 @@
 using UnityEngine;
+using RecordingStudioTycoon.DataModels.Equipment;
+using RecordingStudioTycoon.Utils;
 using System.Collections.Generic;
 using RecordingStudioTycoon.Core;
 using RecordingStudioTycoon.DataModels; // Ensure Equipment is accessible

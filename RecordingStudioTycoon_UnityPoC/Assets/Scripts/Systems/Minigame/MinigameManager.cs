@@ -147,7 +147,7 @@ namespace RecordingStudioTycoon.Systems.Minigame
                 if (RewardManager.Instance != null)
                 {
                     RewardManager.Instance.GrantReward(RewardType.XP, _currentMinigame.BaseRewardXP);
-                    RewardManager.Instance.GrantReward(RewardType.Money, _currentMinigame.BaseRewardMoney);
+                    Systems.Finance.FinanceManager.Instance.AddMoney(_currentMinigame.BaseRewardMoney);
                 }
                 else
                 {

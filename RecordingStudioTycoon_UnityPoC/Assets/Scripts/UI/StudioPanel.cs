@@ -47,7 +47,7 @@ namespace RecordingStudioTycoon.UI
         {
             if (GameManager.Instance != null && GameManager.Instance.GameState != null)
             {
-                moneyLabel.text = $"Money: ${GameManager.Instance.GameState.money}";
+                moneyLabel.text = $"Money: ${Systems.Finance.FinanceManager.Instance.CurrentMoney}";
                 dayLabel.text = $"Day: {GameManager.Instance.GameState.currentDay}";
                 yearLabel.text = $"Year: {GameManager.Instance.GameState.currentYear}";
             }

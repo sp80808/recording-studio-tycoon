@@ -1,4 +1,10 @@
 using UnityEngine;
+using RecordingStudioTycoon.DataModels.Progression;
+using RecordingStudioTycoon.DataModels.Staff;
+using RecordingStudioTycoon.GameLogic;
+using System.Collections.Generic;
+using RecordingStudioTycoon.DataModels;
+using RecordingStudioTycoon.ScriptableObjects;
 using System;
 using System.Collections.Generic;
 using RecordingStudioTycoon.ScriptableObjects; // For EraData

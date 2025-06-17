@@ -249,7 +249,7 @@ namespace RecordingStudioTycoon.Systems.ProjectSystem
                 // Add rewards via RewardManager
                 if (RewardManager.Instance != null)
                 {
-                    RewardManager.Instance.GrantReward(RewardType.Money, finalMoneyReward);
+                    Systems.Finance.FinanceManager.Instance.AddMoney(finalMoneyReward);
                     RewardManager.Instance.GrantReward(RewardType.XP, finalXPReward);
                 }
                 else

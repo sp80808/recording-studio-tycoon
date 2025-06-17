@@ -43,7 +43,7 @@ namespace RecordingStudioTycoon.Gameplay.Collectibles
             switch (type)
             {
                 case CollectibleType.Money:
-                    RewardManager.Instance?.GrantReward(RewardType.Money, value);
+                    Systems.Finance.FinanceManager.Instance?.AddMoney(value);
                     break;
                 case CollectibleType.XP:
                     RewardManager.Instance?.GrantReward(RewardType.XP, value);

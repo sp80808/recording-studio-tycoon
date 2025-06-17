@@ -116,7 +116,7 @@ namespace RecordingStudioTycoon.Gameplay.Environment
                     UIManager.Instance?.ShowNotification($"Accessing computer interface.", NotificationType.Info);
                     break;
                 case InteractionType.CollectMoney:
-                    GameManager.Instance?.AddMoney(100); // Example: Collect 100 money
+                    Systems.Finance.FinanceManager.Instance?.AddMoney(100); // Example: Collect 100 money
                     UIManager.Instance?.ShowNotification($"Collected money!", NotificationType.Success);
                     break;
                 case InteractionType.InteractWithNPC:
