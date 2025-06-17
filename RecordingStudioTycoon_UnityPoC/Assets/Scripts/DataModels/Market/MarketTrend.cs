@@ -2,26 +2,28 @@ using System;
 using System.Collections.Generic;
 using RecordingStudioTycoon.Utils;
 
-namespace RecordingStudioTycoon.DataModels.Progression
+namespace RecordingStudioTycoon.DataModels.Market
 {
     [System.Serializable]
-    public class StudioPerk
+    public class MarketTrend
     {
         public string Id;
         public string Name;
         public string Description;
-        public int Cost;
-        public bool IsUnlocked;
+        public float Influence;
+        public int Duration;
+        public int StartDay;
         public bool IsActive;
         public SerializableDictionary<string, float> Effects;
 
-        public StudioPerk()
+        public MarketTrend()
         {
             Id = Guid.NewGuid().ToString();
-            Name = "New Perk";
-            Description = "A new studio perk.";
-            Cost = 10;
-            IsUnlocked = false;
+            Name = "New Trend";
+            Description = "A new market trend.";
+            Influence = 1.0f;
+            Duration = 30;
+            StartDay = 0;
             IsActive = false;
             Effects = new SerializableDictionary<string, float>();
         }

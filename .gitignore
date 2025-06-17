@@ -45,10 +45,72 @@ yarn-error.log*
 *.zip
 prototypes/
 
+# Unity generated folders and files
 RecordingStudioTycoon_UnityPoC/Library/
 RecordingStudioTycoon_UnityPoC/Temp/
 RecordingStudioTycoon_UnityPoC/Logs/
 RecordingStudioTycoon_UnityPoC/Obj/
 RecordingStudioTycoon_UnityPoC/Build/
 RecordingStudioTycoon_UnityPoC/Builds/
-RecordingStudioTycoon_UnityPoC/UserSettings/ 
+RecordingStudioTycoon_UnityPoC/UserSettings/
+RecordingStudioTycoon_UnityPoC/.vs/
+RecordingStudioTycoon_UnityPoC/.vscode/
+RecordingStudioTycoon_UnityPoC/.idea/
+RecordingStudioTycoon_UnityPoC/*.csproj
+RecordingStudioTycoon_UnityPoC/*.sln
+RecordingStudioTycoon_UnityPoC/*.user
+RecordingStudioTycoon_UnityPoC/*.pidb
+RecordingStudioTycoon_UnityPoC/*.booproj
+RecordingStudioTycoon_UnityPoC/*.svd
+RecordingStudioTycoon_UnityPoC/*.suo
+RecordingStudioTycoon_UnityPoC/*.tmp
+RecordingStudioTycoon_UnityPoC/*.userprefs
+RecordingStudioTycoon_UnityPoC/*.pidb.meta
+RecordingStudioTycoon_UnityPoC/*.pdb
+RecordingStudioTycoon_UnityPoC/*.mdb
+RecordingStudioTycoon_UnityPoC/*.opendb
+RecordingStudioTycoon_UnityPoC/*.VC.db
+RecordingStudioTycoon_UnityPoC/*.pidb
+RecordingStudioTycoon_UnityPoC/*.sln.docstates
+
+# Unity Asset Store tools
+RecordingStudioTycoon_UnityPoC/AssetStoreTools*
+
+# Crash and build reports
+RecordingStudioTycoon_UnityPoC/*.stacktrace
+RecordingStudioTycoon_UnityPoC/*.log
+
+# Exclude macOS system files
+.DS_Store
+
+# Exclude web/public and node files
+node_modules/
+dist/
+build/
+audio/
+public/
+src/
+
+# IDE and editor folders
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Miscellaneous
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+coverage/
+*.tsbuildinfo
+.npm
+.eslintcache
+.node_repl_history
+*.tgz
+.yarn-integrity
+.netlify
+*.zip
+prototypes/ 

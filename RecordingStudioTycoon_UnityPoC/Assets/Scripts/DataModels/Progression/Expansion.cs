@@ -5,25 +5,25 @@ using RecordingStudioTycoon.Utils;
 namespace RecordingStudioTycoon.DataModels.Progression
 {
     [System.Serializable]
-    public class StudioPerk
+    public class Expansion
     {
         public string Id;
         public string Name;
         public string Description;
         public int Cost;
         public bool IsUnlocked;
-        public bool IsActive;
-        public SerializableDictionary<string, float> Effects;
+        public bool IsPurchased;
+        public SerializableDictionary<string, float> Benefits;
 
-        public StudioPerk()
+        public Expansion()
         {
             Id = Guid.NewGuid().ToString();
-            Name = "New Perk";
-            Description = "A new studio perk.";
-            Cost = 10;
+            Name = "New Expansion";
+            Description = "A new studio expansion.";
+            Cost = 5000;
             IsUnlocked = false;
-            IsActive = false;
-            Effects = new SerializableDictionary<string, float>();
+            IsPurchased = false;
+            Benefits = new SerializableDictionary<string, float>();
         }
     }
 }

@@ -26,24 +26,4 @@ namespace RecordingStudioTycoon.DataModels.Songs
         }
     }
 
-    [Serializable]
-    public class Band
-    {
-        public string id;
-        public string name;
-        public MusicGenre primaryGenre;
-        public List<string> memberIds;
-        public float popularity;
-        public float reputation;
-        public List<string> songIds;
-        public bool isPlayerBand;
-
-        public Band()
-        {
-            id = Guid.NewGuid().ToString();
-            memberIds = new List<string>();
-            songIds = new List<string>();
-            isPlayerBand = false;
-        }
-    }
 }

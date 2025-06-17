@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using RecordingStudioTycoon.Utils;
 
 namespace RecordingStudioTycoon.DataModels
 {
@@ -7,23 +9,17 @@ namespace RecordingStudioTycoon.DataModels
     {
         public string Id;
         public string Name;
-        public string ParentGenre; // Corresponds to MusicGenre in TS
-        public string Description;
+        public string ParentGenre;
+        public float Popularity;
+        public SerializableDictionary<string, float> Characteristics;
 
         public SubGenre()
         {
             Id = Guid.NewGuid().ToString();
             Name = "New SubGenre";
-            ParentGenre = "pop";
-            Description = "";
-        }
-
-        public SubGenre(string id, string name, string parentGenre, string description)
-        {
-            Id = id;
-            Name = name;
-            ParentGenre = parentGenre;
-            Description = description;
+            ParentGenre = "Rock";
+            Popularity = 0.5f;
+            Characteristics = new SerializableDictionary<string, float>();
         }
     }
 }

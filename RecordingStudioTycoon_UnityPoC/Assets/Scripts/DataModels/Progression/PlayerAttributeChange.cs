@@ -3,16 +3,16 @@ using System;
 namespace RecordingStudioTycoon.DataModels.Progression
 {
     [System.Serializable]
-    public class PlayerAbilityChange
+    public class PlayerAttributeChange
     {
-        public string AbilityId;
+        public string AttributeId;
         public float ValueChange;
         public bool IsPercentage;
         public int UnlockLevel;
 
-        public PlayerAbilityChange()
+        public PlayerAttributeChange()
         {
-            AbilityId = "NewAbility";
+            AttributeId = "NewAttribute";
             ValueChange = 1.0f;
             IsPercentage = false;
             UnlockLevel = 1;

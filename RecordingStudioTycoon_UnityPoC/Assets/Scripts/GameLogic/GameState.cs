@@ -8,6 +8,7 @@ using RecordingStudioTycoon.DataModels.Market;
 using RecordingStudioTycoon.DataModels.Songs;
 using RecordingStudioTycoon.DataModels.Tours;
 using RecordingStudioTycoon.DataModels.Characters;
+using RecordingStudioTycoon.DataModels.Progression;
 using RecordingStudioTycoon.Utils; // For SerializableDictionary
 
 namespace RecordingStudioTycoon.GameLogic

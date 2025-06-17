@@ -9,6 +9,7 @@ using RecordingStudioTycoon.DataModels.Market; // For MarketState, TrendEvent
 using RecordingStudioTycoon.DataModels.Songs; // For Song, Band
 using RecordingStudioTycoon.DataModels.Tours; // For Venue, Tour
 using RecordingStudioTycoon.DataModels.Characters; // For Artist
+using RecordingStudioTycoon.DataModels.Progression; // For StudioSkill, AggregatedPerkModifiers, StudioSpecialization, IndustryPrestige, PerkUnlockCondition, PerkEffect, PlayerAbilityChange, ProgressionMilestone
 using RecordingStudioTycoon.Utils; // For SerializableDictionary, ProjectUtils, StaffUtils, BandUtils, ProgressionUtils
 using RecordingStudioTycoon.Core; // For GameStateData
 using RecordingStudioTycoon.Systems.Market;
@@ -37,7 +38,7 @@ namespace RecordingStudioTycoon.GameLogic
         [SerializeField] private StaffData _staffData;
         [SerializeField] private EraData _eraData;
         [SerializeField] private StudioPerkData _studioPerkData; // Added StudioPerkData
-        [SerializeField] private GameStateData _gameStateData; // Renamed from GameStateSO
+        [SerializeField] private RecordingStudioTycoon.Core.GameStateData _gameStateData; // Renamed from GameStateSO
 
         private void Awake()
         {

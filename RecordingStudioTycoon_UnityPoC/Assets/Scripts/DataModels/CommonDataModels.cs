@@ -48,11 +48,6 @@ namespace RecordingStudioTycoon.DataModels
     }
 
 
-    [Serializable]
-    public enum ProjectType
-    {
-        Client, OriginalTrack, Contract, Collaboration
-    }
 
     // Common Data Structures (if not already defined elsewhere as full classes)
     [Serializable]
