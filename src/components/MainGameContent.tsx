@@ -227,7 +227,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
 
   return (
     // Outermost container for the main game content area.
-    <div className="h-full flex flex-col main-game-content">
+    <div className="h-full flex flex-col flex-wrap  main-game-content">
       {/* Render MobileArrowNavigation only on mobile viewports. */}
       {isMobile && (
         <div className="mobile-navigation">
@@ -249,11 +249,11 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
       >
         {/* Panel 1: Project List */}
         {/* On mobile, this is the first tab. On desktop, it's the left column. */}
-        <div 
+        <div
           className={`h-full overflow-y-auto p-2 project-panel ${isMobile ? 'flex-shrink-0 mobile-tab-panel' : 'w-1/4 border-r border-gray-700 desktop-panel'}`}
-          style={isMobile ? { width: `calc(100% / ${mobileTabs.length})`} : {}} // Full width per tab on mobile, fractional on desktop
+          style={isMobile ? { width: `calc(100% / ${mobileTabs.length})`} : { width: '25%', minWidth: '200px' }}
         >
-          <ProjectList 
+          <ProjectList
             gameState={gameState}
             setGameState={setGameState}
             startProject={startProject}
@@ -264,9 +264,9 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         {/* On mobile, this is the second (default) tab. On desktop, it's the center column. */}
         <div 
           className={`h-full overflow-y-auto p-2 relative flex flex-col studio-panel ${isMobile ? 'flex-shrink-0 mobile-tab-panel' : 'w-1/2 desktop-panel'}`}
-          style={isMobile ? { width: `calc(100% / ${mobileTabs.length})`} : {}}
+          style={isMobile ? { width: `calc(100% / ${mobileTabs.length})`} : { width: '50%', minWidth: '300px' }}
         >
-          <ProgressiveProjectInterface 
+          <ProgressiveProjectInterface
             gameState={gameState}
             setGameState={setGameState}
             // focusAllocation={focusAllocation} // REMOVED
@@ -282,7 +282,6 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
               // automatically switch to the Studio view (tab 1) to work on it.
               if (isMobile) setActiveMobileTabIndex(1);
             }}
-            advanceDay={advanceDay}
           />
           <div ref={orbContainerRef} className="absolute inset-0 pointer-events-none overflow-hidden">
             {floatingOrbs.map(orb => (
@@ -298,9 +297,9 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
 
         {/* Panel 3: RightPanel (Management, Staff, Equipment) */}
         {/* On mobile, this is the third tab. On desktop, it's the right column. */}
-        <div 
+        <div
           className={`h-full overflow-y-auto p-2 right-panel ${isMobile ? 'flex-shrink-0 mobile-tab-panel' : 'w-1/4 border-l border-gray-700 desktop-panel'}`}
-          style={isMobile ? { width: `calc(100% / ${mobileTabs.length})`} : {}}
+          style={isMobile ? { width: `calc(100% / ${mobileTabs.length})`} : { width: '25%', minWidth: '200px' }}
         >
           <RightPanel
             gameState={gameState}
@@ -328,6 +327,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
       {/* These are rendered outside the swipeable content area. */}
       {showEraTransition && eraTransitionInfo && (
         <EraTransitionAnimation
+          isVisible={showEraTransition}
           fromEra={eraTransitionInfo.fromEra}
           toEra={eraTransitionInfo.toEra}
           onComplete={() => setShowEraTransition(false)}

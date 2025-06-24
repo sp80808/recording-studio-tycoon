@@ -314,17 +314,14 @@ const MusicStudioTycoon = () => {
 
   return (
     <GameLayout>
-      <div className="flex flex-col h-full">
-        <GameHeader 
-          gameState={gameState} 
-          onOpenSettings={handleOpenSettings}
-        />
-        <div className="flex-grow min-h-0">
-          <MainGameContent
-            gameState={gameState}
-            setGameState={setGameState}
-        // focusAllocation={focusAllocation} // REMOVED
-        // setFocusAllocation={setFocusAllocation} // REMOVED
+      <GameHeader
+        gameState={gameState}
+        onOpenSettings={handleOpenSettings}
+        className="grid-area-header"
+      />
+      <MainGameContent
+        gameState={gameState}
+        setGameState={setGameState}
         startProject={handleProjectStart}
         performDailyWork={handlePerformDailyWork} // This now returns { isComplete, finalProjectData? }
         onProjectComplete={handleShowProjectReview} // Changed to show review first
@@ -389,8 +386,6 @@ const MusicStudioTycoon = () => {
           report={activeProjectReport}
         />
       )}
-        </div>
-      </div>
     </GameLayout>
   );
 };

@@ -1,5 +1,6 @@
 // Sound System for Recording Studio Tycoon
 // Using Web Audio API with real audio files
+import Recorder from 'recorder-js';
 
 interface AudioSettings {
   masterVolume: number;
@@ -15,7 +16,7 @@ class GameAudioSystem {
   private sfxGain: GainNode | null = null;
   private musicGain: GainNode | null = null;
   private isInitialized = false;
-  private audioBuffers: Map<string, AudioBuffer> = new Map();
+  private audioBuffers: Map<string, string> = new Map();
   private currentMusic: AudioBufferSourceNode | null = null;
   private settings: AudioSettings = {
     masterVolume: 0.7,
@@ -29,8 +30,8 @@ class GameAudioSystem {
     if (this.isInitialized) return;
     
     try {
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      
+      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext as typeof AudioContext)();
+
       // Create gain nodes for different audio types
       this.masterGain = this.audioContext.createGain();
       this.sfxGain = this.audioContext.createGain();
@@ -64,7 +65,7 @@ class GameAudioSystem {
     this.musicGain.gain.setValueAtTime(this.settings.musicEnabled ? this.settings.musicVolume : 0, this.audioContext?.currentTime || 0);
   }
 
-  private async loadAndCacheAudio(name: string, path: string): Promise<AudioBuffer | null> {
+  private async loadAndCacheAudio(name: string, path: string): Promise<string | null> {
     if (!this.audioContext) {
       console.warn('AudioContext not initialized, cannot load audio.');
       return null;
@@ -74,15 +75,49 @@ class GameAudioSystem {
     }
     try {
       // Assuming paths like '/audio/drums/kick.wav' are relative to the public folder
-      const response = await fetch(path); 
+      const response = await fetch(path);
       if (!response.ok) {
         throw new Error(`Failed to fetch audio ${name} from ${path}: ${response.statusText}`);
       }
       const arrayBuffer = await response.arrayBuffer();
+
+      // Compress audio data
+      const recorder = new Recorder(this.audioContext, {
+        workerPath: '/lib/recorderWorker.js' // Path to worker script
+      });
+
+      // Decode the array buffer into an audio buffer
       const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
-      this.audioBuffers.set(name, audioBuffer);
+
+      // Get the audio data as a Float32Array
+      const audioData = audioBuffer.getChannelData(0);
+
+      // Start recording
+      recorder.init(audioData);
+      recorder.record();
+
+      // Stop recording and get the compressed data
+      recorder.stop();
+      const { blob } = await recorder.exportWAV(audioBuffer.sampleRate);
+
+      // Convert the blob to a base64 string
+      const base64String = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (reader.result && typeof reader.result === 'string') {
+            resolve(reader.result.split(',')[1]); // Extract base64 data
+          } else {
+            reject(new Error('Failed to convert blob to base64 string'));
+          }
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+
+      // Store the base64 string instead of the AudioBuffer
+      this.audioBuffers.set(name, base64String);
       console.log(`Audio loaded and cached: ${name}`);
-      return audioBuffer;
+      return base64String;
     } catch (error) {
       console.warn(`Failed to load audio file ${name} from ${path}:`, error);
       return null;
@@ -138,16 +173,16 @@ class GameAudioSystem {
     await this.ensureInitialized();
     if (!this.audioContext) return null;
 
-    let buffer = this.audioBuffers.get(nameOrPath);
-    if (!buffer) {
+    let compressedData = this.audioBuffers.get(nameOrPath);
+    if (!compressedData) {
       // If not in cache, assume nameOrPath is a path and try to load it
       // For chart clips, the path would be like '/audio/chart_clips/clip.mp3'
       // The 'name' for caching will be the path itself to ensure uniqueness for dynamic files
       console.log(`Buffer for ${nameOrPath} not found in cache, attempting to load...`);
-      buffer = await this.loadAndCacheAudio(nameOrPath, nameOrPath);
+      compressedData = await this.loadAndCacheAudio(nameOrPath, nameOrPath);
     }
 
-    if (!buffer) {
+    if (!compressedData) {
       console.warn(`Audio buffer not found or could not be loaded: ${nameOrPath}`);
       return null;
     }
@@ -158,9 +193,22 @@ class GameAudioSystem {
         return null;
     }
 
+    // Decompress the base64 string
+    const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+      const byteString = atob(compressedData as string);
+      const arrayBuffer = new ArrayBuffer(byteString.length);
+      const intArray = new Uint8Array(arrayBuffer);
+      for (let i = 0; i < byteString.length; i++) {
+        intArray[i] = byteString.charCodeAt(i);
+      }
+      resolve(arrayBuffer);
+    });
+
+    const buffer = await this.audioContext.decodeAudioData(arrayBuffer);
+
     const source = this.audioContext.createBufferSource();
     const gainControl = this.audioContext.createGain();
-    
+
     source.buffer = buffer;
     source.loop = loop;
     source.connect(gainControl);

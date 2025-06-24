@@ -20,9 +20,10 @@ interface GameHeaderProps {
   gameState: GameState;
   onOpenSettings?: () => void;
   triggerEraTransition?: () => void;
+  className?: string;
 }
 
-export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSettings, triggerEraTransition }) => {
+export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSettings, triggerEraTransition, className }) => {
   const [showEraProgress, setShowEraProgress] = useState(false);
   const { isFullscreen, toggleFullscreen } = useFullscreen('root');
   const { t } = useTranslation(); // Initialize useTranslation
@@ -34,7 +35,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSetting
 
   return (
     <TooltipProvider delayDuration={300}>
-      <Card className="bg-gray-900/90 border-gray-600 p-2 backdrop-blur-sm">
+      <Card className={`bg-gray-900/90 border-gray-600 p-2 backdrop-blur-sm ${className}`}>
         <div className="flex justify-between items-center gap-4">
           {/* Left section - Core info */}
           <div className="flex items-center gap-3 sm:gap-4">

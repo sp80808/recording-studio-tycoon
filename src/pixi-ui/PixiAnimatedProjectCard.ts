@@ -1,14 +1,15 @@
-import { Graphics, Text } from 'pixi.js';
-import { Project, StaffMember } from '../types/game';
+import { Graphics, Text, Sprite, Texture } from 'pixi.js';
+import { Project, StaffMember, CardState } from '../types/game';
 import { PixiProjectCard } from './PixiProjectCard';
 
 export class PixiAnimatedProjectCard extends PixiProjectCard {
-    private progressBar: Graphics;
+    private animatedProgressBarBg: Sprite;
     private progressText: Text;
-    private staffIcons: Graphics[] = [];
+    private staffIcons: Sprite[] = [];
     private priorityText: Text;
     private autoStatusText: Text;
-    private progress = 0;
+    private pulseTicker = 0;
+    private pulseDirection = 1;
 
     constructor(
         project: Project,
@@ -18,11 +19,25 @@ export class PixiAnimatedProjectCard extends PixiProjectCard {
         public isAutomated: boolean
     ) {
         super(project, onClick);
+        
+        // Will be fully initialized in rebuildCard()
+    }
+
+    protected override rebuildCard() {
+        super.rebuildCard();
+        
+        if (!this.isInitialized) return;
 
         // Create progress bar
-        this.progressBar = new Graphics();
-        this.drawProgressBar(0);
-        this.addChild(this.progressBar);
+        this.animatedProgressBarBg = new Sprite(this.textures.progressBarBg);
+        this.animatedProgressBarBg.position.set(15, 130);
+        this.addChild(this.animatedProgressBarBg);
+        
+        // Create progress bar using inherited progressBarFill
+        this.progressBarFill = new Sprite(this.textures.progressBarFill);
+        this.progressBarFill.position.set(15, 130);
+        this.progressBarFill.width = 0;
+        this.addChild(this.progressBarFill);
 
         // Create progress text
         this.progressText = new Text('0% Complete', {
@@ -54,43 +69,46 @@ export class PixiAnimatedProjectCard extends PixiProjectCard {
         this.addChild(this.autoStatusText);
     }
 
-    private drawProgressBar(progress: number) {
-        this.progressBar.clear();
-        
-        // Background
-        this.progressBar.beginFill(0x333333);
-        this.progressBar.drawRect(15, 130, 190, 5);
-        this.progressBar.endFill();
-        
-        // Progress fill
-        this.progressBar.beginFill(0x00aaff);
-        this.progressBar.drawRect(15, 130, 190 * (progress / 100), 5);
-        this.progressBar.endFill();
-    }
-
     private updateStaffIcons() {
         // Clear existing icons
         this.staffIcons.forEach(icon => this.removeChild(icon));
         this.staffIcons = [];
 
-        // Create new icons
+        if (!this.isInitialized) return;
+
         const iconSize = 12;
         const spacing = 2;
         const startX = 15;
         const startY = 100;
 
         this.assignedStaff.forEach((staff, index) => {
-            const icon = new Graphics();
-            icon.beginFill(this.getStaffColor(staff.role));
-            icon.drawCircle(0, 0, iconSize / 2);
-            icon.endFill();
+            const icon = new Sprite(this.textures[`staff_${staff.role.toLowerCase()}`] || Texture.WHITE);
+            icon.width = iconSize;
+            icon.height = iconSize;
             icon.position.set(
                 startX + (iconSize + spacing) * index,
                 startY
             );
+            icon.tint = this.getStaffColor(staff.role);
             this.addChild(icon);
             this.staffIcons.push(icon);
         });
+    }
+
+    private pulseProgressBar(delta: number) {
+        if (!this.progressBarFill) return;
+        
+        this.pulseTicker += delta * 0.1 * this.pulseDirection;
+        
+        if (this.pulseTicker > 1) {
+            this.pulseTicker = 1;
+            this.pulseDirection = -1;
+        } else if (this.pulseTicker < 0) {
+            this.pulseTicker = 0;
+            this.pulseDirection = 1;
+        }
+        
+        this.progressBarFill.alpha = 0.7 + this.pulseTicker * 0.3;
     }
 
     private getStaffColor(role: string): number {
@@ -101,19 +119,47 @@ export class PixiAnimatedProjectCard extends PixiProjectCard {
             case 'artist': return 0xffff55;
             default: return 0xaaaaaa;
         }
+    
     }
 
-    public updateAnimation(progress: number, assignedStaff: StaffMember[], priority: number, isAutomated: boolean) {
-        this.progress = progress;
+    public updateAnimation(
+        progress: number,
+        assignedStaff: StaffMember[],
+        priority: number,
+        isAutomated: boolean,
+        delta?: number
+    ) {
         this.assignedStaff = assignedStaff;
         this.priority = priority;
         this.isAutomated = isAutomated;
 
-        this.drawProgressBar(progress);
+        // Update progress bar
+        if (this.progressBarFill) {
+            this.progressBarFill.width = 190 * (progress / 100);
+        }
+        
+        // Pulse animation when progress changes
+        if (delta !== undefined) {
+            this.pulseProgressBar(delta);
+        }
+
+        // Update text elements
         this.progressText.text = `${progress}% Complete`;
         this.updateStaffIcons();
         this.priorityText.text = `Priority: ${priority}`;
         this.autoStatusText.text = `Auto: ${isAutomated ? 'ON' : 'OFF'}`;
-        this.autoStatusText.style.fill = isAutomated ? 0x00ff00 : 0xff0000;
+        this.autoStatusText.style.fill = this.isAutomated ? 0x00ff00 : 0xff0000;
+
+        // Update card state based on progress
+        if (progress >= 100) {
+            this.setState('completed');
+        } else if (this.state !== 'active') {
+            this.setState('active');
+        }
+    }
+
+    public getProgress(): number {
+        if (!this.progressBarFill) return 0;
+        return (this.progressBarFill.width / 190) * 100;
     }
 }

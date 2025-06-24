@@ -1,86 +1,68 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { Application, Container } from 'pixi.js';
-import { PixiGameHeader } from '../pixi-ui/PixiGameHeader';
+import React, { useRef, useEffect } from 'react';
+import { Application, Graphics, Sprite, Texture } from 'pixi.js';
 
 const WebGLCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
-  const [gameState, setGameState] = useState({
-    money: 1000000,
-    reputation: 5000,
-    currentDay: 100,
-    hiredStaff: [],
-    playerData: {
-      perkPoints: 0,
-      xp: 0,
-      xpToNextLevel: 100,
-      level: 1,
-    },
-  });
 
   useEffect(() => {
-    if (!canvasRef.current) return;
+    const init = async () => {
+      if (!canvasRef.current || appRef.current) return;
 
-    const app = new Application({
-      width: window.innerWidth,
-      height: window.innerHeight,
-      backgroundColor: 0x1a1a1a,
-      antialias: true,
-      autoDensity: true,
-      resolution: window.devicePixelRatio || 1,
-    });
+      const app = new Application({
+        width: window.innerWidth,
+        height: window.innerHeight,
+        backgroundColor: 0x4c566a,
+        resolution: window.devicePixelRatio || 1,
+        autoDensity: true,
+      });
 
-    appRef.current = app;
-    canvasRef.current.appendChild(app.view as HTMLCanvasElement);
+      appRef.current = app;
+      canvasRef.current.appendChild(app.view as HTMLCanvasElement);
 
-    const headerHeight = 60;
+      const rectangle = new Graphics();
+      rectangle.beginFill(0x66ccff);
+      rectangle.drawRect(50, 50, 100, 100);
+      rectangle.endFill();
 
-    const gameHeader = new PixiGameHeader(app.renderer.width, headerHeight);
-    gameHeader.y = 0;
-    app.stage.addChild(gameHeader);
+      const texture = Texture.from('assets/isometric_room.png');
+      const background = new Sprite(texture);
 
-    // Set up button click handlers
-    gameHeader.setOnSettingsClick(() => {
-      console.log('Settings clicked from React');
-      // TODO: Connect to React settings modal
-    });
+      // Set the position of the background
+      background.x = 0;
+      background.y = 0;
 
-    gameHeader.setOnFullscreenClick(() => {
-      console.log('Fullscreen clicked from React');
-      // TODO: Implement fullscreen toggle
-    });
+      // Add the background to the stage
+      app.stage.addChild(background);
+      app.stage.addChild(rectangle);
 
-    gameHeader.update(gameState);
+      const resizeHandler = () => {
+        if (canvasRef.current) {
+          const { clientWidth, clientHeight } = canvasRef.current;
+          app.renderer.resize(clientWidth, clientHeight);
+        }
+      };
 
-    const interval = setInterval(() => {
-      setGameState(prev => ({
-        ...prev,
-        money: prev.money + 1000,
-        reputation: prev.reputation + 10,
-        currentDay: prev.currentDay + 1,
-      }));
-    }, 1000);
+      window.addEventListener('resize', resizeHandler);
+      resizeHandler();
 
-    const resizeHandler = () => {
-      const parent = canvasRef.current;
-      if (parent) {
-        app.renderer.resize(parent.clientWidth, parent.clientHeight);
-        gameHeader.resize(parent.clientWidth, headerHeight);
-      }
+      return () => {
+        window.removeEventListener('resize', resizeHandler);
+        if (appRef.current) {
+          appRef.current.destroy(true, true);
+          appRef.current = null;
+        }
+      };
     };
 
-    window.addEventListener('resize', resizeHandler);
-    resizeHandler();
+    const cleanup = init();
 
     return () => {
-      clearInterval(interval);
-      window.removeEventListener('resize', resizeHandler);
-      app.destroy(true);
-      appRef.current = null;
+      cleanup.then(c => c && c());
     };
-  }, [gameState]);
+  }, []);
 
-  return <div ref={canvasRef} style={{ width: '100%', height: '100vh', margin: '0', border: 'none' }} />;
+  return <div ref={canvasRef} style={{ width: '100%', height: '100vh' }} />;
 };
 
 export default WebGLCanvas;

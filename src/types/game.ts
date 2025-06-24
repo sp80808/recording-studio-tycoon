@@ -1,5 +1,9 @@
 // Game type definitions
 import { Chart, ArtistContact, MarketTrend } from './charts';
+import { Client, RecordLabel } from '../game-mechanics/relationship-management';
+
+// Card visual states for PixiJS components
+export type CardState = 'normal' | 'hover' | 'active' | 'completed';
 
 // New Skill interface
 export interface Skill {
@@ -73,6 +77,9 @@ export interface Project {
   workSessionCount: number; // Track how many work sessions have been completed
   associatedBandId?: string;
   focusAllocation: FocusAllocation; // ADDED: Stores current focus settings for the project
+  progress?: number; // 0-100, completion percentage for animated cards
+  cardState?: CardState; // Current visual state for PixiJS rendering
+  textureAtlasKey?: string; // Reference to texture atlas for this project type
 }
 
 export interface StaffMember {
@@ -183,9 +190,10 @@ export interface GameState {
   equipmentMultiplier: number; // Price multiplier for equipment in this era
   playerData: PlayerData;
   studioSkills: Record<string, StudioSkill>;
-  ownedUpgrades
+  ownedUpgrades;
   ownedEquipment: Equipment[];
   availableProjects: Project[];
+  financials: Financials;
   
   // Multi-project system
   activeProjects: Project[]; // Replace single activeProject with array
@@ -209,6 +217,8 @@ export interface GameState {
     lastChartUpdate: number; // Day when charts were last updated
   };
   researchedMods: string[]; // Array of researched mod IDs
+  clients?: Client[];
+  recordLabels?: RecordLabel[];
   
   // Automation system
   automation?: {
@@ -304,4 +314,11 @@ export interface ProjectReport {
     id: string;
     name: string;
   };
+}
+
+export interface Financials {
+  income: number;
+  expenses: number;
+  profit: number;
+  reports: ProjectReport[];
 }

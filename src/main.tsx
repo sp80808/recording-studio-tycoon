@@ -4,6 +4,7 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 import App from './App.tsx';
 import './index.css';
 import { useSettings, SettingsProvider } from './contexts/SettingsContext';
+import { SaveSystemProvider } from './contexts/SaveSystemContext';
 import { useEffect } from 'react';
 import './i18n'; // Import the i18n configuration
 import { gameAudio } from './utils/audioSystem'; // Import gameAudio
@@ -29,7 +30,9 @@ createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <Suspense fallback="Loading..."> {/* Wrap with Suspense for translation loading */}
       <SettingsProvider>
-        <RootComponent />
+        <SaveSystemProvider>
+          <RootComponent />
+        </SaveSystemProvider>
       </SettingsProvider>
     </Suspense>
     <SpeedInsights />

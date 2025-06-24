@@ -13,7 +13,20 @@ export const GameLayout: React.FC<GameLayoutProps> = ({ children }) => {
   const backgroundClass = getBackgroundColorScheme();
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${backgroundClass} text-white relative overflow-hidden flex flex-col game-layout`}>
+    <div className={`min-h-screen bg-gradient-to-br ${backgroundClass} text-white relative overflow-hidden grid game-layout
+      grid-template-rows-[auto_1fr] /* Set height of header to auto and remaining space to main content */
+      grid-template-areas:
+        "header"
+        "main";
+      /* Media queries for responsive design */
+      @media (max-width: 768px) {
+        padding: 1rem; /* Reduce padding on smaller screens */
+      }
+
+      @media (max-width: 480px) {
+        font-size: 0.8rem; /* Reduce font size on even smaller screens */
+      }
+    `}>
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-10 left-10 w-32 h-32 bg-purple-500/10 rounded-full animate-pulse"></div>
