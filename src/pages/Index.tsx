@@ -63,7 +63,7 @@ const MusicStudioTycoon = () => {
   const [currentEraForTutorial, setCurrentEraForTutorial] = useState<string>(ERA_DEFINITIONS[0].id); // Default to first era
   const [activeProjectReport, setActiveProjectReport] = useState<ProjectReport | null>(null);
   
-  const handleLoadGameStateFromString = (newGameState: any) => {
+  const handleLoadGameStateFromString = (newGameState: GameState) => {
     setGameState(newGameState);
     // Additional logic might be needed here, e.g., re-initializing parts of the UI or game logic
     // For now, just setting the game state.

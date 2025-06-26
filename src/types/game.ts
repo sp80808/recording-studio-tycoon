@@ -181,6 +181,8 @@ import { Band, SessionMusician, OriginalTrackProject } from './bands';
 
 export interface GameState {
   money: number;
+  influence: number; // New resource: Influence
+  creativeCapital: number; // New resource: Creative Capital
   currentEra: string; // Current Era ID
   reputation: number;
   currentDay: number;

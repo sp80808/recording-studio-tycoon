@@ -54,6 +54,9 @@ export class ProjectService {
 
         this.gameState.money += report.moneyGained;
         this.gameState.reputation += report.reputationGained;
+        // Calculate influence gain based on project quality and reputation gained
+        const influenceGained = Math.floor((report.overallQualityScore / 10) + (report.reputationGained / 5));
+        this.gameState.influence += influenceGained;
         this.gameState.financials.reports.push(report);
         this.gameState.activeProjects = this.gameState.activeProjects.filter(p => p.id !== project.id);
     }

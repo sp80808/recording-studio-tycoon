@@ -40,6 +40,8 @@ export interface GameMechanicsServices {
 }
 
 // Example service initialization helper
+import { GameState } from '../types/game'; // Import GameState
+
 export function createGameMechanicsServices(
   config: {
     genres: import('./market-trends').Genre[];
@@ -49,10 +51,11 @@ export function createGameMechanicsServices(
     studioPerks: import('./studio-perks').StudioPerk[];
     staffMembers: import('./staff-wellbeing').StaffMemberWellbeing[];
     randomEvents: import('./random-events').RandomEvent[];
-  }
+  },
+  gameState: GameState // Add gameState parameter
 ): GameMechanicsServices {
   const marketService = new MarketService(config.genres, config.subGenres);
-  const relationshipService = new RelationshipService(config.clients, config.recordLabels);
+  const relationshipService = new RelationshipService(config.clients, config.recordLabels, gameState); // Pass gameState
   const studioUpgradeService = new StudioUpgradeService(config.studioPerks);
   const staffWellbeingService = new StaffWellbeingService(config.staffMembers);
   const advancedContractService = new AdvancedContractService();

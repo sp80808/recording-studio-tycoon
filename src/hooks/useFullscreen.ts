@@ -1,14 +1,30 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast'; // Assuming use-toast is correctly set up for Sonner
 
+interface CustomDocument extends Document {
+  webkitFullscreenElement?: Element;
+  mozFullScreenElement?: Element;
+  msFullscreenElement?: Element;
+  webkitExitFullscreen?: () => Promise<void>;
+  mozCancelFullScreen?: () => Promise<void>;
+  msExitFullscreen?: () => Promise<void>;
+}
+
+interface CustomHTMLElement extends HTMLElement {
+  webkitRequestFullscreen?: () => Promise<void>;
+  mozRequestFullScreen?: () => Promise<void>;
+  msRequestFullscreen?: () => Promise<void>;
+}
+
 export function useFullscreen(elementId: string = 'root') {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const getFullscreenElement = () => {
-    return document.fullscreenElement ||
-           (document as any).webkitFullscreenElement ||
-           (document as any).mozFullScreenElement ||
-           (document as any).msFullscreenElement;
+    const doc = document as CustomDocument;
+    return doc.fullscreenElement ||
+           doc.webkitFullscreenElement ||
+           doc.mozFullScreenElement ||
+           doc.msFullscreenElement;
   };
 
   const handleFullscreenChange = useCallback(() => {
@@ -30,15 +46,16 @@ export function useFullscreen(elementId: string = 'root') {
   }, [handleFullscreenChange]);
 
   const toggleFullscreen = async () => {
-    const element = document.getElementById(elementId) || document.documentElement;
+    const element = (document.getElementById(elementId) || document.documentElement) as CustomHTMLElement;
+    const doc = document as CustomDocument;
 
     if (!getFullscreenElement()) {
       try {
         const requestFullscreen =
           element.requestFullscreen ||
-          (element as any).webkitRequestFullscreen ||
-          (element as any).mozRequestFullScreen ||
-          (element as any).msRequestFullscreen;
+          element.webkitRequestFullscreen ||
+          element.mozRequestFullScreen ||
+          element.msRequestFullscreen;
 
         if (requestFullscreen) {
           await requestFullscreen.call(element);
@@ -61,13 +78,13 @@ export function useFullscreen(elementId: string = 'root') {
     } else {
       try {
         const exitFullscreen =
-          document.exitFullscreen ||
-          (document as any).webkitExitFullscreen ||
-          (document as any).mozCancelFullScreen ||
-          (document as any).msExitFullscreen;
+          doc.exitFullscreen ||
+          doc.webkitExitFullscreen ||
+          doc.mozCancelFullScreen ||
+          doc.msExitFullscreen;
 
         if (exitFullscreen) {
-          await exitFullscreen.call(document);
+          await exitFullscreen.call(doc);
           // setIsFullscreen(false); // State will be updated by event listener
         }
       } catch (err) {

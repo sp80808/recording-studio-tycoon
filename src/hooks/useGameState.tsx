@@ -24,6 +24,8 @@ export const useGameState = () => {
 
   const createDefaultGameState = (options?: Partial<EraInitOptions>): GameState => ({
     money: options?.startingMoney || 2000,
+    influence: 0, // Initialize Influence
+    creativeCapital: 0, // Initialize Creative Capital
     reputation: 10,
     currentDay: 2,
     currentYear: options?.currentYear || 1960, // Start in 1960s era
@@ -121,6 +123,12 @@ export const useGameState = () => {
         automationPulse: false,
         lastGlobalUpdate: Date.now()
       }
+    },
+    financials: { // Initialize financials
+      income: 0,
+      expenses: 0,
+      profit: 0,
+      reports: []
     }
   });
 

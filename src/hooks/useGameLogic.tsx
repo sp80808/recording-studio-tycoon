@@ -30,7 +30,7 @@ export const useGameLogic = (
   const { createBand, startTour, createOriginalTrack, processTourIncome } = useBandManagement(gameState, setGameState);
 
   const [selectedStaffForTraining, setSelectedStaffForTraining] = useState<StaffMember | null>(null);
-  const [lastReview, setLastReview] = useState<any>(null);
+  const [lastReview, setLastReview] = useState<ProjectReport | null>(null);
 
   const { performDailyWork, orbContainerRef, autoTriggeredMinigame, clearAutoTriggeredMinigame } = useStageWork({
     gameState,

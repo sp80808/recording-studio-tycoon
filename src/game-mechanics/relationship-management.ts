@@ -1,4 +1,5 @@
 import { EntityId, GenreId, MoodId, ProjectId } from './common.types';
+import { GameState } from '../types/game'; // Import GameState
 
 export interface Client {
   id: EntityId;
@@ -18,7 +19,7 @@ export interface RecordLabel {
   preferredGenres: GenreId[];
   preferredMoods?: MoodId[];
   // Influence level, market reach, etc.
-  influenceTier: 'Indie' | 'Regional' | 'National' | 'Global'; 
+  influenceTier: 'Indie' | 'Regional' | 'National' | 'Global';
   interactionHistory?: Array<{ event: string; impact: number; date: number }>;
   isBlacklisted: boolean;
 }
@@ -31,10 +32,12 @@ export type RelatableEntity = Client | RecordLabel; // Could be expanded to Arti
 export class RelationshipService {
   private clients: Map<EntityId, Client> = new Map();
   private recordLabels: Map<EntityId, RecordLabel> = new Map();
+  private gameState: GameState; // Add gameState property
 
-  constructor(initialClients: Client[], initialRecordLabels: RecordLabel[]) {
+  constructor(initialClients: Client[], initialRecordLabels: RecordLabel[], gameState: GameState) {
     initialClients.forEach(c => this.clients.set(c.id, c));
     initialRecordLabels.forEach(rl => this.recordLabels.set(rl.id, rl));
+    this.gameState = gameState; // Initialize gameState
   }
 
   private getEntity(entityId: EntityId): RelatableEntity | undefined {
@@ -50,6 +53,8 @@ export class RelationshipService {
       if (entity.isBlacklisted && entity.relationshipScore > 20) { // Example threshold
           // entity.isBlacklisted = false; // Consider a more involved un-blacklisting process
       }
+      // Increase influence based on relationship gain
+      this.gameState.influence += Math.floor(amount / 2); // Example: 50% of relationship gain
       return true;
     }
     return false;
@@ -63,6 +68,8 @@ export class RelationshipService {
       if (entity.relationshipScore < 10) { // Example threshold for blacklisting
         // this.blacklistEntity(entityId, 'Critically low relationship');
       }
+      // Decrease influence based on relationship loss (optional, but adds consequence)
+      this.gameState.influence = Math.max(0, this.gameState.influence - Math.floor(amount / 4)); // Example: 25% of relationship loss
       return true;
     }
     return false;
@@ -132,6 +139,7 @@ export class RelationshipService {
     } else if (relationshipChange < 0) {
       this.decreaseRelationship(entityId, Math.abs(relationshipChange), reason, gameTime);
     }
+    // Influence gain from project completion is handled in ProjectService.ts
   }
   
   // Placeholder for ContractGenerationService modification

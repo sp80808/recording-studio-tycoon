@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
 
+interface CustomNavigator extends Navigator {
+  msMaxTouchPoints?: number;
+}
+
 /**
  * Custom React hook to detect mobile devices using user agent and touch capabilities.
  * More reliable than screen size since dev tools can trigger false positives.
@@ -25,7 +29,7 @@ export const useMobileDetection = (): boolean => {
       const hasTouchCapability = (
         'ontouchstart' in window ||
         navigator.maxTouchPoints > 0 ||
-        (navigator as any).msMaxTouchPoints > 0
+        (navigator as CustomNavigator).msMaxTouchPoints > 0
       );
 
       // Check screen size as secondary indicator (but not primary)
