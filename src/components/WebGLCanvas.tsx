@@ -18,7 +18,6 @@ const WebGLCanvas: React.FC = () => {
 
     const rectangle = new Graphics();
     rectangle.beginFill(0x66ccff);
->>>>>>> Stashed changes
     rectangle.drawRect(50, 50, 100, 100);
     rectangle.endFill();
 
