@@ -292,7 +292,7 @@ export const getNextEvent = (gameState: GameState): HistoricalEvent | null => {
 
 // Function to apply event effects to game state
 export const applyEventEffects = (event: HistoricalEvent, gameState: GameState): GameState => {
-  let newGameState = { ...gameState };
+  const newGameState = { ...gameState };
   
   // Apply market changes
   if (event.impact.marketChanges) {

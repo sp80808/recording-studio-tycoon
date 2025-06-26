@@ -80,7 +80,7 @@ export const applyEquipmentEffects = (equipment: Equipment, gameState: GameState
   console.log(`=== APPLYING EQUIPMENT EFFECTS for ${equipment.name} ===`);
   console.log('Equipment bonuses:', equipment.bonuses);
   
-  let updatedGameState = { ...gameState };
+  const updatedGameState = { ...gameState };
   
   // Apply skill bonuses by adding XP to relevant skills
   if (equipment.bonuses.genreBonus) {

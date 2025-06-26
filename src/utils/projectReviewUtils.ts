@@ -6,7 +6,7 @@ const getRelevantSkillsForProject = (
   project: Project, 
   personSkills: PlayerData['skills'] | StaffMember['skills']
 ): Array<keyof (PlayerData['skills'] | StaffMember['skills'])> => {
-  let relevant: Array<keyof (PlayerData['skills'] | StaffMember['skills'])> = [
+  const relevant: Array<keyof (PlayerData['skills'] | StaffMember['skills'])> = [
     'songwriting', 'rhythm', 'tracking', 'mixing', 'mastering' // Foundational skills are always relevant
   ];
 
@@ -16,23 +16,23 @@ const getRelevantSkillsForProject = (
     case 'rock':
     case 'pop':
     case 'country': // Genres that might benefit from traditional analog techniques
-      if (personSkills.hasOwnProperty('tapeSplicing')) relevant.push('tapeSplicing');
-      if (personSkills.hasOwnProperty('vocalComping')) relevant.push('vocalComping');
+      if (Object.prototype.hasOwnProperty.call(personSkills, 'tapeSplicing')) relevant.push('tapeSplicing');
+      if (Object.prototype.hasOwnProperty.call(personSkills, 'vocalComping')) relevant.push('vocalComping');
       break;
     case 'electronic':
     case 'hip-hop': // Genres that might benefit from digital/creative techniques
-      if (personSkills.hasOwnProperty('soundDesign')) relevant.push('soundDesign');
-      if (personSkills.hasOwnProperty('sampleWarping')) relevant.push('sampleWarping');
+      if (Object.prototype.hasOwnProperty.call(personSkills, 'soundDesign')) relevant.push('soundDesign');
+      if (Object.prototype.hasOwnProperty.call(personSkills, 'sampleWarping')) relevant.push('sampleWarping');
       break;
     default: // For other genres, maybe pick one of each category if available
-      if (personSkills.hasOwnProperty('vocalComping')) relevant.push('vocalComping');
-      if (personSkills.hasOwnProperty('soundDesign')) relevant.push('soundDesign');
+      if (Object.prototype.hasOwnProperty.call(personSkills, 'vocalComping')) relevant.push('vocalComping');
+      if (Object.prototype.hasOwnProperty.call(personSkills, 'soundDesign')) relevant.push('soundDesign');
       break;
   }
   
   // Ensure no duplicates and filter out skills the person might not have (e.g. staff don't have 'management')
   const uniqueRelevant = Array.from(new Set(relevant));
-  return uniqueRelevant.filter(skillName => personSkills.hasOwnProperty(skillName)) as Array<keyof (PlayerData['skills'] | StaffMember['skills'])>;
+  return uniqueRelevant.filter(skillName => Object.prototype.hasOwnProperty.call(personSkills, skillName)) as Array<keyof (PlayerData['skills'] | StaffMember['skills'])>;
 };
 
 
@@ -58,7 +58,7 @@ export const generateProjectReview = (
   let numContributingSkills = 0;
 
   let personSkills: PlayerData['skills'] | StaffMember['skills'] | undefined;
-  let isPlayer = assignedPersonDetails.type === 'player';
+  const isPlayer = assignedPersonDetails.type === 'player';
 
   if (isPlayer) {
     personSkills = currentPlayerData.skills;

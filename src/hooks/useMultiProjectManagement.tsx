@@ -124,7 +124,7 @@ export const useMultiProjectManagement = ({ gameState, setGameState }: UseMultiP
 
       const updatedActiveProjects = prev.activeProjects.map(proj => {
         const assignedStaffToThisProject = newHiredStaff.filter(s => s.assignedProjectId === proj.id);
-        let aggregatedSkills: { creativity?: number; technical?: number; arrangement?: number } = {
+        const aggregatedSkills: { creativity?: number; technical?: number; arrangement?: number } = {
           creativity: 0,
           technical: 0,
           arrangement: 0,

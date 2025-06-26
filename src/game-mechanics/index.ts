@@ -1,3 +1,10 @@
+import { MarketService } from './market-trends';
+import { RelationshipService } from './relationship-management';
+import { StudioUpgradeService } from './studio-perks';
+import { StaffWellbeingService } from './staff-wellbeing';
+import { AdvancedContractService } from './advanced-contracts';
+import { RandomEventService } from './random-events';
+
 // Game Mechanics Module - Phase 2 Enhancements for Recording Studio Tycoon
 // This module provides advanced game mechanics for strategic depth and player engagement
 
@@ -44,12 +51,12 @@ export function createGameMechanicsServices(
     randomEvents: import('./random-events').RandomEvent[];
   }
 ): GameMechanicsServices {
-  const marketService = new (require('./market-trends').MarketService)(config.genres, config.subGenres);
-  const relationshipService = new (require('./relationship-management').RelationshipService)(config.clients, config.recordLabels);
-  const studioUpgradeService = new (require('./studio-perks').StudioUpgradeService)(config.studioPerks);
-  const staffWellbeingService = new (require('./staff-wellbeing').StaffWellbeingService)(config.staffMembers);
-  const advancedContractService = new (require('./advanced-contracts').AdvancedContractService)();
-  const randomEventService = new (require('./random-events').RandomEventService)(config.randomEvents);
+  const marketService = new MarketService(config.genres, config.subGenres);
+  const relationshipService = new RelationshipService(config.clients, config.recordLabels);
+  const studioUpgradeService = new StudioUpgradeService(config.studioPerks);
+  const staffWellbeingService = new StaffWellbeingService(config.staffMembers);
+  const advancedContractService = new AdvancedContractService();
+  const randomEventService = new RandomEventService(config.randomEvents);
 
   return {
     marketService,

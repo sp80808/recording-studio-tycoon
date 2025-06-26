@@ -4,10 +4,18 @@ import { Project, StaffMember } from '../types/game'; // Assuming types are in g
 // For example:
 // interface ProjectAnimationState { /* ... properties ... */ }
 
+interface ProjectAnimationState {
+  x?: number;
+  y?: number;
+  scale?: number;
+  opacity?: number;
+  // Add other animation-related properties as needed
+}
+
 interface AnimatedProjectCardProps {
   project: Project;
   assignedStaff: StaffMember[];
-  animationState: any; // Replace 'any' with a more specific ProjectAnimationState if defined
+  animationState: ProjectAnimationState; // Replaced 'any' with ProjectAnimationState
   priority: number;
   progress: number;
   onSelect: (projectId: string) => void;

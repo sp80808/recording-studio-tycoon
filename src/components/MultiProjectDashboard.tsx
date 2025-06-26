@@ -413,7 +413,7 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
                 <label className="font-medium">Priority Mode</label>
                 <Select
                   value={automationStatus?.settings.priorityMode || 'balanced'}
-                  onValueChange={(value: any) => 
+                  onValueChange={(value: AutomationSettings['priorityMode']) => 
                     updateAutomationSettings({ priorityMode: value })
                   }
                 >

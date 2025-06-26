@@ -25,7 +25,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     // Process training and research completions
     const completedTraining: string[] = [];
     const completedResearch: string[] = [];
-    let newResearchedMods = [...gameState.researchedMods];
+    const newResearchedMods = [...gameState.researchedMods];
 
     const updatedStaff = gameState.hiredStaff.map(staff => {
       let updatedStaffMember = { ...staff };

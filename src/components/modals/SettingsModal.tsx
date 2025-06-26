@@ -30,9 +30,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const { settings, updateSettings, resetSettings } = useSettings();
   const { exportGameStateToString, loadGameFromString } = useSaveSystem();
-  // gameState is only needed for export, so conditionally get it.
-  // For import from splash, gameState won't be available/relevant yet.
-  const { gameState } = context === 'ingame' ? useGameState() : { gameState: null };
+  const { gameState } = useGameState(); // Always call the hook
   const { t, i18n } = useTranslation();
 
   const [exportedSaveString, setExportedSaveString] = useState<string | null>(null);

@@ -150,7 +150,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
   // Aggregate skills of staff assigned to this project
   const assignedStaffToThisProject = gameState.hiredStaff.filter(s => s.assignedProjectId === project.id);
-  let aggregatedSkills: { creativity?: number; technical?: number; arrangement?: number } = {
+  const aggregatedSkills: { creativity?: number; technical?: number; arrangement?: number } = {
     creativity: 0,
     technical: 0,
     arrangement: 0,

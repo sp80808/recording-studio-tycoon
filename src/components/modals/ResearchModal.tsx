@@ -107,7 +107,7 @@ export const ResearchModal: React.FC<ResearchModalProps> = ({
                   )}
                   {eligibleEngineers.map((staff) => {
                     const skillName = selectedMod.researchRequirements.engineerSkill;
-                    // @ts-ignore TODO: Fix skill type to allow dynamic access
+                    // @ts-expect-error TODO: Fix skill type to allow dynamic access
                     const staffSkillLevel = staff.skills[skillName]?.level || 0;
                     const canResearch = staffSkillLevel >= selectedMod.researchRequirements.engineerSkillLevel;
                     return (

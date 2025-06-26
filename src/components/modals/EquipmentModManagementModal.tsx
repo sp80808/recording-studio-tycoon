@@ -21,14 +21,14 @@ export const EquipmentModManagementModal: React.FC<EquipmentModManagementModalPr
   gameState,
   onApplyMod,
 }) => {
-  if (!equipment) return null;
-
-  const [selectedModId, setSelectedModId] = useState<string | null>(equipment.appliedModId || null);
+  const [selectedModId, setSelectedModId] = useState<string | null>(equipment?.appliedModId || null);
 
   useEffect(() => {
     // Update selectedModId if the equipment or its appliedModId changes externally
-    setSelectedModId(equipment.appliedModId || null);
+    setSelectedModId(equipment?.appliedModId || null);
   }, [equipment]);
+
+  if (!equipment) return null;
 
   const compatibleResearchedMods = availableMods.filter(mod =>
     mod.modifiesEquipmentId === equipment.id && gameState.researchedMods.includes(mod.id)

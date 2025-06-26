@@ -24,7 +24,7 @@ export interface RightPanelProps {
   assignStaffToProject: (staffId: string) => void;
   unassignStaffFromProject: (staffId: string) => void;
   toggleStaffRest: (staffId: string) => void;
-  openTrainingModal: (staff: any) => boolean;
+  openTrainingModal: (staff: StaffMember) => boolean;
   contactArtist: (artistId: string, offer: number) => void;
   onEraTransition: () => { fromEra?: string; toEra?: string } | void;
   createBand: (bandName: string, memberIds: string[]) => void;
