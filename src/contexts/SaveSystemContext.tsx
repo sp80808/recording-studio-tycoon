@@ -7,29 +7,12 @@
  * @lastModifiedBy Cline
  */
 
-import React, { createContext, useContext, useEffect, ReactNode, useCallback } from 'react';
+import React, { useEffect, ReactNode, useCallback } from 'react';
 import { useSettings } from './SettingsContext';
 import { getVersionInfo, compareVersions } from '../utils/versionUtils';
 import { migrateAndInitializeGameState } from '../utils/gameStateUtils'; // ADDED
-
-interface SaveSystemContextType {
-  saveGame: (gameState: GameState) => void;
-  loadGame: () => GameState | null;
-  resetGame: () => void;
-  hasSavedGame: () => boolean;
-  exportGameStateToString: (gameState: GameState) => string | null; // New function
-  loadGameFromString: (saveString: string) => GameState | null; // New function
-}
-
-const SaveSystemContext = createContext<SaveSystemContextType | undefined>(undefined);
-
-export const useSaveSystem = () => {
-  const context = useContext(SaveSystemContext);
-  if (!context) {
-    throw new Error('useSaveSystem must be used within a SaveSystemProvider');
-  }
-  return context;
-};
+import { SaveSystemContext } from './save-system-context-types';
+import { GameState } from '@/types/game';
 
 interface SaveSystemProviderProps {
   children: ReactNode;
@@ -168,12 +151,12 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
 
   return (
     <SaveSystemContext.Provider value={{ 
-      saveGame, 
-      loadGame, 
-      resetGame, 
-      hasSavedGame, 
-      exportGameStateToString, 
-      loadGameFromString 
+      saveGame,
+      loadGame,
+      resetGame,
+      hasSavedGame,
+      exportGameStateToString,
+      loadGameFromString
     }}>
       {children}
     </SaveSystemContext.Provider>

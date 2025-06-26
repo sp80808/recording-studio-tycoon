@@ -117,8 +117,8 @@ export class StaffWellbeingService {
    * Periodic update for all staff, called by the game loop (e.g., daily).
    * @param activePerks - List of currently active studio perks that might affect mood.
    */
-  dailyUpdate(activePerks: StudioPerk[]): Array<{staffId: StaffId, event: string, details?: { [key: string]: any }}> {
-    const eventsOccurred: Array<{staffId: StaffId, event: string, details?: any}> = [];
+  dailyUpdate(activePerks: StudioPerk[]): Array<{staffId: StaffId, event: string, details?: Record<string, unknown>}> {
+    const eventsOccurred: Array<{staffId: StaffId, event: string, details?: Record<string, unknown>}> = [];
     this.staffWellbeingData.forEach(staff => {
       if (staff.isTakingLeave) {
         staff.leaveDaysRemaining = (staff.leaveDaysRemaining || 0) - 1;

@@ -165,7 +165,7 @@ export function useStudioPerks() {
   const attemptUnlockPerk = useCallback(async (perkId: string): Promise<boolean> => {
     try {
       // In a real implementation, this would get current game state
-      const gameState: any = {}; // getCurrentGameState();
+      const gameState: GameState = {}; // getCurrentGameState();
       const success = gameServices.studioUpgradeService.unlockPerk(perkId, gameState);
       if (success) {
         refreshPerks();

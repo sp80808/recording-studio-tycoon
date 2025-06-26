@@ -264,7 +264,7 @@ const MusicStudioTycoon = () => {
     }
   };
 
-  const handleProjectStart = (project: any) => { // Consider using a more specific type for project
+  const handleProjectStart = (project: Project) => { // Consider using a more specific type for project
     const result = startProject(project);
     if (settings.sfxEnabled && result) { // Assuming startProject returns a truthy value on success
       audioSystem.playUISound('success');

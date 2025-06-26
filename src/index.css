@@ -90,16 +90,6 @@
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-  }
-}
-
 .sunrise-studio {
   --background: #FAF9F6;
   --foreground: 222.2 84% 4.9%;
@@ -527,4 +517,6 @@
 @keyframes pulse-fullscreen {
   0%, 100% { opacity: 0.6; transform: scale(1); }
   50% { opacity: 1; transform: scale(1.2); }
+  100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
 }
+

@@ -1,52 +1,9 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { useState, useEffect, ReactNode } from 'react';
 import { useTheme } from 'next-themes';
 import { gameAudio } from '../utils/audioSystem';
 import i18n from '../i18n'; // Corrected import
-
-export interface GameSettings {
-  masterVolume: number;
-  sfxVolume: number;
-  musicVolume: number;
-  sfxEnabled: boolean;
-  musicEnabled: boolean;
-  tutorialCompleted: boolean;
-  autoSave: boolean;
-  difficulty: 'easy' | 'medium' | 'hard';
-  theme: 'default' | 'sunrise-studio' | 'neon-nights' | 'retro-arcade';
-  seenMinigameTutorials: Record<string, boolean>; // Track seen minigame tutorials
-  language: string; // Added language setting
-}
-
-interface SettingsContextType {
-  settings: GameSettings;
-  updateSettings: (newSettings: Partial<GameSettings>) => void;
-  resetSettings: () => void;
-  markMinigameTutorialAsSeen: (minigameId: string) => void; // Mark minigame tutorial as seen
-}
-
-const defaultSettings: GameSettings = {
-  masterVolume: 0.7,
-  sfxVolume: 0.8,
-  musicVolume: 0.5,
-  sfxEnabled: true,
-  musicEnabled: true,
-  tutorialCompleted: false,
-  autoSave: true,
-  difficulty: 'medium',
-  theme: 'default',
-  seenMinigameTutorials: {}, // Initialize as empty object
-  language: 'en', // Default language
-};
-
-const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
-
-export const useSettings = () => {
-  const context = useContext(SettingsContext);
-  if (!context) {
-    throw new Error('useSettings must be used within a SettingsProvider');
-  }
-  return context;
-};
+import { SettingsContext, GameSettings } from './settings-context-types';
+import { defaultSettings } from '@/data/defaultSettings';
 
 interface SettingsProviderProps {
   children: ReactNode;

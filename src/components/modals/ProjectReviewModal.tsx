@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Progress } from '@/components/ui/progress'; // Assuming Progress component for XP bars
 import { gameAudio } from '@/utils/audioSystem'; // For sound effects
 import { X } from 'lucide-react'; // For skip button icon
+import { generateAlbumArt, generateReview } from '@/services/pollinations';
 
 interface AnimatedNumberProps {
   targetValue: number;
@@ -181,6 +182,10 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
   const [showContinueButton, setShowContinueButton] = useState(false);
   const [animatedOverallQualityValue, setAnimatedOverallQualityValue] = useState(0);
   const [typedSnippet, setTypedSnippet] = useState("");
+  const [reviewText, setReviewText] = useState<string | null>(null);
+  const [artUrl, setArtUrl] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
 
   const totalAnimationStages = (report?.skillBreakdown.length || 0) + 3; 
 
@@ -200,6 +205,27 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
       
       gameAudio.playSound('review_start', 'sfx', 0.7); 
       setTimeout(() => setCurrentSkillIndex(0), 250); // Reduced from 500 
+    }
+  }, [isOpen, report]);
+
+  useEffect(() => {
+    if (isOpen && report) {
+      setIsGenerating(true);
+      setGenerationError(null);
+      Promise.all([
+        generateReview(report.projectTitle),
+        generateAlbumArt(report.projectTitle)
+      ])
+        .then(([review, art]) => {
+          setReviewText(review);
+          setArtUrl(art);
+        })
+        .catch((err) => {
+          setGenerationError(err.message);
+        })
+        .finally(() => {
+          setIsGenerating(false);
+        });
     }
   }, [isOpen, report]);
 
@@ -347,10 +373,31 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
                 </p>
               </div>
             )}
+
+            <div className="pt-4">
+              {isGenerating && (
+                <div className="text-center text-gray-400 italic">Generating review and art...</div>
+              )}
+              {generationError && (
+                <div className="text-center text-red-500">Error: {generationError}</div>
+              )}
+              {!isGenerating && !generationError && artUrl && reviewText && (
+                <div className="pt-4 space-y-3 text-center">
+                  <img
+                    src={artUrl}
+                    alt="Album Art"
+                    className="mx-auto w-64 h-64 object-cover rounded"
+                  />
+                  <div className="p-4 bg-gray-800 rounded">
+                    <p className="text-white">{reviewText}</p>
+                  </div>
+                </div>
+              )}
+            </div>
           </CardContent>
           <CardFooter className="pt-4">
             {showContinueButton ? (
-              <Button 
+              <Button disabled={isGenerating}
                 onClick={() => {
                   // Play sound before calling onClose, as onClose might unmount the component
                   gameAudio.playSound('button_click', 'ui'); 

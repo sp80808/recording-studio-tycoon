@@ -81,7 +81,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
         setPulseAnimation(false);
       }
     }
-  }, [gameState.activeProject?.currentStageIndex, completedMinigamesForStage, clearAutoTriggeredMinigame]);
+  }, [gameState.activeProject, gameState.activeProject?.currentStageIndex, completedMinigamesForStage, clearAutoTriggeredMinigame]);
 
   // Auto-trigger minigames based on project stage and equipment
   useEffect(() => {

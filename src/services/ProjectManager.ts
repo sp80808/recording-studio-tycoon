@@ -109,7 +109,7 @@ export class ProjectManager {
         completion: this.calculateCompletionFactor(project)
       };
 
-      let score = 0;
+      let score: number;
       switch (settings.priorityMode) {
         case 'deadline':
           score = factors.deadline * 0.6 + factors.completion * 0.4;
@@ -314,11 +314,12 @@ export class ProjectManager {
       case 'focus_one':
         return 1; // Full allocation to highest priority project
       case 'adaptive':
-      default:
+      default: {
         // Adaptive allocation based on project needs and staff capacity
         const urgency = this.calculateDeadlineFactor(project);
         const baseAllocation = 0.6;
         return Math.min(1, baseAllocation + (urgency * 0.4));
+      }
     }
   }
 
@@ -351,6 +352,7 @@ export class ProjectManager {
     if (currentStage.workUnitsCompleted >= currentStage.workUnitsBase) {
       currentStage.completed = true;
       project.completedStages.push(project.currentStageIndex);
+      this.triggerMinigameForStage(project);
       
       // Move to next stage if available
       if (project.currentStageIndex < project.stages.length - 1) {
@@ -363,6 +365,30 @@ export class ProjectManager {
       this.gameState.automation!.efficiency = {};
     }
     this.gameState.automation!.efficiency[project.id] = Math.min(1, efficiency + 0.01);
+  }
+
+  /**
+   * Trigger a minigame based on the project's current stage
+   */
+  private triggerMinigameForStage(project: Project): void {
+    const currentStage = project.stages[project.currentStageIndex];
+    if (!currentStage) return;
+
+    let minigameToStart: string | null = null;
+
+    switch (currentStage.name) {
+      case 'Recording':
+        minigameToStart = 'rhythm';
+        break;
+      case 'Mixing':
+        minigameToStart = 'rhythm';
+        break;
+      // Add more cases for other stages and minigames
+    }
+
+    if (minigameToStart) {
+      this.gameState.activeMinigame = minigameToStart;
+    }
   }
 
   /**

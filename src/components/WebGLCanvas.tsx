@@ -3,62 +3,47 @@ import { Application, Graphics, Sprite, Texture } from 'pixi.js';
 
 const WebGLCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLDivElement>(null);
-  const appRef = useRef<Application | null>(null);
+  const app = useRef(new Application({
+    width: window.innerWidth,
+    height: window.innerHeight,
+    backgroundColor: 0x4c566a,
+    resolution: window.devicePixelRatio || 1,
+    autoDensity: true,
+  }));
 
   useEffect(() => {
-    const init = async () => {
-      if (!canvasRef.current || appRef.current) return;
+    if (canvasRef.current) {
+      canvasRef.current.appendChild(app.current.view as HTMLCanvasElement);
+    }
 
-      const app = new Application({
-        width: window.innerWidth,
-        height: window.innerHeight,
-        backgroundColor: 0x4c566a,
-        resolution: window.devicePixelRatio || 1,
-        autoDensity: true,
-      });
+    const rectangle = new Graphics();
+    rectangle.beginFill(0x66ccff);
+>>>>>>> Stashed changes
+    rectangle.drawRect(50, 50, 100, 100);
+    rectangle.endFill();
 
-      appRef.current = app;
-      canvasRef.current.appendChild(app.view as HTMLCanvasElement);
+    const texture = Texture.from('assets/isometric_room.png');
+    const background = new Sprite(texture);
 
-      const rectangle = new Graphics();
-      rectangle.beginFill(0x66ccff);
-      rectangle.drawRect(50, 50, 100, 100);
-      rectangle.endFill();
+    background.x = 0;
+    background.y = 0;
 
-      const texture = Texture.from('assets/isometric_room.png');
-      const background = new Sprite(texture);
+    app.current.stage.addChild(background);
+    app.current.stage.addChild(rectangle);
 
-      // Set the position of the background
-      background.x = 0;
-      background.y = 0;
-
-      // Add the background to the stage
-      app.stage.addChild(background);
-      app.stage.addChild(rectangle);
-
-      const resizeHandler = () => {
-        if (canvasRef.current) {
-          const { clientWidth, clientHeight } = canvasRef.current;
-          app.renderer.resize(clientWidth, clientHeight);
-        }
-      };
-
-      window.addEventListener('resize', resizeHandler);
-      resizeHandler();
-
-      return () => {
-        window.removeEventListener('resize', resizeHandler);
-        if (appRef.current) {
-          appRef.current.destroy(true, true);
-          appRef.current = null;
-        }
-      };
+    const resizeHandler = () => {
+      if (canvasRef.current) {
+        const { clientWidth, clientHeight } = canvasRef.current;
+        app.current.renderer.resize(clientWidth, clientHeight);
+      }
     };
 
-    const cleanup = init();
+    window.addEventListener('resize', resizeHandler);
+    resizeHandler();
 
     return () => {
-      cleanup.then(c => c && c());
+      window.removeEventListener('resize', resizeHandler);
+      app.current.destroy(true, true);
     };
   }, []);
 

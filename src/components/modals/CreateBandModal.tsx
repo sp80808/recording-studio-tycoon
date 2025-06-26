@@ -1,12 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { GameState, StaffMember } from '@/types/game';
 import { Band } from '@/types/bands';
-import { generateBandName } from '@/utils/bandUtils';
+import { generateBandName } from '@/services/pollinations';
 import { toast } from '@/hooks/use-toast';
 
 interface CreateBandModalProps {
@@ -24,14 +24,32 @@ export const CreateBandModal: React.FC<CreateBandModalProps> = ({
 }) => {
   const [bandName, setBandName] = useState('');
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [loadingName, setLoadingName] = useState(true);
+  const [nameError, setNameError] = useState<string | null>(null);
 
   const availableStaff = gameState.hiredStaff.filter(staff => 
     !gameState.playerBands.some(band => band.memberIds.includes(staff.id))
   );
 
-  const handleGenerateName = () => {
-    setBandName(generateBandName());
+  const handleGenerateName = async () => {
+    setLoadingName(true);
+    setNameError(null);
+    try {
+      const name = await generateBandName();
+      setBandName(name);
+    } catch (err) {
+      setNameError((err as Error).message || 'Error generating name');
+    } finally {
+      setLoadingName(false);
+    }
   };
+
+  useEffect(() => {
+    generateBandName()
+      .then(name => setBandName(name))
+      .catch(err => setNameError(err.message || 'Error generating name'))
+      .finally(() => setLoadingName(false));
+  }, []);
 
   const toggleMember = (staffId: string) => {
     setSelectedMembers(prev => 
@@ -85,7 +103,8 @@ export const CreateBandModal: React.FC<CreateBandModalProps> = ({
                 id="bandName"
                 value={bandName}
                 onChange={(e) => setBandName(e.target.value)}
-                placeholder="Enter band name..."
+                placeholder={loadingName ? 'Generating…' : 'Enter band name...'}
+                disabled={loadingName || Boolean(nameError)}
                 className="flex-1"
               />
               <Button

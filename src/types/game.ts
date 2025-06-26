@@ -50,7 +50,7 @@ export interface StudioSkill {
 }
 
 export interface ProjectStage {
-  stageName: string;
+  name: string;
   focusAreas: string[];
   workUnitsBase: number;
   workUnitsCompleted: number;
@@ -215,7 +215,7 @@ export interface GameState {
     charts: Chart[];
     contactedArtists: ArtistContact[];
     marketTrends: MarketTrend[];
-    discoveredArtists: any[]; // Artists found in charts
+    discoveredArtists: Artist[]; // Artists found in charts
     lastChartUpdate: number; // Day when charts were last updated
   };
   researchedMods: string[]; // Array of researched mod IDs
@@ -236,6 +236,16 @@ export interface GameState {
     staff: { [staffId: string]: StaffAnimationState };
     globalEffects: GlobalAnimationState;
   };
+  activeMinigame: string | null;
+}
+
+export interface Artist {
+  id: string;
+  name: string;
+  genre: string;
+  popularity: number;
+  demandLevel: number;
+  priceRange: { min: number; max: number };
 }
 
 export interface GameNotification {

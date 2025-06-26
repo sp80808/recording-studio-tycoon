@@ -91,7 +91,7 @@ export const generateProjectReview = (
 
   relevantSkillKeys.forEach(skillKey => {
     const skillName = skillKey as keyof typeof personSkills;
-    const currentSkillState = (personSkills as any)[skillName] as Skill;
+    const currentSkillState = (personSkills as PlayerData['skills'] | StaffMember['skills'])[skillName] as Skill;
 
     if (!currentSkillState) return; // Should not happen if relevantSkillKeys is correct
 
