@@ -65,7 +65,7 @@ export class PixiGameHeader extends Container {
     this.addChild(this.fullscreenButton);
   }
 
-  public update(gameState: any) {
+  public update(gameState: GameState) {
     this.moneyLabel.text = `$${gameState.money.toLocaleString()}`;
     this.reputationLabel.text = `${gameState.reputation.toLocaleString()} Rep`;
     this.dayLabel.text = `Day ${gameState.currentDay}`;

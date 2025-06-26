@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react'; // Added useMemo
 import { GameState, StaffMember, PlayerAttributes } from '@/types/game';
 import { toast } from '@/hooks/use-toast';
 import { availableTrainingCourses } from '@/data/training';
@@ -15,15 +15,41 @@ import { useBandManagement } from '@/hooks/useBandManagement';
 import { ArtistContact } from '@/types/charts';
 import { FocusAllocation } from '@/types/game'; // Import FocusAllocation type
 
+// Import game mechanics services and sample data
+import { createGameMechanicsServices } from '@/game-mechanics';
+import {
+  SAMPLE_CLIENTS,
+  SAMPLE_RECORD_LABELS,
+  SAMPLE_GENRES,
+  SAMPLE_SUBGENRES,
+  SAMPLE_STUDIO_PERKS,
+  SAMPLE_STAFF_WELLBEING,
+  SAMPLE_RANDOM_EVENTS
+} from '@/game-mechanics/sample-data';
+
+
 export const useGameLogic = (
-  gameState: GameState, 
+  gameState: GameState,
   setGameState: React.Dispatch<React.SetStateAction<GameState>>
-  // focusAllocation: FocusAllocation, // REMOVED
-  // setFocusAllocation: React.Dispatch<React.SetStateAction<FocusAllocation>> // REMOVED
 ) => {
+  // Initialize game mechanics services using useMemo to prevent re-creation on every render
+  const gameMechanicsServices = useMemo(() => {
+    return createGameMechanicsServices(
+      {
+        genres: SAMPLE_GENRES,
+        subGenres: SAMPLE_SUBGENRES,
+        clients: SAMPLE_CLIENTS,
+        recordLabels: SAMPLE_RECORD_LABELS,
+        studioPerks: SAMPLE_STUDIO_PERKS,
+        staffMembers: SAMPLE_STAFF_WELLBEING,
+        randomEvents: SAMPLE_RANDOM_EVENTS,
+      },
+      gameState // Pass gameState to the services
+    );
+  }, [gameState]); // Re-create services only if gameState reference changes
+
   const { levelUpPlayer, spendPerkPoint, checkAndHandleLevelUp } = usePlayerProgression(gameState, setGameState);
-  // setFocusAllocation REMOVED from useStaffManagement call
-  const { hireStaff, assignStaffToProject, unassignStaffFromProject, toggleStaffRest, addStaffXP, openTrainingModal, startResearchMod, sendStaffToTraining: originalSendStaffToTraining } = useStaffManagement(gameState, setGameState); 
+  const { hireStaff, assignStaffToProject, unassignStaffFromProject, toggleStaffRest, addStaffXP, openTrainingModal, startResearchMod, sendStaffToTraining: originalSendStaffToTraining } = useStaffManagement(gameState, setGameState);
   const { startProject, completeProject } = useProjectManagement(gameState, setGameState);
   const { advanceDay, refreshCandidates, triggerEraTransition } = useGameActions(gameState, setGameState);
 
@@ -35,8 +61,6 @@ export const useGameLogic = (
   const { performDailyWork, orbContainerRef, autoTriggeredMinigame, clearAutoTriggeredMinigame } = useStageWork({
     gameState,
     setGameState,
-    // focusAllocation, // REMOVED
-    // completeProject is no longer passed to useStageWork
     addStaffXP,
     advanceDay
   });

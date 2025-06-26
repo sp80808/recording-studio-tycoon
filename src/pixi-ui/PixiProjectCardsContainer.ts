@@ -31,7 +31,7 @@ export class PixiProjectCardsContainer extends Container {
         project: Project,
         onClick: (project: Project) => void,
         isAnimated = false,
-        staff?: any[],
+        staff?: StaffMember[],
         priority?: number,
         isAutomated?: boolean
     ) {
@@ -114,7 +114,7 @@ export class PixiProjectCardsContainer extends Container {
     public updateAnimatedCard(
         index: number,
         progress: number,
-        staff: any[],
+        staff: StaffMember[],
         priority: number,
         isAutomated: boolean
     ) {
