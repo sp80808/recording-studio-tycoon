@@ -6,7 +6,7 @@ import './index.css';
 import { useSettings, SettingsProvider } from './contexts/SettingsContext';
 import { SaveSystemProvider } from './contexts/SaveSystemContext';
 import { useEffect } from 'react';
-import './i18n'; // Import the i18n configuration
+import './i18n.ts'; // Import the i18n configuration
 import { gameAudio } from './utils/audioSystem'; // Import gameAudio
 import { initInteractionListener } from './utils/userInteraction'; // Import interaction listener
 

@@ -18,7 +18,7 @@ interface SettingsModalProps {
   onResetGame?: () => void;
   context?: 'splash' | 'ingame'; // New prop
   // Adding a way to reload the game state after import
-  onLoadGameStateFromString?: (gameState: any) => void; 
+  onLoadGameStateFromString?: (gameState: GameState) => void; 
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ 

@@ -14,18 +14,24 @@ import {
   StaffId,
   EntityId,
   ProjectId,
-  GenreId
+  GenreId,
+  MarketService,
+  RelationshipService,
+  StudioUpgradeService,
+  StaffWellbeingService,
+  AdvancedContractService,
+  RandomEventService
 } from './index';
 
 // Assuming singleton service instances are available
 // In a real implementation, these would be provided via Context or dependency injection
 declare const gameServices: {
-  marketService: any;
-  relationshipService: any;
-  studioUpgradeService: any;
-  staffWellbeingService: any;
-  advancedContractService: any;
-  randomEventService: any;
+  marketService: MarketService;
+  relationshipService: RelationshipService;
+  studioUpgradeService: StudioUpgradeService;
+  staffWellbeingService: StaffWellbeingService;
+  advancedContractService: AdvancedContractService;
+  randomEventService: RandomEventService;
 };
 
 // Hook for Market Trends

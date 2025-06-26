@@ -10,15 +10,15 @@
 import React, { createContext, useContext, useEffect, ReactNode, useCallback } from 'react';
 import { useSettings } from './SettingsContext';
 import { getVersionInfo, compareVersions } from '../utils/versionUtils';
-import { migrateAndInitializeGameState } from '@/utils/gameStateUtils'; // ADDED
+import { migrateAndInitializeGameState } from '../utils/gameStateUtils'; // ADDED
 
 interface SaveSystemContextType {
-  saveGame: (gameState: any) => void;
-  loadGame: () => any | null;
+  saveGame: (gameState: GameState) => void;
+  loadGame: () => GameState | null;
   resetGame: () => void;
   hasSavedGame: () => boolean;
-  exportGameStateToString: (gameState: any) => string | null; // New function
-  loadGameFromString: (saveString: string) => any | null; // New function
+  exportGameStateToString: (gameState: GameState) => string | null; // New function
+  loadGameFromString: (saveString: string) => GameState | null; // New function
 }
 
 const SaveSystemContext = createContext<SaveSystemContextType | undefined>(undefined);
@@ -38,7 +38,7 @@ interface SaveSystemProviderProps {
 export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children }) => {
   const { settings } = useSettings();
 
-  const saveGame = useCallback((gameState: any) => {
+  const saveGame = useCallback((gameState: GameState) => {
     try {
       const versionInfo = getVersionInfo();
       const saveData = {
@@ -55,7 +55,7 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
     }
   }, []);
 
-  const loadGame = useCallback((): any | null => {
+  const loadGame = useCallback((): GameState | null => {
     try {
       const savedData = localStorage.getItem('recordingStudioTycoonSave');
       if (!savedData) return null;
@@ -98,7 +98,7 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
     return localStorage.getItem('recordingStudioTycoonSave') !== null;
   }, []);
 
-  const exportGameStateToString = useCallback((gameState: any): string | null => {
+  const exportGameStateToString = useCallback((gameState: GameState): string | null => {
     try {
       const versionInfo = getVersionInfo();
       const saveData = {
@@ -116,7 +116,7 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
     }
   }, []);
 
-  const loadGameFromString = useCallback((saveString: string): any | null => {
+  const loadGameFromString = useCallback((saveString: string): GameState | null => {
     try {
       // Basic de-obfuscation: Base64 decode
       const jsonString = atob(saveString); 
