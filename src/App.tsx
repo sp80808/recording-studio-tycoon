@@ -8,6 +8,8 @@ import { SaveSystemProvider } from "@/contexts/SaveSystemContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { SpeedInsights } from "@vercel/speed-insights/react"; // Import SpeedInsights
+import DevMenu from "./components/DevMenu";
+import BoxDropController from "./features/boxDrops/BoxDropController";
 
 import { useEffect } from "react";
 
@@ -21,6 +23,8 @@ const App = () => {
           <TooltipProvider>
             <Toaster />
             <Sonner />
+              {process.env.NODE_ENV === 'development' && <DevMenu />}
+              <BoxDropController />
             <BrowserRouter>
               {/* Add a main landmark for accessibility */}
               <main>

@@ -57,5 +57,15 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
 
   // Add other migration logic here as needed in the future
 
+  // Ensure productionQueues exists for new production queue feature
+  if ((processedState as any).productionQueues == null) {
+    ;(processedState as any).productionQueues = {}
+  }
+
+  // Ensure quickAssignPresets exists for new quick-assign feature
+  if ((processedState as any).quickAssignPresets == null) {
+    ;(processedState as any).quickAssignPresets = []
+  }
+
   return processedState;
 };

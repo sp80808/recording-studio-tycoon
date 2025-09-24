@@ -20,6 +20,8 @@ import {
 } from '@/utils/stageUtils';
 
 import { GameState, FocusAllocation, Project, PlayerData } from '@/types/game';
+import { useFeatureFlag } from '@/stores/featureFlagStore';
+import ProductionQueuePanel from '@/components/ProductionQueue/ProductionQueuePanel';
 
 interface ActiveProjectProps {
   gameState: GameState;
@@ -371,6 +373,12 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 </div>
               </div>
             </div>
+            {/* Production Queue Panel (feature-flagged) */}
+            {useFeatureFlag('advanced-production-queue') && (
+              <div className="mt-4">
+                <ProductionQueuePanel roomId={project.id} />
+              </div>
+            )}
 
             {/* Auto-triggered Minigame Notification */}
             {autoTriggeredMinigame && (

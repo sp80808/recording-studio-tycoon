@@ -229,3 +229,155 @@ If you'd like, I can now:
 - Generate GitHub issues for the MVP items with estimates and acceptance criteria.
 
 Which of the two would you like me to do next? 
+
+## XII. Equipment Acquisition, Rarity Systems & Promotion (Brainstorm)
+
+This section non-destructively collects ideas for making equipment discovery and promotion systems more engaging, modern, and satisfying. Ideas range from small QoL features to larger systems that add emergent gameplay.
+
+### Equipment Acquisition & Rarity
+
+- **Feature:** Box / Yard Sale Drops (Random Finds)
+  - **Description:** Periodic random events where the player can find sealed boxes, yard-sale stalls, or storage-lot auctions containing gear. Boxes have rarity tiers (Common, Uncommon, Rare, Vintage, Legendary) and can include partially damaged items requiring restoration. Drop tables are era-aware (1960s crates more analog gear; 2000s crates more digital items).
+  - **Priority:** Medium
+  - **Complexity:** Small
+
+- **Feature:** Flea Market & Used Gear Marketplace
+  - **Description:** A UI-driven marketplace where NPC sellers post used equipment with varying conditions, prices, and negotiation windows. Players can browse, filter by rarity/era, and haggle or use buy-now options. Marketplace inventory refreshes periodically and can include dealer-only rare offers.
+  - **Priority:** High
+  - **Complexity:** Medium
+
+- **Feature:** Equipment Dealers & Reputation
+  - **Description:** Introduce dealer NPCs with reputations. Higher reputation unlocks access to rare gear, better trade-in rates, and referral deals. Reputation increases via purchases, referrals, and completed dealer missions (e.g., find a missing mic capsule).
+  - **Priority:** Medium
+  - **Complexity:** Medium
+
+- **Feature:** Restoration, Modding & Salvage
+  - **Description:** Allow players to buy broken/partial gear and restore or mod it into improved custom equipment. Restoration requires time and materials or technician labor and can yield unique stats or cosmetic skins.
+  - **Priority:** Medium
+  - **Complexity:** Medium
+
+- **Feature:** Auction House & Bidding
+  - **Description:** Time-limited auctions for rare items. Players can place proxy bids, set maximum bids, and deal with auction fees. Auctions add excitement and strategic spending decisions.
+  - **Priority:** Low
+  - **Complexity:** Medium
+
+### Promotion, Agents, and Social Media Minigame
+
+- **Feature:** Agent/Manager System (Hire & Assign)
+  - **Description:** Players can hire agents, managers, and PR reps who provide curated opportunities: festival slots, sync briefs, brand deals, and media appearances. Each agent has specialties (genres, territories) and fees/commission rates. Agents can pitch on behalf of artists and submit applications that yield probabilistic outcomes.
+  - **Priority:** High
+  - **Complexity:** Medium
+
+- **Feature:** Opportunity Application Flow
+  - **Description:** Through an agent UI, players can browse opportunities and apply (pay application fee or meet requirements). Outcomes depend on artist fit, relationship, and investment. Successful applications lead to bookings, syncs, or marketing placements.
+  - **Priority:** High
+  - **Complexity:** Medium
+
+- **Feature:** Paid Advertising Campaigns
+  - **Description:** Simple campaign builder for radio, print, and modern digital ads: set budget, duration, geographic targeting, and creative quality. Campaigns produce predictable boosts to streams, sales, or awareness metrics and integrate with the analytics dashboard.
+  - **Priority:** Medium
+  - **Complexity:** Medium
+
+- **Feature:** Social Media Minigame (Modern Era)
+  - **Description:** A light, fun minigame where players create short content snippets (select clip, add effects, choose caption/tags) and post to simulated platforms. Content quality, timing, and tag choices affect virality. Viral posts yield free promotion, increases to streaming numbers, and temporary trend boosts. The minigame should be fast (10–30 seconds) and skippable; later, it can be automated by hiring a Social Media Manager.
+  - **Priority:** High
+  - **Complexity:** Medium
+
+- **Feature:** Influencer Collaborations & Sponsored Content
+  - **Description:** Pay influencers or trade favors to boost posts. Influencers have audience demographics; matching influencer audiences to artist genres improves ROI.
+  - **Priority:** Low
+  - **Complexity:** Medium
+
+### Fun Small-Scale Polish & RPG-like Additions
+
+- **Feature:** Inspect & Sound-Demo Mode for Gear
+  - **Description:** A "try before you buy" preview where players can listen to short A/B sound samples demonstrating gear impact on a sample mix. Adds delight and functional choice.
+  - **Priority:** Medium
+  - **Complexity:** Small
+
+- **Feature:** Gear Collectibles & Cosmetic Skins
+  - **Description:** Cosmetic skins for rooms and gear, display cabinets for rare items, and achievements for collecting sets (e.g., "Vintage Mic Set").
+  - **Priority:** Low
+  - **Complexity:** Small
+
+- **Feature:** Mini-RPG Progression (Player Profile)
+  - **Description:** Lightweight RPG elements: player level, vanity perks (studio decorations), and titles. Levels unlock small QoL bonuses (reduced negotiation fees, faster maintenance) that feel rewarding without heavy balancing.
+  - **Priority:** Low
+  - **Complexity:** Small
+
+### Non-Destructive Brainstorm Notes
+
+- Treat the above as designer-facing suggestions; each idea should be transformed into a set of acceptance criteria and split into vertical slices before implementation.
+- Prioritize features that reuse existing systems (`RecordingEquipment`, `Financials`, `Artist`) to minimize integration cost.
+
+## XIII. Starter Plan — Features to Implement First (Confidence & Ease)
+
+The following are the features I recommend starting with: they provide high player value and are relatively straightforward to implement within the current React/TS + Zustand architecture.
+
+1. Flea Market & Used Gear Marketplace
+   - Reason: High player impact (shopping & hunting loop) and straightforward UI + state work.
+   - Estimate: Medium (3–4 dev-weeks). Break into: marketplace slice, listing UI, buy/offer flow, basic refresh scheduler.
+
+2. Box / Yard Sale Drops (Random Finds)
+   - Reason: Feels fun and surprising; can be implemented as periodic random events backed by existing equipment models.
+   - Estimate: Small (1–2 dev-weeks). Break into: event generator, modal UI, loot table config per era.
+
+3. Agent/Manager System (basic)
+   - Reason: Enables many future features (applications, syncs, tours) and adds strategic depth.
+   - Estimate: Medium (3–5 dev-weeks). Break into: agent data model, hire UI, opportunity listing, simple apply flow.
+
+4. Social Media Minigame (MVP)
+   - Reason: High novelty and modern polish; can be a small interactive minigame that yields measurable promotion value.
+   - Estimate: Medium (3–4 dev-weeks). Break into: minigame UI, result simulation logic, integration with analytics and artist visibility.
+
+5. Inspect & Sound-Demo Mode
+   - Reason: Small polish feature that improves purchase decisions and player satisfaction.
+   - Estimate: Small (1–2 dev-weeks).
+
+## XIV. Example Issue Templates
+
+- Issue: "feature/marketplace-slice"
+  - Title: "Zustand slice: marketplace (used gear)"
+  - Description: "Create a marketplace slice that exposes listings, refresh logic, negotiations, buy action, and filters by era/rarity. Provide TypeScript types and unit tests."
+  - Acceptance: slice exists with tests, sample listings appear from a mock data provider.
+  - Estimate: 3 dev-days
+
+- Issue: "feature/box-drops-event"
+  - Title: "Event: box/yard-sale loot generator"
+  - Description: "Implement a configurable loot generator with era-based tables and rarity weights. Hook into the event scheduler and show modal with found items."
+  - Acceptance: event produces items using the loot table and modal displays correct stats.
+  - Estimate: 2 dev-days
+
+- Issue: "feature/agent-system-basic"
+  - Title: "Agent system: hiring and opportunity listing"
+  - Description: "Implement agent model, hiring UI, and an opportunity browser. Allow agent to submit one application with a deterministic outcome for MVP."
+  - Acceptance: agents can be hired, opportunities are visible, an application can be made and resolved.
+  - Estimate: 5 dev-days
+
+- Issue: "feature/social-media-minigame-mvp"
+  - Title: "Minigame: social media post creation (MVP)"
+  - Description: "Create a quick minigame UI for posting content. Implement simple scoring logic and integrate result with artist visibility metrics."
+  - Acceptance: minigame posts resolve with a visibility delta and can be automated by hiring a Social Media Manager later.
+  - Estimate: 4 dev-days
+
+## XV. Quick Implementation Steps (first 4-week spike)
+
+Week 1–2 (Spike / S1)
+- Implement `marketplace` Zustand slice and mock data provider.
+- Implement `box-drops` event generator and initial modal UI.
+- Create UI scaffold for `Market` view with list and basic buy flow.
+
+Week 3–4 (S2)
+- Implement `agent` basic model and hiring UI.
+- Implement a simple `opportunity` listing and apply flow resolved by deterministic rules.
+- Prototype the `social media` minigame UI and hook to artist visibility stat.
+
+Deliverables after 4 weeks: working marketplace with loot events, basic agents/opportunities, and a playable social media minigame prototype.
+
+---
+
+If this plan looks good I can:
+- Scaffold the `marketplace` Zustand slice, mock provider, and a simple `Market` React page with tests.
+- Or open the example issues in the repo with estimates and acceptance criteria.
+
+Werrrrr
