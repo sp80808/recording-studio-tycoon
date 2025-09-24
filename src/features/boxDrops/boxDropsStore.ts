@@ -1,4 +1,4 @@
-import create from 'zustand'
+import { create } from 'zustand'
 import { generateBoxLoot, EquipmentItem, Era } from './lootGenerator'
 
 type BoxDropsState = {
