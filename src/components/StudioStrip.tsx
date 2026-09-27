@@ -128,10 +128,17 @@ export const StudioStrip: React.FC<StudioStripProps> = ({ gameState, onExpand })
 
           {nextEnquiry ? (
             <>
-              <div className="text-sm text-white font-medium truncate">{nextEnquiry.title}</div>
-              <div className="text-xs text-gray-400 mt-0.5">
-                {nextEnquiry.genre} · ${nextEnquiry.payoutBase} · {nextEnquiry.matchRating} fit
+              <div className="text-sm text-white font-medium truncate">
+                {nextEnquiry.clientName || nextEnquiry.title}
               </div>
+              <div className="text-xs text-gray-400 mt-0.5 truncate">
+                {nextEnquiry.title} · ${nextEnquiry.payoutBase} · {nextEnquiry.matchRating} fit
+              </div>
+              {nextEnquiry.clientId && gameState.clientRelationships?.[nextEnquiry.clientId] && (
+                <div className="text-[11px] text-purple-300 mt-1">
+                  {gameState.clientRelationships[nextEnquiry.clientId].tier} repeat client
+                </div>
+              )}
             </>
           ) : (
             <div className="text-sm text-gray-500">Inbox clear</div>
