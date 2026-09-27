@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'; // Added useCallback
+import React, { useState, useEffect, useCallback, useRef } from 'react'; // Added useCallback
 import { GameLayout } from '@/components/GameLayout';
 import { GameHeader } from '@/components/GameHeader';
 import { MainGameContent } from '@/components/MainGameContent';
@@ -23,11 +23,19 @@ import { useSaveSystem } from '@/contexts/SaveSystemContext';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { gameAudio as audioSystem } from '@/utils/audioSystem';
 import { MinigameType } from '@/components/minigames/MinigameManager'; // Import MinigameType
+import { WelcomeBackSummaryModal } from '@/components/modals/WelcomeBackSummaryModal';
+import {
+  advanceSimulation,
+  DEFAULT_MAX_OFFLINE_MS,
+  shouldShowSimulationSummary,
+  SimulationSummary
+} from '@/simulation/simulationClock';
+import { getBookedStudioRoom } from '@/utils/studioRoomUtils';
 
 const MusicStudioTycoon = () => {
   const { gameState, setGameState, initializeGameState } = useGameState(); // REMOVED focusAllocation, setFocusAllocation
   const { settings } = useSettings();
-  const { saveGame, loadGame, hasSavedGame, resetGame } = useSaveSystem();
+  const { saveGame, loadGameSnapshot, hasSavedGame, resetGame } = useSaveSystem();
   
   const [showSplashScreen, setShowSplashScreen] = useState(true);
   const [gameInitialized, setGameInitialized] = useState(false);
@@ -64,8 +72,11 @@ const MusicStudioTycoon = () => {
   // const [showRecruitmentModal, setShowRecruitmentModal] = useState(false); // Assuming this was intended to be used elsewhere or can be removed if not
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showTutorialModal, setShowTutorialModal] = useState(false);
+  const [compactStudioMode, setCompactStudioMode] = useState(false);
   const [currentEraForTutorial, setCurrentEraForTutorial] = useState<string>(ERA_DEFINITIONS[0].id); // Default to first era
   const [activeProjectReport, setActiveProjectReport] = useState<ProjectReport | null>(null);
+  const [offlineSummary, setOfflineSummary] = useState<SimulationSummary | null>(null);
+  const simulationLastTickRef = useRef(Date.now());
   
   const handleLoadGameStateFromString = (newGameState: GameState) => {
     setGameState(newGameState);
@@ -137,13 +148,14 @@ const MusicStudioTycoon = () => {
     // focus effectiveness, assigned-crew contribution, studio genre expertise,
     // and market trend — same factors ProjectService uses for background work.
     const ownedEquipment = gameState.ownedEquipment || [];
-    const averageEquipmentQuality = ownedEquipment.length > 0
+    const baseEquipmentQuality = ownedEquipment.length > 0
       ? ownedEquipment.reduce((sum, eq) => sum + (eq.condition ?? 100), 0) / ownedEquipment.length
       : 50; // Default if no equipment
+    const bookedRoom = getBookedStudioRoom(gameState, completedProjectData);
     const equipmentBonuses = getEquipmentBonuses(ownedEquipment, completedProjectData.genre);
     const equipmentQuality = Math.max(
       0,
-      Math.min(100, Math.round(averageEquipmentQuality * 0.6 + Math.min(40, equipmentBonuses.quality || 0)))
+      Math.min(100, Math.round(baseEquipmentQuality * 0.6 + Math.min(40, equipmentBonuses.quality || 0) + (bookedRoom?.qualityBonus || 0)))
     );
     const crewForProject = gameState.hiredStaff.filter(s => s.assignedProjectId === completedProjectData.id);
     const staffContribution = crewForProject.length === 0 ? 0 : Math.max(0, Math.min(10, Math.round(
@@ -175,6 +187,7 @@ const MusicStudioTycoon = () => {
     );
     
     setActiveProjectReport(report);
+    setCompactStudioMode(false); // Reviews are full-studio moments; expand before presenting one.
     setShowReviewModal(true); // This will trigger the new ProjectReviewModal
 
     if (settings.sfxEnabled) {
@@ -216,27 +229,98 @@ const MusicStudioTycoon = () => {
 
   const handleLoadGame = async () => {
     try {
-      const loadedState = await loadGame();
-      if (loadedState) {
-        setGameState(loadedState);
-        setCurrentEraForTutorial(loadedState.currentEra); 
+      const snapshot = loadGameSnapshot();
+      if (snapshot) {
+        const elapsedMs = Math.max(0, Date.now() - snapshot.savedAt);
+        const simulation = advanceSimulation(snapshot.gameState, elapsedMs, {
+          maxElapsedMs: DEFAULT_MAX_OFFLINE_MS
+        });
+
+        setGameState(simulation.state);
+        setCurrentEraForTutorial(simulation.state.currentEra);
         setShowSplashScreen(false);
         setGameInitialized(true);
+        simulationLastTickRef.current = Date.now();
+
+        if (shouldShowSimulationSummary(simulation.summary)) {
+          setOfflineSummary(simulation.summary);
+        }
+
+        if (simulation.summary.creditedMs > 0) {
+          saveGame(simulation.state);
+        }
         
         if (settings.sfxEnabled) {
           audioSystem.playUISound('success');
         }
       } else {
-        // If loadGame returns null (e.g. no save file or error), go back to splash
         setShowSplashScreen(true);
         setGameInitialized(false);
       }
     } catch (error) {
       console.error('Failed to load game:', error);
-      setShowSplashScreen(true); // Show splash screen on error to allow starting new game
+      setShowSplashScreen(true);
       setGameInitialized(false);
     }
   };
+
+  // Keep active sessions progressing while the app is open. If the browser
+  // throttles this timer in the background, the next tick receives the full
+  // elapsed delta and catches up through the same simulation function.
+  useEffect(() => {
+    if (!gameInitialized || !gameState.activeProject || gameState.activeProject.awaitingReview) {
+      simulationLastTickRef.current = Date.now();
+      return;
+    }
+
+    simulationLastTickRef.current = Date.now();
+    const interval = window.setInterval(() => {
+      const now = Date.now();
+      const elapsedMs = Math.max(0, now - simulationLastTickRef.current);
+      simulationLastTickRef.current = now;
+
+      if (elapsedMs <= 0) return;
+
+      setGameState(prev => advanceSimulation(prev, elapsedMs, {
+        maxElapsedMs: DEFAULT_MAX_OFFLINE_MS
+      }).state);
+    }, 5_000);
+
+    return () => window.clearInterval(interval);
+  }, [gameInitialized, gameState.activeProject?.id, gameState.activeProject?.awaitingReview]);
+
+  // The save provider emits this event every 30 seconds when autosave is on.
+  // Previously no game component consumed it, so saves could remain stale.
+  useEffect(() => {
+    if (!gameInitialized) return;
+
+    const handleAutoSave = () => saveGame(gameState);
+    window.addEventListener('autoSave', handleAutoSave);
+    return () => window.removeEventListener('autoSave', handleAutoSave);
+  }, [gameInitialized, gameState, saveGame]);
+
+  // Passive work stops at review-ready rather than settling rewards. Once any
+  // welcome-back summary is dismissed, hand the completed project to the
+  // existing authoritative review/completion flow.
+  useEffect(() => {
+    const project = gameState.activeProject;
+    if (
+      gameInitialized &&
+      project?.awaitingReview &&
+      !offlineSummary &&
+      !activeProjectReport &&
+      !showReviewModal
+    ) {
+      handleShowProjectReview(project);
+    }
+  }, [
+    gameInitialized,
+    gameState.activeProject,
+    offlineSummary,
+    activeProjectReport,
+    showReviewModal,
+    handleShowProjectReview
+  ]);
 
   useEffect(() => {
     // This effect handles showing the tutorial if the game is initialized,
@@ -348,38 +432,50 @@ const MusicStudioTycoon = () => {
 
   return (
     <GameLayout eraId={gameState.currentEra}>
-      <GameHeader
-        gameState={gameState}
-        onOpenSettings={handleOpenSettings}
-        className="grid-area-header"
-      />
-      <MainGameContent
-        gameState={gameState}
-        setGameState={setGameState}
-        startProject={handleProjectStart}
-        performDailyWork={handlePerformDailyWork} // This now returns { isComplete, finalProjectData? }
-        onProjectComplete={handleShowProjectReview} // Changed to show review first
-        onMinigameReward={handleMinigameReward}
-        spendPerkPoint={handleSpendPerkPoint}
-        advanceDay={handleAdvanceDayWithReview}
-        purchaseEquipment={handleEquipmentPurchase}
-        hireStaff={handleStaffHire}
-        refreshCandidates={refreshCandidates}
-        refreshProjects={refreshProjects}
-        assignStaffToProject={assignStaffToProject}
-        unassignStaffFromProject={unassignStaffFromProject}
-        toggleStaffRest={toggleStaffRest}
-        openTrainingModal={handleOpenTrainingModal}
-        orbContainerRef={orbContainerRef}
-        contactArtist={contactArtist}
-        triggerEraTransition={triggerEraTransition}
-        autoTriggeredMinigame={autoTriggeredMinigame}
-        clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
-        // setAutoTriggeredMinigame={setAutoTriggeredMinigame} // Pass this if MainGameContent needs to trigger minigames
+      <div className="flex flex-col h-full">
+        {!compactStudioMode && (
+          <GameHeader 
+            gameState={gameState} 
+            onOpenSettings={handleOpenSettings}
+            className="grid-area-header"
+          />
+        )}
+        <div className="flex-grow min-h-0">
+          <MainGameContent
+            gameState={gameState}
+            setGameState={setGameState}
+            startProject={handleProjectStart}
+            performDailyWork={handlePerformDailyWork} // This now returns { isComplete, finalProjectData? }
+            onProjectComplete={handleShowProjectReview} // Changed to show review first
+            onMinigameReward={handleMinigameReward}
+            spendPerkPoint={handleSpendPerkPoint}
+            advanceDay={handleAdvanceDayWithReview}
+            purchaseEquipment={handleEquipmentPurchase}
+            hireStaff={handleStaffHire}
+            refreshCandidates={refreshCandidates}
+            refreshProjects={refreshProjects}
+            assignStaffToProject={assignStaffToProject}
+            unassignStaffFromProject={unassignStaffFromProject}
+            toggleStaffRest={toggleStaffRest}
+            openTrainingModal={handleOpenTrainingModal}
+            orbContainerRef={orbContainerRef}
+            contactArtist={contactArtist}
+            triggerEraTransition={triggerEraTransition}
+            autoTriggeredMinigame={autoTriggeredMinigame}
+            clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
+            compactStudioMode={compactStudioMode}
+            setCompactStudioMode={setCompactStudioMode}
+          />
+        </div>
+      </div>
+
+      <WelcomeBackSummaryModal
+        summary={offlineSummary}
+        onClose={() => setOfflineSummary(null)}
       />
 
       <TrainingModal
-        isOpen={showTrainingModal}
+        isOpen={showTrainingModal && !compactStudioMode && !offlineSummary}
         onClose={() => {
           setShowTrainingModal(false);
           setSelectedStaffForTraining(null);
@@ -390,7 +486,7 @@ const MusicStudioTycoon = () => {
       />
 
       <SettingsModal
-        isOpen={showSettingsModal}
+        isOpen={showSettingsModal && !compactStudioMode}
         onClose={() => setShowSettingsModal(false)}
         onResetGame={resetGame} // Pass resetGame from useSaveSystem
         context="ingame" // Explicitly set context for in-game settings
@@ -398,15 +494,17 @@ const MusicStudioTycoon = () => {
       />
 
       <TutorialModal
-        isOpen={showTutorialModal}
+        isOpen={showTutorialModal && !compactStudioMode && !offlineSummary}
         onComplete={handleTutorialComplete}
         eraId={currentEraForTutorial} 
       />
 
-      <NotificationSystem
-        notifications={gameState.notifications}
-        removeNotification={removeNotification}
-      />
+      {!compactStudioMode && (
+        <NotificationSystem
+          notifications={gameState.notifications}
+          removeNotification={removeNotification}
+        />
+      )}
 
       {/* <GameModals // This component might manage showReviewModal internally or receive it as a prop
         showReviewModal={showReviewModal}

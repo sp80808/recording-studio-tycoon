@@ -73,11 +73,33 @@ export interface ProjectStage {
   completed: boolean;
 }
 
+export type ClientRelationshipTier =
+  | 'Unknown'
+  | 'Acquaintance'
+  | 'Friendly'
+  | 'Regular'
+  | 'Loyal'
+  | 'Advocate';
+
+export interface ClientRelationship {
+  clientId: string;
+  clientName: string;
+  primaryGenre: string;
+  relationshipXp: number;
+  tier: ClientRelationshipTier;
+  sessionsCompleted: number;
+  lastSessionDay: number;
+  bestQualityScore: number;
+  referralCount: number;
+}
+
 export interface Project {
   id: string;
   title: string;
   genre: string;
   clientType: string;
+  clientId?: string;
+  clientName?: string;
   difficulty: number;
   durationDaysTotal: number;
   payoutBase: number;
@@ -91,9 +113,12 @@ export interface Project {
   currentStageIndex: number;
   completedStages: number[];
   lastWorkDay?: number; // Track when work was last performed
-  workSessionCount: number; // Track how many work sessions have been completed
+  workSessionCount: number; // Track how many work sessions have been completed (fractional for passive simulation)
   comboCount?: number; // ⚡ consecutive same-day work sessions (streak multiplier)
   overdriveArmed?: boolean; // 🔥 next session burns extra energy for bonus output
+  awaitingReview?: boolean; // Work is complete but rewards have not yet been settled
+  resolvedInterventionStageKeys?: string[]; // Persist one resolved/ignored intervention opportunity per stage
+  bookingRoomId?: string; // Physical studio suite reserved for this session
   associatedBandId?: string;
   focusAllocation: FocusAllocation; // ADDED: Stores current focus settings for the project
   progress?: number; // 0-100, completion percentage for animated cards
@@ -113,6 +138,7 @@ export interface StaffMember {
   xpInRole: number;
   levelInRole: number;
   genreAffinity: { genre: string; bonus: number } | null;
+  clientFamiliarity?: Record<string, number>; // Completed sessions with recurring clients
   energy: number;
   mood: number; // 0-100, affects work effectiveness
   salary: number;
@@ -175,6 +201,32 @@ export interface EquipmentMod {
   };
 }
 
+export type StudioRoomType =
+  | 'project-studio'
+  | 'vocal-suite'
+  | 'live-room'
+  | 'mix-suite';
+
+export type StudioRoomStageKind =
+  | 'tracking'
+  | 'production'
+  | 'mixing'
+  | 'mastering'
+  | 'general';
+
+export interface StudioRoom {
+  id: string;
+  name: string;
+  type: StudioRoomType;
+  unlocked: boolean;
+  level: number;
+  purchaseCost: number;
+  requiredPlayerLevel: number;
+  supportedStageKinds: StudioRoomStageKind[];
+  qualityBonus: number;
+  speedBonus: number;
+}
+
 export interface TrainingCourse {
   id: string;
   name: string;
@@ -211,12 +263,14 @@ export interface GameState {
   equipmentMultiplier: number; // Price multiplier for equipment in this era
   playerData: PlayerData;
   studioSkills: Record<string, StudioSkill>;
-  ownedUpgrades;
+  ownedUpgrades: string[];
   ownedEquipment: Equipment[];
   availableProjects: Project[];
   financials: Financials;
   /** Optional: absent on old saves, treated as a fresh day. */
   dailyTracking?: DailyTracking;
+  clientRelationships?: Record<string, ClientRelationship>;
+  studioRooms: StudioRoom[]; // Physical bookable studio suites; drives concurrent capacity
   
   // Multi-project system
   activeProjects: Project[]; // Replace single activeProject with array

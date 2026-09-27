@@ -12,6 +12,9 @@ import { BandManagement } from '@/components/BandManagement';
 import { ChartsPanel } from '@/components/ChartsPanel';
 import { StudioProgressionPanel } from '@/components/StudioProgressionPanel'; // Add Studio Progression Panel
 import { toast } from '@/hooks/use-toast'; // Import toast
+import { ProgressionSystem } from '@/services/ProgressionSystem';
+import { getOperationalStudioRooms, getOccupiedRoomIds } from '@/utils/studioRoomUtils';
+import { calculateStaffProjectFit } from '@/utils/staffFitUtils';
 
 export interface RightPanelProps {
   requestedTab?: 'studio' | 'skills' | 'bands' | 'charts' | 'staff';
@@ -86,6 +89,56 @@ export const RightPanel: React.FC<RightPanelProps> = ({
     }
   };
 
+  const unlockedRooms = getOperationalStudioRooms(gameState);
+  const occupiedRoomIds = getOccupiedRoomIds(gameState);
+  const roomExpansionLimit = ProgressionSystem.getRoomExpansionLimit(gameState);
+
+  const purchaseStudioRoom = (roomId: string) => {
+    const room = gameState.studioRooms.find(candidate => candidate.id === roomId);
+    if (!room || room.unlocked) return;
+
+    if (gameState.playerData.level < room.requiredPlayerLevel) {
+      toast({
+        title: "🔒 Room Not Available Yet",
+        description: `Reach level ${room.requiredPlayerLevel} to consider this expansion.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (unlockedRooms.length >= roomExpansionLimit) {
+      toast({
+        title: "🏢 Expansion Milestone Required",
+        description: "Grow your staff and studio track record before adding another production suite.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (gameState.money < room.purchaseCost) {
+      toast({
+        title: "💰 Insufficient Funds",
+        description: `You need $${room.purchaseCost.toLocaleString()} for ${room.name}.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setGameState(prev => ({
+      ...prev,
+      money: prev.money - room.purchaseCost,
+      studioRooms: prev.studioRooms.map(candidate =>
+        candidate.id === room.id
+          ? { ...candidate, unlocked: true }
+          : candidate
+      )
+    }));
+
+    toast({
+      title: "🏢 Studio Expanded",
+      description: `${room.name} is now operational. You have another physical booking lane.`
+    });
+  };
   const applyModToEquipment = (equipmentId: string, modId: string | null) => {
     setGameState(prev => ({
       ...prev,
@@ -160,6 +213,72 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           
           {/* Studio Progression Panel */}
           <StudioProgressionPanel gameState={gameState} />
+
+          <div className="rounded-lg border border-gray-700 bg-gray-950/50 p-3">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="text-sm font-semibold text-white">🏢 Studio Rooms</h3>
+                <p className="text-xs text-gray-400">
+                  {unlockedRooms.length} owned · {roomExpansionLimit} currently allowed
+                </p>
+              </div>
+              <div className="text-xs text-gray-500">
+                {occupiedRoomIds.size}/{unlockedRooms.length} occupied
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {gameState.studioRooms.map(room => {
+                const occupied = occupiedRoomIds.has(room.id);
+                const levelLocked = gameState.playerData.level < room.requiredPlayerLevel;
+                const expansionLocked = !room.unlocked && unlockedRooms.length >= roomExpansionLimit;
+                const canAfford = gameState.money >= room.purchaseCost;
+
+                return (
+                  <div
+                    key={room.id}
+                    className={`rounded border p-2 ${
+                      room.unlocked
+                        ? occupied
+                          ? 'border-blue-500/40 bg-blue-950/20'
+                          : 'border-green-500/30 bg-green-950/10'
+                        : 'border-gray-700 bg-gray-900/60'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-gray-100">{room.name}</div>
+                        <div className="text-[11px] text-gray-500 capitalize">
+                          {room.type.replace('-', ' ')} · quality +{room.qualityBonus} · speed +{room.speedBonus}
+                        </div>
+                      </div>
+                      {room.unlocked ? (
+                        <span className={`text-[10px] px-2 py-1 rounded-full ${
+                          occupied ? 'bg-blue-500/15 text-blue-300' : 'bg-green-500/15 text-green-300'
+                        }`}>
+                          {occupied ? 'In session' : 'Available'}
+                        </span>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={levelLocked || expansionLocked || !canAfford}
+                          onClick={() => purchaseStudioRoom(room.id)}
+                          className="h-7 text-[11px] border-gray-600"
+                        >
+                          {levelLocked
+                            ? `Lvl ${room.requiredPlayerLevel}`
+                            : expansionLocked
+                              ? 'Milestone'
+                              : `Buy ${room.purchaseCost.toLocaleString()}`}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
           
           <Button onClick={advanceDay} className="w-full bg-purple-600 hover:bg-purple-700 text-white">
             Advance Day
@@ -257,6 +376,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                   <div className="text-xs text-gray-500 mb-2">
                     Creativity: {candidate.primaryStats.creativity}, Technical: {candidate.primaryStats.technical}, Speed: {candidate.primaryStats.speed}
                   </div>
+                  {gameState.activeProject && (() => {
+                    const fit = calculateStaffProjectFit(candidate, gameState.activeProject!);
+                    return (
+                      <div className="text-[11px] text-blue-300 mb-2">
+                        Current-session fit {fit.score}/100 · {fit.reasons.slice(0, 2).join(' · ')}
+                      </div>
+                    );
+                  })()}
                   {candidate.genreAffinity && (
                     <div className="text-xs text-purple-400 mb-2">
                       Specialty: {candidate.genreAffinity.genre} (+{candidate.genreAffinity.bonus}%)
@@ -300,6 +427,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                       </div>
                     </div>
                   </div>
+                  {gameState.activeProject && (() => {
+                    const fit = calculateStaffProjectFit(staff, gameState.activeProject!);
+                    return (
+                      <div className="text-[11px] text-blue-300 mb-2">
+                        Session fit {fit.score}/100 · {fit.reasons.slice(0, 3).join(' · ')}
+                      </div>
+                    );
+                  })()}
                   <div className="flex gap-2 mt-2">
                     {staff.status === 'Idle' && (
                       <Button 

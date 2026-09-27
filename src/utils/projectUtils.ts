@@ -1,4 +1,4 @@
-import { Project, ProjectStage, StaffMember, FocusAllocation, StudioSkill, Equipment, PlayerAttributes, EquipmentMod } from '@/types/game'; // Changed OwnedEquipment to Equipment, Added EquipmentMod
+import { Project, ProjectStage, StaffMember, FocusAllocation, StudioSkill, Equipment, PlayerAttributes, EquipmentMod, ClientRelationship } from '@/types/game'; // Changed OwnedEquipment to Equipment, Added EquipmentMod
 import { generateAIBand } from '@/utils/bandUtils';
 import { ERA_DEFINITIONS, getGenrePopularity } from '@/utils/eraProgression';
 import { initializeSkillsStaff } from '@/utils/skillUtils'; // Added import
@@ -159,7 +159,7 @@ const advancedGameTemplates = [
   }
 ];
 
-export const generateNewProjects = (count: number, playerLevel: number = 1, currentEra: string = 'analog60s'): Project[] => {
+export const generateNewProjects = (count: number, playerLevel: number = 1, currentEra: string = 'analog60s', knownClients: ClientRelationship[] = []): Project[] => {
   const projects: Project[] = [];
   const usedTitles = new Set<string>();
   
@@ -191,6 +191,15 @@ export const generateNewProjects = (count: number, playerLevel: number = 1, curr
       const useAppropriateLevel = Math.random() < 0.7;
       const selectedPool = useAppropriateLevel ? weightedPool : templatePool;
       const template = selectedPool[Math.floor(Math.random() * selectedPool.length)];
+
+      const matchingKnownClients = knownClients.filter(
+        client => client.primaryGenre.toLowerCase() === template.genre.toLowerCase()
+      );
+      const returningClientChance = Math.min(0.45, 0.15 + matchingKnownClients.length * 0.05);
+      const returningClient =
+        matchingKnownClients.length > 0 && Math.random() < returningClientChance
+          ? matchingKnownClients[Math.floor(Math.random() * matchingKnownClients.length)]
+          : undefined;
       
       // Pick a random title from the template's title array
       const titleIndex = Math.floor(Math.random() * template.titleTemplates.length);
@@ -219,7 +228,16 @@ export const generateNewProjects = (count: number, playerLevel: number = 1, curr
       const difficultyMultiplier = 1 + (finalDifficulty - 1) * 0.15; // Scales with difficulty
       const eraPopularityMultiplier = genrePopularity / 100; // Convert to 0-1 scale
       
-      const finalPayout = Math.floor(template.basePayout * marketMultiplier * difficultyMultiplier * eraPopularityMultiplier);
+      const repeatClientMultiplier = returningClient
+        ? 1.05 + Math.min(returningClient.sessionsCompleted, 5) * 0.01
+        : 1;
+      const finalPayout = Math.floor(
+        template.basePayout *
+        marketMultiplier *
+        difficultyMultiplier *
+        eraPopularityMultiplier *
+        repeatClientMultiplier
+      );
       const finalRep = Math.floor(template.baseRep * difficultyMultiplier * eraPopularityMultiplier);
       const finalDuration = Math.max(3, template.baseDuration + Math.floor(Math.random() * 3 - 1));
 
@@ -232,14 +250,18 @@ export const generateNewProjects = (count: number, playerLevel: number = 1, curr
         finalDifficulty <= playerLevel ? 'Excellent' :
         finalDifficulty <= playerLevel + 2 ? 'Good' : 'Poor';
 
-      // Generate associated AI band
-      const associatedBand = generateAIBand(template.genre);
+      // Reuse known clients when possible so relationships create repeat business.
+      const associatedBand = returningClient ? null : generateAIBand(template.genre);
+      const clientId = returningClient?.clientId ?? associatedBand!.id;
+      const clientName = returningClient?.clientName ?? associatedBand!.bandName;
 
       project = {
         id: `project-${Date.now()}-${i}`,
         title: selectedTitle,
         genre: template.genre,
         clientType: template.clientType,
+        clientId,
+        clientName,
         difficulty: finalDifficulty,
         payoutBase: finalPayout,
         repGainBase: finalRep,
@@ -252,7 +274,7 @@ export const generateNewProjects = (count: number, playerLevel: number = 1, curr
         accumulatedCPoints: 0,
         accumulatedTPoints: 0,
         workSessionCount: 0,
-        associatedBandId: associatedBand.id,
+        associatedBandId: clientId,
         focusAllocation: { performance: 33, soundCapture: 33, layering: 34 } // ADDED default focus allocation
       };
 
@@ -326,6 +348,7 @@ export const generateCandidates = (count: number): StaffMember[] => {
       xpInRole: 0,
       levelInRole: 1,
       genreAffinity,
+      clientFamiliarity: {},
       energy: 100,
       mood: 75, // Start with good mood
       salary,

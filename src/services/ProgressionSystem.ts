@@ -1,5 +1,6 @@
 // Multi-Project Progression System
 import { GameState } from '@/types/game';
+import { getPhysicalStudioCapacity } from '@/utils/studioRoomUtils';
 
 export interface ProgressionMilestone {
   level: number;
@@ -31,29 +32,29 @@ export class ProgressionSystem {
       level: 3,
       staffCount: 2,
       projectsCompleted: 3,
-      unlockMessage: "🎉 Studio Expansion Unlocked! You can now manage 2 projects simultaneously.",
-      features: ["Dual Project Management", "Basic Automation", "Project Prioritization"]
+      unlockMessage: "🎉 Studio Expansion Available! You can now purchase a second production suite.",
+      features: ["Second Room Expansion", "Basic Automation", "Project Prioritization"]
     },
     {
       level: 5,
       staffCount: 4,
       projectsCompleted: 8,
-      unlockMessage: "🚀 Multi-Project Mastery! Full automation system and up to 3 concurrent projects available.",
-      features: ["Multi-Project Dashboard", "Smart Staff Automation", "Advanced Scheduling"]
+      unlockMessage: "🚀 Multi-Project Mastery! A third studio suite can now be brought online.",
+      features: ["Third Room Expansion", "Smart Staff Automation", "Advanced Scheduling"]
     },
     {
       level: 8,
       staffCount: 6,
       projectsCompleted: 15,
-      unlockMessage: "🏆 Studio Empire Mode! Maximum efficiency with up to 4 concurrent projects.",
-      features: ["Enterprise Dashboard", "AI-Powered Optimization", "Advanced Analytics"]
+      unlockMessage: "🏆 Studio Empire Mode! Your facility can now support a fourth production suite.",
+      features: ["Fourth Room Expansion", "AI-Powered Optimization", "Advanced Analytics"]
     },
     {
       level: 12,
       staffCount: 8,
       projectsCompleted: 25,
-      unlockMessage: "👑 Industry Legend! You can now manage up to 5 concurrent projects with full automation.",
-      features: ["Legendary Studio Management", "Complete Automation Suite", "Industry Dominance"]
+      unlockMessage: "👑 Industry Legend! Your room expansion limit is fully unlocked.",
+      features: ["Maximum Room Expansion", "Complete Automation Suite", "Industry Dominance"]
     }
   ];
 
@@ -131,23 +132,25 @@ export class ProgressionSystem {
   /**
    * Get maximum concurrent projects based on progression
    */
-  static getMaxConcurrentProjects(gameState: GameState): number {
+  static getRoomExpansionLimit(gameState: GameState): number {
     const status = this.getProgressionStatus(gameState);
-    
-    if (!status.isMultiProjectUnlocked) {
-      return 1; // Single project only
-    }
-
     const milestone = status.currentMilestone;
-    if (!milestone) return 1;
 
-    // Map milestones to project capacity
-    if (milestone.level >= 12) return 5; // Industry Legend
-    if (milestone.level >= 8) return 4;  // Studio Empire
-    if (milestone.level >= 5) return 3;  // Multi-Project Mastery
-    if (milestone.level >= 3) return 2;  // Studio Expansion
-    
-    return 1; // Default single project
+    if (!milestone || !status.isMultiProjectUnlocked) return 1;
+    if (milestone.level >= 12) return 5;
+    if (milestone.level >= 8) return 4;
+    if (milestone.level >= 5) return 3;
+    if (milestone.level >= 3) return 2;
+    return 1;
+  }
+
+  static getMaxConcurrentProjects(gameState: GameState): number {
+    const physicalCapacity = getPhysicalStudioCapacity(gameState);
+    const progressionLimit = this.getRoomExpansionLimit(gameState);
+
+    // Progression grants permission to expand; an actually purchased/unlocked
+    // room creates the physical project slot.
+    return Math.max(1, Math.min(physicalCapacity, progressionLimit));
   }
 
   /**

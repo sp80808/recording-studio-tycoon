@@ -1,5 +1,6 @@
 
 import { GameState, Project, FocusAllocation } from '@/types/game';
+import { RandomSource } from '@/simulation/seededRandom';
 import { MinigameType } from '@/components/minigames/MinigameManager';
 
 export interface MinigameTrigger {
@@ -255,7 +256,8 @@ export const shouldAutoTriggerMinigame = (
   project: Project,
   gameState: GameState,
   focusAllocation: FocusAllocation,
-  workCount: number
+  workCount: number,
+  rng: RandomSource = Math.random
 ): MinigameTrigger | null => {
   const triggers = getTriggeredMinigames(project, gameState, focusAllocation);
   
@@ -293,7 +295,7 @@ export const shouldAutoTriggerMinigame = (
   
   // Add more randomness to trigger selection to ensure variety
   if (selectedTriggers.length > 1) {
-    const randomIndex = Math.floor(Math.random() * Math.min(selectedTriggers.length, 3));
+    const randomIndex = Math.floor(rng() * Math.min(selectedTriggers.length, 3));
     selectedTrigger = selectedTriggers[randomIndex];
   }
   

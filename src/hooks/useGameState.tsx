@@ -5,6 +5,7 @@ import { generateSessionMusicians } from '@/utils/bandUtils';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
 import { resolvePlayerLevelUps } from '@/utils/playerUtils';
 import { initializeSkillsPlayer } from '@/utils/skillUtils'; // Import skill initializer
+import { createDefaultStudioRooms } from '@/utils/studioRoomUtils';
 
 interface EraInitOptions {
   startingMoney: number;
@@ -81,10 +82,11 @@ export const useGameState = () => {
       }
     ],
     availableProjects: [],
+    studioRooms: createDefaultStudioRooms(),
     activeProject: null, // Keep for backward compatibility
     // Multi-project system
     activeProjects: [], // New multi-project array
-    maxConcurrentProjects: 2, // Starting capacity
+    maxConcurrentProjects: 1, // Derived from the starter Studio A room
     hiredStaff: [],
     availableCandidates: [],
     lastSalaryDay: 0,
@@ -169,8 +171,16 @@ export const useGameState = () => {
     const maxConcurrentProjects = ProgressionSystem.getMaxConcurrentProjects(newGameState);
     const isMultiProjectUnlocked = ProgressionSystem.shouldUnlockMultiProject(newGameState);
     
+    const activeProjects =
+      isMultiProjectUnlocked &&
+      newGameState.activeProject &&
+      !newGameState.activeProjects.some(project => project.id === newGameState.activeProject?.id)
+        ? [newGameState.activeProject, ...newGameState.activeProjects]
+        : newGameState.activeProjects;
+
     return {
       ...newGameState,
+      activeProjects,
       maxConcurrentProjects,
       automation: {
         ...newGameState.automation!,

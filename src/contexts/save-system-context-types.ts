@@ -1,13 +1,19 @@
 import React, { createContext, useContext } from 'react';
 import { GameState } from '@/types/game';
 
+export interface LoadedGameSnapshot {
+  gameState: GameState;
+  savedAt: number;
+}
+
 export interface SaveSystemContextType {
   saveGame: (gameState: GameState) => void;
   loadGame: () => GameState | null;
+  loadGameSnapshot: () => LoadedGameSnapshot | null;
   resetGame: () => void;
   hasSavedGame: () => boolean;
-  exportGameStateToString: (gameState: GameState) => string | null; // New function
-  loadGameFromString: (saveString: string) => GameState | null; // New function
+  exportGameStateToString: (gameState: GameState) => string | null;
+  loadGameFromString: (saveString: string) => GameState | null;
 }
 
 export const SaveSystemContext = createContext<SaveSystemContextType | undefined>(undefined);

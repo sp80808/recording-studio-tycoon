@@ -1,5 +1,7 @@
 // Project Management Service for Multi-Project Automation
 import { Project, StaffMember, GameState, AutomationMode, AutomationSettings } from '../types/game';
+import { ProgressionSystem } from './ProgressionSystem';
+import { calculateStaffProjectFit as getStaffProjectFit } from '@/utils/staffFitUtils';
 
 export interface ProjectCapacity {
   maxProjects: number;
@@ -37,18 +39,17 @@ export class ProjectManager {
    * Calculate maximum concurrent projects based on studio level and equipment
    */
   calculateProjectCapacity(): ProjectCapacity {
-    const baseCapacity = Math.max(2, Math.floor(this.gameState.playerData.level / 3));
-    const equipmentBonus = Math.floor(this.gameState.ownedEquipment.length / 10);
-    const staffBonus = Math.floor(this.gameState.hiredStaff.length / 3);
-    
-    const maxProjects = Math.min(5, baseCapacity + equipmentBonus + staffBonus);
+    const maxProjects = ProgressionSystem.getMaxConcurrentProjects(this.gameState);
     const currentProjects = this.gameState.activeProjects.length;
     
-    // Calculate efficiency based on staff-to-project ratio
+    // Staff affects throughput, not whether a physical room exists.
     const totalStaff = this.gameState.hiredStaff.length;
-    const efficiency = totalStaff > 0 ? Math.min(1, totalStaff / (currentProjects * 2)) : 0;
+    const efficiency = currentProjects === 0
+      ? 1
+      : totalStaff > 0
+        ? Math.min(1, totalStaff / (currentProjects * 2))
+        : 0;
     
-    // Calculate staff utilization
     const workingStaff = this.gameState.hiredStaff.filter(s => s.status === 'Working').length;
     const staffUtilization = totalStaff > 0 ? workingStaff / totalStaff : 0;
 
@@ -72,26 +73,17 @@ export class ProjectManager {
    * Add a new project if capacity allows
    */
   addProject(project: Project): boolean {
-    if (!this.canAddProject()) {
-      return false;
-    }
-
-    this.gameState.activeProjects.push(project);
-    this.updateMaxConcurrentProjects();
-    this.reassignStaff();
-    return true;
+    // State updates are owned by the React hook. This service only validates
+    // capacity so callers cannot accidentally append the same project twice.
+    return this.canAddProject() && !!project.bookingRoomId;
   }
 
   /**
    * Remove a completed or cancelled project
    */
   removeProject(projectId: string): boolean {
-    const index = this.gameState.activeProjects.findIndex(p => p.id === projectId);
-    if (index === -1) return false;
-
-    this.gameState.activeProjects.splice(index, 1);
-    this.reassignStaff();
-    return true;
+    // The hook performs the immutable removal and staff cleanup.
+    return this.gameState.activeProjects.some(project => project.id === projectId);
   }
 
   /**
@@ -139,9 +131,11 @@ export class ProjectManager {
    */
   optimizeStaffAssignments(): StaffAssignment[] {
     const priorities = this.calculateProjectPriorities();
-    const availableStaff = this.gameState.hiredStaff.filter(s => 
-      s.status === 'Idle' || s.status === 'Working'
-    );
+    // Work on temporary staff snapshots while calculating assignments.
+    // Recommendation code must not mutate the live game state.
+    const availableStaff = this.gameState.hiredStaff
+      .filter(s => s.status === 'Idle' || s.status === 'Working')
+      .map(staff => ({ ...staff }));
 
     const assignments: StaffAssignment[] = [];
     const settings = this.gameState.automation?.settings;
@@ -279,25 +273,7 @@ export class ProjectManager {
    * Calculate how well a staff member fits a project
    */
   private calculateStaffProjectFit(staff: StaffMember, project: Project): number {
-    let score = 0;
-
-    // Role relevance
-    const currentStage = project.stages[project.currentStageIndex];
-    if (currentStage) {
-      // This is a simplified calculation - you may want to expand this
-      // based on the specific focus areas and staff roles
-      score += staff.primaryStats.creativity * 0.3;
-      score += staff.primaryStats.technical * 0.3;
-      score += staff.primaryStats.speed * 0.2;
-      score += staff.energy * 0.2;
-    }
-
-    // Genre affinity bonus
-    if (staff.genreAffinity && staff.genreAffinity.genre === project.genre) {
-      score += staff.genreAffinity.bonus;
-    }
-
-    return score;
+    return getStaffProjectFit(staff, project).score;
   }
 
   /**

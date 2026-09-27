@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { GameState, Project, ProjectReport } from '@/types/game';
 import { generateNewProjects } from '@/utils/projectUtils';
@@ -7,14 +6,27 @@ import { applyReportToState } from '@/game-mechanics/ProjectService';
 import { withDailyTracking } from '@/utils/dailyChallenges';
 import { gameAudio } from '@/utils/audioSystem';
 import { triggerScreenShake } from '@/utils/screenShake';
+import { applyCompletedSessionToRelationship, createClientRelationshipFromProject } from '@/utils/clientRelationshipUtils';
+import { findAvailableStudioRoom } from '@/utils/studioRoomUtils';
 
 export const useProjectManagement = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
   const startProject = useCallback((project: Project) => {
     if (gameState.activeProject) {
       gameAudio.playUISound('staffUnavailable');
       toast({
-        title: "🎵 Project Already Active",
-        description: "Complete your current project before starting another.",
+        title: "🎵 Session Already Active",
+        description: "Finish or move the current session before booking another into this workflow.",
+        className: "bg-gray-800 border-gray-600 text-white",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    const room = findAvailableStudioRoom(gameState, project);
+    if (!room) {
+      toast({
+        title: "🏢 Studio Fully Booked",
+        description: "No unlocked studio suite is currently free for this session.",
         className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive"
       });
@@ -23,33 +35,90 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
 
     setGameState(prev => ({
       ...prev,
-      activeProject: { ...project, currentStageIndex: 0 },
+      activeProject: {
+        ...project,
+        currentStageIndex: 0,
+        completedStages: [],
+        bookingRoomId: room.id,
+        stages: project.stages.map(s => ({
+          ...s,
+          workUnitsCompleted: 0
+        }))
+      },
       availableProjects: prev.availableProjects.filter(p => p.id !== project.id)
     }));
 
-    gameAudio.playUISound('menuOpen');
     toast({
-      title: "🎵 Project Started!",
-      description: `Now working on: ${project.title}`,
+      title: "🚀 Session Booked!",
+      description: `Booked "${project.title}" into ${room.name}.`,
       className: "bg-gray-800 border-gray-600 text-white",
     });
     return true;
-  }, [gameState.activeProject, setGameState]);
+  }, [gameState, setGameState]);
 
   const completeProject = useCallback((projectReport: ProjectReport): ProjectReport => {
-    // Single canonical settlement (bead ruc.2): money, reputation, influence,
-    // financial income/profit/report history and player/staff skill XP all come
-    // from applyReportToState — the same pure function the background
-    // multi-project path (ProjectService) uses, so the two can't drift apart.
+    const projectId = projectReport.projectId;
+
     setGameState(prev => {
       const settled = applyReportToState(prev, projectReport);
+
+      const involvedStaffIds = new Set(
+        prev.hiredStaff
+          .filter(staff => staff.assignedProjectId === projectId)
+          .map(staff => staff.id)
+      );
+
+      let updatedHiredStaff = [...settled.hiredStaff];
+
+      const completedProject =
+        prev.activeProject?.id === projectId
+          ? prev.activeProject
+          : prev.activeProjects?.find(project => project.id === projectId);
+
+      const updatedClientRelationships = { ...(prev.clientRelationships || {}) };
+
+      if (completedProject?.clientId && completedProject.clientName) {
+        const existingRelationship =
+          updatedClientRelationships[completedProject.clientId] ||
+          createClientRelationshipFromProject(completedProject, prev.currentDay);
+
+        if (existingRelationship) {
+          updatedClientRelationships[completedProject.clientId] =
+            applyCompletedSessionToRelationship(
+              existingRelationship,
+              projectReport.overallQualityScore,
+              prev.currentDay
+            );
+        }
+
+        updatedHiredStaff = updatedHiredStaff.map(staff => {
+          if (!involvedStaffIds.has(staff.id)) return staff;
+
+          const familiarity = { ...(staff.clientFamiliarity || {}) };
+          familiarity[completedProject.clientId!] =
+            (familiarity[completedProject.clientId!] || 0) + 1;
+
+          return {
+            ...staff,
+            clientFamiliarity: familiarity
+          };
+        });
+      }
+
+      const nextEnquiries = generateNewProjects(
+        1,
+        settled.playerData.level,
+        prev.currentEra,
+        Object.values(updatedClientRelationships)
+      );
+
       return withDailyTracking({
         ...settled,
-        activeProject: null, // Assuming single active project for now, will adapt if multi-project
-        availableProjects: [
-          ...settled.availableProjects,
-          ...generateNewProjects(1, settled.playerData.level, settled.currentEra),
-        ],
+        activeProject: null,
+        activeProjects: (settled.activeProjects || []).filter(p => p.id !== projectId),
+        availableProjects: [...settled.availableProjects, ...nextEnquiries],
+        clientRelationships: updatedClientRelationships,
+        hiredStaff: updatedHiredStaff,
       }, { earned: projectReport.moneyGained, projects: 1 });
     });
 
@@ -58,7 +127,7 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
     triggerScreenShake('heavy');
 
     return projectReport;
-  }, [setGameState]); // gameState is read via prev inside setGameState
+  }, [setGameState]);
 
   return {
     startProject,

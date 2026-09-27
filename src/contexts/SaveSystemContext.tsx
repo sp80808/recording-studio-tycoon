@@ -10,12 +10,16 @@
 import React, { useEffect, ReactNode, useCallback } from 'react';
 import { useSettings } from './SettingsContext';
 import { getVersionInfo, compareVersions } from '../utils/versionUtils';
-import { migrateAndInitializeGameState } from '../utils/gameStateUtils'; // ADDED
-import { SaveSystemContext, useSaveSystem } from './save-system-context-types';
+import { migrateAndInitializeGameState } from '../utils/gameStateUtils';
+import { 
+  SaveSystemContext, 
+  useSaveSystem, 
+  LoadedGameSnapshot 
+} from './save-system-context-types';
 import { GameState } from '@/types/game';
 
-// Re-export the hook so consumers can import it from either module path
 export { useSaveSystem };
+export type { LoadedGameSnapshot };
 
 interface SaveSystemProviderProps {
   children: ReactNode;
@@ -41,7 +45,7 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
     }
   }, []);
 
-  const loadGame = useCallback((): GameState | null => {
+  const loadGameSnapshot = useCallback((): LoadedGameSnapshot | null => {
     try {
       const savedData = localStorage.getItem('recordingStudioTycoonSave');
       if (!savedData) return null;
@@ -54,29 +58,35 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
         const versionComparison = compareVersions(parsed.version, currentVersionInfo.version);
         if (versionComparison < 0) {
           console.warn(`Loading save from older version: ${parsed.version} -> ${currentVersionInfo.version}`);
-          // Future: Add migration logic here
         } else if (versionComparison > 0) {
           console.warn(`Loading save from newer version: ${parsed.version} -> ${currentVersionInfo.version}`);
-          // Handle downgrade scenario
         }
       }
       
       console.log(`Game loaded successfully - Save Version: ${parsed.version || 'legacy'}`);
-      // ADDED: Migrate and initialize the loaded game state
       const migratedGameState = migrateAndInitializeGameState(parsed.gameState);
-      return migratedGameState;
+      const savedAt = Number.isFinite(parsed.timestamp) ? parsed.timestamp : Date.now();
+
+      return {
+        gameState: migratedGameState,
+        savedAt
+      };
     } catch (error) {
       console.error('Failed to load game:', error);
       return null;
     }
   }, []);
 
+  const loadGame = useCallback((): GameState | null => {
+    return loadGameSnapshot()?.gameState ?? null;
+  }, [loadGameSnapshot]);
+
   const resetGame = useCallback(() => {
     try {
       localStorage.removeItem('recordingStudioTycoonSave');
-      console.log('Game progress reset');
+      console.log('Save data cleared');
     } catch (error) {
-      console.error('Failed to reset game:', error);
+      console.error('Failed to clear save data:', error);
     }
   }, []);
 
@@ -91,11 +101,9 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
         gameState,
         timestamp: Date.now(),
         ...versionInfo,
-        saveFormat: 'v2_text_export' // Indicate it's a text export
+        saveFormat: 'v2'
       };
-      const jsonString = JSON.stringify(saveData);
-      // Basic obfuscation: Base64 encode
-      return btoa(jsonString); 
+      return btoa(JSON.stringify(saveData));
     } catch (error) {
       console.error('Failed to export game state to string:', error);
       return null;
@@ -104,30 +112,23 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
 
   const loadGameFromString = useCallback((saveString: string): GameState | null => {
     try {
-      // Basic de-obfuscation: Base64 decode
-      const jsonString = atob(saveString); 
-      const parsed = JSON.parse(jsonString);
+      const decodedString = atob(saveString);
+      const parsed = JSON.parse(decodedString);
       const currentVersionInfo = getVersionInfo();
-      
-      // Version compatibility checking (similar to loadGame)
+
       if (parsed.version && parsed.version !== currentVersionInfo.version) {
         const versionComparison = compareVersions(parsed.version, currentVersionInfo.version);
         if (versionComparison < 0) {
-          console.warn(`Loading save from older version (string): ${parsed.version} -> ${currentVersionInfo.version}`);
-          // Future: Add migration logic here
+          console.warn(`Loading exported save from older version: ${parsed.version} -> ${currentVersionInfo.version}`);
         } else if (versionComparison > 0) {
-          console.warn(`Loading save from newer version (string): ${parsed.version} -> ${currentVersionInfo.version}`);
-          // Handle downgrade scenario
+          console.warn(`Loading exported save from newer version: ${parsed.version} -> ${currentVersionInfo.version}`);
         }
       }
-      
-      console.log(`Game loaded from string successfully - Save Version: ${parsed.version || 'legacy_text'}`);
-      // ADDED: Migrate and initialize the loaded game state from string
-      const migratedGameState = migrateAndInitializeGameState(parsed.gameState);
-      return migratedGameState;
+
+      console.log(`Game loaded successfully from string - Save Version: ${parsed.version || 'legacy'}`);
+      return migrateAndInitializeGameState(parsed.gameState);
     } catch (error) {
       console.error('Failed to load game from string:', error);
-      // TODO: Consider adding a user-facing notification for invalid save string
       return null;
     }
   }, []);
@@ -154,12 +155,13 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
 
   return (
     <SaveSystemContext.Provider value={{ 
-      saveGame,
+      saveGame, 
       loadGame,
-      resetGame,
-      hasSavedGame,
-      exportGameStateToString,
-      loadGameFromString
+      loadGameSnapshot,
+      resetGame, 
+      hasSavedGame, 
+      exportGameStateToString, 
+      loadGameFromString 
     }}>
       {children}
     </SaveSystemContext.Provider>

@@ -1,5 +1,6 @@
 import { Project, ProjectReport, ProjectReportSkillEntry, PlayerData, StaffMember, Skill } from '@/types/game';
 import { grantSkillXp } from './skillUtils'; // Assuming grantSkillXp is in skillUtils.ts
+import { createSeededRandom, pickWithRandom, randomInt } from '@/simulation/seededRandom';
 
 /**
  * Optional settlement context for real lifecycle scoring (bead ruc.1).
@@ -83,6 +84,9 @@ export const generateProjectReview = (
   allStaffMembers: StaffMember[],
   settlementContext?: SettlementContext
 ): ProjectReport => {
+  const rng = createSeededRandom(
+    `${project.id}:review:${project.workSessionCount || 0}:${Math.round(project.accumulatedCPoints || 0)}:${Math.round(project.accumulatedTPoints || 0)}`
+  );
   const skillBreakdown: ProjectReportSkillEntry[] = [];
   let totalSkillScoreContribution = 0;
   let numContributingSkills = 0;
@@ -152,7 +156,7 @@ export const generateProjectReview = (
     const difficultyModifier = (project.difficulty - 3) * 3; // e.g. diff 1 = -6, diff 3 = 0, diff 5 = +6
 
     // Randomness (5-15 points)
-    const randomFactor = Math.floor(Math.random() * 11) + 5; 
+    const randomFactor = randomInt(rng, 5, 15); 
 
     // Synergy with project's C/T points (accumulated from minigames, etc.)
     // If a skill aligns with the type of points accumulated, give a small bonus
@@ -173,7 +177,7 @@ export const generateProjectReview = (
     const baseSkillXp = 20;
     const xpFromScore = Math.floor(skillScore * 0.75); // Max 75 XP from score
     const xpFromDifficulty = project.difficulty * 15;   // Max 75 XP from difficulty (assuming difficulty 1-5)
-    const skillXpGained = baseSkillXp + xpFromScore + xpFromDifficulty + Math.floor(Math.random() * 25); // Add some randomness
+    const skillXpGained = baseSkillXp + xpFromScore + xpFromDifficulty + randomInt(rng, 0, 24);
 
     const { updatedSkill, levelUps } = grantSkillXp(currentSkillState, skillXpGained);
 
@@ -195,7 +199,6 @@ export const generateProjectReview = (
   });
 
   const averageSkillScore = numContributingSkills > 0 ? totalSkillScoreContribution / numContributingSkills : 0;
-
   // Overall Quality: skill average + accumulated C/T production points + project
   // difficulty + real lifecycle conditions (focus, staff, studio, equipment).
   // C/T contribution is capped so long grinds can't push quality to 100 alone.
@@ -211,7 +214,7 @@ export const generateProjectReview = (
     equipBonusExtra +
     minigameBonus
   );
-  overallQualityScore = clamp(overallQualityScore + Math.floor(Math.random() * 10 - 5), 0, 100); // Small randomness +/- 5
+  overallQualityScore = clamp(overallQualityScore + randomInt(rng, -5, 4), 0, 100);
 
   // Rewards: quality x difficulty x client-match x market trend (GH #19: no single
   // project type dominates — marketMultiplier comes from genre popularity).
@@ -241,7 +244,7 @@ export const generateProjectReview = (
   const neutralAdjectives = ["decent", "acceptable", "standard", "average", "competent"];
   const negativeAdjectives = ["lackluster", "uninspired", "mediocre", "disappointing", "rough"];
   
-  const pickRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+  const pickRandom = (arr: string[]) => pickWithRandom(rng, arr);
 
   if (overallQualityScore >= highQualityThreshold) {
     reviewSnippet = `A truly ${pickRandom(positiveAdjectives)} production for "${project.title}"! This is chart-topping material.`;
