@@ -4,6 +4,7 @@ import { generateNewProjects, generateCandidates } from '@/utils/projectUtils';
 import { generateSessionMusicians } from '@/utils/bandUtils';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
 import { initializeSkillsPlayer } from '@/utils/skillUtils'; // Import skill initializer
+import { createDefaultStudioRooms } from '@/utils/studioRoomUtils';
 
 interface EraInitOptions {
   startingMoney: number;
@@ -77,6 +78,7 @@ export const useGameState = () => {
       }
     ],
     availableProjects: [],
+    studioRooms: createDefaultStudioRooms(),
     activeProject: null, // Keep for backward compatibility
     // Multi-project system
     activeProjects: [], // New multi-project array
