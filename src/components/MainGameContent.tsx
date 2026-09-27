@@ -12,6 +12,9 @@ import { MinigameType } from '@/components/minigames/MinigameManager';
 import useMediaQuery from '@/hooks/useMediaQuery';
 import { useMobileDetection } from '@/hooks/useMediaQuery';
 import MobileArrowNavigation from '@/components/layout/MobileArrowNavigation';
+import { StudioStrip } from '@/components/StudioStrip';
+import { Button } from '@/components/ui/button';
+import { Minimize2 } from 'lucide-react';
 
 /**
  * Interface defining the structure of a tab object for mobile navigation.
@@ -46,6 +49,8 @@ interface MainGameContentProps {
   autoTriggeredMinigame: { type: MinigameType; reason: string } | null;
   clearAutoTriggeredMinigame: () => void;
   startResearchMod?: (staffId: string, modId: string) => boolean;
+  compactStudioMode: boolean;
+  setCompactStudioMode: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 /**
@@ -77,7 +82,9 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   triggerEraTransition,
   autoTriggeredMinigame,
   clearAutoTriggeredMinigame,
-  startResearchMod
+  startResearchMod,
+  compactStudioMode,
+  setCompactStudioMode
 }) => {
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [showAttributesModal, setShowAttributesModal] = useState(false);
@@ -225,9 +232,36 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   // Desktop layout remains a 3-column flex layout
   // Mobile layout uses swipeable views controlled by MobileArrowNavigation
 
+  if (!isMobile && compactStudioMode) {
+    return (
+      <div className="h-full flex items-end">
+        <StudioStrip
+          gameState={gameState}
+          onExpand={() => setCompactStudioMode(false)}
+          onBookNextEnquiry={() => {
+            const nextEnquiry = gameState.availableProjects[0];
+            if (nextEnquiry) startProject(nextEnquiry);
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     // Outermost container for the main game content area.
-    <div className="h-full flex flex-col main-game-content">
+    <div className="h-full flex flex-col main-game-content relative">
+      {!isMobile && (
+        <Button
+          onClick={() => setCompactStudioMode(true)}
+          size="sm"
+          variant="outline"
+          className="absolute top-2 right-2 z-50 border-gray-700 bg-gray-950/90 text-gray-300 hover:bg-gray-800"
+          title="Collapse to desktop studio strip"
+        >
+          <Minimize2 size={14} className="mr-1" />
+          Studio Strip
+        </Button>
+      )}
       {/* Render MobileArrowNavigation only on mobile viewports. */}
       {isMobile && (
         <div className="mobile-navigation">
