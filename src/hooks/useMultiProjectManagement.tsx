@@ -59,6 +59,7 @@ export const useMultiProjectManagement = ({ gameState, setGameState }: UseMultiP
     if (success) {
       setGameState(prev => ({
         ...prev,
+        activeProject: prev.activeProject?.id === projectId ? null : prev.activeProject,
         activeProjects: prev.activeProjects.filter(p => p.id !== projectId),
         // Clear staff assignments for this project
         hiredStaff: prev.hiredStaff.map(staff => ({
