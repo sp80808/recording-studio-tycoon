@@ -42,9 +42,15 @@ export interface AdvanceSimulationOptions {
 
 const cloneProject = (project: Project): Project => ({
   ...project,
-  stages: project.stages.map(stage => ({ ...stage })),
-  completedStages: [...project.completedStages],
-  focusAllocation: { ...project.focusAllocation }
+  currentStageIndex: Number.isFinite(project.currentStageIndex) ? project.currentStageIndex : 0,
+  accumulatedCPoints: Number.isFinite(project.accumulatedCPoints) ? project.accumulatedCPoints : 0,
+  accumulatedTPoints: Number.isFinite(project.accumulatedTPoints) ? project.accumulatedTPoints : 0,
+  workSessionCount: Number.isFinite(project.workSessionCount) ? project.workSessionCount : 0,
+  stages: (project.stages || []).map(stage => ({ ...stage })),
+  completedStages: [...(project.completedStages || [])],
+  focusAllocation: project.focusAllocation
+    ? { ...project.focusAllocation }
+    : { performance: 33, soundCapture: 33, layering: 34 }
 });
 
 const calculatePassiveSessionOutput = (
@@ -242,9 +248,9 @@ export const advanceSimulation = (
 
     const updatedProject: Project = {
       ...workResult.project,
-      accumulatedCPoints: workResult.project.accumulatedCPoints + creativityAdded,
-      accumulatedTPoints: workResult.project.accumulatedTPoints + technicalAdded,
-      workSessionCount: workResult.project.workSessionCount + sessionFraction
+      accumulatedCPoints: (workResult.project.accumulatedCPoints || 0) + creativityAdded,
+      accumulatedTPoints: (workResult.project.accumulatedTPoints || 0) + technicalAdded,
+      workSessionCount: (workResult.project.workSessionCount || 0) + sessionFraction
     };
 
     const energyCost = PASSIVE_STAFF_ENERGY_COST_PER_SESSION * sessionFraction * appliedRatio;
