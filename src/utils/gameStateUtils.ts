@@ -69,6 +69,58 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
     }));
   }
 
+  // Assign physical rooms to legacy in-flight work. Preserve an existing
+  // assignment when present; otherwise place the primary active project into
+  // the first unlocked room and reuse that assignment if it is also mirrored
+  // in activeProjects.
+  const unlockedRoomIds = processedState.studioRooms
+    .filter(room => room.unlocked)
+    .map(room => room.id);
+  const usedRoomIds = new Set<string>();
+
+  if (processedState.activeProject) {
+    const existingRoomId = processedState.activeProject.bookingRoomId;
+    const primaryRoomId =
+      existingRoomId && unlockedRoomIds.includes(existingRoomId)
+        ? existingRoomId
+        : unlockedRoomIds[0];
+
+    if (primaryRoomId) {
+      processedState.activeProject = {
+        ...processedState.activeProject,
+        bookingRoomId: primaryRoomId
+      };
+      usedRoomIds.add(primaryRoomId);
+    }
+  }
+
+  processedState.activeProjects = (processedState.activeProjects || []).map(project => {
+    if (
+      processedState.activeProject &&
+      project.id === processedState.activeProject.id &&
+      processedState.activeProject.bookingRoomId
+    ) {
+      return {
+        ...project,
+        bookingRoomId: processedState.activeProject.bookingRoomId
+      };
+    }
+
+    if (project.bookingRoomId && unlockedRoomIds.includes(project.bookingRoomId)) {
+      usedRoomIds.add(project.bookingRoomId);
+      return project;
+    }
+
+    const freeRoomId = unlockedRoomIds.find(roomId => !usedRoomIds.has(roomId));
+    if (!freeRoomId) return project;
+
+    usedRoomIds.add(freeRoomId);
+    return {
+      ...project,
+      bookingRoomId: freeRoomId
+    };
+  });
+
   // Add other migration logic here as needed in the future
 
   // Ensure productionQueues exists for new production queue feature
