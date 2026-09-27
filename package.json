@@ -14,8 +14,11 @@
   "author": "Recording Studio Tycoon Development Team",
   "scripts": {
     "dev": "vite",
+    "predev": "python3 scripts/clean-appledouble.py --quiet",
     "build": "vite build",
+    "prebuild": "python3 scripts/clean-appledouble.py --quiet",
     "build:dev": "vite build --mode development",
+    "clean:appledouble": "python3 scripts/clean-appledouble.py",
     "lint": "eslint .",
     "preview": "vite preview"
   },
