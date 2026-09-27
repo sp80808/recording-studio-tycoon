@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { RhythmTimingGame } from './RhythmTimingGame';
 import { MixingBoardGame } from './MixingBoardGame';
@@ -54,6 +54,12 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
   const [showGame, setShowGame] = useState(true);
   const backgroundMusic = useBackgroundMusic(); // Assuming this is for BeatMakingGame or similar
 
+  useEffect(() => {
+    if (isOpen) {
+      setShowGame(true);
+    }
+  }, [isOpen]);
+
   const handleGameComplete = (score: number, success?: boolean) => { // Added success parameter for maintenance game
     setShowGame(false);
     
@@ -102,6 +108,14 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
       case 'layering': // InstrumentLayeringGame
         creativityBonus = Math.floor(score / 9);
         technicalBonus = Math.floor(score / 11);
+        break;
+      case 'vocal-tuning':
+        creativityBonus = Math.floor(score / 14);
+        technicalBonus = Math.floor(score / 7);
+        break;
+      case 'live-recording':
+        creativityBonus = Math.floor(score / 10);
+        technicalBonus = Math.floor(score / 9);
         break;
       case 'maintenance': // GearMaintenanceGame
         // For maintenance, score is already the direct quality impact (0-20)
