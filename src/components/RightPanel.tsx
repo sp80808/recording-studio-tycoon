@@ -14,6 +14,7 @@ import { StudioProgressionPanel } from '@/components/StudioProgressionPanel'; //
 import { toast } from '@/hooks/use-toast'; // Import toast
 import { ProgressionSystem } from '@/services/ProgressionSystem';
 import { getOperationalStudioRooms, getOccupiedRoomIds } from '@/utils/studioRoomUtils';
+import { calculateStaffProjectFit } from '@/utils/staffFitUtils';
 
 export interface RightPanelProps {
   gameState: GameState;
@@ -358,6 +359,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                   <div className="text-xs text-gray-500 mb-2">
                     Creativity: {candidate.primaryStats.creativity}, Technical: {candidate.primaryStats.technical}, Speed: {candidate.primaryStats.speed}
                   </div>
+                  {gameState.activeProject && (() => {
+                    const fit = calculateStaffProjectFit(candidate, gameState.activeProject!);
+                    return (
+                      <div className="text-[11px] text-blue-300 mb-2">
+                        Current-session fit {fit.score}/100 · {fit.reasons.slice(0, 2).join(' · ')}
+                      </div>
+                    );
+                  })()}
                   {candidate.genreAffinity && (
                     <div className="text-xs text-purple-400 mb-2">
                       Specialty: {candidate.genreAffinity.genre} (+{candidate.genreAffinity.bonus}%)
@@ -401,6 +410,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                       </div>
                     </div>
                   </div>
+                  {gameState.activeProject && (() => {
+                    const fit = calculateStaffProjectFit(staff, gameState.activeProject!);
+                    return (
+                      <div className="text-[11px] text-blue-300 mb-2">
+                        Session fit {fit.score}/100 · {fit.reasons.slice(0, 3).join(' · ')}
+                      </div>
+                    );
+                  })()}
                   <div className="flex gap-2 mt-2">
                     {staff.status === 'Idle' && (
                       <Button 
