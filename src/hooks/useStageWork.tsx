@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { GameState, FocusAllocation, Project } from '@/types/game';
 // calculateStudioSkillBonus and getEquipmentBonuses are now used within projectUtils
 import { getCreativityMultiplier, getTechnicalMultiplier, getFocusEffectiveness, getMoodEffectiveness } from '@/utils/playerUtils'; // Added getMoodEffectiveness
@@ -11,6 +11,7 @@ import {
   WorkPoints
 } from '@/utils/projectUtils'; // Import new project utils
 import { shouldAutoTriggerMinigame } from '@/utils/minigameUtils';
+import { MinigameType } from '@/components/minigames/MinigameManager';
 import { toast } from '@/hooks/use-toast';
 
 interface UseStageWorkProps {
@@ -32,9 +33,94 @@ export const useStageWork = ({
 }: UseStageWorkProps) => {
   const orbContainerRef = useRef<HTMLDivElement>(null);
   const [autoTriggeredMinigame, setAutoTriggeredMinigame] = useState<{
-    type: string;
+    id: string;
+    projectId: string;
+    stageIndex: number;
+    type: MinigameType;
     reason: string;
+    priority: number;
+    expiresAt: number;
   } | null>(null);
+  const lastInterventionBucketRef = useRef(-1);
+  const lastInterventionStageRef = useRef('');
+
+  const clearAutoTriggeredMinigame = useCallback(() => {
+    const opportunity = autoTriggeredMinigame;
+
+    if (opportunity) {
+      const stageKey = `${opportunity.projectId}-${opportunity.stageIndex}`;
+      setGameState(prev => {
+        const markResolved = (project: Project): Project => {
+          if (project.id !== opportunity.projectId) return project;
+          const resolved = new Set(project.resolvedInterventionStageKeys || []);
+          resolved.add(stageKey);
+          return {
+            ...project,
+            resolvedInterventionStageKeys: Array.from(resolved)
+          };
+        };
+
+        return {
+          ...prev,
+          activeProject: prev.activeProject ? markResolved(prev.activeProject) : null,
+          activeProjects: (prev.activeProjects || []).map(markResolved)
+        };
+      });
+    }
+
+    setAutoTriggeredMinigame(null);
+  }, [autoTriggeredMinigame, setGameState]);
+
+  // Passive time and manual work both increment workSessionCount. Watch those
+  // milestones and convert the existing context-sensitive minigame trigger
+  // rules into a single optional opportunity for the current stage.
+  useEffect(() => {
+    const project = gameState.activeProject;
+    if (!project || project.awaitingReview || autoTriggeredMinigame) return;
+
+    const stageKey = `${project.id}-${project.currentStageIndex}`;
+    const workBucket = Math.floor(project.workSessionCount || 0);
+
+    if (lastInterventionStageRef.current !== stageKey) {
+      lastInterventionStageRef.current = stageKey;
+      lastInterventionBucketRef.current = Math.max(-1, workBucket - 1);
+    }
+
+    if (workBucket <= 0 || workBucket <= lastInterventionBucketRef.current) return;
+    lastInterventionBucketRef.current = workBucket;
+
+    if ((project.resolvedInterventionStageKeys || []).includes(stageKey)) return;
+
+    const trigger = shouldAutoTriggerMinigame(
+      project,
+      gameState,
+      project.focusAllocation || { performance: 33, soundCapture: 33, layering: 34 },
+      workBucket
+    );
+
+    if (!trigger) return;
+
+    setAutoTriggeredMinigame({
+      id: `intervention-${project.id}-${project.currentStageIndex}-${workBucket}`,
+      projectId: project.id,
+      stageIndex: project.currentStageIndex,
+      type: trigger.minigameType,
+      reason: trigger.triggerReason,
+      priority: trigger.priority,
+      expiresAt: Date.now() + 90_000
+    });
+  }, [gameState, autoTriggeredMinigame]);
+
+  // Opportunities are intentionally ephemeral. Expiry behaves like Skip:
+  // the stage keeps progressing and will not immediately re-offer the same
+  // intervention.
+  useEffect(() => {
+    if (!autoTriggeredMinigame) return;
+
+    const delay = Math.max(0, autoTriggeredMinigame.expiresAt - Date.now());
+    const timer = window.setTimeout(clearAutoTriggeredMinigame, delay);
+    return () => window.clearTimeout(timer);
+  }, [autoTriggeredMinigame?.id, clearAutoTriggeredMinigame]);
 
   const createOrb = useCallback((type: 'creativity' | 'technical', amount: number) => {
     console.log(`🎯 Creating ${type} orb with amount: ${amount}`);
@@ -128,23 +214,6 @@ export const useStageWork = ({
 
     const newWorkSessionCount = (project.workSessionCount || 0) + 1;
     console.log(`🔢 Work session count: ${project.workSessionCount} -> ${newWorkSessionCount}`);
-
-    // Check for auto-triggered minigames using currentProjectFocus
-    const autoTrigger = shouldAutoTriggerMinigame(project, gameState, currentProjectFocus, newWorkSessionCount);
-    if (autoTrigger) {
-      console.log(`🎮 Auto-triggered minigame: ${autoTrigger.minigameType} - ${autoTrigger.triggerReason}`);
-      setAutoTriggeredMinigame({
-        type: autoTrigger.minigameType,
-        reason: autoTrigger.triggerReason
-      });
-      
-      toast({
-        title: "🎮 Production Opportunity!",
-        description: autoTrigger.triggerReason,
-        className: "bg-gray-800 border-gray-600 text-white",
-        duration: 4000
-      });
-    }
 
     // FIXED: Improved base work calculation with better scaling
     const baseWorkCapacity = Math.max(gameState.playerData.dailyWorkCapacity, 1);
@@ -344,6 +413,6 @@ export const useStageWork = ({
     performDailyWork,
     orbContainerRef,
     autoTriggeredMinigame,
-    clearAutoTriggeredMinigame: () => setAutoTriggeredMinigame(null)
+    clearAutoTriggeredMinigame
   };
 };
