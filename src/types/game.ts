@@ -95,6 +95,7 @@ export interface Project {
   workSessionCount: number; // Track how many work sessions have been completed (fractional for passive simulation)
   awaitingReview?: boolean; // Work is complete but rewards have not yet been settled
   resolvedInterventionStageKeys?: string[]; // Persist one resolved/ignored intervention opportunity per stage
+  bookingRoomId?: string; // Physical studio suite reserved for this session
   associatedBandId?: string;
   focusAllocation: FocusAllocation; // ADDED: Stores current focus settings for the project
 }
@@ -173,6 +174,32 @@ export interface EquipmentMod {
   };
 }
 
+export type StudioRoomType =
+  | 'project-studio'
+  | 'vocal-suite'
+  | 'live-room'
+  | 'mix-suite';
+
+export type StudioRoomStageKind =
+  | 'tracking'
+  | 'production'
+  | 'mixing'
+  | 'mastering'
+  | 'general';
+
+export interface StudioRoom {
+  id: string;
+  name: string;
+  type: StudioRoomType;
+  unlocked: boolean;
+  level: number;
+  purchaseCost: number;
+  requiredPlayerLevel: number;
+  supportedStageKinds: StudioRoomStageKind[];
+  qualityBonus: number;
+  speedBonus: number;
+}
+
 export interface TrainingCourse {
   id: string;
   name: string;
@@ -211,6 +238,7 @@ export interface GameState {
   ownedEquipment: Equipment[];
   availableProjects: Project[];
   clientRelationships?: Record<string, ClientRelationship>;
+  studioRooms: StudioRoom[]; // Physical bookable studio suites; drives concurrent capacity
   
   // Multi-project system
   activeProjects: Project[]; // Replace single activeProject with array
