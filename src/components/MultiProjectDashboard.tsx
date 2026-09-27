@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { AlertCircle, Users, Zap, Settings, Play, Pause, Plus, X } from 'lucide-react';
 import { GameState, Project, AutomationMode } from '@/types/game';
 import { useMultiProjectManagement } from '@/hooks/useMultiProjectManagement';
+import { calculateStaffProjectFit } from '@/utils/staffFitUtils';
 
 interface MultiProjectDashboardProps {
   gameState: GameState;
@@ -352,12 +353,18 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
                         </div>
                       </div>
                       
-                      {assignedProject && (
-                        <div className="mt-3 p-2 bg-blue-50 rounded text-sm">
-                          <div className="font-medium">Assigned to:</div>
-                          <div>{assignedProject.title}</div>
-                        </div>
-                      )}
+                      {assignedProject && (() => {
+                        const fit = calculateStaffProjectFit(staff, assignedProject);
+                        return (
+                          <div className="mt-3 p-2 bg-blue-50 rounded text-sm">
+                            <div className="font-medium">Assigned to:</div>
+                            <div>{assignedProject.title}</div>
+                            <div className="text-xs text-blue-700 mt-1">
+                              Fit {fit.score}/100 · {fit.reasons.slice(0, 3).join(' · ')}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   );
                 })}
