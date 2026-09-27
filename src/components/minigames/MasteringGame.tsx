@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { gameAudio } from '@/utils/audioSystem';
+import { KenneyButton, MinigameChrome } from './MinigameChrome';
 
 interface MasteringGameProps {
   onComplete: (score: number) => void;
@@ -93,21 +93,20 @@ export const MasteringGame: React.FC<MasteringGameProps> = ({ onComplete, onClos
   };
 
   const target = targets[currentTarget];
+  const accuracy = calculateAccuracy();
+  const masteringDone = timeLeft === 0;
 
   return (
-    <Card className="w-full max-w-4xl bg-gray-900 border-gray-600 p-6">
+    <Card className="w-full max-w-4xl mx-auto bg-gray-800 text-white border-gray-700">
+      <MinigameChrome title="🎚️ Mastering Challenge" score={score} timeLeft={timeLeft} accent="yellow">
+      <div className="p-6">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-white mb-2">🎚️ Mastering Challenge</h2>
         <p className="text-gray-300">Master the track to match the target sound!</p>
-        <div className="flex justify-between items-center mt-4">
-          <div className="text-yellow-400 font-bold">Score: {score}</div>
-          <div className="text-blue-400 font-bold">Target: {target.name}</div>
-          <div className="text-red-400 font-bold">Time: {timeLeft}s</div>
-        </div>
+        <div className="mt-4 text-lg font-bold text-blue-400">Target: {target.name}</div>
       </div>
 
       {feedback && (
-        <div className="text-center text-xl font-bold text-green-400 mb-4 animate-pulse">
+        <div key={feedback} className={`text-center text-xl font-bold mb-4 ${accuracy >= 80 ? 'text-green-400 mg-perfect-pop' : accuracy >= 60 ? 'text-yellow-300' : 'text-red-400 mg-miss-shake'}`}>
           {feedback}
         </div>
       )}
@@ -180,26 +179,26 @@ export const MasteringGame: React.FC<MasteringGameProps> = ({ onComplete, onClos
 
       <div className="text-center mb-6">
         <div className="text-lg font-bold text-white mb-2">
-          Accuracy: {calculateAccuracy()}%
+          Accuracy: {accuracy}%
         </div>
         <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
-          <div 
-            className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 transition-all duration-300"
-            style={{ width: `${calculateAccuracy()}%` }}
+          <div
+            className={`h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 transition-all duration-300 ${accuracy >= 80 ? 'mg-meter-glow' : ''}`}
+            style={{ width: `${accuracy}%` }}
           />
         </div>
       </div>
 
       <div className="flex gap-4 justify-center">
-        <Button onClick={checkTarget} className="px-8 py-3 bg-green-600 hover:bg-green-700">
+        <KenneyButton variant="green" onClick={checkTarget}>
           ✨ Check Master
-        </Button>
-        <Button onClick={handleComplete} className="px-6 py-3 bg-blue-600 hover:bg-blue-700">
+        </KenneyButton>
+        <KenneyButton variant="blue" onClick={handleComplete}>
           Finish Early
-        </Button>
-        <Button onClick={onClose} variant="outline" className="px-6 py-3">
+        </KenneyButton>
+        <KenneyButton variant="grey" onClick={onClose}>
           Cancel
-        </Button>
+        </KenneyButton>
       </div>
 
       <div className="mt-6 flex justify-center gap-2">
@@ -207,15 +206,22 @@ export const MasteringGame: React.FC<MasteringGameProps> = ({ onComplete, onClos
           <div
             key={index}
             className={`w-3 h-3 rounded-full ${
-              index < currentTarget 
-                ? 'bg-green-500' 
-                : index === currentTarget 
-                  ? 'bg-blue-500 animate-pulse' 
+              index < currentTarget
+                ? 'bg-green-500'
+                : index === currentTarget
+                  ? 'bg-blue-500 animate-pulse'
                   : 'bg-gray-600'
             }`}
           />
         ))}
       </div>
+      {masteringDone && (
+        <div className="mt-4 text-center text-2xl font-bold text-green-400 mg-perfect-pop">
+          Mastering Complete! Final Score: {score}
+        </div>
+      )}
+      </div>
+      </MinigameChrome>
     </Card>
   );
 };
