@@ -144,7 +144,7 @@ export const useGameState = () => {
   });
 
   const initializeGameState = (options?: Partial<EraInitOptions>): GameState => {
-    const newGameState = createDefaultGameState(options);
+    let newGameState = createDefaultGameState(options);
     const currentEra = newGameState.currentEra;
     const initialProjects = generateNewProjects(3, 1, currentEra);
     const initialCandidates = generateCandidates(3);
