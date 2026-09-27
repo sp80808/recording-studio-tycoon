@@ -212,7 +212,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const completedWorkUnits = project.stages.reduce((total, stage) => total + stage.workUnitsCompleted, 0);
   const overallProgress = totalWorkUnits > 0 ? (completedWorkUnits / totalWorkUnits) * 100 : 0;
 
-  const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number, rawScore?: number) => {
+  const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number, _minigameType?: MinigameType, rawScore?: number) => {
     console.log('🎮 Minigame rewards received:', { creativityBonus, technicalBonus, xpBonus, minigameType: selectedMinigame });
     
     // Play success sound

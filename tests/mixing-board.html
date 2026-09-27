@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Mixing desk regression check</title></head>
+<body style="margin:0;background:#020617;padding:16px">
+  <div id="root" style="max-width:640px;margin:auto"></div>
+  <output id="rewards" data-count="0" style="color:white"></output>
+  <button id="unmount">Unmount</button>
+  <script type="module">
+    import React from 'react';
+    import { createRoot } from 'react-dom/client';
+    import { MixingBoardGame } from '/src/components/minigames/MixingBoardGame.tsx';
+    import '/src/index.css';
+    const root = createRoot(document.getElementById('root'));
+    root.render(React.createElement(MixingBoardGame, {
+      onComplete: score => {
+        const output = document.getElementById('rewards');
+        output.dataset.count = Number(output.dataset.count) + 1;
+        output.textContent = String(score);
+      },
+      onClose: () => root.unmount(),
+    }));
+    document.getElementById('unmount').onclick = () => root.unmount();
+  </script>
+</body>
+</html>

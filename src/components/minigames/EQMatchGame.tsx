@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { DialogFooter } from '@/components/ui/dialog';
+import { MinigameChrome, KenneyButton } from './MinigameChrome';
 
 // Define a basic props interface for minigame components
 export interface MinigameComponentProps {
@@ -44,6 +45,7 @@ export const EQMatchGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
       : 0;
   const matchPercent = Math.max(0, 100 - (totalDistance / MAX_TOTAL_DISTANCE) * 100);
   const score = Math.round(matchPercent * 10); // 0-1000
+  const isGoodMatch = matchPercent >= 75;
 
   const adjustBand = (index: number, delta: number) => {
     if (gameOver) return;
@@ -61,29 +63,18 @@ export const EQMatchGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
 
   return (
     <Card className="w-full max-w-2xl mx-auto bg-gray-800 text-white border-gray-700">
-      <CardHeader>
-        <CardTitle>🎚️ EQ Match Challenge 🎚️</CardTitle>
-        <CardDescription>
-          Match the hidden target EQ curve! Adjust each band with - / + or the sliders.
-        </CardDescription>
-      </CardHeader>
+      <MinigameChrome title="🎚️ EQ Match Challenge" score={score} timeLeft={timeLeft} accent="blue">
       <CardContent>
-        <div className="mb-4 flex justify-between items-center">
-          <span className="text-xl font-bold">Score: {score}</span>
-          <span className={`text-xl font-bold ${timeLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-yellow-400'}`}>
-            Time Left: {timeLeft}s
-          </span>
-        </div>
 
         {/* Live match meter */}
         <div className="mb-6">
           <div className="flex justify-between text-sm text-gray-300 mb-1">
             <span>Match Meter</span>
-            <span className="font-mono">{matchPercent.toFixed(1)}%</span>
+            <span className={`font-mono ${matchPercent >= 90 ? 'mg-combo-pulse text-cyan-300' : ''}`}>{matchPercent.toFixed(1)}%</span>
           </div>
           <div className="h-4 bg-gray-700 rounded overflow-hidden">
             <div
-              className="h-full bg-green-500 transition-all duration-150"
+              className={`h-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-150 ${isGoodMatch ? 'mg-meter-glow' : ''}`}
               style={{ width: `${matchPercent}%` }}
             />
           </div>
@@ -98,7 +89,7 @@ export const EQMatchGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
                 onClick={() => adjustBand(i, -1)}
                 disabled={gameOver}
                 variant="outline"
-                className="w-9 text-gray-300 border-gray-600 hover:bg-gray-600"
+                className="w-9 text-gray-300 border-gray-600 hover:bg-gray-600 mg-hit-flash active:scale-95"
               >
                 -
               </Button>
@@ -125,7 +116,7 @@ export const EQMatchGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
                 onClick={() => adjustBand(i, 1)}
                 disabled={gameOver}
                 variant="outline"
-                className="w-9 text-gray-300 border-gray-600 hover:bg-gray-600"
+                className="w-9 text-gray-300 border-gray-600 hover:bg-gray-600 mg-hit-flash active:scale-95"
               >
                 +
               </Button>
@@ -138,7 +129,10 @@ export const EQMatchGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
 
         {gameOver && (
           <div className="mt-4 text-center">
-            <div className="text-2xl font-bold text-green-400">
+            <div
+              key={score}
+              className={`text-2xl font-bold text-green-400 ${score >= 600 ? 'mg-perfect-pop' : 'mg-miss-shake'}`}
+            >
               Time&apos;s Up! Final Score: {score}
             </div>
             {targets.length === BANDS.length && (
@@ -154,13 +148,14 @@ export const EQMatchGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
           </div>
         )}
       </CardContent>
+      </MinigameChrome>
       <DialogFooter className="p-4">
-        <Button onClick={onClose} variant="outline" className="text-gray-300 border-gray-600 hover:bg-gray-700">
+        <KenneyButton variant="blue" onClick={onClose}>
           Close
-        </Button>
-        <Button onClick={handleFinalize} className="bg-green-600 hover:bg-green-700">
+        </KenneyButton>
+        <KenneyButton variant="blue" onClick={handleFinalize}>
           Finalize &amp; Get Score
-        </Button>
+        </KenneyButton>
       </DialogFooter>
     </Card>
   );

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { DialogFooter } from '@/components/ui/dialog';
+import { MinigameChrome, KenneyButton } from './MinigameChrome';
 
 // Define a basic props interface for minigame components
 export interface MinigameComponentProps {
@@ -65,6 +66,14 @@ export const PunchInGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
 
   const total = takes.reduce((sum, t) => sum + (t.points ?? 0), 0); // 0-1000
 
+  // Consecutive Perfect/Great run (display only, derived from existing state)
+  let streak = 0;
+  for (const t of takes) {
+    if (!t.result) break;
+    if (t.result === 'Perfect' || t.result === 'Great') streak += 1;
+    else streak = 0;
+  }
+
   const handleRec = () => {
     if (gameOver || takes.length !== TOTAL_TAKES || currentTake >= TOTAL_TAKES) return;
     const take = takes[currentTake];
@@ -101,18 +110,17 @@ export const PunchInGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
 
   return (
     <Card className="w-full max-w-2xl mx-auto bg-gray-800 text-white border-gray-700">
-      <CardHeader>
-        <CardTitle>⏺️ Punch-In Challenge ⏺️</CardTitle>
-        <CardDescription>
-          Press REC when the playhead is inside the punch window! 5 takes.
-        </CardDescription>
-      </CardHeader>
+      <MinigameChrome title="⏺️ Punch-In Challenge" score={total} timeLeft={TOTAL_TAKES - currentTake} timeUnit=" takes" streak={streak} accent="red">
       <CardContent>
         <div className="mb-4 flex justify-between items-center">
-          <span className="text-xl font-bold">Score: {total}</span>
           <span className="text-xl font-bold text-yellow-400">
             Take: {Math.min(currentTake + 1, TOTAL_TAKES)}/{TOTAL_TAKES}
           </span>
+          {streak >= 2 && (
+            <span className="text-sm font-bold text-orange-300 mg-combo-pulse">
+              🔥 {streak}-take heater!
+            </span>
+          )}
         </div>
 
         {/* Playhead sweep area */}
@@ -120,7 +128,7 @@ export const PunchInGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
           <div className="relative h-10 bg-gray-900 rounded overflow-hidden">
             {active && !gameOver && (
               <div
-                className="absolute top-0 bottom-0 bg-red-600/50 border-x border-red-400"
+                className="absolute top-0 bottom-0 bg-gradient-to-r from-red-500 to-orange-400 border-x border-red-300 mg-meter-glow"
                 style={{ left: `${windowLeft}%`, width: `${active.width}%` }}
               />
             )}
@@ -134,7 +142,7 @@ export const PunchInGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
             <Button
               onClick={handleRec}
               disabled={gameOver}
-              className="bg-red-600 hover:bg-red-700 font-bold px-8"
+              className="bg-gradient-to-b from-red-500 to-red-700 hover:from-red-400 hover:to-red-600 font-bold px-8 mg-hit-flash active:scale-95"
             >
               ● REC
             </Button>
@@ -153,7 +161,10 @@ export const PunchInGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
                     <span className="ml-2 text-yellow-400">◀ live</span>
                   )}
                 </span>
-                <span className={`font-bold ${resultColor(t.result)}`}>
+                <span
+                  key={`${t.result}-${t.hitPos}`}
+                  className={`font-bold ${resultColor(t.result)} ${t.result === 'Perfect' ? 'mg-perfect-pop' : ''} ${t.result === 'Miss' ? 'mg-miss-shake' : ''}`}
+                >
                   {t.result ? `${t.result} (+${t.points}) @${t.hitPos}` : '—'}
                 </span>
               </li>
@@ -162,18 +173,19 @@ export const PunchInGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
         </div>
 
         {gameOver && (
-          <div className="mt-4 text-center text-2xl font-bold text-green-400">
+          <div key={total} className={`mt-4 text-center text-2xl font-bold text-green-400 ${total >= 600 ? 'mg-perfect-pop' : 'mg-miss-shake'}`}>
             Session Complete! Final Score: {total}
           </div>
         )}
       </CardContent>
+      </MinigameChrome>
       <DialogFooter className="p-4">
-        <Button onClick={onClose} variant="outline" className="text-gray-300 border-gray-600 hover:bg-gray-700">
+        <KenneyButton variant="red" onClick={onClose}>
           Close
-        </Button>
-        <Button onClick={handleFinalize} className="bg-green-600 hover:bg-green-700">
+        </KenneyButton>
+        <KenneyButton variant="red" onClick={handleFinalize}>
           Finalize &amp; Get Score
-        </Button>
+        </KenneyButton>
       </DialogFooter>
     </Card>
   );

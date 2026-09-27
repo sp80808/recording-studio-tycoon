@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { DialogFooter } from '@/components/ui/dialog';
+import { MinigameChrome, KenneyButton } from './MinigameChrome';
 
 // Define a basic props interface for minigame components
 export interface MinigameComponentProps {
@@ -77,19 +77,8 @@ export const FaderRideGame: React.FC<MinigameComponentProps> = ({ minigameId, on
 
   return (
     <Card className="w-full max-w-2xl mx-auto bg-gray-800 text-white border-gray-700">
-      <CardHeader>
-        <CardTitle>🎛️ Fader Ride Challenge 🎛️</CardTitle>
-        <CardDescription>
-          Ride the fader to keep the output level inside the green zone (40-60)!
-        </CardDescription>
-      </CardHeader>
+      <MinigameChrome title="🎛️ Fader Ride Challenge" score={score} timeLeft={timeLeft} streak={Math.floor(inZoneTicks / 10)} accent="green">
       <CardContent>
-        <div className="mb-4 flex justify-between items-center">
-          <span className="text-xl font-bold">Score: {score}</span>
-          <span className={`text-xl font-bold ${timeLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-yellow-400'}`}>
-            Time Left: {timeLeft}s
-          </span>
-        </div>
 
         {/* Level meter with fixed green zone */}
         <div className="mb-4 bg-gray-700 rounded p-4">
@@ -101,7 +90,7 @@ export const FaderRideGame: React.FC<MinigameComponentProps> = ({ minigameId, on
           <div className="relative h-8 bg-gray-900 rounded overflow-hidden">
             {/* Green zone */}
             <div
-              className="absolute top-0 bottom-0 bg-green-600/60"
+              className={`absolute top-0 bottom-0 bg-gradient-to-r from-green-500 to-emerald-400 ${inZone ? 'mg-meter-glow' : 'opacity-70'}`}
               style={{ left: `${ZONE_LO}%`, width: `${ZONE_HI - ZONE_LO}%` }}
             />
             {/* Track level marker (blue) */}
@@ -112,7 +101,7 @@ export const FaderRideGame: React.FC<MinigameComponentProps> = ({ minigameId, on
             />
             {/* Output needle (white/yellow) */}
             <div
-              className={`absolute top-0 bottom-0 w-1.5 ${inZone ? 'bg-yellow-300' : 'bg-red-400'}`}
+              className={`absolute top-0 bottom-0 w-1.5 ${inZone ? 'bg-gradient-to-b from-yellow-200 to-yellow-400 mg-meter-glow' : 'bg-gradient-to-b from-red-300 to-red-500'}`}
               style={{ left: `${Math.min(100, Math.max(0, output))}%` }}
               title={`Output: ${output.toFixed(1)}`}
             />
@@ -142,31 +131,32 @@ export const FaderRideGame: React.FC<MinigameComponentProps> = ({ minigameId, on
             value={fader}
             disabled={gameOver}
             onChange={(e) => handleFaderChange(parseInt(e.target.value, 10))}
-            className="w-full accent-green-500"
+            className="w-full accent-green-500 mg-hit-flash cursor-pointer"
             aria-label="Master fader"
           />
         </div>
 
         {/* No-clip streak bonus */}
-        <div className={`mt-3 text-sm font-bold ${noClip ? 'text-green-400' : 'text-red-400'}`}>
+        <div key={String(noClip)} className={`mt-3 text-sm font-bold ${noClip ? 'text-green-400 mg-combo-pulse' : 'text-red-400 mg-miss-shake'}`}>
           {noClip
             ? '🔇 No-clip streak intact! +10% bonus applied.'
             : `⚠️ Clipped! Output exceeded ${CLIP_LEVEL} (peak ${maxOutput.toFixed(1)}). Bonus lost.`}
         </div>
 
         {gameOver && (
-          <div className="mt-4 text-center text-2xl font-bold text-green-400">
+          <div key={score} className={`mt-4 text-center text-2xl font-bold text-green-400 ${score >= 600 ? 'mg-perfect-pop' : 'mg-miss-shake'}`}>
             Time&apos;s Up! Final Score: {score}
           </div>
         )}
       </CardContent>
+      </MinigameChrome>
       <DialogFooter className="p-4">
-        <Button onClick={onClose} variant="outline" className="text-gray-300 border-gray-600 hover:bg-gray-700">
+        <KenneyButton variant="green" onClick={onClose}>
           Close
-        </Button>
-        <Button onClick={handleFinalize} className="bg-green-600 hover:bg-green-700">
+        </KenneyButton>
+        <KenneyButton variant="green" onClick={handleFinalize}>
           Finalize &amp; Get Score
-        </Button>
+        </KenneyButton>
       </DialogFooter>
     </Card>
   );

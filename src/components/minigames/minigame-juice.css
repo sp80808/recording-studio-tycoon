@@ -1,0 +1,88 @@
+/* Minigame juice effects — pure CSS keyframes, no JS.
+ * Imported automatically by MinigameChrome.tsx; consumers get these classes for free. */
+
+@keyframes mg-perfect-pop-keyframes {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.mg-perfect-pop {
+  animation: mg-perfect-pop-keyframes 0.35s ease-out;
+}
+
+@keyframes mg-miss-shake-keyframes {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-6px);
+  }
+  40% {
+    transform: translateX(6px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+.mg-miss-shake {
+  animation: mg-miss-shake-keyframes 0.35s ease-in-out;
+}
+
+@keyframes mg-meter-glow-keyframes {
+  0%,
+  100% {
+    box-shadow: 0 0 4px 1px rgba(74, 222, 128, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 14px 4px rgba(74, 222, 128, 1);
+  }
+}
+
+.mg-meter-glow {
+  animation: mg-meter-glow-keyframes 1.1s ease-in-out infinite;
+}
+
+@keyframes mg-combo-pulse-keyframes {
+  0%,
+  100% {
+    transform: scale(1);
+    color: #fbbf24;
+  }
+  50% {
+    transform: scale(1.25);
+    color: #f59e0b;
+  }
+}
+
+.mg-combo-pulse {
+  display: inline-block;
+  animation: mg-combo-pulse-keyframes 0.8s ease-in-out infinite;
+}
+
+@keyframes mg-hit-flash-keyframes {
+  0% {
+    filter: brightness(2);
+  }
+  100% {
+    filter: brightness(1);
+  }
+}
+
+.mg-hit-flash {
+  animation: mg-hit-flash-keyframes 0.2s ease-out;
+}

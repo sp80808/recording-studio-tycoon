@@ -1,8 +1,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
+import { MinigameChrome, KenneyButton } from './MinigameChrome';
 import { Card } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { gameAudio } from '@/utils/audioSystem';
 
 interface RhythmTimingGameProps {

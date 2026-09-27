@@ -1,0 +1,53 @@
+.mixing-desk {
+  max-height: calc(100dvh - 6rem);
+  overflow-y: auto;
+  background: radial-gradient(ellipse at top, #164e6329, transparent 65%), #0b1220;
+}
+.mixing-channel { transition: border-color 160ms, background-color 160ms; }
+.mixing-meter {
+  position: relative;
+  height: 132px;
+  overflow: hidden;
+  border: 1px solid #334155;
+  border-radius: 5px;
+  background: repeating-linear-gradient(to top, transparent 0 10px, #94a3b815 10px 11px), #020617;
+}
+.mixing-meter-fill {
+  position: absolute;
+  inset: auto 0 0;
+  background: var(--channel-color);
+  opacity: .35;
+}
+.mixing-target {
+  position: absolute;
+  inset-inline: 0;
+  border-block: 1px solid #6ee7b7;
+  background: #34d39933;
+}
+.mixing-needle {
+  position: absolute;
+  inset-inline: 0;
+  height: 3px;
+  transform: translateY(50%);
+  background: var(--channel-color);
+  box-shadow: 0 0 9px var(--channel-color);
+}
+.mixing-fader {
+  display: block;
+  width: 100%;
+  height: 44px;
+  cursor: ew-resize;
+  accent-color: var(--channel-color);
+  touch-action: pan-y;
+}
+.mixing-fader:focus-visible { outline: 2px solid #7dd3fc; outline-offset: 2px; border-radius: 4px; }
+.mixing-fader:disabled { cursor: default; opacity: .6; }
+.mixing-desk button { transition: transform 120ms, filter 120ms; }
+.mixing-desk button:hover { filter: brightness(1.12); }
+.mixing-desk button:active { transform: translateY(2px); }
+@media (prefers-reduced-motion: reduce) {
+  .mixing-desk *, .mixing-desk *::before, .mixing-desk *::after { animation: none !important; transition: none !important; }
+}
+@media (max-width: 639px) {
+  .mixing-meter { height: 76px; }
+}
