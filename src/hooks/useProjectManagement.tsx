@@ -5,13 +5,25 @@ import { generateNewProjects } from '@/utils/projectUtils';
 import { toast } from '@/hooks/use-toast';
 import { grantSkillXp } from '@/utils/skillUtils'; // Import grantSkillXp
 import { applyCompletedSessionToRelationship, createClientRelationshipFromProject } from '@/utils/clientRelationshipUtils';
+import { findAvailableStudioRoom } from '@/utils/studioRoomUtils';
 
 export const useProjectManagement = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
   const startProject = useCallback((project: Project) => {
     if (gameState.activeProject) {
       toast({
-        title: "🎵 Project Already Active",
-        description: "Complete your current project before starting another.",
+        title: "🎵 Session Already Active",
+        description: "Finish or move the current session before booking another into this workflow.",
+        className: "bg-gray-800 border-gray-600 text-white",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    const room = findAvailableStudioRoom(gameState, project);
+    if (!room) {
+      toast({
+        title: "🏢 Studio Fully Booked",
+        description: "No unlocked studio suite is currently free for this session.",
         className: "bg-gray-800 border-gray-600 text-white",
         variant: "destructive"
       });
@@ -20,17 +32,21 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
 
     setGameState(prev => ({
       ...prev,
-      activeProject: { ...project, currentStageIndex: 0 },
+      activeProject: {
+        ...project,
+        currentStageIndex: 0,
+        bookingRoomId: room.id
+      },
       availableProjects: prev.availableProjects.filter(p => p.id !== project.id)
     }));
 
     toast({
-      title: "🎵 Project Started!",
-      description: `Now working on: ${project.title}`,
+      title: "🎵 Session Booked",
+      description: `${project.title} is booked into ${room.name}.`,
       className: "bg-gray-800 border-gray-600 text-white",
     });
     return true;
-  }, [gameState.activeProject, setGameState]);
+  }, [gameState, setGameState]);
 
   const completeProject = useCallback((projectReport: ProjectReport) => {
     // Rewards and overall XP are taken directly from the projectReport
