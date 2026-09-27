@@ -60,6 +60,7 @@ const MusicStudioTycoon = () => {
   // const [showRecruitmentModal, setShowRecruitmentModal] = useState(false); // Assuming this was intended to be used elsewhere or can be removed if not
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showTutorialModal, setShowTutorialModal] = useState(false);
+  const [compactStudioMode, setCompactStudioMode] = useState(false);
   const [currentEraForTutorial, setCurrentEraForTutorial] = useState<string>(ERA_DEFINITIONS[0].id); // Default to first era
   const [activeProjectReport, setActiveProjectReport] = useState<ProjectReport | null>(null);
   
@@ -152,6 +153,7 @@ const MusicStudioTycoon = () => {
     );
     
     setActiveProjectReport(report);
+    setCompactStudioMode(false); // Reviews are full-studio moments; expand before presenting one.
     setShowReviewModal(true); // This will trigger the new ProjectReviewModal
 
     if (settings.sfxEnabled) {
@@ -315,10 +317,12 @@ const MusicStudioTycoon = () => {
   return (
     <GameLayout>
       <div className="flex flex-col h-full">
-        <GameHeader 
-          gameState={gameState} 
-          onOpenSettings={handleOpenSettings}
-        />
+        {!compactStudioMode && (
+          <GameHeader 
+            gameState={gameState} 
+            onOpenSettings={handleOpenSettings}
+          />
+        )}
         <div className="flex-grow min-h-0">
           <MainGameContent
             gameState={gameState}
@@ -343,11 +347,13 @@ const MusicStudioTycoon = () => {
         triggerEraTransition={triggerEraTransition}
         autoTriggeredMinigame={autoTriggeredMinigame}
         clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
+        compactStudioMode={compactStudioMode}
+        setCompactStudioMode={setCompactStudioMode}
         // setAutoTriggeredMinigame={setAutoTriggeredMinigame} // Pass this if MainGameContent needs to trigger minigames
       />
 
       <TrainingModal
-        isOpen={showTrainingModal}
+        isOpen={showTrainingModal && !compactStudioMode}
         onClose={() => {
           setShowTrainingModal(false);
           setSelectedStaffForTraining(null);
@@ -358,7 +364,7 @@ const MusicStudioTycoon = () => {
       />
 
       <SettingsModal
-        isOpen={showSettingsModal}
+        isOpen={showSettingsModal && !compactStudioMode}
         onClose={() => setShowSettingsModal(false)}
         onResetGame={resetGame} // Pass resetGame from useSaveSystem
         context="ingame" // Explicitly set context for in-game settings
@@ -366,15 +372,17 @@ const MusicStudioTycoon = () => {
       />
 
       <TutorialModal
-        isOpen={showTutorialModal}
+        isOpen={showTutorialModal && !compactStudioMode}
         onComplete={handleTutorialComplete}
         eraId={currentEraForTutorial} 
       />
 
-      <NotificationSystem
-        notifications={gameState.notifications}
-        removeNotification={removeNotification}
-      />
+      {!compactStudioMode && (
+        <NotificationSystem
+          notifications={gameState.notifications}
+          removeNotification={removeNotification}
+        />
+      )}
 
       {/* <GameModals // This component might manage showReviewModal internally or receive it as a prop
         showReviewModal={showReviewModal}
