@@ -1,4 +1,5 @@
 import * as React from "react"
+import { toast as sonnerToast } from "sonner"
 
 import type {
   ToastActionElement,
@@ -160,6 +161,22 @@ function toast({ ...props }: Toast) {
       },
     },
   })
+
+  // Bridge to Sonner so notifications actually render on screen.
+  // The app renders a single <Toaster /> (Sonner) from components/ui/toaster,
+  // so we forward every toast call to it here.
+  const { title, description, duration, className, variant, action } = props
+  const options = {
+    description,
+    duration,
+    className,
+    ...(action ? { action } : {}),
+  }
+  if (variant === "destructive") {
+    sonnerToast.error(title ?? "", options)
+  } else {
+    sonnerToast(title ?? "", options)
+  }
 
   return {
     id: id,

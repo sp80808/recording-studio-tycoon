@@ -1,6 +1,6 @@
 
 import { useState, useCallback, useMemo } from 'react'; // Added useMemo
-import { GameState, StaffMember, PlayerAttributes } from '@/types/game';
+import { GameState, StaffMember, PlayerAttributes, ProjectReport } from '@/types/game';
 import { toast } from '@/hooks/use-toast';
 import { availableTrainingCourses } from '@/data/training';
 import { canPurchaseEquipment, addNotification, applyEquipmentEffects } from '@/utils/gameUtils';

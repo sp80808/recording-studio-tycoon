@@ -3,6 +3,7 @@ import { GameState, FocusAllocation, StaffMember, PlayerAttributes, Project } fr
 import { ProjectList } from '@/components/ProjectList';
 import { ProgressiveProjectInterface } from '@/components/ProgressiveProjectInterface';
 import { RightPanel } from '@/components/RightPanel';
+import { StudioRoom } from '@/components/StudioRoom';
 import { FloatingXPOrb } from '@/components/FloatingXPOrb';
 import { EraTransitionAnimation } from '@/components/EraTransitionAnimation';
 import { HistoricalNewsModal } from '@/components/HistoricalNewsModal';
@@ -227,7 +228,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
 
   return (
     // Outermost container for the main game content area.
-    <div className="h-full flex flex-col flex-wrap  main-game-content">
+    <div className="flex-1 min-h-0 flex flex-col main-game-content">
       {/* Render MobileArrowNavigation only on mobile viewports. */}
       {isMobile && (
         <div className="mobile-navigation">
@@ -263,26 +264,39 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         {/* Panel 2: Main Interface (Studio) */}
         {/* On mobile, this is the second (default) tab. On desktop, it's the center column. */}
         <div 
-          className={`h-full overflow-y-auto p-2 relative flex flex-col studio-panel ${isMobile ? 'flex-shrink-0 mobile-tab-panel' : 'w-1/2 desktop-panel'}`}
+          className={`h-full min-h-0 overflow-hidden p-2 relative flex flex-col studio-panel ${isMobile ? 'flex-shrink-0 mobile-tab-panel' : 'w-1/2 desktop-panel'}`}
           style={isMobile ? { width: `calc(100% / ${mobileTabs.length})`} : { width: '50%', minWidth: '300px' }}
         >
-          <ProgressiveProjectInterface
+          {/* The isometric studio floor — diegetic home screen of the game */}
+          <StudioRoom
             gameState={gameState}
-            setGameState={setGameState}
-            // focusAllocation={focusAllocation} // REMOVED
-            // setFocusAllocation={setFocusAllocation} // REMOVED
-            performDailyWork={performDailyWork}
-            onMinigameReward={onMinigameReward}
-            onProjectComplete={onProjectComplete}
-            autoTriggeredMinigame={autoTriggeredMinigame}
-            clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
-            onProjectSelect={(project) => {
-              setGameState(prev => ({ ...prev, activeProject: project }));
-              // On mobile, if a project is selected from the ProjectList (tab 0),
-              // automatically switch to the Studio view (tab 1) to work on it.
+            onAdvanceDay={advanceDay}
+            onRefreshCandidates={refreshCandidates}
+            onConsoleFocus={() => {
               if (isMobile) setActiveMobileTabIndex(1);
             }}
+            className="shrink-0 mb-2"
+            style={{ height: 'clamp(220px, 42vh, 420px)' }}
           />
+          <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+            <ProgressiveProjectInterface
+              gameState={gameState}
+              setGameState={setGameState}
+              // focusAllocation={focusAllocation} // REMOVED
+              // setFocusAllocation={setFocusAllocation} // REMOVED
+              performDailyWork={performDailyWork}
+              onMinigameReward={onMinigameReward}
+              onProjectComplete={onProjectComplete}
+              autoTriggeredMinigame={autoTriggeredMinigame}
+              clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
+              onProjectSelect={(project) => {
+                setGameState(prev => ({ ...prev, activeProject: project }));
+                // On mobile, if a project is selected from the ProjectList (tab 0),
+                // automatically switch to the Studio view (tab 1) to work on it.
+                if (isMobile) setActiveMobileTabIndex(1);
+              }}
+            />
+          </div>
           <div ref={orbContainerRef} className="absolute inset-0 pointer-events-none overflow-hidden">
             {floatingOrbs.map(orb => (
               <FloatingXPOrb

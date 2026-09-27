@@ -1,4 +1,4 @@
-import { GameSettings } from './settings-context-types';
+import { GameSettings } from '../contexts/settings-context-types';
 
 export const defaultSettings: GameSettings = {
   masterVolume: 0.7,

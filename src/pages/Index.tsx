@@ -11,7 +11,7 @@ import { SplashScreen } from '@/components/SplashScreen';
 import { Era } from '@/components/EraSelectionModal'; // Era type
 import { ERA_DEFINITIONS } from '@/utils/eraProgression'; // ERA_DEFINITIONS for initialization
 import { useGameState } from '@/hooks/useGameState';
-import { Project, ProjectReport, StaffMember } from '@/types/game'; // Import Project, ProjectReport, StaffMember
+import { GameState, Project, ProjectReport, StaffMember } from '@/types/game'; // Import GameState, Project, ProjectReport, StaffMember
 import { generateProjectReview } from '@/utils/projectReviewUtils'; // Import generateProjectReview
 import { ProjectReviewModal } from '@/components/modals/ProjectReviewModal'; // Import ProjectReviewModal (assuming path)
 import { useGameLogic } from '@/hooks/useGameLogic';

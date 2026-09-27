@@ -5,6 +5,22 @@ import { Client, RecordLabel } from '../game-mechanics/relationship-management';
 // Card visual states for PixiJS components
 export type CardState = 'normal' | 'hover' | 'active' | 'completed';
 
+// Historical eras the player can start a game in
+export interface Era {
+  id: string;
+  name: string;
+  displayName: string;
+  startYear: number;
+  description: string;
+  funnyDescription: string;
+  startingMoney: number;
+  equipmentMultiplier: number;
+  availableGenres: string[];
+  marketTrends: string[];
+  icon: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard' | 'Legendary';
+}
+
 // New Skill interface
 export interface Skill {
   xp: number;
@@ -50,7 +66,7 @@ export interface StudioSkill {
 }
 
 export interface ProjectStage {
-  name: string;
+  stageName: string;
   focusAreas: string[];
   workUnitsBase: number;
   workUnitsCompleted: number;
@@ -75,6 +91,8 @@ export interface Project {
   completedStages: number[];
   lastWorkDay?: number; // Track when work was last performed
   workSessionCount: number; // Track how many work sessions have been completed
+  comboCount?: number; // ⚡ consecutive same-day work sessions (streak multiplier)
+  overdriveArmed?: boolean; // 🔥 next session burns extra energy for bonus output
   associatedBandId?: string;
   focusAllocation: FocusAllocation; // ADDED: Stores current focus settings for the project
   progress?: number; // 0-100, completion percentage for animated cards

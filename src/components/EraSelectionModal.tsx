@@ -5,6 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { AVAILABLE_ERAS } from '@/data/eras';
 import { Era } from '@/types/game';
 
+// Re-export so consumers can import the Era type from this module as well
+export type { Era } from '@/types/game';
+
 interface EraSelectionModalProps {
   isOpen: boolean;
   onSelectEra: (era: Era) => void;

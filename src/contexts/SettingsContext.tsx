@@ -2,8 +2,10 @@ import React, { useState, useEffect, ReactNode } from 'react';
 import { useTheme } from 'next-themes';
 import { gameAudio } from '../utils/audioSystem';
 import i18n from '../i18n'; // Corrected import
-import { SettingsContext, GameSettings } from './settings-context-types';
-import { defaultSettings } from '@/data/defaultSettings';
+import { SettingsContext, GameSettings, useSettings } from './settings-context-types';
+import { defaultSettings } from '../data/defaultSettings';
+
+export { useSettings };
 
 interface SettingsProviderProps {
   children: ReactNode;

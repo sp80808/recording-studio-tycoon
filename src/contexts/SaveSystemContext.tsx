@@ -11,8 +11,11 @@ import React, { useEffect, ReactNode, useCallback } from 'react';
 import { useSettings } from './SettingsContext';
 import { getVersionInfo, compareVersions } from '../utils/versionUtils';
 import { migrateAndInitializeGameState } from '../utils/gameStateUtils'; // ADDED
-import { SaveSystemContext } from './save-system-context-types';
+import { SaveSystemContext, useSaveSystem } from './save-system-context-types';
 import { GameState } from '@/types/game';
+
+// Re-export the hook so consumers can import it from either module path
+export { useSaveSystem };
 
 interface SaveSystemProviderProps {
   children: ReactNode;

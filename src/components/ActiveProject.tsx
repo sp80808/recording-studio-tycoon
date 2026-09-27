@@ -65,6 +65,28 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const playerLevel = gameState.playerData.level;
   const canUseOptimalFocusButton = managementSkillLevel >= 3 || playerLevel >= 5;
 
+  // 🔥 Overdrive risk/reward toggle (consumed by useStageWork on the next session)
+  const overdriveArmed = !!gameState.activeProject?.overdriveArmed;
+  const toggleOverdrive = () => {
+    if (!gameState.activeProject) return;
+    if (!overdriveArmed && gameState.playerData.dailyWorkCapacity < 2) {
+      toast({
+        title: '⚡ Not Enough Energy',
+        description: 'Overdrive burns 2 energy — advance the day to recharge.',
+        variant: 'destructive',
+        className: 'bg-gray-800 border-gray-600 text-white',
+      });
+      return;
+    }
+    setGameState(prev => ({
+      ...prev,
+      activeProject: prev.activeProject
+        ? { ...prev.activeProject, overdriveArmed: !prev.activeProject.overdriveArmed }
+        : null,
+    }));
+    playSound(overdriveArmed ? 'notification.wav' : 'ui sfx/purchase-complete.mp3', 0.5);
+  };
+
   // Clear auto-triggered minigame when project changes or stage advances
   useEffect(() => {
     if (gameState.activeProject) {
@@ -652,6 +674,33 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 {canUseOptimalFocusButton
                   ? `🎯 Apply Optimal Focus for ${currentStage.stageName}`
                   : `🎯 Apply Optimal Focus (Lvl 5+ or Mgmt Lvl 3+)`}
+              </Button>
+            </div>
+
+            {/* ⚡ Combo streak + 🔥 Overdrive risk/reward controls */}
+            <div className="flex items-stretch gap-2">
+              {(project.comboCount || 0) > 1 && (
+                <div className="flex-1 px-2 py-1.5 text-center text-xs font-black tracking-wide text-amber-300 bg-amber-900/30 border border-amber-500/40 rounded animate-pulse">
+                  ⚡ COMBO x{project.comboCount}
+                  <span className="block text-[10px] font-semibold text-amber-400/80">
+                    +{Math.min(50, (project.comboCount! - 1) * 10)}% output
+                  </span>
+                </div>
+              )}
+              <Button
+                onClick={toggleOverdrive}
+                disabled={gameState.playerData.dailyWorkCapacity < 2 || isProjectComplete}
+                variant="outline"
+                size="sm"
+                className={`flex-1 text-xs transition-colors ${
+                  overdriveArmed
+                    ? 'bg-orange-600 hover:bg-orange-500 border-orange-400 text-white'
+                    : 'bg-gray-800/60 border-orange-700/60 text-orange-300 hover:bg-orange-900/40'
+                }`}
+              >
+                {overdriveArmed
+                  ? '🔥 OVERDRIVE ARMED — 2 energy, +75%'
+                  : '🔥 Arm Overdrive (2 energy, +75%, burnout risk)'}
               </Button>
             </div>
 

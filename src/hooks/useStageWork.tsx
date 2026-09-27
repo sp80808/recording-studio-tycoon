@@ -129,6 +129,15 @@ export const useStageWork = ({
     const newWorkSessionCount = (project.workSessionCount || 0) + 1;
     console.log(`🔢 Work session count: ${project.workSessionCount} -> ${newWorkSessionCount}`);
 
+    // 🔥 Overdrive: armed from the Studio UI — burns 2 energy for a big output boost
+    const overdrive = !!project.overdriveArmed && gameState.playerData.dailyWorkCapacity >= 2;
+
+    // ⚡ Combo: consecutive same-day sessions build a streak multiplier (caps at +50%)
+    const sameDay = project.lastWorkDay === gameState.currentDay;
+    const newCombo = sameDay ? (project.comboCount || 0) + 1 : 1;
+    const comboMultiplier = 1 + Math.min(0.5, (newCombo - 1) * 0.1);
+    console.log(`⚡ Combo x${newCombo} (x${comboMultiplier.toFixed(2)}) | 🔥 Overdrive: ${overdrive}`);
+
     // Check for auto-triggered minigames using currentProjectFocus
     const autoTrigger = shouldAutoTriggerMinigame(project, gameState, currentProjectFocus, newWorkSessionCount);
     if (autoTrigger) {
@@ -200,7 +209,12 @@ export const useStageWork = ({
     );
     console.log(`🎯 FINAL GAINS - C: ${workPoints.creativity}, T: ${workPoints.technical}`);
     
-    const { creativity: creativityGain, technical: technicalGain } = workPoints;
+    const { creativity: rawCreativity, technical: rawTechnical } = workPoints;
+
+    // ⚡ Streak + 🔥 Overdrive multipliers applied to the final gains
+    const overdriveMultiplier = overdrive ? 1.75 : 1;
+    const creativityGain = Math.max(1, Math.round(rawCreativity * comboMultiplier * overdriveMultiplier));
+    const technicalGain = Math.max(1, Math.round(rawTechnical * comboMultiplier * overdriveMultiplier));
 
     // Create orb animations
     createOrb('creativity', creativityGain);
@@ -267,7 +281,11 @@ export const useStageWork = ({
         accumulatedCPoints: prev.activeProject!.accumulatedCPoints + creativityGain,
         accumulatedTPoints: prev.activeProject!.accumulatedTPoints + technicalGain,
         currentStageIndex: newCurrentStageIndex,
-        workSessionCount: newWorkSessionCount
+        workSessionCount: newWorkSessionCount,
+        // ⚡ streak tracking + 🔥 overdrive consumed
+        comboCount: newCombo,
+        lastWorkDay: gameState.currentDay,
+        overdriveArmed: false
       };
 
       console.log(`📋 Project C points: ${prev.activeProject!.accumulatedCPoints} -> ${updatedProject.accumulatedCPoints}`);
@@ -279,7 +297,7 @@ export const useStageWork = ({
         activeProject: updatedProject,
         playerData: {
           ...prev.playerData,
-          dailyWorkCapacity: prev.playerData.dailyWorkCapacity - 1
+          dailyWorkCapacity: prev.playerData.dailyWorkCapacity - (overdrive ? 2 : 1)
         },
         hiredStaff: prev.hiredStaff.map(s => {
           if (s.assignedProjectId === project.id && s.status === 'Working') {
@@ -294,6 +312,31 @@ export const useStageWork = ({
         })
       };
     });
+
+    // 🔥 Overdrive: big payoff, small risk — the session can burn out the crew
+    if (overdrive) {
+      toast({
+        title: '🔥 OVERDRIVE!',
+        description: '+75% output for 2 energy. The room is flying.',
+        className: 'bg-gray-800 border-gray-600 text-white',
+      });
+      if (Math.random() < 0.25) {
+        setGameState(prev => ({
+          ...prev,
+          hiredStaff: prev.hiredStaff.map(s =>
+            s.assignedProjectId === project.id && s.status === 'Working'
+              ? { ...s, mood: Math.max(0, s.mood - 6), energy: Math.max(0, s.energy - 8) }
+              : s
+          )
+        }));
+        toast({
+          title: '😵 Overdrive Fatigue',
+          description: 'That session ran hot — the assigned crew lost some mood.',
+          variant: 'destructive',
+          className: 'bg-gray-800 border-gray-600 text-white',
+        });
+      }
+    }
 
     // Check if project is complete
     const allStagesComplete = project.stages.every((stage, index) => 
@@ -330,9 +373,10 @@ export const useStageWork = ({
         duration: 4000
       });
     } else {
+      const comboNote = newCombo > 1 ? ` — ⚡ Combo x${newCombo} (+${Math.round((comboMultiplier - 1) * 100)}%)` : '';
       toast({
-        title: "📈 Work Progress",
-        description: `Stage progress: ${newWorkUnitsCompleted}/${currentStage.workUnitsBase} work units (+${actualWorkUnitsToAdd} this session)`, // Use actualWorkUnitsToAdd
+        title: newCombo > 1 ? `📈 Work Progress — COMBO x${newCombo}!` : "📈 Work Progress",
+        description: `Stage progress: ${newWorkUnitsCompleted}/${currentStage.workUnitsBase} work units (+${actualWorkUnitsToAdd} this session)${comboNote}`,
         className: "bg-gray-800 border-gray-600 text-white",
       });
     }

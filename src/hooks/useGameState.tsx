@@ -26,6 +26,7 @@ export const useGameState = () => {
     money: options?.startingMoney || 2000,
     influence: 0, // Initialize Influence
     creativeCapital: 0, // Initialize Creative Capital
+    activeMinigame: null, // No minigame active by default
     reputation: 10,
     currentDay: 2,
     currentYear: options?.currentYear || 1960, // Start in 1960s era

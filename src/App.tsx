@@ -1,26 +1,28 @@
-import { useEffect } from 'react';
-import WebGLCanvas from "./components/WebGLCanvas";
-import './App.css'; // Assuming you have some basic CSS for full screen
-import { gameAudio } from './utils/audioSystem';
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
+import './App.css';
+
+const queryClient = new QueryClient();
 
 const App = () => {
-  useEffect(() => {
-    const handleFirstInteraction = () => {
-      gameAudio.userGestureSignal();
-      window.removeEventListener('mousedown', handleFirstInteraction);
-    };
-
-    window.addEventListener('mousedown', handleFirstInteraction);
-
-    return () => {
-      window.removeEventListener('mousedown', handleFirstInteraction);
-    };
-  }, []);
-
   return (
-    <div className="App">
-      <WebGLCanvas />
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <BrowserRouter>
+          <main>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </main>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 };
 

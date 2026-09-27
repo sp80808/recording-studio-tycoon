@@ -14,6 +14,10 @@ export default defineConfig(({ mode }) => ({
     mode === 'development' &&
     componentTagger(),
   ].filter(Boolean),
+  // Some dependencies expect a CommonJS-style `global` in the browser
+  define: {
+    global: 'window',
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

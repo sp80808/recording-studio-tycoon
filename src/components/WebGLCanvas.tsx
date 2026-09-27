@@ -1,52 +1,607 @@
-import React, { useRef, useEffect } from 'react';
-import { Application, Graphics, Sprite, Texture } from 'pixi.js';
+import React, { useEffect, useRef } from 'react';
+import { Application, Container, Graphics, Text } from 'pixi.js';
 
-const WebGLCanvas: React.FC = () => {
-  const canvasRef = useRef<HTMLDivElement>(null);
-  const app = useRef(new Application({
-    width: window.innerWidth,
-    height: window.innerHeight,
-    backgroundColor: 0x4c566a,
-    resolution: window.devicePixelRatio || 1,
-    autoDensity: true,
-  }));
+/**
+ * Studio hotspots the player can click in the isometric room scene.
+ */
+export type StudioHotspotId = 'console' | 'liveRoom' | 'phone' | 'clock' | 'tv' | 'shelf';
+
+/**
+ * Live state fed into the scene. Purely presentational — the scene reads the
+ * latest values from a ref every animation frame, so React can update it
+ * cheaply without rebuilding the room.
+ */
+export interface StudioSceneState {
+  /** 0..1 — how much work is happening right now (drives VU meters) */
+  activity: number;
+  /** Whether a project is currently in production */
+  hasActiveProject: boolean;
+  /** Number of staff physically on the studio floor */
+  staffOnFloor: number;
+  /** Player's equipment count (fills the gear shelf) */
+  ownedEquipment: number;
+  /** In-game day counter (drives the wall clock) */
+  day: number;
+}
+
+interface WebGLCanvasProps {
+  state?: Partial<StudioSceneState>;
+  onHotspotSelect?: (id: StudioHotspotId) => void;
+  className?: string;
+}
+
+const DEFAULT_STATE: StudioSceneState = {
+  activity: 0.2,
+  hasActiveProject: false,
+  staffOnFloor: 1,
+  ownedEquipment: 3,
+  day: 1,
+};
+
+/* ---------------------------------------------------------------------------
+ * Isometric helpers
+ * ------------------------------------------------------------------------- */
+const TILE_W = 56;
+const TILE_H = 28;
+const ROOM_W = 8; // tiles along +x
+const ROOM_D = 7; // tiles along +y
+const WALL_H = 132;
+
+const iso = (x: number, y: number) => ({
+  x: (x - y) * (TILE_W / 2),
+  y: (x + y) * (TILE_H / 2),
+});
+
+/** Start an isometric quad path from tile coords (a,b) -> (c,d), lifted off the floor */
+const isoQuad = (g: Graphics, a: number, b: number, c: number, d: number, lift = 0) => {
+  const p1 = iso(a, b);
+  const p2 = iso(c, b);
+  const p3 = iso(c, d);
+  const p4 = iso(a, d);
+  g.poly([p1.x, p1.y - lift, p2.x, p2.y - lift, p3.x, p3.y - lift, p4.x, p4.y - lift]);
+};
+
+/** Room palette */
+const COLORS = {
+  floorA: 0x6b4f3a,
+  floorB: 0x5d4433,
+  rug: 0x8c3b3b,
+  rugInner: 0x9c4747,
+  wallLeft: 0x2a3345,
+  wallRight: 0x323d52,
+  wallTrim: 0x1d2433,
+  deskTop: 0x3d4459,
+  deskSide: 0x2b3142,
+  deskRight: 0x232a3a,
+  shelf: 0x4a3a2c,
+  shelfSide: 0x382c21,
+  gear: [0xd9a441, 0x5aa9e6, 0xe05c5c, 0x7bd389, 0xc77dff, 0xf2f2f2],
+  staff: [0x5aa9e6, 0xe08fa8, 0x7bd389, 0xf2c14e, 0xc77dff],
+  glass: 0x9fd3ff,
+  glassFrame: 0x7fb5dd,
+};
+
+/** An animatable bar (VU meters, TV equalizer) with a fixed baseline */
+interface AnimBar {
+  g: Graphics;
+  x: number;
+  y: number;
+  color: number;
+}
+
+/** Per-build dynamic refs the ticker animates */
+interface SceneRefs {
+  vuBars: AnimBar[];
+  tvBars: AnimBar[];
+  phoneRing: Graphics | null;
+  clockHand: Graphics | null;
+  staffFigures: { fig: Container; baseY: number }[];
+  nightTintLayer: Container | null;
+  hoverGlows: Record<string, Graphics>;
+}
+
+interface BuiltScene {
+  root: Container;
+  refs: SceneRefs;
+}
+
+/** Attach an interactive hit area + hover glow around a visual group. */
+const addHotspot = (
+  parent: Container,
+  id: StudioHotspotId,
+  hitArea: Graphics,
+  visual: Container,
+  refs: SceneRefs,
+  onSelect?: (id: StudioHotspotId) => void
+) => {
+  const wrap = new Container();
+  if (visual) wrap.addChild(visual);
+
+  // Glow ring shown on hover (populated by the caller with real coordinates)
+  const glow = new Graphics();
+  glow.alpha = 0;
+  refs.hoverGlows[id] = glow;
+  wrap.addChild(glow);
+
+  const hit = new Container();
+  hit.addChild(hitArea);
+  hit.eventMode = 'static';
+  hit.cursor = 'pointer';
+  hit.alpha = 0; // invisible for rendering, still receives pointer events
+  hit.on('pointerover', () => { glow.alpha = 1; });
+  hit.on('pointerout', () => { glow.alpha = 0; });
+  hit.on('pointerdown', () => { onSelect?.(id); });
+
+  parent.addChild(wrap);
+  parent.addChild(hit);
+};
+
+const buildScene = (
+  width: number,
+  height: number,
+  state: StudioSceneState,
+  onSelect?: (id: StudioHotspotId) => void
+): BuiltScene => {
+  const root = new Container();
+  const refs: SceneRefs = {
+    vuBars: [],
+    tvBars: [],
+    phoneRing: null,
+    clockHand: null,
+    staffFigures: [],
+    nightTintLayer: null,
+    hoverGlows: {},
+  };
+
+  // Fit the whole room into the viewport so walls/floor never clip
+  const bounds = { minX: -196, maxX: 224, minY: -135, maxY: 215 };
+  const fitScale = Math.min(
+    (width - 60) / (bounds.maxX - bounds.minX),
+    (height - 40) / (bounds.maxY - bounds.minY),
+    1.15
+  );
+  root.scale.set(fitScale);
+  const originX = width / 2 - ((bounds.minX + bounds.maxX) / 2) * fitScale;
+  const originY = height / 2 - ((bounds.minY + bounds.maxY) / 2) * fitScale;
+  root.position.set(originX, originY);
+
+  /* ---- Back walls ------------------------------------------------------ */
+  const walls = new Graphics();
+  const wl0 = iso(0, 0);
+  const wl1 = iso(0, ROOM_D);
+  const wr1 = iso(ROOM_W, 0);
+  // Left wall: runs from the back corner down the left edge
+  walls
+    .poly([wl0.x, wl0.y, wl1.x, wl1.y, wl1.x, wl1.y - WALL_H, wl0.x, wl0.y - WALL_H])
+    .fill(COLORS.wallLeft);
+  // Right wall
+  walls
+    .poly([wl0.x, wl0.y, wr1.x, wr1.y, wr1.x, wr1.y - WALL_H, wl0.x, wl0.y - WALL_H])
+    .fill(COLORS.wallRight);
+  // Top trim
+  walls
+    .poly([wl0.x, wl0.y - WALL_H, wl1.x, wl1.y - WALL_H, wr1.x, wr1.y - WALL_H])
+    .stroke({ width: 6, color: COLORS.wallTrim });
+  root.addChild(walls);
+
+  /* ---- Window (right wall) -------------------------------------------- */
+  const windowGfx = new Graphics();
+  const winA = iso(5.1, 0);
+  const winB = iso(6.9, 0);
+  const winPoly = [winA.x, winA.y - 96, winB.x, winB.y - 96, winB.x, winB.y - 34, winA.x, winA.y - 34];
+  windowGfx.poly(winPoly).fill(0x8fbfe6);
+  windowGfx.poly(winPoly).stroke({ width: 4, color: COLORS.wallTrim });
+  const winMidX = (winA.x + winB.x) / 2;
+  const winMidY = (winA.y + winB.y) / 2;
+  windowGfx.rect(winMidX - 2, winMidY - 78, 4, 64).fill(COLORS.wallTrim);
+  root.addChild(windowGfx);
+
+  /* ---- Charts TV (left wall) ------------------------------------------ */
+  const tvWrap = new Container();
+  const tvA = iso(0, 4.6);
+  const tvB = iso(0, 6.4);
+  const tvPoly = [tvA.x, tvA.y - 104, tvB.x, tvB.y - 104, tvB.x, tvB.y - 56, tvA.x, tvA.y - 56];
+  const tv = new Graphics();
+  tv.poly(tvPoly).fill(0x11151f);
+  tv.poly(tvPoly).stroke({ width: 3, color: 0x0a0d14 });
+  tvWrap.addChild(tv);
+  // Animated equalizer bars on the TV screen
+  for (let i = 0; i < 5; i++) {
+    const bar = new Graphics();
+    const t = (i + 0.5) / 5;
+    const bx = tvA.x + (tvB.x - tvA.x) * t;
+    const by = tvA.y - 66 + (tvB.y - tvA.y) * t;
+    tvWrap.addChild(bar);
+    refs.tvBars.push({ g: bar, x: bx, y: by, color: COLORS.gear[i % COLORS.gear.length] });
+  }
+  root.addChild(tvWrap);
+  const tvHit = new Graphics();
+  tvHit
+    .poly([tvA.x, tvA.y - 110, tvB.x, tvB.y - 110, tvB.x, tvB.y - 50, tvA.x, tvA.y - 50])
+    .fill(0xffffff);
+  addHotspot(root, 'tv', tvHit, tvWrap, refs, onSelect);
+  refs.hoverGlows['tv']
+    ?.poly([tvA.x, tvA.y - 110, tvB.x, tvB.y - 110, tvB.x, tvB.y - 50, tvA.x, tvA.y - 50])
+    .stroke({ width: 3, color: 0x5aa9e6 });
+
+  /* ---- Wall clock (left wall, near back) ------------------------------ */
+  const clockWrap = new Container();
+  const clockPos = iso(0, 2.2);
+  const clock = new Graphics();
+  clock.circle(clockPos.x, clockPos.y - 100, 17).fill(0xf2f2f2);
+  clock.circle(clockPos.x, clockPos.y - 100, 17).stroke({ width: 3, color: COLORS.wallTrim });
+  clockWrap.addChild(clock);
+  const hand = new Graphics();
+  hand.rect(-1.5, -12, 3, 12).fill(0x222222);
+  hand.position.set(clockPos.x, clockPos.y - 100);
+  refs.clockHand = hand;
+  clockWrap.addChild(hand);
+  root.addChild(clockWrap);
+  const clockHit = new Graphics();
+  clockHit.circle(clockPos.x, clockPos.y - 100, 30).fill(0xffffff);
+  addHotspot(root, 'clock', clockHit, clockWrap, refs, onSelect);
+  refs.hoverGlows['clock']
+    ?.circle(clockPos.x, clockPos.y - 100, 22)
+    .stroke({ width: 3, color: 0xffd166 });
+
+  /* ---- Floor ---------------------------------------------------------- */
+  const floor = new Graphics();
+  for (let x = 0; x < ROOM_W; x++) {
+    for (let y = 0; y < ROOM_D; y++) {
+      const shade = (x + y) % 2 === 0 ? COLORS.floorA : COLORS.floorB;
+      isoQuad(floor, x, y, x + 1, y + 1);
+      floor.fill(shade);
+    }
+  }
+  // Rug in the middle of the floor
+  isoQuad(floor, 3, 4, 6, 6.4);
+  floor.fill(COLORS.rug);
+  isoQuad(floor, 3.2, 4.2, 5.8, 6.2);
+  floor.fill(COLORS.rugInner);
+  root.addChild(floor);
+
+  const outline = new Graphics();
+  isoQuad(outline, 0, 0, ROOM_W, ROOM_D);
+  outline.stroke({ width: 3, color: COLORS.wallTrim });
+  root.addChild(outline);
+
+  /* ---- Live room glass + mic (back area) ------------------------------ */
+  const liveWrap = new Container();
+  const gA = iso(1.0, 0.9);
+  const gB = iso(3.6, 0.9);
+  const glassPoly = [gA.x, gA.y, gB.x, gB.y, gB.x, gB.y - 74, gA.x, gA.y - 74];
+  const glass = new Graphics();
+  glass.poly(glassPoly).fill({ color: COLORS.glass, alpha: 0.22 });
+  glass.poly(glassPoly).stroke({ width: 3, color: COLORS.glassFrame, alpha: 0.85 });
+  liveWrap.addChild(glass);
+
+  const micBase = iso(2.2, 1.7);
+  const mic = new Graphics();
+  mic.ellipse(micBase.x, micBase.y, 14, 7).fill(0x22283a);
+  mic.rect(micBase.x - 2, micBase.y - 46, 4, 46).fill(0x9aa4bf);
+  mic.circle(micBase.x, micBase.y - 52, 8).fill(0xd9a441);
+  liveWrap.addChild(mic);
+
+  const liveHit = new Graphics();
+  liveHit.poly([gA.x, gA.y, gB.x, gB.y, gB.x, gB.y - 90, gA.x, gA.y - 90]).fill(0xffffff);
+  addHotspot(root, 'liveRoom', liveHit, liveWrap, refs, onSelect);
+  refs.hoverGlows['liveRoom']
+    ?.poly([gA.x, gA.y - 90, gB.x, gB.y - 90, gB.x, gB.y, gA.x, gA.y])
+    .stroke({ width: 3, color: COLORS.glass });
+
+  /* ---- Gear shelf (left side) ----------------------------------------- */
+  const shelfWrap = new Container();
+  const q1 = iso(0.6, 4.6); // back-left
+  const q2 = iso(2.2, 4.6); // back-right
+  const q3 = iso(2.2, 5.6); // front-right
+  const q4 = iso(0.6, 5.6); // front-left
+  const shelfH = 44;
+  const shelf = new Graphics();
+  shelf
+    .poly([q1.x, q1.y - shelfH, q2.x, q2.y - shelfH, q3.x, q3.y - shelfH, q4.x, q4.y - shelfH])
+    .fill(COLORS.shelf);
+  shelf.poly([q4.x, q4.y - shelfH, q3.x, q3.y - shelfH, q3.x, q3.y, q4.x, q4.y]).fill(COLORS.shelfSide);
+  shelf.poly([q2.x, q2.y - shelfH, q3.x, q3.y - shelfH, q3.x, q3.y, q2.x, q2.y]).fill(COLORS.shelfSide);
+  shelfWrap.addChild(shelf);
+  // Gear items — count scales with owned equipment (max 6 visible)
+  const gearCount = Math.max(1, Math.min(6, Math.ceil(state.ownedEquipment / 2)));
+  for (let i = 0; i < gearCount; i++) {
+    const t = (i + 0.5) / 6;
+    const gx = q1.x + (q2.x - q1.x) * t;
+    const gy = q1.y + (q2.y - q1.y) * t - shelfH;
+    const item = new Graphics();
+    item.rect(gx - 7, gy - 15, 14, 15).fill(COLORS.gear[i % COLORS.gear.length]);
+    shelfWrap.addChild(item);
+  }
+  const shelfHit = new Graphics();
+  shelfHit.poly([q1.x, q1.y - 60, q2.x, q2.y - 60, q3.x, q3.y, q4.x, q4.y]).fill(0xffffff);
+  addHotspot(root, 'shelf', shelfHit, shelfWrap, refs, onSelect);
+  refs.hoverGlows['shelf']
+    ?.poly([q1.x, q1.y - 60, q2.x, q2.y - 60, q3.x, q3.y, q4.x, q4.y])
+    .stroke({ width: 3, color: 0xc77dff });
+
+  /* ---- Mixing console (center) ---------------------------------------- */
+  const deskWrap = new Container();
+  const p1 = iso(3.1, 3.4); // back-left
+  const p2 = iso(5.9, 3.4); // back-right
+  const p3 = iso(5.9, 4.8); // front-right
+  const p4 = iso(3.1, 4.8); // front-left
+  const deskH = 40;
+  const desk = new Graphics();
+  desk
+    .poly([p1.x, p1.y - deskH, p2.x, p2.y - deskH, p3.x, p3.y - deskH, p4.x, p4.y - deskH])
+    .fill(COLORS.deskTop);
+  desk.poly([p4.x, p4.y - deskH, p3.x, p3.y - deskH, p3.x, p3.y, p4.x, p4.y]).fill(COLORS.deskSide);
+  desk.poly([p2.x, p2.y - deskH, p3.x, p3.y - deskH, p3.x, p3.y, p2.x, p2.y]).fill(COLORS.deskRight);
+  deskWrap.addChild(desk);
+
+  // Two studio monitors sitting on the desk
+  const deskCx = (p1.x + p3.x) / 2;
+  const deskCy = (p1.y + p3.y) / 2 - deskH;
+  const monitors = new Graphics();
+  monitors.rect(deskCx - 44, deskCy - 30, 36, 30).fill(0x141a26);
+  monitors.rect(deskCx - 44, deskCy - 30, 36, 30).stroke({ width: 3, color: 0x0d111a });
+  monitors.rect(deskCx + 8, deskCy - 30, 36, 30).fill(0x141a26);
+  monitors.rect(deskCx + 8, deskCy - 30, 36, 30).stroke({ width: 3, color: 0x0d111a });
+  monitors.rect(deskCx - 41, deskCy - 27, 30, 24).fill(0x2f6fb3);
+  monitors.rect(deskCx + 11, deskCy - 27, 30, 24).fill(0x3f8f6f);
+  deskWrap.addChild(monitors);
+
+  // Fader strip along the front edge of the desk (animated every frame)
+  for (let i = 0; i < 8; i++) {
+    const t = (i + 0.5) / 8;
+    const vx = p4.x + (p3.x - p4.x) * t;
+    const vy = p4.y + (p3.y - p4.y) * t - deskH;
+    const bar = new Graphics();
+    deskWrap.addChild(bar);
+    refs.vuBars.push({ g: bar, x: vx, y: vy, color: COLORS.gear[i % COLORS.gear.length] });
+  }
+
+  const deskHit = new Graphics();
+  deskHit.poly([p1.x, p1.y - deskH - 55, p2.x, p2.y - deskH - 55, p3.x, p3.y, p4.x, p4.y]).fill(0xffffff);
+  addHotspot(root, 'console', deskHit, deskWrap, refs, onSelect);
+  refs.hoverGlows['console']
+    ?.poly([p1.x, p1.y - deskH - 55, p2.x, p2.y - deskH - 55, p3.x, p3.y, p4.x, p4.y])
+    .stroke({ width: 3, color: 0x7bd389 });
+
+  /* ---- Studio phone (on the desk corner) ------------------------------ */
+  const phoneWrap = new Container();
+  const pPos = iso(5.6, 3.6);
+  const phone = new Graphics();
+  phone.rect(pPos.x - 10, pPos.y - deskH - 8, 20, 12).fill(0xd94f4f);
+  phone.rect(pPos.x - 7, pPos.y - deskH - 5, 14, 6).fill(0x8f2f2f);
+  phoneWrap.addChild(phone);
+  const ring = new Graphics();
+  ring.circle(pPos.x, pPos.y - deskH - 2, 16).stroke({ width: 2, color: 0xffd166, alpha: 0.9 });
+  refs.phoneRing = ring;
+  phoneWrap.addChild(ring);
+  const phoneHit = new Graphics();
+  phoneHit.circle(pPos.x, pPos.y - deskH - 2, 26).fill(0xffffff);
+  addHotspot(root, 'phone', phoneHit, phoneWrap, refs, onSelect);
+  refs.hoverGlows['phone']
+    ?.circle(pPos.x, pPos.y - deskH - 2, 22)
+    .stroke({ width: 3, color: 0xffd166 });
+
+  /* ---- Staff / artist figures on the floor ---------------------------- */
+  const spots = [
+    iso(3.0, 5.6),
+    iso(6.2, 4.6),
+    iso(4.4, 2.4),
+    iso(6.8, 6.2),
+    iso(1.8, 3.2),
+  ];
+  const figureCount = Math.max(1, Math.min(spots.length, state.staffOnFloor));
+  for (let i = 0; i < figureCount; i++) {
+    const spot = spots[i];
+    const fig = new Container();
+    fig.position.set(spot.x, spot.y);
+    const body = new Graphics();
+    const color = COLORS.staff[i % COLORS.staff.length];
+    body.ellipse(0, 0, 13, 6).fill({ color: 0x000000, alpha: 0.3 });
+    body.roundRect(-8, -30, 16, 30, 6).fill(color);
+    body.circle(0, -38, 10).fill(0xf2c9a0);
+    fig.addChild(body);
+    fig.zIndex = spot.y;
+    refs.staffFigures.push({ fig, baseY: spot.y });
+    root.addChild(fig);
+  }
+
+  /* ---- Diegetic room signage ------------------------------------------ */
+  const sign = new Text({
+    text: 'LIVE ROOM',
+    style: { fontFamily: 'Arial', fontSize: 13, fill: 0xdbe4ff, letterSpacing: 3 },
+  });
+  const signPos = iso(2.3, 0.9);
+  sign.position.set(signPos.x - sign.width / 2, signPos.y - 96);
+  root.addChild(sign);
+
+  root.sortableChildren = true;
+
+  /* ---- Day/night tint overlay (screen space, on top) ------------------ */
+  const tintLayer = new Container();
+  const tintRect = new Graphics();
+  tintRect.rect(0, 0, width / fitScale, height / fitScale).fill(0x0a1030);
+  tintLayer.addChild(tintRect);
+  tintLayer.alpha = 0;
+  tintLayer.eventMode = 'none';
+  tintLayer.position.set(-originX / fitScale, -originY / fitScale);
+  refs.nightTintLayer = tintLayer;
+  root.addChild(tintLayer);
+
+  return { root, refs };
+};
+
+/* ---------------------------------------------------------------------------
+ * Component
+ * ------------------------------------------------------------------------- */
+const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, className }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const appRef = useRef<Application | null>(null);
+  const sceneRef = useRef<BuiltScene | null>(null);
+  const stateRef = useRef<StudioSceneState>({ ...DEFAULT_STATE, ...state });
+  const selectRef = useRef(onHotspotSelect);
+  const timeRef = useRef(0);
+
+  // Keep the latest props in refs so the ticker/callbacks never go stale
+  useEffect(() => {
+    stateRef.current = { ...DEFAULT_STATE, ...state };
+  }, [state]);
 
   useEffect(() => {
-    if (canvasRef.current) {
-      canvasRef.current.appendChild(app.current.view as HTMLCanvasElement);
+    selectRef.current = onHotspotSelect;
+  }, [onHotspotSelect]);
+
+  // Structural key: only layout-affecting state triggers a scene rebuild
+  const structuralKey = `${state?.staffOnFloor ?? 1}|${state?.ownedEquipment ?? 3}`;
+
+  // Rebuild the room (new window size or layout change)
+  const rebuild = () => {
+    const app = appRef.current;
+    if (!app) return;
+    if (sceneRef.current) {
+      app.stage.removeChild(sceneRef.current.root);
+      sceneRef.current.root.destroy({ children: true });
     }
+    const scene = buildScene(
+      app.screen.width,
+      app.screen.height,
+      stateRef.current,
+      (id) => selectRef.current?.(id)
+    );
+    app.stage.addChild(scene.root);
+    sceneRef.current = scene;
+  };
 
-    const rectangle = new Graphics();
-    rectangle.beginFill(0x66ccff);
-    rectangle.drawRect(50, 50, 100, 100);
-    rectangle.endFill();
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
 
-    const texture = Texture.from('assets/isometric_room.png');
-    const background = new Sprite(texture);
+    let disposed = false;
+    let lastW = 0;
+    let lastH = 0;
 
-    background.x = 0;
-    background.y = 0;
+    const boot = async () => {
+      try {
+        const app = new Application();
+        await app.init({
+          background: 0x11151f,
+          resizeTo: container,
+          antialias: true,
+          autoDensity: true,
+          resolution: Math.min(window.devicePixelRatio || 1, 2),
+        });
+        if (disposed) {
+          app.destroy(true, { children: true });
+          return;
+        }
+        appRef.current = app;
+        container.appendChild(app.canvas);
+        lastW = app.screen.width;
+        lastH = app.screen.height;
+        rebuild();
 
-    app.current.stage.addChild(background);
-    app.current.stage.addChild(rectangle);
+        // Animation loop: VU meters, TV equalizer, phone ring, clock, staff, day tint
+        app.ticker.add((ticker) => {
+          const s = stateRef.current;
+          timeRef.current += ticker.deltaMS;
+          const t = timeRef.current / 1000;
+          const scene = sceneRef.current;
+          if (!scene) return;
+          const refs = scene.refs;
 
-    const resizeHandler = () => {
-      if (canvasRef.current) {
-        const { clientWidth, clientHeight } = canvasRef.current;
-        app.current.renderer.resize(clientWidth, clientHeight);
+          // Console VU meters — amplitude follows live activity
+          refs.vuBars.forEach((bar, i) => {
+            const wobble = 0.5 + 0.5 * Math.sin(t * (3 + i * 0.7) + i * 1.3);
+            const h = 5 + wobble * (5 + s.activity * 30);
+            bar.g.clear();
+            bar.g.rect(bar.x - 5, bar.y - h, 10, h).fill(bar.color);
+          });
+
+          // Charts TV equalizer
+          refs.tvBars.forEach((bar, i) => {
+            const h = 5 + (0.5 + 0.5 * Math.sin(t * 4 + i * 1.1)) * (5 + s.activity * 24);
+            bar.g.clear();
+            bar.g.rect(bar.x - 5, bar.y - h, 10, h).fill(bar.color);
+          });
+
+          // Staff idle bobbing
+          refs.staffFigures.forEach((f, i) => {
+            f.fig.y = f.baseY + Math.sin(t * 2 + i * 1.4) * 2;
+            f.fig.scale.y = 1 + Math.sin(t * 3 + i) * 0.02;
+          });
+
+          // Phone ring pulse (faster when the studio is waiting for a gig)
+          if (refs.phoneRing) {
+            const speed = s.hasActiveProject ? 1.2 : 3;
+            const pulse = (Math.sin(t * speed) + 1) / 2;
+            refs.phoneRing.alpha = 0.15 + pulse * 0.85;
+            refs.phoneRing.scale.set(1 + pulse * 0.25);
+          }
+
+          // Wall clock hand sweeps as days pass
+          if (refs.clockHand) {
+            refs.clockHand.rotation = (t * 0.35 + s.day * 0.4) % (Math.PI * 2);
+          }
+
+          // Ambient day/night tint — slow 90s cycle keeps the room alive
+          if (refs.nightTintLayer) {
+            const cycle = (Math.sin((t * Math.PI * 2) / 90) + 1) / 2;
+            refs.nightTintLayer.alpha = 0.05 + cycle * 0.28;
+          }
+        });
+      } catch (err) {
+        console.error('Studio room failed to initialize:', err);
       }
     };
 
-    window.addEventListener('resize', resizeHandler);
-    resizeHandler();
+    boot();
+
+    // Recenter/rebuild when the container is resized (panel layout changes)
+    const observer = new ResizeObserver(() => {
+      const app = appRef.current;
+      if (!app) return;
+      const w = app.screen.width;
+      const h = app.screen.height;
+      if (Math.abs(w - lastW) > 2 || Math.abs(h - lastH) > 2) {
+        lastW = w;
+        lastH = h;
+        if (!disposed) rebuild();
+      }
+    });
+    observer.observe(container);
 
     return () => {
-      window.removeEventListener('resize', resizeHandler);
-      app.current.destroy(true, true);
+      disposed = true;
+      observer.disconnect();
+      const app = appRef.current;
+      if (app) {
+        app.destroy(true, { children: true });
+        appRef.current = null;
+        sceneRef.current = null;
+      }
+      if (container) container.innerHTML = '';
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return <div ref={canvasRef} style={{ width: '100%', height: '100vh' }} />;
+  // Rebuild when the room layout changes (staff hired, gear bought) — after boot
+  useEffect(() => {
+    if (appRef.current) rebuild();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [structuralKey]);
+
+  return (
+    <div
+      ref={containerRef}
+      className={className}
+      style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}
+    />
+  );
 };
 
 export default WebGLCanvas;
+
+
+
+
+
