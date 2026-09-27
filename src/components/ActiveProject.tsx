@@ -5,7 +5,6 @@ import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
 // GameState and FocusAllocation are imported below with Project
 import { MinigameManager, MinigameType } from './minigames/MinigameManager';
-import { shouldAutoTriggerMinigame } from '@/utils/minigameUtils';
 import { AnimatedStatBlobs } from './AnimatedStatBlobs';
 import { OrbAnimationStyles } from './OrbAnimationStyles';
 import { ProjectCompletionCelebration } from './ProjectCompletionCelebration';
@@ -59,7 +58,6 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   // This will store the full project object to pass to onProjectComplete after celebration
   const [projectDataForCompletionCall, setProjectDataForCompletionCall] = useState<Project | null>(null);
   const [pulseAnimation, setPulseAnimation] = useState(false);
-  const [completedMinigamesForStage, setCompletedMinigamesForStage] = useState<Set<string>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Unlock condition for Apply Optimal Focus button
@@ -67,48 +65,24 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const playerLevel = gameState.playerData.level;
   const canUseOptimalFocusButton = managementSkillLevel >= 3 || playerLevel >= 5;
 
-  // Clear auto-triggered minigame when project changes or stage advances
-  useEffect(() => {
-    if (gameState.activeProject) {
-      const currentStageKey = `${gameState.activeProject.id}-${gameState.activeProject.currentStageIndex}`;
-      const previousStageKey = Array.from(completedMinigamesForStage).find(key => 
-        key.startsWith(`${gameState.activeProject!.id}-`) && key !== currentStageKey
-      );
-      
-      // If we've moved to a new stage, clear the auto-triggered minigame
-      if (previousStageKey && !completedMinigamesForStage.has(currentStageKey)) {
-        if (clearAutoTriggeredMinigame) {
-          clearAutoTriggeredMinigame();
-        }
-        setPulseAnimation(false);
-      }
-    }
-  }, [gameState.activeProject?.currentStageIndex, completedMinigamesForStage, clearAutoTriggeredMinigame]);
-
-  // Auto-trigger minigames based on project stage and equipment
+  // Present an intervention as an optional opportunity. It never opens itself
+  // and never pauses ordinary session progress.
   useEffect(() => {
     if (gameState.activeProject && !showMinigame && autoTriggeredMinigame) {
-      const currentStageKey = `${gameState.activeProject.id}-${gameState.activeProject.currentStageIndex}`;
-      
-      // Don't trigger if we've already completed a minigame for this stage
-      if (completedMinigamesForStage.has(currentStageKey)) {
-        return;
-      }
-
       setPulseAnimation(true);
-      setTimeout(() => setPulseAnimation(false), 3000);
-      
+      const pulseTimer = window.setTimeout(() => setPulseAnimation(false), 3000);
+
       toast({
-        title: "🎯 Production Opportunity!",
+        title: "🎯 Optional Studio Intervention",
         description: autoTriggeredMinigame.reason,
         className: "bg-gray-800 border-gray-600 text-white",
-        duration: 5000
+        duration: 4500
       });
-      
-      // Play notification sound
-      playSound('notification', 0.6); // Assuming 'notification' is a valid sound name in audioSystem.ts
+
+      playSound('notification', 0.45);
+      return () => window.clearTimeout(pulseTimer);
     }
-  }, [gameState.activeProject, autoTriggeredMinigame, showMinigame, completedMinigamesForStage]);
+  }, [gameState.activeProject?.id, autoTriggeredMinigame, showMinigame]);
 
   if (!gameState.activeProject) {
     return (
@@ -193,53 +167,35 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const overallProgress = totalWorkUnits > 0 ? (completedWorkUnits / totalWorkUnits) * 100 : 0;
 
   const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number) => {
-    console.log('🎮 Minigame rewards received:', { creativityBonus, technicalBonus, xpBonus, minigameType: selectedMinigame });
-    
-    // Play success sound
-    playSound('success', 0.7); // Assuming 'success' is a valid sound name in audioSystem.ts
-    
-    if (onMinigameReward) {
-      onMinigameReward(creativityBonus, technicalBonus, xpBonus, selectedMinigame);
-    }
-    
-    // Mark this stage as having completed a minigame
-    const currentStageKey = `${project.id}-${project.currentStageIndex}`;
-    setCompletedMinigamesForStage(prev => new Set([...prev, currentStageKey]));
-    
-    // Close minigame and clear auto-trigger
+    const cappedCreativity = Math.min(12, Math.max(0, creativityBonus));
+    const cappedTechnical = Math.min(12, Math.max(0, technicalBonus));
+    const cappedXp = Math.min(5, Math.max(0, xpBonus));
+
+    console.log('🎮 Intervention rewards received:', {
+      creativityBonus: cappedCreativity,
+      technicalBonus: cappedTechnical,
+      xpBonus: cappedXp,
+      minigameType: selectedMinigame
+    });
+
+    playSound('success', 0.7);
+    onMinigameReward?.(cappedCreativity, cappedTechnical, cappedXp, selectedMinigame);
     setShowMinigame(false);
-    if (clearAutoTriggeredMinigame) {
-      clearAutoTriggeredMinigame();
-    }
+    clearAutoTriggeredMinigame?.();
     setPulseAnimation(false);
-    
-    // Show rewarding toast
+
     toast({
-      title: "🎉 Production Challenge Complete!",
-      description: `+${creativityBonus} creativity, +${technicalBonus} technical, +${xpBonus} XP`,
+      title: "🎉 Intervention Complete",
+      description: `+${cappedCreativity} creativity, +${cappedTechnical} technical, +${cappedXp} XP`,
       className: "bg-gray-800 border-gray-600 text-white",
       duration: 3000
     });
-
-    // Trigger a work session automatically after minigame completion
-    console.log('🔄 Auto-triggering work session after minigame completion...');
-    setTimeout(() => {
-      performDailyWork();
-    }, 1000);
   };
 
   const handleWork = () => {
     // Play work button click sound
     playSound('ui-click', 0.5);
     
-    // Check for auto-triggered minigame opportunity
-    if (autoTriggeredMinigame) {
-      console.log('🎮 Starting auto-triggered minigame:', autoTriggeredMinigame.type);
-      setSelectedMinigame(autoTriggeredMinigame.type);
-      setShowMinigame(true);
-      playSound('start_minigame', 0.6); // Assuming 'start_minigame' is a valid sound name
-      return;
-    }
 
     // Store expected gains for animation (simplified calculation)
     const baseCreativity = gameState.playerData.dailyWorkCapacity * gameState.playerData.attributes.creativeIntuition;
