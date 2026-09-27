@@ -111,6 +111,27 @@ export const useStageWork = ({
     });
   }, [gameState, autoTriggeredMinigame]);
 
+  // If passive progress moves to another stage while an opportunity is open,
+  // resolve the stale opportunity as skipped instead of carrying it forward.
+  useEffect(() => {
+    const project = gameState.activeProject;
+    if (
+      autoTriggeredMinigame &&
+      (
+        !project ||
+        project.id !== autoTriggeredMinigame.projectId ||
+        project.currentStageIndex !== autoTriggeredMinigame.stageIndex
+      )
+    ) {
+      clearAutoTriggeredMinigame();
+    }
+  }, [
+    gameState.activeProject?.id,
+    gameState.activeProject?.currentStageIndex,
+    autoTriggeredMinigame?.id,
+    clearAutoTriggeredMinigame
+  ]);
+
   // Opportunities are intentionally ephemeral. Expiry behaves like Skip:
   // the stage keeps progressing and will not immediately re-offer the same
   // intervention.
