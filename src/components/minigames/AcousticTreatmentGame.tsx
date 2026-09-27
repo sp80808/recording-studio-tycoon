@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { gameAudio } from '@/utils/audioSystem';
+import { KenneyButton, MinigameChrome } from './MinigameChrome';
 
 interface AcousticTreatment {
   id: string;
@@ -260,9 +261,9 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
 
   if (!gameStarted) {
     return (
-      <Card className="w-full max-w-6xl bg-gray-900 border-gray-600 p-6">
-        <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold text-white">🏠 Acoustic Treatment Puzzle</h2>
+      <Card className="w-full max-w-6xl mx-auto bg-gray-800 text-white border-gray-700">
+        <MinigameChrome title="🏠 Acoustic Treatment Puzzle" score={score} accent="green">
+        <div className="p-6 text-center space-y-4">
           <p className="text-gray-300">
             Optimize your studio acoustics for {recordingType} recording!
             Use your budget wisely to create the perfect acoustic environment.
@@ -273,65 +274,55 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
           <div className="text-lg text-yellow-400">
             Budget: ${budget}
           </div>
-          <Button 
-            onClick={startGame} 
-            className="bg-green-600 hover:bg-green-700 text-lg px-8 py-3"
-          >
+          <KenneyButton variant="green" onClick={startGame}>
             Start Treatment
-          </Button>
+          </KenneyButton>
         </div>
+        </MinigameChrome>
       </Card>
     );
   }
 
   if (gameCompleted) {
     return (
-      <Card className="w-full max-w-6xl bg-gray-900 border-gray-600 p-6">
-        <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold text-yellow-400">Room Treatment Complete!</h2>
+      <Card className="w-full max-w-6xl mx-auto bg-gray-800 text-white border-gray-700">
+        <MinigameChrome title="🏠 Acoustic Treatment Puzzle" score={score} accent="green">
+        <div className="p-6 text-center space-y-4">
+          <h2 className={`text-2xl font-bold text-yellow-400 ${score >= 80 ? 'mg-perfect-pop' : ''}`}>Room Treatment Complete!</h2>
           <div className="space-y-2">
             <div className="text-lg text-white">Final Score: {score}</div>
             <div className="text-sm text-gray-400">
               Acoustic Quality: {acousticScore}% | Budget Used: ${spentBudget}/${budget}
             </div>
             {score >= 80 && (
-              <div className="text-green-400 font-bold text-xl">🎉 Professional Studio!</div>
+              <div className="text-green-400 font-bold text-xl mg-perfect-pop">🎉 Professional Studio!</div>
             )}
             {score >= 60 && score < 80 && (
               <div className="text-blue-400 font-bold">👍 Well-Treated Room!</div>
             )}
           </div>
-          <Button 
-            onClick={onClose} 
-            className="bg-green-600 hover:bg-green-700 text-lg px-8 py-3"
-          >
+          <KenneyButton variant="green" onClick={onClose}>
             Collect Rewards
-          </Button>
+          </KenneyButton>
         </div>
+        </MinigameChrome>
       </Card>
     );
   }
 
   return (
-    <Card className="w-full max-w-6xl bg-gray-900 border-gray-600 p-6">
+    <Card className="w-full max-w-6xl mx-auto bg-gray-800 text-white border-gray-700">
+      <MinigameChrome title="🏠 Acoustic Treatment Puzzle" score={acousticScore} timeLeft={timeLeft} accent="green">
+      <div className="p-6">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-white mb-2">🏠 Acoustic Treatment Puzzle</h2>
         <p className="text-gray-300">Recording Type: {recordingType.charAt(0).toUpperCase() + recordingType.slice(1)}</p>
-        
-        <div className="flex justify-between items-center mt-4">
-          <div className="text-yellow-400 font-bold">
-            Budget: ${budget - spentBudget} / ${budget}
-          </div>
-          <div className="text-green-400 font-bold">
-            Acoustic Score: {acousticScore}%
-          </div>
-          <div className={`text-2xl font-bold ${timeLeft <= 15 ? 'text-red-400 animate-pulse' : 'text-blue-400'}`}>
-            ⏱️ {timeLeft}s
-          </div>
+
+        <div className="mt-4 text-lg text-yellow-400 font-bold">
+          Budget: ${budget - spentBudget} / ${budget}
         </div>
 
         {feedback && (
-          <div className="mt-2 text-center text-lg font-bold animate-pulse">
+          <div key={feedback} className={`mt-2 text-center text-lg font-bold ${feedback.startsWith('🎯') ? 'text-green-400 mg-perfect-pop' : feedback.startsWith('💰') ? 'text-red-400 mg-miss-shake' : 'text-yellow-300'}`}>
             {feedback}
           </div>
         )}
@@ -438,20 +429,15 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
       </div>
 
       <div className="flex justify-center gap-4 mt-6">
-        <Button
-          onClick={endGame}
-          className="bg-green-600 hover:bg-green-700 px-6 py-3"
-        >
+        <KenneyButton variant="green" onClick={endGame}>
           🎵 Test Acoustics
-        </Button>
-        <Button
-          onClick={onClose}
-          variant="outline"
-          className="px-6 py-3"
-        >
+        </KenneyButton>
+        <KenneyButton variant="grey" onClick={onClose}>
           Cancel
-        </Button>
+        </KenneyButton>
       </div>
+      </div>
+      </MinigameChrome>
     </Card>
   );
 };
