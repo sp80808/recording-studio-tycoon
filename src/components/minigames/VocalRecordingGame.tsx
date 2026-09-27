@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { DialogFooter } from '@/components/ui/dialog';
+import { MinigameChrome, KenneyButton } from './MinigameChrome';
 import { Progress } from '@/components/ui/progress';
 
 interface PitchBlock {
@@ -144,46 +145,41 @@ export const VocalRecordingGame: React.FC<VocalRecordingGameProps> = ({ onComple
     return totalBlocks > 0 ? Math.round((hitCount / totalBlocks) * 100) : 0;
   };
 
+  const streak = hitCount;
+  const finished = gameStarted && !gameActive;
+
   return (
-    <Card className="w-full max-w-4xl bg-gray-900 border-gray-600 p-6">
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-white mb-2">🎤 Vocal Tuning Challenge</h2>
-        <p className="text-gray-300">Hit the pitch blocks when the cursor reaches them!</p>
-        
-        {gameStarted && gameActive && (
-          <div className="mt-4 space-y-2">
-            <div className="text-yellow-400 font-bold">Score: {score}</div>
-            <div className="text-blue-400">Hits: {hitCount}/{totalBlocks}</div>
-          </div>
-        )}
-      </div>
+    <Card className="w-full max-w-4xl mx-auto bg-gray-800 text-white border-gray-700">
+      <MinigameChrome title="🎤 Vocal Tuning Challenge" score={score} streak={streak >= 2 ? streak : undefined} accent="red">
+      <CardContent>
+        <p className="mb-3 text-center text-sm text-gray-300">Hit the pitch blocks when the cursor reaches them! Hits: {hitCount}/{totalBlocks}</p>
 
       {!gameStarted ? (
-        <div className="text-center space-y-4">
+        <div className="space-y-4 py-4 text-center">
           <p className="text-gray-300">
             Click or press SPACEBAR when the cursor line hits each pitch block.
             Perfect timing gives you maximum creativity points!
           </p>
-          <Button onClick={startGame} className="bg-purple-600 hover:bg-purple-700 text-lg px-8 py-3">
+          <KenneyButton variant="red" onClick={startGame}>
             Start Vocal Session
-          </Button>
+          </KenneyButton>
         </div>
       ) : !gameActive ? (
-        <div className="text-center space-y-4">
-          <div className="text-2xl font-bold text-yellow-400">Vocal Session Complete!</div>
+        <div key={score} className="space-y-4 py-4 text-center">
+          <div className={`text-2xl font-bold text-yellow-400 ${getAccuracy() >= 70 ? 'mg-perfect-pop' : 'mg-miss-shake'}`}>Vocal Session Complete!</div>
           <div className="space-y-2">
             <div className="text-lg">Accuracy: {getAccuracy()}%</div>
             <div className="text-lg">Final Score: {score}</div>
             {getAccuracy() >= 90 && (
-              <div className="text-green-400 font-bold text-xl">🌟 Polished Vocals!</div>
+              <div className="mg-perfect-pop text-green-400 font-bold text-xl">🌟 Polished Vocals!</div>
             )}
             {getAccuracy() >= 70 && getAccuracy() < 90 && (
               <div className="text-blue-400 font-bold">🎵 Good Performance!</div>
             )}
           </div>
-          <Button onClick={onClose} className="bg-green-600 hover:bg-green-700 text-lg px-8 py-3">
+          <KenneyButton variant="green" onClick={onClose}>
             Collect Rewards
-          </Button>
+          </KenneyButton>
         </div>
       ) : (
         <div className="space-y-6">
@@ -202,9 +198,9 @@ export const VocalRecordingGame: React.FC<VocalRecordingGameProps> = ({ onComple
                 key={block.id}
                 className={`absolute w-4 h-16 rounded transition-all duration-200 ${
                   block.hit 
-                    ? 'bg-green-400 scale-110 animate-pulse' 
+                    ? 'bg-green-400 mg-perfect-pop scale-110' 
                     : block.missed 
-                    ? 'bg-red-400 opacity-50' 
+                    ? 'bg-red-400 mg-miss-shake opacity-50' 
                     : 'bg-yellow-400 hover:bg-yellow-300'
                 }`}
                 style={{
@@ -243,6 +239,15 @@ export const VocalRecordingGame: React.FC<VocalRecordingGameProps> = ({ onComple
           {/* Progress indicator */}
           <Progress value={cursorPosition} className="w-full" />
         </div>
+      )}
+      </CardContent>
+      </MinigameChrome>
+      {!finished && gameStarted && (
+        <DialogFooter className="p-4">
+          <KenneyButton variant="grey" onClick={onClose}>
+            Close
+          </KenneyButton>
+        </DialogFooter>
       )}
     </Card>
   );

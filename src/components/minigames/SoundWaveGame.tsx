@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { MinigameChrome, KenneyButton } from './MinigameChrome';
 import { gameAudio } from '@/utils/audioSystem';
 
 interface WavePoint {
@@ -257,30 +257,25 @@ export const SoundWaveGame: React.FC<SoundWaveGameProps> = ({
   }, [targetWave, playerWave, currentLevel, generateTargetWave]);
 
   return (
-    <Card className="p-6 bg-gray-900/95 border-green-500/50 text-white max-w-2xl mx-auto">
-      <div className="text-center mb-4">
-        <h3 className="text-xl font-bold mb-2">🌊 Sound Wave Matching</h3>
-        <div className="flex justify-between items-center">
-          <div>Score: <span className="text-green-400 font-bold">{score}</span></div>
-          <div>Level: <span className="text-blue-400 font-bold">{currentLevel}</span></div>
-          <div>Time: <span className="text-red-400 font-bold">{timeLeft}s</span></div>
-        </div>
-      </div>
+    <Card className="w-full max-w-2xl mx-auto bg-gray-800 text-white border-gray-700">
+      <MinigameChrome title="🌊 Sound Wave Matching" score={score} timeLeft={gameActive ? timeLeft : undefined} streak={currentLevel >= 2 ? currentLevel : undefined} accent="green">
+      <CardContent>
+        <div className="mb-3 text-center text-sm text-gray-300">Level {currentLevel} — draw the orange wave to match the green target!</div>
 
       {!gameActive && timeLeft === 30 ? (
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-4 py-4">
           <p className="text-gray-300">Draw the orange wave to match the green target wave!</p>
-          <Button onClick={startGame} className="bg-green-600 hover:bg-green-700">
+          <KenneyButton variant="green" onClick={startGame}>
             Start Wave Challenge
-          </Button>
+          </KenneyButton>
         </div>
       ) : !gameActive && timeLeft === 0 ? (
-        <div className="text-center space-y-2">
-          <div className="text-lg font-bold text-yellow-400">Challenge Complete!</div>
+        <div key={score} className="space-y-2 py-4 text-center">
+          <div className={`text-lg font-bold text-yellow-400 ${score > 0 ? 'mg-perfect-pop' : ''}`}>Challenge Complete!</div>
           <div className="text-sm text-gray-300">Final Score: {score}</div>
-          <Button onClick={onClose} className="bg-green-600 hover:bg-green-700">
+          <KenneyButton variant="green" onClick={onClose}>
             Collect Rewards
-          </Button>
+          </KenneyButton>
         </div>
       ) : (
         <div className="space-y-4">
@@ -311,6 +306,8 @@ export const SoundWaveGame: React.FC<SoundWaveGameProps> = ({
           </div>
         </div>
       )}
+      </CardContent>
+      </MinigameChrome>
     </Card>
   );
 };
