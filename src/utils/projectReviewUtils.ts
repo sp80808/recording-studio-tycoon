@@ -292,6 +292,19 @@ export const generateProjectReview = (
     reviewSnippet += ` Key factors: ${factorNotes.slice(0, 3).join('; ')}.`;
   }
 
+  // Issue #10: lightweight relationship acknowledgement. Tier growth itself is
+  // reported at settlement (applyReportToState knows prior history); this line
+  // only acknowledges the client, following the factorNotes pattern above.
+  if (project.clientName) {
+    if (overallQualityScore < lowQualityThreshold) {
+      reviewSnippet += ` It'll take a stronger session to win ${project.clientName} back.`;
+    } else if (overallQualityScore >= highQualityThreshold) {
+      reviewSnippet += ` ${project.clientName} left the studio talking about this session.`;
+    } else {
+      reviewSnippet += ` ${project.clientName} will remember this session.`;
+    }
+  }
+
 
   return {
     projectId: project.id,

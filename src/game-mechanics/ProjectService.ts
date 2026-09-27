@@ -16,6 +16,12 @@ import {
   getTechnicalMultiplier,
 } from '../utils/playerUtils';
 import { getGenreMarketMultiplier } from '../utils/eraProgression';
+import {
+  findProjectForReport,
+  resolveDeliveryClient,
+  applyDeliveryToClientRelationships,
+  buildRelationshipSnippet,
+} from './relationship-management';
 
 /**
  * Canonical lifecycle service for the multi-project path (bead ruc.1).
@@ -281,6 +287,42 @@ export function applyReportToState(state: GameState, report: ProjectReport): Gam
             : s
     );
 
+    // Issue #10 lightweight client relationships (append-only; the settlement
+    // math above is untouched). Canonical delivery spot: both the foreground
+    // path (useProjectManagement) and the background path (completeProject)
+    // settle through here, so one guarded update covers every delivery.
+    // NOTE: appends one line to report.reviewSnippet in place so the live
+    // report and the stored history agree; guarded and idempotent, and a
+    // missing project/client skips silently without blocking settlement.
+    let clientRelationships = state.clientRelationships;
+    const deliveryProject = findProjectForReport(state, report.projectId);
+    const deliveryClient = resolveDeliveryClient(deliveryProject);
+    if (deliveryClient) {
+        const applied = applyDeliveryToClientRelationships(clientRelationships, {
+            clientKey: deliveryClient.clientKey,
+            clientName: deliveryClient.clientName,
+            primaryGenre: deliveryClient.primaryGenre,
+            qualityScore: report.overallQualityScore,
+            matchRating: deliveryClient.matchRating,
+            currentDay: state.currentDay,
+        });
+        clientRelationships = applied.relationships;
+        const snippetLine = buildRelationshipSnippet(
+            deliveryClient.clientName,
+            applied.previousTier,
+            applied.record.tier,
+            report.overallQualityScore
+        );
+        if (
+            snippetLine &&
+            typeof report.reviewSnippet === 'string' &&
+            !report.reviewSnippet.includes('relationship with') &&
+            !report.reviewSnippet.includes('barely moved')
+        ) {
+            report.reviewSnippet = `${report.reviewSnippet}${snippetLine}`;
+        }
+    }
+
     return {
         ...state,
         money: state.money + report.moneyGained,
@@ -288,6 +330,7 @@ export function applyReportToState(state: GameState, report: ProjectReport): Gam
         influence: state.influence + influenceGained,
         playerData,
         hiredStaff: releasedStaff,
+        clientRelationships,
         financials: {
             ...state.financials,
             income,

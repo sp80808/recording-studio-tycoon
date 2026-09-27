@@ -4,6 +4,7 @@ import { ERA_DEFINITIONS, getGenrePopularity } from '@/utils/eraProgression';
 import { initializeSkillsStaff } from '@/utils/skillUtils'; // Added import
 import { calculateStudioSkillBonus, getEquipmentBonuses as getBaseEquipmentBonuses } from './gameUtils'; // Import from gameUtils and rename
 import { availableMods } from '@/data/equipmentMods'; // Import available mods
+import { bumpMatchRatingForReturn } from '@/game-mechanics/relationship-management'; // Issue #10: repeat-client match bump
 // Assuming getMoodEffectiveness will be moved to playerUtils or passed as arg
 // For now, let's define a placeholder or expect it as an argument for calculateStaffWorkContribution
 
@@ -192,13 +193,14 @@ export const generateNewProjects = (count: number, playerLevel: number = 1, curr
       const selectedPool = useAppropriateLevel ? weightedPool : templatePool;
       const template = selectedPool[Math.floor(Math.random() * selectedPool.length)];
 
-      const matchingKnownClients = knownClients.filter(
-        client => client.primaryGenre.toLowerCase() === template.genre.toLowerCase()
-      );
-      const returningClientChance = Math.min(0.45, 0.15 + matchingKnownClients.length * 0.05);
+      // Issue #10 repeat-client weighting: one ~35% roll per offer slot — a
+      // random existing relationship client returns (no hidden rolls beyond
+      // this pick). Genre matching is intentionally skipped so an early-game
+      // client can return even when the template pool shifts.
+      const returningClientChance = 0.35;
       const returningClient =
-        matchingKnownClients.length > 0 && Math.random() < returningClientChance
-          ? matchingKnownClients[Math.floor(Math.random() * matchingKnownClients.length)]
+        knownClients.length > 0 && Math.random() < returningClientChance
+          ? knownClients[Math.floor(Math.random() * knownClients.length)]
           : undefined;
       
       // Pick a random title from the template's title array
@@ -228,9 +230,8 @@ export const generateNewProjects = (count: number, playerLevel: number = 1, curr
       const difficultyMultiplier = 1 + (finalDifficulty - 1) * 0.15; // Scales with difficulty
       const eraPopularityMultiplier = genrePopularity / 100; // Convert to 0-1 scale
       
-      const repeatClientMultiplier = returningClient
-        ? 1.05 + Math.min(returningClient.sessionsCompleted, 5) * 0.01
-        : 1;
+      // Issue #10: repeat clients pay a flat 10% loyalty premium.
+      const repeatClientMultiplier = returningClient ? 1.1 : 1;
       const finalPayout = Math.floor(
         template.basePayout *
         marketMultiplier *
@@ -246,9 +247,11 @@ export const generateNewProjects = (count: number, playerLevel: number = 1, curr
       requiredSkills[template.genre] = Math.max(1, Math.floor(finalDifficulty / 2));
 
       // Determine match rating based on difficulty relative to player level
-      const matchRating: 'Poor' | 'Good' | 'Excellent' = 
+      const baseMatchRating: 'Poor' | 'Good' | 'Excellent' =
         finalDifficulty <= playerLevel ? 'Excellent' :
         finalDifficulty <= playerLevel + 2 ? 'Good' : 'Poor';
+      // Issue #10: repeat clients vouch for the studio — bump one step up.
+      const matchRating = returningClient ? bumpMatchRatingForReturn(baseMatchRating) : baseMatchRating;
 
       // Reuse known clients when possible so relationships create repeat business.
       const associatedBand = returningClient ? null : generateAIBand(template.genre);
@@ -257,7 +260,7 @@ export const generateNewProjects = (count: number, playerLevel: number = 1, curr
 
       project = {
         id: `project-${Date.now()}-${i}`,
-        title: selectedTitle,
+        title: returningClient ? `Return: ${selectedTitle}` : selectedTitle,
         genre: template.genre,
         clientType: template.clientType,
         clientId,

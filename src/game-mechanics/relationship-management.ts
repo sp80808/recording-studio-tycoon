@@ -1,5 +1,6 @@
 import { EntityId, GenreId, MoodId, ProjectId } from './common.types';
 import { GameState } from '../types/game'; // Import GameState
+import type { ClientRelationship, ClientRelationshipTier } from '../types/game';
 
 export interface Client {
   id: EntityId;
@@ -190,5 +191,177 @@ Consequences of Low Relationship:
    - This could lead to a temporary drop in overall studio reputation, difficulty attracting new staff, or fewer unsolicited contract offers.
 
 3. Loss of Perks/Access:
-   - Some labels might offer unique opportunities (e.g., access to special artists, events) that become unavailable if the relationship sours.
+    - Some labels might offer unique opportunities (e.g., access to special artists, events) that become unavailable if the relationship sours.
 */
+
+// ---------------------------------------------------------------------------
+// Issue #10 — lightweight client relationships (plain-JSON, save/load safe).
+//
+// The legacy `RelationshipService` above tracks 0-100 scores per entity id.
+// Issue #10 instead wants a tiny per-client record keyed by stable client
+// identity, stored on `GameState.clientRelationships` (already an optional
+// `Record<string, ClientRelationship>`, already rendered by
+// ProjectList/StudioStrip), so no new persisted shape is introduced:
+//   key  = normalized `clientName|clientType` (plain string, survives save/load)
+//   xp   = overallQualityScore (0-100), halved on Poor matchRating
+//   tier = Unknown -> Acquaintance (1 session) -> Friendly (100xp) ->
+//          Regular (250xp) -> Loyal (500xp)
+// All helpers are pure and guard absent data (null project, missing client
+// name, undefined map) by returning null / leaving the map untouched.
+// Referrals, deposits and rush-premiums are explicitly OUT (follow-up).
+// ---------------------------------------------------------------------------
+
+export type LightweightRelationshipTier = 'Unknown' | 'Acquaintance' | 'Friendly' | 'Regular' | 'Loyal';
+
+const LIGHTWEIGHT_TIER_RANK: Record<LightweightRelationshipTier, number> = {
+  Unknown: 0,
+  Acquaintance: 1,
+  Friendly: 2,
+  Regular: 3,
+  Loyal: 4,
+};
+
+export function tierRankForRelationship(tier: string | undefined): number {
+  return (LIGHTWEIGHT_TIER_RANK as Record<string, number>)[tier ?? 'Unknown'] ?? 0;
+}
+
+/** Stable map key from client identity. Plain string — survives save/load. */
+export function buildClientRelationshipKey(clientName: string, clientType?: string): string {
+  const name = (clientName || '').trim().toLowerCase();
+  const type = (clientType || '').trim().toLowerCase();
+  return `${name}|${type}`;
+}
+
+/** Issue #10 tier thresholds: sessions gate Acquaintance, xp gates the rest. */
+export function tierForClientRelationship(xp: number, sessionsCompleted: number): ClientRelationshipTier {
+  if (sessionsCompleted < 1) return 'Unknown';
+  if (xp >= 500) return 'Loyal';
+  if (xp >= 250) return 'Regular';
+  if (xp >= 100) return 'Friendly';
+  return 'Acquaintance';
+}
+
+/** XP for one delivery: quality clamped to 0-100, halved (floored) on Poor match. */
+export function relationshipXpForDelivery(overallQualityScore: number, matchRating?: string): number {
+  const quality = Number.isFinite(overallQualityScore)
+    ? Math.max(0, Math.min(100, Math.round(overallQualityScore)))
+    : 0;
+  return matchRating === 'Poor' ? Math.floor(quality / 2) : quality;
+}
+
+export interface DeliveryClient {
+  clientKey: string;
+  clientName: string;
+  primaryGenre: string;
+  matchRating?: string;
+}
+
+/**
+ * Resolve the stable client identity for a delivered project.
+ * Returns null when the project carries no usable client info (silent skip).
+ */
+export function resolveDeliveryClient(
+  project: { clientName?: string; clientType?: string; genre?: string; matchRating?: string } | null | undefined
+): DeliveryClient | null {
+  if (!project) return null;
+  const clientName = (project.clientName || '').trim();
+  if (!clientName) return null;
+  return {
+    clientKey: buildClientRelationshipKey(clientName, project.clientType),
+    clientName,
+    primaryGenre: (project.genre || '').trim() || 'Unknown',
+    matchRating: project.matchRating,
+  };
+}
+
+/** Find the delivered project in state by report id. Guards every collection. */
+export function findProjectForReport(
+  state: GameState,
+  projectId: string | undefined
+): { clientName?: string; clientType?: string; genre?: string; matchRating?: string } | null {
+  if (!state || !projectId) return null;
+  const activeSingle = state.activeProject;
+  if (activeSingle && activeSingle.id === projectId) return activeSingle;
+  const lists = [state.activeProjects, state.availableProjects];
+  for (const list of lists) {
+    if (!Array.isArray(list)) continue;
+    const found = list.find(p => p && p.id === projectId);
+    if (found) return found;
+  }
+  return null;
+}
+
+export interface AppliedClientRelationship {
+  relationships: Record<string, ClientRelationship>;
+  record: ClientRelationship;
+  previousTier: ClientRelationshipTier;
+  isNewClient: boolean;
+  xpGained: number;
+}
+
+/** Pure map update for one delivery. Never mutates the input map. */
+export function applyDeliveryToClientRelationships(
+  existing: Record<string, ClientRelationship> | undefined,
+  opts: {
+    clientKey: string;
+    clientName: string;
+    primaryGenre: string;
+    qualityScore: number;
+    matchRating?: string;
+    currentDay: number;
+  }
+): AppliedClientRelationship {
+  const prev = existing?.[opts.clientKey];
+  const xpGained = relationshipXpForDelivery(opts.qualityScore, opts.matchRating);
+  const sessionsCompleted = (prev?.sessionsCompleted ?? 0) + 1;
+  const xp = Math.max(0, Math.floor((prev?.relationshipXp ?? 0) + xpGained));
+  const tier = tierForClientRelationship(xp, sessionsCompleted);
+  const previousTier: ClientRelationshipTier = prev?.tier ?? 'Unknown';
+  const day = Number.isFinite(opts.currentDay) ? Math.max(0, Math.floor(opts.currentDay)) : 0;
+  const quality = Number.isFinite(opts.qualityScore)
+    ? Math.max(0, Math.min(100, Math.round(opts.qualityScore)))
+    : 0;
+  const record: ClientRelationship = {
+    clientId: prev?.clientId ?? opts.clientKey,
+    clientName: prev?.clientName ?? opts.clientName,
+    primaryGenre: prev?.primaryGenre ?? opts.primaryGenre,
+    relationshipXp: xp,
+    tier,
+    sessionsCompleted,
+    lastSessionDay: day,
+    bestQualityScore: Math.max(prev?.bestQualityScore ?? 0, quality),
+    referralCount: prev?.referralCount ?? 0,
+  };
+  return {
+    relationships: { ...(existing ?? {}), [opts.clientKey]: record },
+    record,
+    previousTier,
+    isNewClient: !prev,
+    xpGained,
+  };
+}
+
+/** One-line review note for the tier movement. Always plain text. */
+export function buildRelationshipSnippet(
+  clientName: string,
+  previousTier: ClientRelationshipTier,
+  nextTier: ClientRelationshipTier,
+  qualityScore: number
+): string {
+  const name = (clientName || '').trim();
+  if (!name) return '';
+  if (tierRankForRelationship(nextTier) > tierRankForRelationship(previousTier)) {
+    return ` Your relationship with ${name} grew to ${nextTier}.`;
+  }
+  if (!Number.isFinite(qualityScore) || qualityScore < 40) {
+    return ` Your standing with ${name} barely moved - they'll need a stronger session.`;
+  }
+  return ` Your relationship with ${name} holds at ${nextTier}.`;
+}
+
+/** Repeat offers vouch one step up: Poor -> Good -> Excellent. */
+export function bumpMatchRatingForReturn(matchRating: 'Poor' | 'Good' | 'Excellent'): 'Poor' | 'Good' | 'Excellent' {
+  if (matchRating === 'Poor') return 'Good';
+  if (matchRating === 'Good') return 'Excellent';
+  return 'Excellent';
+}
