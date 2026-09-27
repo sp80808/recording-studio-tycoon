@@ -22,6 +22,10 @@ export interface StudioSceneState {
   ownedEquipment: number;
   /** In-game day counter (drives the wall clock) */
   day: number;
+  /** Current era id — drives the room's colour grade + signage (bead goj.3) */
+  eraId?: string;
+  /** Studio tier 1-5 from ProgressionSystem — drives visible room upgrades (bead ifx.3) */
+  roomTier?: number;
 }
 
 interface WebGLCanvasProps {
@@ -36,6 +40,8 @@ const DEFAULT_STATE: StudioSceneState = {
   staffOnFloor: 1,
   ownedEquipment: 3,
   day: 1,
+  eraId: 'analog60s',
+  roomTier: 1,
 };
 
 /* ---------------------------------------------------------------------------
@@ -79,6 +85,26 @@ const COLORS = {
   staff: [0x5aa9e6, 0xe08fa8, 0x7bd389, 0xf2c14e, 0xc77dff],
   glass: 0x9fd3ff,
   glassFrame: 0x7fb5dd,
+};
+
+/**
+ * Era colour grades (bead goj.3): each era tints the room and shifts the wall
+ * tones so the studio visibly ages with the technology. `tint` is the ambient
+ * overlay colour animated by the day/night cycle.
+ */
+const ERA_GRADES: Record<string, { tint: number; wallLeft: number; wallRight: number; accent: number; label: string }> = {
+  analog60s:    { tint: 0x2a1c08, wallLeft: 0x3b3243, wallRight: 0x4a3c47, accent: 0xd9a441, label: 'ANALOG 60s' },
+  digital80s:   { tint: 0x1b0a2e, wallLeft: 0x2c2a4d, wallRight: 0x3a3058, accent: 0xc77dff, label: 'DIGITAL 80s' },
+  internet2000s:{ tint: 0x08171f, wallLeft: 0x263a44, wallRight: 0x2f4a52, accent: 0x5aa9e6, label: 'MILLENNIUM 2000s' },
+  streaming2020s:{ tint: 0x06140f, wallLeft: 0x22352e, wallRight: 0x2b463a, accent: 0x7bd389, label: 'STREAMING 2020s' },
+};
+
+const getEraGrade = (eraId?: string) => ERA_GRADES[eraId ?? 'analog60s'] ?? ERA_GRADES.analog60s;
+
+/** Studio tier furniture/upgrade thresholds (bead ifx.3). */
+const clampTier = (tier?: number): 1 | 2 | 3 | 4 | 5 => {
+  const t = Math.max(1, Math.min(5, Math.round(tier ?? 1)));
+  return t as 1 | 2 | 3 | 4 | 5;
 };
 
 /** An animatable bar (VU meters, TV equalizer) with a fixed baseline */
@@ -153,6 +179,10 @@ const buildScene = (
     hoverGlows: {},
   };
 
+  // Era colour grade + studio tier drive the room's look (beads goj.3 / ifx.3)
+  const grade = getEraGrade(state.eraId);
+  const tier = clampTier(state.roomTier);
+
   // Fit the whole room into the viewport so walls/floor never clip
   const bounds = { minX: -196, maxX: 224, minY: -135, maxY: 215 };
   const fitScale = Math.min(
@@ -173,11 +203,11 @@ const buildScene = (
   // Left wall: runs from the back corner down the left edge
   walls
     .poly([wl0.x, wl0.y, wl1.x, wl1.y, wl1.x, wl1.y - WALL_H, wl0.x, wl0.y - WALL_H])
-    .fill(COLORS.wallLeft);
+    .fill(grade.wallLeft);
   // Right wall
   walls
     .poly([wl0.x, wl0.y, wr1.x, wr1.y, wr1.x, wr1.y - WALL_H, wl0.x, wl0.y - WALL_H])
-    .fill(COLORS.wallRight);
+    .fill(grade.wallRight);
   // Top trim
   walls
     .poly([wl0.x, wl0.y - WALL_H, wl1.x, wl1.y - WALL_H, wr1.x, wr1.y - WALL_H])
@@ -291,9 +321,11 @@ const buildScene = (
 
   /* ---- Gear shelf (left side) ----------------------------------------- */
   const shelfWrap = new Container();
+  // The shelf physically grows with the studio tier (bead ifx.3).
+  const shelfExtension = tier >= 5 ? 2.0 : tier >= 3 ? 1.0 : 0;
   const q1 = iso(0.6, 4.6); // back-left
-  const q2 = iso(2.2, 4.6); // back-right
-  const q3 = iso(2.2, 5.6); // front-right
+  const q2 = iso(2.2 + shelfExtension, 4.6); // back-right
+  const q3 = iso(2.2 + shelfExtension, 5.6); // front-right
   const q4 = iso(0.6, 5.6); // front-left
   const shelfH = 44;
   const shelf = new Graphics();
@@ -303,14 +335,18 @@ const buildScene = (
   shelf.poly([q4.x, q4.y - shelfH, q3.x, q3.y - shelfH, q3.x, q3.y, q4.x, q4.y]).fill(COLORS.shelfSide);
   shelf.poly([q2.x, q2.y - shelfH, q3.x, q3.y - shelfH, q3.x, q3.y, q2.x, q2.y]).fill(COLORS.shelfSide);
   shelfWrap.addChild(shelf);
-  // Gear items — count scales with owned equipment (max 6 visible)
-  const gearCount = Math.max(1, Math.min(6, Math.ceil(state.ownedEquipment / 2)));
+  // Gear items — count scales with owned equipment; shelf capacity grows with tier
+  const gearCapacity = 6 + Math.round(shelfExtension * 4);
+  const gearCount = Math.max(1, Math.min(gearCapacity, Math.ceil(state.ownedEquipment / 2)));
+  const shelfSpanPx = Math.abs(q2.x - q1.x);
+  const gearW = Math.max(6, Math.min(16, Math.floor(shelfSpanPx / gearCapacity) - 1));
   for (let i = 0; i < gearCount; i++) {
-    const t = (i + 0.5) / 6;
+    const t = (i + 0.5) / gearCapacity;
     const gx = q1.x + (q2.x - q1.x) * t;
     const gy = q1.y + (q2.y - q1.y) * t - shelfH;
     const item = new Graphics();
-    item.rect(gx - 7, gy - 15, 14, 15).fill(COLORS.gear[i % COLORS.gear.length]);
+    const itemH = 13 + (i % 3) * 3;
+    item.rect(gx - gearW / 2, gy - itemH, gearW, itemH).fill(COLORS.gear[i % COLORS.gear.length]);
     shelfWrap.addChild(item);
   }
   const shelfHit = new Graphics();
@@ -408,7 +444,7 @@ const buildScene = (
 
   /* ---- Diegetic room signage ------------------------------------------ */
   const sign = new Text({
-    text: 'LIVE ROOM',
+    text: `${grade.label} · ${tier >= 5 ? 'HIT FACTORY' : tier >= 4 ? 'STUDIO A' : tier >= 3 ? 'PROJECT STUDIO' : tier >= 2 ? 'BEDROOM+ STUDIO' : 'HOME STUDIO'}`,
     style: { fontFamily: 'Arial', fontSize: 13, fill: 0xdbe4ff, letterSpacing: 3 },
   });
   const signPos = iso(2.3, 0.9);
@@ -417,10 +453,84 @@ const buildScene = (
 
   root.sortableChildren = true;
 
-  /* ---- Day/night tint overlay (screen space, on top) ------------------ */
+  /* ---- Tier upgrade furniture (bead ifx.3) ---------------------------- */
+  // Each ProgressionSystem milestone visibly adds/replaces studio furniture.
+  if (tier >= 2) {
+    const upgrades = new Graphics();
+    // Potted plant in the back-left corner
+    const plantBase = iso(0.55, 1.5);
+    upgrades.ellipse(plantBase.x, plantBase.y, 12, 6).fill(0x1c2433);
+    upgrades.rect(plantBase.x - 8, plantBase.y - 16, 16, 16).fill(0x7a4a2b);
+    upgrades.circle(plantBase.x, plantBase.y - 30, 16).fill(0x3f7d4f);
+    upgrades.circle(plantBase.x - 10, plantBase.y - 24, 10).fill(0x4f9a5f);
+    upgrades.circle(plantBase.x + 10, plantBase.y - 26, 11).fill(0x357044);
+    // First gold record frame on the right wall
+    const frameA = iso(6.6, 0);
+    const rec = { x: frameA.x, y: frameA.y - 88 };
+    upgrades.rect(rec.x - 12, rec.y - 12, 24, 24).fill(0x2a1f0d);
+    upgrades.rect(rec.x - 12, rec.y - 12, 24, 24).stroke({ width: 3, color: grade.accent });
+    upgrades.circle(rec.x, rec.y, 8).fill(0xd9a441);
+    root.addChild(upgrades);
+  }
+
+  if (tier >= 3) {
+    const lounge = new Graphics();
+    // Green-room sofa along the front-right corner
+    const sofa = iso(6.0, 5.6);
+    lounge.roundRect(sofa.x - 26, sofa.y - 26, 52, 24, 6).fill(0x5b3f6e);
+    lounge.roundRect(sofa.x - 26, sofa.y - 34, 52, 12, 5).fill(0x6d4c85);
+    lounge.rect(sofa.x - 22, sofa.y - 2, 6, 6).fill(0x2a1f33);
+    lounge.rect(sofa.x + 16, sofa.y - 2, 6, 6).fill(0x2a1f33);
+    // Road case next to the console
+    const rc = iso(4.9, 2.4);
+    lounge.rect(rc.x - 14, rc.y - 22, 28, 22).fill(0x38414f);
+    lounge.rect(rc.x - 14, rc.y - 22, 28, 6).fill(0x4c5769);
+    lounge.rect(rc.x - 14, rc.y - 11, 28, 3).fill(0x232a36);
+    root.addChild(lounge);
+  }
+
+  if (tier >= 4) {
+    const pro = new Graphics();
+    // Acoustic treatment panels on the left wall
+    for (let i = 0; i < 3; i++) {
+      const p = iso(0, 3.1 + i * 0.8);
+      pro.rect(p.x - 10, p.y - 78, 20, 34).fill(i % 2 === 0 ? 0x37506b : 0x2d4257);
+      pro.rect(p.x - 10, p.y - 78, 20, 34).stroke({ width: 2, color: 0x1d2a3a });
+    }
+    // Second workstation rig
+    const rig = iso(7.0, 3.2);
+    pro.rect(rig.x - 16, rig.y - 34, 32, 34).fill(0x1d2433);
+    pro.rect(rig.x - 12, rig.y - 29, 24, 16).fill(grade.accent);
+    pro.rect(rig.x - 16, rig.y - 34, 32, 34).stroke({ width: 2, color: 0x0f1420 });
+    root.addChild(pro);
+  }
+
+  if (tier >= 5) {
+    const empire = new Graphics();
+    // Gold trim around the whole floor: the room reads as "hit factory"
+    isoQuad(empire, 0, 0, ROOM_W, ROOM_D);
+    empire.stroke({ width: 4, color: 0xd9a441 });
+    // Trophy wall — second and third gold records
+    [4.6, 5.6].forEach((yTile, idx) => {
+      const f = iso(7.7, yTile);
+      const ry = f.y - 70 - idx * 30;
+      empire.rect(f.x - 10, ry - 10, 20, 20).fill(0x2a1f0d);
+      empire.rect(f.x - 10, ry - 10, 20, 20).stroke({ width: 2, color: 0xffd166 });
+      empire.circle(f.x, ry, 6).fill(0xffd166);
+    });
+    // Neon strip behind the live room glass
+    const neonA = iso(1.0, 0.7);
+    const neonB = iso(3.6, 0.7);
+    empire
+      .poly([neonA.x, neonA.y - 82, neonB.x, neonB.y - 82, neonB.x, neonB.y - 76, neonA.x, neonA.y - 76])
+      .fill(grade.accent);
+    root.addChild(empire);
+  }
+
+  /* ---- Day/night + era tint overlay (screen space, on top) ------------ */
   const tintLayer = new Container();
   const tintRect = new Graphics();
-  tintRect.rect(0, 0, width / fitScale, height / fitScale).fill(0x0a1030);
+  tintRect.rect(0, 0, width / fitScale, height / fitScale).fill(grade.tint);
   tintLayer.addChild(tintRect);
   tintLayer.alpha = 0;
   tintLayer.eventMode = 'none';
@@ -452,7 +562,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   }, [onHotspotSelect]);
 
   // Structural key: only layout-affecting state triggers a scene rebuild
-  const structuralKey = `${state?.staffOnFloor ?? 1}|${state?.ownedEquipment ?? 3}`;
+  const structuralKey = `${state?.staffOnFloor ?? 1}|${state?.ownedEquipment ?? 3}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}`;
 
   // Rebuild the room (new window size or layout change)
   const rebuild = () => {

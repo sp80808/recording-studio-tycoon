@@ -41,6 +41,7 @@ const MusicStudioTycoon = () => {
     purchaseEquipment,
     hireStaff,
     refreshCandidates,
+    refreshProjects,
     assignStaffToProject,
     unassignStaffFromProject,
     toggleStaffRest,
@@ -85,15 +86,6 @@ const MusicStudioTycoon = () => {
 
   useBackgroundMusic();
 
-  useEffect(() => {
-    const checkSaveGame = () => {
-      if (hasSavedGame()) {
-        setShowSplashScreen(false);
-        // Game will be initialized after loading
-      }
-    };
-    checkSaveGame();
-  }, [hasSavedGame]);
 
   useEffect(() => {
     if (selectedStaffForTraining) {
@@ -209,6 +201,17 @@ const MusicStudioTycoon = () => {
       audioSystem.playUISound('success'); 
     }
   }, [activeProjectReport, completeProject, settings.sfxEnabled, setGameState]);
+
+
+  // Advance-day path uses the same review/settlement flow as manual work:
+  // if the auto work session finished the project, show the real report modal.
+  const handleAdvanceDayWithReview = useCallback(() => {
+    const result = advanceDay();
+    if (result?.isComplete && result.finalProjectData) {
+      console.log('Index.tsx: Advance-day work completed project, showing review:', result.finalProjectData.title);
+      handleShowProjectReview(result.finalProjectData);
+    }
+  }, [advanceDay, handleShowProjectReview]);
 
 
   const handleLoadGame = async () => {
@@ -344,7 +347,7 @@ const MusicStudioTycoon = () => {
   }
 
   return (
-    <GameLayout>
+    <GameLayout eraId={gameState.currentEra}>
       <GameHeader
         gameState={gameState}
         onOpenSettings={handleOpenSettings}
@@ -358,10 +361,11 @@ const MusicStudioTycoon = () => {
         onProjectComplete={handleShowProjectReview} // Changed to show review first
         onMinigameReward={handleMinigameReward}
         spendPerkPoint={handleSpendPerkPoint}
-        advanceDay={advanceDay}
+        advanceDay={handleAdvanceDayWithReview}
         purchaseEquipment={handleEquipmentPurchase}
         hireStaff={handleStaffHire}
         refreshCandidates={refreshCandidates}
+        refreshProjects={refreshProjects}
         assignStaffToProject={assignStaffToProject}
         unassignStaffFromProject={unassignStaffFromProject}
         toggleStaffRest={toggleStaffRest}

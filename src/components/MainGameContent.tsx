@@ -47,6 +47,8 @@ interface MainGameContentProps {
   autoTriggeredMinigame: { type: MinigameType; reason: string } | null;
   clearAutoTriggeredMinigame: () => void;
   startResearchMod?: (staffId: string, modId: string) => boolean;
+  /** Cooldown/cost-gated gig refresh (bead goj.3). */
+  refreshProjects: () => boolean;
 }
 
 /**
@@ -78,7 +80,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   triggerEraTransition,
   autoTriggeredMinigame,
   clearAutoTriggeredMinigame,
-  startResearchMod
+  startResearchMod,
+  refreshProjects,
 }) => {
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [showAttributesModal, setShowAttributesModal] = useState(false);
@@ -99,6 +102,11 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   // State to manage the active tab index for mobile view.
   // 0: Projects, 1: Studio (main interface), 2: Management (right panel)
   const [activeMobileTabIndex, setActiveMobileTabIndex] = useState(1); // Default to Studio panel
+
+  // Desktop: the 5-tab RightPanel is collapsed into an on-demand Management
+  // drawer (bead goj.2) so the room stays the home screen. Mobile keeps its
+  // third swipe tab unchanged.
+  const [managementOpen, setManagementOpen] = useState(false);
 
   // Refs for swipe gesture handling on mobile.
   const swipeContainerRef = useRef<HTMLDivElement>(null); // Ref for the swipeable container
@@ -223,8 +231,20 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
     }
   }, [activeMobileTabIndex, isMobile]);
 
-  // Desktop layout remains a 3-column flex layout
-  // Mobile layout uses swipeable views controlled by MobileArrowNavigation
+  /**
+   * Room inspectors deep-link into the management surface: on desktop that
+   * means opening the drawer, on mobile jumping to the Management swipe tab.
+   * RightPanel then switches its own tab via the dispatched event.
+   */
+  const handleOpenDashboardTab = (tab: 'studio' | 'skills' | 'bands' | 'charts' | 'staff') => {
+    if (isMobile) {
+      setActiveMobileTabIndex(2);
+    } else {
+      setManagementOpen(true);
+    }
+    // RightPanel listens for this and switches its own tab.
+    window.dispatchEvent(new CustomEvent('rst:open-dashboard-tab', { detail: tab }));
+  };
 
   return (
     // Outermost container for the main game content area.
@@ -258,20 +278,25 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             gameState={gameState}
             setGameState={setGameState}
             startProject={startProject}
+            onRefreshProjects={refreshProjects}
           />
         </div>
         
         {/* Panel 2: Main Interface (Studio) */}
-        {/* On mobile, this is the second (default) tab. On desktop, it's the center column. */}
-        <div 
-          className={`h-full min-h-0 overflow-hidden p-2 relative flex flex-col studio-panel ${isMobile ? 'flex-shrink-0 mobile-tab-panel' : 'w-1/2 desktop-panel'}`}
-          style={isMobile ? { width: `calc(100% / ${mobileTabs.length})`} : { width: '50%', minWidth: '300px' }}
+        {/* On mobile, this is the second (default) tab. On desktop it fills the space left by the collapsed drawer. */}
+        <div
+          className={`h-full min-h-0 overflow-hidden p-2 relative flex flex-col studio-panel ${isMobile ? 'flex-shrink-0 mobile-tab-panel' : 'desktop-panel'}`}
+          style={isMobile ? { width: `calc(100% / ${mobileTabs.length})`} : (managementOpen ? { width: '50%', minWidth: '300px' } : { flex: 1, minWidth: '300px' })}
         >
           {/* The isometric studio floor — diegetic home screen of the game */}
           <StudioRoom
             gameState={gameState}
             onAdvanceDay={advanceDay}
-            onRefreshCandidates={refreshCandidates}
+            onRefreshProjects={refreshProjects}
+            onStartProject={startProject}
+            onAssignStaff={assignStaffToProject}
+            onUnassignStaff={unassignStaffFromProject}
+            onOpenDashboardTab={handleOpenDashboardTab}
             onConsoleFocus={() => {
               if (isMobile) setActiveMobileTabIndex(1);
             }}
@@ -309,8 +334,23 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           </div>
         </div>
 
+        {/* Management rail (desktop only): toggles the collapsed RightPanel drawer. */}
+        {!isMobile && (
+          <button
+            onClick={() => setManagementOpen(open => !open)}
+            aria-label={managementOpen ? 'Close management panel' : 'Open management panel'}
+            title={managementOpen ? 'Close management' : 'Open management'}
+            className="w-8 shrink-0 self-stretch my-2 rounded-md border border-gray-700 bg-gray-900/80 text-gray-300 hover:text-white hover:border-amber-400/50 transition-colors flex items-center justify-center"
+          >
+            <span style={{ writingMode: 'vertical-rl' }} className="text-[10px] font-black tracking-[0.2em]">
+              {managementOpen ? '❯ MANAGE' : '❮ MANAGE'}
+            </span>
+          </button>
+        )}
+
         {/* Panel 3: RightPanel (Management, Staff, Equipment) */}
-        {/* On mobile, this is the third tab. On desktop, it's the right column. */}
+        {/* Desktop: on-demand drawer (bead goj.2). Mobile: unchanged third swipe tab. */}
+        {(isMobile || managementOpen) && (
         <div
           className={`h-full overflow-y-auto p-2 right-panel ${isMobile ? 'flex-shrink-0 mobile-tab-panel' : 'w-1/4 border-l border-gray-700 desktop-panel'}`}
           style={isMobile ? { width: `calc(100% / ${mobileTabs.length})`} : { width: '25%', minWidth: '200px' }}
@@ -335,6 +375,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             startResearchMod={startResearchMod}
           />
         </div>
+        )}
       </div>
 
       {/* Modals: EraTransitionAnimation, HistoricalNewsModal, etc. */}

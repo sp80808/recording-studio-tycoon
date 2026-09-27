@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { GameState, PlayerAttributes } from '@/types/game';
+import { GameState, PlayerAttributes, StaffMember } from '@/types/game';
 import { SkillsModal } from '@/components/modals/SkillsModal';
 import { AttributesModal } from '@/components/modals/AttributesModal';
 import { ResearchModal } from '@/components/modals/ResearchModal'; // Import ResearchModal
@@ -58,6 +58,20 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   const [showResearchModal, setShowResearchModal] = useState(false);
   const [showEquipmentModModal, setShowEquipmentModModal] = useState(false);
   const [selectedEquipmentForModding, setSelectedEquipmentForModding] = useState<GameState['ownedEquipment'][0] | null>(null);
+
+  // Room inspectors (goj.2) can request a dashboard tab via a DOM event,
+  // e.g. clicking the Charts TV swaps this panel to 'charts' without
+  // needing to lift tab state up through MainGameContent.
+  useEffect(() => {
+    const onOpenTab = (e: Event) => {
+      const tab = (e as CustomEvent).detail as typeof activeTab | undefined;
+      if (tab && ['studio', 'skills', 'bands', 'charts', 'staff'].includes(tab)) {
+        setActiveTab(tab);
+      }
+    };
+    window.addEventListener('rst:open-dashboard-tab', onOpenTab);
+    return () => window.removeEventListener('rst:open-dashboard-tab', onOpenTab);
+  }, []);
 
   const handleEraTransition = () => {
     const result = onEraTransition();
