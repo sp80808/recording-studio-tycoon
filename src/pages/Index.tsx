@@ -13,6 +13,9 @@ import { ERA_DEFINITIONS } from '@/utils/eraProgression'; // ERA_DEFINITIONS for
 import { useGameState } from '@/hooks/useGameState';
 import { GameState, Project, ProjectReport, StaffMember } from '@/types/game'; // Import GameState, Project, ProjectReport, StaffMember
 import { generateProjectReview } from '@/utils/projectReviewUtils'; // Import generateProjectReview
+import { getFocusEffectiveness, getMoodEffectiveness } from '@/utils/playerUtils';
+import { calculateStudioSkillBonus, getEquipmentBonuses } from '@/utils/gameUtils';
+import { getGenreMarketMultiplier } from '@/utils/eraProgression';
 import { ProjectReviewModal } from '@/components/modals/ProjectReviewModal'; // Import ProjectReviewModal (assuming path)
 import { useGameLogic } from '@/hooks/useGameLogic';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -138,17 +141,45 @@ const MusicStudioTycoon = () => {
       assignedPersonDetails = { type: 'player', id: 'player', name: 'You' };
     }
     
-    // Placeholder for equipment quality - e.g., average quality of owned equipment or a studio rating
-    const averageEquipmentQuality = gameState.ownedEquipment.length > 0
-      ? gameState.ownedEquipment.reduce((sum, eq) => sum + eq.condition, 0) / gameState.ownedEquipment.length
+    // Real settlement context (bead ruc.1): equipment condition + bonuses,
+    // focus effectiveness, assigned-crew contribution, studio genre expertise,
+    // and market trend — same factors ProjectService uses for background work.
+    const ownedEquipment = gameState.ownedEquipment || [];
+    const averageEquipmentQuality = ownedEquipment.length > 0
+      ? ownedEquipment.reduce((sum, eq) => sum + (eq.condition ?? 100), 0) / ownedEquipment.length
       : 50; // Default if no equipment
-
+    const equipmentBonuses = getEquipmentBonuses(ownedEquipment, completedProjectData.genre);
+    const equipmentQuality = Math.max(
+      0,
+      Math.min(100, Math.round(averageEquipmentQuality * 0.6 + Math.min(40, equipmentBonuses.quality || 0)))
+    );
+    const crewForProject = gameState.hiredStaff.filter(s => s.assignedProjectId === completedProjectData.id);
+    const staffContribution = crewForProject.length === 0 ? 0 : Math.max(0, Math.min(10, Math.round(
+      crewForProject.reduce((sum, staff) => {
+        const base = (staff.primaryStats.creativity + staff.primaryStats.technical) / 2;
+        const affinity = staff.genreAffinity && staff.genreAffinity.genre === completedProjectData.genre
+          ? staff.genreAffinity.bonus / 10
+          : 0;
+        return sum + base * 0.08 * getMoodEffectiveness(staff.mood) + affinity;
+      }, 0) / crewForProject.length
+    )));
+    const genreSkill = gameState.studioSkills[completedProjectData.genre];
     const report = generateProjectReview(
       completedProjectData,
       assignedPersonDetails,
-      averageEquipmentQuality,
+      equipmentQuality,
       gameState.playerData,
-      gameState.hiredStaff
+      gameState.hiredStaff,
+      {
+        focusEffectiveness: getFocusEffectiveness(gameState),
+        staffContribution,
+        studioQualityBonus: genreSkill ? calculateStudioSkillBonus(genreSkill, 'quality') : 0,
+        equipmentQualityBonus: Math.max(
+          0,
+          Math.min(10, Math.round((equipmentBonuses.quality || 0) / 2 + (equipmentBonuses.genre || 0) / 4))
+        ),
+        marketMultiplier: getGenreMarketMultiplier(completedProjectData.genre, gameState.currentEra),
+      }
     );
     
     setActiveProjectReport(report);

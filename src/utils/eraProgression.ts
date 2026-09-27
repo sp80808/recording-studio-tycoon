@@ -269,3 +269,23 @@ export const getGenrePopularity = (genre: string, era: string): number => {
 
   return genreByEra[era]?.[genre] || 50; // Default popularity
 };
+
+/** Popularity that maps to a neutral (1.0) payout multiplier. */
+const MARKET_NEUTRAL_POPULARITY = 75;
+
+/**
+ * Converts a genre's 0-100 popularity into a payout/reputation multiplier
+ * centred on 1.0 so market trend can help *or* hurt (bead ruc.1).
+ *
+ * Using popularity/100 directly would make market a permanent penalty
+ * (popularity never exceeds 95, so payouts were always cut by up to 50%
+ * and a hot genre was indistinguishable from a mediocre one).
+ *
+ * 75 popularity (typical across the era tables) -> 1.0
+ * 95 popularity -> 1.20   60 popularity -> 0.85   50 popularity -> 0.75
+ */
+export const getGenreMarketMultiplier = (genre: string, era: string): number => {
+  const popularity = getGenrePopularity(genre, era);
+  const multiplier = 1 + (popularity - MARKET_NEUTRAL_POPULARITY) / 100;
+  return Math.max(0.7, Math.min(1.3, multiplier));
+};

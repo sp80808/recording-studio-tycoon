@@ -1,6 +1,5 @@
-import { GameState, GenreId, ProjectId } from './common.types';
-import { MarketTrend } from './market-trends';
-import { StaffMemberWellbeing } from './staff-wellbeing';
+import { GameState } from '../types/game';
+import { GenreId } from './common.types';
 
 export type EventType = 
   | 'MarketShift' 
@@ -85,7 +84,7 @@ export class RandomEventService {
     const newlyTriggeredEvents: RandomEvent[] = [];
 
     this.eventPool.forEach(event => {
-      if (event.hasTriggered && !this.canEventRetrigger(event)) return;
+      if (event.hasTriggered && !this.canEventRetrigger(event, currentTime)) return;
       
       // Check trigger conditions
       if (!this.checkTriggerConditions(event, gameState, currentTime)) return;
@@ -111,13 +110,15 @@ export class RandomEventService {
     for (const condition of event.triggerConditions) {
       switch (condition.condition) {
         case 'StudioReputationAbove':
-          if (gameState.studioReputation <= condition.value) return false;
+          if (gameState.reputation <= condition.value) return false;
           break;
         case 'StudioReputationBelow':
-          if (gameState.studioReputation >= condition.value) return false;
+          if (gameState.reputation >= condition.value) return false;
           break;
         case 'CompletedProjectsAbove':
-          if (gameState.completedProjects.length <= condition.value) return false;
+          // The real GameState has no `completedProjects` array — completed
+          // jobs accumulate in financials.reports (bead ruc.2).
+          if (gameState.financials.reports.length <= condition.value) return false;
           break;
         case 'TimeAfter':
           if (currentTime <= condition.value) return false;
@@ -134,9 +135,9 @@ export class RandomEventService {
     return true;
   }
 
-  private canEventRetrigger(event: RandomEvent): boolean {
+  private canEventRetrigger(event: RandomEvent, currentTime: number): boolean {
     // Some events can only happen once, others can retrigger after a cooldown
-    const timeSinceLastTrigger = this.getTimeSinceLastTrigger(event.id);
+    const timeSinceLastTrigger = this.getTimeSinceLastTrigger(event.id, currentTime);
     switch (event.type) {
       case 'MarketShift':
       case 'ViralTrend':
@@ -151,11 +152,16 @@ export class RandomEventService {
     }
   }
 
-  private getTimeSinceLastTrigger(eventId: string): number {
+  /**
+   * Cooldowns are measured in GAME DAYS, not wall-clock time. The previous
+   * implementation diffed `Date.now()` against a game-day stamp, which made
+   * every cooldown instantly expire — so "once only" events re-fired forever.
+   */
+  private getTimeSinceLastTrigger(eventId: string, currentTime: number): number {
     const lastTrigger = this.triggeredEventHistory
       .filter(h => h.eventId === eventId)
       .sort((a, b) => b.date - a.date)[0];
-    return lastTrigger ? (Date.now() - lastTrigger.date) : Infinity;
+    return lastTrigger ? (currentTime - lastTrigger.date) : Infinity;
   }
 
   private triggerEvent(eventId: string, currentTime: number): RandomEvent | null {
@@ -173,9 +179,10 @@ export class RandomEventService {
     this.activeEvents.set(eventId, activeEvent);
     this.triggeredEventHistory.push({ eventId, date: currentTime });
 
-    // Apply immediate effects (permanent or start of timed effects)
-    this.applyEventEffects(activeEvent);
-
+    // NOTE: state application deliberately does NOT happen here. The caller
+    // receives the triggered event and applies it through
+    // eventIntegration.applyEventToState so React state stays immutable
+    // (bead ruc.3).
     return activeEvent;
   }
 
@@ -184,50 +191,19 @@ export class RandomEventService {
     return maxDuration > 0 ? startTime + maxDuration : undefined;
   }
 
-  private applyEventEffects(event: RandomEvent): void {
-    // This would integrate with other game systems to apply the effects
-    event.effects.forEach(effect => {
-      switch (effect.target) {
-        case 'StudioReputation':
-          // gameState.studioReputation += effect.magnitude;
-          break;
-        case 'GenrePopularity':
-          // marketService.modifyGenrePopularity(effect.scope!, effect.magnitude);
-          break;
-        case 'StaffMood':
-          // staffWellbeingService.applyGlobalMoodModifier(effect.magnitude, effect.description);
-          break;
-        // ... other effect types
-      }
-    });
-  }
-
   private cleanupExpiredEvents(currentTime: number): void {
     const expiredEvents: string[] = [];
-    
+
     this.activeEvents.forEach((event, eventId) => {
       if (event.endDate && currentTime >= event.endDate) {
         expiredEvents.push(eventId);
-        // Reverse any temporary effects
-        this.reverseEventEffects(event);
+        // Effects are applied as one-shot deltas when the event triggers, so
+        // there is nothing to reverse here — expiry only clears the active list.
       }
     });
 
     expiredEvents.forEach(eventId => {
       this.activeEvents.delete(eventId);
-    });
-  }
-
-  private reverseEventEffects(event: RandomEvent): void {
-    event.effects.forEach(effect => {
-      if (effect.duration > 0) { // Only reverse temporary effects
-        switch (effect.target) {
-          case 'StudioReputation':
-            // gameState.studioReputation -= effect.magnitude;
-            break;
-          // ... other reversible effects
-        }
-      }
     });
   }
 

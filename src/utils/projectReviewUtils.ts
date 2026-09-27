@@ -1,6 +1,35 @@
 import { Project, ProjectReport, ProjectReportSkillEntry, PlayerData, StaffMember, Skill } from '@/types/game';
 import { grantSkillXp } from './skillUtils'; // Assuming grantSkillXp is in skillUtils.ts
 
+/**
+ * Optional settlement context for real lifecycle scoring (bead ruc.1).
+ * All fields optional for backward compatibility — absent values fall back
+ * to neutral defaults so existing callers keep working.
+ */
+export interface SettlementContext {
+  /** Multiplier from player focus mastery, e.g. getFocusEffectiveness(gameState) (~1.0-1.2). */
+  focusEffectiveness?: number;
+  /** Flat quality points (0-10) from assigned staff stats/mood/affinity. */
+  staffContribution?: number;
+  /** Flat quality points (0-10) from studio genre-skill quality bonus. */
+  studioQualityBonus?: number;
+  /** Flat quality points (0-10) from equipment quality bonuses. */
+  equipmentQualityBonus?: number;
+  /** Market multiplier from genre popularity via getGenreMarketMultiplier (centred on 1.0). */
+  marketMultiplier?: number;
+  /** Override for match-rating multiplier; defaults from project.matchRating. */
+  matchRatingMultiplier?: number;
+}
+
+export const MATCH_RATING_MULTIPLIERS: Record<Project['matchRating'], number> = {
+  Excellent: 1.15,
+  Good: 1.0,
+  Poor: 0.85,
+};
+
+const clamp = (value: number, min: number, max: number): number =>
+  Math.max(min, Math.min(max, value));
+
 // Helper to determine relevant skills for a project
 const getRelevantSkillsForProject = (
   project: Project, 
@@ -51,7 +80,8 @@ export const generateProjectReview = (
   assignedPersonDetails: { type: 'player' | 'staff'; id: string; name: string },
   equipmentQuality: number, // Assuming a 0-100 scale
   currentPlayerData: PlayerData,
-  allStaffMembers: StaffMember[]
+  allStaffMembers: StaffMember[],
+  settlementContext?: SettlementContext
 ): ProjectReport => {
   const skillBreakdown: ProjectReportSkillEntry[] = [];
   let totalSkillScoreContribution = 0;
@@ -86,6 +116,20 @@ export const generateProjectReview = (
     };
   }
   
+  // Real-lifecycle settlement factors (bead ruc.1). All clamped so no single
+  // factor dominates; absent context falls back to neutral defaults.
+  const focusEffectiveness = settlementContext?.focusEffectiveness ?? 1.0;
+  const focusBonus = clamp(Math.round((focusEffectiveness - 1) * 60), 0, 12);
+  const staffBonus = clamp(Math.round(settlementContext?.staffContribution ?? 0), 0, 10);
+  const studioBonus = clamp(Math.round(settlementContext?.studioQualityBonus ?? 0), 0, 10);
+  const equipBonusExtra = clamp(Math.round(settlementContext?.equipmentQualityBonus ?? 0), 0, 10);
+  const matchMultiplier =
+    settlementContext?.matchRatingMultiplier ?? MATCH_RATING_MULTIPLIERS[project.matchRating] ?? 1.0;
+  const marketMultiplier = settlementContext?.marketMultiplier ?? 1.0;
+  // Shared lifecycle bonus distributed into each skill score so skillBreakdown
+  // reflects real production conditions instead of being cosmetic.
+  const sharedSkillBonus = Math.round((focusBonus + staffBonus + studioBonus + equipBonusExtra) / 4);
+
   // Determine relevant skills for this project and person
   const relevantSkillKeys = getRelevantSkillsForProject(project, personSkills);
 
@@ -120,7 +164,7 @@ export const generateProjectReview = (
         pointsSynergyBonus = Math.min(5, Math.floor(project.accumulatedTPoints / 20));
     }
     
-    let skillScore = Math.round(skillLevelContribution + equipmentBonus + difficultyModifier + randomFactor + pointsSynergyBonus);
+    let skillScore = Math.round(skillLevelContribution + equipmentBonus + difficultyModifier + randomFactor + pointsSynergyBonus + sharedSkillBonus);
     skillScore = Math.max(5, Math.min(100, skillScore)); // Clamp score between 5 and 100
 
     // XP Gained for this skill:
@@ -150,17 +194,35 @@ export const generateProjectReview = (
   });
 
   const averageSkillScore = numContributingSkills > 0 ? totalSkillScoreContribution / numContributingSkills : 0;
-  
-  // Overall Quality: based on average skill score, project's C/T points, and project difficulty
-  const pointsFactor = (project.accumulatedCPoints + project.accumulatedTPoints) / 15; // Increased impact from C/T points
-  const difficultyBonus = project.difficulty * 2; // Small bonus for harder projects
-  let overallQualityScore = Math.floor((averageSkillScore * 0.6) + (pointsFactor * 0.3) + (difficultyBonus * 0.1));
-  overallQualityScore = Math.min(100, Math.max(0, overallQualityScore + Math.floor(Math.random()*10 - 5))); // Add small randomness +/- 5
 
-  // Rewards calculation (more dynamic)
+  // Overall Quality: skill average + accumulated C/T production points + project
+  // difficulty + real lifecycle conditions (focus, staff, studio, equipment).
+  // C/T contribution is capped so long grinds can't push quality to 100 alone.
+  const pointsFactor = clamp((project.accumulatedCPoints + project.accumulatedTPoints) / 15, 0, 15);
+  const difficultyBonus = project.difficulty * 1.5;
+  let overallQualityScore = Math.floor(
+    averageSkillScore * 0.5 +
+    pointsFactor +
+    difficultyBonus +
+    focusBonus +
+    staffBonus +
+    studioBonus +
+    equipBonusExtra
+  );
+  overallQualityScore = clamp(overallQualityScore + Math.floor(Math.random() * 10 - 5), 0, 100); // Small randomness +/- 5
+
+  // Rewards: quality x difficulty x client-match x market trend (GH #19: no single
+  // project type dominates — marketMultiplier comes from genre popularity).
   const qualityMultiplier = 0.5 + (overallQualityScore / 100) * 1.5; // Ranges from 0.5 to 2.0
-  const moneyGained = Math.floor(project.payoutBase * qualityMultiplier);
-  const reputationGained = Math.floor(project.repGainBase * qualityMultiplier);
+  const difficultyFactor = 1 + (project.difficulty - 1) * 0.08;
+  const moneyGained = Math.max(
+    0,
+    Math.floor(project.payoutBase * qualityMultiplier * difficultyFactor * matchMultiplier * marketMultiplier)
+  );
+  const reputationGained = Math.max(
+    0,
+    Math.floor(project.repGainBase * qualityMultiplier * matchMultiplier * marketMultiplier)
+  );
   
   let playerManagementXpGained = 0;
   if (!isPlayer) { // Player gets Management XP if staff did the work
@@ -206,6 +268,22 @@ export const generateProjectReview = (
       reviewSnippet += " Lots of creative flair, but the technical execution could be tighter."
   } else if (project.accumulatedTPoints > 50 && project.accumulatedCPoints < 20 && overallQualityScore < highQualityThreshold) {
       reviewSnippet += " Technically proficient, though it could use a bit more creative spark."
+  }
+
+  // Competence-forward cause attribution (GH #20): name at least one factor that
+  // affected quality instead of an unexplained score.
+  const factorNotes: string[] = [];
+  if (sortedSkills.length > 0) factorNotes.push(`${sortedSkills[0].skillName} led the session`);
+  if (staffBonus >= 6) factorNotes.push('the assigned crew lifted the takes');
+  if (studioBonus >= 6) factorNotes.push('studio genre expertise showed');
+  if (equipBonusExtra >= 6) factorNotes.push('the gear chain stayed clean');
+  if (focusBonus >= 6) factorNotes.push('sharp focus direction paid off');
+  if (marketMultiplier >= 1.05) factorNotes.push('the current market wanted this sound');
+  else if (marketMultiplier < 0.95) factorNotes.push('the current market was cool on this genre');
+  if (project.matchRating === 'Excellent') factorNotes.push('a great client match helped');
+  else if (project.matchRating === 'Poor') factorNotes.push('a tough client brief held it back');
+  if (factorNotes.length > 0) {
+    reviewSnippet += ` Key factors: ${factorNotes.slice(0, 3).join('; ')}.`;
   }
 
 

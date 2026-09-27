@@ -1,5 +1,31 @@
-import { GameState, Project, ProjectReport } from '../types/game';
+import { GameState, Project, ProjectReport, StaffMember } from '../types/game';
+import { generateProjectReview } from '../utils/projectReviewUtils';
+import { grantSkillXp } from '../utils/skillUtils';
+import {
+  calculateBaseWorkPoints,
+  applyFocusAndMultipliers,
+  applyStudioSkillBonusesToWorkPoints,
+  applyEquipmentBonusesToWorkPoints,
+  calculateStaffWorkContribution,
+} from '../utils/projectUtils';
+import { calculateStudioSkillBonus, getEquipmentBonuses } from '../utils/gameUtils';
+import {
+  getFocusEffectiveness,
+  getMoodEffectiveness,
+  getCreativityMultiplier,
+  getTechnicalMultiplier,
+} from '../utils/playerUtils';
+import { getGenreMarketMultiplier } from '../utils/eraProgression';
 
+/**
+ * Canonical lifecycle service for the multi-project path (bead ruc.1).
+ *
+ * Previously this class used a mock model (+1% progress, random 50-100
+ * quality, base payouts). It now delegates to the same authoritative
+ * settlement functions as the foreground single-project path:
+ * projectUtils work-point chain for progression and
+ * projectReviewUtils.generateProjectReview for completion scoring.
+ */
 export class ProjectService {
     private gameState: GameState;
 
@@ -7,58 +33,134 @@ export class ProjectService {
         this.gameState = JSON.parse(JSON.stringify(gameState));
     }
 
-    public startProject(project: Project) {
-        if (this.gameState.activeProjects.length < this.gameState.maxConcurrentProjects) {
-            this.gameState.activeProjects.push(project);
+    public startProject(project: Project): boolean {
+        if (this.gameState.activeProjects.length >= this.gameState.maxConcurrentProjects) {
+            return false;
         }
+        if (this.gameState.activeProjects.some(p => p.id === project.id)) {
+            return false;
+        }
+        this.gameState.activeProjects.push({ ...project });
+        return true;
     }
 
-    public updateProjects() {
-        const completedProjects: Project[] = [];
+    public assignStaffToProject(projectId: string, staffId: string): boolean {
+        const project = this.gameState.activeProjects.find(p => p.id === projectId);
+        const staff = this.gameState.hiredStaff.find(s => s.id === staffId);
+        if (!project || !staff) return false;
+        if (staff.status !== 'Idle' || staff.assignedProjectId) return false;
+        if (staff.energy < 20) return false; // Never schedule an exhausted member
+        staff.status = 'Working';
+        staff.assignedProjectId = projectId;
+        return true;
+    }
+
+    public unassignStaffFromProject(staffId: string): void {
+        const staff = this.gameState.hiredStaff.find(s => s.id === staffId);
+        if (!staff) return;
+        staff.status = 'Idle';
+        staff.assignedProjectId = null;
+    }
+
+    /**
+     * Advance every active project by one passive work tick using the real
+     * work-point chain (focus, studio skills, equipment, staff). Returns the
+     * settlement reports for projects that finished this tick.
+     */
+    public updateProjects(): ProjectReport[] {
+        const completedReports: ProjectReport[] = [];
+        const completedIds: string[] = [];
 
         this.gameState.activeProjects.forEach(project => {
-            // Simple progress model: each update adds 1% progress
-            const progressIncrement = 1;
+            const assignedStaff = this.gameState.hiredStaff.filter(
+                s => s.assignedProjectId === project.id && s.status === 'Working'
+            );
+            const focus = project.focusAllocation || { performance: 33, soundCapture: 33, layering: 34 };
+
+            // Passive tick uses a bounded capacity so background progress never
+            // outpaces attended sessions; same functions as useStageWork.
+            let workPoints = calculateBaseWorkPoints(2, this.gameState.playerData.attributes);
+            workPoints = applyFocusAndMultipliers(
+                workPoints,
+                focus,
+                getCreativityMultiplier(this.gameState),
+                getTechnicalMultiplier(this.gameState),
+                getFocusEffectiveness(this.gameState)
+            );
+            workPoints = applyStudioSkillBonusesToWorkPoints(workPoints, project.genre, this.gameState.studioSkills);
+            workPoints = applyEquipmentBonusesToWorkPoints(workPoints, this.gameState.ownedEquipment, project.genre);
+            workPoints = calculateStaffWorkContribution(workPoints, assignedStaff, project.genre, getMoodEffectiveness);
+
+            const creativityGain = Math.max(1, Math.round(workPoints.creativity));
+            const technicalGain = Math.max(1, Math.round(workPoints.technical));
+            const totalPoints = creativityGain + technicalGain;
+
+            project.accumulatedCPoints += creativityGain;
+            project.accumulatedTPoints += technicalGain;
+            project.workSessionCount = (project.workSessionCount || 0) + 1;
+
             const currentStage = project.stages[project.currentStageIndex];
-            currentStage.workUnitsCompleted += (currentStage.workUnitsBase * progressIncrement) / 100;
-
-            if (currentStage.workUnitsCompleted >= currentStage.workUnitsBase) {
-                currentStage.workUnitsCompleted = currentStage.workUnitsBase;
-                currentStage.completed = true;
-
-                if (project.currentStageIndex < project.stages.length - 1) {
-                    project.currentStageIndex++;
-                } else {
-                    completedProjects.push(project);
+            if (currentStage && !currentStage.completed) {
+                const workUnitsToAdd = Math.max(1, Math.floor(totalPoints / 4));
+                currentStage.workUnitsCompleted = Math.min(
+                    currentStage.workUnitsCompleted + workUnitsToAdd,
+                    currentStage.workUnitsBase
+                );
+                if (currentStage.workUnitsCompleted >= currentStage.workUnitsBase) {
+                    currentStage.completed = true;
+                    if (project.currentStageIndex < project.stages.length - 1) {
+                        project.currentStageIndex++;
+                    } else {
+                        completedIds.push(project.id);
+                    }
                 }
+            } else if (project.stages.every(s => s.completed)) {
+                completedIds.push(project.id);
+            }
+
+            // Assigned crew tires passively, mirroring the foreground path.
+            assignedStaff.forEach(staff => {
+                staff.energy = Math.max(0, staff.energy - 10);
+                staff.mood = Math.max(0, staff.mood - 1);
+            });
+        });
+
+        completedIds.forEach(id => {
+            const project = this.gameState.activeProjects.find(p => p.id === id);
+            if (project) {
+                completedReports.push(this.completeProject(project));
             }
         });
 
-        completedProjects.forEach(project => {
-            this.completeProject(project);
-        });
+        return completedReports;
     }
 
-    private completeProject(project: Project) {
-        const report: ProjectReport = {
-            projectId: project.id,
-            projectTitle: project.title,
-            moneyGained: project.payoutBase,
-            reputationGained: project.repGainBase,
-            overallQualityScore: Math.floor(Math.random() * 50) + 50, // 50-100
-            playerManagementXpGained: 0,
-            skillBreakdown: [],
-            reviewSnippet: 'A solid effort.',
-            assignedPerson: { type: 'player', id: 'player', name: 'Player' },
-        };
+    public completeProject(project: Project): ProjectReport {
+        const assignedStaff = this.gameState.hiredStaff.filter(s => s.assignedProjectId === project.id);
+        const lead = assignedStaff[0];
+        const assignedPerson = lead
+            ? { type: 'staff' as const, id: lead.id, name: lead.name }
+            : { type: 'player' as const, id: 'player', name: 'Player' };
 
-        this.gameState.money += report.moneyGained;
-        this.gameState.reputation += report.reputationGained;
-        // Calculate influence gain based on project quality and reputation gained
-        const influenceGained = Math.floor((report.overallQualityScore / 10) + (report.reputationGained / 5));
-        this.gameState.influence += influenceGained;
-        this.gameState.financials.reports.push(report);
-        this.gameState.activeProjects = this.gameState.activeProjects.filter(p => p.id !== project.id);
+        const report = generateProjectReview(
+            project,
+            assignedPerson,
+            computeEquipmentQuality(this.gameState),
+            this.gameState.playerData,
+            this.gameState.hiredStaff,
+            {
+                focusEffectiveness: getFocusEffectiveness(this.gameState),
+                staffContribution: computeStaffContribution(assignedStaff, project.genre),
+                studioQualityBonus: computeStudioQualityBonus(this.gameState, project.genre),
+                equipmentQualityBonus: computeEquipmentQualityBonus(this.gameState, project.genre),
+                marketMultiplier: getGenreMarketMultiplier(project.genre, this.gameState.currentEra),
+            }
+        );
+
+        const settled = applyReportToState(this.gameState, report);
+        settled.activeProjects = settled.activeProjects.filter(p => p.id !== project.id);
+        this.gameState = settled;
+        return report;
     }
 
     public getActiveProjects(): Project[] {
@@ -68,4 +170,129 @@ export class ProjectService {
     public getGameState(): GameState {
         return this.gameState;
     }
+}
+
+function computeEquipmentQuality(gameState: GameState): number {
+    const equipment = gameState.ownedEquipment;
+    if (equipment.length === 0) return 50;
+    const avgCondition = equipment.reduce((sum, eq) => sum + (eq.condition ?? 100), 0) / equipment.length;
+    const qualityBonus = getEquipmentBonuses(equipment).quality || 0;
+    return Math.max(0, Math.min(100, Math.round(avgCondition * 0.6 + Math.min(40, qualityBonus))));
+}
+
+function computeEquipmentQualityBonus(gameState: GameState, genre: string): number {
+    const bonuses = getEquipmentBonuses(gameState.ownedEquipment, genre);
+    return Math.max(0, Math.min(10, Math.round((bonuses.quality || 0) / 2 + (bonuses.genre || 0) / 4)));
+}
+
+function computeStudioQualityBonus(gameState: GameState, genre: string): number {
+    const genreSkill = gameState.studioSkills[genre];
+    if (!genreSkill) return 0;
+    return Math.max(0, Math.min(10, Math.round(calculateStudioSkillBonus(genreSkill, 'quality'))));
+}
+
+function computeStaffContribution(assignedStaff: StaffMember[], genre: string): number {
+    if (assignedStaff.length === 0) return 0;
+    const total = assignedStaff.reduce((sum, staff) => {
+        const base = (staff.primaryStats.creativity + staff.primaryStats.technical) / 2;
+        const moodMultiplier = getMoodEffectiveness(staff.mood);
+        const affinityBonus = staff.genreAffinity && staff.genreAffinity.genre === genre
+            ? staff.genreAffinity.bonus / 10
+            : 0;
+        return sum + base * 0.08 * moodMultiplier + affinityBonus;
+    }, 0);
+    return Math.max(0, Math.min(10, Math.round(total / Math.max(1, assignedStaff.length))));
+}
+
+/**
+ * Canonical report settlement (bead ruc.2) — PURE.
+ *
+ * Applies everything a completed ProjectReport should change: money,
+ * reputation, influence, financial income/profit/report history, plus
+ * player or staff skill + XP gains and crew release.
+ *
+ * Previously this logic lived in two hand-copied places (this file and
+ * useProjectManagement.completeProject) that could silently drift apart.
+ * Both now call this single function: the foreground path passes prev state
+ * through it inside setGameState, the background path reassigns its snapshot.
+ *
+ * @returns a NEW GameState; the input is never mutated.
+ */
+export function applyReportToState(state: GameState, report: ProjectReport): GameState {
+    const influenceGained = Math.floor(report.overallQualityScore / 10 + report.reputationGained / 5);
+    const income = state.financials.income + report.moneyGained;
+
+    let playerData = state.playerData;
+
+    const applySkillBreakdown = <T extends { skills: Record<string, {
+        xp: number; level: number; xpToNextLevel: number;
+    }> }>(person: T): T => {
+        const newSkills = { ...person.skills };
+        report.skillBreakdown.forEach(skillDetail => {
+            const skillName = skillDetail.skillName as keyof typeof newSkills;
+            const current = newSkills[skillName];
+            if (current) {
+                newSkills[skillName] = {
+                    ...current,
+                    xp: skillDetail.finalXp,
+                    level: skillDetail.finalLevel,
+                    xpToNextLevel: skillDetail.xpToNextLevelAfter,
+                };
+            }
+        });
+        return { ...person, skills: newSkills };
+    };
+
+    let hiredStaff = state.hiredStaff;
+
+    if (report.assignedPerson.type === 'player') {
+        playerData = {
+            ...applySkillBreakdown(state.playerData),
+            xp: state.playerData.xp + 25 + Math.floor(report.overallQualityScore / 10),
+        };
+    } else {
+        hiredStaff = state.hiredStaff.map(staff => {
+            if (staff.id !== report.assignedPerson.id) return staff;
+            return {
+                ...applySkillBreakdown(staff),
+                xpInRole: staff.xpInRole + 20 + Math.floor(report.overallQualityScore / 2),
+                status: 'Idle' as const,
+                assignedProjectId: null,
+            };
+        });
+
+        if (report.playerManagementXpGained > 0) {
+            const { updatedSkill } = grantSkillXp(
+                state.playerData.skills.management,
+                report.playerManagementXpGained
+            );
+            playerData = {
+                ...state.playerData,
+                skills: { ...state.playerData.skills, management: updatedSkill },
+            };
+        }
+    }
+
+    // Release any crew still tied to this project.
+    const projectId = report.projectId;
+    const releasedStaff = hiredStaff.map(s =>
+        s.assignedProjectId === projectId
+            ? { ...s, status: 'Idle' as const, assignedProjectId: null }
+            : s
+    );
+
+    return {
+        ...state,
+        money: state.money + report.moneyGained,
+        reputation: state.reputation + report.reputationGained,
+        influence: state.influence + influenceGained,
+        playerData,
+        hiredStaff: releasedStaff,
+        financials: {
+            ...state.financials,
+            income,
+            profit: income - state.financials.expenses,
+            reports: [...state.financials.reports, report],
+        },
+    };
 }
