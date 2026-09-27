@@ -31,7 +31,7 @@ export const StudioStrip: React.FC<StudioStripProps> = ({ gameState, onExpand })
   const nextEnquiry = gameState.availableProjects[0];
 
   return (
-    <div className="h-full min-h-[148px] bg-gray-950 border-t border-gray-700 flex items-stretch overflow-hidden">
+    <div className="w-full h-[164px] bg-gray-950 border-t border-gray-700 flex items-stretch overflow-hidden">
       <div className="w-[34%] min-w-[280px] border-r border-gray-800 p-3 flex gap-3">
         <div className="flex-1 rounded-lg border border-gray-700 bg-gradient-to-b from-gray-800 to-gray-900 relative overflow-hidden">
           <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gray-900/70" />
