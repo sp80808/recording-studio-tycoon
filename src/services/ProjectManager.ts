@@ -131,9 +131,11 @@ export class ProjectManager {
    */
   optimizeStaffAssignments(): StaffAssignment[] {
     const priorities = this.calculateProjectPriorities();
-    const availableStaff = this.gameState.hiredStaff.filter(s => 
-      s.status === 'Idle' || s.status === 'Working'
-    );
+    // Work on temporary staff snapshots while calculating assignments.
+    // Recommendation code must not mutate the live game state.
+    const availableStaff = this.gameState.hiredStaff
+      .filter(s => s.status === 'Idle' || s.status === 'Working')
+      .map(staff => ({ ...staff }));
 
     const assignments: StaffAssignment[] = [];
     const settings = this.gameState.automation?.settings;
