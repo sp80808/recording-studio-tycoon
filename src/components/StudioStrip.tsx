@@ -7,6 +7,7 @@ import { Mic2, SlidersHorizontal, Users, ChevronUp, Inbox } from 'lucide-react';
 interface StudioStripProps {
   gameState: GameState;
   onExpand: () => void;
+  onBookNextEnquiry: () => void;
 }
 
 const getProjectProgress = (gameState: GameState) => {
@@ -22,7 +23,11 @@ const getProjectProgress = (gameState: GameState) => {
   return total > 0 ? Math.round((completed / total) * 100) : 0;
 };
 
-export const StudioStrip: React.FC<StudioStripProps> = ({ gameState, onExpand }) => {
+export const StudioStrip: React.FC<StudioStripProps> = ({
+  gameState,
+  onExpand,
+  onBookNextEnquiry
+}) => {
   const activeProject = gameState.activeProject;
   const progress = getProjectProgress(gameState);
   const assignedStaff = gameState.hiredStaff.filter(
@@ -152,15 +157,26 @@ export const StudioStrip: React.FC<StudioStripProps> = ({ gameState, onExpand })
           )}
         </div>
 
-        <Button
-          onClick={onExpand}
-          size="sm"
-          variant="outline"
-          className="w-full border-gray-700 bg-gray-900 hover:bg-gray-800 text-gray-200"
-        >
-          <ChevronUp size={14} className="mr-1" />
-          Open Studio
-        </Button>
+        <div className="flex gap-2">
+          {!activeProject && nextEnquiry && (
+            <Button
+              onClick={onBookNextEnquiry}
+              size="sm"
+              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+            >
+              Book ${nextEnquiry.payoutBase}
+            </Button>
+          )}
+          <Button
+            onClick={onExpand}
+            size="sm"
+            variant="outline"
+            className="flex-1 border-gray-700 bg-gray-900 hover:bg-gray-800 text-gray-200"
+          >
+            <ChevronUp size={14} className="mr-1" />
+            Open Studio
+          </Button>
+        </div>
       </div>
     </div>
   );
