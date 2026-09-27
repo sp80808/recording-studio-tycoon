@@ -4,6 +4,7 @@ import { GameState, Project, ProjectReport, PlayerData, StaffMember, Skill } fro
 import { generateNewProjects } from '@/utils/projectUtils';
 import { toast } from '@/hooks/use-toast';
 import { grantSkillXp } from '@/utils/skillUtils'; // Import grantSkillXp
+import { applyCompletedSessionToRelationship, createClientRelationshipFromProject } from '@/utils/clientRelationshipUtils';
 
 export const useProjectManagement = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
   const startProject = useCallback((project: Project) => {
@@ -131,13 +132,43 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
           ? { ...s, status: 'Idle' as const, assignedProjectId: null }
           : s
       );
+
+      const completedProject =
+        prev.activeProject?.id === projectId
+          ? prev.activeProject
+          : prev.activeProjects.find(project => project.id === projectId);
+
+      const updatedClientRelationships = { ...(prev.clientRelationships || {}) };
+
+      if (completedProject?.clientId && completedProject.clientName) {
+        const existingRelationship =
+          updatedClientRelationships[completedProject.clientId] ||
+          createClientRelationshipFromProject(completedProject, prev.currentDay);
+
+        if (existingRelationship) {
+          updatedClientRelationships[completedProject.clientId] =
+            applyCompletedSessionToRelationship(
+              existingRelationship,
+              projectReport.overallQualityScore,
+              prev.currentDay
+            );
+        }
+      }
+
+      const nextEnquiries = generateNewProjects(
+        1,
+        updatedPlayerData.level,
+        prev.currentEra,
+        Object.values(updatedClientRelationships)
+      );
       
       return {
         ...prev,
         money: prev.money + moneyGained,
         reputation: prev.reputation + reputationGained,
         activeProject: null, // Assuming single active project for now, will adapt if multi-project
-        availableProjects: [...prev.availableProjects, ...generateNewProjects(1, updatedPlayerData.level, prev.currentEra)],
+        availableProjects: [...prev.availableProjects, ...nextEnquiries],
+        clientRelationships: updatedClientRelationships,
         playerData: updatedPlayerData,
         hiredStaff: updatedHiredStaff,
       };
