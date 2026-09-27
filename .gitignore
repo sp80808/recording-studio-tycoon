@@ -16,7 +16,6 @@ dist-ssr
 .vscode/*
 !.vscode/extensions.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
@@ -24,3 +23,13 @@ dist-ssr
 *.sw?
 kenney_city-kit-buildingprogression.zip
 kenneyuipack.zip
+
+# macOS metadata & AppleDouble
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+**/._*
+**/.DS_Store
+.Spotlight-V100
+.Trashes
