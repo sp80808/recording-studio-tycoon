@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { gameAudio } from '@/utils/audioSystem';
+import { KenneyButton, MinigameChrome } from './MinigameChrome';
 
 interface Effect {
   id: string;
@@ -236,70 +237,61 @@ export const EffectChainGame: React.FC<EffectChainGameProps> = ({
 
   if (!gameStarted) {
     return (
-      <Card className="w-full max-w-4xl bg-gray-900 border-gray-600 p-6">
-        <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold text-white">🔗 Effect Chain Builder</h2>
+      <Card className="w-full max-w-4xl mx-auto bg-gray-800 text-white border-gray-700">
+        <MinigameChrome title="🔗 Effect Chain Builder" score={score} accent="blue">
+        <div className="p-6 text-center space-y-4">
           <p className="text-gray-300">
-            Build the perfect effect chain for {genre} music! 
+            Build the perfect effect chain for {genre} music!
             Order matters - effects process in sequence.
           </p>
           <div className="text-sm text-blue-400 bg-blue-900/30 p-3 rounded">
             💡 Hint: {getGenreHint()}
           </div>
-          <Button 
-            onClick={startGame} 
-            className="bg-purple-600 hover:bg-purple-700 text-lg px-8 py-3"
-          >
+          <KenneyButton variant="blue" onClick={startGame}>
             Start Building
-          </Button>
+          </KenneyButton>
         </div>
+        </MinigameChrome>
       </Card>
     );
   }
 
   if (gameCompleted) {
     return (
-      <Card className="w-full max-w-4xl bg-gray-900 border-gray-600 p-6">
-        <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold text-yellow-400">Effect Chain Complete!</h2>
+      <Card className="w-full max-w-4xl mx-auto bg-gray-800 text-white border-gray-700">
+        <MinigameChrome title="🔗 Effect Chain Builder" score={score} accent="blue">
+        <div className="p-6 text-center space-y-4">
+          <h2 className={`text-2xl font-bold text-yellow-400 ${score >= 80 ? 'mg-perfect-pop' : ''}`}>Effect Chain Complete!</h2>
           <div className="space-y-2">
             <div className="text-lg text-white">Score: {score}</div>
             <div className="text-sm text-gray-400">
               Effects Used: {effectChain.length} | Target: {targetChain.length}
             </div>
             {score >= 80 && (
-              <div className="text-green-400 font-bold text-xl">🎉 Professional Chain!</div>
+              <div className="text-green-400 font-bold text-xl mg-perfect-pop">🎉 Professional Chain!</div>
             )}
             {score >= 60 && score < 80 && (
               <div className="text-blue-400 font-bold">👍 Good Mix!</div>
             )}
           </div>
-          <Button 
-            onClick={onClose} 
-            className="bg-green-600 hover:bg-green-700 text-lg px-8 py-3"
-          >
+          <KenneyButton variant="green" onClick={onClose}>
             Collect Rewards
-          </Button>
+          </KenneyButton>
         </div>
+        </MinigameChrome>
       </Card>
     );
   }
 
   return (
-    <Card className="w-full max-w-6xl bg-gray-900 border-gray-600 p-6">
+    <Card className="w-full max-w-6xl mx-auto bg-gray-800 text-white border-gray-700">
+      <MinigameChrome title="🔗 Effect Chain Builder" score={score} timeLeft={timeLeft} accent="blue">
+      <div className="p-6">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-white mb-2">🔗 Effect Chain Builder</h2>
         <p className="text-gray-300">Genre: {genre.charAt(0).toUpperCase() + genre.slice(1)}</p>
-        
-        <div className="flex justify-between items-center mt-4">
-          <div className="text-yellow-400 font-bold">Score: {score}</div>
-          <div className={`text-2xl font-bold ${timeLeft <= 10 ? 'text-red-400 animate-pulse' : 'text-blue-400'}`}>
-            ⏱️ {timeLeft}s
-          </div>
-        </div>
 
         {feedback && (
-          <div className="mt-2 text-center text-lg font-bold animate-pulse">
+          <div key={feedback} className={`mt-2 text-center text-lg font-bold ${feedback.startsWith('✅') ? 'text-green-400 mg-perfect-pop' : 'text-yellow-300 mg-miss-shake'}`}>
             {feedback}
           </div>
         )}
@@ -397,21 +389,15 @@ export const EffectChainGame: React.FC<EffectChainGameProps> = ({
       </div>
 
       <div className="flex justify-center gap-4 mt-6">
-        <Button
-          onClick={endGame}
-          className="bg-green-600 hover:bg-green-700 px-6 py-3"
-          disabled={effectChain.length === 0}
-        >
+        <KenneyButton variant="green" onClick={endGame} disabled={effectChain.length === 0}>
           🎵 Test Chain
-        </Button>
-        <Button
-          onClick={onClose}
-          variant="outline"
-          className="px-6 py-3"
-        >
+        </KenneyButton>
+        <KenneyButton variant="grey" onClick={onClose}>
           Cancel
-        </Button>
+        </KenneyButton>
       </div>
+      </div>
+      </MinigameChrome>
     </Card>
   );
 };
