@@ -20,6 +20,7 @@
     "build:dev": "vite build --mode development",
     "clean:appledouble": "python3 scripts/clean-appledouble.py",
     "lint": "eslint .",
+    "test": "bash scripts/run-checks.sh",
     "preview": "vite preview"
   },
   "dependencies": {
