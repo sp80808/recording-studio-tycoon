@@ -16,17 +16,17 @@ not a full-PIXI UI. `src/pixi-ui/` panels exist but are not the main interface.
 - [ ] RightPanel collapse into contextual inspector popups (bead `goj.2`)
 - [ ] De-websitify pass: Refresh cooldown, transitions, screen shake, SFX (`goj.3`)
 
-## Phase 2: Core Gameplay Loop
+## Phase 2: Core Gameplay Loop (Done)
 
-- [ ] Replace mock `ProjectService` progression/report with real scoring (`ruc.1`)
-- [ ] Wire completion reports into Index/`useGameLogic` (`ruc.2`)
-- [ ] Random events + salaries/upkeep on the daily tick (`ruc.3`)
+- [x] Replace mock `ProjectService` progression/report with real scoring (`ruc.1`)
+- [x] Wire completion reports into Index/`useGameLogic` (`ruc.2`)
+- [x] Random events + salaries/upkeep on the daily tick (`ruc.3`)
 - [x] Combo streak + Overdrive risk/reward on work sessions (`ifx.1`, done)
 - [x] Minigames restored (18 games + manager/tutorials from git history)
 
 ## Phase 3: Advanced Feature Expansion
 
-- [ ] Stage-tied minigames feeding quality scores (EQ/fader/punch-in) (`ifx.2`)
+- [x] Stage-tied minigames feeding quality scores (EQ/fader/punch-in) (`ifx.2`)
 - [ ] Milestone rewards that visibly upgrade the studio room (`ifx.3`)
 - [ ] Detailed Skill and Progression System for player and staff.
 - [ ] Research and Development tree for new technologies.
@@ -40,4 +40,9 @@ not a full-PIXI UI. `src/pixi-ui/` panels exist but are not the main interface.
   restored minigames, fixed `Era`/`GameState`/`stageName`/save-system imports.
 - 2026-09-27 — Studio room shipped; combo/overdrive shipped; verified in headless
   Chrome with 0 console errors.
+- 2026-09-27 — Epic `ruc` (Core Gameplay Loop) completed: real `ProjectService` lifecycle,
+  unified `applyReportToState` completion settlement, daily salaries/upkeep financial
+  tracking, and game-day cooldown random events wired to `advanceDay`.
+- 2026-09-27 — Stage-tied minigames (EQ match, Fader ride, Punch-in) wired to
+  project quality (`minigamePoints`) and stages (`ifx.2`).
 

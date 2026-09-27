@@ -1,39 +1,34 @@
-# Current Task: Studio Room + Gamification Pass (2026-09-27)
+# Current Task: Core Gameplay Loop Completion + Daily Tick & Random Events
 
 ## Objective
-Make the game *feel* like a game: restore the deleted minigames, put an interactive
-isometric studio room at the centre of the UI, and add real work-session game mechanics
-(combo streaks, Overdrive). Track everything in Beads (`bd list`).
-
-## Context
-- The build was broken by an uncommitted App.tsx refactor plus a historical commit
-  (`530d9e27`) that had deleted 18 minigame components and gutted `MinigameManager`.
-- `App.tsx` (uncommitted) already mounts the real shell (`pages/Index.tsx`); that is kept.
-- Beads initialized in this repo (prefix `recording-studio-tycoon`), 4 epics / 16 issues.
+Implement bead `ruc.3` of the Core Gameplay Loop epic: connect random events and daily
+financials (staff salaries and equipment upkeep) into `advanceDay`, and verify the entire
+core gameplay loop end-to-end.
 
 ## Completed This Session
-- Fixed Vite config (single `vite.config.ts` with `@` alias + `define.global`), build passes.
-- Restored `src/components/minigames/` from git history (18 games + tutorials).
-- Fixed broken imports: `Era` type, `useSaveSystem` re-export, `ProjectReport`,
-  `GameState`, `ProjectStage.stageName`, `MinigameType`/`MinigameManager` API.
-- Bridged `use-toast` → Sonner so all in-game toasts actually render.
-- Rewrote `WebGLCanvas.tsx` as a Pixi **v8** isometric studio room (fit-to-viewport,
-  animated VU meters/TV/clock/phone, hover glows, 6 clickable hotspots).
-- Added `StudioRoom.tsx` (HUD + hotspot → real game actions) into the center column.
-- `GameLayout` fixed to a real `h-screen` shell (was invalid CSS-in-className).
-- Gamification: ⚡ combo streak (+10%/step, caps +50%, resets on new day) and
-  🔥 Overdrive (2 energy, +75% output, 25% crew-burnout risk) in `useStageWork`,
-  with UI chip/button in `ActiveProject`.
-- Verified in headless Chrome: splash → era → game → work → combo → overdrive,
-  **0 console errors**.
+- **Random Events Cooldown & Mechanics**:
+  - Fixed `random-events.ts` cooldown logic: changed `getTimeSinceLastTrigger` to diff game days (`currentTime - lastTrigger.date`) rather than wall-clock `Date.now()`, preventing immediate expiration and retrigger loops.
+  - Replaced mutating stubs in `RandomEventService` with pure functions.
+  - Created `eventIntegration.ts` with singleton service management (`getRandomEventService`), pure rolling (`rollDailyEvents`), and immutable event effect folding (`applyEventToState`, `applyEventsToState`).
+  - Mapped event effects (`StudioReputation`, `StaffMood`, `EquipmentEfficiency`, `OperatingCosts`) cleanly into `GameState`, and surfaced unmapped effects as narrative items.
+- **Daily Tick & Financials Integration**:
+  - Implemented `calculateEquipmentUpkeep` (0.1% daily maintenance per item, minimum $2/item).
+  - Wired daily staff salaries and equipment upkeep into `advanceDay` in `src/hooks/useGameActions.tsx`.
+  - Updated `gameState.financials` (`expenses` and `profit`) on every tick.
+  - Added staff morale penalty when salaries cannot be afforded.
+  - Generated `GameNotification`s and UI toast alerts for daily expense payouts, unpaid salary warnings, and triggered random events.
+- **Minigame & Quality Loop Wiring (`ifx.2`)**:
+  - Tied minigame performance (`rawScore`) into `project.minigamePoints` and factored it into `generateProjectReview`.
+  - Integrated stage-specific games: `EQMatchGame` for mixing, `FaderRideGame` for mastering, and `PunchInGame` for tracking.
+- **Verification & Bead Tracking**:
+  - Validated build passes (`npm run build`).
+  - Tested upkeep and event integration execution via unit tests in tsx.
+  - Closed beads `recording-studio-tycoon-ruc.2`, `ruc.3`, and epic `ruc`. Closed `1yf` epic.
 
 ## Next Steps
-1. Close out beads: `1yf.1`, `1yf.2`, `1yf.3`, `goj.1`, `ifx.1` are complete.
-2. Phase 2 core loop (epic `ruc`): replace mock `ProjectService` scoring, wire reports,
-   connect random events + salaries to `advanceDay`.
-3. `goj.2` inspector popups (collapse RightPanel tabs), `goj.3` remove web affordances
-   (Refresh cooldown, splash→era→studio transitions, SFX).
-4. `ifx.2` tie restored minigames to stage types/quality; `ifx.3` milestone rewards
-   that visibly upgrade the room.
-5. Docs: roadmap Phase 1 claims reconciled — keep updating as slices land.
+1. Next ready tasks from beads:
+   - `recording-studio-tycoon-goj.2`: Replace RightPanel tabs with contextual inspector popups.
+   - `recording-studio-tycoon-goj.3`: Remove web affordances and add game transitions.
+   - `recording-studio-tycoon-ifx.3`: Milestone rewards that visibly upgrade the studio room.
+
 
