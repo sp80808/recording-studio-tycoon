@@ -274,6 +274,9 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
                     
                     <div className="text-sm text-gray-600">
                       <div>Current: {progress?.currentStage}</div>
+                      <div>
+                        Room: {gameState.studioRooms.find(room => room.id === project.bookingRoomId)?.name || 'Unassigned'}
+                      </div>
                       <div>Staff: {assignedStaff.length}</div>
                       <div>Est. Completion: {progress?.estimatedCompletion === Infinity ? 'N/A' : `${progress?.estimatedCompletion} days`}</div>
                     </div>
