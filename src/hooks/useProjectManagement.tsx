@@ -80,6 +80,11 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
     setGameState(prev => {
       let updatedPlayerData = { ...prev.playerData };
       let updatedHiredStaff = [...prev.hiredStaff];
+      const involvedStaffIds = new Set(
+        prev.hiredStaff
+          .filter(staff => staff.assignedProjectId === projectId)
+          .map(staff => staff.id)
+      );
 
       // Update player skills and overall XP if player worked
       if (assignedPerson.type === 'player' && assignedPerson.id === 'player') { // Assuming player ID is 'player'
@@ -169,6 +174,19 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
               prev.currentDay
             );
         }
+
+        updatedHiredStaff = updatedHiredStaff.map(staff => {
+          if (!involvedStaffIds.has(staff.id)) return staff;
+
+          const familiarity = { ...(staff.clientFamiliarity || {}) };
+          familiarity[completedProject.clientId!] =
+            (familiarity[completedProject.clientId!] || 0) + 1;
+
+          return {
+            ...staff,
+            clientFamiliarity: familiarity
+          };
+        });
       }
 
       const nextEnquiries = generateNewProjects(
