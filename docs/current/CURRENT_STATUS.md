@@ -1,204 +1,46 @@
 # Current Development Status
-*Recording Studio Tycoon - Updated: June 11, 2025*
+*Recording Studio Tycoon - Updated: September 27, 2026*
 
 ## 📊 Project Overview
 
-**Current Version:** 0.3.1  
-**Development Phase:** Multi-Project System Enhancement & Audio System Optimization  
-**Active Branch:** main  
-**Last Major Release:** June 11, 2025
+**Current Version:** 0.3.1
+**Development Phase:** Studio-shell + settlement loop complete; minigame chrome rollout ongoing
+**Last Updated:** September 27, 2026
 
-## 🎯 Current Priority Tasks
+The game shell (`src/pages/Index.tsx`) mounts the full game. The home screen is an isometric PixiJS studio floor (`src/components/StudioRoom.tsx` / `src/components/WebGLCanvas.tsx`); management UI lives in a collapsed drawer (`MainGameContent`).
 
-### 🔴 Critical Issues (In Progress)
-1. **SaveSystemContext 500 Error Resolution**
-   - **Status**: Investigating root cause
-   - **Impact**: Prevents Hot Module Reload functionality
-   - **Priority**: High
-   - **ETA**: Today
+## ✅ Completed systems
 
-2. **AudioContext User Gesture Requirements**
-   - **Status**: Error handling implemented, user gesture handling needed
-   - **Impact**: Background music fails without user interaction
-   - **Priority**: High
-   - **ETA**: This week
+- **Isometric studio floor** — 6 clickable hotspots (console, liveRoom, phone, clock, tv, shelf), each opening a contextual `StudioInspector` popup.
+- **Milestone room upgrades** — `roomTier` 1–5 derived from `ProgressionSystem` milestones; drives visible Pixi furniture/gear upgrades (Home Studio → Bedroom+ → Project Studio → Studio A → Hit Factory) with tier-up flash + fanfare. Extended with deterministic **daily challenges** (`src/utils/dailyChallenges.ts`), surfaced in the clock inspector.
+- **15 minigames via `MinigameManager`** — incl. new EQ Match, Fader Ride, Punch-In. Shared `MinigameChrome` + `minigame-juice.css` kit; combo streak + Overdrive (2 energy, +75%, burnout risk); scores feed project quality via `minigamePoints` (0–10).
+- **Real settlement** — `generateProjectReview` (`src/utils/projectReviewUtils.ts`, wired through `ProjectService`) scores skills, staff contribution, equipment, studio quality, focus effectiveness, artist match, and market multiplier.
+- **Daily tick economy** — `advanceDay` deducts staff salaries + equipment upkeep into `financials` (`income`/`expenses`/`profit`/`reports`), rolls random events (`rollDailyEvents`), resets `dailyTracking`.
+- **Gig pipeline** — phone-inspector gig list with $50 refresh cost and 3-day cooldown (`GIG_REFRESH_COST`, `GIG_REFRESH_COOLDOWN_DAYS` in `useGameActions`).
+- **Era color grade** — `EraGrade` pointer-events-none overlay tinted from the current era palette.
+- **Tooling** — pnpm 12 (`packageManager` + `devEngines` in `package.json`); beads issue tracking (`.beads/`).
 
-3. **Development Server Stability**
-   - **Status**: Testing current build status
-   - **Impact**: Development workflow interruption
-   - **Priority**: Medium
-   - **ETA**: Today
+## 🚧 Open P2s
 
-### 🟡 Active Development
-1. **Documentation Organization & Updates**
-   - **Status**: Major restructuring in progress
-   - **Impact**: Improved developer onboarding and maintenance
-   - **Priority**: Medium
-   - **ETA**: This week
-
-2. **Tutorial System Validation**
-   - **Status**: Era compatibility fixes implemented
-   - **Impact**: Improved new user experience
-   - **Priority**: Medium
-   - **ETA**: Testing phase
-
-## 🎉 Recently Completed (June 11, 2025)
-
-### ✅ Major Milestones
-1. **Work Progression Enhancement System** - COMPLETED
-   - Enhanced work unit calculation with intelligent progression algorithm
-   - Stage-specific focus allocation labels that adapt to recording phase
-   - Real-time effectiveness scoring and optimization recommendations
-   - Genre-aware focus strategies for different musical styles
-   - Visual progress indicators and one-click optimization features
-
-2. **Equipment Purchase Audio Analysis** - COMPLETED
-   - Comprehensive analysis of dual audio system
-   - Identified code-generated vs file-based sound preferences
-   - Documented user audio preference patterns
-   - Created detailed technical analysis document
-
-3. **Tutorial System Era Compatibility** - COMPLETED
-   - Fixed era ID mapping issues between tutorial system and era selection
-   - Added support for current era IDs with legacy compatibility
-   - Enhanced error handling and debugging capabilities
-
-4. **Memory Bank Documentation Updates** - COMPLETED
-   - Updated all memory bank files to v0.3
-   - Synchronized with recent work progression enhancements
-   - Added current project state and audio investigation status
-
-### ✅ Technical Improvements
-1. **Audio System Error Handling**
-   - Enhanced `ensureInitialized()` with try-catch blocks
-   - Improved error resilience for audio initialization failures
-   - Better graceful degradation when audio features fail
-
-2. **Code Quality & Maintainability**
-   - Improved error logging and debugging information
-   - Enhanced type safety in tutorial and audio systems
-   - Better separation of concerns in audio management
-
-## 🚧 Development Focus Areas
-
-### Phase 1: Stability & Bug Fixes (This Week)
-- **SaveSystemContext 500 error resolution**
-- **AudioContext user gesture implementation**
-- **Development server stability verification**
-- **Tutorial system testing across all eras**
-
-### Phase 2: Feature Completion (Next Week)
-- **Multi-project system polish and testing**
-- **Audio system user preference implementation**
-- **Enhanced error handling across all systems**
-- **Performance optimization**
-
-### Phase 3: Polish & Documentation (Following Week)
-- **Complete documentation reorganization**
-- **User experience improvements**
-- **Accessibility enhancements**
-- **Deployment preparation**
-
-## 📋 Task Assignments
-
-### Immediate Actions (Today)
-- [ ] Investigate SaveSystemContext 500 error
-- [ ] Test AudioContext initialization fixes
-- [ ] Verify development server functionality
-- [x] Update documentation structure and organization
-
-### This Week
-- [ ] Implement AudioContext user gesture handling
-- [ ] Complete tutorial system validation
-- [ ] Finish documentation reorganization
-- [ ] Test all recent fixes in live environment
-
-### Next Week
-- [ ] Multi-project system comprehensive testing
-- [ ] Audio preference system implementation
-- [ ] Performance optimization pass
-- [ ] User experience polish
+1. **MinigameChrome rollout to remaining games** — only 4 of 15 minigames (MixingBoard, FaderRide, PunchIn, EQMatch) use the shared chrome/juice kit; 11 legacy games still render bespoke UI.
+2. **Audio unlock** — Web Audio background playback still gated on first user gesture; no in-game unlock prompt yet.
 
 ## 🔧 Technical Stack Status
 
-### Core Technologies
-- **React 18** ✅ Stable
-- **TypeScript 5.x** ✅ Stable
-- **Vite** ✅ Stable
-- **Tailwind CSS** ✅ Stable
-
-### Game Systems
-- **Multi-Project Management** ✅ Implemented, Testing
-- **Work Progression** ✅ Enhanced, Stable
-- **Audio System** 🟡 Dual system operational, optimization ongoing
-- **Tutorial System** ✅ Fixed, Testing
-- **Save System** 🔴 500 error, investigating
-
-### Development Tools
-- **Hot Module Reload** 🔴 Affected by SaveSystemContext error
-- **TypeScript Compiler** ✅ Stable
-- **ESLint** ✅ Configured
-- **Development Server** 🟡 Testing stability
-
-## 📊 Key Metrics
-
-### Code Quality
-- **TypeScript Coverage**: 95%+
-- **Component Count**: 100+ React components
-- **Lines of Code**: ~50,000+
-- **Test Coverage**: Expanding
-
-### Performance
-- **Bundle Size**: Optimized
-- **Load Time**: < 3 seconds
-- **Memory Usage**: Efficient
-- **Audio Latency**: < 100ms
-
-### User Experience
-- **Tutorial Completion**: Testing phase
-- **Error Rate**: Minimizing
-- **Accessibility**: WCAG 2.1 AA compliant
-- **Mobile Compatibility**: Responsive design
-
-## 🎮 Game Features Status
-
-### ✅ Stable Features
-- Studio management and equipment system
-- Staff hiring and management
-- Era progression system
-- Focus allocation and work progression
-- Basic minigames
-- Save/load functionality (excluding current 500 error)
-
-### 🟡 Testing Features
-- Multi-project management system
-- Advanced staff automation
-- Tutorial system improvements
-- Audio preference system
-
-### 🔄 In Development
-- Advanced analytics and reporting
-- Enhanced user experience features
-- Performance optimizations
-- Documentation improvements
+- **React + TypeScript 5.x** ✅ Stable
+- **Vite 5** ✅ Stable
+- **Tailwind CSS + Radix/shadcn** ✅ Stable
+- **PixiJS 8** ✅ Stable (studio floor)
+- **Web Audio** 🟡 Operational, gesture-gated
+- **pnpm 12 / beads** ✅ Active workflow
 
 ## 📞 Support & Resources
 
-### Documentation
-- **[Main README](../README.md)** - Primary documentation entry
-- **[API Reference](../architecture/)** - Technical documentation
+- **[Main README](../../README.md)** - Primary documentation entry
+- **[Documentation Index](../DOCUMENTATION_INDEX.md)** - Complete documentation overview
 - **[Troubleshooting](../TROUBLESHOOTING.md)** - Issue resolution
-
-### Development
-- **Memory Bank**: Up-to-date context files for AI assistance
-- **Implementation Logs**: Detailed change tracking
-- **Feature Documentation**: System-specific guides
-
-### Communication
-- **Issues**: Document in GitHub Issues or task tracking
-- **Updates**: Regular status updates in documentation
-- **Progress**: Track in memory bank and progress files
+- **Task tracking**: `bd ready` / `bd show <id>` / `bd close <id>`
 
 ---
 
-*This document is updated regularly to reflect current development status. Last updated: June 11, 2025*
+*Last updated: September 27, 2026*

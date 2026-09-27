@@ -2,11 +2,13 @@
 *A comprehensive music industry simulation game built with React, TypeScript, and modern web technologies*
 
 ## 🎯 Project Overview
-Recording Studio Tycoon is an immersive music industry simulation game that allows players to build and manage their own recording studio, work with artists, and experience the evolution of the music industry from the 1960s to the present day.
+Recording Studio Tycoon is a music industry simulation game: run a recording studio from the 1960s onward — hire staff, buy gear, take gigs, work project stages, play production minigames, and settle completed projects for money, reputation, and charts.
 
-**Current Version:** 0.3.1  
-**Development Status:** Active Development  
-**Last Updated:** June 12, 2025
+**Current Version:** 0.3.1
+**Development Status:** Active Development
+**Last Updated:** September 27, 2026
+
+**Game shell:** `src/pages/Index.tsx` mounts the full game. The home screen is an isometric PixiJS studio floor (`src/components/StudioRoom.tsx` / `src/components/WebGLCanvas.tsx`) with 6 clickable hotspots — console, live room, phone, clock, TV, shelf — each opening a contextual popup (`src/components/StudioInspector.tsx`). The 5-tab management panel lives in a collapsed on-demand drawer (`MainGameContent`).
 
 ## 🚀 Quick Start
 
@@ -40,21 +42,15 @@ Recording Studio Tycoon is an immersive music industry simulation game that allo
 
 ## 🎯 Implementation Status
 
-### ✅ Phase 1: Core Foundation (Complete)
-- [x] Basic recording studio mechanics
-- [x] Staff management system
-- [x] Equipment progression
-- [x] Foundational minigames
-- [x] Tutorial system
+### ✅ Complete systems
+- **Isometric studio floor** — PixiJS room (`StudioRoom`/`WebGLCanvas`) with 6 hotspots + `StudioInspector` popups; room tier 1–5 from progression milestones drives visible upgrades (Home Studio → Bedroom+ → Project Studio → Studio A → Hit Factory); era color grade overlay (`EraGrade`).
+- **15 minigames via `MinigameManager`** — incl. EQ Match, Fader Ride, Punch-In; shared `MinigameChrome` + CSS juice kit (`minigame-juice.css`); combo streak + Overdrive (2 energy, +75%, burnout risk); scores feed project quality via `minigamePoints` (0–10).
+- **Real project settlement** — `generateProjectReview` scores skills, staff contribution, equipment, studio quality, focus effectiveness, artist match, and market multiplier; results land in financials (`income`/`expenses`/`profit`/`reports`).
+- **Deterministic daily challenges** (`src/utils/dailyChallenges.ts`) — one seeded challenge per day, shown in the clock inspector; gig refresh costs $50 with a 3-day cooldown; random events roll on every daily tick; salaries + equipment upkeep deducted on `advanceDay`.
 
-### 🚧 Phase 2: Current Development (In Progress)
-- **[Bug Fix & Polish Plan](./docs/bugfix_and_polish_plan.md)** - Critical fixes for core loop
-- **[Systems Restoration](./docs/systems_restoration_plan.md)** - Audio and UI improvements
-- **[Multi-Project Automation](./docs/MULTI_PROJECT_AUTOMATION_PLAN.md)** - Concurrent project management
-
-### 📅 Phase 3: Planned Features
-- **[Polish & Localization](./docs/POLISH_AND_LOCALIZATION_PLAN.md)** - UI polish and internationalization
-- **[Mobile Porting](./docs/mobile_porting_plan.md)** - Mobile platform adaptation
+### 🚧 Open P2s
+- **MinigameChrome rollout** — 4 of 15 games use the shared chrome/juice kit; 11 legacy games still need migration.
+- **Audio unlock** — Web Audio still requires a user gesture before background playback starts.
 
 ## 🎨 Design Principles
 
@@ -80,11 +76,14 @@ Recording Studio Tycoon is an immersive music industry simulation game that allo
 
 This project is built with modern web technologies:
 
-- **Framework**: React 18 with TypeScript
-- **Build Tool**: Vite for fast development and optimized builds
+- **Framework**: React with TypeScript
+- **Build Tool**: Vite 5 for fast development and optimized builds
 - **Styling**: Tailwind CSS with shadcn/ui components
 - **State Management**: React hooks and context
+- **2D Rendering**: PixiJS 8 (`pixi.js` + `@pixi/react`) for the isometric studio floor
 - **Audio**: Web Audio API and HTML5 audio elements
+- **Package Manager**: pnpm 12 (`packageManager: pnpm@12.3.4`, `devEngines` enforced)
+- **Issue Tracking**: beads (`.beads/`) — see Development Setup
 - **Deployment**: Vercel with automatic CI/CD
 
 ## 🔗 External Resources
@@ -98,29 +97,34 @@ This project is built with modern web technologies:
 ## 📝 Development Setup
 
 ### Prerequisites
-- Node.js 18+ and npm (install with [nvm](https://github.com/nvm-sh/nvm#installing-and-updating))
+- Node.js 18+ and pnpm 12+ (install with [nvm](https://github.com/nvm-sh/nvm#installing-and-updating), then `corepack enable` or `npm i -g pnpm`)
 - Git for version control
 
 ### Local Development
 ```bash
-# Clone the repository
-git clone <YOUR_GIT_URL>
-
 # Navigate to project directory
 cd recording-studio-tycoon
 
-# Install dependencies
-npm install
+# Install dependencies (pnpm only — packageManager + devEngines enforced)
+pnpm install
 
 # Start development server
-npm run dev
+pnpm run dev
 ```
 
 ### Available Scripts
-- `npm run dev` - Start development server with hot reload
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
+- `pnpm run dev` - Start development server with hot reload
+- `pnpm run build` - Build for production
+- `pnpm run preview` - Preview production build
+- `pnpm run lint` - Run ESLint
+
+### Issue Tracking (beads)
+```bash
+bd ready              # Find available work
+bd show <id>          # View issue details
+bd update <id> --claim  # Claim work
+bd close <id>         # Complete work
+```
 
 ## 🤝 Contributing
 
@@ -133,12 +137,16 @@ We welcome contributions! Please check our documentation for guidelines:
 
 ## 📋 Current Priorities
 
-1. **Core Loop Restoration** - Fix critical bugs in project completion flow
-2. **Audio System Enhancement** - Improve sound effects and music integration  
-3. **UI Polish** - Enhance user interface and user experience
-4. **Multi-Project Management** - Enable concurrent project workflows
+1. **MinigameChrome rollout** - Migrate the 11 legacy minigames to the shared chrome/juice kit
+2. **Audio unlock** - Resolve user-gesture gating for Web Audio background playback
+3. **Multi-project polish** - Harden concurrent project workflows and settlement reports
 
-For detailed information on current development priorities, see the **[Bug Fix & Polish Plan](./docs/bugfix_and_polish_plan.md)**.
+For task-level tracking, see beads (`bd ready`) and the **[Current Development Status](./docs/current/CURRENT_STATUS.md)**.
+
+---
+
+## Screenshots
+<!-- ORCHESTRATOR: screenshot gallery embedded here -->
 
 ---
 

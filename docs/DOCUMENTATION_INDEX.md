@@ -1,21 +1,34 @@
 <!-- 
-  File: DOCUMENTATION_INDEX.md
-  Purpose: Central index for all project documentation with version tracking
-  Version: 0.3.2
-  Created: 2025-06-08
-  Last Modified: 2025-06-11
-  Status: Active
+   File: DOCUMENTATION_INDEX.md
+   Purpose: Central index for all project documentation with version tracking
+   Version: 0.3.3
+   Created: 2025-06-08
+   Last Modified: 2026-09-27
+   Status: Active
 -->
 
 # Documentation Index & Version Tracking
 *Recording Studio Tycoon - Complete Documentation Overview*
-*Updated: June 11, 2025 - Major Documentation Reorganization*
+*Updated: September 27, 2026 - Current-codebase refresh*
 
 ## 📚 Quick Navigation
 - **[Main Documentation](./README.md)** - Start here for all documentation
 - **[Current Development Status](./current/CURRENT_STATUS.md)** - What's happening now
 - **[Quick Start Guide](./QUICK_START.md)** - Get up and running
 - **[Troubleshooting](./TROUBLESHOOTING.md)** - Common issues and solutions
+
+## 🎮 Current Systems (verified in code, September 2026)
+| System | Source path | Purpose |
+|--------|-------------|---------|
+| Studio shell / hotspots | [`../src/components/StudioRoom.tsx`](../src/components/StudioRoom.tsx), [`../src/components/WebGLCanvas.tsx`](../src/components/WebGLCanvas.tsx) | Isometric PixiJS floor, 6 hotspots, roomTier 1–5 upgrades |
+| Inspector popups | [`../src/components/StudioInspector.tsx`](../src/components/StudioInspector.tsx) | Contextual per-hotspot panels (phone gigs, clock challenges, TV charts, shelf gear, console project) |
+| Era color grade | [`../src/components/EraGrade.tsx`](../src/components/EraGrade.tsx) | Era-palette overlay + transition flash |
+| Minigame manager | [`../src/components/minigames/MinigameManager.tsx`](../src/components/minigames/MinigameManager.tsx) | 15 minigame types incl. EQ Match / Fader Ride / Punch-In |
+| Minigame chrome / juice kit | [`../src/components/minigames/MinigameChrome.tsx`](../src/components/minigames/MinigameChrome.tsx), [`../src/components/minigames/minigame-juice.css`](../src/components/minigames/minigame-juice.css) | Shared frame, streak badge, CSS juice (4 of 15 games migrated) |
+| Project lifecycle | [`../src/game-mechanics/ProjectService.ts`](../src/game-mechanics/ProjectService.ts) | Stage/focus/assignment/completion wiring |
+| Settlement scoring | [`../src/utils/projectReviewUtils.ts`](../src/utils/projectReviewUtils.ts) | `generateProjectReview`: skills/staff/equipment/focus/market/match |
+| Daily challenges | [`../src/utils/dailyChallenges.ts`](../src/utils/dailyChallenges.ts) | Deterministic seeded daily challenge + `DailyTracking` counters |
+| Daily tick economy | [`../src/hooks/useGameActions.tsx`](../src/hooks/useGameActions.tsx) | `advanceDay`: salaries/upkeep, `rollDailyEvents`, gig cooldown ($50 / 3d) |
 
 ## 📚 Documentation Categories
 
@@ -46,61 +59,58 @@
 ### 🎮 System Documentation (New - June 10)
 | Document | Version | Last Updated | Status | Purpose |
 |----------|---------|--------------|--------|---------|
-| [Sound System Documentation](./SOUND_SYSTEM_DOCUMENTATION.md) | 1.0.0 | 2025-06-10 | Active | Comprehensive audio system implementation guide |
-| [Visual Polish & Animation System](./VISUAL_POLISH_ANIMATION_SYSTEM.md) | 1.0.0 | 2025-06-10 | Active | Animation patterns and visual feedback systems |
-| [Minigame Design Patterns](./MINIGAME_DESIGN_PATTERNS.md) | 1.0.0 | 2025-06-10 | Active | Minigame architecture and implementation patterns |
-| [Project Management Workflow](./PROJECT_MANAGEMENT_WORKFLOW.md) | 1.0.0 | 2025-06-10 | Active | Project lifecycle and workflow documentation |
-| [Gameplay Enhancement Roadmap](./GAMEPLAY_ENHANCEMENT_ROADMAP.md) | 1.0.0 | 2025-06-10 | Active | Long-term enhancement strategy and timeline |
+| [Sound System Documentation](./system_designs_and_specs/SOUND_SYSTEM_DOCUMENTATION.md) | 1.0.0 | 2025-06-10 | Active | Comprehensive audio system implementation guide |
+| [Visual Polish & Animation System](./system_designs_and_specs/VISUAL_POLISH_ANIMATION_SYSTEM.md) | 1.0.0 | 2025-06-10 | Active | Animation patterns and visual feedback systems |
+| [Minigame Design Patterns](./development_guidelines/MINIGAME_DESIGN_PATTERNS.md) | 1.0.0 | 2025-06-10 | Active | Minigame architecture and implementation patterns |
+| [Project Management Workflow](./development_guidelines/PROJECT_MANAGEMENT_WORKFLOW.md) | 1.0.0 | 2025-06-10 | Active | Project lifecycle and workflow documentation |
+| [Gameplay Enhancement Roadmap](./roadmaps_and_strategic_overviews/GAMEPLAY_ENHANCEMENT_ROADMAP.md) | 1.0.0 | 2025-06-10 | Active | Long-term enhancement strategy and timeline |
 
 ### 🏗️ Architecture & Development
 | Document | Version | Last Updated | Status | Purpose |
 |----------|---------|--------------|--------|---------|
-| [Implementation Roadmap](./IMPLEMENTATION_ROADMAP.md) | 0.3.0 | 2025-06-08 | Active | Development timeline and technical architecture |
-| [Development Standards](./DEVELOPMENT_STANDARDS.md) | 0.3.0 | 2025-06-08 | Active | Code quality and documentation standards |
-| [Version History](./VERSION_HISTORY.md) | 0.3.0 | 2025-06-08 | Active | Complete changelog and version tracking |
-| [Codebase Analysis](./CODEBASE_ANALYSIS_2025.md) | 0.3.0 | 2025-06-08 | Active | Comprehensive system analysis and status |
+| [Implementation Roadmap](./roadmaps_and_strategic_overviews/IMPLEMENTATION_ROADMAP.md) | 0.3.0 | 2025-06-08 | Active | Development timeline and technical architecture |
+| [Development Standards](./development_guidelines/DEVELOPMENT_STANDARDS.md) | 0.3.0 | 2025-06-08 | Active | Code quality and documentation standards |
+| [Version History](./logs_and_reports/VERSION_HISTORY.md) | 0.3.0 | 2025-06-08 | Active | Complete changelog and version tracking |
+| [Codebase Analysis](./logs_and_reports/CODEBASE_ANALYSIS_2025.md) | 0.3.0 | 2025-06-08 | Active | Comprehensive system analysis and status |
 
 ### 🎮 Game Systems Documentation
 | Document | Version | Last Updated | Status | Purpose |
 |----------|---------|--------------|--------|---------|
-| [Game Overview](./GAME_OVERVIEW.md) | 0.2.0 | 2025-06-06 | Active | Master game design documentation |
-| [Charts System Implementation](./CHARTS_SYSTEM_IMPLEMENTATION.md) | 0.3.0 | 2025-06-08 | Active | Charts and industry integration guide |
-| [Music Industry Charts](./MUSIC_INDUSTRY_CHARTS.md) | 0.3.0 | 2025-06-08 | Active | Charts system design and implementation |
-| [Enhanced Minigames Detailed](./ENHANCED_MINIGAMES_DETAILED.md) | 0.2.0 | 2025-06-08 | Active | Advanced minigame implementations |
-| [Enhanced Minigames](./ENHANCED_MINIGAMES.md) | 0.2.0 | 2025-06-08 | Active | Minigame system overview |
-| [Era Based Progression Detailed](./ERA_BASED_PROGRESSION_DETAILED.md) | 0.1.0 | 2025-06-05 | Active | Historical timeline and progression system |
-| [Era Based Progression](./ERA_BASED_PROGRESSION.md) | 0.1.0 | 2025-06-05 | Active | Era progression overview |
+| [Game Overview](./roadmaps_and_strategic_overviews/GAME_OVERVIEW.md) | 0.2.0 | 2025-06-06 | Active | Master game design documentation |
+| [Charts System Implementation](./active_implementation_plans/CHARTS_SYSTEM_IMPLEMENTATION.md) | 0.3.0 | 2025-06-08 | Active | Charts and industry integration guide |
+| [Music Industry Charts](./system_designs_and_specs/MUSIC_INDUSTRY_CHARTS.md) | 0.3.0 | 2025-06-08 | Active | Charts system design and implementation |
+| [Era Based Progression Detailed](./system_designs_and_specs/ERA_BASED_PROGRESSION_DETAILED.md) | 0.1.0 | 2025-06-05 | Active | Historical timeline and progression system |
 
 ### 📋 Integration & Testing
 | Document | Version | Last Updated | Status | Purpose |
 |----------|---------|--------------|--------|---------|
-| [Integration Testing Report](./INTEGRATION_TESTING_REPORT.md) | 0.3.0 | 2025-06-08 | Active | System integration testing results |
-| [Music Timing Fix](./MUSIC_TIMING_FIX.md) | 0.3.0 | 2025-06-08 | Active | Background music timing optimization documentation |
+| [Integration Testing Report](./logs_and_reports/INTEGRATION_TESTING_REPORT.md) | 0.3.0 | 2025-06-08 | Active | System integration testing results |
+| [Music Timing Fix](./completed_implementation_plans/MUSIC_TIMING_FIX.md) | 0.3.0 | 2025-06-08 | Active | Background music timing optimization documentation |
 
 ### 📋 Current Status & Planning
 | Document | Version | Last Updated | Status | Purpose |
 |----------|---------|--------------|--------|---------|
-| [Current Task](./CURRENT_TASK.md) | 0.3.0 | 2025-06-08 | Active | Current development focus and immediate tasks |
+| [Current Task](./current_task_and_summaries/CURRENT_TASK.md) | 0.3.0 | 2025-06-08 | Active | Current development focus and immediate tasks |
 | [Progress](./progress.md) | 0.3.0 | 2025-06-08 | Active | Overall project progress and milestone tracking |
-| [Enhancement Implementation Log](./ENHANCEMENT_IMPLEMENTATION_LOG.md) | 0.3.0 | 2025-06-08 | Active | Detailed implementation progress tracking |
+| [Enhancement Implementation Log](./logs_and_reports/ENHANCEMENT_IMPLEMENTATION_LOG.md) | 0.3.0 | 2025-06-08 | Active | Detailed implementation progress tracking |
 
 ### 🎵 Feature Design Documents
 | Document | Version | Last Updated | Status | Purpose |
 |----------|---------|--------------|--------|---------|
-| [Track Release Plan](./TRACK_RELEASE_PLAN.md) | 0.1.0 | 2025-06-05 | Draft | Track release and promotion system |
-| [A&R Department System](./AR_DEPARTMENT_SYSTEM.md) | 0.1.0 | 2025-06-05 | Draft | Artist development and talent scouting |
-| [Design Notes Original Tracks](./DESIGN_NOTES_ORIGINAL_TRACKS.md) | 0.1.0 | 2025-06-05 | Draft | Band creation and original music systems |
-| [EPK Communication System](./EPK_COMMUNICATION_SYSTEM.md) | 0.1.0 | 2025-06-05 | Draft | Electronic press kit and communication tools |
-| [Advanced Progression Plan](./ADVANCED_PROGRESSION_PLAN.md) | 0.2.0 | 2025-06-07 | Draft | Advanced game progression mechanics |
+| [Track Release Plan](./active_implementation_plans/TRACK_RELEASE_PLAN.md) | 0.1.0 | 2025-06-05 | Draft | Track release and promotion system |
+| [A&R Department System](./system_designs_and_specs/AR_DEPARTMENT_SYSTEM.md) | 0.1.0 | 2025-06-05 | Draft | Artist development and talent scouting |
+| [Design Notes Original Tracks](./system_designs_and_specs/DESIGN_NOTES_ORIGINAL_TRACKS.md) | 0.1.0 | 2025-06-05 | Draft | Band creation and original music systems |
+| [EPK Communication System](./active_implementation_plans/EPK_COMMUNICATION_SYSTEM.md) | 0.1.0 | 2025-06-05 | Draft | Electronic press kit and communication tools |
+| [Advanced Progression Plan](./active_implementation_plans/ADVANCED_PROGRESSION_PLAN.md) | 0.2.0 | 2025-06-07 | Draft | Advanced game progression mechanics |
 
 ### 🔧 Technical Specifications
 | Document | Version | Last Updated | Status | Purpose |
 |----------|---------|--------------|--------|---------|
-| [Chart Track Audio Implementation Plan](./CHART_TRACK_AUDIO_IMPLEMENTATION_PLAN.md) | 0.3.0 | 2025-06-08 | Active | Audio system implementation guide |
-| [Chart Track Audio Prompts](./CHART_TRACK_AUDIO_PROMPTS.md) | 0.3.0 | 2025-06-08 | Active | Audio generation prompts and templates |
-| [Charts Music Generation Plan](./CHARTS_MUSIC_GENERATION_PLAN.md) | 0.3.0 | 2025-06-08 | Active | Music generation system design |
-| [Era Mechanics Implementation Plan](./ERA_MECHANICS_IMPLEMENTATION_PLAN.md) | 0.1.0 | 2025-06-05 | Draft | Era-specific mechanics implementation |
-| [Suno API Integration Plan](./SUNO_API_INTEGRATION_PLAN.md) | 0.2.0 | 2025-06-07 | Draft | AI music generation integration |
+| [Chart Track Audio Implementation Plan](./active_implementation_plans/CHART_TRACK_AUDIO_IMPLEMENTATION_PLAN.md) | 0.3.0 | 2025-06-08 | Active | Audio system implementation guide |
+| [Chart Track Audio Prompts](./logs_and_reports/CHART_TRACK_AUDIO_PROMPTS.md) | 0.3.0 | 2025-06-08 | Active | Audio generation prompts and templates |
+| [Charts Music Generation Plan](./active_implementation_plans/CHARTS_MUSIC_GENERATION_PLAN.md) | 0.3.0 | 2025-06-08 | Active | Music generation system design |
+| [Era Mechanics Implementation Plan](./active_implementation_plans/ERA_MECHANICS_IMPLEMENTATION_PLAN.md) | 0.1.0 | 2025-06-05 | Draft | Era-specific mechanics implementation |
+| [Suno API Integration Plan](./active_implementation_plans/SUNO_API_INTEGRATION_PLAN.md) | 0.2.0 | 2025-06-07 | Draft | AI music generation integration |
 
 ---
 
@@ -166,22 +176,22 @@
 ## 🔍 Quick Navigation
 
 ### For Developers
-1. Start with [Development Standards](./DEVELOPMENT_STANDARDS.md)
-2. Review [Implementation Roadmap](./IMPLEMENTATION_ROADMAP.md)
-3. Check [Current Task](./CURRENT_TASK.md) for immediate work
-4. Reference [Codebase Analysis](./CODEBASE_ANALYSIS_2025.md) for system overview
+1. Start with [Development Standards](./development_guidelines/DEVELOPMENT_STANDARDS.md)
+2. Review [Implementation Roadmap](./roadmaps_and_strategic_overviews/IMPLEMENTATION_ROADMAP.md)
+3. Check [Current Task](./current_task_and_summaries/CURRENT_TASK.md) for immediate work
+4. Reference [Codebase Analysis](./logs_and_reports/CODEBASE_ANALYSIS_2025.md) for system overview
 
 ### For Design Review
-1. Begin with [Game Overview](./GAME_OVERVIEW.md)
-2. Examine [Charts System](./MUSIC_INDUSTRY_CHARTS.md)
-3. Study [Era Progression](./ERA_BASED_PROGRESSION_DETAILED.md)
-4. Review [Enhancement Log](./ENHANCEMENT_IMPLEMENTATION_LOG.md)
+1. Begin with [Game Overview](./roadmaps_and_strategic_overviews/GAME_OVERVIEW.md)
+2. Examine [Charts System](./system_designs_and_specs/MUSIC_INDUSTRY_CHARTS.md)
+3. Study [Era Progression](./system_designs_and_specs/ERA_BASED_PROGRESSION_DETAILED.md)
+4. Review [Enhancement Log](./logs_and_reports/ENHANCEMENT_IMPLEMENTATION_LOG.md)
 
 ### For Project Management
 1. Monitor [Progress](./progress.md)
-2. Track [Current Task](./CURRENT_TASK.md)
-3. Review [Version History](./VERSION_HISTORY.md)
-4. Plan with [Implementation Roadmap](./IMPLEMENTATION_ROADMAP.md)
+2. Track [Current Task](./current_task_and_summaries/CURRENT_TASK.md)
+3. Review [Version History](./logs_and_reports/VERSION_HISTORY.md)
+4. Plan with [Implementation Roadmap](./roadmaps_and_strategic_overviews/IMPLEMENTATION_ROADMAP.md)
 
 ---
 
@@ -208,6 +218,7 @@
 ---
 
 ## 🔄 Change Log
+- **2026-09-27**: Current-codebase refresh (v0.3.3) — added Current Systems table with verified src paths; fixed dead links to relocated docs; removed entries for files that no longer exist
 - **2025-06-08**: Initial creation of documentation index (v0.3.0)
 - **2025-06-08**: Added version tracking for all documentation files (v0.3.0)
 - **2025-06-08**: Established maintenance schedule and quality standards (v0.3.0)
