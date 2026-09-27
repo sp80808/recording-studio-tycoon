@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { DialogFooter } from '@/components/ui/dialog';
 import { MinigameChrome, KenneyButton } from './MinigameChrome';
-import { Card } from '@/components/ui/card';
 import { gameAudio } from '@/utils/audioSystem';
 
 interface RhythmTimingGameProps {
@@ -163,16 +164,12 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
     return () => document.removeEventListener('keydown', handleKeyPress);
   }, [hitBeat, gameActive]);
 
+  const finished = !gameActive && timeLeft === 0;
+
   return (
-    <Card className="p-6 bg-gray-900/95 border-purple-500/50 text-white max-w-2xl mx-auto">
-      <div className="text-center mb-4">
-        <h3 className="text-xl font-bold mb-2">🎵 Rhythm Timing Challenge</h3>
-        <div className="flex justify-between items-center">
-          <div>Score: <span className="text-purple-400 font-bold">{score}</span></div>
-          <div>Combo: <span className="text-orange-400 font-bold">x{combo}</span></div>
-          <div>Time: <span className="text-red-400 font-bold">{timeLeft}s</span></div>
-        </div>
-      </div>
+    <Card className="w-full max-w-2xl mx-auto bg-gray-800 text-white border-gray-700">
+      <MinigameChrome title="🎵 Rhythm Timing Challenge" score={score} timeLeft={gameActive ? timeLeft : undefined} streak={combo} accent="blue">
+      <CardContent>
 
       <div 
         ref={gameAreaRef}
@@ -199,7 +196,7 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
             className={`absolute top-1/2 transform -translate-y-1/2 w-8 h-8 rounded-full transition-all duration-100 ${
               beat.hit 
                 ? beat.perfect 
-                  ? 'bg-yellow-400 animate-pulse scale-150' 
+                  ? 'bg-yellow-400 mg-perfect-pop scale-150' 
                   : 'bg-green-400 animate-pulse scale-125'
                 : 'bg-purple-500 animate-bounce'
             }`}
@@ -222,28 +219,37 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
 
       <div className="text-center space-y-3">
         {!gameActive && timeLeft === 30 ? (
-          <Button onClick={startGame} className="bg-purple-600 hover:bg-purple-700">
+          <KenneyButton variant="blue" onClick={startGame}>
             Start Rhythm Challenge
-          </Button>
-        ) : !gameActive && timeLeft === 0 ? (
-          <div className="space-y-2">
-            <div className="text-lg font-bold text-yellow-400">Game Complete!</div>
+          </KenneyButton>
+        ) : finished ? (
+          <div key={score} className="space-y-2">
+            <div className={`text-lg font-bold text-yellow-400 ${score > 0 ? 'mg-perfect-pop' : ''}`}>Game Complete!</div>
             <div className="text-sm text-gray-300">Final Score: {score}</div>
-            <Button onClick={onClose} className="bg-green-600 hover:bg-green-700">
+            <KenneyButton variant="green" onClick={onClose}>
               Collect Rewards
-            </Button>
+            </KenneyButton>
           </div>
         ) : (
           <div className="space-y-2">
             <div className="text-sm text-gray-300">
               Press SPACE when beats hit the <span className="text-yellow-400 font-bold">yellow line</span> for PERFECT timing!
             </div>
-            <Button onClick={hitBeat} className="bg-orange-600 hover:bg-orange-700 w-full">
+            <KenneyButton variant="yellow" onClick={hitBeat} className="w-full mg-hit-flash active:scale-95">
               HIT (SPACE)
-            </Button>
+            </KenneyButton>
           </div>
         )}
       </div>
+      </CardContent>
+      </MinigameChrome>
+      {!finished && (
+        <DialogFooter className="p-4">
+          <KenneyButton variant="grey" onClick={onClose}>
+            Close
+          </KenneyButton>
+        </DialogFooter>
+      )}
     </Card>
   );
 };
