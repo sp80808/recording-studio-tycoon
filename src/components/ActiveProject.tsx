@@ -21,6 +21,7 @@ import {
 import { GameState, FocusAllocation, Project, PlayerData } from '@/types/game';
 import { useFeatureFlag } from '@/stores/featureFlagStore';
 import ProductionQueuePanel from '@/components/ProductionQueue/ProductionQueuePanel';
+import { rankStaffForProject } from '@/utils/staffFitUtils';
 
 interface ActiveProjectProps {
   gameState: GameState;
@@ -126,6 +127,12 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
   // Aggregate skills of staff assigned to this project
   const assignedStaffToThisProject = gameState.hiredStaff.filter(s => s.assignedProjectId === project.id);
+  const rankedDelegates = rankStaffForProject(
+    assignedStaffToThisProject.filter(staff => staff.status === 'Working' && staff.energy > 0),
+    project
+  );
+  const bestDelegate = rankedDelegates[0];
+
   let aggregatedSkills: { creativity?: number; technical?: number; arrangement?: number } = {
     creativity: 0,
     technical: 0,
@@ -163,21 +170,10 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   };
 
   const handleDelegateIntervention = () => {
-    if (!autoTriggeredMinigame) return;
+    if (!autoTriggeredMinigame || !bestDelegate) return;
 
-    const workingStaff = assignedStaffToThisProject.filter(
-      staff => staff.status === 'Working' && staff.energy > 0
-    );
-    if (workingStaff.length === 0) return;
-
-    const delegationScore = workingStaff.reduce((total, staff) => {
-      const skillBase =
-        (staff.primaryStats.creativity + staff.primaryStats.technical + staff.primaryStats.speed) / 3;
-      const readiness = (staff.energy / 100) * (staff.mood / 100);
-      return total + skillBase * readiness;
-    }, 0) / workingStaff.length;
-
-    const baseBonus = Math.max(1, Math.min(8, Math.round(delegationScore / 8)));
+    const { staff, fit } = bestDelegate;
+    const baseBonus = Math.max(1, Math.min(8, Math.round(fit.score / 12)));
     const creativityLeaning = new Set<MinigameType>([
       'rhythm',
       'beatmaking',
@@ -199,11 +195,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
     toast({
       title: "👥 Intervention Delegated",
-      description: workingStaff.length > 1
-        ? `${workingStaff[0].name} + ${workingStaff.length - 1} staff handled it: +${creativityBonus} C, +${technicalBonus} T`
-        : `${workingStaff[0].name} handled it: +${creativityBonus} C, +${technicalBonus} T`,
+      description: `${staff.name} handled it · ${fit.reasons.slice(0, 3).join(' · ')} · +${creativityBonus} C / +${technicalBonus} T`,
       className: "bg-gray-800 border-gray-600 text-white",
-      duration: 3000
+      duration: 3500
     });
   };
 
@@ -422,10 +416,11 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                     onClick={handleDelegateIntervention}
                     size="sm"
                     variant="outline"
-                    disabled={assignedStaffToThisProject.filter(staff => staff.status === 'Working' && staff.energy > 0).length === 0}
+                    disabled={!bestDelegate}
                     className="border-blue-500/50 text-blue-200"
+                    title={bestDelegate ? bestDelegate.fit.reasons.join(' · ') : 'No available staff'}
                   >
-                    Delegate
+                    {bestDelegate ? `Delegate: ${bestDelegate.staff.name.split(' ')[0]}` : 'Delegate'}
                   </Button>
                   <Button
                     onClick={handleSkipIntervention}
