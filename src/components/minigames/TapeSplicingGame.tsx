@@ -10,14 +10,16 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Scissors, Play, Pause, RotateCcw, Clock } from 'lucide-react';
+import { MinigameChrome, KenneyButton } from './MinigameChrome';
 
 interface TapeSplicingGameProps {
-  onComplete: (score: number) => void;
+  onComplete: (score: number, success?: boolean) => void;
   onClose: () => void;
 }
 
@@ -241,115 +243,103 @@ export const TapeSplicingGame: React.FC<TapeSplicingGameProps> = ({ onComplete, 
   const handleComplete = () => {
     // Bonus points for completing with cuts remaining
     const finalScore = score + (cutsRemaining * 50);
-    onComplete(finalScore);
+    onComplete(finalScore, finalScore >= 200);
   };
 
   return (
-    <Card className="bg-gradient-to-b from-amber-900 to-orange-800 text-white p-6 max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-4">
-          <h2 className="text-2xl font-bold">🎞️ Tape Splicing Studio</h2>
-          <Badge variant="outline" className="text-amber-200 border-amber-400">
-            1960s Analog Era
-          </Badge>
-        </div>
-        <div className="text-right">
-          <div className="text-lg font-bold">Score: {score}</div>
-          <div className="text-sm">Time: {timeLeft}s</div>
-        </div>
-      </div>
-
-      <div className="mb-4">
-        <p className="text-amber-100 mb-2">
-          🎯 <strong>Objective:</strong> Cut and remove the highlighted problem sections from the analog tape recording.
-          Listen for distortion, clicks, or unwanted sounds and make precise cuts.
-        </p>
-        <div className="flex items-center gap-2 text-sm text-amber-200">
-          <Clock className="w-4 h-4" />
-          <span>Cuts remaining: {cutsRemaining}</span>
-        </div>
-      </div>
-
-      {/* Tape Interface */}
-      <div className="mb-6 border-2 border-amber-600 rounded-lg overflow-hidden">
-        <canvas
-          ref={canvasRef}
-          width={800}
-          height={150}
-          className="w-full cursor-crosshair bg-gradient-to-r from-amber-800 to-orange-700"
-          onClick={handleCanvasClick}
-        />
-      </div>
-
-      {/* Controls */}
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex gap-2">
-          <Button
-            onClick={handlePlayPause}
-            variant="outline"
-            className="border-amber-400 text-amber-200 hover:bg-amber-800"
-          >
-            {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-            {isPlaying ? 'Pause' : 'Play'}
-          </Button>
-          
-          <Button
-            onClick={handleReset}
-            variant="outline"
-            className="border-amber-400 text-amber-200 hover:bg-amber-800"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Reset
-          </Button>
-        </div>
-
-        <div className="flex gap-2">
-          <Button
-            onClick={() => setSelectedTool('cut')}
-            variant={selectedTool === 'cut' ? 'default' : 'outline'}
-            className={selectedTool === 'cut' ? 'bg-amber-600' : 'border-amber-400 text-amber-200'}
-          >
-            <Scissors className="w-4 h-4" />
-            Cut Tool
-          </Button>
-        </div>
-
-        <Button
-          onClick={handleComplete}
-          className="bg-amber-600 hover:bg-amber-700"
-        >
-          Complete Edit
-        </Button>
-      </div>
-
-      {/* Progress and Feedback */}
-      <div className="space-y-2">
-        <div className="flex justify-between text-sm text-amber-200">
-          <span>Editing Progress</span>
-          <span>{Math.round((3 - cutsRemaining) / 3 * 100)}%</span>
-        </div>
-        <Progress 
-          value={(3 - cutsRemaining) / 3 * 100} 
-          className="h-2 bg-amber-800"
-        />
-        
-        {feedback && (
-          <div className="text-center text-yellow-300 font-medium">
-            {feedback}
+    <Card className="w-full max-w-4xl mx-auto bg-gray-800 text-white border-gray-700">
+      <MinigameChrome
+        title="🎞️ Tape Splicing Studio"
+        score={score}
+        timeLeft={timeLeft}
+        accent="yellow"
+      >
+        <CardContent>
+          <div className="flex justify-between items-center mb-3">
+            <p className="text-amber-200 text-sm">
+              Cut and remove the red highlighted problem sections from the analog tape.
+            </p>
+            <div className="flex items-center gap-2 text-xs font-mono text-amber-300 bg-amber-950/60 px-2 py-1 rounded border border-amber-800">
+              <Clock className="w-3.5 h-3.5" />
+              <span>Cuts remaining: {cutsRemaining}</span>
+            </div>
           </div>
-        )}
-      </div>
 
-      {/* Vintage Tape Instructions */}
-      <div className="mt-4 p-3 bg-amber-800/50 rounded border border-amber-600">
-        <h4 className="font-semibold text-amber-200 mb-2">🎛️ Analog Tape Editing</h4>
-        <div className="text-sm text-amber-100 space-y-1">
-          <p>• <strong>Red zones:</strong> Problem areas that need to be cut out</p>
-          <p>• <strong>Click to cut:</strong> Make precise cuts at the target lines</p>
-          <p>• <strong>Listen carefully:</strong> Use playback to identify problem areas</p>
-          <p>• <strong>Splice accuracy:</strong> Closer cuts to center lines = higher scores</p>
-        </div>
-      </div>
+          {/* Tape Interface */}
+          <div className="mb-4 border-2 border-amber-600 rounded-lg overflow-hidden shadow-inner">
+            <canvas
+              ref={canvasRef}
+              width={800}
+              height={150}
+              className="w-full cursor-crosshair bg-gradient-to-r from-amber-800 to-orange-700 active:brightness-110"
+              onClick={handleCanvasClick}
+            />
+          </div>
+
+          {/* Controls */}
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex gap-2">
+              <Button
+                onClick={handlePlayPause}
+                variant="outline"
+                size="sm"
+                className="border-amber-500 text-amber-200 hover:bg-amber-900/50"
+              >
+                {isPlaying ? <Pause className="w-4 h-4 mr-1" /> : <Play className="w-4 h-4 mr-1" />}
+                {isPlaying ? 'Pause' : 'Play'}
+              </Button>
+              
+              <Button
+                onClick={handleReset}
+                variant="outline"
+                size="sm"
+                className="border-amber-500 text-amber-200 hover:bg-amber-900/50"
+              >
+                <RotateCcw className="w-4 h-4 mr-1" />
+                Reset
+              </Button>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setSelectedTool('cut')}
+                variant={selectedTool === 'cut' ? 'default' : 'outline'}
+                size="sm"
+                className={selectedTool === 'cut' ? 'bg-amber-600 text-white font-bold' : 'border-amber-500 text-amber-200'}
+              >
+                <Scissors className="w-4 h-4 mr-1" />
+                Razor Tool
+              </Button>
+            </div>
+          </div>
+
+          {/* Progress and Feedback */}
+          <div className="space-y-2 mb-4">
+            <div className="flex justify-between text-xs text-amber-300 font-mono">
+              <span>Splicing Progress</span>
+              <span>{Math.round(((3 - cutsRemaining) / 3) * 100)}%</span>
+            </div>
+            <Progress 
+              value={((3 - cutsRemaining) / 3) * 100} 
+              className="h-2 bg-gray-700"
+            />
+            
+            {feedback && (
+              <div className="text-center text-sm font-bold text-yellow-300 mg-combo-pulse">
+                {feedback}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </MinigameChrome>
+      <DialogFooter className="p-4">
+        <KenneyButton variant="yellow" onClick={onClose}>
+          Close
+        </KenneyButton>
+        <KenneyButton variant="green" onClick={handleComplete}>
+          Complete Edit
+        </KenneyButton>
+      </DialogFooter>
     </Card>
   );
 };

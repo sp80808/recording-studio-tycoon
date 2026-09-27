@@ -107,6 +107,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     }
   }, [gameState.activeProject?.id, autoTriggeredMinigame, showMinigame]);
 
+  // Hoisted above the early return: hooks must run unconditionally (Rules of Hooks).
+  const showAdvancedQueue = useFeatureFlag('advanced-production-queue');
+
   if (!gameState.activeProject) {
     return (
       <div className="flex-1 space-y-4">
@@ -420,7 +423,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
               </div>
             </div>
             {/* Production Queue Panel (feature-flagged) */}
-            {useFeatureFlag('advanced-production-queue') && (
+            {showAdvancedQueue && (
               <div className="mt-4">
                 <ProductionQueuePanel roomId={project.bookingRoomId || project.id} />
               </div>

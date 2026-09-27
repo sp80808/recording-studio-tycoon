@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { DialogFooter } from '@/components/ui/dialog';
 import { playSound } from '@/utils/soundUtils';
 import { useSettings } from '@/contexts/SettingsContext';
 import { MinigameTutorialPopup, minigameTutorials } from '@/components/minigames/index';
+import { MinigameChrome, KenneyButton } from './MinigameChrome';
 
 interface GearMaintenanceGameProps {
   equipment: { name: string };
@@ -129,35 +131,50 @@ const GearMaintenanceGame: React.FC<GearMaintenanceGameProps> = ({ equipment, on
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3 }}
-      className="p-4 bg-gray-800 rounded-lg shadow-xl text-white fixed inset-0 flex items-center justify-center bg-black/50 z-50"
-    >
-      <Card className="w-full max-w-md bg-gray-700 border-gray-600">
-        <CardHeader>
-          <CardTitle>Gear Maintenance: {equipment.name}</CardTitle>
-          <CardDescription>Calibrate the dials to their target zones. Attempts left: {minigameState.attemptsLeft}</CardDescription>
-        </CardHeader>
+    <Card className="w-full max-w-lg mx-auto bg-gray-800 text-white border-gray-700">
+      <MinigameChrome
+        title={`🔧 Gear Maintenance: ${equipment.name}`}
+        score={minigameState.successfulAdjustmentsLastAttempt * 25}
+        accent="yellow"
+      >
         <CardContent className="space-y-6">
-          <div className="text-center text-sm mb-4">{feedbackMessage}</div>
+          <div className="flex justify-between items-center text-xs text-amber-300 font-mono bg-amber-950/40 p-2 rounded border border-amber-800">
+            <span>Calibrate dials to green target zones</span>
+            <span>Attempts: {minigameState.attemptsLeft}</span>
+          </div>
+
+          {feedbackMessage && (
+            <div className="text-center text-sm font-semibold text-yellow-300 mg-combo-pulse">
+              {feedbackMessage}
+            </div>
+          )}
           
           {minigameState.dials.map((dialValue, index) => (
-            <div key={index} className="space-y-2">
-              <div className="text-sm font-medium">Dial {index + 1} (Target Zone: Green)</div>
+            <div key={index} className="space-y-2 bg-gray-900/60 p-3 rounded-lg border border-gray-700">
+              <div className="flex justify-between text-xs font-semibold text-gray-300">
+                <span>Dial {index + 1}</span>
+                <span className="font-mono">Current: {dialValue} / Target: ~{minigameState.targetValues[index]}</span>
+              </div>
               <div className="flex items-center space-x-2">
-                <Button size="sm" onClick={() => handleDialChange(index, 'down')} disabled={minigameState.attemptsLeft <= 0}>-</Button>
-                <div className="w-full h-8 bg-gray-600 rounded overflow-hidden relative">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-8 h-8 text-gray-200 border-gray-600 hover:bg-gray-700"
+                  onClick={() => handleDialChange(index, 'down')}
+                  disabled={minigameState.attemptsLeft <= 0}
+                >
+                  -
+                </Button>
+                <div className="w-full h-7 bg-gray-700 rounded overflow-hidden relative shadow-inner">
                   <motion.div
                     className={`h-full ${getDialColor(dialValue, minigameState.targetValues[index])}`}
-                    initial={{ width: `${dialValue}%`}}
-                    animate={{ width: `${dialValue}%`}}
+                    initial={{ width: `${dialValue}%` }}
+                    animate={{ width: `${dialValue}%` }}
                     transition={{ duration: 0.2 }}
                   />
-                  {/* Target visualization (optional) */}
+                  {/* Target visualization */}
                   <div 
-                    className="absolute top-0 h-full border-l-2 border-r-2 border-green-300/50"
+                    className="absolute top-0 h-full border-l-2 border-r-2 border-green-300/80 bg-green-400/20"
                     style={{ 
                       left: `${minigameState.targetValues[index] - 5}%`, 
                       width: '10%' 
@@ -165,27 +182,38 @@ const GearMaintenanceGame: React.FC<GearMaintenanceGameProps> = ({ equipment, on
                     title={`Target: ${minigameState.targetValues[index]}`}
                   />
                 </div>
-                <Button size="sm" onClick={() => handleDialChange(index, 'up')} disabled={minigameState.attemptsLeft <= 0}>+</Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-8 h-8 text-gray-200 border-gray-600 hover:bg-gray-700"
+                  onClick={() => handleDialChange(index, 'up')}
+                  disabled={minigameState.attemptsLeft <= 0}
+                >
+                  +
+                </Button>
               </div>
-              <div className="text-xs text-center">Current: {dialValue}</div>
             </div>
           ))}
-
-          {minigameState.attemptsLeft > 0 ? (
-            <Button onClick={handleSubmitAttempt} className="w-full bg-blue-600 hover:bg-blue-700">
-              Submit Attempt
-            </Button>
-          ) : (
-            <Button 
-                onClick={() => onComplete(false, minigameState.successfulAdjustmentsLastAttempt * 5)} 
-                className="w-full bg-gray-500 hover:bg-gray-600"
-            >
-              Close
-            </Button>
-          )}
         </CardContent>
-      </Card>
-    </motion.div>
+      </MinigameChrome>
+      <DialogFooter className="p-4">
+        <KenneyButton variant="yellow" onClick={onClose}>
+          Close
+        </KenneyButton>
+        {minigameState.attemptsLeft > 0 ? (
+          <KenneyButton variant="blue" onClick={handleSubmitAttempt}>
+            Submit Calibration
+          </KenneyButton>
+        ) : (
+          <KenneyButton
+            variant="green"
+            onClick={() => onComplete(false, minigameState.successfulAdjustmentsLastAttempt * 5)}
+          >
+            Finish
+          </KenneyButton>
+        )}
+      </DialogFooter>
+    </Card>
   );
 };
 

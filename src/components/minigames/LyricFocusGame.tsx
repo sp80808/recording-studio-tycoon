@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { MinigameChrome, KenneyButton } from './MinigameChrome';
 import { LyricFocusGameState, LyricFocusKeyword, LyricFocusTheme, MinigameType } from '@/types/miniGame';
 import { MusicGenre } from '@/types/charts';
 import { getLyricFocusThemeForProject } from '@/data/lyricFocusData';
@@ -153,68 +155,72 @@ export const LyricFocusGame: React.FC<LyricFocusGameProps> = ({
   const progressPercent = ((BASE_TIME_LIMIT - timeLeft) / BASE_TIME_LIMIT) * 100;
 
   return (
-    <Card className="w-full max-w-2xl mx-auto my-4 shadow-xl bg-slate-800 text-gray-100 border-slate-700">
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold text-purple-400">Lyric Focus Challenge</CardTitle>
-        <CardDescription className="text-slate-400">
-          Select keywords that best fit the theme: <strong className="text-purple-300">{gameState.targetTheme.name}</strong> ({gameState.targetTheme.mood})
-        </CardDescription>
-        <div className="flex justify-between items-center mt-2">
-          <Badge variant="secondary" className="text-lg">Time: {timeLeft}s</Badge>
-          <Badge variant="outline" className="text-lg border-purple-400 text-purple-400">Score: {score}</Badge>
-        </div>
-        <Progress value={progressPercent} className="w-full mt-2 h-2 bg-slate-700 [&>*]:bg-purple-500" />
-      </CardHeader>
-      <CardContent>
-        {feedbackMessage && <p className="text-center text-yellow-400 mb-3 animate-pulse">{feedbackMessage}</p>}
-        
-        <div className="mb-4">
-          <h4 className="font-semibold mb-2 text-lg text-slate-300">Available Keywords:</h4>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-            {gameState.availableKeywords.map(kw => (
-              <Button
-                key={kw.id}
-                variant={gameState.selectedKeywords.find(k => k.id === kw.id) ? "default" : "outline"}
-                onClick={() => handleKeywordSelect(kw)}
-                className={cn(
-                  "h-auto p-2 text-xs sm:text-sm transition-all duration-150 ease-in-out",
-                  gameState.selectedKeywords.find(k => k.id === kw.id) 
-                    ? "bg-purple-600 hover:bg-purple-700 text-white ring-2 ring-purple-400" 
-                    : "bg-slate-700 hover:bg-slate-600 border-slate-600 text-slate-200"
-                )}
-                disabled={!gameState.isActive}
-              >
-                {kw.text}
-              </Button>
-            ))}
+    <Card className="w-full max-w-2xl mx-auto bg-gray-800 text-white border-gray-700">
+      <MinigameChrome
+        title="✍️ Lyric Focus Challenge"
+        score={score}
+        timeLeft={timeLeft}
+        accent="purple"
+      >
+        <CardContent className="pt-4">
+          <div className="text-center mb-3">
+            <span className="text-xs text-purple-300">Theme: </span>
+            <strong className="text-purple-200 text-sm">{gameState.targetTheme.name}</strong>
+            <span className="text-xs text-purple-400"> ({gameState.targetTheme.mood})</span>
           </div>
-        </div>
 
-        <div className="mb-4">
-          <h4 className="font-semibold mb-2 text-lg text-slate-300">Selected Ideas ({gameState.selectedKeywords.length}/{MAX_SELECTIONS}):</h4>
-          {gameState.selectedKeywords.length > 0 ? (
-            <div className="flex flex-wrap gap-2 p-2 border border-slate-700 rounded-md bg-slate-900 min-h-[40px]">
-              {gameState.selectedKeywords.map(kw => (
-                <Badge key={kw.id} variant="secondary" className="text-sm bg-purple-500 text-white">
+          {feedbackMessage && <p className="text-center text-yellow-400 text-sm mb-3 mg-combo-pulse">{feedbackMessage}</p>}
+          
+          <div className="mb-4">
+            <h4 className="font-semibold mb-2 text-sm text-slate-300">Available Keywords:</h4>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+              {gameState.availableKeywords.map(kw => (
+                <Button
+                  key={kw.id}
+                  variant={gameState.selectedKeywords.find(k => k.id === kw.id) ? "default" : "outline"}
+                  onClick={() => handleKeywordSelect(kw)}
+                  className={cn(
+                    "h-auto p-2 text-xs sm:text-sm transition-all duration-150 ease-in-out",
+                    gameState.selectedKeywords.find(k => k.id === kw.id) 
+                      ? "bg-purple-600 hover:bg-purple-700 text-white ring-2 ring-purple-400 mg-hit-flash" 
+                      : "bg-slate-700 hover:bg-slate-600 border-slate-600 text-slate-200"
+                  )}
+                  disabled={!gameState.isActive}
+                >
                   {kw.text}
-                </Badge>
+                </Button>
               ))}
             </div>
-          ) : (
-            <p className="text-slate-500 italic">Select up to {MAX_SELECTIONS} keywords...</p>
-          )}
-        </div>
+          </div>
 
-        {gameState.isActive ? (
-          <Button onClick={endGame} className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-lg">
-            Finalize Lyrical Focus
-          </Button>
-        ) : (
-          <Button onClick={onClose} className="w-full bg-slate-600 hover:bg-slate-500 text-white py-3 text-lg">
-            Close
-          </Button>
-        )}
-      </CardContent>
+          <div className="mb-2">
+            <h4 className="font-semibold mb-2 text-sm text-slate-300">Selected Ideas ({gameState.selectedKeywords.length}/{MAX_SELECTIONS}):</h4>
+            {gameState.selectedKeywords.length > 0 ? (
+              <div className="flex flex-wrap gap-2 p-2 border border-slate-700 rounded-md bg-slate-900 min-h-[40px]">
+                {gameState.selectedKeywords.map(kw => (
+                  <Badge key={kw.id} variant="secondary" className="text-xs bg-purple-500 text-white">
+                    {kw.text}
+                  </Badge>
+                ))}
+              </div>
+            ) : (
+              <p className="text-slate-500 text-xs italic">Select up to {MAX_SELECTIONS} keywords...</p>
+            )}
+          </div>
+        </CardContent>
+      </MinigameChrome>
+      <DialogFooter className="p-4">
+        <KenneyButton variant="blue" onClick={onClose}>
+          Close
+        </KenneyButton>
+        <KenneyButton
+          variant="green"
+          onClick={endGame}
+          disabled={!gameState.isActive || gameState.selectedKeywords.length === 0}
+        >
+          Finalize Lyrical Focus
+        </KenneyButton>
+      </DialogFooter>
     </Card>
   );
 };

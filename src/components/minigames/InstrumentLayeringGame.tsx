@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { gameAudio } from '@/utils/audioSystem';
+import { MinigameChrome, KenneyButton } from './MinigameChrome';
 
 interface InstrumentTrack {
   id: string;
@@ -264,57 +266,61 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
 
   if (gameCompleted) {
     return (
-      <Card className="w-full max-w-6xl bg-gray-900 border-gray-600 p-6">
-        <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold text-yellow-400">Arrangement Complete!</h2>
-          <div className="space-y-2">
-            <div className="text-lg text-white">Score: {score}</div>
-            <div className="text-sm text-gray-400">
-              Active Tracks: {tracks.filter(t => t.isActive).length} | Genre: {genre}
+      <Card className="w-full max-w-2xl mx-auto bg-gray-800 text-white border-gray-700">
+        <MinigameChrome
+          title="🎼 Arrangement Complete!"
+          score={score}
+          accent="green"
+        >
+          <CardContent className="text-center space-y-4 py-6">
+            <div className="space-y-2">
+              <div className="text-sm text-gray-400">
+                Active Tracks: {tracks.filter(t => t.isActive).length} | Genre: {genre}
+              </div>
+              {score >= 120 && (
+                <div className="text-green-400 font-bold text-xl mg-perfect-pop">🎉 Studio-Quality Arrangement!</div>
+              )}
+              {score >= 80 && score < 120 && (
+                <div className="text-blue-400 font-bold mg-meter-glow">👍 Professional Layering!</div>
+              )}
+              {score < 80 && (
+                <div className="text-yellow-400 font-bold">📈 Good Foundation!</div>
+              )}
             </div>
-            {score >= 120 && (
-              <div className="text-green-400 font-bold text-xl">🎉 Studio-Quality Arrangement!</div>
-            )}
-            {score >= 80 && score < 120 && (
-              <div className="text-blue-400 font-bold">👍 Professional Layering!</div>
-            )}
-            {score >= 50 && score < 80 && (
-              <div className="text-yellow-400 font-bold">📈 Good Foundation!</div>
-            )}
-          </div>
-          <Button 
-            onClick={onClose} 
-            className="bg-green-600 hover:bg-green-700 text-lg px-8 py-3"
-          >
+          </CardContent>
+        </MinigameChrome>
+        <DialogFooter className="p-4">
+          <KenneyButton variant="green" onClick={onClose}>
             Collect Rewards
-          </Button>
-        </div>
+          </KenneyButton>
+        </DialogFooter>
       </Card>
     );
   }
 
   return (
-    <Card className="w-full max-w-7xl bg-gray-900 border-gray-600 p-6">
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-white mb-2">🎼 Instrument Layering Challenge</h2>
-        <p className="text-gray-300">Genre: {genre.charAt(0).toUpperCase() + genre.slice(1)}</p>
-        
-        <div className="flex justify-between items-center mt-4">
-          <div className="text-yellow-400 font-bold">Current Score: {calculateScore()}</div>
-          <div className="text-green-400 font-bold">
-            Active: {tracks.filter(t => t.isActive).length}/{tracks.length}
+    <Card className="w-full max-w-7xl mx-auto bg-gray-800 text-white border-gray-700">
+      <MinigameChrome
+        title="🎼 Instrument Layering Challenge"
+        score={calculateScore()}
+        timeLeft={timeLeft}
+        accent="green"
+      >
+        <CardContent>
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-gray-300 text-sm">
+              Genre: <span className="text-white font-semibold">{genre.charAt(0).toUpperCase() + genre.slice(1)}</span>
+            </span>
+            <span className="text-emerald-400 font-mono text-sm font-bold bg-emerald-950/60 px-3 py-1 rounded border border-emerald-800">
+              Active: {tracks.filter(t => t.isActive).length}/{tracks.length}
+            </span>
           </div>
-          <div className={`text-2xl font-bold ${timeLeft <= 20 ? 'text-red-400 animate-pulse' : 'text-blue-400'}`}>
-            ⏱️ {timeLeft}s
-          </div>
-        </div>
 
-        {feedback && (
-          <div className="mt-2 text-center text-lg font-bold animate-pulse">
-            {feedback}
-          </div>
-        )}
-      </div>
+          {feedback && (
+            <div className="mb-4 text-center text-lg font-bold text-yellow-300 mg-combo-pulse">
+              {feedback}
+            </div>
+          )}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Track Selection */}
@@ -462,23 +468,20 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
           </Card>
         </div>
       </div>
-
-      <div className="flex justify-center gap-4 mt-6">
-        <Button
+        </CardContent>
+      </MinigameChrome>
+      <DialogFooter className="p-4">
+        <KenneyButton variant="red" onClick={onClose}>
+          Cancel
+        </KenneyButton>
+        <KenneyButton
+          variant="green"
           onClick={endGame}
-          className="bg-green-600 hover:bg-green-700 px-6 py-3"
           disabled={tracks.filter(t => t.isActive).length === 0}
         >
-          🎵 Finish Arrangement
-        </Button>
-        <Button
-          onClick={onClose}
-          variant="outline"
-          className="px-6 py-3"
-        >
-          Cancel
-        </Button>
-      </div>
+          Finish Arrangement
+        </KenneyButton>
+      </DialogFooter>
     </Card>
   );
 };

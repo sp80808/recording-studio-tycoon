@@ -1,14 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { DialogFooter } from '@/components/ui/dialog';
-import { MinigameComponentProps } from './VocalTuningGame'; // Re-use from VocalTuningGame for now
+import { MinigameChrome, KenneyButton } from './MinigameChrome';
 
-// Placeholder types - actual implementation would be more complex
+// Define a basic props interface for minigame components
+export interface MinigameComponentProps {
+  minigameId: string;
+  onComplete: (score: number, success?: boolean) => void;
+  onClose: () => void;
+  equipmentContext?: { name: string };
+}
+
+// Musician tracking structure
 interface MusicianFigure {
   id: string;
   instrument: string;
-  position: { x: number; y: number }; // For a visual layout
+  position: { x: number; y: number };
   isPerformingWell: boolean;
 }
 
@@ -22,10 +29,9 @@ export const LiveRecordingGame: React.FC<MinigameComponentProps> = ({ minigameId
   // Initialize a simple set of musicians
   useEffect(() => {
     setMusicians([
-      { id: 'drummer', instrument: 'Drums 🥁', position: { x: 50, y: 20 }, isPerformingWell: true },
-      { id: 'guitarist', instrument: 'Guitar 🎸', position: { x: 20, y: 60 }, isPerformingWell: true },
-      { id: 'bassist', instrument: 'Bass 🎻', position: { x: 80, y: 60 }, isPerformingWell: true },
-      // Add vocalist if applicable
+      { id: 'drummer', instrument: 'Drums 🥁', position: { x: 50, y: 25 }, isPerformingWell: true },
+      { id: 'guitarist', instrument: 'Guitar 🎸', position: { x: 25, y: 65 }, isPerformingWell: true },
+      { id: 'bassist', instrument: 'Bass 🎻', position: { x: 75, y: 65 }, isPerformingWell: true },
     ]);
   }, []);
 
@@ -80,70 +86,76 @@ export const LiveRecordingGame: React.FC<MinigameComponentProps> = ({ minigameId
     return () => clearInterval(interval);
   }, [musicians, gameOver]);
 
-
   const handleFinalize = () => {
     setGameOver(true);
-    onComplete(score);
-  }
+    onComplete(score, score >= 200);
+  };
 
   return (
     <Card className="w-full max-w-3xl mx-auto bg-gray-800 text-white border-gray-700">
-      <CardHeader>
-        <CardTitle>🎙️ Live Recording Coordination 🎙️</CardTitle>
-        <CardDescription>
-          Manage the band's performance. Click on struggling musicians to coach them!
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="mb-4 flex justify-between items-center">
-          <span className="text-xl font-bold">Score: {score}</span>
-          <span className={`text-xl font-bold ${timeLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-yellow-400'}`}>
-            Time Left: {timeLeft}s
-          </span>
-        </div>
-
-        {eventMessage && (
-          <div className="mb-2 p-2 text-center bg-yellow-500/20 text-yellow-300 rounded animate-pulse">
-            {eventMessage}
+      <MinigameChrome
+        title="🎙️ Live Recording Coordination"
+        score={score}
+        timeLeft={gameOver ? undefined : timeLeft}
+        accent="red"
+      >
+        <CardContent>
+          <div className="mb-2 text-sm text-gray-300">
+            Manage the band's performance. Click struggling musicians to coach them and maintain studio groove!
           </div>
-        )}
 
-        {/* Simplified visual representation of live band */}
-        <div className="h-80 bg-gray-700 rounded p-4 relative">
-          {musicians.map((musician) => (
-            <div
-              key={musician.id}
-              className={`absolute p-2 rounded cursor-pointer transition-all duration-300
-                          ${musician.isPerformingWell ? 'bg-green-500/70 border-green-400' : 'bg-red-500/70 border-red-400 animate-pulse'}`}
-              style={{ 
-                left: `${musician.position.x}%`, 
-                top: `${musician.position.y}%`,
-                transform: 'translate(-50%, -50%)', // Center the element
-              }}
-              onClick={() => handleMusicianClick(musician.id)}
-            >
-              <div className="text-center">
-                <span className="text-lg">{musician.instrument.split(' ')[1]}</span> 
-                <div>{musician.instrument.split(' ')[0]}</div>
-                <div className="text-xs mt-1">{musician.isPerformingWell ? 'Rocking!' : 'Struggling!'}</div>
+          {eventMessage && (
+            <div className="mb-3 p-2 text-center bg-yellow-500/20 text-yellow-300 rounded animate-pulse mg-combo-pulse font-semibold">
+              {eventMessage}
+            </div>
+          )}
+
+          {/* Band stage visualization */}
+          <div className="h-72 bg-gray-900/80 rounded-xl p-4 relative border border-gray-700 overflow-hidden">
+            {musicians.map((musician) => (
+              <div
+                key={musician.id}
+                className={`absolute p-3 rounded-xl cursor-pointer transition-all duration-300 shadow-lg ${
+                  musician.isPerformingWell
+                    ? 'bg-emerald-600/80 border-2 border-emerald-400 mg-meter-glow hover:scale-105'
+                    : 'bg-red-600/90 border-2 border-red-300 mg-miss-shake animate-pulse hover:scale-105'
+                }`}
+                style={{
+                  left: `${musician.position.x}%`,
+                  top: `${musician.position.y}%`,
+                  transform: 'translate(-50%, -50%)',
+                }}
+                onClick={() => handleMusicianClick(musician.id)}
+              >
+                <div className="text-center select-none">
+                  <div className="text-3xl mb-1">{musician.instrument.split(' ')[1] || '🎵'}</div>
+                  <div className="text-xs font-bold text-white">{musician.instrument.split(' ')[0]}</div>
+                  <div className={`text-[10px] uppercase font-bold mt-1 px-1.5 py-0.5 rounded ${
+                    musician.isPerformingWell ? 'bg-emerald-800 text-emerald-200' : 'bg-red-900 text-red-200'
+                  }`}>
+                    {musician.isPerformingWell ? 'In Pocket' : 'Needs Coach!'}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {gameOver && (
+            <div className="mt-4 text-center">
+              <div className={`text-2xl font-bold text-green-400 ${score >= 200 ? 'mg-perfect-pop' : 'mg-miss-shake'}`}>
+                Session Ended! Final Score: {score}
               </div>
             </div>
-          ))}
-        </div>
-        
-        {gameOver && (
-          <div className="mt-4 text-center text-2xl font-bold text-green-400">
-            Session Ended! Final Score: {score}
-          </div>
-        )}
-      </CardContent>
+          )}
+        </CardContent>
+      </MinigameChrome>
       <DialogFooter className="p-4">
-        <Button onClick={onClose} variant="outline" className="text-gray-300 border-gray-600 hover:bg-gray-700">
+        <KenneyButton variant="red" onClick={onClose}>
           Close
-        </Button>
-         <Button onClick={handleFinalize} disabled={gameOver} className="bg-green-600 hover:bg-green-700">
+        </KenneyButton>
+        <KenneyButton variant="green" onClick={handleFinalize} disabled={gameOver}>
           Finalize & Get Score
-        </Button>
+        </KenneyButton>
       </DialogFooter>
     </Card>
   );

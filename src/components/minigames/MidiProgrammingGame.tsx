@@ -10,14 +10,16 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
 import { Play, Pause, Square, RotateCcw, Music, Settings } from 'lucide-react';
+import { MinigameChrome, KenneyButton } from './MinigameChrome';
 
 interface MidiProgrammingGameProps {
-  onComplete: (score: number) => void;
+  onComplete: (score: number, success?: boolean) => void;
   onClose: () => void;
 }
 
@@ -230,27 +232,14 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
   const currentSequence = TARGET_SEQUENCES[currentSequenceIndex];
 
   return (
-    <Card className="w-full max-w-7xl mx-auto p-6 bg-gradient-to-br from-gray-900 via-blue-900 to-cyan-800 text-white border-2 border-cyan-400 shadow-2xl">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-              MIDI PROGRAMMING
-            </h2>
-            <p className="text-blue-300 text-sm">Digital Revolution Era • Program the perfect MIDI sequence</p>
-          </div>
-          <div className="flex gap-4 items-center">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-cyan-400">{score}</div>
-              <div className="text-xs text-gray-400">SCORE</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-400">{timeLeft}s</div>
-              <div className="text-xs text-gray-400">TIME</div>
-            </div>
-          </div>
-        </div>
+    <Card className="w-full max-w-7xl mx-auto bg-gray-800 text-white border-gray-700">
+      <MinigameChrome
+        title="🎹 MIDI Programming"
+        score={score}
+        timeLeft={timeLeft}
+        accent="cyan"
+      >
+        <CardContent className="space-y-6 pt-4">
 
         {/* Progress */}
         <div className="space-y-2">
@@ -424,29 +413,16 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
           </div>
         </div>
 
-        {/* Controls */}
-        <div className="flex justify-between items-center">
-          <div className="text-sm text-blue-300">
-            <p>• Click grid positions to place/remove notes</p>
-            <p>• Adjust velocity and length before placing • Match the target sequence</p>
-          </div>
-          <div className="flex gap-3">
-            <Button 
-              onClick={checkSequence}
-              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 font-semibold px-6"
-            >
-              Check Sequence
-            </Button>
-            <Button 
-              onClick={onClose} 
-              variant="outline" 
-              className="border-blue-400 text-blue-400 hover:bg-blue-400/10"
-            >
-              Exit
-            </Button>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </MinigameChrome>
+      <DialogFooter className="p-4">
+        <KenneyButton variant="blue" onClick={onClose}>
+          Exit
+        </KenneyButton>
+        <KenneyButton variant="green" onClick={checkSequence}>
+          Check Sequence
+        </KenneyButton>
+      </DialogFooter>
     </Card>
   );
 };

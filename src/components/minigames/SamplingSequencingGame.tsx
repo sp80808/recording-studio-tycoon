@@ -10,13 +10,15 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Play, Pause, Square, RotateCcw, Volume2 } from 'lucide-react';
+import { MinigameChrome, KenneyButton } from './MinigameChrome';
 
 interface SamplingSequencingGameProps {
-  onComplete: (score: number) => void;
+  onComplete: (score: number, success?: boolean) => void;
   onClose: () => void;
 }
 
@@ -195,28 +197,14 @@ export const SamplingSequencingGame: React.FC<SamplingSequencingGameProps> = ({
 
   const getSampleById = (id: string) => SAMPLES.find(s => s.id === id);
 
-  return (
-    <Card className="w-full max-w-6xl mx-auto p-6 bg-gradient-to-br from-gray-900 via-purple-900 to-pink-800 text-white border-2 border-neon-purple shadow-2xl">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-              SAMPLING & SEQUENCING
-            </h2>
-            <p className="text-purple-300 text-sm">Digital Revolution Era • Create the perfect beat sequence</p>
-          </div>
-          <div className="flex gap-4 items-center">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-cyan-400">{score}</div>
-              <div className="text-xs text-gray-400">SCORE</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-400">{timeLeft}s</div>
-              <div className="text-xs text-gray-400">TIME</div>
-            </div>
-          </div>
-        </div>
+    <Card className="w-full max-w-6xl mx-auto bg-gray-800 text-white border-gray-700">
+      <MinigameChrome
+        title="🥁 Sampling & Sequencing"
+        score={score}
+        timeLeft={timeLeft}
+        accent="purple"
+      >
+        <CardContent className="space-y-6 pt-4">
 
         {/* Progress */}
         <div className="space-y-2">
@@ -369,29 +357,16 @@ export const SamplingSequencingGame: React.FC<SamplingSequencingGameProps> = ({
           </div>
         </div>
 
-        {/* Controls */}
-        <div className="flex justify-between items-center">
-          <div className="text-sm text-purple-300">
-            <p>• Select a sample and click steps to place it</p>
-            <p>• Right-click to clear steps • Match the target pattern</p>
-          </div>
-          <div className="flex gap-3">
-            <Button 
-              onClick={checkPattern}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 font-semibold px-6"
-            >
-              Check Pattern
-            </Button>
-            <Button 
-              onClick={onClose} 
-              variant="outline" 
-              className="border-purple-400 text-purple-400 hover:bg-purple-400/10"
-            >
-              Exit
-            </Button>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </MinigameChrome>
+      <DialogFooter className="p-4">
+        <KenneyButton variant="blue" onClick={onClose}>
+          Exit
+        </KenneyButton>
+        <KenneyButton variant="green" onClick={checkPattern}>
+          Check Pattern
+        </KenneyButton>
+      </DialogFooter>
     </Card>
   );
 };
