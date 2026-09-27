@@ -29,6 +29,11 @@
 | Settlement scoring | [`../src/utils/projectReviewUtils.ts`](../src/utils/projectReviewUtils.ts) | `generateProjectReview`: skills/staff/equipment/focus/market/match |
 | Daily challenges | [`../src/utils/dailyChallenges.ts`](../src/utils/dailyChallenges.ts) | Deterministic seeded daily challenge + `DailyTracking` counters |
 | Daily tick economy | [`../src/hooks/useGameActions.tsx`](../src/hooks/useGameActions.tsx) | `advanceDay`: salaries/upkeep, `rollDailyEvents`, gig cooldown ($50 / 3d) |
+| Simulation clock (idle core) | [`../src/simulation/simulationClock.ts`](../src/simulation/simulationClock.ts) | `advanceSimulation` + `shouldShowSimulationSummary`; 5-min slices, 8h offline cap; never settles payout |
+| Seeded RNG | [`../src/simulation/seededRandom.ts`](../src/simulation/seededRandom.ts) | `createSeededRandom`/`randomInt`/`pickWithRandom`; review + intervention determinism |
+| Welcome-back summary | [`../src/components/modals/WelcomeBackSummaryModal.tsx`](../src/components/modals/WelcomeBackSummaryModal.tsx) | Offline catch-up summary modal (wired in `../src/pages/Index.tsx`) |
+| Intervention flow | [`../src/hooks/useStageWork.tsx`](../src/hooks/useStageWork.tsx), [`../src/components/ActiveProject.tsx`](../src/components/ActiveProject.tsx) | Optional ephemeral intervention; Intervene / Delegate / Skip, never blocking |
+| Enquiry inbox + studio strip | [`../src/components/ProjectList.tsx`](../src/components/ProjectList.tsx), [`../src/components/StudioStrip.tsx`](../src/components/StudioStrip.tsx) | Artist Enquiry / Book Session vocabulary, compact strip |
 
 ## 📚 Documentation Categories
 
@@ -218,6 +223,7 @@
 ---
 
 ## 🔄 Change Log
+- **2026-09-27**: Idle-core train sync (o8t) — added Current Systems rows for simulationClock, seeded RNG, WelcomeBackSummaryModal, intervention flow, enquiry inbox + strip
 - **2026-09-27**: Current-codebase refresh (v0.3.3) — added Current Systems table with verified src paths; fixed dead links to relocated docs; removed entries for files that no longer exist
 - **2025-06-08**: Initial creation of documentation index (v0.3.0)
 - **2025-06-08**: Added version tracking for all documentation files (v0.3.0)

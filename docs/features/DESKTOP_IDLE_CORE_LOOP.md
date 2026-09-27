@@ -1,5 +1,7 @@
 # Recording Studio Tycoon — Desktop Idle Core Loop
 
+> **Shipped status (2026-09-27):** the Phase A–C first slice is merged (train #7, #11, #21, #22, #42 into `feature/polished-pre-overhaul`): Artist Enquiries / Book Session inbox + compact `StudioStrip`, passive `advanceSimulation` (live tick + 8h-capped offline catch-up, stops at review-ready, never pays out), `WelcomeBackSummaryModal` catch-up summary, optional Intervene / Delegate / Skip interventions, and seeded-RNG review/intervention determinism. This doc remains the design vision; for shipped behavior see README "Desktop-idle core" and `docs/current/CURRENT_STATUS.md`.
+
 ## Product direction
 
 Recording Studio Tycoon remains the same game and name, but its moment-to-moment structure shifts toward a compact, persistent recording studio that can live along the bottom of the desktop.

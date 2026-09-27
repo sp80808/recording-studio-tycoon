@@ -60,6 +60,13 @@ Recording Studio Tycoon is a music industry simulation game: run a recording stu
 - **Real project settlement** — `generateProjectReview` scores skills, staff contribution, equipment, studio quality, focus effectiveness, artist match, and market multiplier; results land in financials (`income`/`expenses`/`profit`/`reports`).
 - **Deterministic daily challenges** (`src/utils/dailyChallenges.ts`) — one seeded challenge per day, shown in the clock inspector; gig refresh costs $50 with a 3-day cooldown; random events roll on every daily tick; salaries + equipment upkeep deducted on `advanceDay`.
 
+### 🖥️ Desktop-idle core (shipped)
+- **Loop** — Artist Enquiry → Book Session → passive session → optional intervention → review/payout. Enquiries (`Artist Enquiries` inbox with fit badge, fee/rep/time, repeat-client tier) book via `Book Session` (`src/components/ProjectList.tsx`); the compact strip shows the next enquiry + session progress (`src/components/StudioStrip.tsx`).
+- **Passive progress** — `advanceSimulation` (`src/simulation/simulationClock.ts`) advances the active session in 5-minute slices, live (5s tick in `src/pages/Index.tsx`) and offline (catch-up from the save timestamp, capped at 8h via `DEFAULT_MAX_OFFLINE_MS`). It stops at review-ready and never pays out — settlement stays in `generateProjectReview` (`src/utils/projectReviewUtils.ts`).
+- **Offline catch-up + Welcome Back** — on load, credited time resumes the session; `shouldShowSimulationSummary` (≥60s credited plus progress) opens `WelcomeBackSummaryModal` (`src/components/modals/WelcomeBackSummaryModal.tsx`) with time credited, work added, stages done, delivery-ready notice, and cap warning.
+- **Optional intervention** — `useStageWork` (`src/hooks/useStageWork.tsx`) offers one ephemeral (~90s) minigame opportunity per stage; `ActiveProject.tsx` renders Intervene / Delegate (best-fit staff) / Skip — progress never blocks.
+- **Determinism note** — `createSeededRandom` (`src/simulation/seededRandom.ts`) seeds review rolls (`project.id:review:…`) and intervention selection (`project.id:intervention:…`), so the same session state replays the same outcome.
+
 ### 🚧 Open P2s
 - **MinigameChrome rollout** — 4 of 15 games use the shared chrome/juice kit; 11 legacy games still need migration.
 - **Audio unlock** — Web Audio still requires a user gesture before background playback starts.
