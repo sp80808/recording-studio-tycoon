@@ -49,6 +49,8 @@ interface MainGameContentProps {
   autoTriggeredMinigame: { type: MinigameType; reason: string } | null;
   clearAutoTriggeredMinigame: () => void;
   startResearchMod?: (staffId: string, modId: string) => boolean;
+  compactStudioMode: boolean;
+  setCompactStudioMode: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 /**
@@ -80,11 +82,12 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   triggerEraTransition,
   autoTriggeredMinigame,
   clearAutoTriggeredMinigame,
-  startResearchMod
+  startResearchMod,
+  compactStudioMode,
+  setCompactStudioMode
 }) => {
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [showAttributesModal, setShowAttributesModal] = useState(false);
-  const [compactStudioMode, setCompactStudioMode] = useState(false);
   const [showEraTransition, setShowEraTransition] = useState(false);
   const [eraTransitionInfo, setEraTransitionInfo] = useState<{ fromEra: string; toEra: string } | null>(null);
   const [showHistoricalNews, setShowHistoricalNews] = useState(false);
