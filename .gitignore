@@ -34,6 +34,10 @@ kenneyuipack.zip
 .Spotlight-V100
 .Trashes
 
+# Temporary / probe screenshots (preserve legacy documentation screenshots)
+screenshots/*.png
+!screenshots/Screenshot*
+
 # Beads / Dolt files (added by bd init)
 .dolt/
 *.db

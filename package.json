@@ -3,7 +3,14 @@
   "private": true,
   "version": "0.3.1",
   "type": "module",
-  "description": "Music industry simulation game with historical progression and minigames",
+  "packageManager": "pnpm@12.3.4",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": ">=12.0.0",
+      "onFail": "download"
+    }
+  },
   "author": "Recording Studio Tycoon Development Team",
   "scripts": {
     "dev": "vite",
