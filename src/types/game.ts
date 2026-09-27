@@ -215,6 +215,8 @@ export interface GameState {
   ownedEquipment: Equipment[];
   availableProjects: Project[];
   financials: Financials;
+  /** Optional: absent on old saves, treated as a fresh day. */
+  dailyTracking?: DailyTracking;
   
   // Multi-project system
   activeProjects: Project[]; // Replace single activeProject with array
@@ -224,6 +226,8 @@ export interface GameState {
   hiredStaff: StaffMember[];
   availableCandidates: StaffMember[];
   lastSalaryDay: number;
+  /** Day the gig list was last refreshed from the phone (bead goj.3 cooldown). */
+  lastGigRefreshDay?: number;
   notifications: GameNotification[];
   bands: Band[]; // All bands (AI and player-created)
   playerBands: Band[]; // Player's own bands
@@ -352,4 +356,15 @@ export interface Financials {
   expenses: number;
   profit: number;
   reports: ProjectReport[];
+}
+
+/** Per-day activity counters powering the deterministic daily challenge. */
+export interface DailyTracking {
+  day: number;
+  earnedToday: number;
+  minigamesPlayedToday: number;
+  maxComboToday: number;
+  projectsCompletedToday: number;
+  sessionsWorkedToday: number;
+  challengeDoneId: string | null;
 }

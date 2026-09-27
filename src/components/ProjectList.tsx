@@ -4,31 +4,55 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { GameState, Project } from '@/types/game';
 import { generateNewProjects } from '@/utils/projectUtils';
+import {
+  gigRefreshCooldownRemaining,
+  GIG_REFRESH_COST,
+  GIG_REFRESH_COOLDOWN_DAYS,
+} from '@/hooks/useGameActions';
 
 interface ProjectListProps {
   gameState: GameState;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
   startProject: (project: Project) => void;
+  /** Cooldown + cost gated gig refresh (bead goj.3). Falls back to inline roll. */
+  onRefreshProjects?: () => boolean;
 }
 
 export const ProjectList: React.FC<ProjectListProps> = ({
   gameState,
   setGameState,
-  startProject
+  startProject,
+  onRefreshProjects,
 }) => {
+  const cooldownLeft = gigRefreshCooldownRemaining(gameState);
+  const refreshReady = cooldownLeft === 0;
+
+  const handleRefresh = () => {
+    if (onRefreshProjects) {
+      onRefreshProjects();
+      return;
+    }
+    setGameState(prev => ({
+      ...prev,
+      availableProjects: [...prev.availableProjects, ...generateNewProjects(1, prev.playerData.level, prev.currentEra)]
+    }));
+  };
+
   return (
     <Card className="bg-gray-900/90 border-gray-600 p-4 h-full flex flex-col backdrop-blur-sm animate-slide-in-left">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-white">Available Projects</h2>
         <Button 
-          onClick={() => setGameState(prev => ({ 
-            ...prev, 
-            availableProjects: [...prev.availableProjects, ...generateNewProjects(1, prev.playerData.level, prev.currentEra)] 
-          }))}
+          onClick={handleRefresh}
           size="sm"
-          className="bg-blue-600 hover:bg-blue-700 text-white"
+          variant={refreshReady ? 'default' : 'outline'}
+          className={refreshReady
+            ? "bg-blue-600 hover:bg-blue-700 text-white"
+            : "border-gray-600 text-gray-400 text-xs"}
         >
-          Refresh
+          {refreshReady
+            ? `Refresh $${GIG_REFRESH_COST}`
+            : `📵 ${cooldownLeft}/${GIG_REFRESH_COOLDOWN_DAYS}d`}
         </Button>
       </div>
 

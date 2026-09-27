@@ -1,7 +1,7 @@
 
 import { useCallback } from 'react';
 import { GameNotification, GameState } from '@/types/game';
-import { generateCandidates } from '@/utils/projectUtils';
+import { generateCandidates, generateNewProjects } from '@/utils/projectUtils';
 import { toast } from '@/hooks/use-toast';
 import { 
   calculateYearFromDay, 
@@ -12,11 +12,25 @@ import {
 import { availableMods } from '@/data/equipmentMods';
 import { applyEventsToState, rollDailyEvents } from '@/game-mechanics/eventIntegration';
 import { RandomEvent } from '@/game-mechanics/random-events';
+import { freshDailyTracking } from '@/utils/dailyChallenges';
+import { gameAudio } from '@/utils/audioSystem';
+import { triggerScreenShake } from '@/utils/screenShake';
 
 /** Daily equipment upkeep: 0.1% of item price per day, minimum $2/item */
 export const calculateEquipmentUpkeep = (equipment: GameState['ownedEquipment']): number => {
   if (!equipment || equipment.length === 0) return 0;
   return equipment.reduce((sum, item) => sum + Math.max(2, Math.round(item.price * 0.001)), 0);
+};
+
+/** Cost + cooldown for chasing new gig offers (bead goj.3). */
+export const GIG_REFRESH_COST = 50;
+export const GIG_REFRESH_COOLDOWN_DAYS = 3;
+
+/** Days remaining before the gig list can be refreshed again (0 = ready). */
+export const gigRefreshCooldownRemaining = (gameState: GameState): number => {
+  const last = gameState.lastGigRefreshDay ?? 0;
+  const elapsed = gameState.currentDay - last;
+  return Math.max(0, GIG_REFRESH_COOLDOWN_DAYS - elapsed);
 };
 
 export const useGameActions = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
@@ -112,6 +126,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
           profit: prev.financials.income - newExpenses,
         },
         researchedMods: newResearchedMods,
+        dailyTracking: freshDailyTracking(newDay), // New day, new challenge
         hiredStaff: updatedStaff.map(s => 
           s.status === 'Resting' 
             ? { ...s, energy: Math.min(100, s.energy + 20) }
@@ -134,11 +149,14 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
         const ev = triggeredEvents[idx];
         const effectSummaries = res.applied.map(a => a.summary).concat(res.narrative);
         const summaryText = effectSummaries.length > 0 ? effectSummaries.join(', ') : ev.description;
+        const netMagnitude = ev.effects.reduce((sum, eff) => sum + eff.magnitude, 0);
+        const tone: GameNotification['type'] =
+          netMagnitude < 0 ? 'error' : netMagnitude > 0 ? 'success' : 'info';
 
         newNotifications.push({
           id: `random-event-${ev.id}-${newDay}`,
-          message: `${ev.title}: ${summaryText}`,
-          type: ev.type === 'opportunity' ? 'success' : ev.type === 'crisis' ? 'error' : 'info',
+          message: `${ev.name}: ${summaryText}`,
+          type: tone,
           timestamp: Date.now(),
           duration: 6000
         });
@@ -173,12 +191,15 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     // Process salary & upkeep notifications
     if (totalDailyExpenses > 0) {
       if (canAffordSalaries) {
+        gameAudio.playUISound('cashRegister');
         toast({
           title: "💰 Daily Expenses Paid",
           description: `Paid $${totalSalaries} in salaries and $${equipmentUpkeep} in equipment upkeep.`,
           className: "bg-gray-800 border-gray-600 text-white",
         });
       } else {
+        gameAudio.playUISound('staffUnavailable');
+        triggerScreenShake('light');
         toast({
           title: "❌ Cannot Pay Salaries!",
           description: `Need $${totalSalaries} for daily salaries. Staff morale has dropped!`,
@@ -190,10 +211,12 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
 
     // Trigger toast for random events
     triggeredEvents.forEach(ev => {
+      const isNegative = ev.effects.reduce((sum, eff) => sum + eff.magnitude, 0) < 0;
+      gameAudio.playUISound(isNegative ? 'notice' : 'notification');
       toast({
-        title: `🎲 ${ev.title}`,
+        title: `🎲 ${ev.name}`,
         description: ev.description,
-        className: ev.type === 'crisis' ? "bg-red-950 border-red-700 text-white" : "bg-purple-950 border-purple-700 text-white",
+        className: isNegative ? "bg-red-950 border-red-700 text-white" : "bg-purple-950 border-purple-700 text-white",
         duration: 5000
       });
     });
@@ -207,6 +230,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     }
 
     completedTraining.forEach(message => {
+      gameAudio.playUISound('trainingComplete');
       toast({
         title: "🎓 Training Complete!",
         description: message,
@@ -215,6 +239,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     });
 
     completedResearch.forEach(message => {
+      gameAudio.playUISound('notification');
       toast({
         title: "🔬 Research Complete!",
         description: message,
@@ -226,6 +251,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
   const refreshCandidates = useCallback(() => {
     const cost = 50;
     if (gameState.money < cost) {
+      gameAudio.playUISound('unavailable');
       toast({
         title: "💰 Insufficient Funds",
         description: `Need $${cost} to refresh candidate list.`,
@@ -241,6 +267,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       availableCandidates: generateCandidates(3)
     }));
 
+    gameAudio.playUISound('notice');
     toast({
       title: "👥 New Candidates Found",
       description: "Fresh talent is now available for hire!",
@@ -248,10 +275,58 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     });
   }, [gameState.money, setGameState]);
 
+  /**
+   * Chase fresh gig offers (bead goj.3): costs $50 and has a 3-day cooldown so
+   * the gig list can't be rerolled instantly. Returns true when new gigs land.
+   */
+  const refreshProjects = useCallback(() => {
+    const daysLeft = gigRefreshCooldownRemaining(gameState);
+    if (daysLeft > 0) {
+      gameAudio.playUISound('unavailable');
+      toast({
+        title: "📵 No New Leads Yet",
+        description: `The labels are tapped out — try again in ${daysLeft} day${daysLeft === 1 ? '' : 's'} (advance the day or work sessions).`,
+        className: "bg-gray-800 border-gray-600 text-white",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (gameState.money < GIG_REFRESH_COST) {
+      gameAudio.playUISound('unavailable');
+      toast({
+        title: "💰 Insufficient Funds",
+        description: `Need $${GIG_REFRESH_COST} to chase new gigs.`,
+        className: "bg-gray-800 border-gray-600 text-white",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    setGameState(prev => ({
+      ...prev,
+      money: prev.money - GIG_REFRESH_COST,
+      lastGigRefreshDay: prev.currentDay,
+      availableProjects: [
+        ...prev.availableProjects,
+        ...generateNewProjects(1, prev.playerData.level, prev.currentEra),
+      ],
+    }));
+
+    gameAudio.playUISound('notice');
+    toast({
+      title: "📞 New Leads",
+      description: `Paid $${GIG_REFRESH_COST} — a fresh gig landed on your desk.`,
+      className: "bg-gray-800 border-gray-600 text-white",
+    });
+    return true;
+  }, [gameState, setGameState]);
+
   const triggerEraTransition = useCallback(() => {
     const availableTransition = checkEraTransitionAvailable(gameState);
     
     if (!availableTransition) {
+      gameAudio.playUISound('unavailable');
       toast({
         title: "❌ Era Transition Not Available",
         description: "You need more reputation, level, or completed projects to advance to the next era.",
@@ -267,6 +342,8 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     const newGameState = transitionToEra(gameState, availableTransition);
     setGameState(newGameState);
 
+    gameAudio.playUISound('projectComplete');
+    triggerScreenShake('medium');
     toast({
       title: "🎉 Era Transition Complete!",
       description: `Welcome to ${availableTransition.name}! New equipment and opportunities await.`,
@@ -284,6 +361,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
   return {
     advanceDay,
     refreshCandidates,
+    refreshProjects,
     triggerEraTransition
   };
 };

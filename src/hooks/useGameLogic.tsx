@@ -1,11 +1,12 @@
 
 import { useState, useCallback, useMemo } from 'react'; // Added useMemo
-import { GameState, StaffMember, PlayerAttributes, ProjectReport } from '@/types/game';
+import { GameState, StaffMember, PlayerAttributes, ProjectReport, Project } from '@/types/game';
 import { toast } from '@/hooks/use-toast';
 import { availableTrainingCourses } from '@/data/training';
 import { canPurchaseEquipment, addNotification, applyEquipmentEffects } from '@/utils/gameUtils';
 import { playSound } from '@/utils/soundUtils';
 import { getAvailableEquipmentForYear } from '@/data/eraEquipment';
+import { withDailyTracking } from '@/utils/dailyChallenges';
 import { useStaffManagement } from '@/hooks/useStaffManagement';
 import { useProjectManagement } from '@/hooks/useProjectManagement';
 import { usePlayerProgression } from '@/hooks/usePlayerProgression';
@@ -51,7 +52,7 @@ export const useGameLogic = (
   const { levelUpPlayer, spendPerkPoint, checkAndHandleLevelUp } = usePlayerProgression(gameState, setGameState);
   const { hireStaff, assignStaffToProject, unassignStaffFromProject, toggleStaffRest, addStaffXP, openTrainingModal, startResearchMod, sendStaffToTraining: originalSendStaffToTraining } = useStaffManagement(gameState, setGameState);
   const { startProject, completeProject } = useProjectManagement(gameState, setGameState);
-  const { advanceDay, refreshCandidates, triggerEraTransition } = useGameActions(gameState, setGameState);
+  const { advanceDay, refreshCandidates, refreshProjects, triggerEraTransition } = useGameActions(gameState, setGameState);
 
   const { createBand, startTour, createOriginalTrack, processTourIncome } = useBandManagement(gameState, setGameState);
 
@@ -68,7 +69,7 @@ export const useGameLogic = (
   // Handle minigame rewards by updating project points and checking for level ups
   const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string, rawScore?: number) => {
     if (gameState.activeProject) {
-      setGameState(prev => ({
+      setGameState(prev => withDailyTracking({
         ...prev,
         activeProject: prev.activeProject ? {
           ...prev.activeProject,
@@ -83,7 +84,7 @@ export const useGameLogic = (
           xp: prev.playerData.xp + xpBonus,
           lastMinigameType: minigameType || prev.playerData.lastMinigameType
         }
-      }));
+      }, { minigames: 1 }));
 
       toast({
         title: "🎯 Production Bonus!",
@@ -346,6 +347,7 @@ export const useGameLogic = (
     purchaseEquipment,
     hireStaff,
     refreshCandidates,
+    refreshProjects,
     assignStaffToProject,
     unassignStaffFromProject,
     toggleStaffRest,

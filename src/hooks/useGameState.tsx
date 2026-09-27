@@ -130,6 +130,15 @@ export const useGameState = () => {
       expenses: 0,
       profit: 0,
       reports: []
+    },
+    dailyTracking: { // Daily challenge counters (bead ifx.3)
+      day: 2,
+      earnedToday: 0,
+      minigamesPlayedToday: 0,
+      maxComboToday: 0,
+      projectsCompletedToday: 0,
+      sessionsWorkedToday: 0,
+      challengeDoneId: null
     }
   });
 

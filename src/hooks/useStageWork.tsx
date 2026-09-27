@@ -11,7 +11,10 @@ import {
   WorkPoints
 } from '@/utils/projectUtils'; // Import new project utils
 import { shouldAutoTriggerMinigame } from '@/utils/minigameUtils';
+import { withDailyTracking } from '@/utils/dailyChallenges';
 import { toast } from '@/hooks/use-toast';
+import { gameAudio } from '@/utils/audioSystem';
+import { triggerScreenShake } from '@/utils/screenShake';
 
 interface UseStageWorkProps {
   gameState: GameState;
@@ -299,7 +302,7 @@ export const useStageWork = ({
       console.log(`📋 Project T points: ${prev.activeProject!.accumulatedTPoints} -> ${updatedProject.accumulatedTPoints}`);
       console.log(`📋 Updated stages:`, updatedProject.stages.map((s, i) => `${i}: ${s.stageName} (${s.workUnitsCompleted}/${s.workUnitsBase}) ${s.completed ? '✅' : '⏳'}`));
 
-      return {
+      return withDailyTracking({
         ...prev,
         activeProject: updatedProject,
         playerData: {
@@ -317,7 +320,7 @@ export const useStageWork = ({
           }
           return s;
         })
-      };
+      }, { sessions: 1, combo: newCombo });
     });
 
     // 🔥 Overdrive: big payoff, small risk — the session can burn out the crew
@@ -373,6 +376,8 @@ export const useStageWork = ({
 
     // Show stage completion notification
     if (stageCompleted) {
+      gameAudio.playUISound('stageComplete');
+      triggerScreenShake('light');
       toast({
         title: "🎉 Stage Complete!",
         description: `${currentStage.stageName} finished! ${newCurrentStageIndex < project.stages.length ? `Moving to: ${project.stages[newCurrentStageIndex].stageName}` : 'All stages complete!'}`,
