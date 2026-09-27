@@ -13,6 +13,7 @@ import {
 import { shouldAutoTriggerMinigame } from '@/utils/minigameUtils';
 import { MinigameType } from '@/components/minigames/MinigameManager';
 import { toast } from '@/hooks/use-toast';
+import { getBookedStudioRoom } from '@/utils/studioRoomUtils';
 
 interface UseStageWorkProps {
   gameState: GameState;
@@ -314,7 +315,12 @@ export const useStageWork = ({
     const minProgress = totalPointsGenerated > 0 ? 1 : 0;
     const stageEfficiencyBonus = Math.floor(currentStage.workUnitsBase / 10); // Bonus for longer stages
     
-    const workUnitsToAdd = Math.max(minProgress, baseWorkUnits + stageEfficiencyBonus);
+    const bookedRoom = getBookedStudioRoom(gameState, project);
+    const roomSpeedMultiplier = 1 + ((bookedRoom?.speedBonus || 0) / 100);
+    const workUnitsToAdd = Math.max(
+      minProgress,
+      Math.floor((baseWorkUnits + stageEfficiencyBonus) * roomSpeedMultiplier)
+    );
     // Ensure at least 1 unit of progress if energy was spent and stage is not complete
     const actualWorkUnitsToAdd = (workUnitsToAdd === 0 && !currentStage.completed && totalPointsGenerated > 0) ? 1 : workUnitsToAdd; // Ensure progress if any points generated
 
