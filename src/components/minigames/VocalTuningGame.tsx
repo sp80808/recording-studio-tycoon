@@ -128,13 +128,14 @@ export const VocalTuningGame: React.FC<MinigameComponentProps> = ({ minigameId, 
           </div>
         )}
       </CardContent>
+      </MinigameChrome>
       <DialogFooter className="p-4">
-        <Button onClick={onClose} variant="outline" className="text-gray-300 border-gray-600 hover:bg-gray-700">
+        <KenneyButton variant="red" onClick={onClose}>
           Close
-        </Button>
-         <Button onClick={handleFinalize} disabled={gameOver} className="bg-green-600 hover:bg-green-700">
+        </KenneyButton>
+        <KenneyButton variant="red" onClick={handleFinalize} disabled={gameOver}>
           Finalize & Get Score
-        </Button>
+        </KenneyButton>
       </DialogFooter>
     </Card>
   );
