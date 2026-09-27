@@ -106,6 +106,7 @@ class GameAudioSystem {
       { name: 'ui-notice', path: '/audio/ui-sfx/notice-sound-270349.mp3' },
       { name: 'ui-proj-complete', path: '/audio/ui-sfx/proj-complete.mp3' },
       { name: 'ui-purchase-complete', path: '/audio/ui-sfx/purchase-complete.mp3' },
+      { name: 'ui-cash-register', path: '/audio/ui-sfx/cash-register-purchase-87313.mp3' },
       { name: 'ui-staff-unavailable', path: '/audio/ui-sfx/staff-unavailable-warning.mp3' },
       { name: 'ui-stage-complete', path: '/audio/ui-sfx/stage-complete.mp3' },
       { name: 'ui-training-complete', path: '/audio/ui-sfx/training-complete.mp3' },
@@ -742,6 +743,8 @@ class GameAudioSystem {
   }
 
   // GENERAL UI SOUNDS
+  // `soundType` maps both to synthesized fallbacks and the real recorded
+  // assets in /audio/ui-sfx (imported from src/audio/ui-sfx).
   async playUISound(soundType: string) {
     switch (soundType) {
       case 'buttonClick':
@@ -761,6 +764,37 @@ class GameAudioSystem {
         break;
       case 'hover':
         await this.playButtonHover();
+        break;
+      // ---- Recorded assets -------------------------------------------------
+      case 'cashRegister': // money in / daily expenses paid
+        await this.playSound('ui-cash-register', 'sfx', 0.9);
+        break;
+      case 'projectComplete':
+        await this.playSound('ui-proj-complete', 'sfx', 1.0);
+        break;
+      case 'stageComplete':
+        await this.playSound('ui-stage-complete', 'sfx', 0.85);
+        break;
+      case 'trainingComplete':
+        await this.playSound('ui-training-complete', 'sfx', 0.85);
+        break;
+      case 'notification': // phone / random-event / news ping
+        await this.playSound('ui-email-notif', 'sfx', 0.7);
+        break;
+      case 'notice': // generic alert
+        await this.playSound('ui-notice', 'sfx', 0.7);
+        break;
+      case 'menuOpen':
+        await this.playSound('ui-bubble-pop', 'sfx', 0.6);
+        break;
+      case 'menuClose':
+        await this.playSound('ui-close-menu', 'sfx', 0.6);
+        break;
+      case 'staffUnavailable':
+        await this.playSound('ui-staff-unavailable', 'sfx', 0.8);
+        break;
+      case 'unavailable':
+        await this.playSound('ui-unavailable', 'sfx', 0.7);
         break;
       default:
         // Fall back to basic click sound for unknown types
