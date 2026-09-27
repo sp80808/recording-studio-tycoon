@@ -42,3 +42,44 @@ export const getMoodEffectiveness = (mood: number): number => {
   if (mood > 75) return 1.1; // 10% bonus for high mood
   return 1.0; // Normal effectiveness
 };
+
+export const xpForPlayerLevel = (level: number): number =>
+  Math.floor(100 * Math.pow(1.4, Math.max(0, level - 1) * 0.7));
+
+/** Normalize every XP source at the shared state boundary, including loaded saves. */
+export const resolvePlayerLevelUps = (state: GameState): GameState => {
+  const player = state.playerData;
+  if (!Number.isFinite(player.xp) || player.xp < xpForPlayerLevel(player.level)) return state;
+  let { xp, level, perkPoints } = player;
+  while (xp >= xpForPlayerLevel(level)) {
+    xp -= xpForPlayerLevel(level);
+    level++;
+    perkPoints += level <= 10 ? 2 : level <= 25 ? 1 : 0;
+  }
+  return {
+    ...state,
+    playerData: {
+      ...player, xp, level, perkPoints, xpToNextLevel: xpForPlayerLevel(level),
+      dailyWorkCapacity: player.dailyWorkCapacity + level - player.level,
+    },
+    notifications: [...state.notifications, {
+      id: `producer-level-${level}`, type: 'success', timestamp: Date.now(), duration: 6000,
+      message: `Producer level ${level}! +${perkPoints - player.perkPoints} talent points and +${level - player.level} daily sessions.`,
+    }],
+  };
+};
+
+/** Spend against the latest state; upgrades grant only the extra session earned. */
+export const upgradePlayerAttribute = (state: GameState, attribute: keyof PlayerAttributes): GameState => {
+  const player = state.playerData;
+  if (!Object.prototype.hasOwnProperty.call(player.attributes, attribute) || player.perkPoints < 1 || player.attributes[attribute] >= 10) return state;
+  return {
+    ...state,
+    playerData: {
+      ...player,
+      perkPoints: player.perkPoints - 1,
+      attributes: { ...player.attributes, [attribute]: player.attributes[attribute] + 1 },
+      dailyWorkCapacity: player.dailyWorkCapacity + (attribute === 'focusMastery' ? 1 : 0),
+    },
+  };
+};

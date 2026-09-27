@@ -3,6 +3,7 @@ import { GameState, FocusAllocation, PlayerData } from '@/types/game'; // Added 
 import { generateNewProjects, generateCandidates } from '@/utils/projectUtils';
 import { generateSessionMusicians } from '@/utils/bandUtils';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
+import { resolvePlayerLevelUps } from '@/utils/playerUtils';
 import { initializeSkillsPlayer } from '@/utils/skillUtils'; // Import skill initializer
 
 interface EraInitOptions {
@@ -150,6 +151,7 @@ export const useGameState = () => {
     const initialSessionMusicians = generateSessionMusicians(5);
     
     // Set initial progression-based values
+    newGameState = resolvePlayerLevelUps(newGameState);
     const maxConcurrentProjects = ProgressionSystem.getMaxConcurrentProjects(newGameState);
     
     return {
@@ -163,6 +165,7 @@ export const useGameState = () => {
 
   // Update game state to reflect progression changes
   const updateGameStateWithProgression = (newGameState: GameState): GameState => {
+    newGameState = resolvePlayerLevelUps(newGameState);
     const maxConcurrentProjects = ProgressionSystem.getMaxConcurrentProjects(newGameState);
     const isMultiProjectUnlocked = ProgressionSystem.shouldUnlockMultiProject(newGameState);
     

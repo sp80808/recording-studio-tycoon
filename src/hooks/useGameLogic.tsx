@@ -49,7 +49,7 @@ export const useGameLogic = (
     );
   }, [gameState]); // Re-create services only if gameState reference changes
 
-  const { levelUpPlayer, spendPerkPoint, checkAndHandleLevelUp } = usePlayerProgression(gameState, setGameState);
+  const { spendPerkPoint } = usePlayerProgression(gameState, setGameState);
   const { hireStaff, assignStaffToProject, unassignStaffFromProject, toggleStaffRest, addStaffXP, openTrainingModal, startResearchMod, sendStaffToTraining: originalSendStaffToTraining } = useStaffManagement(gameState, setGameState);
   const { startProject, completeProject } = useProjectManagement(gameState, setGameState);
   const { advanceDay, refreshCandidates, refreshProjects, triggerEraTransition } = useGameActions(gameState, setGameState);
@@ -93,10 +93,7 @@ export const useGameLogic = (
         duration: 3000
       });
 
-      // Check for level up after a short delay to let state update
-      setTimeout(() => {
-        checkAndHandleLevelUp();
-      }, 100);
+
     }
   };
 
@@ -220,8 +217,8 @@ export const useGameLogic = (
       return;
     }
 
-    const updatedGameState = spendPerkPoint(attribute);
-    setGameState(updatedGameState);
+    if (gameState.playerData.attributes[attribute] >= 10) return;
+    spendPerkPoint(attribute);
 
     toast({
       title: "⚡ Attribute Upgraded!",
