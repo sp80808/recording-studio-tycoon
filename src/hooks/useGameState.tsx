@@ -82,7 +82,7 @@ export const useGameState = () => {
     activeProject: null, // Keep for backward compatibility
     // Multi-project system
     activeProjects: [], // New multi-project array
-    maxConcurrentProjects: 2, // Starting capacity
+    maxConcurrentProjects: 1, // Derived from the starter Studio A room
     hiredStaff: [],
     availableCandidates: [],
     lastSalaryDay: 0,
