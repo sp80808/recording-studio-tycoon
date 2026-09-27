@@ -72,26 +72,17 @@ export class ProjectManager {
    * Add a new project if capacity allows
    */
   addProject(project: Project): boolean {
-    if (!this.canAddProject()) {
-      return false;
-    }
-
-    this.gameState.activeProjects.push(project);
-    this.updateMaxConcurrentProjects();
-    this.reassignStaff();
-    return true;
+    // State updates are owned by the React hook. This service only validates
+    // capacity so callers cannot accidentally append the same project twice.
+    return this.canAddProject() && !!project.bookingRoomId;
   }
 
   /**
    * Remove a completed or cancelled project
    */
   removeProject(projectId: string): boolean {
-    const index = this.gameState.activeProjects.findIndex(p => p.id === projectId);
-    if (index === -1) return false;
-
-    this.gameState.activeProjects.splice(index, 1);
-    this.reassignStaff();
-    return true;
+    // The hook performs the immutable removal and staff cleanup.
+    return this.gameState.activeProjects.some(project => project.id === projectId);
   }
 
   /**
