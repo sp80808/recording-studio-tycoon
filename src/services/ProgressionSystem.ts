@@ -32,29 +32,29 @@ export class ProgressionSystem {
       level: 3,
       staffCount: 2,
       projectsCompleted: 3,
-      unlockMessage: "🎉 Studio Expansion Unlocked! You can now manage 2 projects simultaneously.",
-      features: ["Dual Project Management", "Basic Automation", "Project Prioritization"]
+      unlockMessage: "🎉 Studio Expansion Available! You can now purchase a second production suite.",
+      features: ["Second Room Expansion", "Basic Automation", "Project Prioritization"]
     },
     {
       level: 5,
       staffCount: 4,
       projectsCompleted: 8,
-      unlockMessage: "🚀 Multi-Project Mastery! Full automation system and up to 3 concurrent projects available.",
-      features: ["Multi-Project Dashboard", "Smart Staff Automation", "Advanced Scheduling"]
+      unlockMessage: "🚀 Multi-Project Mastery! A third studio suite can now be brought online.",
+      features: ["Third Room Expansion", "Smart Staff Automation", "Advanced Scheduling"]
     },
     {
       level: 8,
       staffCount: 6,
       projectsCompleted: 15,
-      unlockMessage: "🏆 Studio Empire Mode! Maximum efficiency with up to 4 concurrent projects.",
-      features: ["Enterprise Dashboard", "AI-Powered Optimization", "Advanced Analytics"]
+      unlockMessage: "🏆 Studio Empire Mode! Your facility can now support a fourth production suite.",
+      features: ["Fourth Room Expansion", "AI-Powered Optimization", "Advanced Analytics"]
     },
     {
       level: 12,
       staffCount: 8,
       projectsCompleted: 25,
-      unlockMessage: "👑 Industry Legend! You can now manage up to 5 concurrent projects with full automation.",
-      features: ["Legendary Studio Management", "Complete Automation Suite", "Industry Dominance"]
+      unlockMessage: "👑 Industry Legend! Your room expansion limit is fully unlocked.",
+      features: ["Maximum Room Expansion", "Complete Automation Suite", "Industry Dominance"]
     }
   ];
 
