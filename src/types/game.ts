@@ -112,6 +112,7 @@ export interface StaffMember {
   xpInRole: number;
   levelInRole: number;
   genreAffinity: { genre: string; bonus: number } | null;
+  clientFamiliarity?: Record<string, number>; // Completed sessions with recurring clients
   energy: number;
   mood: number; // 0-100, affects work effectiveness
   salary: number;
