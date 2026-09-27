@@ -27,6 +27,7 @@ import {
   shouldShowSimulationSummary,
   SimulationSummary
 } from '@/simulation/simulationClock';
+import { getBookedStudioRoom } from '@/utils/studioRoomUtils';
 
 const MusicStudioTycoon = () => {
   const { gameState, setGameState, initializeGameState } = useGameState(); // REMOVED focusAllocation, setFocusAllocation
@@ -139,9 +140,14 @@ const MusicStudioTycoon = () => {
     }
     
     // Placeholder for equipment quality - e.g., average quality of owned equipment or a studio rating
-    const averageEquipmentQuality = gameState.ownedEquipment.length > 0
+    const baseEquipmentQuality = gameState.ownedEquipment.length > 0
       ? gameState.ownedEquipment.reduce((sum, eq) => sum + eq.condition, 0) / gameState.ownedEquipment.length
-      : 50; // Default if no equipment
+      : 50;
+    const bookedRoom = getBookedStudioRoom(gameState, completedProjectData);
+    const averageEquipmentQuality = Math.min(
+      100,
+      baseEquipmentQuality + (bookedRoom?.qualityBonus || 0)
+    );
 
     const report = generateProjectReview(
       completedProjectData,
