@@ -14,6 +14,7 @@ import { shouldAutoTriggerMinigame } from '@/utils/minigameUtils';
 import { MinigameType } from '@/components/minigames/MinigameManager';
 import { toast } from '@/hooks/use-toast';
 import { getBookedStudioRoom } from '@/utils/studioRoomUtils';
+import { createSeededRandom } from '@/simulation/seededRandom';
 
 interface UseStageWorkProps {
   gameState: GameState;
@@ -96,7 +97,10 @@ export const useStageWork = ({
       project,
       gameState,
       project.focusAllocation || { performance: 33, soundCapture: 33, layering: 34 },
-      workBucket
+      workBucket,
+      createSeededRandom(
+        `${project.id}:intervention:${project.currentStageIndex}:${workBucket}`
+      )
     );
 
     if (!trigger) return;
