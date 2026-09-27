@@ -348,6 +348,7 @@ export const generateCandidates = (count: number): StaffMember[] => {
       xpInRole: 0,
       levelInRole: 1,
       genreAffinity,
+      clientFamiliarity: {},
       energy: 100,
       mood: 75, // Start with good mood
       salary,
