@@ -1,4 +1,5 @@
 import { GameState, Project, FocusAllocation } from '@/types/game';
+import { createDefaultStudioRooms } from '@/utils/studioRoomUtils';
 
 const DEFAULT_FOCUS_ALLOCATION: FocusAllocation = {
   performance: 33,
@@ -53,6 +54,19 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
       ...processedState.activeProject,
       focusAllocation: { ...DEFAULT_FOCUS_ALLOCATION },
     };
+  }
+
+  // Physical-room capacity was introduced after the original multi-project model.
+  // Legacy saves receive the starter room and the future purchasable room catalog.
+  if (!processedState.studioRooms || processedState.studioRooms.length === 0) {
+    processedState.studioRooms = createDefaultStudioRooms();
+  } else {
+    const defaults = createDefaultStudioRooms();
+    const existingById = new Map(processedState.studioRooms.map(room => [room.id, room]));
+    processedState.studioRooms = defaults.map(defaultRoom => ({
+      ...defaultRoom,
+      ...(existingById.get(defaultRoom.id) || {})
+    }));
   }
 
   // Add other migration logic here as needed in the future
