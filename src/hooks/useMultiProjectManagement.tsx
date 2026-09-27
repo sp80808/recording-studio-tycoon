@@ -10,8 +10,119 @@ interface UseMultiProjectManagementProps {
   setGameState: (state: GameState | ((prev: GameState) => GameState)) => void;
 }
 
+export interface FocusAdjustmentResult {
+  projectId: string;
+  projectTitle: string;
+  previousFocus: FocusAllocation;
+  nextFocus: FocusAllocation;
+  totalDelta: number;
+}
+
+const DEFAULT_FOCUS: FocusAllocation = {
+  performance: 33,
+  soundCapture: 33,
+  layering: 34,
+};
+
 export const useMultiProjectManagement = ({ gameState, setGameState }: UseMultiProjectManagementProps) => {
   const projectManager = useMemo(() => new ProjectManager(gameState), [gameState]);
+
+  const calculateAggregatedSkills = useCallback((assignedStaffToThisProject: StaffMember[]) => {
+    if (assignedStaffToThisProject.length === 0) {
+      return {
+        creativity: 0,
+        technical: 0,
+        arrangement: 0,
+      };
+    }
+
+    let totalCreativity = 0;
+    let totalTechnical = 0;
+    let totalArrangementScore = 0;
+    let staffWithArrangementSkills = 0;
+
+    assignedStaffToThisProject.forEach(staff => {
+      totalCreativity += staff.primaryStats.creativity || 0;
+      totalTechnical += staff.primaryStats.technical || 0;
+
+      const mixingSkill = staff.skills.mixing?.level || 0;
+      const songwritingSkill = staff.skills.songwriting?.level || 0;
+      if (mixingSkill > 0 || songwritingSkill > 0) {
+        totalArrangementScore += (mixingSkill + songwritingSkill) / 2;
+        staffWithArrangementSkills++;
+      }
+    });
+
+    return {
+      creativity: totalCreativity / assignedStaffToThisProject.length,
+      technical: totalTechnical / assignedStaffToThisProject.length,
+      arrangement: staffWithArrangementSkills > 0 ? totalArrangementScore / staffWithArrangementSkills : 0,
+    };
+  }, []);
+
+  const calculateOptimalFocusForProjects = useCallback((
+    projects: Project[],
+    staff: StaffMember[],
+    assignments: StaffAssignment[]
+  ) => {
+    const assignmentByStaff = new Map<string, string>();
+    assignments.forEach(assignment => {
+      assignmentByStaff.set(assignment.staffId, assignment.projectId);
+    });
+
+    const staffByProject = new Map<string, StaffMember[]>();
+    projects.forEach(project => {
+      staffByProject.set(project.id, []);
+    });
+
+    staff.forEach(member => {
+      const projectId = assignmentByStaff.get(member.id);
+      if (!projectId) return;
+      const projectStaff = staffByProject.get(projectId);
+      if (projectStaff) projectStaff.push(member);
+    });
+
+    const focusByProject = new Map<string, FocusAllocation>();
+    const focusAdjustments: FocusAdjustmentResult[] = [];
+
+    projects.forEach(project => {
+      const currentStage = project.stages[project.currentStageIndex];
+      if (!currentStage) return;
+
+      const assignedStaffToThisProject = staffByProject.get(project.id) || [];
+      const aggregatedSkills = calculateAggregatedSkills(assignedStaffToThisProject);
+      const optimalFocus = getStageOptimalFocus(currentStage, project.genre, aggregatedSkills);
+      const nextFocus: FocusAllocation = {
+        performance: optimalFocus.performance,
+        soundCapture: optimalFocus.soundCapture,
+        layering: optimalFocus.layering,
+      };
+
+      focusByProject.set(project.id, nextFocus);
+
+      const previousFocus = project.focusAllocation || DEFAULT_FOCUS;
+      const totalDelta =
+        Math.abs(previousFocus.performance - nextFocus.performance) +
+        Math.abs(previousFocus.soundCapture - nextFocus.soundCapture) +
+        Math.abs(previousFocus.layering - nextFocus.layering);
+
+      if (totalDelta > 0) {
+        focusAdjustments.push({
+          projectId: project.id,
+          projectTitle: project.title,
+          previousFocus,
+          nextFocus,
+          totalDelta,
+        });
+      }
+    });
+
+    return {
+      assignmentByStaff,
+      focusByProject,
+      focusAdjustments,
+    };
+  }, [calculateAggregatedSkills]);
 
   // Get current project capacity information
   const projectCapacity = useMemo((): ProjectCapacity => {
@@ -109,73 +220,94 @@ export const useMultiProjectManagement = ({ gameState, setGameState }: UseMultiP
   }, [projectManager]);
 
   // Apply optimal staff assignments
-  const applyOptimalStaffAssignments = useCallback((): void => {
+  const applyOptimalStaffAssignments = useCallback((): FocusAdjustmentResult[] => {
     const assignments = projectManager.optimizeStaffAssignments();
-    
+    const { assignmentByStaff, focusByProject, focusAdjustments } = calculateOptimalFocusForProjects(
+      gameState.activeProjects,
+      gameState.hiredStaff,
+      assignments
+    );
+    const now = Date.now();
+
     setGameState(prev => {
       const newHiredStaff = prev.hiredStaff.map(staff => {
-        const assignment = assignments.find(a => a.staffId === staff.id);
+        const assignedProjectId = assignmentByStaff.get(staff.id) || null;
+        const status: StaffMember['status'] = assignedProjectId ? 'Working' : 'Idle';
         return {
           ...staff,
-          assignedProjectId: assignment?.projectId || null,
-          status: assignment ? 'Working' : 'Idle'
+          assignedProjectId,
+          status,
         };
       });
 
       const updatedActiveProjects = prev.activeProjects.map(proj => {
-        const assignedStaffToThisProject = newHiredStaff.filter(s => s.assignedProjectId === proj.id);
-        const aggregatedSkills: { creativity?: number; technical?: number; arrangement?: number } = {
-          creativity: 0,
-          technical: 0,
-          arrangement: 0,
-        };
-
-        if (assignedStaffToThisProject.length > 0) {
-          let totalCreativity = 0;
-          let totalTechnical = 0;
-          let totalArrangementScore = 0;
-          let staffWithArrangementSkills = 0;
-
-          assignedStaffToThisProject.forEach(staff => {
-            totalCreativity += staff.primaryStats.creativity || 0;
-            totalTechnical += staff.primaryStats.technical || 0;
-            
-            const mixingSkill = staff.skills.mixing?.level || 0;
-            const songwritingSkill = staff.skills.songwriting?.level || 0;
-            // Consider staff contributing to arrangement if they have either skill
-            if (mixingSkill > 0 || songwritingSkill > 0) {
-              totalArrangementScore += (mixingSkill + songwritingSkill) / 2; // Simple average for now
-              staffWithArrangementSkills++;
-            }
-          });
-
-          aggregatedSkills.creativity = totalCreativity / assignedStaffToThisProject.length;
-          aggregatedSkills.technical = totalTechnical / assignedStaffToThisProject.length;
-          aggregatedSkills.arrangement = staffWithArrangementSkills > 0 ? totalArrangementScore / staffWithArrangementSkills : 0;
-        }
-        
-        const currentStage = proj.stages[proj.currentStageIndex];
-        if (currentStage) {
-          const newOptimalFocus = getStageOptimalFocus(currentStage, proj.genre, aggregatedSkills);
-          return {
-            ...proj,
-            focusAllocation: {
-              performance: newOptimalFocus.performance,
-              soundCapture: newOptimalFocus.soundCapture,
-              layering: newOptimalFocus.layering,
-            } as FocusAllocation, // Ensure type correctness
-          };
-        }
-        return proj;
+        const nextFocus = focusByProject.get(proj.id);
+        return nextFocus ? { ...proj, focusAllocation: nextFocus } : proj;
       });
+
+      const updatedActiveProject = prev.activeProject && focusByProject.has(prev.activeProject.id)
+        ? { ...prev.activeProject, focusAllocation: focusByProject.get(prev.activeProject.id)! }
+        : prev.activeProject;
+
+      const defaultAnimations = {
+        projects: {},
+        staff: {},
+        globalEffects: {
+          studioActivity: 0,
+          projectTransitions: {},
+          automationPulse: false,
+          lastGlobalUpdate: now,
+        },
+      };
+
+      const updatedAnimations = {
+        ...(prev.animations || defaultAnimations),
+        projects: { ...(prev.animations?.projects || {}) },
+        staff: { ...(prev.animations?.staff || {}) },
+        globalEffects: {
+          ...(prev.animations?.globalEffects || defaultAnimations.globalEffects),
+          projectTransitions: {
+            ...(prev.animations?.globalEffects?.projectTransitions || {}),
+          },
+        },
+      };
+
+      updatedActiveProjects.forEach(project => {
+        const assignedStaff = newHiredStaff.filter(member => member.assignedProjectId === project.id);
+        const hadFocusAdjustment = focusAdjustments.some(adjustment => adjustment.projectId === project.id);
+        const existing = updatedAnimations.projects[project.id];
+
+        updatedAnimations.projects[project.id] = {
+          isActive: assignedStaff.length > 0,
+          workIntensity: Math.min(1, assignedStaff.length / 3),
+          staffCount: assignedStaff.length,
+          progressPulse: hadFocusAdjustment || existing?.progressPulse || false,
+          automationPulse: hadFocusAdjustment || existing?.automationPulse || false,
+          lastUpdate: now,
+        };
+      });
+
+      focusAdjustments.forEach(adjustment => {
+        updatedAnimations.globalEffects.projectTransitions[adjustment.projectId] = true;
+      });
+
+      const workingStaff = newHiredStaff.filter(member => member.status === 'Working').length;
+      const totalStaff = newHiredStaff.length;
+      updatedAnimations.globalEffects.studioActivity = totalStaff > 0 ? workingStaff / totalStaff : 0;
+      updatedAnimations.globalEffects.automationPulse = Boolean(prev.automation?.enabled);
+      updatedAnimations.globalEffects.lastGlobalUpdate = now;
 
       return {
         ...prev,
         hiredStaff: newHiredStaff,
         activeProjects: updatedActiveProjects,
+        activeProject: updatedActiveProject,
+        animations: updatedAnimations,
       };
     });
-  }, [projectManager, setGameState]);
+
+    return focusAdjustments;
+  }, [calculateOptimalFocusForProjects, gameState.activeProjects, gameState.hiredStaff, projectManager, setGameState]);
 
   // Execute one round of automated work
   const executeAutomatedWork = useCallback((): void => {
