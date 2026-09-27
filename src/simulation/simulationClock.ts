@@ -13,6 +13,7 @@ import {
   getMoodEffectiveness,
   getTechnicalMultiplier
 } from '@/utils/playerUtils';
+import { getBookedStudioRoom } from '@/utils/studioRoomUtils';
 
 export const PASSIVE_WORK_SESSION_MS = 5 * 60 * 1000;
 export const DEFAULT_MAX_OFFLINE_MS = 8 * 60 * 60 * 1000;
@@ -108,7 +109,9 @@ const calculatePassiveSessionOutput = (
     ? Math.floor(currentStage.workUnitsBase / 10)
     : 0;
   const baseWorkUnits = Math.floor(totalPointsGenerated / 3);
-  const workUnits = Math.max(1, baseWorkUnits + stageEfficiencyBonus);
+  const room = getBookedStudioRoom(state, project);
+  const roomSpeedMultiplier = 1 + ((room?.speedBonus || 0) / 100);
+  const workUnits = Math.max(1, (baseWorkUnits + stageEfficiencyBonus) * roomSpeedMultiplier);
 
   return {
     workUnits,
