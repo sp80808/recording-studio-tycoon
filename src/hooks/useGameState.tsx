@@ -150,8 +150,16 @@ export const useGameState = () => {
     const maxConcurrentProjects = ProgressionSystem.getMaxConcurrentProjects(newGameState);
     const isMultiProjectUnlocked = ProgressionSystem.shouldUnlockMultiProject(newGameState);
     
+    const activeProjects =
+      isMultiProjectUnlocked &&
+      newGameState.activeProject &&
+      !newGameState.activeProjects.some(project => project.id === newGameState.activeProject?.id)
+        ? [newGameState.activeProject, ...newGameState.activeProjects]
+        : newGameState.activeProjects;
+
     return {
       ...newGameState,
+      activeProjects,
       maxConcurrentProjects,
       automation: {
         ...newGameState.automation!,
