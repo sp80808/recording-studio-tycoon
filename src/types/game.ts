@@ -53,11 +53,33 @@ export interface ProjectStage {
   completed: boolean;
 }
 
+export type ClientRelationshipTier =
+  | 'Unknown'
+  | 'Acquaintance'
+  | 'Friendly'
+  | 'Regular'
+  | 'Loyal'
+  | 'Advocate';
+
+export interface ClientRelationship {
+  clientId: string;
+  clientName: string;
+  primaryGenre: string;
+  relationshipXp: number;
+  tier: ClientRelationshipTier;
+  sessionsCompleted: number;
+  lastSessionDay: number;
+  bestQualityScore: number;
+  referralCount: number;
+}
+
 export interface Project {
   id: string;
   title: string;
   genre: string;
   clientType: string;
+  clientId?: string;
+  clientName?: string;
   difficulty: number;
   durationDaysTotal: number;
   payoutBase: number;
@@ -186,6 +208,7 @@ export interface GameState {
   ownedUpgrades
   ownedEquipment: Equipment[];
   availableProjects: Project[];
+  clientRelationships?: Record<string, ClientRelationship>;
   
   // Multi-project system
   activeProjects: Project[]; // Replace single activeProject with array
