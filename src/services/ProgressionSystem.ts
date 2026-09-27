@@ -1,5 +1,6 @@
 // Multi-Project Progression System
 import { GameState } from '@/types/game';
+import { getPhysicalStudioCapacity } from '@/utils/studioRoomUtils';
 
 export interface ProgressionMilestone {
   level: number;
@@ -131,23 +132,25 @@ export class ProgressionSystem {
   /**
    * Get maximum concurrent projects based on progression
    */
-  static getMaxConcurrentProjects(gameState: GameState): number {
+  static getRoomExpansionLimit(gameState: GameState): number {
     const status = this.getProgressionStatus(gameState);
-    
-    if (!status.isMultiProjectUnlocked) {
-      return 1; // Single project only
-    }
-
     const milestone = status.currentMilestone;
-    if (!milestone) return 1;
 
-    // Map milestones to project capacity
-    if (milestone.level >= 12) return 5; // Industry Legend
-    if (milestone.level >= 8) return 4;  // Studio Empire
-    if (milestone.level >= 5) return 3;  // Multi-Project Mastery
-    if (milestone.level >= 3) return 2;  // Studio Expansion
-    
-    return 1; // Default single project
+    if (!milestone || !status.isMultiProjectUnlocked) return 1;
+    if (milestone.level >= 12) return 5;
+    if (milestone.level >= 8) return 4;
+    if (milestone.level >= 5) return 3;
+    if (milestone.level >= 3) return 2;
+    return 1;
+  }
+
+  static getMaxConcurrentProjects(gameState: GameState): number {
+    const physicalCapacity = getPhysicalStudioCapacity(gameState);
+    const progressionLimit = this.getRoomExpansionLimit(gameState);
+
+    // Progression grants permission to expand; an actually purchased/unlocked
+    // room creates the physical project slot.
+    return Math.max(1, Math.min(physicalCapacity, progressionLimit));
   }
 
   /**
