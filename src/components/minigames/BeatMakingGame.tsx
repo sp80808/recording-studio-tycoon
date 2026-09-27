@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { DialogFooter } from '@/components/ui/dialog';
+import { MinigameChrome, KenneyButton } from './MinigameChrome';
 import { gameAudio } from '@/utils/audioSystem';
 
 interface BeatMakingGameProps {
@@ -139,15 +140,10 @@ export const BeatMakingGame: React.FC<BeatMakingGameProps> = ({ onComplete, onCl
   };
 
   return (
-    <Card className="w-full max-w-4xl bg-gray-900 border-gray-600 p-6">
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-white mb-2">🥁 Beat Making Challenge</h2>
-        <p className="text-gray-300">Create a sick beat pattern!</p>
-        <div className="flex justify-between items-center mt-4">
-          <div className="text-yellow-400 font-bold">Score: {score}</div>
-          <div className="text-red-400 font-bold">Time: {timeLeft}s</div>
-        </div>
-      </div>
+    <Card className="w-full max-w-4xl mx-auto bg-gray-800 text-white border-gray-700">
+      <MinigameChrome title="🥁 Beat Making Challenge" score={score} timeLeft={timeLeft} accent="yellow">
+      <CardContent>
+        <p className="text-center text-sm text-gray-300">Create a sick beat pattern!</p>
 
       <div className="space-y-4 mb-6">
         {beats.map((track, trackIndex) => (
@@ -162,7 +158,7 @@ export const BeatMakingGame: React.FC<BeatMakingGameProps> = ({ onComplete, onCl
                   onClick={() => toggleBeat(trackIndex, stepIndex)}
                   className={`w-12 h-12 transition-all duration-150 ${
                     isActive 
-                      ? `${trackColors[trackIndex]} shadow-lg scale-110` 
+                      ? `${trackColors[trackIndex]} shadow-lg mg-perfect-pop scale-110` 
                       : 'bg-gray-700 hover:bg-gray-600'
                   } ${currentStep === stepIndex && isPlaying ? 'ring-2 ring-white animate-pulse' : ''}`}
                 >
@@ -174,20 +170,19 @@ export const BeatMakingGame: React.FC<BeatMakingGameProps> = ({ onComplete, onCl
         ))}
       </div>
 
-      <div className="flex gap-4 justify-center">
-        <Button
-          onClick={() => setIsPlaying(!isPlaying)}
-          className={`px-6 py-3 ${isPlaying ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
-        >
+      </CardContent>
+      </MinigameChrome>
+      <DialogFooter className="flex flex-wrap gap-3 p-4 sm:justify-center">
+        <KenneyButton variant={isPlaying ? 'red' : 'green'} onClick={() => setIsPlaying(!isPlaying)}>
           {isPlaying ? '⏸️ Stop' : '▶️ Play'}
-        </Button>
-        <Button onClick={handleComplete} className="px-6 py-3 bg-blue-600 hover:bg-blue-700">
+        </KenneyButton>
+        <KenneyButton variant="blue" onClick={handleComplete}>
           🎵 Finish Beat
-        </Button>
-        <Button onClick={handleClose} variant="outline" className="px-6 py-3">
+        </KenneyButton>
+        <KenneyButton variant="grey" onClick={handleClose}>
           Cancel
-        </Button>
-      </div>
+        </KenneyButton>
+      </DialogFooter>
     </Card>
   );
 };
