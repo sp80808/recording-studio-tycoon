@@ -136,7 +136,7 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
       const completedProject =
         prev.activeProject?.id === projectId
           ? prev.activeProject
-          : prev.activeProjects.find(project => project.id === projectId);
+          : prev.activeProjects?.find(project => project.id === projectId);
 
       const updatedClientRelationships = { ...(prev.clientRelationships || {}) };
 
