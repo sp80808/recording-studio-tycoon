@@ -393,7 +393,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             {/* Production Queue Panel (feature-flagged) */}
             {useFeatureFlag('advanced-production-queue') && (
               <div className="mt-4">
-                <ProductionQueuePanel roomId={project.id} />
+                <ProductionQueuePanel roomId={project.bookingRoomId || project.id} />
               </div>
             )}
 
