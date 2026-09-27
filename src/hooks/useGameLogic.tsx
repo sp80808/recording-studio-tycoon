@@ -230,29 +230,23 @@ export const useGameLogic = (
     });
   };
 
-  // Enhanced advanceDay to include tour processing and automatic daily work
-  const handleAdvanceDay = useCallback(() => {
+  // Enhanced advanceDay to include tour processing and automatic daily work.
+  // Returns the work result so callers (Index) can route a completed project
+  // into the same review/settlement flow as manual work sessions.
+  const handleAdvanceDay = useCallback((): { finalProjectData?: Project; isComplete: boolean } | undefined => {
     // First, perform daily work if there's an active project
+    let workResult: { finalProjectData?: Project; isComplete: boolean } | undefined;
     if (gameState.activeProject) {
       console.log('Auto-performing daily work before advancing day');
-      const workResult = performDailyWork();
-      
-      // If project completes, we'll let the normal flow handle it
-      if (workResult?.isComplete && workResult.finalProjectData) {
-        toast({
-          title: "🎉 Project Completed!",
-          description: `${workResult.finalProjectData.title} is finished! Check your studio for the review.`,
-          className: "bg-gray-800 border-gray-600 text-white",
-          duration: 5000
-        });
-      }
+      workResult = performDailyWork();
     }
-    
+
     // Process tour income
     processTourIncome();
-    
+
     // Advance the day (handles salaries, staff training, etc.)
     advanceDay();
+    return workResult;
   }, [gameState.activeProject, performDailyWork, processTourIncome, advanceDay]);
 
   // Contact artist for collaboration

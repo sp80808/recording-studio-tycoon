@@ -117,6 +117,13 @@ export const useStageWork = ({
     console.log(`📈 Stage progress: ${currentStage.workUnitsCompleted}/${currentStage.workUnitsBase}`);
 
     if (currentStage.completed) {
+      if (project.stages.every(stage => stage.completed)) {
+        // Recovery path: all work is done (e.g. finished via Advance Day) but
+        // the project was never settled — route to the review flow instead of
+        // stranding it with a dead-end toast.
+        console.log('🎉 Project work already complete. Routing to review flow.');
+        return { finalProjectData: { ...project }, isComplete: true };
+      }
       console.log('✅ Current stage already completed');
       toast({
         title: "✅ Stage Already Complete",
