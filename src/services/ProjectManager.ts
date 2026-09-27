@@ -1,5 +1,6 @@
 // Project Management Service for Multi-Project Automation
 import { Project, StaffMember, GameState, AutomationMode, AutomationSettings } from '../types/game';
+import { ProgressionSystem } from './ProgressionSystem';
 
 export interface ProjectCapacity {
   maxProjects: number;
@@ -37,18 +38,17 @@ export class ProjectManager {
    * Calculate maximum concurrent projects based on studio level and equipment
    */
   calculateProjectCapacity(): ProjectCapacity {
-    const baseCapacity = Math.max(2, Math.floor(this.gameState.playerData.level / 3));
-    const equipmentBonus = Math.floor(this.gameState.ownedEquipment.length / 10);
-    const staffBonus = Math.floor(this.gameState.hiredStaff.length / 3);
-    
-    const maxProjects = Math.min(5, baseCapacity + equipmentBonus + staffBonus);
+    const maxProjects = ProgressionSystem.getMaxConcurrentProjects(this.gameState);
     const currentProjects = this.gameState.activeProjects.length;
     
-    // Calculate efficiency based on staff-to-project ratio
+    // Staff affects throughput, not whether a physical room exists.
     const totalStaff = this.gameState.hiredStaff.length;
-    const efficiency = totalStaff > 0 ? Math.min(1, totalStaff / (currentProjects * 2)) : 0;
+    const efficiency = currentProjects === 0
+      ? 1
+      : totalStaff > 0
+        ? Math.min(1, totalStaff / (currentProjects * 2))
+        : 0;
     
-    // Calculate staff utilization
     const workingStaff = this.gameState.hiredStaff.filter(s => s.status === 'Working').length;
     const staffUtilization = totalStaff > 0 ? workingStaff / totalStaff : 0;
 
