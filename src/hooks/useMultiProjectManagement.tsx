@@ -4,6 +4,7 @@ import { GameState, Project, StaffMember, AutomationMode, AutomationSettings, Fo
 import { ProjectManager, ProjectCapacity, StaffAssignment } from '@/services/ProjectManager';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
 import { getStageOptimalFocus } from '@/utils/stageUtils'; // ADDED
+import { findAvailableStudioRoom } from '@/utils/studioRoomUtils';
 
 interface UseMultiProjectManagementProps {
   gameState: GameState;
@@ -26,18 +27,28 @@ export const useMultiProjectManagement = ({ gameState, setGameState }: UseMultiP
 
   // Add a new project to active projects
   const addProject = useCallback((project: Project): boolean => {
-    const success = projectManager.addProject(project);
+    const room = findAvailableStudioRoom(gameState, project);
+    if (!room) return false;
+
+    const bookedProject: Project = {
+      ...project,
+      bookingRoomId: room.id
+    };
+
+    const success = projectManager.addProject(bookedProject);
     if (success) {
       setGameState(prev => ({
         ...prev,
-        activeProjects: [...prev.activeProjects, project],
-        maxConcurrentProjects: projectManager.calculateProjectCapacity().maxProjects,
-        // Remove from available projects
+        activeProjects: [...prev.activeProjects, bookedProject],
+        maxConcurrentProjects: ProgressionSystem.getMaxConcurrentProjects({
+          ...prev,
+          activeProjects: [...prev.activeProjects, bookedProject]
+        }),
         availableProjects: prev.availableProjects.filter(p => p.id !== project.id)
       }));
     }
     return success;
-  }, [projectManager, setGameState]);
+  }, [gameState, projectManager, setGameState]);
 
   // Remove a project from active projects
   const removeProject = useCallback((projectId: string): boolean => {
