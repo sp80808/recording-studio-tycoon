@@ -182,7 +182,8 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
         ...prev,
         money: prev.money + moneyGained,
         reputation: prev.reputation + reputationGained,
-        activeProject: null, // Assuming single active project for now, will adapt if multi-project
+        activeProject: prev.activeProject?.id === projectId ? null : prev.activeProject,
+        activeProjects: (prev.activeProjects || []).filter(project => project.id !== projectId),
         availableProjects: [...prev.availableProjects, ...nextEnquiries],
         clientRelationships: updatedClientRelationships,
         playerData: updatedPlayerData,
