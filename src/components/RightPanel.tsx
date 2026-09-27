@@ -14,6 +14,7 @@ import { StudioProgressionPanel } from '@/components/StudioProgressionPanel'; //
 import { toast } from '@/hooks/use-toast'; // Import toast
 
 export interface RightPanelProps {
+  requestedTab?: 'studio' | 'skills' | 'bands' | 'charts' | 'staff';
   gameState: GameState;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
   spendPerkPoint: (attribute: keyof PlayerAttributes) => void;
@@ -50,9 +51,11 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   createBand,
   startTour,
   createOriginalTrack,
-  startResearchMod
+  startResearchMod,
+  requestedTab
 }) => {
-  const [activeTab, setActiveTab] = useState<'studio' | 'skills' | 'bands' | 'charts' | 'staff'>('studio');
+  const [activeTab, setActiveTab] = useState<'studio' | 'skills' | 'bands' | 'charts' | 'staff'>(requestedTab ?? 'studio');
+  useEffect(() => { if (requestedTab) setActiveTab(requestedTab); }, [requestedTab]);
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [showAttributesModal, setShowAttributesModal] = useState(false);
   const [showResearchModal, setShowResearchModal] = useState(false);

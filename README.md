@@ -146,7 +146,12 @@ For task-level tracking, see beads (`bd ready`) and the **[Current Development S
 ---
 
 ## Screenshots
-<!-- ORCHESTRATOR: screenshot gallery embedded here -->
+*Captured 2026-09-27 from a live dev build (headless Chrome; WebGL canvas renders dark headless, UI fully visible).*
+
+![Splash screen](./screenshots/splash.png)
+![Studio floor](./screenshots/studio-floor.png)
+![Management drawer](./screenshots/management-drawer.png)
+![Charts tab](./screenshots/charts-or-projects.png)
 
 ---
 

@@ -2,6 +2,8 @@ import React, { useRef, useState, useEffect } from 'react';
 import { GameState, FocusAllocation, StaffMember, PlayerAttributes, Project } from '@/types/game';
 import { ProjectList } from '@/components/ProjectList';
 import { ProgressiveProjectInterface } from '@/components/ProgressiveProjectInterface';
+import { CareerHub } from '@/components/CareerHub';
+import { AttributesModal } from '@/components/modals/AttributesModal';
 import { RightPanel } from '@/components/RightPanel';
 import { StudioRoom } from '@/components/StudioRoom';
 import { FloatingXPOrb } from '@/components/FloatingXPOrb';
@@ -107,6 +109,14 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   // drawer (bead goj.2) so the room stays the home screen. Mobile keeps its
   // third swipe tab unchanged.
   const [managementOpen, setManagementOpen] = useState(false);
+  const [dashboardTab, setDashboardTab] = useState<'studio' | 'skills' | 'bands' | 'charts' | 'staff'>('studio');
+  const workPanelRef = useRef<HTMLDivElement>(null);
+  const bookingsRef = useRef<HTMLDivElement>(null);
+  const focusPanel = (panel: React.RefObject<HTMLDivElement>, tab: number) => {
+    if (isMobile) setActiveMobileTabIndex(tab);
+    panel.current?.scrollTo({ top: 0, behavior: 'auto' });
+    panel.current?.focus({ preventScroll: true });
+  };
 
   // Refs for swipe gesture handling on mobile.
   const swipeContainerRef = useRef<HTMLDivElement>(null); // Ref for the swipeable container
@@ -242,13 +252,16 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
     } else {
       setManagementOpen(true);
     }
-    // RightPanel listens for this and switches its own tab.
-    window.dispatchEvent(new CustomEvent('rst:open-dashboard-tab', { detail: tab }));
+    setDashboardTab(tab);
   };
 
   return (
     // Outermost container for the main game content area.
     <div className="flex-1 min-h-0 flex flex-col main-game-content">
+      <CareerHub gameState={gameState} onTalents={() => setShowAttributesModal(true)}
+        onWork={() => focusPanel(workPanelRef, 1)} onBookings={() => focusPanel(bookingsRef, 0)}
+        onRest={advanceDay} onStaff={() => handleOpenDashboardTab('staff')} />
+      <AttributesModal isOpen={showAttributesModal} onClose={() => setShowAttributesModal(false)} playerData={gameState.playerData} spendPerkPoint={spendPerkPoint} />
       {/* Render MobileArrowNavigation only on mobile viewports. */}
       {isMobile && (
         <div className="mobile-navigation">
@@ -271,6 +284,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         {/* Panel 1: Project List */}
         {/* On mobile, this is the first tab. On desktop, it's the left column. */}
         <div
+          ref={bookingsRef} tabIndex={-1} aria-label="Available bookings"
           className={`h-full overflow-y-auto p-2 project-panel ${isMobile ? 'flex-shrink-0 mobile-tab-panel' : 'w-1/4 border-r border-gray-700 desktop-panel'}`}
           style={isMobile ? { width: `calc(100% / ${mobileTabs.length})`} : { width: '25%', minWidth: '200px' }}
         >
@@ -297,13 +311,11 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             onAssignStaff={assignStaffToProject}
             onUnassignStaff={unassignStaffFromProject}
             onOpenDashboardTab={handleOpenDashboardTab}
-            onConsoleFocus={() => {
-              if (isMobile) setActiveMobileTabIndex(1);
-            }}
+            onConsoleFocus={() => focusPanel(workPanelRef, 1)}
             className="shrink-0 mb-2"
             style={{ height: 'clamp(220px, 42vh, 420px)' }}
           />
-          <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+          <div ref={workPanelRef} tabIndex={-1} aria-label="Session work panel" className="flex-1 min-h-0 overflow-y-auto pr-1">
             <ProgressiveProjectInterface
               gameState={gameState}
               setGameState={setGameState}
@@ -356,6 +368,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           style={isMobile ? { width: `calc(100% / ${mobileTabs.length})`} : { width: '25%', minWidth: '200px' }}
         >
           <RightPanel
+            requestedTab={dashboardTab}
             gameState={gameState}
             setGameState={setGameState}
             spendPerkPoint={spendPerkPoint}

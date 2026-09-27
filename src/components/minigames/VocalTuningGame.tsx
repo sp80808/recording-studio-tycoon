@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { DialogFooter } from '@/components/ui/dialog'; // Import DialogFooter
+import { MinigameChrome, KenneyButton } from './MinigameChrome';
 
 // Define a basic props interface for minigame components
 export interface MinigameComponentProps {
@@ -87,19 +87,8 @@ export const VocalTuningGame: React.FC<MinigameComponentProps> = ({ minigameId, 
 
   return (
     <Card className="w-full max-w-2xl mx-auto bg-gray-800 text-white border-gray-700">
-      <CardHeader>
-        <CardTitle>🎤 Vocal Tuning Challenge 🎤</CardTitle>
-        <CardDescription>
-          Click on the notes to correct their pitch! Aim for precision.
-        </CardDescription>
-      </CardHeader>
+      <MinigameChrome title="🎤 Vocal Tuning Challenge" score={score} timeLeft={gameOver ? undefined : timeLeft} streak={pitchNodes.filter((node) => node.isCorrected).length >= 2 ? pitchNodes.filter((node) => node.isCorrected).length : undefined} accent="red">
       <CardContent>
-        <div className="mb-4 flex justify-between items-center">
-          <span className="text-xl font-bold">Score: {score}</span>
-          <span className={`text-xl font-bold ${timeLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-yellow-400'}`}>
-            Time Left: {timeLeft}s
-          </span>
-        </div>
 
         {/* Simplified visual representation of pitch nodes */}
         <div className="h-64 bg-gray-700 rounded p-4 relative overflow-x-auto flex items-center space-x-4">
@@ -118,7 +107,7 @@ export const VocalTuningGame: React.FC<MinigameComponentProps> = ({ minigameId, 
               {/* Node representing original pitch */}
               <div
                 className={`w-6 h-6 rounded-full flex items-center justify-center
-                            ${node.isCorrected ? 'bg-green-500' : 'bg-red-500 group-hover:bg-red-400'}
+                            ${node.isCorrected ? 'bg-green-500 mg-perfect-pop' : 'bg-red-500 group-hover:bg-red-400'}
                             border-2 ${node.isCorrected ? 'border-green-300' : 'border-red-300'}`}
                 style={{ 
                   position: 'relative', 
