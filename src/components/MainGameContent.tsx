@@ -238,6 +238,10 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         <StudioStrip
           gameState={gameState}
           onExpand={() => setCompactStudioMode(false)}
+          onBookNextEnquiry={() => {
+            const nextEnquiry = gameState.availableProjects[0];
+            if (nextEnquiry) startProject(nextEnquiry);
+          }}
         />
       </div>
     );
