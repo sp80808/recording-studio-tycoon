@@ -3,6 +3,7 @@ import { GameState } from '@/types/game';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Mic2, SlidersHorizontal, Users, ChevronUp, Inbox } from 'lucide-react';
+import { getBookedStudioRoom } from '@/utils/studioRoomUtils';
 
 interface StudioStripProps {
   gameState: GameState;
@@ -34,6 +35,7 @@ export const StudioStrip: React.FC<StudioStripProps> = ({
     staff => staff.assignedProjectId === activeProject?.id
   );
   const nextEnquiry = gameState.availableProjects[0];
+  const activeRoom = getBookedStudioRoom(gameState, activeProject);
 
   return (
     <div className="w-full h-[164px] bg-gray-950 border-t border-gray-700 flex items-stretch overflow-hidden">
@@ -88,6 +90,7 @@ export const StudioStrip: React.FC<StudioStripProps> = ({
             {activeProject && (
               <div className="text-xs text-gray-400 mt-1">
                 {activeProject.clientType} · {activeProject.genre}
+                {activeRoom ? ` · ${activeRoom.name}` : ''}
               </div>
             )}
           </div>
