@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'; // Added useCallback
+import React, { useState, useEffect, useCallback, useRef } from 'react'; // Added useCallback
 import { GameLayout } from '@/components/GameLayout';
 import { GameHeader } from '@/components/GameHeader';
 import { MainGameContent } from '@/components/MainGameContent';
@@ -20,11 +20,18 @@ import { useSaveSystem } from '@/contexts/SaveSystemContext';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { gameAudio as audioSystem } from '@/utils/audioSystem';
 import { MinigameType } from '@/components/minigames/MinigameManager'; // Import MinigameType
+import { WelcomeBackSummaryModal } from '@/components/modals/WelcomeBackSummaryModal';
+import {
+  advanceSimulation,
+  DEFAULT_MAX_OFFLINE_MS,
+  shouldShowSimulationSummary,
+  SimulationSummary
+} from '@/simulation/simulationClock';
 
 const MusicStudioTycoon = () => {
   const { gameState, setGameState, initializeGameState } = useGameState(); // REMOVED focusAllocation, setFocusAllocation
   const { settings } = useSettings();
-  const { saveGame, loadGame, hasSavedGame, resetGame } = useSaveSystem();
+  const { saveGame, loadGameSnapshot, hasSavedGame, resetGame } = useSaveSystem();
   
   const [showSplashScreen, setShowSplashScreen] = useState(true);
   const [gameInitialized, setGameInitialized] = useState(false);
@@ -63,6 +70,8 @@ const MusicStudioTycoon = () => {
   const [compactStudioMode, setCompactStudioMode] = useState(false);
   const [currentEraForTutorial, setCurrentEraForTutorial] = useState<string>(ERA_DEFINITIONS[0].id); // Default to first era
   const [activeProjectReport, setActiveProjectReport] = useState<ProjectReport | null>(null);
+  const [offlineSummary, setOfflineSummary] = useState<SimulationSummary | null>(null);
+  const simulationLastTickRef = useRef(Date.now());
   
   const handleLoadGameStateFromString = (newGameState: any) => {
     setGameState(newGameState);
@@ -82,16 +91,6 @@ const MusicStudioTycoon = () => {
   const clearAutoTriggeredMinigame = () => setAutoTriggeredMinigame(null);
 
   useBackgroundMusic();
-
-  useEffect(() => {
-    const checkSaveGame = () => {
-      if (hasSavedGame()) {
-        setShowSplashScreen(false);
-        // Game will be initialized after loading
-      }
-    };
-    checkSaveGame();
-  }, [hasSavedGame]);
 
   useEffect(() => {
     if (selectedStaffForTraining) {
@@ -184,27 +183,98 @@ const MusicStudioTycoon = () => {
 
   const handleLoadGame = async () => {
     try {
-      const loadedState = await loadGame();
-      if (loadedState) {
-        setGameState(loadedState);
-        setCurrentEraForTutorial(loadedState.currentEra); 
+      const snapshot = loadGameSnapshot();
+      if (snapshot) {
+        const elapsedMs = Math.max(0, Date.now() - snapshot.savedAt);
+        const simulation = advanceSimulation(snapshot.gameState, elapsedMs, {
+          maxElapsedMs: DEFAULT_MAX_OFFLINE_MS
+        });
+
+        setGameState(simulation.state);
+        setCurrentEraForTutorial(simulation.state.currentEra);
         setShowSplashScreen(false);
         setGameInitialized(true);
+        simulationLastTickRef.current = Date.now();
+
+        if (shouldShowSimulationSummary(simulation.summary)) {
+          setOfflineSummary(simulation.summary);
+        }
+
+        if (simulation.summary.creditedMs > 0) {
+          saveGame(simulation.state);
+        }
         
         if (settings.sfxEnabled) {
           audioSystem.playUISound('success');
         }
       } else {
-        // If loadGame returns null (e.g. no save file or error), go back to splash
         setShowSplashScreen(true);
         setGameInitialized(false);
       }
     } catch (error) {
       console.error('Failed to load game:', error);
-      setShowSplashScreen(true); // Show splash screen on error to allow starting new game
+      setShowSplashScreen(true);
       setGameInitialized(false);
     }
   };
+
+  // Keep active sessions progressing while the app is open. If the browser
+  // throttles this timer in the background, the next tick receives the full
+  // elapsed delta and catches up through the same simulation function.
+  useEffect(() => {
+    if (!gameInitialized || !gameState.activeProject || gameState.activeProject.awaitingReview) {
+      simulationLastTickRef.current = Date.now();
+      return;
+    }
+
+    simulationLastTickRef.current = Date.now();
+    const interval = window.setInterval(() => {
+      const now = Date.now();
+      const elapsedMs = Math.max(0, now - simulationLastTickRef.current);
+      simulationLastTickRef.current = now;
+
+      if (elapsedMs <= 0) return;
+
+      setGameState(prev => advanceSimulation(prev, elapsedMs, {
+        maxElapsedMs: DEFAULT_MAX_OFFLINE_MS
+      }).state);
+    }, 5_000);
+
+    return () => window.clearInterval(interval);
+  }, [gameInitialized, gameState.activeProject?.id, gameState.activeProject?.awaitingReview]);
+
+  // The save provider emits this event every 30 seconds when autosave is on.
+  // Previously no game component consumed it, so saves could remain stale.
+  useEffect(() => {
+    if (!gameInitialized) return;
+
+    const handleAutoSave = () => saveGame(gameState);
+    window.addEventListener('autoSave', handleAutoSave);
+    return () => window.removeEventListener('autoSave', handleAutoSave);
+  }, [gameInitialized, gameState, saveGame]);
+
+  // Passive work stops at review-ready rather than settling rewards. Once any
+  // welcome-back summary is dismissed, hand the completed project to the
+  // existing authoritative review/completion flow.
+  useEffect(() => {
+    const project = gameState.activeProject;
+    if (
+      gameInitialized &&
+      project?.awaitingReview &&
+      !offlineSummary &&
+      !activeProjectReport &&
+      !showReviewModal
+    ) {
+      handleShowProjectReview(project);
+    }
+  }, [
+    gameInitialized,
+    gameState.activeProject,
+    offlineSummary,
+    activeProjectReport,
+    showReviewModal,
+    handleShowProjectReview
+  ]);
 
   useEffect(() => {
     // This effect handles showing the tutorial if the game is initialized,
@@ -352,8 +422,13 @@ const MusicStudioTycoon = () => {
         // setAutoTriggeredMinigame={setAutoTriggeredMinigame} // Pass this if MainGameContent needs to trigger minigames
       />
 
+      <WelcomeBackSummaryModal
+        summary={offlineSummary}
+        onClose={() => setOfflineSummary(null)}
+      />
+
       <TrainingModal
-        isOpen={showTrainingModal && !compactStudioMode}
+        isOpen={showTrainingModal && !compactStudioMode && !offlineSummary}
         onClose={() => {
           setShowTrainingModal(false);
           setSelectedStaffForTraining(null);
@@ -372,7 +447,7 @@ const MusicStudioTycoon = () => {
       />
 
       <TutorialModal
-        isOpen={showTutorialModal && !compactStudioMode}
+        isOpen={showTutorialModal && !compactStudioMode && !offlineSummary}
         onComplete={handleTutorialComplete}
         eraId={currentEraForTutorial} 
       />

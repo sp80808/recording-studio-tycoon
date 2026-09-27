@@ -1,5 +1,6 @@
 import { Project, ProjectReport, ProjectReportSkillEntry, PlayerData, StaffMember, Skill } from '@/types/game';
 import { grantSkillXp } from './skillUtils'; // Assuming grantSkillXp is in skillUtils.ts
+import { createSeededRandom, pickWithRandom, randomInt } from '@/simulation/seededRandom';
 
 // Helper to determine relevant skills for a project
 const getRelevantSkillsForProject = (
@@ -53,6 +54,9 @@ export const generateProjectReview = (
   currentPlayerData: PlayerData,
   allStaffMembers: StaffMember[]
 ): ProjectReport => {
+  const rng = createSeededRandom(
+    `${project.id}:review:${project.workSessionCount || 0}:${Math.round(project.accumulatedCPoints || 0)}:${Math.round(project.accumulatedTPoints || 0)}`
+  );
   const skillBreakdown: ProjectReportSkillEntry[] = [];
   let totalSkillScoreContribution = 0;
   let numContributingSkills = 0;
@@ -107,7 +111,7 @@ export const generateProjectReview = (
     const difficultyModifier = (project.difficulty - 3) * 3; // e.g. diff 1 = -6, diff 3 = 0, diff 5 = +6
 
     // Randomness (5-15 points)
-    const randomFactor = Math.floor(Math.random() * 11) + 5; 
+    const randomFactor = randomInt(rng, 5, 15); 
 
     // Synergy with project's C/T points (accumulated from minigames, etc.)
     // If a skill aligns with the type of points accumulated, give a small bonus
@@ -128,7 +132,7 @@ export const generateProjectReview = (
     const baseSkillXp = 20;
     const xpFromScore = Math.floor(skillScore * 0.75); // Max 75 XP from score
     const xpFromDifficulty = project.difficulty * 15;   // Max 75 XP from difficulty (assuming difficulty 1-5)
-    const skillXpGained = baseSkillXp + xpFromScore + xpFromDifficulty + Math.floor(Math.random() * 25); // Add some randomness
+    const skillXpGained = baseSkillXp + xpFromScore + xpFromDifficulty + randomInt(rng, 0, 24);
 
     const { updatedSkill, levelUps } = grantSkillXp(currentSkillState, skillXpGained);
 
@@ -155,7 +159,7 @@ export const generateProjectReview = (
   const pointsFactor = (project.accumulatedCPoints + project.accumulatedTPoints) / 15; // Increased impact from C/T points
   const difficultyBonus = project.difficulty * 2; // Small bonus for harder projects
   let overallQualityScore = Math.floor((averageSkillScore * 0.6) + (pointsFactor * 0.3) + (difficultyBonus * 0.1));
-  overallQualityScore = Math.min(100, Math.max(0, overallQualityScore + Math.floor(Math.random()*10 - 5))); // Add small randomness +/- 5
+  overallQualityScore = Math.min(100, Math.max(0, overallQualityScore + randomInt(rng, -5, 4)));
 
   // Rewards calculation (more dynamic)
   const qualityMultiplier = 0.5 + (overallQualityScore / 100) * 1.5; // Ranges from 0.5 to 2.0
@@ -177,7 +181,7 @@ export const generateProjectReview = (
   const neutralAdjectives = ["decent", "acceptable", "standard", "average", "competent"];
   const negativeAdjectives = ["lackluster", "uninspired", "mediocre", "disappointing", "rough"];
   
-  const pickRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+  const pickRandom = (arr: string[]) => pickWithRandom(rng, arr);
 
   if (overallQualityScore >= highQualityThreshold) {
     reviewSnippet = `A truly ${pickRandom(positiveAdjectives)} production for "${project.title}"! This is chart-topping material.`;
