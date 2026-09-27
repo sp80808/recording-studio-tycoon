@@ -54,6 +54,30 @@ export const minigameTutorials: Record<string, MinigameTutorialContent> = {
       { icon: '⏰', text: 'Work quickly but thoughtfully - time is limited!' },
     ],
   },
+  eqMatch: {
+    title: "EQ Match 🎚️",
+    instructions: [
+      { icon: '🎯', text: 'Match the target EQ curve by adjusting the frequency bands.' },
+      { icon: '👂', text: 'Listen carefully and shape the tone to fit the mix.' },
+      { icon: '⭐', text: 'Get as close as possible to the target curve for the best score!' },
+    ],
+  },
+  faderRide: {
+    title: "Fader Ride 🎛️",
+    instructions: [
+      { icon: '👆', text: 'Ride the fader to keep the level in the target zone.' },
+      { icon: '📊', text: 'Watch the meter and react quickly to level changes.' },
+      { icon: '🏆', text: 'Stay in the green for a polished master-ready mix!' },
+    ],
+  },
+  punchIn: {
+    title: "Punch In 🎤",
+    instructions: [
+      { icon: '⏺️', text: 'Hit punch-in at the perfect moment to capture the take.' },
+      { icon: '🎵', text: 'Follow the count-in and watch for your cue.' },
+      { icon: '🌟', text: 'Nail the timing for a flawless recording!' },
+    ],
+  },
   // Add more minigames here as they are developed
   // Example for a new minigame:
   // soundWaveGame: {

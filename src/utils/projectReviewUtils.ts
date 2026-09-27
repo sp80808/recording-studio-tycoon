@@ -123,6 +123,7 @@ export const generateProjectReview = (
   const staffBonus = clamp(Math.round(settlementContext?.staffContribution ?? 0), 0, 10);
   const studioBonus = clamp(Math.round(settlementContext?.studioQualityBonus ?? 0), 0, 10);
   const equipBonusExtra = clamp(Math.round(settlementContext?.equipmentQualityBonus ?? 0), 0, 10);
+  const minigameBonus = clamp(project.minigamePoints ?? 0, 0, 10);
   const matchMultiplier =
     settlementContext?.matchRatingMultiplier ?? MATCH_RATING_MULTIPLIERS[project.matchRating] ?? 1.0;
   const marketMultiplier = settlementContext?.marketMultiplier ?? 1.0;
@@ -207,7 +208,8 @@ export const generateProjectReview = (
     focusBonus +
     staffBonus +
     studioBonus +
-    equipBonusExtra
+    equipBonusExtra +
+    minigameBonus
   );
   overallQualityScore = clamp(overallQualityScore + Math.floor(Math.random() * 10 - 5), 0, 100); // Small randomness +/- 5
 
@@ -278,6 +280,7 @@ export const generateProjectReview = (
   if (studioBonus >= 6) factorNotes.push('studio genre expertise showed');
   if (equipBonusExtra >= 6) factorNotes.push('the gear chain stayed clean');
   if (focusBonus >= 6) factorNotes.push('sharp focus direction paid off');
+  if (minigameBonus >= 4) factorNotes.push('standout session takes boosted the result');
   if (marketMultiplier >= 1.05) factorNotes.push('the current market wanted this sound');
   else if (marketMultiplier < 0.95) factorNotes.push('the current market was cool on this genre');
   if (project.matchRating === 'Excellent') factorNotes.push('a great client match helped');

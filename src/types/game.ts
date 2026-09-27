@@ -87,6 +87,7 @@ export interface Project {
   matchRating: 'Poor' | 'Good' | 'Excellent';
   accumulatedCPoints: number;
   accumulatedTPoints: number;
+  minigamePoints?: number; // accumulated 0-10 minigame quality bonus (undefined = 0, save-safe).
   currentStageIndex: number;
   completedStages: number[];
   lastWorkDay?: number; // Track when work was last performed

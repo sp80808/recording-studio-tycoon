@@ -1,6 +1,6 @@
 
 import { useCallback } from 'react';
-import { GameState } from '@/types/game';
+import { GameNotification, GameState } from '@/types/game';
 import { generateCandidates } from '@/utils/projectUtils';
 import { toast } from '@/hooks/use-toast';
 import { 
@@ -10,6 +10,14 @@ import {
   getEraSpecificEquipmentMultiplier 
 } from '@/utils/eraProgression';
 import { availableMods } from '@/data/equipmentMods';
+import { applyEventsToState, rollDailyEvents } from '@/game-mechanics/eventIntegration';
+import { RandomEvent } from '@/game-mechanics/random-events';
+
+/** Daily equipment upkeep: 0.1% of item price per day, minimum $2/item */
+export const calculateEquipmentUpkeep = (equipment: GameState['ownedEquipment']): number => {
+  if (!equipment || equipment.length === 0) return 0;
+  return equipment.reduce((sum, item) => sum + Math.max(2, Math.round(item.price * 0.001)), 0);
+};
 
 export const useGameActions = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
   const advanceDay = useCallback(() => {
@@ -26,6 +34,14 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     const completedTraining: string[] = [];
     const completedResearch: string[] = [];
     const newResearchedMods = [...gameState.researchedMods];
+
+    // Staff salary + equipment upkeep expenses (bead ruc.3)
+    const totalSalaries = gameState.hiredStaff.reduce((total, staff) => total + staff.salary, 0);
+    const equipmentUpkeep = calculateEquipmentUpkeep(gameState.ownedEquipment);
+    const totalDailyExpenses = totalSalaries + equipmentUpkeep;
+
+    // Unpaid salaries penalty check
+    const canAffordSalaries = gameState.money >= totalSalaries;
 
     const updatedStaff = gameState.hiredStaff.map(staff => {
       let updatedStaffMember = { ...staff };
@@ -55,12 +71,25 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
           energy: Math.max(20, staff.energy - 20) // Research consumes some energy
         };
       }
+      // If salaries could not be paid, staff morale suffers
+      if (!canAffordSalaries) {
+        updatedStaffMember = {
+          ...updatedStaffMember,
+          mood: Math.max(0, updatedStaffMember.mood - 10)
+        };
+      }
       return updatedStaffMember;
     });
 
-    // Calculate total salaries
-    const totalSalaries = gameState.hiredStaff.reduce((total, staff) => total + staff.salary, 0);
-    
+    // Roll random events for the new day (bead ruc.3)
+    const stateForEvaluation: GameState = {
+      ...gameState,
+      currentDay: newDay,
+      currentYear: newYear,
+      hiredStaff: updatedStaff
+    };
+    const triggeredEvents: RandomEvent[] = rollDailyEvents(stateForEvaluation);
+
     // Update equipment multiplier based on year progression
     const updatedEquipmentMultiplier = getEraSpecificEquipmentMultiplier(
       gameState.currentEra, 
@@ -68,23 +97,58 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       newYear
     );
     
-    setGameState(prev => ({ 
-      ...prev, 
-      currentDay: newDay,
-      currentYear: newYear,
-      equipmentMultiplier: updatedEquipmentMultiplier,
-      money: prev.money - totalSalaries, // Deduct salaries
-      researchedMods: newResearchedMods, // Update researched mods
-      hiredStaff: updatedStaff.map(s => 
-        s.status === 'Resting' 
-          ? { ...s, energy: Math.min(100, s.energy + 20) }
-          : s
-      ),
-      playerData: {
-        ...prev.playerData,
-        dailyWorkCapacity: prev.playerData.attributes.focusMastery + 3 + prev.playerData.level - 1 // Reset daily capacity
+    setGameState(prev => {
+      const newExpenses = prev.financials.expenses + totalDailyExpenses;
+      const baseUpdatedState: GameState = {
+        ...prev, 
+        currentDay: newDay,
+        currentYear: newYear,
+        lastSalaryDay: newDay,
+        equipmentMultiplier: updatedEquipmentMultiplier,
+        money: prev.money - totalDailyExpenses,
+        financials: {
+          ...prev.financials,
+          expenses: newExpenses,
+          profit: prev.financials.income - newExpenses,
+        },
+        researchedMods: newResearchedMods,
+        hiredStaff: updatedStaff.map(s => 
+          s.status === 'Resting' 
+            ? { ...s, energy: Math.min(100, s.energy + 20) }
+            : s
+        ),
+        playerData: {
+          ...prev.playerData,
+          dailyWorkCapacity: prev.playerData.attributes.focusMastery + 3 + prev.playerData.level - 1
+        }
+      };
+
+      if (triggeredEvents.length === 0) {
+        return baseUpdatedState;
       }
-    }));
+
+      const { state: postEventsState, results } = applyEventsToState(baseUpdatedState, triggeredEvents);
+      const newNotifications: GameNotification[] = [];
+
+      results.forEach((res, idx) => {
+        const ev = triggeredEvents[idx];
+        const effectSummaries = res.applied.map(a => a.summary).concat(res.narrative);
+        const summaryText = effectSummaries.length > 0 ? effectSummaries.join(', ') : ev.description;
+
+        newNotifications.push({
+          id: `random-event-${ev.id}-${newDay}`,
+          message: `${ev.title}: ${summaryText}`,
+          type: ev.type === 'opportunity' ? 'success' : ev.type === 'crisis' ? 'error' : 'info',
+          timestamp: Date.now(),
+          duration: 6000
+        });
+      });
+
+      return {
+        ...postEventsState,
+        notifications: [...postEventsState.notifications, ...newNotifications]
+      };
+    });
     
     // Show era transition notification if available
     if (availableTransition) {
@@ -106,23 +170,33 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       });
     }
     
-    // Process salary payments
-    if (totalSalaries > 0) {
-      if (gameState.money >= totalSalaries) {
+    // Process salary & upkeep notifications
+    if (totalDailyExpenses > 0) {
+      if (canAffordSalaries) {
         toast({
-          title: "💰 Salaries Paid",
-          description: `Paid $${totalSalaries} in daily salaries.`,
+          title: "💰 Daily Expenses Paid",
+          description: `Paid $${totalSalaries} in salaries and $${equipmentUpkeep} in equipment upkeep.`,
           className: "bg-gray-800 border-gray-600 text-white",
         });
       } else {
         toast({
           title: "❌ Cannot Pay Salaries!",
-          description: `Need $${totalSalaries} for daily salaries. Staff morale will suffer.`,
+          description: `Need $${totalSalaries} for daily salaries. Staff morale has dropped!`,
           className: "bg-gray-800 border-gray-600 text-white",
           variant: "destructive"
         });
       }
     }
+
+    // Trigger toast for random events
+    triggeredEvents.forEach(ev => {
+      toast({
+        title: `🎲 ${ev.title}`,
+        description: ev.description,
+        className: ev.type === 'crisis' ? "bg-red-950 border-red-700 text-white" : "bg-purple-950 border-purple-700 text-white",
+        duration: 5000
+      });
+    });
 
     // Generate new candidates every few days
     if (newDay % 3 === 0) {

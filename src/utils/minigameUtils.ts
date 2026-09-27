@@ -215,6 +215,38 @@ export const getTriggeredMinigames = (
     });
   }
 
+  // EQ MATCH - For mixing and layering stages
+  if (stageName.includes('mix') || stageName.includes('layering') ||
+      (focusAllocation.layering >= 50 && stageName.includes('production'))) {
+    triggers.push({
+      minigameType: 'eq-match',
+      triggerReason: 'Mixing stage - match the EQ curve!',
+      priority: 9,
+      focusThreshold: { type: 'layering', min: 40 }
+    });
+  }
+
+  // FADER RIDE - For mastering and final stages
+  if (stageName.includes('mastering') || stageName.includes('master') ||
+      stageName.includes('final') || isLastStage) {
+    triggers.push({
+      minigameType: 'fader-ride',
+      triggerReason: 'Mastering stage - ride the fader!',
+      priority: 10
+    });
+  }
+
+  // PUNCH IN - For tracking and recording stages
+  if (stageName.includes('tracking') || stageName.includes('track') ||
+      stageName.includes('takes') || stageName.includes('recording')) {
+    triggers.push({
+      minigameType: 'punch-in',
+      triggerReason: 'Tracking stage - punch in at the perfect moment!',
+      priority: 9,
+      focusThreshold: { type: 'performance', min: 50 }
+    });
+  }
+
   // Sort by priority (highest first) and return top 3 to avoid overwhelming
   return triggers.sort((a, b) => b.priority - a.priority).slice(0, 3);
 };

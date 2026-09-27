@@ -66,14 +66,17 @@ export const useGameLogic = (
   });
 
   // Handle minigame rewards by updating project points and checking for level ups
-  const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => {
+  const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string, rawScore?: number) => {
     if (gameState.activeProject) {
       setGameState(prev => ({
         ...prev,
         activeProject: prev.activeProject ? {
           ...prev.activeProject,
           accumulatedCPoints: prev.activeProject.accumulatedCPoints + creativityBonus,
-          accumulatedTPoints: prev.activeProject.accumulatedTPoints + technicalBonus
+          accumulatedTPoints: prev.activeProject.accumulatedTPoints + technicalBonus,
+          minigamePoints: typeof rawScore === 'number' && Number.isFinite(rawScore)
+            ? Math.min(10, (prev.activeProject.minigamePoints ?? 0) + (rawScore / 1000) * 2)
+            : prev.activeProject.minigamePoints
         } : null,
         playerData: {
           ...prev.playerData,

@@ -400,7 +400,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
               <Button disabled={isGenerating}
                 onClick={() => {
                   // Play sound before calling onClose, as onClose might unmount the component
-                  gameAudio.playSound('button_click', 'ui'); 
+                  gameAudio.playSound('button_click', 'sfx'); 
                   onClose();
                 }} 
                 className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold text-lg py-3"

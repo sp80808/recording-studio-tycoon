@@ -27,7 +27,7 @@ interface ActiveProjectProps {
   // focusAllocation prop is removed, as it will be derived from gameState.activeProject.focusAllocation
   // setFocusAllocation prop is removed, will be handled by a new specific updater function if manual adjustment is kept, or via setGameState
   performDailyWork?: () => { isComplete: boolean; finalProjectData?: Project } | undefined;
-  onMinigameReward?: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => void;
+  onMinigameReward?: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string, rawScore?: number) => void;
   onProjectComplete?: (completedProject: Project) => void;
   onProjectSelect?: (project: Project) => void;
   autoTriggeredMinigame?: { type: MinigameType; reason: string } | null;
@@ -212,14 +212,14 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const completedWorkUnits = project.stages.reduce((total, stage) => total + stage.workUnitsCompleted, 0);
   const overallProgress = totalWorkUnits > 0 ? (completedWorkUnits / totalWorkUnits) * 100 : 0;
 
-  const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number) => {
+  const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number, rawScore?: number) => {
     console.log('🎮 Minigame rewards received:', { creativityBonus, technicalBonus, xpBonus, minigameType: selectedMinigame });
     
     // Play success sound
     playSound('success', 0.7); // Assuming 'success' is a valid sound name in audioSystem.ts
     
     if (onMinigameReward) {
-      onMinigameReward(creativityBonus, technicalBonus, xpBonus, selectedMinigame);
+      onMinigameReward(creativityBonus, technicalBonus, xpBonus, selectedMinigame, rawScore);
     }
     
     // Mark this stage as having completed a minigame

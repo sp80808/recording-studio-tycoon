@@ -12,6 +12,9 @@ import { InstrumentLayeringGame } from './InstrumentLayeringGame';
 import { VocalTuningGame } from './VocalTuningGame';
 import { LiveRecordingGame } from './LiveRecordingGame'; // Import new game
 import GearMaintenanceGame from './GearMaintenanceGame'; // Default import
+import { EQMatchGame } from './EQMatchGame';
+import { FaderRideGame } from './FaderRideGame';
+import { PunchInGame } from './PunchInGame';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { toast } from '@/hooks/use-toast';
 // import { playSound } from '@/utils/soundUtils'; // playSound seems unused here, consider removing if not needed directly in manager
@@ -29,7 +32,10 @@ export type MinigameType =
   | 'layering' 
   | 'maintenance'
   | 'vocal-tuning'
-  | 'live-recording'; // Added new minigame type
+  | 'live-recording'
+  | 'eq-match'
+  | 'fader-ride'
+  | 'punch-in'; // Added new minigame type
   // Add new minigame types here and ensure they have corresponding entries in minigameTutorials
   // | 'songwriting' // Example: if SongwritingGame becomes a distinct minigame managed here
   // | 'tapeSplicing' // Example
@@ -39,7 +45,7 @@ interface MinigameManagerProps {
   isOpen: boolean;
   onClose: () => void;
   gameType: MinigameType;
-  onReward: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: MinigameType) => void;
+  onReward: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: MinigameType, rawScore?: number) => void;
   // Optional: Pass equipment details if relevant for the specific minigame (e.g., maintenance)
   equipmentContext?: { name: string }; 
 }
@@ -113,6 +119,18 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         technicalBonus = success ? Math.floor(score / 2) : 0; // e.g. max 10 if score is 20
         // xpBonus is already calculated based on score, which is fine.
         break;
+      case 'eq-match':
+        creativityBonus = Math.floor(score / 12);
+        technicalBonus = Math.floor(score / 8);
+        break;
+      case 'fader-ride':
+        creativityBonus = Math.floor(score / 15);
+        technicalBonus = Math.floor(score / 6);
+        break;
+      case 'punch-in':
+        creativityBonus = Math.floor(score / 8);
+        technicalBonus = Math.floor(score / 12);
+        break;
       // Add cases for other minigames if their reward calculation differs
       default:
         // Generic fallback or throw error
@@ -120,7 +138,7 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         break;
     }
 
-    onReward(creativityBonus, technicalBonus, xpBonus, gameType);
+    onReward(creativityBonus, technicalBonus, xpBonus, gameType, score);
 
     toast({
       title: "🎮 Minigame Complete!",
@@ -174,6 +192,12 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         return <VocalTuningGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'live-recording':
         return <LiveRecordingGame {...commonGameProps} onComplete={standardOnComplete} />;
+      case 'eq-match':
+        return <EQMatchGame {...commonGameProps} onComplete={standardOnComplete} />;
+      case 'fader-ride':
+        return <FaderRideGame {...commonGameProps} onComplete={standardOnComplete} />;
+      case 'punch-in':
+        return <PunchInGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'maintenance':
         if (!equipmentContext) {
           console.error('Equipment context is required for maintenance minigame.');
