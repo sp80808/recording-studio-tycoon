@@ -22,6 +22,7 @@ const PASSIVE_STAFF_MOOD_COST_PER_SESSION = 1;
 export interface SimulationSummary {
   rawElapsedMs: number;
   creditedMs: number;
+  productiveMs: number;
   wasCapped: boolean;
   workUnitsAdded: number;
   creativityPointsAdded: number;
@@ -196,6 +197,7 @@ export const advanceSimulation = (
   const summary: SimulationSummary = {
     rawElapsedMs,
     creditedMs,
+    productiveMs: 0,
     wasCapped: rawElapsedMs > creditedMs,
     workUnitsAdded: 0,
     creativityPointsAdded: 0,
@@ -272,6 +274,7 @@ export const advanceSimulation = (
       })
     };
 
+    summary.productiveMs += stepMs * appliedRatio;
     summary.workUnitsAdded += workResult.applied;
     summary.creativityPointsAdded += creativityAdded;
     summary.technicalPointsAdded += technicalAdded;
