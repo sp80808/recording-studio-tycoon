@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "recording_studio_tycoon",
+  "project_id": "d0ee5bec-f0fe-4966-a2f0-5b6b82180dd1"
+}
