@@ -93,16 +93,6 @@ const MusicStudioTycoon = () => {
   useBackgroundMusic();
 
   useEffect(() => {
-    const checkSaveGame = () => {
-      if (hasSavedGame()) {
-        setShowSplashScreen(false);
-        // Game will be initialized after loading
-      }
-    };
-    checkSaveGame();
-  }, [hasSavedGame]);
-
-  useEffect(() => {
     if (selectedStaffForTraining) {
       setShowTrainingModal(true);
     }
