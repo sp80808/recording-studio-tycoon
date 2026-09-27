@@ -123,3 +123,12 @@ export const findAvailableStudioRoom = (
 export const getPhysicalStudioCapacity = (
   gameState: Pick<GameState, 'studioRooms'>
 ): number => Math.max(1, getOperationalStudioRooms(gameState).length);
+
+
+export const getBookedStudioRoom = (
+  gameState: Pick<GameState, 'studioRooms'>,
+  project?: Pick<Project, 'bookingRoomId'> | null
+): StudioRoom | undefined => {
+  if (!project?.bookingRoomId) return undefined;
+  return (gameState.studioRooms || []).find(room => room.id === project.bookingRoomId);
+};
