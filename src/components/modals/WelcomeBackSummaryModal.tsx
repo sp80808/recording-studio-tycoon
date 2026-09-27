@@ -40,11 +40,11 @@ export const WelcomeBackSummaryModal: React.FC<WelcomeBackSummaryModalProps> = (
           <div className="rounded-lg border border-gray-800 bg-gray-900 p-3">
             <div className="text-gray-400 text-xs uppercase tracking-wide">Studio time credited</div>
             <div className="text-lg font-semibold mt-1">
-              {formatDuration(summary.creditedMs)}
+              {formatDuration(summary.productiveMs || summary.creditedMs)}
             </div>
             {summary.wasCapped && (
               <div className="text-xs text-amber-300 mt-1">
-                Offline progress reached the current safety cap.
+                Away-time exceeded the current offline safety cap.
               </div>
             )}
           </div>
