@@ -231,10 +231,12 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
 
   if (!isMobile && compactStudioMode) {
     return (
-      <StudioStrip
-        gameState={gameState}
-        onExpand={() => setCompactStudioMode(false)}
-      />
+      <div className="h-full flex items-end">
+        <StudioStrip
+          gameState={gameState}
+          onExpand={() => setCompactStudioMode(false)}
+        />
+      </div>
     );
   }
 
