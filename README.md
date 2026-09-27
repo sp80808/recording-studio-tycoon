@@ -10,6 +10,18 @@ Recording Studio Tycoon is a music industry simulation game: run a recording stu
 
 **Game shell:** `src/pages/Index.tsx` mounts the full game. The home screen is an isometric PixiJS studio floor (`src/components/StudioRoom.tsx` / `src/components/WebGLCanvas.tsx`) with 6 clickable hotspots — console, live room, phone, clock, TV, shelf — each opening a contextual popup (`src/components/StudioInspector.tsx`). The 5-tab management panel lives in a collapsed on-demand drawer (`MainGameContent`).
 
+## 📸 Gameplay & Visuals
+
+| Studio Floor (PixiJS Isometric Room) | Production & Gigs Management Drawer |
+| :---: | :---: |
+| ![Studio Floor](./screenshots/studio-floor.png) | ![Management Drawer](./screenshots/management-drawer.png) |
+| *Interactive 6-hotspot studio floor with dynamic era color grading* | *Collapsed on-demand drawer for active sessions, staff, and gear* |
+
+| Era Selection & Splash | Industry Charts & Project Opportunities |
+| :---: | :---: |
+| ![Splash & Era Select](./screenshots/splash.png) | ![Charts & Projects](./screenshots/charts-or-projects.png) |
+| *Historical timeline from 1960s analog tape to modern digital audio* | *Record label gigs, industry chart tracking, and project reviews* |
+
 ## 🚀 Quick Start
 
 ### For Developers
