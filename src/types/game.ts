@@ -1,7 +1,6 @@
 // Game type definitions
 import { Chart, ArtistContact, MarketTrend } from './charts';
 import { Client, RecordLabel } from '../game-mechanics/relationship-management';
-import type { Room } from '../game-mechanics/rooms';
 
 // Card visual states for PixiJS components
 export type CardState = 'normal' | 'hover' | 'active' | 'completed';
@@ -272,9 +271,6 @@ export interface GameState {
   dailyTracking?: DailyTracking;
   clientRelationships?: Record<string, ClientRelationship>;
   studioRooms: StudioRoom[]; // Physical bookable studio suites; drives concurrent capacity
-  // GH #14 slice 1: absent = single-room legacy behavior.
-  rooms?: Room[];
-  roomAssignments?: Record<string, string>;
   
   // Multi-project system
   activeProjects: Project[]; // Replace single activeProject with array
