@@ -60,7 +60,12 @@ export const ProjectList: React.FC<ProjectListProps> = ({
             ...prev,
             availableProjects: [
               ...prev.availableProjects,
-              ...generateNewProjects(1, prev.playerData.level, prev.currentEra)
+              ...generateNewProjects(
+                1,
+                prev.playerData.level,
+                prev.currentEra,
+                Object.values(prev.clientRelationships || {})
+              )
             ]
           }))}
           size="sm"
@@ -118,8 +123,13 @@ export const ProjectList: React.FC<ProjectListProps> = ({
               <div>
                 <h3 className="font-semibold text-white">{project.title}</h3>
                 <div className="text-xs text-gray-400 mt-0.5">
-                  {project.genre} · {project.clientType}
+                  {project.clientName || project.clientType} · {project.genre}
                 </div>
+                {project.clientId && gameState.clientRelationships?.[project.clientId] && (
+                  <div className="text-[11px] text-purple-300 mt-1">
+                    ↻ {gameState.clientRelationships[project.clientId].tier} client · {gameState.clientRelationships[project.clientId].sessionsCompleted} previous session{gameState.clientRelationships[project.clientId].sessionsCompleted === 1 ? '' : 's'}
+                  </div>
+                )}
               </div>
               <span
                 className={`text-[11px] border px-2 py-1 rounded-full whitespace-nowrap ${getFitClasses(project.matchRating)}`}
