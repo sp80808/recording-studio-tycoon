@@ -94,6 +94,7 @@ export interface Project {
   lastWorkDay?: number; // Track when work was last performed
   workSessionCount: number; // Track how many work sessions have been completed (fractional for passive simulation)
   awaitingReview?: boolean; // Work is complete but rewards have not yet been settled
+  resolvedInterventionStageKeys?: string[]; // Persist one resolved/ignored intervention opportunity per stage
   associatedBandId?: string;
   focusAllocation: FocusAllocation; // ADDED: Stores current focus settings for the project
 }
