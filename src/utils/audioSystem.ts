@@ -922,6 +922,41 @@ class GameAudioSystem {
         await this.playClick();
     }
   }
+
+  async playTakeChord(genre: string = 'Pop', grade: 'Gold' | 'Silver' | 'Solid' = 'Solid') {
+    if (typeof window === 'undefined') return;
+    try {
+      this.playTactileClick();
+      // Genre chord voicings
+      const chords: Record<string, string[]> = {
+        Rock: ['E3', 'B3', 'E4', 'G4'],
+        Pop: ['C4', 'E4', 'G4', 'B4'],
+        Soul: ['F3', 'C4', 'Eb4', 'G4', 'Bb4'],
+        'R&B': ['Eb3', 'Bb3', 'D4', 'F4', 'Ab4'],
+        Electronic: ['A3', 'E4', 'G4', 'C5'],
+        HipHop: ['G3', 'D4', 'F4', 'Bb4'],
+        Jazz: ['D3', 'C4', 'F4', 'B4', 'E5']
+      };
+
+      const selectedNotes = chords[genre] || chords.Pop;
+      const notesToPlay = grade === 'Gold'
+        ? selectedNotes
+        : grade === 'Silver'
+        ? selectedNotes.slice(0, 3)
+        : selectedNotes.slice(0, 2);
+
+      if (Tone && Tone.context && Tone.context.state === 'running') {
+        const synth = new Tone.PolySynth(Tone.Synth, {
+          oscillator: { type: genre === 'Electronic' ? 'sawtooth' : 'triangle' },
+          envelope: { attack: 0.02, decay: 0.2, sustain: 0.2, release: 0.6 }
+        }).toDestination();
+        synth.volume.value = -12;
+        synth.triggerAttackRelease(notesToPlay, grade === 'Gold' ? '4n' : '8n');
+      }
+    } catch {
+      // Audio autoplay policy fallback
+    }
+  }
 }
 
 // Global instance
