@@ -1,5 +1,5 @@
 import React from 'react';
-import { ERA_DEFINITIONS } from '@/utils/eraProgression';
+import { ERA_DEFINITIONS, visualEraId } from '@/utils/eraProgression';
 
 interface EraGradeProps {
   eraId: string;
@@ -11,7 +11,7 @@ interface EraGradeProps {
  * plus a one-shot flash whenever the era changes (key remount replays it).
  */
 export const EraGrade: React.FC<EraGradeProps> = ({ eraId }) => {
-  const era = ERA_DEFINITIONS.find(e => e.id === eraId) ?? ERA_DEFINITIONS[0];
+  const era = ERA_DEFINITIONS.find(e => e.id === visualEraId(eraId)) ?? ERA_DEFINITIONS[0];
 
   return (
     <div

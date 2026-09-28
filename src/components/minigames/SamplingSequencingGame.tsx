@@ -197,6 +197,7 @@ export const SamplingSequencingGame: React.FC<SamplingSequencingGameProps> = ({
 
   const getSampleById = (id: string) => SAMPLES.find(s => s.id === id);
 
+  return (
     <Card className="w-full max-w-6xl mx-auto bg-gray-800 text-white border-gray-700">
       <MinigameChrome
         title="🥁 Sampling & Sequencing"

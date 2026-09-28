@@ -10,7 +10,6 @@ import { SettingsModal } from '@/components/modals/SettingsModal';
 import { TutorialModal } from '@/components/TutorialModal';
 import { SplashScreen } from '@/components/SplashScreen';
 import { Era } from '@/components/EraSelectionModal'; // Era type
-import { ERA_DEFINITIONS } from '@/utils/eraProgression'; // ERA_DEFINITIONS for initialization
 import { useGameState } from '@/hooks/useGameState';
 import { GameState, Project, ProjectReport, StaffMember } from '@/types/game'; // Import GameState, Project, ProjectReport, StaffMember
 import { generateProjectReview } from '@/utils/projectReviewUtils'; // Import generateProjectReview
@@ -72,9 +71,7 @@ const MusicStudioTycoon = () => {
   // const [showStaffModal, setShowStaffModal] = useState(false); // Assuming this was intended to be used elsewhere or can be removed if not
   // const [showRecruitmentModal, setShowRecruitmentModal] = useState(false); // Assuming this was intended to be used elsewhere or can be removed if not
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [showTutorialModal, setShowTutorialModal] = useState(false);
   const [compactStudioMode, setCompactStudioMode] = useState(false);
-  const [currentEraForTutorial, setCurrentEraForTutorial] = useState<string>(ERA_DEFINITIONS[0].id); // Default to first era
   const [activeProjectReport, setActiveProjectReport] = useState<ProjectReport | null>(null);
   const [offlineSummary, setOfflineSummary] = useState<SimulationSummary | null>(null);
   const simulationLastTickRef = useRef(Date.now());
@@ -83,10 +80,6 @@ const MusicStudioTycoon = () => {
     setGameState(newGameState);
     // Additional logic might be needed here, e.g., re-initializing parts of the UI or game logic
     // For now, just setting the game state.
-    // Also, ensure currentEraForTutorial is updated if relevant
-    if (newGameState.currentEra) {
-      setCurrentEraForTutorial(newGameState.currentEra);
-    }
     // Potentially close splash screen if open, set gameInitialized, etc.
     // This function will primarily be called from in-game settings, so splash screen might not be an issue.
     // If called from splash settings, then setShowSplashScreen(false) and setGameInitialized(true) would be needed.
@@ -115,15 +108,9 @@ const MusicStudioTycoon = () => {
     });
     
     setGameState(newGameState);
-    setCurrentEraForTutorial(era.id); 
     setShowSplashScreen(false);
     setGameInitialized(true);
     
-    const hasPlayedBefore = localStorage.getItem('recordingStudioTycoon_hasPlayed');
-    if (!hasPlayedBefore && !settings.tutorialCompleted) {
-      setShowTutorialModal(true);
-    }
-
     if (settings.sfxEnabled) {
       audioSystem.playUISound('success');
     }
@@ -238,7 +225,6 @@ const MusicStudioTycoon = () => {
         });
 
         setGameState(simulation.state);
-        setCurrentEraForTutorial(simulation.state.currentEra);
         setShowSplashScreen(false);
         setGameInitialized(true);
         simulationLastTickRef.current = Date.now();
@@ -323,24 +309,6 @@ const MusicStudioTycoon = () => {
     handleShowProjectReview
   ]);
 
-  useEffect(() => {
-    // This effect handles showing the tutorial if the game is initialized,
-    // tutorial hasn't been completed, and it's the user's first session.
-    // It also ensures currentEraForTutorial is set from gameState if loading a game
-    // where the tutorial wasn't completed.
-    const hasPlayedBefore = localStorage.getItem('recordingStudioTycoon_hasPlayed');
-    if (gameInitialized && !settings.tutorialCompleted) {
-      if (gameState && gameState.currentEra) {
-         // If it's a loaded game, gameState.currentEra should be used.
-         // If it's a new game, handleStartNewGame already set currentEraForTutorial.
-        setCurrentEraForTutorial(gameState.currentEra);
-      }
-      // Only show tutorial if it's genuinely the first time (or tutorialCompleted is false)
-      // The 'hasPlayedBefore' check in handleStartNewGame is more specific for *brand new* games.
-      // This effect covers loaded games where tutorial was skipped/not finished.
-      setShowTutorialModal(true); 
-    }
-  }, [settings.tutorialCompleted, gameInitialized, gameState]);
 
   useEffect(() => {
     if (settings.autoSave) {
@@ -408,8 +376,6 @@ const MusicStudioTycoon = () => {
   };
 
   const handleTutorialComplete = () => {
-    setShowTutorialModal(false);
-    // updateSettings({ tutorialCompleted: true }); // This is handled within TutorialModal
     if (settings.sfxEnabled) {
       audioSystem.playUISound('success');
     }
@@ -443,6 +409,11 @@ const MusicStudioTycoon = () => {
             className="grid-area-header"
           />
         )}
+        <TutorialModal
+          isOpen={!settings.tutorialCompleted && !compactStudioMode && !offlineSummary}
+          onComplete={handleTutorialComplete}
+          gameState={gameState}
+        />
         <div className="flex-grow min-h-0">
           <MainGameContent
             gameState={gameState}
@@ -496,11 +467,7 @@ const MusicStudioTycoon = () => {
         onLoadGameStateFromString={handleLoadGameStateFromString} // Pass the new handler
       />
 
-      <TutorialModal
-        isOpen={showTutorialModal && !compactStudioMode && !offlineSummary}
-        onComplete={handleTutorialComplete}
-        eraId={currentEraForTutorial} 
-      />
+
 
       {!compactStudioMode && (
         <NotificationSystem

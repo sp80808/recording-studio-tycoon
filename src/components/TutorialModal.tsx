@@ -1,253 +1,111 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { Check, ChevronDown, CircleDollarSign, Headphones, Phone, SlidersHorizontal, Users, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useSettings } from '@/contexts/SettingsContext';
-import { gameAudio } from '@/utils/audioSystem';
-
-interface TutorialStep {
-  title: string;
-  content: string;
-  image?: string;
-  target?: string;
-  position?: 'top' | 'bottom' | 'left' | 'right';
-}
-
-// Renamed to baseTutorialSteps and removed the first generic welcome step
-const baseTutorialSteps: TutorialStep[] = [
-  {
-    title: "Your First Project 📝",
-    content: "Start by taking on simple recording projects. Each project has multiple stages: Recording, Mixing, Mastering, and more. Complete minigames to earn XP and money!",
-  },
-  {
-    title: "Equipment & Upgrades 🎛️",
-    content: "Use your earnings to buy better equipment. Higher quality gear helps you complete projects faster and earn more money. Check the equipment shop regularly!",
-  },
-  {
-    title: "Staff Management 👥",
-    content: "As you grow, hire staff members to help with projects. Each staff member has different skills and can work on specific project stages.",
-  },
-  {
-    title: "Minigames 🎮",
-    content: "Master the minigames to maximize your earnings:\n• Beat Making: Create drum patterns\n• Waveform Matching: Draw sound waves\n• Rhythm Timing: Hit beats perfectly\n• Mixing Board: Balance audio levels\n• Mastering: Perfect the final sound",
-  },
-  {
-    title: "Progression & XP ⭐",
-    content: "Gain XP to level up and unlock new features. Higher levels give access to better projects, equipment, and staff. Watch your XP bar in the top-right!",
-  },
-  {
-    title: "Audio Settings 🔊",
-    content: "This game features dynamic sound effects and background music. Adjust audio settings in the settings menu (⚙️) to customize your experience.",
-  },
-  {
-    title: "Ready to Rock! 🚀",
-    content: "You're all set! Start with basic projects, upgrade your equipment, and build your recording studio empire. Good luck, and have fun making music!",
-  }
-];
-
-const getTutorialStepsForEra = (eraId: string): TutorialStep[] => {
-  let eraSpecificIntro: TutorialStep;
-  
-  console.log('Tutorial: Getting steps for era ID:', eraId);
-  
-  switch (eraId) {
-    case 'classic_rock':
-      eraSpecificIntro = {
-        title: "Welcome to the Rock Revolution! 🎸 (1960s-1970s)",
-        content: "The world of music is buzzing with analog warmth! Start your journey with 4-track recorders and build your studio from the ground up. Vinyl is king!",
-      };
-      break;
-    case 'golden_age':
-      eraSpecificIntro = {
-        title: "The Golden Age Arrives! 📺 (1980s-1990s)",
-        content: "Digital technology is revolutionizing music! Embrace MIDI, early samplers, and the rise of CDs. MTV will make or break artists!",
-      };
-      break;
-    case 'digital_age':
-      eraSpecificIntro = {
-        title: "Ride the Digital Wave! 💿 (2000s-2010s)",
-        content: "The internet changes everything! DAWs become powerful, file sharing is rampant, and digital distribution opens new doors. Can you adapt?",
-      };
-      break;
-    case 'modern':
-      eraSpecificIntro = {
-        title: "Conquer the Modern Era! 📱 (2020s+)",
-        content: "Streaming platforms rule the music world! Master AI tools, leverage social media, and navigate the fast-paced landscape of modern music production.",
-      };
-      break;
-    // Legacy era IDs for backward compatibility
-    case 'analog60s':
-      eraSpecificIntro = {
-        title: "Welcome to the Analog Age! 🎵 (1960s-1970s)",
-        content: "The world of music is buzzing with analog warmth! You'll be working with 4-track tape machines, analog mixing consoles, and aiming for vinyl releases. Radio promotion is key, and record labels hold significant power. Focus on genres like Rock, Folk, and Soul.",
-      };
-      break;
-    case 'digital80s':
-      eraSpecificIntro = {
-        title: "The Digital Dawn Arrives! 💾 (1980s-1990s)",
-        content: "Digital technology is here! Explore MIDI sequencing, early digital recorders (ADAT, DAT), and CD production. Music videos on MTV are crucial for marketing. New genres like Synth-pop and Hip-hop are emerging. Independent labels are gaining traction.",
-      };
-      break;
-    case 'internet2000s':
-      eraSpecificIntro = {
-        title: "Ride the Internet Wave! 💻 (2000s-2010s)",
-        content: "The internet has disrupted everything. Pro Tools and computer-based recording are standard. MP3s and digital distribution (like iTunes) are the new norm, but piracy is a concern. Social media and YouTube are becoming vital for promotion. Home studios are on the rise.",
-      };
-      break;
-    case 'streaming2020s':
-      eraSpecificIntro = {
-        title: "Conquer the Streaming Era! 🎧 (2020s+)",
-        content: "Streaming platforms (like Spotify) dominate music consumption. Algorithmic promotion and playlist placements are critical for discovery. AI-assisted production tools are available, and global collaboration is easier than ever. Short-form video content on platforms like TikTok can make a track viral.",
-      };
-      break;
-    default: // Fallback to a generic welcome if eraId is unknown
-      eraSpecificIntro = {
-        title: "Welcome to Recording Studio Tycoon! 🎵",
-        content: "Build your music empire from a small home studio to a professional recording complex. Complete projects, upgrade equipment, and become the ultimate music mogul!",
-      };
-      console.warn('Tutorial: Unknown era ID:', eraId, 'Using default welcome message.');
-  }
-  return [eraSpecificIntro, ...baseTutorialSteps];
-};
-
+import type { GameState } from '@/types/game';
+import { FirstSessionGuideStep, getFirstSessionGuideStep } from '@/utils/firstSessionGuide';
 
 interface TutorialModalProps {
   isOpen: boolean;
   onComplete: () => void;
-  eraId: string; // Added eraId prop
+  gameState: GameState;
 }
 
-export const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onComplete, eraId }) => {
-  const [currentStep, setCurrentStep] = useState(0);
+const STEPS: Array<{
+  id: Exclude<FirstSessionGuideStep, 'complete'>;
+  title: string;
+  body: string;
+  action: string;
+  Icon: typeof Phone;
+}> = [
+  {
+    id: 'book', title: 'Answer an enquiry',
+    body: 'Open Bookings and choose a session that fits your studio. The fee, time and fit are shown before you commit.',
+    action: 'Bookings → Book Session', Icon: Phone,
+  },
+  {
+    id: 'work', title: 'Get behind the console',
+    body: 'Open Session and work the current stage. Your daily sessions are limited, so use them where they matter.',
+    action: 'Session → Work on Project', Icon: Headphones,
+  },
+  {
+    id: 'deliver', title: 'Keep the room moving',
+    body: 'Use Session to work directly, or Gear → Advance Day to restore daily sessions and progress booked work. When ready, Collect release settles the payout.',
+    action: 'Gear → Advance Day · Session → Collect release', Icon: CircleDollarSign,
+  },
+  {
+    id: 'reinvest', title: 'Make the next session easier',
+    body: 'Put the first payout back into the studio. Gear improves the room; Crew adds staff you can assign to active sessions.',
+    action: 'Gear or Crew → Buy / Hire', Icon: SlidersHorizontal,
+  },
+];
+
+export const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onComplete, gameState }) => {
+  const [collapsed, setCollapsed] = React.useState(() => window.matchMedia('(max-width: 1100px)').matches);
   const { updateSettings } = useSettings();
-  const [tutorialSteps, setTutorialSteps] = useState<TutorialStep[]>(getTutorialStepsForEra(eraId));
+  const current = getFirstSessionGuideStep(gameState);
+  const currentIndex = current === 'complete' ? STEPS.length : STEPS.findIndex(step => step.id === current);
 
-  useEffect(() => {
-    if (isOpen) {
-      gameAudio.initialize();
-      // Update tutorial steps if eraId changes while modal is open (or for initial setup)
-      setTutorialSteps(getTutorialStepsForEra(eraId));
-      setCurrentStep(0); // Reset to first step if era changes
+  React.useEffect(() => {
+    const query = window.matchMedia('(max-width: 1100px)');
+    const onResize = (event: MediaQueryListEvent) => setCollapsed(event.matches);
+    query.addEventListener('change', onResize);
+    return () => query.removeEventListener('change', onResize);
+  }, []);
+
+  React.useEffect(() => {
+    if (isOpen && current === 'complete') {
+      updateSettings({ tutorialCompleted: true });
+      onComplete();
     }
-  }, [isOpen, eraId]);
+  }, [current, isOpen, onComplete, updateSettings]);
 
-  if (!isOpen) return null;
+  if (!isOpen || current === 'complete') return null;
 
-  const handleNext = () => {
-    gameAudio.playClick();
-    
-    if (currentStep < tutorialSteps.length - 1) {
-      setCurrentStep(prev => prev + 1);
-    } else {
-      handleComplete();
-    }
-  };
-
-  const handlePrevious = () => {
-    gameAudio.playClick();
-    if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1);
-    }
-  };
-
-  const handleComplete = () => {
+  const step = STEPS[currentIndex];
+  const finish = () => {
     updateSettings({ tutorialCompleted: true });
-    gameAudio.playSuccess();
     onComplete();
   };
 
-  const handleSkip = () => {
-    if (confirm('Are you sure you want to skip the tutorial? You can restart it later in the settings.')) {
-      handleComplete();
-    }
-  };
-
-  const step = tutorialSteps[currentStep];
-  
-  // Ensure step is not undefined if tutorialSteps is empty or currentStep is out of bounds
-  if (!step) {
-    // This case should ideally not be reached if tutorialSteps are always populated
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-        <Card className="w-full max-w-2xl bg-gray-900 border-purple-500 p-8 m-4 relative">
-          <div className="text-center text-white">Error: Tutorial step not found.</div>
-          <Button onClick={handleComplete}>Close</Button>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-      <Card className="w-full max-w-2xl bg-gray-900 border-purple-500 p-8 m-4 relative">
-        {/* Progress Bar */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gray-700">
-          <div 
-            className="h-full bg-purple-500 transition-all duration-300"
-            style={{ width: `${((currentStep + 1) / tutorialSteps.length) * 100}%` }}
-          />
-        </div>
-
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-white mb-2">{step.title}</h2>
-          <div className="text-gray-300 text-sm">
-            Step {currentStep + 1} of {tutorialSteps.length}
+    <aside className="first-session-guide" aria-label="First session guide">
+      <Card className="overflow-hidden border-amber-400/40 bg-gray-950/95 text-white shadow-2xl backdrop-blur">
+        <div className="flex items-center gap-3 border-b border-gray-700/80 px-3 py-2">
+          <div className="grid h-9 w-9 place-items-center rounded-full bg-amber-400/15 text-amber-300">
+            <step.Icon size={19} aria-hidden="true" />
           </div>
-        </div>
-
-        <div className="mb-8">
-          <div className="text-gray-200 text-lg leading-relaxed whitespace-pre-line">
-            {step.content}
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300">First session</p>
+            <p className="truncate text-sm font-semibold">{step.title}</p>
           </div>
+          <Button variant="ghost" size="icon" className="h-11 w-11 text-gray-400 hover:text-white" onClick={() => setCollapsed(value => !value)} aria-label={collapsed ? 'Expand guide' : 'Collapse guide'}>
+            <ChevronDown size={18} className={`transition-transform ${collapsed ? '' : 'rotate-180'}`} />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-11 w-11 text-gray-400 hover:text-white" onClick={finish} aria-label="Dismiss first session guide">
+            <X size={18} />
+          </Button>
         </div>
 
-        {/* Tutorial Navigation */}
-        <div className="flex justify-between items-center">
-          <div className="flex gap-2">
-            {currentStep > 0 && (
-              <Button
-                onClick={handlePrevious}
-                variant="outline"
-                className="border-gray-600 text-white hover:bg-gray-800"
-              >
-                ← Previous
-              </Button>
-            )}
+        {!collapsed && (
+          <div className="space-y-2 px-4 pb-3 pt-2">
+            <p className="text-sm leading-relaxed text-gray-300">{step.body}</p>
+            <div className="flex items-center gap-2 rounded-lg border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-sm font-medium text-amber-100">
+              {step.id === 'reinvest' && <Users size={16} aria-hidden="true" />}
+              {step.action}
+            </div>
+            <ol className="flex gap-2" aria-label={`Guide progress: step ${currentIndex + 1} of ${STEPS.length}`}>
+              {STEPS.map((item, index) => (
+                <li key={item.id} className={`h-1.5 flex-1 rounded-full ${index < currentIndex ? 'bg-emerald-400' : index === currentIndex ? 'bg-amber-300' : 'bg-gray-700'}`}>
+                  <span className="sr-only">{index < currentIndex ? 'Complete' : index === currentIndex ? 'Current' : 'Upcoming'}: {item.title}</span>
+                </li>
+              ))}
+            </ol>
+            <p className="flex items-center gap-1.5 text-xs text-gray-500"><Check size={13} />Progress updates from what you do in the studio.</p>
           </div>
-
-          <div className="flex gap-2">
-            <Button
-              onClick={handleSkip}
-              variant="ghost"
-              className="text-gray-400 hover:text-white"
-            >
-              Skip Tutorial
-            </Button>
-            
-            <Button
-              onClick={handleNext}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              {currentStep === tutorialSteps.length - 1 ? 'Start Playing!' : 'Next →'}
-            </Button>
-          </div>
-        </div>
-
-        {/* Step Indicators */}
-        <div className="flex justify-center gap-2 mt-6">
-          {tutorialSteps.map((_, index) => (
-            <div
-              key={index}
-              className={`w-3 h-3 rounded-full transition-all duration-200 ${
-                index === currentStep 
-                  ? 'bg-purple-500 scale-125' 
-                  : index < currentStep 
-                    ? 'bg-purple-600' 
-                    : 'bg-gray-600'
-              }`}
-            />
-          ))}
-        </div>
+        )}
       </Card>
-    </div>
+    </aside>
   );
 };

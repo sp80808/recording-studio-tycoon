@@ -126,7 +126,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
           profit: prev.financials.income - newExpenses,
         },
         researchedMods: newResearchedMods,
-        dailyTracking: freshDailyTracking(newDay), // New day, new challenge
+        dailyTracking: freshDailyTracking(newDay, prev.dailyTracking), // New day, new challenge (streak carried)
         hiredStaff: updatedStaff.map(s => 
           s.status === 'Resting' 
             ? { ...s, energy: Math.min(100, s.energy + 20) }

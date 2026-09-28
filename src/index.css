@@ -455,37 +455,56 @@
   -webkit-overflow-scrolling: touch;
 }
 
-/* Fullscreen scrollbar styling for better visibility */
-:fullscreen *::-webkit-scrollbar,
-:-webkit-full-screen *::-webkit-scrollbar,
-:-moz-full-screen *::-webkit-scrollbar,
-:-ms-fullscreen *::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* Global scrollbar styling for consistent game aesthetic */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-:fullscreen *::-webkit-scrollbar-track,
-:-webkit-full-screen *::-webkit-scrollbar-track,
-:-moz-full-screen *::-webkit-scrollbar-track,
-:-ms-fullscreen *::-webkit-scrollbar-track {
-  background: rgba(55, 65, 81, 0.5);
+*::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
   border-radius: 4px;
 }
 
-:fullscreen *::-webkit-scrollbar-thumb,
-:-webkit-full-screen *::-webkit-scrollbar-thumb,
-:-moz-full-screen *::-webkit-scrollbar-thumb,
-:-ms-fullscreen *::-webkit-scrollbar-thumb {
-  background: rgba(156, 163, 175, 0.7);
+*::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.6);
   border-radius: 4px;
   transition: background 0.2s ease;
 }
 
-:fullscreen *::-webkit-scrollbar-thumb:hover,
-:-webkit-full-screen *::-webkit-scrollbar-thumb:hover,
-:-moz-full-screen *::-webkit-scrollbar-thumb:hover,
-:-ms-fullscreen *::-webkit-scrollbar-thumb:hover {
-  background: rgba(156, 163, 175, 0.9);
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.9);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.6) rgba(15, 23, 42, 0.6);
+}
+
+/* Edge-fade scroll hints */
+.edge-fade-y {
+  mask-image: linear-gradient(to bottom, transparent 0%, black 14px, black calc(100% - 14px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 14px, black calc(100% - 14px), transparent 100%);
+}
+
+.edge-fade-b {
+  mask-image: linear-gradient(to bottom, black calc(100% - 20px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 20px), transparent 100%);
+}
+
+/* Tactile game hover & active transitions */
+.game-interactive {
+  transition: transform 0.12s ease-out, filter 0.12s ease-out, border-color 0.12s ease-out;
+}
+
+.game-interactive:hover {
+  filter: brightness(1.1);
+  transform: scale(1.015);
+}
+
+.game-interactive:active {
+  transform: scale(0.985) translateY(1px);
+  filter: brightness(0.95);
 }
 
 /* Fullscreen mode visual indicator */

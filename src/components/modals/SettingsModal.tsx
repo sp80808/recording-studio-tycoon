@@ -1,3 +1,4 @@
+import type { GameState } from '@/types/game';
 import React, { useState } from 'react'; // Added useState import
 import { GameConfirmDialog } from '@/components/ui/GameConfirmDialog';
 import { Button } from '@/components/ui/button';
@@ -254,12 +255,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             {/* Tutorial Status */}
             <div className="flex justify-between items-center">
               <div>
-                <label className="text-white font-medium">Tutorial Completed</label>
-                <p className="text-gray-400 text-sm">Show tutorial on next restart</p>
+                <label className="text-white font-medium">First session guide</label>
+                <p className="text-gray-400 text-sm">Show guidance for your current studio progress</p>
               </div>
               <Switch
-                checked={settings.tutorialCompleted}
-                onCheckedChange={(checked) => updateSettings({ tutorialCompleted: checked })}
+                checked={!settings.tutorialCompleted}
+                onCheckedChange={(checked) => updateSettings({ tutorialCompleted: !checked })}
               />
             </div>
           </div>

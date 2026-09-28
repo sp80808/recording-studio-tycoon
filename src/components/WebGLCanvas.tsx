@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Application, Container, Graphics, Text } from 'pixi.js';
+import { visualEraId } from '@/utils/eraProgression';
 
 /**
  * Studio hotspots the player can click in the isometric room scene.
@@ -70,8 +71,8 @@ const isoQuad = (g: Graphics, a: number, b: number, c: number, d: number, lift =
 
 /** Room palette */
 const COLORS = {
-  floorA: 0x6b4f3a,
-  floorB: 0x5d4433,
+  floorA: 0x624a39,
+  floorB: 0x5d4737,
   rug: 0x8c3b3b,
   rugInner: 0x9c4747,
   wallLeft: 0x2a3345,
@@ -100,7 +101,7 @@ const ERA_GRADES: Record<string, { tint: number; wallLeft: number; wallRight: nu
   streaming2020s:{ tint: 0x06140f, wallLeft: 0x22352e, wallRight: 0x2b463a, accent: 0x7bd389, label: 'STREAMING 2020s' },
 };
 
-const getEraGrade = (eraId?: string) => ERA_GRADES[eraId ?? 'analog60s'] ?? ERA_GRADES.analog60s;
+const getEraGrade = (eraId?: string) => ERA_GRADES[visualEraId(eraId ?? 'analog60s')] ?? ERA_GRADES.analog60s;
 
 /** Studio tier furniture/upgrade thresholds (bead ifx.3). */
 const clampTier = (tier?: number): 1 | 2 | 3 | 4 | 5 => {
@@ -214,6 +215,17 @@ const buildScene = (
   walls
     .poly([wl0.x, wl0.y, wr1.x, wr1.y, wr1.x, wr1.y - WALL_H, wl0.x, wl0.y - WALL_H])
     .fill(grade.wallRight);
+  // Shallow acoustic panels make the room read as a recording space at every zoom.
+  for (let i = 0; i < 6; i++) {
+    const a = iso(0, i + .2);
+    const b = iso(0, i + .8);
+    walls.poly([a.x, a.y - 102, b.x, b.y - 102, b.x, b.y - 46, a.x, a.y - 46])
+      .fill({ color: 0x121a29, alpha: .22 });
+    const c = iso(i + .2, 0);
+    const d = iso(i + .8, 0);
+    walls.poly([c.x, c.y - 104, d.x, d.y - 104, d.x, d.y - 53, c.x, c.y - 53])
+      .fill({ color: 0x101827, alpha: .19 });
+  }
   // Top trim
   walls
     .poly([wl0.x, wl0.y - WALL_H, wl1.x, wl1.y - WALL_H, wr1.x, wr1.y - WALL_H])
@@ -287,6 +299,8 @@ const buildScene = (
       const shade = (x + y) % 2 === 0 ? COLORS.floorA : COLORS.floorB;
       isoQuad(floor, x, y, x + 1, y + 1);
       floor.fill(shade);
+      isoQuad(floor, x, y, x + 1, y + 1);
+      floor.stroke({ width: .7, color: 0xf1d6a4, alpha: .08 });
     }
   }
   // Rug in the middle of the floor
@@ -294,7 +308,17 @@ const buildScene = (
   floor.fill(COLORS.rug);
   isoQuad(floor, 3.2, 4.2, 5.8, 6.2);
   floor.fill(COLORS.rugInner);
+  isoQuad(floor, 3.2, 4.2, 5.8, 6.2);
+  floor.stroke({ width: 1.5, color: 0xe29d6c, alpha: .38 });
   root.addChild(floor);
+
+  // Window spill and contact shadow place furniture on the floor plane.
+  const lightAndShadow = new Graphics();
+  const sun = [iso(5.1, .2), iso(6.9, .2), iso(6.6, 3.8), iso(4.9, 3.8)];
+  lightAndShadow.poly(sun.flatMap(point => [point.x, point.y])).fill({ color: 0xb8ddf6, alpha: .075 });
+  const deskFoot = iso(4.5, 4.2);
+  lightAndShadow.ellipse(deskFoot.x, deskFoot.y + 3, 63, 23).fill({ color: 0x131620, alpha: .28 });
+  root.addChild(lightAndShadow);
 
   const outline = new Graphics();
   isoQuad(outline, 0, 0, ROOM_W, ROOM_D);
@@ -387,6 +411,20 @@ const buildScene = (
   monitors.rect(deskCx + 8, deskCy - 30, 36, 30).stroke({ width: 3, color: 0x0d111a });
   monitors.rect(deskCx - 41, deskCy - 27, 30, 24).fill(0x2f6fb3);
   monitors.rect(deskCx + 11, deskCy - 27, 30, 24).fill(0x3f8f6f);
+  // A pair of near-field speakers and screen tracks make this read as a console.
+  for (const sx of [deskCx - 66, deskCx + 49]) {
+    monitors.roundRect(sx, deskCy - 34, 19, 36, 2).fill(0x171c27);
+    monitors.roundRect(sx, deskCy - 34, 19, 36, 2).stroke({ width: 2, color: 0x485466 });
+    monitors.circle(sx + 9.5, deskCy - 24, 4).fill(0x708397);
+    monitors.circle(sx + 9.5, deskCy - 10, 6).fill(0x566b7c);
+    monitors.circle(sx + 9.5, deskCy - 10, 3).fill(0x1d2734);
+  }
+  for (let i = 0; i < 5; i++) {
+    monitors.rect(deskCx - 38 + i * 5, deskCy - 15 - (i % 3) * 3, 3, 7 + (i % 3) * 3)
+      .fill({ color: 0xb8dcf6, alpha: .62 });
+    monitors.rect(deskCx + 14 + i * 5, deskCy - 16, 3, 10)
+      .fill({ color: grade.accent, alpha: .6 });
+  }
   deskWrap.addChild(monitors);
 
   // Fader strip along the front edge of the desk (animated every frame)
@@ -439,9 +477,19 @@ const buildScene = (
     fig.position.set(spot.x, spot.y);
     const body = new Graphics();
     const color = COLORS.staff[i % COLORS.staff.length];
-    body.ellipse(0, 0, 13, 6).fill({ color: 0x000000, alpha: 0.3 });
-    body.roundRect(-8, -30, 16, 30, 6).fill(color);
-    body.circle(0, -38, 10).fill(0xf2c9a0);
+    body.ellipse(0, 1, 15, 7).fill({ color: 0x000000, alpha: .35 });
+    body.roundRect(-8, -13, 7, 14, 2).fill(0x253047);
+    body.roundRect(1, -13, 7, 14, 2).fill(0x253047);
+    body.roundRect(-15, -34, 5, 18, 2).fill(0xe9bd96);
+    body.roundRect(10, -34, 5, 18, 2).fill(0xe9bd96);
+    body.roundRect(-11, -36, 22, 27, 5).fill(color);
+    body.roundRect(-11, -36, 22, 27, 5).stroke({ width: 2, color: 0x243044, alpha: .55 });
+    body.circle(0, -45, 11).fill(0xf2c9a0);
+    body.ellipse(0, -52, 11, 5).fill(0x2e3040);
+    body.circle(-4, -44, 1).fill(0x273040);
+    body.circle(4, -44, 1).fill(0x273040);
+    body.circle(-11, -43, 3).fill(grade.accent);
+    body.circle(11, -43, 3).fill(grade.accent);
     fig.addChild(body);
     fig.zIndex = spot.y;
     refs.staffFigures.push({ fig, baseY: spot.y });

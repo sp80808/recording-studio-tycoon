@@ -177,11 +177,13 @@ export const generateNewProjects = (count: number, playerLevel: number = 1, curr
   const advancedEraTemplates = advancedGameTemplates.filter(template => 
     availableGenresSet.has(template.genre)
   );
+  const starterTemplates = eraAppropriateTemplates.length ? eraAppropriateTemplates : earlyGameTemplates;
+  const higherLevelTemplates = advancedEraTemplates.length ? advancedEraTemplates : advancedGameTemplates;
   
   // Choose appropriate template pool based on player level and era
   const isEarlyGame = playerLevel < 5;
-  const templatePool = isEarlyGame ? eraAppropriateTemplates : [...eraAppropriateTemplates, ...advancedEraTemplates];
-  const weightedPool = isEarlyGame ? eraAppropriateTemplates : advancedEraTemplates;
+  const templatePool = isEarlyGame ? starterTemplates : [...starterTemplates, ...higherLevelTemplates];
+  const weightedPool = isEarlyGame ? starterTemplates : higherLevelTemplates;
   
   for (let i = 0; i < count; i++) {
     let attempts = 0;

@@ -6,6 +6,7 @@ import { ProgressionSystem } from '@/services/ProgressionSystem';
 import { resolvePlayerLevelUps } from '@/utils/playerUtils';
 import { initializeSkillsPlayer } from '@/utils/skillUtils'; // Import skill initializer
 import { createDefaultStudioRooms } from '@/utils/studioRoomUtils';
+import { visualEraId } from '@/utils/eraProgression';
 
 interface EraInitOptions {
   startingMoney: number;
@@ -32,7 +33,7 @@ export const useGameState = () => {
     reputation: 10,
     currentDay: 2,
     currentYear: options?.currentYear || 1960, // Start in 1960s era
-    currentEra: 'analog60s', // Start with analog era
+    currentEra: visualEraId(options?.selectedEra || 'analog60s'),
     selectedEra: options?.selectedEra || 'analog60s',
     eraStartYear: options?.eraStartYear || 1960,
     equipmentMultiplier: options?.equipmentMultiplier || 0.3, // Lower prices in 1960s

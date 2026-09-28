@@ -177,6 +177,9 @@ export class RandomEventService {
     };
 
     this.activeEvents.set(eventId, activeEvent);
+    // Mark the pool template as triggered so future evaluations consult
+    // canEventRetrigger (cooldowns) instead of rolling again unconditionally.
+    this.eventPool.set(eventId, { ...event, hasTriggered: true });
     this.triggeredEventHistory.push({ eventId, date: currentTime });
 
     // NOTE: state application deliberately does NOT happen here. The caller

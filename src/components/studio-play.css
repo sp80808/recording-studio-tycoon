@@ -33,6 +33,7 @@
 .studio-hud-xp progress { display:block; width:100%; height:5px; accent-color:#e9be73; border-radius:5px; overflow:hidden; background:#384157; }
 .studio-hud-xp progress::-webkit-progress-bar { background:#384157; }
 .studio-hud-xp progress::-webkit-progress-value { background:#e9be73; }
+.first-session-guide { position:absolute; z-index:31; top:70px; right:12px; width:min(300px,calc(100vw - 24px)); }
 .studio-reward-flight { position:fixed; top:0; left:0; z-index:150; display:flex; align-items:center; gap:6px; padding:6px 10px; border:1px solid currentColor; border-radius:20px; background:#111827; box-shadow:0 0 24px #f5ca6333; font-size:13px; font-weight:800; pointer-events:none; white-space:nowrap; }
 @keyframes studio-fade { from { opacity:0; } }
 @keyframes studio-panel-enter { from { opacity:0; translate:0 12px; } }
@@ -40,12 +41,13 @@
   .studio-command-dock { width:100%; justify-content:space-between; gap:0; padding:4px; }
   .studio-command-dock .studio-dock-button { width:auto; flex:1; min-width:40px; }
   .studio-play-actions { padding-left:6px; padding-right:6px; width:100%; }
-  .studio-play-room .studio-room-label, .studio-play-room .studio-camera-center { top:112px; }
+  .studio-play-room .studio-room-label, .studio-play-room .studio-camera-center { top:174px; }
   .studio-play-status { font-size:10px; gap:6px; }
   .studio-hud { gap:2px 8px; }
   .studio-hud-stats,.studio-hud-controls { gap:8px; }
   .studio-hud-controls { width:100%; justify-content:flex-end; }
   .studio-hud-xp { margin-right:auto; width:130px; }
+  .first-session-guide { top:108px; right:6px; width:calc(100vw - 12px); }
   .studio-activity-panel,.studio-session-popup { top:108px; right:6px; bottom:6px; width:calc(100vw - 12px); transform:none; border-radius:14px; }
 }
 @media(max-height:500px) and (min-width:541px) {

@@ -423,4 +423,10 @@ export interface DailyTracking {
   projectsCompletedToday: number;
   sessionsWorkedToday: number;
   challengeDoneId: string | null;
+  /** Consecutive challenge-complete days (retention streak, never negative). */
+  streakCount?: number;
+  /** Game day the streak was last extended. */
+  lastStreakDay?: number | null;
+  /** Banked streak shields (max 1, earned at 7d, auto-consumed on a miss). */
+  streakShield?: number;
 }

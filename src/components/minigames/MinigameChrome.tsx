@@ -67,42 +67,4 @@ export function MinigameChrome({
   );
 }
 
-type KenneyButtonVariant = 'blue' | 'green' | 'red' | 'yellow' | 'grey';
-
-interface KenneyButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: KenneyButtonVariant;
-}
-
-const KENNEY_VARIANT_DIRS: Record<KenneyButtonVariant, string> = {
-  blue: 'Blue',
-  green: 'Green',
-  red: 'Red',
-  yellow: 'Yellow',
-  grey: 'Grey',
-};
-
-const KENNEY_BUTTON_SPRITE = 'button_rectangle_depth_flat.png';
-
-export function KenneyButton({ variant = 'blue', ...buttonProps }: KenneyButtonProps) {
-  const { className, style, type = 'button', ...rest } = buttonProps;
-  const spriteUrl =
-    `/assets/kenney-ui/PNG/${KENNEY_VARIANT_DIRS[variant]}/Default/${KENNEY_BUTTON_SPRITE}`;
-
-  return (
-    <button
-      type={type}
-      className={`cursor-pointer px-5 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60 ${className ?? ''}`}
-      style={{
-        borderWidth: 10,
-        borderStyle: 'solid',
-        borderImageSource: `url("${spriteUrl}")`,
-        borderImageSlice: 10,
-        borderImageRepeat: 'stretch',
-        backgroundColor: 'transparent',
-        textShadow: '0 2px 2px rgba(0, 0, 0, 0.55)',
-        ...style,
-      }}
-      {...rest}
-    />
-  );
-}
+export { KenneyButton, type KenneyButtonProps, type KenneyButtonVariant } from '@/components/ui/KenneyButton';

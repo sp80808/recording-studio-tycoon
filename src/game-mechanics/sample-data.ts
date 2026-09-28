@@ -277,6 +277,44 @@ export const SAMPLE_STAFF_WELLBEING: StaffMemberWellbeing[] = [
 ];
 
 // Example Random Events
+/**
+ * Golden Reels nomination (sd3.3) — annual awards season opener.
+ *
+ * Deliberately auto-resolvable (no playerChoices) so it flows through the
+ * live daily pipeline; the choice-having ceremony-night event (attend / skip
+ * / rig) waits for the ruc.4 event-choice dialog. Type AwardCeremony reuses
+ * the existing 365-day retrigger in canEventRetrigger — one season per year.
+ * CompletedProjectsAbove reads financials.reports.length (real completions).
+ */
+export const GOLDEN_REELS_NOMINATION: RandomEvent = {
+  id: 'golden_reels_nomination',
+  name: 'Golden Reels Nomination',
+  description: 'Your studio has been nominated for a Golden Reel! The ceremony airs at year-end — the crew is buzzing.',
+  type: 'AwardCeremony' as EventType,
+  triggerChance: 0.02,
+  triggerConditions: [
+    { condition: 'TimeAfter', value: 180 },
+    { condition: 'StudioReputationAbove', value: 60 },
+    { condition: 'CompletedProjectsAbove', value: 8 }
+  ],
+  effects: [
+    {
+      target: 'StudioReputation',
+      magnitude: 5,
+      duration: 0, // Permanent nomination buzz
+      description: 'Golden Reels nomination buzz'
+    },
+    {
+      target: 'StaffMood',
+      magnitude: 10,
+      duration: 30,
+      description: 'Crew morale boost from the nomination'
+    }
+  ],
+  isActive: false,
+  hasTriggered: false
+};
+
 export const SAMPLE_RANDOM_EVENTS: RandomEvent[] = [
   {
     id: 'viral_tiktok_trend',
@@ -473,5 +511,6 @@ export const SAMPLE_RANDOM_EVENTS: RandomEvent[] = [
     ],
     isActive: false,
     hasTriggered: false
-  }
+  },
+  GOLDEN_REELS_NOMINATION
 ];

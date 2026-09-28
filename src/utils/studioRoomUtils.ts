@@ -54,6 +54,82 @@ export const createDefaultStudioRooms = (): StudioRoom[] => [
 export const getOperationalStudioRooms = (gameState: Pick<GameState, 'studioRooms'>): StudioRoom[] =>
   (gameState.studioRooms || []).filter(room => room.unlocked);
 
+export type StudioRoomPurchaseAvailability =
+  | { available: true; room: StudioRoom }
+  | {
+      available: false;
+      room?: StudioRoom;
+      reason: 'not-found' | 'already-owned' | 'invalid-state' | 'level' | 'expansion-limit' | 'funds';
+      explanation: string;
+    };
+
+export const getStudioRoomPurchaseAvailability = (
+  gameState: Pick<GameState, 'money' | 'playerData' | 'studioRooms'>,
+  roomId: string,
+  roomExpansionLimit: number
+): StudioRoomPurchaseAvailability => {
+  const room = gameState.studioRooms.find(candidate => candidate.id === roomId);
+  if (!room) {
+    return { available: false, reason: 'not-found', explanation: 'This studio room does not exist.' };
+  }
+  if (room.unlocked) {
+    return { available: false, room, reason: 'already-owned', explanation: `${room.name} is already operational.` };
+  }
+  if (
+    !Number.isFinite(gameState.money) ||
+    !Number.isFinite(gameState.playerData.level) ||
+    !Number.isFinite(room.purchaseCost) ||
+    room.purchaseCost < 0 ||
+    !Number.isFinite(room.requiredPlayerLevel) ||
+    !Number.isFinite(roomExpansionLimit) ||
+    roomExpansionLimit < 0
+  ) {
+    return { available: false, room, reason: 'invalid-state', explanation: 'Room purchase data is invalid.' };
+  }
+  if (gameState.playerData.level < room.requiredPlayerLevel) {
+    return {
+      available: false,
+      room,
+      reason: 'level',
+      explanation: `Reach level ${room.requiredPlayerLevel} to consider this expansion.`
+    };
+  }
+  if (getOperationalStudioRooms(gameState).length >= Math.floor(roomExpansionLimit)) {
+    return {
+      available: false,
+      room,
+      reason: 'expansion-limit',
+      explanation: 'Grow your staff and studio track record before adding another production suite.'
+    };
+  }
+  if (gameState.money < room.purchaseCost) {
+    return {
+      available: false,
+      room,
+      reason: 'funds',
+      explanation: `You need $${room.purchaseCost.toLocaleString()} for ${room.name}.`
+    };
+  }
+  return { available: true, room };
+};
+
+export const applyStudioRoomPurchase = (
+  gameState: GameState,
+  roomId: string,
+  roomExpansionLimit: number
+): GameState => {
+  const availability = getStudioRoomPurchaseAvailability(gameState, roomId, roomExpansionLimit);
+  if (!availability.available) return gameState;
+
+  return {
+    ...gameState,
+    money: gameState.money - availability.room.purchaseCost,
+    studioRooms: gameState.studioRooms.map(room =>
+      room.id === availability.room.id ? { ...room, unlocked: true } : room
+    )
+  };
+};
+
 export const getOccupiedRoomIds = (
   gameState: Pick<GameState, 'activeProject' | 'activeProjects'>
 ): Set<string> => {

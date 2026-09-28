@@ -1,5 +1,6 @@
 import { GameState } from '@/types/game';
 import { ERA_DEFINITIONS } from '@/utils/eraProgression';
+import { rolloverStreak, completeStreak } from '@/narrative/streaks';
 
 /**
  * Deterministic daily challenges (bead ifx.3).
@@ -136,10 +137,16 @@ const ZERO_TRACKING = {
   projectsCompletedToday: 0,
   sessionsWorkedToday: 0,
   challengeDoneId: null as string | null,
+  streakCount: 0,
+  lastStreakDay: null as number | null,
+  streakShield: 0,
 };
 
-export function freshDailyTracking(day: number): GameState['dailyTracking'] {
-  return { day, ...ZERO_TRACKING };
+export function freshDailyTracking(
+  day: number,
+  prev?: GameState['dailyTracking']
+): GameState['dailyTracking'] {
+  return { day, ...ZERO_TRACKING, ...rolloverStreak(prev, day) };
 }
 
 /**
@@ -149,7 +156,7 @@ export function freshDailyTracking(day: number): GameState['dailyTracking'] {
 export function withDailyTracking(state: GameState, patch: DailyChallengePatch): GameState {
   const base = state.dailyTracking?.day === state.currentDay
     ? state.dailyTracking
-    : { ...ZERO_TRACKING, day: state.currentDay };
+    : { ...ZERO_TRACKING, day: state.currentDay, ...rolloverStreak(state.dailyTracking, state.currentDay) };
 
   const tracking = {
     ...base,
@@ -166,20 +173,40 @@ export function withDailyTracking(state: GameState, patch: DailyChallengePatch):
   const { def, done } = checkDailyChallenge(withTracking);
   if (!done) return withTracking;
 
+  // Streak extends exactly once per completed day (challengeDoneId guards re-entry).
+  const streak = completeStreak(
+    {
+      streakCount: tracking.streakCount ?? 0,
+      lastStreakDay: tracking.lastStreakDay ?? null,
+      streakShield: tracking.streakShield ?? 0,
+    },
+    withTracking.currentDay
+  );
+
+  const bonusParts: string[] = [];
+  if (streak.bonus > 0) bonusParts.push(`+$${streak.bonus} streak bonus (${streak.streakCount}d)`);
+  if (streak.bankedShield) bonusParts.push('+1 streak shield');
+
   return {
     ...withTracking,
-    money: withTracking.money + def.reward.money,
+    money: withTracking.money + def.reward.money + streak.bonus,
     reputation: withTracking.reputation + def.reward.reputation,
     playerData: {
       ...withTracking.playerData,
       xp: withTracking.playerData.xp + def.reward.xp,
     },
-    dailyTracking: { ...tracking, challengeDoneId: def.id },
+    dailyTracking: {
+      ...tracking,
+      challengeDoneId: def.id,
+      streakCount: streak.streakCount,
+      lastStreakDay: streak.lastStreakDay,
+      streakShield: streak.streakShield,
+    },
     notifications: [
       ...withTracking.notifications,
       {
         id: `daily-challenge-${withTracking.currentDay}-${def.id}`,
-        message: `${def.title} complete! +$${def.reward.money}, +${def.reward.reputation} rep, +${def.reward.xp} XP.`,
+        message: `${def.title} complete! +$${def.reward.money}, +${def.reward.reputation} rep, +${def.reward.xp} XP.${bonusParts.length > 0 ? ` ${bonusParts.join(', ')}.` : ''}`,
         type: 'success' as const,
         timestamp: Date.now(),
         duration: 6000,

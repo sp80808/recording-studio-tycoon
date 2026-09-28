@@ -24,6 +24,14 @@ export interface EraDefinition {
   };
 }
 
+// Career start eras predate the progression era ids; visuals share this mapping.
+export const visualEraId = (id: string): string => ({
+  modern: 'streaming2020s',
+  digital_age: 'internet2000s',
+  golden_age: 'digital80s',
+  classic_rock: 'analog60s',
+}[id] ?? id);
+
 export const ERA_DEFINITIONS: EraDefinition[] = [
   {
     id: 'analog60s',

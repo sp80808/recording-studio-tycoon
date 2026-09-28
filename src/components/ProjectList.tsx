@@ -1,6 +1,6 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { KenneyButton } from '@/components/ui/KenneyButton';
+import { GamePanel } from '@/components/ui/GamePanel';
 import { GameState, Project } from '@/types/game';
 import { generateNewProjects } from '@/utils/projectUtils';
 import {
@@ -77,56 +77,54 @@ export const ProjectList: React.FC<ProjectListProps> = ({
   };
 
   return (
-    <Card className="bg-gray-900/90 border-gray-600 p-4 h-full flex flex-col backdrop-blur-sm animate-slide-in-left">
-      <div className="flex items-start justify-between gap-3 mb-4">
+    <GamePanel className="p-4 h-full min-h-0 flex flex-col backdrop-blur-sm animate-slide-in-left">
+      <div className="flex items-start justify-between gap-3 mb-4 shrink-0">
         <div>
-          <h2 className="text-xl font-bold text-white">Artist Enquiries</h2>
-          <p className="text-xs text-gray-400 mt-1">
+          <h2 className="text-xl font-bold text-white tracking-wide">Artist Enquiries</h2>
+          <p className="text-xs text-slate-400 mt-1">
             Choose the sessions that best fit your room, staff and current cashflow.
           </p>
         </div>
-        <Button 
+        <KenneyButton 
           onClick={handleRefresh}
           size="sm"
-          variant={refreshReady ? 'default' : 'outline'}
-          className={refreshReady
-            ? "bg-blue-600 hover:bg-blue-700 text-white"
-            : "border-gray-600 text-gray-400 text-xs"}
+          variant={refreshReady ? 'blue' : 'grey'}
+          disabled={!refreshReady}
         >
           {refreshReady
             ? `Refresh $${GIG_REFRESH_COST}`
             : `📵 ${cooldownLeft}/${GIG_REFRESH_COOLDOWN_DAYS}d`}
-        </Button>
+        </KenneyButton>
       </div>
 
       {gameState.activeProject && (
-        <Card className="p-4 bg-blue-900/80 border-blue-400 backdrop-blur-sm mb-4">
-          <div className="text-sm text-blue-200 mb-2 font-semibold">🎙 Session in progress</div>
-          <div className="text-sm text-white mb-1">{gameState.activeProject.title}</div>
-          <div className="text-xs text-blue-300 mb-2">
+        <GamePanel variant="cyan" className="p-3 mb-4 shrink-0">
+          <div className="text-xs text-cyan-300 mb-1 font-bold uppercase tracking-wider">🎙 Session in progress</div>
+          <div className="text-sm font-bold text-white mb-1">{gameState.activeProject.title}</div>
+          <div className="text-xs text-cyan-200/90 mb-2">
             Stage {gameState.activeProject.currentStageIndex + 1} of {gameState.activeProject.stages.length}
           </div>
-          <div className="text-xs text-gray-300 bg-blue-900/40 p-2 rounded border-l-2 border-blue-400">
+          <div className="text-xs text-slate-300 bg-slate-950/60 p-2 rounded border-l-2 border-cyan-400">
             The session can keep progressing through the existing studio workflow. Optional interventions should add upside rather than block completion.
           </div>
 
-          <div className="mt-3 pt-2 border-t border-blue-400/30">
-            <div className="text-xs text-blue-300 mb-1">On the session:</div>
+          <div className="mt-2.5 pt-2 border-t border-cyan-500/20">
+            <div className="text-[11px] text-cyan-300/80 mb-1 font-semibold">On the session:</div>
             {gameState.hiredStaff
               .filter(s => s.assignedProjectId === gameState.activeProject?.id)
               .map(staff => (
-                <div key={staff.id} className="text-xs text-gray-200">
+                <div key={staff.id} className="text-xs text-slate-200">
                   👤 {staff.name} ({staff.role})
                 </div>
               ))}
             {gameState.hiredStaff.filter(s => s.assignedProjectId === gameState.activeProject?.id).length === 0 && (
-              <div className="text-xs text-gray-400">You are handling this one yourself.</div>
+              <div className="text-xs text-slate-400">You are handling this one yourself.</div>
             )}
           </div>
-        </Card>
+        </GamePanel>
       )}
 
-      <div className="flex-1 overflow-y-auto space-y-3">
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1 edge-fade-b">
         {gameState.availableProjects.length === 0 && (
           <div className="text-center py-10 px-4">
             <div className="text-2xl mb-2">📭</div>
@@ -138,14 +136,15 @@ export const ProjectList: React.FC<ProjectListProps> = ({
         )}
 
         {gameState.availableProjects.map(project => (
-          <Card
+          <GamePanel
             key={project.id}
-            className="p-4 bg-gray-900/90 border-gray-600 hover:bg-gray-800/90 hover:border-gray-500 transition-colors backdrop-blur-sm"
+            variant="interactive"
+            className="p-3.5 game-interactive"
           >
             <div className="flex justify-between items-start gap-3 mb-3">
               <div>
-                <h3 className="font-semibold text-white">{project.title}</h3>
-                <div className="text-xs text-gray-400 mt-0.5">
+                <h3 className="font-bold text-white text-base">{project.title}</h3>
+                <div className="text-xs text-slate-400 mt-0.5">
                   {project.clientName || project.clientType} · {project.genre}
                 </div>
                 {project.clientId && gameState.clientRelationships?.[project.clientId] && (
@@ -155,47 +154,48 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                 )}
               </div>
               <span
-                className={`text-[11px] border px-2 py-1 rounded-full whitespace-nowrap ${getFitClasses(project.matchRating)}`}
+                className={`text-[11px] font-bold border px-2 py-0.5 rounded-full whitespace-nowrap ${getFitClasses(project.matchRating)}`}
               >
                 {project.matchRating} fit
               </span>
             </div>
 
             <div className="grid grid-cols-3 gap-2 mb-3">
-              <div className="rounded bg-gray-950/60 p-2">
-                <div className="text-[10px] uppercase tracking-wide text-gray-500">Fee</div>
-                <div className="text-sm text-green-400 font-semibold">${project.payoutBase}</div>
+              <div className="rounded border border-slate-700/60 bg-slate-950/70 p-2 shadow-inner">
+                <div className="text-[10px] uppercase font-bold tracking-wide text-slate-400">Fee</div>
+                <div className="text-sm text-emerald-400 font-black">${project.payoutBase}</div>
               </div>
-              <div className="rounded bg-gray-950/60 p-2">
-                <div className="text-[10px] uppercase tracking-wide text-gray-500">Rep</div>
-                <div className="text-sm text-blue-400 font-semibold">+{project.repGainBase}</div>
+              <div className="rounded border border-slate-700/60 bg-slate-950/70 p-2 shadow-inner">
+                <div className="text-[10px] uppercase font-bold tracking-wide text-slate-400">Rep</div>
+                <div className="text-sm text-sky-400 font-black">+{project.repGainBase}</div>
               </div>
-              <div className="rounded bg-gray-950/60 p-2">
-                <div className="text-[10px] uppercase tracking-wide text-gray-500">Time</div>
-                <div className="text-sm text-yellow-300 font-semibold">{project.durationDaysTotal}d</div>
+              <div className="rounded border border-slate-700/60 bg-slate-950/70 p-2 shadow-inner">
+                <div className="text-[10px] uppercase font-bold tracking-wide text-slate-400">Time</div>
+                <div className="text-sm text-amber-300 font-black">{project.durationDaysTotal}d</div>
               </div>
             </div>
 
             <div className="flex items-center justify-between text-xs mb-2">
-              <span className="text-gray-400">Session difficulty</span>
-              <span className="text-orange-300 font-medium">{project.difficulty}/10</span>
+              <span className="text-slate-400">Session difficulty</span>
+              <span className="text-amber-300 font-bold">{project.difficulty}/10</span>
             </div>
 
-            <div className="text-xs text-gray-300 bg-gray-950/50 border border-gray-700/70 rounded p-2.5 leading-relaxed">
+            <div className="text-xs text-slate-300 bg-slate-950/60 border border-slate-800 rounded p-2.5 leading-relaxed">
               {getOpportunityNote(project)}
             </div>
 
-            <Button
+            <KenneyButton
               onClick={() => startProject(project)}
               disabled={!!gameState.activeProject}
-              className="w-full mt-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:text-gray-400 text-white"
-              size="sm"
+              variant={gameState.activeProject ? 'grey' : 'green'}
+              size="md"
+              className="w-full mt-3"
             >
               {gameState.activeProject ? 'Studio Occupied' : 'Book Session'}
-            </Button>
-          </Card>
+            </KenneyButton>
+          </GamePanel>
         ))}
       </div>
-    </Card>
+    </GamePanel>
   );
 };

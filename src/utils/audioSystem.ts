@@ -19,6 +19,13 @@ class GameAudioSystem {
   private isInitialized = false;
   private audioBuffers: Map<string, AudioBuffer> = new Map();
   private currentMusic: AudioBufferSourceNode | null = null;
+  /**
+   * Per-sound throttle timestamps (Date.now ms). High-frequency UI sounds
+   * (slider drags, hovers, work ticks) must check shouldThrottle() so rapid
+   * input can't stack polyphony. Discrete events (stage complete, awards)
+   * skip throttling.
+   */
+  private lastPlayed: Map<string, number> = new Map();
   private settings: AudioSettings = {
     masterVolume: 0.7,
     sfxVolume: 0.8,
@@ -138,6 +145,19 @@ class GameAudioSystem {
   // Public method to check initialization status
   public isAudioInitialized(): boolean {
     return this.isInitialized;
+  }
+
+  /**
+   * Throttle gate: returns true when `key` fired within the last `ms`
+   * milliseconds (call dropped). Pure time check — safe to unit-test via
+   * source inspection; wall-clock only.
+   */
+  private shouldThrottle(key: string, ms: number): boolean {
+    const now = Date.now();
+    const last = this.lastPlayed.get(key) ?? -Infinity;
+    if (now - last < ms) return true;
+    this.lastPlayed.set(key, now);
+    return false;
   }
 
   // Public method to play sound, loads on demand if not cached
@@ -268,7 +288,7 @@ class GameAudioSystem {
     const gainNode = this.audioContext.createGain();
     
     oscillator.connect(gainNode);
-    gainNode.connect(this.masterGain);
+    gainNode.connect(this.sfxGain!);
     
     // Kick drum synthesis
     oscillator.frequency.setValueAtTime(60, this.audioContext.currentTime);
@@ -294,7 +314,7 @@ class GameAudioSystem {
     noiseSource.buffer = noiseBuffer;
     noiseSource.connect(filter);
     filter.connect(noiseGain);
-    noiseGain.connect(this.masterGain);
+    noiseGain.connect(this.sfxGain!);
     
     filter.type = 'highpass';
     filter.frequency.setValueAtTime(1000, this.audioContext.currentTime);
@@ -318,7 +338,7 @@ class GameAudioSystem {
     noiseSource.buffer = noiseBuffer;
     noiseSource.connect(filter);
     filter.connect(noiseGain);
-    noiseGain.connect(this.masterGain);
+    noiseGain.connect(this.sfxGain!);
     
     filter.type = 'highpass';
     filter.frequency.setValueAtTime(8000, this.audioContext.currentTime);
@@ -342,7 +362,7 @@ class GameAudioSystem {
     noiseSource.buffer = noiseBuffer;
     noiseSource.connect(filter);
     filter.connect(noiseGain);
-    noiseGain.connect(this.masterGain);
+    noiseGain.connect(this.sfxGain!);
     
     filter.type = 'highpass';
     filter.frequency.setValueAtTime(6000, this.audioContext.currentTime);
@@ -363,7 +383,7 @@ class GameAudioSystem {
     const gainNode = this.audioContext.createGain();
     
     oscillator.connect(gainNode);
-    gainNode.connect(this.masterGain);
+    gainNode.connect(this.sfxGain!);
     
     oscillator.frequency.setValueAtTime(440, this.audioContext.currentTime);
     oscillator.frequency.setValueAtTime(880, this.audioContext.currentTime + 0.1);
@@ -378,12 +398,13 @@ class GameAudioSystem {
   async playError() {
     await this.ensureInitialized();
     if (!this.audioContext || !this.masterGain) return;
+    if (this.shouldThrottle('error', 150)) return;
 
     const oscillator = this.audioContext.createOscillator();
     const gainNode = this.audioContext.createGain();
     
     oscillator.connect(gainNode);
-    gainNode.connect(this.masterGain);
+    gainNode.connect(this.sfxGain!);
     
     oscillator.frequency.setValueAtTime(200, this.audioContext.currentTime);
     oscillator.frequency.setValueAtTime(100, this.audioContext.currentTime + 0.1);
@@ -403,7 +424,7 @@ class GameAudioSystem {
     const gainNode = this.audioContext.createGain();
     
     oscillator.connect(gainNode);
-    gainNode.connect(this.masterGain);
+    gainNode.connect(this.sfxGain!);
     
     oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime);
     
@@ -427,7 +448,7 @@ class GameAudioSystem {
         const gainNode = this.audioContext!.createGain();
         
         oscillator.connect(gainNode);
-        gainNode.connect(this.masterGain!);
+        gainNode.connect(this.sfxGain!);
         
         oscillator.frequency.setValueAtTime(freq, this.audioContext!.currentTime);
         
@@ -455,7 +476,7 @@ class GameAudioSystem {
           const gainNode = this.audioContext!.createGain();
           
           oscillator.connect(gainNode);
-          gainNode.connect(this.masterGain!);
+          gainNode.connect(this.sfxGain!);
           
           oscillator.frequency.setValueAtTime(freq, this.audioContext!.currentTime);
           
@@ -478,7 +499,7 @@ class GameAudioSystem {
     const gainNode = this.audioContext.createGain();
     
     oscillator.connect(gainNode);
-    gainNode.connect(this.masterGain);
+    gainNode.connect(this.sfxGain!);
     
     // Sweep frequency to simulate waveform
     oscillator.frequency.setValueAtTime(220, this.audioContext.currentTime);
@@ -515,7 +536,7 @@ class GameAudioSystem {
     const gainNode = this.audioContext.createGain();
     
     oscillator.connect(gainNode);
-    gainNode.connect(this.masterGain);
+    gainNode.connect(this.sfxGain!);
     
     oscillator.frequency.setValueAtTime(1000, this.audioContext.currentTime);
     
@@ -534,7 +555,7 @@ class GameAudioSystem {
     const gainNode = this.audioContext.createGain();
     
     oscillator.connect(gainNode);
-    gainNode.connect(this.masterGain);
+    gainNode.connect(this.sfxGain!);
     
     oscillator.frequency.setValueAtTime(880, this.audioContext.currentTime);
     oscillator.frequency.setValueAtTime(1320, this.audioContext.currentTime + 0.05);
@@ -554,7 +575,7 @@ class GameAudioSystem {
     const gainNode = this.audioContext.createGain();
     
     oscillator.connect(gainNode);
-    gainNode.connect(this.masterGain);
+    gainNode.connect(this.sfxGain!);
     
     oscillator.frequency.setValueAtTime(660, this.audioContext.currentTime);
     
@@ -569,12 +590,13 @@ class GameAudioSystem {
   async playSliderMove() {
     await this.ensureInitialized();
     if (!this.audioContext || !this.masterGain) return;
+    if (this.shouldThrottle('slider', 60)) return;
 
     const oscillator = this.audioContext.createOscillator();
     const gainNode = this.audioContext.createGain();
     
     oscillator.connect(gainNode);
-    gainNode.connect(this.masterGain);
+    gainNode.connect(this.sfxGain!);
     
     oscillator.frequency.setValueAtTime(400, this.audioContext.currentTime);
     
@@ -602,7 +624,7 @@ class GameAudioSystem {
     const gainNode = this.audioContext.createGain();
     
     oscillator.connect(gainNode);
-    gainNode.connect(this.masterGain);
+    gainNode.connect(this.sfxGain!);
     
     oscillator.frequency.setValueAtTime(523, this.audioContext.currentTime); // C5
     
@@ -625,7 +647,7 @@ class GameAudioSystem {
       const gainNode = this.audioContext!.createGain();
       
       oscillator.connect(gainNode);
-      gainNode.connect(this.masterGain!);
+      gainNode.connect(this.sfxGain!);
       
       oscillator.frequency.setValueAtTime(freq, this.audioContext!.currentTime);
       
@@ -641,12 +663,13 @@ class GameAudioSystem {
   async playParameterAdjust() {
     await this.ensureInitialized();
     if (!this.audioContext || !this.masterGain) return;
+    if (this.shouldThrottle('param', 60)) return;
 
     const oscillator = this.audioContext.createOscillator();
     const gainNode = this.audioContext.createGain();
     
     oscillator.connect(gainNode);
-    gainNode.connect(this.masterGain);
+    gainNode.connect(this.sfxGain!);
     
     oscillator.frequency.setValueAtTime(300, this.audioContext.currentTime);
     oscillator.frequency.linearRampToValueAtTime(350, this.audioContext.currentTime + 0.05);
@@ -667,7 +690,7 @@ class GameAudioSystem {
     const gainNode = this.audioContext.createGain();
     
     oscillator.connect(gainNode);
-    gainNode.connect(this.masterGain);
+    gainNode.connect(this.sfxGain!);
     
     oscillator.frequency.setValueAtTime(100, this.audioContext.currentTime);
     oscillator.frequency.exponentialRampToValueAtTime(400, this.audioContext.currentTime + 0.3);
@@ -688,7 +711,7 @@ class GameAudioSystem {
     const gainNode = this.audioContext.createGain();
     
     oscillator.connect(gainNode);
-    gainNode.connect(this.masterGain);
+    gainNode.connect(this.sfxGain!);
     
     // Vocal-like frequency with vibrato
     oscillator.frequency.setValueAtTime(440, this.audioContext.currentTime);
@@ -710,7 +733,7 @@ class GameAudioSystem {
     const gainNode = this.audioContext.createGain();
     
     oscillator.connect(gainNode);
-    gainNode.connect(this.masterGain);
+    gainNode.connect(this.sfxGain!);
     
     oscillator.frequency.setValueAtTime(200, this.audioContext.currentTime);
     oscillator.frequency.linearRampToValueAtTime(150, this.audioContext.currentTime + 0.1);
@@ -734,7 +757,7 @@ class GameAudioSystem {
     
     oscillator1.connect(gainNode);
     oscillator2.connect(gainNode);
-    gainNode.connect(this.masterGain);
+    gainNode.connect(this.sfxGain!);
     
     oscillator1.frequency.setValueAtTime(800, this.audioContext.currentTime);
     oscillator2.frequency.setValueAtTime(1200, this.audioContext.currentTime);
@@ -751,12 +774,13 @@ class GameAudioSystem {
   async playButtonHover() {
     await this.ensureInitialized();
     if (!this.audioContext || !this.masterGain) return;
+    if (this.shouldThrottle('hover', 90)) return;
 
     const oscillator = this.audioContext.createOscillator();
     const gainNode = this.audioContext.createGain();
     
     oscillator.connect(gainNode);
-    gainNode.connect(this.masterGain);
+    gainNode.connect(this.sfxGain!);
     
     oscillator.frequency.setValueAtTime(600, this.audioContext.currentTime);
     
@@ -765,6 +789,56 @@ class GameAudioSystem {
     
     oscillator.start();
     oscillator.stop(this.audioContext.currentTime + 0.03);
+  }
+
+  // TACTILE LOOP FEEDBACK (k6e.1) — short synth blips routed to sfxGain
+  // (mute-respecting), throttled, scheduled on AudioContext time.
+  private blip(freq: number, at: number, dur: number, vol: number, type: OscillatorType = 'sine') {
+    if (!this.audioContext || !this.sfxGain) return;
+    const t0 = this.audioContext.currentTime + at;
+    const oscillator = this.audioContext.createOscillator();
+    const gainNode = this.audioContext.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(this.sfxGain);
+    oscillator.type = type;
+    oscillator.frequency.setValueAtTime(freq, t0);
+    gainNode.gain.setValueAtTime(vol, t0);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, t0 + dur);
+    oscillator.start(t0);
+    oscillator.stop(t0 + dur);
+  }
+
+  /** Work-tick pulse: 1200 Hz sine, 40 ms — the per-session heartbeat. */
+  async playWorkTick() {
+    await this.ensureInitialized();
+    if (!this.audioContext || !this.sfxGain) return;
+    if (this.shouldThrottle('workTick', 90)) return;
+    this.blip(1200, 0, 0.04, 0.15);
+  }
+
+  /** Combo-up step: rising pentatonic (660→780→920→1100) per flow tier. */
+  async playComboUp(step: number = 1) {
+    await this.ensureInitialized();
+    if (!this.audioContext || !this.sfxGain) return;
+    if (this.shouldThrottle('comboUp', 120)) return;
+    const scale = [660, 780, 920, 1100];
+    const freq = scale[Math.max(0, Math.min(step - 1, scale.length - 1))];
+    this.blip(freq, 0, 0.12, 0.3, 'triangle');
+  }
+
+  /**
+   * Rank-reveal sting. S plays the level-up arpeggio; S+ adds the recorded
+   * project-complete tail 250 ms later (pairs with the confetti hook).
+   * Always sounds even under reduced-motion — audio IS the reward there.
+   */
+  async playRankReveal(rank: 'S' | 'S+') {
+    await this.ensureInitialized();
+    if (!this.audioContext || !this.sfxGain) return;
+    if (this.shouldThrottle('rankReveal', 500)) return;
+    await this.playLevelUp();
+    if (rank === 'S+') {
+      setTimeout(() => void this.playSound('ui-proj-complete', 'sfx', 1.0), 250);
+    }
   }
 
   // GENERAL UI SOUNDS
@@ -826,6 +900,22 @@ class GameAudioSystem {
         break;
       case 'gearSwitch':
         await this.playGearSwitch();
+        break;
+      case 'event': // review-screen / ceremony reveal (was falling to default click)
+      case 'reviewReveal':
+        await this.playSound('ui-email-notif', 'sfx', 0.7);
+        break;
+      case 'workTick':
+        await this.playWorkTick();
+        break;
+      case 'comboUp':
+        await this.playComboUp();
+        break;
+      case 'rankS':
+        await this.playRankReveal('S');
+        break;
+      case 'rankSPlus':
+        await this.playRankReveal('S+');
         break;
       default:
         // Fall back to basic click sound for unknown types

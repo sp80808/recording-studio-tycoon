@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { KenneyButton } from '@/components/ui/KenneyButton';
+import { GamePanel } from '@/components/ui/GamePanel';
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
 // GameState and FocusAllocation are imported below with Project
@@ -127,19 +129,19 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           </div>
         </div>
         
-        <Card className="flex-1 bg-gray-800/90 border-gray-600 p-6 backdrop-blur-sm">
-          <div className="text-center text-gray-400 animate-fade-in">
+        <GamePanel className="flex-1 p-6 backdrop-blur-sm">
+          <div className="text-center text-slate-400 animate-fade-in">
             <div className="text-6xl mb-4 animate-pulse">🎵</div>
             <h3 className="text-xl font-bold mb-2 text-white">Studio Ready</h3>
-            <p className="mb-4">Choose an artist enquiry, then bring their session into the room.</p>
-            <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4 text-sm text-blue-300">
+            <p className="mb-4 text-slate-300">Choose an artist enquiry, then bring their session into the room.</p>
+            <div className="bg-slate-950/60 border border-slate-700/80 rounded-lg p-4 text-sm text-sky-300 shadow-inner">
               <p className="font-semibold mb-2">📱 Your next move:</p>
               <p>1. Browse the Artist Enquiries board</p>
               <p>2. Book a session that fits your room and crew</p>
               <p>3. Return here to run the recording session</p>
             </div>
           </div>
-        </Card>
+        </GamePanel>
       </div>
     );
   }
@@ -747,16 +749,12 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             </Button>
           </div>
 
-          <Button 
+          <KenneyButton 
             onClick={handleWork}
             disabled={gameState.playerData.dailyWorkCapacity <= 0 || isProjectComplete}
-            className={`w-full py-2.5 h-11 text-base font-black tracking-wide game-button transition-all duration-200 shadow-lg ${
-              isProjectComplete
-                ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                : gameState.playerData.dailyWorkCapacity > 0
-                  ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 text-white shadow-indigo-950/50'
-                  : 'bg-slate-800 text-slate-500 border border-slate-700'
-            } ${pulseAnimation ? 'ring-2 ring-yellow-400/80' : ''}`}
+            variant={isProjectComplete ? 'green' : gameState.playerData.dailyWorkCapacity > 0 ? 'blue' : 'grey'}
+            size="lg"
+            className={`w-full py-3 text-base font-black shadow-lg ${pulseAnimation ? 'ring-2 ring-yellow-400/80' : ''}`}
           >
             {isProjectComplete ? (
               '🎉 Project Ready For Review!'
@@ -765,7 +763,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             ) : (
               '😴 Studio Exhausted (Advance Day to Restore)'
             )}
-          </Button>
+          </KenneyButton>
         </div>
 
         <MinigameManager
