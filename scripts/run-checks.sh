@@ -34,6 +34,10 @@ echo "=== lore, character origins & narrative arcs ==="
 ./node_modules/.bin/esbuild tests/narrative-lore-arcs.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-narrative-lore-arcs.cjs --alias:@=./src >/dev/null
 node /tmp/rst-narrative-lore-arcs.cjs
 
+echo "=== splash & career hub loop ==="
+./node_modules/.bin/esbuild tests/splash-career-hub.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-splash-career-hub.cjs --alias:@=./src >/dev/null
+node /tmp/rst-splash-career-hub.cjs
+
 
 echo "=== balance harness invariants (10 days, seed 7) ==="
 ./node_modules/.bin/esbuild src/dev/balance/run.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-balance.cjs --alias:@=./src >/dev/null

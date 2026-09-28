@@ -327,6 +327,10 @@ export const useStageWork = ({
     // 🌟 Studio Synergies (Issues #45 & #48)
     const activeSynergies = evaluateProjectSynergies(project, gameState);
     const synergyBonuses = calculateSynergyBonuses(activeSynergies);
+    const { newlyDiscovered, updatedDiscovered } = recordDiscoveredSynergies(
+      gameState.discoveredSynergies,
+      activeSynergies
+    );
 
     // ⚡ Streak + 🔥 Overdrive + ✨ Synergy multipliers applied to the final gains
     const overdriveMultiplier = overdrive ? 1.75 : 1;
@@ -417,7 +421,7 @@ export const useStageWork = ({
       return withDailyTracking({
         ...prev,
         activeProject: updatedProject,
-        discoveredSynergies: gameState.discoveredSynergies,
+        discoveredSynergies: updatedDiscovered,
         playerData: {
           ...prev.playerData,
           dailyWorkCapacity: Math.max(0, prev.playerData.dailyWorkCapacity - energyCost)
@@ -437,10 +441,6 @@ export const useStageWork = ({
     });
 
     // ✨ Celebrate new synergy discoveries
-    const { newlyDiscovered } = recordDiscoveredSynergies(
-      gameState.discoveredSynergies,
-      activeSynergies
-    );
     if (newlyDiscovered.length > 0) {
       newlyDiscovered.forEach(syn => {
         toast({
