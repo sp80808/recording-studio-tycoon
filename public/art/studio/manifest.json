@@ -1,0 +1,176 @@
+{
+  "version": 1,
+  "source": "Recording Studio Tycoon isometric studio art pass",
+  "spriteSheet": "/art/studio/studio-sprites.svg",
+  "viewBox": [
+    0,
+    0,
+    256,
+    256
+  ],
+  "artDirection": {
+    "silhouette": "chunky readable tycoon-game forms",
+    "perspective": "soft isometric / 3-quarter",
+    "outline": "#17191E",
+    "palette": {
+      "background": "#191718",
+      "warmWood": "#583C2D",
+      "equipment": "#30373D",
+      "coolSlate": "#707D81",
+      "screenBlue": "#58A5D8",
+      "accentAmber": "#D09A2E"
+    }
+  },
+  "sprites": [
+    {
+      "id": "character-producer",
+      "category": "character",
+      "href": "/art/studio/studio-sprites.svg#character-producer",
+      "recommendedScale": 0.72,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      }
+    },
+    {
+      "id": "character-artist",
+      "category": "character",
+      "href": "/art/studio/studio-sprites.svg#character-artist",
+      "recommendedScale": 0.72,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      }
+    },
+    {
+      "id": "mixing-console",
+      "category": "gear",
+      "href": "/art/studio/studio-sprites.svg#mixing-console",
+      "recommendedScale": 0.92,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.89
+      }
+    },
+    {
+      "id": "nearfield-monitor",
+      "category": "gear",
+      "href": "/art/studio/studio-sprites.svg#nearfield-monitor",
+      "recommendedScale": 0.62,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.88
+      }
+    },
+    {
+      "id": "daw-monitor",
+      "category": "gear",
+      "href": "/art/studio/studio-sprites.svg#daw-monitor",
+      "recommendedScale": 0.72,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.88
+      }
+    },
+    {
+      "id": "reel-to-reel",
+      "category": "gear",
+      "href": "/art/studio/studio-sprites.svg#reel-to-reel",
+      "recommendedScale": 0.72,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.88
+      }
+    },
+    {
+      "id": "vintage-microphone",
+      "category": "gear",
+      "href": "/art/studio/studio-sprites.svg#vintage-microphone",
+      "recommendedScale": 0.62,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.91
+      }
+    },
+    {
+      "id": "outboard-rack",
+      "category": "gear",
+      "href": "/art/studio/studio-sprites.svg#outboard-rack",
+      "recommendedScale": 0.67,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.89
+      }
+    },
+    {
+      "id": "record-shelf",
+      "category": "decor",
+      "href": "/art/studio/studio-sprites.svg#record-shelf",
+      "recommendedScale": 0.72,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.89
+      }
+    },
+    {
+      "id": "floor-lamp",
+      "category": "decor",
+      "href": "/art/studio/studio-sprites.svg#floor-lamp",
+      "recommendedScale": 0.6,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.91
+      }
+    },
+    {
+      "id": "studio-chair",
+      "category": "furniture",
+      "href": "/art/studio/studio-sprites.svg#studio-chair",
+      "recommendedScale": 0.68,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      }
+    },
+    {
+      "id": "acoustic-panel",
+      "category": "decor",
+      "href": "/art/studio/studio-sprites.svg#acoustic-panel",
+      "recommendedScale": 0.7,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.88
+      }
+    },
+    {
+      "id": "studio-sofa",
+      "category": "furniture",
+      "href": "/art/studio/studio-sprites.svg#studio-sofa",
+      "recommendedScale": 0.9,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9
+      }
+    },
+    {
+      "id": "potted-plant",
+      "category": "decor",
+      "href": "/art/studio/studio-sprites.svg#potted-plant",
+      "recommendedScale": 0.61,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.91
+      }
+    },
+    {
+      "id": "headphones",
+      "category": "prop",
+      "href": "/art/studio/studio-sprites.svg#headphones",
+      "recommendedScale": 0.58,
+      "anchor": {
+        "x": 0.5,
+        "y": 0.89
+      }
+    }
+  ]
+}

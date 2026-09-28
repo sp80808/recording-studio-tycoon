@@ -1,0 +1,225 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <symbol id="character-producer" viewBox="0 0 256 256">
+    <ellipse cx="128" cy="220" rx="49" ry="13" fill="#000" opacity=".28"/>
+    <g stroke="#17191E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="103" y="165" width="18" height="39" rx="8" fill="#35404B"/>
+      <rect x="136" y="165" width="18" height="39" rx="8" fill="#35404B"/>
+      <ellipse cx="111" cy="205" rx="16" ry="8" fill="#242B32"/>
+      <ellipse cx="146" cy="205" rx="16" ry="8" fill="#242B32"/>
+      <rect x="93" y="111" width="70" height="62" rx="18" fill="#58A5D8"/>
+      <rect x="80" y="119" width="17" height="45" rx="8" fill="#F0BE78"/>
+      <rect x="159" y="119" width="17" height="45" rx="8" fill="#F0BE78"/>
+      <ellipse cx="128" cy="92" rx="36" ry="34" fill="#F2C27E"/>
+      <path d="M93 90c3-31 64-37 70-3-15-8-46-10-70 3Z" fill="#222832"/>
+      <path d="M101 69c14-14 46-15 58 4" fill="none" stroke="#222832" stroke-width="10"/>
+      <circle cx="105" cy="92" r="10" fill="#DDA24F"/>
+      <circle cx="151" cy="92" r="10" fill="#DDA24F"/>
+      <path d="M104 88v-3c0-11 10-19 24-19s24 8 24 19v3" fill="none" stroke="#DDA24F" stroke-width="6"/>
+      <circle cx="116" cy="94" r="3" fill="#1D2329" stroke="none"/>
+      <circle cx="140" cy="94" r="3" fill="#1D2329" stroke="none"/>
+      <path d="M119 108c5 4 13 4 18 0" fill="none" stroke="#7C5135" stroke-width="3"/>
+    </g>
+  </symbol>
+
+  <symbol id="character-artist" viewBox="0 0 256 256">
+    <ellipse cx="127" cy="220" rx="51" ry="13" fill="#000" opacity=".28"/>
+    <g stroke="#17191E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="101" y="165" width="18" height="40" rx="8" fill="#303640"/>
+      <rect x="136" y="165" width="18" height="40" rx="8" fill="#303640"/>
+      <ellipse cx="110" cy="206" rx="16" ry="8" fill="#24282D"/>
+      <ellipse cx="146" cy="206" rx="16" ry="8" fill="#24282D"/>
+      <rect x="91" y="111" width="72" height="64" rx="20" fill="#8E6CC1"/>
+      <rect x="79" y="120" width="17" height="44" rx="8" fill="#EFB875"/>
+      <rect x="158" y="120" width="17" height="44" rx="8" fill="#EFB875"/>
+      <ellipse cx="127" cy="92" rx="35" ry="34" fill="#F0BD78"/>
+      <path d="M93 92c1-31 22-43 39-43 19 0 34 10 39 34-13-8-20-7-29-16-12 11-26 13-49 25Z" fill="#4B342C"/>
+      <circle cx="115" cy="95" r="3" fill="#1D2329" stroke="none"/>
+      <circle cx="138" cy="95" r="3" fill="#1D2329" stroke="none"/>
+      <path d="M118 108c5 4 12 4 17 0" fill="none" stroke="#7C5135" stroke-width="3"/>
+      <path d="M164 143l27-30" stroke="#B4BAC2" stroke-width="7"/>
+      <ellipse cx="194" cy="108" rx="9" ry="12" fill="#313944" transform="rotate(39 194 108)"/>
+    </g>
+  </symbol>
+
+  <symbol id="mixing-console" viewBox="0 0 256 256">
+    <ellipse cx="128" cy="217" rx="86" ry="16" fill="#000" opacity=".24"/>
+    <g stroke="#17191E" stroke-width="4" stroke-linejoin="round">
+      <path d="M49 116 126 78l83 42-79 42Z" fill="#333A40"/>
+      <path d="m49 116 81 46v51l-81-45Z" fill="#292F35"/>
+      <path d="m130 162 79-42v49l-79 44Z" fill="#20262C"/>
+      <path d="M67 116 127 88l63 32-62 31Z" fill="#4B5156"/>
+      <rect x="92" y="76" width="76" height="34" rx="4" fill="#252A2F"/>
+      <rect x="101" y="83" width="58" height="19" rx="2" fill="#172D35"/>
+      <path d="M108 96v-6m9 6V87m9 9v-12m9 12v-7m9 7V85m9 11V89" stroke="#58A5D8" stroke-width="4"/>
+      <g fill="#D19A2C" stroke="none">
+        <circle cx="87" cy="119" r="4"/><circle cx="102" cy="126" r="4"/><circle cx="118" cy="134" r="4"/>
+        <circle cx="135" cy="126" r="4"/><circle cx="150" cy="119" r="4"/><circle cx="166" cy="126" r="4"/>
+      </g>
+      <g stroke="#B6BDC3" stroke-width="3">
+        <path d="M80 130l22 12"/><path d="M95 122l22 12"/><path d="M113 114l22 12"/>
+        <path d="M132 113l22 12"/><path d="M148 106l22 12"/>
+      </g>
+      <g fill="#49A36D" stroke="none"><rect x="157" y="136" width="5" height="13"/><rect x="166" y="132" width="5" height="17"/><rect x="175" y="128" width="5" height="21"/></g>
+    </g>
+  </symbol>
+
+  <symbol id="nearfield-monitor" viewBox="0 0 256 256">
+    <ellipse cx="127" cy="215" rx="55" ry="13" fill="#000" opacity=".24"/>
+    <g stroke="#17191E" stroke-width="4" stroke-linejoin="round">
+      <path d="M78 68h77l28 20v115H78Z" fill="#30373D"/>
+      <path d="m155 68 28 20v115l-28-14Z" fill="#252B30"/>
+      <circle cx="117" cy="112" r="19" fill="#171D22"/><circle cx="117" cy="112" r="7" fill="#65737C"/>
+      <circle cx="117" cy="163" r="29" fill="#171D22"/><circle cx="117" cy="163" r="13" fill="#59666F"/>
+      <circle cx="92" cy="85" r="3" fill="#55C98B" stroke="none"/>
+    </g>
+  </symbol>
+
+  <symbol id="daw-monitor" viewBox="0 0 256 256">
+    <ellipse cx="127" cy="215" rx="65" ry="12" fill="#000" opacity=".22"/>
+    <g stroke="#17191E" stroke-width="4" stroke-linejoin="round">
+      <path d="M55 67h136v94H55Z" fill="#282F35"/>
+      <rect x="64" y="77" width="118" height="74" rx="2" fill="#1C3340"/>
+      <path d="M74 137V91m14 46v-27m14 27V99m14 38v-42m14 42v-18m14 18V86m14 51v-34" stroke="#5D96C3" stroke-width="8"/>
+      <path d="M123 161h15v29h-15z" fill="#343C43"/>
+      <path d="M96 190h68l14 15H82Z" fill="#252C32"/>
+      <rect x="73" y="84" width="101" height="5" fill="#263E4A" stroke="none"/>
+    </g>
+  </symbol>
+
+  <symbol id="reel-to-reel" viewBox="0 0 256 256">
+    <ellipse cx="128" cy="215" rx="68" ry="13" fill="#000" opacity=".23"/>
+    <g stroke="#17191E" stroke-width="4" stroke-linejoin="round">
+      <rect x="63" y="62" width="130" height="139" rx="8" fill="#343B3E"/>
+      <rect x="73" y="73" width="110" height="83" rx="4" fill="#484E4F"/>
+      <circle cx="105" cy="108" r="27" fill="#23282C"/><circle cx="105" cy="108" r="19" fill="#7B858A"/>
+      <circle cx="151" cy="108" r="27" fill="#23282C"/><circle cx="151" cy="108" r="19" fill="#7B858A"/>
+      <circle cx="105" cy="108" r="6" fill="#202428"/><circle cx="151" cy="108" r="6" fill="#202428"/>
+      <path d="M127 110c2 18 13 28 25 32" fill="none" stroke="#C8A45B" stroke-width="3"/>
+      <rect x="77" y="166" width="102" height="23" rx="3" fill="#262B2E"/>
+      <circle cx="91" cy="177" r="4" fill="#D09A2E" stroke="none"/>
+      <circle cx="105" cy="177" r="4" fill="#5DB483" stroke="none"/>
+      <path d="M127 172v10m13-10v10m13-10v10" stroke="#9DA7A9" stroke-width="4"/>
+    </g>
+  </symbol>
+
+  <symbol id="vintage-microphone" viewBox="0 0 256 256">
+    <ellipse cx="127" cy="222" rx="50" ry="11" fill="#000" opacity=".24"/>
+    <g stroke="#17191E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="128" cy="219" rx="34" ry="8" fill="#2B3035"/>
+      <path d="M128 213V93" stroke="#535C63" stroke-width="8"/>
+      <path d="M128 113l37-31" stroke="#535C63" stroke-width="7"/>
+      <path d="M165 82l13-10" stroke="#535C63" stroke-width="7"/>
+      <rect x="169" y="48" width="25" height="46" rx="12" fill="#A9AFB2" transform="rotate(38 181.5 71)"/>
+      <path d="M173 60l16 20m-21-12 16 20" stroke="#6F777B" stroke-width="2"/>
+      <circle cx="128" cy="113" r="6" fill="#D09A2E"/>
+    </g>
+  </symbol>
+
+  <symbol id="outboard-rack" viewBox="0 0 256 256">
+    <ellipse cx="128" cy="218" rx="67" ry="13" fill="#000" opacity=".22"/>
+    <g stroke="#17191E" stroke-width="4" stroke-linejoin="round">
+      <rect x="69" y="54" width="118" height="153" rx="5" fill="#292F34"/>
+      <g fill="#3A4146">
+        <rect x="80" y="67" width="96" height="26" rx="2"/><rect x="80" y="99" width="96" height="26" rx="2"/>
+        <rect x="80" y="131" width="96" height="26" rx="2"/><rect x="80" y="163" width="96" height="26" rx="2"/>
+      </g>
+      <g stroke="none">
+        <circle cx="94" cy="80" r="5" fill="#D49A2A"/><circle cx="109" cy="80" r="4" fill="#68B385"/><rect x="125" y="75" width="38" height="10" fill="#1E3035"/>
+        <circle cx="94" cy="112" r="5" fill="#7A87C2"/><circle cx="109" cy="112" r="4" fill="#D49A2A"/><rect x="125" y="107" width="38" height="10" fill="#1E3035"/>
+        <circle cx="94" cy="144" r="5" fill="#D45A57"/><circle cx="109" cy="144" r="4" fill="#68B385"/><rect x="125" y="139" width="38" height="10" fill="#1E3035"/>
+        <circle cx="94" cy="176" r="5" fill="#D49A2A"/><circle cx="109" cy="176" r="4" fill="#68B385"/><rect x="125" y="171" width="38" height="10" fill="#1E3035"/>
+      </g>
+    </g>
+  </symbol>
+
+  <symbol id="record-shelf" viewBox="0 0 256 256">
+    <ellipse cx="128" cy="219" rx="69" ry="12" fill="#000" opacity=".20"/>
+    <g stroke="#17191E" stroke-width="4" stroke-linejoin="round">
+      <rect x="58" y="48" width="140" height="163" rx="3" fill="#392B26"/>
+      <rect x="69" y="60" width="118" height="138" fill="#1F2326"/>
+      <path d="M69 104h118M69 151h118" stroke="#594034" stroke-width="7"/>
+      <g stroke="none">
+        <rect x="78" y="71" width="15" height="27" fill="#945AB5"/><rect x="96" y="66" width="17" height="32" fill="#65A669"/>
+        <rect x="116" y="72" width="18" height="26" fill="#C75C57"/><rect x="138" y="67" width="17" height="31" fill="#4C7FB5"/>
+        <rect x="159" y="75" width="18" height="23" fill="#C49334"/>
+        <rect x="79" y="117" width="18" height="28" fill="#48749A"/><rect x="101" y="123" width="15" height="22" fill="#B55258"/>
+        <rect x="120" y="114" width="17" height="31" fill="#6D9C6F"/><rect x="141" y="119" width="18" height="26" fill="#8960A7"/>
+        <rect x="163" y="116" width="14" height="29" fill="#C38E32"/>
+        <rect x="80" y="164" width="17" height="27" fill="#A25A5A"/><rect x="101" y="159" width="15" height="32" fill="#457BA7"/>
+        <rect x="120" y="166" width="20" height="25" fill="#6E9E70"/><rect x="144" y="161" width="13" height="30" fill="#A86BB2"/>
+        <rect x="161" y="169" width="15" height="22" fill="#C28D31"/>
+      </g>
+    </g>
+  </symbol>
+
+  <symbol id="floor-lamp" viewBox="0 0 256 256">
+    <ellipse cx="128" cy="222" rx="45" ry="10" fill="#000" opacity=".22"/>
+    <g stroke="#17191E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="128" cy="218" rx="30" ry="8" fill="#3B4147"/>
+      <path d="M128 213V89" stroke="#4C555D" stroke-width="8"/>
+      <path d="M128 111l32-24" stroke="#4C555D" stroke-width="7"/>
+      <path d="M150 58h41l-8 35h-36Z" fill="#C9912F"/>
+      <path d="M158 65h22" stroke="#F0C86C" stroke-width="5"/>
+      <circle cx="128" cy="111" r="6" fill="#C9912F"/>
+    </g>
+  </symbol>
+
+  <symbol id="studio-chair" viewBox="0 0 256 256">
+    <ellipse cx="128" cy="220" rx="55" ry="12" fill="#000" opacity=".22"/>
+    <g stroke="#17191E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="85" y="57" width="86" height="77" rx="22" fill="#343A40"/>
+      <rect x="78" y="122" width="100" height="45" rx="18" fill="#3E454B"/>
+      <path d="M128 167v31" stroke="#4F5860" stroke-width="9"/>
+      <path d="M95 205h66M128 198l-33 15m33-15 33 15" stroke="#4F5860" stroke-width="7"/>
+      <circle cx="94" cy="213" r="6" fill="#2A3035"/><circle cx="162" cy="213" r="6" fill="#2A3035"/>
+      <path d="M79 132 63 146m115-14 16 14" stroke="#4F5860" stroke-width="8"/>
+    </g>
+  </symbol>
+
+  <symbol id="acoustic-panel" viewBox="0 0 256 256">
+    <ellipse cx="128" cy="219" rx="61" ry="11" fill="#000" opacity=".17"/>
+    <g stroke="#17191E" stroke-width="4" stroke-linejoin="round">
+      <path d="M57 62h142v135H57Z" fill="#2D3338"/>
+      <path d="M69 73h118v113H69Z" fill="#485158"/>
+      <path d="M80 82v95m20-95v95m20-95v95m20-95v95m20-95v95m20-95v95" stroke="#313A40" stroke-width="7"/>
+      <path d="M69 129h118" stroke="#59636A" stroke-width="3"/>
+    </g>
+  </symbol>
+
+  <symbol id="studio-sofa" viewBox="0 0 256 256">
+    <ellipse cx="128" cy="219" rx="90" ry="14" fill="#000" opacity=".20"/>
+    <g stroke="#17191E" stroke-width="4" stroke-linejoin="round">
+      <rect x="47" y="100" width="162" height="88" rx="24" fill="#543B35"/>
+      <rect x="58" y="114" width="140" height="57" rx="18" fill="#624840"/>
+      <path d="M128 116v53" stroke="#3D302D" stroke-width="4"/>
+      <rect x="40" y="135" width="35" height="50" rx="14" fill="#4C3934"/>
+      <rect x="181" y="135" width="35" height="50" rx="14" fill="#4C3934"/>
+      <path d="M65 188v20m126-20v20" stroke="#272D31" stroke-width="9"/>
+    </g>
+  </symbol>
+
+  <symbol id="potted-plant" viewBox="0 0 256 256">
+    <ellipse cx="128" cy="220" rx="46" ry="11" fill="#000" opacity=".20"/>
+    <g stroke="#17191E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M91 160h74l-10 53h-54Z" fill="#8E5E3C"/>
+      <path d="M128 164c0-49 9-86 28-111" fill="none" stroke="#4C7753" stroke-width="7"/>
+      <path d="M128 160c-2-43-18-77-43-94" fill="none" stroke="#4C7753" stroke-width="7"/>
+      <path d="M126 132c25-19 46-22 60-14-12 24-37 30-60 14Z" fill="#5F9364"/>
+      <path d="M122 113c-24-17-44-18-56-8 12 22 34 26 56 8Z" fill="#699A69"/>
+      <path d="M143 83c-2-26 9-44 22-52 12 22 4 43-22 52Z" fill="#6FA06B"/>
+      <path d="M104 86c-21-13-37-10-49 0 15 17 33 18 49 0Z" fill="#5D8C61"/>
+    </g>
+  </symbol>
+
+  <symbol id="headphones" viewBox="0 0 256 256">
+    <ellipse cx="128" cy="218" rx="61" ry="11" fill="#000" opacity=".18"/>
+    <g stroke="#17191E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M69 140v-22c0-45 26-74 59-74s59 29 59 74v22" fill="none" stroke="#353C43" stroke-width="15"/>
+      <rect x="55" y="125" width="37" height="64" rx="15" fill="#2E353B"/>
+      <rect x="164" y="125" width="37" height="64" rx="15" fill="#2E353B"/>
+      <rect x="63" y="136" width="21" height="42" rx="9" fill="#59666E"/>
+      <rect x="172" y="136" width="21" height="42" rx="9" fill="#59666E"/>
+      <path d="M89 177c16 22 62 22 78 0" fill="none" stroke="#505960" stroke-width="7"/>
+    </g>
+  </symbol>
+</svg>
