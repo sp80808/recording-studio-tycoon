@@ -2,7 +2,7 @@ import {
   evaluateTakeAccuracy,
   calculateTakeEnergyCost,
   calculateTakeBaseUnits
-} from '../src/rpg/takeEvaluation';
+} from '@/rpg/takeEvaluation';
 
 let passed = 0;
 const ok = (cond: boolean, msg: string) => {

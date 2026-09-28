@@ -25,10 +25,14 @@ echo "=== studio synergies ==="
 node /tmp/rst-synergies.cjs
 
 echo "=== open source tools and assets ==="
-for check in tools-assets audio-system confetti-juice minigames-audio user-interaction vu-meter; do
+for check in tools-assets audio-system confetti-juice minigames-audio user-interaction vu-meter pocket-take take-audio; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
   node "/tmp/rst-$check.cjs"
 done
+
+echo "=== lore, character origins & narrative arcs ==="
+./node_modules/.bin/esbuild tests/narrative-lore-arcs.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-narrative-lore-arcs.cjs --alias:@=./src >/dev/null
+node /tmp/rst-narrative-lore-arcs.cjs
 
 
 echo "=== balance harness invariants (10 days, seed 7) ==="

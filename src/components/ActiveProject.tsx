@@ -12,8 +12,10 @@ import { OrbAnimationStyles } from './OrbAnimationStyles';
 import { ProjectCompletionCelebration } from './ProjectCompletionCelebration';
 import { EnhancedAnimationStyles } from './EnhancedAnimationStyles';
 import { toast } from '@/hooks/use-toast';
-import { playSound } from '@/utils/audioSystem'; // Updated import
-import { 
+import { playSound, gameAudio } from '@/utils/audioSystem'; // Updated import
+import { triggerScreenShake } from '@/utils/screenShake';
+import { evaluateTakeAccuracy, calculateTakeEnergyCost } from '@/rpg/takeEvaluation';
+import { PocketMeter } from '@/components/console/PocketMeter'; 
   getStageFocusLabels, 
   getStageOptimalFocus, 
   calculateFocusEffectiveness,
@@ -294,46 +296,62 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     });
   };
 
-  const handleWork = () => {
-    // Play work button click sound
-    playSound('ui-click', 0.5);
-    
+  const [takeState, setTakeState] = useState<'idle' | 'tracking'>('idle');
+  const [lastTakeGrade, setLastTakeGrade] = useState<{ grade: string; text: string } | null>(null);
 
-    // Store expected gains for animation (simplified calculation)
+  const availableEnergy = gameState.playerData.dailyWorkCapacity;
+  const energyCost = calculateTakeEnergyCost(availableEnergy, overdriveArmed);
+
+  const handleArmTake = () => {
+    if (availableEnergy <= 0 || isProjectComplete) return;
+    playSound('ui-click', 0.5);
+    if ((gameAudio as any).playGearSwitch) (gameAudio as any).playGearSwitch();
+    setTakeState('tracking');
+  };
+
+  const handleLockTake = (needlePosition: number) => {
+    const verdict = evaluateTakeAccuracy(needlePosition);
+    setTakeState('idle');
+
+    // Trigger Tone.js chord synthesis + SFX
+    if ((gameAudio as any).playTakeChord) (gameAudio as any).playTakeChord(project.genre, verdict.grade);
+    triggerScreenShake('light');
+
+    // Calculate expected gains for animation
     const baseCreativity = gameState.playerData.dailyWorkCapacity * gameState.playerData.attributes.creativeIntuition;
     const baseTechnical = gameState.playerData.attributes.technicalAptitude;
-    
-    // Use projectFocus for calculating gains
-    const creativityGain = Math.floor(
-      baseCreativity * (projectFocus.performance / 100) * 0.8 + 
-      baseCreativity * (projectFocus.layering / 100) * 0.6
-    );
-    const technicalGain = Math.floor(
-      baseTechnical * (projectFocus.soundCapture / 100) * 0.8 + 
-      baseTechnical * (projectFocus.layering / 100) * 0.4
-    );
+    const creativityGain = Math.floor((baseCreativity * (projectFocus.performance / 100) * 0.8 + baseCreativity * (projectFocus.layering / 100) * 0.6) * verdict.multiplier);
+    const technicalGain = Math.floor((baseTechnical * (projectFocus.soundCapture / 100) * 0.8 + baseTechnical * (projectFocus.layering / 100) * 0.4) * verdict.multiplier);
 
-    console.log('🎯 Setting last gains for animation:', { creativityGain, technicalGain });
     setLastGains({ creativity: creativityGain, technical: technicalGain });
     setShowBlobAnimation(true);
-    
-    // Call actual work function
-    const result = performDailyWork(); // Now returns { isComplete: boolean, finalProjectData?: Project }
-    
+
+    // Execute work in useStageWork with take bonuses
+    const result = performDailyWork?.({
+      energyCost,
+      takeGrade: verdict.grade,
+      takeMultiplier: verdict.multiplier,
+      qualityBonus: verdict.qualityBonus
+    });
+
     if (result?.isComplete && result.finalProjectData) {
-      console.log('🎉 Project work units complete! Triggering celebration for:', result.finalProjectData.title);
       playSound('project-complete', 0.8);
-      
-      // Set data for the celebration display
-      setCelebrationDisplayData({
-        title: result.finalProjectData.title,
-        genre: result.finalProjectData.genre
-      });
-      // Store the full project data to be used when the celebration is over
+      setCelebrationDisplayData({ title: result.finalProjectData.title, genre: result.finalProjectData.genre });
       setProjectDataForCompletionCall(result.finalProjectData);
       setShowCelebration(true);
     }
-    // If not complete, or if somehow isComplete is true but no finalProjectData, do nothing further here.
+
+    setLastTakeGrade({
+      grade: verdict.grade,
+      text: `${verdict.label}! +${verdict.qualityBonus} Quality (${Math.round((verdict.multiplier - 1) * 100)}% Boost)`
+    });
+
+    toast({
+      title: verdict.grade === 'Gold' ? '🔥 IN THE POCKET! (Gold Take)' : verdict.grade === 'Silver' ? '✨ TIGHT TAKE! (Silver Take)' : '🎵 SOLID TAKE',
+      description: `${verdict.label}: Advanced stage with ${energyCost} energy spent.`,
+      className: verdict.grade === 'Gold' ? 'bg-amber-950 border-amber-500 text-amber-200' : 'bg-gray-800 border-gray-600 text-white',
+      duration: 3000
+    });
   };
 
   const handleProjectCelebrationComplete = () => {
@@ -402,10 +420,15 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       {/* Studio Workspace Card: Scaled DAW / Console Layout */}
       <div 
         ref={containerRef} 
-        className="flex-1 min-h-0 flex flex-col h-full overflow-hidden bg-slate-900/95 border border-slate-700/80 rounded-xl p-3 shadow-2xl backdrop-blur-md"
+        className="flex-1 min-h-0 flex flex-col h-full overflow-hidden bg-slate-950 border border-slate-700/80 rounded-[2px] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_12px_40px_rgba(0,0,0,0.85)] relative"
       >
+        <div className="absolute top-1 left-1 w-2 h-2 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-[8px] text-slate-400 font-mono shadow-inner">+</div>
+        <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-[8px] text-slate-400 font-mono shadow-inner">+</div>
+        <div className="absolute bottom-1 left-1 w-2 h-2 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-[8px] text-slate-400 font-mono shadow-inner">+</div>
+        <div className="absolute bottom-1 right-1 w-2 h-2 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-[8px] text-slate-400 font-mono shadow-inner">+</div>
+
         {/* Pinned Top Bar: Project Meta & LED telemetry */}
-        <div className="shrink-0 mb-2.5 bg-gradient-to-r from-slate-950 via-indigo-950/70 to-slate-950 border border-slate-800/90 rounded-lg p-2.5 shadow-inner">
+        <div className="shrink-0 mb-2.5 bg-gradient-to-r from-slate-950 via-indigo-950/70 to-slate-950 border border-slate-800/90 rounded-[2px] p-2.5 shadow-inner relative z-10">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
@@ -515,7 +538,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           )}
 
           {/* Dual Progress Meters */}
-          <div className="bg-slate-950/60 border border-slate-800/80 rounded-lg p-2.5">
+          <div className="bg-slate-900/90 border border-slate-800 rounded-[2px] p-2.5">
             <div className="flex justify-between items-center text-xs mb-1.5">
               <span className="font-semibold text-white flex items-center gap-1.5">
                 <span className="text-slate-400">Stage {project.currentStageIndex + 1}/{project.stages.length}:</span>
@@ -551,7 +574,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           </div>
 
           {/* Focus Allocation Console Module */}
-          <div className="bg-slate-950/70 border border-slate-800 rounded-lg p-2.5 space-y-2">
+          <div className="bg-slate-900/90 border border-slate-800 rounded-[2px] p-2.5 space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
@@ -724,46 +747,68 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           </div>
         </div>
 
-        {/* Pinned Bottom Action Dock: ALWAYS VISIBLE */}
-        <div className="shrink-0 pt-2 mt-2 border-t border-slate-700/60 bg-slate-950/90 backdrop-blur-md">
-          <div className="flex items-center gap-2 mb-2">
-            {(project.comboCount || 0) > 1 && (
-              <div className="px-2.5 py-1 text-center text-xs font-black tracking-wide text-amber-300 bg-amber-950/80 border border-amber-500/50 rounded animate-pulse">
-                ⚡ x{project.comboCount} COMBO (+{Math.min(50, (project.comboCount! - 1) * 10)}%)
+        {/* Industrial Console Transport Dock */}
+        <div className="shrink-0 pt-2.5 mt-2 border-t border-slate-800 bg-slate-950/95 relative z-10">
+          {takeState === 'tracking' ? (
+            <div className="space-y-2">
+              <PocketMeter
+                isArmed={true}
+                onLock={handleLockTake}
+              />
+              <button
+                onClick={() => handleLockTake(0.78)} // Instant lock button
+                className="w-full py-3 bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-slate-950 font-black tracking-wider uppercase text-sm rounded-[2px] shadow-[0_0_15px_rgba(251,191,36,0.6)] border border-amber-300 transition-all flex items-center justify-center gap-2 animate-pulse"
+              >
+                <span>🎯</span>
+                <span>LOCK TAKE IN THE POCKET!</span>
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {lastTakeGrade && (
+                <div className="px-2 py-1 text-center text-xs font-mono font-bold tracking-wide text-amber-300 bg-amber-950/60 border border-amber-500/40 rounded-[2px]">
+                  {lastTakeGrade.text}
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={toggleOverdrive}
+                  disabled={availableEnergy < 2 || isProjectComplete}
+                  variant="outline"
+                  className={`h-9 text-xs font-mono font-bold uppercase rounded-[2px] flex-1 border transition-all ${
+                    overdriveArmed
+                      ? 'bg-orange-600 border-orange-400 text-white shadow-[0_0_10px_rgba(234,88,12,0.6)]'
+                      : 'bg-slate-900 border-slate-700 text-orange-400 hover:bg-slate-800'
+                  }`}
+                >
+                  {overdriveArmed ? '🔥 OVERDRIVE ENGAGED (+1⚡ · +75%)' : '🔥 ARM OVERDRIVE (+1⚡ · +75%)'}
+                </Button>
               </div>
-            )}
-            <Button
-              onClick={toggleOverdrive}
-              disabled={gameState.playerData.dailyWorkCapacity < 2 || isProjectComplete}
-              variant="outline"
-              size="sm"
-              className={`h-8 text-xs font-semibold flex-1 transition-all ${
-                overdriveArmed
-                  ? 'bg-orange-600 hover:bg-orange-500 border-orange-400 text-white shadow-lg shadow-orange-950/50'
-                  : 'bg-slate-900/80 border-orange-700/50 text-orange-300 hover:bg-orange-950/40'
-              }`}
-            >
-              {overdriveArmed
-                ? '🔥 Overdrive Armed (2 Energy · +75%)'
-                : '🔥 Arm Overdrive (2 Energy · +75%)'}
-            </Button>
-          </div>
 
-          <KenneyButton 
-            onClick={handleWork}
-            disabled={gameState.playerData.dailyWorkCapacity <= 0 || isProjectComplete}
-            variant={isProjectComplete ? 'green' : gameState.playerData.dailyWorkCapacity > 0 ? 'blue' : 'grey'}
-            size="lg"
-            className={`w-full py-3 text-base font-black shadow-lg ${pulseAnimation ? 'ring-2 ring-yellow-400/80' : ''}`}
-          >
-            {isProjectComplete ? (
-              '🎉 Project Ready For Review!'
-            ) : gameState.playerData.dailyWorkCapacity > 0 ? (
-              `🎵 Work on Project (${gameState.playerData.dailyWorkCapacity} energy left)`
-            ) : (
-              '😴 Studio Exhausted (Advance Day to Restore)'
-            )}
-          </KenneyButton>
+              <button
+                onClick={handleArmTake}
+                disabled={availableEnergy <= 0 || isProjectComplete}
+                className={`w-full py-3.5 text-sm font-black uppercase tracking-wider rounded-[2px] border transition-all flex items-center justify-center gap-2 shadow-lg ${
+                  isProjectComplete
+                    ? 'bg-emerald-600 border-emerald-400 text-white'
+                    : availableEnergy > 0
+                    ? 'bg-red-600 hover:bg-red-500 border-red-400 text-white shadow-[0_0_12px_rgba(220,38,38,0.5)] active:scale-[0.99]'
+                    : 'bg-slate-900 border-slate-800 text-slate-500 cursor-not-allowed'
+                }`}
+              >
+                {isProjectComplete ? (
+                  '🎉 PROJECT READY FOR REVIEW!'
+                ) : availableEnergy > 0 ? (
+                  <>
+                    <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping mr-1" />
+                    <span>🔴 RECORD TAKE ({energyCost}⚡ · {availableEnergy} LEFT)</span>
+                  </>
+                ) : (
+                  '😴 STUDIO EXHAUSTED (ADVANCE DAY)'
+                )}
+              </button>
+            </div>
+          )}
         </div>
 
         <MinigameManager

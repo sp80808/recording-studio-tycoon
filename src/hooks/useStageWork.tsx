@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { GameState, FocusAllocation, Project } from '@/types/game';
+import { TakeGrade, evaluateTakeAccuracy, calculateTakeEnergyCost } from '@/rpg/takeEvaluation';
 // calculateStudioSkillBonus and getEquipmentBonuses are now used within projectUtils
 import { getCreativityMultiplier, getTechnicalMultiplier, getFocusEffectiveness, getMoodEffectiveness } from '@/utils/playerUtils'; // Added getMoodEffectiveness
 import {
@@ -192,7 +193,12 @@ export const useStageWork = ({
 
   // getMoodEffectiveness is now imported from playerUtils
 
-  const performDailyWork = useCallback((): { finalProjectData?: Project; isComplete: boolean } | undefined => {
+  const performDailyWork = useCallback((options?: {
+    energyCost?: number;
+    takeGrade?: TakeGrade;
+    takeMultiplier?: number;
+    qualityBonus?: number;
+  }): { finalProjectData?: Project; isComplete: boolean } | undefined => {
     console.log('🚀 === PERFORMING DAILY WORK ===');
     
     if (!gameState.activeProject) {
@@ -200,12 +206,15 @@ export const useStageWork = ({
       return;
     }
 
-    if (gameState.playerData.dailyWorkCapacity <= 0) {
-      console.log('❌ No energy left');
+    const energyCost = options?.energyCost ?? (gameState.activeProject.overdriveArmed ? 2 : 1);
+    const takeMultiplier = options?.takeMultiplier ?? 1.0;
+    const qualityBonus = options?.qualityBonus ?? 0;
+
+    // Check available energy against energyCost
+    if (gameState.playerData.dailyWorkCapacity < energyCost) {
       toast({
-        title: "⚡ No Energy Left",
-        description: "You need to advance to the next day to restore your energy.",
-        className: "bg-gray-800 border-gray-600 text-white",
+        title: "⚡ Insufficient Energy",
+        description: `This take requires ${energyCost} energy.`,
         variant: "destructive"
       });
       return;
@@ -321,8 +330,8 @@ export const useStageWork = ({
 
     // ⚡ Streak + 🔥 Overdrive + ✨ Synergy multipliers applied to the final gains
     const overdriveMultiplier = overdrive ? 1.75 : 1;
-    const creativityGain = Math.max(1, Math.round(rawCreativity * comboMultiplier * overdriveMultiplier * synergyBonuses.creativityMultiplier));
-    const technicalGain = Math.max(1, Math.round(rawTechnical * comboMultiplier * overdriveMultiplier * synergyBonuses.technicalMultiplier));
+    const creativityGain = Math.max(1, Math.round(workPoints.creativity * comboMultiplier * overdriveMultiplier * synergyBonuses.creativityMultiplier));
+    const technicalGain = Math.max(1, Math.round(workPoints.technical * comboMultiplier * overdriveMultiplier * synergyBonuses.technicalMultiplier));
 
     // Create orb animations
     createOrb('creativity', creativityGain);
@@ -342,15 +351,15 @@ export const useStageWork = ({
     // - Base conversion: points to work units (divide by 3 for faster progression)
     // - Minimum progress: Always make at least 1 work unit of progress if points > 0
     // - Stage difficulty scaling: Harder stages (more work units) get bonus efficiency
-    const baseWorkUnits = Math.floor(totalPointsGenerated / 3);
+    const baseTakeUnits = Math.max(1, Math.floor(energyCost * 2));
     const minProgress = totalPointsGenerated > 0 ? 1 : 0;
     const stageEfficiencyBonus = Math.floor(currentStage.workUnitsBase / 10); // Bonus for longer stages
     
     const bookedRoom = getBookedStudioRoom(gameState, project);
     const roomSpeedMultiplier = 1 + ((bookedRoom?.speedBonus || 0) / 100);
     const workUnitsToAdd = Math.max(
-      minProgress,
-      Math.floor((baseWorkUnits + stageEfficiencyBonus) * roomSpeedMultiplier * synergyBonuses.workUnitSpeedMultiplier)
+      1,
+      Math.floor((baseTakeUnits + stageEfficiencyBonus) * roomSpeedMultiplier * synergyBonuses.workUnitSpeedMultiplier * takeMultiplier)
     );
     // Ensure at least 1 unit of progress if energy was spent and stage is not complete
     const actualWorkUnitsToAdd = (workUnitsToAdd === 0 && !currentStage.completed && totalPointsGenerated > 0) ? 1 : workUnitsToAdd; // Ensure progress if any points generated
@@ -391,8 +400,8 @@ export const useStageWork = ({
           }
           return stage;
         }),
-        accumulatedCPoints: prev.activeProject!.accumulatedCPoints + creativityGain,
-        accumulatedTPoints: prev.activeProject!.accumulatedTPoints + technicalGain,
+        accumulatedCPoints: prev.activeProject!.accumulatedCPoints + creativityGain + qualityBonus,
+        accumulatedTPoints: prev.activeProject!.accumulatedTPoints + technicalGain + qualityBonus,
         currentStageIndex: newCurrentStageIndex,
         workSessionCount: newWorkSessionCount,
         // ⚡ streak tracking + 🔥 overdrive consumed
@@ -408,10 +417,10 @@ export const useStageWork = ({
       return withDailyTracking({
         ...prev,
         activeProject: updatedProject,
-        discoveredSynergies: updatedDiscovered,
+        discoveredSynergies: gameState.discoveredSynergies,
         playerData: {
           ...prev.playerData,
-          dailyWorkCapacity: prev.playerData.dailyWorkCapacity - (overdrive ? 2 : 1)
+          dailyWorkCapacity: Math.max(0, prev.playerData.dailyWorkCapacity - energyCost)
         },
         hiredStaff: prev.hiredStaff.map(s => {
           if (s.assignedProjectId === project.id && s.status === 'Working') {
