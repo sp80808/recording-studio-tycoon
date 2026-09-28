@@ -1,5 +1,4 @@
 import { gameAudio } from './audioSystem';
-import { GameAudioSystem } from './audioSystem'; // Import the class type
 
 declare global {
   interface Window {
@@ -26,15 +25,13 @@ const onFirstUserInteraction = () => {
 
   console.log('User has interacted with the document for the first time.');
 
-  // Attempt to resume the main AudioContext from audioSystem.ts
-  // gameAudio.initialize() should have been called at app startup.
-  // ensureInitialized will attempt to resume the context if suspended.
-  if (gameAudio && typeof (gameAudio as GameAudioSystem).ensureInitialized === 'function') {
-    (gameAudio as GameAudioSystem).ensureInitialized().then(() => {
-       console.log('GameAudio context state checked/resumed on interaction.');
-    }).catch((e: Error) => console.warn("Error ensuring gameAudio is initialized on interaction:", e));
+  // Attempt to resume the main AudioContext and Tone.js context from audioSystem.ts
+  if (gameAudio && typeof gameAudio.userGestureSignal === 'function') {
+    gameAudio.userGestureSignal().then(() => {
+       console.log('GameAudio & Tone.js context unlocked on interaction.');
+    }).catch((e: Error) => console.warn("Error unlocking gameAudio on interaction:", e));
   } else {
-    console.warn('gameAudio or gameAudio.ensureInitialized is not available for interaction handling.');
+    console.warn('gameAudio or gameAudio.userGestureSignal is not available for interaction handling.');
   }
   
   // Dispatch a custom event that other parts of the app can listen to
