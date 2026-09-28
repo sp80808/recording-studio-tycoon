@@ -554,7 +554,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           onApplyMod={applyModToEquipment} // Pass the actual function
         />
       )}
-    </Card>
+    </GamePanel>
   );
 };
 
