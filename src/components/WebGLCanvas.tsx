@@ -758,18 +758,19 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         };
 
         // Safari native gesture events (macOS trackpad pinch)
-        const onGestureStart = (e: any) => {
+        const onGestureStart = (e: Event) => {
           e.preventDefault();
           lastGestureScale = 1;
         };
-        const onGestureChange = (e: any) => {
+        const onGestureChange = (e: Event) => {
           e.preventDefault();
-          const currentScale = e.scale || 1;
+          const gesture = e as Event & { scale: number; clientX: number; clientY: number };
+          const currentScale = gesture.scale || 1;
           const scaleRatio = currentScale / lastGestureScale;
           lastGestureScale = currentScale;
-          zoomAt(e.clientX, e.clientY, scaleRatio);
+          zoomAt(gesture.clientX, gesture.clientY, scaleRatio);
         };
-        const onGestureEnd = (e: any) => {
+        const onGestureEnd = (e: Event) => {
           e.preventDefault();
           lastGestureScale = 1;
         };
@@ -789,9 +790,9 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         app.canvas.addEventListener('pointerup', onPointerUp, { passive: true });
         app.canvas.addEventListener('pointercancel', onPointerUp, { passive: true });
         app.canvas.addEventListener('wheel', onWheel, { passive: false });
-        app.canvas.addEventListener('gesturestart', onGestureStart as any, { passive: false });
-        app.canvas.addEventListener('gesturechange', onGestureChange as any, { passive: false });
-        app.canvas.addEventListener('gestureend', onGestureEnd as any, { passive: false });
+        app.canvas.addEventListener('gesturestart', onGestureStart, { passive: false });
+        app.canvas.addEventListener('gesturechange', onGestureChange, { passive: false });
+        app.canvas.addEventListener('gestureend', onGestureEnd, { passive: false });
         app.canvas.addEventListener('dblclick', onDblClick);
 
         detachInteractions = () => {
@@ -800,9 +801,9 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           app.canvas.removeEventListener('pointerup', onPointerUp);
           app.canvas.removeEventListener('pointercancel', onPointerUp);
           app.canvas.removeEventListener('wheel', onWheel);
-          app.canvas.removeEventListener('gesturestart', onGestureStart as any);
-          app.canvas.removeEventListener('gesturechange', onGestureChange as any);
-          app.canvas.removeEventListener('gestureend', onGestureEnd as any);
+          app.canvas.removeEventListener('gesturestart', onGestureStart);
+          app.canvas.removeEventListener('gesturechange', onGestureChange);
+          app.canvas.removeEventListener('gestureend', onGestureEnd);
           app.canvas.removeEventListener('dblclick', onDblClick);
         };
 

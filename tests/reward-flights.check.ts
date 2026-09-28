@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { rewardGains } from '../src/components/RewardFlights';
+import { rewardGains } from '../src/utils/rewardFeedback';
 import { xpForPlayerLevel } from '../src/utils/playerUtils';
 
 const start = { money: 100, xp: 90, level: 1, day: 1 };

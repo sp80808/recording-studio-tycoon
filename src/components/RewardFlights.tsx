@@ -3,18 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Coins, Sparkles } from 'lucide-react';
 import { GameState } from '@/types/game';
-import { xpForPlayerLevel } from '@/utils/playerUtils';
-
-type Snapshot = { money: number; xp: number; level: number; day: number };
-export function rewardGains(before: Snapshot, after: Snapshot) {
-  if (![...Object.values(before), ...Object.values(after)].every(Number.isFinite) ||
-      after.day < before.day || after.level < before.level || after.level - before.level > 100) {
-    return { money: 0, xp: 0 };
-  }
-  let xp = after.xp - before.xp;
-  for (let level = before.level; level < after.level; level++) xp += xpForPlayerLevel(level);
-  return { money: Math.max(0, after.money - before.money), xp: Math.max(0, xp) };
-}
+import { rewardGains } from '@/utils/rewardFeedback';
 
 type Flight = { id: number; type: 'money' | 'xp'; amount: number; fromX: number; fromY: number; toX: number; toY: number };
 

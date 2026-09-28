@@ -52,7 +52,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
   const roomTier = useMemo(() => {
     const status = ProgressionSystem.getProgressionStatus(gameState);
     return status.currentMilestone?.level ?? 1;
-  }, [gameState.playerData.level, gameState.hiredStaff.length, gameState.playerData.xp]);
+  }, [gameState]);
 
   // Celebrate a tier-up in-place: flash overlay + shake + fanfare + toast.
   const prevTierRef = useRef(roomTier);
@@ -150,7 +150,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
         onClick={() => setCameraReset(value => value + 1)} aria-label="Center studio camera" title="Center studio camera">
         <LocateFixed size={18} />
       </button>
-      <p className="absolute bottom-2 left-3 text-[10px] text-slate-400 pointer-events-none">Tap objects · pinch to zoom · two-finger pan</p>
+      <p className="studio-room-hint absolute bottom-2 left-3 text-[10px] text-slate-400 pointer-events-none">Tap objects · pinch to zoom · two-finger pan</p>
     </div>
   );
 };

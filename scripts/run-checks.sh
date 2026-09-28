@@ -5,6 +5,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 echo "=== daily challenges ==="
+./node_modules/.bin/esbuild tests/reward-flights.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-reward-flights.cjs --alias:@=./src >/dev/null
+node /tmp/rst-reward-flights.cjs
 pnpm exec esbuild tests/daily-challenges.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-daily-challenges.cjs --alias:@=./src >/dev/null
 node /tmp/rst-daily-challenges.cjs
 

@@ -86,6 +86,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   const [lastCheckedDay, setLastCheckedDay] = useState(0);
   const [dashboardTab, setDashboardTab] = useState<'studio' | 'skills' | 'bands' | 'charts' | 'staff'>('studio');
   const returnFocusRef = useRef<HTMLElement | null>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const previousProjectId = useRef(gameState.activeProject?.id);
   const openPanel = (next: Panel) => {
     if (!panel) returnFocusRef.current = document.activeElement as HTMLElement;
     setPanel(next);
@@ -103,6 +105,15 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
     if (autoTriggeredMinigame) setPanel('session');
   }, [autoTriggeredMinigame]);
 
+  useEffect(() => {
+    if (panel) headingRef.current?.focus();
+  }, [panel]);
+
+  useEffect(() => {
+    if (previousProjectId.current && !gameState.activeProject && panel === 'session') setPanel(null);
+    previousProjectId.current = gameState.activeProject?.id;
+  }, [gameState.activeProject, panel]);
+
   // Check for new historical events when day advances
   useEffect(() => {
     const newEvents = checkForNewEvents(gameState, lastCheckedDay);
@@ -119,7 +130,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
       // Update last checked day
       setLastCheckedDay(gameState.currentDay);
     }
-  }, [gameState.currentDay, gameState.currentEra, lastCheckedDay, setGameState]);
+  }, [gameState, lastCheckedDay, setGameState]);
 
   // Enhanced era transition handler
   const handleEraTransition = () => {
@@ -185,9 +196,13 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           <Dialog.Overlay className="studio-panel-shade" />
           <Dialog.Content className={`studio-activity-panel ${panel === 'session' ? 'studio-session-popup' : ''}`}
             aria-describedby={undefined}
-            onCloseAutoFocus={event => { event.preventDefault(); returnFocusRef.current?.focus(); }}>
+            onCloseAutoFocus={event => {
+              event.preventDefault();
+              const target = returnFocusRef.current?.isConnected ? returnFocusRef.current : document.querySelector<HTMLElement>('.studio-command-dock button');
+              target?.focus();
+            }}>
             <header className="studio-panel-heading">
-              <div><p>RECORDING STUDIO</p><Dialog.Title>{panel ? titles[panel] : ''}</Dialog.Title></div>
+              <div><p>RECORDING STUDIO</p><Dialog.Title ref={headingRef} tabIndex={-1} className="outline-none">{panel ? titles[panel] : ''}</Dialog.Title></div>
               {panel === 'session' && gameState.playerData.dailyWorkCapacity <= 0 && !project?.awaitingReview &&
                 <button className="studio-primary-action ml-auto" onClick={advanceDay}><Moon size={16} />Rest & advance day</button>}
               <Dialog.Close className="studio-dock-button" aria-label="Return to studio floor"><X size={22} /></Dialog.Close>

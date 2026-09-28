@@ -172,13 +172,13 @@ export const useStageWork = ({
 
     setTimeout(() => {
       const targetElement = document.getElementById(type === 'creativity' ? 'creativity-points' : 'technical-points');
-      if (targetElement) {
+      if (targetElement && orbContainerRef.current && orb.isConnected) {
         const rect = targetElement.getBoundingClientRect();
-        const containerRect = orbContainerRef.current!.getBoundingClientRect();
+        const containerRect = orbContainerRef.current.getBoundingClientRect();
         const targetX = rect.left - containerRect.left + rect.width / 2;
         const targetY = rect.top - containerRect.top + rect.height / 2;
         
-        orb.style.transform = `translate(${targetX - startX}px, ${targetY - startY}px scale(0.8)`;
+        orb.style.transform = `translate(${targetX - startX}px, ${targetY - startY}px) scale(0.8)`;
         orb.style.opacity = '0';
       }
     }, 100);
