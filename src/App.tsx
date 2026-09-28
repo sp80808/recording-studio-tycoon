@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import DevMenu from "./components/DevMenu";
 import BoxDropController from "./features/boxDrops/BoxDropController";
+import { CutsceneDirector } from "./components/cutscenes/CutsceneDirector";
 import './App.css';
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => {
             <Sonner />
             {process.env.NODE_ENV === 'development' && <DevMenu />}
             <BoxDropController />
+            <CutsceneDirector />
             <BrowserRouter>
               <main>
                 <Routes>

@@ -17,6 +17,7 @@ import { FaderRideGame } from './FaderRideGame';
 import { PunchInGame } from './PunchInGame';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { toast } from '@/hooks/use-toast';
+import { useCutsceneQueue } from '@/hooks/useCutsceneQueue';
 // import { playSound } from '@/utils/soundUtils'; // playSound seems unused here, consider removing if not needed directly in manager
 
 // MinigameType will also serve as minigameId for tutorial tracking
@@ -59,6 +60,7 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
 }) => {
   const [showGame, setShowGame] = useState(true);
   const backgroundMusic = useBackgroundMusic(); // Assuming this is for BeatMakingGame or similar
+  const enqueueCutscene = useCutsceneQueue((s) => s.enqueue);
 
   useEffect(() => {
     if (isOpen) {
@@ -154,12 +156,21 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
 
     onReward(creativityBonus, technicalBonus, xpBonus, gameType, score);
 
-    toast({
-      title: "🎮 Minigame Complete!",
-      description: `Rewards: +${creativityBonus} C, +${technicalBonus} T, +${xpBonus} XP`,
-      className: "bg-gray-800 border-gray-600 text-white",
-      variant: success === false ? "destructive" : "default", // Indicate if it wasn't fully successful
-    });
+    // If it's an S-Rank or Botched take, show full-screen cutscene instead of toast
+    if (score >= 850 || score <= 300) {
+      enqueueCutscene({
+        id: `outcome-${Date.now()}`,
+        type: 'outcome_vignette',
+        payload: { score, gameType }
+      });
+    } else {
+      toast({
+        title: "🎮 Minigame Complete!",
+        description: `Rewards: +${creativityBonus} C, +${technicalBonus} T, +${xpBonus} XP`,
+        className: "bg-gray-800 border-gray-600 text-white",
+        variant: success === false ? "destructive" : "default", // Indicate if it wasn't fully successful
+      });
+    }
     // onClose(); // Call onClose after toast to ensure modal closes
   };
 
