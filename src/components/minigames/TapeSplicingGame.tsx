@@ -16,6 +16,8 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Scissors, Play, Pause, RotateCcw, Clock } from 'lucide-react';
+import { gameAudio } from '@/utils/audioSystem';
+import { triggerProjectCompleteJuice } from '@/utils/confettiJuice';
 import { MinigameChrome, KenneyButton } from './MinigameChrome';
 
 interface TapeSplicingGameProps {
@@ -202,10 +204,12 @@ export const TapeSplicingGame: React.FC<TapeSplicingGameProps> = ({ onComplete, 
     const newCuts = [...playerCuts, x];
     setPlayerCuts(newCuts);
     setCutsRemaining(prev => prev - 1);
+    void gameAudio.playTactileClick();
 
     // Check if cut is accurate
     const accuracy = checkCutAccuracy(x);
     if (accuracy > 0) {
+      void gameAudio.playGoodHit();
       setScore(prev => prev + accuracy);
       setFeedback(`Perfect cut! +${accuracy} points`);
     } else {
@@ -228,10 +232,12 @@ export const TapeSplicingGame: React.FC<TapeSplicingGameProps> = ({ onComplete, 
   };
 
   const handlePlayPause = () => {
+    void gameAudio.playGearSwitch();
     setIsPlaying(!isPlaying);
   };
 
   const handleReset = () => {
+    void gameAudio.playTactileClick();
     setPlayerCuts([]);
     setCutsRemaining(3);
     setPlayheadPosition(0);
@@ -243,6 +249,10 @@ export const TapeSplicingGame: React.FC<TapeSplicingGameProps> = ({ onComplete, 
   const handleComplete = () => {
     // Bonus points for completing with cuts remaining
     const finalScore = score + (cutsRemaining * 50);
+    if (finalScore >= 200) {
+      gameAudio.playSuccess();
+      triggerProjectCompleteJuice();
+    }
     onComplete(finalScore, finalScore >= 200);
   };
 

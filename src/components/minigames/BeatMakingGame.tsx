@@ -1,9 +1,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import * as Tone from 'tone';
 import { Card, CardContent } from '@/components/ui/card';
 import { DialogFooter } from '@/components/ui/dialog';
 import { MinigameChrome, KenneyButton } from './MinigameChrome';
 import { gameAudio } from '@/utils/audioSystem';
+import { triggerProjectCompleteJuice } from '@/utils/confettiJuice';
 
 interface BeatMakingGameProps {
   onComplete: (score: number) => void;
@@ -20,8 +22,9 @@ export const BeatMakingGame: React.FC<BeatMakingGameProps> = ({ onComplete, onCl
   const [isPlaying, setIsPlaying] = useState(false);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60);
-  const intervalRef = useRef<NodeJS.Timeout>();
   const gameIntervalRef = useRef<NodeJS.Timeout>();
+  const beatsRef = useRef(beats);
+  beatsRef.current = beats;
 
   const trackNames = ['Kick', 'Snare', 'Hi-Hat', 'Open Hat'];
   const trackColors = ['bg-red-500', 'bg-blue-500', 'bg-yellow-500', 'bg-green-500'];
@@ -36,45 +39,64 @@ export const BeatMakingGame: React.FC<BeatMakingGameProps> = ({ onComplete, onCl
   useEffect(() => {
     const initAudio = async () => {
       await gameAudio.initialize();
-      // Fade down background music when beatmaking game starts (slower fade)
       if (backgroundMusic) {
-        await backgroundMusic.fadeVolume(0.2, 1500); // Fade to 20% volume over 1.5 seconds
+        await backgroundMusic.fadeVolume(0.2, 1500);
       }
     };
     initAudio();
 
-    // Cleanup: restore background music volume when component unmounts
     return () => {
+      Tone.getTransport().stop();
       if (backgroundMusic) {
-        backgroundMusic.restoreVolume(1500); // Restore over 1.5 seconds
+        backgroundMusic.restoreVolume(1500);
       }
     };
   }, [backgroundMusic]);
 
+  // Tone.js Transport-backed drift-free step sequencer
   useEffect(() => {
+    let repeatId: number | null = null;
+
     if (isPlaying) {
-      intervalRef.current = setInterval(() => {
-        setCurrentStep(prev => {
-          const newStep = (prev + 1) % 8;
-          
-          // Play sounds for active beats on this step
-          beats.forEach((track, trackIndex) => {
-            if (track[newStep]) {
-              trackSounds[trackIndex]();
-            }
-          });
-          
-          return newStep;
+      void gameAudio.playTactileClick();
+      if (Tone.getContext().state !== 'running') {
+        void Tone.start();
+      }
+
+      Tone.getTransport().bpm.value = 120;
+      let stepCounter = 0;
+
+      repeatId = Tone.getTransport().scheduleRepeat((time) => {
+        const step = stepCounter % 8;
+        stepCounter++;
+
+        Tone.getDraw().schedule(() => {
+          setCurrentStep(step);
+        }, time);
+
+        const currentBeats = beatsRef.current;
+        currentBeats.forEach((track, trackIndex) => {
+          if (track[step]) {
+            trackSounds[trackIndex]();
+          }
         });
-      }, 250);
+      }, '8n');
+
+      Tone.getTransport().start();
     } else {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      Tone.getTransport().stop();
+      if (repeatId !== null) {
+        Tone.getTransport().clear(repeatId);
+      }
     }
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      Tone.getTransport().stop();
+      if (repeatId !== null) {
+        Tone.getTransport().clear(repeatId);
+      }
     };
-  }, [isPlaying, beats]);
+  }, [isPlaying]);
 
   useEffect(() => {
     gameIntervalRef.current = setInterval(() => {
@@ -98,10 +120,12 @@ export const BeatMakingGame: React.FC<BeatMakingGameProps> = ({ onComplete, onCl
       newBeats[trackIndex] = [...newBeats[trackIndex]];
       newBeats[trackIndex][stepIndex] = !newBeats[trackIndex][stepIndex];
       
-      // Play sound when toggling on
+      // Play sound and tactile feedback when toggling
       if (newBeats[trackIndex][stepIndex]) {
         trackSounds[trackIndex]();
-        gameAudio.playClick();
+        void gameAudio.playTactileClick(0.7);
+      } else {
+        void gameAudio.playTactileClick(0.4);
       }
       
       // Calculate score based on pattern complexity
@@ -114,20 +138,19 @@ export const BeatMakingGame: React.FC<BeatMakingGameProps> = ({ onComplete, onCl
 
   const handleComplete = async () => {
     setIsPlaying(false);
-    if (intervalRef.current) clearInterval(intervalRef.current);
+    Tone.getTransport().stop();
     if (gameIntervalRef.current) clearInterval(gameIntervalRef.current);
     
-    // Restore background music volume with slower fade
     if (backgroundMusic) {
       await backgroundMusic.restoreVolume(1500);
     }
     
-    // Bonus for creating rhythmic patterns
     const patternBonus = beats.some(track => 
       track.filter(Boolean).length >= 2
     ) ? 50 : 0;
     
     gameAudio.playSuccess();
+    triggerProjectCompleteJuice();
     onComplete(score + patternBonus);
   };
 

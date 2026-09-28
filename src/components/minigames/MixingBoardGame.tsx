@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Check, SlidersHorizontal, Trophy } from 'lucide-react';
 import { gameAudio } from '@/utils/audioSystem';
+import { triggerMilestoneCelebration, triggerProjectCompleteJuice } from '@/utils/confettiJuice';
 import { KenneyButton, MinigameChrome } from './MinigameChrome';
 import './mixing-board.css';
 
@@ -41,8 +42,15 @@ export const MixingBoardGame: React.FC<MixingBoardGameProps> = ({ onComplete, on
 
   useEffect(() => {
     if (phase === 'result') {
-      if (correct === 4) gameAudio.playPerfectMix();
-      else gameAudio.playCompleteProject();
+      if (correct === 4) {
+        gameAudio.playPerfectMix();
+        triggerMilestoneCelebration('S', 'Platinum');
+      } else if (correct >= 2) {
+        gameAudio.playCompleteProject();
+        triggerProjectCompleteJuice();
+      } else {
+        gameAudio.playCompleteProject();
+      }
     }
   }, [phase, correct]);
 
@@ -69,14 +77,19 @@ export const MixingBoardGame: React.FC<MixingBoardGameProps> = ({ onComplete, on
     const previous = tracks[index];
     const next = { ...previous, level: Math.max(0, Math.min(100, Math.round(value))) };
     if (next.level === previous.level) return;
-    if (inZone(next) && !inZone(previous)) gameAudio.playZoneEnter();
-    else gameAudio.playSliderMove();
+    if (inZone(next) && !inZone(previous)) {
+      gameAudio.playZoneEnter();
+      void gameAudio.playTactileClick(0.5);
+    } else {
+      gameAudio.playSliderMove();
+    }
     setTracks(tracks.map((track, i) => i === index ? next : track));
   };
 
   const collectReward = () => {
     if (phase !== 'result' || collected.current) return;
     collected.current = true;
+    void gameAudio.playTactileClick();
     onComplete(score);
   };
 
