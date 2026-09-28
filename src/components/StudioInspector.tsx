@@ -10,6 +10,8 @@ import {
 } from '@/hooks/useGameActions';
 import { checkDailyChallenge } from '@/utils/dailyChallenges';
 import { Button } from '@/components/ui/button';
+import { CalendarDays, Guitar, Mic2, Phone, PhoneCall, PhoneOff, ShoppingCart, SlidersHorizontal, Tv, X } from 'lucide-react';
+import { gameAudio } from '@/utils/audioSystem';
 
 /**
  * Contextual inspector popup (bead goj.2).
@@ -43,13 +45,27 @@ const ANCHORS: Record<StudioHotspotId, string> = {
   liveRoom: 'bottom-9 right-3',
 };
 
-const TITLES: Record<StudioHotspotId, string> = {
-  phone: '📞 Booking Line',
-  clock: '🕐 Studio Calendar',
-  tv: '📺 Charts TV',
-  shelf: '🎸 Gear Locker',
-  console: '🎛 Mixing Console',
-  liveRoom: '🎤 Live Room',
+const INSPECTOR_META = {
+  phone: { label: 'Booking Line', icon: Phone },
+  clock: { label: 'Studio Calendar', icon: CalendarDays },
+  tv: { label: 'Charts TV', icon: Tv },
+  shelf: { label: 'Gear Locker', icon: Guitar },
+  console: { label: 'Mixing Console', icon: SlidersHorizontal },
+  liveRoom: { label: 'Live Room', icon: Mic2 },
+} as const satisfies Record<StudioHotspotId, { label: string; icon: typeof Phone }>;
+
+const ActionIcon: React.FC<{ icon: typeof Phone }> = ({ icon: Icon }) => (
+  <Icon aria-hidden="true" className="mr-1.5 h-3.5 w-3.5" />
+);
+
+const InspectorTitle: React.FC<{ hotspot: StudioHotspotId }> = ({ hotspot }) => {
+  const { label, icon: Icon } = INSPECTOR_META[hotspot];
+  return (
+    <span className="flex items-center gap-1.5 text-xs font-black tracking-widest text-amber-200">
+      <Icon aria-hidden="true" className="h-4 w-4" />
+      {label}
+    </span>
+  );
 };
 
 const Shell: React.FC<{
@@ -67,18 +83,21 @@ const Shell: React.FC<{
     <div className="absolute inset-0 bg-black/25" />
     <div
       role="dialog"
-      aria-label={TITLES[hotspot]}
+      aria-label={INSPECTOR_META[hotspot].label}
       className={`absolute ${ANCHORS[hotspot]} w-72 max-w-[80vw] max-h-[78%] overflow-y-auto rounded-lg border border-amber-400/30 bg-[#0e1320]/95 backdrop-blur-md shadow-2xl shadow-black/60 animate-inspector-pop`}
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-black/40 sticky top-0">
-        <span className="text-xs font-black tracking-widest text-amber-200">{TITLES[hotspot]}</span>
+        <InspectorTitle hotspot={hotspot} />
         <button
-          onClick={onClose}
+          onClick={() => {
+            void gameAudio.playTactileClick();
+            onClose();
+          }}
           aria-label="Close inspector"
-          className="text-gray-400 hover:text-white text-sm leading-none px-1"
+          className="rounded p-1 text-gray-400 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
         >
-          ✕
+          <X aria-hidden="true" className="h-4 w-4" />
         </button>
       </div>
       <div className="p-3 space-y-3 text-sm text-gray-100">{children}</div>
@@ -113,12 +132,18 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   onOpenDashboardTab,
   onConsoleFocus,
 }) => {
-  // Esc closes the inspector.
+  // Esc closes the inspector, and opening plays tactile gear switch.
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    void gameAudio.playGearSwitch(0.4);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        void gameAudio.playTactileClick();
+        onClose();
+      }
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [hotspot, onClose]);
 
   const project = gameState.activeProject;
 
@@ -157,9 +182,10 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
             className={`w-full h-7 text-xs border-white/20 ${ready ? 'text-amber-200 hover:bg-amber-500/10' : 'text-gray-500'}`}
             onClick={() => onRefreshProjects?.()}
           >
+            <ActionIcon icon={ready ? PhoneCall : PhoneOff} />
             {ready
-              ? `📞 Chase New Gigs — $${GIG_REFRESH_COST}`
-              : `📵 No leads — ${cooldown}/${GIG_REFRESH_COOLDOWN_DAYS} days`}
+              ? `Chase New Gigs — $${GIG_REFRESH_COST}`
+              : `No leads — ${cooldown}/${GIG_REFRESH_COOLDOWN_DAYS} days`}
           </Button>
         </div>
       </Shell>
@@ -196,7 +222,8 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           className="w-full h-8 bg-purple-600 hover:bg-purple-700 text-white text-xs"
           onClick={() => { onAdvanceDay(); onClose(); }}
         >
-          🕐 Advance to Day {gameState.currentDay + 1}
+          <ActionIcon icon={CalendarDays} />
+          Advance to Day {gameState.currentDay + 1}
         </Button>
         {(() => {
           const challenge = checkDailyChallenge(gameState);
@@ -246,7 +273,8 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           className="w-full h-7 text-xs border-white/20 text-gray-200 hover:bg-white/10"
           onClick={() => { onOpenDashboardTab('charts'); onClose(); }}
         >
-          📺 Open Full Charts
+          <ActionIcon icon={Tv} />
+          Open Full Charts
         </Button>
       </Shell>
     );
@@ -282,7 +310,8 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           className="w-full h-7 text-xs border-white/20 text-gray-200 hover:bg-white/10"
           onClick={() => { onOpenDashboardTab('studio'); onClose(); }}
         >
-          🛒 Equipment Shop
+          <ActionIcon icon={ShoppingCart} />
+          Equipment Shop
         </Button>
       </Shell>
     );
@@ -302,7 +331,8 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
             className="w-full h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white"
             onClick={() => onConsoleFocus?.()}
           >
-            🎛 Jump to Work Panel
+            <ActionIcon icon={SlidersHorizontal} />
+            Jump to Work Panel
           </Button>
         </Shell>
       );
@@ -326,7 +356,8 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           className="w-full h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white"
           onClick={() => { onConsoleFocus?.(); onClose(); }}
         >
-          🎛 Go to Work Panel
+          <ActionIcon icon={SlidersHorizontal} />
+          Go to Work Panel
         </Button>
       </Shell>
     );
@@ -372,4 +403,3 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
 };
 
 export default StudioInspector;
-

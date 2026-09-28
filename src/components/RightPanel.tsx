@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { GamePanel } from '@/components/ui/GamePanel';
+import { KenneyButton } from '@/components/ui/KenneyButton';
 import { GameState, PlayerAttributes, StaffMember } from '@/types/game';
 import { SkillsModal } from '@/components/modals/SkillsModal';
 import { AttributesModal } from '@/components/modals/AttributesModal';
@@ -13,12 +15,25 @@ import { ChartsPanel } from '@/components/ChartsPanel';
 import { StudioProgressionPanel } from '@/components/StudioProgressionPanel'; // Add Studio Progression Panel
 import { toast } from '@/hooks/use-toast'; // Import toast
 import { ProgressionSystem } from '@/services/ProgressionSystem';
-import { getOperationalStudioRooms, getOccupiedRoomIds } from '@/utils/studioRoomUtils';
+import { getOperationalStudioRooms, getOccupiedRoomIds, applyStudioRoomPurchase, getStudioRoomPurchaseAvailability } from '@/utils/studioRoomUtils';
 import { calculateStaffProjectFit } from '@/utils/staffFitUtils';
 import { SynergyEncyclopedia } from '@/components/synergy/SynergyEncyclopedia';
+import { BarChart3, Building2, Guitar, Sparkles, TrendingUp, Users } from 'lucide-react';
+import { gameAudio } from '@/utils/audioSystem';
+
+type DashboardTab = 'studio' | 'skills' | 'bands' | 'charts' | 'staff' | 'synergies';
+
+const DASHBOARD_TABS = [
+  { id: 'studio', label: 'Studio', icon: Building2 },
+  { id: 'skills', label: 'Skills', icon: TrendingUp },
+  { id: 'staff', label: 'Staff', icon: Users },
+  { id: 'bands', label: 'Bands', icon: Guitar },
+  { id: 'charts', label: 'Charts', icon: BarChart3 },
+  { id: 'synergies', label: 'Recipes', icon: Sparkles },
+] as const satisfies ReadonlyArray<{ id: DashboardTab; label: string; icon: typeof Building2 }>;
 
 export interface RightPanelProps {
-  requestedTab?: 'studio' | 'skills' | 'bands' | 'charts' | 'staff' | 'synergies';
+  requestedTab?: DashboardTab;
   gameState: GameState;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
   spendPerkPoint: (attribute: keyof PlayerAttributes) => void;
@@ -58,7 +73,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   startResearchMod,
   requestedTab
 }) => {
-  const [activeTab, setActiveTab] = useState<'studio' | 'skills' | 'bands' | 'charts' | 'staff' | 'synergies'>(requestedTab ?? 'studio');
+  const [activeTab, setActiveTab] = useState<DashboardTab>(requestedTab ?? 'studio');
   useEffect(() => { if (requestedTab) setActiveTab(requestedTab); }, [requestedTab]);
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [showAttributesModal, setShowAttributesModal] = useState(false);
@@ -95,52 +110,11 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   const roomExpansionLimit = ProgressionSystem.getRoomExpansionLimit(gameState);
 
   const purchaseStudioRoom = (roomId: string) => {
-    const room = gameState.studioRooms.find(candidate => candidate.id === roomId);
-    if (!room || room.unlocked) return;
-
-    if (gameState.playerData.level < room.requiredPlayerLevel) {
-      toast({
-        title: "🔒 Room Not Available Yet",
-        description: `Reach level ${room.requiredPlayerLevel} to consider this expansion.`,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (unlockedRooms.length >= roomExpansionLimit) {
-      toast({
-        title: "🏢 Expansion Milestone Required",
-        description: "Grow your staff and studio track record before adding another production suite.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (gameState.money < room.purchaseCost) {
-      toast({
-        title: "💰 Insufficient Funds",
-        description: `You need $${room.purchaseCost.toLocaleString()} for ${room.name}.`,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setGameState(prev => ({
-      ...prev,
-      money: prev.money - room.purchaseCost,
-      studioRooms: prev.studioRooms.map(candidate =>
-        candidate.id === room.id
-          ? { ...candidate, unlocked: true }
-          : candidate
-      )
-    }));
-
-    toast({
-      title: "🏢 Studio Expanded",
-      description: `${room.name} is now operational. You have another physical booking lane.`
-    });
+    void gameAudio.playGearSwitch();
+    setGameState(prev => applyStudioRoomPurchase(prev, roomId, ProgressionSystem.getRoomExpansionLimit(prev)));
   };
   const applyModToEquipment = (equipmentId: string, modId: string | null) => {
+    void gameAudio.playGearSwitch();
     setGameState(prev => ({
       ...prev,
       ownedEquipment: prev.ownedEquipment.map(eq => 
@@ -151,78 +125,46 @@ export const RightPanel: React.FC<RightPanelProps> = ({
     }));
   };
 
+  const selectTab = (tab: DashboardTab) => {
+    if (tab === activeTab) return;
+    setActiveTab(tab);
+    void gameAudio.playTactileClick();
+  };
+
   return (
-    <Card className="bg-slate-900/95 border-slate-700/80 p-3 h-full min-h-0 flex flex-col overflow-hidden backdrop-blur-md animate-slide-in-right">
+    <GamePanel className="p-3 h-full min-h-0 flex flex-col overflow-hidden backdrop-blur-md animate-slide-in-right">
       {/* Tab Navigation (Pinned) */}
-      <div className="flex shrink-0 mb-2.5 bg-slate-950/80 border border-slate-800 rounded-lg p-1">
-        <button
-          onClick={() => setActiveTab('studio')}
-          className={`flex-1 py-1.5 px-1.5 rounded-md text-xs font-semibold transition-colors ${
-            activeTab === 'studio'
-              ? 'bg-blue-600 text-white shadow'
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          🏢 Studio
-        </button>
-        <button
-          onClick={() => setActiveTab('skills')}
-          className={`flex-1 py-1.5 px-1.5 rounded-md text-xs font-semibold transition-colors ${
-            activeTab === 'skills'
-              ? 'bg-blue-600 text-white shadow'
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          📊 Skills
-        </button>
-        <button
-          onClick={() => setActiveTab('staff')}
-          className={`flex-1 py-1.5 px-1.5 rounded-md text-xs font-semibold transition-colors ${
-            activeTab === 'staff'
-              ? 'bg-blue-600 text-white shadow'
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          👥 Staff
-        </button>
-        <button
-          onClick={() => setActiveTab('bands')}
-          className={`flex-1 py-1.5 px-1.5 rounded-md text-xs font-semibold transition-colors ${
-            activeTab === 'bands'
-              ? 'bg-blue-600 text-white shadow'
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          🎸 Bands
-        </button>
-        <button
-          onClick={() => setActiveTab('charts')}
-          className={`flex-1 py-1.5 px-1.5 rounded-md text-xs font-semibold transition-colors ${
-            activeTab === 'charts'
-              ? 'bg-blue-600 text-white shadow'
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          📈 Charts
-        </button>
-        <button
-          onClick={() => setActiveTab('synergies')}
-          className={`flex-1 py-1.5 px-1 rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1 ${
-            activeTab === 'synergies'
-              ? 'bg-amber-600 text-white shadow'
-              : 'text-gray-400 hover:text-white'
-          }`}
-          title="Studio Recipe & Synergy Codex"
-        >
-          <span>✨</span>
-          <span>Recipes</span>
-          {(gameState.discoveredSynergies?.length ?? 0) > 0 && (
-            <span className="text-[9px] bg-amber-400/20 text-amber-300 font-bold px-1 rounded-full">
-              {gameState.discoveredSynergies?.length}
-            </span>
-          )}
-        </button>
-      </div>
+      <nav
+        aria-label="Management panels"
+        className="grid grid-cols-6 shrink-0 mb-2.5 overflow-hidden rounded-lg border border-slate-700/80 bg-gradient-to-b from-slate-700/70 to-slate-950 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_4px_14px_rgba(0,0,0,0.3)]"
+      >
+        {DASHBOARD_TABS.map(({ id, label, icon: Icon }) => {
+          const selected = activeTab === id;
+          const discoveryCount = id === 'synergies' ? (gameState.discoveredSynergies?.length ?? 0) : 0;
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => selectTab(id)}
+              title={id === 'synergies' ? 'Studio Recipe & Synergy Codex' : label}
+              className={`relative flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[10px] font-bold leading-none transition-all focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-950 ${
+                selected
+                  ? 'bg-gradient-to-b from-slate-950 to-slate-800 text-amber-200 shadow-[inset_0_2px_5px_rgba(0,0,0,0.9),inset_0_-1px_0_rgba(255,255,255,0.08)]'
+                  : 'text-slate-400 hover:bg-white/5 hover:text-slate-100 active:translate-y-px'
+              }`}
+            >
+              <Icon aria-hidden="true" className={`h-4 w-4 ${selected ? 'drop-shadow-[0_0_5px_rgba(251,191,36,0.45)]' : ''}`} strokeWidth={2.1} />
+              <span className="truncate">{label}</span>
+              {discoveryCount > 0 && (
+                <span className="absolute right-1 top-1 min-w-3.5 rounded-full bg-amber-400 px-1 text-[8px] leading-3.5 text-slate-950 shadow">
+                  {discoveryCount}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </nav>
 
       {/* Tab Content (Scrollable Container) */}
       <div className="flex-1 min-h-0 overflow-y-auto pr-1">
@@ -232,20 +174,21 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-gradient-to-r from-purple-950/80 via-indigo-950/70 to-slate-900 border border-purple-500/50 shadow-md">
               <div className="min-w-0">
                 <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <span className="text-amber-300">☀ Day {gameState.currentDay}</span>
+                  <span className="text-amber-300 font-extrabold">☀ Day {gameState.currentDay}</span>
                   <span className="text-[10px] text-purple-300 font-medium">({gameState.currentYear})</span>
                 </div>
                 <div className="text-[10px] text-slate-400 truncate">
                   Advances calendar & restores producer sessions
                 </div>
               </div>
-              <Button 
+              <KenneyButton 
                 onClick={advanceDay} 
                 size="sm" 
-                className="bg-purple-600 hover:bg-purple-500 text-white font-bold px-3 text-xs shrink-0 shadow-lg shadow-purple-950/50"
+                variant="yellow"
+                className="shrink-0"
               >
                 Advance Day ❯
-              </Button>
+              </KenneyButton>
             </div>
 
             {/* Studio Progression Panel */}
@@ -270,7 +213,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                   const occupied = occupiedRoomIds.has(room.id);
                   const levelLocked = gameState.playerData.level < room.requiredPlayerLevel;
                   const expansionLocked = !room.unlocked && unlockedRooms.length >= roomExpansionLimit;
-                  const canAfford = gameState.money >= room.purchaseCost;
+                  const availability = getStudioRoomPurchaseAvailability(gameState, room.id, roomExpansionLimit);
 
                   return (
                     <div
@@ -297,21 +240,24 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                             {occupied ? 'In session' : 'Available'}
                           </span>
                         ) : (
-                          <Button
+                          <KenneyButton
                             size="sm"
-                            variant="outline"
-                            disabled={levelLocked || expansionLocked || !canAfford}
+                            variant={availability.available ? 'green' : 'grey'}
+                            disabled={!availability.available}
                             onClick={() => purchaseStudioRoom(room.id)}
-                            className="h-6 text-[10px] px-2 border-gray-600"
+                            className="text-[10px] py-0.5 px-2"
                           >
                             {levelLocked
                               ? `Lvl ${room.requiredPlayerLevel}`
                               : expansionLocked
                                 ? 'Milestone'
                                 : `Buy $${room.purchaseCost.toLocaleString()}`}
-                          </Button>
+                          </KenneyButton>
                         )}
                       </div>
+                      {!room.unlocked && availability.available === false && (
+                        <p className="mt-2 text-[10px] leading-relaxed text-amber-200/80">{availability.explanation}</p>
+                      )}
                     </div>
                   );
                 })}
@@ -343,17 +289,17 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                             <p className="text-[10px] text-gray-400">Condition: {equip.condition}%</p>
                           </div>
                           {gameState.researchedMods && gameState.researchedMods.length > 0 && (
-                            <Button
+                            <KenneyButton
                               size="sm"
-                              variant="outline"
-                              className="text-[10px] border-gray-600 text-gray-300 hover:bg-gray-700/50 hover:text-white px-2 py-0.5 h-6 bg-gray-800/50 shrink-0"
+                              variant="blue"
+                              className="text-[10px] py-0.5 px-2 shrink-0"
                               onClick={() => {
                                 setSelectedEquipmentForModding(equip);
                                 setShowEquipmentModModal(true);
                               }}
                             >
                               Mods
-                            </Button>
+                            </KenneyButton>
                           )}
                         </div>
                       </Card>
@@ -372,12 +318,12 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           <div className="text-gray-300">XP: {gameState.playerData.xp} / {gameState.playerData.xpToNextLevel}</div>
           <div className="text-green-400">Perk Points: {gameState.playerData.perkPoints}</div>
 
-          <Button onClick={() => setShowAttributesModal(true)} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+          <KenneyButton onClick={() => setShowAttributesModal(true)} variant="blue" size="md" className="w-full">
             Upgrade Attributes
-          </Button>
-          <Button onClick={() => setShowSkillsModal(true)} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+          </KenneyButton>
+          <KenneyButton onClick={() => setShowSkillsModal(true)} variant="blue" size="md" className="w-full">
             View Studio Skills
-          </Button>
+          </KenneyButton>
 
           <div className="mt-4">
             <StudioProgressionPanel gameState={gameState} />
@@ -393,12 +339,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             Hire and manage studio staff to help with projects
           </div>
 
-          <Button 
+          <KenneyButton 
             onClick={refreshCandidates} 
-            className="w-full bg-green-600 hover:bg-green-700 text-white mb-4"
+            variant="green"
+            size="md"
+            className="w-full mb-4"
           >
             🔄 Refresh Candidates
-          </Button>
+          </KenneyButton>
 
           {/* Staff candidates section */}
           <div className="space-y-2">
@@ -429,13 +377,15 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                       Specialty: {candidate.genreAffinity.genre} (+{candidate.genreAffinity.bonus}%)
                     </div>
                   )}
-                  <Button 
+                  <KenneyButton 
                     onClick={() => hireStaff(index)}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-1"
+                    variant={gameState.money >= candidate.salary * 3 ? 'green' : 'grey'}
+                    size="sm"
+                    className="w-full"
                     disabled={gameState.money < candidate.salary * 3}
                   >
                     {gameState.money >= candidate.salary * 3 ? `Hire for $${candidate.salary * 3}` : 'Insufficient Funds'}
-                  </Button>
+                  </KenneyButton>
                 </div>
               ))
             ) : (
@@ -477,45 +427,55 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                   })()}
                   <div className="flex gap-2 mt-2">
                     {staff.status === 'Idle' && (
-                      <Button 
+                      <KenneyButton 
                         onClick={() => assignStaffToProject(staff.id)}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-1"
+                        variant="blue"
+                        size="sm"
+                        className="flex-1 text-xs"
                       >
-                        Assign to Project
-                      </Button>
+                        Assign
+                      </KenneyButton>
                     )}
                     {staff.status === 'Working' && (
-                      <Button 
+                      <KenneyButton 
                         onClick={() => unassignStaffFromProject(staff.id)}
-                        className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs py-1"
+                        variant="red"
+                        size="sm"
+                        className="flex-1 text-xs"
                       >
                         Unassign
-                      </Button>
+                      </KenneyButton>
                     )}
-                    <Button 
+                    <KenneyButton 
                       onClick={() => toggleStaffRest(staff.id)}
-                      className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white text-xs py-1"
+                      variant="yellow"
+                      size="sm"
+                      className="flex-1 text-xs"
                     >
-                      {staff.status === 'Resting' ? 'End Rest' : 'Rest'}
-                    </Button>
+                      {staff.status === 'Resting' ? 'Wake' : 'Rest'}
+                    </KenneyButton>
                     {staff.status === 'Idle' && (
-                      <Button 
+                      <KenneyButton 
                         onClick={() => openTrainingModal(staff)}
-                        className="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-xs py-1"
+                        variant="blue"
+                        size="sm"
+                        className="flex-1 text-xs"
                       >
                         Train
-                      </Button>
+                      </KenneyButton>
                     )}
                     {staff.role === 'Engineer' && staff.status === 'Idle' && (
-                      <Button
+                      <KenneyButton
                         onClick={() => {
                           // setSelectedEngineerForResearch(staff); // ResearchModal will handle staff selection internally
                           setShowResearchModal(true);
                         }}
-                        className="flex-1 bg-teal-600 hover:bg-teal-700 text-white text-xs py-1"
+                        variant="green"
+                        size="sm"
+                        className="flex-1 text-xs"
                       >
-                        Research Mod
-                      </Button>
+                        Research
+                      </KenneyButton>
                     )}
                   </div>
                 </div>
