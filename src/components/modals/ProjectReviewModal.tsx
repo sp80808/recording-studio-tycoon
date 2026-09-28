@@ -13,8 +13,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Progress } from '@/components/ui/progress'; // Assuming Progress component for XP bars
 import { gameAudio } from '@/utils/audioSystem'; // For sound effects
 import { X } from 'lucide-react'; // For skip button icon
-import { generateAlbumArt, generateReview } from '@/services/pollinations';
+import { generateReview } from '@/services/pollinations';
 import { AlbumCoverArt } from '@/components/AlbumCoverArt';
+import { triggerMilestoneCelebration } from '@/utils/confettiJuice';
 
 interface AnimatedNumberProps {
   targetValue: number;
@@ -184,9 +185,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
   const [animatedOverallQualityValue, setAnimatedOverallQualityValue] = useState(0);
   const [typedSnippet, setTypedSnippet] = useState("");
   const [reviewText, setReviewText] = useState<string | null>(null);
-  const [artUrl, setArtUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generationError, setGenerationError] = useState<string | null>(null);
 
   const totalAnimationStages = (report?.skillBreakdown.length || 0) + 3; 
 
@@ -212,18 +211,9 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
   useEffect(() => {
     if (isOpen && report) {
       setIsGenerating(true);
-      setGenerationError(null);
-      Promise.all([
-        generateReview(report.projectTitle),
-        generateAlbumArt(report.projectTitle)
-      ])
-        .then(([review, art]) => {
-          setReviewText(review);
-          setArtUrl(art);
-        })
-        .catch((err) => {
-          setGenerationError(err.message);
-        })
+      generateReview(report.projectTitle)
+        .then(setReviewText)
+        .catch(() => setReviewText(report.reviewSnippet))
         .finally(() => {
           setIsGenerating(false);
         });
@@ -254,6 +244,12 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
         if (currentQuality >= targetQuality) {
           setAnimatedOverallQualityValue(targetQuality);
           clearInterval(intervalId);
+          if (targetQuality >= 80) {
+            triggerMilestoneCelebration(
+              targetQuality >= 90 ? 'S' : 'A',
+              targetQuality >= 95 ? 'Platinum' : targetQuality >= 85 ? 'Gold' : undefined
+            );
+          }
           handleNextAnimation();
         } else {
           setAnimatedOverallQualityValue(Math.floor(currentQuality));
@@ -388,7 +384,6 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
                     genre={report.genre}
                     artist={report.assignedPerson?.name || 'Studio Tycoon'}
                     score={report.overallQualityScore}
-                    imageUrl={artUrl}
                     showVinylPeek={true}
                   />
                   {reviewText && (
