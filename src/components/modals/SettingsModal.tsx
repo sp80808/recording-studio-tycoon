@@ -1,4 +1,5 @@
 import React, { useState } from 'react'; // Added useState import
+import { GameConfirmDialog } from '@/components/ui/GameConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
@@ -35,6 +36,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const [exportedSaveString, setExportedSaveString] = useState<string | null>(null);
   const [importSaveString, setImportSaveString] = useState<string>('');
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
 
   if (!isOpen) return null;
@@ -73,9 +75,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   const handleResetGame = () => {
-    if (onResetGame && confirm('Are you sure you want to reset all game progress? This cannot be undone.')) {
+    if (onResetGame) setShowResetConfirm(true);
+  };
+
+  const confirmResetGame = () => {
+    if (onResetGame) {
       onResetGame();
       gameAudio.playClick();
+      setShowResetConfirm(false);
       onClose();
     }
   };
@@ -127,6 +134,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   return (
+    <>
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <Card className="w-full max-w-2xl bg-gray-900 border-gray-600 p-6 m-4 max-h-[90vh] overflow-y-auto">
         <div className="text-center mb-6">
@@ -440,5 +448,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
       </Card>
     </div>
+
+    <GameConfirmDialog
+      isOpen={showResetConfirm}
+      title="Reset Game Progress"
+      message="Are you sure you want to reset all game progress? This cannot be undone."
+      confirmLabel="Reset Everything"
+      cancelLabel="Keep Playing"
+      variant="danger"
+      onConfirm={confirmResetGame}
+      onCancel={() => setShowResetConfirm(false)}
+    />
+    </>
   );
 };

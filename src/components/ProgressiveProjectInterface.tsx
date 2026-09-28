@@ -74,14 +74,13 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
   // Render single project view for early game
   const renderSingleProjectView = () => {
     return (
-      <div className="space-y-6 h-full overflow-y-auto p-1">        
+      <div className="h-full flex flex-col min-h-0 overflow-hidden p-0.5">        
         {/* Hint about upcoming multi-project capability */}
         {progressionStatus.progressToNext > 0.7 && progressionStatus.nextMilestone && (
-          <Alert className="border-yellow-600 bg-gray-800">
+          <Alert className="border-yellow-600/70 bg-gray-900/90 shrink-0 mb-2 py-2">
             <TrendingUp className="w-4 h-4 text-yellow-400" />
-            <AlertDescription className="text-yellow-200">
-              <strong>Studio Expansion Coming Soon!</strong> You're close to unlocking multi-project management. 
-              Keep growing your studio to handle multiple projects simultaneously.
+            <AlertDescription className="text-yellow-200 text-xs">
+              <strong>Studio Expansion Coming Soon:</strong> You're close to unlocking multi-project management. 
             </AlertDescription>
           </Alert>
         )}

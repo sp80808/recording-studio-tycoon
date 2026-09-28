@@ -60,6 +60,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const [projectDataForCompletionCall, setProjectDataForCompletionCall] = useState<Project | null>(null);
   const [pulseAnimation, setPulseAnimation] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastSliderAudioRef = useRef(0);
 
   // Unlock condition for Apply Optimal Focus button
   const managementSkillLevel = gameState.playerData.skills.management?.level || 0;
@@ -127,13 +128,13 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
         <Card className="flex-1 bg-gray-800/90 border-gray-600 p-6 backdrop-blur-sm">
           <div className="text-center text-gray-400 animate-fade-in">
             <div className="text-6xl mb-4 animate-pulse">🎵</div>
-            <h3 className="text-xl font-bold mb-2 text-white">No Active Project</h3>
-            <p className="mb-4">Select a project from the "Projects" tab to start working</p>
+            <h3 className="text-xl font-bold mb-2 text-white">Studio Ready</h3>
+            <p className="mb-4">Choose an artist enquiry, then bring their session into the room.</p>
             <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4 text-sm text-blue-300">
-              <p className="font-semibold mb-2">📱 How to get started:</p>
-              <p>1. Switch to the "Projects" tab (swipe left or use arrows)</p>
-              <p>2. Choose a project and click "Start Project"</p>
-              <p>3. Return to this "Studio" tab to work on it</p>
+              <p className="font-semibold mb-2">📱 Your next move:</p>
+              <p>1. Browse the Artist Enquiries board</p>
+              <p>2. Book a session that fits your room and crew</p>
+              <p>3. Return here to run the recording session</p>
             </div>
           </div>
         </Card>
@@ -341,6 +342,26 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const isCurrentStageComplete = currentStage && currentStage.workUnitsCompleted >= currentStage.workUnitsBase;
   const isProjectComplete = project.stages.every(stage => stage.completed);
 
+  const playSliderSoundThrottled = () => {
+    const now = Date.now();
+    if (now - lastSliderAudioRef.current > 80) {
+      playSound('slider.wav', 0.25);
+      lastSliderAudioRef.current = now;
+    }
+  };
+
+  const handleFocusChange = (key: keyof FocusAllocation, value: number) => {
+    playSliderSoundThrottled();
+    const newFocus = { ...projectFocus, [key]: value };
+    setGameState(prev => ({
+      ...prev,
+      activeProject: prev.activeProject ? { ...prev.activeProject, focusAllocation: newFocus } : null,
+      activeProjects: prev.activeProjects.map(p => 
+        p.id === project.id ? { ...p, focusAllocation: newFocus } : p
+      ),
+    }));
+  };
+
   return (
     <>
       <OrbAnimationStyles />
@@ -370,341 +391,162 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
         />
       )}
       
-      {/* Make this div scrollable and ensure it fills height */}
-      <div ref={containerRef} className="flex-1 space-y-4 relative overflow-y-auto flex flex-col">
-        {/* Studio Header */}
-        <div className="bg-gradient-to-r from-purple-900/30 to-blue-900/30 border border-purple-500/30 rounded-lg p-3 mb-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">🎵</span>
-              <div>
-                <h2 className="text-lg font-bold text-white">Studio Workspace</h2>
-                <p className="text-sm text-gray-300">Work on your current project</p>
+      {/* Studio Workspace Card: Scaled DAW / Console Layout */}
+      <div 
+        ref={containerRef} 
+        className="flex-1 min-h-0 flex flex-col h-full overflow-hidden bg-slate-900/95 border border-slate-700/80 rounded-xl p-3 shadow-2xl backdrop-blur-md"
+      >
+        {/* Pinned Top Bar: Project Meta & LED telemetry */}
+        <div className="shrink-0 mb-2.5 bg-gradient-to-r from-slate-950 via-indigo-950/70 to-slate-950 border border-slate-800/90 rounded-lg p-2.5 shadow-inner">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse">
+                  ● REC
+                </span>
+                <h3 className="text-sm sm:text-base font-bold text-white truncate flex items-center gap-1.5">
+                  {project.title}
+                </h3>
+              </div>
+              <div className="text-xs text-slate-400 flex flex-wrap items-center gap-2 mt-0.5">
+                <span>{project.genre} · {project.clientName || project.clientType}</span>
+                <span className="text-emerald-400 font-semibold">💰 ${Math.round(project.payoutBase)}</span>
+                <span className="text-amber-300">⭐ Diff {project.difficulty}</span>
               </div>
             </div>
-            <div className="text-sm text-gray-400">
-              Project {project.currentStageIndex + 1}/{project.stages.length} stages
+
+            <div className="flex items-center gap-3 text-xs tabular-nums">
+              <div className="text-right">
+                <div className="text-[11px] text-amber-300 font-semibold">{project.durationDaysTotal}d duration</div>
+                <div className="text-[10px] text-slate-400">{Math.round(project.workSessionCount || 0)} sessions</div>
+              </div>
+              <div className="flex items-center gap-2 bg-slate-900/90 px-2 py-1 rounded border border-slate-700/70">
+                <div id="creativity-points" data-creativity-target className="text-sky-400 font-bold flex items-center gap-1 text-xs">
+                  <span>🎨</span> {Math.round(project.accumulatedCPoints || 0)}
+                </div>
+                <div className="w-px h-3 bg-slate-700" />
+                <div id="technical-points" data-technical-target className="text-emerald-400 font-bold flex items-center gap-1 text-xs">
+                  <span>⚙️</span> {Math.round(project.accumulatedTPoints || 0)}
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        
-        {/* The Card should not prevent scrolling; its height can be auto based on content */}
-        <Card className="bg-gray-800/50 border-gray-600 p-6 backdrop-blur-sm animate-scale-in flex-grow flex flex-col">
-          {/* Added flex-grow and flex flex-col to allow inner content to manage space */}
-          <div className="flex-grow space-y-4"> {/* Added a wrapper for scrollable content, if Card itself is not meant to scroll */}
-            <div className="flex justify-between items-start mb-4">
-              <div className="animate-fade-in">
-                <h3 className="text-xl font-bold text-white mb-1">
-                  {project.title}
-                  {gameState.activeProject && !isProjectComplete && (
-                    <>
-                      <span className="ml-1 text-2xl animate-fader-move" role="img" aria-label="recording">🎤</span>
-                    </>
-                  )}
-                </h3>
-                <p className="text-gray-300 text-sm mb-2">{project.genre} • {project.clientType}</p>
-                <div className="flex gap-4 text-sm">
-                  <span className="text-green-400 animate-pulse">💰 ${project.payoutBase}</span>
-                  <span className="text-blue-400">🎵 {project.genre}</span>
-                  <span className="text-purple-400">⭐ {project.difficulty}</span>
+
+        {/* Scrollable Center Body: Meters, Sliders, Stage info */}
+        <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2.5">
+          {/* Production Queue Panel (feature-flagged) */}
+          {showAdvancedQueue && (
+            <div>
+              <ProductionQueuePanel roomId={project.bookingRoomId || project.id} />
+            </div>
+          )}
+
+          {/* Optional intervention opportunity */}
+          {autoTriggeredMinigame && (
+            <div className="p-3 bg-gradient-to-r from-purple-900/50 to-blue-900/50 border border-purple-500/70 rounded-lg animate-scale-in">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h4 className="text-yellow-300 font-semibold text-xs mb-0.5">🎯 Optional Studio Intervention</h4>
+                  <p className="text-gray-300 text-xs">{autoTriggeredMinigame.reason}</p>
                 </div>
+                <div className="text-xl">🎮</div>
               </div>
-              <div className="text-right animate-fade-in" style={{ animationDelay: '0.1s' }}>
-                <div className="text-yellow-400 font-bold">{project.durationDaysTotal} days total</div>
-                <div className="text-gray-400 text-sm">Work sessions: {project.workSessionCount || 0}</div>
-                <div className="mt-2 space-y-1">
-                  <div id="creativity-points" data-creativity-target className="text-blue-400 text-sm">
-                    🎨 {project.accumulatedCPoints} creativity
-                  </div>
-                  <div id="technical-points" data-technical-target className="text-green-400 text-sm">
-                    ⚙️ {project.accumulatedTPoints} technical
-                  </div>
-                </div>
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                <Button
+                  onClick={handleStartIntervention}
+                  size="sm"
+                  className="h-7 text-xs bg-purple-600 hover:bg-purple-700"
+                >
+                  Intervene
+                </Button>
+                <Button
+                  onClick={handleDelegateIntervention}
+                  size="sm"
+                  variant="outline"
+                  disabled={!bestDelegate}
+                  className="h-7 text-xs border-blue-500/50 text-blue-200"
+                  title={bestDelegate ? bestDelegate.fit.reasons.join(' · ') : 'No available staff'}
+                >
+                  {bestDelegate ? `Delegate: ${bestDelegate.staff.name.split(' ')[0]}` : 'Delegate'}
+                </Button>
+                <Button
+                  onClick={handleSkipIntervention}
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs text-gray-300"
+                >
+                  Skip
+                </Button>
               </div>
             </div>
-            {/* Production Queue Panel (feature-flagged) */}
-            {showAdvancedQueue && (
-              <div className="mt-4">
-                <ProductionQueuePanel roomId={project.bookingRoomId || project.id} />
-              </div>
-            )}
+          )}
 
-            {/* Optional intervention opportunity */}
-            {autoTriggeredMinigame && (
-              <div className="mb-4 p-4 bg-gradient-to-r from-purple-900/50 to-blue-900/50 border border-purple-500 rounded-lg animate-scale-in">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <h4 className="text-yellow-300 font-semibold mb-1">🎯 Optional Studio Intervention</h4>
-                    <p className="text-gray-300 text-sm">{autoTriggeredMinigame.reason}</p>
-                    <p className="text-gray-500 text-xs mt-1">
-                      Session progress continues whether you intervene or not.
-                    </p>
-                  </div>
-                  <div className="text-2xl">🎮</div>
-                </div>
-                <div className="grid grid-cols-3 gap-2 mt-3">
-                  <Button
-                    onClick={handleStartIntervention}
-                    size="sm"
-                    className="bg-purple-600 hover:bg-purple-700"
-                  >
-                    Intervene
-                  </Button>
-                  <Button
-                    onClick={handleDelegateIntervention}
-                    size="sm"
-                    variant="outline"
-                    disabled={!bestDelegate}
-                    className="border-blue-500/50 text-blue-200"
-                    title={bestDelegate ? bestDelegate.fit.reasons.join(' · ') : 'No available staff'}
-                  >
-                    {bestDelegate ? `Delegate: ${bestDelegate.staff.name.split(' ')[0]}` : 'Delegate'}
-                  </Button>
-                  <Button
-                    onClick={handleSkipIntervention}
-                    size="sm"
-                    variant="ghost"
-                    className="text-gray-300"
-                  >
-                    Skip
-                  </Button>
-                </div>
+          {/* Stage Completion Notification */}
+          {isCurrentStageComplete && !isProjectComplete && (
+            <div className="p-3 bg-gradient-to-r from-green-900/50 to-emerald-900/50 border border-green-500/70 rounded-lg animate-scale-in flex items-center justify-between">
+              <div>
+                <h4 className="text-green-400 font-semibold text-xs">✅ Stage Complete!</h4>
+                <p className="text-gray-300 text-xs">
+                  {currentStage.stageName} finished. Work next session to advance.
+                </p>
               </div>
-            )}
-            {/* Stage Completion Notification */}
-            {isCurrentStageComplete && !isProjectComplete && (
-              <div className="mb-4 p-4 bg-gradient-to-r from-green-900/50 to-emerald-900/50 border border-green-500 rounded-lg animate-scale-in">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-green-400 font-semibold mb-1">✅ Stage Complete!</h4>
-                    <p className="text-gray-300 text-sm">
-                      {currentStage.stageName} finished! Continue working to advance to the next stage.
-                    </p>
-                  </div>
-                  <div className="text-2xl animate-bounce">🎉</div>
-                </div>
-              </div>
-            )}
-
-            {/* Current Stage Progress */}
-            <div className="mb-4 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-              {/* Enhanced progress display with effectiveness indicator */}
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-white font-semibold flex items-center gap-2">
-                  Current Stage: {currentStage?.stageName}
-                  {focusEffectiveness.effectiveness > 0.8 && (
-                    <span className="text-green-400 text-sm animate-pulse">🚀 Optimized!</span>
-                  )}
-                </span>
-                <span className="text-gray-400 flex items-center gap-1">
-                  {currentStage?.workUnitsCompleted || 0}/{currentStage?.workUnitsBase || 0}
-                  {focusEffectiveness.effectiveness > 0.7 && (
-                    <span className="text-blue-400 text-xs">⚡ Efficient</span>
-                  )}
-                </span>
-              </div>
-              <Progress 
-                value={currentStageProgress} 
-                className="h-3 mb-2 transition-all duration-500"
-                aria-label={`${currentStage?.stageName || 'Current stage'} progress`}
-              />
-              {currentStage?.completed && (
-                <div className="text-green-400 text-sm animate-scale-in">✓ Stage Complete!</div>
-              )}
+              <div className="text-xl animate-bounce">🎉</div>
             </div>
+          )}
 
-            {/* Overall Project Progress */}
-            <div className="mb-6 animate-fade-in" style={{ animationDelay: '0.3s' }}>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-white font-semibold">Overall Progress</span>
-                <span className="text-gray-400">{Math.round(overallProgress)}%</span>
-              </div>
-              <Progress 
-                value={overallProgress} 
-                className="h-3 progress-bar transition-all duration-500"
-                aria-label="Overall project progress"
-              />
-            </div>
-
-            {/* Focus Allocation Sliders */}
-            <div className="space-y-4 mb-6 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-              <div className="flex justify-between items-center">
-                <h4 className="text-white font-semibold">Focus Allocation</h4>
-                <div className={`text-sm px-2 py-1 rounded ${
-                  focusEffectiveness.effectiveness > 0.8 ? 'bg-green-900 text-green-200' :
-                  focusEffectiveness.effectiveness > 0.6 ? 'bg-yellow-900 text-yellow-200' :
-                  'bg-red-900 text-red-200'
-                }`}>
-                  {Math.round(focusEffectiveness.effectiveness * 100)}% effective
-                </div>
-              </div>
-              
-              {/* Stage-specific guidance */}
-              <div className="bg-blue-900/30 border border-blue-600/50 rounded-lg p-3 text-sm">
-                <div className="text-blue-200 font-medium mb-1">
-                  📋 {currentStage.stageName} - {optimalFocus.reasoning}
-                </div>
-                {stageRecommendations.length > 0 && (
-                  <div className="text-blue-300 text-xs">
-                    💡 {stageRecommendations.join(' • ')}
-                  </div>
+          {/* Dual Progress Meters */}
+          <div className="bg-slate-950/60 border border-slate-800/80 rounded-lg p-2.5">
+            <div className="flex justify-between items-center text-xs mb-1.5">
+              <span className="font-semibold text-white flex items-center gap-1.5">
+                <span className="text-slate-400">Stage {project.currentStageIndex + 1}/{project.stages.length}:</span>
+                <span className="text-sky-300 font-bold">{currentStage?.stageName}</span>
+                {focusEffectiveness.effectiveness > 0.8 && (
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                    🚀 Optimized
+                  </span>
                 )}
+              </span>
+              <span className="text-slate-400 text-xs tabular-nums flex items-center gap-1.5">
+                <span>{Math.round(currentStage?.workUnitsCompleted || 0)} / {currentStage?.workUnitsBase || 0} units</span>
+                {focusEffectiveness.effectiveness > 0.7 && (
+                  <span className="text-[10px] px-1 rounded bg-sky-500/20 text-sky-300">⚡ Efficient</span>
+                )}
+              </span>
+            </div>
+            <Progress 
+              value={currentStageProgress} 
+              className="h-2.5 mb-2 transition-all duration-300"
+              aria-label={`${currentStage?.stageName || 'Current stage'} progress`}
+            />
+
+            <div className="flex justify-between items-center text-[11px] text-slate-400 mt-1">
+              <span>Overall Track Progress</span>
+              <span className="font-bold text-slate-300 tabular-nums">{Math.round(overallProgress)}%</span>
+            </div>
+            <Progress 
+              value={overallProgress} 
+              className="h-1.5 bg-slate-800 progress-bar transition-all duration-300"
+              aria-label="Overall project progress"
+            />
+          </div>
+
+          {/* Focus Allocation Console Module */}
+          <div className="bg-slate-950/70 border border-slate-800 rounded-lg p-2.5 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                  🎛️ Session Focus Allocation
+                </span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  focusEffectiveness.effectiveness > 0.8 ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/40' :
+                  focusEffectiveness.effectiveness > 0.6 ? 'bg-amber-950 text-amber-300 border border-amber-500/40' :
+                  'bg-rose-950 text-rose-300 border border-rose-500/40'
+                }`}>
+                  {Math.round(focusEffectiveness.effectiveness * 100)}% Match
+                </span>
               </div>
               
-              {/* Performance Slider */}
-              <div className="hover-scale">
-                <div className="flex justify-between items-center mb-2">
-                  <div className="flex flex-col">
-                    <label className="text-gray-300 font-medium">
-                      {stageFocusLabels.performance.label} ({projectFocus.performance}%)
-                    </label>
-                    <span className="text-xs text-gray-400">
-                      {stageFocusLabels.performance.description}
-                    </span>
-                  </div>
-                  {/* The Optimal text can be removed or kept as per preference, color change is primary */}
-                  {/* {Math.abs(focusAllocation.performance - optimalFocus.performance) <= 10 && (
-                    <span className="text-green-400 text-xs">✓ Optimal</span>
-                  )} */}
-                </div>
-                <div className="relative group">
-                  <Slider
-                    value={[projectFocus.performance]}
-                    onValueChange={(value) => {
-                      playSound('slider.wav', 0.3);
-                      const newFocus = { ...projectFocus, performance: value[0] };
-                      setGameState(prev => ({
-                        ...prev,
-                        activeProject: prev.activeProject ? { ...prev.activeProject, focusAllocation: newFocus } : null,
-                        // Also update in activeProjects array if multi-project is primary
-                        activeProjects: prev.activeProjects.map(p => 
-                          p.id === project.id ? { ...p, focusAllocation: newFocus } : p
-                        ),
-                      }));
-                    }}
-                    max={100}
-                    step={5}
-                    className={`w-full transition-all duration-300 ease-in-out ${
-                      Math.abs(projectFocus.performance - optimalFocus.performance) <= 10 
-                        ? 'slider-optimal' 
-                        : Math.abs(projectFocus.performance - optimalFocus.performance) <= 25
-                          ? 'slider-good'
-                          : 'slider-default'
-                    }`}
-                  />
-                </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  💡 {stageFocusLabels.performance.impact}
-                </div>
-              </div>
-
-              {/* Sound Capture Slider */}
-              <div className="hover-scale">
-                <div className="flex justify-between items-center mb-2">
-                  <div className="flex flex-col">
-                    <label className="text-gray-300 font-medium">
-                      {stageFocusLabels.soundCapture.label} ({projectFocus.soundCapture}%)
-                    </label>
-                    <span className="text-xs text-gray-400">
-                      {stageFocusLabels.soundCapture.description}
-                    </span>
-                  </div>
-                  {/* {Math.abs(focusAllocation.soundCapture - optimalFocus.soundCapture) <= 10 && (
-                    <span className="text-green-400 text-xs">✓ Optimal</span>
-                  )} */}
-                </div>
-                <div className="relative group">
-                  {/* Tooltip removed as staff variable is not available here */}
-                  <Slider
-                    value={[projectFocus.soundCapture]}
-                    onValueChange={(value) => {
-                      playSound('slider.wav', 0.3);
-                      const newFocus = { ...projectFocus, soundCapture: value[0] };
-                       setGameState(prev => ({
-                        ...prev,
-                        activeProject: prev.activeProject ? { ...prev.activeProject, focusAllocation: newFocus } : null,
-                        activeProjects: prev.activeProjects.map(p => 
-                          p.id === project.id ? { ...p, focusAllocation: newFocus } : p
-                        ),
-                      }));
-                    }}
-                    max={100}
-                    step={5}
-                    className={`w-full transition-all duration-300 ease-in-out ${
-                      Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 10
-                        ? 'slider-optimal'
-                        : Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 25
-                          ? 'slider-good'
-                          : 'slider-default'
-                    }`}
-                  />
-                </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  💡 {stageFocusLabels.soundCapture.impact}
-                </div>
-              </div>
-
-              {/* Layering Slider */}
-              <div className="hover-scale">
-                <div className="flex justify-between items-center mb-2">
-                  <div className="flex flex-col">
-                    <label className="text-gray-300 font-medium">
-                      {stageFocusLabels.layering.label} ({projectFocus.layering}%)
-                    </label>
-                    <span className="text-xs text-gray-400">
-                      {stageFocusLabels.layering.description}
-                    </span>
-                  </div>
-                  {/* {Math.abs(focusAllocation.layering - optimalFocus.layering) <= 10 && (
-                    <span className="text-green-400 text-xs">✓ Optimal</span>
-                  )} */}
-                </div>
-                <div className="relative group">
-                  {/* Tooltip removed as staff variable is not available here */}
-                  <Slider
-                    value={[projectFocus.layering]}
-                    onValueChange={(value) => {
-                      playSound('slider.wav', 0.3);
-                      const newFocus = { ...projectFocus, layering: value[0] };
-                      setGameState(prev => ({
-                        ...prev,
-                        activeProject: prev.activeProject ? { ...prev.activeProject, focusAllocation: newFocus } : null,
-                        activeProjects: prev.activeProjects.map(p => 
-                          p.id === project.id ? { ...p, focusAllocation: newFocus } : p
-                        ),
-                      }));
-                    }}
-                    max={100}
-                    step={5}
-                    className={`w-full transition-all duration-300 ease-in-out ${
-                      Math.abs(projectFocus.layering - optimalFocus.layering) <= 10
-                        ? 'slider-optimal'
-                        : Math.abs(projectFocus.layering - optimalFocus.layering) <= 25
-                          ? 'slider-good'
-                          : 'slider-default'
-                    }`}
-                  />
-                </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  💡 {stageFocusLabels.layering.impact}
-                </div>
-              </div>
-
-              {/* Focus suggestions */}
-              {focusEffectiveness.suggestions.length > 0 && (
-                <div className="bg-yellow-900/30 border border-yellow-600/50 rounded-lg p-3">
-                  <div className="text-yellow-200 font-medium text-sm mb-1">
-                    💡 Focus Suggestions:
-                  </div>
-                  <div className="text-yellow-300 text-xs space-y-1">
-                    {focusEffectiveness.suggestions.map((suggestion, index) => (
-                      <div key={index}>• {suggestion}</div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Optimal focus button */}
               <Button
                 onClick={() => {
                   const newFocus = {
@@ -721,73 +563,196 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   }));
                   playSound('notification.wav', 0.4);
                   toast({
-                    title: "🎯 Optimal Focus Applied",
-                    description: `Set focus for ${currentStage.stageName}`,
+                    title: "🎯 Focus Aligned",
+                    description: `Target focus applied for ${currentStage.stageName}`,
                     className: "bg-gray-800 border-gray-600 text-white",
                   });
                 }}
                 disabled={!canUseOptimalFocusButton}
-                variant="outline"
                 size="sm"
-                className={`w-full transition-colors duration-200 ${
+                variant="outline"
+                className={`text-[11px] h-7 px-2.5 border transition-colors ${
                   canUseOptimalFocusButton
-                    ? 'bg-blue-900/30 border-blue-600/50 text-blue-200 hover:bg-blue-800/50'
-                    : 'bg-gray-700/30 border-gray-600/50 text-gray-400 cursor-not-allowed'
+                    ? 'bg-indigo-900/40 border-indigo-500/50 text-indigo-200 hover:bg-indigo-800/60'
+                    : 'bg-slate-800/40 border-slate-700 text-slate-500 cursor-not-allowed'
                 }`}
+                title={canUseOptimalFocusButton ? 'Auto-align to stage target' : 'Requires Level 5+ or Management Level 3+'}
               >
-                {canUseOptimalFocusButton
-                  ? `🎯 Apply Optimal Focus for ${currentStage.stageName}`
-                  : `🎯 Apply Optimal Focus (Lvl 5+ or Mgmt Lvl 3+)`}
+                🎯 Auto-Align
               </Button>
             </div>
 
-            {/* ⚡ Combo streak + 🔥 Overdrive risk/reward controls */}
-            <div className="flex items-stretch gap-2">
-              {(project.comboCount || 0) > 1 && (
-                <div className="flex-1 px-2 py-1.5 text-center text-xs font-black tracking-wide text-amber-300 bg-amber-900/30 border border-amber-500/40 rounded animate-pulse">
-                  ⚡ COMBO x{project.comboCount}
-                  <span className="block text-[10px] font-semibold text-amber-400/80">
-                    +{Math.min(50, (project.comboCount! - 1) * 10)}% output
+            {/* 3-Channel Mixing Strips */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {/* Channel 1: Performance */}
+              <div className="bg-slate-900/80 border border-slate-800/90 p-2 rounded-md">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-semibold text-slate-200 truncate">
+                    {stageFocusLabels.performance.label}
+                  </span>
+                  <span className={`text-[11px] font-mono font-bold px-1.5 py-0.2 rounded ${
+                    Math.abs(projectFocus.performance - optimalFocus.performance) <= 10 
+                      ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/40' 
+                      : Math.abs(projectFocus.performance - optimalFocus.performance) <= 25
+                        ? 'bg-amber-950 text-amber-400 border border-amber-500/40'
+                        : 'bg-rose-950 text-rose-400 border border-rose-500/40'
+                  }`}>
+                    {projectFocus.performance}%
                   </span>
                 </div>
-              )}
-              <Button
-                onClick={toggleOverdrive}
-                disabled={gameState.playerData.dailyWorkCapacity < 2 || isProjectComplete}
-                variant="outline"
-                size="sm"
-                className={`flex-1 text-xs transition-colors ${
-                  overdriveArmed
-                    ? 'bg-orange-600 hover:bg-orange-500 border-orange-400 text-white'
-                    : 'bg-gray-800/60 border-orange-700/60 text-orange-300 hover:bg-orange-900/40'
-                }`}
-              >
-                {overdriveArmed
-                  ? '🔥 OVERDRIVE ARMED — 2 energy, +75%'
-                  : '🔥 Arm Overdrive (2 energy, +75%, burnout risk)'}
-              </Button>
+                <Slider
+                  value={[projectFocus.performance]}
+                  onValueChange={(value) => handleFocusChange('performance', value[0])}
+                  max={100}
+                  step={5}
+                  className={`w-full ${
+                    Math.abs(projectFocus.performance - optimalFocus.performance) <= 10 
+                      ? 'slider-optimal' 
+                      : Math.abs(projectFocus.performance - optimalFocus.performance) <= 25
+                        ? 'slider-good'
+                        : 'slider-default'
+                  }`}
+                />
+                <div className="flex justify-between items-center text-[10px] text-slate-400 mt-1">
+                  <span>Target: {Math.max(0, optimalFocus.performance - 10)}–{Math.min(100, optimalFocus.performance + 10)}%</span>
+                  <span className={Math.abs(projectFocus.performance - optimalFocus.performance) <= 10 ? 'text-emerald-400 font-semibold' : 'text-slate-500'}>
+                    {Math.abs(projectFocus.performance - optimalFocus.performance) <= 10 ? '✓ Optimal' : 'Adjust'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Channel 2: Sound Capture */}
+              <div className="bg-slate-900/80 border border-slate-800/90 p-2 rounded-md">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-semibold text-slate-200 truncate">
+                    {stageFocusLabels.soundCapture.label}
+                  </span>
+                  <span className={`text-[11px] font-mono font-bold px-1.5 py-0.2 rounded ${
+                    Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 10 
+                      ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/40' 
+                      : Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 25
+                        ? 'bg-amber-950 text-amber-400 border border-amber-500/40'
+                        : 'bg-rose-950 text-rose-400 border border-rose-500/40'
+                  }`}>
+                    {projectFocus.soundCapture}%
+                  </span>
+                </div>
+                <Slider
+                  value={[projectFocus.soundCapture]}
+                  onValueChange={(value) => handleFocusChange('soundCapture', value[0])}
+                  max={100}
+                  step={5}
+                  className={`w-full ${
+                    Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 10 
+                      ? 'slider-optimal' 
+                      : Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 25
+                        ? 'slider-good'
+                        : 'slider-default'
+                  }`}
+                />
+                <div className="flex justify-between items-center text-[10px] text-slate-400 mt-1">
+                  <span>Target: {Math.max(0, optimalFocus.soundCapture - 10)}–{Math.min(100, optimalFocus.soundCapture + 10)}%</span>
+                  <span className={Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 10 ? 'text-emerald-400 font-semibold' : 'text-slate-500'}>
+                    {Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 10 ? '✓ Optimal' : 'Adjust'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Channel 3: Layering */}
+              <div className="bg-slate-900/80 border border-slate-800/90 p-2 rounded-md">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-semibold text-slate-200 truncate">
+                    {stageFocusLabels.layering.label}
+                  </span>
+                  <span className={`text-[11px] font-mono font-bold px-1.5 py-0.2 rounded ${
+                    Math.abs(projectFocus.layering - optimalFocus.layering) <= 10 
+                      ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/40' 
+                      : Math.abs(projectFocus.layering - optimalFocus.layering) <= 25
+                        ? 'bg-amber-950 text-amber-400 border border-amber-500/40'
+                        : 'bg-rose-950 text-rose-400 border border-rose-500/40'
+                  }`}>
+                    {projectFocus.layering}%
+                  </span>
+                </div>
+                <Slider
+                  value={[projectFocus.layering]}
+                  onValueChange={(value) => handleFocusChange('layering', value[0])}
+                  max={100}
+                  step={5}
+                  className={`w-full ${
+                    Math.abs(projectFocus.layering - optimalFocus.layering) <= 10 
+                      ? 'slider-optimal' 
+                      : Math.abs(projectFocus.layering - optimalFocus.layering) <= 25
+                        ? 'slider-good'
+                        : 'slider-default'
+                  }`}
+                />
+                <div className="flex justify-between items-center text-[10px] text-slate-400 mt-1">
+                  <span>Target: {Math.max(0, optimalFocus.layering - 10)}–{Math.min(100, optimalFocus.layering + 10)}%</span>
+                  <span className={Math.abs(projectFocus.layering - optimalFocus.layering) <= 10 ? 'text-emerald-400 font-semibold' : 'text-slate-500'}>
+                    {Math.abs(projectFocus.layering - optimalFocus.layering) <= 10 ? '✓ Optimal' : 'Adjust'}
+                  </span>
+                </div>
+              </div>
             </div>
 
-            <Button 
-              onClick={handleWork}
-              disabled={gameState.playerData.dailyWorkCapacity <= 0 || isProjectComplete}
-              className={`w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 py-3 text-lg font-bold game-button transition-all duration-300 ${
-                pulseAnimation ? 'ring-2 ring-yellow-400/40' : ''
+            {/* Stage Guidance Note */}
+            <div className="text-[11px] text-slate-400 bg-slate-900/60 px-2.5 py-1.5 rounded border border-slate-800 flex items-center gap-1.5">
+              <span className="text-sky-400">💡</span>
+              <span className="text-slate-300 font-medium">{currentStage.stageName}:</span>
+              <span className="truncate">{optimalFocus.reasoning}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Pinned Bottom Action Dock: ALWAYS VISIBLE */}
+        <div className="shrink-0 pt-2 mt-2 border-t border-slate-700/60 bg-slate-950/90 backdrop-blur-md">
+          <div className="flex items-center gap-2 mb-2">
+            {(project.comboCount || 0) > 1 && (
+              <div className="px-2.5 py-1 text-center text-xs font-black tracking-wide text-amber-300 bg-amber-950/80 border border-amber-500/50 rounded animate-pulse">
+                ⚡ x{project.comboCount} COMBO (+{Math.min(50, (project.comboCount! - 1) * 10)}%)
+              </div>
+            )}
+            <Button
+              onClick={toggleOverdrive}
+              disabled={gameState.playerData.dailyWorkCapacity < 2 || isProjectComplete}
+              variant="outline"
+              size="sm"
+              className={`h-8 text-xs font-semibold flex-1 transition-all ${
+                overdriveArmed
+                  ? 'bg-orange-600 hover:bg-orange-500 border-orange-400 text-white shadow-lg shadow-orange-950/50'
+                  : 'bg-slate-900/80 border-orange-700/50 text-orange-300 hover:bg-orange-950/40'
               }`}
             >
-              {isProjectComplete ? (
-                '🎉 Project Complete!'
-              ) : gameState.playerData.dailyWorkCapacity > 0 ? (
-                `🎵 Work on Project (${gameState.playerData.dailyWorkCapacity} energy left)`
-              ) : (
-                '😴 No Energy Left (Advance Day to Restore)'
-              )}
+              {overdriveArmed
+                ? '🔥 Overdrive Armed (2 Energy · +75%)'
+                : '🔥 Arm Overdrive (2 Energy · +75%)'}
             </Button>
-          </div> {/* Closing the new inner wrapper div */}
-        </Card>
+          </div>
+
+          <Button 
+            onClick={handleWork}
+            disabled={gameState.playerData.dailyWorkCapacity <= 0 || isProjectComplete}
+            className={`w-full py-2.5 h-11 text-base font-black tracking-wide game-button transition-all duration-200 shadow-lg ${
+              isProjectComplete
+                ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                : gameState.playerData.dailyWorkCapacity > 0
+                  ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 text-white shadow-indigo-950/50'
+                  : 'bg-slate-800 text-slate-500 border border-slate-700'
+            } ${pulseAnimation ? 'ring-2 ring-yellow-400/80' : ''}`}
+          >
+            {isProjectComplete ? (
+              '🎉 Project Ready For Review!'
+            ) : gameState.playerData.dailyWorkCapacity > 0 ? (
+              `🎵 Work on Project (${gameState.playerData.dailyWorkCapacity} energy left)`
+            ) : (
+              '😴 Studio Exhausted (Advance Day to Restore)'
+            )}
+          </Button>
+        </div>
 
         <MinigameManager
-           isOpen={showMinigame}
+          isOpen={showMinigame}
           onClose={() => {
             setShowMinigame(false);
             if (clearAutoTriggeredMinigame) {

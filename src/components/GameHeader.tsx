@@ -1,20 +1,10 @@
 import React, { useState } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { GameState } from '@/types/game';
-import { AnimatedCounter } from '@/components/AnimatedCounter';
-import { Maximize, Minimize, SettingsIcon, CalendarDays, Users, Sparkles, DollarSign, Star } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { AnimatedCounter } from './AnimatedCounter';
+import { Maximize, Minimize, Settings, CalendarDays, Coins, Star } from 'lucide-react';
 import { useFullscreen } from '@/hooks/useFullscreen';
-import { XPProgressBar } from '@/components/XPProgressBar';
-import { EraProgressModal } from '@/components/modals/EraProgressModal';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useTranslation } from 'react-i18next'; // Import useTranslation
+import { EraProgressModal } from './modals/EraProgressModal';
+import { useTranslation } from 'react-i18next';
 
 interface GameHeaderProps {
   gameState: GameState;
@@ -23,163 +13,35 @@ interface GameHeaderProps {
   className?: string;
 }
 
-export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSettings, triggerEraTransition, className }) => {
+export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSettings, triggerEraTransition, className = '' }) => {
   const [showEraProgress, setShowEraProgress] = useState(false);
   const { isFullscreen, toggleFullscreen } = useFullscreen('root');
-  const { t } = useTranslation(); // Initialize useTranslation
-
-  const buttonHoverTapAnimation = {
-    hover: { scale: 1.1, transition: { type: "spring", stiffness: 300 } },
-    tap: { scale: 0.95 },
-  };
-
-  return (
-    <TooltipProvider delayDuration={300}>
-      <Card className={`bg-gray-900/90 border-gray-600 p-2 backdrop-blur-sm ${className}`}>
-        <div className="flex justify-between items-center gap-4">
-          {/* Left section - Core info */}
-          <div className="flex items-center gap-3 sm:gap-4">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <motion.div whileHover={buttonHoverTapAnimation.hover} whileTap={buttonHoverTapAnimation.tap}>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={toggleFullscreen}
-                    aria-label={isFullscreen ? t('exit_fullscreen_aria_label', 'Exit fullscreen') : t('enter_fullscreen_aria_label', 'Enter fullscreen')}
-                    className="text-white bg-gray-700/50 hover:bg-gray-600/50 border-gray-500 h-8 w-8 p-0"
-                  >
-                    {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
-                  </Button>
-                </motion.div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{isFullscreen ? t('exit_fullscreen', 'Exit Fullscreen') : t('enter_fullscreen', 'Enter Fullscreen')}</p>
-              </TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 cursor-default px-2 py-1 rounded hover:bg-gray-700/30">
-                  <DollarSign className="text-green-400" size={16} />
-                  <AnimatedCounter value={gameState.money} prefix="$" className="text-green-400 font-bold text-sm" />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{t('money', 'Current Money')}: ${gameState.money.toLocaleString()}</p>
-              </TooltipContent>
-            </Tooltip>
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 cursor-default px-2 py-1 rounded hover:bg-gray-700/30">
-                  <Star className="text-blue-400" size={16} />
-                  <AnimatedCounter value={gameState.reputation} suffix={` Rep`} className="text-blue-400 font-bold text-sm" />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{t('reputation', 'Current Reputation')}: {gameState.reputation.toLocaleString()} {t('reputation_suffix', 'Rep')}</p>
-              </TooltipContent>
-            </Tooltip>
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <motion.button
-                  whileHover={buttonHoverTapAnimation.hover}
-                  whileTap={buttonHoverTapAnimation.tap}
-                  className="text-yellow-400 font-bold hover:bg-yellow-400/10 px-2 py-1 text-sm flex items-center rounded bg-transparent border-none"
-                  onClick={() => setShowEraProgress(true)}
-                >
-                  <CalendarDays size={14} className="mr-1" />
-                  Day {gameState.currentDay}
-                </motion.button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{t('current_day_tooltip', 'Current Day: {{day}} / View Era Progress', { day: gameState.currentDay })}</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-
-          {/* Right section - Level and controls */}
-          <div className="flex items-center gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 cursor-default px-2 py-1 rounded hover:bg-gray-700/30">
-                  <Users className="text-purple-400" size={14} />
-                  <span className="text-purple-400 font-bold text-sm">{gameState.hiredStaff.length}</span>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{t('hired_staff_tooltip', 'Hired Staff: {{count}}', { count: gameState.hiredStaff.length })}</p>
-              </TooltipContent>
-            </Tooltip>
-
-            {gameState.playerData.perkPoints > 0 && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1 cursor-default px-2 py-1 rounded hover:bg-gray-700/30">
-                    <Sparkles className="text-orange-400" size={14} />
-                    <span className="text-orange-400 font-bold text-sm">{gameState.playerData.perkPoints}</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{t('perk_points_tooltip', 'Available Perk Points: {{count}}', { count: gameState.playerData.perkPoints })}</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-
-            {onOpenSettings && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <motion.div whileHover={buttonHoverTapAnimation.hover} whileTap={buttonHoverTapAnimation.tap}>
-                    <Button
-                      onClick={onOpenSettings}
-                      variant="outline"
-                      size="sm"
-                      className="bg-gray-700/50 border-gray-500 text-gray-300 hover:bg-gray-600/50 h-8 w-8 p-0"
-                      aria-label={t('open_settings', 'Open Settings')}
-                    >
-                      <SettingsIcon size={16} />
-                    </Button>
-                  </motion.div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{t('open_settings', 'Open Settings')}</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="text-right cursor-default px-2 py-1 rounded hover:bg-gray-700/30">
-                  {/* <div className="text-white font-bold text-sm">Level {gameState.playerData.level}</div> */}
-                  <XPProgressBar 
-                    currentXP={gameState.playerData.xp} 
-                    xpToNext={gameState.playerData.xpToNextLevel}
-                    level={gameState.playerData.level}
-                    className="w-24"
-                    showNumbers={false}
-                    currentXPLab={t('xp_suffix', 'XP')}
-                  />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>
-                  {t('level_tooltip_level', 'Level {{level}}', { level: gameState.playerData.level })} 
-                  ({t('xp_progress_tooltip', '{{currentXP}}/{{xpToNextLevel}} XP', { currentXP: gameState.playerData.xp.toLocaleString(), xpToNextLevel: gameState.playerData.xpToNextLevel.toLocaleString() })})
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
+  const { t } = useTranslation();
+  const player = gameState.playerData;
+  return <>
+    <header className={`studio-hud ${className}`} aria-label="Studio status">
+      <div className="studio-hud-stats">
+        <div className="studio-hud-stat text-emerald-200" data-reward-target="money" title={t('money', 'Current money')}>
+          <Coins size={18} aria-hidden="true" /><AnimatedCounter value={gameState.money} prefix="$" />
         </div>
-      </Card>
-
-      <EraProgressModal
-        gameState={gameState}
-        isOpen={showEraProgress}
-        onClose={() => setShowEraProgress(false)}
-        triggerEraTransition={triggerEraTransition || (() => {})}
-      />
-    </TooltipProvider>
-  );
+        <div className="studio-hud-stat text-sky-200" title={t('reputation', 'Reputation')}>
+          <Star size={16} aria-hidden="true" /><AnimatedCounter value={gameState.reputation} suffix=" Rep" />
+        </div>
+        <button className="studio-dock-button studio-hud-day" onClick={() => setShowEraProgress(true)} aria-label={`Day ${gameState.currentDay}, view era progress`}>
+          <CalendarDays size={16} aria-hidden="true" />Day {gameState.currentDay}
+        </button>
+      </div>
+      <div className="studio-hud-controls">
+        <div className="studio-hud-xp" data-reward-target="xp" title={`${player.xp}/${player.xpToNextLevel} XP · ${player.perkPoints} talent points · ${gameState.hiredStaff.length} crew`}>
+          <span>Level {player.level} <span className="float-right">{player.xp} XP</span></span>
+          <progress aria-label="Producer experience" max={Math.max(1, player.xpToNextLevel)} value={player.xp} />
+        </div>
+        <button className="studio-dock-button" onClick={toggleFullscreen} aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}>
+          {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+        </button>
+        {onOpenSettings && <button className="studio-dock-button" onClick={onOpenSettings} aria-label={t('open_settings', 'Open Settings')}><Settings size={18} /></button>}
+      </div>
+    </header>
+    <EraProgressModal gameState={gameState} isOpen={showEraProgress} onClose={() => setShowEraProgress(false)} triggerEraTransition={triggerEraTransition || (() => {})} />
+  </>;
 };

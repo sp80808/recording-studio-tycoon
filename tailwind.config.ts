@@ -20,6 +20,11 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				display: ['"Fredoka"', 'system-ui', 'sans-serif'],
+				body: ['"Outfit"', 'system-ui', 'sans-serif'],
+				sans: ['"Outfit"', 'system-ui', 'sans-serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',

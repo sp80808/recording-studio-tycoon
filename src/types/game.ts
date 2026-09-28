@@ -271,6 +271,7 @@ export interface GameState {
   dailyTracking?: DailyTracking;
   clientRelationships?: Record<string, ClientRelationship>;
   studioRooms: StudioRoom[]; // Physical bookable studio suites; drives concurrent capacity
+  discoveredSynergies?: string[]; // IDs of discovered studio synergies (Kairosoft recipe codex)
   
   // Multi-project system
   activeProjects: Project[]; // Replace single activeProject with array

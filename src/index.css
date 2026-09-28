@@ -3,6 +3,16 @@
 @tailwind utilities;
 
 @layer base {
+  body {
+    font-family: 'Outfit', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Fredoka', system-ui, sans-serif;
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -227,12 +237,12 @@
   --slider-shadow: rgba(239, 68, 68, 0.3);
 }
 
-/* Apply slider colors dynamically using CSS custom properties */
+/* Apply slider colors dynamically using CSS custom properties with zero position latency */
 .slider-optimal .bg-primary,
 .slider-good .bg-primary,
 .slider-default .bg-primary {
   background: linear-gradient(90deg, var(--slider-bg), var(--slider-bg-dark)) !important;
-  transition: all 0.3s ease-in-out;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease !important;
 }
 
 .slider-optimal .border-primary,
@@ -240,7 +250,7 @@
 .slider-default .border-primary {
   border-color: var(--slider-border) !important;
   box-shadow: 0 4px 12px var(--slider-shadow);
-  transition: all 0.2s ease-in-out;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
 }
 
 .slider-optimal .border-primary:hover,
@@ -257,50 +267,32 @@
   box-shadow: 0 8px 20px var(--slider-shadow);
 }
 
-/* Enhanced slider feedback animations */
+/* Subtle glow for slider ranges based on optimization status without laggy keyframe animation restarts */
 .slider-optimal [data-radix-slider-range] {
-  animation: pulse-green 0.6s ease-in-out;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
 }
 
 .slider-good [data-radix-slider-range] {
-  animation: pulse-yellow 0.6s ease-in-out;
+  box-shadow: 0 0 10px rgba(234, 179, 8, 0.35);
 }
 
 .slider-default [data-radix-slider-range] {
-  animation: pulse-blue 0.6s ease-in-out;
-}
-
-@keyframes pulse-green {
-  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0.2); }
-  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
-}
-
-@keyframes pulse-yellow {
-  0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(234, 179, 8, 0.2); }
-  100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
-}
-
-@keyframes pulse-blue {
-  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.2); }
-  100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.25);
 }
 
 /* Smooth slider track styling */
 [data-radix-slider-track] {
-  background: linear-gradient(90deg, rgb(55, 65, 81) 0%, rgb(75, 85, 99) 100%);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgb(107, 114, 128);
+  background: linear-gradient(90deg, rgb(31, 41, 55) 0%, rgb(55, 65, 81) 100%);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgb(75, 85, 99);
 }
 
-/* Smooth slider thumb interactions */
+/* Instant-response slider thumb interactions - only scale and shadow transition */
 [data-radix-slider-thumb] {
-  background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, #ffffff 0%, #e5e7eb 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
   cursor: grab;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
 [data-radix-slider-thumb]:active {

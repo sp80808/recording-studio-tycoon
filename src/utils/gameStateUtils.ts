@@ -133,5 +133,10 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
     ;(processedState as any).quickAssignPresets = []
   }
 
+  // Ensure discoveredSynergies exists for Kairosoft synergy codex
+  if (!Array.isArray(processedState.discoveredSynergies)) {
+    processedState.discoveredSynergies = [];
+  }
+
   return processedState;
 };

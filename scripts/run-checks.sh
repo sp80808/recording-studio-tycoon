@@ -8,6 +8,15 @@ echo "=== daily challenges ==="
 pnpm exec esbuild tests/daily-challenges.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-daily-challenges.cjs --alias:@=./src >/dev/null
 node /tmp/rst-daily-challenges.cjs
 
+echo "=== talents & atomicity ==="
+pnpm exec esbuild tests/talents-atomicity.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-talents.cjs --alias:@=./src >/dev/null
+node /tmp/rst-talents.cjs
+
+echo "=== studio synergies ==="
+pnpm exec esbuild tests/synergies.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-synergies.cjs --alias:@=./src >/dev/null
+node /tmp/rst-synergies.cjs
+
+
 echo "=== balance harness invariants (10 days, seed 7) ==="
 pnpm exec esbuild src/dev/balance/run.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-balance.cjs --alias:@=./src >/dev/null
 mkdir -p /tmp/rst-balance

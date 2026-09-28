@@ -83,6 +83,7 @@ export const useGameState = () => {
     ],
     availableProjects: [],
     studioRooms: createDefaultStudioRooms(),
+    discoveredSynergies: [],
     activeProject: null, // Keep for backward compatibility
     // Multi-project system
     activeProjects: [], // New multi-project array

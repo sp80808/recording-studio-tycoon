@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
+import { KenneyButton } from './minigames/MinigameChrome';
 import { Button } from '@/components/ui/button';
 import { EraSelectionModal, Era } from '@/components/EraSelectionModal'; // AVAILABLE_ERAS removed as it's not used directly here
 import { SettingsModal } from '@/components/modals/SettingsModal'; // Added SettingsModal import
@@ -7,14 +7,8 @@ import { useSettings } from '@/contexts/SettingsContext'; // Added useSettings i
 import { gameAudio } from '@/utils/audioSystem'; // Added gameAudio import
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { useFullscreen } from '@/hooks/useFullscreen';
-import { Maximize, Minimize } from 'lucide-react';
+import { BriefcaseBusiness, Headphones, Maximize, Minimize, Play, Settings, Disc3 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-
-// Get version from README
-const getGameVersion = () => {
-  // This will be replaced with the actual version from README during build
-  return '0.3.1';
-};
 
 interface SplashScreenProps {
   onStartGame: (era: Era) => void;
@@ -79,104 +73,41 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4 relative">
+      <main className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[#070a14] p-4 text-white">
+        <div aria-hidden="true" className="absolute inset-0 opacity-50 [background-image:radial-gradient(circle_at_20%_15%,rgba(99,102,241,.3),transparent_25%),radial-gradient(circle_at_80%_75%,rgba(245,158,11,.16),transparent_30%),linear-gradient(rgba(255,255,255,.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.025)_1px,transparent_1px)] [background-size:auto,auto,22px_22px,22px_22px]" />
+        <div aria-hidden="true" className="absolute left-1/2 top-1/2 h-[min(95vw,760px)] w-[min(95vw,760px)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-indigo-300/10 shadow-[0_0_150px_45px_rgba(79,70,229,.16)]" />
         {/* Fullscreen button for the entire page */}
         <Button
           variant="ghost"
           size="icon"
           onClick={toggleFullscreen}
-          className="absolute top-4 right-4 text-gray-300 hover:text-white z-50"
+          className="absolute right-4 top-4 z-50 text-slate-300 hover:bg-white/10 hover:text-white"
           aria-label={isFullscreen ? t('exit_fullscreen_aria_label') : t('enter_fullscreen_aria_label')}
         >
           {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
         </Button>
 
-        <Card className="bg-gray-900/95 border-gray-600 p-8 max-w-2xl w-full text-center backdrop-blur-sm relative">
-          {/* Game Title */}
-          <div className="mb-8">
-            <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 mb-4">
-              🎵 {t('game_title_splash', 'Recording Studio Tycoon')} 🎵
-            </h1>
-            <p className="text-xl text-gray-300 mb-2">
-              {t('splash_subtitle', 'Build Your Musical Empire')}
-            </p>
-            <p className="text-gray-400 text-sm">
-              {t('splash_tagline', 'From analog beginnings to digital dominance')}
-            </p>
+        <section className="relative z-10 mx-auto flex w-full max-w-2xl flex-col items-center py-12 text-center">
+          <div aria-hidden="true" className="splash-record mb-5 grid h-20 w-20 place-items-center rounded-full border-4 border-slate-700 bg-slate-950 shadow-[0_0_60px_#8b5cf633]">
+            <Disc3 size={50} className="text-amber-200" />
           </div>
-
-          {/* Animated Feature Highlights */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700 hover:bg-gray-700/50 transition-colors">
-              <div className="text-2xl mb-2">🎤</div>
-              <div className="text-sm text-gray-300">{t('splash_feature_record', 'Record')}</div>
-            </div>
-            <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700 hover:bg-gray-700/50 transition-colors">
-              <div className="text-2xl mb-2">🎛️</div>
-              <div className="text-sm text-gray-300">{t('splash_feature_mix', 'Mix')}</div>
-            </div>
-            <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700 hover:bg-gray-700/50 transition-colors">
-              <div className="text-2xl mb-2">💿</div>
-              <div className="text-sm text-gray-300">{t('splash_feature_master', 'Master')}</div>
-            </div>
-            <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700 hover:bg-gray-700/50 transition-colors">
-              <div className="text-2xl mb-2">📈</div>
-              <div className="text-sm text-gray-300">{t('splash_feature_profit', 'Profit')}</div>
-            </div>
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-[.4em] text-indigo-200">Every session tells a story</p>
+          <h1 className="text-4xl font-black leading-[.95] tracking-tight sm:text-6xl">
+            <span className="block text-xl font-medium tracking-[.24em] text-slate-200 sm:text-3xl">RECORDING</span>
+            <span className="mt-2 block bg-gradient-to-b from-amber-100 via-amber-300 to-orange-400 bg-clip-text text-transparent">STUDIO TYCOON</span>
+          </h1>
+          <p className="mt-4 text-base font-medium text-indigo-100 sm:text-lg">Build your musical empire.</p>
+          <div className="my-6 flex items-center gap-3 text-xs text-slate-400" aria-label="Record, mix, master, release">
+            <Headphones size={16} className="text-sky-300" />Record<span aria-hidden="true">·</span>Mix<span aria-hidden="true">·</span>Master<span aria-hidden="true">·</span><span className="text-amber-200">Release</span>
           </div>
-
-          {/* Game Tip Carousel */}
-          <Card className="bg-gray-800/30 border-gray-600 p-4 mb-8">
-            <div className="text-yellow-400 text-sm font-medium mb-2">{t('splash_pro_tip', 'Pro Tip:')}</div>
-            <div className="text-gray-300 text-sm h-12 flex items-center justify-center">
-              {t(gameTipKeys[currentTip])}
-            </div>
-          </Card>
-
-          {/* Action Buttons */}
-          <div className="space-y-4">
-            <Button
-              onClick={handleStartNewGame}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 text-lg font-semibold"
-            >
-              🎯 {t('splash_btn_new_game', 'Start New Game')}
-            </Button>
-
-            {hasSaveGame && (
-              <Button
-                onClick={handleLoadGame}
-                variant="outline"
-                className="w-full bg-gray-700/30 border-gray-600 text-gray-300 hover:bg-gray-600/50 py-3"
-              >
-                📁 {t('splash_btn_continue_game', 'Continue Game')}
-              </Button>
-            )}
-
-            <Button
-              onClick={() => {
-                if (settings.sfxEnabled) gameAudio.playClick();
-                setShowSettingsModal(true);
-              }}
-              variant="outline"
-              className="w-full bg-gray-700/30 border-gray-600 text-gray-300 hover:bg-gray-600/50 py-3"
-            >
-              ⚙️ {t('splash_btn_settings', 'Settings')}
-            </Button>
-
-            <div className="text-xs text-gray-500 mt-6">
-              <p>{t('splash_footer_1', 'Choose your era and build the studio of your dreams!')}</p>
-              <p className="mt-1">{t('splash_footer_2', 'Each era offers unique challenges, equipment, and music trends.')}</p>
-            </div>
+          <div className="flex w-full max-w-xs flex-col gap-3">
+            {hasSaveGame && <KenneyButton variant="green" onClick={handleLoadGame} className="splash-command flex min-h-14 items-center justify-center gap-2 text-base"><Play size={18} className="fill-current" />Continue shift</KenneyButton>}
+            <KenneyButton variant={hasSaveGame ? 'blue' : 'green'} onClick={handleStartNewGame} className="splash-command flex min-h-14 items-center justify-center gap-2 text-base"><BriefcaseBusiness size={18} />Open a new studio</KenneyButton>
+            <Button onClick={() => { if (settings.sfxEnabled) gameAudio.playClick(); setShowSettingsModal(true); }} variant="ghost" className="h-11 text-slate-400 hover:bg-white/5 hover:text-white"><Settings size={17} className="mr-2" />Settings</Button>
           </div>
-
-          {/* Version/Credits */}
-          <div className="mt-8 pt-4 border-t border-gray-700">
-            <p className="text-xs text-gray-500">
-              Recording Studio Tycoon v{getGameVersion()} (alpha) | Built with ❤️ for music lovers
-            </p>
-          </div>
-        </Card>
-      </div>
+          <p key={currentTip} className="mt-7 min-h-10 max-w-sm text-xs leading-relaxed text-slate-400 motion-safe:animate-in motion-safe:fade-in">{t(gameTipKeys[currentTip])}</p>
+        </section>
+      </main>
 
       {/* Era Selection Modal */}
       <EraSelectionModal

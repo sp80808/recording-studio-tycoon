@@ -1,5 +1,6 @@
 
 import { GameState, StudioSkill, Equipment, PlayerAttributes } from '@/types/game';
+import { upgradePlayerAttribute } from './playerUtils';
 
 export const calculateStudioSkillBonus = (skill: StudioSkill, type: 'creativity' | 'technical' | 'quality'): number => {
   const level = skill.level;
@@ -158,22 +159,10 @@ export const addNotification = (gameState: GameState, message: string, type: 'in
   };
 };
 
+/**
+ * Spend a perk point on a player attribute.
+ * Uses atomic upgrade logic with range validation and cap at 10.
+ */
 export const spendPerkPoint = (gameState: GameState, attribute: keyof PlayerAttributes): GameState => {
-  if (gameState.playerData.perkPoints <= 0) {
-    return gameState;
-  }
-
-  const updatedAttributes = {
-    ...gameState.playerData.attributes,
-    [attribute]: gameState.playerData.attributes[attribute] + 1
-  };
-
-  return {
-    ...gameState,
-    playerData: {
-      ...gameState.playerData,
-      perkPoints: gameState.playerData.perkPoints - 1,
-      attributes: updatedAttributes
-    }
-  };
+  return upgradePlayerAttribute(gameState, attribute);
 };

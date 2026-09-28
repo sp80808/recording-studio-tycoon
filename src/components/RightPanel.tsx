@@ -151,14 +151,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   };
 
   return (
-    <Card className="bg-gray-900/90 border-gray-600 p-4 h-full overflow-y-auto backdrop-blur-sm animate-slide-in-right">
-      {/* Tab Navigation */}
-      <div className="flex mb-4 bg-gray-800 rounded-lg p-1">
+    <Card className="bg-slate-900/95 border-slate-700/80 p-3 h-full min-h-0 flex flex-col overflow-hidden backdrop-blur-md animate-slide-in-right">
+      {/* Tab Navigation (Pinned) */}
+      <div className="flex shrink-0 mb-2.5 bg-slate-950/80 border border-slate-800 rounded-lg p-1">
         <button
           onClick={() => setActiveTab('studio')}
-          className={`flex-1 py-2 px-2 rounded-md text-xs font-medium transition-colors ${
+          className={`flex-1 py-1.5 px-1.5 rounded-md text-xs font-semibold transition-colors ${
             activeTab === 'studio'
-              ? 'bg-blue-600 text-white'
+              ? 'bg-blue-600 text-white shadow'
               : 'text-gray-400 hover:text-white'
           }`}
         >
@@ -166,9 +166,9 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         </button>
         <button
           onClick={() => setActiveTab('skills')}
-          className={`flex-1 py-2 px-2 rounded-md text-xs font-medium transition-colors ${
+          className={`flex-1 py-1.5 px-1.5 rounded-md text-xs font-semibold transition-colors ${
             activeTab === 'skills'
-              ? 'bg-blue-600 text-white'
+              ? 'bg-blue-600 text-white shadow'
               : 'text-gray-400 hover:text-white'
           }`}
         >
@@ -176,9 +176,9 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         </button>
         <button
           onClick={() => setActiveTab('staff')}
-          className={`flex-1 py-2 px-2 rounded-md text-xs font-medium transition-colors ${
+          className={`flex-1 py-1.5 px-1.5 rounded-md text-xs font-semibold transition-colors ${
             activeTab === 'staff'
-              ? 'bg-blue-600 text-white'
+              ? 'bg-blue-600 text-white shadow'
               : 'text-gray-400 hover:text-white'
           }`}
         >
@@ -186,9 +186,9 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         </button>
         <button
           onClick={() => setActiveTab('bands')}
-          className={`flex-1 py-2 px-2 rounded-md text-xs font-medium transition-colors ${
+          className={`flex-1 py-1.5 px-1.5 rounded-md text-xs font-semibold transition-colors ${
             activeTab === 'bands'
-              ? 'bg-blue-600 text-white'
+              ? 'bg-blue-600 text-white shadow'
               : 'text-gray-400 hover:text-white'
           }`}
         >
@@ -196,9 +196,9 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         </button>
         <button
           onClick={() => setActiveTab('charts')}
-          className={`flex-1 py-2 px-2 rounded-md text-xs font-medium transition-colors ${
+          className={`flex-1 py-1.5 px-1.5 rounded-md text-xs font-semibold transition-colors ${
             activeTab === 'charts'
-              ? 'bg-blue-600 text-white'
+              ? 'bg-blue-600 text-white shadow'
               : 'text-gray-400 hover:text-white'
           }`}
         >
@@ -206,128 +206,146 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         </button>
       </div>
 
-      {/* Tab Content */}
-      {activeTab === 'studio' && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold text-white">Studio Actions</h2>
-          
-          {/* Studio Progression Panel */}
-          <StudioProgressionPanel gameState={gameState} />
-
-          <div className="rounded-lg border border-gray-700 bg-gray-950/50 p-3">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <h3 className="text-sm font-semibold text-white">🏢 Studio Rooms</h3>
-                <p className="text-xs text-gray-400">
-                  {unlockedRooms.length} owned · {roomExpansionLimit} currently allowed
-                </p>
+      {/* Tab Content (Scrollable Container) */}
+      <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+        {activeTab === 'studio' && (
+          <div className="space-y-3">
+            {/* Prominent Advance Day Action Banner */}
+            <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-gradient-to-r from-purple-950/80 via-indigo-950/70 to-slate-900 border border-purple-500/50 shadow-md">
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <span className="text-amber-300">☀ Day {gameState.currentDay}</span>
+                  <span className="text-[10px] text-purple-300 font-medium">({gameState.currentYear})</span>
+                </div>
+                <div className="text-[10px] text-slate-400 truncate">
+                  Advances calendar & restores producer sessions
+                </div>
               </div>
-              <div className="text-xs text-gray-500">
-                {occupiedRoomIds.size}/{unlockedRooms.length} occupied
-              </div>
+              <Button 
+                onClick={advanceDay} 
+                size="sm" 
+                className="bg-purple-600 hover:bg-purple-500 text-white font-bold px-3 text-xs shrink-0 shadow-lg shadow-purple-950/50"
+              >
+                Advance Day ❯
+              </Button>
             </div>
 
-            <div className="space-y-2">
-              {gameState.studioRooms.map(room => {
-                const occupied = occupiedRoomIds.has(room.id);
-                const levelLocked = gameState.playerData.level < room.requiredPlayerLevel;
-                const expansionLocked = !room.unlocked && unlockedRooms.length >= roomExpansionLimit;
-                const canAfford = gameState.money >= room.purchaseCost;
+            {/* Studio Progression Panel */}
+            <StudioProgressionPanel gameState={gameState} />
 
-                return (
-                  <div
-                    key={room.id}
-                    className={`rounded border p-2 ${
-                      room.unlocked
-                        ? occupied
-                          ? 'border-blue-500/40 bg-blue-950/20'
-                          : 'border-green-500/30 bg-green-950/10'
-                        : 'border-gray-700 bg-gray-900/60'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium text-gray-100">{room.name}</div>
-                        <div className="text-[11px] text-gray-500 capitalize">
-                          {room.type.replace('-', ' ')} · quality +{room.qualityBonus} · speed +{room.speedBonus}
-                        </div>
-                      </div>
-                      {room.unlocked ? (
-                        <span className={`text-[10px] px-2 py-1 rounded-full ${
-                          occupied ? 'bg-blue-500/15 text-blue-300' : 'bg-green-500/15 text-green-300'
-                        }`}>
-                          {occupied ? 'In session' : 'Available'}
-                        </span>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={levelLocked || expansionLocked || !canAfford}
-                          onClick={() => purchaseStudioRoom(room.id)}
-                          className="h-7 text-[11px] border-gray-600"
-                        >
-                          {levelLocked
-                            ? `Lvl ${room.requiredPlayerLevel}`
-                            : expansionLocked
-                              ? 'Milestone'
-                              : `Buy ${room.purchaseCost.toLocaleString()}`}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          
-          <Button onClick={advanceDay} className="w-full bg-purple-600 hover:bg-purple-700 text-white">
-            Advance Day
-          </Button>
-          
-          <EquipmentList purchaseEquipment={purchaseEquipment} gameState={gameState} />
+            {/* Studio Rooms */}
+            <div className="rounded-lg border border-gray-700 bg-gray-950/50 p-2.5">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <h3 className="text-xs font-bold text-white">🏢 Studio Rooms</h3>
+                  <p className="text-[10px] text-gray-400">
+                    {unlockedRooms.length} owned · {roomExpansionLimit} allowed
+                  </p>
+                </div>
+                <div className="text-[10px] text-gray-400">
+                  {occupiedRoomIds.size}/{unlockedRooms.length} occupied
+                </div>
+              </div>
 
-          {/* Owned Equipment Section */}
-          <div className="mt-6">
-            <h3 className="text-lg font-bold text-white mb-3">🛠️ My Gear</h3>
-            {gameState.ownedEquipment.length === 0 ? (
-              <p className="text-sm text-gray-400">You don't own any equipment yet. Purchase some from the shop!</p>
-            ) : (
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                {gameState.ownedEquipment.map(equip => {
-                  const currentMod = equip.appliedModId ? availableMods.find(m => m.id === equip.appliedModId) : null;
+              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                {gameState.studioRooms.map(room => {
+                  const occupied = occupiedRoomIds.has(room.id);
+                  const levelLocked = gameState.playerData.level < room.requiredPlayerLevel;
+                  const expansionLocked = !room.unlocked && unlockedRooms.length >= roomExpansionLimit;
+                  const canAfford = gameState.money >= room.purchaseCost;
+
                   return (
-                    <Card key={equip.id} className="p-3 bg-gray-800/60 border-gray-700">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="text-sm font-semibold text-gray-200">
-                            {equip.icon} {equip.name} 
-                            {currentMod && <span className="text-xs text-yellow-400 ml-1">{currentMod.nameSuffix || `(${currentMod.name})`}</span>}
-                          </p>
-                          <p className="text-xs text-gray-400">Condition: {equip.condition}%</p>
+                    <div
+                      key={room.id}
+                      className={`rounded border p-2 ${
+                        room.unlocked
+                          ? occupied
+                            ? 'border-blue-500/40 bg-blue-950/20'
+                            : 'border-green-500/30 bg-green-950/10'
+                          : 'border-gray-700 bg-gray-900/60'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="text-xs font-medium text-gray-100">{room.name}</div>
+                          <div className="text-[10px] text-gray-500 capitalize">
+                            {room.type.replace('-', ' ')} · Q+{room.qualityBonus} · S+{room.speedBonus}
+                          </div>
                         </div>
-                        {/* Only show Mods button if any mods are researched */}
-                        {gameState.researchedMods && gameState.researchedMods.length > 0 && (
+                        {room.unlocked ? (
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${
+                            occupied ? 'bg-blue-500/15 text-blue-300' : 'bg-green-500/15 text-green-300'
+                          }`}>
+                            {occupied ? 'In session' : 'Available'}
+                          </span>
+                        ) : (
                           <Button
                             size="sm"
                             variant="outline"
-                            className="text-xs border-gray-600 text-gray-300 hover:bg-gray-700/50 hover:text-white px-2 py-1 h-auto bg-gray-800/50"
-                            onClick={() => {
-                              setSelectedEquipmentForModding(equip);
-                              setShowEquipmentModModal(true);
-                            }}
+                            disabled={levelLocked || expansionLocked || !canAfford}
+                            onClick={() => purchaseStudioRoom(room.id)}
+                            className="h-6 text-[10px] px-2 border-gray-600"
                           >
-                            Mods
+                            {levelLocked
+                              ? `Lvl ${room.requiredPlayerLevel}`
+                              : expansionLocked
+                                ? 'Milestone'
+                                : `Buy $${room.purchaseCost.toLocaleString()}`}
                           </Button>
                         )}
                       </div>
-                    </Card>
+                    </div>
                   );
                 })}
               </div>
-            )}
+            </div>
+            
+            {/* Equipment Shop Section */}
+            <div className="rounded-lg border border-gray-700 bg-gray-950/50 p-2.5 max-h-72 overflow-y-auto pr-1">
+              <EquipmentList purchaseEquipment={purchaseEquipment} gameState={gameState} />
+            </div>
+
+            {/* Owned Equipment Section */}
+            <div className="rounded-lg border border-gray-700 bg-gray-950/50 p-2.5">
+              <h3 className="text-xs font-bold text-white mb-2">🛠️ My Gear ({gameState.ownedEquipment.length})</h3>
+              {gameState.ownedEquipment.length === 0 ? (
+                <p className="text-[11px] text-gray-400">No equipment owned yet.</p>
+              ) : (
+                <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
+                  {gameState.ownedEquipment.map(equip => {
+                    const currentMod = equip.appliedModId ? availableMods.find(m => m.id === equip.appliedModId) : null;
+                    return (
+                      <Card key={equip.id} className="p-2 bg-gray-800/60 border-gray-700">
+                        <div className="flex justify-between items-center text-xs">
+                          <div className="min-w-0 pr-2">
+                            <p className="font-semibold text-gray-200 truncate">
+                              {equip.icon} {equip.name} 
+                              {currentMod && <span className="text-[10px] text-yellow-400 ml-1">{currentMod.nameSuffix || `(${currentMod.name})`}</span>}
+                            </p>
+                            <p className="text-[10px] text-gray-400">Condition: {equip.condition}%</p>
+                          </div>
+                          {gameState.researchedMods && gameState.researchedMods.length > 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-[10px] border-gray-600 text-gray-300 hover:bg-gray-700/50 hover:text-white px-2 py-0.5 h-6 bg-gray-800/50 shrink-0"
+                              onClick={() => {
+                                setSelectedEquipmentForModding(equip);
+                                setShowEquipmentModModal(true);
+                              }}
+                            >
+                              Mods
+                            </Button>
+                          )}
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {activeTab === 'skills' && (
         <div className="space-y-4">
@@ -342,6 +360,10 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           <Button onClick={() => setShowSkillsModal(true)} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
             View Studio Skills
           </Button>
+
+          <div className="mt-4">
+            <StudioProgressionPanel gameState={gameState} />
+          </div>
         </div>
       )}
 
@@ -494,7 +516,8 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         />
       )}
 
-      {activeTab === 'charts' && gameState.playerData.level >= 1 && (                  <ChartsPanel
+      {activeTab === 'charts' && gameState.playerData.level >= 1 && (
+        <ChartsPanel
           gameState={gameState}
           onContactArtist={contactArtist}
         />
@@ -510,6 +533,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           </div>
         </div>
       )}
+      </div>
 
       <SkillsModal
         isOpen={showSkillsModal}
@@ -547,12 +571,6 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           gameState={gameState}
           onApplyMod={applyModToEquipment} // Pass the actual function
         />
-      )}
-
-      {activeTab === 'skills' && (
-        <div className="mt-6">
-          <StudioProgressionPanel gameState={gameState} />
-        </div>
       )}
     </Card>
   );

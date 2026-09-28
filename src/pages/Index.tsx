@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'; // Adde
 import { GameLayout } from '@/components/GameLayout';
 import { GameHeader } from '@/components/GameHeader';
 import { MainGameContent } from '@/components/MainGameContent';
+import { RewardFlights } from '@/components/RewardFlights';
 import { NotificationSystem } from '@/components/NotificationSystem';
 import { TrainingModal } from '@/components/modals/TrainingModal';
 import { GameModals } from '@/components/GameModals';
@@ -432,11 +433,13 @@ const MusicStudioTycoon = () => {
 
   return (
     <GameLayout eraId={gameState.currentEra}>
+      {!compactStudioMode && <RewardFlights gameState={gameState} />}
       <div className="flex flex-col h-full">
         {!compactStudioMode && (
           <GameHeader 
             gameState={gameState} 
             onOpenSettings={handleOpenSettings}
+            triggerEraTransition={triggerEraTransition}
             className="grid-area-header"
           />
         )}

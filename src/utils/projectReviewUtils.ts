@@ -16,6 +16,8 @@ export interface SettlementContext {
   studioQualityBonus?: number;
   /** Flat quality points (0-10) from equipment quality bonuses. */
   equipmentQualityBonus?: number;
+  /** Flat quality points (0-12) from active Studio Synergies. */
+  synergyQualityBonus?: number;
   /** Market multiplier from genre popularity via getGenreMarketMultiplier (centred on 1.0). */
   marketMultiplier?: number;
   /** Override for match-rating multiplier; defaults from project.matchRating. */

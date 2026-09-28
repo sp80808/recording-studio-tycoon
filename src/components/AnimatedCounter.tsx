@@ -1,5 +1,6 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useReducedMotion } from 'framer-motion';
 
 interface AnimatedCounterProps {
   value: number;
@@ -16,9 +17,17 @@ export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({
   prefix = "",
   suffix = ""
 }) => {
-  const [displayValue, setDisplayValue] = useState(0);
+  const [displayValue, setDisplayValue] = useState(value);
+  const current = useRef(value);
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
+    const from = current.current;
+    if (reducedMotion || duration <= 0) {
+      current.current = value;
+      setDisplayValue(value);
+      return;
+    }
     let startTime: number;
     let animationFrame: number;
 
@@ -27,7 +36,8 @@ export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({
       const progress = Math.min((timestamp - startTime) / duration, 1);
       
       const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-      setDisplayValue(Math.floor(easeOutQuart * value));
+      current.current = Math.round(from + easeOutQuart * (value - from));
+      setDisplayValue(current.current);
       
       if (progress < 1) {
         animationFrame = requestAnimationFrame(animate);
@@ -41,7 +51,7 @@ export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({
         cancelAnimationFrame(animationFrame);
       }
     };
-  }, [value, duration]);
+  }, [value, duration, reducedMotion]);
 
   return (
     <span className={`animated-counter ${className}`}>

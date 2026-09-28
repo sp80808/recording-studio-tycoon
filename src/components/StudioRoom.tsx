@@ -6,6 +6,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { gameAudio } from '@/utils/audioSystem';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
 import { toast } from '@/hooks/use-toast';
+import { LocateFixed } from 'lucide-react';
 import { triggerScreenShake } from '@/utils/screenShake';
 
 interface StudioRoomProps {
@@ -17,6 +18,7 @@ interface StudioRoomProps {
   onUnassignStaff?: (staffId: string) => void;
   onOpenDashboardTab?: (tab: 'studio' | 'skills' | 'bands' | 'charts' | 'staff') => void;
   onConsoleFocus: () => void;
+  onBookings?: () => void;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -35,11 +37,13 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
   onUnassignStaff,
   onOpenDashboardTab,
   onConsoleFocus,
+  onBookings,
   className = '',
   style,
 }) => {
   const { settings } = useSettings();
   const [activeInspector, setActiveInspector] = useState<StudioHotspotId | null>(null);
+  const [cameraReset, setCameraReset] = useState(0);
   const [tierFlash, setTierFlash] = useState(false);
   const playClick = () => { if (settings.sfxEnabled) gameAudio.playUISound('buttonClick'); };
 
@@ -101,6 +105,8 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
   /** Every hotspot now opens its contextual inspector (bead goj.2). */
   const handleHotspot = (id: StudioHotspotId) => {
     playClick();
+    if (id === 'console') { onConsoleFocus(); return; }
+    if (id === 'phone' && onBookings) { onBookings(); return; }
     setActiveInspector(id);
   };
 
@@ -110,8 +116,11 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
   };
 
   return (
-    <div className={`relative overflow-hidden rounded-lg border border-gray-700/70 bg-[#11151f] ${className}`} style={style}>
-      <WebGLCanvas state={sceneState} onHotspotSelect={handleHotspot} />
+    <div 
+      className={`relative overflow-hidden rounded-lg border border-gray-700/70 bg-[#11151f] transition-all duration-300 ${className}`} 
+      style={style}
+    >
+      <WebGLCanvas state={sceneState} onHotspotSelect={handleHotspot} resetCameraKey={cameraReset} />
       {tierFlash && <div className="tier-flash-overlay" />}
       {activeInspector && (
         <StudioInspector
@@ -136,32 +145,12 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
             {gameState.currentYear}
           </span>
         </div>
-        <div className="absolute top-2 right-3">
-          <span className="px-2 py-1 text-[10px] font-black tracking-[0.15em] text-amber-300 bg-black/50 border border-white/10 rounded">
-            ☀ DAY {gameState.currentDay}
-          </span>
-        </div>
-        {!gameState.activeProject && (
-          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center">
-            <span className="animate-pulse px-3 py-1.5 text-xs font-semibold text-gray-100 bg-black/60 border border-amber-400/40 rounded-full">
-              📞 No session booked — click the phone or pick a gig
-            </span>
-          </div>
-        )}
-        <div className="absolute bottom-2 inset-x-0 flex justify-center">
-          <div className="flex flex-wrap justify-center gap-1.5 px-2">
-            {[['🎛','Console'],['📞','Book'],['🕐','Day'],['📺','Charts'],['🎸','Gear'],['🎤','Crew']]
-              .map(([icon, label]) => (
-                <span key={label} className="px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-gray-300/90 bg-black/45 border border-white/10 rounded">
-                  {icon} {label}
-                </span>
-              ))}
-            <span className="px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-amber-200/90 bg-black/45 border border-amber-300/20 rounded">
-              click objects to inspect
-            </span>
-          </div>
-        </div>
       </div>
+      <button className="absolute right-3 top-2 studio-dock-button bg-slate-950/70 border border-white/10"
+        onClick={() => setCameraReset(value => value + 1)} aria-label="Center studio camera" title="Center studio camera">
+        <LocateFixed size={18} />
+      </button>
+      <p className="absolute bottom-2 left-3 text-[10px] text-slate-400 pointer-events-none">Tap objects · pinch to zoom · two-finger pan</p>
     </div>
   );
 };

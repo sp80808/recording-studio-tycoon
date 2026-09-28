@@ -1,32 +1,20 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { GameState, FocusAllocation, StaffMember, PlayerAttributes, Project } from '@/types/game';
-import { ProjectList } from '@/components/ProjectList';
-import { ProgressiveProjectInterface } from '@/components/ProgressiveProjectInterface';
-import { CareerHub } from '@/components/CareerHub';
-import { AttributesModal } from '@/components/modals/AttributesModal';
-import { RightPanel } from '@/components/RightPanel';
-import { StudioRoom } from '@/components/StudioRoom';
-import { FloatingXPOrb } from '@/components/FloatingXPOrb';
-import { EraTransitionAnimation } from '@/components/EraTransitionAnimation';
-import { HistoricalNewsModal } from '@/components/HistoricalNewsModal';
+import * as Dialog from '@radix-ui/react-dialog';
+import { Headphones, Phone, SlidersHorizontal, Sparkles, Users, Disc3, Trophy, X, Minimize2, Moon } from 'lucide-react';
+import { GameState, StaffMember, PlayerAttributes, Project } from '@/types/game';
+import { ProjectList } from './ProjectList';
+import { ProgressiveProjectInterface } from './ProgressiveProjectInterface';
+import { CareerHub } from './CareerHub';
+import { AttributesModal } from './modals/AttributesModal';
+import { RightPanel } from './RightPanel';
+import { StudioRoom } from './StudioRoom';
+import { StudioStrip } from './StudioStrip';
+import { EraTransitionAnimation } from './EraTransitionAnimation';
+import { HistoricalNewsModal } from './HistoricalNewsModal';
 import { checkForNewEvents, applyEventEffects, HistoricalEvent } from '@/utils/historicalEvents';
 import { useBandManagement } from '@/hooks/useBandManagement';
-import { MinigameType } from '@/components/minigames/MinigameManager';
-import useMediaQuery from '@/hooks/useMediaQuery';
-import { useMobileDetection } from '@/hooks/useMediaQuery';
-import MobileArrowNavigation from '@/components/layout/MobileArrowNavigation';
-import { StudioStrip } from '@/components/StudioStrip';
-import { Button } from '@/components/ui/button';
-import { Minimize2 } from 'lucide-react';
-
-/**
- * Interface defining the structure of a tab object for mobile navigation.
- */
-interface Tab {
-  id: string; // Unique identifier for the tab (e.g., 'studio', 'projects')
-  name: string; // Display name for the tab (e.g., "Studio", "Projects")
-  component?: React.ReactNode; // Optional: The actual component to render (not directly used for rendering by MobileArrowNavigation itself)
-}
+import { MinigameType } from './minigames/MinigameManager';
+import './studio-play.css';
 
 interface MainGameContentProps {
   gameState: GameState;
@@ -58,12 +46,8 @@ interface MainGameContentProps {
   setCompactStudioMode: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-/**
- * MainGameContent component.
- * This component is the core of the game's UI, displaying different panels based on the game state and viewport size.
- * On desktop, it shows a three-column layout: Project List, Main Studio Interface, and Management Panel.
- * On mobile, it uses MobileArrowNavigation and swipe gestures to switch between these three panels, showing one at a time.
- */
+
+type Panel = 'bookings' | 'session' | 'studio' | 'career';
 export const MainGameContent: React.FC<MainGameContentProps> = ({
   gameState,
   setGameState,
@@ -92,64 +76,32 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   compactStudioMode,
   setCompactStudioMode
 }) => {
-  const [showSkillsModal, setShowSkillsModal] = useState(false);
+
+  const [panel, setPanel] = useState<Panel | null>(null);
   const [showAttributesModal, setShowAttributesModal] = useState(false);
   const [showEraTransition, setShowEraTransition] = useState(false);
   const [eraTransitionInfo, setEraTransitionInfo] = useState<{ fromEra: string; toEra: string } | null>(null);
   const [showHistoricalNews, setShowHistoricalNews] = useState(false);
   const [currentHistoricalEvent, setCurrentHistoricalEvent] = useState<HistoricalEvent | null>(null);
   const [lastCheckedDay, setLastCheckedDay] = useState(0);
-  const [floatingOrbs, setFloatingOrbs] = useState<Array<{
-    id: string;
-    amount: number;
-    type: 'xp' | 'money' | 'skill';
-  }>>([]);
-
-  // Mobile detection: Use user agent and touch capabilities instead of screen size
-  const isMobile = useMobileDetection();
-  
-  // State to manage the active tab index for mobile view.
-  // 0: Projects, 1: Studio (main interface), 2: Management (right panel)
-  const [activeMobileTabIndex, setActiveMobileTabIndex] = useState(1); // Default to Studio panel
-
-  // Desktop: the 5-tab RightPanel is collapsed into an on-demand Management
-  // drawer (bead goj.2) so the room stays the home screen. Mobile keeps its
-  // third swipe tab unchanged.
-  const [managementOpen, setManagementOpen] = useState(false);
   const [dashboardTab, setDashboardTab] = useState<'studio' | 'skills' | 'bands' | 'charts' | 'staff'>('studio');
-  const workPanelRef = useRef<HTMLDivElement>(null);
-  const bookingsRef = useRef<HTMLDivElement>(null);
-  const focusPanel = (panel: React.RefObject<HTMLDivElement>, tab: number) => {
-    if (isMobile) setActiveMobileTabIndex(tab);
-    panel.current?.scrollTo({ top: 0, behavior: 'auto' });
-    panel.current?.focus({ preventScroll: true });
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const openPanel = (next: Panel) => {
+    if (!panel) returnFocusRef.current = document.activeElement as HTMLElement;
+    setPanel(next);
+  };
+  const bookProject = (project: Project) => {
+    startProject(project);
+    openPanel('session');
+  };
+  const handleOpenDashboardTab = (tab: typeof dashboardTab) => {
+    setDashboardTab(tab);
+    openPanel('studio');
   };
 
-  // Refs for swipe gesture handling on mobile.
-  const swipeContainerRef = useRef<HTMLDivElement>(null); // Ref for the swipeable container
-  const touchStartXRef = useRef(0); // Stores X-coordinate at the start of a touch
-  const touchCurrentXRef = useRef(0); // Stores current X-coordinate during a touch move
-  const isSwipingRef = useRef(false); // Flag to indicate if a swipe is in progress
-  const SWIPE_THRESHOLD = 50; // Minimum pixel distance for a swipe to be registered
-
-  // Defines the tabs available for mobile navigation.
-  // These correspond to the three main panels of the game.
-  const mobileTabs: Tab[] = [
-    { id: 'projects', name: 'Projects' },     // Corresponds to ProjectList panel
-    { id: 'studio', name: 'Studio' },         // Corresponds to ProgressiveProjectInterface (main studio)
-    { id: 'management', name: 'Management' }, // Corresponds to RightPanel (staff, equipment, etc.)
-  ];
-  
-  /**
-   * Handles navigation triggered by the MobileArrowNavigation component.
-   * @param {string} tabId - The ID of the tab to navigate to.
-   */
-  const handleMobileNavigate = (tabId: string) => {
-    const newIndex = mobileTabs.findIndex(tab => tab.id === tabId);
-    if (newIndex !== -1) {
-      setActiveMobileTabIndex(newIndex);
-    }
-  };
+  useEffect(() => {
+    if (autoTriggeredMinigame) setPanel('session');
+  }, [autoTriggeredMinigame]);
 
   // Check for new historical events when day advances
   useEffect(() => {
@@ -182,174 +134,66 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   const { createBand, startTour, createOriginalTrack } = useBandManagement(gameState, setGameState);
 
 
-  /**
-   * Touch event handler for the start of a swipe gesture on mobile.
-   * @param {React.TouchEvent} e - The touch event.
-   */
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (!isMobile) return; // Swipe logic is only for mobile
-    touchStartXRef.current = e.touches[0].clientX;
-    touchCurrentXRef.current = e.touches[0].clientX;
-    isSwipingRef.current = true;
-    if (swipeContainerRef.current) {
-      // Disable CSS transition during manual swipe to avoid lag
-      swipeContainerRef.current.style.transition = 'none';
-    }
-  };
 
-  /**
-   * Touch event handler for movement during a swipe gesture on mobile.
-   * @param {React.TouchEvent} e - The touch event.
-   */
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isMobile || !isSwipingRef.current) return;
-    touchCurrentXRef.current = e.touches[0].clientX;
-    const diffX = touchCurrentXRef.current - touchStartXRef.current;
-    if (swipeContainerRef.current) {
-      // Translate the swipe container based on touch movement
-      const baseTranslate = -activeMobileTabIndex * 100; // Base offset for the current tab
-      swipeContainerRef.current.style.transform = `translateX(calc(${baseTranslate}% + ${diffX}px))`;
-    }
-  };
-
-  /**
-   * Touch event handler for the end of a swipe gesture on mobile.
-   * Determines if a swipe was significant enough to change tabs.
-   */
-  const handleTouchEnd = () => {
-    if (!isMobile || !isSwipingRef.current) return;
-    isSwipingRef.current = false;
-    const diffX = touchCurrentXRef.current - touchStartXRef.current;
-
-    if (swipeContainerRef.current) {
-      // Re-enable CSS transition for smooth snapping
-      swipeContainerRef.current.style.transition = 'transform 0.3s ease-out';
-    }
-
-    // Check if swipe distance exceeds the threshold
-    if (Math.abs(diffX) > SWIPE_THRESHOLD) {
-      if (diffX < 0) { // Swiped left (next tab)
-        setActiveMobileTabIndex(prev => Math.min(prev + 1, mobileTabs.length - 1));
-      } else { // Swiped right (previous tab)
-        setActiveMobileTabIndex(prev => Math.max(prev - 1, 0));
-      }
-    } else {
-      // If not a significant swipe, snap back to the current tab
-      if (swipeContainerRef.current) {
-        swipeContainerRef.current.style.transform = `translateX(-${activeMobileTabIndex * 100}%)`;
-      }
-    }
-  };
-  
-  // Effect to update the swipe container's translation when activeMobileTabIndex changes (e.g., via arrow navigation).
-  useEffect(() => {
-    if (isMobile && swipeContainerRef.current) {
-      swipeContainerRef.current.style.transform = `translateX(-${activeMobileTabIndex * 100}%)`;
-    }
-  }, [activeMobileTabIndex, isMobile]);
-
-  /**
-   * Room inspectors deep-link into the management surface: on desktop that
-   * means opening the drawer, on mobile jumping to the Management swipe tab.
-   * RightPanel then switches its own tab via the dispatched event.
-   */
-  const handleOpenDashboardTab = (tab: 'studio' | 'skills' | 'bands' | 'charts' | 'staff') => {
-    if (isMobile) {
-      setActiveMobileTabIndex(2);
-    } else {
-      setManagementOpen(true);
-    }
-    setDashboardTab(tab);
-  };
-
-  if (!isMobile && compactStudioMode) {
-    return (
-      <div className="h-full flex items-end">
-        <StudioStrip
-          gameState={gameState}
-          onExpand={() => setCompactStudioMode(false)}
-          onBookNextEnquiry={() => {
-            const nextEnquiry = gameState.availableProjects[0];
-            if (nextEnquiry) startProject(nextEnquiry);
-          }}
-        />
-      </div>
-    );
+  if (compactStudioMode) {
+    return <div className="h-full flex items-end"><StudioStrip gameState={gameState}
+      onExpand={() => setCompactStudioMode(false)}
+      onBookNextEnquiry={() => { const next = gameState.availableProjects[0]; if (next) startProject(next); }} /></div>;
   }
 
+  const project = gameState.activeProject;
+  const sessionLabel = project?.awaitingReview ? 'Collect release' : project ? 'Continue session' : 'Book your first session';
+  const titles = { bookings: 'Bookings', session: 'At the console', studio: 'Studio management', career: 'Your producer story' };
   return (
-    // Outermost container for the main game content area.
-    <div className="h-full flex-1 min-h-0 flex flex-col main-game-content relative">
-      {!isMobile && (
-        <Button
-          onClick={() => setCompactStudioMode(true)}
-          size="sm"
-          variant="outline"
-          className="absolute top-2 right-2 z-50 border-gray-700 bg-gray-950/90 text-gray-300 hover:bg-gray-800"
-          title="Collapse to desktop studio strip"
-        >
-          <Minimize2 size={14} className="mr-1" />
-          Studio Strip
-        </Button>
-      )}
-      <CareerHub gameState={gameState} onTalents={() => setShowAttributesModal(true)}
-        onWork={() => focusPanel(workPanelRef, 1)} onBookings={() => focusPanel(bookingsRef, 0)}
-        onRest={advanceDay} onStaff={() => handleOpenDashboardTab('staff')} />
-      <AttributesModal isOpen={showAttributesModal} onClose={() => setShowAttributesModal(false)} playerData={gameState.playerData} spendPerkPoint={spendPerkPoint} />
-      {/* Render MobileArrowNavigation only on mobile viewports. */}
-      {isMobile && (
-        <div className="mobile-navigation">
-          <MobileArrowNavigation
-            tabs={mobileTabs}
-            activeTabId={mobileTabs[activeMobileTabIndex].id} // Pass the ID of the current active tab
-            onNavigate={handleMobileNavigate} // Pass the handler for arrow clicks
-          />
-        </div>
-      )}
-      {/* Container for the tab panels. Flex direction and overflow differ for mobile vs. desktop. */}
-      <div 
-        className={`flex-grow flex ${isMobile ? 'mobile-tab-container' : ''}`}
-        ref={isMobile ? swipeContainerRef : null} // Apply swipe container ref only on mobile
-        style={isMobile ? { transition: 'transform 0.3s ease-out', width: `${mobileTabs.length * 100}%` } : {}} // Style for swipe track on mobile
-        onTouchStart={isMobile ? handleTouchStart : undefined} // Attach touch handlers only on mobile
-        onTouchMove={isMobile ? handleTouchMove : undefined}
-        onTouchEnd={isMobile ? handleTouchEnd : undefined}
-      >
-        {/* Panel 1: Project List */}
-        {/* On mobile, this is the first tab. On desktop, it's the left column. */}
-        <div
-          ref={bookingsRef} tabIndex={-1} aria-label="Available bookings"
-          className={`h-full overflow-y-auto p-2 project-panel ${isMobile ? 'flex-shrink-0 mobile-tab-panel' : 'w-1/4 border-r border-gray-700 desktop-panel'}`}
-          style={isMobile ? { width: `calc(100% / ${mobileTabs.length})`} : { width: '25%', minWidth: '200px' }}
-        >
-          <ProjectList
-            gameState={gameState}
-            setGameState={setGameState}
-            startProject={startProject}
-            onRefreshProjects={refreshProjects}
-          />
-        </div>
-        
-        {/* Panel 2: Main Interface (Studio) */}
-        {/* On mobile, this is the second (default) tab. On desktop it fills the space left by the collapsed drawer. */}
-        <div
-          className={`h-full min-h-0 overflow-hidden p-2 relative flex flex-col studio-panel ${isMobile ? 'flex-shrink-0 mobile-tab-panel' : 'desktop-panel'}`}
-          style={isMobile ? { width: `calc(100% / ${mobileTabs.length})`} : (managementOpen ? { width: '50%', minWidth: '300px' } : { flex: 1, minWidth: '300px' })}
-        >
-          {/* The isometric studio floor — diegetic home screen of the game */}
-          <StudioRoom
-            gameState={gameState}
-            onAdvanceDay={advanceDay}
-            onRefreshProjects={refreshProjects}
-            onStartProject={startProject}
-            onAssignStaff={assignStaffToProject}
-            onUnassignStaff={unassignStaffFromProject}
-            onOpenDashboardTab={handleOpenDashboardTab}
-            onConsoleFocus={() => focusPanel(workPanelRef, 1)}
-            className="shrink-0 mb-2"
-            style={{ height: 'clamp(220px, 42vh, 420px)' }}
-          />
-          <div ref={workPanelRef} tabIndex={-1} aria-label="Session work panel" className="flex-1 min-h-0 overflow-y-auto pr-1">
+    <div className="studio-play">
+      <div className="studio-play-world" data-reward-source="floor">
+        <StudioRoom gameState={gameState} onAdvanceDay={advanceDay} onRefreshProjects={refreshProjects}
+          onStartProject={bookProject} onAssignStaff={assignStaffToProject} onUnassignStaff={unassignStaffFromProject}
+          onOpenDashboardTab={handleOpenDashboardTab} onConsoleFocus={() => openPanel('session')}
+          onBookings={() => openPanel('bookings')} className="studio-play-room" />
+      </div>
+      <div className="studio-play-status">
+        <span className="studio-live-light" aria-hidden="true" />
+        <span className="min-w-0 truncate">{project ? project.title : 'Your studio. Your next great record.'}</span>
+        <span className="shrink-0 text-amber-200">{gameState.playerData.dailyWorkCapacity} sessions left</span>
+      </div>
+      <div className="studio-play-actions">
+        <button className="studio-primary-action" onClick={() => openPanel(project ? 'session' : 'bookings')}>
+          {project ? <Headphones size={20} /> : <Phone size={20} />}
+          <span>{sessionLabel}</span><span aria-hidden="true">→</span>
+        </button>
+        <nav aria-label="Studio activities" className="studio-command-dock">
+          {([
+            ['bookings', Phone, 'Bookings', () => openPanel('bookings')],
+            ['session', Headphones, 'Session', () => openPanel('session')],
+            ['gear', SlidersHorizontal, 'Gear', () => handleOpenDashboardTab('studio')],
+            ['crew', Users, 'Crew', () => handleOpenDashboardTab('staff')],
+            ['bands', Disc3, 'Artists', () => handleOpenDashboardTab('bands')],
+            ['charts', Trophy, 'Charts', () => handleOpenDashboardTab('charts')],
+            ['career', Sparkles, 'Career', () => openPanel('career')],
+          ] as const).map(([id, Icon, label, action]) => (
+            <button key={id} onClick={action} className="studio-dock-button" title={label} aria-label={label}>
+              <Icon size={21} aria-hidden="true" /><span>{label}</span>
+              {id === 'career' && gameState.playerData.perkPoints > 0 && <i className="studio-dock-badge">{gameState.playerData.perkPoints}</i>}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      <Dialog.Root open={panel !== null} onOpenChange={open => { if (!open) setPanel(null); }}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="studio-panel-shade" />
+          <Dialog.Content className={`studio-activity-panel ${panel === 'session' ? 'studio-session-popup' : ''}`}
+            aria-describedby={undefined}
+            onCloseAutoFocus={event => { event.preventDefault(); returnFocusRef.current?.focus(); }}>
+            <header className="studio-panel-heading">
+              <div><p>RECORDING STUDIO</p><Dialog.Title>{panel ? titles[panel] : ''}</Dialog.Title></div>
+              <Dialog.Close className="studio-dock-button" aria-label="Return to studio floor"><X size={22} /></Dialog.Close>
+            </header>
+            <div className="studio-panel-body" data-reward-source="activity">
+              {panel === 'bookings' && <ProjectList gameState={gameState} setGameState={setGameState}
+                startProject={bookProject} onRefreshProjects={refreshProjects} />}
+              {panel === 'session' && <>
             <ProgressiveProjectInterface
               gameState={gameState}
               setGameState={setGameState}
@@ -362,45 +206,13 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
               clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
               onProjectSelect={(project) => {
                 setGameState(prev => ({ ...prev, activeProject: project }));
-                // On mobile, if a project is selected from the ProjectList (tab 0),
-                // automatically switch to the Studio view (tab 1) to work on it.
-                if (isMobile) setActiveMobileTabIndex(1);
+                setPanel('session');
               }}
             />
-          </div>
-          <div ref={orbContainerRef} className="absolute inset-0 pointer-events-none overflow-hidden">
-            {floatingOrbs.map(orb => (
-              <FloatingXPOrb
-                key={orb.id}
-                amount={orb.amount}
-                type={orb.type}
-                onComplete={() => setFloatingOrbs(prev => prev.filter(o => o.id !== orb.id))}
-              />
-            ))}
-          </div>
-        </div>
 
-        {/* Management rail (desktop only): toggles the collapsed RightPanel drawer. */}
-        {!isMobile && (
-          <button
-            onClick={() => setManagementOpen(open => !open)}
-            aria-label={managementOpen ? 'Close management panel' : 'Open management panel'}
-            title={managementOpen ? 'Close management' : 'Open management'}
-            className="w-8 shrink-0 self-stretch my-2 rounded-md border border-gray-700 bg-gray-900/80 text-gray-300 hover:text-white hover:border-amber-400/50 transition-colors flex items-center justify-center"
-          >
-            <span style={{ writingMode: 'vertical-rl' }} className="text-[10px] font-black tracking-[0.2em]">
-              {managementOpen ? '❯ MANAGE' : '❮ MANAGE'}
-            </span>
-          </button>
-        )}
-
-        {/* Panel 3: RightPanel (Management, Staff, Equipment) */}
-        {/* Desktop: on-demand drawer (bead goj.2). Mobile: unchanged third swipe tab. */}
-        {(isMobile || managementOpen) && (
-        <div
-          className={`h-full overflow-y-auto p-2 right-panel ${isMobile ? 'flex-shrink-0 mobile-tab-panel' : 'w-1/4 border-l border-gray-700 desktop-panel'}`}
-          style={isMobile ? { width: `calc(100% / ${mobileTabs.length})`} : { width: '25%', minWidth: '200px' }}
-        >
+                <div ref={orbContainerRef} className="absolute inset-0 pointer-events-none overflow-hidden" />
+              </>}
+              {panel === 'studio' && (
           <RightPanel
             requestedTab={dashboardTab}
             gameState={gameState}
@@ -421,12 +233,25 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             createOriginalTrack={createOriginalTrack}
             startResearchMod={startResearchMod}
           />
-        </div>
-        )}
-      </div>
 
-      {/* Modals: EraTransitionAnimation, HistoricalNewsModal, etc. */}
-      {/* These are rendered outside the swipeable content area. */}
+              )}
+              {panel === 'career' && <div className="overflow-y-auto">
+                <CareerHub gameState={gameState} onTalents={() => setShowAttributesModal(true)}
+                  onWork={() => openPanel('session')} onBookings={() => openPanel('bookings')}
+                  onRest={advanceDay} onStaff={() => handleOpenDashboardTab('staff')} />
+                <div className="grid gap-3 p-4">
+                  <button className="studio-primary-action" onClick={() => handleOpenDashboardTab('skills')}><Sparkles size={20} />Skills & research</button>
+                  <button className="studio-primary-action" onClick={advanceDay}><Moon size={20} />Rest & advance day</button>
+                  <button className="studio-dock-button flex-row gap-2" onClick={() => { setPanel(null); setCompactStudioMode(true); }}><Minimize2 size={18} />Desktop studio strip</button>
+                </div>
+              </div>}
+            </div>
+            <p className="studio-panel-hint">Close to return to your studio floor</p>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+      <AttributesModal isOpen={showAttributesModal} onClose={() => setShowAttributesModal(false)}
+        playerData={gameState.playerData} spendPerkPoint={spendPerkPoint} />
       {showEraTransition && eraTransitionInfo && (
         <EraTransitionAnimation
           isVisible={showEraTransition}
@@ -442,9 +267,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           event={currentHistoricalEvent}
         />
       )}
+
     </div>
   );
 };
-
-// Helper components like SkillsModal, AttributesModal would be defined or imported
-// For brevity, their implementation is omitted here.

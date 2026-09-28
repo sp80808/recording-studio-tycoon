@@ -31,6 +31,7 @@ export interface StudioSceneState {
 interface WebGLCanvasProps {
   state?: Partial<StudioSceneState>;
   onHotspotSelect?: (id: StudioHotspotId) => void;
+  resetCameraKey?: number;
   className?: string;
 }
 
@@ -129,6 +130,8 @@ interface SceneRefs {
 interface BuiltScene {
   root: Container;
   refs: SceneRefs;
+  basePosition: { x: number; y: number };
+  baseScale: number;
 }
 
 /** Attach an interactive hit area + hover glow around a visual group. */
@@ -156,7 +159,8 @@ const addHotspot = (
   hit.alpha = 0; // invisible for rendering, still receives pointer events
   hit.on('pointerover', () => { glow.alpha = 1; });
   hit.on('pointerout', () => { glow.alpha = 0; });
-  hit.on('pointerdown', () => { onSelect?.(id); });
+  // The canvas gesture guard suppresses selection after a two-finger pan.
+  hit.on('pointertap', () => { onSelect?.(id); });
 
   parent.addChild(wrap);
   parent.addChild(hit);
@@ -188,7 +192,7 @@ const buildScene = (
   const fitScale = Math.min(
     (width - 60) / (bounds.maxX - bounds.minX),
     (height - 40) / (bounds.maxY - bounds.minY),
-    1.15
+    2.4
   );
   root.scale.set(fitScale);
   const originX = width / 2 - ((bounds.minX + bounds.maxX) / 2) * fitScale;
@@ -538,19 +542,23 @@ const buildScene = (
   refs.nightTintLayer = tintLayer;
   root.addChild(tintLayer);
 
-  return { root, refs };
+  return { root, refs, basePosition: { x: originX, y: originY }, baseScale: fitScale };
 };
 
 /* ---------------------------------------------------------------------------
  * Component
  * ------------------------------------------------------------------------- */
-const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, className }) => {
+const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, className, resetCameraKey }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const sceneRef = useRef<BuiltScene | null>(null);
   const stateRef = useRef<StudioSceneState>({ ...DEFAULT_STATE, ...state });
   const selectRef = useRef(onHotspotSelect);
   const timeRef = useRef(0);
+  const cameraRef = useRef({ x: 0, y: 0, zoom: 1.0 });
+  const gestureRef = useRef(new Map<number, { x: number; y: number }>());
+  const suppressTapRef = useRef(false);
+  const gestureMidpointRef = useRef<{ x: number; y: number } | null>(null);
 
   // Keep the latest props in refs so the ticker/callbacks never go stale
   useEffect(() => {
@@ -560,6 +568,15 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   useEffect(() => {
     selectRef.current = onHotspotSelect;
   }, [onHotspotSelect]);
+
+  useEffect(() => {
+    cameraRef.current = { x: 0, y: 0, zoom: 1.0 };
+    const sc = sceneRef.current;
+    if (sc) {
+      sc.root.scale.set(sc.baseScale);
+      sc.root.position.set(sc.basePosition.x, sc.basePosition.y);
+    }
+  }, [resetCameraKey]);
 
   // Structural key: only layout-affecting state triggers a scene rebuild
   const structuralKey = `${state?.staffOnFloor ?? 1}|${state?.ownedEquipment ?? 3}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}`;
@@ -576,7 +593,13 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
       app.screen.width,
       app.screen.height,
       stateRef.current,
-      (id) => selectRef.current?.(id)
+      (id) => { if (!suppressTapRef.current) selectRef.current?.(id); }
+    );
+    const zoom = cameraRef.current.zoom ?? 1.0;
+    scene.root.scale.set(scene.baseScale * zoom);
+    scene.root.position.set(
+      scene.basePosition.x + cameraRef.current.x,
+      scene.basePosition.y + cameraRef.current.y,
     );
     app.stage.addChild(scene.root);
     sceneRef.current = scene;
@@ -589,6 +612,63 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     let disposed = false;
     let lastW = 0;
     let lastH = 0;
+    let detachInteractions: (() => void) | undefined;
+    let gestureDistance: number | null = null;
+    let lastGestureScale = 1;
+
+    const MIN_ZOOM = 0.75;
+    const MAX_ZOOM = 2.6;
+
+    const zoomAt = (clientX: number, clientY: number, factor: number) => {
+      const app = appRef.current;
+      const scene = sceneRef.current;
+      if (!app || !scene || !Number.isFinite(factor) || factor <= 0) return;
+
+      const currentZoom = cameraRef.current.zoom ?? 1.0;
+      const nextZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, currentZoom * factor));
+      if (Math.abs(nextZoom - currentZoom) < 0.001) return;
+
+      const rect = app.canvas.getBoundingClientRect();
+      const focalX = clientX - rect.left;
+      const focalY = clientY - rect.top;
+
+      const scaleRatio = nextZoom / currentZoom;
+      const currentRootX = scene.root.position.x;
+      const currentRootY = scene.root.position.y;
+
+      const newRootX = focalX - (focalX - currentRootX) * scaleRatio;
+      const newRootY = focalY - (focalY - currentRootY) * scaleRatio;
+
+      let nextX = newRootX - scene.basePosition.x;
+      let nextY = newRootY - scene.basePosition.y;
+
+      const limitX = Math.max(app.screen.width * 0.35, app.screen.width * nextZoom * 0.5);
+      const limitY = Math.max(app.screen.height * 0.35, app.screen.height * nextZoom * 0.5);
+      nextX = Math.max(-limitX, Math.min(limitX, nextX));
+      nextY = Math.max(-limitY, Math.min(limitY, nextY));
+
+      cameraRef.current.zoom = nextZoom;
+      cameraRef.current.x = nextX;
+      cameraRef.current.y = nextY;
+
+      scene.root.scale.set(scene.baseScale * nextZoom);
+      scene.root.position.set(scene.basePosition.x + nextX, scene.basePosition.y + nextY);
+    };
+
+    const panBy = (dx: number, dy: number) => {
+      const app = appRef.current;
+      const scene = sceneRef.current;
+      if (!app || !scene) return;
+      const zoom = cameraRef.current.zoom ?? 1.0;
+      const limitX = Math.max(app.screen.width * 0.35, app.screen.width * zoom * 0.5);
+      const limitY = Math.max(app.screen.height * 0.35, app.screen.height * zoom * 0.5);
+      cameraRef.current.x = Math.max(-limitX, Math.min(limitX, cameraRef.current.x + dx));
+      cameraRef.current.y = Math.max(-limitY, Math.min(limitY, cameraRef.current.y + dy));
+      scene.root.position.set(
+        scene.basePosition.x + cameraRef.current.x,
+        scene.basePosition.y + cameraRef.current.y,
+      );
+    };
 
     const boot = async () => {
       try {
@@ -606,9 +686,123 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         }
         appRef.current = app;
         container.appendChild(app.canvas);
+        app.canvas.style.touchAction = 'none';
+        app.canvas.setAttribute('aria-label', 'Interactive studio floor. Tap objects to inspect. Pinch to zoom or use two fingers to pan.');
         lastW = app.screen.width;
         lastH = app.screen.height;
         rebuild();
+
+        const midpoint = () => {
+          const pointers = [...gestureRef.current.values()];
+          return { x: (pointers[0].x + pointers[1].x) / 2, y: (pointers[0].y + pointers[1].y) / 2 };
+        };
+        const onPointerDown = (event: PointerEvent) => {
+          if (gestureRef.current.size === 0) suppressTapRef.current = false;
+          gestureRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          if (gestureRef.current.size === 2) {
+            suppressTapRef.current = true;
+            gestureMidpointRef.current = midpoint();
+            const pointers = [...gestureRef.current.values()];
+            gestureDistance = Math.hypot(pointers[0].x - pointers[1].x, pointers[0].y - pointers[1].y);
+            try {
+              app.canvas.setPointerCapture(event.pointerId);
+            } catch {
+              // ponytail: keep pan local when capture is unavailable.
+            }
+          }
+        };
+        const onPointerMove = (event: PointerEvent) => {
+          if (!gestureRef.current.has(event.pointerId)) return;
+          gestureRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          if (gestureRef.current.size !== 2) return;
+          event.preventDefault();
+
+          const nextMid = midpoint();
+          const prevMid = gestureMidpointRef.current;
+          const pointers = [...gestureRef.current.values()];
+          const nextDist = Math.hypot(pointers[0].x - pointers[1].x, pointers[0].y - pointers[1].y);
+
+          if (gestureDistance && gestureDistance > 0 && nextDist > 0) {
+            const scaleRatio = nextDist / gestureDistance;
+            if (Math.abs(scaleRatio - 1) > 0.002) {
+              zoomAt(nextMid.x, nextMid.y, scaleRatio);
+            }
+          }
+          if (prevMid) {
+            panBy(nextMid.x - prevMid.x, nextMid.y - prevMid.y);
+          }
+
+          gestureMidpointRef.current = nextMid;
+          gestureDistance = nextDist;
+        };
+        const onPointerUp = (event: PointerEvent) => {
+          gestureRef.current.delete(event.pointerId);
+          if (gestureRef.current.size < 2) {
+            gestureMidpointRef.current = null;
+            gestureDistance = null;
+          }
+        };
+        const onWheel = (event: WheelEvent) => {
+          event.preventDefault();
+          if (event.ctrlKey) {
+            // Trackpad pinch-to-zoom (Chrome / Safari / Firefox on Mac/Win send wheel with ctrlKey)
+            // deltaY < 0 is pinch out (zoom in), deltaY > 0 is pinch in (zoom out)
+            const zoomFactor = Math.exp(-event.deltaY * 0.01);
+            zoomAt(event.clientX, event.clientY, zoomFactor);
+          } else {
+            const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? app.screen.height : 1;
+            panBy(-event.deltaX * unit, -event.deltaY * unit);
+          }
+        };
+
+        // Safari native gesture events (macOS trackpad pinch)
+        const onGestureStart = (e: any) => {
+          e.preventDefault();
+          lastGestureScale = 1;
+        };
+        const onGestureChange = (e: any) => {
+          e.preventDefault();
+          const currentScale = e.scale || 1;
+          const scaleRatio = currentScale / lastGestureScale;
+          lastGestureScale = currentScale;
+          zoomAt(e.clientX, e.clientY, scaleRatio);
+        };
+        const onGestureEnd = (e: any) => {
+          e.preventDefault();
+          lastGestureScale = 1;
+        };
+
+        const onDblClick = (e: MouseEvent) => {
+          e.preventDefault();
+          cameraRef.current = { x: 0, y: 0, zoom: 1.0 };
+          const sc = sceneRef.current;
+          if (sc) {
+            sc.root.scale.set(sc.baseScale);
+            sc.root.position.set(sc.basePosition.x, sc.basePosition.y);
+          }
+        };
+
+        app.canvas.addEventListener('pointerdown', onPointerDown, { passive: true });
+        app.canvas.addEventListener('pointermove', onPointerMove, { passive: false });
+        app.canvas.addEventListener('pointerup', onPointerUp, { passive: true });
+        app.canvas.addEventListener('pointercancel', onPointerUp, { passive: true });
+        app.canvas.addEventListener('wheel', onWheel, { passive: false });
+        app.canvas.addEventListener('gesturestart', onGestureStart as any, { passive: false });
+        app.canvas.addEventListener('gesturechange', onGestureChange as any, { passive: false });
+        app.canvas.addEventListener('gestureend', onGestureEnd as any, { passive: false });
+        app.canvas.addEventListener('dblclick', onDblClick);
+
+        detachInteractions = () => {
+          app.canvas.removeEventListener('pointerdown', onPointerDown);
+          app.canvas.removeEventListener('pointermove', onPointerMove);
+          app.canvas.removeEventListener('pointerup', onPointerUp);
+          app.canvas.removeEventListener('pointercancel', onPointerUp);
+          app.canvas.removeEventListener('wheel', onWheel);
+          app.canvas.removeEventListener('gesturestart', onGestureStart as any);
+          app.canvas.removeEventListener('gesturechange', onGestureChange as any);
+          app.canvas.removeEventListener('gestureend', onGestureEnd as any);
+          app.canvas.removeEventListener('dblclick', onDblClick);
+        };
 
         // Animation loop: VU meters, TV equalizer, phone ring, clock, staff, day tint
         app.ticker.add((ticker) => {
@@ -670,11 +864,13 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     const observer = new ResizeObserver(() => {
       const app = appRef.current;
       if (!app) return;
-      const w = app.screen.width;
-      const h = app.screen.height;
+      const w = container.clientWidth;
+      const h = container.clientHeight;
       if (Math.abs(w - lastW) > 2 || Math.abs(h - lastH) > 2) {
         lastW = w;
         lastH = h;
+        app.renderer.resize(w, h);
+        cameraRef.current = { x: 0, y: 0 };
         if (!disposed) rebuild();
       }
     });
@@ -683,6 +879,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     return () => {
       disposed = true;
       observer.disconnect();
+      detachInteractions?.();
       const app = appRef.current;
       if (app) {
         app.destroy(true, { children: true });
@@ -691,13 +888,11 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
       }
       if (container) container.innerHTML = '';
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Rebuild when the room layout changes (staff hired, gear bought) — after boot
   useEffect(() => {
     if (appRef.current) rebuild();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [structuralKey]);
 
   return (
@@ -710,8 +905,3 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
 };
 
 export default WebGLCanvas;
-
-
-
-
-
