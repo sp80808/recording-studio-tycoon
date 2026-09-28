@@ -404,6 +404,7 @@ export interface ProjectReport {
     id: string;
     name: string;
   };
+  genre?: string;
 }
 
 export interface Financials {

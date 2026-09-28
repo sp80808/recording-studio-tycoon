@@ -320,5 +320,6 @@ export const generateProjectReview = (
     skillBreakdown,
     reviewSnippet,
     assignedPerson: assignedPersonDetails,
+    genre: project.genre,
   };
 };

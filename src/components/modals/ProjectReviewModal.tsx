@@ -14,6 +14,7 @@ import { Progress } from '@/components/ui/progress'; // Assuming Progress compon
 import { gameAudio } from '@/utils/audioSystem'; // For sound effects
 import { X } from 'lucide-react'; // For skip button icon
 import { generateAlbumArt, generateReview } from '@/services/pollinations';
+import { AlbumCoverArt } from '@/components/AlbumCoverArt';
 
 interface AnimatedNumberProps {
   targetValue: number;
@@ -376,21 +377,25 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
 
             <div className="pt-4">
               {isGenerating && (
-                <div className="text-center text-gray-400 italic">Generating review and art...</div>
+                <div className="text-center text-amber-300/80 font-mono text-xs tracking-wider animate-pulse py-2">
+                  🎛️ Mastering album art & press review...
+                </div>
               )}
-              {generationError && (
-                <div className="text-center text-red-500">Error: {generationError}</div>
-              )}
-              {!isGenerating && !generationError && artUrl && reviewText && (
-                <div className="pt-4 space-y-3 text-center">
-                  <img
-                    src={artUrl}
-                    alt="Album Art"
-                    className="mx-auto w-64 h-64 object-cover rounded"
+              {!isGenerating && (
+                <div className="pt-2 space-y-3 text-center flex flex-col items-center">
+                  <AlbumCoverArt
+                    title={report.projectTitle}
+                    genre={report.genre}
+                    artist={report.assignedPerson?.name || 'Studio Tycoon'}
+                    score={report.overallQualityScore}
+                    imageUrl={artUrl}
+                    showVinylPeek={true}
                   />
-                  <div className="p-4 bg-gray-800 rounded">
-                    <p className="text-white">{reviewText}</p>
-                  </div>
+                  {reviewText && (
+                    <div className="w-full max-w-lg p-3.5 bg-slate-900/90 border border-slate-700/80 rounded-lg shadow-inner">
+                      <p className="text-sm text-slate-200 italic leading-relaxed">"{reviewText}"</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
