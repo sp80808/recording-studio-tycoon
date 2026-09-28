@@ -11,14 +11,16 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
   onLock,
   className = ''
 }) => {
-  const [needlePos, setNeedlePos] = useState(0.2); // 0 to 1
+  const [needlePos, setNeedlePos] = useState(0.2); // 0.0 to 1.0
   const animRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
   const lockedRef = useRef(false);
+  const currentPosRef = useRef(0.2);
 
   useEffect(() => {
     if (!isArmed) {
       setNeedlePos(0.2);
+      currentPosRef.current = 0.2;
       lockedRef.current = false;
       return;
     }
@@ -26,7 +28,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
     lockedRef.current = false;
     startTimeRef.current = performance.now();
 
-    // Smooth sinusoidal needle swing across 0.1 to 0.95 with cycle of ~1.2s
+    // Smooth sinusoidal needle swing across 0.12 to 0.94 with cycle of ~1.2s
     const tick = (now: number) => {
       if (lockedRef.current) return;
       const elapsed = (now - startTimeRef.current) / 1000;
@@ -34,13 +36,14 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
       // Auto-lock fallback after 2.5s
       if (elapsed >= 2.5) {
         lockedRef.current = true;
-        onLock(needlePos);
+        onLock(currentPosRef.current);
         return;
       }
 
-      // Smooth oscillation: center at 0.55, amplitude 0.4
-      const pos = 0.525 + 0.425 * Math.sin(elapsed * Math.PI * 1.8);
-      setNeedlePos(pos);
+      // Smooth oscillation: center at 0.53, amplitude 0.41
+      const pos = 0.53 + 0.41 * Math.sin(elapsed * Math.PI * 1.8);
+      currentPosRef.current = Math.max(0.05, Math.min(0.98, pos));
+      setNeedlePos(currentPosRef.current);
       animRef.current = requestAnimationFrame(tick);
     };
 
@@ -49,14 +52,22 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
     };
-  }, [isArmed, onLock, needlePos]);
+  }, [isArmed, onLock]);
 
-  // Convert needle 0-1 to needle rotation angle (-45deg to +45deg)
-  const angle = -45 + needlePos * 90;
   const isInPocket = needlePos >= 0.70 && needlePos <= 0.85;
 
+  const handleMeterClick = () => {
+    if (!isArmed || lockedRef.current) return;
+    lockedRef.current = true;
+    onLock(currentPosRef.current);
+  };
+
   return (
-    <div className={`relative bg-slate-950 border border-slate-700/80 p-2 rounded-[2px] shadow-[inset_0_2px_8px_rgba(0,0,0,0.8)] overflow-hidden ${className}`}>
+    <div
+      onClick={handleMeterClick}
+      className={`relative bg-slate-950 border border-slate-700/80 p-2 rounded-[2px] shadow-[inset_0_2px_8px_rgba(0,0,0,0.8)] select-none cursor-pointer transition-all ${className}`}
+      title={isArmed ? 'Click to Lock Take in the Pocket!' : 'Analog Calibration Gauge'}
+    >
       {/* Rackmount hardware corner hex bolts */}
       <div className="absolute top-1 left-1 w-1.5 h-1.5 rounded-full bg-slate-700 border border-slate-600 shadow-inner flex items-center justify-center text-[7px] text-slate-400 font-mono">
         +
@@ -86,7 +97,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
           <div className="w-[15%] h-full bg-amber-500/80 border-x border-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)] flex items-center justify-center">
             <span className="text-[7px] font-black text-slate-950 uppercase tracking-tighter">POCKET</span>
           </div>
-          {/* 85% to 100%: Over-compression / Hot zone (red) */}
+          {/* 85% to 100%: Hot zone (red) */}
           <div className="w-[15%] h-full bg-red-600/40 border-l border-red-500/40" />
         </div>
 
