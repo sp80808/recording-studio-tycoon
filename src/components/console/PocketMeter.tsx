@@ -120,6 +120,24 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
           <span className="text-red-400">+6dB</span>
         </div>
       </div>
+
+      {/* Dynamic 60fps Lock Button */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleMeterClick();
+        }}
+        aria-label="Work on Project - Lock Take"
+        className={`w-full py-3 mt-2 font-black tracking-wider uppercase text-sm rounded-[2px] border transition-all flex items-center justify-center gap-2 active:scale-[0.98] ${
+          isInPocket
+            ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 border-amber-300 shadow-[0_0_18px_rgba(251,191,36,0.8)] animate-pulse'
+            : 'bg-gradient-to-r from-slate-800 to-slate-700 text-amber-300 border-slate-600 hover:border-amber-400/60 shadow-md'
+        }`}
+      >
+        <span>{isInPocket ? '🔥' : '🎯'}</span>
+        <span>{isInPocket ? 'LOCK TAKE IN THE POCKET!' : 'LOCK TAKE!'}</span>
+      </button>
     </div>
   );
 };

@@ -15,7 +15,8 @@ import { toast } from '@/hooks/use-toast';
 import { playSound, gameAudio } from '@/utils/audioSystem'; // Updated import
 import { triggerScreenShake } from '@/utils/screenShake';
 import { evaluateTakeAccuracy, calculateTakeEnergyCost } from '@/rpg/takeEvaluation';
-import { PocketMeter } from '@/components/console/PocketMeter'; 
+import { PocketMeter } from '@/components/console/PocketMeter';
+import {
   getStageFocusLabels, 
   getStageOptimalFocus, 
   calculateFocusEffectiveness,
@@ -755,13 +756,6 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 isArmed={true}
                 onLock={handleLockTake}
               />
-              <button
-                onClick={() => handleLockTake(0.78)} // Instant lock button
-                className="w-full py-3 bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-slate-950 font-black tracking-wider uppercase text-sm rounded-[2px] shadow-[0_0_15px_rgba(251,191,36,0.6)] border border-amber-300 transition-all flex items-center justify-center gap-2 animate-pulse"
-              >
-                <span>🎯</span>
-                <span>LOCK TAKE IN THE POCKET!</span>
-              </button>
             </div>
           ) : (
             <div className="space-y-2">
@@ -788,6 +782,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
               <button
                 onClick={handleArmTake}
                 disabled={availableEnergy <= 0 || isProjectComplete}
+                aria-label="Work on Project"
                 className={`w-full py-3.5 text-sm font-black uppercase tracking-wider rounded-[2px] border transition-all flex items-center justify-center gap-2 shadow-lg ${
                   isProjectComplete
                     ? 'bg-emerald-600 border-emerald-400 text-white'

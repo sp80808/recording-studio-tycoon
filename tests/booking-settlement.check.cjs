@@ -48,7 +48,7 @@ async (page) => {
     if (await release.isVisible()) { await release.click(); continue; }
     const skip = page.getByRole('button', { name: /Skip intervention|Skip/ }).first();
     if (await skip.isVisible()) { await skip.click(); continue; }
-    const work = page.getByRole('button', { name: /Work on Project/ }).first();
+    const work = page.getByRole('button', { name: /Work on Project|RECORD TAKE|LOCK TAKE/i }).first();
     if (await work.isVisible() && await work.isEnabled()) {
       await work.click();
       continue;
