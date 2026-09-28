@@ -1,0 +1,54 @@
+.ambient-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+  user-select: none;
+}
+
+@keyframes ambient-reel-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ambient-tube-glow {
+  0%, 100% {
+    opacity: 0.6;
+    filter: drop-shadow(0 0 16px rgba(245, 158, 11, 0.4));
+  }
+  50% {
+    opacity: 0.85;
+    filter: drop-shadow(0 0 24px rgba(245, 158, 11, 0.7));
+  }
+}
+
+@keyframes ambient-led-blink {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.95; }
+}
+
+.ambient-reel-spinning {
+  animation: ambient-reel-spin 6s linear infinite;
+  transform-origin: center center;
+}
+
+.ambient-tube-warmth {
+  animation: ambient-tube-glow 4s ease-in-out infinite;
+}
+
+.ambient-led-pulse {
+  animation: ambient-led-blink 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-reel-spinning,
+  .ambient-tube-warmth,
+  .ambient-led-pulse {
+    animation: none !important;
+  }
+}

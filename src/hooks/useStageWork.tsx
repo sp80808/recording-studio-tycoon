@@ -20,6 +20,8 @@ import { MinigameType } from '@/components/minigames/MinigameManager';
 import { getBookedStudioRoom } from '@/utils/studioRoomUtils';
 import { createSeededRandom } from '@/simulation/seededRandom';
 import { evaluateProjectSynergies, calculateSynergyBonuses, recordDiscoveredSynergies } from '@/utils/synergyUtils';
+import { advanceFlow } from '@/rpg/focusFlow';
+import { gradeStage, focusMatchFraction } from '@/rpg/stageGrades';
 
 interface UseStageWorkProps {
   gameState: GameState;
@@ -270,6 +272,23 @@ export const useStageWork = ({
     const comboMultiplier = 1 + Math.min(0.5, (newCombo - 1) * 0.1);
     console.log(`⚡ Combo x${newCombo} (x${comboMultiplier.toFixed(2)}) | 🔥 Overdrive: ${overdrive}`);
 
+    // 🌊 Focus Flow (sd3.2): the top focus dial matching a stage focus area
+    // extends the aura streak; 3 in a row ignites FLOW x2 up to x4 on gains.
+    const focusEntries = Object.entries(currentProjectFocus) as Array<[string, number]>;
+    const topFocus = focusEntries.sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
+    const focusMatched = currentStage.focusAreas.includes(topFocus);
+    const prevFlow = { streak: project.flowStreak ?? 0, multiplier: project.flowMultiplier ?? 1 };
+    const flow = advanceFlow(prevFlow, focusMatched);
+    if (flow.multiplier > prevFlow.multiplier && flow.multiplier > 1) {
+      console.log(`🌊 FOCUS FLOW x${flow.multiplier} ignited!`);
+      toast({
+        title: `🌊 FOCUS FLOW x${flow.multiplier}!`,
+        description: 'Matched focus keeps chaining — ride it for bonus output.',
+        className: "bg-gray-800 border-gray-600 text-white",
+      });
+      void gameAudio.playComboUp(flow.multiplier - 1);
+    }
+
     // FIXED: Improved base work calculation with better scaling
     const baseWorkCapacity = Math.max(gameState.playerData.dailyWorkCapacity, 1);
     const attributeMultiplier = 1 + (gameState.playerData.attributes.creativeIntuition - 1) * 0.5 + (gameState.playerData.attributes.technicalAptitude - 1) * 0.5;
@@ -334,8 +353,8 @@ export const useStageWork = ({
 
     // ⚡ Streak + 🔥 Overdrive + ✨ Synergy multipliers applied to the final gains
     const overdriveMultiplier = overdrive ? 1.75 : 1;
-    const creativityGain = Math.max(1, Math.round(workPoints.creativity * comboMultiplier * overdriveMultiplier * synergyBonuses.creativityMultiplier));
-    const technicalGain = Math.max(1, Math.round(workPoints.technical * comboMultiplier * overdriveMultiplier * synergyBonuses.technicalMultiplier));
+    const creativityGain = Math.max(1, Math.round(workPoints.creativity * comboMultiplier * overdriveMultiplier * synergyBonuses.creativityMultiplier * flow.multiplier));
+    const technicalGain = Math.max(1, Math.round(workPoints.technical * comboMultiplier * overdriveMultiplier * synergyBonuses.technicalMultiplier * flow.multiplier));
 
     // Create orb animations
     createOrb('creativity', creativityGain);
@@ -380,10 +399,26 @@ export const useStageWork = ({
     // Check if stage is completed
     const stageCompleted = newWorkUnitsCompleted >= currentStage.workUnitsBase;
     let newCurrentStageIndex = currentStageIndex;
-    
+
+    // Stage-grade inputs (sd3.2): per-stage session count, par pacing,
+    // best minigame take, and focus discipline.
+    const prevStageSessions = [...(project.stageSessionsTaken ?? [])];
+    while (prevStageSessions.length < project.stages.length) prevStageSessions.push(0);
+    const newStageSessions = [...prevStageSessions];
+    newStageSessions[currentStageIndex] = (newStageSessions[currentStageIndex] ?? 0) + 1;
+    const parSessions = Math.max(2, Math.round(currentStage.workUnitsBase / 3));
+
+    let completedGrade: ReturnType<typeof gradeStage> | null = null;
     if (stageCompleted && !currentStage.completed) {
       newCurrentStageIndex = Math.min(currentStageIndex + 1, project.stages.length - 1);
       console.log(`✅ Stage completed! Moving to stage index: ${newCurrentStageIndex}`);
+      completedGrade = gradeStage({
+        sessionsTaken: newStageSessions[currentStageIndex] ?? 1,
+        parSessions,
+        minigameTake: project.stageTake ?? null,
+        focusMatch: focusMatchFraction(focusMatched),
+      });
+      console.log(`🏅 Stage grade: ${completedGrade.grade} (+${completedGrade.qualityCarry} carry${completedGrade.capsProjectAtA ? ', caps project at A' : ''})`);
     }
 
     // FIXED: Immutable state update for React re-rendering
@@ -411,7 +446,16 @@ export const useStageWork = ({
         // ⚡ streak tracking + 🔥 overdrive consumed
         comboCount: newCombo,
         lastWorkDay: gameState.currentDay,
-        overdriveArmed: false
+        overdriveArmed: false,
+        // 🌊 Focus Flow aura + 🏅 stage grades (sd3.2)
+        flowStreak: flow.streak,
+        flowMultiplier: flow.multiplier,
+        stageSessionsTaken: newStageSessions,
+        stageGrades: completedGrade
+          ? [...(prev.activeProject!.stageGrades ?? []), completedGrade.grade]
+          : prev.activeProject!.stageGrades,
+        // A fresh stage means a fresh take slate (skipped take caps at A).
+        stageTake: newCurrentStageIndex !== currentStageIndex ? null : prev.activeProject!.stageTake ?? null
       };
 
       console.log(`📋 Project C points: ${prev.activeProject!.accumulatedCPoints} -> ${updatedProject.accumulatedCPoints}`);
@@ -495,7 +539,16 @@ export const useStageWork = ({
         accumulatedCPoints: project.accumulatedCPoints + creativityGain,
         accumulatedTPoints: project.accumulatedTPoints + technicalGain,
         currentStageIndex: newCurrentStageIndex, // Should be the last stage index or project.stages.length
-        workSessionCount: newWorkSessionCount
+        workSessionCount: newWorkSessionCount,
+        // Carry this tick's loop state forward so settlement sees grades/flow (sd3.2)
+        flowStreak: flow.streak,
+        flowMultiplier: flow.multiplier,
+        stageSessionsTaken: newStageSessions,
+        stageGrades: completedGrade
+          ? [...(project.stageGrades ?? []), completedGrade.grade]
+          : project.stageGrades,
+        stageTake: newCurrentStageIndex !== currentStageIndex ? null : project.stageTake ?? null,
+        stake: project.stake ?? 'safe'
       };
       // DO NOT CALL completeProject here.
       // Return the project details so the UI can display celebration BEFORE state is wiped.
@@ -506,9 +559,15 @@ export const useStageWork = ({
     if (stageCompleted) {
       gameAudio.playUISound('stageComplete');
       triggerScreenShake('light');
+      const gradeTitle = completedGrade
+        ? `🏅 Stage ${completedGrade.grade}! ${currentStage.stageName} finished`
+        : `🎉 Stage Complete!`;
+      const gradeDetail = completedGrade
+        ? `${currentStage.stageName} finished! +${completedGrade.qualityCarry} quality carry.${completedGrade.capsProjectAtA ? ' Skipped take caps this project at A.' : ''} ${newCurrentStageIndex < project.stages.length ? `Moving to: ${project.stages[newCurrentStageIndex].stageName}` : 'All stages complete!'}`
+        : `${currentStage.stageName} finished! ${newCurrentStageIndex < project.stages.length ? `Moving to: ${project.stages[newCurrentStageIndex].stageName}` : 'All stages complete!'}`;
       toast({
-        title: "🎉 Stage Complete!",
-        description: `${currentStage.stageName} finished! ${newCurrentStageIndex < project.stages.length ? `Moving to: ${project.stages[newCurrentStageIndex].stageName}` : 'All stages complete!'}`,
+        title: gradeTitle,
+        description: gradeDetail,
         className: "bg-gray-800 border-gray-600 text-white",
         duration: 4000
       });

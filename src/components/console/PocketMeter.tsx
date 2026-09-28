@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import confetti from 'canvas-confetti';
 
 interface PocketMeterProps {
   isArmed: boolean;
@@ -59,7 +60,25 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
   const handleMeterClick = () => {
     if (!isArmed || lockedRef.current) return;
     lockedRef.current = true;
-    onLock(currentPosRef.current);
+    
+    const pos = currentPosRef.current;
+    
+    // Visual Juice: Trigger confetti burst for Gold Take ("In The Pocket")
+    if (pos >= 0.70 && pos <= 0.85) {
+      confetti({
+        particleCount: 35,
+        spread: 70,
+        origin: { y: 0.65 },
+        colors: ['#f59e0b', '#fbbf24', '#fcd34d', '#ffffff'],
+        disableForReducedMotion: true,
+        ticks: 120,
+        gravity: 1.2,
+        scalar: 0.8,
+        zIndex: 100
+      });
+    }
+
+    onLock(pos);
   };
 
   return (

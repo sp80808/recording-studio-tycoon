@@ -215,7 +215,7 @@ const MusicStudioTycoon = () => {
   }, [advanceDay, handleShowProjectReview]);
 
 
-  const handleLoadGame = async () => {
+  const handleLoadGame = async (): Promise<boolean> => {
     try {
       const snapshot = loadGameSnapshot();
       if (snapshot) {
@@ -240,14 +240,17 @@ const MusicStudioTycoon = () => {
         if (settings.sfxEnabled) {
           audioSystem.playUISound('success');
         }
+        return true;
       } else {
         setShowSplashScreen(true);
         setGameInitialized(false);
+        return false;
       }
     } catch (error) {
       console.error('Failed to load game:', error);
       setShowSplashScreen(true);
       setGameInitialized(false);
+      return false;
     }
   };
 

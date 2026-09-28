@@ -1,6 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { GameNotification } from '@/types/game';
+import './chip-fidelity.css';
 
 interface NotificationSystemProps {
   notifications: GameNotification[];
@@ -38,7 +39,7 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
       {notifications.map(notification => (
         <div
           key={notification.id}
-          className={`p-3 rounded-lg border text-white shadow-lg animate-fade-in ${getNotificationColor(notification.type)}`}
+          className={`p-3 rounded-lg border text-white shadow-lg animate-fade-in ${getNotificationColor(notification.type)}${notification.type === 'error' ? ' deny-shake' : ''}`}
           onClick={() => removeNotification(notification.id)}
         >
           <div className="text-sm">{notification.message}</div>

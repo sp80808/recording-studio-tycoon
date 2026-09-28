@@ -109,7 +109,9 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
       return;
     }
 
-    const dailyIncome = band.fame * 100;
+    // Tour income (sd3.4): capped so tours are a mid-game engine, not an
+    // exploit — fame 50 pays $1,250/day (was $5,000).
+    const dailyIncome = Math.min(1500, band.fame * 25);
 
     setGameState(prev => ({
       ...prev,

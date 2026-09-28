@@ -22,9 +22,40 @@ export function CareerHub({ gameState, onTalents, onWork, onBookings, onRest, on
   const claimed = gameState.dailyTracking?.day === gameState.currentDay && gameState.dailyTracking?.challengeDoneId === challenge.def.id;
   const next = ProgressionSystem.getNextUnlockRequirements(gameState);
   const project = gameState.activeProject;
+  const awaitingReview = Boolean(project?.awaitingReview);
   const tired = player.dailyWorkCapacity <= 0;
   const expenses = calculateEquipmentUpkeep(gameState.ownedEquipment) + gameState.hiredStaff.reduce((sum, staff) => sum + staff.salary, 0);
   const title = player.level >= 12 ? 'Industry legend' : player.level >= 8 ? 'Studio visionary' : player.level >= 5 ? 'Hitmaker' : player.level >= 3 ? 'Rising producer' : 'Independent producer';
+
+  const nextAction = (() => {
+    if (awaitingReview) {
+      return {
+        label: 'Review & release',
+        subtext: 'Master complete · Ready to review and release',
+        action: onWork,
+      };
+    }
+    if (tired) {
+      return {
+        label: 'Rest & advance day',
+        subtext: `Rest restores sessions · $${expenses} daily costs`,
+        action: onRest,
+      };
+    }
+    if (project) {
+      return {
+        label: 'Continue session',
+        subtext: project.title,
+        action: onWork,
+      };
+    }
+    return {
+      label: gameState.completedProjects.length === 0 ? 'Book your first session' : 'Find a gig',
+      subtext: 'Your next record starts with a booking.',
+      action: onBookings,
+    };
+  })();
+
   return (
     <section aria-label="Producer career" className="shrink-0 border-b border-slate-700/70 bg-slate-950/90 px-3 py-3 text-slate-100">
       <div className="flex flex-wrap items-center gap-3">
@@ -41,10 +72,10 @@ export function CareerHub({ gameState, onTalents, onWork, onBookings, onRest, on
         </button>
         <div className="min-w-0 flex-1 text-xs">
           <p className="flex items-center gap-1.5 font-semibold text-sky-200"><Zap size={14} aria-hidden="true" />{player.dailyWorkCapacity} sessions left today</p>
-          <p className="mt-1 truncate text-slate-400">{tired ? `Rest restores sessions · $${expenses} daily costs` : project ? project.title : 'Your next record starts with a booking.'}</p>
+          <p className="mt-1 truncate text-slate-400">{nextAction.subtext}</p>
         </div>
-        <button onClick={tired ? onRest : project ? onWork : onBookings} className="flex min-h-11 items-center gap-2 rounded-lg border border-sky-300/30 bg-sky-500/15 px-4 text-xs font-bold text-sky-100 transition-colors hover:bg-sky-500/30 active:bg-sky-500/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-200">
-          {tired ? 'Rest & advance day' : project ? 'Continue session' : 'Find a gig'}<ArrowRight size={15} aria-hidden="true" />
+        <button onClick={nextAction.action} className="flex min-h-11 items-center gap-2 rounded-lg border border-sky-300/30 bg-sky-500/15 px-4 text-xs font-bold text-sky-100 transition-colors hover:bg-sky-500/30 active:bg-sky-500/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-200">
+          {nextAction.label}<ArrowRight size={15} aria-hidden="true" />
         </button>
       </div>
       <div className="mt-2 overflow-hidden rounded-lg border-2 border-slate-700/80 bg-slate-900/80 text-xs shadow-inner transition-all">

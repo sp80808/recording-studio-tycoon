@@ -120,6 +120,17 @@ export interface Project {
   resolvedInterventionStageKeys?: string[]; // Persist one resolved/ignored intervention opportunity per stage
   bookingRoomId?: string; // Physical studio suite reserved for this session
   associatedBandId?: string;
+  /** Booking gamble: safe default; ambitious/moonshot need rank bars (sd3.2). */
+  stake?: import('@/rpg/contractStakes').ContractStake;
+  /** Per-stage verdicts in stage order (sd3.2 work-loop wiring). */
+  stageGrades?: import('@/rpg/stageGrades').StageGrade[];
+  /** Sessions spent per stage index (par pacing + grade input). */
+  stageSessionsTaken?: number[];
+  /** Best minigame take this stage; null = skipped (caps project at A). */
+  stageTake?: import('@/rpg/stageGrades').StageTake | null;
+  /** Focus Flow aura streak + multiplier (sd3.2). */
+  flowStreak?: number;
+  flowMultiplier?: number;
   focusAllocation: FocusAllocation; // ADDED: Stores current focus settings for the project
   progress?: number; // 0-100, completion percentage for animated cards
   cardState?: CardState; // Current visual state for PixiJS rendering

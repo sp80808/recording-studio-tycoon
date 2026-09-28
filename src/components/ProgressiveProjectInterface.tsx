@@ -74,7 +74,7 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
   // Render single project view for early game
   const renderSingleProjectView = () => {
     return (
-      <div className="h-full flex flex-col min-h-0 overflow-hidden p-0.5">        
+      <div className="flex-1 min-h-0 w-full flex flex-col overflow-hidden p-0.5">        
         {/* Hint about upcoming multi-project capability */}
         {progressionStatus.progressToNext > 0.7 && progressionStatus.nextMilestone && (
           <Alert className="border-yellow-600/70 bg-gray-900/90 shrink-0 mb-2 py-2">
@@ -107,7 +107,7 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
     // const [showMultiProject, setShowMultiProject] = useState(false); // State lifted
 
     return (
-      <div className="space-y-6 h-full overflow-y-auto p-1">        
+      <div className="space-y-6 flex-1 min-h-0 w-full flex flex-col overflow-y-auto p-1">        
         {/* New Feature Announcement */}
         <Alert className="border-green-600 bg-gray-800">
           <Zap className="w-4 h-4 text-green-400" />
@@ -165,7 +165,7 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
   // Render advanced multi-project view for experienced players
   const renderAdvancedMultiProjectView = () => {
     return (
-      <div className="space-y-6 h-full overflow-y-auto p-1">        
+      <div className="space-y-6 flex-1 min-h-0 w-full flex flex-col overflow-y-auto p-1">        
         <MultiProjectDashboard
           gameState={gameState}
           setGameState={setGameState}

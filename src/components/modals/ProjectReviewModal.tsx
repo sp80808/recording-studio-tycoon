@@ -16,6 +16,8 @@ import { X } from 'lucide-react'; // For skip button icon
 import { generateReview } from '@/services/pollinations';
 import { AlbumCoverArt } from '@/components/AlbumCoverArt';
 import { triggerMilestoneCelebration } from '@/utils/confettiJuice';
+import { gradeQuality, type RankResult } from '@/rpg/rankChase';
+import { RankRevealOverlay } from '@/components/RankRevealOverlay';
 
 interface AnimatedNumberProps {
   targetValue: number;
@@ -186,6 +188,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
   const [typedSnippet, setTypedSnippet] = useState("");
   const [reviewText, setReviewText] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [rankStamp, setRankStamp] = useState<RankResult | null>(null);
 
   const totalAnimationStages = (report?.skillBreakdown.length || 0) + 3; 
 
@@ -202,6 +205,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
       setShowContinueButton(false);
       setAnimatedOverallQualityValue(0); 
       setTypedSnippet("");
+      setRankStamp(null);
       
       gameAudio.playSound('review_start', 'sfx', 0.7); 
       setTimeout(() => setCurrentSkillIndex(0), 250); // Reduced from 500 
@@ -245,6 +249,9 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
           setAnimatedOverallQualityValue(targetQuality);
           clearInterval(intervalId);
           if (targetQuality >= 80) {
+            // Rank stamp climax (non-blocking): overlay fires alongside the
+            // existing milestone confetti; S/S+ sting plays from the overlay.
+            setRankStamp(gradeQuality(targetQuality));
             triggerMilestoneCelebration(
               targetQuality >= 90 ? 'S' : 'A',
               targetQuality >= 95 ? 'Platinum' : targetQuality >= 85 ? 'Gold' : undefined
@@ -395,6 +402,14 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
               )}
             </div>
           </CardContent>
+          {rankStamp && (
+            <RankRevealOverlay
+              rank={rankStamp.rank}
+              pointsToNext={rankStamp.pointsToNext}
+              nextRank={rankStamp.nextRank}
+              onDone={() => setRankStamp(null)}
+            />
+          )}
           <CardFooter className="pt-4">
             {showContinueButton ? (
               <Button disabled={isGenerating}

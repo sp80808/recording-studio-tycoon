@@ -121,8 +121,13 @@ export class AdvancedContractService {
     // Select a genre, potentially influenced by issuer preference and market trends
     const preferredGenre = issuer.preferredGenres[Math.floor(Math.random() * issuer.preferredGenres.length)] || 'Pop';
     // const marketPopularity = this.marketService.getPopularity(preferredGenre);
-    
-    const budgetBase = (Math.random() * 50000) + 10000; // Base budget
+
+    // Contract budgets (sd3.4): scaled to the live economy (normal payouts
+    // $600-$3,200 base) instead of the old 10k-60k flat roll that would
+    // either break the economy or rot as dead content. Prestige-anchored:
+    // ~$2.1k early → ~$5.1k empire. Royalty wiring lands with chart pay.
+    const prestigeScore = Math.floor(Math.random() * 50) + 10; // 10-60 prestige
+    const budgetBase = 1500 + prestigeScore * 60;
     // const budget = budgetBase * (1 + (marketPopularity / 200)); // Market influence
     const budget = budgetBase; // Simplified for now
 
@@ -149,7 +154,7 @@ export class AdvancedContractService {
       negotiationPoints,
       initialOfferDate: gameTime,
       expirationDate: gameTime + (14 + Math.floor(Math.random()*14)), // Expires in 2-4 weeks
-      prestigeScore: Math.floor(Math.random() * 50) + 10, // 10-60 prestige
+      prestigeScore,
       minQuality: Math.floor(Math.random() * 30) + 50, // 50-80 min quality
       latePenaltyPerDay: budget * 0.005, // 0.5% of budget per day
     };

@@ -1,6 +1,6 @@
 import { Project, ProjectStage, StaffMember, FocusAllocation, StudioSkill, Equipment, PlayerAttributes, EquipmentMod, ClientRelationship } from '@/types/game'; // Changed OwnedEquipment to Equipment, Added EquipmentMod
 import { generateAIBand } from '@/utils/bandUtils';
-import { ERA_DEFINITIONS, getGenrePopularity } from '@/utils/eraProgression';
+import { ERA_DEFINITIONS, getGenreMarketMultiplier } from '@/utils/eraProgression';
 import { initializeSkillsStaff } from '@/utils/skillUtils'; // Added import
 import { calculateStudioSkillBonus, getEquipmentBonuses as getBaseEquipmentBonuses } from './gameUtils'; // Import from gameUtils and rename
 import { availableMods } from '@/data/equipmentMods'; // Import available mods
@@ -23,7 +23,7 @@ const earlyGameTemplates = [
       { stageName: 'Basic Mixing', workUnitsBase: 10, focusAreas: ['layering', 'soundCapture'] },
       { stageName: 'Demo Master', workUnitsBase: 6, focusAreas: ['performance', 'layering'] }
     ],
-    basePayout: 300,
+    basePayout: 900,
     baseRep: 3,
     baseDuration: 4
   },
@@ -36,7 +36,7 @@ const earlyGameTemplates = [
       { stageName: 'Live Recording', workUnitsBase: 6, focusAreas: ['soundCapture', 'performance'] },
       { stageName: 'Light Production', workUnitsBase: 8, focusAreas: ['layering', 'soundCapture'] }
     ],
-    basePayout: 250,
+    basePayout: 600,
     baseRep: 2,
     baseDuration: 3
   },
@@ -50,7 +50,7 @@ const earlyGameTemplates = [
       { stageName: 'Multi-Vocal Recording', workUnitsBase: 9, focusAreas: ['layering', 'performance'] },
       { stageName: 'Traditional Mix', workUnitsBase: 5, focusAreas: ['soundCapture', 'layering'] }
     ],
-    basePayout: 350,
+    basePayout: 850,
     baseRep: 3,
     baseDuration: 4
   },
@@ -64,7 +64,7 @@ const earlyGameTemplates = [
       { stageName: 'Lead Vocal Recording', workUnitsBase: 12, focusAreas: ['performance', 'soundCapture'] },
       { stageName: 'Horn Section Overdubs', workUnitsBase: 8, focusAreas: ['layering', 'performance'] }
     ],
-    basePayout: 400,
+    basePayout: 1000,
     baseRep: 4,
     baseDuration: 5
   },
@@ -78,7 +78,7 @@ const earlyGameTemplates = [
       { stageName: 'Live Recording Session', workUnitsBase: 11, focusAreas: ['performance', 'soundCapture'] },
       { stageName: 'Analog Mix & Press', workUnitsBase: 7, focusAreas: ['soundCapture', 'layering'] }
     ],
-    basePayout: 375,
+    basePayout: 950,
     baseRep: 3,
     baseDuration: 4
   }
@@ -97,7 +97,7 @@ const advancedGameTemplates = [
       { stageName: 'Interactive Implementation', workUnitsBase: 18, focusAreas: ['performance', 'layering'] },
       { stageName: 'Final Mix & Mastering', workUnitsBase: 14, focusAreas: ['layering', 'soundCapture'] }
     ],
-    basePayout: 1200,
+    basePayout: 3200,
     baseRep: 12,
     baseDuration: 12
   },
@@ -111,7 +111,7 @@ const advancedGameTemplates = [
       { stageName: 'Arrangement & Build-ups', workUnitsBase: 16, focusAreas: ['performance', 'layering'] },
       { stageName: 'Mixing & Master', workUnitsBase: 12, focusAreas: ['layering', 'soundCapture'] }
     ],
-    basePayout: 850,
+    basePayout: 1800,
     baseRep: 8,
     baseDuration: 8
   },
@@ -125,7 +125,7 @@ const advancedGameTemplates = [
       { stageName: 'Recording & Layering', workUnitsBase: 16, focusAreas: ['soundCapture', 'layering'] },
       { stageName: 'Mixing & Mastering', workUnitsBase: 14, focusAreas: ['layering', 'performance'] }
     ],
-    basePayout: 700,
+    basePayout: 1600,
     baseRep: 7,
     baseDuration: 7
   },
@@ -139,7 +139,7 @@ const advancedGameTemplates = [
       { stageName: 'Multiple Variations & Testing', workUnitsBase: 12, focusAreas: ['layering', 'performance'] },
       { stageName: 'Final Production & Delivery', workUnitsBase: 10, focusAreas: ['soundCapture', 'layering'] }
     ],
-    basePayout: 600,
+    basePayout: 1500,
     baseRep: 6,
     baseDuration: 6
   },
@@ -154,7 +154,7 @@ const advancedGameTemplates = [
       { stageName: 'Mixing & Production', workUnitsBase: 12, focusAreas: ['layering', 'performance'] },
       { stageName: 'Mastering & Polish', workUnitsBase: 8, focusAreas: ['soundCapture', 'layering'] }
     ],
-    basePayout: 650,
+    basePayout: 1700,
     baseRep: 6,
     baseDuration: 8
   }
@@ -226,11 +226,13 @@ export const generateNewProjects = (count: number, playerLevel: number = 1, curr
         completed: false
       }));
 
-      // Calculate dynamic pricing based on difficulty, market conditions, and era popularity
-      const genrePopularity = getGenrePopularity(template.genre, currentEra);
+      // Calculate dynamic pricing based on difficulty and market conditions.
+      // Uses the centered market multiplier (0.7-1.3, neutral 1.0) — the old
+      // popularity/100 term double-taxed genre heat (offer cut AND settlement
+      // multiplier). See sd3.4.
       const marketMultiplier = 0.8 + Math.random() * 0.4; // 0.8 to 1.2
       const difficultyMultiplier = 1 + (finalDifficulty - 1) * 0.15; // Scales with difficulty
-      const eraPopularityMultiplier = genrePopularity / 100; // Convert to 0-1 scale
+      const eraPopularityMultiplier = getGenreMarketMultiplier(template.genre, currentEra);
       
       // Issue #10: repeat clients pay a flat 10% loyalty premium.
       const repeatClientMultiplier = returningClient ? 1.1 : 1;
@@ -276,6 +278,7 @@ export const generateNewProjects = (count: number, playerLevel: number = 1, curr
         stages,
         currentStageIndex: 0,
         completedStages: [],
+        stake: 'safe', // Booking gamble default (sd3.2); ambitious/moonshot UI lands later
         accumulatedCPoints: 0,
         accumulatedTPoints: 0,
         workSessionCount: 0,
@@ -345,6 +348,19 @@ export const generateCandidates = (count: number): StaffMember[] => {
       }
     }
     
+    // Salary tiers (sd3.4): interns are day-1 hireable, pros break even
+    // around day 40, specialists are empire-only. Classified AFTER stats and
+    // affinity are final so the tier always matches the candidate.
+    const bestStat = Math.max(primaryStats.creativity, primaryStats.technical, primaryStats.speed);
+    const affinityBonus = genreAffinity?.bonus ?? 0;
+    if (bestStat >= 45 || affinityBonus >= 25) {
+      salary = 160 + Math.floor(Math.random() * 81); // Specialist 160-240
+    } else if (bestStat >= 30 || affinityBonus >= 15) {
+      salary = 90 + Math.floor(Math.random() * 51); // Pro 90-140
+    } else {
+      salary = 35 + Math.floor(Math.random() * 21); // Intern 35-55
+    }
+
     const candidate: StaffMember = {
       id: '', // Will be assigned when hired
       name: names[Math.floor(Math.random() * names.length)],

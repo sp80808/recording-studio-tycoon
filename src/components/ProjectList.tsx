@@ -77,7 +77,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
   };
 
   return (
-    <GamePanel className="p-4 h-full min-h-0 flex flex-col backdrop-blur-sm animate-slide-in-left">
+    <GamePanel className="p-4 flex-1 min-h-0 w-full flex flex-col backdrop-blur-sm animate-slide-in-left">
       <div className="flex items-start justify-between gap-3 mb-4 shrink-0">
         <div>
           <h2 className="text-xl font-bold text-white tracking-wide">Artist Enquiries</h2>

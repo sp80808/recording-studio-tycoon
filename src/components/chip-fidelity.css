@@ -1,0 +1,121 @@
+/* Chip-fidelity kit (k6e.2) — one token set for the Kenney/chip aesthetic.
+ * New-file only: never edit index.css / studio-play.css / release.css.
+ * All motion respects prefers-reduced-motion (single block at the bottom). */
+
+:root {
+  --chip-out: cubic-bezier(.22, 1, .36, 1);
+  --chip-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --chip-bevel-hi: #ffffff22;
+  --chip-bevel-lo: #00000055;
+  --chip-edge: #080b13;
+}
+
+/* True bevel so new cards sit in the same light world as Kenney sprites. */
+.kenney-bevel {
+  box-shadow:
+    0 3px 0 var(--chip-edge),
+    inset 0 1px var(--chip-bevel-hi),
+    inset 0 -2px var(--chip-bevel-lo);
+}
+.kenney-bevel:active {
+  transform: translateY(2px);
+  box-shadow:
+    0 1px 0 var(--chip-edge),
+    inset 0 1px var(--chip-bevel-hi);
+}
+
+/* Scoped hardware grain for panels/HUD chips (not fullscreen). */
+.chip-grain {
+  position: relative;
+}
+.chip-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+}
+
+/* Settle landing: HUD chip pulse when a reward lands (not just flies). */
+@keyframes settle-tick {
+  0% { transform: scale(1); filter: brightness(1); }
+  35% { transform: scale(1.12); filter: brightness(1.5); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+.settle-tick {
+  animation: settle-tick 0.6s var(--chip-out);
+}
+
+/* Deny shake: 4px, 280ms for error feedback. */
+@keyframes deny-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+  75% { transform: translateX(-2px); }
+}
+.deny-shake {
+  animation: deny-shake 0.28s var(--chip-out);
+}
+
+/* Press ripple element (positioned by PressRipple.tsx at pointer coords). */
+.press-ripple-ink {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+  background: currentColor;
+  opacity: 0.25;
+  transform: translate(-50%, -50%) scale(0);
+  animation: press-ripple 0.32s var(--chip-out) forwards;
+}
+@keyframes press-ripple {
+  to { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+.press-ripple-host {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Streak flame pop. */
+@keyframes flame-pop {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+.flame-pop {
+  display: inline-block;
+  animation: flame-pop 0.3s var(--chip-spring);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Rank stamp entrance: dim is the overlay, card springs in. */
+@keyframes rank-stamp-in {
+  0% { transform: scale(1.6) rotate(-6deg); opacity: 0; }
+  60% { transform: scale(0.94) rotate(1deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+.rank-stamp-in {
+  animation: rank-stamp-in 0.45s var(--chip-spring);
+}
+
+/* Hover preview card rise. */
+@keyframes hover-preview-rise {
+  from { transform: translateY(4px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.hover-preview-card {
+  animation: hover-preview-rise 0.18s var(--chip-out);
+}
+
+/* One reduced-motion block for the whole kit: motion collapses to fades,
+ * audio is never muted here (sound replaces motion for these users). */
+@media (prefers-reduced-motion: reduce) {
+  .settle-tick { animation-duration: 0.01s; }
+  .deny-shake { animation: none; opacity: 0.7; }
+  .press-ripple-ink { display: none; }
+  .flame-pop { animation: none; }
+  .kenney-bevel:active { transform: none; }
+  .rank-stamp-in { animation-duration: 0.01s; }
+  .hover-preview-card { animation: none; }
+}

@@ -421,7 +421,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       {/* Studio Workspace Card: Scaled DAW / Console Layout */}
       <div 
         ref={containerRef} 
-        className="flex-1 min-h-0 flex flex-col h-full overflow-hidden bg-slate-950 border border-slate-700/80 rounded-[2px] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_12px_40px_rgba(0,0,0,0.85)] relative"
+        className="flex-1 min-h-0 flex flex-col w-full overflow-hidden bg-slate-950 border border-slate-700/80 rounded-[2px] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_12px_40px_rgba(0,0,0,0.85)] relative"
       >
         <div className="absolute top-1 left-1 w-2 h-2 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-[8px] text-slate-400 font-mono shadow-inner">+</div>
         <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-[8px] text-slate-400 font-mono shadow-inner">+</div>

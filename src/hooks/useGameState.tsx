@@ -26,7 +26,7 @@ export const useGameState = () => {
   });
 
   const createDefaultGameState = (options?: Partial<EraInitOptions>): GameState => ({
-    money: options?.startingMoney || 2000,
+    money: options?.startingMoney || 3500,
     influence: 0, // Initialize Influence
     creativeCapital: 0, // Initialize Creative Capital
     activeMinigame: null, // No minigame active by default

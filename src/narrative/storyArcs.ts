@@ -181,6 +181,24 @@ export const STORY_ARCS: readonly StoryArc[] = [
           unlockedPerkOrTitle: 'Subculture Hero',
         },
       },
+      {
+        chapterNumber: 3,
+        title: 'Act III: The DIY Megafestival',
+        loreBrief: 'Roxy Riot rallies hundreds of independent musicians for an unpermitted warehouse festival. Put on the performance of a generation to permanently fund the underground movement.',
+        objectiveDescription: 'Reach 150 Reputation and produce a high-caliber session (Quality >= 85) in an underground genre.',
+        checkCompletion: (state) => {
+          const completedHighQuality = state.financials?.history?.some(
+            h => ['Punk', 'Grunge', 'Hip Hop', 'Alternative'].includes(h.genre || '') && h.quality >= 85
+          ) ?? false;
+          return state.reputation >= 150 && completedHighQuality;
+        },
+        reward: {
+          money: 8000,
+          reputation: 60,
+          xp: 1800,
+          unlockedPerkOrTitle: 'Icon of the Counter-Culture',
+        },
+      },
     ],
   },
   {
@@ -218,6 +236,21 @@ export const STORY_ARCS: readonly StoryArc[] = [
           reputation: 35,
           xp: 1000,
           unlockedPerkOrTitle: 'Harmonic Alchemist',
+        },
+      },
+      {
+        chapterNumber: 3,
+        title: 'Act III: The Resonance Breakthrough',
+        loreBrief: 'Dr. Aris Thorne challenges you to construct an ultra-low-noise acoustic signal chain that creates the theoretical Golden Resonance frequency.',
+        objectiveDescription: 'Discover at least 6 Studio Synergies and reach Producer Level 8.',
+        checkCompletion: (state) => {
+          return (state.discoveredSynergies?.length ?? 0) >= 6 && state.playerData.level >= 8;
+        },
+        reward: {
+          money: 10000,
+          reputation: 50,
+          xp: 2000,
+          unlockedPerkOrTitle: 'Grand Master of Frequencies',
         },
       },
     ],

@@ -21,11 +21,16 @@
 .studio-session-popup { width:min(940px,calc(100vw - 48px)); right:50%; transform:translateX(50%); }
 .studio-panel-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; flex:none; padding:12px 16px; border-bottom:1px solid #ffffff12; background:#1b2638; }
 .studio-panel-heading p { font-size:9px; letter-spacing:.2em; color:#b9a67f; }
-.studio-panel-heading h2 { font-size:21px; font-weight:600; }
-.studio-panel-body { flex:1; min-height:0; min-width:0; display:flex; flex-direction:column; position:relative; overflow:auto; padding:8px; overscroll-behavior:contain; }
+.studio-panel-body { flex:1; min-height:0; min-width:0; display:flex; flex-direction:column; position:relative; overflow:hidden; padding:8px; }
 .studio-panel-hint { flex:none; padding:6px 12px; text-align:center; font-size:10px; color:#8093af; border-top:1px solid #ffffff0b; }
 .studio-hud { position:absolute; inset:0 0 auto; z-index:30; pointer-events:none; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:4px 12px; padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 6px max(10px,env(safe-area-inset-left)); color:#d9e3f2; }
-.studio-hud-stats > *, .studio-hud-controls > * { pointer-events:auto; background:#182131de; border:1px solid #64748b55; border-radius:12px; box-shadow:0 3px 12px #0003,inset 0 1px #ffffff0a; min-height:44px; padding:7px 10px; backdrop-filter:blur(12px); }
+.studio-hud-stats > *, .studio-hud-controls > *, .studio-hud-title { pointer-events:auto; background:#182131de; border:1px solid #64748b55; border-radius:12px; box-shadow:0 3px 12px #0003,inset 0 1px #ffffff0a; min-height:44px; padding:7px 14px; backdrop-filter:blur(12px); }
+.studio-hud-title { display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; letter-spacing:0.18em; color:#dbe4ff; text-transform:uppercase; cursor:pointer; transition:background .15s,border-color .15s,transform .15s; white-space:nowrap; }
+.studio-hud-title:hover { background:#222d42ee; border-color:#94a3b888; color:#ffffff; }
+.studio-hud-title:active { transform:translateY(1px); }
+@media(min-width:768px) {
+  .studio-hud-title { position:absolute; left:50%; transform:translateX(-50%); top:max(10px,env(safe-area-inset-top)); }
+}
 .studio-hud .studio-hud-day { flex-direction:row; font-size:12px; white-space:nowrap; }
 .studio-hud-stats,.studio-hud-controls { display:flex; align-items:center; gap:12px; min-width:0; }
 .studio-hud-stat { display:flex; align-items:center; gap:5px; font-size:13px; font-weight:700; white-space:nowrap; font-variant-numeric:tabular-nums; }
@@ -46,16 +51,28 @@
   .studio-hud { gap:2px 8px; }
   .studio-hud-stats,.studio-hud-controls { gap:8px; }
   .studio-hud-controls { width:100%; justify-content:flex-end; }
+  .studio-hud-title { width:100%; order:-1; font-size:11px; letter-spacing:0.12em; min-height:36px; padding:4px 8px; justify-content:center; }
   .studio-hud-xp { margin-right:auto; width:130px; }
   .first-session-guide { top:108px; right:6px; width:calc(100vw - 12px); }
   .studio-activity-panel,.studio-session-popup { top:108px; right:6px; bottom:6px; width:calc(100vw - 12px); transform:none; border-radius:14px; }
+}
+@media(max-height:768px) and (min-width:541px) {
+  .studio-activity-panel { top:68px; bottom:8px; }
+  .studio-session-popup { top:68px; bottom:8px; }
+}
+@media(max-height:600px) and (min-width:541px) {
+  .studio-activity-panel { top:54px; bottom:4px; }
+  .studio-session-popup { top:54px; bottom:4px; }
+  .studio-panel-heading { padding:8px 12px; }
+  .studio-panel-hint { display:none; }
 }
 @media(max-height:500px) and (min-width:541px) {
   .studio-play-actions { position:absolute; bottom:0; right:8px; align-items:flex-end; }
   .studio-play-status { left:12px; top:60px; bottom:auto; max-width:45%; }
   .studio-command-dock .studio-dock-button { width:48px; }
   .studio-play-room .studio-room-hint { bottom:8px; }
-  .studio-activity-panel { top:62px; }
+  .studio-activity-panel { top:50px; bottom:2px; }
+  .studio-session-popup { top:50px; bottom:2px; }
 }
 @media(prefers-reduced-motion:reduce) {
   .studio-play *, .studio-activity-panel, .studio-panel-shade { animation:none!important; transition:none!important; }

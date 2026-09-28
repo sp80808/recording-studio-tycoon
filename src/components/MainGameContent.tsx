@@ -252,7 +252,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           />
 
               )}
-              {panel === 'career' && <div className="overflow-y-auto">
+              {panel === 'career' && <div className="flex-1 min-h-0 w-full flex flex-col overflow-y-auto">
                 <CareerHub gameState={gameState} onTalents={() => setShowAttributesModal(true)}
                   onWork={() => openPanel('session')} onBookings={() => openPanel('bookings')}
                   onRest={advanceDay} onStaff={() => handleOpenDashboardTab('staff')} />

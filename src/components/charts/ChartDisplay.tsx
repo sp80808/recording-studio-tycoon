@@ -6,6 +6,7 @@ import { ChartEntry, Chart } from '@/types/charts';
 import { GameState } from '@/types/game';
 import { Play, Pause, TrendingUp, Clock, Star, ArrowUp, ArrowDown, Minus } from 'lucide-react';
 import { calculateContactCost, isArtistContactable } from '@/data/chartsData';
+import { HoverPreview } from '@/components/HoverPreview';
 
 interface ChartDisplayProps {
   chart: Chart;
@@ -102,9 +103,18 @@ export const ChartDisplay: React.FC<ChartDisplayProps> = ({
 
                 {/* Song & Artist Info */}
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-lg font-bold text-white truncate">
-                    {entry.song.title}
-                  </h4>
+                  <HoverPreview
+                    preview={
+                      <span>
+                        <strong>{entry.song.title}</strong> — {entry.song.artist.name}<br />
+                        {entry.song.genre} · {entry.weeksOnChart}w on chart · Peak #{entry.peakPosition}
+                      </span>
+                    }
+                  >
+                    <h4 className="text-lg font-bold text-white truncate">
+                      {entry.song.title}
+                    </h4>
+                  </HoverPreview>
                   <p className="text-sm text-gray-300 truncate">
                     {entry.song.artist.name}
                   </p>

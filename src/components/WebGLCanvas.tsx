@@ -101,12 +101,26 @@ const ERA_GRADES: Record<string, { tint: number; wallLeft: number; wallRight: nu
   streaming2020s:{ tint: 0x06140f, wallLeft: 0x22352e, wallRight: 0x2b463a, accent: 0x7bd389, label: 'STREAMING 2020s' },
 };
 
-const getEraGrade = (eraId?: string) => ERA_GRADES[visualEraId(eraId ?? 'analog60s')] ?? ERA_GRADES.analog60s;
+export const getEraGrade = (eraId?: string) => ERA_GRADES[visualEraId(eraId ?? 'analog60s')] ?? ERA_GRADES.analog60s;
 
 /** Studio tier furniture/upgrade thresholds (bead ifx.3). */
-const clampTier = (tier?: number): 1 | 2 | 3 | 4 | 5 => {
+export const clampTier = (tier?: number): 1 | 2 | 3 | 4 | 5 => {
   const t = Math.max(1, Math.min(5, Math.round(tier ?? 1)));
   return t as 1 | 2 | 3 | 4 | 5;
+};
+
+export const getStudioTierName = (tier: number): string => {
+  if (tier >= 5) return 'HIT FACTORY';
+  if (tier >= 4) return 'STUDIO A';
+  if (tier >= 3) return 'PROJECT STUDIO';
+  if (tier >= 2) return 'BEDROOM+ STUDIO';
+  return 'HOME STUDIO';
+};
+
+export const getStudioSignage = (eraId?: string, milestonesCount = 0): string => {
+  const grade = getEraGrade(eraId);
+  const tier = clampTier(Math.floor(milestonesCount / 2) + 1);
+  return `${grade.label} · ${getStudioTierName(tier)}`;
 };
 
 /** An animatable bar (VU meters, TV equalizer) with a fixed baseline */
@@ -226,10 +240,20 @@ const buildScene = (
     walls.poly([c.x, c.y - 104, d.x, d.y - 104, d.x, d.y - 53, c.x, c.y - 53])
       .fill({ color: 0x101827, alpha: .19 });
   }
-  // Top trim
+  // Wall trim / roof outline (left wall front -> left top -> back corner top -> right top -> right wall front)
   walls
-    .poly([wl0.x, wl0.y - WALL_H, wl1.x, wl1.y - WALL_H, wr1.x, wr1.y - WALL_H])
-    .stroke({ width: 6, color: COLORS.wallTrim });
+    .poly([
+      wl1.x, wl1.y,
+      wl1.x, wl1.y - WALL_H,
+      wl0.x, wl0.y - WALL_H,
+      wr1.x, wr1.y - WALL_H,
+      wr1.x, wr1.y,
+    ])
+    .stroke({ width: 4, color: COLORS.wallTrim });
+  // Center corner vertical seam
+  walls
+    .poly([wl0.x, wl0.y, wl0.x, wl0.y - WALL_H])
+    .stroke({ width: 2, color: COLORS.wallTrim, alpha: 0.6 });
   root.addChild(walls);
 
   /* ---- Window (right wall) -------------------------------------------- */
@@ -495,15 +519,6 @@ const buildScene = (
     refs.staffFigures.push({ fig, baseY: spot.y });
     root.addChild(fig);
   }
-
-  /* ---- Diegetic room signage ------------------------------------------ */
-  const sign = new Text({
-    text: `${grade.label} · ${tier >= 5 ? 'HIT FACTORY' : tier >= 4 ? 'STUDIO A' : tier >= 3 ? 'PROJECT STUDIO' : tier >= 2 ? 'BEDROOM+ STUDIO' : 'HOME STUDIO'}`,
-    style: { fontFamily: 'Arial', fontSize: 13, fill: 0xdbe4ff, letterSpacing: 3 },
-  });
-  const signPos = iso(2.3, 0.9);
-  sign.position.set(signPos.x - sign.width / 2, signPos.y - 96);
-  root.addChild(sign);
 
   root.sortableChildren = true;
 

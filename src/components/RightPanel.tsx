@@ -132,7 +132,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   };
 
   return (
-    <GamePanel className="p-3 h-full min-h-0 flex flex-col overflow-hidden backdrop-blur-md animate-slide-in-right">
+    <GamePanel className="p-3 flex-1 min-h-0 w-full flex flex-col overflow-hidden backdrop-blur-md animate-slide-in-right">
       {/* Tab Navigation (Pinned) */}
       <nav
         aria-label="Management panels"
