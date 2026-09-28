@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Mic2, SlidersHorizontal, Users, ChevronUp, Inbox } from 'lucide-react';
 import { getBookedStudioRoom } from '@/utils/studioRoomUtils';
+import { VUMeter } from '@/components/ui/VUMeter';
 
 interface StudioStripProps {
   gameState: GameState;
@@ -47,13 +48,9 @@ export const StudioStrip: React.FC<StudioStripProps> = ({
               <SlidersHorizontal size={14} />
               CONTROL ROOM
             </div>
-            <div>
-              <div className="h-5 rounded bg-gray-800 border border-gray-700 flex items-center justify-center gap-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-300" />
-                <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
-              </div>
-              <div className="mt-2 text-xs text-gray-300">
+            <div className="flex items-center justify-between">
+              <VUMeter size="sm" level={activeProject ? 0.75 : 0.15} isActive={!!activeProject} label="OUTPUT" />
+              <div className="ml-2 flex-1 text-xs text-gray-300">
                 {assignedStaff.length > 0
                   ? assignedStaff.map(staff => staff.name).join(', ')
                   : activeProject

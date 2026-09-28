@@ -104,7 +104,13 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
 
   /** Every hotspot now opens its contextual inspector (bead goj.2). */
   const handleHotspot = (id: StudioHotspotId) => {
-    playClick();
+    if (settings.sfxEnabled) {
+      if (id === 'console' || id === 'shelf') {
+        void gameAudio.playGearSwitch();
+      } else {
+        void gameAudio.playTactileClick();
+      }
+    }
     if (id === 'console') { onConsoleFocus(); return; }
     if (id === 'phone' && onBookings) { onBookings(); return; }
     setActiveInspector(id);
