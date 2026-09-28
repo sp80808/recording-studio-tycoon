@@ -137,7 +137,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
         />
       )}
       <div className="absolute inset-0 pointer-events-none select-none">
-        <div className="absolute top-2 left-3 flex items-center gap-2">
+        <div className="studio-room-label absolute top-2 left-3 flex items-center gap-2">
           <span className="px-2 py-1 text-[10px] font-black tracking-[0.2em] text-gray-100 bg-black/50 border border-white/10 rounded">
             🎛 STUDIO FLOOR
           </span>
@@ -146,7 +146,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           </span>
         </div>
       </div>
-      <button className="absolute right-3 top-2 studio-dock-button bg-slate-950/70 border border-white/10"
+      <button className="studio-camera-center absolute right-3 top-2 studio-dock-button bg-slate-950/70 border border-white/10"
         onClick={() => setCameraReset(value => value + 1)} aria-label="Center studio camera" title="Center studio camera">
         <LocateFixed size={18} />
       </button>

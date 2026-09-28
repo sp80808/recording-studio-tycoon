@@ -188,6 +188,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             onCloseAutoFocus={event => { event.preventDefault(); returnFocusRef.current?.focus(); }}>
             <header className="studio-panel-heading">
               <div><p>RECORDING STUDIO</p><Dialog.Title>{panel ? titles[panel] : ''}</Dialog.Title></div>
+              {panel === 'session' && gameState.playerData.dailyWorkCapacity <= 0 && !project?.awaitingReview &&
+                <button className="studio-primary-action ml-auto" onClick={advanceDay}><Moon size={16} />Rest & advance day</button>}
               <Dialog.Close className="studio-dock-button" aria-label="Return to studio floor"><X size={22} /></Dialog.Close>
             </header>
             <div className="studio-panel-body" data-reward-source="activity">

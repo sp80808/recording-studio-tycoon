@@ -206,6 +206,7 @@ export const generateProjectReview = (
   // C/T contribution is capped so long grinds can't push quality to 100 alone.
   const pointsFactor = clamp((project.accumulatedCPoints + project.accumulatedTPoints) / 15, 0, 15);
   const difficultyBonus = project.difficulty * 1.5;
+  const synergyBonus = clamp(Math.round(settlementContext?.synergyQualityBonus ?? 0), 0, 12);
   let overallQualityScore = Math.floor(
     averageSkillScore * 0.5 +
     pointsFactor +
@@ -214,7 +215,8 @@ export const generateProjectReview = (
     staffBonus +
     studioBonus +
     equipBonusExtra +
-    minigameBonus
+    minigameBonus +
+    synergyBonus
   );
   overallQualityScore = clamp(overallQualityScore + randomInt(rng, -5, 4), 0, 100);
 

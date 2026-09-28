@@ -1,5 +1,8 @@
 .studio-play { height:100%; min-height:0; display:flex; flex-direction:column; position:relative; isolation:isolate; background:#11151f; }
-.studio-play-world { position:absolute; inset:0; padding-top:68px; padding-bottom:155px; }
+.studio-play-world { position:absolute; inset:0; }
+.studio-play-room .studio-room-label { top:74px; }
+.studio-play-room .studio-camera-center { top:74px; }
+.studio-play-room .studio-room-hint { bottom:158px; }
 .studio-play-room { height:100%; border:0!important; border-radius:0!important; }
 .studio-play-status { display:flex; align-items:center; gap:10px; padding:6px 12px; font-size:12px; color:#b7c4d9; position:absolute; bottom:128px; align-self:center; max-width:calc(100% - 24px); border:1px solid #ffffff12; border-radius:20px; background:#121b2bcc; }
 .studio-live-light { width:6px; height:6px; border-radius:50%; background:#6ee7b7; box-shadow:0 0 12px #6ee7b7; flex:none; }
@@ -37,7 +40,7 @@
   .studio-command-dock { width:100%; justify-content:space-between; gap:0; padding:4px; }
   .studio-command-dock .studio-dock-button { width:auto; flex:1; min-width:40px; }
   .studio-play-actions { padding-left:6px; padding-right:6px; width:100%; }
-  .studio-play-world { padding-top:112px; }
+  .studio-play-room .studio-room-label, .studio-play-room .studio-camera-center { top:112px; }
   .studio-play-status { font-size:10px; gap:6px; }
   .studio-hud { gap:2px 8px; }
   .studio-hud-stats,.studio-hud-controls { gap:8px; }
@@ -49,7 +52,7 @@
   .studio-play-actions { position:absolute; bottom:0; right:8px; align-items:flex-end; }
   .studio-play-status { left:12px; top:60px; bottom:auto; max-width:45%; }
   .studio-command-dock .studio-dock-button { width:48px; }
-  .studio-play-world { padding-top:30px; padding-bottom:92px; }
+  .studio-play-room .studio-room-hint { bottom:8px; }
   .studio-activity-panel { top:62px; }
 }
 @media(prefers-reduced-motion:reduce) {

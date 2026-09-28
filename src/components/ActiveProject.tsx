@@ -22,6 +22,8 @@ import { GameState, FocusAllocation, Project, PlayerData } from '@/types/game';
 import { useFeatureFlag } from '@/stores/featureFlagStore';
 import ProductionQueuePanel from '@/components/ProductionQueue/ProductionQueuePanel';
 import { rankStaffForProject } from '@/utils/staffFitUtils';
+import { evaluateProjectSynergies } from '@/utils/synergyUtils';
+import { SynergyBadgeList } from '@/components/synergy/SynergyBadgeList';
 
 interface ActiveProjectProps {
   gameState: GameState;
@@ -153,6 +155,10 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
   // Aggregate skills of staff assigned to this project
   const assignedStaffToThisProject = gameState.hiredStaff.filter(s => s.assignedProjectId === project.id);
+  const activeSynergies = React.useMemo(() => {
+    return evaluateProjectSynergies(project, gameState);
+  }, [project, gameState]);
+
   const rankedDelegates = rankStaffForProject(
     assignedStaffToThisProject.filter(staff => staff.status === 'Working' && staff.energy > 0),
     project
@@ -492,6 +498,17 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 </p>
               </div>
               <div className="text-xl animate-bounce">🎉</div>
+            </div>
+          )}
+
+          {/* Active Studio Synergies (Kairosoft Combos) */}
+          {activeSynergies.length > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-950/40 via-yellow-950/20 to-slate-900/60 border border-amber-500/30">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-amber-300 flex items-center gap-1 shrink-0">
+                <span>✨</span>
+                <span>Active Combos ({activeSynergies.length}):</span>
+              </span>
+              <SynergyBadgeList synergies={activeSynergies} size="sm" />
             </div>
           )}
 

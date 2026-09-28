@@ -18,6 +18,7 @@ import { triggerScreenShake } from '@/utils/screenShake';
 import { MinigameType } from '@/components/minigames/MinigameManager';
 import { getBookedStudioRoom } from '@/utils/studioRoomUtils';
 import { createSeededRandom } from '@/simulation/seededRandom';
+import { evaluateProjectSynergies, calculateSynergyBonuses, recordDiscoveredSynergies } from '@/utils/synergyUtils';
 
 interface UseStageWorkProps {
   gameState: GameState;
@@ -314,12 +315,14 @@ export const useStageWork = ({
     );
     console.log(`🎯 FINAL GAINS - C: ${workPoints.creativity}, T: ${workPoints.technical}`);
     
-    const { creativity: rawCreativity, technical: rawTechnical } = workPoints;
+    // 🌟 Studio Synergies (Issues #45 & #48)
+    const activeSynergies = evaluateProjectSynergies(project, gameState);
+    const synergyBonuses = calculateSynergyBonuses(activeSynergies);
 
-    // ⚡ Streak + 🔥 Overdrive multipliers applied to the final gains
+    // ⚡ Streak + 🔥 Overdrive + ✨ Synergy multipliers applied to the final gains
     const overdriveMultiplier = overdrive ? 1.75 : 1;
-    const creativityGain = Math.max(1, Math.round(rawCreativity * comboMultiplier * overdriveMultiplier));
-    const technicalGain = Math.max(1, Math.round(rawTechnical * comboMultiplier * overdriveMultiplier));
+    const creativityGain = Math.max(1, Math.round(rawCreativity * comboMultiplier * overdriveMultiplier * synergyBonuses.creativityMultiplier));
+    const technicalGain = Math.max(1, Math.round(rawTechnical * comboMultiplier * overdriveMultiplier * synergyBonuses.technicalMultiplier));
 
     // Create orb animations
     createOrb('creativity', creativityGain);
@@ -330,8 +333,8 @@ export const useStageWork = ({
 
     // Log values for debugging stage progression
     console.log(`🐞 DEBUG - Current Stage workUnitsBase: ${currentStage.workUnitsBase}`);
-    console.log(`🐞 DEBUG - Creativity Gain: ${creativityGain}`);
-    console.log(`🐞 DEBUG - Technical Gain: ${technicalGain}`);
+    console.log(`🐞 DEBUG - Creativity Gain: ${creativityGain} (Synergy x${synergyBonuses.creativityMultiplier})`);
+    console.log(`🐞 DEBUG - Technical Gain: ${technicalGain} (Synergy x${synergyBonuses.technicalMultiplier})`);
     console.log(`🐞 DEBUG - Total Points Generated: ${totalPointsGenerated}`);
     console.log(`🐞 DEBUG - Current Stage workUnitsCompleted (before): ${currentStage.workUnitsCompleted}`);
     
@@ -347,7 +350,7 @@ export const useStageWork = ({
     const roomSpeedMultiplier = 1 + ((bookedRoom?.speedBonus || 0) / 100);
     const workUnitsToAdd = Math.max(
       minProgress,
-      Math.floor((baseWorkUnits + stageEfficiencyBonus) * roomSpeedMultiplier)
+      Math.floor((baseWorkUnits + stageEfficiencyBonus) * roomSpeedMultiplier * synergyBonuses.workUnitSpeedMultiplier)
     );
     // Ensure at least 1 unit of progress if energy was spent and stage is not complete
     const actualWorkUnitsToAdd = (workUnitsToAdd === 0 && !currentStage.completed && totalPointsGenerated > 0) ? 1 : workUnitsToAdd; // Ensure progress if any points generated
@@ -405,6 +408,7 @@ export const useStageWork = ({
       return withDailyTracking({
         ...prev,
         activeProject: updatedProject,
+        discoveredSynergies: updatedDiscovered,
         playerData: {
           ...prev.playerData,
           dailyWorkCapacity: prev.playerData.dailyWorkCapacity - (overdrive ? 2 : 1)
@@ -422,6 +426,21 @@ export const useStageWork = ({
         })
       }, { sessions: 1, combo: newCombo });
     });
+
+    // ✨ Celebrate new synergy discoveries
+    const { newlyDiscovered } = recordDiscoveredSynergies(
+      gameState.discoveredSynergies,
+      activeSynergies
+    );
+    if (newlyDiscovered.length > 0) {
+      newlyDiscovered.forEach(syn => {
+        toast({
+          title: `✨ NEW SYNERGY: ${syn.icon} ${syn.name}!`,
+          description: `${syn.tagline} — unlocked in your Synergy Encyclopedia!`,
+          className: 'bg-gradient-to-r from-amber-950/95 via-purple-950/95 to-slate-900 border border-amber-400 text-white shadow-2xl',
+        });
+      });
+    }
 
     // 🔥 Overdrive: big payoff, small risk — the session can burn out the crew
     if (overdrive) {

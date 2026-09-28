@@ -189,14 +189,16 @@ const buildScene = (
 
   // Fit the whole room into the viewport so walls/floor never clip
   const bounds = { minX: -196, maxX: 224, minY: -135, maxY: 215 };
+  const topInset = width <= 540 ? 116 : 68;
+  const bottomInset = height < 500 ? 96 : 160;
   const fitScale = Math.min(
     (width - 60) / (bounds.maxX - bounds.minX),
-    (height - 40) / (bounds.maxY - bounds.minY),
+    Math.max(80, height - topInset - bottomInset - 20) / (bounds.maxY - bounds.minY),
     2.4
   );
   root.scale.set(fitScale);
   const originX = width / 2 - ((bounds.minX + bounds.maxX) / 2) * fitScale;
-  const originY = height / 2 - ((bounds.minY + bounds.maxY) / 2) * fitScale;
+  const originY = (topInset + height - bottomInset) / 2 - ((bounds.minY + bounds.maxY) / 2) * fitScale;
   root.position.set(originX, originY);
 
   /* ---- Back walls ------------------------------------------------------ */
@@ -870,7 +872,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         lastW = w;
         lastH = h;
         app.renderer.resize(w, h);
-        cameraRef.current = { x: 0, y: 0 };
+        cameraRef.current = { x: 0, y: 0, zoom: 1 };
         if (!disposed) rebuild();
       }
     });

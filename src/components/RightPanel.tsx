@@ -15,9 +15,10 @@ import { toast } from '@/hooks/use-toast'; // Import toast
 import { ProgressionSystem } from '@/services/ProgressionSystem';
 import { getOperationalStudioRooms, getOccupiedRoomIds } from '@/utils/studioRoomUtils';
 import { calculateStaffProjectFit } from '@/utils/staffFitUtils';
+import { SynergyEncyclopedia } from '@/components/synergy/SynergyEncyclopedia';
 
 export interface RightPanelProps {
-  requestedTab?: 'studio' | 'skills' | 'bands' | 'charts' | 'staff';
+  requestedTab?: 'studio' | 'skills' | 'bands' | 'charts' | 'staff' | 'synergies';
   gameState: GameState;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
   spendPerkPoint: (attribute: keyof PlayerAttributes) => void;
@@ -57,7 +58,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   startResearchMod,
   requestedTab
 }) => {
-  const [activeTab, setActiveTab] = useState<'studio' | 'skills' | 'bands' | 'charts' | 'staff'>(requestedTab ?? 'studio');
+  const [activeTab, setActiveTab] = useState<'studio' | 'skills' | 'bands' | 'charts' | 'staff' | 'synergies'>(requestedTab ?? 'studio');
   useEffect(() => { if (requestedTab) setActiveTab(requestedTab); }, [requestedTab]);
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [showAttributesModal, setShowAttributesModal] = useState(false);
@@ -71,7 +72,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   useEffect(() => {
     const onOpenTab = (e: Event) => {
       const tab = (e as CustomEvent).detail as typeof activeTab | undefined;
-      if (tab && ['studio', 'skills', 'bands', 'charts', 'staff'].includes(tab)) {
+      if (tab && ['studio', 'skills', 'bands', 'charts', 'staff', 'synergies'].includes(tab)) {
         setActiveTab(tab);
       }
     };
@@ -203,6 +204,23 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           }`}
         >
           📈 Charts
+        </button>
+        <button
+          onClick={() => setActiveTab('synergies')}
+          className={`flex-1 py-1.5 px-1 rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1 ${
+            activeTab === 'synergies'
+              ? 'bg-amber-600 text-white shadow'
+              : 'text-gray-400 hover:text-white'
+          }`}
+          title="Studio Recipe & Synergy Codex"
+        >
+          <span>✨</span>
+          <span>Recipes</span>
+          {(gameState.discoveredSynergies?.length ?? 0) > 0 && (
+            <span className="text-[9px] bg-amber-400/20 text-amber-300 font-bold px-1 rounded-full">
+              {gameState.discoveredSynergies?.length}
+            </span>
+          )}
         </button>
       </div>
 
@@ -532,6 +550,10 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             <div className="text-xs mt-1">Complete projects to access industry charts!</div>
           </div>
         </div>
+      )}
+
+      {activeTab === 'synergies' && (
+        <SynergyEncyclopedia gameState={gameState} />
       )}
       </div>
 
