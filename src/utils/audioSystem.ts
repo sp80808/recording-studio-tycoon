@@ -1,6 +1,7 @@
 // Sound System for Recording Studio Tycoon
 // Using Web Audio API with real audio files
 // import Recorder from 'recorder-js';
+import * as Tone from 'tone';
 
 interface AudioSettings {
   masterVolume: number;
@@ -111,6 +112,11 @@ class GameAudioSystem {
       { name: 'ui-stage-complete', path: '/audio/ui-sfx/stage-complete.mp3' },
       { name: 'ui-training-complete', path: '/audio/ui-sfx/training-complete.mp3' },
       { name: 'ui-unavailable', path: '/audio/ui-sfx/unavailable-ui-79817.mp3' },
+      // Kenney UI Audio - Tactile Hardware SFX
+      { name: 'ui-tactile-click', path: '/audio/ui-sfx/kenney/click1.wav' },
+      { name: 'ui-tactile-click-alt', path: '/audio/ui-sfx/kenney/click2.wav' },
+      { name: 'ui-gear-switch', path: '/audio/ui-sfx/kenney/switch1.wav' },
+      { name: 'ui-gear-switch-alt', path: '/audio/ui-sfx/kenney/switch2.wav' },
       // Music - Added paths
       { name: 'music-bgm1', path: '/audio/music/tycoon-bgm1.mp3' },
       { name: 'music-bgm2', path: '/audio/music/tycoon-bgm2.mp3' },
@@ -240,6 +246,16 @@ class GameAudioSystem {
     } else {
       console.error('Audio context failed to initialize or resume after user gesture.');
     }
+
+    try {
+      if (typeof window !== 'undefined' && Tone.getContext().state !== 'running') {
+        await Tone.start();
+        console.log('Tone.js audio context started.');
+      }
+    } catch (e) {
+      console.warn('Tone.start() initialization deferred:', e);
+    }
+
     return initialized && this.audioContext?.state === 'running';
   }
 
@@ -569,6 +585,15 @@ class GameAudioSystem {
     oscillator.stop(this.audioContext.currentTime + 0.05);
   }
 
+  // TACTILE HARDWARE SFX (Kenney CC0)
+  async playTactileClick(volume: number = 0.6) {
+    return this.playSound('ui-tactile-click', 'sfx', volume);
+  }
+
+  async playGearSwitch(volume: number = 0.7) {
+    return this.playSound('ui-gear-switch', 'sfx', volume);
+  }
+
   async playZoneEnter() {
     await this.ensureInitialized();
     if (!this.audioContext || !this.masterGain) return;
@@ -795,6 +820,12 @@ class GameAudioSystem {
         break;
       case 'unavailable':
         await this.playSound('ui-unavailable', 'sfx', 0.7);
+        break;
+      case 'tactileClick':
+        await this.playTactileClick();
+        break;
+      case 'gearSwitch':
+        await this.playGearSwitch();
         break;
       default:
         // Fall back to basic click sound for unknown types
