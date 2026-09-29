@@ -38,9 +38,9 @@ export function ProjectCompletionCelebration({ isVisible, projectTitle, genre, o
           <div className="release-glow" aria-hidden="true" />
           <div className="release-disc" aria-hidden="true"><Disc3 size={76} strokeWidth={1} /></div>
           <div className="release-copy">
-            <p>MASTER PRESSED · RELEASE READY</p>
-            <Dialog.Title>{projectTitle}</Dialog.Title>
-            <span>{genre} · Made in your studio</span>
+            <Dialog.Title asChild>
+              <h2>{projectTitle}</h2>
+            </Dialog.Title>
           </div>
           <button className="release-continue" onClick={finish}>View session review <ArrowRight size={18} /></button>
         </Dialog.Content>

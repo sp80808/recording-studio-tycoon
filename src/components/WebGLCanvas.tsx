@@ -701,16 +701,20 @@ const buildScene = (
 
   // Outboard Gear Rack / Tape Machine on far right
   if (tier === 1) {
-    // Vintage reel-to-reel tape recorder
-    const reel1 = dPt(5.62, 4.22);
-    const reel2 = dPt(5.72, 4.42);
-    channelG.roundRect(reel1.x - 10, reel1.y - 8, 24, 26, 2).fill(0x283142);
-    channelG.roundRect(reel1.x - 10, reel1.y - 8, 24, 26, 2).stroke({ width: 1, color: 0x4b586e });
-    // Reels
-    channelG.circle(reel1.x - 2, reel1.y + 1, 5).fill(0x718096);
-    channelG.circle(reel1.x - 2, reel1.y + 1, 2).fill(0x1a202c);
-    channelG.circle(reel2.x - 2, reel2.y + 1, 5).fill(0x718096);
-    channelG.circle(reel2.x - 2, reel2.y + 1, 2).fill(0x1a202c);
+    // Vintage reel-to-reel tape recorder in true isometric
+    const tp1 = dPt(5.54, 4.05);
+    const tp2 = dPt(5.80, 4.05);
+    const tp3 = dPt(5.80, 4.58);
+    const tp4 = dPt(5.54, 4.58);
+    channelG.poly([tp1.x, tp1.y, tp2.x, tp2.y, tp3.x, tp3.y, tp4.x, tp4.y]).fill(0x242d3d);
+    channelG.poly([tp1.x, tp1.y, tp2.x, tp2.y, tp3.x, tp3.y, tp4.x, tp4.y]).stroke({ width: 1, color: 0x475569 });
+    // Tape reels
+    const reel1 = dPt(5.64, 4.20);
+    const reel2 = dPt(5.70, 4.42);
+    channelG.ellipse(reel1.x, reel1.y, 4.5, 2.5).fill(0x718096);
+    channelG.ellipse(reel1.x, reel1.y, 1.8, 1.0).fill(0x1a202c);
+    channelG.ellipse(reel2.x, reel2.y, 4.5, 2.5).fill(0x718096);
+    channelG.ellipse(reel2.x, reel2.y, 1.8, 1.0).fill(0x1a202c);
   } else {
     // Outboard Rack modules
     for (let u = 0; u < consoleProfile.outboardUnits; u++) {
