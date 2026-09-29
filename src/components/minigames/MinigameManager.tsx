@@ -15,6 +15,9 @@ import GearMaintenanceGame from './GearMaintenanceGame'; // Default import
 import { EQMatchGame } from './EQMatchGame';
 import { FaderRideGame } from './FaderRideGame';
 import { PunchInGame } from './PunchInGame';
+import { BeatPadGame } from './BeatPadGame';
+import { TapeJogGame } from './TapeJogGame';
+import { ConsoleRideGame } from './ConsoleRideGame';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { toast } from '@/hooks/use-toast';
 import { useCutsceneQueue } from '@/hooks/useCutsceneQueue';
@@ -36,7 +39,10 @@ export type MinigameType =
   | 'live-recording'
   | 'eq-match'
   | 'fader-ride'
-  | 'punch-in'; // Added new minigame type
+  | 'punch-in'
+  | 'beat-pad'
+  | 'tape-jog'
+  | 'console-ride'; // Added controller-first pad minigames
   // Add new minigame types here and ensure they have corresponding entries in minigameTutorials
   // | 'songwriting' // Example: if SongwritingGame becomes a distinct minigame managed here
   // | 'tapeSplicing' // Example
@@ -147,6 +153,18 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         creativityBonus = Math.floor(score / 8);
         technicalBonus = Math.floor(score / 12);
         break;
+      case 'beat-pad':
+        creativityBonus = Math.floor(score / 6);
+        technicalBonus = Math.floor(score / 12);
+        break;
+      case 'tape-jog':
+        creativityBonus = Math.floor(score / 15);
+        technicalBonus = Math.floor(score / 6);
+        break;
+      case 'console-ride':
+        creativityBonus = Math.floor(score / 10);
+        technicalBonus = Math.floor(score / 8);
+        break;
       // Add cases for other minigames if their reward calculation differs
       default:
         // Generic fallback or throw error
@@ -223,6 +241,12 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         return <FaderRideGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'punch-in':
         return <PunchInGame {...commonGameProps} onComplete={standardOnComplete} />;
+      case 'beat-pad':
+        return <BeatPadGame {...commonGameProps} onComplete={standardOnComplete} />;
+      case 'tape-jog':
+        return <TapeJogGame {...commonGameProps} onComplete={standardOnComplete} />;
+      case 'console-ride':
+        return <ConsoleRideGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'maintenance':
         if (!equipmentContext) {
           console.error('Equipment context is required for maintenance minigame.');

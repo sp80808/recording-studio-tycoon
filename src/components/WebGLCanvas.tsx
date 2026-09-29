@@ -1250,6 +1250,49 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             const cycle = (Math.sin((t * Math.PI * 2) / 90) + 1) / 2;
             refs.nightTintLayer.alpha = 0.05 + cycle * 0.28;
           }
+
+          // Gamepad analog camera controls (Right stick pans, triggers zoom, R3 centers)
+          if (typeof navigator !== 'undefined' && typeof navigator.getGamepads === 'function') {
+            const gamepads = navigator.getGamepads();
+            let pad: Gamepad | null = null;
+            for (let i = 0; i < gamepads.length; i++) {
+              if (gamepads[i]?.connected) {
+                pad = gamepads[i];
+                break;
+              }
+            }
+            if (pad) {
+              const rx = pad.axes[2] ?? 0;
+              const ry = pad.axes[3] ?? 0;
+              const deadzone = 0.18;
+              const stickDx = Math.abs(rx) > deadzone ? (rx > 0 ? rx - deadzone : rx + deadzone) : 0;
+              const stickDy = Math.abs(ry) > deadzone ? (ry > 0 ? ry - deadzone : ry + deadzone) : 0;
+              if (stickDx !== 0 || stickDy !== 0) {
+                markCanvasInput();
+                panBy(-stickDx * 10, -stickDy * 10);
+              }
+
+              // Triggers zoom
+              const lt = pad.buttons[6]?.value ?? 0;
+              const rt = pad.buttons[7]?.value ?? 0;
+              if (lt > 0.15 || rt > 0.15) {
+                markCanvasInput();
+                const zoomFactor = 1 + (rt - lt) * 0.02;
+                zoomAt(app.screen.width / 2, app.screen.height / 2, zoomFactor);
+              }
+
+              // R3 click (button 11) recenters camera
+              if (pad.buttons[11]?.pressed) {
+                markCanvasInput();
+                cameraRef.current = { x: 0, y: 0, zoom: 1.0 };
+                const sc = sceneRef.current;
+                if (sc) {
+                  sc.root.scale.set(sc.baseScale);
+                  sc.root.position.set(sc.basePosition.x, sc.basePosition.y);
+                }
+              }
+            }
+          }
         });
       } catch (err) {
         console.error('Studio room failed to initialize:', err);

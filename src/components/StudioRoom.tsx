@@ -8,6 +8,18 @@ import { ProgressionSystem } from '@/services/ProgressionSystem';
 import { toast } from '@/hooks/use-toast';
 import { LocateFixed } from 'lucide-react';
 import { triggerScreenShake } from '@/utils/screenShake';
+import { useGamepad } from '@/hooks/useGamepad';
+import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
+
+const STUDIO_HOTSPOTS: StudioHotspotId[] = ['console', 'phone', 'liveroom', 'shelf', 'crt', 'clock'];
+const HOTSPOT_NAMES: Record<StudioHotspotId, string> = {
+  console: 'Console Desk',
+  phone: 'Studio Phone',
+  liveroom: 'Live Room',
+  shelf: 'Vinyl Shelf',
+  crt: 'Charts & TV',
+  clock: 'Studio Clock',
+};
 
 interface StudioRoomProps {
   gameState: GameState;
@@ -121,6 +133,48 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     setActiveInspector(null);
   };
 
+  const gamepad = useGamepad({
+    preferredLayout: settings?.controllerLayout,
+    hapticsEnabled: settings?.gamepadHaptics,
+  });
+
+  const [focusedHotspotIndex, setFocusedHotspotIndex] = useState(0);
+
+  // Close inspector on B button
+  useEffect(() => {
+    if (!gamepad.isConnected || !activeInspector) return;
+    if (gamepad.justPressed.east) {
+      closeInspector();
+      gamepad.triggerHaptic(0.1, 0.2, 40);
+    }
+  }, [gamepad.isConnected, activeInspector, gamepad.justPressed.east]);
+
+  // Navigate hotspots via D-Pad or Left Stick when on studio floor
+  useEffect(() => {
+    if (!gamepad.isConnected || activeInspector) return;
+
+    if (gamepad.justPressed.dpadRight || gamepad.justPressed.dpadDown) {
+      setFocusedHotspotIndex((prev) => (prev + 1) % STUDIO_HOTSPOTS.length);
+      gamepad.triggerHaptic(0.1, 0.15, 30);
+    } else if (gamepad.justPressed.dpadLeft || gamepad.justPressed.dpadUp) {
+      setFocusedHotspotIndex((prev) => (prev - 1 + STUDIO_HOTSPOTS.length) % STUDIO_HOTSPOTS.length);
+      gamepad.triggerHaptic(0.1, 0.15, 30);
+    } else if (gamepad.justPressed.south) {
+      const selected = STUDIO_HOTSPOTS[focusedHotspotIndex];
+      handleHotspot(selected);
+      gamepad.triggerHaptic(0.2, 0.3, 50);
+    }
+  }, [
+    gamepad.isConnected,
+    activeInspector,
+    gamepad.justPressed.dpadRight,
+    gamepad.justPressed.dpadDown,
+    gamepad.justPressed.dpadLeft,
+    gamepad.justPressed.dpadUp,
+    gamepad.justPressed.south,
+    focusedHotspotIndex,
+  ]);
+
   return (
     <div 
       className={`relative overflow-hidden rounded-lg border border-gray-700/70 bg-[#11151f] transition-all duration-300 ${className}`} 
@@ -152,11 +206,27 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           </span>
         </div>
       </div>
-      <button className="studio-camera-center absolute right-3 top-2 studio-dock-button bg-slate-950/70 border border-white/10"
+      <button className="studio-camera-center absolute right-3 top-2 studio-dock-button bg-slate-950/70 border border-white/10 flex items-center gap-1.5"
         onClick={() => setCameraReset(value => value + 1)} aria-label="Center studio camera" title="Center studio camera">
+        {gamepad.isConnected && gamepad.lastInputType === 'gamepad' && (
+          <GamepadGlyph button="rs" size="xs" />
+        )}
         <LocateFixed size={18} />
       </button>
-      <p className="studio-room-hint absolute bottom-2 left-3 text-[10px] text-slate-400 pointer-events-none">Tap objects · pinch to zoom · two-finger pan</p>
+      {gamepad.isConnected && gamepad.lastInputType === 'gamepad' ? (
+        <div className="absolute bottom-2 left-3 flex items-center gap-2 bg-slate-950/85 px-2.5 py-1.5 rounded-full border border-slate-700/60 shadow-lg text-[11px] text-slate-300 pointer-events-none select-none animate-in fade-in">
+          <GamepadGlyph button="dpadLeft" size="xs" />
+          <GamepadGlyph button="dpadRight" size="xs" />
+          <span>Target: <b className="text-amber-300">{HOTSPOT_NAMES[STUDIO_HOTSPOTS[focusedHotspotIndex]]}</b></span>
+          <span className="text-slate-600">|</span>
+          <GamepadGlyph button="south" size="xs" />
+          <span>Inspect</span>
+        </div>
+      ) : (
+        <p className="studio-room-hint absolute bottom-2 left-3 text-[10px] text-slate-400 pointer-events-none">
+          Tap objects · pinch to zoom · two-finger pan
+        </p>
+      )}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Headphones, Phone, SlidersHorizontal, Sparkles, Users, Disc3, Trophy, X, Minimize2, Moon } from 'lucide-react';
 import { GameState, StaffMember, PlayerAttributes, Project } from '@/types/game';
@@ -14,6 +14,12 @@ import { HistoricalNewsModal } from './HistoricalNewsModal';
 import { checkForNewEvents, applyEventEffects, HistoricalEvent } from '@/utils/historicalEvents';
 import { useBandManagement } from '@/hooks/useBandManagement';
 import { MinigameType } from './minigames/MinigameManager';
+import { GamepadNavProvider, DockTabId } from '@/contexts/GamepadNavContext';
+import { GamepadHUD } from '@/components/ui/GamepadHUD';
+import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
+import { RadialActionWheel } from '@/components/ui/RadialActionWheel';
+import { useGamepad } from '@/hooks/useGamepad';
+import { useSettings } from '@/contexts/settings-context-types';
 import './studio-play.css';
 
 interface MainGameContentProps {
@@ -101,6 +107,97 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
     openPanel('studio');
   };
 
+  const { settings } = useSettings();
+  const [showRadialWheel, setShowRadialWheel] = useState(false);
+  const gamepad = useGamepad({
+    preferredLayout: settings?.controllerLayout,
+    hapticsEnabled: settings?.gamepadHaptics,
+  });
+
+  const handleDockTabChange = useCallback((tab: DockTabId) => {
+    switch (tab) {
+      case 'bookings':
+        openPanel('bookings');
+        break;
+      case 'session':
+        openPanel('session');
+        break;
+      case 'gear':
+        handleOpenDashboardTab('studio');
+        break;
+      case 'crew':
+        handleOpenDashboardTab('staff');
+        break;
+      case 'bands':
+        handleOpenDashboardTab('bands');
+        break;
+      case 'charts':
+        handleOpenDashboardTab('charts');
+        break;
+      case 'career':
+        openPanel('career');
+        break;
+    }
+  }, []);
+
+  const handleRadialSelect = useCallback((sliceId: string) => {
+    switch (sliceId) {
+      case 'bookings':
+        openPanel('bookings');
+        break;
+      case 'session':
+        openPanel('session');
+        break;
+      case 'gear':
+        handleOpenDashboardTab('studio');
+        break;
+      case 'crew':
+        handleOpenDashboardTab('staff');
+        break;
+      case 'bands':
+        handleOpenDashboardTab('bands');
+        break;
+      case 'charts':
+        handleOpenDashboardTab('charts');
+        break;
+      case 'career':
+        openPanel('career');
+        break;
+      case 'settings':
+        setShowRadialWheel(false);
+        break;
+    }
+  }, []);
+
+  // Quick radial wheel toggle on R3 or Left Trigger held when on floor
+  useEffect(() => {
+    if (!gamepad.isConnected) return;
+    if (gamepad.justPressed.rs || (gamepad.justPressed.lt && !panel)) {
+      setShowRadialWheel((prev) => !prev);
+      gamepad.triggerHaptic(0.2, 0.3, 50);
+    }
+  }, [gamepad.isConnected, gamepad.justPressed.rs, gamepad.justPressed.lt, panel]);
+
+  // Controller B button closes active panel
+  useEffect(() => {
+    if (!gamepad.isConnected || !panel) return;
+    if (gamepad.justPressed.east) {
+      setPanel(null);
+      gamepad.triggerHaptic(0.1, 0.2, 40);
+    }
+  }, [gamepad.isConnected, gamepad.justPressed.east, panel]);
+
+  // Controller Y button advances day when session is open & out of capacity or in studio
+  useEffect(() => {
+    if (!gamepad.isConnected) return;
+    if (gamepad.justPressed.north) {
+      if (gameState.playerData.dailyWorkCapacity <= 0 || panel === null) {
+        advanceDay();
+        gamepad.triggerHaptic(0.3, 0.4, 80);
+      }
+    }
+  }, [gamepad.isConnected, gamepad.justPressed.north, gameState.playerData.dailyWorkCapacity, panel, advanceDay]);
+
   useEffect(() => {
     if (autoTriggeredMinigame) setPanel('session');
   }, [autoTriggeredMinigame]);
@@ -156,23 +253,25 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   const sessionLabel = project?.awaitingReview ? 'Collect release' : project ? 'Continue session' : 'Book your first session';
   const titles = { bookings: 'Bookings', session: 'At the console', studio: 'Studio management', career: 'Your producer story' };
   return (
-    <div className="studio-play">
-      <div className="studio-play-world" data-reward-source="floor">
-        <StudioRoom gameState={gameState} onAdvanceDay={advanceDay} onRefreshProjects={refreshProjects}
-          onStartProject={bookProject} onAssignStaff={assignStaffToProject} onUnassignStaff={unassignStaffFromProject}
-          onOpenDashboardTab={handleOpenDashboardTab} onConsoleFocus={() => openPanel('session')}
-          onBookings={() => openPanel('bookings')} className="studio-play-room" />
-      </div>
-      <div className="studio-play-status">
-        <span className="studio-live-light" aria-hidden="true" />
-        <span className="min-w-0 truncate">{project ? project.title : 'Your studio. Your next great record.'}</span>
-        <span className="shrink-0 text-amber-200">{gameState.playerData.dailyWorkCapacity} sessions left</span>
-      </div>
-      <div className="studio-play-actions">
-        <button className="studio-primary-action" onClick={() => openPanel(project ? 'session' : 'bookings')}>
-          {project ? <Headphones size={20} /> : <Phone size={20} />}
-          <span>{sessionLabel}</span><span aria-hidden="true">→</span>
-        </button>
+    <GamepadNavProvider onTabChange={handleDockTabChange}>
+      <div className="studio-play">
+        <div className="studio-play-world" data-reward-source="floor">
+          <StudioRoom gameState={gameState} onAdvanceDay={advanceDay} onRefreshProjects={refreshProjects}
+            onStartProject={bookProject} onAssignStaff={assignStaffToProject} onUnassignStaff={unassignStaffFromProject}
+            onOpenDashboardTab={handleOpenDashboardTab} onConsoleFocus={() => openPanel('session')}
+            onBookings={() => openPanel('bookings')} className="studio-play-room" />
+        </div>
+        <div className="studio-play-status">
+          <span className="studio-live-light" aria-hidden="true" />
+          <span className="min-w-0 truncate">{project ? project.title : 'Your studio. Your next great record.'}</span>
+          <span className="shrink-0 text-amber-200">{gameState.playerData.dailyWorkCapacity} sessions left</span>
+        </div>
+        <div className="studio-play-actions">
+          <button className="studio-primary-action" onClick={() => openPanel(project ? 'session' : 'bookings')}>
+            {gamepad.lastInputType === 'gamepad' && <GamepadGlyph button="south" size="xs" className="mr-1 inline-block" />}
+            {project ? <Headphones size={20} /> : <Phone size={20} />}
+            <span>{sessionLabel}</span><span aria-hidden="true">→</span>
+          </button>
         <nav aria-label="Studio activities" className="studio-command-dock">
           {([
             ['bookings', Phone, 'Bookings', () => openPanel('bookings')],
@@ -285,6 +384,13 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         />
       )}
 
+      <RadialActionWheel
+        isOpen={showRadialWheel}
+        onSelect={handleRadialSelect}
+        onClose={() => setShowRadialWheel(false)}
+      />
+      <GamepadHUD hasOpenModal={panel !== null} />
     </div>
+    </GamepadNavProvider>
   );
 };

@@ -42,8 +42,8 @@ not a full-PIXI UI. `src/pixi-ui/` panels exist but are not the main interface.
   contextual `studio-activity-panel` dialogs, height-aware media queries) — GH #41/#54, beads `zel.*`
 - [x] Gamepad Task 1: polling service, deadzones, haptic actuator, `useGamepad` (`49i.1`)
 - [x] Gamepad Task 2: `GamepadGlyph` vector badges + Settings controller layout/rumble (`49i.2`)
-- [ ] Gamepad Tasks 3–8: spatial nav + HUD, radial action wheel, MPC beat-pad / tape-jog /
-  console-ride minigames (`49i.3`…`49i.8`, plan: `docs/superpowers/plans/2026-09-29-…`)
+- [x] Gamepad Tasks 3–8: spatial nav + HUD, radial action wheel, MPC beat-pad / tape-jog /
+  console-ride minigames, tactile PocketMeter haptics, and isometric floor camera (`49i.3`…`49i.8`)
 - [ ] Workbench/telemetry tooling from the new GitHub backlog (#59 then #57-first sequence —
   see `cline_docs/githubIssueTriage.md`)
 

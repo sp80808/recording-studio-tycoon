@@ -65,18 +65,19 @@
 
 ## 🚧 Active Priorities & Upcoming Work
 
-1. **Gamepad Controller Support (`recording-studio-tycoon-49i`)**
-   - Hardware polling loop, spatial focus navigation, SVG button glyphs, and pad-centric minigames (MPC BeatPad, TapeJog, ConsoleRide).
-2. **MinigameChrome Rollout**
+1. **MinigameChrome Rollout**
    - Complete migration of remaining legacy minigames to the standardized chrome and juice kit.
-3. **Content Authoring Workbench (#64)**
+2. **Content Authoring Workbench (#64)**
    - Schema-driven content editor for events, briefs, synergies, and gear archetypes.
+3. **Advanced Telemetry & Analytics Tooling (#59, #57)**
+   - Studio financial and production telemetry reporting.
 
 ---
 
 ## 🛠️ Verification & Quality Assurance
 
-- **10 Core Check Suites:** 100% passing (`bash scripts/run-checks.sh`).
+- **16 Core Check Suites (including 8 Gamepad suites):** 100% passing (`bash scripts/run-checks.sh`).
+- **Gamepad Integration Verification:** Polling service, vector glyphs, navigation context, radial wheel, beat pad, tape jog, console ride, and full integration suite all passing.
 - **RPG & Audio Checks:** `career-cutscene`, `pocket-meter-pacing`, `project-era-starters`, `work-loop-wire` all passing.
 - **End-to-End Smoke:** Playwright booking-to-settlement automated test passing with code 0.
 - **Build Status:** Clean TypeScript compile and Vite production bundling (`pnpm run build`).

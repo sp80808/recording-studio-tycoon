@@ -16,6 +16,9 @@ import { playSound, gameAudio } from '@/utils/audioSystem'; // Updated import
 import { triggerScreenShake } from '@/utils/screenShake';
 import { evaluateTakeAccuracy, calculateTakeEnergyCost } from '@/rpg/takeEvaluation';
 import { PocketMeter } from '@/components/console/PocketMeter';
+import { useGamepad } from '@/hooks/useGamepad';
+import { useSettings } from '@/contexts/settings-context-types';
+import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
 import {
   getStageFocusLabels, 
   getStageOptimalFocus, 
@@ -74,6 +77,12 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const playerLevel = gameState.playerData.level;
   const canUseOptimalFocusButton = managementSkillLevel >= 3 || playerLevel >= 5;
 
+  const { settings } = useSettings();
+  const gamepad = useGamepad({
+    preferredLayout: settings?.controllerLayout,
+    hapticsEnabled: settings?.gamepadHaptics,
+  });
+
   // 🔥 Overdrive risk/reward toggle (consumed by useStageWork on the next session)
   const overdriveArmed = !!gameState.activeProject?.overdriveArmed;
   const toggleOverdrive = () => {
@@ -121,6 +130,10 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     () => gameState.activeProject ? evaluateProjectSynergies(gameState.activeProject, gameState) : [],
     [gameState]
   );
+  // Console take-loop state (hoisted for the same Rules-of-Hooks reason — these
+  // were below the early return and caused the post-settlement white screen, GH-65).
+  const [takeState, setTakeState] = useState<'idle' | 'tracking'>('idle');
+  const [lastTakeGrade, setLastTakeGrade] = useState<{ grade: string; text: string } | null>(null);
 
   if (!gameState.activeProject) {
     return (
@@ -297,9 +310,6 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     });
   };
 
-  const [takeState, setTakeState] = useState<'idle' | 'tracking'>('idle');
-  const [lastTakeGrade, setLastTakeGrade] = useState<{ grade: string; text: string } | null>(null);
-
   const availableEnergy = gameState.playerData.dailyWorkCapacity;
   const energyCost = calculateTakeEnergyCost(availableEnergy, overdriveArmed);
 
@@ -309,6 +319,32 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     if ((gameAudio as any).playGearSwitch) (gameAudio as any).playGearSwitch();
     setTakeState('tracking');
   };
+
+  // Gamepad shortcuts when take is idle (A to record, Y/X to toggle overdrive)
+  useEffect(() => {
+    if (!gamepad.isConnected || takeState !== 'idle') return;
+
+    if (gamepad.justPressed.south) {
+      if (availableEnergy > 0 && !isProjectComplete) {
+        handleArmTake();
+        gamepad.triggerHaptic(0.2, 0.4, 60);
+      }
+    } else if (gamepad.justPressed.north || gamepad.justPressed.west) {
+      if ((availableEnergy >= 2 || overdriveArmed) && !isProjectComplete) {
+        toggleOverdrive();
+        gamepad.triggerHaptic(0.2, 0.3, 50);
+      }
+    }
+  }, [
+    gamepad.isConnected,
+    gamepad.justPressed.south,
+    gamepad.justPressed.north,
+    gamepad.justPressed.west,
+    takeState,
+    availableEnergy,
+    overdriveArmed,
+    isProjectComplete,
+  ]);
 
   const handleLockTake = (needlePosition: number) => {
     const verdict = evaluateTakeAccuracy(needlePosition);
@@ -769,13 +805,16 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   onClick={toggleOverdrive}
                   disabled={availableEnergy < 2 || isProjectComplete}
                   variant="outline"
-                  className={`h-9 text-xs font-mono font-bold uppercase rounded-[2px] flex-1 border transition-all ${
+                  className={`h-9 text-xs font-mono font-bold uppercase rounded-[2px] flex-1 border transition-all flex items-center justify-center gap-1.5 ${
                     overdriveArmed
                       ? 'bg-orange-600 border-orange-400 text-white shadow-[0_0_10px_rgba(234,88,12,0.6)]'
                       : 'bg-slate-900 border-slate-700 text-orange-400 hover:bg-slate-800'
                   }`}
                 >
-                  {overdriveArmed ? '🔥 OVERDRIVE ENGAGED (+1⚡ · +75%)' : '🔥 ARM OVERDRIVE (+1⚡ · +75%)'}
+                  {gamepad.isConnected && gamepad.lastInputType === 'gamepad' && (
+                    <GamepadGlyph button="north" size="xs" />
+                  )}
+                  <span>{overdriveArmed ? '🔥 OVERDRIVE ENGAGED (+1⚡ · +75%)' : '🔥 ARM OVERDRIVE (+1⚡ · +75%)'}</span>
                 </Button>
               </div>
 
@@ -795,6 +834,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   '🎉 PROJECT READY FOR REVIEW!'
                 ) : availableEnergy > 0 ? (
                   <>
+                    {gamepad.isConnected && gamepad.lastInputType === 'gamepad' && (
+                      <GamepadGlyph button="south" size="xs" />
+                    )}
                     <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping mr-1" />
                     <span>🔴 RECORD TAKE ({energyCost}⚡ · {availableEnergy} LEFT)</span>
                   </>

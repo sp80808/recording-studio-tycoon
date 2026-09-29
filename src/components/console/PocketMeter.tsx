@@ -1,5 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import confetti from 'canvas-confetti';
+import { useGamepad } from '@/hooks/useGamepad';
+import { useSettings } from '@/contexts/settings-context-types';
+import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
 
 interface PocketMeterProps {
   isArmed: boolean;
@@ -17,11 +20,18 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
   onLock,
   className = ''
 }) => {
+  const { settings } = useSettings();
+  const gamepad = useGamepad({
+    preferredLayout: settings?.controllerLayout,
+    hapticsEnabled: settings?.gamepadHaptics,
+  });
+
   const [needlePos, setNeedlePos] = useState(0.2); // 0.0 to 1.0
   const animRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
   const lockedRef = useRef(false);
   const currentPosRef = useRef(0.2);
+  const wasInPocketRef = useRef(false);
 
   useEffect(() => {
     if (!isArmed) {
@@ -62,6 +72,14 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
       const pos = 0.53 + 0.41 * Math.sin((elapsed * Math.PI * 2) / POCKET_METER_TIMING.cycleSeconds);
       currentPosRef.current = Math.max(0.05, Math.min(0.98, pos));
       setNeedlePos(currentPosRef.current);
+
+      // Tactile groove haptics: pulse gently when entering the Pocket zone
+      const inPocketNow = currentPosRef.current >= 0.70 && currentPosRef.current <= 0.85;
+      if (inPocketNow && !wasInPocketRef.current) {
+        gamepad.triggerHaptic(0.2, 0.4, 40);
+      }
+      wasInPocketRef.current = inPocketNow;
+
       animRef.current = requestAnimationFrame(tick);
     };
 
@@ -70,19 +88,20 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
     };
-  }, [isArmed, onLock]);
+  }, [isArmed, onLock, gamepad]);
 
   const isInPocket = needlePos >= 0.70 && needlePos <= 0.85;
   const meterFeedback = isInPocket ? 'IN THE POCKET' : needlePos < 0.70 ? 'COMING UP' : 'TOO HOT';
 
-  const handleMeterClick = () => {
+  const handleMeterClick = useCallback(() => {
     if (!isArmed || lockedRef.current) return;
     lockedRef.current = true;
     
     const pos = currentPosRef.current;
     
-    // Visual Juice: Trigger confetti burst for Gold Take ("In The Pocket")
+    // Tactile lock rumble
     if (pos >= 0.70 && pos <= 0.85) {
+      gamepad.triggerHaptic(0.6, 0.9, 130);
       confetti({
         particleCount: 35,
         spread: 70,
@@ -94,10 +113,20 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
         scalar: 0.8,
         zIndex: 100
       });
+    } else {
+      gamepad.triggerHaptic(0.2, 0.3, 60);
     }
 
     onLock(pos);
-  };
+  }, [isArmed, onLock, gamepad]);
+
+  // Gamepad A button or Right Trigger locks the armed take
+  useEffect(() => {
+    if (!isArmed || lockedRef.current || !gamepad.isConnected) return;
+    if (gamepad.justPressed.south || gamepad.justPressed.rt || gamepad.triggers.right > 0.6) {
+      handleMeterClick();
+    }
+  }, [isArmed, gamepad.isConnected, gamepad.justPressed.south, gamepad.justPressed.rt, gamepad.triggers.right, handleMeterClick]);
 
   return (
     <div
@@ -180,6 +209,9 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
             : 'bg-gradient-to-r from-slate-800 to-slate-700 text-amber-300 border-slate-600 hover:border-amber-400/60 shadow-md'
         }`}
       >
+        {gamepad.isConnected && gamepad.lastInputType === 'gamepad' && (
+          <GamepadGlyph button="south" size="xs" />
+        )}
         <span>{isInPocket ? '🔥' : '🎯'}</span>
         <span>{isInPocket ? 'LOCK GOLD TAKE!' : needlePos < 0.70 ? 'LOW — AIM FOR GOLD' : 'HOT — AIM FOR GOLD'}</span>
       </button>
