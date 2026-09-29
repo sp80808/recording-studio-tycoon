@@ -11,3 +11,12 @@ export { MagneticPress, type MagneticPressProps } from '../origin/MagneticPress'
 export { TextScramble, type TextScrambleProps } from '../origin/TextScramble';
 export * from '@/lib/motion/tokens';
 export * from '@/lib/motion/capabilities';
+
+export {
+  FlightCaseReveal,
+  RewardReveal,
+  type FlightCaseRevealProps,
+  type PremiumDisplayItem,
+  type PremiumCaseReward,
+  type CaseSource,
+} from './FlightCaseReveal';
