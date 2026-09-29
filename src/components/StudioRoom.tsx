@@ -206,6 +206,50 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           </span>
         </div>
       </div>
+
+      {/* Floating Chore Hotspot Attention Badges */}
+      {(() => {
+        const choreState = gameState.choreState;
+        if (!choreState) return null;
+        const pendingConsoleChores = Object.values(choreState.chores).filter(c => c.hotspotId === 'console' && !c.completed);
+        const pendingShelfChores = Object.values(choreState.chores).filter(c => c.hotspotId === 'shelf' && !c.completed);
+        const pendingLiveRoomChores = Object.values(choreState.chores).filter(c => c.hotspotId === 'liveroom' && !c.completed);
+
+        return (
+          <>
+            {pendingConsoleChores.length > 0 && (
+              <button
+                onClick={() => handleHotspot('console')}
+                className="absolute bottom-14 left-6 bg-amber-500 hover:bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full text-[10px] font-black shadow-lg border border-amber-300 flex items-center gap-1 animate-bounce z-20 pointer-events-auto"
+                title={`${pendingConsoleChores.length} Console Maintenance Duty Pending`}
+              >
+                <span>🔧</span>
+                <span>{pendingConsoleChores[0].title}</span>
+              </button>
+            )}
+            {pendingShelfChores.length > 0 && (
+              <button
+                onClick={() => handleHotspot('shelf')}
+                className="absolute top-28 right-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-2 py-0.5 rounded-full text-[10px] font-black shadow-lg border border-emerald-300 flex items-center gap-1 animate-pulse z-20 pointer-events-auto"
+                title="Lounge: Brew Espresso"
+              >
+                <span>☕</span>
+                <span>Brew Espresso</span>
+              </button>
+            )}
+            {pendingLiveRoomChores.length > 0 && (
+              <button
+                onClick={() => handleHotspot('liveRoom')}
+                className="absolute bottom-16 right-6 bg-purple-600 hover:bg-purple-500 text-white px-2 py-0.5 rounded-full text-[10px] font-black shadow-lg border border-purple-300 flex items-center gap-1 z-20 pointer-events-auto"
+                title="Live Room: Tune Acoustics"
+              >
+                <span>✨</span>
+                <span>Tune Acoustics</span>
+              </button>
+            )}
+          </>
+        );
+      })()}
       <button className="studio-camera-center absolute right-3 top-2 studio-dock-button bg-slate-950/70 border border-white/10 flex items-center gap-1.5"
         onClick={() => setCameraReset(value => value + 1)} aria-label="Center studio camera" title="Center studio camera">
         {gamepad.isConnected && gamepad.lastInputType === 'gamepad' && (
