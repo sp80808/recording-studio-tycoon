@@ -142,34 +142,66 @@ export function getRoomEffectiveEquipment(
 
 /**
  * Pure state reducer to move equipment to a slot, handling swaps and removals.
+ * `null` / missing target returns the item to inventory with an explicit
+ * `INVENTORY_SLOT_ID` placement so save/load stays deterministic.
  */
 export function placeEquipmentInSlot(
   currentPlacements: EquipmentPlacement[],
   equipmentId: string,
   targetSlotId: string | null // null means return to inventory
 ): EquipmentPlacement[] {
-  // Filter out any existing placement for this equipment
+  const destination = targetSlotId ?? INVENTORY_SLOT_ID;
   const withoutCurrent = currentPlacements.filter((p) => p.equipmentId !== equipmentId);
 
-  if (!targetSlotId) {
-    // Returned to inventory
-    return withoutCurrent;
+  if (destination === INVENTORY_SLOT_ID) {
+    return [...withoutCurrent, { equipmentId, slotId: INVENTORY_SLOT_ID }];
   }
 
-  // Check if target slot is occupied
-  const existingInTarget = withoutCurrent.find((p) => p.slotId === targetSlotId);
+  const existingInTarget = withoutCurrent.find((p) => p.slotId === destination);
   const currentPlacement = currentPlacements.find((p) => p.equipmentId === equipmentId);
 
   if (existingInTarget) {
-    // Swap: if source had a slot, move existing item to source slot. Otherwise, displace to inventory.
+    // Swap: occupied target moves to the dragged item's prior slot (or inventory).
     const withoutTarget = withoutCurrent.filter((p) => p.equipmentId !== existingInTarget.equipmentId);
-    const newPlacements = [...withoutTarget, { equipmentId, slotId: targetSlotId }];
-
-    if (currentPlacement) {
-      newPlacements.push({ equipmentId: existingInTarget.equipmentId, slotId: currentPlacement.slotId });
-    }
-    return newPlacements;
+    const swapSlotId =
+      currentPlacement && currentPlacement.slotId !== destination
+        ? currentPlacement.slotId
+        : INVENTORY_SLOT_ID;
+    return [
+      ...withoutTarget,
+      { equipmentId, slotId: destination },
+      { equipmentId: existingInTarget.equipmentId, slotId: swapSlotId },
+    ];
   }
 
-  return [...withoutCurrent, { equipmentId, slotId: targetSlotId }];
+  return [...withoutCurrent, { equipmentId, slotId: destination }];
+}
+
+/** Resolve which owned equipment item currently occupies a slot, if any. */
+export function getEquipmentInSlot(
+  ownedEquipment: Equipment[],
+  placements: EquipmentPlacement[] | undefined,
+  slotId: string
+): Equipment | undefined {
+  if (!placements?.length) return undefined;
+  const placement = placements.find((p) => p.slotId === slotId);
+  if (!placement) return undefined;
+  return ownedEquipment.find((item) => item.id === placement.equipmentId);
+}
+
+/** Equipment currently sitting in the inventory tray (not seated in any room). */
+export function getInventoryEquipment(
+  ownedEquipment: Equipment[],
+  placements: EquipmentPlacement[] | undefined
+): Equipment[] {
+  if (!placements?.length) return ownedEquipment;
+  const inventoryIds = new Set(
+    placements.filter((p) => p.slotId === INVENTORY_SLOT_ID).map((p) => p.equipmentId)
+  );
+  // Orphans (owned but missing a placement) also count as inventory so the UI
+  // never hides gear after a partial migration.
+  const placedIds = new Set(placements.map((p) => p.equipmentId));
+  return ownedEquipment.filter(
+    (item) => inventoryIds.has(item.id) || !placedIds.has(item.id)
+  );
 }

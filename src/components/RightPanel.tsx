@@ -10,6 +10,7 @@ import { ResearchModal } from '@/components/modals/ResearchModal'; // Import Res
 import { EquipmentModManagementModal } from '@/components/modals/EquipmentModManagementModal'; // Import new modal
 import { availableMods } from '@/data/equipmentMods'; // Import availableMods
 import { EquipmentList } from '@/components/EquipmentList';
+import { GearRackBoard } from '@/components/equipment/GearRackBoard';
 import { BandManagement } from '@/components/BandManagement';
 import { ChartsPanel } from '@/components/ChartsPanel';
 import { StudioProgressionPanel } from '@/components/StudioProgressionPanel'; // Add Studio Progression Panel
@@ -269,13 +270,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({
               <EquipmentList purchaseEquipment={purchaseEquipment} gameState={gameState} />
             </div>
 
-            {/* Owned Equipment Section */}
-            <div className="rounded-lg border border-gray-700 bg-gray-950/50 p-2.5">
-              <h3 className="text-xs font-bold text-white mb-2">🛠️ My Gear ({gameState.ownedEquipment.length})</h3>
-              {gameState.ownedEquipment.length === 0 ? (
-                <p className="text-[11px] text-gray-400">No equipment owned yet.</p>
-              ) : (
-                <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
+            {/* Slot-based gear racks (bead 8om) — drag owned gear into room chassis */}
+            <GearRackBoard gameState={gameState} setGameState={setGameState} />
+
+            {/* Quick mod access when research unlocks hardware mods */}
+            {gameState.researchedMods && gameState.researchedMods.length > 0 && gameState.ownedEquipment.length > 0 && (
+              <div className="rounded-lg border border-gray-700 bg-gray-950/50 p-2.5">
+                <h3 className="text-xs font-bold text-white mb-2">🛠️ Gear mods</h3>
+                <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
                   {gameState.ownedEquipment.map(equip => {
                     const currentMod = equip.appliedModId ? availableMods.find(m => m.id === equip.appliedModId) : null;
                     return (
@@ -283,31 +285,29 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                         <div className="flex justify-between items-center text-xs">
                           <div className="min-w-0 pr-2">
                             <p className="font-semibold text-gray-200 truncate">
-                              {equip.icon} {equip.name} 
+                              {equip.icon} {equip.name}
                               {currentMod && <span className="text-[10px] text-yellow-400 ml-1">{currentMod.nameSuffix || `(${currentMod.name})`}</span>}
                             </p>
                             <p className="text-[10px] text-gray-400">Condition: {equip.condition}%</p>
                           </div>
-                          {gameState.researchedMods && gameState.researchedMods.length > 0 && (
-                            <KenneyButton
-                              size="sm"
-                              variant="blue"
-                              className="text-[10px] py-0.5 px-2 shrink-0"
-                              onClick={() => {
-                                setSelectedEquipmentForModding(equip);
-                                setShowEquipmentModModal(true);
-                              }}
-                            >
-                              Mods
-                            </KenneyButton>
-                          )}
+                          <KenneyButton
+                            size="sm"
+                            variant="blue"
+                            className="text-[10px] py-0.5 px-2 shrink-0"
+                            onClick={() => {
+                              setSelectedEquipmentForModding(equip);
+                              setShowEquipmentModModal(true);
+                            }}
+                          >
+                            Mods
+                          </KenneyButton>
                         </div>
                       </Card>
                     );
                   })}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         )}
 
