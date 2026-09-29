@@ -42,9 +42,16 @@ Finalize the v0.4.0 milestone rollout: tier-specific isometric studio progressio
 
 ## Active & Next Steps
 
-1. Complete `recording-studio-tycoon-49i.7`: Dual-Stick Console Fader Ride & Stereo Pan Minigame (`ConsoleRideGame`).
-2. Complete `recording-studio-tycoon-49i.8`: MinigameManager integration, dynamic HUD button badges & comprehensive tests.
-3. Close gamepad epic `recording-studio-tycoon-49i`.
+1. **Branching Deterministic Random Storylines (`recording-studio-tycoon-283`)**:
+   - Spec: `docs/superpowers/specs/2026-09-29-branching-deterministic-storylines-design.md`.
+   - Slice 1 (`recording-studio-tycoon-283.1`): Core deterministic PRNG engine & seed derivation (`branchingStorylineEngine.ts`).
+   - Slice 2 (`recording-studio-tycoon-283.2`): 3-Act branching tree, procedural grammar & subplots.
+   - Slice 3 (`recording-studio-tycoon-283.3`): GameState schema, save migration & lifecycle check.
+   - Slice 4 (`recording-studio-tycoon-283.4`): CareerHub live tracker & branch choice modal UI.
+   - Slice 5 (`recording-studio-tycoon-283.5`): Automated test suite & balance verification.
+2. Complete `recording-studio-tycoon-49i.7`: Dual-Stick Console Fader Ride & Stereo Pan Minigame (`ConsoleRideGame`).
+3. Complete `recording-studio-tycoon-49i.8`: MinigameManager integration, dynamic HUD button badges & comprehensive tests.
+4. Close gamepad epic `recording-studio-tycoon-49i`.
 
 
 ---

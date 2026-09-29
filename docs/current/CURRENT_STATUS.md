@@ -77,11 +77,14 @@
 
 ## 🚧 Active Priorities & Upcoming Work
 
-1. **Engine Back-End & Graphics Tech Implementation**
+1. **Branching Deterministic Random Storylines (`recording-studio-tycoon-283`)**
+   - Architectural specification approved (`docs/superpowers/specs/2026-09-29-branching-deterministic-storylines-design.md`).
+   - 3-Act campaign tree branching into 4 finales, Mulberry32 deterministic seed derivation, procedural grammar and emergent subplots.
+2. **Engine Back-End & Graphics Tech Implementation**
    - Implement `EngineLoop`, `GameEventBus`, expanded `SettingsModal`, and PixiJS resolution/CRT/bloom pipeline per approved spec.
-2. **MinigameChrome Rollout**
+3. **MinigameChrome Rollout**
    - Complete migration of remaining legacy minigames to the standardized chrome and juice kit.
-3. **Content Authoring Workbench (#64)**
+4. **Content Authoring Workbench (#64)**
    - Schema-driven content editor for events, briefs, synergies, and gear archetypes.
 4. **Advanced Telemetry & Analytics Tooling (#59, #57)**
    - Studio financial and production telemetry reporting.
