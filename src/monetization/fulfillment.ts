@@ -48,13 +48,19 @@ export class FulfillmentService {
     if (receipt.status !== 'verified' || receipt.sku !== product.sku) {
       return { outcome: 'rejected_unverified', entitlements: [] };
     }
+    // Spoof / pending / reversed receipts never grant — only verified.
     if (product.preview.chooseOneOfMany) {
-      return this.fulfillChoice(receipt, product, choiceRef);
+      const result = this.fulfillChoice(receipt, product, choiceRef);
+      if (result.outcome === 'granted' || result.outcome === 'already_granted') {
+        this.ledger.markProviderVerified();
+      }
+      return result;
     }
     const already = this.allDuplicate(receipt.transactionId, product.entitlements);
     const granted = product.entitlements.map((g) =>
       this.grantOnce(receipt.transactionId, g, g.ref).entitlement,
     );
+    this.ledger.markProviderVerified();
     return { outcome: already ? 'already_granted' : 'granted', entitlements: granted };
   }
 
@@ -93,7 +99,7 @@ export class FulfillmentService {
 
   /** Re-fulfill verified receipts (restore after reinstall/reset). Idempotent. */
   restore(receipts: PurchaseReceipt[], products: StoreProduct[]): FulfillResult[] {
-    return receipts
+    const results = receipts
       .filter((r) => r.status === 'verified')
       .map((receipt) => {
         const product = products.find((p) => p.sku === receipt.sku);
@@ -101,16 +107,24 @@ export class FulfillmentService {
         if (product.preview.chooseOneOfMany) {
           const existing = product.entitlements
             .map((e) => this.ledger.get(e.entitlementId))
-            .find((e) => e && e.grantedByTransaction === receipt.transactionId);
+            .find((e) => e && !e.revoked && e.grantedByTransaction === receipt.transactionId);
           if (existing) return { outcome: 'already_granted' as const, entitlements: [existing] };
           // Choice not yet made for this transaction: nothing to restore yet.
           return { outcome: 'already_granted' as const, entitlements: [] };
         }
         return this.fulfill({ receipt, product });
       });
+    if (results.some((r) => r.outcome === 'granted' || r.outcome === 'already_granted')) {
+      this.ledger.markProviderVerified();
+    }
+    return results;
   }
 
-  /** Refund/reversal: revoke every entitlement granted by this transaction. */
+  /**
+   * Refund/reversal: revoke every entitlement granted by this transaction.
+   * Does not touch GameState — cosmetic unequip is a separate side effect
+   * (`applyReversalCosmeticSideEffects`) so career saves stay intact.
+   */
   reverse(transactionId: TransactionId): FulfillResult {
     const revoked: OwnedEntitlement[] = [];
     for (const e of this.ledger.list()) {
@@ -119,6 +133,18 @@ export class FulfillmentService {
         if (updated) revoked.push(updated);
       }
     }
+    this.ledger.markProviderVerified();
     return { outcome: 'revoked', entitlements: revoked };
+  }
+
+  /**
+   * Apply a provider-reported reversed receipt: revoke by transaction id.
+   * Pending / unverified statuses are ignored (grant nothing, revoke nothing).
+   */
+  applyReceiptStatus(receipt: PurchaseReceipt): FulfillResult | null {
+    if (receipt.status === 'reversed') {
+      return this.reverse(receipt.transactionId);
+    }
+    return null;
   }
 }

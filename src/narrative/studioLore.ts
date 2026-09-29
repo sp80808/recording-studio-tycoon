@@ -21,7 +21,7 @@ export interface RivalStudio {
   primaryPlaystyle: 'purist' | 'hit-maker' | 'underground' | 'sound-lab';
   preferredEra: string;
   signatureGenres: string[];
-  threatLevel: 'Rookie' | 'Contender' | 'Titan' | 'Iconic Nemesis';
+  threatLevel: 'Rookie' | 'Rising' | 'Contender' | 'Titan' | 'Iconic Nemesis';
   catchphrase: string;
   rivalryBonus: string;
 }
@@ -118,6 +118,38 @@ export const CONSOLE_LAWS: readonly ConsoleLaw[] = [
     lore: 'The fastest band breakup happens at the mailbox when the first licensing check arrives.',
     gameplayPrinciple: 'Fair contracts foster Advocate client tiers; predatory contracts generate quick cash but burn bridges.',
   },
+  {
+    id: 'law-demo',
+    number: 9,
+    title: 'Law of the Demo',
+    quote: 'Finished beats perfect. Perfect never ships.',
+    lore: 'A polished idea trapped in endless revision earns nothing. The street hears what you release, not what you meant.',
+    gameplayPrinciple: 'Daily challenge and combo streaks reward shipping sessions over endless polish loops.',
+  },
+  {
+    id: 'law-session-player',
+    number: 10,
+    title: 'Law of the Session Player',
+    quote: 'Hire for feel, not chops.',
+    lore: 'A metronome-perfect sideman can still suck the air out of a take. Groove is a personality trait.',
+    gameplayPrinciple: 'Session musicians amplify stage grades when matched to genre feel more than raw skill rating.',
+  },
+  {
+    id: 'law-second-room',
+    number: 11,
+    title: 'Law of the Second Room',
+    quote: 'A B-room prints money while the A-room prints legends.',
+    lore: 'One legendary suite cannot fund itself. Parallel tracking rooms keep cash flowing while the A-room chases immortality.',
+    gameplayPrinciple: 'Unlocked studio rooms raise concurrent capacity and stabilize daily income floors.',
+  },
+  {
+    id: 'law-reunion',
+    number: 12,
+    title: 'Law of the Reunion',
+    quote: 'Every breakup is a future payday.',
+    lore: 'Bands dissolve, egos cool, and nostalgia pays triple. The mailbox remembers what the dressing room forgot.',
+    gameplayPrinciple: 'Comeback offers and reunion arcs pay hype bonuses after drama-driven breakups cool off.',
+  },
 ] as const;
 
 export const RIVAL_STUDIOS: readonly RivalStudio[] = [
@@ -173,6 +205,32 @@ export const RIVAL_STUDIOS: readonly RivalStudio[] = [
     catchphrase: 'Everything is an oscillator if you push enough voltage through it.',
     rivalryBonus: 'Solving Dr. Thorne’s frequency riddles grants unique circuit mod components and synergy discoveries.',
   },
+  {
+    id: 'velvet-static-collective',
+    name: 'Velvet Static Collective',
+    headProducer: 'Mira Gloss',
+    epithet: 'The Idol Architect',
+    philosophy: 'Pop is choreography glued to a chorus. Manufacture desire, then sell the encore.',
+    primaryPlaystyle: 'hit-maker',
+    preferredEra: 'modern-streaming',
+    signatureGenres: ['Pop', 'RnB', 'Dance'],
+    threatLevel: 'Rising',
+    catchphrase: 'If the fans can lip-sync it in an elevator, we already won.',
+    rivalryBonus: 'Beating Velvet Static on playlist bids unlocks idol-group package briefs.',
+  },
+  {
+    id: 'basement-tapes-union',
+    name: 'The Basement Tapes Union',
+    headProducer: 'Jules Ash',
+    epithet: 'The Co-op Saboteur',
+    philosophy: 'No contracts, no polish, only cassette hiss and collective veto power.',
+    primaryPlaystyle: 'underground',
+    preferredEra: 'retro-glam',
+    signatureGenres: ['Lo-Fi', 'Punk', 'Garage Rock'],
+    threatLevel: 'Rising',
+    catchphrase: 'If the landlord can hear it, the mix is almost loud enough.',
+    rivalryBonus: 'Surviving a Union challenge unlocks underground co-op tour referrals.',
+  },
 ] as const;
 
 export const HISTORIC_STUDIOS: readonly HistoricStudio[] = [
@@ -205,13 +263,95 @@ export const HISTORIC_STUDIOS: readonly HistoricStudio[] = [
   },
 ] as const;
 
+export const HISTORIC_VENUES: readonly HistoricVenue[] = [
+  {
+    id: 'venue-marquee-cellar',
+    name: 'The Marquee Cellar',
+    city: 'London, UK',
+    eraId: 'vintage-warmth',
+    capacity: '280 standing',
+    claimToFame: 'Sweaty mid-60s launchpad where tape-era bands proved choruses before the charts noticed.',
+    acousticSecret: 'Low brick arches that thicken midrange guitars without a plate reverb.',
+    legendaryRecord: 'Cellar Smoke Sessions Vol. 1',
+  },
+  {
+    id: 'venue-arena-dome',
+    name: 'Arena Dome Circuit',
+    city: 'Los Angeles, CA',
+    eraId: 'retro-glam',
+    capacity: '18,000 seats',
+    claimToFame: '80s spectacle tours that taught engineers to mix for fireworks and radio edits at once.',
+    acousticSecret: 'Flying PA delays timed to the dome’s slap so choruses hit the cheap seats in phase.',
+    legendaryRecord: 'Neon Overdrive Live 1984',
+  },
+  {
+    id: 'venue-warped-lot',
+    name: 'Warped Parking-Lot Tour',
+    city: 'Everywhere, USA',
+    eraId: 'digital-revolution',
+    capacity: 'Muddy field, infinite merch tents',
+    claimToFame: 'Early-2000s traveling stages where punk and pop-punk shared generators and drama.',
+    acousticSecret: 'Generator hum became a bass shelf; engineers learned to notch 60Hz on the fly.',
+    legendaryRecord: 'Lot Stage Bootlegs 2003',
+  },
+  {
+    id: 'venue-bedroom-stream',
+    name: 'Bedroom Stream Fest',
+    city: 'Global / Online',
+    eraId: 'modern-streaming',
+    capacity: 'Unlimited concurrent viewers',
+    claimToFame: '2020s living-room festivals that turned Discord stages into A&R cattle calls.',
+    acousticSecret: 'Aggressive loudness targets with soft-knee limiters so laptop speakers still feel huge.',
+    legendaryRecord: 'Clip Peak Charity Stream',
+  },
+] as const;
+
+export const ERA_CODEX: readonly EraCodexEntry[] = [
+  {
+    eraId: 'vintage-warmth',
+    title: 'Vintage Warmth',
+    blurb:
+      'Tape was expensive and mistakes were permanent, so rooms learned patience. Consoles glowed, drums lived in concrete, and a hit meant a radio program director believed your chorus before lunch.',
+  },
+  {
+    eraId: 'retro-glam',
+    title: 'Retro Glam',
+    blurb:
+      'Gated snares and bigger hair rode FM radio into arenas. Studios chased spectacle: more tracks, more lights, more gloss — then prayed the vinyl still had soul in the quiet bits.',
+  },
+  {
+    eraId: 'digital-revolution',
+    title: 'Digital Revolution',
+    blurb:
+      'Hard disks made undo free and perfection a trap. Producers fought latency, plugin shelves, and the fear that unlimited tracks would erase the urgency that made records matter.',
+  },
+  {
+    eraId: 'modern-streaming',
+    title: 'Modern Streaming',
+    blurb:
+      'Playlists replaced gatekeepers and attention spans shrank to a swipe. Rooms that survive treat algorithms as weather: prepare the mix, then go outside and still play like a band.',
+  },
+] as const;
+
 /** Retrieve all console laws */
 export const getConsoleLaws = (): readonly ConsoleLaw[] => CONSOLE_LAWS;
 
 /** Retrieve rival studios by playstyle alignment */
 export const getRivalsByPlaystyle = (playstyle: string): RivalStudio[] =>
-  RIVAL_STUDIOS.filter(r => r.primaryPlaystyle === playstyle);
+  RIVAL_STUDIOS.filter((r) => r.primaryPlaystyle === playstyle);
 
 /** Retrieve a specific rival studio by ID */
 export const getRivalStudio = (id: string): RivalStudio | undefined =>
-  RIVAL_STUDIOS.find(r => r.id === id);
+  RIVAL_STUDIOS.find((r) => r.id === id);
+
+/** Historic venues for tours and lore codex */
+export const getHistoricVenues = (): readonly HistoricVenue[] => HISTORIC_VENUES;
+
+export const getHistoricVenue = (id: string): HistoricVenue | undefined =>
+  HISTORIC_VENUES.find((v) => v.id === id);
+
+/** Era fiction blurbs for era-select tooltips */
+export const getEraCodex = (): readonly EraCodexEntry[] => ERA_CODEX;
+
+export const getEraCodexEntry = (eraId: string): EraCodexEntry | undefined =>
+  ERA_CODEX.find((e) => e.eraId === eraId);

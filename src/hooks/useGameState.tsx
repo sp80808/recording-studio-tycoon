@@ -8,6 +8,7 @@ import { initializeSkillsPlayer } from '@/utils/skillUtils'; // Import skill ini
 import { createDefaultStudioRooms } from '@/utils/studioRoomUtils';
 import { visualEraId } from '@/utils/eraProgression';
 import { createInitialChoreState } from '@/simulation/choreEngine';
+import { initializeStorylineState } from '@/narrative/branchingStorylineEngine';
 
 interface EraInitOptions {
   startingMoney: number;
@@ -160,14 +161,19 @@ export const useGameState = () => {
     // Set initial progression-based values
     newGameState = resolvePlayerLevelUps(newGameState);
     const maxConcurrentProjects = ProgressionSystem.getMaxConcurrentProjects(newGameState);
-    
-    return {
+
+    // Branching storylines (bead 283.3): seed a deterministic campaign on new runs.
+    // Per-run saveSeed keeps procedural rivals/text unique while remaining reproducible.
+    newGameState = initializeStorylineState({
       ...newGameState,
       availableProjects: initialProjects,
       availableCandidates: initialCandidates,
       availableSessionMusicians: initialSessionMusicians,
-      maxConcurrentProjects
-    };
+      maxConcurrentProjects,
+      saveSeed: newGameState.saveSeed ?? Date.now(),
+    });
+
+    return newGameState;
   };
 
   // Update game state to reflect progression changes

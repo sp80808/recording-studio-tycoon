@@ -24,6 +24,7 @@ import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { gameAudio as audioSystem } from '@/utils/audioSystem';
 import { MinigameType } from '@/components/minigames/MinigameManager'; // Import MinigameType
 import { WelcomeBackSummaryModal } from '@/components/modals/WelcomeBackSummaryModal';
+import { StorylineBranchModal } from '@/components/modals/StorylineBranchModal';
 import {
   advanceSimulation,
   DEFAULT_MAX_OFFLINE_MS,
@@ -31,6 +32,11 @@ import {
   SimulationSummary
 } from '@/simulation/simulationClock';
 import { getBookedStudioRoom } from '@/utils/studioRoomUtils';
+import {
+  getPendingStorylineBranch,
+  resolveStorylineBranch,
+  type StorylineBranchOption,
+} from '@/narrative/branchingStorylineEngine';
 
 const MusicStudioTycoon = () => {
   const { gameState, setGameState, initializeGameState } = useGameState(); // REMOVED focusAllocation, setFocusAllocation
@@ -71,6 +77,7 @@ const MusicStudioTycoon = () => {
   // const [showStaffModal, setShowStaffModal] = useState(false); // Assuming this was intended to be used elsewhere or can be removed if not
   // const [showRecruitmentModal, setShowRecruitmentModal] = useState(false); // Assuming this was intended to be used elsewhere or can be removed if not
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showStorylineBranchModal, setShowStorylineBranchModal] = useState(false);
   const [compactStudioMode, setCompactStudioMode] = useState(false);
   const [activeProjectReport, setActiveProjectReport] = useState<ProjectReport | null>(null);
   const [offlineSummary, setOfflineSummary] = useState<SimulationSummary | null>(null);
@@ -97,6 +104,40 @@ const MusicStudioTycoon = () => {
       setShowTrainingModal(true);
     }
   }, [selectedStaffForTraining]);
+
+  // Auto-open campaign branch modal when an Act objective completes (pending choice).
+  const pendingBranchFlag = gameState.storylineState?.storyFlags?.pending_branch_choice;
+  useEffect(() => {
+    if (
+      gameInitialized &&
+      !showSplashScreen &&
+      !compactStudioMode &&
+      !offlineSummary &&
+      !showReviewModal &&
+      typeof pendingBranchFlag === 'string'
+    ) {
+      setShowStorylineBranchModal(true);
+    }
+  }, [
+    gameInitialized,
+    showSplashScreen,
+    compactStudioMode,
+    offlineSummary,
+    showReviewModal,
+    pendingBranchFlag,
+  ]);
+
+  const pendingStorylineBranch = getPendingStorylineBranch(gameState);
+
+  const handleStorylineBranchChoice = useCallback(
+    (option: StorylineBranchOption) => {
+      setGameState((prev) => resolveStorylineBranch(prev, option));
+      if (settings.sfxEnabled) {
+        void audioSystem.playUISound('success').catch(() => {});
+      }
+    },
+    [setGameState, settings.sfxEnabled],
+  );
 
   const handleStartNewGame = (era: Era) => {
     const newGameState = initializeGameState({
@@ -443,6 +484,7 @@ const MusicStudioTycoon = () => {
             clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
             compactStudioMode={compactStudioMode}
             setCompactStudioMode={setCompactStudioMode}
+            onOpenStorylineBranch={() => setShowStorylineBranchModal(true)}
           />
         </div>
       </div>
@@ -493,6 +535,19 @@ const MusicStudioTycoon = () => {
           report={activeProjectReport}
         />
       )}
+
+      <StorylineBranchModal
+        isOpen={
+          showStorylineBranchModal &&
+          !compactStudioMode &&
+          !offlineSummary &&
+          !showReviewModal &&
+          Boolean(pendingStorylineBranch)
+        }
+        node={pendingStorylineBranch?.node ?? null}
+        onChoose={handleStorylineBranchChoice}
+        onClose={() => setShowStorylineBranchModal(false)}
+      />
     </GameLayout>
   );
 };

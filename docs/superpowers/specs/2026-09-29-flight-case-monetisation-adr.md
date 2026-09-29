@@ -20,6 +20,11 @@ Ship a two-path Flight Case economy reusing the central catalogue
   (Hussain et al. 2024/25; Mkedder et al. 2024; Zhao et al. 2022;
   Wang et al. 2022; Böffel et al. 2022; Kordyaka & Hribersek 2019;
   Musabirov et al. 2017; Gumussoy 2016; Rietveld 2018).
+- **Hard product rule — storyline is free:** never monetise or soft-gate
+  story path, narrative progress, campaign acts, branch choices, finales,
+  or CareerHub story unlocks. Purchases are optional cosmetics / rare or
+  skinned gear / Flight Case vanity only. Experiments A–E are dealer
+  presentation levers and must not paywall narrative.
 - Never: frustrate free progression on purpose, degrade earned cases,
   mandatory purchases, obscured prices, energy refills, artificial
   inconvenience, pay-to-win, premium currency in v1.

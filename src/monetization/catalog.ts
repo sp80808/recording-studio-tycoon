@@ -5,6 +5,8 @@
 // Collector equipment variants are cosmetic-only and stat-equivalent to
 // their base item; the `ref` format "baseId~variantId" resolves against
 // equipmentArt (base stats) + a cosmetic faceplate override.
+// PRODUCT RULE: catalogue may only sell optional cosmetics / rare or skinned
+// gear / Flight Case vanity — never story nodes, acts, finales, or branches.
 
 import type { StoreProduct } from './types';
 
@@ -157,6 +159,10 @@ export const V1_CATALOGUE: StoreProduct[] = [
   },
 ];
 
+/** Forbidden: any catalogue string that implies story / campaign paywalls. */
+const STORY_PAYWALL_SMELL =
+  /storyline|campaign[_-]?unlock|narrative[_-]?unlock|finale[_-]?unlock|act[_-]?unlock|branch[_-]?unlock|story[_-]?path|paywall.*story|premium.*campaign/i;
+
 /** Catalogue integrity: unique product ids, SKUs and entitlement ids. */
 export function validateCatalogue(products: StoreProduct[] = V1_CATALOGUE): string[] {
   const errors: string[] = [];
@@ -172,6 +178,11 @@ export function validateCatalogue(products: StoreProduct[] = V1_CATALOGUE): stri
     claim(`sku:${p.sku}`, 'sku', p.id);
     if (p.preview.items.length === 0) errors.push(`product ${p.id} has empty preview (v1 forbids hidden contents)`);
     if (p.entitlements.length === 0) errors.push(`product ${p.id} grants nothing`);
+    for (const field of [p.id, p.sku, p.title, p.description, p.preview.tagline]) {
+      if (STORY_PAYWALL_SMELL.test(field)) {
+        errors.push(`product ${p.id} must not monetise storyline/campaign ("${field.slice(0, 48)}")`);
+      }
+    }
     // Entitlement ids are unique WITHIN a product; repeating across products
     // is intentional (bundles re-grant the same ownership — first purchase
     // wins lineage in the ledger).
@@ -179,6 +190,9 @@ export function validateCatalogue(products: StoreProduct[] = V1_CATALOGUE): stri
     for (const e of p.entitlements) {
       if (local.has(e.entitlementId)) errors.push(`duplicate entitlement id "${e.entitlementId}" in ${p.id}`);
       local.add(e.entitlementId);
+      if (STORY_PAYWALL_SMELL.test(e.entitlementId) || STORY_PAYWALL_SMELL.test(e.kind) || STORY_PAYWALL_SMELL.test(e.ref)) {
+        errors.push(`product ${p.id} entitlement must not gate storyline (${e.entitlementId})`);
+      }
     }
   }
   return errors;

@@ -51,6 +51,8 @@ interface MainGameContentProps {
   refreshProjects?: () => boolean;
   compactStudioMode: boolean;
   setCompactStudioMode: React.Dispatch<React.SetStateAction<boolean>>;
+  /** Open StorylineBranchModal when a pending Act choice exists. */
+  onOpenStorylineBranch?: () => void;
 }
 
 
@@ -78,6 +80,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   triggerEraTransition,
   autoTriggeredMinigame,
   clearAutoTriggeredMinigame,
+  onOpenStorylineBranch,
   startResearchMod,
   refreshProjects,
   compactStudioMode,
@@ -408,6 +411,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                 onBookings={() => openPanel('bookings')}
                 onRest={advanceDay}
                 onStaff={() => handleOpenDashboardTab('staff')}
+                onOpenStorylineBranch={onOpenStorylineBranch}
               />
               <div className="grid gap-3 p-4">
                 <button

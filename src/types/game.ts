@@ -2,6 +2,7 @@
 import { Chart, ArtistContact, MarketTrend } from './charts';
 import { Client, RecordLabel } from '../game-mechanics/relationship-management';
 import { StudioChoreState } from '../simulation/choreEngine';
+import { EquipmentPlacement } from './equipmentSlots';
 
 // Card visual states for PixiJS components
 export type CardState = 'normal' | 'hover' | 'active' | 'completed';
@@ -45,6 +46,10 @@ export interface PlayerData {
   dailyWorkCapacity: number;
   reputation: number;
   lastMinigameType?: string; // Track last completed minigame to prevent repetition
+  /** Producer origin id from career start (storylines seed). Absent on legacy saves. */
+  originId?: string;
+  /** Playstyle focus from career start (storylines seed). Absent on legacy saves. */
+  playstyle?: string;
   skills: { // NEW as per core_loop_plan.md
     songwriting: Skill;
     rhythm: Skill;
@@ -273,10 +278,16 @@ export interface GameState {
   selectedEra: string; // Era ID that was selected at game start
   eraStartYear: number; // Year when the current era started
   equipmentMultiplier: number; // Price multiplier for equipment in this era
+  /** Stable run seed for deterministic systems (storylines, sim). Absent on legacy saves. */
+  saveSeed?: number | string;
+  /** Branching campaign + subplot tracker (bead 283.3). Absent on legacy saves. */
+  storylineState?: import('@/narrative/branchingStorylineEngine').StorylineState;
   playerData: PlayerData;
   studioSkills: Record<string, StudioSkill>;
   ownedUpgrades: string[];
   ownedEquipment: Equipment[];
+  /** Slot-based equipment placements (bead 8om). Absent on legacy saves. */
+  equipmentPlacements?: EquipmentPlacement[];
   availableProjects: Project[];
   financials: Financials;
   /** Optional: absent on old saves, treated as a fresh day. */

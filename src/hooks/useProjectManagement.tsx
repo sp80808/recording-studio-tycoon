@@ -8,6 +8,7 @@ import { gameAudio } from '@/utils/audioSystem';
 import { triggerScreenShake } from '@/utils/screenShake';
 import { applyCompletedSessionToRelationship, createClientRelationshipFromProject } from '@/utils/clientRelationshipUtils';
 import { findAvailableStudioRoom } from '@/utils/studioRoomUtils';
+import { evaluateStorylineTick } from '@/narrative/branchingStorylineEngine';
 
 export const useProjectManagement = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
   const startProject = useCallback((project: Project) => {
@@ -112,14 +113,16 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
         Object.values(updatedClientRelationships)
       );
 
-      return withDailyTracking({
-        ...settled,
-        activeProject: null,
-        activeProjects: (settled.activeProjects || []).filter(p => p.id !== projectId),
-        availableProjects: [...settled.availableProjects, ...nextEnquiries],
-        clientRelationships: updatedClientRelationships,
-        hiredStaff: updatedHiredStaff,
-      }, { earned: projectReport.moneyGained, projects: 1 });
+      return evaluateStorylineTick(
+        withDailyTracking({
+          ...settled,
+          activeProject: null,
+          activeProjects: (settled.activeProjects || []).filter(p => p.id !== projectId),
+          availableProjects: [...settled.availableProjects, ...nextEnquiries],
+          clientRelationships: updatedClientRelationships,
+          hiredStaff: updatedHiredStaff,
+        }, { earned: projectReport.moneyGained, projects: 1 }),
+      );
     });
 
     // Game-feel punctuation (goj.3): fanfare + a solid screen shake on delivery.
