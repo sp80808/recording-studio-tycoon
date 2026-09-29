@@ -25,6 +25,7 @@ import { ClipboardList } from 'lucide-react';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useSettings } from '@/contexts/settings-context-types';
 import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
+import { useUiChromeStore } from '@/stores/uiChromeStore';
 import {
   getStageFocusLabels, 
   getStageOptimalFocus, 
@@ -169,8 +170,15 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   // were below the early return and caused the post-settlement white screen, GH-65).
   const [takeState, setTakeState] = useState<'idle' | 'tracking'>('idle');
   const [lastTakeGrade, setLastTakeGrade] = useState<{ grade: string; text: string } | null>(null);
+  const setTakeCalibrationFocused = useUiChromeStore((s) => s.setTakeCalibrationFocused);
   const availableEnergy = gameState.playerData.dailyWorkCapacity;
   const isProjectComplete = !!gameState.activeProject && gameState.activeProject.stages.every(stage => stage.completed);
+
+  // Shared chrome host: hide First Session coach while Take Calibration owns the dock.
+  useEffect(() => {
+    setTakeCalibrationFocused(takeState === 'tracking');
+    return () => setTakeCalibrationFocused(false);
+  }, [takeState, setTakeCalibrationFocused]);
 
   // Gamepad take shortcuts (hoisted so the hook order stays stable when a project
   // settles — Rules of Hooks, GH-65). Handlers are only reached with a live project.
@@ -330,12 +338,6 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     playSound('ui-click', 0.4);
     window.setTimeout(() => {
       clearAutoTriggeredMinigame?.();
-      toast({
-        title: "Studio kept moving",
-        description: "The normal workflow continued with no bonus or penalty.",
-        className: "bg-gray-800 border-gray-600 text-white",
-        duration: 2200
-      });
     }, 150);
   };
   // Get stage-specific focus labels and guidance, now considering staff skills for optimalFocus
@@ -743,11 +745,6 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                     ),
                   }));
                   playSound('notification.wav', 0.4);
-                  toast({
-                    title: "🎯 Focus Aligned",
-                    description: `Target focus applied for ${currentStage.stageName}`,
-                    className: "bg-gray-800 border-gray-600 text-white",
-                  });
                 }}
                 disabled={!canUseOptimalFocusButton}
                 size="sm"

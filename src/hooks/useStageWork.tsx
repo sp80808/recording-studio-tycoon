@@ -257,11 +257,6 @@ export const useStageWork = ({
         return { finalProjectData: { ...project }, isComplete: true };
       }
       console.log('✅ Current stage already completed');
-      toast({
-        title: "✅ Stage Already Complete",
-        description: "This stage has been completed. The project will advance automatically.",
-        className: "bg-gray-800 border-gray-600 text-white",
-      });
       return;
     }
 
@@ -520,11 +515,6 @@ export const useStageWork = ({
 
     // 🔥 Overdrive: big payoff, small risk — the session can burn out the crew
     if (overdrive) {
-      toast({
-        title: '🔥 OVERDRIVE!',
-        description: '+75% output for 2 energy. The room is flying.',
-        className: 'bg-gray-800 border-gray-600 text-white',
-      });
       if (Math.random() < 0.25) {
         setGameState(prev => ({
           ...prev,
@@ -594,14 +584,8 @@ export const useStageWork = ({
         className: "bg-gray-800 border-gray-600 text-white",
         duration: 4000
       });
-    } else {
-      const comboNote = newCombo > 1 ? ` — ⚡ Combo x${newCombo} (+${Math.round((comboMultiplier - 1) * 100)}%)` : '';
-      toast({
-        title: newCombo > 1 ? `📈 Work Progress — COMBO x${newCombo}!` : "📈 Work Progress",
-        description: `Stage progress: ${newWorkUnitsCompleted}/${currentStage.workUnitsBase} work units (+${actualWorkUnitsToAdd} this session)${comboNote}`,
-        className: "bg-gray-800 border-gray-600 text-white",
-      });
     }
+    // Routine mid-stage progress stays on the Session Progress bar — no toast spam.
     
     return { isComplete: false }; // No review object if not complete
   }, [gameState, createOrb, setGameState, addStaffXP, advanceDay]); // Removed focusAllocation from dependencies

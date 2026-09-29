@@ -229,15 +229,10 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       });
     }
     
-    // Process salary & upkeep notifications
+    // Successful payroll is audible + visible in the money ticker — skip routine toast spam.
     if (totalDailyExpenses > 0) {
       if (canAffordSalaries) {
         gameAudio.playUISound('cashRegister');
-        toast({
-          title: "💰 Daily Expenses Paid",
-          description: `Paid $${totalSalaries} in salaries and $${equipmentUpkeep} in equipment upkeep.`,
-          className: "bg-gray-800 border-gray-600 text-white",
-        });
       } else {
         gameAudio.playUISound('staffUnavailable');
         triggerScreenShake('light');
