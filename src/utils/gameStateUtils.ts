@@ -1,5 +1,10 @@
 import { GameState, Project, FocusAllocation } from '@/types/game';
 import { createDefaultStudioRooms } from '@/utils/studioRoomUtils';
+import {
+  INVENTORY_SLOT_ID,
+  buildDefaultPlacements,
+} from '@/types/equipmentSlots';
+import { initializeStorylineState } from '@/narrative/branchingStorylineEngine';
 
 const DEFAULT_FOCUS_ALLOCATION: FocusAllocation = {
   performance: 33,
@@ -138,5 +143,24 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
     processedState.discoveredSynergies = [];
   }
 
-  return processedState;
+  // Slot-based equipment placements (bead 8om). Legacy saves have no
+  // placements at all — treat every owned item as globally available and
+  // seed the placement list with inventory entries so future moves are
+  // deterministic and survive save/load.
+  const existingPlacements = Array.isArray(processedState.equipmentPlacements)
+    ? processedState.equipmentPlacements
+    : null;
+  if (existingPlacements) {
+    const placedIds = new Set(existingPlacements.map((p) => p.equipmentId));
+    const missing = processedState.ownedEquipment
+      .filter((item) => !placedIds.has(item.id))
+      .map((item) => ({ equipmentId: item.id, slotId: INVENTORY_SLOT_ID as string }));
+    processedState.equipmentPlacements = [...existingPlacements, ...missing];
+  } else {
+    processedState.equipmentPlacements = buildDefaultPlacements(processedState.ownedEquipment);
+  }
+
+  // Branching storylines (bead 283.3): legacy saves without storylineState
+  // receive a deterministic campaign seed without mutating other fields.
+  return initializeStorylineState(processedState);
 };

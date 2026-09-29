@@ -166,3 +166,31 @@ export const addNotification = (gameState: GameState, message: string, type: 'in
 export const spendPerkPoint = (gameState: GameState, attribute: keyof PlayerAttributes): GameState => {
   return upgradePlayerAttribute(gameState, attribute);
 };
+
+/**
+ * Resolve the equipment that is physically active in a given room.
+ *
+ * Slot-based placement (bead 8om) means an item only counts for a room's
+ * sessions when it is seated in one of that room's slots. Items still in
+ * inventory, or seated in a different room, do not contribute. Legacy saves
+ * without placements fall back to the global ownedEquipment list.
+ */
+export const getRoomEquipment = (
+  gameState: GameState,
+  roomId: string,
+  roomSlots: { id: string }[]
+): Equipment[] => {
+  const placements = gameState.equipmentPlacements;
+  if (!placements || placements.length === 0) {
+    return gameState.ownedEquipment;
+  }
+
+  const roomSlotIds = new Set(roomSlots.map((slot) => slot.id));
+  const activeIds = new Set(
+    placements
+      .filter((placement) => roomSlotIds.has(placement.slotId))
+      .map((placement) => placement.equipmentId)
+  );
+
+  return gameState.ownedEquipment.filter((item) => activeIds.has(item.id));
+};

@@ -5,9 +5,13 @@ import {
   CONSOLE_LAWS,
   RIVAL_STUDIOS,
   HISTORIC_STUDIOS,
+  HISTORIC_VENUES,
+  ERA_CODEX,
   getConsoleLaws,
   getRivalStudio,
   getRivalsByPlaystyle,
+  getHistoricVenues,
+  getEraCodex,
 } from '../src/narrative/studioLore';
 
 import {
@@ -94,9 +98,10 @@ const makeMockGameState = (overrides: Partial<GameState> = {}): GameState => {
 };
 
 describe('Studio Lore & Console Laws', () => {
-  it('has at least 8 authored console laws with non-empty lore and principles', () => {
+  it('has at least 12 authored console laws with non-empty lore and principles', () => {
     const laws = getConsoleLaws();
-    assert.ok(laws.length >= 8, 'Expected >= 8 console laws');
+    assert.ok(laws.length >= 12, 'Expected >= 12 console laws');
+    assert.strictEqual(CONSOLE_LAWS.length, 12);
     laws.forEach((law) => {
       assert.ok(law.number > 0, `Law ${law.id} should have positive number`);
       assert.ok(law.title.length > 3, `Law ${law.id} title is too short`);
@@ -106,8 +111,8 @@ describe('Studio Lore & Console Laws', () => {
     });
   });
 
-  it('defines 4 rival studios covering all 4 core playstyles', () => {
-    assert.strictEqual(RIVAL_STUDIOS.length, 4, 'Expected exactly 4 rival studios');
+  it('defines 6 rival studios covering all 4 core playstyles with Rising foils', () => {
+    assert.strictEqual(RIVAL_STUDIOS.length, 6, 'Expected exactly 6 rival studios');
     const playstyles = new Set(RIVAL_STUDIOS.map((r) => r.primaryPlaystyle));
     assert.ok(playstyles.has('purist'));
     assert.ok(playstyles.has('hit-maker'));
@@ -121,6 +126,13 @@ describe('Studio Lore & Console Laws', () => {
     const rivalsPurist = getRivalsByPlaystyle('purist');
     assert.strictEqual(rivalsPurist.length, 1);
     assert.strictEqual(rivalsPurist[0].id, 'black-wax-vault');
+
+    const velvet = getRivalStudio('velvet-static-collective');
+    assert.ok(velvet);
+    assert.strictEqual(velvet?.threatLevel, 'Rising');
+    const basement = getRivalStudio('basement-tapes-union');
+    assert.ok(basement);
+    assert.strictEqual(basement?.threatLevel, 'Rising');
   });
 
   it('contains authored historic studios of lore', () => {
@@ -128,6 +140,15 @@ describe('Studio Lore & Console Laws', () => {
     const ditch = HISTORIC_STUDIOS.find((s) => s.id === 'the-ditch');
     assert.ok(ditch);
     assert.ok(ditch.acousticSecret.length > 0);
+  });
+
+  it('appends 4 historic venues and era codex blurbs without renaming existing ids', () => {
+    assert.strictEqual(HISTORIC_VENUES.length, 4);
+    assert.strictEqual(getHistoricVenues().length, 4);
+    assert.ok(HISTORIC_VENUES.every((v) => v.eraId && v.acousticSecret.length > 0));
+    assert.strictEqual(ERA_CODEX.length, 4);
+    assert.strictEqual(getEraCodex().length, 4);
+    assert.ok(ERA_CODEX.every((e) => e.blurb.length > 40));
   });
 });
 

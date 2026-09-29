@@ -21,6 +21,7 @@ import {
   processAutomaticChores,
   autoAssignAvailableChores
 } from '@/simulation/choreEngine';
+import { evaluateStorylineTick } from '@/narrative/branchingStorylineEngine';
 
 /** Daily equipment upkeep: 0.1% of item price per day, minimum $2/item */
 export const calculateEquipmentUpkeep = (equipment: GameState['ownedEquipment']): number => {
@@ -179,7 +180,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       };
 
       if (triggeredEvents.length === 0) {
-        return baseUpdatedState;
+        return evaluateStorylineTick(baseUpdatedState);
       }
 
       const { state: postEventsState, results } = applyEventsToState(baseUpdatedState, triggeredEvents);
@@ -202,10 +203,10 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
         });
       });
 
-      return {
+      return evaluateStorylineTick({
         ...postEventsState,
         notifications: [...postEventsState.notifications, ...newNotifications]
-      };
+      });
     });
     
     // Show era transition notification if available
