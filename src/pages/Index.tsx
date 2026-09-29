@@ -31,6 +31,8 @@ import {
   SimulationSummary
 } from '@/simulation/simulationClock';
 import { getBookedStudioRoom } from '@/utils/studioRoomUtils';
+import { isTauriShell } from '@/utils/platform';
+import { useFeatureFlag } from '@/stores/featureFlagStore';
 
 const MusicStudioTycoon = () => {
   const { gameState, setGameState, initializeGameState } = useGameState(); // REMOVED focusAllocation, setFocusAllocation
@@ -72,6 +74,10 @@ const MusicStudioTycoon = () => {
   // const [showRecruitmentModal, setShowRecruitmentModal] = useState(false); // Assuming this was intended to be used elsewhere or can be removed if not
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [compactStudioMode, setCompactStudioMode] = useState(false);
+  // zel.6: compact strip is desktop-shell only — browser must never blank the playable UI.
+  const desktopStripFlag = useFeatureFlag('desktop-studio-strip');
+  const desktopStripEnabled = desktopStripFlag && isTauriShell();
+  const effectiveCompactStudioMode = compactStudioMode && desktopStripEnabled;
   const [activeProjectReport, setActiveProjectReport] = useState<ProjectReport | null>(null);
   const [offlineSummary, setOfflineSummary] = useState<SimulationSummary | null>(null);
   const simulationLastTickRef = useRef(Date.now());
@@ -97,6 +103,13 @@ const MusicStudioTycoon = () => {
       setShowTrainingModal(true);
     }
   }, [selectedStaffForTraining]);
+
+  // zel.6: never leave compact mode sticky when the desktop-strip gate is off (browser).
+  useEffect(() => {
+    if (compactStudioMode && !desktopStripEnabled) {
+      setCompactStudioMode(false);
+    }
+  }, [compactStudioMode, desktopStripEnabled]);
 
   const handleStartNewGame = (era: Era) => {
     const newGameState = initializeGameState({
@@ -402,9 +415,9 @@ const MusicStudioTycoon = () => {
 
   return (
     <GameLayout eraId={gameState.currentEra}>
-      {!compactStudioMode && <RewardFlights gameState={gameState} />}
+      {!effectiveCompactStudioMode && <RewardFlights gameState={gameState} />}
       <div className="flex flex-col h-full">
-        {!compactStudioMode && (
+        {!effectiveCompactStudioMode && (
           <GameHeader 
             gameState={gameState} 
             onOpenSettings={handleOpenSettings}
@@ -414,7 +427,7 @@ const MusicStudioTycoon = () => {
           />
         )}
         <TutorialModal
-          isOpen={!settings.tutorialCompleted && !compactStudioMode && !offlineSummary}
+          isOpen={!settings.tutorialCompleted && !effectiveCompactStudioMode && !offlineSummary}
           onComplete={handleTutorialComplete}
           gameState={gameState}
         />
@@ -441,8 +454,9 @@ const MusicStudioTycoon = () => {
             triggerEraTransition={triggerEraTransition}
             autoTriggeredMinigame={autoTriggeredMinigame}
             clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
-            compactStudioMode={compactStudioMode}
+            compactStudioMode={effectiveCompactStudioMode}
             setCompactStudioMode={setCompactStudioMode}
+            desktopStripEnabled={desktopStripEnabled}
           />
         </div>
       </div>
@@ -453,7 +467,7 @@ const MusicStudioTycoon = () => {
       />
 
       <TrainingModal
-        isOpen={showTrainingModal && !compactStudioMode && !offlineSummary}
+        isOpen={showTrainingModal && !effectiveCompactStudioMode && !offlineSummary}
         onClose={() => {
           setShowTrainingModal(false);
           setSelectedStaffForTraining(null);
@@ -464,7 +478,7 @@ const MusicStudioTycoon = () => {
       />
 
       <SettingsModal
-        isOpen={showSettingsModal && !compactStudioMode}
+        isOpen={showSettingsModal && !effectiveCompactStudioMode}
         onClose={() => setShowSettingsModal(false)}
         onResetGame={resetGame} // Pass resetGame from useSaveSystem
         context="ingame" // Explicitly set context for in-game settings
@@ -473,7 +487,7 @@ const MusicStudioTycoon = () => {
 
 
 
-      {!compactStudioMode && (
+      {!effectiveCompactStudioMode && (
         <NotificationSystem
           notifications={gameState.notifications}
           removeNotification={removeNotification}
