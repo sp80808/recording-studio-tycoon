@@ -506,24 +506,38 @@ const buildScene = (
     ?.poly([tvA.x, tvA.y - 110, tvB.x, tvB.y - 110, tvB.x, tvB.y - 50, tvA.x, tvA.y - 50])
     .stroke({ width: 3, color: 0x5aa9e6 });
 
-  /* ---- Wall clock (left wall, near back) ------------------------------ */
+  /* ---- Wall clock (left wall, near back) — foreshortened to wall plane ---- */
   const clockWrap = new Container();
-  const clockPos = iso(0, 2.2);
+  const clockPos = iso(0, 2.0);
+  // Left-wall screen direction (for flush mounting)
+  const leftWallAngle = Math.atan2(wl1.y - wl0.y, wl1.x - wl0.x);
+  clockWrap.position.set(clockPos.x + 6, clockPos.y - 98);
+  // Compress + skew so the face reads as attached to the isometric left wall
+  // rather than a flat billboard facing the camera.
+  clockWrap.scale.set(0.78, 1);
+  clockWrap.skew.x = -0.32;
+  clockWrap.rotation = leftWallAngle * 0.12;
   const clock = new Graphics();
-  clock.circle(clockPos.x, clockPos.y - 100, 17).fill(0xf2f2f2);
-  clock.circle(clockPos.x, clockPos.y - 100, 17).stroke({ width: 3, color: COLORS.wallTrim });
+  clock.ellipse(0, 0, 15, 17).fill(0xf2f2f2);
+  clock.ellipse(0, 0, 15, 17).stroke({ width: 3, color: COLORS.wallTrim });
+  // Tick marks oriented on the face
+  for (let i = 0; i < 4; i++) {
+    const a = (i * Math.PI) / 2;
+    clock
+      .circle(Math.cos(a) * 11, Math.sin(a) * 12.5, 1.2)
+      .fill(0x333333);
+  }
   clockWrap.addChild(clock);
   const hand = new Graphics();
   hand.rect(-1.5, -12, 3, 12).fill(0x222222);
-  hand.position.set(clockPos.x, clockPos.y - 100);
   refs.clockHand = hand;
   clockWrap.addChild(hand);
   root.addChild(clockWrap);
   const clockHit = new Graphics();
-  clockHit.circle(clockPos.x, clockPos.y - 100, 30).fill(0xffffff);
+  clockHit.ellipse(clockPos.x + 6, clockPos.y - 98, 28, 26).fill(0xffffff);
   addHotspot(root, 'clock', clockHit, clockWrap, refs, onSelect);
   refs.hoverGlows['clock']
-    ?.circle(clockPos.x, clockPos.y - 100, 22)
+    ?.ellipse(clockPos.x + 6, clockPos.y - 98, 20, 18)
     .stroke({ width: 3, color: 0xffd166 });
 
   /* ---- Floor ---------------------------------------------------------- */
@@ -537,20 +551,20 @@ const buildScene = (
       floor.stroke({ width: .7, color: 0xf1d6a4, alpha: .08 });
     }
   }
-  // Rug in the middle of the floor
-  isoQuad(floor, 3, 4, 6, 6.4);
+  // Rug under console — snapped to half-tile grid matching desk footprint
+  isoQuad(floor, 3, 3.5, 6, 5);
   floor.fill(COLORS.rug);
-  isoQuad(floor, 3.2, 4.2, 5.8, 6.2);
+  isoQuad(floor, 3.25, 3.75, 5.75, 4.75);
   floor.fill(COLORS.rugInner);
-  isoQuad(floor, 3.2, 4.2, 5.8, 6.2);
+  isoQuad(floor, 3.25, 3.75, 5.75, 4.75);
   floor.stroke({ width: 1.5, color: 0xe29d6c, alpha: .38 });
   root.addChild(floor);
 
   // Window spill and contact shadow place furniture on the floor plane.
   const lightAndShadow = new Graphics();
-  const sun = [iso(5.1, .2), iso(6.9, .2), iso(6.6, 3.8), iso(4.9, 3.8)];
+  const sun = [iso(5, .5), iso(7, .5), iso(6.5, 3.5), iso(5, 3.5)];
   lightAndShadow.poly(sun.flatMap(point => [point.x, point.y])).fill({ color: 0xb8ddf6, alpha: .075 });
-  const deskFoot = iso(4.5, 4.2);
+  const deskFoot = iso(4.5, 4.25);
   lightAndShadow.ellipse(deskFoot.x, deskFoot.y + 3, 63, 23).fill({ color: 0x131620, alpha: .28 });
   root.addChild(lightAndShadow);
 
@@ -559,22 +573,113 @@ const buildScene = (
   outline.stroke({ width: 3, color: COLORS.wallTrim });
   root.addChild(outline);
 
-  /* ---- Live room glass + mic (back area) ------------------------------ */
+  /* ---- Studio door (left wall, between clock & TV) ----------------------
+   * Drawn after the floor so the threshold sits on the tile plane.
+   * Reserved as the client enter/exit anchor for future walk-in anims. */
+  {
+    const doorA = iso(0, 3.15);
+    const doorB = iso(0, 4.35);
+    const doorH = 92;
+    const doorJam = 6;
+    const doorWrap = new Container();
+    const doorGfx = new Graphics();
+    doorGfx
+      .poly([
+        doorA.x, doorA.y,
+        doorB.x, doorB.y,
+        doorB.x, doorB.y - doorH,
+        doorA.x, doorA.y - doorH,
+      ])
+      .fill(0x1a1520);
+    doorGfx
+      .poly([
+        doorA.x + 1, doorA.y - 2,
+        doorB.x - 1, doorB.y - 2,
+        doorB.x - 1, doorB.y - doorH + doorJam,
+        doorA.x + 1, doorA.y - doorH + doorJam,
+      ])
+      .fill(0x3a2a1c);
+    const dpA = iso(0, 3.25);
+    const dpB = iso(0, 4.25);
+    doorGfx
+      .poly([
+        dpA.x + 3, dpA.y - 8,
+        dpB.x - 2, dpB.y - 8,
+        dpB.x - 2, dpB.y - doorH + 14,
+        dpA.x + 3, dpA.y - doorH + 14,
+      ])
+      .fill(0x5c4030);
+    doorGfx
+      .poly([
+        dpB.x - 2, dpB.y - 8,
+        dpB.x + 4, dpB.y - 4,
+        dpB.x + 4, dpB.y - doorH + 18,
+        dpB.x - 2, dpB.y - doorH + 14,
+      ])
+      .fill(0x3d2a1e);
+    const handle = iso(0, 4.05);
+    doorGfx.circle(handle.x + 2, handle.y - 42, 2.4).fill(0xd9a441);
+    doorGfx
+      .poly([
+        doorA.x + 2, doorA.y - 10,
+        doorB.x - 2, doorB.y - 10,
+        doorB.x - 2, doorB.y - 18,
+        doorA.x + 2, doorA.y - 18,
+      ])
+      .fill({ color: 0x2a1e16, alpha: 0.7 });
+    const thresh = new Graphics();
+    isoQuad(thresh, 0, 3.15, 0.55, 4.35, 0);
+    thresh.fill({ color: 0x2a2118, alpha: 0.85 });
+    doorWrap.addChild(thresh);
+    doorWrap.addChild(doorGfx);
+    const lintel = new Graphics();
+    lintel
+      .poly([
+        doorA.x, doorA.y - doorH,
+        doorB.x, doorB.y - doorH,
+        doorB.x, doorB.y - doorH - 5,
+        doorA.x, doorA.y - doorH - 5,
+      ])
+      .fill(COLORS.wallTrim);
+    doorWrap.addChild(lintel);
+    root.addChild(doorWrap);
+  }
+
+  /* ---- Live room booth: mic BEHIND glass (correct draw order) ---------- */
   const liveWrap = new Container();
-  const gA = iso(1.0, 0.9);
-  const gB = iso(3.6, 0.9);
+  // Grid-aligned booth footprint (half-tile snap for sprite/model authoring)
+  const boothBackY = 0.5;
+  const boothGlassY = 1.0;
+  const boothX0 = 1.0;
+  const boothX1 = 3.5;
+
+  // Booth carpet / raised floor behind the glass
+  const boothFloor = new Graphics();
+  isoQuad(boothFloor, boothX0, boothBackY, boothX1, boothGlassY);
+  boothFloor.fill({ color: 0x3a4558, alpha: 0.55 });
+  isoQuad(boothFloor, boothX0 + 0.1, boothBackY + 0.1, boothX1 - 0.1, boothGlassY - 0.05);
+  boothFloor.fill({ color: 0x2a3344, alpha: 0.35 });
+  liveWrap.addChild(boothFloor);
+
+  // Mic stand deep in the booth (smaller tile-Y = behind glass plane)
+  const micBase = iso(2.25, 0.55);
+  const mic = new Graphics();
+  mic.ellipse(micBase.x, micBase.y, 12, 6).fill(0x22283a);
+  mic.rect(micBase.x - 2, micBase.y - 44, 4, 44).fill(0x9aa4bf);
+  mic.circle(micBase.x, micBase.y - 50, 7).fill(0xd9a441);
+  liveWrap.addChild(mic);
+
+  // Isolation glass partition in FRONT of the mic
+  const gA = iso(boothX0, boothGlassY);
+  const gB = iso(boothX1, boothGlassY);
   const glassPoly = [gA.x, gA.y, gB.x, gB.y, gB.x, gB.y - 74, gA.x, gA.y - 74];
   const glass = new Graphics();
-  glass.poly(glassPoly).fill({ color: COLORS.glass, alpha: 0.22 });
-  glass.poly(glassPoly).stroke({ width: 3, color: COLORS.glassFrame, alpha: 0.85 });
+  glass.poly(glassPoly).fill({ color: COLORS.glass, alpha: 0.28 });
+  glass.poly(glassPoly).stroke({ width: 3, color: COLORS.glassFrame, alpha: 0.9 });
+  // Subtle mullion
+  const gMid = iso((boothX0 + boothX1) / 2, boothGlassY);
+  glass.poly([gMid.x, gMid.y - 4, gMid.x, gMid.y - 70]).stroke({ width: 2, color: COLORS.glassFrame, alpha: 0.55 });
   liveWrap.addChild(glass);
-
-  const micBase = iso(2.2, 1.7);
-  const mic = new Graphics();
-  mic.ellipse(micBase.x, micBase.y, 14, 7).fill(0x22283a);
-  mic.rect(micBase.x - 2, micBase.y - 46, 4, 46).fill(0x9aa4bf);
-  mic.circle(micBase.x, micBase.y - 52, 8).fill(0xd9a441);
-  liveWrap.addChild(mic);
 
   const liveHit = new Graphics();
   liveHit.poly([gA.x, gA.y, gB.x, gB.y, gB.x, gB.y - 90, gA.x, gA.y - 90]).fill(0xffffff);
@@ -583,14 +688,15 @@ const buildScene = (
     ?.poly([gA.x, gA.y - 90, gB.x, gB.y - 90, gB.x, gB.y, gA.x, gA.y])
     .stroke({ width: 3, color: COLORS.glass });
 
-  /* ---- Gear shelf (left side) ----------------------------------------- */
+  /* ---- Gear shelf (left side) — half-tile grid snap -------------------- */
   const shelfWrap = new Container();
   // The shelf physically grows with the studio tier (bead ifx.3).
   const shelfExtension = tier >= 5 ? 2.0 : tier >= 3 ? 1.0 : 0;
-  const q1 = iso(0.6, 4.6); // back-left
-  const q2 = iso(2.2 + shelfExtension, 4.6); // back-right
-  const q3 = iso(2.2 + shelfExtension, 5.6); // front-right
-  const q4 = iso(0.6, 5.6); // front-left
+  // Half-tile snap: shelf sits along left wall at y=5..6
+  const q1 = iso(0.5, 5.0); // back-left
+  const q2 = iso(2.0 + shelfExtension, 5.0); // back-right
+  const q3 = iso(2.0 + shelfExtension, 6.0); // front-right
+  const q4 = iso(0.5, 6.0); // front-left
   const shelfH = 44;
   const shelf = new Graphics();
   shelf
@@ -631,10 +737,10 @@ const buildScene = (
     return { x: p.x, y: p.y - lift };
   };
 
-  const p1 = dPt(3.1, 3.4); // back-left
-  const p2 = dPt(5.9, 3.4); // back-right
-  const p3 = dPt(5.9, 4.8); // front-right
-  const p4 = dPt(3.1, 4.8); // front-left
+  const p1 = dPt(3.0, 3.5); // back-left
+  const p2 = dPt(6.0, 3.5); // back-right
+  const p3 = dPt(6.0, 5.0); // front-right
+  const p4 = dPt(3.0, 5.0); // front-left
 
   const desk = new Graphics();
   // Main desk surface
@@ -645,19 +751,19 @@ const buildScene = (
   desk.poly([p2.x, p2.y, p3.x, p3.y, p3.x, p3.y + deskH, p2.x, p2.y + deskH]).fill(COLORS.deskRight);
 
   // Padded leather armrest along the front edge
-  const a1 = dPt(3.18, 4.68);
-  const a2 = dPt(5.82, 4.68);
-  const a3 = dPt(5.82, 4.80);
-  const a4 = dPt(3.18, 4.80);
+  const a1 = dPt(3.15, 4.85);
+  const a2 = dPt(5.85, 4.85);
+  const a3 = dPt(5.85, 5.0);
+  const a4 = dPt(3.15, 5.0);
   desk.poly([a1.x, a1.y, a2.x, a2.y, a3.x, a3.y, a4.x, a4.y]).fill(consoleProfile.leatherRest);
   desk.poly([a4.x, a4.y, a3.x, a3.y, a3.x, a3.y + 4, a4.x, a4.y + 4]).fill(0x0e1116);
 
   // Hardwood side cheek end-panels
-  const lCheekTop = [dPt(3.10, 3.4, deskH + 2), dPt(3.18, 3.4, deskH + 2), dPt(3.18, 4.8, deskH + 2), dPt(3.10, 4.8, deskH + 2)];
+  const lCheekTop = [dPt(3.0, 3.5, deskH + 2), dPt(3.15, 3.5, deskH + 2), dPt(3.15, 5.0, deskH + 2), dPt(3.0, 5.0, deskH + 2)];
   desk.poly([lCheekTop[0].x, lCheekTop[0].y, lCheekTop[1].x, lCheekTop[1].y, lCheekTop[2].x, lCheekTop[2].y, lCheekTop[3].x, lCheekTop[3].y]).fill(consoleProfile.sideCheeks);
   desk.poly([lCheekTop[3].x, lCheekTop[3].y, lCheekTop[2].x, lCheekTop[2].y, lCheekTop[2].x, lCheekTop[2].y + deskH + 2, lCheekTop[3].x, lCheekTop[3].y + deskH + 2]).fill(0x1a120b);
 
-  const rCheekTop = [dPt(5.82, 3.4, deskH + 2), dPt(5.90, 3.4, deskH + 2), dPt(5.90, 4.8, deskH + 2), dPt(5.82, 4.8, deskH + 2)];
+  const rCheekTop = [dPt(5.85, 3.5, deskH + 2), dPt(6.0, 3.5, deskH + 2), dPt(6.0, 5.0, deskH + 2), dPt(5.85, 5.0, deskH + 2)];
   desk.poly([rCheekTop[0].x, rCheekTop[0].y, rCheekTop[1].x, rCheekTop[1].y, rCheekTop[2].x, rCheekTop[2].y, rCheekTop[3].x, rCheekTop[3].y]).fill(consoleProfile.sideCheeks);
   desk.poly([rCheekTop[1].x, rCheekTop[1].y, rCheekTop[2].x, rCheekTop[2].y, rCheekTop[2].x, rCheekTop[2].y + deskH + 2, rCheekTop[1].x, rCheekTop[1].y + deskH + 2]).fill(0x130d08);
 
@@ -1262,6 +1368,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         }
         appRef.current = app;
         container.appendChild(app.canvas);
+        app.canvas.id = 'pixi-studio-canvas';
+        app.canvas.setAttribute('data-engine', 'pixi');
         app.canvas.style.touchAction = 'none';
         app.canvas.setAttribute('aria-label', 'Interactive studio floor. Tap objects to inspect. Pinch to zoom or use two fingers to pan.');
         lastW = app.screen.width;

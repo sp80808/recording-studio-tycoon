@@ -10,6 +10,7 @@ import { SettingsModal } from '@/components/modals/SettingsModal';
 import { TutorialModal } from '@/components/TutorialModal';
 import { SplashScreen } from '@/components/SplashScreen';
 import { Era } from '@/components/EraSelectionModal'; // Era type
+import '@/components/studio-play.css';
 import { useGameState } from '@/hooks/useGameState';
 import { GameState, Project, ProjectReport, StaffMember } from '@/types/game'; // Import GameState, Project, ProjectReport, StaffMember
 import { generateProjectReview } from '@/utils/projectReviewUtils'; // Import generateProjectReview
@@ -448,9 +449,16 @@ const MusicStudioTycoon = () => {
   }
 
   if (!gameInitialized) {
-    return <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-      <div className="text-white text-xl">Loading Your Studio...</div>
-    </div>;
+    return (
+      <div className="studio-boot-gate" role="status" aria-live="polite" aria-busy="true">
+        <span className="studio-boot-gate-mark">RST</span>
+        <p className="studio-boot-gate-title">Warming up the studio…</p>
+        <div className="studio-boot-skeleton" aria-hidden="true">
+          <span /><span /><span />
+        </div>
+        <div className="studio-boot-progress" aria-hidden="true"><i /></div>
+      </div>
+    );
   }
 
   return (

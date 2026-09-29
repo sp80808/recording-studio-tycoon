@@ -11,6 +11,7 @@
   background:
     radial-gradient(ellipse 50% 42% at 50% 38%, #29324c 0%, #10172a 62%, transparent 100%),
     linear-gradient(145deg, #0f1628, #070b15 62%, #14101d);
+  animation: splash-enter .55s ease-out both;
 }
 .splash-page::before {
   content: "";
@@ -55,6 +56,17 @@
 .splash-page button:focus-visible { outline: 2px solid #ffdb8b; outline-offset: 4px; }
 @keyframes splash-breathe { 50% { transform:scale(1.035); border-color:#f5c87224; } }
 @keyframes splash-live { 50% { opacity:.55; box-shadow:0 0 5px #f5c87266; } }
+@keyframes splash-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes splash-hero-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.splash-hero { animation: splash-hero-rise .6s ease-out .08s both; }
+.splash-actions { animation: splash-hero-rise .55s ease-out .18s both; }
+.splash-footer { animation: splash-hero-rise .5s ease-out .28s both; }
 @media(max-width:540px) {
   .splash-page { padding-inline: 16px; }
   .splash-title-group h1 strong { font-size: clamp(37px,11vw,56px); }
@@ -68,4 +80,5 @@
 }
 @media(prefers-reduced-motion:reduce) {
   .splash-page *, .splash-page *::before, .splash-page *::after { animation: none !important; transition: none !important; }
+  .splash-page, .splash-hero, .splash-actions, .splash-footer { opacity: 1; transform: none; }
 }

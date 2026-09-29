@@ -22,18 +22,22 @@ Storyline stays free; monetisation stays optional cosmetics/gear only (see fligh
 ## P0 — Fix first
 
 ### HUD / viewport scaling
-1. **Guarantee Work / Overdrive dock visibility** in windowed short viewports (Issue #54 path): reduce `StudioRoom` min clamp when `ActiveProject` is open, or make middle column a flex scroll with pinned dock — do not require fullscreen.
-2. **Unify hotspot IDs** across Pixi (`liveRoom`, `tv`) and `StudioRoom` gamepad/chore aliases (`liveroom`, `crt`) so controller focus and badges always hit the same targets.
-3. **Reposition DEV chrome** (`DevMenu`, `PerformanceOverlay`) so they never cover studio hints, camera reset, or primary dock — e.g. top-right collapsible, or only when DevMenu expanded.
-4. **Tag living studio canvas** with `data-engine="pixi"` (or `id="pixi-studio-canvas"`) so motion WebGL audit matches reality.
+1. **Guarantee Work / Overdrive dock visibility** in windowed short viewports (Issue #54 path): reduce `StudioRoom` min clamp when `ActiveProject` is open, or make middle column a flex scroll with pinned dock — do not require fullscreen. *(partial — dock clearance CSS var landed; Session drawer uses viewport-aware widths)*
+2. **Unify hotspot IDs** across Pixi (`liveRoom`, `tv`) and `StudioRoom` gamepad/chore aliases (`liveroom`, `crt`) so controller focus and badges always hit the same targets. *(open)*
+3. ~~**Reposition DEV chrome**~~ — **done** (`5eaed315`): Settings opt-in, defaults OFF.
+4. ~~**Tag living studio canvas**~~ — **done**: `id="pixi-studio-canvas"` + `data-engine="pixi"`.
 
 ### Isometric room (screenshot blockers)
-5. **Mic z-order:** draw mic *before* glass (or give glass higher `zIndex` / separate depth band) so the mic reads inside the booth.
-6. **Add a door / corridor stub** on the open floor edge (procedural is fine) so the space reads as enterable and prepares multi-room adjacency.
-7. **Clock foreshortening:** replace flat circle with an isometric-ish ellipse / wall-plane poly matching TV framing.
+5. ~~**Mic z-order**~~ — **done**: mic drawn before glass, deeper tile-Y.
+6. ~~**Add a door**~~ — **done**: left-wall door between clock & TV + floor threshold.
+7. ~~**Clock foreshortening**~~ — **done**: ellipse + skew/scale on left wall plane.
 
 ### Splash
-8. **Confirm splash → game handoff** never leaves the player on a clipped first frame: after splash dismiss, layout should settle with studio + dock visible on laptop windowed heights (smoke-test 1366×768 windowed).
+8. ~~**Splash → game handoff**~~ — **done**: `studio-boot-gate` skeleton/progress between splash and floor; splash enter fades.
+
+### Adaptive coach / Session
+- First Session coach host: `first-session-guide.css` breakpoints (~375 / 768 / 1100 / 1400) + hide during `data-chrome-busy=take-calibration` (toast merge `9a98ad7e`).
+- Session drawer: wider viewport caps (`ContextDrawer` session width) to reduce empty side margins.
 
 ---
 

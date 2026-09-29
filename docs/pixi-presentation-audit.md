@@ -20,7 +20,7 @@ Cross-links: [pixijs-migration-plan.md](./pixijs-migration-plan.md), [visual_stu
 
 **Invariant (code):** `src/lib/motion/qualification.ts` requires a single continuous GPU owner — the Pixi living studio. Secondary continuous WebGL is disqualified (`SecondaryWebGLStudio`). Approved canvases must be tagged `id="pixi-studio-canvas"`, `data-engine="pixi"`, or `data-approved-webgl="true"`.
 
-**Gap:** `WebGLCanvas` currently appends `app.canvas` without those attributes, so the audit harness may not mark the real studio canvas as approved unless callers set them later.
+**Status (2026-09-29 polish):** `WebGLCanvas` now tags the living studio canvas with `id="pixi-studio-canvas"` and `data-engine="pixi"`. Booth mic draws behind glass; left-wall door + foreshortened clock + half-tile prop snaps landed.
 
 ---
 

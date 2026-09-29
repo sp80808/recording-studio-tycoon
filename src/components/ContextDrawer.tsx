@@ -140,10 +140,12 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
 
   const widthStyle =
     width === 'session'
-      ? 'w-full md:max-w-4xl lg:max-w-5xl'
+      ? 'w-full max-w-none md:w-[min(100%,1100px)] lg:w-[min(100vw-24px,1280px)] xl:w-[min(96vw,1400px)]'
       : width === 'wide'
         ? 'w-full md:max-w-2xl'
         : 'w-full md:max-w-md lg:max-w-lg';
+
+  const shellPad = width === 'session' ? 'pl-0 sm:pl-3' : 'pl-6';
 
   return (
     <AnimatePresence>
@@ -151,6 +153,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
         <div
           className="fixed inset-0 z-40 overflow-hidden"
           role="presentation"
+          data-studio-drawer={width}
         >
           {/* Subtle backdrop overlay (does not destroy or unmount background Pixi canvas) */}
           <div
@@ -160,7 +163,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
           />
 
           {/* Contextual slide-over drawer panel */}
-          <div className="absolute inset-y-0 right-0 flex max-w-full pl-6 pointer-events-none">
+          <div className={`absolute inset-y-0 right-0 flex max-w-full pointer-events-none ${shellPad}`}>
             <MotionPanel
               ref={drawerRef}
               direction={activeTab === 'session' ? 'scale' : 'right'}

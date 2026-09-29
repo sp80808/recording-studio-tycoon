@@ -116,6 +116,10 @@ echo "=== DEV overlays opt-in (hidden by default) ==="
 ./node_modules/.bin/esbuild tests/dev-overlays-opt-in.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-dev-overlays-opt-in.cjs --alias:@=./src >/dev/null
 node /tmp/rst-dev-overlays-opt-in.cjs
 
+echo "=== studio ux presentation (HUD + love-room) ==="
+./node_modules/.bin/esbuild tests/studio-ux-presentation.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-ux-presentation.cjs --alias:@=./src >/dev/null
+node /tmp/rst-studio-ux-presentation.cjs
+
 echo "=== progression motion: studio-tier upgrades and era transitions (#77) ==="
 ./node_modules/.bin/esbuild tests/progression-motion.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-progression-motion.cjs --alias:@=./src >/dev/null
 node /tmp/rst-progression-motion.cjs
