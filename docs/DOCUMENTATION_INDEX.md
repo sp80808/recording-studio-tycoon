@@ -50,6 +50,9 @@
 |----------|---------|--------------|--------|---------|
 | [Equipment Purchase Audio Analysis](./logs_and_reports/EQUIPMENT_PURCHASE_AUDIO_ANALYSIS.md) | 1.0.0 | 2025-06-11 | **NEW** | Comprehensive dual audio system analysis |
 | [UI/UX Overhaul Considerations: Viewport Resilience](./UI_UX_OVERHAUL_CONSIDERATIONS.md) | 1.0.0 | 2026-09-28 | **NEW** | Windowed scrolling, viewport height resilience & core action accessibility |
+| [Pixi Presentation Audit](./pixi-presentation-audit.md) | 1.0.0 | 2026-09-29 | **NEW** | Living-studio Pixi layer stack, hotspots, perf, screenshot UX issues |
+| [UX Visual Iterative Plan](./ux-visual-iterative-plan.md) | 1.0.0 | 2026-09-29 | **NEW** | P0–P2 polish plan for HUD, splash, iso room, expansions |
+| [Multi-Room Blueprints](./multi-room-blueprints.md) | 1.0.0 | 2026-09-29 | **NEW** | Iso ↔ top-down facility map, adjacency/doors, cosmetics-only monetisation |
 | [Studio Strip Audit & Remediation Plan](./STUDIO_STRIP_AUDIT.md) | 1.0.0 | 2026-09-28 | **NEW** | Audit of broken StudioStrip compact mode, dead-end loops, and viewport blackout |
 | [Documentation Update Summary](./logs_and_reports/DOCUMENTATION_UPDATE_SUMMARY_2025-06-11.md) | 1.0.0 | 2025-06-11 | **NEW** | Summary of June 11 documentation changes |
 | [Work Progression Enhancement Log](./logs_and_reports/WORK_PROGRESSION_ENHANCEMENT_LOG.md) | 1.0.0 | 2025-06-11 | Updated | Work progression system implementation |
