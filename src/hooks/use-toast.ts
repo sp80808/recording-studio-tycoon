@@ -5,6 +5,10 @@ import type {
   ToastActionElement,
   ToastProps,
 } from "@/components/ui/toast"
+import {
+  toastGate,
+  type ToastPriority,
+} from "@/lib/toastGate"
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000000
@@ -14,6 +18,7 @@ type ToasterToast = ToastProps & {
   title?: React.ReactNode
   description?: React.ReactNode
   action?: ToastActionElement
+  priority?: ToastPriority
 }
 
 const actionTypes = {
@@ -91,8 +96,6 @@ export const reducer = (state: State, action: Action): State => {
     case "DISMISS_TOAST": {
       const { toastId } = action
 
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
       if (toastId) {
         addToRemoveQueue(toastId)
       } else {
@@ -140,13 +143,40 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">
 
-function toast({ ...props }: Toast) {
-  const id = genId()
+function nodeToText(node: React.ReactNode): string {
+  if (node == null || typeof node === "boolean") return ""
+  if (typeof node === "string" || typeof node === "number") return String(node)
+  return ""
+}
 
-  const update = (props: ToasterToast) =>
+function toast({ ...props }: Toast) {
+  const titleText = nodeToText(props.title)
+  const descriptionText = nodeToText(props.description)
+  const admission = toastGate.admit({
+    title: titleText,
+    description: descriptionText || undefined,
+    variant: props.variant,
+    priority: props.priority,
+    duration: props.duration,
+  })
+
+  if (!admission.allow) {
+    if (props.priority === "quiet" && typeof console !== "undefined") {
+      console.debug("[toast:quiet]", titleText, descriptionText)
+    }
+    return {
+      id: admission.coalesceId ?? genId(),
+      dismiss: () => undefined,
+      update: () => undefined,
+    }
+  }
+
+  const id = admission.coalesceId ?? genId()
+
+  const update = (next: ToasterToast) =>
     dispatch({
       type: "UPDATE_TOAST",
-      toast: { ...props, id },
+      toast: { ...next, id },
     })
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
 
@@ -162,13 +192,12 @@ function toast({ ...props }: Toast) {
     },
   })
 
-  // Bridge to Sonner so notifications actually render on screen.
-  // The app renders a single <Toaster /> (Sonner) from components/ui/toaster,
-  // so we forward every toast call to it here.
-  const { title, description, duration, className, variant, action } = props
+  // Bridge to Sonner — App mounts a single <Toaster /> from components/ui/toaster.
+  const { title, description, className, variant, action } = props
   const options = {
+    id,
     description,
-    duration,
+    duration: admission.durationMs,
     className,
     ...(action ? { action } : {}),
   }
@@ -179,7 +208,7 @@ function toast({ ...props }: Toast) {
   }
 
   return {
-    id: id,
+    id,
     dismiss,
     update,
   }

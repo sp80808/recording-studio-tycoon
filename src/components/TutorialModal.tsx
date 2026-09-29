@@ -5,6 +5,8 @@ import { Card } from '@/components/ui/card';
 import { useSettings } from '@/contexts/SettingsContext';
 import type { GameState } from '@/types/game';
 import { FirstSessionGuideStep, getFirstSessionGuideStep } from '@/utils/firstSessionGuide';
+import { selectTakeCalibrationFocused, useUiChromeStore } from '@/stores/uiChromeStore';
+import './first-session-guide.css';
 
 interface TutorialModalProps {
   isOpen: boolean;
@@ -44,6 +46,7 @@ const STEPS: Array<{
 export const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onComplete, gameState }) => {
   const [collapsed, setCollapsed] = React.useState(() => window.matchMedia('(max-width: 1100px)').matches);
   const { updateSettings } = useSettings();
+  const takeCalibrationFocused = useUiChromeStore(selectTakeCalibrationFocused);
   const current = getFirstSessionGuideStep(gameState);
   const currentIndex = current === 'complete' ? STEPS.length : STEPS.findIndex(step => step.id === current);
 
@@ -61,7 +64,8 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onComplete
     }
   }, [current, isOpen, onComplete, updateSettings]);
 
-  if (!isOpen || current === 'complete') return null;
+  // Take Calibration needs the full Session Progress / PocketMeter band — park the coach.
+  if (!isOpen || current === 'complete' || takeCalibrationFocused) return null;
 
   const step = STEPS[currentIndex];
   const finish = () => {
@@ -70,7 +74,7 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onComplete
   };
 
   return (
-    <aside className="first-session-guide" aria-label="First session guide">
+    <aside className="first-session-guide" aria-label="First session guide" data-toast-host="coach">
       <Card className="overflow-hidden border-amber-400/40 bg-gray-950/95 text-white shadow-2xl backdrop-blur">
         <div className="flex items-center gap-3 border-b border-gray-700/80 px-3 py-2">
           <div className="grid h-9 w-9 place-items-center rounded-full bg-amber-400/15 text-amber-300">

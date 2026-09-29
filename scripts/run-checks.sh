@@ -5,7 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 echo "=== tutorial and room purchases ==="
-for check in first-session-guide studio-room-purchase; do
+for check in first-session-guide studio-room-purchase toast-spam; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
   node "/tmp/rst-$check.cjs"
 done
@@ -81,6 +81,10 @@ if [ -f tests/monetisation-e2e.check.ts ]; then
   ./node_modules/.bin/esbuild tests/monetisation-e2e.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-monetisation-e2e.cjs --alias:@=./src >/dev/null
   node /tmp/rst-monetisation-e2e.cjs
 fi
+
+echo "=== i18n locales (en / en-GB / pl key parity) ==="
+./node_modules/.bin/esbuild tests/i18n-locales.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-i18n-locales.cjs --alias:@=./src >/dev/null
+node /tmp/rst-i18n-locales.cjs
 
 echo "=== game engine back-end & graphics tech suites ==="
 for check in game-event-bus engine-loop engine-settings graphics-postfx; do
