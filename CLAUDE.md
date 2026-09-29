@@ -1,6 +1,6 @@
 # Project Instructions for AI Agents
 
-This file provides instructions and context for AI coding agents working on this project.
+This file provides instructions and context for AI coding agents working on Recording Studio Tycoon.
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:6cd5cc61 -->
 ## Beads Issue Tracker
@@ -57,21 +57,62 @@ This protocol applies when ending a Beads implementation workflow. It is subordi
 - If a required sync or push is blocked, stop and report the exact command and error.
 <!-- END BEADS INTEGRATION -->
 
+---
 
-## Build & Test
+## 🛠️ Build & Test Commands
 
-_Add your build and test commands here_
+Strictly use **pnpm 12+** (`devEngines` enforced; do NOT use `npm` or `npx` directly):
 
 ```bash
-# Example:
-# npm install
-# npm test
+# Install dependencies
+pnpm install
+
+# Start local dev server (default port 8080 or 5173)
+pnpm run dev
+
+# Run automated check suites (10 regression suites)
+pnpm test
+# Equivalent to:
+bash scripts/run-checks.sh
+
+# Run TypeScript compilation & production build
+pnpm run build
+
+# Run Playwright end-to-end booking & settlement test
+NODE_PATH=/Users/user/.local/lib/node_modules node -e "const{chromium}=require('playwright');const fs=require('fs');(async()=>{const fn=eval(fs.readFileSync('tests/booking-settlement.check.cjs','utf8'));const b=await chromium.launch({headless:true,channel:'chrome'});const p=await b.newPage({viewport:{width:1440,height:900}});try{console.log(await fn(p))}finally{await b.close()}})().catch(e=>{console.error(e);process.exit(1)})"
 ```
 
-## Architecture Overview
+---
 
-_Add a brief overview of your project architecture_
+## 🏗️ Architecture Overview
 
-## Conventions & Patterns
+Recording Studio Tycoon is an isometric simulation and management RPG:
+1. **Game Shell (`src/pages/Index.tsx`)**: Mounts game state (`useGameState`), simulation loop, cutscene director, and audio unlocked state.
+2. **Living Isometric Studio (`src/components/StudioRoom.tsx` / `WebGLCanvas.tsx`)**:
+   - PixiJS 8 canvas rendering an isometric grid (`TILE_W=56, TILE_H=28`).
+   - 5-tier console hardware progression (Tier 1 tube desk with Auratone cube & reel-to-reel tape to Tier 5 gold flagship console).
+   - 6 interactive hotspots (`console`, `liveRoom`, `phone`, `clock`, `tv`, `shelf`).
+3. **Industrial Console Transport Dock (`ActiveProject.tsx` / `PocketMeter.tsx`)**:
+   - 60fps Lock Take button with haptic animations.
+   - Analog PocketMeter timing gauge tracking take rhythm accuracy (Gold, Silver, Solid).
+   - Variable energy take spending (1⚡ efficient, 2⚡ standard, 3⚡ Overdrive).
+4. **Contextual Slide-Over Drawer (`MainGameContent.tsx`)**:
+   - Gigs, Artist Enquiries, Gear, Crew, and Career navigation in an on-demand slide panel.
+5. **Tactile Audio & Music Engine (`src/utils/audioSystem.ts`)**:
+   - Tone.js polyphonic synthesis generating authentic musical chords per genre upon take completion.
+   - Kenney mechanical switch clicks and rotary knob audio for all physical buttons.
+   - Robust gesture-based audio context unlocking.
+6. **RPG Progression Engine (`src/rpg/`)**:
+   - Take evaluation, combo codex streaks, contract stakes (Safe vs. Moonshot), letter stage grades (S/A/B/C), and unified XP.
+7. **Gamepad Controller Support (`src/services/gamepadService.ts` / `GamepadNavContext.tsx`)**:
+   - 60fps hardware polling, dynamic SVG glyph rendering, spatial focus navigation, and radial action wheel.
 
-_Add your project-specific conventions here_
+---
+
+## 📋 Conventions & Coding Standards
+
+1. **State Immutability**: All mutations to `GameState` must be pure and immutable; avoid direct state mutations.
+2. **Deterministic Seeded RNG**: Use `createSeededRandom` (`src/simulation/seededRandom.ts`) with project seeds for reviews, interventions, and daily challenges.
+3. **No Flashing Placeholders**: Use Kenney assets, authentic SVG graphics, or Pixi shapes.
+4. **Package Management**: Strictly `pnpm` (`packageManager: pnpm@12.3.4`).
+5. **Issue Tracking**: Strictly use `bd` commands for task claiming, updating, and closing.
