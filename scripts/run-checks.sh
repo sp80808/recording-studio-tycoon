@@ -60,6 +60,10 @@ echo "=== branching deterministic storylines ==="
 ./node_modules/.bin/esbuild tests/branching-storylines.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-branching-storylines.cjs --alias:@=./src >/dev/null
 node /tmp/rst-branching-storylines.cjs
 
+echo "=== equipment slots / gear racks (8om) ==="
+./node_modules/.bin/esbuild tests/equipment-slots.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-equipment-slots.cjs --alias:@=./src >/dev/null
+node /tmp/rst-equipment-slots.cjs
+
 echo "=== monetisation telemetry & experiments ==="
 if [ -f tests/monetisation-telemetry.check.ts ]; then
   ./node_modules/.bin/esbuild tests/monetisation-telemetry.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-monetisation-telemetry.cjs --alias:@=./src >/dev/null
