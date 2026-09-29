@@ -8,7 +8,7 @@ import {
   applyEquipmentBonusesToWorkPoints,
   calculateStaffWorkContribution,
 } from '../utils/projectUtils';
-import { calculateStudioSkillBonus, getEquipmentBonuses } from '../utils/gameUtils';
+import { calculateStudioSkillBonus, getEquipmentBonuses, resolveSessionEquipment } from '../utils/gameUtils';
 import {
   getFocusEffectiveness,
   getMoodEffectiveness,
@@ -94,7 +94,11 @@ export class ProjectService {
                 getFocusEffectiveness(this.gameState)
             );
             workPoints = applyStudioSkillBonusesToWorkPoints(workPoints, project.genre, this.gameState.studioSkills);
-            workPoints = applyEquipmentBonusesToWorkPoints(workPoints, this.gameState.ownedEquipment, project.genre);
+            workPoints = applyEquipmentBonusesToWorkPoints(
+                workPoints,
+                resolveSessionEquipment(this.gameState, project.bookingRoomId),
+                project.genre
+            );
             workPoints = calculateStaffWorkContribution(workPoints, assignedStaff, project.genre, getMoodEffectiveness);
 
             const creativityGain = Math.max(1, Math.round(workPoints.creativity));
@@ -151,14 +155,14 @@ export class ProjectService {
         const report = generateProjectReview(
             project,
             assignedPerson,
-            computeEquipmentQuality(this.gameState),
+            computeEquipmentQuality(this.gameState, project.bookingRoomId),
             this.gameState.playerData,
             this.gameState.hiredStaff,
             {
                 focusEffectiveness: getFocusEffectiveness(this.gameState),
                 staffContribution: computeStaffContribution(assignedStaff, project.genre),
                 studioQualityBonus: computeStudioQualityBonus(this.gameState, project.genre),
-                equipmentQualityBonus: computeEquipmentQualityBonus(this.gameState, project.genre),
+                equipmentQualityBonus: computeEquipmentQualityBonus(this.gameState, project.genre, project.bookingRoomId),
                 marketMultiplier: getGenreMarketMultiplier(project.genre, this.gameState.currentEra),
             }
         );
@@ -178,16 +182,20 @@ export class ProjectService {
     }
 }
 
-function computeEquipmentQuality(gameState: GameState): number {
-    const equipment = gameState.ownedEquipment;
+function computeEquipmentQuality(gameState: GameState, bookingRoomId?: string | null): number {
+    const equipment = resolveSessionEquipment(gameState, bookingRoomId);
     if (equipment.length === 0) return 50;
     const avgCondition = equipment.reduce((sum, eq) => sum + (eq.condition ?? 100), 0) / equipment.length;
     const qualityBonus = getEquipmentBonuses(equipment).quality || 0;
     return Math.max(0, Math.min(100, Math.round(avgCondition * 0.6 + Math.min(40, qualityBonus))));
 }
 
-function computeEquipmentQualityBonus(gameState: GameState, genre: string): number {
-    const bonuses = getEquipmentBonuses(gameState.ownedEquipment, genre);
+function computeEquipmentQualityBonus(
+    gameState: GameState,
+    genre: string,
+    bookingRoomId?: string | null
+): number {
+    const bonuses = getEquipmentBonuses(resolveSessionEquipment(gameState, bookingRoomId), genre);
     return Math.max(0, Math.min(10, Math.round((bonuses.quality || 0) / 2 + (bonuses.genre || 0) / 4)));
 }
 

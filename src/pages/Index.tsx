@@ -14,7 +14,7 @@ import { useGameState } from '@/hooks/useGameState';
 import { GameState, Project, ProjectReport, StaffMember } from '@/types/game'; // Import GameState, Project, ProjectReport, StaffMember
 import { generateProjectReview } from '@/utils/projectReviewUtils'; // Import generateProjectReview
 import { getFocusEffectiveness, getMoodEffectiveness } from '@/utils/playerUtils';
-import { calculateStudioSkillBonus, getEquipmentBonuses } from '@/utils/gameUtils';
+import { calculateStudioSkillBonus, getEquipmentBonuses, resolveSessionEquipment } from '@/utils/gameUtils';
 import { getGenreMarketMultiplier } from '@/utils/eraProgression';
 import { ProjectReviewModal } from '@/components/modals/ProjectReviewModal'; // Import ProjectReviewModal (assuming path)
 import { useGameLogic } from '@/hooks/useGameLogic';
@@ -186,15 +186,14 @@ const MusicStudioTycoon = () => {
       assignedPersonDetails = { type: 'player', id: 'player', name: 'You' };
     }
     
-    // Real settlement context (bead ruc.1): equipment condition + bonuses,
-    // focus effectiveness, assigned-crew contribution, studio genre expertise,
-    // and market trend — same factors ProjectService uses for background work.
-    const ownedEquipment = gameState.ownedEquipment || [];
-    const baseEquipmentQuality = ownedEquipment.length > 0
-      ? ownedEquipment.reduce((sum, eq) => sum + (eq.condition ?? 100), 0) / ownedEquipment.length
-      : 50; // Default if no equipment
+    // Real settlement context (bead ruc.1 / 8om): seated room gear when the
+    // player has engaged racks; inventory-only / legacy saves keep full owned list.
     const bookedRoom = getBookedStudioRoom(gameState, completedProjectData);
-    const equipmentBonuses = getEquipmentBonuses(ownedEquipment, completedProjectData.genre);
+    const sessionEquipment = resolveSessionEquipment(gameState, bookedRoom?.id ?? completedProjectData.bookingRoomId);
+    const baseEquipmentQuality = sessionEquipment.length > 0
+      ? sessionEquipment.reduce((sum, eq) => sum + (eq.condition ?? 100), 0) / sessionEquipment.length
+      : 50; // Default if no equipment
+    const equipmentBonuses = getEquipmentBonuses(sessionEquipment, completedProjectData.genre);
     const equipmentQuality = Math.max(
       0,
       Math.min(100, Math.round(baseEquipmentQuality * 0.6 + Math.min(40, equipmentBonuses.quality || 0) + (bookedRoom?.qualityBonus || 0)))

@@ -1,6 +1,10 @@
 
 import { GameState, StudioSkill, Equipment, PlayerAttributes } from '@/types/game';
 import { upgradePlayerAttribute } from './playerUtils';
+import {
+  INVENTORY_SLOT_ID,
+  generateDefaultRoomSlots,
+} from '@/types/equipmentSlots';
 
 export const calculateStudioSkillBonus = (skill: StudioSkill, type: 'creativity' | 'technical' | 'quality'): number => {
   const level = skill.level;
@@ -174,9 +178,13 @@ export const spendPerkPoint = (gameState: GameState, attribute: keyof PlayerAttr
  * sessions when it is seated in one of that room's slots. Items still in
  * inventory, or seated in a different room, do not contribute. Legacy saves
  * without placements fall back to the global ownedEquipment list.
+ *
+ * Prefer {@link resolveSessionEquipment} for work/settlement paths — it adds
+ * the soft inventory-only cutover so bonuses are not zeroed before the player
+ * seats any gear.
  */
 export const getRoomEquipment = (
-  gameState: GameState,
+  gameState: Pick<GameState, 'ownedEquipment' | 'equipmentPlacements'>,
   roomId: string,
   roomSlots: { id: string }[]
 ): Equipment[] => {
@@ -193,4 +201,33 @@ export const getRoomEquipment = (
   );
 
   return gameState.ownedEquipment.filter((item) => activeIds.has(item.id));
+};
+
+/**
+ * Soft-cutover session gear resolver (bead 8om).
+ *
+ * - No placements / empty → legacy: all owned gear
+ * - Placements exist but nothing seated in any room chassis (inventory-only,
+ *   including fresh migrations via buildDefaultPlacements) → all owned gear
+ * - At least one room seat exists → only gear seated in `roomId` counts
+ */
+export const resolveSessionEquipment = (
+  gameState: Pick<GameState, 'ownedEquipment' | 'equipmentPlacements'>,
+  roomId?: string | null
+): Equipment[] => {
+  const owned = gameState.ownedEquipment || [];
+  const placements = gameState.equipmentPlacements;
+
+  if (!placements || placements.length === 0) {
+    return owned;
+  }
+
+  const hasAnyRoomSeat = placements.some((p) => p.slotId !== INVENTORY_SLOT_ID);
+  if (!hasAnyRoomSeat) {
+    return owned;
+  }
+
+  const resolvedRoomId = roomId || 'studio-a';
+  const roomSlots = generateDefaultRoomSlots(resolvedRoomId);
+  return getRoomEquipment(gameState, resolvedRoomId, roomSlots);
 };
