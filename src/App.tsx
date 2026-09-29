@@ -13,6 +13,7 @@ import BoxDropController from "./features/boxDrops/BoxDropController";
 import DealerController from "./monetization/DealerController";
 import PremiumRevealController from "./monetization/PremiumRevealController";
 import { CutsceneDirector } from "./components/cutscenes/CutsceneDirector";
+import { MotionConfig } from "framer-motion";
 import './App.css';
 
 const queryClient = new QueryClient();
@@ -23,22 +24,24 @@ const App = () => {
       <SettingsProvider>
         <SaveSystemProvider>
           <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            {process.env.NODE_ENV === 'development' && <DevMenu />}
-            <BoxDropController />
-            <DealerController />
-            <PremiumRevealController />
-            <CutsceneDirector />
-            <BrowserRouter>
-              <main>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </main>
-            </BrowserRouter>
-            <SpeedInsights />
+            <MotionConfig reducedMotion="user">
+              <Toaster />
+              <Sonner />
+              {process.env.NODE_ENV === 'development' && <DevMenu />}
+              <BoxDropController />
+              <DealerController />
+              <PremiumRevealController />
+              <CutsceneDirector />
+              <BrowserRouter>
+                <main>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </main>
+              </BrowserRouter>
+              <SpeedInsights />
+            </MotionConfig>
           </TooltipProvider>
         </SaveSystemProvider>
       </SettingsProvider>

@@ -64,6 +64,10 @@ echo "=== motion platform & originkit architecture (#72) ==="
 ./node_modules/.bin/esbuild tests/motion-platform.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-motion-platform.cjs --alias:@=./src >/dev/null
 node /tmp/rst-motion-platform.cjs
 
+echo "=== motion primitives, tokens & reduced-motion (#73) ==="
+./node_modules/.bin/esbuild tests/motion-primitives.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-motion-primitives.cjs --alias:@=./src >/dev/null
+node /tmp/rst-motion-primitives.cjs
+
 echo "=== balance harness invariants (10 days, seed 7) ==="
 ./node_modules/.bin/esbuild src/dev/balance/run.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-balance.cjs --alias:@=./src >/dev/null
 mkdir -p /tmp/rst-balance

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import {
   ClipboardList,
   CheckCircle2,
@@ -26,6 +26,12 @@ import {
 import { gameAudio, playSound } from '@/utils/audioSystem';
 import { toast } from '@/hooks/use-toast';
 import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
+import {
+  MotionPanel,
+  MotionButton,
+  MotionReveal,
+  MotionNumber
+} from '@/components/motion/primitives';
 import './studio-duties.css';
 
 interface StudioDutiesClipboardProps {
@@ -139,10 +145,8 @@ export const StudioDutiesClipboard: React.FC<StudioDutiesClipboardProps> = ({
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 15 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 15 }}
+        <MotionPanel
+          direction="scale"
           className="studio-clipboard-panel w-full max-w-xl p-6 text-slate-100 relative"
         >
           {/* Weathered Metal Spring Clip */}
@@ -151,13 +155,13 @@ export const StudioDutiesClipboard: React.FC<StudioDutiesClipboardProps> = ({
           </div>
 
           {/* Close button */}
-          <button
+          <MotionButton
             onClick={onClose}
             className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors"
             title="Close Clipboard"
           >
             <X size={18} />
-          </button>
+          </MotionButton>
 
           {/* Header */}
           <div className="flex items-center justify-between mt-2 mb-4 border-b border-amber-900/40 pb-3">
@@ -178,7 +182,7 @@ export const StudioDutiesClipboard: React.FC<StudioDutiesClipboardProps> = ({
               <Award className="text-amber-400" size={16} />
               <div>
                 <span className="font-semibold text-amber-300">
-                  Streak: {streak} {streak === 1 ? 'Day' : 'Days'}
+                  Streak: <MotionNumber value={streak} /> {streak === 1 ? 'Day' : 'Days'}
                 </span>
                 <span className="text-slate-400 block text-[10px]">
                   {daysUntilCrate} {daysUntilCrate === 1 ? 'day' : 'days'} to Flight Case
@@ -190,15 +194,16 @@ export const StudioDutiesClipboard: React.FC<StudioDutiesClipboardProps> = ({
           {/* Auto-Assign Toolbar */}
           <div className="flex items-center justify-between mb-3 text-xs">
             <span className="text-slate-400">
-              Energy Available: <strong className="text-amber-300">{gameState.playerData.dailyWorkCapacity}⚡</strong>
+              Energy Available: <strong className="text-amber-300"><MotionNumber value={gameState.playerData.dailyWorkCapacity} suffix="⚡" /></strong>
             </span>
-            <button
+            <MotionButton
+              magnetic
               onClick={handleAutoAssignAll}
               className="flex items-center gap-1.5 px-2.5 py-1 bg-sky-950/80 hover:bg-sky-900 border border-sky-500/40 text-sky-200 rounded text-xs transition-colors"
             >
               <Bot size={13} />
               Auto-Assign Staff
-            </button>
+            </MotionButton>
           </div>
 
           {/* Chores List */}
@@ -208,94 +213,101 @@ export const StudioDutiesClipboard: React.FC<StudioDutiesClipboardProps> = ({
               const isDone = chore.completed;
 
               return (
-                <div
+                <MotionReveal
                   key={chore.id}
-                  onClick={() => setFocusedIndex(index)}
-                  className={`studio-clipboard-paper p-3 rounded-lg border transition-all ${
-                    isDone
-                      ? 'chore-card-done'
-                      : focusedIndex === index
-                      ? 'chore-card-active'
-                      : 'border-slate-800 hover:border-slate-700'
-                  }`}
+                  direction="up"
+                  staggerIndex={index}
+                  distance={10}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-2.5 flex-1 min-w-0">
-                      <button
-                        onClick={() => !isDone && handlePerformDuty(chore.id)}
-                        disabled={isDone}
-                        className="mt-0.5 text-slate-400 hover:text-emerald-400 disabled:opacity-80 transition-colors"
-                      >
-                        {isDone ? (
-                          <CheckCircle2 size={18} className="text-emerald-400" />
-                        ) : (
-                          <Circle size={18} />
-                        )}
-                      </button>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className={`font-medium text-sm ${isDone ? 'line-through text-slate-500' : 'text-slate-200'}`}>
-                            {chore.title}
-                          </span>
-                          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 border border-slate-700">
-                            {CATEGORY_ICONS[chore.category]}
-                            {chore.category}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">
-                          {chore.description}
-                        </p>
-
-                        {/* Staff Assignment & Speed Ability Display */}
-                        <div className="flex items-center gap-2 mt-2 text-xs">
-                          <span className="text-slate-500 text-[11px] flex items-center gap-1">
-                            <Users size={12} /> Assigned:
-                          </span>
-                          <select
-                            value={chore.assignedStaffId || ''}
-                            onChange={(e) => handleAssignStaff(chore.id, e.target.value || null)}
-                            disabled={isDone}
-                            className="bg-slate-900 border border-slate-700 text-slate-300 text-[11px] rounded px-2 py-0.5 disabled:opacity-50"
-                          >
-                            <option value="">Manual (Self)</option>
-                            {gameState.hiredStaff.map(s => (
-                              <option key={s.id} value={s.id}>
-                                {s.name} ({s.role} • Spd {s.primaryStats?.speed || 50})
-                              </option>
-                            ))}
-                          </select>
-
-                          {assignedStaff && (
-                            <span className="text-[10px] text-sky-400">
-                              ⚡ Spd {(1 + ((assignedStaff.primaryStats?.speed || 50) - 50) / 100).toFixed(1)}x
-                            </span>
+                  <div
+                    onClick={() => setFocusedIndex(index)}
+                    className={`studio-clipboard-paper p-3 rounded-lg border transition-all ${
+                      isDone
+                        ? 'chore-card-done'
+                        : focusedIndex === index
+                        ? 'chore-card-active'
+                        : 'border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                        <button
+                          onClick={() => !isDone && handlePerformDuty(chore.id)}
+                          disabled={isDone}
+                          className="mt-0.5 text-slate-400 hover:text-emerald-400 disabled:opacity-80 transition-colors"
+                        >
+                          {isDone ? (
+                            <CheckCircle2 size={18} className="text-emerald-400" />
+                          ) : (
+                            <Circle size={18} />
                           )}
+                        </button>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className={`font-medium text-sm ${isDone ? 'line-through text-slate-500' : 'text-slate-200'}`}>
+                              {chore.title}
+                            </span>
+                            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 border border-slate-700">
+                              {CATEGORY_ICONS[chore.category]}
+                              {chore.category}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">
+                            {chore.description}
+                          </p>
+
+                          {/* Staff Assignment & Speed Ability Display */}
+                          <div className="flex items-center gap-2 mt-2 text-xs">
+                            <span className="text-slate-500 text-[11px] flex items-center gap-1">
+                              <Users size={12} /> Assigned:
+                            </span>
+                            <select
+                              value={chore.assignedStaffId || ''}
+                              onChange={(e) => handleAssignStaff(chore.id, e.target.value || null)}
+                              disabled={isDone}
+                              className="bg-slate-900 border border-slate-700 text-slate-300 text-[11px] rounded px-2 py-0.5 disabled:opacity-50"
+                            >
+                              <option value="">Manual (Self)</option>
+                              {gameState.hiredStaff.map(s => (
+                                <option key={s.id} value={s.id}>
+                                  {s.name} ({s.role} • Spd {s.primaryStats?.speed || 50})
+                                </option>
+                              ))}
+                            </select>
+
+                            {assignedStaff && (
+                              <span className="text-[10px] text-sky-400">
+                                ⚡ Spd {(1 + ((assignedStaff.primaryStats?.speed || 50) - 50) / 100).toFixed(1)}x
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Duty Action Button */}
-                    <div className="flex flex-col items-end gap-1.5 shrink-0">
-                      <span className="text-[11px] text-amber-400 flex items-center gap-0.5">
-                        <Zap size={11} /> {chore.energyCost > 0 ? `${chore.energyCost}⚡` : 'Free'}
-                      </span>
-                      {!isDone ? (
-                        <button
-                          onClick={() => handlePerformDuty(chore.id)}
-                          className="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-slate-950 font-bold rounded text-xs transition-colors flex items-center gap-1"
-                        >
-                          <GamepadGlyph input="south" size="sm" />
-                          Do Duty
-                        </button>
-                      ) : (
-                        <span className="text-[11px] text-emerald-400 font-medium">
-                          Active Buff
+                      {/* Duty Action Button */}
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        <span className="text-[11px] text-amber-400 flex items-center gap-0.5">
+                          <Zap size={11} /> {chore.energyCost > 0 ? `${chore.energyCost}⚡` : 'Free'}
                         </span>
-                      )}
+                        {!isDone ? (
+                          <MotionButton
+                            magnetic
+                            onClick={() => handlePerformDuty(chore.id)}
+                            className="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-slate-950 font-bold rounded text-xs transition-colors flex items-center gap-1"
+                          >
+                            <GamepadGlyph input="south" size="sm" />
+                            Do Duty
+                          </MotionButton>
+                        ) : (
+                          <span className="text-[11px] text-emerald-400 font-medium">
+                            Active Buff
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                </MotionReveal>
               );
             })}
           </div>
@@ -307,14 +319,14 @@ export const StudioDutiesClipboard: React.FC<StudioDutiesClipboardProps> = ({
               <span className="mx-1.5">•</span>
               <GamepadGlyph input="south" size="sm" /> Execute
             </span>
-            <button
+            <MotionButton
               onClick={onClose}
               className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded transition-colors"
             >
               Close
-            </button>
+            </MotionButton>
           </div>
-        </motion.div>
+        </MotionPanel>
       </div>
     </AnimatePresence>
   );

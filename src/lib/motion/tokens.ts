@@ -37,12 +37,26 @@ export const motionEasing = {
   linear: [0, 0, 1, 1] as const,
 } as const;
 
+export const motionTransition = {
+  instant: { duration: motionDuration.instant } as const,
+  press: motionSpring.press,
+  drawer: motionSpring.drawer,
+  reward: motionSpring.reward,
+  snappy: motionSpring.snappy,
+  gentle: motionSpring.gentle,
+  reveal: { duration: motionDuration.reveal, ease: motionEasing.settle } as const,
+  settle: { duration: motionDuration.normal, ease: motionEasing.settle } as const,
+  hardware: { duration: motionDuration.fast, ease: motionEasing.hardware } as const,
+} as const;
+
 export const motionTokens = {
   duration: motionDuration,
   spring: motionSpring,
   easing: motionEasing,
+  transition: motionTransition,
 } as const;
 
 export type MotionDuration = keyof typeof motionDuration;
 export type MotionSpring = keyof typeof motionSpring;
 export type MotionEasing = keyof typeof motionEasing;
+export type MotionTransition = keyof typeof motionTransition;
