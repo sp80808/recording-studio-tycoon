@@ -10,6 +10,9 @@ export const useFeatureFlagStore = create<FeatureFlags>((set) => ({
     // default: features are off; enable via dev tools or config
     'advanced-production-queue': false,
     'quick-assign-presets': false,
+    // Flight Case Monetisation (bead 89o): store + premium reveals, default off.
+    'monetisation-dealer': false,
+    'premium-cases': false,
   },
   setFlag: (key, value) => set((s) => ({ flags: { ...s.flags, [key]: value } })),
 }))

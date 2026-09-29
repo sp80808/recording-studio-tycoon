@@ -108,6 +108,9 @@ settings:
 overrides:
   esbuild: 0.21.5
 
+patchedDependencies:
+  sonner@1.7.4: f675cac989dbf8c7bc273bda7a0820241908718c0dd1bb08ca32205f1092f9d0
+
 importers:
 
   .:
@@ -285,7 +288,7 @@ importers:
         version: 0.9.5
       sonner:
         specifier: ^1.5.0
-        version: 1.7.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        version: 1.7.4(patch_hash=f675cac989dbf8c7bc273bda7a0820241908718c0dd1bb08ca32205f1092f9d0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       tailwind-merge:
         specifier: ^2.6.0
         version: 2.6.1
@@ -4924,7 +4927,7 @@ snapshots:
 
   shebang-regex@3.0.0: {}
 
-  sonner@1.7.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
+  sonner@1.7.4(patch_hash=f675cac989dbf8c7bc273bda7a0820241908718c0dd1bb08ca32205f1092f9d0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
     dependencies:
       react: 19.3.0
       react-dom: 19.3.0(react@19.3.0)

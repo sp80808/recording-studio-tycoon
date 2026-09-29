@@ -14,6 +14,104 @@ export const shouldSkipFrame = (targetFps: number, elapsedMs: number) => {
   return elapsedMs < budgetMs - 1.0;
 };
 
+export interface EraPostFxTuning {
+  scanlineAlpha: number;
+  scanlinePitch: number;
+  vignetteColor: number;
+  vignetteAlpha: number;
+}
+
+export const getEraPostFxTuning = (eraId?: string): EraPostFxTuning => {
+  const era = visualEraId(eraId ?? 'analog60s');
+  switch (era) {
+    case 'digital80s':
+      return {
+        scanlineAlpha: 0.05,
+        scanlinePitch: 4,
+        vignetteColor: 0x160c24, // Deep slate-violet
+        vignetteAlpha: 0.18,
+      };
+    case 'internet2000s':
+      return {
+        scanlineAlpha: 0.03,
+        scanlinePitch: 3,
+        vignetteColor: 0x0a141d, // Cool studio navy
+        vignetteAlpha: 0.15,
+      };
+    case 'streaming2020s':
+      return {
+        scanlineAlpha: 0.018,
+        scanlinePitch: 3,
+        vignetteColor: 0x080f0c, // Ultra-subtle charcoal
+        vignetteAlpha: 0.12,
+      };
+    case 'analog60s':
+    default:
+      return {
+        scanlineAlpha: 0.045,
+        scanlinePitch: 4,
+        vignetteColor: 0x1d1107, // Warm tape amber-sepia
+        vignetteAlpha: 0.20,
+      };
+  }
+};
+
+export interface DynamicBloomResult {
+  meterAlpha: number;
+  lampAlpha: number;
+  radiusMultiplier: number;
+  meterColor: number;
+  lampColor: number;
+}
+
+export const calculateDynamicBloom = (
+  activity = 0,
+  hasActiveProject = false,
+  eraId?: string,
+  isReducedMotion = false
+): DynamicBloomResult => {
+  const clampedActivity = Math.max(0, Math.min(1, activity));
+  // Subtle meter core alpha between 0.10 and 0.25 (never overpowering)
+  const meterAlpha = 0.10 + clampedActivity * 0.15;
+  // Pilot lamp / record indicator alpha: 0.20 when recording, subtle 0.06 pilot when idle
+  const lampAlpha = hasActiveProject ? 0.20 : 0.06;
+  const radiusMultiplier = isReducedMotion ? 1.0 : 1.0 + clampedActivity * 0.35;
+
+  const era = visualEraId(eraId ?? 'analog60s');
+  let meterColor = 0xffaa33; // Warm tungsten amber for analog
+  let lampColor = 0xff5533; // Warm tube record lamp
+
+  if (era === 'digital80s') {
+    meterColor = 0xc77dff; // Synth magenta / fluorescent
+    lampColor = 0x5aa9e6; // Cool digital blue
+  } else if (era === 'internet2000s') {
+    meterColor = 0x5aa9e6; // Precision DAW cyan
+    lampColor = 0x7bd389; // Soft green lock
+  } else if (era === 'streaming2020s') {
+    meterColor = 0x7bd389; // Modern emerald studio LED
+    lampColor = 0x48dbfb; // Clean smart studio cyan
+  }
+
+  return {
+    meterAlpha,
+    lampAlpha,
+    radiusMultiplier,
+    meterColor,
+    lampColor,
+  };
+};
+
+export const calculateTapeSaturationWarmth = (
+  activity = 0,
+  hasActiveProject = false,
+  baseAlpha = 1.0
+): number => {
+  const clampedActivity = Math.max(0, Math.min(1, activity));
+  // Warmth subtly deepens under heavy activity and session takes (max +0.06 boost)
+  const saturationBoost = (hasActiveProject ? 0.03 : 0.0) + clampedActivity * 0.03;
+  return Math.min(1.25, Math.max(0.1, baseAlpha * (1.0 + saturationBoost)));
+};
+
 /**
  * Studio hotspots the player can click in the isometric room scene.
  */
@@ -238,14 +336,17 @@ interface SceneRefs {
   staffFigures: { fig: Container; baseY: number }[];
   nightTintLayer: Container | null;
   hoverGlows: Record<string, Graphics>;
+  hoverGlowTargets: Record<string, number>;
   idleHints: Partial<Record<'phone' | 'console', Graphics>>;
   crtLayer: Container | null;
   bloomLayer: Container | null;
   vignetteLayer: Container | null;
+  dynamicBloomG: Graphics | null;
 }
 
 interface BuiltScene {
   root: Container;
+  overlayRoot: Container;
   refs: SceneRefs;
   basePosition: { x: number; y: number };
   baseScale: number;
@@ -267,6 +368,7 @@ const addHotspot = (
   const glow = new Graphics();
   glow.alpha = 0;
   refs.hoverGlows[id] = glow;
+  refs.hoverGlowTargets[id] = 0;
   wrap.addChild(glow);
 
   const hit = new Container();
@@ -274,8 +376,8 @@ const addHotspot = (
   hit.eventMode = 'static';
   hit.cursor = 'pointer';
   hit.alpha = 0; // invisible for rendering, still receives pointer events
-  hit.on('pointerover', () => { glow.alpha = 1; });
-  hit.on('pointerout', () => { glow.alpha = 0; });
+  hit.on('pointerover', () => { refs.hoverGlowTargets[id] = 0.85; });
+  hit.on('pointerout', () => { refs.hoverGlowTargets[id] = 0; });
   // The canvas gesture guard suppresses selection after a two-finger pan.
   hit.on('pointertap', () => { onSelect?.(id); });
 
@@ -298,7 +400,12 @@ const buildScene = (
     staffFigures: [],
     nightTintLayer: null,
     hoverGlows: {},
+    hoverGlowTargets: {},
     idleHints: {},
+    crtLayer: null,
+    bloomLayer: null,
+    vignetteLayer: null,
+    dynamicBloomG: null,
   };
 
   // Era colour grade + studio tier drive the room's look (beads goj.3 / ifx.3)
@@ -912,58 +1019,65 @@ const buildScene = (
     root.addChild(empire);
   }
 
+  /* ---- Screen-space Post-FX container (unaffected by camera pan/zoom) --- */
+  const overlayRoot = new Container();
+  overlayRoot.eventMode = 'none';
+  overlayRoot.position.set(0, 0);
+
   /* ---- Day/night + era tint overlay (screen space, on top) ------------ */
   const tintLayer = new Container();
   const tintRect = new Graphics();
-  tintRect.rect(0, 0, width / fitScale, height / fitScale).fill(grade.tint);
+  tintRect.rect(0, 0, width, height).fill(grade.tint);
   tintLayer.addChild(tintRect);
   tintLayer.alpha = 0;
   tintLayer.eventMode = 'none';
-  tintLayer.position.set(-originX / fitScale, -originY / fitScale);
   refs.nightTintLayer = tintLayer;
-  root.addChild(tintLayer);
+  overlayRoot.addChild(tintLayer);
 
-  /* ---- CRT scanlines & Vignette Post-FX layers ------------ */
+  /* ---- CRT scanlines & Vignette Post-FX layers (screen space) ------------ */
+  const postFxTuning = getEraPostFxTuning(state.eraId);
+
   const vignetteLayer = new Container();
-  const vignetteG = new Graphics();
-  const maxDim = Math.max(width, height) / fitScale;
-  vignetteG.circle((width / 2) / fitScale, (height / 2) / fitScale, maxDim * 0.72)
-    .stroke({ color: 0x140a04, width: 85, alpha: 0.28 });
-  vignetteLayer.addChild(vignetteG);
   vignetteLayer.eventMode = 'none';
-  vignetteLayer.position.set(-originX / fitScale, -originY / fitScale);
+  const vignetteG = new Graphics();
+  const cx = width / 2;
+  const cy = height / 2;
+  const stops = [
+    { radiusMult: 0.72, strokeW: Math.max(24, width * 0.08), alpha: postFxTuning.vignetteAlpha * 0.35 },
+    { radiusMult: 0.90, strokeW: Math.max(34, width * 0.12), alpha: postFxTuning.vignetteAlpha * 0.65 },
+    { radiusMult: 1.08, strokeW: Math.max(46, width * 0.16), alpha: postFxTuning.vignetteAlpha },
+  ];
+  for (const stop of stops) {
+    vignetteG
+      .ellipse(cx, cy, cx * stop.radiusMult, cy * stop.radiusMult)
+      .stroke({ color: postFxTuning.vignetteColor, width: stop.strokeW, alpha: stop.alpha });
+  }
+  vignetteLayer.addChild(vignetteG);
   refs.vignetteLayer = vignetteLayer;
-  root.addChild(vignetteLayer);
+  overlayRoot.addChild(vignetteLayer);
 
   const crtLayer = new Container();
+  crtLayer.eventMode = 'none';
   const crtG = new Graphics();
-  const screenW = width / fitScale;
-  const screenH = height / fitScale;
-  for (let y = 0; y < screenH; y += 4) {
-    crtG.rect(0, y, screenW, 1.5).fill({ color: 0x000000, alpha: 0.14 });
+  const pitch = postFxTuning.scanlinePitch;
+  for (let y = 0; y < height; y += pitch) {
+    crtG.rect(0, y, width, 1.0).fill({ color: 0x000000, alpha: postFxTuning.scanlineAlpha });
   }
   crtLayer.addChild(crtG);
-  crtLayer.eventMode = 'none';
-  crtLayer.position.set(-originX / fitScale, -originY / fitScale);
   refs.crtLayer = crtLayer;
-  root.addChild(crtLayer);
+  overlayRoot.addChild(crtLayer);
 
-  /* ---- Emissive Bloom & Glow Layer (additive blend) ------------ */
+  /* ---- Emissive Bloom & Glow Layer (world space, additive blend) ------------ */
   const bloomLayer = new Container();
   bloomLayer.eventMode = 'none';
   bloomLayer.blendMode = 'add';
-  const meterBloom = new Graphics();
-  refs.vuBars.forEach((bar) => {
-    meterBloom.circle(bar.x, bar.y - 4, 7).fill({ color: 0xffb347, alpha: 0.35 });
-  });
-  refs.tvBars.forEach((bar) => {
-    meterBloom.circle(bar.x, bar.y, 6).fill({ color: 0x5aa9e6, alpha: 0.25 });
-  });
-  bloomLayer.addChild(meterBloom);
+  const dynamicBloomG = new Graphics();
+  bloomLayer.addChild(dynamicBloomG);
+  refs.dynamicBloomG = dynamicBloomG;
   refs.bloomLayer = bloomLayer;
   root.addChild(bloomLayer);
 
-  return { root, refs, basePosition: { x: originX, y: originY }, baseScale: fitScale };
+  return { root, overlayRoot, refs, basePosition: { x: originX, y: originY }, baseScale: fitScale };
 };
 
 /* ---------------------------------------------------------------------------
@@ -1033,6 +1147,10 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     if (sceneRef.current) {
       app.stage.removeChild(sceneRef.current.root);
       sceneRef.current.root.destroy({ children: true });
+      if (sceneRef.current.overlayRoot) {
+        app.stage.removeChild(sceneRef.current.overlayRoot);
+        sceneRef.current.overlayRoot.destroy({ children: true });
+      }
     }
     const scene = buildScene(
       app.screen.width,
@@ -1052,6 +1170,9 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
       if (scene.refs.bloomLayer) scene.refs.bloomLayer.visible = Boolean(settingsRef.current.bloomAndGlow);
     }
     app.stage.addChild(scene.root);
+    if (scene.overlayRoot) {
+      app.stage.addChild(scene.overlayRoot);
+    }
     sceneRef.current = scene;
   };
 
@@ -1305,7 +1426,17 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             hint.alpha = pulse;
           });
 
+          // Smoothly interpolate hotspot hover glow alphas for tactile feedback
+          Object.keys(refs.hoverGlows).forEach((key) => {
+            const glow = refs.hoverGlows[key];
+            const target = refs.hoverGlowTargets[key] ?? 0;
+            if (glow && Math.abs(glow.alpha - target) > 0.005) {
+              glow.alpha += (target - glow.alpha) * 0.18;
+            }
+          });
+
           // Console VU meters — amplitude follows live activity
+          const vuPeaks: { x: number; y: number; width: number }[] = [];
           refs.vuBars.forEach((bar, i) => {
             const wobble = 0.5 + 0.5 * Math.sin(t * (3 + i * 0.7) + i * 1.3);
             const maxRange = bar.range ?? 9;
@@ -1313,14 +1444,59 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             const width = bar.width ?? 3.5;
             bar.g.clear();
             bar.g.rect(bar.x - width / 2, bar.y - h, width, h).fill(bar.color);
+            vuPeaks.push({ x: bar.x, y: bar.y - h, width });
           });
 
           // Charts TV equalizer
+          const tvPeaks: { x: number; y: number }[] = [];
           refs.tvBars.forEach((bar, i) => {
             const h = 5 + (0.5 + 0.5 * Math.sin(t * 4 + i * 1.1)) * (5 + s.activity * 24);
             bar.g.clear();
             bar.g.rect(bar.x - 5, bar.y - h, 10, h).fill(bar.color);
+            tvPeaks.push({ x: bar.x, y: bar.y - h });
           });
+
+          // Emissive dynamic bloom updates (world-space, additive blend)
+          if (refs.dynamicBloomG && refs.bloomLayer?.visible) {
+            const bg = refs.dynamicBloomG;
+            bg.clear();
+
+            const bloomParams = calculateDynamicBloom(
+              s.activity,
+              s.hasActiveProject,
+              s.eraId,
+              reduceMotion
+            );
+
+            // 1. Console VU meters glowing cores
+            for (let i = 0; i < vuPeaks.length; i++) {
+              const peak = vuPeaks[i];
+              const r = (peak.width ? peak.width * 1.3 : 4.5) * bloomParams.radiusMultiplier;
+              bg.circle(peak.x, peak.y, r * 1.8)
+                .fill({ color: bloomParams.meterColor, alpha: bloomParams.meterAlpha * 0.35 });
+              bg.circle(peak.x, peak.y, r)
+                .fill({ color: bloomParams.meterColor, alpha: bloomParams.meterAlpha });
+            }
+
+            // 2. Active recording status lamp (on console meter bridge)
+            if (s.hasActiveProject && vuPeaks.length > 0) {
+              const midBar = vuPeaks[Math.floor(vuPeaks.length / 2)];
+              const lampX = midBar.x;
+              const lampY = midBar.y - 12;
+              const lampPulse = reduceMotion ? 1.0 : 0.88 + 0.12 * Math.sin(t * 3.5);
+              bg.circle(lampX, lampY, 7 * bloomParams.radiusMultiplier)
+                .fill({ color: bloomParams.lampColor, alpha: bloomParams.lampAlpha * 0.35 * lampPulse });
+              bg.circle(lampX, lampY, 3.5 * bloomParams.radiusMultiplier)
+                .fill({ color: bloomParams.lampColor, alpha: bloomParams.lampAlpha * lampPulse });
+            }
+
+            // 3. TV equalizer display bloom (soft cyan / era accent)
+            for (let i = 0; i < tvPeaks.length; i++) {
+              const peak = tvPeaks[i];
+              bg.circle(peak.x, peak.y, 5 * bloomParams.radiusMultiplier)
+                .fill({ color: 0x5aa9e6, alpha: bloomParams.meterAlpha * 0.35 });
+            }
+          }
 
           // Staff idle bobbing
           refs.staffFigures.forEach((f, i) => {
@@ -1345,6 +1521,17 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           if (refs.nightTintLayer) {
             const cycle = (Math.sin((t * Math.PI * 2) / 90) + 1) / 2;
             refs.nightTintLayer.alpha = 0.05 + cycle * 0.28;
+          }
+
+          // Dynamic analog tape saturation warmth (deepens subtly during active session takes)
+          if (refs.vignetteLayer && refs.vignetteLayer.visible) {
+            refs.vignetteLayer.alpha = calculateTapeSaturationWarmth(s.activity, s.hasActiveProject, 1.0);
+          }
+
+          // Subtle phosphor micro-drift on CRT scanlines (disabled when reducedMotion is active)
+          if (refs.crtLayer && refs.crtLayer.visible) {
+            const drift = reduceMotion ? 1.0 : 1.0 + Math.sin(t * 1.6) * 0.04;
+            refs.crtLayer.alpha = drift;
           }
 
           // Gamepad analog camera controls (Right stick pans, triggers zoom, R3 centers)

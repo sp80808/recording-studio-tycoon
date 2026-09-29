@@ -36,6 +36,23 @@ export interface HistoricStudio {
   legendaryRecord: string;
 }
 
+export interface HistoricVenue {
+  id: string;
+  name: string;
+  city: string;
+  eraId: string;
+  capacity: string;
+  claimToFame: string;
+  acousticSecret: string;
+  legendaryRecord: string;
+}
+
+export interface EraCodexEntry {
+  eraId: string;
+  title: string;
+  blurb: string;
+}
+
 export const CONSOLE_LAWS: readonly ConsoleLaw[] = [
   {
     id: 'law-red-light',

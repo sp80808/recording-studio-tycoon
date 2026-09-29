@@ -3,3 +3,5 @@ allowBuilds:
   esbuild: true
 overrides:
   esbuild: 0.21.5
+patchedDependencies:
+  sonner@1.7.4: patches/sonner@1.7.4.patch
