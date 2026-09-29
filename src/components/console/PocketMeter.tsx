@@ -12,8 +12,10 @@ interface PocketMeterProps {
 }
 
 export const POCKET_METER_TIMING = {
-  cycleSeconds: 2.4,
-  autoLockSeconds: 5,
+  // ~30% snappier than the prior 2.4s / 5s readability pass — still slower
+  // than the original ~1.1s / 2.5s swing so Gold locks stay fair.
+  cycleSeconds: 1.7,
+  autoLockSeconds: 3.5,
 } as const;
 
 export const PocketMeter: React.FC<PocketMeterProps> = ({
@@ -63,7 +65,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
       return () => window.clearTimeout(timeout);
     }
 
-    // Deliberate two-beat sweep gives players time to read and react.
+    // Readable sweep with enough reaction time for Gold locks (not twitchy).
     const tick = (now: number) => {
       if (lockedRef.current) return;
       const elapsed = (now - startTimeRef.current) / 1000;
