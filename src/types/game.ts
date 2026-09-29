@@ -1,6 +1,7 @@
 // Game type definitions
 import { Chart, ArtistContact, MarketTrend } from './charts';
 import { Client, RecordLabel } from '../game-mechanics/relationship-management';
+import { StudioChoreState } from '../simulation/choreEngine';
 
 // Card visual states for PixiJS components
 export type CardState = 'normal' | 'hover' | 'active' | 'completed';
@@ -326,6 +327,14 @@ export interface GameState {
     globalEffects: GlobalAnimationState;
   };
   activeMinigame: string | null;
+  // Studio maintenance chores & pending loot crates
+  choreState?: StudioChoreState;
+  pendingCrates?: Array<{
+    id: string;
+    era: string;
+    source: 'chore_streak' | 's_grade_take' | 'yard_sale';
+    tier: 'standard' | 'vintage_flight_case';
+  }>;
 }
 
 export interface Artist {

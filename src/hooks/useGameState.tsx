@@ -7,6 +7,7 @@ import { resolvePlayerLevelUps } from '@/utils/playerUtils';
 import { initializeSkillsPlayer } from '@/utils/skillUtils'; // Import skill initializer
 import { createDefaultStudioRooms } from '@/utils/studioRoomUtils';
 import { visualEraId } from '@/utils/eraProgression';
+import { createInitialChoreState } from '@/simulation/choreEngine';
 
 interface EraInitOptions {
   startingMoney: number;
@@ -144,7 +145,9 @@ export const useGameState = () => {
       projectsCompletedToday: 0,
       sessionsWorkedToday: 0,
       challengeDoneId: null
-    }
+    },
+    choreState: createInitialChoreState(),
+    pendingCrates: []
   });
 
   const initializeGameState = (options?: Partial<EraInitOptions>): GameState => {
