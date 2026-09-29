@@ -17,6 +17,8 @@ import { triggerScreenShake } from '@/utils/screenShake';
 import { evaluateTakeAccuracy, calculateTakeEnergyCost } from '@/rpg/takeEvaluation';
 import { hasActiveChoreBuff, getActiveBuffMagnitude } from '@/simulation/choreEngine';
 import { PocketMeter } from '@/components/console/PocketMeter';
+import { StudioDutiesClipboard } from './chores/StudioDutiesClipboard';
+import { ClipboardList } from 'lucide-react';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useSettings } from '@/contexts/settings-context-types';
 import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
@@ -62,6 +64,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const [lastGains, setLastGains] = useState<{ creativity: number; technical: number }>({ creativity: 0, technical: 0 });
   const [showBlobAnimation, setShowBlobAnimation] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [showDutiesClipboard, setShowDutiesClipboard] = useState(false);
   // This will store the data for the celebration screen
   const [celebrationDisplayData, setCelebrationDisplayData] = useState<{ 
     title: string;
@@ -494,6 +497,17 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 <div className="text-[11px] text-amber-300 font-semibold">{project.durationDaysTotal}d duration</div>
                 <div className="text-[10px] text-slate-400">{Math.round(project.workSessionCount || 0)} sessions</div>
               </div>
+              <button
+                onClick={() => setShowDutiesClipboard(true)}
+                className="flex items-center gap-1.5 px-2 py-1 bg-amber-950/70 hover:bg-amber-900 border border-amber-500/40 rounded text-xs text-amber-200 transition-colors shadow-sm"
+                title="Open Studio Maintenance Duties"
+              >
+                <ClipboardList size={13} className="text-amber-400" />
+                <span>Duties</span>
+                <span className="text-[10px] text-amber-400 font-bold bg-amber-900/60 px-1 rounded">
+                  {Object.values(gameState.choreState?.chores || {}).filter(c => c.completed).length}/5
+                </span>
+              </button>
               <div className="flex items-center gap-2 bg-slate-900/90 px-2 py-1 rounded border border-slate-700/70">
                 <div id="creativity-points" data-creativity-target className="text-sky-400 font-bold flex items-center gap-1 text-xs">
                   <span>🎨</span> {Math.round(project.accumulatedCPoints || 0)}
@@ -866,6 +880,13 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           }}
           gameType={selectedMinigame}
           onReward={handleMinigameReward}
+        />
+
+        <StudioDutiesClipboard
+          gameState={gameState}
+          setGameState={setGameState}
+          isOpen={showDutiesClipboard}
+          onClose={() => setShowDutiesClipboard(false)}
         />
       </div>
     </>

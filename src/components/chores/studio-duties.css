@@ -1,0 +1,41 @@
+/* studio-duties.css - Industrial Wood & Brass Clipboard Aesthetic */
+
+.studio-clipboard-panel {
+  position: relative;
+  background: linear-gradient(145deg, #1e1b18 0%, #2b2520 50%, #1a1613 100%);
+  border: 2px solid #574635;
+  box-shadow: 
+    0 16px 36px -8px rgba(0, 0, 0, 0.85),
+    inset 0 1px 1px rgba(255, 255, 255, 0.15),
+    inset 0 0 20px rgba(0, 0, 0, 0.5);
+  border-radius: 12px;
+  overflow: hidden;
+  font-family: inherit;
+}
+
+.studio-clipboard-clip {
+  background: linear-gradient(180deg, #94a3b8 0%, #64748b 60%, #475569 100%);
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  border-radius: 0 0 8px 8px;
+}
+
+.studio-clipboard-paper {
+  background: linear-gradient(180deg, #182234 0%, #0f172a 100%);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  box-shadow: 
+    inset 0 1px 3px rgba(0, 0, 0, 0.4),
+    0 2px 6px rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+}
+
+.chore-card-active {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.25);
+  background: rgba(30, 41, 59, 0.8);
+}
+
+.chore-card-done {
+  border-color: rgba(52, 211, 153, 0.3) !important;
+  background: rgba(6, 78, 59, 0.15);
+}
