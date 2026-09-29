@@ -67,7 +67,7 @@ async (page) => {
   await settle.waitFor({ timeout: 30000 });
   await settle.click();
   await review.waitFor({ state: 'hidden', timeout: 20000 });
-  assert(await activities.isVisible(), 'Studio floor did not return');
+  await activities.waitFor({ state: 'visible', timeout: 10000 });
   await activities.getByRole('button', { name: 'Bookings' }).click();
   assert(await page.getByRole('button', { name: 'Book Session' }).first().isEnabled(), 'Cannot book after settlement');
   const moneyAfter = await page.locator('[data-reward-target="money"]').innerText();

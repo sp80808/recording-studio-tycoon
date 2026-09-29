@@ -214,13 +214,24 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
 
   useEffect(() => {
     if (isOpen && report) {
+      let settled = false;
       setIsGenerating(true);
+      setReviewText(null);
+      const fallback = window.setTimeout(() => {
+        settled = true;
+        setReviewText(report.reviewSnippet);
+        setIsGenerating(false);
+      }, 2500);
       generateReview(report.projectTitle)
-        .then(setReviewText)
-        .catch(() => setReviewText(report.reviewSnippet))
+        .then(text => { if (!settled) setReviewText(text); })
+        .catch(() => { if (!settled) setReviewText(report.reviewSnippet); })
         .finally(() => {
-          setIsGenerating(false);
+          if (!settled) setIsGenerating(false);
         });
+      return () => {
+        settled = true;
+        window.clearTimeout(fallback);
+      };
     }
   }, [isOpen, report]);
 
@@ -315,7 +326,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
       }}
     >
       <DialogContent 
-        className="bg-black border-gray-700 text-gray-50 shadow-xl max-w-2xl w-full rounded-lg z-[60]" // Changed to black background
+        className="bg-black border-gray-700 text-gray-50 shadow-2xl max-w-4xl w-[calc(100%-2rem)] max-h-[calc(100dvh-2rem)] overflow-hidden rounded-xl z-[60] flex flex-col !animate-none"
         onInteractOutside={(e) => {
           // Prevent closing when clicking outside if animation is not complete
           if (!showContinueButton) {
@@ -326,80 +337,88 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
         }}
         aria-describedby={descriptionId} // Add aria-describedby for accessibility
       >
-        <DialogHeader className="pt-6 px-6">
-          <DialogTitle className="text-2xl font-bold text-yellow-400">Project Complete: {report.projectTitle}</DialogTitle>
+        <DialogHeader className="pt-5 px-6 border-b border-gray-800/80 pb-3 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-2xl font-bold text-yellow-400">Project Complete: {report.projectTitle}</DialogTitle>
+            <span className="text-xs font-mono px-2.5 py-1 rounded bg-gray-800 text-gray-300 border border-gray-700">
+              {report.genre}
+            </span>
+          </div>
           {/* Visible description for screen readers and context */}
           <DialogDescription id={descriptionId} className="sr-only">
             Detailed review of your completed project: {report.projectTitle}. Shows skill improvements, overall quality, and rewards gained.
           </DialogDescription>
         </DialogHeader>
-        {/* Card wrapper for styling consistency, removed its own onClick handler */}
-        <Card className="bg-transparent border-0 shadow-none">
-          <CardContent className="overflow-y-auto flex-grow p-6 space-y-3 max-h-[70vh] md:max-h-[80vh]">
-            {report.skillBreakdown.length > 0 && (
-              <div>
-                <h4 className="text-xl font-semibold text-yellow-200 mb-2">Skill Progression ({report.assignedPerson.name})</h4>
-                <ul className="space-y-2">
-                  {report.skillBreakdown.map((skillDetail, index) => (
-                    <SkillDisplay 
-                      key={skillDetail.skillName} 
-                      skillDetail={skillDetail}
-                      startAnimation={currentSkillIndex === index}
-                      onAnimationComplete={handleNextAnimation} 
-                    />
-                  ))}
-                </ul>
-              </div>
-            )}
-            {showOverallQuality && (
-              <div className="pt-2">
-                <h3 className="text-2xl font-bold text-center text-yellow-300 mb-1">
-                  Overall Quality: <AnimatedNumber targetValue={report.overallQualityScore} duration={1000} className="text-3xl" /> / 100
-                </h3>
-                <Progress value={animatedOverallQualityValue} className="h-6 bg-gray-700 [&>*]:bg-green-500 transition-all duration-300" />
-              </div>
-            )}
-            {showRewards && (
-              <div className="pt-2 space-y-1 text-center">
-                <h4 className="text-xl font-semibold text-yellow-200">Rewards</h4>
-                <p className="text-lg text-white">💰 Money: $<AnimatedNumber targetValue={report.moneyGained} duration={600} /></p>
-                <p className="text-lg text-white">🌟 Reputation: +<AnimatedNumber targetValue={report.reputationGained} duration={600} /></p>
-                {report.assignedPerson.type === 'staff' && report.playerManagementXpGained > 0 && (
-                  <p className="text-lg text-white">🧠 Player Management XP: +<AnimatedNumber targetValue={report.playerManagementXpGained} duration={600} /></p>
-                )}
-              </div>
-            )}
-            {showSnippet && (
-              <div className="pt-2">
-                <h4 className="text-xl font-semibold text-yellow-200">Summary</h4>
-                <p className="italic text-gray-300 text-center text-lg p-2 border border-dashed border-gray-600 rounded bg-gray-750">
-                  "{typedSnippet}"
-                </p>
-              </div>
-            )}
+        {/* Card wrapper for styling consistency */}
+        <Card className="bg-transparent border-0 shadow-none min-h-0 flex flex-1 flex-col">
+          <CardContent className="min-h-0 overflow-y-auto flex-1 p-5 sm:p-6 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+              {/* Left Column: Album Art, Press Review & Rewards */}
+              <div className="flex flex-col items-center space-y-4">
+                <AlbumCoverArt
+                  title={report.projectTitle}
+                  genre={report.genre}
+                  artist={report.assignedPerson?.name || 'Studio Tycoon'}
+                  score={report.overallQualityScore}
+                  showVinylPeek={true}
+                />
 
-            <div className="pt-4">
-              {isGenerating && (
-                <div className="text-center text-amber-300/80 font-mono text-xs tracking-wider animate-pulse py-2">
-                  🎛️ Mastering album art & press review...
-                </div>
-              )}
-              {!isGenerating && (
-                <div className="pt-2 space-y-3 text-center flex flex-col items-center">
-                  <AlbumCoverArt
-                    title={report.projectTitle}
-                    genre={report.genre}
-                    artist={report.assignedPerson?.name || 'Studio Tycoon'}
-                    score={report.overallQualityScore}
-                    showVinylPeek={true}
-                  />
-                  {reviewText && (
-                    <div className="w-full max-w-lg p-3.5 bg-slate-900/90 border border-slate-700/80 rounded-lg shadow-inner">
-                      <p className="text-sm text-slate-200 italic leading-relaxed">"{reviewText}"</p>
+                {/* Press Critique */}
+                <div className="w-full max-w-sm">
+                  {isGenerating ? (
+                    <div className="text-center text-amber-300/80 font-mono text-xs tracking-wider animate-pulse py-2">
+                      🎛️ Mastering album art & press review...
+                    </div>
+                  ) : (
+                    <div className="w-full p-3.5 bg-slate-900/90 border border-slate-700/80 rounded-lg shadow-inner text-center">
+                      <p className="text-[10px] font-mono tracking-widest text-amber-400/80 uppercase mb-1">Press Critique</p>
+                      <p className="text-sm text-slate-200 italic leading-relaxed">
+                        "{reviewText || typedSnippet || report.reviewSnippet}"
+                      </p>
                     </div>
                   )}
                 </div>
-              )}
+
+                {/* Rewards */}
+                {showRewards && (
+                  <div className="w-full max-w-sm pt-2 space-y-1 text-center bg-slate-900/70 border border-amber-500/30 rounded-lg p-3 shadow">
+                    <h4 className="text-xl font-semibold text-yellow-200">Rewards</h4>
+                    <p className="text-lg text-white">💰 Money: $<AnimatedNumber targetValue={report.moneyGained} duration={600} /></p>
+                    <p className="text-lg text-white">🌟 Reputation: +<AnimatedNumber targetValue={report.reputationGained} duration={600} /></p>
+                    {report.assignedPerson.type === 'staff' && report.playerManagementXpGained > 0 && (
+                      <p className="text-lg text-white">🧠 Player Management XP: +<AnimatedNumber targetValue={report.playerManagementXpGained} duration={600} /></p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Right Column: Overall Quality & Skill Progression */}
+              <div className="space-y-4">
+                {showOverallQuality && (
+                  <div className="p-3 bg-slate-900/80 border border-yellow-500/40 rounded-lg shadow text-center">
+                    <h3 className="text-2xl font-bold text-center text-yellow-300 mb-1">
+                      Overall Quality: <AnimatedNumber targetValue={report.overallQualityScore} duration={1000} className="text-3xl" /> / 100
+                    </h3>
+                    <Progress value={animatedOverallQualityValue} className="h-5 bg-gray-700 [&>*]:bg-green-500 transition-all duration-300" />
+                  </div>
+                )}
+
+                {report.skillBreakdown.length > 0 && (
+                  <div className="bg-slate-950/60 border border-gray-800/80 rounded-lg p-3 space-y-2">
+                    <h4 className="text-xl font-semibold text-yellow-200 mb-2">Skill Progression ({report.assignedPerson.name})</h4>
+                    <ul className="space-y-2">
+                      {report.skillBreakdown.map((skillDetail, index) => (
+                        <SkillDisplay 
+                          key={skillDetail.skillName} 
+                          skillDetail={skillDetail}
+                          startAnimation={currentSkillIndex === index}
+                          onAnimationComplete={handleNextAnimation} 
+                        />
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             </div>
           </CardContent>
           {rankStamp && (
@@ -410,9 +429,9 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
               onDone={() => setRankStamp(null)}
             />
           )}
-          <CardFooter className="pt-4">
+          <CardFooter className="shrink-0 p-4 border-t border-gray-800/80 bg-gray-950/90">
             {showContinueButton ? (
-              <Button disabled={isGenerating}
+              <Button
                 onClick={() => {
                   // Play sound before calling onClose, as onClose might unmount the component
                   gameAudio.playSound('button_click', 'sfx'); 

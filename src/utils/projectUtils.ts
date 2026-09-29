@@ -14,6 +14,47 @@ const clientTypes = ['Independent', 'Record Label', 'Commercial', 'Streaming'] a
 // Early-game project templates (grounded names)
 const earlyGameTemplates = [
   {
+    titleTemplates: ['Bedroom Beat Session', 'First Synth Single', 'Club Demo'],
+    genre: 'Electronic',
+    clientType: 'Independent',
+    difficulty: 2,
+    baseStages: [
+      { stageName: 'Beat Programming', workUnitsBase: 7, focusAreas: ['layering', 'performance'] },
+      { stageName: 'Synth Tracking', workUnitsBase: 8, focusAreas: ['soundCapture', 'layering'] },
+      { stageName: 'Rough Mix', workUnitsBase: 6, focusAreas: ['layering', 'soundCapture'] }
+    ],
+    basePayout: 320,
+    baseRep: 3,
+    baseDuration: 4
+  },
+  {
+    titleTemplates: ['Bedroom Pop Single', 'Indie Chorus Session', 'First Release'],
+    genre: 'Indie Pop',
+    clientType: 'Independent',
+    difficulty: 2,
+    baseStages: [
+      { stageName: 'Vocal & Guitar Takes', workUnitsBase: 7, focusAreas: ['performance', 'soundCapture'] },
+      { stageName: 'Layer the Hook', workUnitsBase: 8, focusAreas: ['layering', 'performance'] },
+      { stageName: 'Streaming Master', workUnitsBase: 6, focusAreas: ['soundCapture', 'layering'] }
+    ],
+    basePayout: 330,
+    baseRep: 3,
+    baseDuration: 4
+  },
+  {
+    titleTemplates: ['Late Night Lo-fi', 'Study Beats EP', 'Tape Hiss Sessions'],
+    genre: 'Lo-fi',
+    clientType: 'Independent',
+    difficulty: 1,
+    baseStages: [
+      { stageName: 'Sample & Texture', workUnitsBase: 6, focusAreas: ['layering', 'performance'] },
+      { stageName: 'Warm Mix', workUnitsBase: 7, focusAreas: ['soundCapture', 'layering'] }
+    ],
+    basePayout: 260,
+    baseRep: 2,
+    baseDuration: 3
+  },
+  {
     titleTemplates: ['Local Band Demo', 'Garage Band Recording', 'Indie Demo Session'],
     genre: 'Rock',
     clientType: 'Independent',

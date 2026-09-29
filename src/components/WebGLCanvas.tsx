@@ -46,6 +46,16 @@ const DEFAULT_STATE: StudioSceneState = {
   roomTier: 1,
 };
 
+export const IDLE_HINT_DELAY_MS = 8_000;
+
+export const getIdleHintTarget = (
+  hasActiveProject: boolean,
+  idleMs: number,
+): 'phone' | 'console' | null => {
+  if (idleMs < IDLE_HINT_DELAY_MS) return null;
+  return hasActiveProject ? 'console' : 'phone';
+};
+
 /* ---------------------------------------------------------------------------
  * Isometric helpers
  * ------------------------------------------------------------------------- */
@@ -123,12 +133,88 @@ export const getStudioSignage = (eraId?: string, milestonesCount = 0): string =>
   return `${grade.label} · ${getStudioTierName(tier)}`;
 };
 
+export interface ConsoleProfile {
+  tier: number;
+  channels: number;
+  displays: 0 | 1 | 2;
+  outboardUnits: number;
+  finish: number;
+  trim: number;
+  leatherRest: number;
+  sideCheeks: number;
+}
+
+/** Visible progression from a compact valve-era desk to a full mastering console. */
+export const getConsoleProfile = (tier: number): ConsoleProfile => {
+  const t = clampTier(tier);
+  switch (t) {
+    case 1: // Home Studio: Warm retro wood chassis & compact 4-ch valve desk
+      return {
+        tier: 1,
+        channels: 4,
+        displays: 0,
+        outboardUnits: 1,
+        finish: 0x4a3627,
+        trim: 0x735138,
+        leatherRest: 0x2e1f16,
+        sideCheeks: 0x5c3d28,
+      };
+    case 2: // Project Studio: Classic 70s/80s analog slate console
+      return {
+        tier: 2,
+        channels: 8,
+        displays: 1,
+        outboardUnits: 2,
+        finish: 0x3d4554,
+        trim: 0x576378,
+        leatherRest: 0x1f232b,
+        sideCheeks: 0x453123,
+      };
+    case 3: // Commercial Facility: British console blue-grey (SSL/Neve)
+      return {
+        tier: 3,
+        channels: 12,
+        displays: 1,
+        outboardUnits: 3,
+        finish: 0x2c3b4d,
+        trim: 0x4d6482,
+        leatherRest: 0x18202b,
+        sideCheeks: 0x3b2a1e,
+      };
+    case 4: // Pro Complex: Large-format matte charcoal & precision anodized aluminum
+      return {
+        tier: 4,
+        channels: 16,
+        displays: 2,
+        outboardUnits: 4,
+        finish: 0x222730,
+        trim: 0x464e5e,
+        leatherRest: 0x14171d,
+        sideCheeks: 0x2e231b,
+      };
+    case 5: // World-Class: Flagship custom master console with brushed gold accents
+    default:
+      return {
+        tier: 5,
+        channels: 20,
+        displays: 2,
+        outboardUnits: 5,
+        finish: 0x1a1e26,
+        trim: 0xd4a553,
+        leatherRest: 0x101318,
+        sideCheeks: 0x421d12,
+      };
+  }
+};
+
 /** An animatable bar (VU meters, TV equalizer) with a fixed baseline */
 interface AnimBar {
   g: Graphics;
   x: number;
   y: number;
   color: number;
+  width?: number;
+  range?: number;
 }
 
 /** Per-build dynamic refs the ticker animates */
@@ -140,6 +226,7 @@ interface SceneRefs {
   staffFigures: { fig: Container; baseY: number }[];
   nightTintLayer: Container | null;
   hoverGlows: Record<string, Graphics>;
+  idleHints: Partial<Record<'phone' | 'console', Graphics>>;
 }
 
 interface BuiltScene {
@@ -196,6 +283,7 @@ const buildScene = (
     staffFigures: [],
     nightTintLayer: null,
     hoverGlows: {},
+    idleHints: {},
   };
 
   // Era colour grade + studio tier drive the room's look (beads goj.3 / ifx.3)
@@ -412,79 +500,288 @@ const buildScene = (
 
   /* ---- Mixing console (center) ---------------------------------------- */
   const deskWrap = new Container();
-  const p1 = iso(3.1, 3.4); // back-left
-  const p2 = iso(5.9, 3.4); // back-right
-  const p3 = iso(5.9, 4.8); // front-right
-  const p4 = iso(3.1, 4.8); // front-left
   const deskH = 40;
+  const consoleProfile = getConsoleProfile(tier);
+
+  // Isometric point on the desk (or lifted above it)
+  const dPt = (gx: number, gy: number, lift = deskH) => {
+    const p = iso(gx, gy);
+    return { x: p.x, y: p.y - lift };
+  };
+
+  const p1 = dPt(3.1, 3.4); // back-left
+  const p2 = dPt(5.9, 3.4); // back-right
+  const p3 = dPt(5.9, 4.8); // front-right
+  const p4 = dPt(3.1, 4.8); // front-left
+
   const desk = new Graphics();
-  desk
-    .poly([p1.x, p1.y - deskH, p2.x, p2.y - deskH, p3.x, p3.y - deskH, p4.x, p4.y - deskH])
-    .fill(COLORS.deskTop);
-  desk.poly([p4.x, p4.y - deskH, p3.x, p3.y - deskH, p3.x, p3.y, p4.x, p4.y]).fill(COLORS.deskSide);
-  desk.poly([p2.x, p2.y - deskH, p3.x, p3.y - deskH, p3.x, p3.y, p2.x, p2.y]).fill(COLORS.deskRight);
+  // Main desk surface
+  desk.poly([p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p4.x, p4.y]).fill(consoleProfile.finish);
+  // Front face (down-left)
+  desk.poly([p4.x, p4.y, p3.x, p3.y, p3.x, p3.y + deskH, p4.x, p4.y + deskH]).fill(COLORS.deskSide);
+  // Right face (down-right)
+  desk.poly([p2.x, p2.y, p3.x, p3.y, p3.x, p3.y + deskH, p2.x, p2.y + deskH]).fill(COLORS.deskRight);
+
+  // Padded leather armrest along the front edge
+  const a1 = dPt(3.18, 4.68);
+  const a2 = dPt(5.82, 4.68);
+  const a3 = dPt(5.82, 4.80);
+  const a4 = dPt(3.18, 4.80);
+  desk.poly([a1.x, a1.y, a2.x, a2.y, a3.x, a3.y, a4.x, a4.y]).fill(consoleProfile.leatherRest);
+  desk.poly([a4.x, a4.y, a3.x, a3.y, a3.x, a3.y + 4, a4.x, a4.y + 4]).fill(0x0e1116);
+
+  // Hardwood side cheek end-panels
+  const lCheekTop = [dPt(3.10, 3.4, deskH + 2), dPt(3.18, 3.4, deskH + 2), dPt(3.18, 4.8, deskH + 2), dPt(3.10, 4.8, deskH + 2)];
+  desk.poly([lCheekTop[0].x, lCheekTop[0].y, lCheekTop[1].x, lCheekTop[1].y, lCheekTop[2].x, lCheekTop[2].y, lCheekTop[3].x, lCheekTop[3].y]).fill(consoleProfile.sideCheeks);
+  desk.poly([lCheekTop[3].x, lCheekTop[3].y, lCheekTop[2].x, lCheekTop[2].y, lCheekTop[2].x, lCheekTop[2].y + deskH + 2, lCheekTop[3].x, lCheekTop[3].y + deskH + 2]).fill(0x1a120b);
+
+  const rCheekTop = [dPt(5.82, 3.4, deskH + 2), dPt(5.90, 3.4, deskH + 2), dPt(5.90, 4.8, deskH + 2), dPt(5.82, 4.8, deskH + 2)];
+  desk.poly([rCheekTop[0].x, rCheekTop[0].y, rCheekTop[1].x, rCheekTop[1].y, rCheekTop[2].x, rCheekTop[2].y, rCheekTop[3].x, rCheekTop[3].y]).fill(consoleProfile.sideCheeks);
+  desk.poly([rCheekTop[1].x, rCheekTop[1].y, rCheekTop[2].x, rCheekTop[2].y, rCheekTop[2].x, rCheekTop[2].y + deskH + 2, rCheekTop[1].x, rCheekTop[1].y + deskH + 2]).fill(0x130d08);
+
+  // Tier 5 gold pinstripe inlay
+  if (tier >= 5) {
+    const goldPinstripe = [dPt(3.18, 4.67, deskH + 1), dPt(5.82, 4.67, deskH + 1), dPt(5.82, 4.69, deskH + 1), dPt(3.18, 4.69, deskH + 1)];
+    desk.poly([goldPinstripe[0].x, goldPinstripe[0].y, goldPinstripe[1].x, goldPinstripe[1].y, goldPinstripe[2].x, goldPinstripe[2].y, goldPinstripe[3].x, goldPinstripe[3].y]).fill(0xd4a553);
+  }
   deskWrap.addChild(desk);
 
-  // Two studio monitors sitting on the desk
-  const deskCx = (p1.x + p3.x) / 2;
-  const deskCy = (p1.y + p3.y) / 2 - deskH;
-  const monitors = new Graphics();
-  monitors.rect(deskCx - 44, deskCy - 30, 36, 30).fill(0x141a26);
-  monitors.rect(deskCx - 44, deskCy - 30, 36, 30).stroke({ width: 3, color: 0x0d111a });
-  monitors.rect(deskCx + 8, deskCy - 30, 36, 30).fill(0x141a26);
-  monitors.rect(deskCx + 8, deskCy - 30, 36, 30).stroke({ width: 3, color: 0x0d111a });
-  monitors.rect(deskCx - 41, deskCy - 27, 30, 24).fill(0x2f6fb3);
-  monitors.rect(deskCx + 11, deskCy - 27, 30, 24).fill(0x3f8f6f);
-  // A pair of near-field speakers and screen tracks make this read as a console.
-  for (const sx of [deskCx - 66, deskCx + 49]) {
-    monitors.roundRect(sx, deskCy - 34, 19, 36, 2).fill(0x171c27);
-    monitors.roundRect(sx, deskCy - 34, 19, 36, 2).stroke({ width: 2, color: 0x485466 });
-    monitors.circle(sx + 9.5, deskCy - 24, 4).fill(0x708397);
-    monitors.circle(sx + 9.5, deskCy - 10, 6).fill(0x566b7c);
-    monitors.circle(sx + 9.5, deskCy - 10, 3).fill(0x1d2734);
-  }
-  for (let i = 0; i < 5; i++) {
-    monitors.rect(deskCx - 38 + i * 5, deskCy - 15 - (i % 3) * 3, 3, 7 + (i % 3) * 3)
-      .fill({ color: 0xb8dcf6, alpha: .62 });
-    monitors.rect(deskCx + 14 + i * 5, deskCy - 16, 3, 10)
-      .fill({ color: grade.accent, alpha: .6 });
-  }
-  deskWrap.addChild(monitors);
+  // Meter Bridge (angled bridge at back of desk)
+  const bridgeH = 14;
+  const bridgeG = new Graphics();
+  const mbTop = [
+    dPt(3.22, 3.42, deskH + bridgeH),
+    dPt(5.42, 3.42, deskH + bridgeH),
+    dPt(5.42, 3.64, deskH + bridgeH),
+    dPt(3.22, 3.64, deskH + bridgeH),
+  ];
+  bridgeG.poly([mbTop[0].x, mbTop[0].y, mbTop[1].x, mbTop[1].y, mbTop[2].x, mbTop[2].y, mbTop[3].x, mbTop[3].y]).fill(0x222834);
+  const mbFront = [
+    mbTop[3],
+    mbTop[2],
+    dPt(5.42, 3.68, deskH),
+    dPt(3.22, 3.68, deskH),
+  ];
+  bridgeG.poly([mbFront[0].x, mbFront[0].y, mbFront[1].x, mbFront[1].y, mbFront[2].x, mbFront[2].y, mbFront[3].x, mbFront[3].y]).fill(0x141820);
+  bridgeG.poly([mbTop[0].x, mbTop[0].y, mbTop[1].x, mbTop[1].y, mbTop[2].x, mbTop[2].y, mbTop[3].x, mbTop[3].y]).stroke({ width: 1, color: consoleProfile.trim });
 
-  // Fader strip along the front edge of the desk (animated every frame)
-  for (let i = 0; i < 8; i++) {
-    const t = (i + 0.5) / 8;
-    const vx = p4.x + (p3.x - p4.x) * t;
-    const vy = p4.y + (p3.y - p4.y) * t - deskH;
+  // VU Meters on the Meter Bridge face
+  const numMeters = Math.min(consoleProfile.channels, 12);
+  for (let i = 0; i < numMeters; i++) {
+    const mgx = 3.30 + (i + 0.5) / numMeters * (5.34 - 3.30);
+    const mBase = dPt(mgx, 3.68, deskH + 1);
+    const mTopPt = dPt(mgx, 3.64, deskH + bridgeH - 1);
+    const slotW = 3.5;
+    if (tier === 1) {
+      // Vintage amber backlit dial
+      bridgeG.rect(mBase.x - slotW / 2, mTopPt.y, slotW, mBase.y - mTopPt.y).fill(0xffeaa7);
+      bridgeG.rect(mBase.x - slotW / 2, mTopPt.y, slotW, mBase.y - mTopPt.y).stroke({ width: 0.5, color: 0x3d3122 });
+      // Needle tick
+      bridgeG.rect(mBase.x - 0.5, mTopPt.y + 2, 1, mBase.y - mTopPt.y - 3).fill(0x8a2323);
+    } else {
+      // Dark LED ladder slot
+      bridgeG.rect(mBase.x - slotW / 2, mTopPt.y, slotW, mBase.y - mTopPt.y).fill(0x0c0f14);
+    }
     const bar = new Graphics();
     deskWrap.addChild(bar);
-    refs.vuBars.push({ g: bar, x: vx, y: vy, color: COLORS.gear[i % COLORS.gear.length] });
+    refs.vuBars.push({
+      g: bar,
+      x: mBase.x,
+      y: mBase.y,
+      color: tier === 1 ? 0xcc3333 : COLORS.gear[i % COLORS.gear.length],
+      width: slotW,
+      range: 9,
+    });
   }
 
+  // DAW Displays
+  if (consoleProfile.displays === 1) {
+    // 1 Central Display
+    const scL = dPt(4.02, 3.40, deskH + bridgeH + 2);
+    const scR = dPt(4.62, 3.40, deskH + bridgeH + 2);
+    const dispW = scR.x - scL.x;
+    const dispH = 24;
+    // Display frame
+    bridgeG.roundRect(scL.x, scL.y - dispH, dispW, dispH, 2).fill(0x0f141d);
+    bridgeG.roundRect(scL.x, scL.y - dispH, dispW, dispH, 2).stroke({ width: 1.5, color: 0x475569 });
+    // Screen contents: glowing DAW tracks
+    bridgeG.rect(scL.x + 2, scL.y - dispH + 2, dispW - 4, dispH - 4).fill(0x0a1622);
+    for (let track = 0; track < 3; track++) {
+      const trackColors = [0x38bdf8, 0x4ade80, 0xfbbf24];
+      bridgeG.rect(scL.x + 5, scL.y - dispH + 4 + track * 6, dispW - 10 - (track % 2) * 6, 3).fill({ color: trackColors[track], alpha: 0.85 });
+    }
+    // Stand mount
+    bridgeG.rect(scL.x + dispW / 2 - 2, scL.y, 4, 3).fill(0x334155);
+  } else if (consoleProfile.displays === 2) {
+    // 2 Displays
+    for (let d = 0; d < 2; d++) {
+      const gx1 = d === 0 ? 3.65 : 4.40;
+      const gx2 = d === 0 ? 4.25 : 5.00;
+      const scL = dPt(gx1, 3.40, deskH + bridgeH + 2);
+      const scR = dPt(gx2, 3.40, deskH + bridgeH + 2);
+      const dispW = scR.x - scL.x;
+      const dispH = 24;
+      bridgeG.roundRect(scL.x, scL.y - dispH, dispW, dispH, 2).fill(0x0f141d);
+      bridgeG.roundRect(scL.x, scL.y - dispH, dispW, dispH, 2).stroke({ width: 1.5, color: 0x475569 });
+      bridgeG.rect(scL.x + 2, scL.y - dispH + 2, dispW - 4, dispH - 4).fill(d === 0 ? 0x091b29 : 0x141026);
+      for (let track = 0; track < 3; track++) {
+        const c = d === 0 ? [0x38bdf8, 0x4ade80, 0xfbbf24][track] : [0xa855f7, 0xec4899, 0x06b6d4][track];
+        bridgeG.rect(scL.x + 4, scL.y - dispH + 4 + track * 6, dispW - 8 - (track * 3), 3).fill({ color: c, alpha: 0.82 });
+      }
+      bridgeG.rect(scL.x + dispW / 2 - 2, scL.y, 4, 3).fill(0x334155);
+    }
+  }
+
+  // Near-field studio monitors (speakers)
+  if (tier === 1) {
+    // 1 compact cube Auratone speaker on left
+    const spL = dPt(3.22, 3.46, deskH + bridgeH + 1);
+    bridgeG.roundRect(spL.x - 7, spL.y - 14, 14, 14, 1).fill(0x3e2c1e);
+    bridgeG.roundRect(spL.x - 7, spL.y - 14, 14, 14, 1).stroke({ width: 1, color: 0x5a432f });
+    bridgeG.circle(spL.x, spL.y - 7, 4.5).fill(0x1f1710);
+    bridgeG.circle(spL.x, spL.y - 7, 2).fill(0x6e5238);
+  } else {
+    // Pair of studio monitors (Yamaha NS-10 style with white cones)
+    const speakerCoords = [dPt(3.20, 3.46, deskH + bridgeH + 1), dPt(5.34, 3.46, deskH + bridgeH + 1)];
+    for (const sp of speakerCoords) {
+      bridgeG.roundRect(sp.x - 8, sp.y - 20, 16, 20, 2).fill(0x181c24);
+      bridgeG.roundRect(sp.x - 8, sp.y - 20, 16, 20, 2).stroke({ width: 1.5, color: 0x3d4756 });
+      // Tweeter
+      bridgeG.circle(sp.x, sp.y - 15, 2).fill(0x475569);
+      // Woofer with iconic white cone
+      bridgeG.circle(sp.x, sp.y - 7, 5).fill(0xeeeae1);
+      bridgeG.circle(sp.x, sp.y - 7, 2).fill(0x252c38);
+    }
+  }
+  deskWrap.addChild(bridgeG);
+
+  // Channel Strips on desk surface
+  const channelG = new Graphics();
+  for (let i = 0; i < consoleProfile.channels; i++) {
+    const cgx = 3.30 + (i + 0.5) / consoleProfile.channels * (5.22 - 3.30);
+    // Knobs (gain, 3-band EQ, pan)
+    const gainPt = dPt(cgx, 3.82);
+    channelG.circle(gainPt.x, gainPt.y, 1.9).fill(i % 2 ? 0xd93838 : 0x3b82f6);
+    const eqHPt = dPt(cgx, 3.96);
+    channelG.circle(eqHPt.x, eqHPt.y, 1.6).fill(0x2dd4bf);
+    const eqMPt = dPt(cgx, 4.08);
+    channelG.circle(eqMPt.x, eqMPt.y, 1.6).fill(0xf59e0b);
+    const eqLPt = dPt(cgx, 4.20);
+    channelG.circle(eqLPt.x, eqLPt.y, 1.6).fill(0xa855f7);
+    const panPt = dPt(cgx, 4.32);
+    channelG.circle(panPt.x, panPt.y, 1.5).fill(0xd1d5db);
+
+    // Solo/Mute indicator dots
+    const soloPt = dPt(cgx - 0.02, 4.40);
+    channelG.circle(soloPt.x, soloPt.y, 0.9).fill(0x22c55e);
+    const mutePt = dPt(cgx + 0.02, 4.40);
+    channelG.circle(mutePt.x, mutePt.y, 0.9).fill(0xef4444);
+
+    // Fader groove line along isometric depth
+    const fStart = dPt(cgx, 4.46);
+    const fEnd = dPt(cgx, 4.65);
+    channelG.poly([fStart.x - 0.8, fStart.y, fEnd.x - 0.8, fEnd.y, fEnd.x + 0.8, fEnd.y, fStart.x + 0.8, fStart.y]).fill(0x10141a);
+
+    // Fader cap (metallic slider)
+    const fGy = 4.49 + ((i * 7) % 5) * 0.032;
+    const fCapPt = dPt(cgx, fGy);
+    channelG.roundRect(fCapPt.x - 2.5, fCapPt.y - 1.5, 5, 3, 0.5).fill(0xe5e7eb);
+    channelG.rect(fCapPt.x - 0.5, fCapPt.y - 1.5, 1, 3).fill(0x1f2937);
+  }
+
+  // Master Section on right side
+  const masterFaderL = dPt(5.32, 4.57);
+  const masterFaderR = dPt(5.40, 4.57);
+  channelG.roundRect(masterFaderL.x - 2.5, masterFaderL.y - 1.5, 5, 3, 0.5).fill(0xef4444);
+  channelG.roundRect(masterFaderR.x - 2.5, masterFaderR.y - 1.5, 5, 3, 0.5).fill(0xef4444);
+  // Big Master Volume Knob
+  const masterVol = dPt(5.36, 4.12);
+  channelG.circle(masterVol.x, masterVol.y, 3.5).fill(0xd4d8e2);
+  channelG.circle(masterVol.x, masterVol.y, 1.2).fill(0x475569);
+
+  // Outboard Gear Rack / Tape Machine on far right
+  if (tier === 1) {
+    // Vintage reel-to-reel tape recorder
+    const reel1 = dPt(5.62, 4.22);
+    const reel2 = dPt(5.72, 4.42);
+    channelG.roundRect(reel1.x - 10, reel1.y - 8, 24, 26, 2).fill(0x283142);
+    channelG.roundRect(reel1.x - 10, reel1.y - 8, 24, 26, 2).stroke({ width: 1, color: 0x4b586e });
+    // Reels
+    channelG.circle(reel1.x - 2, reel1.y + 1, 5).fill(0x718096);
+    channelG.circle(reel1.x - 2, reel1.y + 1, 2).fill(0x1a202c);
+    channelG.circle(reel2.x - 2, reel2.y + 1, 5).fill(0x718096);
+    channelG.circle(reel2.x - 2, reel2.y + 1, 2).fill(0x1a202c);
+  } else {
+    // Outboard Rack modules
+    for (let u = 0; u < consoleProfile.outboardUnits; u++) {
+      const uGy1 = 4.02 + u * (0.62 / consoleProfile.outboardUnits);
+      const uGy2 = uGy1 + 0.62 / consoleProfile.outboardUnits * 0.85;
+      const r1 = dPt(5.54, uGy1);
+      const r2 = dPt(5.80, uGy1);
+      const r3 = dPt(5.80, uGy2);
+      const r4 = dPt(5.54, uGy2);
+      channelG.poly([r1.x, r1.y, r2.x, r2.y, r3.x, r3.y, r4.x, r4.y]).fill(0x1e2430);
+      channelG.poly([r1.x, r1.y, r2.x, r2.y, r3.x, r3.y, r4.x, r4.y]).stroke({ width: 0.8, color: 0x475569 });
+      // Status LEDs on rack unit
+      const ledPt = dPt(5.58, (uGy1 + uGy2) / 2);
+      channelG.circle(ledPt.x, ledPt.y, 1.2).fill(u % 2 === 0 ? 0x22c55e : 0xf59e0b);
+      const meterPt = dPt(5.66, (uGy1 + uGy2) / 2);
+      channelG.rect(meterPt.x, meterPt.y - 1, 6, 2).fill(0x38bdf8);
+    }
+  }
+  deskWrap.addChild(channelG);
+
+  // Desk interaction hit area and hover glow
   const deskHit = new Graphics();
-  deskHit.poly([p1.x, p1.y - deskH - 55, p2.x, p2.y - deskH - 55, p3.x, p3.y, p4.x, p4.y]).fill(0xffffff);
+  deskHit.poly([p1.x, p1.y - bridgeH - 18, p2.x, p2.y - bridgeH - 18, p3.x, p3.y + 4, p4.x, p4.y + 4]).fill(0xffffff);
   addHotspot(root, 'console', deskHit, deskWrap, refs, onSelect);
   refs.hoverGlows['console']
-    ?.poly([p1.x, p1.y - deskH - 55, p2.x, p2.y - deskH - 55, p3.x, p3.y, p4.x, p4.y])
+    ?.poly([p1.x, p1.y - bridgeH - 18, p2.x, p2.y - bridgeH - 18, p3.x, p3.y + 4, p4.x, p4.y + 4])
     .stroke({ width: 3, color: 0x7bd389 });
+
+  const consoleHint = new Graphics();
+  consoleHint
+    .poly([p1.x, p1.y - bridgeH - 20, p2.x, p2.y - bridgeH - 20, p3.x, p3.y + 6, p4.x, p4.y + 6])
+    .stroke({ width: 3.5, color: grade.accent, alpha: 0.95 });
+  consoleHint.alpha = 0;
+  consoleHint.eventMode = 'none';
+  refs.idleHints.console = consoleHint;
+  root.addChild(consoleHint);
 
   /* ---- Studio phone (on the desk corner) ------------------------------ */
   const phoneWrap = new Container();
-  const pPos = iso(5.6, 3.6);
+  const pPos = dPt(5.66, 3.58, deskH);
   const phone = new Graphics();
-  phone.rect(pPos.x - 10, pPos.y - deskH - 8, 20, 12).fill(0xd94f4f);
-  phone.rect(pPos.x - 7, pPos.y - deskH - 5, 14, 6).fill(0x8f2f2f);
+  // Isometric base quad for phone
+  const ph1 = dPt(5.55, 3.48, deskH);
+  const ph2 = dPt(5.77, 3.48, deskH);
+  const ph3 = dPt(5.77, 3.68, deskH);
+  const ph4 = dPt(5.55, 3.68, deskH);
+  phone.poly([ph1.x, ph1.y, ph2.x, ph2.y, ph3.x, ph3.y, ph4.x, ph4.y]).fill(0xd94f4f);
+  phone.poly([ph4.x, ph4.y, ph3.x, ph3.y, ph3.x, ph3.y + 5, ph4.x, ph4.y + 5]).fill(0x8f2f2f);
+  // Phone receiver handset
+  phone.roundRect(pPos.x - 7, pPos.y - 7, 14, 4, 1.5).fill(0x3b1515);
   phoneWrap.addChild(phone);
+
   const ring = new Graphics();
-  ring.circle(pPos.x, pPos.y - deskH - 2, 16).stroke({ width: 2, color: 0xffd166, alpha: 0.9 });
+  ring.position.set(pPos.x, pPos.y - 3);
+  ring.ellipse(0, 0, 18, 9).stroke({ width: 2, color: 0xffd166, alpha: 0.9 });
   refs.phoneRing = ring;
   phoneWrap.addChild(ring);
+
   const phoneHit = new Graphics();
-  phoneHit.circle(pPos.x, pPos.y - deskH - 2, 26).fill(0xffffff);
+  phoneHit.ellipse(pPos.x, pPos.y - 3, 24, 14).fill(0xffffff);
   addHotspot(root, 'phone', phoneHit, phoneWrap, refs, onSelect);
   refs.hoverGlows['phone']
-    ?.circle(pPos.x, pPos.y - deskH - 2, 22)
+    ?.ellipse(pPos.x, pPos.y - 3, 22, 12)
     .stroke({ width: 3, color: 0xffd166 });
+
+  const phoneHint = new Graphics();
+  phoneHint.ellipse(pPos.x, pPos.y - 3, 24, 13).stroke({ width: 3.5, color: 0xffd166, alpha: 0.95 });
+  phoneHint.alpha = 0;
+  phoneHint.eventMode = 'none';
+  refs.idleHints.phone = phoneHint;
+  root.addChild(phoneHint);
 
   /* ---- Staff / artist figures on the floor ---------------------------- */
   const spots = [
@@ -624,6 +921,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   const gestureRef = useRef(new Map<number, { x: number; y: number }>());
   const suppressTapRef = useRef(false);
   const gestureMidpointRef = useRef<{ x: number; y: number } | null>(null);
+  const lastCanvasInputRef = useRef(0);
 
   // Keep the latest props in refs so the ticker/callbacks never go stale
   useEffect(() => {
@@ -680,6 +978,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     let detachInteractions: (() => void) | undefined;
     let gestureDistance: number | null = null;
     let lastGestureScale = 1;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const MIN_ZOOM = 0.75;
     const MAX_ZOOM = 2.6;
@@ -757,11 +1056,20 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         lastH = app.screen.height;
         rebuild();
 
+        const markCanvasInput = () => {
+          lastCanvasInputRef.current = performance.now();
+          const hints = sceneRef.current?.refs.idleHints;
+          if (hints?.phone) hints.phone.alpha = 0;
+          if (hints?.console) hints.console.alpha = 0;
+        };
+        markCanvasInput();
+
         const midpoint = () => {
           const pointers = [...gestureRef.current.values()];
           return { x: (pointers[0].x + pointers[1].x) / 2, y: (pointers[0].y + pointers[1].y) / 2 };
         };
         const onPointerDown = (event: PointerEvent) => {
+          markCanvasInput();
           if (gestureRef.current.size === 0) suppressTapRef.current = false;
           gestureRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
           if (gestureRef.current.size === 2) {
@@ -777,6 +1085,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           }
         };
         const onPointerMove = (event: PointerEvent) => {
+          markCanvasInput();
           if (!gestureRef.current.has(event.pointerId)) return;
           gestureRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
           if (gestureRef.current.size !== 2) return;
@@ -808,6 +1117,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           }
         };
         const onWheel = (event: WheelEvent) => {
+          markCanvasInput();
           event.preventDefault();
           if (event.ctrlKey) {
             // Trackpad pinch-to-zoom (Chrome / Safari / Firefox on Mac/Win send wheel with ctrlKey)
@@ -822,10 +1132,12 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
 
         // Safari native gesture events (macOS trackpad pinch)
         const onGestureStart = (e: Event) => {
+          markCanvasInput();
           e.preventDefault();
           lastGestureScale = 1;
         };
         const onGestureChange = (e: Event) => {
+          markCanvasInput();
           e.preventDefault();
           const gesture = e as Event & { scale: number; clientX: number; clientY: number };
           const currentScale = gesture.scale || 1;
@@ -839,6 +1151,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         };
 
         const onDblClick = (e: MouseEvent) => {
+          markCanvasInput();
           e.preventDefault();
           cameraRef.current = { x: 0, y: 0, zoom: 1.0 };
           const sc = sceneRef.current;
@@ -879,12 +1192,27 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           if (!scene) return;
           const refs = scene.refs;
 
+          const idleMs = performance.now() - lastCanvasInputRef.current;
+          const hintedHotspot = getIdleHintTarget(s.hasActiveProject, idleMs);
+          (['phone', 'console'] as const).forEach((id) => {
+            const hint = refs.idleHints[id];
+            if (!hint) return;
+            if (id !== hintedHotspot) {
+              hint.alpha = 0;
+              return;
+            }
+            const pulse = reduceMotion ? 0.72 : 0.42 + (Math.sin(t * 3.2) + 1) * 0.24;
+            hint.alpha = pulse;
+          });
+
           // Console VU meters — amplitude follows live activity
           refs.vuBars.forEach((bar, i) => {
             const wobble = 0.5 + 0.5 * Math.sin(t * (3 + i * 0.7) + i * 1.3);
-            const h = 5 + wobble * (5 + s.activity * 30);
+            const maxRange = bar.range ?? 9;
+            const h = Math.min(maxRange, 1.5 + wobble * (1.5 + s.activity * (maxRange - 3)));
+            const width = bar.width ?? 3.5;
             bar.g.clear();
-            bar.g.rect(bar.x - 5, bar.y - h, 10, h).fill(bar.color);
+            bar.g.rect(bar.x - width / 2, bar.y - h, width, h).fill(bar.color);
           });
 
           // Charts TV equalizer

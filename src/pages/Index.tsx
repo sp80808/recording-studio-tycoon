@@ -408,6 +408,7 @@ const MusicStudioTycoon = () => {
           <GameHeader 
             gameState={gameState} 
             onOpenSettings={handleOpenSettings}
+            onAdvanceDay={handleAdvanceDayWithReview}
             triggerEraTransition={triggerEraTransition}
             className="grid-area-header"
           />

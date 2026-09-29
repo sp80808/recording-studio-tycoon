@@ -23,12 +23,12 @@
 }
 .splash-ambience { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
 .splash-ambience span { position: absolute; width: min(98vw,720px); aspect-ratio: 1; border: 1px solid #d6b8821a; border-radius: 50%; box-shadow: 0 0 100px #e8ae4310; }
-.splash-ambience span:nth-child(2) { width: min(132vw,980px); border-color: #8baae612; }
+.splash-ambience span:nth-child(2) { width: min(132vw,980px); border-color: #8baae612; animation:splash-breathe 7s ease-in-out infinite; }
 .splash-ambience span:nth-child(3) { width: min(178vw,1300px); border-color: #8baae609; }
 .splash-header { position: relative; z-index: 2; width: min(100%,1100px); display: flex; align-items: center; justify-content: space-between; }
 .splash-wordmark { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 900; letter-spacing: .24em; }
 .splash-header-muted { color: #8290ae; font-size: 10px; letter-spacing: .14em; }
-.splash-live-dot { width: 8px; height: 8px; background: #f3bb67; border-radius: 50%; box-shadow: 0 0 14px #f5c872aa; }
+.splash-live-dot { width: 8px; height: 8px; background: #f3bb67; border-radius: 50%; box-shadow: 0 0 14px #f5c872aa; animation:splash-live 2.2s ease-in-out infinite; }
 .splash-header-controls { display: flex; gap: 7px; }
 .splash-header-controls button { display: grid; place-items: center; width: 44px; height: 44px; color: #c7cfdf; border: 1px solid #afc3e13b; border-radius: 11px; background: #0b1222bd; backdrop-filter: blur(10px); transition: background .2s,color .2s; }
 .splash-header-controls button:hover { background: #26334a; color: #f5c872; }
@@ -53,6 +53,8 @@
 .splash-footer-label { flex: none; color: #f3c476; font-size: 9px; font-weight: 900; letter-spacing: .1em; }
 .splash-footer p { line-height: 1.35; }
 .splash-page button:focus-visible { outline: 2px solid #ffdb8b; outline-offset: 4px; }
+@keyframes splash-breathe { 50% { transform:scale(1.035); border-color:#f5c87224; } }
+@keyframes splash-live { 50% { opacity:.55; box-shadow:0 0 5px #f5c87266; } }
 @media(max-width:540px) {
   .splash-page { padding-inline: 16px; }
   .splash-title-group h1 strong { font-size: clamp(37px,11vw,56px); }

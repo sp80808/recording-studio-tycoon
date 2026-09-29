@@ -7,6 +7,7 @@ import { canPurchaseEquipment, addNotification, applyEquipmentEffects } from '@/
 import { playSound } from '@/utils/soundUtils';
 import { getAvailableEquipmentForYear } from '@/data/eraEquipment';
 import { withDailyTracking } from '@/utils/dailyChallenges';
+import { bestTake, takeFromRawScore } from '@/rpg/stageGrades';
 import { useStaffManagement } from '@/hooks/useStaffManagement';
 import { useProjectManagement } from '@/hooks/useProjectManagement';
 import { usePlayerProgression } from '@/hooks/usePlayerProgression';
@@ -77,7 +78,11 @@ export const useGameLogic = (
           accumulatedTPoints: prev.activeProject.accumulatedTPoints + technicalBonus,
           minigamePoints: typeof rawScore === 'number' && Number.isFinite(rawScore)
             ? Math.min(10, (prev.activeProject.minigamePoints ?? 0) + (rawScore / 1000) * 2)
-            : prev.activeProject.minigamePoints
+            : prev.activeProject.minigamePoints,
+          // Best minigame take this stage (sd3.2); reset on stage advance.
+          stageTake: typeof rawScore === 'number' && Number.isFinite(rawScore)
+            ? bestTake(prev.activeProject.stageTake, takeFromRawScore(rawScore))
+            : prev.activeProject.stageTake
         } : null,
         playerData: {
           ...prev.playerData,

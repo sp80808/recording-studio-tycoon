@@ -117,6 +117,10 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
   // Hoisted above the early return: hooks must run unconditionally (Rules of Hooks).
   const showAdvancedQueue = useFeatureFlag('advanced-production-queue');
+  const activeSynergies = React.useMemo(
+    () => gameState.activeProject ? evaluateProjectSynergies(gameState.activeProject, gameState) : [],
+    [gameState]
+  );
 
   if (!gameState.activeProject) {
     return (
@@ -160,10 +164,6 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
   // Aggregate skills of staff assigned to this project
   const assignedStaffToThisProject = gameState.hiredStaff.filter(s => s.assignedProjectId === project.id);
-  const activeSynergies = React.useMemo(() => {
-    return evaluateProjectSynergies(project, gameState);
-  }, [project, gameState]);
-
   const rankedDelegates = rankStaffForProject(
     assignedStaffToThisProject.filter(staff => staff.status === 'Working' && staff.energy > 0),
     project

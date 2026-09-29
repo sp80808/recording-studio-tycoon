@@ -1,5 +1,6 @@
 import React from 'react';
 import { EraGrade } from './EraGrade';
+import { StudioAmbientBackdrop } from './cutscenes/StudioAmbientBackdrop';
 
 interface GameLayoutProps {
   children: React.ReactNode;
@@ -12,6 +13,7 @@ export const GameLayout: React.FC<GameLayoutProps> = ({ children, eraId }) => {
       {/* Studio texture and atmosphere layers */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         {eraId && <EraGrade eraId={eraId} />}
+        {eraId && <StudioAmbientBackdrop eraId={eraId} />}
         {/* Analog hardware noise/grain texture overlay */}
         <div
           className="absolute inset-0 opacity-[0.035] mix-blend-screen pointer-events-none"

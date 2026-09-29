@@ -1,6 +1,9 @@
 import { Project, ProjectReport, ProjectReportSkillEntry, PlayerData, StaffMember, Skill } from '@/types/game';
 import { grantSkillXp } from './skillUtils'; // Assuming grantSkillXp is in skillUtils.ts
 import { createSeededRandom, pickWithRandom, randomInt } from '@/simulation/seededRandom';
+import { STAGE_GRADE_CARRY, gradeCapsProject, A_GRADE_CAP } from '@/rpg/stageGrades';
+import { gradeQuality } from '@/rpg/rankChase';
+import { settleStake } from '@/rpg/contractStakes';
 
 /**
  * Optional settlement context for real lifecycle scoring (bead ruc.1).
@@ -220,17 +223,34 @@ export const generateProjectReview = (
   );
   overallQualityScore = clamp(overallQualityScore + randomInt(rng, -5, 4), 0, 100);
 
+  // Stage grades (sd3.2): Gold/Silver carry quality forward; a skipped/rough
+  // stage caps the project at A no matter the score. Absent grades (old
+  // saves, sims) change nothing.
+  const stageGrades = project.stageGrades ?? [];
+  const stageCarry = Math.max(
+    0,
+    Math.min(12, stageGrades.reduce((sum, g) => sum + (STAGE_GRADE_CARRY[g] ?? 0), 0))
+  );
+  const bronzeCapped = stageGrades.some(gradeCapsProject);
+  overallQualityScore = clamp(overallQualityScore + stageCarry, 0, 100);
+  if (bronzeCapped) overallQualityScore = Math.min(overallQualityScore, A_GRADE_CAP);
+
+  // Contract stake (sd3.2): the booking gamble settles against the final
+  // rank. Safe (default) is a no-op by construction.
+  const finalRank = gradeQuality(overallQualityScore).rank;
+  const stakeSettle = settleStake(project.stake ?? 'safe', finalRank);
+
   // Rewards: quality x difficulty x client-match x market trend (GH #19: no single
   // project type dominates — marketMultiplier comes from genre popularity).
   const qualityMultiplier = 0.5 + (overallQualityScore / 100) * 1.5; // Ranges from 0.5 to 2.0
   const difficultyFactor = 1 + (project.difficulty - 1) * 0.08;
   const moneyGained = Math.max(
     0,
-    Math.floor(project.payoutBase * qualityMultiplier * difficultyFactor * matchMultiplier * marketMultiplier)
+    Math.floor(project.payoutBase * qualityMultiplier * difficultyFactor * matchMultiplier * marketMultiplier * stakeSettle.payoutMult)
   );
   const reputationGained = Math.max(
     0,
-    Math.floor(project.repGainBase * qualityMultiplier * matchMultiplier * marketMultiplier)
+    Math.floor(project.repGainBase * qualityMultiplier * matchMultiplier * marketMultiplier) + stakeSettle.repDelta
   );
   
   let playerManagementXpGained = 0;
@@ -307,6 +327,17 @@ export const generateProjectReview = (
     } else {
       reviewSnippet += ` ${project.clientName} will remember this session.`;
     }
+  }
+
+  // Stage + stake ledger (sd3.2): factual, one line each.
+  if (stageGrades.length > 0) {
+    reviewSnippet += ` Stage grades: ${stageGrades.join(', ')}.`;
+    if (bronzeCapped) reviewSnippet += ' A rough stage capped this project at A.';
+  }
+  if ((project.stake ?? 'safe') !== 'safe') {
+    reviewSnippet += stakeSettle.met
+      ? ` The ${project.stake} gamble paid off.`
+      : ` The ${project.stake} gamble missed its ${finalRank} bar.`;
   }
 
 

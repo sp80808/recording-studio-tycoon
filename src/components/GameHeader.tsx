@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { GameState } from '@/types/game';
 import { AnimatedCounter } from './AnimatedCounter';
-import { Maximize, Minimize, Settings, CalendarDays, Coins, Star } from 'lucide-react';
+import { Maximize, Minimize, Settings, CalendarDays, Coins, Star, Sunrise } from 'lucide-react';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import { EraProgressModal } from './modals/EraProgressModal';
 import { useTranslation } from 'react-i18next';
@@ -14,11 +14,12 @@ import { PressRipple } from './ui/PressRipple';
 interface GameHeaderProps {
   gameState: GameState;
   onOpenSettings?: () => void;
+  onAdvanceDay?: () => void;
   triggerEraTransition?: () => void;
   className?: string;
 }
 
-export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSettings, triggerEraTransition, className = '' }) => {
+export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSettings, onAdvanceDay, triggerEraTransition, className = '' }) => {
   const [showEraProgress, setShowEraProgress] = useState(false);
   const { isFullscreen, toggleFullscreen } = useFullscreen('root');
   const { t } = useTranslation();
@@ -55,6 +56,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSetting
           <span>Level {player.level} <span className="float-right">{player.xp} XP</span></span>
           <progress aria-label="Producer experience" max={Math.max(1, player.xpToNextLevel)} value={player.xp} />
         </div>
+        {onAdvanceDay && <button className="studio-dock-button studio-hud-advance" onClick={onAdvanceDay} aria-label="Rest and advance day" title="Rest and advance day"><PressRipple><Sunrise size={19} /></PressRipple></button>}
         <button className="studio-dock-button" onClick={toggleFullscreen} aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}>
           <PressRipple>{isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}</PressRipple>
         </button>

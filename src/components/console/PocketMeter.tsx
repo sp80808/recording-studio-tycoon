@@ -7,6 +7,11 @@ interface PocketMeterProps {
   className?: string;
 }
 
+export const POCKET_METER_TIMING = {
+  cycleSeconds: 2.4,
+  autoLockSeconds: 5,
+} as const;
+
 export const PocketMeter: React.FC<PocketMeterProps> = ({
   isArmed,
   onLock,
@@ -29,20 +34,32 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
     lockedRef.current = false;
     startTimeRef.current = performance.now();
 
-    // Smooth sinusoidal needle swing across 0.12 to 0.94 with cycle of ~1.2s
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const accessiblePosition = 0.775;
+      setNeedlePos(accessiblePosition);
+      currentPosRef.current = accessiblePosition;
+      const timeout = window.setTimeout(() => {
+        if (!lockedRef.current) {
+          lockedRef.current = true;
+          onLock(accessiblePosition);
+        }
+      }, POCKET_METER_TIMING.autoLockSeconds * 1000);
+      return () => window.clearTimeout(timeout);
+    }
+
+    // Deliberate two-beat sweep gives players time to read and react.
     const tick = (now: number) => {
       if (lockedRef.current) return;
       const elapsed = (now - startTimeRef.current) / 1000;
 
-      // Auto-lock fallback after 2.5s
-      if (elapsed >= 2.5) {
+      if (elapsed >= POCKET_METER_TIMING.autoLockSeconds) {
         lockedRef.current = true;
         onLock(currentPosRef.current);
         return;
       }
 
       // Smooth oscillation: center at 0.53, amplitude 0.41
-      const pos = 0.53 + 0.41 * Math.sin(elapsed * Math.PI * 1.8);
+      const pos = 0.53 + 0.41 * Math.sin((elapsed * Math.PI * 2) / POCKET_METER_TIMING.cycleSeconds);
       currentPosRef.current = Math.max(0.05, Math.min(0.98, pos));
       setNeedlePos(currentPosRef.current);
       animRef.current = requestAnimationFrame(tick);
@@ -56,6 +73,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
   }, [isArmed, onLock]);
 
   const isInPocket = needlePos >= 0.70 && needlePos <= 0.85;
+  const meterFeedback = isInPocket ? 'IN THE POCKET' : needlePos < 0.70 ? 'COMING UP' : 'TOO HOT';
 
   const handleMeterClick = () => {
     if (!isArmed || lockedRef.current) return;
@@ -98,14 +116,22 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
       {/* Meter Header Label */}
       <div className="flex justify-between items-center px-3 mb-1 text-[9px] font-mono tracking-widest text-slate-400">
         <span>TAKE CALIBRATION</span>
-        <span className={isInPocket ? 'text-amber-400 font-bold animate-pulse' : 'text-slate-500'}>
-          {isInPocket ? '⚡ IN THE POCKET' : 'RMS LEVEL'}
+        <span aria-live="polite" className={isInPocket ? 'text-amber-400 font-bold' : needlePos > 0.85 ? 'text-red-400 font-bold' : 'text-cyan-300 font-bold'}>
+          {meterFeedback}
         </span>
         <span>+4 dBu</span>
       </div>
 
       {/* Analog Faceplate */}
-      <div className="relative h-14 bg-gradient-to-b from-amber-950/20 via-slate-900 to-slate-950 border border-slate-800 rounded-[2px] overflow-hidden flex flex-col justify-between p-1.5">
+      <div
+        className="relative h-14 bg-gradient-to-b from-amber-950/20 via-slate-900 to-slate-950 border border-slate-800 rounded-[2px] overflow-hidden flex flex-col justify-between p-1.5"
+        role="meter"
+        aria-label="Take timing meter"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(needlePos * 100)}
+        aria-valuetext={`${meterFeedback}. Target is 70 to 85.`}
+      >
         {/* Arc Track / Pocket Highlight */}
         <div className="relative w-full h-4 bg-slate-800/80 rounded-[1px] overflow-hidden flex">
           {/* 0% to 50%: Normal range (cyan/slate) */}
@@ -147,7 +173,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
           e.stopPropagation();
           handleMeterClick();
         }}
-        aria-label="Work on Project - Lock Take"
+        aria-label={`Lock take. ${meterFeedback}. Target is 70 to 85.`}
         className={`w-full py-3 mt-2 font-black tracking-wider uppercase text-sm rounded-[2px] border transition-all flex items-center justify-center gap-2 active:scale-[0.98] ${
           isInPocket
             ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 border-amber-300 shadow-[0_0_18px_rgba(251,191,36,0.8)] animate-pulse'
@@ -155,7 +181,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
         }`}
       >
         <span>{isInPocket ? '🔥' : '🎯'}</span>
-        <span>{isInPocket ? 'LOCK TAKE IN THE POCKET!' : 'LOCK TAKE!'}</span>
+        <span>{isInPocket ? 'LOCK GOLD TAKE!' : needlePos < 0.70 ? 'LOW — AIM FOR GOLD' : 'HOT — AIM FOR GOLD'}</span>
       </button>
     </div>
   );
