@@ -60,4 +60,8 @@ not a full-PIXI UI. `src/pixi-ui/` panels exist but are not the main interface.
   tracking, and game-day cooldown random events wired to `advanceDay`.
 - 2026-09-27 — Stage-tied minigames (EQ match, Fader ride, Punch-in) wired to
   project quality (`minigamePoints`) and stages (`ifx.2`).
+- 2026-09-29 — **Streak Bank** (`k6e.5`): tactile combo cash-out in the transport
+  dock — tap banks the same-day streak for cash + XP; hold charges a 1.6s sweep
+  with accelerating ticks/haptics where a gold-window release pays ×1.6 and keeps
+  the streak. 48-check suite + browser smoke, zero console errors.
 

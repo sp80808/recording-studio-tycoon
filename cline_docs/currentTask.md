@@ -94,3 +94,33 @@ Finalize the v0.4.0 milestone rollout: tier-specific isometric studio progressio
      closed with the evidence comment — this also validates `p33`'s earlier closure.
    - Hand-off note: the concurrent session's `git add -A`-style commits (`dcd2bdea`,
      `2c4c0fda`) swept these fixes into history under their messages; content is safe.
+
+---
+
+## Session: k6e.5 Streak Bank — tactile combo cash-out (2026-09-29)
+
+Slice from the queued `k6e` epic ideas ("combo cash-out + collect gamble").
+Bead: `recording-studio-tycoon-k6e.5` (closed with evidence).
+
+1. **`src/rpg/streakBank.ts`** — pure math: unlock at combo 3 (preview at 2),
+   safe quote `35 + 10×level` × tier (×0.75 / ×1.0 / ×1.25 capped at combo 6),
+   flat XP `6 + 2×combo` capped at 30, release zones over a 1600 ms sweep
+   (early <68% ×0.85, **gold 68–82% ×1.6 + keeps combo**, late >82% ×0.9,
+   filled 100% ×1.0 floor — blind-timed EV 0.964 < 1.0 so patience ≥ mashing).
+2. **`src/components/StreakBankControl.tsx`** — tap-to-bank / hold-to-amplify
+   control: accelerating tick SFX, escalating gamepad haptics, zone-mapped
+   sweep bar, settle chip with `AnimatedCounter` payout, confetti + combo-up
+   sting on gold. Pointer (window-level release — the root element swaps to
+   the sweep panel mid-charge), Space/Enter, and gamepad SELECT inputs; focus
+   loss aborts penalty-free; `useReducedMotion` gates decoration, audio/haptics
+   stay live (k6e constraint).
+3. **`ActiveProject.tsx`** (surgical) — `handleStreakBank` credits
+   `money` + `playerData.xp`, resets `comboCount` unless the release was gold;
+   control mounts for the whole session (self-hides at idle combo < 2 — gating
+   on combo unmounts the settle chip before it is seen, caught by the smoke).
+4. **Validation** — `tests/streak-bank.check.ts` (48 checks: zone partition,
+   tier curve, payout bounds, EV floor, wiring/reduced-motion source asserts)
+   registered in `scripts/run-checks.sh`; `pnpm test` EXIT:0 · `pnpm build`
+   EXIT:0 · eslint clean on new/changed files · browser smoke
+   `tests/streak-bank.check.cjs` PASS: *locked→armed, STEADY HAND ×1.0 hold,
+   payout credited, combo spent, zero console errors* (`/tmp/rst-smoke-streakbank3.log`).

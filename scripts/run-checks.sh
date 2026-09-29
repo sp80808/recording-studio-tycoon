@@ -57,6 +57,10 @@ for check in game-event-bus engine-loop engine-settings graphics-postfx; do
 done
 
 
+echo "=== streak bank (k6e.5 combo cash-out) ==="
+./node_modules/.bin/esbuild tests/streak-bank.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-streak-bank.cjs --alias:@=./src >/dev/null
+node /tmp/rst-streak-bank.cjs
+
 echo "=== balance harness invariants (10 days, seed 7) ==="
 ./node_modules/.bin/esbuild src/dev/balance/run.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-balance.cjs --alias:@=./src >/dev/null
 mkdir -p /tmp/rst-balance

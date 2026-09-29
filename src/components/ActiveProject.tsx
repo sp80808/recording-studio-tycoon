@@ -15,6 +15,8 @@ import { toast } from '@/hooks/use-toast';
 import { playSound, gameAudio } from '@/utils/audioSystem'; // Updated import
 import { triggerScreenShake } from '@/utils/screenShake';
 import { evaluateTakeAccuracy, calculateTakeEnergyCost } from '@/rpg/takeEvaluation';
+import { StreakBankControl } from './StreakBankControl';
+import type { BankResult } from '@/rpg/streakBank';
 import { hasActiveChoreBuff, getActiveBuffMagnitude } from '@/simulation/choreEngine';
 import { PocketMeter } from '@/components/console/PocketMeter';
 import { StudioDutiesClipboard } from './chores/StudioDutiesClipboard';
@@ -108,6 +110,33 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
         : null,
     }));
     playSound(overdriveArmed ? 'notification.wav' : 'ui sfx/purchase-complete.mp3', 0.5);
+  };
+
+  // 🏦 Streak Bank (k6e.5): cash out the same-day take combo for instant cash
+  // + XP. Only a gold release preserves the streak; every other outcome spends
+  // it (comboCount → 0), so banking trades future output for liquidity now.
+  const handleStreakBank = (result: BankResult) => {
+    if (!gameState.activeProject) return;
+    setGameState(prev => ({
+      ...prev,
+      money: prev.money + result.cash,
+      playerData: {
+        ...prev.playerData,
+        xp: prev.playerData.xp + result.xp,
+      },
+      activeProject: prev.activeProject
+        ? {
+            ...prev.activeProject,
+            comboCount: result.keepsCombo ? prev.activeProject.comboCount : 0,
+          }
+        : null,
+    }));
+    toast({
+      title: `🏦 ${result.label}`,
+      description: `+$${result.cash} cash · +${result.xp} XP${result.keepsCombo ? ' · ⚡ streak kept!' : ''}`,
+      className: 'bg-gray-800 border-gray-600 text-white',
+      duration: 2600,
+    });
   };
 
   // Present an intervention as an optional opportunity. It never opens itself
@@ -871,6 +900,20 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   </div>
                 )}
               </div>
+
+              {/* 🏦 Streak Bank (k6e.5) — combo cash-out with hold-to-amplify.
+                  Mounted for the whole session: the control self-hides at idle
+                  combo < 2, but must STAY mounted while its settle chip shows
+                  (a spent streak is combo 0 — gating on combo would unmount the
+                  chip before the player sees the payout). */}
+              {!isProjectComplete && (
+                <StreakBankControl
+                  combo={project.comboCount ?? 0}
+                  level={gameState.playerData.level}
+                  onBank={handleStreakBank}
+                />
+              )}
+
               <div className="flex items-center gap-2">
                 <Button
                   onClick={toggleOverdrive}
