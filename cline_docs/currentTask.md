@@ -72,7 +72,25 @@ Finalize the v0.4.0 milestone rollout: tier-specific isometric studio progressio
 3. **Unblocked shared flow** — `MainGameContent.tsx` (concurrent WIP) used `useCallback`
    without importing it, which crashed the studio on mount for every validation run; added
    the missing import.
-4. **Validation caveat** — the booking-to-settlement browser smoke still times out in the
-   work-loop phase while the concurrent 49i.8 minigame-integration WIP is live; re-run
-   `tests/booking-settlement.check.cjs` once that branch of work is committed/green, then
-   close GH-65/`typ` with the passing run as evidence.
+4. **Validation complete — GH-65 / bead `typ` CLOSED (2026-09-29, settlement-fix session)**:
+   The smoke failures had two further causes after the initial hook hoist, both fixed:
+   - (a) The 49i gamepad take-shortcut `useEffect` was a **conditional hook below the early
+     return** — the whole effect was hoisted above the return with an in-effect
+     `if (!gameState.activeProject) return;` guard (also recomputing `isProjectComplete`
+     from `gameState.activeProject` above the return to kill the TDZ).
+   - (b) `sonner@1.7.4` publishes a store dismiss **inside a `useState` updater** (updater
+     side effects run during render) → React warned *"Cannot update a component while
+     rendering a different component"* during the review/reward phase. Upstream is still
+     unfixed in 2.0.8, so the package is patched via pnpm: `patches/sonner@1.7.4.patch`
+     (defer dismiss with `queueMicrotask`) registered as `patchedDependencies` in
+     `pnpm-workspace.yaml`. Note: `pnpm patch-commit` is broken on this exFAT volume
+     (hard-link staging fails with os error 45; pnpm#15395 fallback misses errno 45) — the
+     patch file was generated manually with `diff -u --label a/... b/...` and applied by a
+     plain `pnpm install`, which works fine.
+   - **Final evidence**: booking→settlement smoke **PASS with zero console errors**
+     (`PASS: splash, mobile layout, floor menu, booking, work, release, review and
+     settlement`, `/tmp/rst-smoke8.log`), `pnpm build` ✓, `pnpm test` ✓ (10 suites +
+     balance invariants, 161 PASS / 0 FAIL). GH-#65 and `recording-studio-tycoon-typ`
+     closed with the evidence comment — this also validates `p33`'s earlier closure.
+   - Hand-off note: the concurrent session's `git add -A`-style commits (`dcd2bdea`,
+     `2c4c0fda`) swept these fixes into history under their messages; content is safe.

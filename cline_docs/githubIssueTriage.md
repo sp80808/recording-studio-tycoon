@@ -17,6 +17,7 @@ execution order so future sessions do not re-triage.
 | #13 | Optional intervention scheduler + staff auto-resolution | PR #22 merged; intervention flow in `ActiveProject.tsx` / `useStageWork.tsx`. |
 | #16 | Living Studio Scene spike | Pixi v8 isometric room shipped (`WebGLCanvas.tsx`, `StudioRoom.tsx`) with staff, gear activity, day/night, hotspots. |
 | #20 | First paid session onboarding | Bead `g5i` closed; state-inferred `FirstSessionGuide` (non-blocking) + `tests/first-session-guide.check.ts` in `pnpm test`. |
+| #65 | Post-settlement white screen (ActiveProject hook-order crash) | Three hooks/flags below the early return hoisted (takeState/lastTakeGrade, completion flags, gamepad take-shortcut effect with in-effect guard); sonner dismiss-during-render patched (`patches/sonner@1.7.4.patch` via `patchedDependencies`). Evidence: booking→settlement smoke PASS with zero console errors, `pnpm build` + `pnpm test` green; bead `typ` closed. |
 
 ## 2. Open GitHub issues already tracked in Beads (execute via `bd ready`)
 
@@ -27,7 +28,7 @@ execution order so future sessions do not re-triage.
 | #45 Kairosoft R&D | `sd3` RPG slices (3/5 done; `.3` retention, `.4` economy in progress) | in progress |
 | #46 Performance contract | Handled by `EngineLoop` + Pixi resolution & FPS budget (`docs/superpowers/specs/2026-09-29-game-engine-settings-graphics-design.md`) | spec written |
 | #56 Deterministic event director | Handled by typed `GameEventBus` + narrative cutscene triggers (`docs/superpowers/specs/2026-09-29-game-engine-settings-graphics-design.md`) | spec written |
-| #65 Settlement white screen | `typ` P0 bug — hook order crash fixed in `ActiveProject.tsx` and `MainGameContent.tsx` | fix verified |
+| #65 Settlement white screen | `typ` P0 bug — three hook-order/TDZ defects fixed in `ActiveProject.tsx` (takeState/lastTakeGrade, completion flags, gamepad effect all hoisted above early return); sonner dismiss-during-render patched | **closed with evidence** (smoke PASS + build + test green) |
 | #8 release plan / #19 balance harness / #43 repo cleanup | `z2f.6`, `mhk`, `p33`, `o8t`, `6zi` | in progress / open |
 
 ## 3. Not yet in Beads — new backlog (#48–#64). Recommended build order
