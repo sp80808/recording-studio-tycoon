@@ -12,4 +12,6 @@ export const defaultSettings: GameSettings = {
   theme: 'default',
   seenMinigameTutorials: {}, // Initialize as empty object
   language: 'en', // Default language
+  controllerLayout: 'auto', // Match glyphs to the connected controller
+  gamepadHaptics: true, // Rumble feedback when supported
 };

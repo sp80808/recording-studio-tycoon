@@ -117,6 +117,18 @@ export const createDefaultGamepadSnapshot = (): GamepadSnapshot => ({
   triggers: { left: 0, right: 0 },
 });
 
+export interface GamepadVibrationActuator {
+  playEffect?: (
+    type: string,
+    params: {
+      startDelay?: number;
+      duration?: number;
+      weakMagnitude?: number;
+      strongMagnitude?: number;
+    }
+  ) => Promise<unknown>;
+}
+
 export const triggerGamepadHaptic = (
   gamepadIndex = 0,
   weakMagnitude = 0.4,
@@ -129,7 +141,8 @@ export const triggerGamepadHaptic = (
     const pad = gamepads[gamepadIndex] || gamepads.find((g) => g !== null);
     if (!pad) return;
 
-    const actuator = (pad as any).vibrationActuator;
+    const actuator = (pad as Gamepad & { vibrationActuator?: GamepadVibrationActuator })
+      .vibrationActuator;
     if (actuator && typeof actuator.playEffect === 'function') {
       actuator.playEffect('dual-rumble', {
         startDelay: 0,

@@ -1,177 +1,191 @@
 # Recording Studio Tycoon
-*A comprehensive music industry simulation game built with React, TypeScript, and modern web technologies*
+*A tactile music industry simulation game built with React, PixiJS, Tone.js, TypeScript, and modern web technologies.*
+
+---
 
 ## 🎯 Project Overview
-Recording Studio Tycoon is a music industry simulation game: run a recording studio from the 1960s onward — hire staff, buy gear, take gigs, work project stages, play production minigames, and settle completed projects for money, reputation, and charts.
 
-**Current Version:** 0.3.1
-**Development Status:** Active Development
-**Last Updated:** September 27, 2026
+**Recording Studio Tycoon** is an immersive music industry simulation game: build and manage a legendary recording studio from the 1960s analog tape era through to modern digital streaming. Hire specialized engineers and session musicians, invest in vintage and cutting-edge hardware, pitch for record label contracts, master interactive production minigames, and settle hit records to top the industry charts.
 
-**Game shell:** `src/pages/Index.tsx` mounts the full game. The home screen is an isometric PixiJS studio floor (`src/components/StudioRoom.tsx` / `src/components/WebGLCanvas.tsx`) with 6 clickable hotspots — console, live room, phone, clock, TV, shelf — each opening a contextual popup (`src/components/StudioInspector.tsx`). The 5-tab management panel lives in a collapsed on-demand drawer (`MainGameContent`).
+- **Current Version:** 0.4.0 (The Living Isometric Studio & Interactive Console Overhaul)
+- **Development Status:** Active Development
+- **Last Updated:** September 29, 2026
+- **Live Shell:** `src/pages/Index.tsx` mounts the game. The main viewport features an interactive isometric PixiJS studio floor (`src/components/StudioRoom.tsx` / `src/components/WebGLCanvas.tsx`) with 6 clickable hotspots — console desk, live room, analog phone, studio clock, CRT monitor, and vinyl shelf — backed by contextual slide-over management drawers and tactile hardware controls.
 
-## 📸 Gameplay & Visuals
+---
 
-| Studio Floor (PixiJS Isometric Room) | Production & Gigs Management Drawer |
+## 📸 Evolution & Visual Progression (Before & After)
+
+Rather than erasing earlier versions, Recording Studio Tycoon showcases its visual and mechanical evolution from early prototypes to the current tactile living studio.
+
+### 1. Studio Floor Evolution
+*From an empty central placeholder box to a fully interactive isometric 3D PixiJS studio floor with physical tier-specific console progression, analog tape reels, and animated producer.*
+
+| Before (v0.2.0 Desktop-Idle) | After (v0.4.0 Living Isometric Studio) |
 | :---: | :---: |
-| ![Studio Floor](./screenshots/studio-floor.png) | ![Management Drawer](./screenshots/management-drawer.png) |
-| *Interactive 6-hotspot studio floor with dynamic era color grading* | *Collapsed on-demand drawer for active sessions, staff, and gear* |
+| ![Studio Floor Before](./screenshots/studio-floor-before.png) | ![Studio Floor After](./screenshots/studio-floor.png) |
+| *Static central box with generic action buttons and blank room canvas.* | *True isometric 3D PixiJS floor with Tier 1 valve console, reel-to-reel tape deck, Auratone cube, engineer character, and ambient lighting.* |
 
-| Era Selection & Splash | Industry Charts & Project Opportunities |
+---
+
+### 2. Studio Management & Navigation Evolution
+*From rigid, screen-filling 3-column dashboards to a living studio world with contextual slide-over drawers.*
+
+| Before (v0.1.0 Fixed 3-Column Dashboard) | After (v0.4.0 Contextual Slide-Over Drawer) |
 | :---: | :---: |
-| ![Splash & Era Select](./screenshots/splash.png) | ![Charts & Projects](./screenshots/charts-or-projects.png) |
-| *Historical timeline from 1960s analog tape to modern digital audio* | *Record label gigs, industry chart tracking, and project reviews* |
+| ![Management Drawer Before](./screenshots/management-drawer-before.png) | ![Management Drawer After](./screenshots/management-drawer.png) |
+| *Fixed multi-column layout crowding the viewport with text-heavy tables.* | *Clean slide-over drawer highlighting Artist Enquiries, genre compatibility badges, payout forecasts, and glowing action prompts.* |
+
+---
+
+### 3. Splash Screen & Era Selection Evolution
+*From a minimal alpha dialog to a retro vinyl groove experience with hardware switches and historical era selection.*
+
+| Before (v0.3.1 Alpha Splash) | After (v0.4.0 Vinyl Grooves & Era Starters) |
+| :---: | :---: |
+| ![Splash Screen Before](./screenshots/splash-before.png) | ![Splash Screen After](./screenshots/splash.png) |
+| *Flat card dialog on purple gradient background.* | *Concentric vinyl-groove backdrop, embossed gold branding, hardware audio toggles, and multi-era career selection.* |
+
+---
+
+### 4. Interactive Console & Hardware Work Loop
+*The heart of the studio: tactile analog take recording, timing accuracy, and variable energy progression.*
+
+| At the Console (Work Loop) | Era Progression & Historical Gigs |
+| :---: | :---: |
+| ![Console Dock](./screenshots/console-dock.png) | ![Era Select](./screenshots/splash-era-select.png) |
+| *Dynamic 60fps Lock Take button, analog PocketMeter timing gauge, focus sliders, and Overdrive.* | *Select between 1960s Rock Revolution, 1980s Golden Age, 2000s Digital Revolution, or 2020s Modern Streaming.* |
+
+---
+
+### 5. Historical Foundation (2025 Archive)
+*The original prototype foundation from June 2025, showing the initial conception of project focus allocation and equipment shopping.*
+
+<p align="center">
+  <img src="./screenshots/classic-dashboard-2025.png" alt="Classic 2025 Dashboard" width="80%" />
+  <br />
+  <em>Original June 2025 prototype: 3-column layout featuring early focus sliders and equipment catalog.</em>
+</p>
+
+---
+
+## 🕹️ Core Game Mechanics & Systems
+
+### 🎛️ 1. Living Isometric Studio & Tier Progression (`WebGLCanvas.tsx`)
+- **True Isometric Projection:** Rendered using PixiJS 8 on an isometric grid (`TILE_W=56, TILE_H=28`) with z-ordering, dynamic shadows, and era-tinted color grading (`EraGrade`).
+- **Tier-Specific Hardware Progression:**
+  - **Tier 1 (Home Studio):** 4-channel vintage valve desk with mahogany wood cheeks, analog VU meters, Auratone 5C mono cube monitor, and twin-spool reel-to-reel tape deck.
+  - **Tier 2 (Bedroom+):** Sleek slate console, Yamaha NS-10 studio monitors, analog phone, and compact rack unit.
+  - **Tier 3 (Project Studio):** British racing-blue console, single DAW display, dual stereo monitors, and 2-unit outboard rack.
+  - **Tier 4 (Studio A):** Dark graphite professional console with illuminated meter bridge, dual DAW displays, and 4-unit outboard gear bay.
+  - **Tier 5 (Hit Factory):** World-class gold-trimmed flagship console, dual ultra-wide displays, master patchbay, and full multi-rack outboard suite.
+- **Interactive Hotspots:** Clickable console, live room, analog telephone (with pulsing alert ring), wall clock, CRT monitor, and gear shelf.
+
+### ⏱️ 2. Interactive Console Work Loop & PocketMeter (`PocketMeter.tsx`)
+- **Dynamic Lock Take Transport:** 60fps illuminated transport button with haptic press animations and stateful feedback.
+- **Analog PocketMeter Gauge:** Real-time timing window tracking take precision — evaluates needle position to award **Gold Takes** (perfect pocket), **Silver Takes**, or **Solid Takes**.
+- **Variable Energy Take Progression:** Spend 1⚡ (efficient take), 2⚡ (standard production take), or trigger **Overdrive (+1⚡ / 3⚡ total)** for a +75% production boost with higher reward potential.
+- **Genre Chord Synthesis (Tone.js):** Generates authentic musical chords (Rock, Pop, Hip-Hop, Electronic, Jazz) using browser Web Audio synthesis immediately upon locking in a take.
+
+### 🔊 3. Tactile Audio System & Kenney UI Assets (`audioSystem.ts`)
+- **Analog UI SFX:** Authentic mechanical switch clicks, fader slides, and rotary knob snaps sourced from the Kenney audio asset library.
+- **Audio Context Unlock:** Graceful user-gesture unlocking wired to the global audio signal, ensuring seamless background sound and synthesizer playback across all modern browsers.
+- **Juice & Celebration:** Particle confetti bursts (`canvas-confetti`) and Golden Reels celebrations trigger on platinum releases, awards, and milestone achievements.
+
+### 🏆 4. Fun-First RPG Progression Overhaul
+- **Take Evaluation Engine (`takeEvaluation.ts`):** Translates timing accuracy and focus into performance quality scores.
+- **Combo Codex (`comboCodex.ts`):** Rewarding consecutive successful takes with multiplying quality bonuses.
+- **Contract Stakes (`contractStakes.ts`):** Choose between **Safe Contracts** (steady guaranteed payouts) and **Moonshot Stakes** (up to 1.6x massive payouts and reputation gains, with harsh penalties on missed deadlines).
+- **Stage Grades (`stageGrades.ts`):** Letter grading (S/A/B/C) per production stage (Tracking, Overdubs, Mixing, Mastering) with clear feedback on where the session excelled.
+- **Character Origins & Lore (`characterOrigins.ts`, `studioLore.ts`):** 5 distinct producer origins with tailored starting perks, console laws, rival studios, and narrative dilemmas.
+
+### 🧩 5. Studio Synergies System (`synergyCatalog.ts`)
+- **20 Authored Synergies:** Unlocks special multiplicative bonuses when pairing complementary rooms, equipment, staff specialties, and artist genres (e.g., *Vocal Chain* = Vocal Suite + Tube Mic + Producer).
+- **Discovery Encyclopedia:** Interactive synergy catalog that tracks discovered combinations and guides strategic studio expansion.
+
+### 🔄 6. Desktop-Idle Simulation Core (`simulationClock.ts`)
+- **Active & Passive Sessions:** Sessions progress automatically in 5-minute time slices during active play or via offline catch-up (capped at 8 hours).
+- **Welcome Back Modal:** Summarizes offline progress, completed stages, revenue earned, and staff energy.
+- **Deterministic Seeded RNG (`seededRandom.ts`):** Mulberry32 deterministic random number generator ensures reproducible review outcomes, gig generation, and intervention triggers.
+
+### 🎮 7. Gamepad Controller Support (`gamepadService.ts`)
+- **Hardware Auto-Detection:** Plug-and-play controller detection with 60fps polling loop and haptic actuator rumble support.
+- **Dynamic Button Glyphs:** SVG gamepad glyphs adapting dynamically to Xbox, PlayStation, Nintendo Switch, and Steam Deck layouts.
+- **Spatial Focus Navigation:** Complete controller navigation across studio tabs, transport controls, and minigames.
+
+---
+
+## 💻 Tech Stack & Architecture
+
+- **Frontend Framework:** React 19 with TypeScript 5
+- **Build Tool:** Vite 5 with hot module replacement (HMR)
+- **2D Canvas Rendering:** PixiJS 8 (`pixi.js` + `@pixi/react`)
+- **Audio Engine:** Tone.js + Web Audio API + Kenney Tactile SFX
+- **Visual Juice & Effects:** Canvas Confetti + Framer Motion 12
+- **Styling:** Tailwind CSS + Radix UI / shadcn primitives
+- **Icons:** Lucide React
+- **Package Manager:** pnpm 12 (`devEngines` enforced)
+- **Task Tracking:** Beads (`.beads/`) + GitHub Issues
+
+---
 
 ## 🚀 Quick Start
 
-### For Developers
-- **[Quick Start Guide](./docs/QUICK_START.md)** - Get the project running locally
-- **[Documentation Index](./docs/DOCUMENTATION_INDEX.md)** - Complete documentation overview
-- **[Troubleshooting](./docs/TROUBLESHOOTING.md)** - Common issues and solutions
-
-### For Contributors  
-- **[Main Documentation](./docs/README.md)** - Complete documentation entry point
-- **[Current Development Status](./docs/current/CURRENT_STATUS.md)** - What we're working on now
-- **[Bug Fix & Polish Plan](./docs/bugfix_and_polish_plan.md)** - Current critical fixes
-
-## 📚 Core Documentation
-
-### 🏗️ Architecture & Systems
-- **[Skill System Architecture](./docs/architecture/SKILL_SYSTEM_ARCHITECTURE.md)** - Player progression and skill mechanics
-- **[Skill System Implementation](./docs/skill_system_readme.md)** - Detailed skill system guide
-- **[Core Loop Implementation](./docs/core_loop_plan.md)** - Game loop and project management
-
-### 🎵 Game Features
-- **[Core Loop Plan](./docs/features/CORE_LOOP_IMPLEMENTATION_PLAN.md)** - Game loop implementation details
-- **[Feature Documentation](./docs/features/)** - Detailed feature specifications
-- **[Multi-Project System](./docs/MULTI_PROJECT_AUTOMATION_PLAN.md)** - Concurrent project management
-- **[Progress Tracking](./docs/progress.md)** - Development milestones and progress
-
-### 🔧 Development Resources
-- **[Development Guidelines](./docs/development_guidelines/)** - Coding standards and practices
-- **[Implementation Plans](./docs/active_implementation_plans/)** - Current development plans
-- **[System Designs](./docs/system_designs_and_specs/)** - Technical specifications
-
-## 🎯 Implementation Status
-
-### ✅ Complete systems
-- **Isometric studio floor** — PixiJS room (`StudioRoom`/`WebGLCanvas`) with 6 hotspots + `StudioInspector` popups; room tier 1–5 from progression milestones drives visible upgrades (Home Studio → Bedroom+ → Project Studio → Studio A → Hit Factory); era color grade overlay (`EraGrade`).
-- **15 minigames via `MinigameManager`** — incl. EQ Match, Fader Ride, Punch-In; shared `MinigameChrome` + CSS juice kit (`minigame-juice.css`); combo streak + Overdrive (2 energy, +75%, burnout risk); scores feed project quality via `minigamePoints` (0–10).
-- **Real project settlement** — `generateProjectReview` scores skills, staff contribution, equipment, studio quality, focus effectiveness, artist match, and market multiplier; results land in financials (`income`/`expenses`/`profit`/`reports`).
-- **Deterministic daily challenges** (`src/utils/dailyChallenges.ts`) — one seeded challenge per day, shown in the clock inspector; gig refresh costs $50 with a 3-day cooldown; random events roll on every daily tick; salaries + equipment upkeep deducted on `advanceDay`.
-
-### 🖥️ Desktop-idle core (shipped)
-- **Loop** — Artist Enquiry → Book Session → passive session → optional intervention → review/payout. Enquiries (`Artist Enquiries` inbox with fit badge, fee/rep/time, repeat-client tier) book via `Book Session` (`src/components/ProjectList.tsx`); the compact strip shows the next enquiry + session progress (`src/components/StudioStrip.tsx`).
-- **Passive progress** — `advanceSimulation` (`src/simulation/simulationClock.ts`) advances the active session in 5-minute slices, live (5s tick in `src/pages/Index.tsx`) and offline (catch-up from the save timestamp, capped at 8h via `DEFAULT_MAX_OFFLINE_MS`). It stops at review-ready and never pays out — settlement stays in `generateProjectReview` (`src/utils/projectReviewUtils.ts`).
-- **Offline catch-up + Welcome Back** — on load, credited time resumes the session; `shouldShowSimulationSummary` (≥60s credited plus progress) opens `WelcomeBackSummaryModal` (`src/components/modals/WelcomeBackSummaryModal.tsx`) with time credited, work added, stages done, delivery-ready notice, and cap warning.
-- **Optional intervention** — `useStageWork` (`src/hooks/useStageWork.tsx`) offers one ephemeral (~90s) minigame opportunity per stage; `ActiveProject.tsx` renders Intervene / Delegate (best-fit staff) / Skip — progress never blocks.
-- **Determinism note** — `createSeededRandom` (`src/simulation/seededRandom.ts`) seeds review rolls (`project.id:review:…`) and intervention selection (`project.id:intervention:…`), so the same session state replays the same outcome.
-
-### 🚧 Open P2s
-- **MinigameChrome rollout** — 4 of 15 games use the shared chrome/juice kit; 11 legacy games still need migration.
-- **Audio unlock** — Web Audio still requires a user gesture before background playback starts.
-
-## 🎨 Design Principles
-
-### Player-Centric Design
-- **Progressive Complexity**: Advanced features don't overwhelm new players
-- **Clear Feedback**: Visual and audio cues for all player actions
-- **Meaningful Choices**: Decisions with long-term strategic impact
-- **Accessibility First**: Designed for players of all skill levels
-
-### Technical Excellence
-- **Modular Architecture**: Clean separation of concerns and easy feature addition
-- **Performance Optimization**: Smooth experience across devices
-- **Maintainable Code**: Well-documented and structured codebase
-- **Modern Technologies**: Built with React, TypeScript, and Vite
-
-### Authentic Experience
-- **Music Industry Accuracy**: Realistic studio operations and workflows
-- **Historical Context**: Authentic equipment and industry evolution
-- **Educational Value**: Learn real recording and business concepts
-- **Cultural Appreciation**: Celebrate music history and creativity
-
-## 💻 Technologies Used
-
-This project is built with modern web technologies:
-
-- **Framework**: React with TypeScript
-- **Build Tool**: Vite 5 for fast development and optimized builds
-- **Styling**: Tailwind CSS with shadcn/ui components
-- **State Management**: React hooks and context
-- **2D Rendering**: PixiJS 8 (`pixi.js` + `@pixi/react`) for the isometric studio floor
-- **Audio**: Web Audio API and HTML5 audio elements
-- **Package Manager**: pnpm 12 (`packageManager: pnpm@12.3.4`, `devEngines` enforced)
-- **Issue Tracking**: beads (`.beads/`) — see Development Setup
-- **Deployment**: Vercel with automatic CI/CD
-
-## 🔗 External Resources
-
-- **[Lovable Project](https://lovable.dev/projects/fb4096d3-b98e-4381-9c20-873902a5af5d)** - Live development environment
-- **[Deployment Guide](./docs/VERCEL_DEPLOYMENT.md)** - How to deploy the project
-- **[Troubleshooting](./docs/TROUBLESHOOTING.md)** - Common issues and solutions
-
----
-
-## 📝 Development Setup
-
 ### Prerequisites
-- Node.js 18+ and pnpm 12+ (install with [nvm](https://github.com/nvm-sh/nvm#installing-and-updating), then `corepack enable` or `npm i -g pnpm`)
-- Git for version control
+- Node.js 18+ and pnpm 12+ (install via [pnpm.io](https://pnpm.io/) or `corepack enable`)
 
 ### Local Development
 ```bash
-# Navigate to project directory
+# Clone the repository
+git clone https://github.com/sp80808/recording-studio-tycoon.git
 cd recording-studio-tycoon
 
-# Install dependencies (pnpm only — packageManager + devEngines enforced)
+# Install dependencies (strictly managed with pnpm)
 pnpm install
 
-# Start development server
+# Start the Vite development server
 pnpm run dev
 ```
 
-### Available Scripts
-- `pnpm run dev` - Start development server with hot reload
-- `pnpm run build` - Build for production
-- `pnpm run preview` - Preview production build
-- `pnpm run lint` - Run ESLint
-
-### Issue Tracking (beads)
+### Verification & Automated Testing
 ```bash
-bd ready              # Find available work
-bd show <id>          # View issue details
-bd update <id> --claim  # Claim work
-bd close <id>         # Complete work
+# Run the complete test suite (synergies, daily challenges, lore, balance harness)
+pnpm test
+
+# Run build verification (TypeScript + Vite production bundle)
+pnpm run build
 ```
 
-## 🤝 Contributing
+---
 
-We welcome contributions! Please check our documentation for guidelines:
+## 📚 Project Documentation
 
-- **[Development Standards](./docs/development_guidelines/DEVELOPMENT_STANDARDS.md)** - Code quality and standards
-- **[Current Development Status](./docs/current/CURRENT_STATUS.md)** - What needs to be done
-- **[Project Management Workflow](./docs/development_guidelines/PROJECT_MANAGEMENT_WORKFLOW.md)** - Development process
-- **[Minigame Design Patterns](./docs/development_guidelines/MINIGAME_DESIGN_PATTERNS.md)** - Game design patterns
-
-## 📋 Current Priorities
-
-1. **MinigameChrome rollout** - Migrate the 11 legacy minigames to the shared chrome/juice kit
-2. **Audio unlock** - Resolve user-gesture gating for Web Audio background playback
-3. **Multi-project polish** - Harden concurrent project workflows and settlement reports
-
-For task-level tracking, see beads (`bd ready`) and the **[Current Development Status](./docs/current/CURRENT_STATUS.md)**.
+- **[Current Development Status](./docs/current/CURRENT_STATUS.md)** - Active development phase, completed modules, and priorities
+- **[Development Progress & Changelog](./docs/progress.md)** - Comprehensive version changelog from v0.1.0 to v0.4.0
+- **[Quick Start Guide](./docs/QUICK_START.md)** - Detailed local environment setup
+- **[Troubleshooting Guide](./docs/TROUBLESHOOTING.md)** - Common development questions and fixes
+- **[Feature Specifications](./docs/features/)** - Deep dives into simulation and RPG subsystems
 
 ---
 
-## Screenshots
-*Captured 2026-09-27 from a live dev build (headless Chrome; WebGL canvas renders dark headless, UI fully visible).*
+## 📋 Task & Issue Tracking (Beads)
 
-![Splash screen](./screenshots/splash.png)
-![Studio floor](./screenshots/studio-floor.png)
-![Management drawer](./screenshots/management-drawer.png)
-![Charts tab](./screenshots/charts-or-projects.png)
+This repository uses [beads](https://github.com/beads-project/beads) for local-first, distributed issue tracking:
+
+```bash
+# View available ready tasks
+bd ready
+
+# Inspect a task details
+bd show <issue-id>
+
+# Claim an active task
+bd update <issue-id> --claim
+
+# Close a completed task
+bd close <issue-id> -r "Resolution summary"
+```
 
 ---
 
-*Recording Studio Tycoon - Building the future of music industry simulation gaming*
+*Recording Studio Tycoon — From analog beginnings to digital dominance.*

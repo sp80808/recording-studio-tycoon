@@ -1,4 +1,5 @@
 import React, { createContext, useContext } from 'react';
+import type { ControllerLayoutPreference } from '@/types/gamepad';
 
 export interface GameSettings {
   masterVolume: number;
@@ -12,6 +13,8 @@ export interface GameSettings {
   theme: 'default' | 'sunrise-studio' | 'neon-nights' | 'retro-arcade';
   seenMinigameTutorials: Record<string, boolean>; // Track seen minigame tutorials
   language: string; // Added language setting
+  controllerLayout: ControllerLayoutPreference; // Gamepad glyph + input layout preference (49i.2)
+  gamepadHaptics: boolean; // Rumble/haptic feedback on supported controllers (49i.2)
 }
 
 export interface SettingsContextType {

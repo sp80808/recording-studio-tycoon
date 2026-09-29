@@ -10,6 +10,8 @@ import { Textarea } from '@/components/ui/textarea'; // Added for import/export
 import { useSettings } from '@/contexts/SettingsContext';
 import { useSaveSystem } from '@/contexts/SaveSystemContext'; // Added for save/load string
 import { useGameState } from '@/hooks/useGameState'; // Added to access gameState for export
+import { GamepadGlyph, CONTROLLER_LAYOUT_OPTIONS, CONTROLLER_TYPE_NAMES } from '@/components/ui/GamepadGlyph';
+import type { ControllerLayoutPreference, ControllerType } from '@/types/gamepad';
 import { gameAudio } from '@/utils/audioSystem';
 import { useTranslation } from 'react-i18next';
 import { toast } from "sonner"; // For notifications
@@ -39,6 +41,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [importSaveString, setImportSaveString] = useState<string>('');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
+  // Glyph preview: Auto mirrors the Xbox family until a controller is detected.
+  const controllerPreviewType: ControllerType =
+    settings.controllerLayout === 'auto' ? 'xbox' : settings.controllerLayout;
 
   if (!isOpen) return null;
 
@@ -261,6 +266,69 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <Switch
                 checked={!settings.tutorialCompleted}
                 onCheckedChange={(checked) => updateSettings({ tutorialCompleted: !checked })}
+              />
+            </div>
+          </div>
+
+          {/* Controller Settings */}
+          <div className="space-y-6">
+            <h3 className="text-xl font-semibold text-white border-b border-gray-600 pb-2">
+              🕹️ Controller Settings
+            </h3>
+
+            {/* Controller Layout */}
+            <div className="space-y-2">
+              <label className="text-white font-medium">Controller Layout</label>
+              <p className="text-gray-400 text-sm">
+                On-screen button hints follow the connected pad automatically, or pick a fixed glyph set.
+              </p>
+              <Select
+                value={settings.controllerLayout}
+                onValueChange={(value: ControllerLayoutPreference) => {
+                  updateSettings({ controllerLayout: value });
+                  gameAudio.playClick();
+                }}
+              >
+                <SelectTrigger className="w-full bg-gray-800 border-gray-600 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-600">
+                  {CONTROLLER_LAYOUT_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value} className="text-white hover:bg-gray-700">
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Glyph preview for the preferred layout */}
+              <div className="flex items-center gap-3 pt-2">
+                <span className="text-gray-400 text-sm">
+                  {settings.controllerLayout === 'auto'
+                    ? 'Preview (Auto)'
+                    : CONTROLLER_TYPE_NAMES[controllerPreviewType]}
+                </span>
+                {(['south', 'east', 'west', 'north'] as const).map((button) => (
+                  <GamepadGlyph
+                    key={button}
+                    button={button}
+                    controllerType={controllerPreviewType}
+                    size="md"
+                    decorative
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Controller Rumble */}
+            <div className="flex justify-between items-center">
+              <div>
+                <label className="text-white font-medium">Controller Rumble</label>
+                <p className="text-gray-400 text-sm">Haptic feedback on supported controllers</p>
+              </div>
+              <Switch
+                checked={settings.gamepadHaptics}
+                onCheckedChange={(checked) => updateSettings({ gamepadHaptics: checked })}
               />
             </div>
           </div>

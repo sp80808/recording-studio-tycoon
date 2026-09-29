@@ -77,7 +77,7 @@ export const useGamepad = (options: UseGamepadOptions = {}): UseGamepadResult =>
       const effectiveType: ControllerType =
         preferredLayout && preferredLayout !== 'auto' ? preferredLayout : detectedType;
 
-      const currentButtons = mapStandardGamepadButtons(pad.buttons as any);
+      const currentButtons = mapStandardGamepadButtons(pad.buttons);
       const prevButtons = prevButtonsRef.current;
 
       const justPressed: Partial<Record<StandardButton, boolean>> = {};
