@@ -1,132 +1,230 @@
-import React, { useEffect, useState } from 'react';
-import { ERA_DEFINITIONS } from '@/utils/eraProgression';
+import React, { useEffect, useRef, useCallback } from 'react';
+import { ERA_DEFINITIONS, EraDefinition } from '@/utils/eraProgression';
+import { MotionPanel, MotionReveal, MotionButton, TextScramble, motionTokens } from '@/components/motion/primitives';
+import { useMotionCapabilities } from '@/lib/motion/capabilities';
+import { useGamepad } from '@/hooks/useGamepad';
+import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
+import { Sparkles, ArrowRight, CheckCircle2, Disc3 } from 'lucide-react';
 
-interface EraTransitionAnimationProps {
+export interface EraTransitionAnimationProps {
   isVisible: boolean;
   fromEra: string;
   toEra: string;
   onComplete: () => void;
+  focusMode?: boolean;
 }
 
 export const EraTransitionAnimation: React.FC<EraTransitionAnimationProps> = ({
   isVisible,
   fromEra,
   toEra,
-  onComplete
+  onComplete,
+  focusMode = false,
 }) => {
-  const [currentPhase, setCurrentPhase] = useState<'sweep' | 'reveal' | 'complete'>('sweep');
-  const [showContent, setShowContent] = useState(false);
+  const capabilities = useMotionCapabilities({ focusMode });
+  const completedRef = useRef(false);
 
-  const fromEraData = ERA_DEFINITIONS.find(era => era.id === fromEra);
-  const toEraData = ERA_DEFINITIONS.find(era => era.id === toEra);
+  const gamepad = useGamepad();
 
+  const handleSkip = useCallback(() => {
+    if (completedRef.current) return;
+    completedRef.current = true;
+    onComplete();
+  }, [onComplete]);
+
+  // Gamepad south button skip
   useEffect(() => {
-    if (isVisible) {
-      // Phase 1: Sweep transition
-      const sweepTimer = setTimeout(() => {
-        setCurrentPhase('reveal');
-        setShowContent(true);
-      }, 1000);
-
-      // Phase 2: Content reveal
-      const revealTimer = setTimeout(() => {
-        setCurrentPhase('complete');
-      }, 3000);
-
-      // Phase 3: Complete and cleanup
-      const completeTimer = setTimeout(() => {
-        setShowContent(false);
-        onComplete();
-      }, 5000);
-
-      return () => {
-        clearTimeout(sweepTimer);
-        clearTimeout(revealTimer);
-        clearTimeout(completeTimer);
-      };
+    if (!isVisible || !gamepad.isConnected) return;
+    if (gamepad.justPressed.south) {
+      handleSkip();
     }
-  }, [isVisible, onComplete]);
+  }, [isVisible, gamepad.isConnected, gamepad.justPressed.south, handleSkip]);
+
+  // Keyboard skip (Escape, Enter, Space)
+  useEffect(() => {
+    if (!isVisible) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleSkip();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isVisible, handleSkip]);
+
+  // Presentation timer: auto-completes smoothly (faster under reduced motion)
+  useEffect(() => {
+    if (!isVisible) return;
+    completedRef.current = false;
+    const duration = capabilities.reducedMotion ? 1000 : 5000;
+    const timer = window.setTimeout(() => {
+      handleSkip();
+    }, duration);
+    return () => window.clearTimeout(timer);
+  }, [isVisible, capabilities.reducedMotion, handleSkip]);
 
   if (!isVisible) return null;
 
+  const fromEraData = ERA_DEFINITIONS.find((era) => era.id === fromEra) || ERA_DEFINITIONS[0];
+  const toEraData = ERA_DEFINITIONS.find((era) => era.id === toEra) || ERA_DEFINITIONS[1];
+
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
-      {/* Background sweep */}
-      <div 
-        className={`absolute inset-0 bg-gradient-to-r ${toEraData?.colors.gradient || 'from-purple-900 to-blue-900'} 
-                   ${currentPhase === 'sweep' ? 'animate-era-transition-sweep' : ''}`}
-      />
+    <div
+      role="dialog"
+      aria-label="Era Transition"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none pointer-events-auto"
+      style={{
+        backgroundColor: capabilities.heavyEffects ? 'rgba(7, 10, 18, 0.82)' : 'rgba(7, 10, 18, 0.94)',
+        backdropFilter: capabilities.heavyEffects ? 'blur(12px)' : 'none',
+      }}
+    >
+      {/* Decorative background glow (suppressed in focus / minimal mode) */}
+      {capabilities.heavyEffects && (
+        <div
+          className={`absolute inset-0 bg-gradient-to-tr ${toEraData.colors.gradient} opacity-20 pointer-events-none`}
+        />
+      )}
 
-      {/* Content overlay */}
-      {showContent && (
-        <div className="absolute inset-0 flex items-center justify-center text-white">
-          <div className="text-center space-y-8 animate-celebration-bounce">
-            {/* Era icons */}
-            <div className="flex items-center justify-center space-x-8">
-              <div className="text-center">
-                <div className="text-6xl mb-2">{fromEraData?.icon}</div>
-                <div className="text-lg text-gray-300">{fromEraData?.name}</div>
-              </div>
-              
-              <div className="text-4xl animate-pulse">→</div>
-              
-              <div className="text-center">
-                <div className="text-8xl mb-2 animate-equipment-unlock-reveal">{toEraData?.icon}</div>
-                <div className="text-xl font-bold">{toEraData?.name}</div>
-              </div>
-            </div>
-
-            {/* Era transition message */}
-            <div className="space-y-4">
-              <h1 className="text-5xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
-                ERA TRANSITION
-              </h1>
-              <p className="text-xl text-gray-200 max-w-2xl">
-                {toEraData?.description}
-              </p>
-            </div>
-
-            {/* New features unlock */}
-            <div className="bg-black/40 rounded-lg p-6 max-w-3xl">
-              <h3 className="text-2xl font-bold mb-4 text-yellow-400">✨ New Features Unlocked</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                {toEraData?.features?.map((feature, index) => (
-                  <div 
-                    key={index} 
-                    className="flex items-center space-x-2 animate-smooth-slide-in"
-                    style={{ animationDelay: `${index * 0.2}s` }}
-                  >
-                    <span className="text-green-400">✓</span>
-                    <span>{feature}</span>
-                  </div>
-                )) || []}
-              </div>
-            </div>
-
-            {/* Equipment availability */}
-            <div className="text-center">
-              <p className="text-lg text-gray-300">
-                🎛️ New Equipment Available • 🎵 Genre Expansion • 📈 Market Changes
-              </p>
-            </div>
-          </div>
+      {/* Decorative ambient particles (suppressed in focus / minimal / reduced motion mode) */}
+      {capabilities.particles && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {Array.from({ length: 16 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1.5 h-1.5 rounded-full bg-amber-400/40 animate-pulse"
+              style={{
+                left: `${(i * 19) % 100}%`,
+                top: `${(i * 29) % 100}%`,
+                animationDelay: `${(i * 0.3) % 2}s`,
+                animationDuration: '2.5s',
+              }}
+            />
+          ))}
         </div>
       )}
 
-      {/* Particle effects */}
-      <div className="absolute inset-0 pointer-events-none">
-        {Array.from({ length: 30 }, (_, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 bg-yellow-400 animate-celebration-particle rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 2}s`
-            }}
-          />
-        ))}
-      </div>
+      <MotionPanel
+        direction="scale"
+        className="relative w-full max-w-2xl bg-gradient-to-b from-[#191f2e] to-[#0f1420] border-2 border-purple-500/40 rounded-2xl shadow-2xl p-6 sm:p-8 overflow-hidden text-slate-100"
+      >
+        {/* Header Ribbon */}
+        <div className="flex items-center justify-between mb-6 pb-3 border-b border-slate-700/60">
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 bg-purple-500/20 text-purple-400 rounded-lg border border-purple-500/30">
+              <Disc3 className="w-5 h-5 animate-spin" style={{ animationDuration: '6s' }} />
+            </span>
+            <div>
+              <span className="text-[11px] font-mono tracking-widest text-purple-400 uppercase font-bold">
+                Historical Progression · Musical Epoch Advanced
+              </span>
+              <h1 className="text-xl sm:text-2xl font-black text-white tracking-wide">
+                <TextScramble
+                  text={toEraData.name.toUpperCase()}
+                  speed={capabilities.reducedMotion ? 0 : 25}
+                />
+              </h1>
+            </div>
+          </div>
+          <div className="text-right">
+            <span className="text-[10px] font-mono tracking-wider text-slate-400 uppercase block">Epoch Year</span>
+            <span className="text-sm font-mono font-bold text-purple-300">{toEraData.startYear}+</span>
+          </div>
+        </div>
+
+        {/* Era Shift Banner: From -> To */}
+        <div className="grid grid-cols-5 items-center gap-2 p-4 bg-slate-900/70 rounded-xl border border-slate-800 mb-6">
+          <div className="col-span-2 text-center sm:text-left flex items-center gap-3">
+            <span className="text-3xl sm:text-4xl p-2 rounded-lg bg-slate-800/80 border border-slate-700">
+              {fromEraData.icon}
+            </span>
+            <div className="truncate">
+              <span className="text-[10px] font-mono text-slate-400 block uppercase">Previous Era</span>
+              <p className="text-sm font-bold text-slate-300 truncate">{fromEraData.name}</p>
+            </div>
+          </div>
+
+          <div className="col-span-1 flex justify-center text-purple-400">
+            <ArrowRight className="w-6 h-6 animate-pulse" />
+          </div>
+
+          <div className="col-span-2 text-center sm:text-left flex items-center gap-3">
+            <span className="text-3xl sm:text-4xl p-2 rounded-lg bg-purple-900/40 border border-purple-500/40 shadow-inner">
+              {toEraData.icon}
+            </span>
+            <div className="truncate">
+              <span className="text-[10px] font-mono text-purple-300 font-bold block uppercase">Dawn of Era</span>
+              <p className="text-sm font-bold text-purple-200 truncate">{toEraData.name}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Era Description */}
+        <p className="text-sm text-slate-300 mb-5 leading-relaxed">
+          {toEraData.description}
+        </p>
+
+        {/* Unlocked Era Features */}
+        <div className="mb-6">
+          <span className="text-[11px] font-mono tracking-widest text-slate-400 uppercase font-semibold block mb-2.5">
+            Key Epoch Innovations & Capabilities
+          </span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {toEraData.features.map((feature, index) => (
+              <MotionReveal
+                key={feature}
+                staggerIndex={index}
+                staggerDelay={capabilities.reducedMotion ? 0 : 0.06}
+                direction="up"
+                distance={capabilities.reducedMotion ? 0 : 10}
+                className="flex items-center gap-2 px-3 py-2 bg-slate-800/70 rounded-md border border-slate-700/50 text-xs text-slate-200"
+              >
+                <CheckCircle2 className="w-4 h-4 text-purple-400 shrink-0" />
+                <span>{feature}</span>
+              </MotionReveal>
+            ))}
+          </div>
+        </div>
+
+        {/* Popular Genres in this era */}
+        <div className="mb-6">
+          <span className="text-[11px] font-mono tracking-widest text-slate-400 uppercase font-semibold block mb-2">
+            Emerging & Trending Musical Genres
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {toEraData.availableGenres.map((genre) => (
+              <span
+                key={genre}
+                className="px-2.5 py-1 bg-purple-950/60 border border-purple-500/30 rounded-full text-xs font-medium text-purple-300"
+              >
+                🎵 {genre}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer controls: non-blocking, skippable */}
+        <div className="flex items-center justify-between pt-3 border-t border-slate-800">
+          <p className="text-[11px] text-slate-400">
+            Authoritative simulation active · Click or press key to resume
+          </p>
+          <div className="flex items-center gap-2">
+            <MotionButton
+              onClick={handleSkip}
+              className="px-5 py-2 bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-1.5 shadow-lg"
+            >
+              <span>Enter New Era</span>
+              {gamepad.isConnected ? (
+                <GamepadGlyph button="south" size="xs" />
+              ) : (
+                <span className="text-[10px] bg-slate-950/30 px-1 py-0.5 rounded font-mono">Esc</span>
+              )}
+            </MotionButton>
+          </div>
+        </div>
+      </MotionPanel>
     </div>
   );
 };
+
+export default EraTransitionAnimation;

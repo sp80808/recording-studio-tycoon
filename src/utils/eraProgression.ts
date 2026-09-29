@@ -1,5 +1,6 @@
 // Era progression system for Recording Studio Tycoon
 import { GameState } from '@/types/game';
+import { gameEvents } from '@/engine/gameEventBus';
 
 export interface EraDefinition {
   id: string;
@@ -189,6 +190,11 @@ export const checkEraTransitionAvailable = (gameState: GameState): EraDefinition
 };
 
 export const transitionToEra = (gameState: GameState, newEra: EraDefinition): GameState => {
+  // Idempotent guard: if already in this era, do not grant duplicate rewards or alter state
+  if (gameState.currentEra === newEra.id) {
+    return gameState;
+  }
+
   console.log(`Transitioning to era: ${newEra.name}`);
   
   // Calculate new starting conditions for the era
@@ -204,7 +210,8 @@ export const transitionToEra = (gameState: GameState, newEra: EraDefinition): Ga
     case 'streaming2020s': equipmentMultiplier = 1.0; break;
   }
 
-  return {
+  const fromEra = gameState.currentEra;
+  const newGameState: GameState = {
     ...gameState,
     currentEra: newEra.id,
     eraStartYear: newEraStartYear,
@@ -213,6 +220,17 @@ export const transitionToEra = (gameState: GameState, newEra: EraDefinition): Ga
     // Add bonus reputation for successful era transition
     reputation: gameState.reputation + 10
   };
+
+  try {
+    gameEvents.emit('studio:era_transition', {
+      fromEra,
+      toEra: newEra.id,
+    });
+  } catch {
+    // EventBus fallback in isolated test runners
+  }
+
+  return newGameState;
 };
 
 export const getEraProgress = (gameState: GameState): { 

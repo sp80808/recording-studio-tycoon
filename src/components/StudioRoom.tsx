@@ -5,6 +5,7 @@ import { GameState, Project } from '@/types/game';
 import { useSettings } from '@/contexts/SettingsContext';
 import { gameAudio } from '@/utils/audioSystem';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
+import { TierUpgradeAnimation } from './TierUpgradeAnimation';
 import { toast } from '@/hooks/use-toast';
 import { LocateFixed, Phone } from 'lucide-react';
 import { triggerScreenShake } from '@/utils/screenShake';
@@ -62,23 +63,26 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
   const [activeInspector, setActiveInspector] = useState<StudioHotspotId | null>(null);
   const [cameraReset, setCameraReset] = useState(0);
   const [tierFlash, setTierFlash] = useState(false);
+  const [pendingTierUpgrade, setPendingTierUpgrade] = useState<{ oldTier: number; newTier: number } | null>(null);
+  const playClick = () => { if (settings.sfxEnabled) gameAudio.playUISound('buttonClick'); };
 
   // Studio tier (1-5) from the progression milestones — drives visible
   // room upgrades in the Pixi scene (bead ifx.3).
   const roomTier = useMemo(() => {
-    const status = ProgressionSystem.getProgressionStatus(gameState);
-    return status.currentMilestone?.level ?? 1;
+    return ProgressionSystem.getStudioTier(gameState);
   }, [gameState]);
 
   // Celebrate a tier-up in-place: flash overlay + shake + fanfare + toast.
   const prevTierRef = useRef(roomTier);
   useEffect(() => {
     if (roomTier > prevTierRef.current) {
+      const oldTier = prevTierRef.current;
       setTierFlash(true);
       triggerScreenShake('medium');
       gameAudio.playUISound('projectComplete');
+      setPendingTierUpgrade({ oldTier, newTier: roomTier });
       toast({
-        title: '🏗 Studio Upgraded!',
+        title: '🏗️ Studio Upgraded!',
         description: `Your studio reached tier ${roomTier} — the room just got an upgrade.`,
         className: 'bg-amber-900/95 border-amber-400 text-white',
         duration: 6000,
@@ -300,6 +304,15 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
         <p className="studio-room-hint absolute bottom-2 left-3 text-[10px] text-slate-400 pointer-events-none">
           Tap objects · pinch to zoom · two-finger pan
         </p>
+      )}
+      {pendingTierUpgrade && (
+        <TierUpgradeAnimation
+          isVisible={!!pendingTierUpgrade}
+          oldTier={pendingTierUpgrade.oldTier}
+          newTier={pendingTierUpgrade.newTier}
+          onComplete={() => setPendingTierUpgrade(null)}
+          focusMode={settings.reducedMotion}
+        />
       )}
     </div>
   );
