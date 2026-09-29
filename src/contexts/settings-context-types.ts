@@ -2,19 +2,37 @@ import React, { createContext, useContext } from 'react';
 import type { ControllerLayoutPreference } from '@/types/gamepad';
 
 export interface GameSettings {
+  // Audio
   masterVolume: number;
   sfxVolume: number;
   musicVolume: number;
   sfxEnabled: boolean;
   musicEnabled: boolean;
-  tutorialCompleted: boolean;
-  autoSave: boolean;
+
+  // Graphics & Display
+  graphicsPreset: 'low' | 'medium' | 'high' | 'ultra';
+  resolutionScale: 0.75 | 1.0 | 1.25 | 1.5 | 2.0;
+  targetFps: 30 | 60 | 120 | 0; // 0 = unconstrained/vsync
+  crtScanlines: boolean;        // Procedural retro scanline & curvature layer
+  analogTapeWarmth: boolean;    // Warm color grading, subtle vignette
+  bloomAndGlow: boolean;        // Console switches, VU meter lights, glowing displays
+
+  // Gameplay & Controller
   difficulty: 'easy' | 'medium' | 'hard';
-  theme: 'default' | 'sunrise-studio' | 'neon-nights' | 'retro-arcade';
-  seenMinigameTutorials: Record<string, boolean>; // Track seen minigame tutorials
-  language: string; // Added language setting
+  autoSave: boolean;
   controllerLayout: ControllerLayoutPreference; // Gamepad glyph + input layout preference (49i.2)
   gamepadHaptics: boolean; // Rumble/haptic feedback on supported controllers (49i.2)
+  tutorialCompleted: boolean;
+  seenMinigameTutorials: Record<string, boolean>; // Track seen minigame tutorials
+
+  // Accessibility
+  screenShake: boolean;         // Celebration/milestone screenshake
+  reducedMotion: boolean;       // Honors OS prefers-reduced-motion or manual toggle
+  pocketMeterAssistance: 'strict' | 'normal' | 'generous'; // +/- tolerance
+
+  // Customization & Localization
+  theme: 'default' | 'sunrise-studio' | 'neon-nights' | 'retro-arcade';
+  language: string; // Added language setting
 }
 
 export interface SettingsContextType {

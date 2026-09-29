@@ -1,7 +1,9 @@
 import assert from 'node:assert';
 import { generateBoxLoot, pickLootForEra } from '../src/features/boxDrops/lootGenerator';
+import { CrateUnboxingModal } from '../src/features/boxDrops/CrateUnboxingModal';
 
 console.log('Testing Crate Unboxing & Loot Generator...');
+assert.strictEqual(typeof CrateUnboxingModal, 'function', 'CrateUnboxingModal component should be exported');
 
 const loot1970 = generateBoxLoot('1970s', 1, 42);
 assert.strictEqual(loot1970.length, 1);

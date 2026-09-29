@@ -1,47 +1,70 @@
 import type { GameState } from '@/types/game';
-import React, { useState } from 'react'; // Added useState import
+import React, { useState, useEffect } from 'react';
 import { GameConfirmDialog } from '@/components/ui/GameConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea'; // Added for import/export
+import { Textarea } from '@/components/ui/textarea';
 import { useSettings } from '@/contexts/SettingsContext';
-import { useSaveSystem } from '@/contexts/SaveSystemContext'; // Added for save/load string
-import { useGameState } from '@/hooks/useGameState'; // Added to access gameState for export
+import { useSaveSystem } from '@/contexts/SaveSystemContext';
+import { useGameState } from '@/hooks/useGameState';
+import { useGamepad } from '@/hooks/useGamepad';
 import { GamepadGlyph, CONTROLLER_LAYOUT_OPTIONS, CONTROLLER_TYPE_NAMES } from '@/components/ui/GamepadGlyph';
 import type { ControllerLayoutPreference, ControllerType } from '@/types/gamepad';
+import { GRAPHICS_PRESETS } from '@/data/defaultSettings';
 import { gameAudio } from '@/utils/audioSystem';
 import { useTranslation } from 'react-i18next';
-import { toast } from "sonner"; // For notifications
+import { toast } from "sonner";
+
+export type SettingsTabId = 'audio' | 'graphics' | 'gameplay' | 'accessibility' | 'system';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onResetGame?: () => void;
-  context?: 'splash' | 'ingame'; // New prop
-  // Adding a way to reload the game state after import
-  onLoadGameStateFromString?: (gameState: GameState) => void; 
+  context?: 'splash' | 'ingame';
+  onLoadGameStateFromString?: (gameState: GameState) => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ 
   isOpen, 
   onClose, 
   onResetGame,
-  context = 'ingame', // Default to 'ingame'
+  context = 'ingame',
   onLoadGameStateFromString
 }) => {
   const { settings, updateSettings, resetSettings } = useSettings();
   const { exportGameStateToString, loadGameFromString } = useSaveSystem();
-  const { gameState } = useGameState(); // Always call the hook
-  const { t, i18n } = useTranslation();
+  const { gameState } = useGameState();
+  const { t } = useTranslation();
+  const gamepad = useGamepad();
 
+  const [activeTab, setActiveTab] = useState<SettingsTabId>('audio');
   const [exportedSaveString, setExportedSaveString] = useState<string | null>(null);
   const [importSaveString, setImportSaveString] = useState<string>('');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
-  // Glyph preview: Auto mirrors the Xbox family until a controller is detected.
+  // Gamepad Bumper (LB / RB) Tab Cycling
+  useEffect(() => {
+    if (!isOpen || !gamepad.isConnected) return;
+    const tabs: SettingsTabId[] = ['audio', 'graphics', 'gameplay', 'accessibility', 'system'];
+    const idx = tabs.indexOf(activeTab);
+
+    if (gamepad.justPressed.lb) {
+      const nextIdx = (idx - 1 + tabs.length) % tabs.length;
+      setActiveTab(tabs[nextIdx]);
+      gamepad.triggerHaptic(0.1, 0.15, 30);
+      gameAudio.playClick();
+    } else if (gamepad.justPressed.rb) {
+      const nextIdx = (idx + 1) % tabs.length;
+      setActiveTab(tabs[nextIdx]);
+      gamepad.triggerHaptic(0.1, 0.15, 30);
+      gameAudio.playClick();
+    }
+  }, [isOpen, gamepad.isConnected, gamepad.justPressed.lb, gamepad.justPressed.rb, activeTab]);
+
   const controllerPreviewType: ControllerType =
     settings.controllerLayout === 'auto' ? 'xbox' : settings.controllerLayout;
 
@@ -53,13 +76,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       sfx: { sfxVolume: value },
       music: { musicVolume: value }
     };
-    
     updateSettings(volumeSettings[type]);
-    
-    // Play test sound for immediate feedback
-    if (type === 'sfx') {
-      gameAudio.playClick();
-    }
+    if (type === 'sfx') gameAudio.playClick();
   };
 
   const handleToggleChange = (type: 'sfx' | 'music', enabled: boolean) => {
@@ -67,17 +85,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       sfx: { sfxEnabled: enabled },
       music: { musicEnabled: enabled }
     };
-    
     updateSettings(toggleSettings[type]);
-    
-    if (enabled && type === 'sfx') {
-      gameAudio.playSuccess();
-    }
+    if (enabled && type === 'sfx') gameAudio.playSuccess();
+  };
+
+  const handlePresetSelect = (preset: 'low' | 'medium' | 'high' | 'ultra') => {
+    const patch = GRAPHICS_PRESETS[preset];
+    updateSettings(patch);
+    gameAudio.playClick();
   };
 
   const handleResetSettings = () => {
     resetSettings();
     gameAudio.playClick();
+    toast.success('Settings reset to defaults');
   };
 
   const handleResetGame = () => {
@@ -120,10 +141,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       if (onLoadGameStateFromString) {
         onLoadGameStateFromString(loadedState);
         toast.success("Game data imported successfully! Reloading game...");
-        onClose(); // Close modal after successful import
+        onClose();
       } else {
-        // This case should ideally be handled by ensuring onLoadGameStateFromString is passed
-        // when import is possible.
         toast.error("Import successful, but no reload function provided.");
       }
     } else {
@@ -141,393 +160,510 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   return (
     <>
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <Card className="w-full max-w-2xl bg-gray-900 border-gray-600 p-6 m-4 max-h-[90vh] overflow-y-auto">
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-white mb-2">⚙️ Game Settings</h2>
-          <p className="text-gray-300">Customize your game experience</p>
-        </div>
-
-        <div className="space-y-8">
-          {/* Audio Settings */}
-          <div className="space-y-6">
-            <h3 className="text-xl font-semibold text-white border-b border-gray-600 pb-2">
-              🔊 Audio Settings
-            </h3>
-            
-            {/* Master Volume */}
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <label className="text-white font-medium">Master Volume</label>
-                <span className="text-gray-400">{Math.round(settings.masterVolume * 100)}%</span>
-              </div>
-              <Slider
-                value={[settings.masterVolume]}
-                onValueChange={(value) => handleVolumeChange('master', value[0])}
-                max={1}
-                step={0.1}
-                className="w-full [&_.bg-primary]:bg-green-500 [&_.border-primary]:border-green-500 [&_.bg-secondary]:bg-gray-700"
-              />
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <Card className="w-full max-w-3xl bg-slate-950 border-slate-700/80 shadow-2xl p-6 max-h-[90vh] flex flex-col overflow-hidden text-slate-100">
+          {/* Header */}
+          <div className="flex justify-between items-center pb-4 border-b border-slate-800">
+            <div>
+              <h2 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
+                <span>⚙️</span> Game Settings
+              </h2>
+              <p className="text-xs text-slate-400">Configure audio, graphics rendering, controller, and accessibility</p>
             </div>
-
-            {/* Sound Effects */}
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <label className="text-white font-medium">Sound Effects</label>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-400">{Math.round(settings.sfxVolume * 100)}%</span>
-                  <Switch
-                    checked={settings.sfxEnabled}
-                    onCheckedChange={(checked) => handleToggleChange('sfx', checked)}
-                  />
-                </div>
-              </div>
-              <Slider
-                value={[settings.sfxVolume]}
-                onValueChange={(value) => handleVolumeChange('sfx', value[0])}
-                max={1}
-                step={0.1}
-                className="w-full [&_.bg-primary]:bg-green-500 [&_.border-primary]:border-green-500 [&_.bg-secondary]:bg-gray-700"
-                disabled={!settings.sfxEnabled}
-              />
-            </div>
-
-            {/* Background Music */}
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <label className="text-white font-medium">Background Music</label>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-400">{Math.round(settings.musicVolume * 100)}%</span>
-                  <Switch
-                    checked={settings.musicEnabled}
-                    onCheckedChange={(checked) => handleToggleChange('music', checked)}
-                  />
-                </div>
-              </div>
-              <Slider
-                value={[settings.musicVolume]}
-                onValueChange={(value) => handleVolumeChange('music', value[0])}
-                max={1}
-                step={0.1}
-                className="w-full [&_.bg-primary]:bg-green-500 [&_.border-primary]:border-green-500 [&_.bg-secondary]:bg-gray-700"
-                disabled={!settings.musicEnabled}
-              />
-            </div>
-          </div>
-
-          {/* Game Settings */}
-          <div className="space-y-6">
-            <h3 className="text-xl font-semibold text-white border-b border-gray-600 pb-2">
-              🎮 Game Settings
-            </h3>
-            
-            {/* Difficulty */}
-            <div className="space-y-2">
-              <label className="text-white font-medium">Difficulty Level</label>
-              <Select
-                value={settings.difficulty}
-                onValueChange={(value: 'easy' | 'medium' | 'hard') => updateSettings({ difficulty: value })}
-              >
-                <SelectTrigger className="w-full bg-gray-800 border-gray-600 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-600">
-                  <SelectItem value="easy" className="text-white hover:bg-gray-700">
-                    Easy - Relaxed gameplay
-                  </SelectItem>
-                  <SelectItem value="medium" className="text-white hover:bg-gray-700">
-                    Medium - Balanced challenge
-                  </SelectItem>
-                  <SelectItem value="hard" className="text-white hover:bg-gray-700">
-                    Hard - Expert mode
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Auto Save */}
-            <div className="flex justify-between items-center">
-              <div>
-                <label className="text-white font-medium">Auto Save</label>
-                <p className="text-gray-400 text-sm">Automatically save progress</p>
-              </div>
-              <Switch
-                checked={settings.autoSave}
-                onCheckedChange={(checked) => updateSettings({ autoSave: checked })}
-              />
-            </div>
-
-            {/* Tutorial Status */}
-            <div className="flex justify-between items-center">
-              <div>
-                <label className="text-white font-medium">First session guide</label>
-                <p className="text-gray-400 text-sm">Show guidance for your current studio progress</p>
-              </div>
-              <Switch
-                checked={!settings.tutorialCompleted}
-                onCheckedChange={(checked) => updateSettings({ tutorialCompleted: !checked })}
-              />
-            </div>
-          </div>
-
-          {/* Controller Settings */}
-          <div className="space-y-6">
-            <h3 className="text-xl font-semibold text-white border-b border-gray-600 pb-2">
-              🕹️ Controller Settings
-            </h3>
-
-            {/* Controller Layout */}
-            <div className="space-y-2">
-              <label className="text-white font-medium">Controller Layout</label>
-              <p className="text-gray-400 text-sm">
-                On-screen button hints follow the connected pad automatically, or pick a fixed glyph set.
-              </p>
-              <Select
-                value={settings.controllerLayout}
-                onValueChange={(value: ControllerLayoutPreference) => {
-                  updateSettings({ controllerLayout: value });
-                  gameAudio.playClick();
-                }}
-              >
-                <SelectTrigger className="w-full bg-gray-800 border-gray-600 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-600">
-                  {CONTROLLER_LAYOUT_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value} className="text-white hover:bg-gray-700">
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Glyph preview for the preferred layout */}
-              <div className="flex items-center gap-3 pt-2">
-                <span className="text-gray-400 text-sm">
-                  {settings.controllerLayout === 'auto'
-                    ? 'Preview (Auto)'
-                    : CONTROLLER_TYPE_NAMES[controllerPreviewType]}
-                </span>
-                {(['south', 'east', 'west', 'north'] as const).map((button) => (
-                  <GamepadGlyph
-                    key={button}
-                    button={button}
-                    controllerType={controllerPreviewType}
-                    size="md"
-                    decorative
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Controller Rumble */}
-            <div className="flex justify-between items-center">
-              <div>
-                <label className="text-white font-medium">Controller Rumble</label>
-                <p className="text-gray-400 text-sm">Haptic feedback on supported controllers</p>
-              </div>
-              <Switch
-                checked={settings.gamepadHaptics}
-                onCheckedChange={(checked) => updateSettings({ gamepadHaptics: checked })}
-              />
-            </div>
-          </div>
-
-          {/* Language Settings - Placed before Theme Settings for better grouping */}
-          <div className="space-y-6">
-            <h3 className="text-xl font-semibold text-white border-b border-gray-600 pb-2">
-              🌐 {t('language_settings_title', 'Language Settings')}
-            </h3>
-            <div className="space-y-2">
-              <label className="text-white font-medium">{t('select_language_label', 'Select Language')}</label>
-              <Select
-                value={settings.language}
-                onValueChange={handleLanguageChange}
-              >
-                <SelectTrigger className="w-full bg-gray-800 border-gray-600 text-white">
-                  <SelectValue placeholder={t('select_language_placeholder', 'Select a language')} />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-600">
-                  <SelectItem value="en" className="text-white hover:bg-gray-700">
-                    {t('language_english', 'English')}
-                  </SelectItem>
-                  <SelectItem value="pl" className="text-white hover:bg-gray-700">
-                    {t('language_polish', 'Polski')}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Theme Settings */}
-          <div className="space-y-6">
-            <h3 className="text-xl font-semibold text-white border-b border-gray-600 pb-2">
-              🎨 Theme Settings
-            </h3>
-            
-            {/* Theme Selector */}
-            <div className="space-y-2">
-              <label className="text-white font-medium">Game Theme</label>
-              <Select
-                value={settings.theme}
-                onValueChange={(value: 'default' | 'sunrise-studio' | 'neon-nights' | 'retro-arcade') => updateSettings({ theme: value })}
-              >
-                <SelectTrigger className="w-full bg-gray-800 border-gray-600 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-600">
-                  <SelectItem value="default" className="text-white hover:bg-gray-700">
-                    Default
-                  </SelectItem>
-                  <SelectItem value="sunrise-studio" className="text-white hover:bg-gray-700">
-                    Sunrise Studio
-                  </SelectItem>
-                  <SelectItem value="neon-nights" className="text-white hover:bg-gray-700">
-                    Neon Nights
-                  </SelectItem>
-                  <SelectItem value="retro-arcade" className="text-white hover:bg-gray-700">
-                    Retro Arcade
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          {/* Data Management Section */}
-          <div className="space-y-6">
-            <h3 className="text-xl font-semibold text-white border-b border-gray-600 pb-2">
-              💾 Data Management
-            </h3>
-
-            {/* Import Game Data */}
-            <div className="space-y-2">
-              <label htmlFor="import-save-string" className="text-white font-medium">Import Game from Text</label>
-              <p className="text-gray-400 text-sm">Paste your exported game data string below.</p>
-              <Textarea
-                id="import-save-string"
-                value={importSaveString}
-                onChange={(e) => setImportSaveString(e.target.value)}
-                placeholder="Paste your save string here..."
-                className="bg-gray-800 border-gray-600 text-white min-h-[100px]"
-              />
-              <Button onClick={handleImportGameData} className="w-full mt-2 bg-green-600 hover:bg-green-700">
-                Import Data
-              </Button>
-            </div>
-
-            {/* Export Game Data (Only in-game) */}
-            {context === 'ingame' && gameState && (
-              <div className="space-y-2">
-                <label htmlFor="export-save-string" className="text-white font-medium">Export Game to Text</label>
-                <p className="text-gray-400 text-sm">Copy this string to save your game progress externally.</p>
-                <Button onClick={handleExportGameData} className="w-full mb-2 bg-orange-600 hover:bg-orange-700">
-                  Generate Export String
-                </Button>
-                {exportedSaveString && (
-                  <>
-                    <Textarea
-                      id="export-save-string"
-                      value={exportedSaveString}
-                      readOnly
-                      className="bg-gray-800 border-gray-600 text-white min-h-[100px]"
-                    />
-                    <Button onClick={handleCopyToClipboard} className="w-full mt-2 bg-sky-600 hover:bg-sky-700">
-                      Copy to Clipboard
-                    </Button>
-                  </>
-                )}
+            {gamepad.isConnected && (
+              <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-900 px-3 py-1.5 rounded-full border border-slate-800">
+                <GamepadGlyph button="lb" size="xs" />
+                <span className="font-semibold text-slate-300">Tabs</span>
+                <GamepadGlyph button="rb" size="xs" />
               </div>
             )}
           </div>
 
-
-          {/* Action Buttons */}
-          <div className="space-y-4 pt-6 border-t border-gray-600">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Button
-                onClick={handleResetSettings}
-                className="w-full bg-gray-700 hover:bg-gray-600 text-white border border-gray-500"
-              >
-                Reset Settings
-              </Button>
-              
-              {onResetGame && (
-              <Button
-                onClick={handleResetGame}
-                variant="destructive"
-                className="w-full bg-red-600 hover:bg-red-700 text-white"
-              >
-                Reset Game Progress
-              </Button>
-            )}
-            </div>
-            
-            {/* Conditionally hide Reset Game Progress if context is splash, or if onResetGame is not provided */}
-            {/* The existing onResetGame check already handles part of this, but context makes it more explicit */}
-            {/* For now, the main change is adding the context prop. UI changes based on context will come next. */}
-            {/* The Reset Game Progress button should only show if context is 'ingame' and onResetGame is passed */}
-            {!(context === 'splash') && onResetGame && (
-              <Button
-                onClick={handleResetGame}
-                variant="destructive"
-                className="w-full bg-red-600 hover:bg-red-700 text-white mt-4 md:mt-0" // Ensure consistent spacing if it becomes the only button in its row
-              >
-                Reset Game Progress
-              </Button>
-            )}
-            {/* If context is splash, and onResetGame is not available, the above block is hidden.
-                If context is ingame, it depends on onResetGame.
-                This logic needs refinement to ensure correct layout when Reset Game is hidden.
-                The original code had Reset Settings and Reset Game in a grid.
-                If Reset Game is hidden, Reset Settings should span full width or be handled differently.
-            */}
-            {/* Let's adjust the grid logic for the buttons */}
-            {/* The following is a simplified structure for now, focusing on the context prop addition.
-                Detailed conditional rendering of buttons will be part of text save/load implementation.
-            */}
-            {/* The original code for Reset Game Progress button is:
-            {onResetGame && (
-              <Button onClick={handleResetGame} variant="destructive" className="w-full bg-red-600 hover:bg-red-700 text-white">
-                Reset Game Progress
-              </Button>
-            )}
-            This will be refined later. For now, I'm ensuring the context prop is added.
-            The previous SEARCH/REPLACE block for the Reset Settings button was:
-            <Button onClick={handleResetSettings} className="w-full bg-gray-700 hover:bg-gray-600 text-white border border-gray-500"> Reset Settings </Button>
-            
-            The grid structure for buttons:
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              Button for Reset Settings
-              Conditional Button for Reset Game
-            </div>
-            If context is 'splash', Reset Game should not appear.
-            The `onResetGame` prop is typically passed from `Index.tsx` (in-game context) and not from `SplashScreen.tsx`.
-            So, the `onResetGame && (...)` check effectively hides "Reset Game Progress" when called from splash.
-            No change needed to the Reset Game Progress button's conditional rendering based on `onResetGame` for now.
-            The `context` prop will be used later for adding Export/Import text save features.
-            */}
-
-          <Button
-              onClick={onClose}
-              className="w-full bg-blue-600 hover:bg-blue-700"
+          {/* Navigation Tabs */}
+          <div className="flex gap-1.5 pt-3 pb-3 border-b border-slate-800/80 overflow-x-auto select-none">
+            <button
+              onClick={() => setActiveTab('audio')}
+              className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+                activeTab === 'audio'
+                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                  : 'bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
             >
-              Save & Close
+              <span>🔊</span> Audio
+            </button>
+            <button
+              onClick={() => setActiveTab('graphics')}
+              className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+                activeTab === 'graphics'
+                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                  : 'bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <span>📺</span> Graphics & Display
+            </button>
+            <button
+              onClick={() => setActiveTab('gameplay')}
+              className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+                activeTab === 'gameplay'
+                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                  : 'bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <span>🎮</span> Gameplay & Pad
+            </button>
+            <button
+              onClick={() => setActiveTab('accessibility')}
+              className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+                activeTab === 'accessibility'
+                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                  : 'bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <span>♿</span> Accessibility
+            </button>
+            <button
+              onClick={() => setActiveTab('system')}
+              className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+                activeTab === 'system'
+                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                  : 'bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <span>🌐</span> System & Data
+            </button>
+          </div>
+
+          {/* Tab Content Body */}
+          <div className="flex-1 overflow-y-auto py-4 space-y-6 pr-1">
+            {/* 1. AUDIO TAB */}
+            {activeTab === 'audio' && (
+              <div className="space-y-5 animate-in fade-in duration-200">
+                <div className="space-y-2 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                  <div className="flex justify-between items-center">
+                    <label className="text-white font-medium text-sm">Master Volume</label>
+                    <span className="text-amber-400 font-mono text-xs">{Math.round(settings.masterVolume * 100)}%</span>
+                  </div>
+                  <Slider
+                    value={[settings.masterVolume]}
+                    onValueChange={(val) => handleVolumeChange('master', val[0])}
+                    max={1}
+                    step={0.05}
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="space-y-2 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                  <div className="flex justify-between items-center">
+                    <label className="text-white font-medium text-sm">Sound Effects (SFX)</label>
+                    <div className="flex items-center gap-3">
+                      <span className="text-amber-400 font-mono text-xs">{Math.round(settings.sfxVolume * 100)}%</span>
+                      <Switch
+                        checked={settings.sfxEnabled}
+                        onCheckedChange={(checked) => handleToggleChange('sfx', checked)}
+                      />
+                    </div>
+                  </div>
+                  <Slider
+                    value={[settings.sfxVolume]}
+                    onValueChange={(val) => handleVolumeChange('sfx', val[0])}
+                    max={1}
+                    step={0.05}
+                    disabled={!settings.sfxEnabled}
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="space-y-2 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                  <div className="flex justify-between items-center">
+                    <label className="text-white font-medium text-sm">Background Music & Atmosphere</label>
+                    <div className="flex items-center gap-3">
+                      <span className="text-amber-400 font-mono text-xs">{Math.round(settings.musicVolume * 100)}%</span>
+                      <Switch
+                        checked={settings.musicEnabled}
+                        onCheckedChange={(checked) => handleToggleChange('music', checked)}
+                      />
+                    </div>
+                  </div>
+                  <Slider
+                    value={[settings.musicVolume]}
+                    onValueChange={(val) => handleVolumeChange('music', val[0])}
+                    max={1}
+                    step={0.05}
+                    disabled={!settings.musicEnabled}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* 2. GRAPHICS & DISPLAY TAB */}
+            {activeTab === 'graphics' && (
+              <div className="space-y-5 animate-in fade-in duration-200">
+                {/* Preset Selector */}
+                <div className="bg-slate-900/50 p-4 rounded-lg border border-slate-800 space-y-3">
+                  <label className="text-white font-medium text-sm block">Graphics Quality Preset</label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {(['low', 'medium', 'high', 'ultra'] as const).map((preset) => (
+                      <button
+                        key={preset}
+                        onClick={() => handlePresetSelect(preset)}
+                        className={`py-2 px-3 rounded text-xs font-bold uppercase tracking-wider transition-all border ${
+                          settings.graphicsPreset === preset
+                            ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md shadow-amber-500/20'
+                            : 'bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-800'
+                        }`}
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Resolution Scaling & Target FPS */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-slate-900/50 p-4 rounded-lg border border-slate-800 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <label className="text-white font-medium text-sm">Resolution Scale</label>
+                      <span className="text-cyan-400 font-mono text-xs">{settings.resolutionScale}x</span>
+                    </div>
+                    <Select
+                      value={String(settings.resolutionScale)}
+                      onValueChange={(val) => updateSettings({ resolutionScale: Number(val) as any })}
+                    >
+                      <SelectTrigger className="w-full bg-slate-900 border-slate-700 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                        <SelectItem value="0.75">0.75x (Performance / Low-end)</SelectItem>
+                        <SelectItem value="1">1.0x (Standard 1080p native)</SelectItem>
+                        <SelectItem value="1.25">1.25x (Crisp High-DPI)</SelectItem>
+                        <SelectItem value="1.5">1.5x (Ultra 1440p+)</SelectItem>
+                        <SelectItem value="2">2.0x (Retina 4K Supersample)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="bg-slate-900/50 p-4 rounded-lg border border-slate-800 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <label className="text-white font-medium text-sm">Target Frame Rate</label>
+                      <span className="text-cyan-400 font-mono text-xs">
+                        {settings.targetFps === 0 ? 'V-Sync Uncapped' : `${settings.targetFps} FPS`}
+                      </span>
+                    </div>
+                    <Select
+                      value={String(settings.targetFps)}
+                      onValueChange={(val) => updateSettings({ targetFps: Number(val) as any })}
+                    >
+                      <SelectTrigger className="w-full bg-slate-900 border-slate-700 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                        <SelectItem value="30">30 FPS (Battery Saver / Focus)</SelectItem>
+                        <SelectItem value="60">60 FPS (Smooth Standard)</SelectItem>
+                        <SelectItem value="120">120 FPS (High Refresh Rate)</SelectItem>
+                        <SelectItem value="0">Uncapped / Monitor V-Sync</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Post-Processing Toggles */}
+                <div className="space-y-3 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Visual Enhancements & Shaders</h4>
+
+                  <div className="flex justify-between items-center py-2 border-b border-slate-800">
+                    <div>
+                      <label className="text-white text-sm font-medium">Retro CRT Scanlines & Curvature</label>
+                      <p className="text-xs text-slate-400">Renders procedural scanlines over the isometric studio</p>
+                    </div>
+                    <Switch
+                      checked={settings.crtScanlines}
+                      onCheckedChange={(checked) => updateSettings({ crtScanlines: checked })}
+                    />
+                  </div>
+
+                  <div className="flex justify-between items-center py-2 border-b border-slate-800">
+                    <div>
+                      <label className="text-white text-sm font-medium">Analog Tape Warmth & Vignette</label>
+                      <p className="text-xs text-slate-400">Applies era-specific analog saturation and warm corner vignette</p>
+                    </div>
+                    <Switch
+                      checked={settings.analogTapeWarmth}
+                      onCheckedChange={(checked) => updateSettings({ analogTapeWarmth: checked })}
+                    />
+                  </div>
+
+                  <div className="flex justify-between items-center py-2">
+                    <div>
+                      <label className="text-white text-sm font-medium">Console Hardware Emissive Bloom</label>
+                      <p className="text-xs text-slate-400">Illuminates VU meter lamps, console switches, and DAW monitors</p>
+                    </div>
+                    <Switch
+                      checked={settings.bloomAndGlow}
+                      onCheckedChange={(checked) => updateSettings({ bloomAndGlow: checked })}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 3. GAMEPLAY & CONTROLLER TAB */}
+            {activeTab === 'gameplay' && (
+              <div className="space-y-5 animate-in fade-in duration-200">
+                <div className="space-y-2 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                  <label className="text-white font-medium text-sm">Difficulty Level</label>
+                  <Select
+                    value={settings.difficulty}
+                    onValueChange={(val: 'easy' | 'medium' | 'hard') => updateSettings({ difficulty: val })}
+                  >
+                    <SelectTrigger className="w-full bg-slate-900 border-slate-700 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                      <SelectItem value="easy">Easy - Relaxed commercial payouts & generous deadlines</SelectItem>
+                      <SelectItem value="medium">Medium - Balanced authentic studio challenge</SelectItem>
+                      <SelectItem value="hard">Hard - High client expectations & strict maintenance fees</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex justify-between items-center bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                  <div>
+                    <label className="text-white font-medium text-sm">Auto Save</label>
+                    <p className="text-xs text-slate-400">Save studio state automatically after key milestones and daily ticks</p>
+                  </div>
+                  <Switch
+                    checked={settings.autoSave}
+                    onCheckedChange={(checked) => updateSettings({ autoSave: checked })}
+                  />
+                </div>
+
+                {/* Controller Layout */}
+                <div className="space-y-3 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <label className="text-white font-medium text-sm">Gamepad Layout & Glyphs</label>
+                      <p className="text-xs text-slate-400">Choose glyph set or auto-detect from connected controller</p>
+                    </div>
+                  </div>
+                  <Select
+                    value={settings.controllerLayout}
+                    onValueChange={(value: ControllerLayoutPreference) => {
+                      updateSettings({ controllerLayout: value });
+                      gameAudio.playClick();
+                    }}
+                  >
+                    <SelectTrigger className="w-full bg-slate-900 border-slate-700 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                      {CONTROLLER_LAYOUT_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <div className="flex items-center gap-3 pt-2">
+                    <span className="text-slate-400 text-xs font-mono">
+                      {settings.controllerLayout === 'auto'
+                        ? 'Preview (Auto)'
+                        : CONTROLLER_TYPE_NAMES[controllerPreviewType]}:
+                    </span>
+                    {(['south', 'east', 'west', 'north'] as const).map((button) => (
+                      <GamepadGlyph
+                        key={button}
+                        button={button}
+                        controllerType={controllerPreviewType}
+                        size="sm"
+                        decorative
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                  <div>
+                    <label className="text-white font-medium text-sm">Gamepad Haptics & Vibration</label>
+                    <p className="text-xs text-slate-400">Tactile rumble during PocketMeter groove and Gold takes</p>
+                  </div>
+                  <Switch
+                    checked={settings.gamepadHaptics}
+                    onCheckedChange={(checked) => updateSettings({ gamepadHaptics: checked })}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* 4. ACCESSIBILITY TAB */}
+            {activeTab === 'accessibility' && (
+              <div className="space-y-5 animate-in fade-in duration-200">
+                <div className="flex justify-between items-center bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                  <div>
+                    <label className="text-white font-medium text-sm">Screen Shake & Camera Kick</label>
+                    <p className="text-xs text-slate-400">Milestone celebrations and studio tier-up camera shake</p>
+                  </div>
+                  <Switch
+                    checked={settings.screenShake}
+                    onCheckedChange={(checked) => updateSettings({ screenShake: checked })}
+                  />
+                </div>
+
+                <div className="flex justify-between items-center bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                  <div>
+                    <label className="text-white font-medium text-sm">Reduced Motion</label>
+                    <p className="text-xs text-slate-400">Disable fast animated spring transitions and camera zooms</p>
+                  </div>
+                  <Switch
+                    checked={settings.reducedMotion}
+                    onCheckedChange={(checked) => updateSettings({ reducedMotion: checked })}
+                  />
+                </div>
+
+                <div className="space-y-2 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                  <label className="text-white font-medium text-sm">PocketMeter Timing Window Assist</label>
+                  <p className="text-xs text-slate-400">Calibrates the needle lock sweet-spot tolerance for Gold takes</p>
+                  <Select
+                    value={settings.pocketMeterAssistance}
+                    onValueChange={(val: 'strict' | 'normal' | 'generous') => updateSettings({ pocketMeterAssistance: val })}
+                  >
+                    <SelectTrigger className="w-full bg-slate-900 border-slate-700 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                      <SelectItem value="strict">Strict (Authentic analog timing: ±7% target)</SelectItem>
+                      <SelectItem value="normal">Normal (Standard studio tolerance: ±15% target)</SelectItem>
+                      <SelectItem value="generous">Generous (Accessibility assist: ±25% target)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {/* 5. SYSTEM & DATA TAB */}
+            {activeTab === 'system' && (
+              <div className="space-y-5 animate-in fade-in duration-200">
+                {/* Language & Theme */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                    <label className="text-white font-medium text-sm">🌐 Language</label>
+                    <Select
+                      value={settings.language}
+                      onValueChange={handleLanguageChange}
+                    >
+                      <SelectTrigger className="w-full bg-slate-900 border-slate-700 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                        <SelectItem value="en">English (US)</SelectItem>
+                        <SelectItem value="pl">Polski</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                    <label className="text-white font-medium text-sm">🎨 Studio Theme</label>
+                    <Select
+                      value={settings.theme}
+                      onValueChange={(val: any) => updateSettings({ theme: val })}
+                    >
+                      <SelectTrigger className="w-full bg-slate-900 border-slate-700 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                        <SelectItem value="default">Default Dark Console</SelectItem>
+                        <SelectItem value="sunrise-studio">Sunrise Studio</SelectItem>
+                        <SelectItem value="neon-nights">Neon Nights</SelectItem>
+                        <SelectItem value="retro-arcade">Retro Arcade</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Import / Export Save */}
+                <div className="space-y-3 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">💾 Data Management & Backup</h4>
+                  <div className="space-y-2">
+                    <label htmlFor="import-save-string" className="text-xs font-medium text-slate-300">Import Game from Text</label>
+                    <Textarea
+                      id="import-save-string"
+                      value={importSaveString}
+                      onChange={(e) => setImportSaveString(e.target.value)}
+                      placeholder="Paste exported save string here..."
+                      className="bg-slate-900 border-slate-700 text-xs font-mono min-h-[60px]"
+                    />
+                    <Button onClick={handleImportGameData} className="w-full bg-emerald-600 hover:bg-emerald-700 text-xs py-1.5 h-auto">
+                      Import Save String
+                    </Button>
+                  </div>
+
+                  {context === 'ingame' && gameState && (
+                    <div className="space-y-2 pt-2 border-t border-slate-800">
+                      <Button onClick={handleExportGameData} className="w-full bg-amber-600 hover:bg-amber-700 text-xs py-1.5 h-auto">
+                        Generate Export Save String
+                      </Button>
+                      {exportedSaveString && (
+                        <>
+                          <Textarea
+                            value={exportedSaveString}
+                            readOnly
+                            className="bg-slate-900 border-slate-700 text-xs font-mono min-h-[60px]"
+                          />
+                          <Button onClick={handleCopyToClipboard} className="w-full bg-sky-600 hover:bg-sky-700 text-xs py-1.5 h-auto">
+                            Copy to Clipboard
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Danger Zone */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                  <Button
+                    onClick={handleResetSettings}
+                    variant="outline"
+                    className="w-full bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-700 text-xs"
+                  >
+                    Reset Settings to Default
+                  </Button>
+                  {onResetGame && (
+                    <Button
+                      onClick={handleResetGame}
+                      variant="destructive"
+                      className="w-full bg-red-600 hover:bg-red-700 text-white text-xs"
+                    >
+                      Reset Game Progress
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Footer Save & Close */}
+          <div className="pt-4 border-t border-slate-800 flex justify-end">
+            <Button
+              onClick={onClose}
+              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-6"
+            >
+              Done & Close
             </Button>
           </div>
-        </div>
-      </Card>
-    </div>
+        </Card>
+      </div>
 
-    <GameConfirmDialog
-      isOpen={showResetConfirm}
-      title="Reset Game Progress"
-      message="Are you sure you want to reset all game progress? This cannot be undone."
-      confirmLabel="Reset Everything"
-      cancelLabel="Keep Playing"
-      variant="danger"
-      onConfirm={confirmResetGame}
-      onCancel={() => setShowResetConfirm(false)}
-    />
+      <GameConfirmDialog
+        isOpen={showResetConfirm}
+        title="Reset Game Progress"
+        message="Are you sure you want to reset all game progress? This cannot be undone."
+        confirmLabel="Reset Everything"
+        cancelLabel="Keep Playing"
+        variant="danger"
+        onConfirm={confirmResetGame}
+        onCancel={() => setShowResetConfirm(false)}
+      />
     </>
   );
 };

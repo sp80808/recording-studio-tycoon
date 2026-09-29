@@ -392,6 +392,12 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       setShowCelebration(true);
     }
 
+    if (verdict.grade === 'Gold') {
+      setGoldStreak(prev => prev + 1);
+    } else if (verdict.grade !== 'Silver') {
+      setGoldStreak(0);
+    }
+
     setLastTakeGrade({
       grade: verdict.grade,
       text: `${verdict.label}! +${verdict.qualityBonus} Quality (${Math.round((verdict.multiplier - 1) * 100)}% Boost)`
@@ -521,6 +527,41 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Active Session Hardware & Maintenance Buff Chips */}
+        {gameState.choreState?.activeBuffs && gameState.choreState.activeBuffs.length > 0 && (
+          <div className="shrink-0 mb-2 px-2.5 py-1.5 bg-slate-900/90 border border-slate-700/60 rounded-[2px] flex items-center gap-2 overflow-x-auto select-none shadow-inner">
+            <div className="text-[10px] font-mono text-slate-400 uppercase tracking-widest flex items-center gap-1 shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>ACTIVE BUFFS:</span>
+            </div>
+            <div className="flex items-center gap-1.5 flex-nowrap">
+              {gameState.choreState.activeBuffs.map(buff => {
+                const config = {
+                  timing_bonus: { icon: '🧲', label: `+${Math.round(buff.magnitude * 100)}% Pocket Sweet Spot`, bg: 'bg-amber-950/70 border-amber-500/50 text-amber-300' },
+                  tech_bonus: { icon: '🎛️', label: `+${Math.round(buff.magnitude * 100)}% Technical Gain`, bg: 'bg-emerald-950/70 border-emerald-500/50 text-emerald-300' },
+                  creativity_bonus: { icon: '✨', label: `+${Math.round(buff.magnitude * 100)}% Creativity Gain`, bg: 'bg-purple-950/70 border-purple-500/50 text-purple-300' },
+                  energy_saver: { icon: '⚡', label: `Overdrive -${buff.magnitude}⚡ Cost`, bg: 'bg-sky-950/70 border-sky-500/50 text-sky-300' },
+                  vibe_boost: { icon: '☕', label: `+${Math.round(buff.magnitude * 100)}% Client Vibe`, bg: 'bg-rose-950/70 border-rose-500/50 text-rose-300' },
+                }[buff.buffType] || { icon: '🔧', label: buff.buffType, bg: 'bg-slate-800 border-slate-600 text-slate-300' };
+
+                return (
+                  <span
+                    key={buff.id}
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono border shadow-sm shrink-0 ${config.bg}`}
+                    title={`${config.label} (${buff.remainingSessions} session remaining)`}
+                  >
+                    <span>{config.icon}</span>
+                    <span className="font-semibold">{config.label}</span>
+                    <span className="opacity-70 text-[9px] bg-black/40 px-1 rounded font-sans">
+                      {buff.remainingSessions}s
+                    </span>
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Scrollable Center Body: Meters, Sliders, Stage info */}
         <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2.5">
@@ -812,15 +853,24 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
               <PocketMeter
                 isArmed={true}
                 onLock={handleLockTake}
+                timingBonus={getActiveBuffMagnitude(gameState.choreState, 'timing_bonus')}
               />
             </div>
           ) : (
             <div className="space-y-2">
-              {lastTakeGrade && (
-                <div className="px-2 py-1 text-center text-xs font-mono font-bold tracking-wide text-amber-300 bg-amber-950/60 border border-amber-500/40 rounded-[2px]">
-                  {lastTakeGrade.text}
-                </div>
-              )}
+              <div className="flex items-center justify-between gap-2">
+                {lastTakeGrade && (
+                  <div className="px-2 py-1 flex-1 text-center text-xs font-mono font-bold tracking-wide text-amber-300 bg-amber-950/60 border border-amber-500/40 rounded-[2px]">
+                    {lastTakeGrade.text}
+                  </div>
+                )}
+                {goldStreak > 1 && (
+                  <div className="px-2.5 py-1 text-xs font-black tracking-wider text-slate-950 bg-gradient-to-r from-amber-400 to-yellow-300 border border-amber-200 rounded-[2px] shadow-[0_0_12px_rgba(251,191,36,0.8)] animate-bounce flex items-center gap-1 shrink-0">
+                    <span>🔥</span>
+                    <span>{goldStreak}X GOLD STREAK!</span>
+                  </div>
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 <Button
                   onClick={toggleOverdrive}
@@ -835,7 +885,11 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   {gamepad.isConnected && gamepad.lastInputType === 'gamepad' && (
                     <GamepadGlyph button="north" size="xs" />
                   )}
-                  <span>{overdriveArmed ? '🔥 OVERDRIVE ENGAGED (+1⚡ · +75%)' : '🔥 ARM OVERDRIVE (+1⚡ · +75%)'}</span>
+                  <span>
+                    {overdriveArmed
+                      ? `🔥 OVERDRIVE ENGAGED (${energyCost}⚡ · ${energySaver ? '⚡-1 Saver' : '+75%'})`
+                      : `🔥 ARM OVERDRIVE (${energySaver ? '1⚡ with Patchbay' : '2⚡'} · +75%)`}
+                  </span>
                 </Button>
               </div>
 
@@ -859,10 +913,10 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                       <GamepadGlyph button="south" size="xs" />
                     )}
                     <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping mr-1" />
-                    <span>🔴 RECORD TAKE ({energyCost}⚡ · {availableEnergy} LEFT)</span>
+                    <span>ARM TAKE ({energyCost}⚡ · {availableEnergy} LEFT)</span>
                   </>
                 ) : (
-                  '😴 STUDIO EXHAUSTED (ADVANCE DAY)'
+                  '⚡ OUT OF WORK CAPACITY — ADVANCE DAY'
                 )}
               </button>
             </div>
