@@ -32,6 +32,12 @@ import {
 
 // Studio Hardware Connector Suite & Audio
 import {
+  PixiParticleBurst,
+  RarityMaterialSweep,
+  AnimatedGearFlourish,
+} from "@/features/boxDrops/fx";
+
+import {
   playConnectorSnap,
   playJackInsert,
   playJackRemove,
@@ -550,6 +556,16 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
                 exit={reducedMotion ? { opacity: 0 } : { scale: 0.88, opacity: 0, y: -20, transition: { duration: 0.25 } }}
                 className={`w-88 sm:w-[450px] bg-gradient-to-b ${caseDef.cssTheme.gradient} border-2 ${caseDef.cssTheme.border} rounded-sm shadow-[0_20px_60px_rgba(0,0,0,0.9)] p-4 relative overflow-visible`}
               >
+                {/* Ephemeral Particle Bursts */}
+                {state.phase === "open" && (
+                  <>
+                    <PixiParticleBurst preset="foam" count={36} durationMs={800} />
+                    <PixiParticleBurst preset="sparks" count={24} durationMs={600} />
+                  </>
+                )}
+                {state.phase === "reveal" && (
+                  <PixiParticleBurst preset="motes" count={42} durationMs={1200} />
+                )}
                 {/* 3D Hinged Lid Lifting Off during Open/Silhouette/Reveal Phase */}
                 {(state.phase === 'open' || state.phase === 'silhouette') && !reducedMotion && (
                   <motion.div
@@ -844,6 +860,8 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
                 className={`w-88 sm:w-[450px] bg-slate-950 border-2 ${rarityInfo.borderColor} rounded-sm p-4 relative`}
                 style={{ boxShadow: `0 0 40px ${rarityInfo.glowColor}` }}
               >
+                {/* Rarity Material Specular Gleam Sweep */}
+                <RarityMaterialSweep rarity={currentItem.rarity} />
                 {!reducedMotion &&
                   heavyEffects &&
                   ['rare', 'vintage', 'legendary'].includes(currentItem.rarity) && (
