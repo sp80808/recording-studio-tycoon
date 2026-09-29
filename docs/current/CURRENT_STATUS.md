@@ -61,15 +61,29 @@
    - Welcome Back modal summarizing offline progress, completed stages, revenue earned, and staff energy.
    - Deterministic Mulberry32 seeded RNG (`seededRandom.ts`) guaranteeing reproducible outcomes.
 
+8. **Studio Maintenance Chores & Flight Case Loot Unboxing (`choreEngine.ts`, `StudioDutiesClipboard.tsx`, `CrateUnboxingModal.tsx`)**
+   - Daily maintenance chores (tape head cleaning, outboard calibration, patchbay routing, acoustic tuning, espresso brewing) granting active session buffs.
+   - Staff auto-assignment & ability scaling: chores automatically processed by assigned staff members with speed scaling and high-ability buff magnitude boosts.
+   - Dock-anchored Studio Duties Clipboard component with streak meter and gamepad D-pad navigation.
+   - Floating interactive maintenance badges anchored to isometric studio floor hotspots (console, shelf, live room).
+   - Multi-source loot triggers: 3-day chore streaks and S-grade stage completion rolls awarding vintage flight case crates.
+   - 4-phase cinematic 3D flight case unboxing with metal latches, rarity-colored radiating light rays, particle confetti, 3D card flips, and direct equip/inventory/sell actions.
+   - Enhanced `RewardFlights` with trailing sparkle particles and streak feedback.
+
+9. **Game Engine, Settings & PixiJS Graphics Tech Specification (`docs/superpowers/specs/2026-09-29-game-engine-settings-graphics-design.md`)**
+   - Architectural specification for decoupled 20Hz `EngineLoop` accumulator, typed `GameEventBus`, multi-tab `GameSettings` (Audio, Graphics, Accessibility), and PixiJS post-fx (CRT scanlines, tape warmth, emissive bloom). Cross-referenced to GH-46, GH-56, GH-41.
+
 ---
 
 ## 🚧 Active Priorities & Upcoming Work
 
-1. **MinigameChrome Rollout**
+1. **Engine Back-End & Graphics Tech Implementation**
+   - Implement `EngineLoop`, `GameEventBus`, expanded `SettingsModal`, and PixiJS resolution/CRT/bloom pipeline per approved spec.
+2. **MinigameChrome Rollout**
    - Complete migration of remaining legacy minigames to the standardized chrome and juice kit.
-2. **Content Authoring Workbench (#64)**
+3. **Content Authoring Workbench (#64)**
    - Schema-driven content editor for events, briefs, synergies, and gear archetypes.
-3. **Advanced Telemetry & Analytics Tooling (#59, #57)**
+4. **Advanced Telemetry & Analytics Tooling (#59, #57)**
    - Studio financial and production telemetry reporting.
 
 ---

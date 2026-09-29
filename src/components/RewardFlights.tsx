@@ -66,7 +66,7 @@ export function RewardFlights({ gameState }: { gameState: GameState }) {
       // Big wins fly bigger: amount-tiered chip scale.
       const winScale = flight.amount >= 1000 ? 1.25 : flight.amount >= 300 ? 1.1 : 1;
       return <motion.div key={flight.id} aria-hidden="true"
-      className={`studio-reward-flight ${flight.type === 'money' ? 'text-emerald-200' : 'text-amber-200'}`}
+      className={`studio-reward-flight relative ${flight.type === 'money' ? 'text-emerald-200 border-emerald-400/40 shadow-[0_0_12px_rgba(52,211,153,0.35)]' : 'text-amber-200 border-amber-400/40 shadow-[0_0_12px_rgba(251,191,36,0.35)]'}`}
       initial={{ x: reducedMotion ? flight.toX : flight.fromX, y: reducedMotion ? flight.toY : flight.fromY, opacity: 0, scale: .8 }}
       animate={reducedMotion
         ? { opacity: [0, 1, 1, 0], scale: 1 }
@@ -75,6 +75,7 @@ export function RewardFlights({ gameState }: { gameState: GameState }) {
             opacity: [0, 1, 1, 0], scale: [.8 * winScale, 1.12 * winScale, winScale, .9 * winScale] }}
       transition={{ duration: reducedMotion ? .9 : v.duration, times: [0, .25, .8, 1], ease: 'easeInOut', delay: flight.type === 'xp' ? .12 : 0 }}
       onAnimationComplete={() => setFlights(current => current.filter(f => f.id !== flight.id))}>
+      <span className="absolute -left-1 -top-1 w-2 h-2 rounded-full bg-white animate-ping opacity-75 pointer-events-none" />
       <img src={FLIGHT_SPRITE[flight.type]} alt="" width={17} height={17} loading="eager" />
       {flight.type === 'money' ? <Coins size={14} /> : <Sparkles size={14} />}
       +{flight.type === 'money' ? '$' : ''}{flight.amount.toLocaleString()}{flight.type === 'xp' ? ' XP' : ''}
