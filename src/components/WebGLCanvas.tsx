@@ -1,6 +1,18 @@
 import React, { useEffect, useRef } from 'react';
 import { Application, Container, Graphics, Text } from 'pixi.js';
 import { visualEraId } from '@/utils/eraProgression';
+import { useSettings } from '@/contexts/SettingsContext';
+
+export const calculateEffectiveResolution = (dpr: number, scale?: number) => {
+  const clampedDpr = Math.max(1.0, Math.min(2.0, dpr || 1.0));
+  return Math.max(0.5, Math.min(3.0, clampedDpr * (scale || 1.0)));
+};
+
+export const shouldSkipFrame = (targetFps: number, elapsedMs: number) => {
+  if (targetFps <= 0) return false;
+  const budgetMs = 1000 / targetFps;
+  return elapsedMs < budgetMs - 1.0;
+};
 
 /**
  * Studio hotspots the player can click in the isometric room scene.
@@ -227,6 +239,9 @@ interface SceneRefs {
   nightTintLayer: Container | null;
   hoverGlows: Record<string, Graphics>;
   idleHints: Partial<Record<'phone' | 'console', Graphics>>;
+  crtLayer: Container | null;
+  bloomLayer: Container | null;
+  vignetteLayer: Container | null;
 }
 
 interface BuiltScene {
@@ -908,6 +923,46 @@ const buildScene = (
   refs.nightTintLayer = tintLayer;
   root.addChild(tintLayer);
 
+  /* ---- CRT scanlines & Vignette Post-FX layers ------------ */
+  const vignetteLayer = new Container();
+  const vignetteG = new Graphics();
+  const maxDim = Math.max(width, height) / fitScale;
+  vignetteG.circle((width / 2) / fitScale, (height / 2) / fitScale, maxDim * 0.72)
+    .stroke({ color: 0x140a04, width: 85, alpha: 0.28 });
+  vignetteLayer.addChild(vignetteG);
+  vignetteLayer.eventMode = 'none';
+  vignetteLayer.position.set(-originX / fitScale, -originY / fitScale);
+  refs.vignetteLayer = vignetteLayer;
+  root.addChild(vignetteLayer);
+
+  const crtLayer = new Container();
+  const crtG = new Graphics();
+  const screenW = width / fitScale;
+  const screenH = height / fitScale;
+  for (let y = 0; y < screenH; y += 4) {
+    crtG.rect(0, y, screenW, 1.5).fill({ color: 0x000000, alpha: 0.14 });
+  }
+  crtLayer.addChild(crtG);
+  crtLayer.eventMode = 'none';
+  crtLayer.position.set(-originX / fitScale, -originY / fitScale);
+  refs.crtLayer = crtLayer;
+  root.addChild(crtLayer);
+
+  /* ---- Emissive Bloom & Glow Layer (additive blend) ------------ */
+  const bloomLayer = new Container();
+  bloomLayer.eventMode = 'none';
+  bloomLayer.blendMode = 'add';
+  const meterBloom = new Graphics();
+  refs.vuBars.forEach((bar) => {
+    meterBloom.circle(bar.x, bar.y - 4, 7).fill({ color: 0xffb347, alpha: 0.35 });
+  });
+  refs.tvBars.forEach((bar) => {
+    meterBloom.circle(bar.x, bar.y, 6).fill({ color: 0x5aa9e6, alpha: 0.25 });
+  });
+  bloomLayer.addChild(meterBloom);
+  refs.bloomLayer = bloomLayer;
+  root.addChild(bloomLayer);
+
   return { root, refs, basePosition: { x: originX, y: originY }, baseScale: fitScale };
 };
 
@@ -926,6 +981,29 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   const suppressTapRef = useRef(false);
   const gestureMidpointRef = useRef<{ x: number; y: number } | null>(null);
   const lastCanvasInputRef = useRef(0);
+  const lastFrameTimeRef = useRef(0);
+
+  const { settings } = useSettings();
+  const settingsRef = useRef(settings);
+
+  useEffect(() => {
+    settingsRef.current = settings;
+    const app = appRef.current;
+    if (app && app.renderer) {
+      const dpr = window.devicePixelRatio || 1;
+      const effectiveRes = calculateEffectiveResolution(dpr, settings.resolutionScale);
+      if (Math.abs(app.renderer.resolution - effectiveRes) > 0.01) {
+        app.renderer.resolution = effectiveRes;
+        app.renderer.resize(app.screen.width, app.screen.height);
+      }
+    }
+    const sc = sceneRef.current;
+    if (sc) {
+      if (sc.refs.crtLayer) sc.refs.crtLayer.visible = Boolean(settings.crtScanlines);
+      if (sc.refs.vignetteLayer) sc.refs.vignetteLayer.visible = Boolean(settings.analogTapeWarmth);
+      if (sc.refs.bloomLayer) sc.refs.bloomLayer.visible = Boolean(settings.bloomAndGlow);
+    }
+  }, [settings]);
 
   // Keep the latest props in refs so the ticker/callbacks never go stale
   useEffect(() => {
@@ -968,6 +1046,11 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
       scene.basePosition.x + cameraRef.current.x,
       scene.basePosition.y + cameraRef.current.y,
     );
+    if (settingsRef.current) {
+      if (scene.refs.crtLayer) scene.refs.crtLayer.visible = Boolean(settingsRef.current.crtScanlines);
+      if (scene.refs.vignetteLayer) scene.refs.vignetteLayer.visible = Boolean(settingsRef.current.analogTapeWarmth);
+      if (scene.refs.bloomLayer) scene.refs.bloomLayer.visible = Boolean(settingsRef.current.bloomAndGlow);
+    }
     app.stage.addChild(scene.root);
     sceneRef.current = scene;
   };
@@ -1041,12 +1124,16 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     const boot = async () => {
       try {
         const app = new Application();
+        const initialRes = calculateEffectiveResolution(
+          window.devicePixelRatio || 1,
+          settingsRef.current?.resolutionScale
+        );
         await app.init({
           background: 0x11151f,
           resizeTo: container,
           antialias: true,
           autoDensity: true,
-          resolution: Math.min(window.devicePixelRatio || 1, 2),
+          resolution: initialRes,
         });
         if (disposed) {
           app.destroy(true, { children: true });
@@ -1189,6 +1276,15 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
 
         // Animation loop: VU meters, TV equalizer, phone ring, clock, staff, day tint
         app.ticker.add((ticker) => {
+          if (typeof document !== 'undefined' && document.hidden) return;
+
+          const now = performance.now();
+          const targetFps = settingsRef.current?.targetFps ?? 60;
+          if (shouldSkipFrame(targetFps, now - lastFrameTimeRef.current)) {
+            return;
+          }
+          lastFrameTimeRef.current = now;
+
           const s = stateRef.current;
           timeRef.current += ticker.deltaMS;
           const t = timeRef.current / 1000;
