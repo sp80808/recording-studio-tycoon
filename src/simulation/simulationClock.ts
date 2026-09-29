@@ -14,6 +14,7 @@ import {
   getTechnicalMultiplier
 } from '@/utils/playerUtils';
 import { getBookedStudioRoom } from '@/utils/studioRoomUtils';
+import { resolveSessionEquipment } from '@/utils/gameUtils';
 
 export const PASSIVE_WORK_SESSION_MS = 5 * 60 * 1000;
 export const DEFAULT_MAX_OFFLINE_MS = 8 * 60 * 60 * 1000;
@@ -85,7 +86,7 @@ const calculatePassiveSessionOutput = (
 
     workPoints = applyEquipmentBonusesToWorkPoints(
       workPoints,
-      state.ownedEquipment,
+      resolveSessionEquipment(state, project.bookingRoomId),
       project.genre
     );
   }

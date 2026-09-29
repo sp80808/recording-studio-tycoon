@@ -11,7 +11,7 @@ import {
   getRoomEffectiveEquipment,
   placeEquipmentInSlot,
 } from '@/types/equipmentSlots';
-import { getRoomEquipment } from '@/utils/gameUtils';
+import { getRoomEquipment, resolveSessionEquipment, getEquipmentBonuses } from '@/utils/gameUtils';
 import type { GameState } from '@/types/game';
 
 const makeEquip = (
@@ -135,6 +135,65 @@ it('limits room-effective gear to seated placements', () => {
   // Legacy fallback: no placements ⇒ all owned gear available
   const legacy = getRoomEffectiveEquipment(owned, undefined, 'studio-a', slots);
   assert.equal(legacy.length, 3);
+});
+
+it('soft-cutover: inventory-only / legacy keep full owned gear for session bonuses', () => {
+  const hot = makeEquip('hot-comp', 'outboard', 'Hot Comp');
+  hot.bonuses = { qualityBonus: 20, genreBonus: { rock: 8 } };
+  const cold = makeEquip('cold-mic', 'microphone', 'Cold Mic');
+  cold.bonuses = { qualityBonus: 4 };
+  const owned = [hot, cold];
+
+  const legacyState = { ownedEquipment: owned } as GameState;
+  assert.deepEqual(
+    resolveSessionEquipment(legacyState, 'studio-a').map((e) => e.id).sort(),
+    ['cold-mic', 'hot-comp']
+  );
+  assert.equal(getEquipmentBonuses(resolveSessionEquipment(legacyState, 'studio-a'), 'rock').quality, 24);
+
+  const inventoryOnly = {
+    ownedEquipment: owned,
+    equipmentPlacements: buildDefaultPlacements(owned),
+  } as GameState;
+  const soft = resolveSessionEquipment(inventoryOnly, 'studio-a');
+  assert.equal(soft.length, 2);
+  assert.equal(getEquipmentBonuses(soft, 'rock').quality, 24);
+  assert.equal(getEquipmentBonuses(soft, 'rock').genre, 8);
+});
+
+it('engaged seating: only gear seated in the booked room drives session bonuses', () => {
+  const hot = makeEquip('hot-comp', 'outboard', 'Hot Comp');
+  hot.bonuses = { qualityBonus: 20, genreBonus: { rock: 8 } };
+  const spare = makeEquip('spare-eq', 'outboard', 'Spare EQ');
+  spare.bonuses = { qualityBonus: 50 };
+  const otherRoom = makeEquip('other-iface', 'interface', 'Other IF');
+  otherRoom.bonuses = { qualityBonus: 30 };
+  const owned = [hot, spare, otherRoom];
+
+  const engaged = {
+    ownedEquipment: owned,
+    equipmentPlacements: [
+      { equipmentId: 'hot-comp', slotId: 'studio-a:rack:1' },
+      { equipmentId: 'spare-eq', slotId: INVENTORY_SLOT_ID },
+      { equipmentId: 'other-iface', slotId: 'vocal-suite:desk:1' },
+    ],
+  } as GameState;
+
+  const studioA = resolveSessionEquipment(engaged, 'studio-a');
+  assert.deepEqual(studioA.map((e) => e.id), ['hot-comp']);
+  const studioABonuses = getEquipmentBonuses(studioA, 'rock');
+  assert.equal(studioABonuses.quality, 20);
+  assert.equal(studioABonuses.genre, 8);
+
+  // Different room only sees its own seated gear — spare inventory does not leak in
+  const vocal = resolveSessionEquipment(engaged, 'vocal-suite');
+  assert.deepEqual(vocal.map((e) => e.id), ['other-iface']);
+  assert.equal(getEquipmentBonuses(vocal, 'rock').quality, 30);
+
+  // Empty booked room while seating is engaged elsewhere ⇒ zero session gear (intentional)
+  const emptyLive = resolveSessionEquipment(engaged, 'live-room');
+  assert.equal(emptyLive.length, 0);
+  assert.equal(getEquipmentBonuses(emptyLive, 'rock').quality, 0);
 });
 
 console.log('PASS: equipment slot placements, seating rules, and room resolution');

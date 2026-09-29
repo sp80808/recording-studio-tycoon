@@ -18,6 +18,7 @@ import { gameAudio } from '@/utils/audioSystem';
 import { triggerScreenShake } from '@/utils/screenShake';
 import { MinigameType } from '@/components/minigames/MinigameManager';
 import { getBookedStudioRoom } from '@/utils/studioRoomUtils';
+import { resolveSessionEquipment } from '@/utils/gameUtils';
 import { createSeededRandom } from '@/simulation/seededRandom';
 import { evaluateProjectSynergies, calculateSynergyBonuses, recordDiscoveredSynergies } from '@/utils/synergyUtils';
 import { advanceFlow } from '@/rpg/focusFlow';
@@ -328,10 +329,10 @@ export const useStageWork = ({
     );
     console.log(`🎸 After skill bonuses - C: ${workPoints.creativity}, T: ${workPoints.technical}`);
 
-    // Apply equipment bonuses
+    // Apply equipment bonuses (seated room gear when racks are in use — bead 8om)
     workPoints = applyEquipmentBonusesToWorkPoints(
       workPoints,
-      gameState.ownedEquipment,
+      resolveSessionEquipment(gameState, project.bookingRoomId),
       project.genre
     );
     console.log(`🎛️ After equipment bonuses - C: ${workPoints.creativity}, T: ${workPoints.technical}`);
