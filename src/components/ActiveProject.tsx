@@ -73,6 +73,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   // This will store the full project object to pass to onProjectComplete after celebration
   const [projectDataForCompletionCall, setProjectDataForCompletionCall] = useState<Project | null>(null);
   const [pulseAnimation, setPulseAnimation] = useState(false);
+  const [goldStreak, setGoldStreak] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastSliderAudioRef = useRef(0);
 
