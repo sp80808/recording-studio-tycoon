@@ -380,4 +380,32 @@ If this plan looks good I can:
 - Scaffold the `marketplace` Zustand slice, mock provider, and a simple `Market` React page with tests.
 - Or open the example issues in the repo with estimates and acceptance criteria.
 
-Werrrrr
+## XVI. Art Pass — Flight Cases, Mods, Equipment Art, Collectibles (Sept 2026, shipped data layer)
+
+Shipped this pass (data + CSS rendering, no binary downloads):
+
+- `src/data/flightCases.ts` — 5-tier flight-case catalogue (cardboard_box,
+  road_case, tour_trunk, vintage_flight_case, holy_grail_vault) with loot
+  weights, era bias, drop sources, CC0 source per tier, and
+  `legacyTierToFlightCase()` back-compat for `GameState.pendingCrates`.
+- `src/data/equipmentMods.ts` — 12 in-house CC0 mods (was 1), one+ per
+  category, research costs 120–900 / 3–12 days.
+- `src/data/equipmentArt.ts` — art registry for all 57 equipment ids: base
+  sprite target, alts, fallback emoji, tint, CC0 source, 3+ CSS variants,
+  wear + emblem-slot flags. `equipmentSprites.ts` now covers all 57 with
+  category-row positions and re-exports art sprites.
+- `src/data/collectibles.ts` — 12 emblem/skin/sticker/level-trophy defs
+  alongside main sprites. `status: 'shipped'` works today (CSS); `'roadmap'`
+  is data scaffold only.
+- `docs/ART_SOURCING_LOG.md` — per-item source, license, and PNG trimming queue.
+
+Logged for later roadmap (see `COLLECTIBLES_ROADMAP` + beads issue):
+
+- 3D models: OGA Sci-Fi Shipping Crate .glb + Crate-and-barrel .blend (cases);
+  Kenney Furniture/City Kit .obj/.fbx/.glb (room dressing).
+- PNG trimming queue: Kenney Generic Items → `public/assets/items/`, OGA Hifi
+  System → `public/assets/items/`, Kenney Medals + OGA Award Icons →
+  `public/assets/collectibles/`.
+- Skins equip UI, sticker slotting UI, shelf display scene (PixiJS), animated
+  variants (VU bounce, tube flicker). Higgsfield generation reserved ONLY for
+  gaps with no CC0 equivalent.
