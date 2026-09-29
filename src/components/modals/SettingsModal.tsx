@@ -18,6 +18,7 @@ import { gameAudio } from '@/utils/audioSystem';
 import { useTranslation } from 'react-i18next';
 import { toast } from "sonner";
 import { useBoxDropsStore } from '@/features/boxDrops/boxDropsStore';
+import { SUPPORTED_LOCALES } from '@/i18n/supportedLocales';
 
 export type SettingsTabId = 'audio' | 'graphics' | 'gameplay' | 'accessibility' | 'system';
 
@@ -101,7 +102,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const handleResetSettings = () => {
     resetSettings();
     gameAudio.playClick();
-    toast.success('Settings reset to defaults');
+    toast.success(t('toast_settings_reset'));
   };
 
   const handleResetGame = () => {
@@ -120,6 +121,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const handleLanguageChange = (lang: string) => {
     updateSettings({ language: lang });
     gameAudio.playClick();
+    toast.success(t('toast_language_changed'));
   };
 
   const handleExportGameData = () => {
@@ -127,37 +129,37 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       const exportedString = exportGameStateToString(gameState);
       if (exportedString) {
         setExportedSaveString(exportedString);
-        toast.success("Game data exported to text string!");
+        toast.success(t('toast_export_success'));
       } else {
-        toast.error("Failed to export game data.");
+        toast.error(t('toast_export_failed'));
       }
     }
   };
 
   const handleImportGameData = () => {
     if (!importSaveString.trim()) {
-      toast.error("Please paste a save string to import.");
+      toast.error(t('toast_import_empty'));
       return;
     }
     const loadedState = loadGameFromString(importSaveString);
     if (loadedState) {
       if (onLoadGameStateFromString) {
         onLoadGameStateFromString(loadedState);
-        toast.success("Game data imported successfully! Reloading game...");
+        toast.success(t('toast_import_success'));
         onClose();
       } else {
-        toast.error("Import successful, but no reload function provided.");
+        toast.error(t('toast_import_no_reload'));
       }
     } else {
-      toast.error("Failed to import game data. The save string might be invalid or corrupted.");
+      toast.error(t('toast_import_failed'));
     }
   };
 
   const handleCopyToClipboard = () => {
     if (exportedSaveString) {
       navigator.clipboard.writeText(exportedSaveString)
-        .then(() => toast.success("Save string copied to clipboard!"))
-        .catch(() => toast.error("Failed to copy to clipboard."));
+        .then(() => toast.success(t('toast_clipboard_copied')))
+        .catch(() => toast.error(t('toast_clipboard_failed')));
     }
   };
 
@@ -169,14 +171,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="flex justify-between items-center pb-4 border-b border-slate-800">
             <div>
               <h2 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
-                <span>⚙️</span> Game Settings
+                <span>⚙️</span> {t('settings_title')}
               </h2>
-              <p className="text-xs text-slate-400">Configure audio, graphics rendering, controller, and accessibility</p>
+              <p className="text-xs text-slate-400">{t('settings_subtitle')}</p>
             </div>
             {gamepad.isConnected && (
               <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-900 px-3 py-1.5 rounded-full border border-slate-800">
                 <GamepadGlyph button="lb" size="xs" />
-                <span className="font-semibold text-slate-300">Tabs</span>
+                <span className="font-semibold text-slate-300">{t('settings_tabs_hint')}</span>
                 <GamepadGlyph button="rb" size="xs" />
               </div>
             )}
@@ -192,7 +194,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   : 'bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-800'
               }`}
             >
-              <span>🔊</span> Audio
+              <span>🔊</span> {t('settings_tab_audio')}
             </button>
             <button
               onClick={() => setActiveTab('graphics')}
@@ -202,7 +204,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   : 'bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-800'
               }`}
             >
-              <span>📺</span> Graphics & Display
+              <span>📺</span> {t('settings_tab_graphics')}
             </button>
             <button
               onClick={() => setActiveTab('gameplay')}
@@ -212,7 +214,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   : 'bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-800'
               }`}
             >
-              <span>🎮</span> Gameplay & Pad
+              <span>🎮</span> {t('settings_tab_gameplay')}
             </button>
             <button
               onClick={() => setActiveTab('accessibility')}
@@ -222,7 +224,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   : 'bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-800'
               }`}
             >
-              <span>♿</span> Accessibility
+              <span>♿</span> {t('settings_tab_accessibility')}
             </button>
             <button
               onClick={() => setActiveTab('system')}
@@ -232,7 +234,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   : 'bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-800'
               }`}
             >
-              <span>🌐</span> System & Data
+              <span>🌐</span> {t('settings_tab_system')}
             </button>
           </div>
 
@@ -243,7 +245,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <div className="space-y-5 animate-in fade-in duration-200">
                 <div className="space-y-2 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
                   <div className="flex justify-between items-center">
-                    <label className="text-white font-medium text-sm">Master Volume</label>
+                    <label className="text-white font-medium text-sm">{t('settings_master_volume')}</label>
                     <span className="text-amber-400 font-mono text-xs">{Math.round(settings.masterVolume * 100)}%</span>
                   </div>
                   <Slider
@@ -257,7 +259,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 <div className="space-y-2 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
                   <div className="flex justify-between items-center">
-                    <label className="text-white font-medium text-sm">Sound Effects (SFX)</label>
+                    <label className="text-white font-medium text-sm">{t('settings_sfx_volume')}</label>
                     <div className="flex items-center gap-3">
                       <span className="text-amber-400 font-mono text-xs">{Math.round(settings.sfxVolume * 100)}%</span>
                       <Switch
@@ -278,7 +280,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 <div className="space-y-2 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
                   <div className="flex justify-between items-center">
-                    <label className="text-white font-medium text-sm">Background Music & Atmosphere</label>
+                    <label className="text-white font-medium text-sm">{t('settings_music_volume')}</label>
                     <div className="flex items-center gap-3">
                       <span className="text-amber-400 font-mono text-xs">{Math.round(settings.musicVolume * 100)}%</span>
                       <Switch
@@ -387,7 +389,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                   <div className="flex justify-between items-center py-2 border-b border-slate-800">
                     <div>
-                      <label className="text-white text-sm font-medium">Analog Tape Warmth & Vignette</label>
+                      <label className="text-white text-sm font-medium">{t('settings_analog_tape_warmth')}</label>
                       <p className="text-xs text-slate-400">Applies era-specific analog saturation and warm corner vignette</p>
                     </div>
                     <Switch
@@ -525,8 +527,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 <div className="space-y-2 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
-                  <label className="text-white font-medium text-sm">PocketMeter Timing Window Assist</label>
-                  <p className="text-xs text-slate-400">Calibrates the needle lock sweet-spot tolerance for Gold takes</p>
+                  <label className="text-white font-medium text-sm">{t('settings_pocket_meter_assist')}</label>
+                  <p className="text-xs text-slate-400">{t('settings_pocket_meter_assist_hint')}</p>
                   <Select
                     value={settings.pocketMeterAssistance}
                     onValueChange={(val: 'strict' | 'normal' | 'generous') => updateSettings({ pocketMeterAssistance: val })}
@@ -535,9 +537,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-700 text-white">
-                      <SelectItem value="strict">Strict (Authentic analog timing: ±7% target)</SelectItem>
-                      <SelectItem value="normal">Normal (Standard studio tolerance: ±15% target)</SelectItem>
-                      <SelectItem value="generous">Generous (Accessibility assist: ±25% target)</SelectItem>
+                      <SelectItem value="strict">{t('settings_pocket_strict')}</SelectItem>
+                      <SelectItem value="normal">{t('settings_pocket_normal')}</SelectItem>
+                      <SelectItem value="generous">{t('settings_pocket_generous')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -550,7 +552,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 {/* Language & Theme */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
-                    <label className="text-white font-medium text-sm">🌐 Language</label>
+                    <label className="text-white font-medium text-sm">🌐 {t('settings_language')}</label>
                     <Select
                       value={settings.language}
                       onValueChange={handleLanguageChange}
@@ -559,14 +561,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-slate-900 border-slate-700 text-white">
-                        <SelectItem value="en">English (US)</SelectItem>
-                        <SelectItem value="pl">Polski</SelectItem>
+                        {SUPPORTED_LOCALES.map((locale) => (
+                          <SelectItem key={locale.code} value={locale.code}>
+                            {locale.nativeLabel}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
-                    <label className="text-white font-medium text-sm">🎨 Studio Theme</label>
+                    <label className="text-white font-medium text-sm">🎨 {t('settings_theme')}</label>
                     <Select
                       value={settings.theme}
                       onValueChange={(val: any) => updateSettings({ theme: val })}
@@ -575,10 +580,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-slate-900 border-slate-700 text-white">
-                        <SelectItem value="default">Default Dark Console</SelectItem>
-                        <SelectItem value="sunrise-studio">Sunrise Studio</SelectItem>
-                        <SelectItem value="neon-nights">Neon Nights</SelectItem>
-                        <SelectItem value="retro-arcade">Retro Arcade</SelectItem>
+                        <SelectItem value="default">{t('settings_theme_default')}</SelectItem>
+                        <SelectItem value="sunrise-studio">{t('settings_theme_sunrise')}</SelectItem>
+                        <SelectItem value="neon-nights">{t('settings_theme_neon')}</SelectItem>
+                        <SelectItem value="retro-arcade">{t('settings_theme_retro')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -586,25 +591,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 {/* Import / Export Save */}
                 <div className="space-y-3 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">💾 Data Management & Backup</h4>
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">💾 {t('settings_data_management')}</h4>
                   <div className="space-y-2">
-                    <label htmlFor="import-save-string" className="text-xs font-medium text-slate-300">Import Game from Text</label>
+                    <label htmlFor="import-save-string" className="text-xs font-medium text-slate-300">{t('settings_import_label')}</label>
                     <Textarea
                       id="import-save-string"
                       value={importSaveString}
                       onChange={(e) => setImportSaveString(e.target.value)}
-                      placeholder="Paste exported save string here..."
+                      placeholder={t('settings_import_placeholder')}
                       className="bg-slate-900 border-slate-700 text-xs font-mono min-h-[60px]"
                     />
                     <Button onClick={handleImportGameData} className="w-full bg-emerald-600 hover:bg-emerald-700 text-xs py-1.5 h-auto">
-                      Import Save String
+                      {t('settings_import_button')}
                     </Button>
                   </div>
 
                   {context === 'ingame' && gameState && (
                     <div className="space-y-2 pt-2 border-t border-slate-800">
                       <Button onClick={handleExportGameData} className="w-full bg-amber-600 hover:bg-amber-700 text-xs py-1.5 h-auto">
-                        Generate Export Save String
+                        {t('settings_export_button')}
                       </Button>
                       {exportedSaveString && (
                         <>
@@ -614,7 +619,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             className="bg-slate-900 border-slate-700 text-xs font-mono min-h-[60px]"
                           />
                           <Button onClick={handleCopyToClipboard} className="w-full bg-sky-600 hover:bg-sky-700 text-xs py-1.5 h-auto">
-                            Copy to Clipboard
+                            {t('settings_copy_clipboard')}
                           </Button>
                         </>
                       )}
@@ -665,7 +670,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       onClick={() => {
                         triggerBoxDrop('1970s', 2);
                         gameAudio.playClick();
-                        toast.success('Spawned box drop (1970s ×2)');
+                        toast.success(t('toast_dev_box_drop_spawned'));
                       }}
                       className="w-full bg-sky-600 hover:bg-sky-700 text-white text-xs py-2 h-auto"
                     >
@@ -681,7 +686,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     variant="outline"
                     className="w-full bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-700 text-xs"
                   >
-                    Reset Settings to Default
+                    {t('settings_reset_defaults')}
                   </Button>
                   {onResetGame && (
                     <Button
@@ -689,7 +694,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       variant="destructive"
                       className="w-full bg-red-600 hover:bg-red-700 text-white text-xs"
                     >
-                      Reset Game Progress
+                      {t('settings_reset_game')}
                     </Button>
                   )}
                 </div>

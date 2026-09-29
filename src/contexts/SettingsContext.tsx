@@ -3,10 +3,18 @@ import { gameAudio } from '../utils/audioSystem';
 import { SettingsContext, GameSettings, useSettings } from './settings-context-types';
 import { defaultSettings } from '../data/defaultSettings';
 import { gameEvents } from '../engine/gameEventBus';
+import i18n from '../i18n';
+import { DEFAULT_LOCALE, isSupportedLocale } from '../i18n/supportedLocales';
 
 export { useSettings };
 
 const SETTINGS_STORAGE_KEY = 'rst_game_settings';
+
+function resolveLanguage(raw: unknown): string {
+  if (typeof raw === 'string' && isSupportedLocale(raw)) return raw;
+  if (raw === 'en-US' || raw === 'en-us') return 'en';
+  return DEFAULT_LOCALE;
+}
 
 interface SettingsProviderProps {
   children: ReactNode;
@@ -23,6 +31,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
         return {
           ...defaultSettings,
           ...parsed,
+          language: resolveLanguage(parsed.language ?? defaultSettings.language),
           devShowBoxDropButton: parsed.devShowBoxDropButton === true,
           devShowPerfHud: parsed.devShowPerfHud === true,
         };
@@ -33,9 +42,22 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     return defaultSettings;
   });
 
+  // Keep i18next in sync with the persisted Settings language (including first paint)
+  useEffect(() => {
+    const lng = resolveLanguage(settings.language);
+    if (i18n.language !== lng) {
+      void i18n.changeLanguage(lng);
+    }
+  }, [settings.language]);
+
   const updateSettings = (newSettings: Partial<GameSettings>) => {
+    const normalised: Partial<GameSettings> = { ...newSettings };
+    if (newSettings.language !== undefined) {
+      normalised.language = resolveLanguage(newSettings.language);
+    }
+
     setSettings((prev) => {
-      const updated = { ...prev, ...newSettings };
+      const updated = { ...prev, ...normalised };
       try {
         if (typeof localStorage !== 'undefined') {
           localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(updated));
@@ -44,14 +66,12 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
         console.warn('[SettingsProvider] Failed to persist settings to localStorage:', err);
       }
 
-      // Emit event through engine bus for decoupled systems (PixiJS canvas, audio, tick engine)
-      gameEvents.emit('settings:changed', { changed: newSettings, all: updated });
+      gameEvents.emit('settings:changed', { changed: normalised, all: updated });
 
       return updated;
     });
 
-    // Single source of truth: push volume/mute straight into audio engine
-    const { masterVolume, sfxVolume, musicVolume, sfxEnabled, musicEnabled } = newSettings;
+    const { masterVolume, sfxVolume, musicVolume, sfxEnabled, musicEnabled } = normalised;
     const audioPatch: {
       masterVolume?: number;
       sfxVolume?: number;
@@ -78,6 +98,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     }
     gameEvents.emit('settings:changed', { changed: defaultSettings, all: defaultSettings });
     gameAudio.updateSettings({ ...defaultSettings });
+    void i18n.changeLanguage(resolveLanguage(defaultSettings.language));
   };
 
   const markMinigameTutorialAsSeen = (minigameId: string) => {

@@ -37,14 +37,20 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
   const [showSettings, setShowSettings] = useState(false);
   const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false);
   const [saveInfo, setSaveInfo] = useState<SaveInspectionResult>(() => inspectSaveGame());
+  const { t } = useTranslation();
   const [errorMessage, setErrorMessage] = useState<string | null>(() =>
-    saveInfo.isCorrupt ? (saveInfo.error ?? 'Save file is corrupted or unreadable.') : null
+    saveInfo.isCorrupt ? (saveInfo.error ?? null) : null
   );
   const [tip, setTip] = useState(0);
-  const { settings, updateSetting } = useSettings();
+  const { settings, updateSettings } = useSettings();
   const music = useBackgroundMusic();
   const { isFullscreen, toggleFullscreen } = useFullscreen('root');
-  const { t } = useTranslation();
+
+  useEffect(() => {
+    if (saveInfo.isCorrupt && !errorMessage) {
+      setErrorMessage(saveInfo.error ?? t('splash_save_corrupt'));
+    }
+  }, [saveInfo, errorMessage, t]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setTip(index => (index + 1) % TIP_KEYS.length), 5000);
@@ -59,7 +65,7 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
 
   const toggleMusic = () => {
     const enabled = !settings.musicEnabled;
-    updateSetting('musicEnabled', enabled);
+    updateSettings({ musicEnabled: enabled });
     if (enabled) {
       void gameAudio.userGestureSignal().catch(() => {});
       music.playTrack(1);
@@ -69,16 +75,16 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
   const handleContinue = () => {
     wakeAudio();
     if (saveInfo.isCorrupt || !saveInfo.hasSave || !saveInfo.preview) {
-      setErrorMessage('Cannot continue: Save data is missing or corrupted.');
+      setErrorMessage(t('splash_cannot_continue'));
       return;
     }
     try {
       const res = onLoadGame();
       if (res === false) {
-        setErrorMessage('Failed to load save file.');
+        setErrorMessage(t('splash_load_failed'));
       }
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'Error loading save file.');
+      setErrorMessage(err instanceof Error ? err.message : t('splash_load_error'));
     }
   };
 
@@ -97,27 +103,29 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
   };
 
   const hasValidSave = saveInfo.hasSave && !saveInfo.isCorrupt && saveInfo.preview !== null;
+  const musicLabel = settings.musicEnabled ? t('splash_mute_music') : t('splash_play_music');
+  const fullscreenLabel = isFullscreen ? t('exit_fullscreen') : t('enter_fullscreen');
 
   return <>
     <main className="splash-page">
       <div className="splash-ambience" aria-hidden="true"><span /><span /><span /></div>
       <header className="splash-header">
-        <span className="splash-wordmark"><span className="splash-live-dot" /> RST <span className="splash-header-muted">/ CAREER MODE</span></span>
+        <span className="splash-wordmark"><span className="splash-live-dot" /> RST <span className="splash-header-muted">/ {t('splash_career_mode')}</span></span>
         <div className="splash-header-controls">
-          <button onClick={toggleMusic} aria-label={settings.musicEnabled ? 'Mute music' : 'Play music'} title={settings.musicEnabled ? 'Mute music' : 'Play music'}>
+          <button onClick={toggleMusic} aria-label={musicLabel} title={musicLabel}>
             {settings.musicEnabled ? <Volume2 size={19} /> : <VolumeX size={19} />}
           </button>
-          <button onClick={() => setShowSettings(true)} aria-label="Settings" title="Settings"><Settings size={19} /></button>
-          <button onClick={toggleFullscreen} aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'} title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}>
+          <button onClick={() => setShowSettings(true)} aria-label={t('settings')} title={t('settings')}><Settings size={19} /></button>
+          <button onClick={toggleFullscreen} aria-label={fullscreenLabel} title={fullscreenLabel}>
             {isFullscreen ? <Minimize size={19} /> : <Maximize size={19} />}
           </button>
         </div>
       </header>
 
-      <section className="splash-hero" aria-label="Recording Studio Tycoon">
+      <section className="splash-hero" aria-label={t('game_title')}>
         <div className="splash-title-group">
           <h1><span>RECORDING</span><strong>STUDIO TYCOON</strong></h1>
-          <p className="splash-tagline">{t('splash_tagline', 'From analog beginnings to digital dominance')}</p>
+          <p className="splash-tagline">{t('splash_tagline')}</p>
         </div>
 
         {errorMessage && (
@@ -131,7 +139,7 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
               onClick={() => setErrorMessage(null)}
               className="text-rose-300 hover:text-white underline text-[11px]"
             >
-              Dismiss
+              {t('dismiss')}
             </button>
           </div>
         )}
@@ -141,8 +149,15 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
             <button className="splash-action splash-action-primary" onClick={handleContinue}>
               <span className="splash-action-icon"><Play size={20} fill="currentColor" /></span>
               <span>
-                <strong>Continue studio</strong>
-                <small>Day {saveInfo.preview!.day} · Lv {saveInfo.preview!.level} · ${saveInfo.preview!.money.toLocaleString()} · {saveInfo.preview!.era}</small>
+                <strong>{t('splash_continue_studio')}</strong>
+                <small>
+                  {t('splash_save_preview', {
+                    day: saveInfo.preview!.day,
+                    level: saveInfo.preview!.level,
+                    money: saveInfo.preview!.money.toLocaleString(),
+                    era: saveInfo.preview!.era,
+                  })}
+                </small>
               </span>
               <span className="splash-action-arrow" aria-hidden="true">→</span>
             </button>
@@ -152,13 +167,13 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
             onClick={handleNewGameClick}
           >
             <span className="splash-action-icon"><Plus size={21} /></span>
-            <span><strong>New studio</strong><small>Choose your era</small></span><span className="splash-action-arrow" aria-hidden="true">→</span>
+            <span><strong>{t('splash_new_studio')}</strong><small>{t('splash_choose_era')}</small></span><span className="splash-action-arrow" aria-hidden="true">→</span>
           </button>
         </div>
       </section>
 
       <footer className="splash-footer">
-        <span className="splash-footer-label">PRODUCER NOTE {String(tip + 1).padStart(2, '0')}</span>
+        <span className="splash-footer-label">{t('splash_producer_note', { n: String(tip + 1).padStart(2, '0') })}</span>
         <p key={tip}>{t(TIP_KEYS[tip])}</p>
       </footer>
     </main>
@@ -166,29 +181,34 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
     <AlertDialog open={showOverwriteConfirm} onOpenChange={setShowOverwriteConfirm}>
       <AlertDialogContent className="border border-amber-400/30 bg-slate-900 text-slate-100 sm:max-w-md">
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-amber-200">Overwrite Existing Career?</AlertDialogTitle>
+          <AlertDialogTitle className="text-amber-200">{t('splash_overwrite_title')}</AlertDialogTitle>
           <AlertDialogDescription className="text-slate-300">
             {saveInfo.preview ? (
               <span>
-                You currently have an active studio saved at <strong className="text-amber-100">Day {saveInfo.preview.day}</strong> ({saveInfo.preview.era}, Level {saveInfo.preview.level}, ${saveInfo.preview.money.toLocaleString()}).
+                {t('splash_overwrite_body', {
+                  day: saveInfo.preview.day,
+                  era: saveInfo.preview.era,
+                  level: saveInfo.preview.level,
+                  money: saveInfo.preview.money.toLocaleString(),
+                })}
               </span>
             ) : (
-              <span>You have an existing career saved on this device.</span>
+              <span>{t('splash_overwrite_generic')}</span>
             )}
             <span className="mt-2 block text-rose-300/90 text-xs">
-              Starting a new studio will overwrite your current career progress. This cannot be undone.
+              {t('splash_overwrite_warning')}
             </span>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="mt-4 gap-2 sm:gap-2">
           <AlertDialogCancel className="border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700">
-            Keep Existing Career
+            {t('splash_keep_career')}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirmOverwrite}
             className="border border-amber-400/50 bg-amber-500 font-bold text-slate-950 hover:bg-amber-400"
           >
-            Overwrite & Start New
+            {t('splash_overwrite_confirm')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
