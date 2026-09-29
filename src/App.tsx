@@ -11,6 +11,7 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 import DevMenu from "./components/DevMenu";
 import BoxDropController from "./features/boxDrops/BoxDropController";
 import DealerController from "./monetization/DealerController";
+import PremiumRevealController from "./monetization/PremiumRevealController";
 import { CutsceneDirector } from "./components/cutscenes/CutsceneDirector";
 import './App.css';
 
@@ -27,6 +28,7 @@ const App = () => {
             {process.env.NODE_ENV === 'development' && <DevMenu />}
             <BoxDropController />
             <DealerController />
+            <PremiumRevealController />
             <CutsceneDirector />
             <BrowserRouter>
               <main>

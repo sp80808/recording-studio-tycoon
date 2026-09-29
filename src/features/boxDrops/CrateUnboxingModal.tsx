@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { Sparkles, Wrench, ShieldCheck, DollarSign, PackageCheck, Archive } from 'lucide-react';
+import { Sparkles, Wrench, ShieldCheck, DollarSign, PackageCheck, Archive, BadgeCheck } from 'lucide-react';
 import { EquipmentItem, Rarity } from './lootGenerator';
 import { playSound, gameAudio } from '@/utils/audioSystem';
 import { useGamepad } from '@/hooks/useGamepad';
@@ -9,10 +9,32 @@ import { useSettings } from '@/contexts/settings-context-types';
 import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
 import { toast } from '@/hooks/use-toast';
 
+/** Resolved case/reward model (bead 89o.6): the modal is a
+ * presentation/decision surface. It never generates rewards — earned gear
+ * arrives via `items`, premium cosmetics via `premium`, both resolved by
+ * their respective domains before the modal mounts. */
+export interface PremiumDisplayItem {
+  ref: string;
+  label: string;
+  icon: string;
+}
+
+export interface PremiumCaseReward {
+  productTitle: string;
+  items: PremiumDisplayItem[];
+}
+
+export type CaseSource = 'earned' | 'purchase';
+
 interface CrateUnboxingModalProps {
   items: EquipmentItem[];
   onClose: () => void;
   onClaim?: (item: EquipmentItem, action: 'equip' | 'stash' | 'sell') => void;
+  /** Premium mode: disclosed cosmetics from a verified purchase. */
+  premium?: PremiumCaseReward;
+  source?: CaseSource;
+  /** Stencil/title override for the flight-case shell (e.g. product title). */
+  titleOverride?: string;
 }
 
 type UnboxingPhase = 'locked' | 'opening' | 'revealed';
@@ -71,10 +93,14 @@ export const CrateUnboxingModal: React.FC<CrateUnboxingModalProps> = ({
   items,
   onClose,
   onClaim,
+  premium,
+  source = 'earned',
+  titleOverride,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [phase, setPhase] = useState<UnboxingPhase>('locked');
   const [latchesOpen, setLatchesOpen] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   const { settings } = useSettings();
   const gamepad = useGamepad({
@@ -82,10 +108,21 @@ export const CrateUnboxingModal: React.FC<CrateUnboxingModalProps> = ({
     hapticsEnabled: settings?.gamepadHaptics,
   });
 
-  const currentItem: EquipmentItem | undefined = items[currentIndex];
-  const rarityInfo = currentItem ? RARITY_CONFIG[currentItem.rarity] || RARITY_CONFIG.common : RARITY_CONFIG.common;
+  const isPremium = !!premium;
+  const premiumItems = premium?.items ?? [];
+  const currentItem: EquipmentItem | undefined = isPremium ? undefined : items[currentIndex];
+  const rarityInfo = currentItem
+    ? RARITY_CONFIG[currentItem.rarity] || RARITY_CONFIG.common
+    : RARITY_CONFIG.legendary;
+  const shellTitle = titleOverride ?? (isPremium ? premium?.productTitle ?? 'COLLECTOR CASE' : undefined);
 
-  // Sound and unlatching sequence
+  // Sound and unlatching sequence (presentation only — rewards are resolved before mount)
+  const revealNow = useCallback(() => {
+    setPhase('revealed');
+    playSound('project-complete', 0.5);
+    gamepad.triggerHaptic(0.7, 0.9, 140);
+  }, [gamepad]);
+
   const handleUnlatch = useCallback(() => {
     if (phase !== 'locked') return;
 
@@ -97,6 +134,12 @@ export const CrateUnboxingModal: React.FC<CrateUnboxingModalProps> = ({
       playSound('ui-click', 0.6);
     }
     gamepad.triggerHaptic(0.5, 0.7, 90);
+
+    // Reduced-motion: skip the opening beat and confetti entirely.
+    if (reduceMotion) {
+      revealNow();
+      return;
+    }
 
     setPhase('opening');
 
@@ -110,11 +153,9 @@ export const CrateUnboxingModal: React.FC<CrateUnboxingModalProps> = ({
 
     // Phase 2 -> Phase 3: Reveal gear card after short delay
     setTimeout(() => {
-      setPhase('revealed');
-      playSound('project-complete', 0.5);
-      gamepad.triggerHaptic(0.7, 0.9, 140);
+      revealNow();
     }, 750);
-  }, [phase, gamepad, rarityInfo.rayColor]);
+  }, [phase, gamepad, rarityInfo.rayColor, reduceMotion, revealNow]);
 
   const handleAction = useCallback((action: 'equip' | 'stash' | 'sell') => {
     if (!currentItem) return;
@@ -157,14 +198,18 @@ export const CrateUnboxingModal: React.FC<CrateUnboxingModalProps> = ({
       if (phase === 'locked' && (btn === 'south' || btn === 'start')) {
         handleUnlatch();
       } else if (phase === 'revealed') {
-        if (btn === 'south') handleAction('equip');
-        if (btn === 'west') handleAction('stash');
-        if (btn === 'north') handleAction('sell');
-        if (btn === 'east') onClose();
+        if (isPremium) {
+          if (btn === 'south' || btn === 'east') onClose();
+        } else {
+          if (btn === 'south') handleAction('equip');
+          if (btn === 'west') handleAction('stash');
+          if (btn === 'north') handleAction('sell');
+          if (btn === 'east') onClose();
+        }
       }
     });
     return unsub;
-  }, [gamepad, phase, handleUnlatch, handleAction, onClose]);
+  }, [gamepad, phase, handleUnlatch, handleAction, onClose, isPremium]);
 
   // Keyboard support
   useEffect(() => {
@@ -175,7 +220,8 @@ export const CrateUnboxingModal: React.FC<CrateUnboxingModalProps> = ({
           handleUnlatch();
         } else if (phase === 'revealed') {
           e.preventDefault();
-          handleAction('equip');
+          if (isPremium) onClose();
+          else handleAction('equip');
         }
       } else if (e.key === 'Escape') {
         onClose();
@@ -183,15 +229,16 @@ export const CrateUnboxingModal: React.FC<CrateUnboxingModalProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [phase, handleUnlatch, handleAction, onClose]);
+  }, [phase, handleUnlatch, handleAction, onClose, isPremium]);
 
-  if (!currentItem) return null;
+  if (!currentItem && !isPremium) return null;
+  if (isPremium && premiumItems.length === 0) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md select-none overflow-hidden">
-      {/* 360° Rotating Radiance Sunburst Rays (Opening & Revealed Phases) */}
+      {/* 360° Rotating Radiance Sunburst Rays (skipped under reduced-motion) */}
       <AnimatePresence>
-        {phase !== 'locked' && (
+        {phase !== 'locked' && !reduceMotion && (
           <motion.div
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 0.35, scale: 1.2, rotate: 360 }}
@@ -244,8 +291,8 @@ export const CrateUnboxingModal: React.FC<CrateUnboxingModalProps> = ({
 
                 {/* Stenciled vintage tour branding */}
                 <div className="flex justify-between items-center border-b border-stone-800 pb-2 mb-4 text-[10px] font-mono tracking-widest text-stone-400">
-                  <span>VINTAGE FLIGHT CRATE</span>
-                  <span className="text-amber-500 font-bold">FRAGILE · TUBE GEAR</span>
+                  <span>{shellTitle ?? 'VINTAGE FLIGHT CRATE'}</span>
+                  <span className="text-amber-500 font-bold">{isPremium ? 'COLLECTOR EDITION' : source === 'purchase' ? 'VERIFIED PURCHASE' : 'FRAGILE · TUBE GEAR'}</span>
                 </div>
 
                 {/* Road case centerpiece texture */}
@@ -263,7 +310,9 @@ export const CrateUnboxingModal: React.FC<CrateUnboxingModalProps> = ({
 
                     <div className="px-3 py-1 bg-stone-950/80 border border-stone-700/60 rounded text-center">
                       <span className="text-[10px] font-mono text-stone-400 block">SEALED IN</span>
-                      <span className="text-xs font-mono font-bold text-amber-400 uppercase tracking-widest">{currentItem.era}</span>
+                      <span className="text-xs font-mono font-bold text-amber-400 uppercase tracking-widest">
+                        {isPremium ? 'COLLECTOR EDITION' : currentItem?.era}
+                      </span>
                     </div>
 
                     <motion.div
@@ -294,6 +343,12 @@ export const CrateUnboxingModal: React.FC<CrateUnboxingModalProps> = ({
                       <p className="text-xs font-bold font-mono text-emerald-400 uppercase tracking-wider">
                         Unlatching Enclosure...
                       </p>
+                      <button
+                        onClick={revealNow}
+                        className="mt-2 text-[10px] font-mono text-stone-400 underline underline-offset-2 hover:text-stone-200"
+                      >
+                        Skip animation
+                      </button>
                     </div>
                   )}
                 </div>
@@ -308,6 +363,45 @@ export const CrateUnboxingModal: React.FC<CrateUnboxingModalProps> = ({
                     <GamepadGlyph button="south" size="xs" />
                   )}
                   <span>OPEN VINTAGE CRATE</span>
+                </button>
+              </motion.div>
+            ) : isPremium ? (
+              /* Premium celebration reveal: disclosed, owned cosmetics.
+                 Display only — ownership was granted by fulfilment before mount. */
+              <motion.div
+                key="collector-card"
+                initial={reduceMotion ? { opacity: 0 } : { rotateY: 90, scale: 0.8, opacity: 0 }}
+                animate={reduceMotion ? { opacity: 1 } : { rotateY: 0, scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 220, damping: 20 }}
+                className="w-88 sm:w-[420px] bg-slate-950 border-2 border-amber-400 rounded-sm p-4 relative"
+                style={{ boxShadow: '0 0 40px rgba(251, 191, 36, 0.9)' }}
+              >
+                <div className="flex justify-between items-center mb-3">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-black uppercase tracking-wider bg-amber-950 text-amber-300 border border-amber-400">
+                    ★ Collector — Yours
+                  </span>
+                  <span className="text-[10px] font-mono text-slate-400">VERIFIED PURCHASE</span>
+                </div>
+                <h2 className="text-xl font-black text-white tracking-tight mb-3">{premium?.productTitle}</h2>
+                <ul className="space-y-2 mb-4">
+                  {premiumItems.map((item) => (
+                    <li
+                      key={item.ref}
+                      className="flex items-center gap-2 bg-slate-900/90 border border-slate-800 rounded-sm px-3 py-2 text-sm text-slate-200"
+                    >
+                      <span aria-hidden>{item.icon}</span>
+                      <span className="flex-1">{item.label}</span>
+                      <span className="flex items-center gap-1 text-[10px] font-mono text-emerald-400">
+                        <BadgeCheck size={13} /> OWNED
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  onClick={onClose}
+                  className="w-full py-2.5 px-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-sm border border-emerald-400 shadow-md transition-all active:scale-[0.98]"
+                >
+                  STASH IN STUDIO ✓
                 </button>
               </motion.div>
             ) : (
