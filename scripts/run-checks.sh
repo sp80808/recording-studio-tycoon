@@ -50,6 +50,12 @@ for check in chore-engine chore-progression-coupling studio-duties-clipboard cho
   node "/tmp/rst-$check.cjs"
 done
 
+echo "=== game engine back-end & graphics tech suites ==="
+for check in game-event-bus engine-loop engine-settings graphics-postfx; do
+  ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
+  node "/tmp/rst-$check.cjs"
+done
+
 
 echo "=== balance harness invariants (10 days, seed 7) ==="
 ./node_modules/.bin/esbuild src/dev/balance/run.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-balance.cjs --alias:@=./src >/dev/null
