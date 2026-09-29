@@ -126,14 +126,16 @@ Frame budget policy: UI motion ≤ 2.0 ms; Pixi owns the remainder (`UI_MOTION_F
 
 ## 7. Known UX issues (screenshot / visual)
 
-Observed from current procedural layout (no code changes in this audit):
+Observed from the original procedural layout; status as of `20cad80a` polish:
 
-1. **Mic z-order** — Mic is drawn **after** the live-room glass inside `liveWrap`, so it reads in front of the booth glass instead of behind/inside the booth. Staff `zIndex = y` can also paint over props without consistent depth for furniture.
-2. **Flat clock** — Wall clock is an orthographic circle + hand on the left wall plane; it does not share the isometric foreshortening of other wall props (TV poly is angled; clock is not).
-3. **Missing door** — No door / corridor / exit prop in `buildScene`. The room is a sealed L-wall + open floor; no adjacency cue for multi-room expansion.
-4. **DEV overlay collision** — `DevMenu` is `fixed bottom-4 right-4 z-50`; `PerformanceOverlay` is `fixed bottom-3 left-3 z-50`. Left side overlaps studio hint / gamepad target strip (`bottom-2 left-3`); right side can fight dock / strip chrome. Both sit above gameplay hit-testing in DOM.
-5. **Hotspot alias drift** — `tv` vs `crt`, `liveRoom` vs `liveroom` (see §5).
-6. **Canvas approval tagging** — Living studio canvas not self-tagged for the WebGL auditor (§1).
+1. ~~**Mic z-order**~~ — **Fixed:** mic is authored before the isolation glass (deeper tile-Y) so it reads inside the booth.
+2. ~~**Flat clock**~~ — **Fixed:** foreshortened ellipse + skew/scale on the left wall plane.
+3. ~~**Missing door**~~ — **Fixed:** left-wall door between clock & TV with floor threshold (enter/exit anchor).
+4. ~~**DEV overlay collision**~~ — **Fixed** (`5eaed315`): floating Spawn/Perf chrome defaults OFF; Settings → System opt-in only.
+5. **Hotspot alias drift** — Still open: `tv` vs `crt`, `liveRoom` vs `liveroom` (see §5).
+6. ~~**Canvas approval tagging**~~ — **Fixed:** living studio canvas tagged `id="pixi-studio-canvas"` + `data-engine="pixi"`.
+7. **Staff/furniture depth bands** — Still open: staff `zIndex = y` can paint over props without consistent furniture depth bands (P1 in iterative plan).
+8. **Second Pixi app** — Still open: avoid mounting `PixiProjectCardsBridge` during studio play (GPU exclusivity).
 
 ---
 
