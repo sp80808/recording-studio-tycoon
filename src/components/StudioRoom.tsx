@@ -6,10 +6,15 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { gameAudio } from '@/utils/audioSystem';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
 import { toast } from '@/hooks/use-toast';
-import { LocateFixed } from 'lucide-react';
+import { LocateFixed, Phone } from 'lucide-react';
 import { triggerScreenShake } from '@/utils/screenShake';
 import { useGamepad } from '@/hooks/useGamepad';
 import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
+import {
+  MotionReveal,
+  MotionNumber,
+  MotionButton,
+} from '@/components/motion/primitives';
 
 const STUDIO_HOTSPOTS: StudioHotspotId[] = ['console', 'phone', 'liveroom', 'shelf', 'crt', 'clock'];
 const HOTSPOT_NAMES: Record<StudioHotspotId, string> = {
@@ -57,7 +62,6 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
   const [activeInspector, setActiveInspector] = useState<StudioHotspotId | null>(null);
   const [cameraReset, setCameraReset] = useState(0);
   const [tierFlash, setTierFlash] = useState(false);
-  const playClick = () => { if (settings.sfxEnabled) gameAudio.playUISound('buttonClick'); };
 
   // Studio tier (1-5) from the progression milestones — drives visible
   // room upgrades in the Pixi scene (bead ifx.3).
@@ -175,6 +179,8 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     focusedHotspotIndex,
   ]);
 
+  const availableCount = gameState.availableProjects.length;
+
   return (
     <div 
       className={`relative overflow-hidden rounded-lg border border-gray-700/70 bg-[#11151f] transition-all duration-300 ${className}`} 
@@ -207,7 +213,25 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
         </div>
       </div>
 
-      {/* Floating Chore Hotspot Attention Badges */}
+      {/* Peripheral Unread Enquiry Indicator (Issue #75: short spatial/opacity motion, NO infinite bounce/pulse, NO modal takeover) */}
+      {availableCount > 0 && (
+        <MotionReveal direction="down" distance={8}>
+          <button
+            onClick={() => handleHotspot('phone')}
+            className="absolute top-11 left-3 bg-sky-950/90 hover:bg-sky-900 border border-sky-400/50 hover:border-sky-300 text-sky-200 px-2.5 py-1 rounded-full text-[11px] font-bold shadow-lg flex items-center gap-1.5 z-20 pointer-events-auto backdrop-blur-md transition-colors"
+            title={`${availableCount} Artist ${availableCount === 1 ? 'Enquiry' : 'Enquiries'} Waiting`}
+            aria-label={`${availableCount} Artist Enquiries Waiting`}
+          >
+            <Phone size={12} className="text-sky-300" aria-hidden="true" />
+            <span className="text-[10px] font-medium tracking-wide">Enquiry</span>
+            <span className="px-1.5 py-0.2 text-[9px] font-black rounded-full bg-amber-400 text-slate-950">
+              <MotionNumber value={availableCount} />
+            </span>
+          </button>
+        </MotionReveal>
+      )}
+
+      {/* Floating Chore Hotspot Attention Badges (Settled one-shot reveal, NO infinite bounce/pulse) */}
       {(() => {
         const choreState = gameState.choreState;
         if (!choreState) return null;
@@ -218,34 +242,40 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
         return (
           <>
             {pendingConsoleChores.length > 0 && (
-              <button
-                onClick={() => handleHotspot('console')}
-                className="absolute bottom-14 left-6 bg-amber-500 hover:bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full text-[10px] font-black shadow-lg border border-amber-300 flex items-center gap-1 animate-bounce z-20 pointer-events-auto"
-                title={`${pendingConsoleChores.length} Console Maintenance Duty Pending`}
-              >
-                <span>🔧</span>
-                <span>{pendingConsoleChores[0].title}</span>
-              </button>
+              <MotionReveal direction="up" distance={6}>
+                <button
+                  onClick={() => handleHotspot('console')}
+                  className="absolute bottom-14 left-6 bg-amber-500 hover:bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-lg border border-amber-300 flex items-center gap-1 z-20 pointer-events-auto transition-transform active:scale-95"
+                  title={`${pendingConsoleChores.length} Console Maintenance Duty Pending`}
+                >
+                  <span>🔧</span>
+                  <span>{pendingConsoleChores[0].title}</span>
+                </button>
+              </MotionReveal>
             )}
             {pendingShelfChores.length > 0 && (
-              <button
-                onClick={() => handleHotspot('shelf')}
-                className="absolute top-28 right-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-2 py-0.5 rounded-full text-[10px] font-black shadow-lg border border-emerald-300 flex items-center gap-1 animate-pulse z-20 pointer-events-auto"
-                title="Lounge: Brew Espresso"
-              >
-                <span>☕</span>
-                <span>Brew Espresso</span>
-              </button>
+              <MotionReveal direction="down" distance={6}>
+                <button
+                  onClick={() => handleHotspot('shelf')}
+                  className="absolute top-28 right-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-lg border border-emerald-300 flex items-center gap-1 z-20 pointer-events-auto transition-transform active:scale-95"
+                  title="Lounge: Brew Espresso"
+                >
+                  <span>☕</span>
+                  <span>Brew Espresso</span>
+                </button>
+              </MotionReveal>
             )}
             {pendingLiveRoomChores.length > 0 && (
-              <button
-                onClick={() => handleHotspot('liveRoom')}
-                className="absolute bottom-16 right-6 bg-purple-600 hover:bg-purple-500 text-white px-2 py-0.5 rounded-full text-[10px] font-black shadow-lg border border-purple-300 flex items-center gap-1 z-20 pointer-events-auto"
-                title="Live Room: Tune Acoustics"
-              >
-                <span>✨</span>
-                <span>Tune Acoustics</span>
-              </button>
+              <MotionReveal direction="up" distance={6}>
+                <button
+                  onClick={() => handleHotspot('liveRoom')}
+                  className="absolute bottom-16 right-6 bg-purple-600 hover:bg-purple-500 text-white px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-lg border border-purple-300 flex items-center gap-1 z-20 pointer-events-auto transition-transform active:scale-95"
+                  title="Live Room: Tune Acoustics"
+                >
+                  <span>✨</span>
+                  <span>Tune Acoustics</span>
+                </button>
+              </MotionReveal>
             )}
           </>
         );

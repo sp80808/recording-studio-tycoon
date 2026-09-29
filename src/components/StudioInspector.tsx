@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { GameState, Project } from '@/types/game';
 import { StudioHotspotId } from '@/components/WebGLCanvas';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
@@ -9,18 +9,25 @@ import {
   GIG_REFRESH_COOLDOWN_DAYS,
 } from '@/hooks/useGameActions';
 import { checkDailyChallenge } from '@/utils/dailyChallenges';
-import { Button } from '@/components/ui/button';
-import { CalendarDays, Guitar, Mic2, Phone, PhoneCall, PhoneOff, ShoppingCart, SlidersHorizontal, Tv, X } from 'lucide-react';
+import {
+  CalendarDays,
+  Guitar,
+  Mic2,
+  Phone,
+  PhoneCall,
+  PhoneOff,
+  ShoppingCart,
+  SlidersHorizontal,
+  Tv,
+  X,
+  Check,
+} from 'lucide-react';
 import { gameAudio } from '@/utils/audioSystem';
-
-/**
- * Contextual inspector popup (bead goj.2).
- *
- * Anchored to the room object the player clicked, replacing the old
- * "every tab is always visible" dashboard feel. One inspector is open at a
- * time; Esc or the backdrop closes it. Data-dense screens (charts, financials)
- * still live in the DOM shell — inspectors only surface the essentials.
- */
+import {
+  MotionPanel,
+  MotionButton,
+  MotionNumber,
+} from '@/components/motion/primitives';
 
 export interface StudioInspectorProps {
   hotspot: StudioHotspotId;
@@ -76,20 +83,20 @@ const Shell: React.FC<{
   <div
     className="absolute inset-0 z-20"
     onClick={(e) => {
-      // Backdrop click closes; the panel stops propagation itself.
       if (e.target === e.currentTarget) onClose();
     }}
   >
-    <div className="absolute inset-0 bg-black/25" />
-    <div
+    <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]" />
+    <MotionPanel
+      direction="scale"
       role="dialog"
       aria-label={INSPECTOR_META[hotspot].label}
-      className={`absolute ${ANCHORS[hotspot]} w-72 max-w-[80vw] max-h-[78%] overflow-y-auto rounded-lg border border-amber-400/30 bg-[#0e1320]/95 backdrop-blur-md shadow-2xl shadow-black/60 animate-inspector-pop`}
-      onClick={(e) => e.stopPropagation()}
+      className={`absolute ${ANCHORS[hotspot]} w-72 max-w-[80vw] max-h-[78%] overflow-y-auto rounded-lg border border-amber-400/30 bg-[#0e1320]/95 backdrop-blur-md shadow-2xl shadow-black/60`}
+      onClick={(e: React.MouseEvent) => e.stopPropagation()}
     >
-      <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-black/40 sticky top-0">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-black/40 sticky top-0 z-10">
         <InspectorTitle hotspot={hotspot} />
-        <button
+        <MotionButton
           onClick={() => {
             void gameAudio.playTactileClick();
             onClose();
@@ -98,10 +105,10 @@ const Shell: React.FC<{
           className="rounded p-1 text-gray-400 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
         >
           <X aria-hidden="true" className="h-4 w-4" />
-        </button>
+        </MotionButton>
       </div>
       <div className="p-3 space-y-3 text-sm text-gray-100">{children}</div>
-    </div>
+    </MotionPanel>
   </div>
 );
 
@@ -132,6 +139,9 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   onOpenDashboardTab,
   onConsoleFocus,
 }) => {
+  const [actingGigId, setActingGigId] = useState<string | null>(null);
+  const [actingStaffId, setActingStaffId] = useState<string | null>(null);
+
   // Esc closes the inspector, and opening plays tactile gear switch.
   useEffect(() => {
     void gameAudio.playGearSwitch(0.4);
@@ -147,6 +157,31 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
 
   const project = gameState.activeProject;
 
+  const handleTakeGig = (gig: Project) => {
+    if (project || actingGigId) return;
+    setActingGigId(gig.id);
+    void gameAudio.playTactileClick();
+
+    window.setTimeout(() => {
+      onStartProject(gig);
+      onClose();
+    }, 180);
+  };
+
+  const handleToggleStaff = (memberId: string, assigned: boolean) => {
+    if (actingStaffId) return;
+    setActingStaffId(memberId);
+    void gameAudio.playGearSwitch(0.3);
+
+    window.setTimeout(() => {
+      if (assigned) {
+        onUnassignStaff(memberId);
+      } else {
+        onAssignStaff(memberId);
+      }
+      setActingStaffId(null);
+    }, 180);
+  };
 
   /* ------------------------------- phone -------------------------------- */
   if (hotspot === 'phone') {
@@ -165,28 +200,37 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
             <StatRow label="Genre" value={gig.genre} />
             <StatRow label="Payout" value={`$${gig.payoutBase}`} valueClass="text-green-400" />
             <StatRow label="Rep" value={`+${gig.repGainBase}`} valueClass="text-blue-400" />
-            <Button
+            <MotionButton
               size="sm"
-              className="w-full h-7 mt-1 bg-green-600 hover:bg-green-700 text-white text-xs"
-              disabled={!!project}
-              onClick={() => { onStartProject(gig); onClose(); }}
+              className="w-full h-7 mt-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold"
+              disabled={!!project || !!actingGigId}
+              onClick={() => handleTakeGig(gig)}
             >
-              {project ? 'Console busy…' : 'Take Gig'}
-            </Button>
+              {actingGigId === gig.id ? (
+                <span className="flex items-center justify-center gap-1"><Check size={12} /> Starting…</span>
+              ) : project ? (
+                'Console busy…'
+              ) : (
+                'Take Gig'
+              )}
+            </MotionButton>
           </div>
         ))}
         <div className="pt-1 border-t border-white/10">
-          <Button
+          <MotionButton
             size="sm"
             variant="outline"
             className={`w-full h-7 text-xs border-white/20 ${ready ? 'text-amber-200 hover:bg-amber-500/10' : 'text-gray-500'}`}
-            onClick={() => onRefreshProjects?.()}
+            onClick={() => {
+              void gameAudio.playTactileClick();
+              onRefreshProjects?.();
+            }}
           >
             <ActionIcon icon={ready ? PhoneCall : PhoneOff} />
             {ready
               ? `Chase New Gigs — $${GIG_REFRESH_COST}`
               : `No leads — ${cooldown}/${GIG_REFRESH_COOLDOWN_DAYS} days`}
-          </Button>
+          </MotionButton>
         </div>
       </Shell>
     );
@@ -200,7 +244,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
     const status = ProgressionSystem.getProgressionStatus(gameState);
     return (
       <Shell hotspot={hotspot} onClose={onClose}>
-        <StatRow label="Day" value={gameState.currentDay} />
+        <StatRow label="Day" value={<MotionNumber value={gameState.currentDay} />} />
         <StatRow label="Year" value={gameState.currentYear} />
         <StatRow label="Daily salaries" value={`-$${salaries}`} valueClass="text-red-400" />
         <StatRow label="Equipment upkeep" value={`-$${upkeep}`} valueClass="text-red-400" />
@@ -217,14 +261,18 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
             </div>
           )}
         </div>
-        <Button
+        <MotionButton
           size="sm"
-          className="w-full h-8 bg-purple-600 hover:bg-purple-700 text-white text-xs"
-          onClick={() => { onAdvanceDay(); onClose(); }}
+          className="w-full h-8 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold"
+          onClick={() => {
+            void gameAudio.playTactileClick();
+            onAdvanceDay();
+            onClose();
+          }}
         >
           <ActionIcon icon={CalendarDays} />
           Advance to Day {gameState.currentDay + 1}
-        </Button>
+        </MotionButton>
         {(() => {
           const challenge = checkDailyChallenge(gameState);
           return (
@@ -253,8 +301,8 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
     const topEntries = charts.flatMap((c) => c.entries.slice(0, 2).map((e) => ({ chart: c.name, entry: e }))).slice(0, 4);
     return (
       <Shell hotspot={hotspot} onClose={onClose}>
-        <StatRow label="Reputation" value={gameState.reputation} valueClass="text-blue-400" />
-        <StatRow label="Influence" value={gameState.influence} valueClass="text-purple-300" />
+        <StatRow label="Reputation" value={<MotionNumber value={gameState.reputation} />} valueClass="text-blue-400" />
+        <StatRow label="Influence" value={<MotionNumber value={gameState.influence} />} valueClass="text-purple-300" />
         {topEntries.length === 0 && (
           <div className="text-xs text-gray-400">No chart data yet — release tracks with a band to enter the charts.</div>
         )}
@@ -267,15 +315,19 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
             </span>
           </div>
         ))}
-        <Button
+        <MotionButton
           size="sm"
           variant="outline"
           className="w-full h-7 text-xs border-white/20 text-gray-200 hover:bg-white/10"
-          onClick={() => { onOpenDashboardTab('charts'); onClose(); }}
+          onClick={() => {
+            void gameAudio.playTactileClick();
+            onOpenDashboardTab('charts');
+            onClose();
+          }}
         >
           <ActionIcon icon={Tv} />
           Open Full Charts
-        </Button>
+        </MotionButton>
       </Shell>
     );
   }
@@ -285,7 +337,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
     const gear = gameState.ownedEquipment;
     return (
       <Shell hotspot={hotspot} onClose={onClose}>
-        <StatRow label="Owned gear" value={gear.length} />
+        <StatRow label="Owned gear" value={<MotionNumber value={gear.length} />} />
         <StatRow label="Daily upkeep" value={`-$${calculateEquipmentUpkeep(gear)}`} valueClass="text-red-400" />
         <div className="space-y-2">
           {gear.slice(0, 6).map((item) => (
@@ -304,19 +356,22 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           ))}
           {gear.length === 0 && <div className="text-xs text-gray-400">Bare shelves — buy gear from the Equipment Shop.</div>}
         </div>
-        <Button
+        <MotionButton
           size="sm"
           variant="outline"
           className="w-full h-7 text-xs border-white/20 text-gray-200 hover:bg-white/10"
-          onClick={() => { onOpenDashboardTab('studio'); onClose(); }}
+          onClick={() => {
+            void gameAudio.playTactileClick();
+            onOpenDashboardTab('studio');
+            onClose();
+          }}
         >
           <ActionIcon icon={ShoppingCart} />
           Equipment Shop
-        </Button>
+        </MotionButton>
       </Shell>
     );
   }
-
 
   /* ------------------------------- console ------------------------------ */
   if (hotspot === 'console') {
@@ -326,14 +381,14 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           <div className="text-xs text-gray-400">
             The console is dark. Take a gig from the phone to start tracking.
           </div>
-          <Button
+          <MotionButton
             size="sm"
-            className="w-full h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white"
+            className="w-full h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold"
             onClick={() => onConsoleFocus?.()}
           >
             <ActionIcon icon={SlidersHorizontal} />
             Jump to Work Panel
-          </Button>
+          </MotionButton>
         </Shell>
       );
     }
@@ -351,14 +406,18 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
         {!!project.comboCount && project.comboCount > 1 && (
           <StatRow label="Combo" value={`⚡ x${project.comboCount}`} valueClass="text-amber-300" />
         )}
-        <Button
+        <MotionButton
           size="sm"
-          className="w-full h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white"
-          onClick={() => { onConsoleFocus?.(); onClose(); }}
+          className="w-full h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold"
+          onClick={() => {
+            void gameAudio.playTactileClick();
+            onConsoleFocus?.();
+            onClose();
+          }}
         >
           <ActionIcon icon={SlidersHorizontal} />
           Go to Work Panel
-        </Button>
+        </MotionButton>
       </Shell>
     );
   }
@@ -375,6 +434,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
       )}
       {crew.map((member) => {
         const assignedHere = !!project && member.assignedProjectId === project.id;
+        const isActing = actingStaffId === member.id;
         return (
           <div key={member.id} className="rounded border border-white/10 bg-white/5 p-2 space-y-1">
             <div className="flex items-center justify-between">
@@ -387,13 +447,22 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
               <span className="ml-auto text-gray-400">{member.status}</span>
             </div>
             {project && (
-              <Button
+              <MotionButton
                 size="sm"
-                className={`w-full h-6 text-[10px] ${assignedHere ? 'bg-gray-700 hover:bg-gray-600' : 'bg-emerald-600 hover:bg-emerald-700'} text-white`}
-                onClick={() => (assignedHere ? onUnassignStaff(member.id) : onAssignStaff(member.id))}
+                className={`w-full h-6 text-[10px] font-bold ${
+                  assignedHere ? 'bg-gray-700 hover:bg-gray-600' : 'bg-emerald-600 hover:bg-emerald-700'
+                } text-white`}
+                disabled={isActing}
+                onClick={() => handleToggleStaff(member.id, assignedHere)}
               >
-                {assignedHere ? 'Unassign from session' : 'Assign to session'}
-              </Button>
+                {isActing ? (
+                  <span className="flex items-center justify-center gap-1"><Check size={10} /> Updating…</span>
+                ) : assignedHere ? (
+                  'Unassign from session'
+                ) : (
+                  'Assign to session'
+                )}
+              </MotionButton>
             )}
           </div>
         );

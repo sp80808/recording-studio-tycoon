@@ -428,7 +428,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                   <div className="flex gap-2 mt-2">
                     {staff.status === 'Idle' && (
                       <KenneyButton 
-                        onClick={() => assignStaffToProject(staff.id)}
+                        onClick={() => { void gameAudio.playGearSwitch(0.3); assignStaffToProject(staff.id); }}
                         variant="blue"
                         size="sm"
                         className="flex-1 text-xs"
@@ -438,7 +438,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                     )}
                     {staff.status === 'Working' && (
                       <KenneyButton 
-                        onClick={() => unassignStaffFromProject(staff.id)}
+                        onClick={() => { void gameAudio.playTactileClick(); unassignStaffFromProject(staff.id); }}
                         variant="red"
                         size="sm"
                         className="flex-1 text-xs"
@@ -447,7 +447,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                       </KenneyButton>
                     )}
                     <KenneyButton 
-                      onClick={() => toggleStaffRest(staff.id)}
+                      onClick={() => { void gameAudio.playGearSwitch(0.2); toggleStaffRest(staff.id); }}
                       variant="yellow"
                       size="sm"
                       className="flex-1 text-xs"
