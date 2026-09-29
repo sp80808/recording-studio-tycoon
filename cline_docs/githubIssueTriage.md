@@ -25,6 +25,9 @@ execution order so future sessions do not re-triage.
 | #40 merge train | `8ig` epic — `.6` (PR #53 supersedes #23) and `.7` (PR #24 staff fit) **blocked on merge decisions** | 5/7 merged |
 | #41 Studio OS V2 | `goj` epic (closed) + `zel` epic (closed) — delivered via studio-play/dock/panel overhaul | done in code; close candidate |
 | #45 Kairosoft R&D | `sd3` RPG slices (3/5 done; `.3` retention, `.4` economy in progress) | in progress |
+| #46 Performance contract | Handled by `EngineLoop` + Pixi resolution & FPS budget (`docs/superpowers/specs/2026-09-29-game-engine-settings-graphics-design.md`) | spec written |
+| #56 Deterministic event director | Handled by typed `GameEventBus` + narrative cutscene triggers (`docs/superpowers/specs/2026-09-29-game-engine-settings-graphics-design.md`) | spec written |
+| #65 Settlement white screen | `typ` P0 bug — hook order crash fixed in `ActiveProject.tsx` and `MainGameContent.tsx` | fix verified |
 | #8 release plan / #19 balance harness / #43 repo cleanup | `z2f.6`, `mhk`, `p33`, `o8t`, `6zi` | in progress / open |
 
 ## 3. Not yet in Beads — new backlog (#48–#64). Recommended build order

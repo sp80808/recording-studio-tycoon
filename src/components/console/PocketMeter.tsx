@@ -7,6 +7,7 @@ import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
 interface PocketMeterProps {
   isArmed: boolean;
   onLock: (needlePosition: number) => void;
+  timingBonus?: number;
   className?: string;
 }
 
@@ -18,6 +19,7 @@ export const POCKET_METER_TIMING = {
 export const PocketMeter: React.FC<PocketMeterProps> = ({
   isArmed,
   onLock,
+  timingBonus = 0,
   className = ''
 }) => {
   const { settings } = useSettings();
@@ -25,6 +27,10 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
     preferredLayout: settings?.controllerLayout,
     hapticsEnabled: settings?.gamepadHaptics,
   });
+
+  const expansion = 0.15 * Math.max(0, timingBonus);
+  const goldMin = Math.max(0, 0.70 - expansion);
+  const goldMax = Math.min(1, 0.85 + expansion);
 
   const [needlePos, setNeedlePos] = useState(0.2); // 0.0 to 1.0
   const animRef = useRef<number | null>(null);
@@ -45,7 +51,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
     startTimeRef.current = performance.now();
 
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      const accessiblePosition = 0.775;
+      const accessiblePosition = (goldMin + goldMax) / 2;
       setNeedlePos(accessiblePosition);
       currentPosRef.current = accessiblePosition;
       const timeout = window.setTimeout(() => {
@@ -74,7 +80,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
       setNeedlePos(currentPosRef.current);
 
       // Tactile groove haptics: pulse gently when entering the Pocket zone
-      const inPocketNow = currentPosRef.current >= 0.70 && currentPosRef.current <= 0.85;
+      const inPocketNow = currentPosRef.current >= goldMin && currentPosRef.current <= goldMax;
       if (inPocketNow && !wasInPocketRef.current) {
         gamepad.triggerHaptic(0.2, 0.4, 40);
       }
@@ -88,10 +94,12 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
     };
-  }, [isArmed, onLock, gamepad]);
+  }, [isArmed, onLock, gamepad, goldMin, goldMax]);
 
-  const isInPocket = needlePos >= 0.70 && needlePos <= 0.85;
-  const meterFeedback = isInPocket ? 'IN THE POCKET' : needlePos < 0.70 ? 'COMING UP' : 'TOO HOT';
+  const isInPocket = needlePos >= goldMin && needlePos <= goldMax;
+  const meterFeedback = isInPocket
+    ? (timingBonus > 0 ? 'IN THE POCKET (CALIBRATED)' : 'IN THE POCKET')
+    : needlePos < goldMin ? 'COMING UP' : 'TOO HOT';
 
   const handleMeterClick = useCallback(() => {
     if (!isArmed || lockedRef.current) return;
@@ -100,7 +108,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
     const pos = currentPosRef.current;
     
     // Tactile lock rumble
-    if (pos >= 0.70 && pos <= 0.85) {
+    if (pos >= goldMin && pos <= goldMax) {
       gamepad.triggerHaptic(0.6, 0.9, 130);
       confetti({
         particleCount: 35,
@@ -145,7 +153,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
       {/* Meter Header Label */}
       <div className="flex justify-between items-center px-3 mb-1 text-[9px] font-mono tracking-widest text-slate-400">
         <span>TAKE CALIBRATION</span>
-        <span aria-live="polite" className={isInPocket ? 'text-amber-400 font-bold' : needlePos > 0.85 ? 'text-red-400 font-bold' : 'text-cyan-300 font-bold'}>
+        <span aria-live="polite" className={isInPocket ? 'text-amber-400 font-bold' : needlePos > goldMax ? 'text-red-400 font-bold' : 'text-cyan-300 font-bold'}>
           {meterFeedback}
         </span>
         <span>+4 dBu</span>
@@ -159,20 +167,26 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(needlePos * 100)}
-        aria-valuetext={`${meterFeedback}. Target is 70 to 85.`}
+        aria-valuetext={`${meterFeedback}. Target is ${Math.round(goldMin * 100)} to ${Math.round(goldMax * 100)}.`}
       >
         {/* Arc Track / Pocket Highlight */}
         <div className="relative w-full h-4 bg-slate-800/80 rounded-[1px] overflow-hidden flex">
-          {/* 0% to 50%: Normal range (cyan/slate) */}
-          <div className="w-[50%] h-full bg-slate-700/50" />
-          {/* 50% to 70%: Warm zone (emerald) */}
-          <div className="w-[20%] h-full bg-emerald-600/40 border-l border-emerald-500/30" />
-          {/* 70% to 85%: The Pocket Sweet Spot (amber/gold glowing) */}
-          <div className="w-[15%] h-full bg-amber-500/80 border-x border-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)] flex items-center justify-center">
-            <span className="text-[7px] font-black text-slate-950 uppercase tracking-tighter">POCKET</span>
+          {/* Normal range */}
+          <div style={{ width: `${Math.max(0, goldMin - 0.20) * 100}%` }} className="h-full bg-slate-700/50" />
+          {/* Warm zone */}
+          <div style={{ width: `${(goldMin - Math.max(0, goldMin - 0.20)) * 100}%` }} className="h-full bg-emerald-600/40 border-l border-emerald-500/30" />
+          {/* The Pocket Sweet Spot (amber/gold glowing) */}
+          <div
+            style={{ width: `${(goldMax - goldMin) * 100}%` }}
+            className={`h-full bg-amber-500/80 border-x border-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)] flex items-center justify-center transition-all ${timingBonus > 0 ? 'ring-1 ring-amber-300' : ''}`}
+            title={timingBonus > 0 ? `Tape Heads Cleaned: +${Math.round(timingBonus * 100)}% Sweet Spot` : 'Standard Sweet Spot'}
+          >
+            <span className="text-[7px] font-black text-slate-950 uppercase tracking-tighter">
+              {timingBonus > 0 ? '+CAL' : 'POCKET'}
+            </span>
           </div>
-          {/* 85% to 100%: Hot zone (red) */}
-          <div className="w-[15%] h-full bg-red-600/40 border-l border-red-500/40" />
+          {/* Hot zone */}
+          <div style={{ width: `${(1 - goldMax) * 100}%` }} className="h-full bg-red-600/40 border-l border-red-500/40" />
         </div>
 
         {/* Needle Marker Indicator */}
@@ -202,7 +216,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
           e.stopPropagation();
           handleMeterClick();
         }}
-        aria-label={`Lock take. ${meterFeedback}. Target is 70 to 85.`}
+        aria-label={`Lock take. ${meterFeedback}. Target is ${Math.round(goldMin * 100)} to ${Math.round(goldMax * 100)}.`}
         className={`w-full py-3 mt-2 font-black tracking-wider uppercase text-sm rounded-[2px] border transition-all flex items-center justify-center gap-2 active:scale-[0.98] ${
           isInPocket
             ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 border-amber-300 shadow-[0_0_18px_rgba(251,191,36,0.8)] animate-pulse'
@@ -213,7 +227,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
           <GamepadGlyph button="south" size="xs" />
         )}
         <span>{isInPocket ? '🔥' : '🎯'}</span>
-        <span>{isInPocket ? 'LOCK GOLD TAKE!' : needlePos < 0.70 ? 'LOW — AIM FOR GOLD' : 'HOT — AIM FOR GOLD'}</span>
+        <span>{isInPocket ? 'LOCK GOLD TAKE!' : needlePos < goldMin ? 'LOW — AIM FOR GOLD' : 'HOT — AIM FOR GOLD'}</span>
       </button>
     </div>
   );
