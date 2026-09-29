@@ -28,6 +28,10 @@ export interface GameEventPayloads {
     oldTier: number;
     newTier: number;
   };
+  'studio:era_transition': {
+    fromEra: string;
+    toEra: string;
+  };
   'studio:day_advanced': {
     currentDay: number;
   };

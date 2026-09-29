@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -6,6 +6,11 @@ import { Badge } from '@/components/ui/badge';
 import { GameState } from '@/types/game';
 import { getEraProgress } from '@/utils/eraProgression';
 import { getNextEvent as getNextHistoricalEvent } from '@/utils/historicalEvents';
+import { MotionButton, MotionReveal, MotionPanel, TextScramble } from '@/components/motion/primitives';
+import { useMotionCapabilities } from '@/lib/motion/capabilities';
+import { useGamepad } from '@/hooks/useGamepad';
+import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
+import { Sparkles, Calendar, Award, CheckCircle2, Disc3 } from 'lucide-react';
 
 interface EraProgressModalProps {
   gameState: GameState;
@@ -22,184 +27,187 @@ export const EraProgressModal: React.FC<EraProgressModalProps> = ({
 }) => {
   const { currentEra, nextEra, progressPercent, canTransition } = getEraProgress(gameState);
   const nextHistoricalEvent = getNextHistoricalEvent(gameState);
+  const capabilities = useMotionCapabilities();
+  const gamepad = useGamepad();
+
+  // Controller B / East button close
+  useEffect(() => {
+    if (!isOpen || !gamepad.isConnected) return;
+    if (gamepad.justPressed.east) {
+      onClose();
+    }
+  }, [isOpen, gamepad.isConnected, gamepad.justPressed.east, onClose]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl bg-gray-800 border-gray-600 text-white">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3 text-xl">
-            <span className="text-2xl">{currentEra.icon}</span>
-            Era Progression Timeline
+      <DialogContent className="max-w-2xl bg-gradient-to-b from-[#182030] to-[#0f1422] border-slate-700 text-white shadow-2xl overflow-hidden p-6">
+        <DialogHeader className="border-b border-slate-800 pb-3">
+          <DialogTitle className="flex items-center gap-3 text-lg font-bold text-slate-100">
+            <span className="p-1.5 bg-purple-500/20 text-purple-400 rounded-lg border border-purple-500/30">
+              <Disc3 className="w-5 h-5 animate-spin" style={{ animationDuration: '8s' }} />
+            </span>
+            <div className="flex items-center gap-2">
+              <span>Era Progression Timeline</span>
+              <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                Day {gameState.currentDay}
+              </span>
+            </div>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-1">
           {/* Current Era Info */}
-          <div className="space-y-3">
+          <div className="bg-slate-900/70 p-4 rounded-xl border border-slate-800 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold text-white">{currentEra.name}</h3>
-              <Badge className="bg-amber-600 text-white">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">{currentEra.icon}</span>
+                <h3 className="text-xl font-black text-amber-300 tracking-wide">
+                  <TextScramble text={currentEra.name} speed={capabilities.reducedMotion ? 0 : 20} />
+                </h3>
+              </div>
+              <Badge className="bg-purple-900/80 text-purple-200 border border-purple-500/30 font-mono text-xs">
                 Year: {gameState.currentYear}
               </Badge>
             </div>
-            <p className="text-gray-300">{currentEra.description}</p>
+            <p className="text-xs text-slate-300 leading-relaxed">{currentEra.description}</p>
             
             {/* Era Features */}
             <div>
-              <h4 className="font-semibold text-gray-300 mb-2">Era Features:</h4>
+              <h4 className="text-xs font-mono uppercase tracking-wider text-slate-400 mb-2">Epoch Innovations:</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {currentEra.features.map((feature, index) => (
-                  <div key={index} className="flex items-center gap-2 text-sm text-gray-400">
-                    <span className="text-green-400">✓</span>
-                    {feature}
-                  </div>
+                  <MotionReveal
+                    key={feature}
+                    staggerIndex={index}
+                    staggerDelay={capabilities.reducedMotion ? 0 : 0.04}
+                    direction="up"
+                    distance={capabilities.reducedMotion ? 0 : 8}
+                    className="flex items-center gap-2 text-xs text-slate-300 bg-slate-950/40 px-2.5 py-1.5 rounded border border-slate-800/80"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span>{feature}</span>
+                  </MotionReveal>
                 ))}
               </div>
             </div>
 
             {/* Available Genres */}
             <div>
-              <h4 className="font-semibold text-gray-300 mb-2">Popular Genres:</h4>
-              <div className="flex flex-wrap gap-2">
+              <h4 className="text-xs font-mono uppercase tracking-wider text-slate-400 mb-1.5">Dominant Genres:</h4>
+              <div className="flex flex-wrap gap-1.5">
                 {currentEra.availableGenres.map((genre) => (
-                  <Badge key={genre} className="bg-purple-600 text-white">
+                  <span
+                    key={genre}
+                    className="px-2 py-0.5 rounded-full text-[11px] font-mono bg-purple-950/50 text-purple-300 border border-purple-500/30"
+                  >
                     {genre}
-                  </Badge>
+                  </span>
                 ))}
               </div>
             </div>
           </div>
 
           {/* Progress to Next Era */}
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <h4 className="font-semibold text-gray-300">Era Progress</h4>
-              <span className="text-sm text-gray-400">{Math.round(progressPercent)}%</span>
-            </div>
-            <Progress value={progressPercent} className="h-3" />
-          </div>
-
-          {/* Next Era Preview */}
           {nextEra && (
-            <div className="bg-gray-700/50 rounded-lg p-4 space-y-3">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{nextEra.icon}</span>
-                <div>
-                  <h4 className="font-bold text-green-400">Next Era: {nextEra.name}</h4>
-                  <p className="text-sm text-gray-400">{nextEra.description}</p>
-                </div>
+            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <span>{nextEra.icon}</span>
+                  <span>Next Era Horizon: {nextEra.name}</span>
+                </span>
+                <span className="text-xs font-mono font-bold text-purple-400">
+                  {Math.round(progressPercent)}%
+                </span>
               </div>
+              <Progress
+                value={progressPercent}
+                className="h-2 bg-slate-950"
+                aria-label="Progress to next era"
+              />
 
-              {/* Requirements */}
-              <div>
-                <h5 className="text-sm font-semibold text-gray-300 mb-2">Unlock Requirements:</h5>
-                <div className="grid grid-cols-2 gap-2">
-                  {nextEra.unlockRequirements.minReputation && (
-                    <div className="text-xs flex justify-between bg-gray-600/50 rounded px-2 py-1">
-                      <span>Reputation:</span>
-                      <span className={gameState.reputation >= nextEra.unlockRequirements.minReputation ? 'text-green-400' : 'text-red-400'}>
-                        {gameState.reputation}/{nextEra.unlockRequirements.minReputation}
-                      </span>
+              {/* Requirements Checklist */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-xs">
+                {nextEra.unlockRequirements.minReputation && (
+                  <div className="bg-slate-950/60 p-2 rounded border border-slate-800">
+                    <div className="text-[10px] text-slate-400 flex items-center gap-1 mb-0.5">
+                      <Award className="w-3 h-3 text-amber-400" /> Reputation
                     </div>
-                  )}
-                  {nextEra.unlockRequirements.minLevel && (
-                    <div className="text-xs flex justify-between bg-gray-600/50 rounded px-2 py-1">
-                      <span>Level:</span>
-                      <span className={gameState.playerData.level >= nextEra.unlockRequirements.minLevel ? 'text-green-400' : 'text-red-400'}>
-                        {gameState.playerData.level}/{nextEra.unlockRequirements.minLevel}
-                      </span>
+                    <div className={gameState.reputation >= nextEra.unlockRequirements.minReputation ? 'text-emerald-400 font-bold font-mono' : 'text-amber-400 font-mono'}>
+                      {gameState.reputation} / {nextEra.unlockRequirements.minReputation}
                     </div>
-                  )}
-                  {nextEra.unlockRequirements.minDays && (
-                    <div className="text-xs flex justify-between bg-gray-600/50 rounded px-2 py-1">
-                      <span>Days:</span>
-                      <span className={gameState.currentDay >= nextEra.unlockRequirements.minDays ? 'text-green-400' : 'text-red-400'}>
-                        {gameState.currentDay}/{nextEra.unlockRequirements.minDays}
-                      </span>
+                  </div>
+                )}
+                {nextEra.unlockRequirements.minLevel && (
+                  <div className="bg-slate-950/60 p-2 rounded border border-slate-800">
+                    <div className="text-[10px] text-slate-400 flex items-center gap-1 mb-0.5">
+                      <Sparkles className="w-3 h-3 text-blue-400" /> Producer Level
                     </div>
-                  )}
-                  {nextEra.unlockRequirements.completedProjects && (
-                    <div className="text-xs flex justify-between bg-gray-600/50 rounded px-2 py-1">
-                      <span>Projects:</span>
-                      <span className={Math.floor(gameState.reputation / 5) >= nextEra.unlockRequirements.completedProjects ? 'text-green-400' : 'text-red-400'}>
-                        {Math.floor(gameState.reputation / 5)}/{nextEra.unlockRequirements.completedProjects}
-                      </span>
+                    <div className={gameState.playerData.level >= nextEra.unlockRequirements.minLevel ? 'text-emerald-400 font-bold font-mono' : 'text-amber-400 font-mono'}>
+                      {gameState.playerData.level} / {nextEra.unlockRequirements.minLevel}
                     </div>
-                  )}
-                </div>
-              </div>
-
-              {/* What's Coming */}
-              <div>
-                <h5 className="text-sm font-semibold text-gray-300 mb-2">Coming Features:</h5>
-                <div className="space-y-1">
-                  {nextEra.features.slice(0, 3).map((feature, index) => (
-                    <div key={index} className="text-xs text-blue-400 flex items-center gap-2">
-                      <span>→</span>
-                      {feature}
+                  </div>
+                )}
+                {nextEra.unlockRequirements.minDays && (
+                  <div className="bg-slate-950/60 p-2 rounded border border-slate-800">
+                    <div className="text-[10px] text-slate-400 flex items-center gap-1 mb-0.5">
+                      <Calendar className="w-3 h-3 text-slate-400" /> Studio Days
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* New Genres */}
-              <div>
-                <h5 className="text-sm font-semibold text-gray-300 mb-2">New Genres:</h5>
-                <div className="flex flex-wrap gap-1">
-                  {nextEra.availableGenres.filter(genre => !currentEra.availableGenres.includes(genre)).map((genre) => (
-                    <Badge key={genre} className="bg-blue-600 text-white text-xs">
-                      {genre}
-                    </Badge>
-                  ))}
-                </div>
+                    <div className={gameState.currentDay >= nextEra.unlockRequirements.minDays ? 'text-emerald-400 font-bold font-mono' : 'text-amber-400 font-mono'}>
+                      {gameState.currentDay} / {nextEra.unlockRequirements.minDays}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
           {/* Upcoming Historical Event */}
           {nextHistoricalEvent && (
-            <div className="bg-yellow-900/30 border border-yellow-700 rounded-lg p-4">
-              <h4 className="font-semibold text-yellow-400 mb-2">📰 Upcoming Historical Event:</h4>
-              <div className="space-y-2">
-                <p className="text-sm text-gray-300">{nextHistoricalEvent.title}</p>
-                <div className="text-xs text-gray-400">
-                  Expected in {nextHistoricalEvent.triggerDay - gameState.currentDay} days ({nextHistoricalEvent.year})
-                </div>
+            <div className="bg-amber-950/20 border border-amber-500/30 rounded-lg p-3 text-xs">
+              <h4 className="font-bold text-amber-300 mb-1 flex items-center gap-1.5">
+                <span>📰</span>
+                <span>Upcoming Historical Event: {nextHistoricalEvent.title}</span>
+              </h4>
+              <div className="text-slate-400">
+                Expected in {nextHistoricalEvent.triggerDay - gameState.currentDay} days ({nextHistoricalEvent.year})
               </div>
             </div>
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 pt-2 border-t border-slate-800">
             {canTransition ? (
-              <Button 
+              <MotionButton 
                 onClick={() => {
                   triggerEraTransition();
                   onClose();
                 }}
-                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+                className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-2 px-4 rounded-lg shadow-lg flex items-center justify-center gap-2"
               >
-                🚀 Advance to {nextEra?.name}
-              </Button>
+                <span>🚀 Advance to {nextEra?.name}</span>
+                {gamepad.isConnected && <GamepadGlyph button="south" size="xs" />}
+              </MotionButton>
             ) : (
               <Button 
                 disabled
-                className="flex-1 bg-gray-600 text-gray-400 cursor-not-allowed"
+                className="flex-1 bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed text-xs font-mono"
               >
-                {nextEra ? 'Requirements Not Met' : 'Latest Era Reached'}
+                {nextEra ? 'Requirements Pending' : 'Latest Era Reached'}
               </Button>
             )}
             
-            <Button 
+            <MotionButton 
               onClick={onClose}
-              variant="outline"
-              className="border-gray-600 text-gray-300 hover:bg-gray-700"
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg border border-slate-700 flex items-center gap-1.5"
             >
-              Close
-            </Button>
+              <span>Close</span>
+              {gamepad.isConnected && <GamepadGlyph button="east" size="xs" />}
+            </MotionButton>
           </div>
         </div>
       </DialogContent>
     </Dialog>
   );
 };
+
+export default EraProgressModal;

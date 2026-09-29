@@ -1,6 +1,7 @@
 // Multi-Project Progression System
 import { GameState } from '@/types/game';
 import { getPhysicalStudioCapacity } from '@/utils/studioRoomUtils';
+import { gameEvents } from '@/engine/gameEventBus';
 
 export interface ProgressionMilestone {
   level: number;
@@ -292,5 +293,103 @@ export class ProgressionSystem {
     }
 
     return `To unlock next features, you need: ${requirements.join(', ')}`;
+  }
+
+  /** Map milestone level requirement to studio tier (1-5) */
+  static getStudioTierFromMilestone(milestoneLevel?: number): 1 | 2 | 3 | 4 | 5 {
+    if (!milestoneLevel || milestoneLevel < 3) return 1;
+    if (milestoneLevel < 5) return 2;
+    if (milestoneLevel < 8) return 3;
+    if (milestoneLevel < 12) return 4;
+    return 5;
+  }
+
+  /**
+   * Authoritative studio tier (1-5).
+   * Prioritizes authoritative gameState.studioLevel, falling back to milestone status.
+   */
+  static getStudioTier(gameState: GameState): 1 | 2 | 3 | 4 | 5 {
+    if (typeof gameState.studioLevel === 'number') {
+      const clamped = Math.max(1, Math.min(5, Math.floor(gameState.studioLevel)));
+      return clamped as 1 | 2 | 3 | 4 | 5;
+    }
+    const status = this.getProgressionStatus(gameState);
+    return this.getStudioTierFromMilestone(status.currentMilestone?.level);
+  }
+
+  /** Metadata, console hardware, and unlock details for each tier */
+  static getStudioTierDetails(tier: number) {
+    const t = (Math.max(1, Math.min(5, Math.floor(tier)))) as 1 | 2 | 3 | 4 | 5;
+    const names = [
+      'HOME STUDIO',
+      'BEDROOM+ STUDIO',
+      'PROJECT STUDIO',
+      'STUDIO A',
+      'HIT FACTORY',
+    ];
+    const desks = [
+      '4-channel compact valve desk',
+      '8-channel analog slate console with rack bay',
+      '12-channel British console (SSL/Neve) with analog VU meters',
+      '16-channel large-format console with digital telemetry displays',
+      '20-channel custom flagship master console with gold accents',
+    ];
+    const perks = [
+      ['4-track analog warmth', 'Single project focus', 'Vintage valve chassis'],
+      ['8-channel summing', 'Second room expansion', 'Basic automation routing'],
+      ['12-channel British EQ', 'Third room expansion', 'Smart staff automation'],
+      ['16-channel multitrack', 'Fourth room expansion', 'AI-assisted routing'],
+      ['20-channel mastering suite', 'Maximum expansion limit', 'Complete automation suite'],
+    ];
+    return {
+      tier: t,
+      name: names[t - 1],
+      desk: desks[t - 1],
+      perks: perks[t - 1],
+    };
+  }
+
+  /**
+   * Authoritative upgrade of studio tier.
+   * State updates FIRST before presentation.
+   * Idempotent: cannot downgrade or double-grant bonuses.
+   */
+  static advanceStudioTier(
+    gameState: GameState,
+    targetTier?: number
+  ): { newGameState: GameState; oldTier: number; newTier: number; upgraded: boolean } {
+    const oldTier = this.getStudioTier(gameState);
+    const newTier = targetTier !== undefined
+      ? (Math.max(1, Math.min(5, Math.floor(targetTier))) as 1 | 2 | 3 | 4 | 5)
+      : (Math.min(5, oldTier + 1) as 1 | 2 | 3 | 4 | 5);
+
+    if (newTier <= oldTier) {
+      return {
+        newGameState: gameState,
+        oldTier,
+        newTier: oldTier,
+        upgraded: false,
+      };
+    }
+
+    const newGameState: GameState = {
+      ...gameState,
+      studioLevel: newTier,
+      studioTier: newTier,
+      reputation: gameState.reputation + 25,
+    };
+
+    try {
+      gameEvents.emit('studio:tier_upgraded', { oldTier, newTier });
+    } catch {
+      // EventBus fallback in isolated test runners
+    }
+
+    return {
+      newGameState,
+      oldTier,
+      newTier,
+      upgraded: true,
+    };
   }
 }
