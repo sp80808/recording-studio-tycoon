@@ -15,6 +15,7 @@ import { toast } from '@/hooks/use-toast';
 import { playSound, gameAudio } from '@/utils/audioSystem'; // Updated import
 import { triggerScreenShake } from '@/utils/screenShake';
 import { evaluateTakeAccuracy, calculateTakeEnergyCost } from '@/rpg/takeEvaluation';
+import { hasActiveChoreBuff, getActiveBuffMagnitude } from '@/simulation/choreEngine';
 import { PocketMeter } from '@/components/console/PocketMeter';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useSettings } from '@/contexts/settings-context-types';
@@ -134,6 +135,37 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   // were below the early return and caused the post-settlement white screen, GH-65).
   const [takeState, setTakeState] = useState<'idle' | 'tracking'>('idle');
   const [lastTakeGrade, setLastTakeGrade] = useState<{ grade: string; text: string } | null>(null);
+  const availableEnergy = gameState.playerData.dailyWorkCapacity;
+  const isProjectComplete = !!gameState.activeProject && gameState.activeProject.stages.every(stage => stage.completed);
+
+  // Gamepad take shortcuts (hoisted so the hook order stays stable when a project
+  // settles — Rules of Hooks, GH-65). Handlers are only reached with a live project.
+  useEffect(() => {
+    if (!gameState.activeProject) return;
+    if (!gamepad.isConnected || takeState !== 'idle') return;
+
+    if (gamepad.justPressed.south) {
+      if (availableEnergy > 0 && !isProjectComplete) {
+        handleArmTake();
+        gamepad.triggerHaptic(0.2, 0.4, 60);
+      }
+    } else if (gamepad.justPressed.north || gamepad.justPressed.west) {
+      if ((availableEnergy >= 2 || overdriveArmed) && !isProjectComplete) {
+        toggleOverdrive();
+        gamepad.triggerHaptic(0.2, 0.3, 50);
+      }
+    }
+  }, [
+    gameState.activeProject,
+    gamepad.isConnected,
+    gamepad.justPressed.south,
+    gamepad.justPressed.north,
+    gamepad.justPressed.west,
+    takeState,
+    availableEnergy,
+    overdriveArmed,
+    isProjectComplete,
+  ]);
 
   if (!gameState.activeProject) {
     return (
@@ -171,6 +203,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   // Calculate progress for current stage
   const currentStage = project.stages[project.currentStageIndex] || project.stages[0];
   const currentStageProgress = currentStage ? (currentStage.workUnitsCompleted / currentStage.workUnitsBase) * 100 : 0;
+
+  // Stage completion flag (isProjectComplete is hoisted above the early return).
+  const isCurrentStageComplete = currentStage && currentStage.workUnitsCompleted >= currentStage.workUnitsBase;
 
   // DERIVE projectFocus from gameState.activeProject.focusAllocation
   const projectFocus = project.focusAllocation || { performance: 33, soundCapture: 33, layering: 34 }; // Fallback if somehow undefined
@@ -310,8 +345,8 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     });
   };
 
-  const availableEnergy = gameState.playerData.dailyWorkCapacity;
-  const energyCost = calculateTakeEnergyCost(availableEnergy, overdriveArmed);
+  const energySaver = hasActiveChoreBuff(gameState.choreState, 'energy_saver');
+  const energyCost = calculateTakeEnergyCost(availableEnergy, overdriveArmed, energySaver);
 
   const handleArmTake = () => {
     if (availableEnergy <= 0 || isProjectComplete) return;
@@ -320,34 +355,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     setTakeState('tracking');
   };
 
-  // Gamepad shortcuts when take is idle (A to record, Y/X to toggle overdrive)
-  useEffect(() => {
-    if (!gamepad.isConnected || takeState !== 'idle') return;
-
-    if (gamepad.justPressed.south) {
-      if (availableEnergy > 0 && !isProjectComplete) {
-        handleArmTake();
-        gamepad.triggerHaptic(0.2, 0.4, 60);
-      }
-    } else if (gamepad.justPressed.north || gamepad.justPressed.west) {
-      if ((availableEnergy >= 2 || overdriveArmed) && !isProjectComplete) {
-        toggleOverdrive();
-        gamepad.triggerHaptic(0.2, 0.3, 50);
-      }
-    }
-  }, [
-    gamepad.isConnected,
-    gamepad.justPressed.south,
-    gamepad.justPressed.north,
-    gamepad.justPressed.west,
-    takeState,
-    availableEnergy,
-    overdriveArmed,
-    isProjectComplete,
-  ]);
-
   const handleLockTake = (needlePosition: number) => {
-    const verdict = evaluateTakeAccuracy(needlePosition);
+    const timingBonus = getActiveBuffMagnitude(gameState.choreState, 'timing_bonus');
+    const verdict = evaluateTakeAccuracy(needlePosition, timingBonus);
     setTakeState('idle');
 
     // Trigger Tone.js chord synthesis + SFX
@@ -400,10 +410,6 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     setCelebrationDisplayData(null);
     setProjectDataForCompletionCall(null); // Clear the stored project data
   };
-
-  // Check if current stage is complete and ready to advance
-  const isCurrentStageComplete = currentStage && currentStage.workUnitsCompleted >= currentStage.workUnitsBase;
-  const isProjectComplete = project.stages.every(stage => stage.completed);
 
   const playSliderSoundThrottled = () => {
     const now = Date.now();

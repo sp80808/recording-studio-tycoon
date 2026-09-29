@@ -22,6 +22,10 @@ import { createSeededRandom } from '@/simulation/seededRandom';
 import { evaluateProjectSynergies, calculateSynergyBonuses, recordDiscoveredSynergies } from '@/utils/synergyUtils';
 import { advanceFlow } from '@/rpg/focusFlow';
 import { gradeStage, focusMatchFraction } from '@/rpg/stageGrades';
+import {
+  getActiveBuffMagnitude,
+  consumeChoreBuffSession
+} from '@/simulation/choreEngine';
 
 interface UseStageWorkProps {
   gameState: GameState;
@@ -351,10 +355,12 @@ export const useStageWork = ({
       activeSynergies
     );
 
-    // ⚡ Streak + 🔥 Overdrive + ✨ Synergy multipliers applied to the final gains
+    // ⚡ Streak + 🔥 Overdrive + ✨ Synergy + 🔧 Chore multipliers applied to the final gains
     const overdriveMultiplier = overdrive ? 1.75 : 1;
-    const creativityGain = Math.max(1, Math.round(workPoints.creativity * comboMultiplier * overdriveMultiplier * synergyBonuses.creativityMultiplier * flow.multiplier));
-    const technicalGain = Math.max(1, Math.round(workPoints.technical * comboMultiplier * overdriveMultiplier * synergyBonuses.technicalMultiplier * flow.multiplier));
+    const choreCreativityMultiplier = 1 + getActiveBuffMagnitude(gameState.choreState, 'creativity_bonus');
+    const choreTechnicalMultiplier = 1 + getActiveBuffMagnitude(gameState.choreState, 'tech_bonus');
+    const creativityGain = Math.max(1, Math.round(workPoints.creativity * comboMultiplier * overdriveMultiplier * synergyBonuses.creativityMultiplier * flow.multiplier * choreCreativityMultiplier));
+    const technicalGain = Math.max(1, Math.round(workPoints.technical * comboMultiplier * overdriveMultiplier * synergyBonuses.technicalMultiplier * flow.multiplier * choreTechnicalMultiplier));
 
     // Create orb animations
     createOrb('creativity', creativityGain);
@@ -462,10 +468,26 @@ export const useStageWork = ({
       console.log(`📋 Project T points: ${prev.activeProject!.accumulatedTPoints} -> ${updatedProject.accumulatedTPoints}`);
       console.log(`📋 Updated stages:`, updatedProject.stages.map((s, i) => `${i}: ${s.stageName} (${s.workUnitsCompleted}/${s.workUnitsBase}) ${s.completed ? '✅' : '⏳'}`));
 
+      const nextChoreState = stageCompleted && prev.choreState
+        ? consumeChoreBuffSession(prev.choreState)
+        : prev.choreState;
+
+      const nextPendingCrates = prev.pendingCrates ? [...prev.pendingCrates] : [];
+      if (stageCompleted && completedGrade?.grade === 'S' && Math.random() < 0.25) {
+        nextPendingCrates.push({
+          id: `crate-sgrade-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          era: prev.selectedEra || '1970s',
+          source: 's_grade_take',
+          tier: 'standard'
+        });
+      }
+
       return withDailyTracking({
         ...prev,
         activeProject: updatedProject,
         discoveredSynergies: updatedDiscovered,
+        choreState: nextChoreState,
+        pendingCrates: nextPendingCrates,
         playerData: {
           ...prev.playerData,
           dailyWorkCapacity: Math.max(0, prev.playerData.dailyWorkCapacity - energyCost)

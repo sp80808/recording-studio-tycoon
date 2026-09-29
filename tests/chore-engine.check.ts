@@ -71,4 +71,56 @@ const buffState = consumeChoreBuffSession(day3.nextChoreState);
 assert.strictEqual(buffState.activeBuffs.length, 0, '1-session buffs should expire after a session');
 console.log('PASS: Buff consumption verified');
 
+// 6. Assignable Chores to Staff & Ability-based Automation
+import {
+  assignChoreToStaff,
+  processAutomaticChores,
+  autoAssignAvailableChores
+} from '../src/simulation/choreEngine';
+
+const mockStaff: any[] = [
+  {
+    id: 'staff-eng-1',
+    name: 'Alex Engineer',
+    role: 'Engineer',
+    primaryStats: { creativity: 40, technical: 85, speed: 80 },
+    energy: 90,
+    mood: 80,
+    xpInRole: 100,
+    levelInRole: 3
+  },
+  {
+    id: 'staff-prod-1',
+    name: 'Sam Producer',
+    role: 'Producer',
+    primaryStats: { creativity: 90, technical: 50, speed: 75 },
+    energy: 85,
+    mood: 85,
+    xpInRole: 200,
+    levelInRole: 4
+  }
+];
+
+// Assign maintenance chore to high-tech/speed engineer
+let assignedState = assignChoreToStaff(state, 'clean_tape_heads', 'staff-eng-1');
+assert.strictEqual(assignedState.chores.clean_tape_heads.assignedStaffId, 'staff-eng-1');
+console.log('PASS: Chore successfully assigned to staff');
+
+// Automatic processing triggers assigned chores
+const autoResult = processAutomaticChores(assignedState, mockStaff);
+assert.strictEqual(autoResult.completedChores.length, 1);
+assert.strictEqual(autoResult.nextChoreState.chores.clean_tape_heads.completed, true);
+// Staff with high technical skill (>75) grants an enhanced ability buff bonus
+const tapeBuff = autoResult.nextChoreState.activeBuffs.find(b => b.choreId === 'clean_tape_heads');
+assert(tapeBuff !== undefined, 'Buff must be created');
+assert(tapeBuff.magnitude >= 0.11, 'High technical ability should scale buff magnitude above 0.10');
+assert.strictEqual(autoResult.staffEnergyDeltas['staff-eng-1'] < 0, true, 'Staff burns energy');
+console.log('PASS: Automatic chore processing executes based on staff ability');
+
+// Auto-assign matching best staff to remaining chores
+const autoAssignedState = autoAssignAvailableChores(createInitialChoreState(), mockStaff);
+assert.strictEqual(autoAssignedState.chores.clean_tape_heads.assignedStaffId, 'staff-eng-1', 'Engineer assigned to maintenance');
+assert.strictEqual(autoAssignedState.chores.tune_acoustics.assignedStaffId, 'staff-prod-1', 'Producer assigned to acoustics');
+console.log('PASS: Auto-assign optimally assigns duties based on staff stats and role');
+
 console.log('chore-engine: all checks passed');

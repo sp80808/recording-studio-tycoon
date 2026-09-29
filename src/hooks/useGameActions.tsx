@@ -15,6 +15,12 @@ import { RandomEvent } from '@/game-mechanics/random-events';
 import { freshDailyTracking } from '@/utils/dailyChallenges';
 import { gameAudio } from '@/utils/audioSystem';
 import { triggerScreenShake } from '@/utils/screenShake';
+import {
+  createInitialChoreState,
+  refreshDailyChores,
+  processAutomaticChores,
+  autoAssignAvailableChores
+} from '@/simulation/choreEngine';
 
 /** Daily equipment upkeep: 0.1% of item price per day, minimum $2/item */
 export const calculateEquipmentUpkeep = (equipment: GameState['ownedEquipment']): number => {
@@ -112,6 +118,38 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     );
     
     setGameState(prev => {
+      // Refresh studio daily chores and evaluate streak crates
+      const initialChore = prev.choreState || createInitialChoreState();
+      const { nextChoreState: refreshedChores, crateAwarded } = refreshDailyChores(initialChore, newDay);
+
+      // Auto-assign any unassigned chores if staff available
+      const assignedChores = autoAssignAvailableChores(refreshedChores, updatedStaff as any);
+
+      // Automatically execute assigned chores based on staff ability & speed
+      const { nextChoreState: autoProcessedChores, completedChores, staffEnergyDeltas, staffXpGained } =
+        processAutomaticChores(assignedChores, updatedStaff as any);
+
+      // Apply staff energy deltas & XP
+      const staffAfterChores = updatedStaff.map(s => {
+        const delta = staffEnergyDeltas[s.id] || 0;
+        const xp = staffXpGained[s.id] || 0;
+        return {
+          ...s,
+          energy: Math.max(0, s.energy + delta),
+          xpInRole: (s.xpInRole || 0) + xp
+        };
+      });
+
+      const updatedPendingCrates = prev.pendingCrates ? [...prev.pendingCrates] : [];
+      if (crateAwarded) {
+        updatedPendingCrates.push({
+          id: `crate-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          era: prev.selectedEra || '1970s',
+          source: 'chore_streak',
+          tier: 'vintage_flight_case'
+        });
+      }
+
       const newExpenses = prev.financials.expenses + totalDailyExpenses;
       const baseUpdatedState: GameState = {
         ...prev, 
@@ -127,7 +165,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
         },
         researchedMods: newResearchedMods,
         dailyTracking: freshDailyTracking(newDay, prev.dailyTracking), // New day, new challenge (streak carried)
-        hiredStaff: updatedStaff.map(s => 
+        hiredStaff: staffAfterChores.map(s => 
           s.status === 'Resting' 
             ? { ...s, energy: Math.min(100, s.energy + 20) }
             : s
@@ -135,7 +173,9 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
         playerData: {
           ...prev.playerData,
           dailyWorkCapacity: prev.playerData.attributes.focusMastery + 3 + prev.playerData.level - 1
-        }
+        },
+        choreState: autoProcessedChores,
+        pendingCrates: updatedPendingCrates
       };
 
       if (triggeredEvents.length === 0) {

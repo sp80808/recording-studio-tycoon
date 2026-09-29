@@ -2,6 +2,7 @@
  * choreEngine.ts
  * Core simulation service for Studio Maintenance & Daily Chores.
  * Manages daily chore lifecycles, condition decay, active session buffs,
+ * automatic chore execution via assigned staff, ability-scaled speeds & buffs,
  * and 3-day chore streaks awarding vintage flight case crates.
  */
 
@@ -25,6 +26,7 @@ export interface StudioChore {
   buffDurationSessions: number; // default 1 session
   buffType: 'timing_bonus' | 'tech_bonus' | 'creativity_bonus' | 'energy_saver' | 'vibe_boost';
   buffMagnitude: number;
+  assignedStaffId?: string | null; // Staff assigned to automate this chore
 }
 
 export interface ActiveChoreBuff {
@@ -33,6 +35,7 @@ export interface ActiveChoreBuff {
   buffType: StudioChore['buffType'];
   magnitude: number;
   remainingSessions: number;
+  appliedByStaffId?: string | null;
 }
 
 export interface StudioChoreState {
@@ -41,9 +44,25 @@ export interface StudioChoreState {
   dailyCompletedCount: number;
   streakDays: number;
   lastCompletedDay: number;
+  autoProcessEnabled?: boolean;
 }
 
-export const AUTHORED_CHORES: Record<StudioChoreId, Omit<StudioChore, 'completed'>> = {
+export interface StaffLike {
+  id: string;
+  name: string;
+  role: string;
+  primaryStats: {
+    creativity: number;
+    technical: number;
+    speed: number;
+  };
+  energy: number;
+  mood?: number;
+  xpInRole?: number;
+  levelInRole?: number;
+}
+
+export const AUTHORED_CHORES: Record<StudioChoreId, Omit<StudioChore, 'completed' | 'assignedStaffId'>> = {
   clean_tape_heads: {
     id: 'clean_tape_heads',
     title: 'Clean Tape Heads',
@@ -106,11 +125,11 @@ export const AUTHORED_CHORES: Record<StudioChoreId, Omit<StudioChore, 'completed
  */
 export function createInitialChoreState(): StudioChoreState {
   const chores: Record<StudioChoreId, StudioChore> = {
-    clean_tape_heads: { ...AUTHORED_CHORES.clean_tape_heads, completed: false },
-    calibrate_outboard: { ...AUTHORED_CHORES.calibrate_outboard, completed: false },
-    organize_patchbay: { ...AUTHORED_CHORES.organize_patchbay, completed: false },
-    tune_acoustics: { ...AUTHORED_CHORES.tune_acoustics, completed: false },
-    brew_espresso: { ...AUTHORED_CHORES.brew_espresso, completed: false },
+    clean_tape_heads: { ...AUTHORED_CHORES.clean_tape_heads, completed: false, assignedStaffId: null },
+    calibrate_outboard: { ...AUTHORED_CHORES.calibrate_outboard, completed: false, assignedStaffId: null },
+    organize_patchbay: { ...AUTHORED_CHORES.organize_patchbay, completed: false, assignedStaffId: null },
+    tune_acoustics: { ...AUTHORED_CHORES.tune_acoustics, completed: false, assignedStaffId: null },
+    brew_espresso: { ...AUTHORED_CHORES.brew_espresso, completed: false, assignedStaffId: null },
   };
 
   return {
@@ -119,11 +138,35 @@ export function createInitialChoreState(): StudioChoreState {
     dailyCompletedCount: 0,
     streakDays: 0,
     lastCompletedDay: 0,
+    autoProcessEnabled: true,
   };
 }
 
 /**
- * Executes a studio chore, burning energy and granting an active session buff.
+ * Assigns or unassigns a chore to a staff member for automated execution.
+ */
+export function assignChoreToStaff(
+  state: StudioChoreState,
+  choreId: StudioChoreId,
+  staffId: string | null
+): StudioChoreState {
+  const chore = state.chores[choreId];
+  if (!chore) return state;
+
+  return {
+    ...state,
+    chores: {
+      ...state.chores,
+      [choreId]: {
+        ...chore,
+        assignedStaffId: staffId,
+      },
+    },
+  };
+}
+
+/**
+ * Executes a studio chore manually (player action), burning energy and granting an active session buff.
  */
 export function executeStudioChore(
   state: StudioChoreState,
@@ -152,9 +195,9 @@ export function executeStudioChore(
     buffType: chore.buffType,
     magnitude: chore.buffMagnitude,
     remainingSessions: buffDuration,
+    appliedByStaffId: null,
   };
 
-  // Filter out any existing buff of the same choreId to refresh it
   const remainingBuffs = state.activeBuffs.filter(b => b.choreId !== choreId);
 
   const nextChores: Record<StudioChoreId, StudioChore> = {
@@ -172,7 +215,6 @@ export function executeStudioChore(
     dailyCompletedCount: state.dailyCompletedCount + 1,
   };
 
-  // XP is 35 for maintenance/acoustics, 25 for hospitality
   const xpAwarded = chore.category === 'hospitality' ? 25 : 35;
 
   return {
@@ -184,7 +226,151 @@ export function executeStudioChore(
 }
 
 /**
+ * Automatically processes chores assigned to staff members.
+ * Scales execution speed and buff effectiveness based on staff ability:
+ * - Speed stat reduces staff energy cost and execution time.
+ * - Technical & Creativity stats augment buff magnitude (up to +30% boost).
+ */
+export function processAutomaticChores(
+  state: StudioChoreState,
+  staffList: StaffLike[]
+): {
+  nextChoreState: StudioChoreState;
+  completedChores: StudioChoreId[];
+  staffEnergyDeltas: Record<string, number>;
+  staffXpGained: Record<string, number>;
+} {
+  const completedChores: StudioChoreId[] = [];
+  const staffEnergyDeltas: Record<string, number> = {};
+  const staffXpGained: Record<string, number> = {};
+  let currentBuffs = [...state.activeBuffs];
+  const nextChores = { ...state.chores };
+  let dailyCount = state.dailyCompletedCount;
+
+  for (const choreId of Object.keys(nextChores) as StudioChoreId[]) {
+    const chore = nextChores[choreId];
+    if (chore.completed || !chore.assignedStaffId) continue;
+
+    const staff = staffList.find(s => s.id === chore.assignedStaffId);
+    if (!staff || staff.energy < 15) continue;
+
+    // Ability-based calculation:
+    // Speed stat (0-100) scales efficiency
+    const speed = staff.primaryStats?.speed || 50;
+    const speedFactor = 1 + (speed - 50) / 100; // e.g. speed 80 = 1.3x
+
+    // Energy deduction is reduced for faster/higher ability staff
+    const energyCost = Math.max(5, Math.round(15 / speedFactor));
+
+    // Stat affinity:
+    // Maintenance scales with Technical
+    // Acoustics scales with Creativity
+    // Hospitality scales with Mood / Speed
+    const relevantStat =
+      chore.category === 'maintenance'
+        ? staff.primaryStats?.technical || 50
+        : chore.category === 'acoustics'
+        ? staff.primaryStats?.creativity || 50
+        : (staff.mood || 50);
+
+    // High ability (>70) boosts buff magnitude
+    const abilityMultiplier = relevantStat > 70 ? 1 + (relevantStat - 70) * 0.01 : 1.0;
+    const scaledMagnitude = Number((chore.buffMagnitude * abilityMultiplier).toFixed(3));
+
+    const newBuff: ActiveChoreBuff = {
+      id: `buff-${choreId}-auto-${Date.now()}`,
+      choreId,
+      buffType: chore.buffType,
+      magnitude: scaledMagnitude,
+      remainingSessions: chore.buffDurationSessions,
+      appliedByStaffId: staff.id,
+    };
+
+    currentBuffs = currentBuffs.filter(b => b.choreId !== choreId);
+    currentBuffs.push(newBuff);
+
+    nextChores[choreId] = {
+      ...chore,
+      completed: true,
+    };
+
+    completedChores.push(choreId);
+    dailyCount += 1;
+
+    staffEnergyDeltas[staff.id] = (staffEnergyDeltas[staff.id] || 0) - energyCost;
+    staffXpGained[staff.id] = (staffXpGained[staff.id] || 0) + 30;
+  }
+
+  return {
+    nextChoreState: {
+      ...state,
+      chores: nextChores,
+      activeBuffs: currentBuffs,
+      dailyCompletedCount: dailyCount,
+    },
+    completedChores,
+    staffEnergyDeltas,
+    staffXpGained,
+  };
+}
+
+/**
+ * Automatically assigns available unassigned chores to the most qualified staff member
+ * based on role and primary ability stats.
+ */
+export function autoAssignAvailableChores(
+  state: StudioChoreState,
+  staffList: StaffLike[]
+): StudioChoreState {
+  if (!staffList || staffList.length === 0) return state;
+
+  const nextChores = { ...state.chores };
+
+  for (const choreId of Object.keys(nextChores) as StudioChoreId[]) {
+    const chore = nextChores[choreId];
+    if (chore.assignedStaffId) continue;
+
+    // Pick best staff for this category
+    let bestStaff: StaffLike | null = null;
+    let bestScore = -1;
+
+    for (const staff of staffList) {
+      if (staff.energy < 20) continue;
+
+      let score = staff.primaryStats?.speed || 0;
+      if (chore.category === 'maintenance') {
+        score += (staff.primaryStats?.technical || 0) * 2;
+        if (staff.role === 'Engineer') score += 50;
+      } else if (chore.category === 'acoustics') {
+        score += (staff.primaryStats?.creativity || 0) * 2;
+        if (staff.role === 'Producer') score += 50;
+      } else {
+        score += ((staff.mood || 50) + (staff.primaryStats?.speed || 50));
+      }
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestStaff = staff;
+      }
+    }
+
+    if (bestStaff) {
+      nextChores[choreId] = {
+        ...chore,
+        assignedStaffId: bestStaff.id,
+      };
+    }
+  }
+
+  return {
+    ...state,
+    chores: nextChores,
+  };
+}
+
+/**
  * Resets daily chores upon day rollover, evaluating streaks and awarding crates.
+ * Preserves staff assignments so routines remain active!
  */
 export function refreshDailyChores(
   state: StudioChoreState,
@@ -194,10 +380,8 @@ export function refreshDailyChores(
   nextChoreState: StudioChoreState;
   crateAwarded: boolean;
 } {
-  // Check if player met the daily threshold (>= 3 chores completed)
   const metThreshold = state.dailyCompletedCount >= streakThreshold;
   const nextStreak = metThreshold ? state.streakDays + 1 : 0;
-  // 3-day streak awards a vintage flight case crate
   const crateAwarded = nextStreak > 0 && nextStreak % 3 === 0;
 
   const resetChores: Record<StudioChoreId, StudioChore> = {
@@ -241,10 +425,10 @@ export function consumeChoreBuffSession(state: StudioChoreState): StudioChoreSta
  * Queries if a buff type is currently active.
  */
 export function hasActiveChoreBuff(
-  state: StudioChoreState,
-  buffType: StudioChore['buffType']
+  state?: StudioChoreState | null,
+  buffType?: StudioChore['buffType']
 ): boolean {
-  if (!state || !state.activeBuffs) return false;
+  if (!state || !state.activeBuffs || !buffType) return false;
   return state.activeBuffs.some(b => b.buffType === buffType && b.remainingSessions > 0);
 }
 
@@ -252,10 +436,10 @@ export function hasActiveChoreBuff(
  * Gets the total magnitude for an active buff type.
  */
 export function getActiveBuffMagnitude(
-  state: StudioChoreState,
-  buffType: StudioChore['buffType']
+  state?: StudioChoreState | null,
+  buffType?: StudioChore['buffType']
 ): number {
-  if (!state || !state.activeBuffs) return 0;
+  if (!state || !state.activeBuffs || !buffType) return 0;
   return state.activeBuffs
     .filter(b => b.buffType === buffType && b.remainingSessions > 0)
     .reduce((sum, b) => sum + b.magnitude, 0);

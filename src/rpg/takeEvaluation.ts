@@ -9,14 +9,24 @@ export interface TakeEvaluationResult {
 
 /**
  * Evaluates needle position (0.0 to 1.0) against "The Pocket" target zone.
- * - 0.70 to 0.85: Gold Take (In The Pocket)
- * - 0.50 to 0.69 or 0.86 to 0.95: Silver Take (Near Miss)
- * - Otherwise: Solid Take (Standard Take)
+ * - Base Gold: 0.70 to 0.85
+ * - timingBonus widens the Gold window tolerance (e.g. +10% width).
+ * - Silver: Near miss adjacent to Gold zone.
+ * - Otherwise: Solid Take.
  */
-export function evaluateTakeAccuracy(needlePosition: number): TakeEvaluationResult {
+export function evaluateTakeAccuracy(
+  needlePosition: number,
+  timingBonus: number = 0
+): TakeEvaluationResult {
   const pos = Math.max(0, Math.min(1, needlePosition));
 
-  if (pos >= 0.70 && pos <= 0.85) {
+  // Base gold window is [0.70, 0.85] (width 0.15).
+  // timingBonus expands lower and upper boundaries.
+  const expansion = 0.15 * Math.max(0, timingBonus);
+  const goldMin = Math.max(0, 0.70 - expansion);
+  const goldMax = Math.min(1, 0.85 + expansion);
+
+  if (pos >= goldMin && pos <= goldMax) {
     return {
       grade: 'Gold',
       multiplier: 1.3,
@@ -25,7 +35,10 @@ export function evaluateTakeAccuracy(needlePosition: number): TakeEvaluationResu
     };
   }
 
-  if ((pos >= 0.50 && pos < 0.70) || (pos > 0.85 && pos <= 0.95)) {
+  const silverMin = Math.max(0, goldMin - 0.20);
+  const silverMax = Math.min(1, goldMax + 0.10);
+
+  if ((pos >= silverMin && pos < goldMin) || (pos > goldMax && pos <= silverMax)) {
     return {
       grade: 'Silver',
       multiplier: 1.1,
@@ -46,14 +59,19 @@ export function evaluateTakeAccuracy(needlePosition: number): TakeEvaluationResu
  * Calculates adaptive energy cost:
  * - Default: 2 energy
  * - If 1 energy remaining: 1 energy
- * - If overdrive armed: +1 energy if available
+ * - If overdrive armed: +1 energy if available (discounted by 1⚡ if energySaver buff is active)
  */
-export function calculateTakeEnergyCost(availableEnergy: number, overdriveArmed: boolean): number {
+export function calculateTakeEnergyCost(
+  availableEnergy: number,
+  overdriveArmed: boolean,
+  energySaver: boolean = false
+): number {
   if (availableEnergy <= 0) return 0;
   if (availableEnergy === 1) return 1;
 
   if (overdriveArmed) {
-    return availableEnergy >= 3 ? 3 : availableEnergy;
+    const targetCost = energySaver ? 2 : 3;
+    return Math.min(availableEnergy, targetCost);
   }
 
   return 2;
