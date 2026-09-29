@@ -6,15 +6,32 @@
 
 import { create } from 'zustand';
 import { getProductBySku, V1_CATALOGUE } from './catalog';
-import { loadLedgerCache, saveLedgerCache } from './entitlements';
+import { applyReversalCosmeticSideEffects } from './equippedCosmetics';
+import {
+  loadLedgerCache,
+  reconcileOfflineCacheWithProvider,
+  saveLedgerCache,
+} from './entitlements';
+import type { OwnedEntitlement } from './entitlements';
+import { getActiveExperimentId } from './experiments';
 import { FulfillmentService } from './fulfillment';
+import type { FulfillResult } from './fulfillment';
 import { MockPurchaseProvider } from './MockPurchaseProvider';
+import {
+  trackEntitlementRestored,
+  trackPurchaseCancelled,
+  trackPurchaseFailed,
+  trackPurchaseStarted,
+  trackPurchaseVerified,
+  trackStoreOpened,
+} from './telemetry';
 import type {
   EntitlementId,
   LocalizedProduct,
   PurchaseProvider,
   Sku,
   StoreProduct,
+  TransactionId,
 } from './types';
 
 export type PurchaseState =
@@ -46,6 +63,8 @@ interface DealerState {
   refreshProducts: () => Promise<void>;
   purchaseSku: (sku: Sku, choiceRef?: string) => Promise<void>;
   restore: () => Promise<number>;
+  /** Refund/reversal: revoke ledger grants + unequip cosmetics. */
+  reversePurchase: (transactionId: TransactionId) => FulfillResult;
   clearCelebration: () => void;
   ownedEntitlements: () => EntitlementId[];
   isOwned: (entitlementId: EntitlementId) => boolean;
@@ -68,7 +87,10 @@ export const useDealerStore = create<DealerState>((set, get) => ({
 
   setDealerOpen: (open) => {
     set({ dealerOpen: open });
-    if (open) void get().refreshProducts();
+    if (open) {
+      trackStoreOpened({ experimentId: getActiveExperimentId() });
+      void get().refreshProducts();
+    }
   },
 
   refreshProducts: async () => {
@@ -86,11 +108,19 @@ export const useDealerStore = create<DealerState>((set, get) => ({
 
   purchaseSku: async (sku, choiceRef) => {
     const product = getProductBySku(sku);
+    const experimentId = getActiveExperimentId();
     if (!product) {
       set({ purchase: { status: 'failed', sku, message: `Unknown product: ${sku}` } });
+      trackPurchaseFailed({ sku, reason: 'unknown_product', experimentId });
       return;
     }
     set({ purchase: { status: 'pending', sku } });
+    trackPurchaseStarted({
+      sku,
+      productType: product.type,
+      experimentId,
+      choiceRef,
+    });
     try {
       const receipt = await get().provider.purchase(sku);
       const result = get().fulfillment.fulfill({ receipt, product, choiceRef });
@@ -103,29 +133,46 @@ export const useDealerStore = create<DealerState>((set, get) => ({
           purchase: { status: 'owned', sku },
           celebration: { sku, productTitle: product.title, refs },
         });
+        trackPurchaseVerified({ sku, experimentId, choiceRef });
       } else {
-        set({
-          purchase: {
-            status: 'failed',
-            sku,
-            message: result.outcome === 'rejected_unknown_choice' ? 'Pick one of the three shown options.' : 'Receipt not verified — nothing granted.',
-          },
-        });
+        const message =
+          result.outcome === 'rejected_unknown_choice'
+            ? 'Pick one of the three shown options.'
+            : 'Receipt not verified — nothing granted.';
+        set({ purchase: { status: 'failed', sku, message } });
+        trackPurchaseFailed({ sku, reason: result.outcome, experimentId });
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Purchase failed.';
       const cancelled = /cancel/i.test(message);
       set({ purchase: cancelled ? { status: 'cancelled', sku } : { status: 'failed', sku, message } });
+      if (cancelled) trackPurchaseCancelled({ sku, reason: 'user_cancelled', experimentId });
+      else trackPurchaseFailed({ sku, reason: 'provider_error', experimentId });
     }
   },
 
   restore: async () => {
     const receipts = await get().provider.restorePurchases();
+    const ledger = get().fulfillment.getLedger();
+    // Provider is authority: drop offline-cache-only spoofs, then re-fulfill.
+    const unbacked: OwnedEntitlement[] = reconcileOfflineCacheWithProvider(ledger, receipts);
+    applyReversalCosmeticSideEffects(unbacked);
     const results = get().fulfillment.restore(receipts, V1_CATALOGUE);
-    saveLedgerCache(get().fulfillment.getLedger());
+    saveLedgerCache(ledger);
     const granted = results.filter((r) => r.outcome === 'granted').length;
+    trackEntitlementRestored({
+      restoredCount: granted,
+      experimentId: getActiveExperimentId(),
+    });
     set({ purchase: { status: 'idle' } });
     return granted;
+  },
+
+  reversePurchase: (transactionId) => {
+    const result = get().fulfillment.reverse(transactionId);
+    applyReversalCosmeticSideEffects(result.entitlements);
+    saveLedgerCache(get().fulfillment.getLedger());
+    return result;
   },
 
   clearCelebration: () => set({ celebration: null }),

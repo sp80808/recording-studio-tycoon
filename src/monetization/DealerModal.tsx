@@ -4,13 +4,15 @@
 // construction (no autoplay animation — reduced-motion safe). Opens only
 // on explicit click; never interrupts sessions.
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { V1_CATALOGUE } from './catalog';
+import { getActiveExperimentId, getActiveMonetisationExperiment } from './experiments';
 import { priceFor, useDealerStore } from './store';
+import { trackProductViewed } from './telemetry';
 import type { StoreProduct } from './types';
 
 type Section = 'featured' | 'customs' | 'collections' | 'owned' | 'back';
@@ -41,13 +43,22 @@ function productsFor(section: Section, isOwned: (id: string) => boolean): StoreP
   }
 }
 
-const ProductCard: React.FC<{ product: StoreProduct }> = ({ product }) => {
+const ProductCard: React.FC<{ product: StoreProduct; section: Section }> = ({ product, section }) => {
   const { products, purchase, purchaseSku, isOwned } = useDealerStore();
   const [choice, setChoice] = useState<string>(product.preview.items[0]?.ref ?? '');
   const owned = isFullyOwned(product, isOwned);
   const pending = purchase.status === 'pending' && purchase.sku === product.sku;
   const failed = purchase.status === 'failed' && purchase.sku === product.sku;
   const cancelled = purchase.status === 'cancelled' && purchase.sku === product.sku;
+
+  useEffect(() => {
+    trackProductViewed({
+      sku: product.sku,
+      productType: product.type,
+      section,
+      experimentId: getActiveExperimentId(),
+    });
+  }, [product.sku, product.type, section]);
 
   return (
     <Card className="p-3 bg-stone-900/70 border-stone-700">
@@ -129,7 +140,8 @@ export const DealerModal: React.FC<{ open: boolean; onClose: () => void }> = ({ 
         <DialogHeader>
           <DialogTitle className="text-amber-400">📦 Sal&apos;s Road Warehouse — Flight Case Dealer</DialogTitle>
           <DialogDescription className="text-stone-400">
-            Tour-tested cases, liveries and studio dressing. Everything below shows exactly what you get — no blind rolls, ever.
+            {getActiveMonetisationExperiment().params.dealerTagline
+              ?? 'Tour-tested cases, liveries and studio dressing. Everything below shows exactly what you get — no blind rolls, ever.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -173,7 +185,7 @@ export const DealerModal: React.FC<{ open: boolean; onClose: () => void }> = ({ 
               </p>
             )}
             {list.map((p) => (
-              <ProductCard key={p.id} product={p} />
+              <ProductCard key={p.id} product={p} section={section} />
             ))}
           </div>
         </ScrollArea>

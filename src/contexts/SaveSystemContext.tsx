@@ -17,6 +17,12 @@ import {
   LoadedGameSnapshot 
 } from './save-system-context-types';
 import { GameState } from '@/types/game';
+// Bead 89o.8: strip spoofed entitlement claims; never clear ledger on reset.
+import {
+  GAME_SAVE_STORAGE_KEY,
+  resetGameSavePreservingLedger,
+  sanitizeImportedSaveEnvelope,
+} from '@/monetization/saveIsolation';
 
 export { useSaveSystem };
 export type { LoadedGameSnapshot };
@@ -50,12 +56,16 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
       const savedData = localStorage.getItem('recordingStudioTycoonSave');
       if (!savedData) return null;
       
-      const parsed = JSON.parse(savedData);
+      const parsedRaw = JSON.parse(savedData);
+      // Additive 89o.8: drop spoof entitlement keys before migration.
+      const { cleaned: parsed } = sanitizeImportedSaveEnvelope(
+        parsedRaw && typeof parsedRaw === 'object' ? parsedRaw : {},
+      );
       const currentVersionInfo = getVersionInfo();
       
       // Version compatibility checking
       if (parsed.version && parsed.version !== currentVersionInfo.version) {
-        const versionComparison = compareVersions(parsed.version, currentVersionInfo.version);
+        const versionComparison = compareVersions(String(parsed.version), currentVersionInfo.version);
         if (versionComparison < 0) {
           console.warn(`Loading save from older version: ${parsed.version} -> ${currentVersionInfo.version}`);
         } else if (versionComparison > 0) {
@@ -64,8 +74,8 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
       }
       
       console.log(`Game loaded successfully - Save Version: ${parsed.version || 'legacy'}`);
-      const migratedGameState = migrateAndInitializeGameState(parsed.gameState);
-      const savedAt = Number.isFinite(parsed.timestamp) ? parsed.timestamp : Date.now();
+      const migratedGameState = migrateAndInitializeGameState(parsed.gameState as GameState);
+      const savedAt = Number.isFinite(parsed.timestamp) ? Number(parsed.timestamp) : Date.now();
 
       return {
         gameState: migratedGameState,
@@ -83,7 +93,8 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
 
   const resetGame = useCallback(() => {
     try {
-      localStorage.removeItem('recordingStudioTycoonSave');
+      // 89o.8: clear career save only — entitlement ledger cache survives.
+      resetGameSavePreservingLedger(localStorage, GAME_SAVE_STORAGE_KEY);
       console.log('Save data cleared');
     } catch (error) {
       console.error('Failed to clear save data:', error);
@@ -113,11 +124,14 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
   const loadGameFromString = useCallback((saveString: string): GameState | null => {
     try {
       const decodedString = atob(saveString);
-      const parsed = JSON.parse(decodedString);
+      const parsedRaw = JSON.parse(decodedString);
+      const { cleaned: parsed } = sanitizeImportedSaveEnvelope(
+        parsedRaw && typeof parsedRaw === 'object' ? parsedRaw : {},
+      );
       const currentVersionInfo = getVersionInfo();
 
       if (parsed.version && parsed.version !== currentVersionInfo.version) {
-        const versionComparison = compareVersions(parsed.version, currentVersionInfo.version);
+        const versionComparison = compareVersions(String(parsed.version), currentVersionInfo.version);
         if (versionComparison < 0) {
           console.warn(`Loading exported save from older version: ${parsed.version} -> ${currentVersionInfo.version}`);
         } else if (versionComparison > 0) {
@@ -126,7 +140,7 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
       }
 
       console.log(`Game loaded successfully from string - Save Version: ${parsed.version || 'legacy'}`);
-      return migrateAndInitializeGameState(parsed.gameState);
+      return migrateAndInitializeGameState(parsed.gameState as GameState);
     } catch (error) {
       console.error('Failed to load game from string:', error);
       return null;
