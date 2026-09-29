@@ -58,3 +58,19 @@ Dependency-aware sequence (do not start later items before earlier ones land):
 
 Flea market (#3), box drops (#4), agent system (#5), social media minigame (#6) — pre-overhaul
 ideas; re-scope against current systems before implementation. #8 stays the long-range umbrella.
+
+
+## 6. Session log (2026-09-29, second orchestration run)
+
+- Closed with evidence: #54, #9, #12, #13, #16, #20 (see §1). Annotated #19 (§4).
+- Filed **#65** — post-settlement white screen (`Rendered fewer hooks than expected` in
+  `ActiveProject`, component stack through the session Dialog). Bead: `recording-studio-tycoon-typ`
+  (P0, discovered-from `p33`).
+- Root cause + fix: `takeState`/`lastTakeGrade` hooks sat **below** `ActiveProject`'s
+  `if (!gameState.activeProject) return` (added by the Interactive Console Work Loop commit);
+  hoisted above the return. Build/tests green.
+- Note: `p33` was closed as "smoke passing end-to-end" while `tests/booking-settlement.check.cjs`
+  still fails at the post-settlement assertion — the #65 fix is the true gate before that claim
+  holds. Re-run the smoke after the in-flight 49i.8 minigame-integration work settles.
+- Coordination: a parallel orchestrator run owns the gamepad epic (`49i.3`…`49i.8`), README/docs
+  refresh and the v0.4.0 status files. Avoid editing those files from triage sessions.

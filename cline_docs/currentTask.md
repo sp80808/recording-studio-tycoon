@@ -45,3 +45,27 @@ Finalize the v0.4.0 milestone rollout: tier-specific isometric studio progressio
 1. Complete `recording-studio-tycoon-49i.7`: Dual-Stick Console Fader Ride & Stereo Pan Minigame (`ConsoleRideGame`).
 2. Complete `recording-studio-tycoon-49i.8`: MinigameManager integration, dynamic HUD button badges & comprehensive tests.
 3. Close gamepad epic `recording-studio-tycoon-49i`.
+
+
+---
+
+## Concurrent session notes (2026-09-29 — GitHub triage + P0 settlement fix)
+
+> A parallel orchestrator run owns the v0.4.0/gamepad epic commits above. This section
+> records the second session's work so both can hand off safely. Do not revert.
+
+1. **GH-54-class verification + GitHub reconciliation** — closed #54, #9, #12, #13, #16, #20
+   with evidence comments, annotated #19 with remaining balance-harness scope, filed **#65**
+   (post-settlement white screen). Full map: `cline_docs/githubIssueTriage.md`.
+2. **P0 fix (GH-65 / bead `typ`)** — `ActiveProject` had `takeState` / `lastTakeGrade`
+   `useState` hooks below its `if (!gameState.activeProject) return ...` early return; the
+   settlement commit skipped them → *Rendered fewer hooks than expected* → white screen.
+   Hooks hoisted above the return (same pattern as the earlier `ahd` fix). `pnpm test`,
+   `pnpm build` and eslint on the file pass.
+3. **Unblocked shared flow** — `MainGameContent.tsx` (concurrent WIP) used `useCallback`
+   without importing it, which crashed the studio on mount for every validation run; added
+   the missing import.
+4. **Validation caveat** — the booking-to-settlement browser smoke still times out in the
+   work-loop phase while the concurrent 49i.8 minigame-integration WIP is live; re-run
+   `tests/booking-settlement.check.cjs` once that branch of work is committed/green, then
+   close GH-65/`typ` with the passing run as evidence.
