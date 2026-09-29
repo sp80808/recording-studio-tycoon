@@ -20,6 +20,16 @@ export interface MotionCapabilities {
 }
 
 /**
+ * Pure helper to sanitize Framer Motion transition config under reduced motion.
+ */
+export function getFilteredTransition<T extends Transition>(transition: T, reducedMotion: boolean): Transition {
+  if (reducedMotion) {
+    return { duration: 0 };
+  }
+  return transition;
+}
+
+/**
  * Pure evaluator for motion capabilities from inputs (useful outside React hook context and in test suites).
  */
 export function resolveMotionCapabilities(params: {
@@ -48,10 +58,7 @@ export function resolveMotionCapabilities(params: {
     (graphicsPreset === 'high' || graphicsPreset === 'ultra');
 
   const filterTransition = (transition: Transition): Transition => {
-    if (reducedMotion) {
-      return { duration: 0 };
-    }
-    return transition;
+    return getFilteredTransition(transition, reducedMotion);
   };
 
   return {

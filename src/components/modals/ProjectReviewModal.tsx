@@ -18,6 +18,7 @@ import { AlbumCoverArt } from '@/components/AlbumCoverArt';
 import { triggerMilestoneCelebration } from '@/utils/confettiJuice';
 import { gradeQuality, type RankResult } from '@/rpg/rankChase';
 import { RankRevealOverlay } from '@/components/RankRevealOverlay';
+import { MotionReward, MotionButton, MotionNumber } from '@/components/motion/primitives';
 
 interface AnimatedNumberProps {
   targetValue: number;
@@ -26,25 +27,8 @@ interface AnimatedNumberProps {
   onComplete?: () => void;
 }
 
-const AnimatedNumber: React.FC<AnimatedNumberProps> = ({ targetValue, duration = 1000, className, onComplete }) => {
-  const [currentValue, setCurrentValue] = useState(0);
-
-  useEffect(() => {
-    let startTime: number;
-    const animate = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
-      const progress = Math.min((timestamp - startTime) / duration, 1);
-      setCurrentValue(Math.floor(progress * targetValue));
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        if (onComplete) onComplete();
-      }
-    };
-    requestAnimationFrame(animate);
-  }, [targetValue, duration, onComplete]);
-
-  return <span className={className}>{currentValue.toLocaleString()}</span>;
+const AnimatedNumber: React.FC<AnimatedNumberProps> = ({ targetValue, className, onComplete }) => {
+  return <MotionNumber value={targetValue} className={className} onComplete={onComplete} />;
 };
 
 
@@ -381,14 +365,19 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
 
                 {/* Rewards */}
                 {showRewards && (
-                  <div className="w-full max-w-sm pt-2 space-y-1 text-center bg-slate-900/70 border border-amber-500/30 rounded-lg p-3 shadow">
+                  <MotionReward
+                    active={showRewards}
+                    glow={true}
+                    glowTone="gold"
+                    className="w-full max-w-sm pt-2 space-y-1 text-center bg-slate-900/70 border border-amber-500/30 rounded-lg p-3 shadow"
+                  >
                     <h4 className="text-xl font-semibold text-yellow-200">Rewards</h4>
                     <p className="text-lg text-white">💰 Money: $<AnimatedNumber targetValue={report.moneyGained} duration={600} /></p>
                     <p className="text-lg text-white">🌟 Reputation: +<AnimatedNumber targetValue={report.reputationGained} duration={600} /></p>
                     {report.assignedPerson.type === 'staff' && report.playerManagementXpGained > 0 && (
                       <p className="text-lg text-white">🧠 Player Management XP: +<AnimatedNumber targetValue={report.playerManagementXpGained} duration={600} /></p>
                     )}
-                  </div>
+                  </MotionReward>
                 )}
               </div>
 
@@ -431,16 +420,16 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
           )}
           <CardFooter className="shrink-0 p-4 border-t border-gray-800/80 bg-gray-950/90">
             {showContinueButton ? (
-              <Button
+              <MotionButton
                 onClick={() => {
                   // Play sound before calling onClose, as onClose might unmount the component
                   gameAudio.playSound('button_click', 'sfx'); 
                   onClose();
                 }} 
-                className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold text-lg py-3"
+                className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold text-lg py-3 rounded"
               >
                 Awesome!
-              </Button>
+              </MotionButton>
             ) : (
               <div className="w-full text-center text-gray-400 italic">Calculating...</div>
             )}
