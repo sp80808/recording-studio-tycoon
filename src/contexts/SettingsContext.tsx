@@ -19,7 +19,13 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
       const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        return { ...defaultSettings, ...parsed };
+        // DEV chrome is opt-in only — never treat missing/legacy values as enabled
+        return {
+          ...defaultSettings,
+          ...parsed,
+          devShowBoxDropButton: parsed.devShowBoxDropButton === true,
+          devShowPerfHud: parsed.devShowPerfHud === true,
+        };
       }
     } catch (e) {
       console.warn('[SettingsProvider] Failed to parse stored settings:', e);

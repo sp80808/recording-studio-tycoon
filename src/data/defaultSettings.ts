@@ -58,4 +58,7 @@ export const defaultSettings: GameSettings = {
   pocketMeterAssistance: 'normal',
   theme: 'default',
   language: 'en', // Default language
+  // Floating DEV chrome — always off until explicitly enabled in Settings
+  devShowBoxDropButton: false,
+  devShowPerfHud: false,
 };

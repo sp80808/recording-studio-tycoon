@@ -33,6 +33,13 @@ export interface GameSettings {
   // Customization & Localization
   theme: 'default' | 'sunrise-studio' | 'neon-nights' | 'retro-arcade';
   language: string; // Added language setting
+
+  /**
+   * Dev-only HUD chrome. Defaults OFF so first launch / fresh settings never
+   * cover the studio dock. Opt-in from Settings → System → Developer Tools.
+   */
+  devShowBoxDropButton: boolean;
+  devShowPerfHud: boolean;
 }
 
 export interface SettingsContextType {

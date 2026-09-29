@@ -17,6 +17,7 @@ import { GRAPHICS_PRESETS } from '@/data/defaultSettings';
 import { gameAudio } from '@/utils/audioSystem';
 import { useTranslation } from 'react-i18next';
 import { toast } from "sonner";
+import { useBoxDropsStore } from '@/features/boxDrops/boxDropsStore';
 
 export type SettingsTabId = 'audio' | 'graphics' | 'gameplay' | 'accessibility' | 'system';
 
@@ -40,6 +41,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const { gameState } = useGameState();
   const { t } = useTranslation();
   const gamepad = useGamepad();
+  const triggerBoxDrop = useBoxDropsStore((s) => s.triggerDrop);
+  const isDevBuild = import.meta.env.DEV;
 
   const [activeTab, setActiveTab] = useState<SettingsTabId>('audio');
   const [exportedSaveString, setExportedSaveString] = useState<string | null>(null);
@@ -618,6 +621,58 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
                   )}
                 </div>
+
+                {/* Developer Tools — opt-in floating chrome; defaults OFF */}
+                {isDevBuild && (
+                  <div className="space-y-3 bg-slate-900/50 p-4 rounded-lg border border-amber-500/30">
+                    <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider">
+                      Developer Tools
+                    </h4>
+                    <p className="text-xs text-slate-400">
+                      Floating DEV controls stay hidden by default so they never cover the studio dock. Enable only what you need.
+                    </p>
+
+                    <div className="flex justify-between items-center py-2 border-b border-slate-800">
+                      <div>
+                        <label className="text-white text-sm font-medium">Show Spawn Box Drop</label>
+                        <p className="text-xs text-slate-400">Floating button over the studio HUD (off by default)</p>
+                      </div>
+                      <Switch
+                        checked={settings.devShowBoxDropButton === true}
+                        onCheckedChange={(checked) => {
+                          updateSettings({ devShowBoxDropButton: checked });
+                          gameAudio.playClick();
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex justify-between items-center py-2 border-b border-slate-800">
+                      <div>
+                        <label className="text-white text-sm font-medium">Show Perf HUD</label>
+                        <p className="text-xs text-slate-400">Performance / WebGL audit overlay (off by default)</p>
+                      </div>
+                      <Switch
+                        checked={settings.devShowPerfHud === true}
+                        onCheckedChange={(checked) => {
+                          updateSettings({ devShowPerfHud: checked });
+                          gameAudio.playClick();
+                        }}
+                      />
+                    </div>
+
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        triggerBoxDrop('1970s', 2);
+                        gameAudio.playClick();
+                        toast.success('Spawned box drop (1970s ×2)');
+                      }}
+                      className="w-full bg-sky-600 hover:bg-sky-700 text-white text-xs py-2 h-auto"
+                    >
+                      Spawn Box Drop Now
+                    </Button>
+                  </div>
+                )}
 
                 {/* Danger Zone */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
