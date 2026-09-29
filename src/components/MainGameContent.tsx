@@ -53,6 +53,8 @@ interface MainGameContentProps {
   setCompactStudioMode: React.Dispatch<React.SetStateAction<boolean>>;
   /** Open StorylineBranchModal when a pending Act choice exists. */
   onOpenStorylineBranch?: () => void;
+  /** zel.6: Tauri + feature-flag gate; when false, strip entry is hidden and compact is ignored. */
+  desktopStripEnabled: boolean;
 }
 
 
@@ -84,7 +86,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   startResearchMod,
   refreshProjects,
   compactStudioMode,
-  setCompactStudioMode
+  setCompactStudioMode,
+  desktopStripEnabled
 }) => {
 
   const [panel, setPanel] = useState<Panel | null>(null);
@@ -247,7 +250,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
 
 
 
-  if (compactStudioMode) {
+  if (compactStudioMode && desktopStripEnabled) {
     return <div className="h-full flex items-end"><StudioStrip gameState={gameState}
       onExpand={() => setCompactStudioMode(false)}
       onBookNextEnquiry={() => { const next = gameState.availableProjects[0]; if (next) startProject(next); }} /></div>;
@@ -423,15 +426,17 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                 <button className="studio-primary-action" onClick={advanceDay}>
                   <Moon size={20} />Rest & advance day
                 </button>
-                <button
-                  className="studio-dock-button flex-row gap-2"
-                  onClick={() => {
-                    setPanel(null);
-                    setCompactStudioMode(true);
-                  }}
-                >
-                  <Minimize2 size={18} />Desktop studio strip
-                </button>
+                {desktopStripEnabled && (
+                  <button
+                    className="studio-dock-button flex-row gap-2"
+                    onClick={() => {
+                      setPanel(null);
+                      setCompactStudioMode(true);
+                    }}
+                  >
+                    <Minimize2 size={18} />Desktop studio strip
+                  </button>
+                )}
               </div>
             </div>
           )}

@@ -13,6 +13,9 @@ export const useFeatureFlagStore = create<FeatureFlags>((set) => ({
     // Flight Case Monetisation (bead 89o): store + premium reveals, default off.
     'monetisation-dealer': false,
     'premium-cases': false,
+    // Compact Studio Strip (zel.6): master switch — still requires Tauri shell at runtime.
+    // Browser always keeps the full playable UI; enable only for desktop shell experiments.
+    'desktop-studio-strip': true,
   },
   setFlag: (key, value) => set((s) => ({ flags: { ...s.flags, [key]: value } })),
 }))
