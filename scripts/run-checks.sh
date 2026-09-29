@@ -72,6 +72,10 @@ echo "=== motion qualification & renderer audit (#74) ==="
 ./node_modules/.bin/esbuild tests/motion-qualification.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-motion-qualification.cjs --alias:@=./src >/dev/null
 node /tmp/rst-motion-qualification.cjs
 
+echo "=== studio os motion pass (#75) ==="
+./node_modules/.bin/esbuild tests/studio-os-motion.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-os-motion.cjs --alias:@=./src >/dev/null
+node /tmp/rst-studio-os-motion.cjs
+
 echo "=== balance harness invariants (10 days, seed 7) ==="
 ./node_modules/.bin/esbuild src/dev/balance/run.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-balance.cjs --alias:@=./src >/dev/null
 mkdir -p /tmp/rst-balance

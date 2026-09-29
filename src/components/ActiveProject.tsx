@@ -1,3 +1,4 @@
+import { MotionButton, MotionReveal, MotionNumber } from '@/components/motion/primitives';
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -282,9 +283,11 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
   const handleStartIntervention = () => {
     if (!autoTriggeredMinigame) return;
-    setSelectedMinigame(autoTriggeredMinigame.type);
-    setShowMinigame(true);
     playSound('start_minigame', 0.55);
+    window.setTimeout(() => {
+      setSelectedMinigame(autoTriggeredMinigame.type);
+      setShowMinigame(true);
+    }, 150);
   };
 
   const handleDelegateIntervention = () => {
@@ -303,30 +306,37 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     const technicalBonus = creativityLeaning ? Math.max(1, Math.floor(baseBonus * 0.6)) : baseBonus;
     const xpBonus = Math.max(1, Math.min(3, Math.floor(baseBonus / 2)));
 
-    onMinigameReward?.(
-      creativityBonus,
-      technicalBonus,
-      xpBonus,
-      autoTriggeredMinigame.type
-    );
-    clearAutoTriggeredMinigame?.();
+    playSound('reward', 0.5);
+    // Tactile action feedback communicated within short beat (~180ms)
+    window.setTimeout(() => {
+      onMinigameReward?.(
+        creativityBonus,
+        technicalBonus,
+        xpBonus,
+        autoTriggeredMinigame.type
+      );
+      clearAutoTriggeredMinigame?.();
 
-    toast({
-      title: "👥 Intervention Delegated",
-      description: `${staff.name} handled it · ${fit.reasons.slice(0, 3).join(' · ')} · +${creativityBonus} C / +${technicalBonus} T`,
-      className: "bg-gray-800 border-gray-600 text-white",
-      duration: 3500
-    });
+      toast({
+        title: "👥 Intervention Delegated",
+        description: `${staff.name} handled it · ${fit.reasons.slice(0, 3).join(' · ')} · +${creativityBonus} C / +${technicalBonus} T`,
+        className: "bg-gray-800 border-gray-600 text-white",
+        duration: 3500
+      });
+    }, 180);
   };
 
   const handleSkipIntervention = () => {
-    clearAutoTriggeredMinigame?.();
-    toast({
-      title: "Studio kept moving",
-      description: "The normal workflow continued with no bonus or penalty.",
-      className: "bg-gray-800 border-gray-600 text-white",
-      duration: 2200
-    });
+    playSound('ui-click', 0.4);
+    window.setTimeout(() => {
+      clearAutoTriggeredMinigame?.();
+      toast({
+        title: "Studio kept moving",
+        description: "The normal workflow continued with no bonus or penalty.",
+        className: "bg-gray-800 border-gray-600 text-white",
+        duration: 2200
+      });
+    }, 150);
   };
   // Get stage-specific focus labels and guidance, now considering staff skills for optimalFocus
   const stageFocusLabels = getStageFocusLabels(currentStage);
@@ -416,9 +426,15 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
     if (result?.isComplete && result.finalProjectData) {
       playSound('project-complete', 0.8);
-      setCelebrationDisplayData({ title: result.finalProjectData.title, genre: result.finalProjectData.genre });
-      setProjectDataForCompletionCall(result.finalProjectData);
-      setShowCelebration(true);
+      const isMilestone = verdict.grade === 'Gold' || verdict.grade === 'Platinum' || (result.finalProjectData.overallQualityScore ?? 0) >= 80;
+      if (isMilestone) {
+        setCelebrationDisplayData({ title: result.finalProjectData.title, genre: result.finalProjectData.genre });
+        setProjectDataForCompletionCall(result.finalProjectData);
+        setShowCelebration(true);
+      } else {
+        // Reserve full-screen celebrations for actual milestones; direct settle for routine sessions (#75)
+        onProjectComplete?.(result.finalProjectData);
+      }
     }
 
     if (verdict.grade === 'Gold') {
@@ -612,31 +628,26 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 <div className="text-xl">🎮</div>
               </div>
               <div className="grid grid-cols-3 gap-2 mt-2">
-                <Button
+                <MotionButton
                   onClick={handleStartIntervention}
-                  size="sm"
-                  className="h-7 text-xs bg-purple-600 hover:bg-purple-700"
+                  className="h-7 text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold rounded"
                 >
                   Intervene
-                </Button>
-                <Button
+                </MotionButton>
+                <MotionButton
                   onClick={handleDelegateIntervention}
-                  size="sm"
-                  variant="outline"
                   disabled={!bestDelegate}
-                  className="h-7 text-xs border-blue-500/50 text-blue-200"
+                  className="h-7 text-xs border border-blue-500/50 text-blue-200 hover:bg-blue-900/30 rounded"
                   title={bestDelegate ? bestDelegate.fit.reasons.join(' · ') : 'No available staff'}
                 >
                   {bestDelegate ? `Delegate: ${bestDelegate.staff.name.split(' ')[0]}` : 'Delegate'}
-                </Button>
-                <Button
+                </MotionButton>
+                <MotionButton
                   onClick={handleSkipIntervention}
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 text-xs text-gray-300"
+                  className="h-7 text-xs text-gray-300 hover:bg-slate-800/50 rounded"
                 >
                   Skip
-                </Button>
+                </MotionButton>
               </div>
             </div>
           )}
@@ -650,7 +661,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   {currentStage.stageName} finished. Work next session to advance.
                 </p>
               </div>
-              <div className="text-xl animate-bounce">🎉</div>
+              <div className="text-xl">🎉</div>
             </div>
           )}
 
@@ -894,10 +905,12 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   </div>
                 )}
                 {goldStreak > 1 && (
-                  <div className="px-2.5 py-1 text-xs font-black tracking-wider text-slate-950 bg-gradient-to-r from-amber-400 to-yellow-300 border border-amber-200 rounded-[2px] shadow-[0_0_12px_rgba(251,191,36,0.8)] animate-bounce flex items-center gap-1 shrink-0">
-                    <span>🔥</span>
-                    <span>{goldStreak}X GOLD STREAK!</span>
-                  </div>
+                  <MotionReveal direction="up" distance={6}>
+                    <div className="px-2.5 py-1 text-xs font-black tracking-wider text-slate-950 bg-gradient-to-r from-amber-400 to-yellow-300 border border-amber-200 rounded-[2px] shadow-[0_0_12px_rgba(251,191,36,0.8)] flex items-center gap-1 shrink-0">
+                      <span>🔥</span>
+                      <span>{goldStreak}X GOLD STREAK!</span>
+                    </div>
+                  </MotionReveal>
                 )}
               </div>
 

@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
+import { ContextDrawer, ContextDrawerTab } from './ContextDrawer';
+import { MotionNumber, MotionButton } from '@/components/motion/primitives';
 import { Headphones, Phone, SlidersHorizontal, Sparkles, Users, Disc3, Trophy, X, Minimize2, Moon } from 'lucide-react';
 import { GameState, StaffMember, PlayerAttributes, Project } from '@/types/game';
 import { ProjectList } from './ProjectList';
@@ -284,88 +285,154 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           ] as const).map(([id, Icon, label, action]) => (
             <button key={id} onClick={action} className="studio-dock-button" title={label} aria-label={label}>
               <Icon size={21} aria-hidden="true" /><span>{label}</span>
+              {id === 'bookings' && gameState.availableProjects.length > 0 && (
+                <i className="studio-dock-badge"><MotionNumber value={gameState.availableProjects.length} /></i>
+              )}
               {id === 'career' && gameState.playerData.perkPoints > 0 && <i className="studio-dock-badge">{gameState.playerData.perkPoints}</i>}
             </button>
           ))}
         </nav>
       </div>
 
-      <Dialog.Root open={panel !== null} onOpenChange={open => { if (!open) setPanel(null); }}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="studio-panel-shade" />
-          <Dialog.Content className={`studio-activity-panel ${panel === 'session' ? 'studio-session-popup' : ''}`}
-            aria-describedby={undefined}
-            onCloseAutoFocus={event => {
-              event.preventDefault();
-              const target = returnFocusRef.current?.isConnected ? returnFocusRef.current : document.querySelector<HTMLElement>('.studio-command-dock button');
-              target?.focus();
-            }}>
-            <header className="studio-panel-heading">
-              <div><p>RECORDING STUDIO</p><Dialog.Title ref={headingRef} tabIndex={-1} className="outline-none">{panel ? titles[panel] : ''}</Dialog.Title></div>
-              {panel === 'session' && gameState.playerData.dailyWorkCapacity <= 0 && !project?.awaitingReview &&
-                <button className="studio-primary-action ml-auto" onClick={advanceDay}><Moon size={16} />Rest & advance day</button>}
-              <Dialog.Close className="studio-dock-button" aria-label="Return to studio floor"><X size={22} /></Dialog.Close>
-            </header>
-            <div className="studio-panel-body" data-reward-source="activity">
-              {panel === 'bookings' && <ProjectList gameState={gameState} setGameState={setGameState}
-                startProject={bookProject} onRefreshProjects={refreshProjects} />}
-              {panel === 'session' && <>
-            <ProgressiveProjectInterface
+      <ContextDrawer
+        isOpen={panel !== null}
+        onClose={() => setPanel(null)}
+        activeTab={
+          panel === 'bookings'
+            ? 'artist'
+            : panel === 'session'
+              ? 'session'
+              : panel === 'career'
+                ? 'career'
+                : dashboardTab === 'staff'
+                  ? 'staff'
+                  : 'gear'
+        }
+        onTabChange={(tab: ContextDrawerTab) => {
+          switch (tab) {
+            case 'artist':
+              setPanel('bookings');
+              break;
+            case 'session':
+              setPanel('session');
+              break;
+            case 'gear':
+              setPanel('studio');
+              setDashboardTab('studio');
+              break;
+            case 'staff':
+              setPanel('studio');
+              setDashboardTab('staff');
+              break;
+            case 'room':
+              setPanel('studio');
+              setDashboardTab('studio');
+              break;
+            case 'career':
+              setPanel('career');
+              break;
+          }
+        }}
+        title={panel ? titles[panel] : ''}
+        subtitle="RECORDING STUDIO OS"
+        width={panel === 'session' ? 'session' : 'default'}
+        returnFocusRef={returnFocusRef}
+        unreadEnquiries={gameState.availableProjects.length}
+        headerActions={
+          panel === 'session' && gameState.playerData.dailyWorkCapacity <= 0 && !project?.awaitingReview ? (
+            <MotionButton
+              className="studio-primary-action ml-auto text-xs py-1 px-2.5"
+              onClick={advanceDay}
+            >
+              <Moon size={14} />
+              <span>Rest & advance day</span>
+            </MotionButton>
+          ) : null
+        }
+      >
+        <div className="flex-1 min-h-0 min-w-0 flex flex-col relative" data-reward-source="activity">
+          {panel === 'bookings' && (
+            <ProjectList
               gameState={gameState}
               setGameState={setGameState}
-              // focusAllocation={focusAllocation} // REMOVED
-              // setFocusAllocation={setFocusAllocation} // REMOVED
-              performDailyWork={performDailyWork}
-              onMinigameReward={onMinigameReward}
-              onProjectComplete={onProjectComplete}
-              autoTriggeredMinigame={autoTriggeredMinigame}
-              clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
-              onProjectSelect={(project) => {
-                setGameState(prev => ({ ...prev, activeProject: project }));
-                setPanel('session');
-              }}
+              startProject={bookProject}
+              onRefreshProjects={refreshProjects}
             />
-
-                <div ref={orbContainerRef} className="absolute inset-0 pointer-events-none overflow-hidden" />
-              </>}
-              {panel === 'studio' && (
-          <RightPanel
-            requestedTab={dashboardTab}
-            gameState={gameState}
-            setGameState={setGameState}
-            spendPerkPoint={spendPerkPoint}
-            advanceDay={advanceDay}
-            purchaseEquipment={purchaseEquipment}
-            hireStaff={hireStaff}
-            refreshCandidates={refreshCandidates}
-            assignStaffToProject={assignStaffToProject}
-            unassignStaffFromProject={unassignStaffFromProject}
-            toggleStaffRest={toggleStaffRest}
-            openTrainingModal={openTrainingModal}
-            contactArtist={contactArtist}
-            onEraTransition={handleEraTransition}
-            createBand={createBand}
-            startTour={startTour}
-            createOriginalTrack={createOriginalTrack}
-            startResearchMod={startResearchMod}
-          />
-
-              )}
-              {panel === 'career' && <div className="flex-1 min-h-0 w-full flex flex-col overflow-y-auto">
-                <CareerHub gameState={gameState} onTalents={() => setShowAttributesModal(true)}
-                  onWork={() => openPanel('session')} onBookings={() => openPanel('bookings')}
-                  onRest={advanceDay} onStaff={() => handleOpenDashboardTab('staff')} />
-                <div className="grid gap-3 p-4">
-                  <button className="studio-primary-action" onClick={() => handleOpenDashboardTab('skills')}><Sparkles size={20} />Skills & research</button>
-                  <button className="studio-primary-action" onClick={advanceDay}><Moon size={20} />Rest & advance day</button>
-                  <button className="studio-dock-button flex-row gap-2" onClick={() => { setPanel(null); setCompactStudioMode(true); }}><Minimize2 size={18} />Desktop studio strip</button>
-                </div>
-              </div>}
+          )}
+          {panel === 'session' && (
+            <>
+              <ProgressiveProjectInterface
+                gameState={gameState}
+                setGameState={setGameState}
+                performDailyWork={performDailyWork}
+                onMinigameReward={onMinigameReward}
+                onProjectComplete={onProjectComplete}
+                autoTriggeredMinigame={autoTriggeredMinigame}
+                clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
+                onProjectSelect={(project) => {
+                  setGameState(prev => ({ ...prev, activeProject: project }));
+                  setPanel('session');
+                }}
+              />
+              <div ref={orbContainerRef} className="absolute inset-0 pointer-events-none overflow-hidden" />
+            </>
+          )}
+          {panel === 'studio' && (
+            <RightPanel
+              requestedTab={dashboardTab}
+              gameState={gameState}
+              setGameState={setGameState}
+              spendPerkPoint={spendPerkPoint}
+              advanceDay={advanceDay}
+              purchaseEquipment={purchaseEquipment}
+              hireStaff={hireStaff}
+              refreshCandidates={refreshCandidates}
+              assignStaffToProject={assignStaffToProject}
+              unassignStaffFromProject={unassignStaffFromProject}
+              toggleStaffRest={toggleStaffRest}
+              openTrainingModal={openTrainingModal}
+              contactArtist={contactArtist}
+              onEraTransition={handleEraTransition}
+              createBand={createBand}
+              startTour={startTour}
+              createOriginalTrack={createOriginalTrack}
+              startResearchMod={startResearchMod}
+            />
+          )}
+          {panel === 'career' && (
+            <div className="flex-1 min-h-0 w-full flex flex-col overflow-y-auto">
+              <CareerHub
+                gameState={gameState}
+                onTalents={() => setShowAttributesModal(true)}
+                onWork={() => openPanel('session')}
+                onBookings={() => openPanel('bookings')}
+                onRest={advanceDay}
+                onStaff={() => handleOpenDashboardTab('staff')}
+              />
+              <div className="grid gap-3 p-4">
+                <button
+                  className="studio-primary-action"
+                  onClick={() => handleOpenDashboardTab('skills')}
+                >
+                  <Sparkles size={20} />Skills & research
+                </button>
+                <button className="studio-primary-action" onClick={advanceDay}>
+                  <Moon size={20} />Rest & advance day
+                </button>
+                <button
+                  className="studio-dock-button flex-row gap-2"
+                  onClick={() => {
+                    setPanel(null);
+                    setCompactStudioMode(true);
+                  }}
+                >
+                  <Minimize2 size={18} />Desktop studio strip
+                </button>
+              </div>
             </div>
-            <p className="studio-panel-hint">Close to return to your studio floor</p>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+          )}
+        </div>
+      </ContextDrawer>
       <AttributesModal isOpen={showAttributesModal} onClose={() => setShowAttributesModal(false)}
         playerData={gameState.playerData} spendPerkPoint={spendPerkPoint} />
       {showEraTransition && eraTransitionInfo && (

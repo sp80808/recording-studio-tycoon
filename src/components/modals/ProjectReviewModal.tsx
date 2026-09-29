@@ -372,10 +372,19 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
                     className="w-full max-w-sm pt-2 space-y-1 text-center bg-slate-900/70 border border-amber-500/30 rounded-lg p-3 shadow"
                   >
                     <h4 className="text-xl font-semibold text-yellow-200">Rewards</h4>
-                    <p className="text-lg text-white">💰 Money: $<AnimatedNumber targetValue={report.moneyGained} duration={600} /></p>
-                    <p className="text-lg text-white">🌟 Reputation: +<AnimatedNumber targetValue={report.reputationGained} duration={600} /></p>
+                    <p className="text-lg text-white flex items-center justify-center gap-1.5">
+                      <span>💰 Money:</span>
+                      <span className="text-emerald-400 font-bold"><MotionNumber value={report.moneyGained} prefix="$" /></span>
+                    </p>
+                    <p className="text-lg text-white flex items-center justify-center gap-1.5">
+                      <span>🌟 Reputation:</span>
+                      <span className="text-sky-400 font-bold"><MotionNumber value={report.reputationGained} prefix="+" /></span>
+                    </p>
                     {report.assignedPerson.type === 'staff' && report.playerManagementXpGained > 0 && (
-                      <p className="text-lg text-white">🧠 Player Management XP: +<AnimatedNumber targetValue={report.playerManagementXpGained} duration={600} /></p>
+                      <p className="text-lg text-white flex items-center justify-center gap-1.5">
+                        <span>🧠 Player Management XP:</span>
+                        <span className="text-purple-400 font-bold"><MotionNumber value={report.playerManagementXpGained} prefix="+" /></span>
+                      </p>
                     )}
                   </MotionReward>
                 )}
