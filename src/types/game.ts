@@ -334,6 +334,8 @@ export interface GameState {
   playerBands: Band[];
   /** A&R roster of signed artists (artist contracts). Absent on legacy saves. */
   signedArtists?: import('@/simulation/artistContracts').SignedArtist[];
+  /** Ambient active-play trickle counters (economy/ambientIncome). Absent on legacy saves. */
+  ambientIncome?: import('@/economy/ambientIncome').AmbientIncomeState;
   /** Prospect ids the player negotiated with and walked away from. Absent on legacy saves. */
   passedProspects?: string[];
   availableSessionMusicians: SessionMusician[];
