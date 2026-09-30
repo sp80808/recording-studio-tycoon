@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, Swords, UserRound, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Swords } from 'lucide-react';
 import { AVAILABLE_ERAS } from '@/data/eras';
 import type { Era } from '@/types/game';
 import type { ProducerBackgroundId } from '@/types/character';
@@ -43,8 +43,10 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
   const [eraId, setEraId] = useState<string | null>(null);
   const [originId, setOriginId] = useState<ProducerBackgroundId | null>(null);
   const [moniker, setMoniker] = useState('The Architect');
-  const [motto, setMotto] = useState('In sound we trust');
-  const [avatar, setAvatar] = useState('◆');
+  const [hair, setHair] = useState('Classic crop');
+  const [hairColor, setHairColor] = useState('#d6a85b');
+  const [clothesColor, setClothesColor] = useState('#2d7182');
+  const [accessory, setAccessory] = useState('Headphones');
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   const era = useMemo(() => AVAILABLE_ERAS.find((e) => e.id === eraId) ?? null, [eraId]);
@@ -207,12 +209,15 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
           <div className="mx-auto mt-8 grid w-full max-w-3xl gap-5 lg:grid-cols-[0.9fr_1.1fr]">
             <section className="rst-option flex flex-col items-center justify-center gap-4 !p-8 text-center" aria-label="Character preview">
               <div className="relative grid h-36 w-36 place-items-center rounded-full border-2 border-[var(--rst-brass-400)] bg-[radial-gradient(circle_at_32%_24%,rgba(247,190,86,.42),transparent_66%),rgba(0,0,0,.35)] shadow-[0_0_42px_rgba(220,164,61,.18)]">
-                <span className="rst-serif text-5xl text-[var(--rst-brass-200)]" aria-hidden="true">{avatar}</span>
+                <span className="relative grid h-20 w-16 place-items-center rounded-t-[2rem] rounded-b-xl border-2 border-black/30 text-3xl" style={{ backgroundColor: clothesColor, color: hairColor }} aria-label={`${hair}, ${accessory}`}>
+                  <span className="absolute -top-5 text-4xl" aria-hidden="true">{hair === 'Bald' ? '◯' : hair === 'Long waves' ? '≈' : '⌒'}</span>
+                  <span aria-hidden="true">{accessory === 'Headphones' ? '◉' : accessory === 'Glasses' ? '⊙' : '•'}</span>
+                </span>
                 <span className="absolute -bottom-2 rounded-full border border-[var(--rst-line-strong)] bg-[#171310] px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--rst-brass-200)]">Producer</span>
               </div>
               <div>
                 <p className="rst-title text-2xl">{moniker || 'Unnamed producer'}</p>
-                <p className="rst-body mt-1 text-xs italic">“{motto || 'Your sound, your rules.'}”</p>
+                <p className="rst-body mt-1 text-xs">{hair} · {accessory}</p>
               </div>
             </section>
             <section className="rst-option !p-6" aria-label="Character details">
@@ -221,16 +226,18 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                   Producer name
                   <input value={moniker} onChange={(e) => setMoniker(e.target.value.slice(0, 24))} maxLength={24} autoFocus className="rst-input mt-2 w-full" placeholder="The Architect" />
                 </label>
-                <label className="block text-left text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">
-                  Studio motto
-                  <input value={motto} onChange={(e) => setMotto(e.target.value.slice(0, 42))} maxLength={42} className="rst-input mt-2 w-full" placeholder="In sound we trust" />
-                </label>
                 <fieldset>
-                  <legend className="text-left text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">Calling card</legend>
-                  <div className="mt-2 grid grid-cols-4 gap-2" role="radiogroup" aria-label="Choose a calling card">
-                    {['◆', '✦', '◉', '✚'].map((mark) => (
-                      <button key={mark} type="button" role="radio" aria-checked={avatar === mark} onClick={() => { click(); setAvatar(mark); }} className={`rst-chip grid h-11 place-items-center text-lg ${avatar === mark ? 'border-[var(--rst-brass-300)] bg-[var(--rst-brass-400)]/15 text-[var(--rst-brass-200)]' : ''}`}>{mark}</button>
-                    ))}
+                  <legend className="text-left text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">Hair style</legend>
+                  <div className="mt-2 grid grid-cols-3 gap-2" role="radiogroup" aria-label="Choose hair style">
+                    {['Classic crop', 'Long waves', 'Bald'].map((option) => <button key={option} type="button" role="radio" aria-checked={hair === option} onClick={() => { click(); setHair(option); }} className={`rst-chip px-2 py-2 text-xs ${hair === option ? 'border-[var(--rst-brass-300)] bg-[var(--rst-brass-400)]/15 text-[var(--rst-brass-200)]' : ''}`}>{option}</button>)}
+                  </div>
+                </fieldset>
+                <label className="flex items-center justify-between gap-3 text-left text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">Hair colour <input aria-label="Hair colour" type="color" value={hairColor} onChange={(e) => setHairColor(e.target.value)} className="h-9 w-14 cursor-pointer rounded border border-[var(--rst-line-strong)] bg-transparent" /></label>
+                <label className="flex items-center justify-between gap-3 text-left text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">Clothes colour <input aria-label="Clothes colour" type="color" value={clothesColor} onChange={(e) => setClothesColor(e.target.value)} className="h-9 w-14 cursor-pointer rounded border border-[var(--rst-line-strong)] bg-transparent" /></label>
+                <fieldset>
+                  <legend className="text-left text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">Accessory</legend>
+                  <div className="mt-2 grid grid-cols-3 gap-2" role="radiogroup" aria-label="Choose accessory">
+                    {['Headphones', 'Glasses', 'None'].map((option) => <button key={option} type="button" role="radio" aria-checked={accessory === option} onClick={() => { click(); setAccessory(option); }} className={`rst-chip px-2 py-2 text-xs ${accessory === option ? 'border-[var(--rst-brass-300)] bg-[var(--rst-brass-400)]/15 text-[var(--rst-brass-200)]' : ''}`}>{option}</button>)}
                   </div>
                 </fieldset>
                 <p className="border-t border-[var(--rst-line)] pt-3 text-left text-xs leading-relaxed text-stone-400">This identity is set before your role and origin. Choose a name you will recognise on contracts, charts, and rival dossiers.</p>

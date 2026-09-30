@@ -306,7 +306,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
         );
       })()}
       {/* Top-right overlay stack: camera recentre, then the lounge chore chip beneath it. */}
-      <div className="studio-room-overlay-tr">
+      {roomTier > 1 && <div className="studio-room-overlay-tr">
         <button className="studio-camera-center studio-dock-button bg-stone-950/70 border border-white/10 flex items-center gap-1.5"
           onClick={() => {
             setCameraReset(value => value + 1);
@@ -334,7 +334,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
             </MotionReveal>
           );
         })()}
-      </div>
+      </div>}
       {gamepad.isConnected && gamepad.lastInputType === 'gamepad' ? (
         <div className="absolute bottom-2 left-3 flex items-center gap-2 bg-stone-950/85 px-2.5 py-1.5 rounded-full border border-stone-700/60 shadow-lg text-[11px] text-stone-300 pointer-events-none select-none animate-in fade-in">
           <GamepadGlyph button="dpadLeft" size="xs" />
