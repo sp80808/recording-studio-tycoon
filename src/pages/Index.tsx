@@ -42,6 +42,8 @@ import { WelcomeBackSummaryModal } from '@/components/modals/WelcomeBackSummaryM
 import { StorylineBranchModal } from '@/components/modals/StorylineBranchModal';
 import { StoryEventModal } from '@/components/modals/StoryEventModal';
 import { DirectorEventModal } from '@/components/modals/DirectorEventModal';
+import { DayCloseBanner } from '@/components/DayCloseBanner';
+import { getDayCloseBeat } from '@/narrative/dayClose';
 import { getPendingDirectorEvent, resolveDirectorChoice } from '@/narrative/directorEvents';
 import { CinematicStoryCutscene } from '@/components/cutscenes/CinematicStoryCutscene';
 import { getCampaignEnding } from '@/narrative/endings';
@@ -763,6 +765,17 @@ const MusicStudioTycoon = () => {
         onChoose={handleStoryEventChoice}
         onDeferred={() => setDeferredStoryEventKey(pendingStoryEventKey)}
         onDone={() => setDeferredStoryEventKey(null)}
+      />
+
+      <DayCloseBanner
+        beat={gameInitialized && !showSplashScreen ? getDayCloseBeat(gameState) : null}
+        suppressed={
+          storyEventOpen ||
+          historicalNewsOpen ||
+          showReviewModal ||
+          Boolean(offlineSummary) ||
+          (showStorylineBranchModal && Boolean(pendingStorylineBranch))
+        }
       />
 
       <DirectorEventModal

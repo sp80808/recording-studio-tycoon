@@ -124,6 +124,10 @@ export interface DirectorState {
   lastOpportunityDay?: number;
   lastEventDay?: number;
   pending?: PendingDirectorEvent;
+  /** End-of-day beat for the current day (see dayClose.ts). */
+  dayClose?: { day: number; lineId: string; text: string; tone: 'good' | 'neutral' | 'warn' };
+  /** Recent day-close line ids, so the same line is not repeated too soon. */
+  dayCloseLog?: Array<{ day: number; lineId: string }>;
 }
 
 // ───────────────────────────── Constants ─────────────────────────────
