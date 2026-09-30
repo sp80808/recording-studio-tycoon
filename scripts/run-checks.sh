@@ -135,7 +135,7 @@ for check in origin-perks career-start design-system; do
 done
 
 echo "=== era-authentic gigs, story contracts & economy floors ==="
-for check in project-era-starters economy-income story-contracts achievements campaign-endings studio-hotkeys studio-know-how; do
+for check in project-era-starters economy-income story-contracts achievements campaign-endings studio-hotkeys studio-know-how studio-premises; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
   node "/tmp/rst-$check.cjs"
 done

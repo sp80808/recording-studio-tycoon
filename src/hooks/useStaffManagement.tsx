@@ -1,3 +1,4 @@
+import { premisesStaffCap, getPremisesDef } from '@/rpg/premises';
 
 import { meetsKnowHowGate, spendKnowHow, createInitialKnowHow } from '@/rpg/studioKnowHow';
 import { useCallback } from 'react';
@@ -16,6 +17,16 @@ export const useStaffManagement = (
   const hireStaff = useCallback((candidateIndex: number): boolean => {
     const candidate = gameState.availableCandidates[candidateIndex];
     if (!candidate) return false;
+
+    if (gameState.hiredStaff.length >= premisesStaffCap(gameState)) {
+      toast({
+        title: "🏠 No Room For More Staff",
+        description: `Your ${getPremisesDef(gameState).name.toLowerCase()} fits ${premisesStaffCap(gameState)} people. Move to bigger premises to hire more.`,
+        className: "bg-stone-800 border-stone-600 text-white",
+        variant: "destructive"
+      });
+      return false;
+    }
 
     const signingFee = candidate.salary * 3; // 3x daily salary as signing fee
     if (gameState.money < signingFee) {

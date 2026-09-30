@@ -10,6 +10,7 @@ import {
   getEraSpecificEquipmentMultiplier 
 } from '@/utils/eraProgression';
 import { availableMods } from '@/data/equipmentMods';
+import { premisesDailyRent, premisesCandidateCount } from '@/rpg/premises';
 import { availableTrainingCourses } from '@/data/training';
 import { applyKnowHowEvents, type KnowHowEvent } from '@/rpg/studioKnowHow';
 import { applyEventsToState, rollDailyEvents } from '@/game-mechanics/eventIntegration';
@@ -74,7 +75,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     // Staff salary + equipment upkeep expenses (bead ruc.3)
     const totalSalaries = gameState.hiredStaff.reduce((total, staff) => total + staff.salary, 0);
     const equipmentUpkeep = calculateEquipmentUpkeep(gameState.ownedEquipment, getOriginEffects(gameState));
-    const totalDailyExpenses = totalSalaries + equipmentUpkeep;
+    const totalDailyExpenses = totalSalaries + equipmentUpkeep + premisesDailyRent(gameState);
 
     // Unpaid salaries penalty check
     const canAffordSalaries = gameState.money >= totalSalaries;
@@ -287,7 +288,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     if (newDay % 3 === 0) {
       setGameState(prev => ({
         ...prev,
-        availableCandidates: generateCandidates(3)
+        availableCandidates: generateCandidates(premisesCandidateCount(prev))
       }));
     }
 
@@ -326,7 +327,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     setGameState(prev => ({
       ...prev,
       money: prev.money - cost,
-      availableCandidates: generateCandidates(3)
+      availableCandidates: generateCandidates(premisesCandidateCount(prev))
     }));
 
     gameAudio.playUISound('notice');

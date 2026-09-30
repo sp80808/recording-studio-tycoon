@@ -1,3 +1,4 @@
+import { premisesRoomAllowanceBonus } from '@/rpg/premises';
 import { grantsDelegation } from '@/rpg/studioKnowHow';
 // Multi-Project Progression System
 import { GameState } from '@/types/game';
@@ -138,12 +139,13 @@ export class ProgressionSystem {
     const status = this.getProgressionStatus(gameState);
     const milestone = status.currentMilestone;
 
-    if (!milestone || !status.isMultiProjectUnlocked) return 1;
-    if (milestone.level >= 12) return 5;
-    if (milestone.level >= 8) return 4;
-    if (milestone.level >= 5) return 3;
-    if (milestone.level >= 3) return 2;
-    return 1;
+    const bonus = premisesRoomAllowanceBonus(gameState); // #70: premises raise the real room allowance
+    if (!milestone || !status.isMultiProjectUnlocked) return 1 + bonus;
+    if (milestone.level >= 12) return 5 + bonus;
+    if (milestone.level >= 8) return 4 + bonus;
+    if (milestone.level >= 5) return 3 + bonus;
+    if (milestone.level >= 3) return 2 + bonus;
+    return 1 + bonus;
   }
 
   static getMaxConcurrentProjects(gameState: GameState): number {

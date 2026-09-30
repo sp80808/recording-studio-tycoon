@@ -144,6 +144,9 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
     processedState.discoveredSynergies = [];
   }
 
+  // Premises tier (#70): legacy saves start in the borrowed room.
+  processedState.premisesTier = processedState.premisesTier === 1 ? 1 : 0;
+
   // Studio Know-How (#66): legacy saves start empty; corrupt blobs are repaired.
   processedState.studioKnowHow = migrateKnowHow(processedState.studioKnowHow);
 

@@ -92,6 +92,7 @@ export const createDefaultGameState = (options?: Partial<EraInitOptions>): GameS
     studioRooms: createDefaultStudioRooms(),
     discoveredSynergies: [],
     studioKnowHow: createInitialKnowHow(),
+    premisesTier: 0,
     activeProject: null, // Keep for backward compatibility
     // Multi-project system
     activeProjects: [], // New multi-project array

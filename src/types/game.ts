@@ -310,6 +310,8 @@ export interface GameState {
   studioRooms: StudioRoom[]; // Physical bookable studio suites; drives concurrent capacity
   /** Studio Know-How progression (#66). Absent on legacy saves; migrated to an empty state. */
   studioKnowHow?: import('@/rpg/studioKnowHow').StudioKnowHow;
+  /** Studio premises tier (#70): 0 borrowed room, 1 project studio. Absent on legacy saves = 0. */
+  premisesTier?: 0 | 1;
   discoveredSynergies?: string[]; // IDs of discovered studio synergies (Kairosoft recipe codex)
   
   // Multi-project system
