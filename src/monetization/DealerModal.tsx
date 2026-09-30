@@ -4,6 +4,7 @@
 // construction (no autoplay animation — reduced-motion safe). Opens only
 // on explicit click; never interrupts sessions.
 
+import { EMPTY_STATES } from '@/data/flavour';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -181,7 +182,7 @@ export const DealerModal: React.FC<{ open: boolean; onClose: () => void }> = ({ 
           <div className="space-y-2">
             {list.length === 0 && !productsLoading && (
               <p className="text-sm text-stone-500 py-6 text-center">
-                {section === 'owned' ? 'Nothing owned yet — the warehouse remembers every purchase.' : 'Nothing shelved here right now.'}
+                {section === 'owned' ? `${EMPTY_STATES.warehouse.title} ${EMPTY_STATES.warehouse.hint}` : 'Nothing shelved here right now.'}
               </p>
             )}
             {list.map((p) => (
