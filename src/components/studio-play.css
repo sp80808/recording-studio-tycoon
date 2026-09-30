@@ -156,3 +156,28 @@
   .studio-play-room .studio-duty-live { right:12px; left:auto; }
   .studio-play-room .studio-room-hint { display:none; }
 }
+
+/* ---- Mobile: short viewports & landscape phones -------------------------------------------
+   Keep the Work/Overdrive dock visible: collapse the HUD to one row and shrink clearances. */
+@media (max-width:540px) {
+  .studio-hud-title { display:none; }
+  .studio-play-room { --studio-hud-clearance: calc(112px + env(safe-area-inset-top)); }
+  .studio-hud-controls { width:auto; }
+}
+@media (max-height:480px) and (orientation:landscape) {
+  .studio-play { --studio-dock-clearance: calc(64px + env(safe-area-inset-bottom, 0px)); }
+  .studio-play-room { --studio-hud-clearance: calc(52px + env(safe-area-inset-top)); }
+  .studio-hud { flex-wrap:nowrap; padding-top:max(4px,env(safe-area-inset-top)); }
+  .studio-hud-title, .studio-hud-xp { display:none; }
+  .studio-hud-stats > *, .studio-hud-controls > * { min-height:36px; padding:4px 10px; }
+  .studio-play-status, .studio-room-overlay-tl, .studio-play-room .studio-room-hint { display:none; }
+  /* Dock becomes a right-hand rail so it never competes with the room for vertical space */
+  .studio-play-actions { left:auto; right:0; transform:none; width:auto; bottom:0; top:auto; flex-direction:row; align-items:flex-end; padding:4px max(8px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) 8px; }
+  .studio-primary-action { min-height:40px; padding:4px 14px; }
+  .studio-command-dock .studio-dock-button { min-height:40px; font-size:9px; }
+  .studio-activity-panel, .studio-session-popup { top:48px; bottom:4px; }
+}
+@media (max-height:640px) and (max-width:540px) {
+  .studio-play { --studio-dock-clearance: calc(96px + env(safe-area-inset-bottom, 0px)); }
+  .studio-primary-action { min-height:42px; }
+}

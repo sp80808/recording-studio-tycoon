@@ -1,7 +1,8 @@
 import React, { useState, useEffect, ReactNode } from 'react';
 import { gameAudio } from '../utils/audioSystem';
 import { SettingsContext, GameSettings, useSettings } from './settings-context-types';
-import { defaultSettings } from '../data/defaultSettings';
+import { defaultSettings, GRAPHICS_PRESETS } from '../data/defaultSettings';
+import { isCoarsePointer } from '../utils/mobilePlatform';
 import { gameEvents } from '../engine/gameEventBus';
 import i18n from '../i18n';
 import { resolveSupportedLocale } from '../i18n/supportedLocales';
@@ -37,6 +38,8 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     } catch (e) {
       console.warn('[SettingsProvider] Failed to parse stored settings:', e);
     }
+    // First launch on a touch device: start on the lighter graphics preset (no bloom, 1x resolution)
+    if (isCoarsePointer()) return { ...defaultSettings, ...GRAPHICS_PRESETS.medium };
     return defaultSettings;
   });
 

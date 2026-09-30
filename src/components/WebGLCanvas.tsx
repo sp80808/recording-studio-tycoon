@@ -1150,6 +1150,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     settingsRef.current = settings;
     const app = appRef.current;
     if (app && app.renderer) {
+      // Hard-cap the ticker so 90/120Hz phones don't wake the GPU every vsync (0 = uncapped)
+      app.ticker.maxFPS = settings.targetFps > 0 ? settings.targetFps : 0;
       const dpr = window.devicePixelRatio || 1;
       const effectiveRes = calculateEffectiveResolution(dpr, settings.resolutionScale);
       if (Math.abs(app.renderer.resolution - effectiveRes) > 0.01) {
@@ -1301,8 +1303,9 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         await app.init({
           background: 0x0e0c0a,
           resizeTo: container,
-          antialias: true,
+          antialias: !(typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches),
           autoDensity: true,
+          powerPreference: 'high-performance',
           resolution: initialRes,
         });
         if (disposed) {
