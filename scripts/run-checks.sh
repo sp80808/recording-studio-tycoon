@@ -170,6 +170,11 @@ for check in project-era-starters project-brief session-issues signal-chain econ
   node "/tmp/rst-$check.cjs"
 done
 
+echo "=== ambient earning (#105) ==="
+./node_modules/.bin/esbuild tests/ambient-income.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-ambient-income.cjs --alias:@=./src >/dev/null
+node /tmp/rst-ambient-income.cjs
+
+
 echo "=== studio seasons (#63) ==="
 ./node_modules/.bin/esbuild tests/studio-seasons.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-seasons.cjs --alias:@=./src >/dev/null
 node /tmp/rst-studio-seasons.cjs
