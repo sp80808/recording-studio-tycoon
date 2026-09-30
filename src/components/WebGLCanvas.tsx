@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Application, Container, Graphics, Text } from 'pixi.js';
 import { visualEraId } from '@/utils/eraProgression';
 import { useSettings } from '@/contexts/SettingsContext';
+import { claimPixiApplication, STUDIO_FLOOR_OWNER } from '@/lib/motion/pixiGuard';
 import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from '@/components/studio/isoMath';
 import {
   buildDecorLights,
@@ -1230,6 +1231,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     if (!container) return;
 
     let disposed = false;
+    let releasePixiClaim: (() => void) | null = null;
     let lastW = 0;
     let lastH = 0;
     let detachInteractions: (() => void) | undefined;
@@ -1293,6 +1295,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
 
     const boot = async () => {
       try {
+        releasePixiClaim = claimPixiApplication(STUDIO_FLOOR_OWNER);
         const app = new Application();
         const initialRes = calculateEffectiveResolution(
           window.devicePixelRatio || 1,
@@ -1307,6 +1310,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         });
         if (disposed) {
           app.destroy(true, { children: true });
+          releasePixiClaim?.();
           return;
         }
         appRef.current = app;
@@ -1670,6 +1674,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
 
     return () => {
       disposed = true;
+      releasePixiClaim?.();
       observer.disconnect();
       detachInteractions?.();
       const app = appRef.current;

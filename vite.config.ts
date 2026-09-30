@@ -18,6 +18,23 @@ export default defineConfig(({ mode }) => ({
   define: {
     global: 'window',
   },
+  // Production builds drop the debug chatter (139 console.log calls, several in per-frame/per-take paths)
+  esbuild: mode === 'production' ? { pure: ['console.log', 'console.debug'] } : undefined,
+  build: {
+    rollupOptions: {
+      output: {
+        // Split heavy vendor libs so the studio shell parses before audio/charts code
+        manualChunks(id: string) {
+          if (!id.includes('node_modules')) return undefined;
+          if (id.includes('/tone/')) return 'vendor-tone';
+          if (id.includes('/recharts/') || id.includes('/d3-')) return 'vendor-charts';
+          if (id.includes('/framer-motion/') || id.includes('/motion-')) return 'vendor-motion';
+          if (id.includes('/@radix-ui/')) return 'vendor-radix';
+          return undefined;
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

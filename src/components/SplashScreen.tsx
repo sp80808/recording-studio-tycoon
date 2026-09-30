@@ -71,7 +71,7 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
     if (enabled) {
       void gameAudio.userGestureSignal().catch(() => {});
       music.playTrack(1);
-    } else music.stop();
+    } else music.pauseMusic();
   };
 
   const handleContinue = () => {
