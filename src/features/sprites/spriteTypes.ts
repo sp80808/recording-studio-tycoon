@@ -87,6 +87,8 @@ export interface PersonalityDetails {
 export interface ModularNpcDefinition {
   id: string;
   seed: number;
+  /** Which appearance table version produced this look; saved so old NPCs never change. */
+  appearanceVersion: number;
   name: string;
   role: StudioRole;
   era: NpcEra;
@@ -122,4 +124,3 @@ export interface ModularNpcDefinition {
   };
 }
 
-export type NpcAnimationState = 'idle' | 'working' | 'headbob' | 'celebrate';
