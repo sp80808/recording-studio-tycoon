@@ -35,6 +35,9 @@ function pulseTarget(type: RewardKind) {
   window.setTimeout(() => el.classList.remove('studio-reward-hit'), 520);
 }
 
+/** Fixed spark fan around a big pop-up (deterministic). */
+const SPARK_OFFSETS: Array<[number, number]> = [[-46, -14], [44, -18], [-28, 18], [30, 16], [0, -30]];
+
 const clampPoint = (x: number, y: number): Point => ({
   x: Math.max(8, Math.min(innerWidth - 115, x)),
   y: Math.max(8, Math.min(innerHeight - 44, y)),
@@ -176,6 +179,11 @@ export function RewardFlights({ gameState }: { gameState: GameState }) {
         animate={{ opacity: [0, 1, 1, 0], y: [0, -14, -30 - 8 * scale, -58], scale: [0.5, 1.25, 1, 1] }}
         transition={{ duration: 1.3, times: [0, .14, .6, 1], ease: 'easeOut' }}>
         {pop.label}
+        {(pop.tier === 'big' || pop.tier === 'jackpot') && SPARK_OFFSETS.map((o, i) =>
+          <motion.img key={i} src="/assets/rewards/spark.svg" alt="" width={10} height={10} className="studio-pop-spark"
+            initial={{ x: 0, y: 0, opacity: 0, scale: .3 }}
+            animate={{ x: o[0], y: o[1], opacity: [0, 1, 0], scale: [.3, 1.2, .2], rotate: 90 }}
+            transition={{ duration: .8, delay: i * .04 }} />)}
       </motion.div>;
     })}
 

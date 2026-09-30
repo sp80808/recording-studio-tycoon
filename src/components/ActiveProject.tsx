@@ -448,6 +448,11 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     }
 
     if (verdict.grade === 'Gold') {
+      if (goldStreak >= 1) {
+        window.dispatchEvent(new CustomEvent<RewardPopDetail>(REWARD_POP_EVENT, {
+          detail: { label: `${goldStreak + 1}X COMBO!`, tier: goldStreak >= 3 ? 'jackpot' : 'big', tone: 'gold' },
+        }));
+      }
       setGoldStreak(prev => prev + 1);
     } else if (verdict.grade !== 'Silver') {
       setGoldStreak(0);

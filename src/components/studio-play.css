@@ -52,6 +52,7 @@
 /* Reward juice: loot dots, on-spot pop-ups, HUD landing pulse, level-up banner. */
 .studio-loot-dot { position:fixed; top:0; left:0; z-index:151; pointer-events:none; filter:drop-shadow(0 0 6px #ffd98a99); }
 .studio-reward-pop { position:fixed; z-index:152; pointer-events:none; font-weight:900; letter-spacing:.02em; white-space:nowrap; text-shadow:0 1px 0 #000, 0 0 10px #000a; transform:translateX(-50%); }
+.studio-pop-spark { position:absolute; left:50%; top:50%; pointer-events:none; }
 .studio-level-up { position:fixed; top:22%; left:50%; translate:-50% 0; z-index:153; pointer-events:none; padding:8px 22px; font:900 28px/1 ui-monospace,monospace; letter-spacing:.12em; color:#ffe7a8; background:#211d17ee; border:2px solid #e9be73; border-radius:12px; box-shadow:0 0 34px #e9be7399; }
 .studio-reward-hit { animation:studio-reward-hit .5s ease-out; }
 @keyframes studio-reward-hit { 0% { filter:brightness(1); scale:1; } 35% { filter:brightness(1.8) drop-shadow(0 0 8px #ffd98a); scale:1.12; } 100% { filter:brightness(1); scale:1; } }
