@@ -15,6 +15,7 @@ import { EnhancedAnimationStyles } from './EnhancedAnimationStyles';
 import { toast } from '@/hooks/use-toast';
 import { playSound, gameAudio } from '@/utils/audioSystem'; // Updated import
 import { triggerScreenShake } from '@/utils/screenShake';
+import { REWARD_POP_EVENT, takePopTier, type RewardPopDetail } from '@/utils/rewardFx';
 import { evaluateTakeAccuracy, calculateTakeEnergyCost } from '@/rpg/takeEvaluation';
 import { StreakBankControl } from './StreakBankControl';
 import type { BankResult } from '@/rpg/streakBank';
@@ -408,6 +409,13 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     // Trigger Tone.js chord synthesis + SFX
     if ((gameAudio as any).playTakeChord) (gameAudio as any).playTakeChord(project.genre, verdict.grade);
     triggerScreenShake('light');
+    window.dispatchEvent(new CustomEvent<RewardPopDetail>(REWARD_POP_EVENT, {
+      detail: {
+        label: `${verdict.label.toUpperCase()} +${verdict.qualityBonus}Q`,
+        tier: takePopTier(verdict.grade),
+        tone: verdict.grade === 'Gold' ? 'gold' : verdict.grade === 'Silver' ? 'silver' : 'plain',
+      },
+    }));
 
     // Calculate expected gains for animation
     const baseCreativity = gameState.playerData.dailyWorkCapacity * gameState.playerData.attributes.creativeIntuition;
