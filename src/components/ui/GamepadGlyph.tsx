@@ -85,15 +85,15 @@ const BUTTON_LABELS: Record<ControllerType, Record<StandardButton, string>> = {
 };
 
 /** Slate shell used for shoulders, triggers, d-pad and stick clicks. */
-const NEUTRAL_BUTTON_COLOR = '#334155';
-const NEUTRAL_TEXT_COLOR = '#f1f5f9';
-const GENERIC_TEXT_COLOR = '#cbd5e1';
+const NEUTRAL_BUTTON_COLOR = '#4c453c';
+const NEUTRAL_TEXT_COLOR = '#f6f5f4';
+const GENERIC_TEXT_COLOR = '#dbd7d1';
 
 const BUTTON_COLORS: Record<ControllerType, Partial<Record<StandardButton, string>>> = {
   xbox: { south: '#10b981', east: '#ef4444', west: '#3b82f6', north: '#eab308' },
   playstation: { south: '#38bdf8', east: '#ef4444', west: '#ec4899', north: '#22c55e' },
   switch: { south: '#06b6d4', east: '#ef4444', west: '#06b6d4', north: '#ef4444' },
-  generic: { south: '#1e293b', east: '#1e293b', west: '#1e293b', north: '#1e293b' },
+  generic: { south: '#332d26', east: '#332d26', west: '#332d26', north: '#332d26' },
 };
 
 const GLYPH_PIXEL_SIZES: Record<GamepadGlyphSize, number> = {
@@ -168,7 +168,7 @@ export const GamepadGlyph: React.FC<GamepadGlyphProps> = ({
       height={pixels}
       viewBox="0 0 40 40"
       className={`inline-block align-middle shrink-0 ${className}`}
-      style={{ filter: 'drop-shadow(0 1px 1px rgba(2, 6, 23, 0.55))' }}
+      style={{ filter: 'drop-shadow(0 1px 1px rgba(16, 13, 9, 0.55))' }}
       role={decorative ? 'presentation' : 'img'}
       aria-label={decorative ? undefined : `${controllerType} ${button} button`}
       aria-hidden={decorative || undefined}

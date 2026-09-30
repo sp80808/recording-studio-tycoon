@@ -83,7 +83,7 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
     if (priority === 1) return 'bg-red-600 text-white';
     if (priority === 2) return 'bg-orange-600 text-white';
     if (priority === 3) return 'bg-yellow-600 text-white';
-    return 'bg-gray-600 text-white';
+    return 'bg-stone-600 text-white';
   };
 
   return (
@@ -92,7 +92,7 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Multi-Project Studio</h1>
-          <p className="text-gray-600">
+          <p className="text-stone-600">
             Managing {activeProjects.length} of {projectCapacity.maxProjects} projects
           </p>
         </div>
@@ -118,31 +118,31 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-2xl font-bold text-amber-400">
                 {activeProjects.length}/{projectCapacity.maxProjects}
               </div>
-              <div className="text-sm text-gray-600">Active Projects</div>
+              <div className="text-sm text-stone-600">Active Projects</div>
             </div>
             
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">
                 {Math.round(projectCapacity.efficiency * 100)}%
               </div>
-              <div className="text-sm text-gray-600">Efficiency</div>
+              <div className="text-sm text-stone-600">Efficiency</div>
             </div>
             
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">
                 {automationStatus?.workingStaff || 0}/{automationStatus?.totalStaff || 0}
               </div>
-              <div className="text-sm text-gray-600">Staff Working</div>
+              <div className="text-sm text-stone-600">Staff Working</div>
             </div>
             
             <div className="text-center">
               <div className="text-2xl font-bold text-orange-600">
                 {Math.round((automationStatus?.studioActivity || 0) * 100)}%
               </div>
-              <div className="text-sm text-gray-600">Studio Activity</div>
+              <div className="text-sm text-stone-600">Studio Activity</div>
             </div>
           </div>
         </CardContent>
@@ -170,7 +170,7 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
               </CardHeader>
               <CardContent className="space-y-4">
                 {projectProgress.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">No active projects</p>
+                  <p className="text-stone-500 text-center py-8">No active projects</p>
                 ) : (
                   projectProgress.map((progress, index) => (
                     <div key={progress.projectId} className="space-y-2">
@@ -185,7 +185,7 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
                         className="h-2"
                         aria-label={`${progress.title} project progress`}
                       />
-                      <div className="flex justify-between text-sm text-gray-600">
+                      <div className="flex justify-between text-sm text-stone-600">
                         <span>{progress.currentStage}</span>
                         <span>{progress.assignedStaffCount} staff</span>
                       </div>
@@ -205,13 +205,13 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
               </CardHeader>
               <CardContent className="space-y-4">
                 {gameState.availableProjects.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">No available projects</p>
+                  <p className="text-stone-500 text-center py-8">No available projects</p>
                 ) : (
                   gameState.availableProjects.slice(0, 3).map((project) => (
                     <div key={project.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div>
                         <div className="font-medium">{project.title}</div>
-                        <div className="text-sm text-gray-600">
+                        <div className="text-sm text-stone-600">
                           {project.genre} • ${project.payoutBase.toLocaleString()}
                         </div>
                       </div>
@@ -273,7 +273,7 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
                       />
                     </div>
                     
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-stone-600">
                       <div>Current: {progress?.currentStage}</div>
                       <div>
                         Room: {gameState.studioRooms.find(room => room.id === project.bookingRoomId)?.name || 'Unassigned'}
@@ -299,12 +299,12 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
             
             {/* Add Project Card */}
             {canAddProject() && (
-              <Card className="border-dashed border-2 border-gray-300 hover:border-gray-400 transition-colors">
+              <Card className="border-dashed border-2 border-stone-300 hover:border-stone-400 transition-colors">
                 <CardContent className="flex items-center justify-center h-64">
                   <div className="text-center">
-                    <Plus className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 mb-4">Add a new project</p>
-                    <p className="text-sm text-gray-500">
+                    <Plus className="w-12 h-12 text-stone-400 mx-auto mb-4" />
+                    <p className="text-stone-600 mb-4">Add a new project</p>
+                    <p className="text-sm text-stone-500">
                       {projectCapacity.maxProjects - activeProjects.length} slots available
                     </p>
                   </div>
@@ -338,7 +338,7 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
                         </Badge>
                       </div>
                       
-                      <div className="text-sm text-gray-600 mb-2">
+                      <div className="text-sm text-stone-600 mb-2">
                         {staff.role} • Level {staff.levelInRole}
                       </div>
                       
@@ -356,10 +356,10 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
                       {assignedProject && (() => {
                         const fit = calculateStaffProjectFit(staff, assignedProject);
                         return (
-                          <div className="mt-3 p-2 bg-blue-50 rounded text-sm">
+                          <div className="mt-3 p-2 bg-amber-50 rounded text-sm">
                             <div className="font-medium">Assigned to:</div>
                             <div>{assignedProject.title}</div>
-                            <div className="text-xs text-blue-700 mt-1">
+                            <div className="text-xs text-amber-500 mt-1">
                               Fit {fit.score}/100 · {fit.reasons.slice(0, 3).join(' · ')}
                             </div>
                           </div>
@@ -387,7 +387,7 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
               <div className="flex items-center justify-between">
                 <div>
                   <div className="font-medium">Enable Automation</div>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-stone-600">
                     Automatically assign staff and manage project work
                   </div>
                 </div>
@@ -453,7 +453,7 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
                     step={1}
                     className="w-full"
                   />
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-stone-600">
                     {automationStatus?.settings.minStaffPerProject || 1} staff minimum
                   </div>
                 </div>
@@ -470,7 +470,7 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
                     step={1}
                     className="w-full"
                   />
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-stone-600">
                     {automationStatus?.settings.maxStaffPerProject || 3} staff maximum
                   </div>
                 </div>
@@ -481,7 +481,7 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-medium">Pause on Issues</div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-stone-600">
                       Pause automation when problems occur
                     </div>
                   </div>
@@ -496,7 +496,7 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-medium">Milestone Notifications</div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-stone-600">
                       Notify when projects reach milestones
                     </div>
                   </div>

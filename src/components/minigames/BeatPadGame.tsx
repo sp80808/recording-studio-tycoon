@@ -263,7 +263,7 @@ export const BeatPadGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
     >
       <div className="space-y-4 max-w-lg mx-auto select-none">
         {/* Rolling Cue Highway */}
-        <div className="relative h-20 bg-slate-950 rounded-lg border border-slate-800 p-2 overflow-hidden flex items-center shadow-inner">
+        <div className="relative h-20 bg-stone-950 rounded-lg border border-stone-800 p-2 overflow-hidden flex items-center shadow-inner">
           <div className="absolute left-16 top-0 bottom-0 w-1 bg-amber-500/80 shadow-[0_0_10px_#f59e0b] z-10" />
           <div className="absolute left-8 text-[10px] text-amber-400 font-mono font-bold tracking-widest uppercase">
             TARGET
@@ -285,7 +285,7 @@ export const BeatPadGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
                   left: `${leftPx}px`,
                   backgroundColor: config.color,
                 }}
-                className={`absolute top-3 w-8 h-8 rounded-md flex items-center justify-center text-[10px] font-bold text-slate-950 shadow-md transition-transform duration-75 ${
+                className={`absolute top-3 w-8 h-8 rounded-md flex items-center justify-center text-[10px] font-bold text-stone-950 shadow-md transition-transform duration-75 ${
                   cue.hit ? 'opacity-30 scale-75' : 'scale-100'
                 }`}
               >
@@ -306,7 +306,7 @@ export const BeatPadGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
                 lastGrade.grade === 'Perfect'
                   ? 'text-emerald-400'
                   : lastGrade.grade === 'Great'
-                  ? 'text-sky-400'
+                  ? 'text-[var(--rst-live)]'
                   : lastGrade.grade === 'Good'
                   ? 'text-yellow-400'
                   : 'text-red-400'
@@ -318,7 +318,7 @@ export const BeatPadGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
         </div>
 
         {/* 2x2 MPC Hardware Pads */}
-        <div className="grid grid-cols-2 gap-3 p-4 bg-slate-900 border-2 border-slate-700/80 rounded-xl shadow-2xl">
+        <div className="grid grid-cols-2 gap-3 p-4 bg-stone-900 border-2 border-stone-700/80 rounded-xl shadow-2xl">
           {(['hihat', 'clap', 'snare', 'kick'] as PadType[]).map((pad) => {
             const cfg = PAD_MAPPINGS[pad];
             const isLit = activePad === pad;
@@ -331,15 +331,15 @@ export const BeatPadGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
                   borderColor: isLit ? cfg.color : '#334155',
                   boxShadow: isLit ? `0 0 24px ${cfg.color}` : 'inset 0 2px 4px rgba(0,0,0,0.6)',
                 }}
-                className={`h-24 rounded-lg bg-slate-950/80 flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 border-2 ${
+                className={`h-24 rounded-lg bg-stone-950/80 flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 border-2 ${
                   isLit ? 'brightness-125' : ''
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <GamepadGlyph button={cfg.button} size="sm" />
-                  <span className="font-bold text-slate-200 text-sm tracking-wider uppercase">{cfg.label}</span>
+                  <span className="font-bold text-stone-200 text-sm tracking-wider uppercase">{cfg.label}</span>
                 </div>
-                <span className="text-[10px] text-slate-500 font-mono">{cfg.key}</span>
+                <span className="text-[10px] text-stone-500 font-mono">{cfg.key}</span>
               </button>
             );
           })}
@@ -348,7 +348,7 @@ export const BeatPadGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
         {gameOver && (
           <div className="p-3 bg-emerald-950/60 border border-emerald-500/50 rounded-lg text-center animate-in zoom-in-95">
             <h4 className="font-bold text-emerald-300 mb-1">Beat Recorded!</h4>
-            <p className="text-xs text-slate-300 mb-3">
+            <p className="text-xs text-stone-300 mb-3">
               Final Score: <span className="font-mono text-amber-300 font-bold">{totalScore}</span>
             </p>
             <KenneyButton onClick={handleFinalize} variant="green" className="w-full">

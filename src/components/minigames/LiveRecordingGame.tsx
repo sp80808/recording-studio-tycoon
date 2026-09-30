@@ -92,7 +92,7 @@ export const LiveRecordingGame: React.FC<MinigameComponentProps> = ({ minigameId
   };
 
   return (
-    <Card className="w-full max-w-3xl mx-auto bg-gray-800 text-white border-gray-700">
+    <Card className="w-full max-w-3xl mx-auto bg-stone-800 text-white border-stone-700">
       <MinigameChrome
         title="🎙️ Live Recording Coordination"
         score={score}
@@ -100,7 +100,7 @@ export const LiveRecordingGame: React.FC<MinigameComponentProps> = ({ minigameId
         accent="red"
       >
         <CardContent>
-          <div className="mb-2 text-sm text-gray-300">
+          <div className="mb-2 text-sm text-stone-300">
             Manage the band's performance. Click struggling musicians to coach them and maintain studio groove!
           </div>
 
@@ -111,7 +111,7 @@ export const LiveRecordingGame: React.FC<MinigameComponentProps> = ({ minigameId
           )}
 
           {/* Band stage visualization */}
-          <div className="h-72 bg-gray-900/80 rounded-xl p-4 relative border border-gray-700 overflow-hidden">
+          <div className="h-72 bg-stone-900/80 rounded-xl p-4 relative border border-stone-700 overflow-hidden">
             {musicians.map((musician) => (
               <div
                 key={musician.id}

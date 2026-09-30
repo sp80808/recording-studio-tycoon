@@ -935,10 +935,21 @@ class GameAudioSystem {
         'R&B': ['Eb3', 'Bb3', 'D4', 'F4', 'Ab4'],
         Electronic: ['A3', 'E4', 'G4', 'C5'],
         HipHop: ['G3', 'D4', 'F4', 'Bb4'],
-        Jazz: ['D3', 'C4', 'F4', 'B4', 'E5']
+        Jazz: ['D3', 'C4', 'F4', 'B4', 'E5'],
+        Country: ['G3', 'D4', 'G4', 'B4'],
+        Blues: ['A3', 'E4', 'G4', 'C#5'],
+        Punk: ['E3', 'B3', 'E4'],
+        NewWave: ['D3', 'A3', 'F#4', 'C#5'],
+        Disco: ['A3', 'C#4', 'E4', 'G#4']
       };
-
-      const selectedNotes = chords[genre] || chords.Pop;
+      // Era genres map onto the voicing family they sound closest to.
+      const voicingFamily: Record<string, string> = {
+        hiphop: 'HipHop', trap: 'HipHop', motown: 'Soul', rnb: 'R&B', folk: 'Country', acoustic: 'Country',
+        hairmetal: 'Rock', poppunk: 'Punk', emo: 'Rock', indie: 'Pop', indiepop: 'Pop', tiktokpop: 'Pop',
+        edm: 'Electronic', lofi: 'Jazz', digital: 'Electronic', newwave: 'NewWave'
+      };
+      const genreKey = genre.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const selectedNotes = chords[genre] || chords[voicingFamily[genreKey] ?? ''] || chords.Pop;
       const notesToPlay = grade === 'Gold'
         ? selectedNotes
         : grade === 'Silver'

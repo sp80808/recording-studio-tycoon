@@ -284,7 +284,7 @@ export const useStageWork = ({
       toast({
         title: `🌊 FOCUS FLOW x${flow.multiplier}!`,
         description: 'Matched focus keeps chaining — ride it for bonus output.',
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
       });
       void gameAudio.playComboUp(flow.multiplier - 1);
     }
@@ -508,7 +508,7 @@ export const useStageWork = ({
         toast({
           title: `✨ NEW SYNERGY: ${syn.icon} ${syn.name}!`,
           description: `${syn.tagline} — unlocked in your Synergy Encyclopedia!`,
-          className: 'bg-gradient-to-r from-amber-950/95 via-purple-950/95 to-slate-900 border border-amber-400 text-white shadow-2xl',
+          className: 'bg-gradient-to-r from-amber-950/95 via-purple-950/95 to-stone-900 border border-amber-400 text-white shadow-2xl',
         });
       });
     }
@@ -528,7 +528,7 @@ export const useStageWork = ({
           title: '😵 Overdrive Fatigue',
           description: 'That session ran hot — the assigned crew lost some mood.',
           variant: 'destructive',
-          className: 'bg-gray-800 border-gray-600 text-white',
+          className: 'bg-stone-800 border-stone-600 text-white',
         });
       }
     }
@@ -581,7 +581,7 @@ export const useStageWork = ({
       toast({
         title: gradeTitle,
         description: gradeDetail,
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         duration: 4000
       });
     }

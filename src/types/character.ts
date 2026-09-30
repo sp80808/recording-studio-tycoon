@@ -34,6 +34,18 @@ export interface ProducerOrigin {
     xpMultiplier?: number;
     upkeepDiscount?: number;
     relationshipXpMultiplier?: number;
+    /** Gig refreshes cost nothing (the cooldown still applies). */
+    freeGigRefresh?: boolean;
+    /** Multiplier on studio-synergy quality bonuses (1.25 = 25% stronger). */
+    synergyMultiplier?: number;
+    /** Extra payout multiplier when the session's genre market is hot (>= 1.05). */
+    hotMarketPayoutBonus?: number;
+    /** Extra reputation fraction on A-rank (80+) sessions, e.g. 0.15 = +15%. */
+    rankARepBonus?: number;
+    /** Returning-client fee premium (default game value 1.1). */
+    repeatClientPremium?: number;
+    /** Skills that receive `xpMultiplier` (defaults to none). */
+    xpSkills?: string[];
     specialTrait: string;
   };
   startingGearSuggestion: string;

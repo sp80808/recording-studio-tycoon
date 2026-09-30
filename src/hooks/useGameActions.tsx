@@ -21,12 +21,23 @@ import {
   processAutomaticChores,
   autoAssignAvailableChores
 } from '@/simulation/choreEngine';
-import { evaluateStorylineTick } from '@/narrative/branchingStorylineEngine';
+import { advanceStory } from '@/narrative/storyProgression';
+import {
+  NEUTRAL_ORIGIN_EFFECTS,
+  applyUpkeepDiscount,
+  getOriginEffects,
+  gigRefreshCostFor,
+  type OriginEffects,
+} from '@/narrative/originPerks';
 
 /** Daily equipment upkeep: 0.1% of item price per day, minimum $2/item */
-export const calculateEquipmentUpkeep = (equipment: GameState['ownedEquipment']): number => {
+export const calculateEquipmentUpkeep = (
+  equipment: GameState['ownedEquipment'],
+  effects: OriginEffects = NEUTRAL_ORIGIN_EFFECTS,
+): number => {
   if (!equipment || equipment.length === 0) return 0;
-  return equipment.reduce((sum, item) => sum + Math.max(2, Math.round(item.price * 0.001)), 0);
+  const base = equipment.reduce((sum, item) => sum + Math.max(2, Math.round(item.price * 0.001)), 0);
+  return applyUpkeepDiscount(base, effects);
 };
 
 /** Cost + cooldown for chasing new gig offers (bead goj.3). */
@@ -58,7 +69,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
 
     // Staff salary + equipment upkeep expenses (bead ruc.3)
     const totalSalaries = gameState.hiredStaff.reduce((total, staff) => total + staff.salary, 0);
-    const equipmentUpkeep = calculateEquipmentUpkeep(gameState.ownedEquipment);
+    const equipmentUpkeep = calculateEquipmentUpkeep(gameState.ownedEquipment, getOriginEffects(gameState));
     const totalDailyExpenses = totalSalaries + equipmentUpkeep;
 
     // Unpaid salaries penalty check
@@ -180,7 +191,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       };
 
       if (triggeredEvents.length === 0) {
-        return evaluateStorylineTick(baseUpdatedState);
+        return advanceStory(baseUpdatedState);
       }
 
       const { state: postEventsState, results } = applyEventsToState(baseUpdatedState, triggeredEvents);
@@ -203,7 +214,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
         });
       });
 
-      return evaluateStorylineTick({
+      return advanceStory({
         ...postEventsState,
         notifications: [...postEventsState.notifications, ...newNotifications]
       });
@@ -214,7 +225,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       toast({
         title: "🎵 Era Transition Available!",
         description: `You can now advance to ${availableTransition.name}. Check the Studio tab for transition options.`,
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         duration: 6000
       });
     }
@@ -224,7 +235,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       toast({
         title: `📅 Year ${newYear}`,
         description: `Your studio has been operating for ${Math.floor(newDay / 90)} years. Keep pushing forward!`,
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         duration: 4000
       });
     }
@@ -239,7 +250,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
         toast({
           title: "❌ Cannot Pay Salaries!",
           description: `Need $${totalSalaries} for daily salaries. Staff morale has dropped!`,
-          className: "bg-gray-800 border-gray-600 text-white",
+          className: "bg-stone-800 border-stone-600 text-white",
           variant: "destructive"
         });
       }
@@ -270,7 +281,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       toast({
         title: "🎓 Training Complete!",
         description: message,
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
       });
     });
 
@@ -279,7 +290,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       toast({
         title: "🔬 Research Complete!",
         description: message,
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
       });
     });
   }, [gameState, setGameState]);
@@ -291,7 +302,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       toast({
         title: "💰 Insufficient Funds",
         description: `Need $${cost} to refresh candidate list.`,
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive"
       });
       return;
@@ -307,7 +318,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     toast({
       title: "👥 New Candidates Found",
       description: "Fresh talent is now available for hire!",
-      className: "bg-gray-800 border-gray-600 text-white",
+      className: "bg-stone-800 border-stone-600 text-white",
     });
   }, [gameState.money, setGameState]);
 
@@ -322,18 +333,19 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       toast({
         title: "📵 No New Leads Yet",
         description: `The labels are tapped out — try again in ${daysLeft} day${daysLeft === 1 ? '' : 's'} (advance the day or work sessions).`,
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive",
       });
       return false;
     }
 
-    if (gameState.money < GIG_REFRESH_COST) {
+    const refreshCost = gigRefreshCostFor(GIG_REFRESH_COST, getOriginEffects(gameState));
+    if (gameState.money < refreshCost) {
       gameAudio.playUISound('unavailable');
       toast({
         title: "💰 Insufficient Funds",
-        description: `Need $${GIG_REFRESH_COST} to chase new gigs.`,
-        className: "bg-gray-800 border-gray-600 text-white",
+        description: `Need $${refreshCost} to chase new gigs.`,
+        className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive",
       });
       return false;
@@ -341,7 +353,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
 
     setGameState(prev => ({
       ...prev,
-      money: prev.money - GIG_REFRESH_COST,
+      money: prev.money - refreshCost,
       lastGigRefreshDay: prev.currentDay,
       availableProjects: [
         ...prev.availableProjects,
@@ -352,8 +364,8 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     gameAudio.playUISound('notice');
     toast({
       title: "📞 New Leads",
-      description: `Paid $${GIG_REFRESH_COST} — a fresh gig landed on your desk.`,
-      className: "bg-gray-800 border-gray-600 text-white",
+      description: refreshCost > 0 ? `Paid $${refreshCost} — a fresh gig landed on your desk.` : 'A fresh gig landed on your desk — no fee for you.',
+      className: "bg-stone-800 border-stone-600 text-white",
     });
     return true;
   }, [gameState, setGameState]);
@@ -366,7 +378,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       toast({
         title: "❌ Era Transition Not Available",
         description: "You need more reputation, level, or completed projects to advance to the next era.",
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive"
       });
       return;
@@ -383,7 +395,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     toast({
       title: "🎉 Era Transition Complete!",
       description: `Welcome to ${availableTransition.name}! New equipment and opportunities await.`,
-      className: "bg-gray-800 border-gray-600 text-white",
+      className: "bg-stone-800 border-stone-600 text-white",
       duration: 6000
     });
 

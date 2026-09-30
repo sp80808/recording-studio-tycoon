@@ -42,7 +42,7 @@ export const SynergyBadgeList: React.FC<SynergyBadgeListProps> = ({
             <Tooltip key={synergy.id}>
               <TooltipTrigger asChild>
                 <div
-                  className={`inline-flex items-center gap-1 font-semibold rounded-full border border-amber-400/50 bg-gradient-to-r from-amber-500/20 to-yellow-600/20 text-amber-300 shadow-sm cursor-help hover:border-amber-300 hover:scale-105 transition-all ${
+                  className={`inline-flex items-center gap-1 font-semibold rounded-full border border-amber-400/50 bg-amber-500/15 text-amber-300 shadow-sm cursor-help hover:border-amber-300 hover:scale-105 transition-all ${
                     isSmall ? 'text-[10px] px-2 py-0.5' : 'text-xs px-2.5 py-1'
                   }`}
                 >
@@ -52,16 +52,16 @@ export const SynergyBadgeList: React.FC<SynergyBadgeListProps> = ({
               </TooltipTrigger>
               <TooltipContent
                 side="top"
-                className="max-w-xs p-2.5 bg-gray-950/95 border border-amber-500/40 text-gray-100 shadow-xl rounded-lg"
+                className="max-w-xs p-2.5 bg-stone-950/95 border border-amber-500/40 text-stone-100 shadow-xl rounded-lg"
               >
                 <div className="flex items-center gap-1.5 font-bold text-amber-300 text-xs">
                   <span>{synergy.icon}</span>
                   <span>{synergy.name}</span>
                   <span className="text-[10px] text-amber-500/80 font-normal">Active Synergy</span>
                 </div>
-                <div className="text-[11px] text-gray-300 mt-1">{synergy.description}</div>
+                <div className="text-[11px] text-stone-300 mt-1">{synergy.description}</div>
                 {bonusParts.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2 pt-1.5 border-t border-gray-800">
+                  <div className="flex flex-wrap gap-1 mt-2 pt-1.5 border-t border-stone-800">
                     {bonusParts.map((b, idx) => (
                       <span
                         key={idx}

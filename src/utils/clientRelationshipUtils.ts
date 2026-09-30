@@ -41,7 +41,8 @@ export const createClientRelationshipFromProject = (
 export const applyCompletedSessionToRelationship = (
   relationship: ClientRelationship,
   qualityScore: number,
-  currentDay: number
+  currentDay: number,
+  xpMultiplier = 1
 ): ClientRelationship => {
   const qualityXp =
     qualityScore >= 90 ? 24 :
@@ -51,7 +52,10 @@ export const applyCompletedSessionToRelationship = (
     qualityScore >= 40 ? 5 : 2;
 
   const repeatClientBonus = relationship.sessionsCompleted > 0 ? 2 : 0;
-  const relationshipXp = Math.max(0, relationship.relationshipXp + qualityXp + repeatClientBonus);
+  const relationshipXp = Math.max(
+    0,
+    relationship.relationshipXp + Math.round((qualityXp + repeatClientBonus) * Math.max(1, Math.min(3, xpMultiplier)))
+  );
   const tier = getClientRelationshipTier(relationshipXp);
 
   return {

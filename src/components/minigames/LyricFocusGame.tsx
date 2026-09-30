@@ -155,7 +155,7 @@ export const LyricFocusGame: React.FC<LyricFocusGameProps> = ({
   const progressPercent = ((BASE_TIME_LIMIT - timeLeft) / BASE_TIME_LIMIT) * 100;
 
   return (
-    <Card className="w-full max-w-2xl mx-auto bg-gray-800 text-white border-gray-700">
+    <Card className="w-full max-w-2xl mx-auto bg-stone-800 text-white border-stone-700">
       <MinigameChrome
         title="✍️ Lyric Focus Challenge"
         score={score}
@@ -172,7 +172,7 @@ export const LyricFocusGame: React.FC<LyricFocusGameProps> = ({
           {feedbackMessage && <p className="text-center text-yellow-400 text-sm mb-3 mg-combo-pulse">{feedbackMessage}</p>}
           
           <div className="mb-4">
-            <h4 className="font-semibold mb-2 text-sm text-slate-300">Available Keywords:</h4>
+            <h4 className="font-semibold mb-2 text-sm text-stone-300">Available Keywords:</h4>
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
               {gameState.availableKeywords.map(kw => (
                 <Button
@@ -183,7 +183,7 @@ export const LyricFocusGame: React.FC<LyricFocusGameProps> = ({
                     "h-auto p-2 text-xs sm:text-sm transition-all duration-150 ease-in-out",
                     gameState.selectedKeywords.find(k => k.id === kw.id) 
                       ? "bg-purple-600 hover:bg-purple-700 text-white ring-2 ring-purple-400 mg-hit-flash" 
-                      : "bg-slate-700 hover:bg-slate-600 border-slate-600 text-slate-200"
+                      : "bg-stone-700 hover:bg-stone-600 border-stone-600 text-stone-200"
                   )}
                   disabled={!gameState.isActive}
                 >
@@ -194,9 +194,9 @@ export const LyricFocusGame: React.FC<LyricFocusGameProps> = ({
           </div>
 
           <div className="mb-2">
-            <h4 className="font-semibold mb-2 text-sm text-slate-300">Selected Ideas ({gameState.selectedKeywords.length}/{MAX_SELECTIONS}):</h4>
+            <h4 className="font-semibold mb-2 text-sm text-stone-300">Selected Ideas ({gameState.selectedKeywords.length}/{MAX_SELECTIONS}):</h4>
             {gameState.selectedKeywords.length > 0 ? (
-              <div className="flex flex-wrap gap-2 p-2 border border-slate-700 rounded-md bg-slate-900 min-h-[40px]">
+              <div className="flex flex-wrap gap-2 p-2 border border-stone-700 rounded-md bg-stone-900 min-h-[40px]">
                 {gameState.selectedKeywords.map(kw => (
                   <Badge key={kw.id} variant="secondary" className="text-xs bg-purple-500 text-white">
                     {kw.text}
@@ -204,13 +204,13 @@ export const LyricFocusGame: React.FC<LyricFocusGameProps> = ({
                 ))}
               </div>
             ) : (
-              <p className="text-slate-500 text-xs italic">Select up to {MAX_SELECTIONS} keywords...</p>
+              <p className="text-stone-500 text-xs italic">Select up to {MAX_SELECTIONS} keywords...</p>
             )}
           </div>
         </CardContent>
       </MinigameChrome>
       <DialogFooter className="p-4">
-        <KenneyButton variant="blue" onClick={onClose}>
+        <KenneyButton variant="yellow" onClick={onClose}>
           Close
         </KenneyButton>
         <KenneyButton

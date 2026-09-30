@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { ContextDrawer, ContextDrawerTab } from './ContextDrawer';
 import { MotionNumber, MotionButton } from '@/components/motion/primitives';
 import { Headphones, Phone, SlidersHorizontal, Sparkles, Users, Disc3, Trophy, X, Minimize2, Moon } from 'lucide-react';
@@ -12,10 +12,13 @@ import { StudioRoom } from './StudioRoom';
 import { StudioStrip } from './StudioStrip';
 import { EraTransitionAnimation } from './EraTransitionAnimation';
 import { HistoricalNewsModal } from './HistoricalNewsModal';
+import { FeatureBoundary } from './FeatureBoundary';
 import { checkForNewEvents, applyEventEffects, HistoricalEvent } from '@/utils/historicalEvents';
 import { useBandManagement } from '@/hooks/useBandManagement';
 import { MinigameType } from './minigames/MinigameManager';
-import { GamepadNavProvider, DockTabId } from '@/contexts/GamepadNavContext';
+import { GamepadNavProvider, DockTabId, DOCK_TABS } from '@/contexts/GamepadNavContext';
+import { useStudioHotkeys, type HotkeyBinding } from '@/hooks/useStudioHotkeys';
+import { ShortcutsOverlay } from './ShortcutsOverlay';
 import { GamepadHUD } from '@/components/ui/GamepadHUD';
 import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
 import { RadialActionWheel } from '@/components/ui/RadialActionWheel';
@@ -53,12 +56,25 @@ interface MainGameContentProps {
   setCompactStudioMode: React.Dispatch<React.SetStateAction<boolean>>;
   /** Open StorylineBranchModal when a pending Act choice exists. */
   onOpenStorylineBranch?: () => void;
+  onOpenStoryEvent?: () => void;
+  /** Lets the page hold story popups back while a news popup is on screen. */
+  onHistoricalNewsOpenChange?: (open: boolean) => void;
   /** zel.6: Tauri + feature-flag gate; when false, strip entry is hidden and compact is ignored. */
   desktopStripEnabled: boolean;
 }
 
 
 type Panel = 'bookings' | 'session' | 'studio' | 'career';
+
+const DOCK_LABELS: Record<DockTabId, string> = {
+  bookings: 'Bookings',
+  session: 'Session',
+  gear: 'Gear',
+  crew: 'Crew',
+  bands: 'Artists',
+  charts: 'Charts',
+  career: 'Career',
+};
 export const MainGameContent: React.FC<MainGameContentProps> = ({
   gameState,
   setGameState,
@@ -83,6 +99,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   autoTriggeredMinigame,
   clearAutoTriggeredMinigame,
   onOpenStorylineBranch,
+  onOpenStoryEvent,
+  onHistoricalNewsOpenChange,
   startResearchMod,
   refreshProjects,
   compactStudioMode,
@@ -96,6 +114,10 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   const [eraTransitionInfo, setEraTransitionInfo] = useState<{ fromEra: string; toEra: string } | null>(null);
   const [showHistoricalNews, setShowHistoricalNews] = useState(false);
   const [currentHistoricalEvent, setCurrentHistoricalEvent] = useState<HistoricalEvent | null>(null);
+  useEffect(() => {
+    onHistoricalNewsOpenChange?.(showHistoricalNews && Boolean(currentHistoricalEvent));
+    return () => onHistoricalNewsOpenChange?.(false);
+  }, [showHistoricalNews, currentHistoricalEvent, onHistoricalNewsOpenChange]);
   const [lastCheckedDay, setLastCheckedDay] = useState(0);
   const [dashboardTab, setDashboardTab] = useState<'studio' | 'skills' | 'bands' | 'charts' | 'staff'>('studio');
   const returnFocusRef = useRef<HTMLElement | null>(null);
@@ -146,6 +168,22 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         break;
     }
   }, []);
+
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const hotkeyBindings = useMemo<HotkeyBinding[]>(
+    () => [
+      ...DOCK_TABS.map((id, index) => ({
+        key: String(index + 1),
+        label: DOCK_LABELS[id],
+        description: `Open ${DOCK_LABELS[id]}`,
+        run: () => handleDockTabChange(id),
+      })),
+      { key: '?', label: 'Shortcuts', description: 'Show this list', run: () => setShowShortcuts(true) },
+    ],
+    [handleDockTabChange],
+  );
+  // The console tab hosts keyboard-driven minigames, so number keys stand down there.
+  useStudioHotkeys(hotkeyBindings, panel !== 'session' && !(compactStudioMode && desktopStripEnabled));
 
   const handleRadialSelect = useCallback((sliceId: string) => {
     switch (sliceId) {
@@ -288,8 +326,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             ['bands', Disc3, 'Artists', () => handleOpenDashboardTab('bands')],
             ['charts', Trophy, 'Charts', () => handleOpenDashboardTab('charts')],
             ['career', Sparkles, 'Career', () => openPanel('career')],
-          ] as const).map(([id, Icon, label, action]) => (
-            <button key={id} onClick={action} className="studio-dock-button" title={label} aria-label={label}>
+          ] as const).map(([id, Icon, label, action], dockIndex) => (
+            <button key={id} onClick={action} className="studio-dock-button" title={`${label} (${dockIndex + 1})`} aria-label={label} aria-keyshortcuts={String(dockIndex + 1)}>
               <Icon size={21} aria-hidden="true" /><span>{label}</span>
               {id === 'bookings' && gameState.availableProjects.length > 0 && (
                 <i className="studio-dock-badge"><MotionNumber value={gameState.availableProjects.length} /></i>
@@ -299,6 +337,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           ))}
         </nav>
       </div>
+
+      <ShortcutsOverlay open={showShortcuts} onOpenChange={setShowShortcuts} bindings={hotkeyBindings} />
 
       <ContextDrawer
         isOpen={panel !== null}
@@ -356,6 +396,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           ) : null
         }
       >
+        <FeatureBoundary feature={`drawer:${panel ?? 'closed'}:${dashboardTab}`} resetKey={`${panel}:${dashboardTab}`}>
         <div className="flex-1 min-h-0 min-w-0 flex flex-col relative" data-reward-source="activity">
           {panel === 'bookings' && (
             <ProjectList
@@ -415,16 +456,14 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                 onRest={advanceDay}
                 onStaff={() => handleOpenDashboardTab('staff')}
                 onOpenStorylineBranch={onOpenStorylineBranch}
+                onOpenStoryEvent={onOpenStoryEvent}
               />
-              <div className="grid gap-3 p-4">
-                <button
-                  className="studio-primary-action"
-                  onClick={() => handleOpenDashboardTab('skills')}
-                >
-                  <Sparkles size={20} />Skills & research
+              <div className="grid gap-2.5 p-1 pt-3 sm:grid-cols-2">
+                <button className="rst-btn" onClick={() => handleOpenDashboardTab('skills')}>
+                  <Sparkles size={17} />Skills & research
                 </button>
-                <button className="studio-primary-action" onClick={advanceDay}>
-                  <Moon size={20} />Rest & advance day
+                <button className="rst-btn" onClick={advanceDay}>
+                  <Moon size={17} />Rest & advance day
                 </button>
                 {desktopStripEnabled && (
                   <button
@@ -441,6 +480,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             </div>
           )}
         </div>
+        </FeatureBoundary>
       </ContextDrawer>
       <AttributesModal isOpen={showAttributesModal} onClose={() => setShowAttributesModal(false)}
         playerData={gameState.playerData} spendPerkPoint={spendPerkPoint} />

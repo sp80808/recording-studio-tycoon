@@ -91,9 +91,9 @@ export const RARITY_CONFIG: Record<Rarity, {
 }> = {
   common: {
     label: 'Standard',
-    badgeBg: 'bg-slate-800',
-    textColor: 'text-slate-300',
-    borderColor: 'border-slate-500',
+    badgeBg: 'bg-stone-800',
+    textColor: 'text-stone-300',
+    borderColor: 'border-stone-500',
     glowColor: 'rgba(148, 163, 184, 0.4)',
     rayColor: '#94a3b8',
     glowTone: 'amber',
@@ -815,14 +815,14 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
                 initial={reducedMotion ? { opacity: 0 } : { rotateY: 90, scale: 0.85, opacity: 0 }}
                 animate={reducedMotion ? { opacity: 1 } : { rotateY: 0, scale: 1, opacity: 1 }}
                 transition={motionSpring.reward}
-                className="w-88 sm:w-[420px] bg-slate-950 border-2 border-amber-400 rounded-sm p-4 relative shadow-[0_0_40px_rgba(251,191,36,0.8)]"
+                className="w-88 sm:w-[420px] bg-stone-950 border-2 border-amber-400 rounded-sm p-4 relative shadow-[0_0_40px_rgba(251,191,36,0.8)]"
               >
                 {!reducedMotion && heavyEffects && <GlowSweep tone="gold" repeat={false} />}
                 <div className="flex justify-between items-center mb-3">
                   <span className="px-2 py-0.5 rounded text-[10px] font-mono font-black uppercase tracking-wider bg-amber-950 text-amber-300 border border-amber-400">
                     ★ Collector — Yours
                   </span>
-                  <span className="text-[10px] font-mono text-slate-400">VERIFIED PURCHASE</span>
+                  <span className="text-[10px] font-mono text-stone-400">VERIFIED PURCHASE</span>
                 </div>
                 <h2 className="text-xl font-black text-white tracking-tight mb-3">
                   {premiumReward?.productTitle}
@@ -831,7 +831,7 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
                   {premiumReward?.items.map((item) => (
                     <li
                       key={item.ref}
-                      className="flex items-center gap-2 bg-slate-900/90 border border-slate-800 rounded-sm px-3 py-2 text-sm text-slate-200"
+                      className="flex items-center gap-2 bg-stone-900/90 border border-stone-800 rounded-sm px-3 py-2 text-sm text-stone-200"
                     >
                       <span aria-hidden className="text-lg">{item.icon}</span>
                       <span className="flex-1 font-medium">{item.label}</span>
@@ -857,7 +857,7 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
                 initial={reducedMotion ? { opacity: 0 } : { rotateY: 90, scale: 0.85, opacity: 0 }}
                 animate={reducedMotion ? { opacity: 1 } : { rotateY: 0, scale: 1, opacity: 1 }}
                 transition={motionSpring.reward}
-                className={`w-88 sm:w-[450px] bg-slate-950 border-2 ${rarityInfo.borderColor} rounded-sm p-4 relative`}
+                className={`w-88 sm:w-[450px] bg-stone-950 border-2 ${rarityInfo.borderColor} rounded-sm p-4 relative`}
                 style={{ boxShadow: `0 0 40px ${rarityInfo.glowColor}` }}
               >
                 {/* Rarity Material Specular Gleam Sweep */}
@@ -875,7 +875,7 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
                   >
                     ★ {rarityInfo.label}
                   </span>
-                  <span className="text-[10px] font-mono text-slate-400 font-bold">
+                  <span className="text-[10px] font-mono text-stone-400 font-bold">
                     ORIGIN: {currentItem.era}
                   </span>
                 </div>
@@ -886,9 +886,9 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
                 </h2>
 
                 {/* Condition Readout & Resale Appraisal */}
-                <div className="bg-slate-900/90 border border-slate-800 rounded-sm p-2.5 mb-2.5 space-y-2">
+                <div className="bg-stone-900/90 border border-stone-800 rounded-sm p-2.5 mb-2.5 space-y-2">
                   <div className="flex justify-between items-center text-xs font-mono">
-                    <span className="text-slate-400 flex items-center gap-1">
+                    <span className="text-stone-400 flex items-center gap-1">
                       <Wrench size={13} className="text-amber-400" />
                       Condition Rating:
                     </span>
@@ -912,7 +912,7 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
                   </div>
 
                   {/* Condition Progress Bar */}
-                  <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="w-full h-1.5 bg-stone-800 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
                         currentItem.condition >= 80
@@ -926,8 +926,8 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
                   </div>
 
                   {/* Resale Market Value */}
-                  <div className="flex justify-between items-center pt-1 border-t border-slate-800/80 text-xs font-mono">
-                    <span className="text-slate-400 flex items-center gap-1">
+                  <div className="flex justify-between items-center pt-1 border-t border-stone-800/80 text-xs font-mono">
+                    <span className="text-stone-400 flex items-center gap-1">
                       <DollarSign size={13} className="text-emerald-400" />
                       Appraised Market Value:
                     </span>

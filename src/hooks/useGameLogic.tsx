@@ -94,7 +94,7 @@ export const useGameLogic = (
       toast({
         title: "🎯 Production Bonus!",
         description: `+${creativityBonus} creativity, +${technicalBonus} technical, +${xpBonus} XP`,
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         duration: 3000
       });
 
@@ -135,7 +135,7 @@ export const useGameLogic = (
       toast({
         title: "❌ Cannot Purchase",
         description: purchaseCheck.reason,
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive"
       });
       return false;
@@ -159,7 +159,7 @@ export const useGameLogic = (
     toast({
       title: "💰 Equipment Purchased!",
       description: `${equipment.name} added to your studio.`,
-      className: "bg-gray-800 border-gray-600 text-white",
+      className: "bg-stone-800 border-stone-600 text-white",
     });
     return true;
   };
@@ -197,7 +197,7 @@ export const useGameLogic = (
     toast({
       title: "📚 Training Started",
       description: `${staff.name} will complete ${course.name} in ${course.duration} days.`,
-      className: "bg-gray-800 border-gray-600 text-white",
+      className: "bg-stone-800 border-stone-600 text-white",
     });
   };
 
@@ -216,7 +216,7 @@ export const useGameLogic = (
       toast({
         title: "❌ No Perk Points",
         description: "Complete projects to earn perk points!",
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive"
       });
       return;
@@ -228,7 +228,7 @@ export const useGameLogic = (
     toast({
       title: "⚡ Attribute Upgraded!",
       description: `${String(attribute).replace(/([A-Z])/g, ' $1').trim()} increased!`,
-      className: "bg-gray-800 border-gray-600 text-white",
+      className: "bg-stone-800 border-stone-600 text-white",
       duration: 3000
     });
   };
@@ -261,7 +261,7 @@ export const useGameLogic = (
       toast({
         title: "💰 Insufficient Funds",
         description: "You don't have enough money to make this offer.",
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive"
       });
       return;
@@ -273,7 +273,7 @@ export const useGameLogic = (
       toast({
         title: "❌ Artist Not Found",
         description: "Unable to find the specified artist.",
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive"
       });
       return;
@@ -312,7 +312,7 @@ export const useGameLogic = (
       toast({
         title: "🎤 Artist Interested!",
         description: `${artist.name} is interested in working with you! They'll be in touch soon.`,
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         duration: 5000
       });
       
@@ -333,7 +333,7 @@ export const useGameLogic = (
       toast({
         title: "❌ Offer Declined",
         description: `${artist.name} declined your offer. Try again later or consider a higher offer.`,
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive",
         duration: 5000
       });

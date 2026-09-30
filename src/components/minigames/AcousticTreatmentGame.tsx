@@ -261,14 +261,14 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
 
   if (!gameStarted) {
     return (
-      <Card className="w-full max-w-6xl mx-auto bg-gray-800 text-white border-gray-700">
+      <Card className="w-full max-w-6xl mx-auto bg-stone-800 text-white border-stone-700">
         <MinigameChrome title="🏠 Acoustic Treatment Puzzle" score={score} accent="green">
         <div className="p-6 text-center space-y-4">
-          <p className="text-gray-300">
+          <p className="text-stone-300">
             Optimize your studio acoustics for {recordingType} recording!
             Use your budget wisely to create the perfect acoustic environment.
           </p>
-          <div className="text-sm text-blue-400 bg-blue-900/30 p-3 rounded">
+          <div className="text-sm text-[var(--rst-live)] bg-white/[0.04] border border-[var(--rst-line)] p-3 rounded">
             💡 Hint: {getRecordingTypeHint()}
           </div>
           <div className="text-lg text-yellow-400">
@@ -285,20 +285,20 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
 
   if (gameCompleted) {
     return (
-      <Card className="w-full max-w-6xl mx-auto bg-gray-800 text-white border-gray-700">
+      <Card className="w-full max-w-6xl mx-auto bg-stone-800 text-white border-stone-700">
         <MinigameChrome title="🏠 Acoustic Treatment Puzzle" score={score} accent="green">
         <div className="p-6 text-center space-y-4">
           <h2 className={`text-2xl font-bold text-yellow-400 ${score >= 80 ? 'mg-perfect-pop' : ''}`}>Room Treatment Complete!</h2>
           <div className="space-y-2">
             <div className="text-lg text-white">Final Score: {score}</div>
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-stone-400">
               Acoustic Quality: {acousticScore}% | Budget Used: ${spentBudget}/${budget}
             </div>
             {score >= 80 && (
               <div className="text-green-400 font-bold text-xl mg-perfect-pop">🎉 Professional Studio!</div>
             )}
             {score >= 60 && score < 80 && (
-              <div className="text-blue-400 font-bold">👍 Well-Treated Room!</div>
+              <div className="text-[var(--rst-live)] font-bold">👍 Well-Treated Room!</div>
             )}
           </div>
           <KenneyButton variant="green" onClick={onClose}>
@@ -311,11 +311,11 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
   }
 
   return (
-    <Card className="w-full max-w-6xl mx-auto bg-gray-800 text-white border-gray-700">
+    <Card className="w-full max-w-6xl mx-auto bg-stone-800 text-white border-stone-700">
       <MinigameChrome title="🏠 Acoustic Treatment Puzzle" score={acousticScore} timeLeft={timeLeft} accent="green">
       <div className="p-6">
       <div className="text-center mb-6">
-        <p className="text-gray-300">Recording Type: {recordingType.charAt(0).toUpperCase() + recordingType.slice(1)}</p>
+        <p className="text-stone-300">Recording Type: {recordingType.charAt(0).toUpperCase() + recordingType.slice(1)}</p>
 
         <div className="mt-4 text-lg text-yellow-400 font-bold">
           Budget: ${budget - spentBudget} / ${budget}
@@ -340,7 +340,7 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
                 className={`w-full p-4 h-auto flex justify-between items-center ${
                   selectedTreatment?.id === treatment.id 
                     ? treatment.color 
-                    : 'bg-gray-700 hover:bg-gray-600'
+                    : 'bg-stone-700 hover:bg-stone-600'
                 }`}
                 disabled={spentBudget + treatment.cost > budget}
               >
@@ -360,8 +360,8 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
             ))}
           </div>
 
-          <div className="mt-4 p-3 bg-blue-900/30 rounded border border-blue-600/50">
-            <div className="text-sm text-blue-300">
+          <div className="mt-4 p-3 bg-white/[0.04] border border-[var(--rst-line)] rounded border border-[var(--rst-live)]/50">
+            <div className="text-sm text-[var(--rst-live)]">
               <div className="font-semibold mb-2">Treatment Tips:</div>
               <ul className="text-xs space-y-1">
                 <li>🔺 Bass traps work best in corners</li>
@@ -377,7 +377,7 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
         <div className="lg:col-span-2">
           <h3 className="text-xl font-bold text-white mb-4">🏠 Studio Room (8x6)</h3>
           <div 
-            className="grid grid-cols-8 gap-1 bg-gray-800 p-4 rounded-lg border-2 border-gray-600"
+            className="grid grid-cols-8 gap-1 bg-stone-800 p-4 rounded-lg border-2 border-stone-600"
             style={{ aspectRatio: '8/6' }}
           >
             {roomGrid.map((position, index) => (
@@ -389,14 +389,14 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
                     : placeTreatment(position)
                 }
                 className={`
-                  aspect-square cursor-pointer border border-gray-700 rounded transition-all duration-200
+                  aspect-square cursor-pointer border border-stone-700 rounded transition-all duration-200
                   ${position.treatment 
                     ? position.treatment.color 
                     : isCorner(position) 
-                      ? 'bg-gray-600 hover:bg-gray-500' 
+                      ? 'bg-stone-600 hover:bg-stone-500' 
                       : isWall(position) 
-                        ? 'bg-gray-700 hover:bg-gray-600' 
-                        : 'bg-gray-800 hover:bg-gray-700'
+                        ? 'bg-stone-700 hover:bg-stone-600' 
+                        : 'bg-stone-800 hover:bg-stone-700'
                   }
                   ${selectedTreatment && !position.treatment ? 'hover:ring-2 hover:ring-yellow-400' : ''}
                 `}
@@ -414,7 +414,7 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
                   </div>
                 )}
                 {!position.treatment && isCorner(position) && (
-                  <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                  <div className="w-full h-full flex items-center justify-center text-xs text-stone-400">
                     ⛞
                   </div>
                 )}
@@ -422,7 +422,7 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
             ))}
           </div>
           
-          <div className="mt-2 text-xs text-gray-400 text-center">
+          <div className="mt-2 text-xs text-stone-400 text-center">
             Click to place selected treatment | Click existing treatment to remove
           </div>
         </div>

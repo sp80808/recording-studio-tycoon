@@ -62,7 +62,7 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
       electronic: [
         { id: 'kick', name: 'Kick Drum', type: 'drum', icon: '🥁', color: 'bg-red-500', frequency: 60, timing: 0, volume: 85, pan: 0, isActive: true, conflicts: [] },
         { id: 'bass', name: 'Synth Bass', type: 'bass', icon: '🎛️', color: 'bg-blue-500', frequency: 80, timing: 0, volume: 80, pan: 0, isActive: true, conflicts: [] },
-        { id: 'lead', name: 'Lead Synth', type: 'keys', icon: '🎹', color: 'bg-cyan-500', frequency: 1000, timing: 0, volume: 70, pan: 20, isActive: false, conflicts: [] },
+        { id: 'lead', name: 'Lead Synth', type: 'keys', icon: '🎹', color: 'bg-[var(--rst-brass-400)]', frequency: 1000, timing: 0, volume: 70, pan: 20, isActive: false, conflicts: [] },
         { id: 'pad', name: 'Synth Pad', type: 'strings', icon: '🌊', color: 'bg-indigo-500', frequency: 400, timing: 10, volume: 40, pan: 0, isActive: false, conflicts: [] },
         { id: 'arp', name: 'Arpeggiator', type: 'keys', icon: '🔄', color: 'bg-green-500', frequency: 800, timing: -5, volume: 50, pan: -40, isActive: false, conflicts: [] },
         { id: 'vocal', name: 'Vocal', type: 'vocal', icon: '🎤', color: 'bg-purple-500', frequency: 1200, timing: 0, volume: 60, pan: 0, isActive: false, conflicts: [] }
@@ -238,14 +238,14 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
 
   if (!gameStarted) {
     return (
-      <Card className="w-full max-w-6xl bg-gray-900 border-gray-600 p-6">
+      <Card className="w-full max-w-6xl bg-stone-900 border-stone-600 p-6">
         <div className="text-center space-y-4">
           <h2 className="text-2xl font-bold text-white">🎼 Instrument Layering Challenge</h2>
-          <p className="text-gray-300">
+          <p className="text-stone-300">
             Create the perfect {genre} arrangement! Layer instruments thoughtfully, 
             balance frequencies, and achieve a professional mix.
           </p>
-          <div className="text-sm text-blue-400 bg-blue-900/30 p-4 rounded">
+          <div className="text-sm text-[var(--rst-live)] bg-white/[0.04] border border-[var(--rst-line)] p-4 rounded">
             <div className="font-semibold mb-2">💡 {genre.charAt(0).toUpperCase() + genre.slice(1)} Tips:</div>
             <div className="space-y-1 text-left">
               {getGenreHints().map((hint, index) => (
@@ -255,7 +255,7 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
           </div>
           <Button 
             onClick={startGame} 
-            className="bg-indigo-600 hover:bg-indigo-700 text-lg px-8 py-3"
+            className="rst-btn rst-btn-primary text-lg px-8 py-3"
           >
             Start Arranging
           </Button>
@@ -266,7 +266,7 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
 
   if (gameCompleted) {
     return (
-      <Card className="w-full max-w-2xl mx-auto bg-gray-800 text-white border-gray-700">
+      <Card className="w-full max-w-2xl mx-auto bg-stone-800 text-white border-stone-700">
         <MinigameChrome
           title="🎼 Arrangement Complete!"
           score={score}
@@ -274,14 +274,14 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
         >
           <CardContent className="text-center space-y-4 py-6">
             <div className="space-y-2">
-              <div className="text-sm text-gray-400">
+              <div className="text-sm text-stone-400">
                 Active Tracks: {tracks.filter(t => t.isActive).length} | Genre: {genre}
               </div>
               {score >= 120 && (
                 <div className="text-green-400 font-bold text-xl mg-perfect-pop">🎉 Studio-Quality Arrangement!</div>
               )}
               {score >= 80 && score < 120 && (
-                <div className="text-blue-400 font-bold mg-meter-glow">👍 Professional Layering!</div>
+                <div className="text-[var(--rst-live)] font-bold mg-meter-glow">👍 Professional Layering!</div>
               )}
               {score < 80 && (
                 <div className="text-yellow-400 font-bold">📈 Good Foundation!</div>
@@ -299,7 +299,7 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
   }
 
   return (
-    <Card className="w-full max-w-7xl mx-auto bg-gray-800 text-white border-gray-700">
+    <Card className="w-full max-w-7xl mx-auto bg-stone-800 text-white border-stone-700">
       <MinigameChrome
         title="🎼 Instrument Layering Challenge"
         score={calculateScore()}
@@ -308,7 +308,7 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
       >
         <CardContent>
           <div className="flex justify-between items-center mb-4">
-            <span className="text-gray-300 text-sm">
+            <span className="text-stone-300 text-sm">
               Genre: <span className="text-white font-semibold">{genre.charAt(0).toUpperCase() + genre.slice(1)}</span>
             </span>
             <span className="text-emerald-400 font-mono text-sm font-bold bg-emerald-950/60 px-3 py-1 rounded border border-emerald-800">
@@ -333,7 +333,7 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
                 className={`p-4 cursor-pointer transition-all duration-200 ${
                   track.isActive 
                     ? `${track.color} border-2 border-white` 
-                    : 'bg-gray-700 border-gray-600 hover:bg-gray-600'
+                    : 'bg-stone-700 border-stone-600 hover:bg-stone-600'
                 }`}
                 onClick={() => toggleTrack(track.id)}
               >
@@ -355,7 +355,7 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
                 {track.isActive && (
                   <div className="space-y-3 mt-4" onClick={(e) => e.stopPropagation()}>
                     <div>
-                      <div className="flex justify-between text-xs text-gray-300 mb-1">
+                      <div className="flex justify-between text-xs text-stone-300 mb-1">
                         <span>Volume</span>
                         <span>{track.volume}%</span>
                       </div>
@@ -369,7 +369,7 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
                     </div>
                     
                     <div>
-                      <div className="flex justify-between text-xs text-gray-300 mb-1">
+                      <div className="flex justify-between text-xs text-stone-300 mb-1">
                         <span>Pan</span>
                         <span>{track.pan > 0 ? 'R' : track.pan < 0 ? 'L' : 'C'}{Math.abs(track.pan)}</span>
                       </div>
@@ -384,7 +384,7 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-xs text-gray-300 mb-1">
+                      <div className="flex justify-between text-xs text-stone-300 mb-1">
                         <span>Timing</span>
                         <span>{track.timing > 0 ? '+' : ''}{track.timing}ms</span>
                       </div>
@@ -409,7 +409,7 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
           <h3 className="text-xl font-bold text-white">📊 Mix Analysis</h3>
           
           {/* Frequency Distribution */}
-          <Card className="p-4 bg-gray-800 border-gray-600">
+          <Card className="p-4 bg-stone-800 border-stone-600">
             <h4 className="font-semibold text-white mb-3">Frequency Balance</h4>
             <div className="space-y-2">
               {['60-200Hz', '200-800Hz', '800-3kHz', '3kHz+'].map((range, index) => {
@@ -422,7 +422,7 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
                 
                 return (
                   <div key={range} className="flex justify-between text-sm">
-                    <span className="text-gray-300">{range}</span>
+                    <span className="text-stone-300">{range}</span>
                     <span className={tracksInRange.length > 2 ? 'text-red-400' : 'text-green-400'}>
                       {tracksInRange.length} tracks
                     </span>
@@ -433,24 +433,24 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
           </Card>
 
           {/* Stereo Field */}
-          <Card className="p-4 bg-gray-800 border-gray-600">
+          <Card className="p-4 bg-stone-800 border-stone-600">
             <h4 className="font-semibold text-white mb-3">Stereo Field</h4>
             <div className="grid grid-cols-3 gap-2 text-xs">
               <div className="text-center">
-                <div className="text-gray-400">Left</div>
-                <div className="text-blue-400">
+                <div className="text-stone-400">Left</div>
+                <div className="text-[var(--rst-live)]">
                   {tracks.filter(t => t.isActive && t.pan < -20).length}
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-gray-400">Center</div>
+                <div className="text-stone-400">Center</div>
                 <div className="text-green-400">
                   {tracks.filter(t => t.isActive && t.pan >= -20 && t.pan <= 20).length}
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-gray-400">Right</div>
-                <div className="text-blue-400">
+                <div className="text-stone-400">Right</div>
+                <div className="text-[var(--rst-live)]">
                   {tracks.filter(t => t.isActive && t.pan > 20).length}
                 </div>
               </div>
@@ -458,9 +458,9 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
           </Card>
 
           {/* Genre Guidelines */}
-          <Card className="p-4 bg-blue-900/30 border-blue-600/50">
-            <h4 className="font-semibold text-blue-300 mb-2">Genre Guidelines</h4>
-            <div className="space-y-1 text-xs text-blue-200">
+          <Card className="p-4 bg-white/[0.04] border border-[var(--rst-line)] border-[var(--rst-live)]/50">
+            <h4 className="font-semibold text-[var(--rst-live)] mb-2">Genre Guidelines</h4>
+            <div className="space-y-1 text-xs text-[var(--rst-ivory-soft)]">
               {getGenreHints().slice(0, 2).map((hint, index) => (
                 <div key={index}>• {hint.replace(/[🎤🥁🎸🎹🎵📍🔊🌊🔄⚡]/gu, '')}</div>
               ))}

@@ -21,7 +21,9 @@ export const GRAPHICS_PRESETS: Record<GameSettings['graphicsPreset'], Partial<Ga
     graphicsPreset: 'high',
     resolutionScale: 1.0,
     targetFps: 60,
-    crtScanlines: true,
+    // CRT scanlines read as a hazy texture over the whole studio, so they are opt-in
+    // (Ultra preset or Settings) rather than part of the default look.
+    crtScanlines: false,
     analogTapeWarmth: true,
     bloomAndGlow: true,
   },
@@ -44,7 +46,7 @@ export const defaultSettings: GameSettings = {
   graphicsPreset: 'high',
   resolutionScale: 1.0,
   targetFps: 60,
-  crtScanlines: true,
+  crtScanlines: false,
   analogTapeWarmth: true,
   bloomAndGlow: true,
   difficulty: 'medium',

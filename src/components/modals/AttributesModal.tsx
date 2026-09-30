@@ -48,7 +48,7 @@ export const AttributesModal: React.FC<AttributesModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-gray-900 border-gray-600 text-white max-w-2xl max-h-[85dvh] overflow-y-auto">
+      <DialogContent className="bg-stone-900 border-stone-600 text-white max-w-2xl max-h-[85dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-white flex items-center gap-2">
             <ArrowUp className="w-5 h-5" />
@@ -64,13 +64,13 @@ export const AttributesModal: React.FC<AttributesModalProps> = ({
           </div>
 
           {attributes.map((attr) => (
-            <div key={attr.key} className="flex flex-wrap gap-3 items-center justify-between p-4 bg-gray-800 rounded-lg border border-gray-600">
+            <div key={attr.key} className="flex flex-wrap gap-3 items-center justify-between p-4 bg-stone-800 rounded-lg border border-stone-600">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{attr.icon}</span>
                 <div>
                   <h4 className="font-bold text-white">{attr.name}</h4>
-                  <p className="text-sm text-gray-400">{attr.description}</p>
-                  <div className="text-blue-400 font-medium">
+                  <p className="text-sm text-stone-400">{attr.description}</p>
+                  <div className="text-amber-300 font-medium">
                     Rank {playerData.attributes[attr.key]}/10 · +{calculateAttributeBonus(attr.key, playerData.attributes[attr.key])}% effectiveness
                   </div>
                 </div>
@@ -79,7 +79,7 @@ export const AttributesModal: React.FC<AttributesModalProps> = ({
                 onClick={() => spendPerkPoint(attr.key)}
                 disabled={playerData.perkPoints <= 0 || playerData.attributes[attr.key] >= 10}
                 aria-label={`Upgrade ${attr.name}`}
-                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600"
+                className="bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] disabled:bg-stone-600"
               >
                 {playerData.attributes[attr.key] >= 10 ? 'Mastered' : '+1 rank · 1 point'}
               </Button>

@@ -38,7 +38,7 @@ export const AlbumCoverArt: React.FC<AlbumCoverArtProps> = ({
     const normalized = (g || '').toLowerCase();
     if (normalized.includes('rock') || normalized.includes('metal') || normalized.includes('punk')) {
       return {
-        bgGradient: 'from-zinc-950 via-red-950 to-neutral-900',
+        bgGradient: 'from-stone-950 via-red-950 to-neutral-900',
         accentColor: 'text-red-400',
         glowColor: 'rgba(239, 68, 68, 0.35)',
         secondaryColor: 'from-red-600 to-amber-600',
@@ -49,7 +49,7 @@ export const AlbumCoverArt: React.FC<AlbumCoverArtProps> = ({
     }
     if (normalized.includes('electronic') || normalized.includes('techno') || normalized.includes('synth') || normalized.includes('edm')) {
       return {
-        bgGradient: 'from-slate-950 via-purple-950 to-cyan-950',
+        bgGradient: 'from-stone-950 via-purple-950 to-cyan-950',
         accentColor: 'text-cyan-400',
         glowColor: 'rgba(6, 182, 212, 0.4)',
         secondaryColor: 'from-cyan-400 via-fuchsia-500 to-indigo-500',
@@ -60,7 +60,7 @@ export const AlbumCoverArt: React.FC<AlbumCoverArtProps> = ({
     }
     if (normalized.includes('hip-hop') || normalized.includes('rap') || normalized.includes('trap')) {
       return {
-        bgGradient: 'from-black via-zinc-900 to-amber-950',
+        bgGradient: 'from-black via-stone-900 to-amber-950',
         accentColor: 'text-amber-300',
         glowColor: 'rgba(245, 158, 11, 0.4)',
         secondaryColor: 'from-amber-300 to-yellow-600',
@@ -71,7 +71,7 @@ export const AlbumCoverArt: React.FC<AlbumCoverArtProps> = ({
     }
     if (normalized.includes('jazz') || normalized.includes('blues')) {
       return {
-        bgGradient: 'from-slate-950 via-blue-950 to-indigo-950',
+        bgGradient: 'from-stone-950 via-blue-950 to-indigo-950',
         accentColor: 'text-amber-200',
         glowColor: 'rgba(217, 119, 6, 0.35)',
         secondaryColor: 'from-amber-200 to-blue-400',
@@ -93,7 +93,7 @@ export const AlbumCoverArt: React.FC<AlbumCoverArtProps> = ({
     }
     // Default Pop / General
     return {
-      bgGradient: 'from-indigo-950 via-purple-950 to-slate-950',
+      bgGradient: 'from-indigo-950 via-purple-950 to-stone-950',
       accentColor: 'text-pink-300',
       glowColor: 'rgba(236, 72, 153, 0.35)',
       secondaryColor: 'from-pink-500 via-purple-500 to-sky-400',
@@ -111,17 +111,17 @@ export const AlbumCoverArt: React.FC<AlbumCoverArtProps> = ({
       {showVinylPeek && (
         <div
           aria-hidden="true"
-          className="absolute -right-7 sm:-right-9 top-1/2 -translate-y-1/2 w-48 h-48 sm:w-56 sm:h-56 rounded-full bg-slate-950 border-4 border-slate-800 shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-0 transition-transform duration-500 ease-out group-hover:translate-x-3 pointer-events-none"
+          className="absolute -right-7 sm:-right-9 top-1/2 -translate-y-1/2 w-48 h-48 sm:w-56 sm:h-56 rounded-full bg-stone-950 border-4 border-stone-800 shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-0 transition-transform duration-500 ease-out group-hover:translate-x-3 pointer-events-none"
           style={{
             backgroundImage: `radial-gradient(circle, #020617 0%, #0f172a 24%, #1e293b 25%, #020617 26%, #0f172a 48%, #1e293b 49%, #020617 50%, #0f172a 74%, #1e293b 75%, #020617 76%, #0f172a 96%, #334155 98%, #020617 100%)`
           }}
         >
           {/* Vinyl label in center */}
           <div className="absolute inset-0 m-auto w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-amber-600 to-amber-300 border-2 border-amber-200 flex flex-col items-center justify-center p-1 text-center shadow-inner">
-            <span className="text-[7px] font-black tracking-widest text-slate-950 uppercase leading-none">RST</span>
-            <span className="text-[6px] font-bold text-slate-900 tracking-tighter">33⅓ RPM</span>
-            <div className="w-2.5 h-2.5 rounded-full bg-slate-950 border border-amber-100 my-0.5" />
-            <span className="text-[5px] font-semibold text-slate-950 tracking-tighter truncate max-w-[50px]">{genre}</span>
+            <span className="text-[7px] font-black tracking-widest text-stone-950 uppercase leading-none">RST</span>
+            <span className="text-[6px] font-bold text-stone-900 tracking-tighter">33⅓ RPM</span>
+            <div className="w-2.5 h-2.5 rounded-full bg-stone-950 border border-amber-100 my-0.5" />
+            <span className="text-[5px] font-semibold text-stone-950 tracking-tighter truncate max-w-[50px]">{genre}</span>
           </div>
           {/* Vinyl light sheen */}
           <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,transparent_0deg,rgba(255,255,255,0.12)_45deg,transparent_90deg,transparent_180deg,rgba(255,255,255,0.12)_225deg,transparent_270deg)] pointer-events-none" />
@@ -130,7 +130,7 @@ export const AlbumCoverArt: React.FC<AlbumCoverArtProps> = ({
 
       {/* Main Square Album Jacket */}
       <div 
-        className="relative z-10 w-56 h-56 sm:w-64 sm:h-64 rounded-xl overflow-hidden shadow-2xl border border-slate-700/80 bg-slate-950 flex flex-col justify-between p-4 group"
+        className="relative z-10 w-56 h-56 sm:w-64 sm:h-64 rounded-xl overflow-hidden shadow-2xl border border-stone-700/80 bg-stone-950 flex flex-col justify-between p-4 group"
         style={{
           boxShadow: `0 20px 40px -15px ${theme.glowColor}, 0 0 0 1px rgba(255,255,255,0.1) inset`
         }}
@@ -208,19 +208,19 @@ export const AlbumCoverArt: React.FC<AlbumCoverArtProps> = ({
 
         {/* Top Header: Genre Tag & Stereo Badge */}
         <div className="relative z-10 flex items-center justify-between gap-2">
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-black/60 backdrop-blur-md border border-white/15 text-slate-200">
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-black/60 backdrop-blur-md border border-white/15 text-stone-200">
             {theme.icon}
             {genre}
           </span>
 
-          <span className="text-[9px] font-mono font-bold tracking-widest text-slate-400 bg-black/50 px-1.5 py-0.5 rounded border border-white/10 backdrop-blur-sm">
+          <span className="text-[9px] font-mono font-bold tracking-widest text-stone-400 bg-black/50 px-1.5 py-0.5 rounded border border-white/10 backdrop-blur-sm">
             STEREO 33⅓
           </span>
         </div>
 
         {/* Center / Bottom Info */}
         <div className="relative z-10 mt-auto pt-4 text-left">
-          <p className="text-[10px] font-mono tracking-widest uppercase text-slate-400 font-semibold mb-0.5">
+          <p className="text-[10px] font-mono tracking-widest uppercase text-stone-400 font-semibold mb-0.5">
             {theme.tagline}
           </p>
 
@@ -229,7 +229,7 @@ export const AlbumCoverArt: React.FC<AlbumCoverArtProps> = ({
           </h3>
 
           <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-white/10">
-            <span className="text-xs text-slate-300 font-medium truncate max-w-[130px]">
+            <span className="text-xs text-stone-300 font-medium truncate max-w-[130px]">
               {artist}
             </span>
 

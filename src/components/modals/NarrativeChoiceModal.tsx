@@ -52,14 +52,14 @@ export const NarrativeChoiceModal: React.FC<NarrativeChoiceModalProps> = ({
         className="relative z-10 w-full max-w-xl flex flex-col p-5 shadow-2xl animate-inspector-pop border-amber-500/50"
       >
         {/* Header Kicker */}
-        <div className="flex items-center justify-between pb-2 mb-3 border-b-2 border-slate-700/80">
+        <div className="flex items-center justify-between pb-2 mb-3 border-b-2 border-stone-700/80">
           <div className="flex items-center gap-2">
             <AlertCircle size={18} className="text-amber-400 animate-pulse" />
             <span className="text-[11px] font-extrabold tracking-widest text-amber-300 uppercase">
               {dilemma.kicker}
             </span>
           </div>
-          <span className="text-[10px] font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
+          <span className="text-[10px] font-mono text-stone-400 bg-stone-950 px-2 py-0.5 rounded border border-stone-800">
             Source: {dilemma.source}
           </span>
         </div>
@@ -68,19 +68,19 @@ export const NarrativeChoiceModal: React.FC<NarrativeChoiceModalProps> = ({
         <h2 id="dilemma-title" className="text-xl font-black text-white tracking-wide mb-2">
           {dilemma.title}
         </h2>
-        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4 bg-slate-950/60 p-3 rounded-lg border border-slate-800">
+        <p className="text-xs sm:text-sm text-stone-300 leading-relaxed mb-4 bg-stone-950/60 p-3 rounded-lg border border-stone-800">
           {dilemma.context}
         </p>
 
         {/* Outcome View (If an option has been chosen) */}
         {outcomeMessage ? (
           <div className="space-y-4 my-2 animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-4 rounded-lg bg-emerald-950/40 border-2 border-emerald-500/60 text-slate-100 shadow-inner">
+            <div className="p-4 rounded-lg bg-emerald-950/40 border-2 border-emerald-500/60 text-stone-100 shadow-inner">
               <div className="flex items-center gap-2 mb-2 text-emerald-300 font-bold text-sm">
                 <CheckCircle size={18} />
                 Decision Executed
               </div>
-              <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+              <p className="text-xs sm:text-sm text-stone-200 leading-relaxed">
                 {outcomeMessage}
               </p>
             </div>
@@ -97,7 +97,7 @@ export const NarrativeChoiceModal: React.FC<NarrativeChoiceModalProps> = ({
         ) : (
           /* Choice Options List */
           <div className="space-y-2.5 my-1">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+            <p className="text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-1">
               Select Your Course of Action:
             </p>
             {dilemma.options.map((option) => {
@@ -106,23 +106,23 @@ export const NarrativeChoiceModal: React.FC<NarrativeChoiceModalProps> = ({
                 <div
                   key={option.id}
                   onClick={() => handleChoose(option)}
-                  className="cursor-pointer rounded-lg border-2 border-slate-700/80 bg-slate-900/80 p-3 hover:border-amber-400/80 hover:brightness-110 active:scale-[0.99] transition-all game-interactive"
+                  className="cursor-pointer rounded-lg border-2 border-stone-700/80 bg-stone-900/80 p-3 hover:border-amber-400/80 hover:brightness-110 active:scale-[0.99] transition-all game-interactive"
                 >
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
                       {option.label}
                     </h3>
-                    <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-slate-950 text-slate-300 border border-slate-700">
+                    <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-stone-950 text-stone-300 border border-stone-700">
                       {option.playstyleFit}
                     </span>
                   </div>
 
-                  <p className="text-xs text-slate-300 leading-relaxed mb-2.5">
+                  <p className="text-xs text-stone-300 leading-relaxed mb-2.5">
                     {option.flavorText}
                   </p>
 
                   {/* Consequence Preview Badges */}
-                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800 text-[11px]">
+                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-stone-800 text-[11px]">
                     {moneyDelta !== 0 && (
                       <span className={`inline-flex items-center gap-1 font-bold ${
                         moneyDelta > 0 ? 'text-emerald-400' : 'text-red-400'
@@ -133,7 +133,7 @@ export const NarrativeChoiceModal: React.FC<NarrativeChoiceModalProps> = ({
                     )}
                     {repDelta !== 0 && (
                       <span className={`inline-flex items-center gap-1 font-bold ${
-                        repDelta > 0 ? 'text-sky-400' : 'text-orange-400'
+                        repDelta > 0 ? 'text-amber-300' : 'text-orange-400'
                       }`}>
                         <Star size={12} />
                         {repDelta > 0 ? `+${repDelta} Rep` : `${repDelta} Rep`}

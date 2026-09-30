@@ -107,7 +107,7 @@ const ProductCard: React.FC<{ product: StoreProduct; section: Section }> = ({ pr
             size="sm"
             disabled={pending}
             onClick={() => void purchaseSku(product.sku, product.preview.chooseOneOfMany ? choice : undefined)}
-            className="bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold"
+            className="bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-amber-100 font-bold"
           >
             {pending ? 'Confirming…' : `Purchase · ${priceFor(product.sku, products)}`}
           </Button>
@@ -160,7 +160,7 @@ export const DealerModal: React.FC<{ open: boolean; onClose: () => void }> = ({ 
               aria-selected={section === s.id}
               variant={section === s.id ? 'default' : 'outline'}
               onClick={() => setSection(s.id)}
-              className={section === s.id ? 'bg-amber-600 text-stone-950 font-bold' : 'text-stone-300'}
+              className={section === s.id ? 'bg-amber-400/[0.16] ring-1 ring-inset ring-amber-400/50 text-amber-100 font-bold' : 'text-stone-300'}
             >
               {s.label}
             </Button>

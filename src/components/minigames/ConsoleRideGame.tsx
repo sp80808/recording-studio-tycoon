@@ -235,27 +235,27 @@ export const ConsoleRideGame: React.FC<MinigameComponentProps> = ({ minigameId, 
     >
       <div className="space-y-4 max-w-lg mx-auto select-none">
         {/* Hardware Channel Strip Chassis */}
-        <div className="p-5 bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-slate-700/80 rounded-xl shadow-2xl flex flex-col items-center">
+        <div className="p-5 bg-stone-950/85 border-2 border-stone-700/80 rounded-xl shadow-2xl flex flex-col items-center">
           {/* Top Status & VU Meter Section */}
           <div className="w-full flex items-center justify-between mb-4 px-2">
             <div>
-              <span className="text-[10px] text-slate-400 font-mono">CHANNEL BUS 01</span>
+              <span className="text-[10px] text-stone-400 font-mono">CHANNEL BUS 01</span>
               <div className="text-xs font-bold text-amber-300">
                 Time: <span className="font-mono">{timeLeft}s</span>
               </div>
             </div>
 
             {/* Live VU Peak Needle Display */}
-            <div className="flex flex-col items-center bg-slate-950 px-4 py-2 rounded-lg border border-slate-800 shadow-inner">
+            <div className="flex flex-col items-center bg-stone-950 px-4 py-2 rounded-lg border border-stone-800 shadow-inner">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[9px] font-mono text-slate-400">OUTPUT RMS</span>
+                <span className="text-[9px] font-mono text-stone-400">OUTPUT RMS</span>
                 {isClipping && (
                   <span className="flex items-center gap-1 text-[9px] font-bold text-red-500 animate-pulse">
                     <AlertTriangle size={11} /> CLIP!
                   </span>
                 )}
               </div>
-              <div className="relative w-44 h-4 bg-slate-900 rounded overflow-hidden border border-slate-700">
+              <div className="relative w-44 h-4 bg-stone-900 rounded overflow-hidden border border-stone-700">
                 {/* Sweet spot indicator 45% - 65% */}
                 <div className="absolute left-[45%] w-[20%] top-0 bottom-0 bg-emerald-500/25 border-x border-emerald-400/60" />
                 {/* Red clip zone >92% */}
@@ -271,23 +271,23 @@ export const ConsoleRideGame: React.FC<MinigameComponentProps> = ({ minigameId, 
             </div>
 
             <div>
-              <span className="text-[10px] text-slate-400 font-mono">SCORE</span>
+              <span className="text-[10px] text-stone-400 font-mono">SCORE</span>
               <div className="text-sm font-bold font-mono text-emerald-400">{score}</div>
             </div>
           </div>
 
           {/* Console Controls Area: Fader (Left) and Pan Knob (Right) */}
-          <div className="w-full grid grid-cols-2 gap-4 bg-slate-950/70 p-4 rounded-lg border border-slate-800">
+          <div className="w-full grid grid-cols-2 gap-4 bg-stone-950/70 p-4 rounded-lg border border-stone-800">
             {/* Left Stick Motorized Vertical Fader */}
             <div className="flex flex-col items-center">
               <div className="flex items-center gap-1.5 mb-2">
                 <GamepadGlyph button="ls" size="xs" />
-                <span className="text-xs font-bold text-slate-200">FADER (L-Stick)</span>
+                <span className="text-xs font-bold text-stone-200">FADER (L-Stick)</span>
               </div>
 
-              <div className="relative w-12 h-44 bg-slate-900 border border-slate-700 rounded-md flex justify-center py-2 shadow-inner">
+              <div className="relative w-12 h-44 bg-stone-900 border border-stone-700 rounded-md flex justify-center py-2 shadow-inner">
                 {/* Center travel slot */}
-                <div className="w-1.5 h-full bg-slate-950 rounded-full border border-slate-800" />
+                <div className="w-1.5 h-full bg-stone-950 rounded-full border border-stone-800" />
 
                 {/* Target Zone Indicator */}
                 <div className="absolute left-1 right-1 top-[35%] bottom-[35%] bg-emerald-500/10 border-y border-emerald-500/30 rounded pointer-events-none" />
@@ -298,9 +298,9 @@ export const ConsoleRideGame: React.FC<MinigameComponentProps> = ({ minigameId, 
                     bottom: `${fader}%`,
                     transform: 'translateY(50%)',
                   }}
-                  className="absolute w-10 h-7 rounded bg-gradient-to-b from-slate-200 via-slate-400 to-slate-500 border border-slate-600 shadow-md flex items-center justify-center transition-all duration-75"
+                  className="absolute w-10 h-7 rounded bg-gradient-to-b from-stone-200 via-stone-400 to-stone-500 border border-stone-600 shadow-md flex items-center justify-center transition-all duration-75"
                 >
-                  <div className="w-6 h-0.5 bg-slate-900/60" />
+                  <div className="w-6 h-0.5 bg-stone-900/60" />
                 </div>
               </div>
               <span className="text-[10px] font-mono text-amber-300 mt-2">{fader.toFixed(0)}% GAIN</span>
@@ -310,11 +310,11 @@ export const ConsoleRideGame: React.FC<MinigameComponentProps> = ({ minigameId, 
             <div className="flex flex-col items-center justify-center">
               <div className="flex items-center gap-1.5 mb-2">
                 <GamepadGlyph button="rs" size="xs" />
-                <span className="text-xs font-bold text-slate-200">STEREO PAN (R-Stick)</span>
+                <span className="text-xs font-bold text-stone-200">STEREO PAN (R-Stick)</span>
               </div>
 
               {/* Circular Pan Knob */}
-              <div className="relative w-28 h-28 rounded-full bg-gradient-to-b from-slate-800 to-slate-950 border-2 border-slate-600 flex items-center justify-center shadow-lg my-2">
+              <div className="relative w-28 h-28 rounded-full bg-gradient-to-b from-stone-800 to-stone-950 border-2 border-stone-600 flex items-center justify-center shadow-lg my-2">
                 {/* Target Pan Dot */}
                 <div
                   style={{
@@ -333,12 +333,12 @@ export const ConsoleRideGame: React.FC<MinigameComponentProps> = ({ minigameId, 
                   <div className="w-1.5 h-6 bg-amber-400 rounded-full shadow-[0_0_8px_#fbbf24]" />
                 </div>
 
-                <div className="absolute text-[10px] font-mono text-slate-400">
+                <div className="absolute text-[10px] font-mono text-stone-400">
                   {pan === 0 ? 'CENTER' : pan < 0 ? `L ${Math.abs(pan).toFixed(0)}` : `R ${pan.toFixed(0)}`}
                 </div>
               </div>
 
-              <div className="flex items-center justify-between w-full px-4 text-[9px] text-slate-500 font-mono">
+              <div className="flex items-center justify-between w-full px-4 text-[9px] text-stone-500 font-mono">
                 <span>HARD L</span>
                 <span>CENTER</span>
                 <span>HARD R</span>
@@ -353,7 +353,7 @@ export const ConsoleRideGame: React.FC<MinigameComponentProps> = ({ minigameId, 
             ) : inSweetSpot ? (
               <span className="text-emerald-400 font-bold">✨ IN THE SWEET SPOT (+0dB RMS / Balanced Pan)</span>
             ) : (
-              <span className="text-slate-400">Adjust sticks to bring mix into the green zone</span>
+              <span className="text-stone-400">Adjust sticks to bring mix into the green zone</span>
             )}
           </div>
         </div>
@@ -361,7 +361,7 @@ export const ConsoleRideGame: React.FC<MinigameComponentProps> = ({ minigameId, 
         {gameOver && (
           <div className="p-3 bg-emerald-950/60 border border-emerald-500/50 rounded-lg text-center animate-in zoom-in-95">
             <h4 className="font-bold text-emerald-300 mb-1">Session Take Mixed!</h4>
-            <p className="text-xs text-slate-300 mb-3">
+            <p className="text-xs text-stone-300 mb-3">
               Total Score: <span className="font-mono text-amber-300 font-bold">{score}</span> / 1000
             </p>
             <KenneyButton onClick={handleFinalize} variant="green" className="w-full">

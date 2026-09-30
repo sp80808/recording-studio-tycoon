@@ -50,18 +50,18 @@ export const EquipmentModManagementModal: React.FC<EquipmentModManagementModalPr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg bg-gray-800 border-gray-700 text-gray-200">
+      <DialogContent className="max-w-lg bg-stone-800 border-stone-700 text-stone-200">
         <DialogHeader>
           <DialogTitle className="text-yellow-400">🔧 Manage Mods for {equipment.name}</DialogTitle>
-          <DialogDescription className="text-gray-400">
+          <DialogDescription className="text-stone-400">
             Apply or change modifications for this piece of equipment.
             {currentModDetails && (
-              <span className="block mt-1 text-sm text-blue-300">
+              <span className="block mt-1 text-sm text-amber-200">
                 Current Mod: {currentModDetails.name} {currentModDetails.nameSuffix || ''}
               </span>
             )}
             {!currentModDetails && (
-              <span className="block mt-1 text-sm text-gray-500">
+              <span className="block mt-1 text-sm text-stone-500">
                 Current Mod: None
               </span>
             )}
@@ -69,23 +69,23 @@ export const EquipmentModManagementModal: React.FC<EquipmentModManagementModalPr
         </DialogHeader>
         
         <div className="py-4 max-h-[60vh]">
-          <h3 className="text-md font-semibold mb-2 text-gray-200">Available Researched Mods:</h3>
-          <ScrollArea className="h-[300px] border border-gray-600 rounded-md p-2 bg-gray-900/70">
+          <h3 className="text-md font-semibold mb-2 text-stone-200">Available Researched Mods:</h3>
+          <ScrollArea className="h-[300px] border border-stone-600 rounded-md p-2 bg-stone-900/70">
             {compatibleResearchedMods.length === 0 && (
-              <p className="text-gray-400 text-center py-4">No compatible researched mods available for this equipment.</p>
+              <p className="text-stone-400 text-center py-4">No compatible researched mods available for this equipment.</p>
             )}
             {/* Option to remove current mod */}
             {equipment.appliedModId && (
                  <Card
                  className={`mb-2 cursor-pointer transition-all ${
-                   selectedModId === null ? 'ring-2 ring-red-500 bg-red-900/30' : 'bg-gray-700/80 hover:bg-gray-700'
+                   selectedModId === null ? 'ring-2 ring-red-500 bg-red-900/30' : 'bg-stone-700/80 hover:bg-stone-700'
                  }`}
                  onClick={handleRemoveMod}
                >
                  <CardHeader className="pb-2 pt-3 px-4">
                    <CardTitle className="text-base text-red-400">🚫 Remove Current Mod</CardTitle>
                  </CardHeader>
-                 <CardContent className="text-xs text-gray-400 pb-3 px-4">
+                 <CardContent className="text-xs text-stone-400 pb-3 px-4">
                     Return to base equipment stats.
                  </CardContent>
                </Card>
@@ -95,14 +95,14 @@ export const EquipmentModManagementModal: React.FC<EquipmentModManagementModalPr
               <Card
                 key={mod.id}
                 className={`mb-2 cursor-pointer transition-all ${
-                  selectedModId === mod.id ? 'ring-2 ring-green-500 bg-green-800/50' : 'bg-gray-700/80 hover:bg-gray-700'
+                  selectedModId === mod.id ? 'ring-2 ring-green-500 bg-green-800/50' : 'bg-stone-700/80 hover:bg-stone-700'
                 }`}
                 onClick={() => setSelectedModId(mod.id)}
               >
                 <CardHeader className="pb-2 pt-3 px-4">
                   <CardTitle className="text-base text-green-300">{mod.name} {mod.nameSuffix || ''}</CardTitle>
                 </CardHeader>
-                <CardContent className="text-xs text-gray-300 pb-3 px-4">
+                <CardContent className="text-xs text-stone-300 pb-3 px-4">
                   <p>{mod.description}</p>
                   <p className="mt-1 text-purple-300">Bonuses: {JSON.stringify(mod.statChanges)}</p>
                 </CardContent>
@@ -112,13 +112,13 @@ export const EquipmentModManagementModal: React.FC<EquipmentModManagementModalPr
         </div>
 
         <DialogFooter className="sm:justify-end pt-4">
-          <Button type="button" variant="outline" onClick={onClose} className="mr-2 border-gray-600 text-gray-300 hover:bg-gray-700">
+          <Button type="button" variant="outline" onClick={onClose} className="mr-2 border-stone-600 text-stone-300 hover:bg-stone-700">
             Cancel
           </Button>
           <Button 
             type="button" 
             onClick={handleApply}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
+            className="bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-amber-100"
             disabled={selectedModId === equipment.appliedModId} // Disabled if selection hasn't changed
           >
             Save Changes

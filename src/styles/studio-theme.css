@@ -1,0 +1,267 @@
+/**
+ * Studio theme — the shared "hardware" design language for every popup, panel and HUD.
+ *
+ * Palette philosophy: warm ink + walnut surfaces, ivory type, brass as the one
+ * signature accent. Cool colour is deliberately rare — teal marks live/recording
+ * state, emerald means money, rose means danger, violet means story. Blue is not
+ * used for text; informational copy is ivory or muted stone.
+ *
+ * Everything here is token-driven (--rst-*) so a future era skin can re-tint
+ * the whole UI by overriding a handful of variables on a wrapper element.
+ */
+:root {
+  /* Surfaces (darkest → lightest) */
+  --rst-ink-950: #0d0c0a;
+  --rst-ink-900: #141210;
+  --rst-ink-850: #191613;
+  --rst-ink-800: #1f1b17;
+  --rst-ink-700: #2a2520;
+  --rst-ink-600: #38322b;
+
+  /* Type */
+  --rst-ivory: #f3ecdd;
+  --rst-ivory-soft: #d9d0bd;
+  --rst-stone: #a89f8e;
+  --rst-stone-dim: #7c7466;
+
+  /* Brass (signature accent) */
+  --rst-brass-200: #f6e2b3;
+  --rst-brass-300: #efcf8a;
+  --rst-brass-400: #e6b866;
+  --rst-brass-500: #d49f45;
+  --rst-brass-600: #b4802f;
+
+  /* Semantic accents — each has one job */
+  --rst-money: #7fd6a6;
+  --rst-live: #5fd0c0;
+  --rst-danger: #f0776b;
+  --rst-story: #c4a1f0;
+  --rst-warn: #f2b25c;
+
+  /* Flat translucent fills (no gradients on controls or panels) */
+  --rst-fill-1: rgba(243, 236, 221, 0.04);
+  --rst-fill-2: rgba(243, 236, 221, 0.08);
+  --rst-fill-3: rgba(243, 236, 221, 0.13);
+  --rst-panel: rgba(22, 19, 16, 0.9);
+  --rst-brass-fill: rgba(230, 184, 102, 0.13);
+  --rst-brass-fill-hover: rgba(230, 184, 102, 0.22);
+
+  /* Lines & light */
+  --rst-line: rgba(243, 236, 221, 0.09);
+  --rst-line-strong: rgba(243, 236, 221, 0.17);
+  --rst-brass-line: rgba(230, 184, 102, 0.34);
+  --rst-sheen: rgba(255, 244, 214, 0.07);
+  --rst-shadow-pop: 0 24px 64px rgba(0, 0, 0, 0.62), 0 4px 14px rgba(0, 0, 0, 0.45);
+  --rst-shadow-card: 0 10px 28px rgba(0, 0, 0, 0.4);
+  --rst-radius: 14px;
+  --rst-ease: cubic-bezier(0.22, 0.9, 0.32, 1);
+  --rst-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+}
+
+/* ------------------------------------------------------------------ base */
+html { color-scheme: dark; }
+body { background: var(--rst-ink-900); color: var(--rst-ivory); }
+::selection { background: rgba(230, 184, 102, 0.34); color: #fff8e6; }
+
+*:focus-visible {
+  outline: 2px solid var(--rst-brass-300);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Warm, unobtrusive scrollbars */
+* { scrollbar-width: thin; scrollbar-color: rgba(230, 184, 102, 0.28) transparent; }
+*::-webkit-scrollbar { width: 9px; height: 9px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: rgba(230, 184, 102, 0.22); border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
+*::-webkit-scrollbar-thumb:hover { background: rgba(230, 184, 102, 0.42); background-clip: padding-box; border: 2px solid transparent; }
+
+/* ---------------------------------------------------------- typography */
+.rst-serif { font-family: var(--rst-serif); }
+.rst-kicker {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--rst-brass-400);
+}
+.rst-title {
+  font-family: var(--rst-serif);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--rst-ivory);
+  line-height: 1.15;
+}
+.rst-body { color: var(--rst-ivory-soft); line-height: 1.6; }
+.rst-muted { color: var(--rst-stone); }
+
+/* Ornamental divider: hairline – diamond – hairline */
+.rst-divider { display: flex; align-items: center; gap: 10px; color: var(--rst-brass-500); }
+.rst-divider::before, .rst-divider::after { content: ''; flex: 1; height: 1px; background: var(--rst-line-strong); }
+.rst-divider > i { width: 6px; height: 6px; transform: rotate(45deg); background: currentColor; opacity: 0.85; }
+
+/* ------------------------------------------------------------ surfaces */
+.rst-surface {
+  border: 1px solid var(--rst-line-strong);
+  border-radius: var(--rst-radius);
+  background: var(--rst-panel);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(8px);
+  color: var(--rst-ivory);
+}
+
+/* Modal frame: brass hairline, top sheen, soft grain */
+.rst-modal {
+  /* NB: no `position` here. Dialogs set fixed/absolute via utilities; a position rule in this
+     later stylesheet would override them and throw every dialog out of the viewport. */
+  border: 1px solid var(--rst-brass-line);
+  border-radius: 18px;
+  background: #171411;
+  box-shadow: var(--rst-shadow-pop);
+  color: var(--rst-ivory);
+}
+.rst-modal-header { padding: 20px 24px 14px; border-bottom: 1px solid var(--rst-line); }
+.rst-modal-body { padding: 18px 24px; }
+.rst-modal-footer { padding: 14px 24px 20px; display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid var(--rst-line); background: rgba(0, 0, 0, 0.18); }
+
+/* Staggered entrance: header → body → footer, each rising a touch later. */
+.rst-enter > * { animation: rst-rise 0.42s var(--rst-ease) both; }
+.rst-enter > *:nth-child(2) { animation-delay: 0.05s; }
+.rst-enter > *:nth-child(3) { animation-delay: 0.10s; }
+.rst-enter > *:nth-child(4) { animation-delay: 0.15s; }
+.rst-enter > *:nth-child(5) { animation-delay: 0.20s; }
+.rst-enter > *:nth-child(n+6) { animation-delay: 0.24s; }
+
+@keyframes rst-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes rst-modal-in { from { opacity: 0; transform: translate(-50%, -47%) scale(0.965); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+@keyframes rst-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rst-pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(230, 184, 102, 0.45); } 100% { box-shadow: 0 0 0 10px rgba(230, 184, 102, 0); } }
+
+.rst-modal-pop { animation: rst-modal-in 0.34s var(--rst-ease) both; }
+.animate-rst-fade { animation: rst-fade 0.22s ease-out both; }
+.animate-rst-rise { animation: rst-rise 0.4s var(--rst-ease) both; }
+
+/* -------------------------------------------------------------- buttons */
+.rst-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 40px; padding: 8px 18px;
+  border-radius: 11px; border: 1px solid var(--rst-line-strong);
+  background: var(--rst-fill-1);
+  color: var(--rst-ivory);
+  font-size: 13px; font-weight: 600; letter-spacing: 0.03em;
+  transition: transform 0.14s var(--rst-ease), background 0.14s, border-color 0.14s, color 0.14s;
+  cursor: pointer; user-select: none;
+}
+.rst-btn:hover:not(:disabled) { background: var(--rst-fill-2); border-color: var(--rst-brass-line); }
+.rst-btn:active:not(:disabled) { transform: translateY(1px); background: var(--rst-fill-3); }
+.rst-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+/* Primary = brass-tinted glass: translucent fill, brass hairline and type. No gradient, no bevel. */
+.rst-btn-primary {
+  border-color: rgba(230, 184, 102, 0.55);
+  background: var(--rst-brass-fill);
+  color: var(--rst-brass-200);
+  font-weight: 700;
+}
+.rst-btn-primary:hover:not(:disabled) { background: var(--rst-brass-fill-hover); border-color: var(--rst-brass-400); }
+.rst-btn-primary:active:not(:disabled) { background: rgba(230, 184, 102, 0.3); }
+.rst-btn-success { border-color: rgba(127, 214, 166, 0.45); background: rgba(127, 214, 166, 0.11); color: var(--rst-money); font-weight: 700; }
+.rst-btn-success:hover:not(:disabled) { background: rgba(127, 214, 166, 0.2); border-color: var(--rst-money); }
+.rst-btn-danger { border-color: rgba(240, 119, 107, 0.45); background: rgba(240, 119, 107, 0.10); color: #ffc2bb; font-weight: 700; }
+.rst-btn-danger:hover:not(:disabled) { background: rgba(240, 119, 107, 0.18); border-color: var(--rst-danger); }
+.rst-btn-ghost { background: transparent; border-color: transparent; color: var(--rst-ivory-soft); font-weight: 500; }
+.rst-btn-ghost:hover:not(:disabled) { background: var(--rst-fill-2); border-color: var(--rst-line); }
+
+/* ---------------------------------------------------------- chips & stats */
+.rst-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: 999px;
+  border: 1px solid var(--rst-line-strong);
+  background: rgba(243, 236, 221, 0.05);
+  color: var(--rst-ivory-soft);
+  font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+}
+.rst-chip-brass { border-color: var(--rst-brass-line); background: rgba(230, 184, 102, 0.10); color: var(--rst-brass-300); }
+.rst-chip-money { border-color: rgba(127, 214, 166, 0.35); background: rgba(127, 214, 166, 0.09); color: var(--rst-money); }
+.rst-chip-live { border-color: rgba(95, 208, 192, 0.35); background: rgba(95, 208, 192, 0.09); color: var(--rst-live); }
+.rst-chip-danger { border-color: rgba(240, 119, 107, 0.4); background: rgba(240, 119, 107, 0.10); color: var(--rst-danger); }
+.rst-chip-story { border-color: rgba(196, 161, 240, 0.4); background: rgba(196, 161, 240, 0.10); color: var(--rst-story); }
+
+/* Option cards inside decision popups */
+.rst-option {
+  width: 100%;
+  padding: 14px 16px; border-radius: 12px;
+  border: 1px solid var(--rst-line-strong);
+  background: var(--rst-fill-1);
+  transition: transform 0.16s var(--rst-ease), border-color 0.16s, background 0.16s;
+  cursor: pointer;
+}
+.rst-option:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--rst-brass-line); background: var(--rst-fill-2); }
+.rst-option:active:not(:disabled) { transform: translateY(0); }
+.rst-option:disabled { opacity: 0.5; cursor: not-allowed; }
+.rst-option[aria-pressed='true'] { border-color: var(--rst-brass-400); background: var(--rst-brass-fill); }
+
+/* Floor duty / enquiry chips: one calm style for every "something needs attention" nudge */
+.rst-duty-chip {
+  pointer-events: auto;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 11px; border-radius: 999px;
+  border: 1px solid var(--rst-brass-line);
+  background: rgba(24, 20, 16, 0.82);
+  color: var(--rst-brass-200);
+  font-size: 11px; font-weight: 600; letter-spacing: 0.02em; white-space: nowrap;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  transition: transform 0.16s var(--rst-ease), border-color 0.16s, background 0.16s;
+}
+.rst-duty-chip:hover { transform: translateY(-2px); border-color: var(--rst-brass-400); background: rgba(40, 32, 22, 0.9); }
+.rst-duty-chip:active { transform: translateY(0); }
+
+/* Loading shimmer for any skeleton block */
+.rst-shimmer { background: var(--rst-fill-2); animation: rst-skeleton-pulse 1.4s ease-in-out infinite; }
+@keyframes rst-skeleton-pulse { 50% { opacity: 0.45; } }
+
+/* Notification pulse ring (used on badges that want attention once, not forever) */
+.rst-attention { animation: rst-pulse-ring 1.4s ease-out 3; }
+
+/* ----------------------------------------------------------------- toasts */
+.rst-toast {
+  position: relative;
+  border: 1px solid var(--rst-line-strong) !important;
+  border-left: 3px solid var(--rst-brass-400) !important;
+  border-radius: 12px !important;
+  background: rgba(24, 21, 18, 0.96) !important;
+  color: var(--rst-ivory) !important;
+  box-shadow: var(--rst-shadow-card) !important;
+  backdrop-filter: blur(10px);
+}
+.rst-toast [data-title] { color: var(--rst-ivory); font-weight: 700; }
+.rst-toast [data-description] { color: var(--rst-stone) !important; }
+.rst-toast-success { border-left-color: var(--rst-money) !important; }
+.rst-toast-success [data-icon] { color: var(--rst-money); }
+.rst-toast-error { border-left-color: var(--rst-danger) !important; }
+.rst-toast-error [data-icon] { color: var(--rst-danger); }
+.rst-toast-warning { border-left-color: var(--rst-warn) !important; }
+.rst-toast-warning [data-icon] { color: var(--rst-warn); }
+.rst-toast-info [data-icon] { color: var(--rst-brass-300); }
+
+@media (prefers-reduced-motion: reduce) {
+  .rst-enter > *, .rst-modal-pop, .animate-rst-fade, .animate-rst-rise, .rst-shimmer, .rst-attention { animation: none !important; }
+  .rst-option, .rst-btn { transition: none; }
+}
+
+/* ------------------------------------------------- career start (full-screen flow) */
+.career-start-page {
+  position: relative;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  color: var(--rst-ivory);
+  background:
+    radial-gradient(110% 60% at 50% -10%, rgba(230, 184, 102, 0.07), transparent 60%),
+    var(--rst-ink-950);
+}
+.career-start-page::before { /* faint studio grid, same language as the splash */
+  content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0.32;
+  background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: 38px 38px;
+  mask-image: radial-gradient(ellipse at center, #000 30%, transparent 78%);
+}

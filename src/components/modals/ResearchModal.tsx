@@ -56,10 +56,10 @@ export const ResearchModal: React.FC<ResearchModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl bg-gray-800 border-gray-700 text-gray-200">
+      <DialogContent className="max-w-3xl bg-stone-800 border-stone-700 text-stone-200">
         <DialogHeader>
           <DialogTitle className="text-yellow-400">🔬 Equipment Modification Research</DialogTitle>
-          <DialogDescription className="text-gray-400">
+          <DialogDescription className="text-stone-400">
             Assign an Engineer to research new equipment modifications.
           </DialogDescription>
         </DialogHeader>
@@ -67,26 +67,26 @@ export const ResearchModal: React.FC<ResearchModalProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 max-h-[60vh] ">
           {/* Mods List */}
           <div className="flex flex-col">
-            <h3 className="text-lg font-semibold mb-2 text-gray-200">Available Modifications</h3>
-            <ScrollArea className="flex-grow border border-gray-600 rounded-md p-2 bg-gray-900/70 min-h-[200px]">
+            <h3 className="text-lg font-semibold mb-2 text-stone-200">Available Modifications</h3>
+            <ScrollArea className="flex-grow border border-stone-600 rounded-md p-2 bg-stone-900/70 min-h-[200px]">
               {unresearchedMods.length === 0 && (
-                <p className="text-gray-400 text-center py-4">No new modifications available for research.</p>
+                <p className="text-stone-400 text-center py-4">No new modifications available for research.</p>
               )}
               {unresearchedMods.map((mod) => (
                 <Card
                   key={mod.id}
                   className={`mb-2 cursor-pointer transition-all ${
-                    selectedMod?.id === mod.id ? 'ring-2 ring-blue-500 bg-blue-800/50' : 'bg-gray-700/80 hover:bg-gray-700'
+                    selectedMod?.id === mod.id ? 'ring-2 ring-amber-500 bg-stone-800/50' : 'bg-stone-700/80 hover:bg-stone-700'
                   }`}
                   onClick={() => handleSelectMod(mod)}
                 >
                   <CardHeader className="pb-2 pt-3 px-4">
                     <CardTitle className="text-base text-yellow-300">{mod.name}</CardTitle>
-                    <CardDescription className="text-xs text-gray-400">
+                    <CardDescription className="text-xs text-stone-400">
                       Modifies: {getTargetEquipmentName(mod.modifiesEquipmentId)}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="text-xs text-gray-300 pb-3 px-4">
+                  <CardContent className="text-xs text-stone-300 pb-3 px-4">
                     <p>{mod.description}</p>
                     <p className="mt-1">Cost: ${mod.researchRequirements.cost}, Time: {mod.researchRequirements.researchTime} days</p>
                     <p>Requires: {mod.researchRequirements.engineerSkill} Lvl {mod.researchRequirements.engineerSkillLevel}</p>
@@ -98,12 +98,12 @@ export const ResearchModal: React.FC<ResearchModalProps> = ({
 
           {/* Staff Assignment & Details */}
           <div className="flex flex-col">
-            <h3 className="text-lg font-semibold mb-2 text-gray-200">Assign Engineer</h3>
+            <h3 className="text-lg font-semibold mb-2 text-stone-200">Assign Engineer</h3>
             {selectedMod ? (
               <>
-                <ScrollArea className="flex-grow border border-gray-600 rounded-md p-2 bg-gray-900/70 min-h-[200px]">
+                <ScrollArea className="flex-grow border border-stone-600 rounded-md p-2 bg-stone-900/70 min-h-[200px]">
                   {eligibleEngineers.length === 0 && (
-                    <p className="text-gray-400 text-center py-4">No idle Engineers available.</p>
+                    <p className="text-stone-400 text-center py-4">No idle Engineers available.</p>
                   )}
                   {eligibleEngineers.map((staff) => {
                     const skillName = selectedMod.researchRequirements.engineerSkill;
@@ -114,13 +114,13 @@ export const ResearchModal: React.FC<ResearchModalProps> = ({
                       <Card
                         key={staff.id}
                         className={`mb-2 cursor-pointer transition-all ${
-                          selectedStaff?.id === staff.id ? 'ring-2 ring-green-500 bg-green-800/50' : 'bg-gray-700/80 hover:bg-gray-700'
+                          selectedStaff?.id === staff.id ? 'ring-2 ring-green-500 bg-green-800/50' : 'bg-stone-700/80 hover:bg-stone-700'
                         } ${!canResearch ? 'opacity-50 cursor-not-allowed' : ''}`}
                         onClick={() => canResearch && handleSelectStaff(staff)}
                       >
                         <CardHeader className="pb-2 pt-3 px-4">
                           <CardTitle className="text-base text-green-300">{staff.name}</CardTitle>
-                          <CardDescription className="text-xs text-gray-400">
+                          <CardDescription className="text-xs text-stone-400">
                             {staff.role} - {skillName} Lvl: {staffSkillLevel} (Req: {selectedMod.researchRequirements.engineerSkillLevel})
                           </CardDescription>
                         </CardHeader>
@@ -136,20 +136,20 @@ export const ResearchModal: React.FC<ResearchModalProps> = ({
                 <Button
                   onClick={handleStartResearch}
                   disabled={!selectedMod || !selectedStaff || gameState.money < selectedMod.researchRequirements.cost}
-                  className="mt-4 w-full bg-green-600 hover:bg-green-700 text-white"
+                  className="mt-4 w-full bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] text-emerald-100"
                 >
                   Start Research for ${selectedMod.researchRequirements.cost}
                 </Button>
               </>
             ) : (
-              <div className="flex items-center justify-center h-full border border-gray-600 rounded-md p-4 bg-gray-900/70">
-                <p className="text-gray-400">Select a modification to see assignable staff.</p>
+              <div className="flex items-center justify-center h-full border border-stone-600 rounded-md p-4 bg-stone-900/70">
+                <p className="text-stone-400">Select a modification to see assignable staff.</p>
               </div>
             )}
           </div>
         </div>
         <DialogFooter className="sm:justify-start pt-4">
-          <Button type="button" variant="outline" onClick={onClose} className="border-gray-600 text-gray-300 hover:bg-gray-700">
+          <Button type="button" variant="outline" onClick={onClose} className="border-stone-600 text-stone-300 hover:bg-stone-700">
             Close
           </Button>
         </DialogFooter>

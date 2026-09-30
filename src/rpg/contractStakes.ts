@@ -34,3 +34,24 @@ export const settleStake = (
     met,
   };
 };
+
+/** Producer level at which each stake opens on the booking board. */
+export const STAKE_MIN_LEVEL: Record<ContractStake, number> = { safe: 1, ambitious: 3, moonshot: 6 };
+
+export const STAKE_ORDER: readonly ContractStake[] = ['safe', 'ambitious', 'moonshot'];
+
+export const STAKE_LABEL: Record<ContractStake, string> = {
+  safe: 'Safe',
+  ambitious: 'Ambitious',
+  moonshot: 'Moonshot',
+};
+
+export const isStakeUnlocked = (stake: ContractStake, playerLevel: number): boolean =>
+  playerLevel >= STAKE_MIN_LEVEL[stake];
+
+/** One factual line for the booking card: what you must hit, what it pays, what a miss costs. */
+export const describeStake = (stake: ContractStake): string => {
+  const t = STAKE_TERMS[stake];
+  if (stake === 'safe') return 'No gamble — standard fee, no penalty.';
+  return `Hit ${t.needsRank}-rank for ×${t.payoutMult} fee · miss it and lose ${t.failRepHit} rep.`;
+};

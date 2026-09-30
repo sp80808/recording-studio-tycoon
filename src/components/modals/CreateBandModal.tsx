@@ -64,7 +64,7 @@ export const CreateBandModal: React.FC<CreateBandModalProps> = ({
       toast({
         title: "🎸 Band Name Required",
         description: "Please enter a name for your band.",
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive"
       });
       return;
@@ -74,7 +74,7 @@ export const CreateBandModal: React.FC<CreateBandModalProps> = ({
       toast({
         title: "👥 No Members Selected",
         description: "Please select at least one staff member for your band.",
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive"
       });
       return;
@@ -126,8 +126,8 @@ export const CreateBandModal: React.FC<CreateBandModalProps> = ({
                   key={staff.id}
                   className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                     selectedMembers.includes(staff.id)
-                      ? 'bg-blue-600 border-blue-500 text-white'
-                      : 'bg-gray-800 border-gray-600 hover:bg-gray-700'
+                      ? 'bg-amber-400/[0.16] border-amber-400/55 text-amber-100'
+                      : 'bg-white/[0.07] border-stone-600 hover:bg-white/[0.13]'
                   }`}
                   onClick={() => toggleMember(staff.id)}
                 >
@@ -144,7 +144,7 @@ export const CreateBandModal: React.FC<CreateBandModalProps> = ({
                 </div>
               ))}
               {availableStaff.length === 0 && (
-                <div className="text-gray-400 text-center py-4">
+                <div className="text-stone-400 text-center py-4">
                   No available staff members. All staff are already in bands or you need to hire more staff.
                 </div>
               )}

@@ -163,10 +163,10 @@ export const BeatMakingGame: React.FC<BeatMakingGameProps> = ({ onComplete, onCl
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto bg-gray-800 text-white border-gray-700">
+    <Card className="w-full max-w-4xl mx-auto bg-stone-800 text-white border-stone-700">
       <MinigameChrome title="🥁 Beat Making Challenge" score={score} timeLeft={timeLeft} accent="yellow">
       <CardContent>
-        <p className="text-center text-sm text-gray-300">Create a sick beat pattern!</p>
+        <p className="text-center text-sm text-stone-300">Create a sick beat pattern!</p>
 
       <div className="space-y-4 mb-6">
         {beats.map((track, trackIndex) => (
@@ -182,7 +182,7 @@ export const BeatMakingGame: React.FC<BeatMakingGameProps> = ({ onComplete, onCl
                   className={`w-12 h-12 transition-all duration-150 ${
                     isActive 
                       ? `${trackColors[trackIndex]} shadow-lg mg-perfect-pop scale-110` 
-                      : 'bg-gray-700 hover:bg-gray-600'
+                      : 'bg-stone-700 hover:bg-stone-600'
                   } ${currentStep === stepIndex && isPlaying ? 'ring-2 ring-white animate-pulse' : ''}`}
                 >
                   {stepIndex + 1}
@@ -199,7 +199,7 @@ export const BeatMakingGame: React.FC<BeatMakingGameProps> = ({ onComplete, onCl
         <KenneyButton variant={isPlaying ? 'red' : 'green'} onClick={() => setIsPlaying(!isPlaying)}>
           {isPlaying ? '⏸️ Stop' : '▶️ Play'}
         </KenneyButton>
-        <KenneyButton variant="blue" onClick={handleComplete}>
+        <KenneyButton variant="yellow" onClick={handleComplete}>
           🎵 Finish Beat
         </KenneyButton>
         <KenneyButton variant="grey" onClick={handleClose}>

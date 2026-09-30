@@ -60,6 +60,10 @@ echo "=== branching deterministic storylines ==="
 ./node_modules/.bin/esbuild tests/branching-storylines.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-branching-storylines.cjs --alias:@=./src >/dev/null
 node /tmp/rst-branching-storylines.cjs
 
+echo "=== story events, rival cast & truthful objectives ==="
+./node_modules/.bin/esbuild tests/story-events.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-story-events.cjs --alias:@=./src >/dev/null
+node /tmp/rst-story-events.cjs
+
 echo "=== equipment slots / gear racks (8om) ==="
 ./node_modules/.bin/esbuild tests/equipment-slots.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-equipment-slots.cjs --alias:@=./src >/dev/null
 node /tmp/rst-equipment-slots.cjs
@@ -123,6 +127,18 @@ node /tmp/rst-studio-ux-presentation.cjs
 echo "=== progression motion: studio-tier upgrades and era transitions (#77) ==="
 ./node_modules/.bin/esbuild tests/progression-motion.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-progression-motion.cjs --alias:@=./src >/dev/null
 node /tmp/rst-progression-motion.cjs
+
+echo "=== producer origins, perks & career start ==="
+for check in origin-perks career-start design-system; do
+  ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
+  node "/tmp/rst-$check.cjs"
+done
+
+echo "=== era-authentic gigs, story contracts & economy floors ==="
+for check in project-era-starters economy-income story-contracts achievements campaign-endings studio-hotkeys; do
+  ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
+  node "/tmp/rst-$check.cjs"
+done
 
 echo "=== balance harness invariants (10 days, seed 7) ==="
 ./node_modules/.bin/esbuild src/dev/balance/run.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-balance.cjs --alias:@=./src >/dev/null

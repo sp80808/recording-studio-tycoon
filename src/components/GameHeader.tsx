@@ -28,11 +28,11 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSetting
   return <>
     <header className={`studio-hud ${className}`} aria-label={t('studio_status_aria')}>
       <div className="studio-hud-stats">
-        <div className="studio-hud-stat text-emerald-200" data-reward-target="money" title={t('money')}>
-          <Coins size={18} aria-hidden="true" /><SettleTicker value={gameState.money}><AnimatedCounter value={gameState.money} prefix="$" /></SettleTicker>
+        <div className="studio-hud-stat text-[var(--rst-ivory)]" data-reward-target="money" title={t('money')}>
+          <Coins size={18} className="text-[var(--rst-money)]" aria-hidden="true" /><SettleTicker value={gameState.money}><AnimatedCounter value={gameState.money} prefix="$" /></SettleTicker>
         </div>
-        <div className="studio-hud-stat text-sky-200" title={t('reputation')}>
-          <Star size={16} aria-hidden="true" /><AnimatedCounter value={gameState.reputation} suffix={t('rep_suffix')} />
+        <div className="studio-hud-stat text-[var(--rst-ivory)]" title={t('reputation')}>
+          <Star size={16} className="text-[var(--rst-brass-400)]" fill="currentColor" aria-hidden="true" /><AnimatedCounter value={gameState.reputation} suffix={t('rep_suffix')} />
         </div>
         <button
           className="studio-dock-button studio-hud-day"

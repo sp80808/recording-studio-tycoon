@@ -86,12 +86,12 @@ export const VocalTuningGame: React.FC<MinigameComponentProps> = ({ minigameId, 
   }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto bg-gray-800 text-white border-gray-700">
+    <Card className="w-full max-w-2xl mx-auto bg-stone-800 text-white border-stone-700">
       <MinigameChrome title="🎤 Vocal Tuning Challenge" score={score} timeLeft={gameOver ? undefined : timeLeft} streak={pitchNodes.filter((node) => node.isCorrected).length >= 2 ? pitchNodes.filter((node) => node.isCorrected).length : undefined} accent="red">
       <CardContent>
 
         {/* Simplified visual representation of pitch nodes */}
-        <div className="h-64 bg-gray-700 rounded p-4 relative overflow-x-auto flex items-center space-x-4">
+        <div className="h-64 bg-stone-700 rounded p-4 relative overflow-x-auto flex items-center space-x-4">
           {pitchNodes.map((node, index) => (
             <div
               key={index}
@@ -117,7 +117,7 @@ export const VocalTuningGame: React.FC<MinigameComponentProps> = ({ minigameId, 
               >
                 <span className="text-xs font-mono">{Math.round(node.originalPitch * 10)/10}</span>
               </div>
-               <span className="text-xs mt-1 text-gray-400">{node.time}s</span>
+               <span className="text-xs mt-1 text-stone-400">{node.time}s</span>
             </div>
           ))}
         </div>

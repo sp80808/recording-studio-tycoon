@@ -49,7 +49,7 @@ export const SynergyEncyclopedia: React.FC<SynergyEncyclopediaProps> = ({
   return (
     <div className={`space-y-3 ${className}`}>
       {/* Header & Discovery Progress Bar */}
-      <div className="rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-950/40 via-yellow-950/20 to-gray-900/60 p-3 shadow-md">
+      <div className="rounded-xl border border-amber-500/30 bg-amber-500/[0.06] p-3 shadow-md">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="text-xl">✨</span>
@@ -57,7 +57,7 @@ export const SynergyEncyclopedia: React.FC<SynergyEncyclopediaProps> = ({
               <h3 className="text-sm font-bold text-amber-200 tracking-wide font-display">
                 Studio Recipe Codex
               </h3>
-              <p className="text-[11px] text-gray-400">
+              <p className="text-[11px] text-stone-400">
                 Discover matching rooms, gear, staff, and genres for session boosts.
               </p>
             </div>
@@ -73,7 +73,7 @@ export const SynergyEncyclopedia: React.FC<SynergyEncyclopediaProps> = ({
         {/* Progress Bar */}
         <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-black/50 border border-white/10">
           <div
-            className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 transition-all duration-500 rounded-full"
+            className="h-full bg-amber-400 transition-all duration-500 rounded-full"
             style={{ width: `${discoveryPercent}%` }}
           />
         </div>
@@ -88,8 +88,8 @@ export const SynergyEncyclopedia: React.FC<SynergyEncyclopediaProps> = ({
           }}
           className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
             selectedCategory === 'all'
-              ? 'bg-amber-500 text-gray-950 shadow-sm scale-102'
-              : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-700/60'
+              ? 'bg-amber-400/[0.16] ring-1 ring-inset ring-amber-400/50 text-amber-100 scale-102'
+              : 'bg-stone-800/80 text-stone-300 hover:bg-stone-700 hover:text-white border border-stone-700/60'
           }`}
         >
           All ({totalCount})
@@ -109,13 +109,13 @@ export const SynergyEncyclopedia: React.FC<SynergyEncyclopediaProps> = ({
               }}
               className={`px-2.5 py-1 text-xs font-bold rounded-lg flex items-center gap-1 transition-all ${
                 isSelected
-                  ? 'bg-amber-500 text-gray-950 shadow-sm scale-102'
-                  : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-700/60'
+                  ? 'bg-amber-400/[0.16] ring-1 ring-inset ring-amber-400/50 text-amber-100 scale-102'
+                  : 'bg-stone-800/80 text-stone-300 hover:bg-stone-700 hover:text-white border border-stone-700/60'
               }`}
             >
               <span>{info.icon}</span>
               <span>{info.label}</span>
-              <span className={`text-[10px] ml-0.5 ${isSelected ? 'text-gray-900 font-extrabold' : 'text-gray-400'}`}>
+              <span className={`text-[10px] ml-0.5 ${isSelected ? 'text-stone-900 font-extrabold' : 'text-stone-400'}`}>
                 {discoveredInCat}/{countInCat}
               </span>
             </button>
@@ -150,7 +150,7 @@ export const SynergyEncyclopedia: React.FC<SynergyEncyclopediaProps> = ({
             return (
               <div
                 key={synergy.id}
-                className="rounded-lg border border-amber-500/40 bg-gradient-to-br from-amber-950/20 via-gray-900/80 to-gray-950 p-2.5 shadow-sm transition-all hover:border-amber-400"
+                className="rounded-lg border border-amber-500/40 bg-stone-900/70 p-2.5 shadow-sm transition-all hover:border-amber-400"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
@@ -172,10 +172,10 @@ export const SynergyEncyclopedia: React.FC<SynergyEncyclopediaProps> = ({
                   </span>
                 </div>
 
-                <p className="text-[11px] text-gray-300 mt-2 leading-relaxed">{synergy.description}</p>
+                <p className="text-[11px] text-stone-300 mt-2 leading-relaxed">{synergy.description}</p>
 
                 {bonusBadges.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2 pt-2 border-t border-gray-800">
+                  <div className="flex flex-wrap gap-1 mt-2 pt-2 border-t border-stone-800">
                     {bonusBadges.map((badge, idx) => (
                       <span
                         key={idx}
@@ -194,26 +194,26 @@ export const SynergyEncyclopedia: React.FC<SynergyEncyclopediaProps> = ({
           return (
             <div
               key={synergy.id}
-              className="rounded-lg border border-gray-800 bg-gray-950/60 p-2.5 opacity-80 hover:opacity-100 transition-opacity"
+              className="rounded-lg border border-stone-800 bg-stone-950/60 p-2.5 opacity-80 hover:opacity-100 transition-opacity"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg p-1 rounded-md bg-gray-900 border border-gray-800 text-gray-500">
+                  <span className="text-lg p-1 rounded-md bg-stone-900 border border-stone-800 text-stone-500">
                     🔒
                   </span>
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-gray-400 tracking-wider">???</span>
-                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-gray-800/80 text-gray-400">
+                      <span className="text-xs font-bold text-stone-400 tracking-wider">???</span>
+                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-stone-800/80 text-stone-400">
                         {catInfo.label}
                       </span>
                     </div>
-                    <div className="text-[10px] text-gray-500">Undiscovered Recipe</div>
+                    <div className="text-[10px] text-stone-500">Undiscovered Recipe</div>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-2 p-1.5 rounded bg-black/40 border border-gray-800/80 text-[10px] text-amber-300/80 flex items-start gap-1.5">
+              <div className="mt-2 p-1.5 rounded bg-black/40 border border-stone-800/80 text-[10px] text-amber-300/80 flex items-start gap-1.5">
                 <span className="shrink-0">💡</span>
                 <span className="italic">{synergy.hint}</span>
               </div>

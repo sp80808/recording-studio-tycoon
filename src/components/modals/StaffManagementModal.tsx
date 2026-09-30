@@ -32,12 +32,12 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
   return (
     <Dialog open={showStaffModal} onOpenChange={setShowStaffModal}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="bg-gray-800/80 hover:bg-gray-700/80 text-white border-gray-600">
+        <Button variant="outline" className="bg-stone-800/80 hover:bg-stone-700/80 text-white border-stone-600">
           <Users className="w-4 h-4 mr-2" />
           Manage Staff ({gameState.hiredStaff.length})
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-gray-900 border-gray-600 text-white max-w-5xl">
+      <DialogContent className="bg-stone-900 border-stone-600 text-white max-w-5xl">
         <DialogHeader>
           <DialogTitle className="text-white flex items-center gap-2">
             <Users className="w-5 h-5" />
@@ -55,7 +55,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
               </h3>
               <div className="grid gap-3">
                 {assignedStaff.length === 0 ? (
-                  <div className="text-center text-gray-400 py-4 border border-gray-700 rounded bg-gray-800/50">
+                  <div className="text-center text-stone-400 py-4 border border-stone-700 rounded bg-stone-800/50">
                     No staff assigned to this project
                   </div>
                 ) : (
@@ -78,7 +78,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                           <Button
                             size="sm"
                             onClick={() => unassignStaffFromProject(staff.id)}
-                            className="bg-red-600 hover:bg-red-700"
+                            className="bg-red-400/[0.14] ring-1 ring-inset ring-red-400/45 hover:bg-red-400/[0.24]"
                           >
                             Unassign
                           </Button>
@@ -96,14 +96,14 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
             <h3 className="text-lg font-bold text-white mb-3">Available Staff</h3>
             <div className="grid gap-3">
               {availableStaff.length === 0 ? (
-                <div className="text-center text-gray-400 py-8">
-                  <Users className="w-12 h-12 mx-auto mb-4 text-gray-600" />
+                <div className="text-center text-stone-400 py-8">
+                  <Users className="w-12 h-12 mx-auto mb-4 text-stone-600" />
                   <div>No staff members hired yet.</div>
                   <div className="text-sm mt-2">Visit the Recruitment Center to hire your first team member!</div>
                 </div>
               ) : (
                 availableStaff.map(staff => (
-                  <Card key={staff.id} className="p-4 bg-gray-800 border-gray-600 hover:bg-gray-750 transition-colors">
+                  <Card key={staff.id} className="p-4 bg-white/[0.07] border-stone-600 hover:bg-stone-750 transition-colors">
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <h4 className="font-bold text-white">{staff.name}</h4>
@@ -119,22 +119,22 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                             {staff.energy}%
                           </span>
                         </div>
-                        <div className="text-xs text-gray-400">${staff.salary}/day</div>
+                        <div className="text-xs text-stone-400">${staff.salary}/day</div>
                       </div>
                     </div>
                     
                     <div className="grid grid-cols-3 gap-2 mb-3 text-xs">
                       <div className="text-center">
-                        <div className="text-blue-400 font-bold">{staff.primaryStats.creativity}</div>
-                        <div className="text-gray-400">Creativity</div>
+                        <div className="text-amber-300 font-bold">{staff.primaryStats.creativity}</div>
+                        <div className="text-stone-400">Creativity</div>
                       </div>
                       <div className="text-center">
                         <div className="text-green-400 font-bold">{staff.primaryStats.technical}</div>
-                        <div className="text-gray-400">Technical</div>
+                        <div className="text-stone-400">Technical</div>
                       </div>
                       <div className="text-center">
                         <div className="text-yellow-400 font-bold">{staff.primaryStats.speed}</div>
-                        <div className="text-gray-400">Speed</div>
+                        <div className="text-stone-400">Speed</div>
                       </div>
                     </div>
 
@@ -150,7 +150,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                         <Button 
                           size="sm"
                           onClick={() => assignStaffToProject(staff.id)}
-                          className="bg-green-600 hover:bg-green-700"
+                          className="bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24]"
                         >
                           Assign to Project
                         </Button>
@@ -161,7 +161,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                           size="sm"
                           onClick={() => toggleStaffRest(staff.id)}
                           variant="outline"
-                          className="border-gray-600 hover:bg-gray-700"
+                          className="border-stone-600 hover:bg-stone-700"
                         >
                           {staff.status === 'Resting' ? 'Stop Resting' : 'Send to Rest'}
                         </Button>
@@ -171,7 +171,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                         <Button 
                           size="sm"
                           onClick={() => openTrainingModal(staff)}
-                          className="bg-blue-600 hover:bg-blue-700"
+                          className="bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24]"
                         >
                           Training
                         </Button>

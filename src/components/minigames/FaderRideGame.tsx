@@ -76,18 +76,18 @@ export const FaderRideGame: React.FC<MinigameComponentProps> = ({ minigameId, on
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto bg-gray-800 text-white border-gray-700">
+    <Card className="w-full max-w-2xl mx-auto bg-stone-800 text-white border-stone-700">
       <MinigameChrome title="🎛️ Fader Ride Challenge" score={score} timeLeft={timeLeft} streak={Math.floor(inZoneTicks / 10)} accent="green">
       <CardContent>
 
         {/* Level meter with fixed green zone */}
-        <div className="mb-4 bg-gray-700 rounded p-4">
-          <div className="flex justify-between text-xs text-gray-300 mb-1">
+        <div className="mb-4 bg-stone-700 rounded p-4">
+          <div className="flex justify-between text-xs text-stone-300 mb-1">
             <span>0</span>
             <span className="text-green-400 font-bold">Green zone 40-60</span>
             <span>100</span>
           </div>
-          <div className="relative h-8 bg-gray-900 rounded overflow-hidden">
+          <div className="relative h-8 bg-stone-900 rounded overflow-hidden">
             {/* Green zone */}
             <div
               className={`absolute top-0 bottom-0 bg-gradient-to-r from-green-500 to-emerald-400 ${inZone ? 'mg-meter-glow' : 'opacity-70'}`}
@@ -106,20 +106,20 @@ export const FaderRideGame: React.FC<MinigameComponentProps> = ({ minigameId, on
               title={`Output: ${output.toFixed(1)}`}
             />
           </div>
-          <div className="mt-2 flex justify-between text-sm font-mono text-gray-200">
+          <div className="mt-2 flex justify-between text-sm font-mono text-stone-200">
             <span>Track: {trackLevel.toFixed(1)}</span>
             <span className={inZone ? 'text-green-400' : 'text-red-400'}>
               Output: {output.toFixed(1)} {inZone ? '(IN ZONE)' : '(OUT)'}
             </span>
           </div>
-          <div className="mt-1 text-xs text-gray-400 font-mono">
+          <div className="mt-1 text-xs text-stone-400 font-mono">
             In-zone ticks: {inZoneTicks}/{totalTicks}
           </div>
         </div>
 
         {/* Fader control */}
-        <div className="bg-gray-700 rounded p-4">
-          <div className="flex justify-between text-sm text-gray-300 mb-1">
+        <div className="bg-stone-700 rounded p-4">
+          <div className="flex justify-between text-sm text-stone-300 mb-1">
             <span>Fader</span>
             <span className="font-mono">{fader}</span>
           </div>

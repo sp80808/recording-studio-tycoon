@@ -14,21 +14,9 @@ interface GameConfirmDialogProps {
 }
 
 const VARIANT_STYLES = {
-  danger: {
-    accent: 'from-red-600 to-red-800 border-red-400/50',
-    confirmBtn: 'bg-red-600 hover:bg-red-500 active:translate-y-[2px] active:bg-red-700',
-    icon: '⚠️',
-  },
-  warning: {
-    accent: 'from-amber-600 to-amber-800 border-amber-400/50',
-    confirmBtn: 'bg-amber-600 hover:bg-amber-500 active:translate-y-[2px] active:bg-amber-700',
-    icon: '⚡',
-  },
-  default: {
-    accent: 'from-blue-600 to-blue-800 border-blue-400/50',
-    confirmBtn: 'bg-blue-600 hover:bg-blue-500 active:translate-y-[2px] active:bg-blue-700',
-    icon: '❓',
-  },
+  danger: { accent: 'bg-[var(--rst-danger)]', confirmBtn: 'rst-btn rst-btn-danger', kicker: 'Careful' },
+  warning: { accent: 'bg-[var(--rst-warn)]', confirmBtn: 'rst-btn rst-btn-primary', kicker: 'Heads up' },
+  default: { accent: 'bg-[var(--rst-brass-400)]', confirmBtn: 'rst-btn rst-btn-primary', kicker: 'Confirm' },
 };
 
 /**
@@ -65,39 +53,29 @@ export const GameConfirmDialog: React.FC<GameConfirmDialogProps> = ({
     >
       {/* Gradient scrim — not the web-default flat black overlay */}
       <div
-        className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/80 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-black/65 backdrop-blur-[3px] animate-rst-fade"
         onClick={() => { playClick(); onCancel(); }}
       />
 
       {/* Dialog panel */}
-      <div className="relative animate-inspector-pop w-full max-w-sm mx-4 rounded-lg border-2 border-white/10 bg-gray-900/95 shadow-2xl overflow-hidden">
-        {/* Header strip */}
-        <div className={`flex items-center gap-2 px-4 py-3 border-b bg-gradient-to-r ${v.accent}`}>
-          <span className="text-lg">{v.icon}</span>
-          <h2 id="game-confirm-title" className="font-display font-bold text-white text-base tracking-wide">
-            {title}
-          </h2>
+      <div className="rst-modal rst-modal-pop relative mx-4 w-full max-w-sm rst-enter">
+        <div className="rst-modal-header flex items-start gap-3">
+          <span aria-hidden="true" className={`mt-1 h-8 w-1 shrink-0 rounded-full ${v.accent}`} />
+          <div>
+            <p className="rst-kicker">{v.kicker}</p>
+            <h2 id="game-confirm-title" className="rst-title mt-0.5 text-xl">{title}</h2>
+          </div>
         </div>
 
-        {/* Body */}
-        <div className="px-5 py-4">
-          <p id="game-confirm-desc" className="text-sm text-gray-200 leading-relaxed">
-            {message}
-          </p>
+        <div className="rst-modal-body">
+          <p id="game-confirm-desc" className="rst-body text-sm">{message}</p>
         </div>
 
-        {/* Button row — chunky game buttons with depth/press */}
-        <div className="flex gap-3 px-5 pb-5">
-          <button
-            onClick={() => { playClick(); onCancel(); }}
-            className="flex-1 rounded-md border-2 border-gray-600 bg-gray-700 px-4 py-2.5 text-sm font-bold text-gray-200 transition-all hover:bg-gray-600 hover:border-gray-500 active:translate-y-[2px] active:bg-gray-800"
-          >
+        <div className="rst-modal-footer">
+          <button onClick={() => { playClick(); onCancel(); }} className="rst-btn flex-1">
             {cancelLabel}
           </button>
-          <button
-            onClick={() => { playClick(); onConfirm(); }}
-            className={`flex-1 rounded-md border-2 border-white/20 px-4 py-2.5 text-sm font-bold text-white transition-all shadow-lg ${v.confirmBtn}`}
-          >
+          <button onClick={() => { playClick(); onConfirm(); }} className={`${v.confirmBtn} flex-1`}>
             {confirmLabel}
           </button>
         </div>

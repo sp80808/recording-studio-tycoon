@@ -37,7 +37,7 @@ export const HoverPreview: React.FC<{
       {open && (
         <span
           aria-hidden="true"
-          className={`hover-preview-card pointer-events-none absolute z-40 w-56 rounded-lg border border-amber-300/30 bg-slate-900/95 p-2.5 text-left text-xs text-slate-200 shadow-xl ${
+          className={`hover-preview-card pointer-events-none absolute z-40 w-56 rounded-lg border border-amber-300/30 bg-stone-900/95 p-2.5 text-left text-xs text-stone-200 shadow-xl ${
             side === 'top' ? 'bottom-full mb-2 left-0' : 'top-full mt-2 left-0'
           }`}
         >

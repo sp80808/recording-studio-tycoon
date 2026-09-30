@@ -29,7 +29,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
             "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
           success: "!bg-green-600 !border-green-700 !text-white",
           error: "!bg-red-600 !border-red-700 !text-white",
-          info: "!bg-blue-600 !border-blue-700 !text-white",
+          info: "!bg-amber-600 !border-amber-700 !text-stone-950",
           warning: "!bg-yellow-500 !border-yellow-600 !text-black",
         },
       }}

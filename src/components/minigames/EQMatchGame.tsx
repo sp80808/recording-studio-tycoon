@@ -62,34 +62,34 @@ export const EQMatchGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto bg-gray-800 text-white border-gray-700">
+    <Card className="w-full max-w-2xl mx-auto bg-stone-800 text-white border-stone-700">
       <MinigameChrome title="🎚️ EQ Match Challenge" score={score} timeLeft={timeLeft} accent="blue">
       <CardContent>
 
         {/* Live match meter */}
         <div className="mb-6">
-          <div className="flex justify-between text-sm text-gray-300 mb-1">
+          <div className="flex justify-between text-sm text-stone-300 mb-1">
             <span>Match Meter</span>
-            <span className={`font-mono ${matchPercent >= 90 ? 'mg-combo-pulse text-cyan-300' : ''}`}>{matchPercent.toFixed(1)}%</span>
+            <span className={`font-mono ${matchPercent >= 90 ? 'mg-combo-pulse text-[var(--rst-brass-300)]' : ''}`}>{matchPercent.toFixed(1)}%</span>
           </div>
-          <div className="h-4 bg-gray-700 rounded overflow-hidden">
+          <div className="h-4 bg-stone-700 rounded overflow-hidden">
             <div
-              className={`h-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-150 ${isGoodMatch ? 'mg-meter-glow' : ''}`}
+              className={`h-full bg-[var(--rst-live)] transition-all duration-150 ${isGoodMatch ? 'mg-meter-glow' : ''}`}
               style={{ width: `${matchPercent}%` }}
             />
           </div>
         </div>
 
         {/* EQ bands */}
-        <div className="space-y-4 bg-gray-700 rounded p-4">
+        <div className="space-y-4 bg-stone-700 rounded p-4">
           {BANDS.map((band, i) => (
             <div key={band} className="flex items-center gap-3">
-              <span className="w-16 text-sm font-mono text-gray-200">{band}</span>
+              <span className="w-16 text-sm font-mono text-stone-200">{band}</span>
               <Button
                 onClick={() => adjustBand(i, -1)}
                 disabled={gameOver}
                 variant="outline"
-                className="w-9 text-gray-300 border-gray-600 hover:bg-gray-600 mg-hit-flash active:scale-95"
+                className="w-9 text-stone-300 border-stone-600 hover:bg-stone-600 mg-hit-flash active:scale-95"
               >
                 -
               </Button>
@@ -116,11 +116,11 @@ export const EQMatchGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
                 onClick={() => adjustBand(i, 1)}
                 disabled={gameOver}
                 variant="outline"
-                className="w-9 text-gray-300 border-gray-600 hover:bg-gray-600 mg-hit-flash active:scale-95"
+                className="w-9 text-stone-300 border-stone-600 hover:bg-stone-600 mg-hit-flash active:scale-95"
               >
                 +
               </Button>
-              <span className="w-20 text-right text-sm font-mono text-gray-200">
+              <span className="w-20 text-right text-sm font-mono text-stone-200">
                 {values[i] > 0 ? `+${values[i]}` : values[i]} dB
               </span>
             </div>
@@ -136,7 +136,7 @@ export const EQMatchGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
               Time&apos;s Up! Final Score: {score}
             </div>
             {targets.length === BANDS.length && (
-              <div className="mt-2 text-sm text-gray-300">
+              <div className="mt-2 text-sm text-stone-300">
                 Hidden targets were:{' '}
                 {BANDS.map((b, i) => (
                   <span key={b} className="font-mono mx-1">
@@ -150,10 +150,10 @@ export const EQMatchGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
       </CardContent>
       </MinigameChrome>
       <DialogFooter className="p-4">
-        <KenneyButton variant="blue" onClick={onClose}>
+        <KenneyButton variant="yellow" onClick={onClose}>
           Close
         </KenneyButton>
-        <KenneyButton variant="blue" onClick={handleFinalize}>
+        <KenneyButton variant="yellow" onClick={handleFinalize}>
           Finalize &amp; Get Score
         </KenneyButton>
       </DialogFooter>

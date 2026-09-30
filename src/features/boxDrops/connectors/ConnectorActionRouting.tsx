@@ -36,12 +36,12 @@ export const ConnectorActionRouting: React.FC<ConnectorActionRoutingProps> = ({
   return (
     <div className="w-full mt-3 select-none relative">
       {/* Visual Header: Audio Routing Sockets */}
-      <div className="flex items-center justify-between text-[9px] font-mono text-slate-400 mb-1.5 px-1">
+      <div className="flex items-center justify-between text-[9px] font-mono text-stone-400 mb-1.5 px-1">
         <span className="flex items-center gap-1">
           <Cable size={11} className="text-amber-400" />
           <span>ROUTE HARDWARE OUTPUT:</span>
         </span>
-        <span className="text-slate-500">SELECT DESTINATION TERMINAL</span>
+        <span className="text-stone-500">SELECT DESTINATION TERMINAL</span>
       </div>
 
       {/* Action Buttons Grid with Connector Terminal Motifs */}
@@ -80,24 +80,24 @@ export const ConnectorActionRouting: React.FC<ConnectorActionRoutingProps> = ({
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={() => handleSelect('stash')}
-          className={`py-2.5 px-2 bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-slate-200 font-bold text-xs rounded-sm border-2 shadow-lg flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
+          className={`py-2.5 px-2 bg-gradient-to-b from-stone-800 via-stone-850 to-stone-900 hover:from-stone-700 hover:to-stone-800 text-stone-200 font-bold text-xs rounded-sm border-2 shadow-lg flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
             activeRouting === 'stash'
               ? 'border-white shadow-[0_0_20px_#94a3b8] scale-102'
-              : 'border-slate-600 shadow-[0_4px_12px_rgba(0,0,0,0.4)]'
+              : 'border-stone-600 shadow-[0_4px_12px_rgba(0,0,0,0.4)]'
           }`}
         >
           <div className="flex items-center gap-1.5">
             {gamepadConnected && lastInputType === 'gamepad' && (
               <GamepadGlyph button="west" size="xs" />
             )}
-            <div className="w-4 h-4 rounded-xs bg-slate-950 border border-slate-400 flex items-center justify-center">
-              <div className="w-2 h-1 bg-slate-400 rounded-xs" />
+            <div className="w-4 h-4 rounded-xs bg-stone-950 border border-stone-400 flex items-center justify-center">
+              <div className="w-2 h-1 bg-stone-400 rounded-xs" />
             </div>
-            <Archive size={14} className="text-slate-300" />
+            <Archive size={14} className="text-stone-300" />
           </div>
 
           <span className="tracking-wide">STASH VAULT</span>
-          <span className="text-[8px] font-mono text-slate-400 font-normal">
+          <span className="text-[8px] font-mono text-stone-400 font-normal">
             STORAGE TRUNK
           </span>
         </motion.button>

@@ -39,27 +39,24 @@ export const XPProgressBar: React.FC<XPProgressBarProps> = ({
           Level {level}
         </span>
         {showNumbers && (
-          <span className="text-xs text-gray-400">{safeCurrentXP}/{safeXpToNext} {currentXPLab}</span>
+          <span className="text-xs text-stone-400">{safeCurrentXP}/{safeXpToNext} {currentXPLab}</span>
         )}
       </div>
       
       <div className="relative group">
         <Progress 
           value={progressPercentage} 
-          className={`h-4 bg-gray-700/50 border border-gray-600 ${animated ? 'transition-all duration-700' : ''}`}
+          className={`h-4 bg-stone-700/50 border border-stone-600 ${animated ? 'transition-all duration-700' : ''}`}
           aria-label="Player experience progress"
         />
         
-        {/* Animated gradient overlay */}
+        {/* Solid brass fill; near a level-up it breathes once instead of shimmering */}
         <div 
-          className={`absolute inset-0 bg-gradient-to-r from-purple-500 via-blue-400 to-cyan-300 rounded-full 
-                     ${isNearLevelUp ? 'animate-pulse opacity-90' : 'opacity-75'} 
+          className={`absolute inset-0 rounded-full bg-[var(--rst-brass-400)]
+                     ${isNearLevelUp ? 'animate-pulse opacity-95' : 'opacity-85'} 
                      ${animated ? 'transition-all duration-700' : ''}`}
           style={{ width: `${progressPercentage}%` }}
-        >
-          {/* Shine effect */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
-        </div>
+        />
         
         {/* Percentage text - only show when progress is significant */}
         {progressPercentage > 15 && (
@@ -85,7 +82,7 @@ export const XPProgressBar: React.FC<XPProgressBarProps> = ({
           <div 
             key={milestone}
             className={`w-1 h-1 rounded-full transition-colors duration-300 ${
-              progressPercentage >= milestone ? 'bg-cyan-400' : 'bg-gray-600'
+              progressPercentage >= milestone ? 'bg-teal-400' : 'bg-stone-600'
             }`}
           />
         ))}

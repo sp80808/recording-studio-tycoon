@@ -48,31 +48,31 @@ export const RecordTrackModal: React.FC<RecordTrackModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] bg-gray-800 text-white border-gray-600">
+      <DialogContent className="sm:max-w-[425px] bg-stone-800 text-white border-stone-600">
         <DialogHeader>
           <DialogTitle className="text-white">Record New Track for {band.bandName}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="trackTitle" className="text-right text-gray-300">
+            <Label htmlFor="trackTitle" className="text-right text-stone-300">
               Track Title
             </Label>
             <Input
               id="trackTitle"
               value={trackTitle}
               onChange={(e) => setTrackTitle(e.target.value)}
-              className="col-span-3 bg-gray-700 border-gray-600 text-white"
+              className="col-span-3 bg-stone-700 border-stone-600 text-white"
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="genre" className="text-right text-gray-300">
+            <Label htmlFor="genre" className="text-right text-stone-300">
               Genre
             </Label>
             <Select onValueChange={setSelectedGenre} value={selectedGenre}>
-              <SelectTrigger className="col-span-3 bg-gray-700 border-gray-600 text-white">
+              <SelectTrigger className="col-span-3 bg-stone-700 border-stone-600 text-white">
                 <SelectValue placeholder="Select a genre" />
               </SelectTrigger>
-              <SelectContent className="bg-gray-700 text-white border-gray-600">
+              <SelectContent className="bg-stone-700 text-white border-stone-600">
                 {availableGenres.map(genre => (
                   <SelectItem key={genre} value={genre}>
                     {genre}
@@ -84,10 +84,10 @@ export const RecordTrackModal: React.FC<RecordTrackModalProps> = ({
           {/* TODO: Add customizable details fields here */}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} className="border-gray-600 text-gray-300 hover:bg-gray-700">
+          <Button variant="outline" onClick={onClose} className="border-stone-600 text-stone-300 hover:bg-stone-700">
             Cancel
           </Button>
-          <Button onClick={handleCreateTrack} className="bg-green-600 hover:bg-green-700">
+          <Button onClick={handleCreateTrack} className="bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24]">
             Start Recording
           </Button>
         </DialogFooter>

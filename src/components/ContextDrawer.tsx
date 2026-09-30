@@ -145,8 +145,6 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
         ? 'w-full md:max-w-2xl'
         : 'w-full md:max-w-md lg:max-w-lg';
 
-  const shellPad = width === 'session' ? 'pl-0 sm:pl-3' : 'pl-6';
-
   return (
     <AnimatePresence>
       {isOpen && (
@@ -155,81 +153,86 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
           role="presentation"
           data-studio-drawer={width}
         >
-          {/* Subtle backdrop overlay (does not destroy or unmount background Pixi canvas) */}
+          {/* Soft scrim: the studio stays legible behind the panel and the Pixi canvas is never unmounted. */}
           <div
-            className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px] transition-opacity"
+            className="absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity animate-rst-fade"
             onClick={handleClose}
             aria-hidden="true"
           />
 
-          {/* Contextual slide-over drawer panel */}
-          <div className={`absolute inset-y-0 right-0 flex max-w-full pointer-events-none ${shellPad}`}>
+          {/* Floating panel: starts below the HUD (desktop) and goes edge-to-edge on phones. */}
+          <div
+            className="studio-drawer-shell absolute right-3 bottom-3 flex max-w-full pointer-events-none"
+            style={{ top: 'var(--studio-drawer-top, 72px)' }}
+          >
             <MotionPanel
               ref={drawerRef}
               direction={activeTab === 'session' ? 'scale' : 'right'}
               role="dialog"
               aria-modal="true"
               aria-labelledby="context-drawer-title"
-              className={`pointer-events-auto flex flex-col h-full bg-[#111a2a]/95 border-l border-slate-700/80 shadow-2xl text-slate-100 ${widthStyle} ${className}`}
+              className={`rst-modal pointer-events-auto flex flex-col h-full ${widthStyle} ${className}`}
             >
               {/* Header */}
-              <div className="flex flex-col border-b border-slate-800 bg-[#162032] px-4 py-3 shrink-0">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[10px] font-mono tracking-[0.2em] uppercase text-amber-400/90">
-                      {subtitle || 'STUDIO CONTEXT'}
-                    </p>
+              <div className="shrink-0 px-5 pt-4 pb-3 border-b border-[var(--rst-line)]">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="rst-kicker">{subtitle || 'STUDIO CONTEXT'}</p>
                     <h2
                       id="context-drawer-title"
                       ref={headingRef}
                       tabIndex={-1}
-                      className="text-base sm:text-lg font-bold text-white outline-none tracking-wide"
+                      className="rst-title mt-1 truncate text-xl outline-none sm:text-2xl"
                     >
                       {resolvedTitle}
                     </h2>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex shrink-0 items-center gap-2">
                     {headerActions}
                     <MotionButton
                       onClick={handleClose}
                       aria-label="Close drawer"
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+                      className="grid h-9 w-9 place-items-center rounded-full border border-[var(--rst-line-strong)] bg-white/[0.03] text-stone-300 transition-colors hover:border-[var(--rst-brass-line)] hover:bg-white/[0.07] hover:text-[var(--rst-brass-200)]"
                     >
-                      <X size={18} aria-hidden="true" />
+                      <X size={16} aria-hidden="true" />
                     </MotionButton>
                   </div>
                 </div>
 
-                {/* Quick-Switch Tab Bar: Artist / Session / Gear / Staff / Room */}
+                {/* Quick-switch tabs: equal-width icon-over-label cells so nothing ever clips. */}
                 {onTabChange && (
                   <div
                     role="tablist"
                     aria-label="Studio contextual views"
-                    className="flex items-center gap-1 mt-3 p-1 rounded-lg bg-slate-950/60 border border-slate-800/80 overflow-x-auto text-xs"
+                    className="mt-3 grid gap-1 rounded-xl border border-[var(--rst-line)] bg-black/25 p-1"
+                    style={{ gridTemplateColumns: `repeat(${TAB_CONFIGS.length}, minmax(0, 1fr))` }}
                   >
                     {TAB_CONFIGS.map((tab) => {
                       const isActive = activeTab === tab.id;
                       const Icon = tab.icon;
-                      const badgeCount =
-                        tab.id === 'artist' ? unreadEnquiries : tab.badge;
+                      const badgeCount = tab.id === 'artist' ? unreadEnquiries : tab.badge;
 
                       return (
                         <MotionButton
                           key={tab.id}
                           role="tab"
                           aria-selected={isActive}
+                          aria-label={tab.label}
                           onClick={() => handleTabClick(tab.id)}
-                          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md font-medium text-xs whitespace-nowrap transition-colors relative ${
+                          className={`relative flex flex-col items-center gap-0.5 rounded-lg px-0.5 pb-1.5 pt-1.5 text-[10px] max-[420px]:text-[9px] font-semibold tracking-wide transition-colors ${
                             isActive
-                              ? 'bg-amber-500/20 text-amber-200 border border-amber-400/40 shadow-sm'
-                              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
+                              ? 'bg-[rgba(230,184,102,0.13)] text-[var(--rst-brass-200)]'
+                              : 'text-stone-400 hover:bg-white/[0.05] hover:text-stone-200'
                           }`}
                         >
-                          <Icon size={14} aria-hidden="true" />
-                          <span className="hidden sm:inline">{tab.shortLabel}</span>
+                          <Icon size={16} aria-hidden="true" />
+                          <span className="max-w-full truncate">{tab.shortLabel}</span>
+                          {isActive && (
+                            <span aria-hidden="true" className="absolute inset-x-3 bottom-0 h-[2px] rounded-full bg-[var(--rst-brass-400)]" />
+                          )}
                           {badgeCount !== undefined && badgeCount > 0 && (
-                            <span className="ml-0.5 px-1 py-0.2 text-[9px] font-black rounded-full bg-amber-500 text-slate-950">
+                            <span className="absolute right-1 top-0.5 min-w-[15px] rounded-full bg-[var(--rst-brass-400)] px-1 text-center text-[9px] font-black leading-[15px] text-stone-950">
                               <MotionNumber value={badgeCount} />
                             </span>
                           )}
@@ -247,7 +250,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
 
               {/* Optional Footer */}
               {footerContent && (
-                <div className="border-t border-slate-800 bg-[#162032]/80 px-4 py-2.5 shrink-0 text-xs text-slate-400">
+                <div className="shrink-0 border-t border-[var(--rst-line)] bg-black/25 px-4 py-2.5 text-xs text-stone-400">
                   {footerContent}
                 </div>
               )}

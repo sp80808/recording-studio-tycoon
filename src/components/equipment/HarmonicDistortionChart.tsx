@@ -11,7 +11,7 @@ interface HarmonicDistortionChartProps {
 
 export const HarmonicDistortionChart: React.FC<HarmonicDistortionChartProps> = ({ harmonicsData, isVintage }) => {
   return (
-    <Card className="p-4 bg-gray-800/50 border-gray-600">
+    <Card className="p-4 bg-stone-800/50 border-stone-600">
       <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
         <Clock className="h-4 w-4" />
         Harmonic Distortion
@@ -20,23 +20,23 @@ export const HarmonicDistortionChart: React.FC<HarmonicDistortionChartProps> = (
         <LineChart data={harmonicsData}>
           <XAxis 
             dataKey="harmonic" 
-            tick={{ fontSize: 10, fill: '#9ca3af' }}
+            tick={{ fontSize: 10, fill: '#aaa6a1' }}
           />
           <YAxis 
             domain={[0, 1]} 
-            tick={{ fontSize: 10, fill: '#9ca3af' }}
-            label={{ value: '%', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#9ca3af' } }}
+            tick={{ fontSize: 10, fill: '#aaa6a1' }}
+            label={{ value: '%', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#aaa6a1' } }}
           />
           <Line 
             type="monotone" 
             dataKey="level" 
-            stroke={isVintage ? "#f59e0b" : "#06b6d4"} 
+            stroke={isVintage ? "#f59e0b" : "#5fd0c0"} 
             strokeWidth={2}
             dot={{ r: 3 }}
           />
         </LineChart>
       </ResponsiveContainer>
-      <p className="text-xs text-gray-500 mt-1">
+      <p className="text-xs text-stone-500 mt-1">
         {isVintage ? 'Vintage warmth & character' : 'Clean & transparent'}
       </p>
     </Card>

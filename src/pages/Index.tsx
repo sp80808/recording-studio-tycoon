@@ -17,6 +17,7 @@ import { generateProjectReview } from '@/utils/projectReviewUtils'; // Import ge
 import { getFocusEffectiveness, getMoodEffectiveness } from '@/utils/playerUtils';
 import { calculateStudioSkillBonus, getEquipmentBonuses, resolveSessionEquipment } from '@/utils/gameUtils';
 import { getGenreMarketMultiplier } from '@/utils/eraProgression';
+import { getSettlementBonuses } from '@/utils/settlementBonuses';
 import { ProjectReviewModal } from '@/components/modals/ProjectReviewModal'; // Import ProjectReviewModal (assuming path)
 import { useGameLogic } from '@/hooks/useGameLogic';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -26,6 +27,10 @@ import { gameAudio as audioSystem } from '@/utils/audioSystem';
 import { MinigameType } from '@/components/minigames/MinigameManager'; // Import MinigameType
 import { WelcomeBackSummaryModal } from '@/components/modals/WelcomeBackSummaryModal';
 import { StorylineBranchModal } from '@/components/modals/StorylineBranchModal';
+import { StoryEventModal } from '@/components/modals/StoryEventModal';
+import { CinematicStoryCutscene } from '@/components/cutscenes/CinematicStoryCutscene';
+import { getCampaignEnding } from '@/narrative/endings';
+import { buildActIntroCutscene, buildEndingCutscene } from '@/narrative/actCinematics';
 import {
   advanceSimulation,
   DEFAULT_MAX_OFFLINE_MS,
@@ -35,10 +40,14 @@ import {
 import { getBookedStudioRoom } from '@/utils/studioRoomUtils';
 import {
   getPendingStorylineBranch,
+  getActiveCampaignNode,
+  getPendingSubplotEvent,
   resolveStorylineBranch,
+  resolveSubplotChoice,
   type StorylineBranchOption,
 } from '@/narrative/branchingStorylineEngine';
 import { isTauriShell } from '@/utils/platform';
+import type { ProducerBackgroundId } from '@/types/character';
 import { useFeatureFlag } from '@/stores/featureFlagStore';
 
 const MusicStudioTycoon = () => {
@@ -81,6 +90,9 @@ const MusicStudioTycoon = () => {
   // const [showRecruitmentModal, setShowRecruitmentModal] = useState(false); // Assuming this was intended to be used elsewhere or can be removed if not
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showStorylineBranchModal, setShowStorylineBranchModal] = useState(false);
+  // Key of a subplot beat the player chose to decide later; cleared when the beat changes or they reopen it.
+  const [deferredStoryEventKey, setDeferredStoryEventKey] = useState<string | null>(null);
+  const [historicalNewsOpen, setHistoricalNewsOpen] = useState(false);
   const [compactStudioMode, setCompactStudioMode] = useState(false);
   // zel.6: compact strip is desktop-shell only — browser must never blank the playable UI.
   const desktopStripFlag = useFeatureFlag('desktop-studio-strip');
@@ -142,6 +154,41 @@ const MusicStudioTycoon = () => {
   ]);
 
   const pendingStorylineBranch = getPendingStorylineBranch(gameState);
+  const pendingStoryEvent = getPendingSubplotEvent(gameState);
+  const pendingStoryEventKey = pendingStoryEvent
+    ? `${pendingStoryEvent.subplot.id}:${pendingStoryEvent.active.currentStage}`
+    : null;
+
+  // Story cinematics (act openings + epilogue) wait for every other story popup to clear.
+  const storyEventOpen =
+    pendingStoryEventKey !== null && pendingStoryEventKey !== deferredStoryEventKey && !historicalNewsOpen;
+  const storyStageClear =
+    gameInitialized &&
+    !showSplashScreen &&
+    !effectiveCompactStudioMode &&
+    !offlineSummary &&
+    !showReviewModal &&
+    !(showStorylineBranchModal && Boolean(pendingStorylineBranch)) &&
+    !storyEventOpen &&
+    !historicalNewsOpen &&
+    settings.tutorialCompleted;
+  const campaignEnding = gameState.storylineState?.campaignCompleted ? getCampaignEnding(gameState) : null;
+  const activeCampaignNode = gameState.storylineState ? getActiveCampaignNode(gameState) : null;
+  const actIntroFlag = activeCampaignNode ? `intro_seen_${activeCampaignNode.id}` : null;
+  const showEpilogue = Boolean(campaignEnding) && !gameState.endingSeen && storyStageClear;
+  const showActIntro =
+    !showEpilogue &&
+    storyStageClear &&
+    Boolean(activeCampaignNode && activeCampaignNode.act >= 2 && actIntroFlag) &&
+    !gameState.storylineState?.campaignCompleted &&
+    !gameState.storylineState?.storyFlags[actIntroFlag!];
+
+  const handleStoryEventChoice = useCallback(
+    (optionId: string) => {
+      setGameState((prev) => resolveSubplotChoice(prev, optionId));
+    },
+    [setGameState],
+  );
 
   const handleStorylineBranchChoice = useCallback(
     (option: StorylineBranchOption) => {
@@ -153,8 +200,9 @@ const MusicStudioTycoon = () => {
     [setGameState, settings.sfxEnabled],
   );
 
-  const handleStartNewGame = (era: Era) => {
+  const handleStartNewGame = (era: Era, originId?: ProducerBackgroundId) => {
     const newGameState = initializeGameState({
+      originId,
       startingMoney: era.startingMoney,
       selectedEra: era.id,
       eraStartYear: era.startYear,
@@ -225,6 +273,11 @@ const MusicStudioTycoon = () => {
           Math.min(10, Math.round((equipmentBonuses.quality || 0) / 2 + (equipmentBonuses.genre || 0) / 4))
         ),
         marketMultiplier: getGenreMarketMultiplier(completedProjectData.genre, gameState.currentEra),
+        ...getSettlementBonuses(
+          gameState,
+          completedProjectData,
+          getGenreMarketMultiplier(completedProjectData.genre, gameState.currentEra),
+        ),
       }
     );
     
@@ -505,6 +558,8 @@ const MusicStudioTycoon = () => {
             compactStudioMode={effectiveCompactStudioMode}
             setCompactStudioMode={setCompactStudioMode}
             onOpenStorylineBranch={() => setShowStorylineBranchModal(true)}
+            onOpenStoryEvent={() => setDeferredStoryEventKey(null)}
+            onHistoricalNewsOpenChange={setHistoricalNewsOpen}
             desktopStripEnabled={desktopStripEnabled}
           />
         </div>
@@ -563,12 +618,59 @@ const MusicStudioTycoon = () => {
           !effectiveCompactStudioMode &&
           !offlineSummary &&
           !showReviewModal &&
+          !historicalNewsOpen &&
           Boolean(pendingStorylineBranch)
         }
         node={pendingStorylineBranch?.node ?? null}
         onChoose={handleStorylineBranchChoice}
         onClose={() => setShowStorylineBranchModal(false)}
       />
+
+      <StoryEventModal
+        event={pendingStoryEvent}
+        gameState={gameState}
+        open={
+          gameInitialized &&
+          !showSplashScreen &&
+          !effectiveCompactStudioMode &&
+          !offlineSummary &&
+          !showReviewModal &&
+          !showStorylineBranchModal &&
+          !historicalNewsOpen &&
+          settings.tutorialCompleted &&
+          pendingStoryEventKey !== null &&
+          pendingStoryEventKey !== deferredStoryEventKey
+        }
+        onChoose={handleStoryEventChoice}
+        onDeferred={() => setDeferredStoryEventKey(pendingStoryEventKey)}
+        onDone={() => setDeferredStoryEventKey(null)}
+      />
+
+      {showEpilogue && campaignEnding && (
+        <CinematicStoryCutscene
+          payload={buildEndingCutscene(campaignEnding)}
+          onComplete={() => setGameState((prev) => ({ ...prev, endingSeen: true }))}
+        />
+      )}
+
+      {showActIntro && activeCampaignNode && actIntroFlag && (
+        <CinematicStoryCutscene
+          payload={buildActIntroCutscene(activeCampaignNode, gameState.playerData.playstyle)}
+          onComplete={() =>
+            setGameState((prev) =>
+              prev.storylineState
+                ? {
+                    ...prev,
+                    storylineState: {
+                      ...prev.storylineState,
+                      storyFlags: { ...prev.storylineState.storyFlags, [actIntroFlag]: true },
+                    },
+                  }
+                : prev,
+            )
+          }
+        />
+      )}
     </GameLayout>
   );
 };

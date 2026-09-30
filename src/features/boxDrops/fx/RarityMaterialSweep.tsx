@@ -8,7 +8,7 @@ interface RarityMaterialSweepProps {
 }
 
 const RARITY_GRADIENTS: Record<Rarity, string> = {
-  standard: 'from-transparent via-slate-400/25 to-transparent',
+  standard: 'from-transparent via-stone-400/25 to-transparent',
   rare: 'from-transparent via-sky-400/40 to-transparent',
   vintage: 'from-transparent via-amber-400/50 to-transparent',
   legendary: 'from-transparent via-purple-400/60 to-transparent',

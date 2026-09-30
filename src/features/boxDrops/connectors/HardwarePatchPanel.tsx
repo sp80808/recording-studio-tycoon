@@ -38,19 +38,19 @@ export const HardwarePatchPanel: React.FC<HardwarePatchPanelProps> = ({
   const jewel = jewelColorMap[rarity] || jewelColorMap.common;
 
   return (
-    <div className="w-full bg-gradient-to-b from-stone-950 via-slate-950 to-stone-950 border border-slate-700/80 rounded-sm p-3 shadow-[inset_0_2px_8px_rgba(0,0,0,0.85)] relative overflow-hidden select-none">
+    <div className="w-full bg-gradient-to-b from-stone-950 via-stone-950 to-stone-950 border border-stone-700/80 rounded-sm p-3 shadow-[inset_0_2px_8px_rgba(0,0,0,0.85)] relative overflow-hidden select-none">
       {/* 19" Rack Ears & Screws on left and right border */}
       <div className="absolute left-1 top-2 bottom-2 flex flex-col justify-between py-1 pointer-events-none">
-        <div className="w-1.5 h-3 rounded-full bg-slate-700 border border-slate-900 shadow-inner" />
-        <div className="w-1.5 h-3 rounded-full bg-slate-700 border border-slate-900 shadow-inner" />
+        <div className="w-1.5 h-3 rounded-full bg-stone-700 border border-stone-900 shadow-inner" />
+        <div className="w-1.5 h-3 rounded-full bg-stone-700 border border-stone-900 shadow-inner" />
       </div>
       <div className="absolute right-1 top-2 bottom-2 flex flex-col justify-between py-1 pointer-events-none">
-        <div className="w-1.5 h-3 rounded-full bg-slate-700 border border-slate-900 shadow-inner" />
-        <div className="w-1.5 h-3 rounded-full bg-slate-700 border border-slate-900 shadow-inner" />
+        <div className="w-1.5 h-3 rounded-full bg-stone-700 border border-stone-900 shadow-inner" />
+        <div className="w-1.5 h-3 rounded-full bg-stone-700 border border-stone-900 shadow-inner" />
       </div>
 
       {/* Header bar: Stenciled Studio Bus & Jewel Pilot Light */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-2.5 px-2">
+      <div className="flex items-center justify-between border-b border-stone-800 pb-2 mb-2.5 px-2">
         <div className="flex items-center gap-2">
           {/* Vintage Faceted Pilot Jewel Lamp */}
           <div className="relative flex items-center justify-center">
@@ -76,10 +76,10 @@ export const HardwarePatchPanel: React.FC<HardwarePatchPanelProps> = ({
           </div>
 
           <div>
-            <span className="text-[10px] font-mono tracking-widest uppercase font-bold text-slate-300 block">
+            <span className="text-[10px] font-mono tracking-widest uppercase font-bold text-stone-300 block">
               BALANCED AUDIO I/O TERMINAL
             </span>
-            <span className="text-[9px] font-mono text-slate-400 flex items-center gap-1">
+            <span className="text-[9px] font-mono text-stone-400 flex items-center gap-1">
               <span>{era} ARCHITECTURE</span>
               <span>•</span>
               <span className="text-amber-400 font-semibold">+4dBu REF</span>
@@ -92,7 +92,7 @@ export const HardwarePatchPanel: React.FC<HardwarePatchPanelProps> = ({
           className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase tracking-wider border flex items-center gap-1 ${
             isPatched
               ? 'bg-emerald-950/80 border-emerald-500 text-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.3)]'
-              : 'bg-slate-900 border-slate-700 text-slate-400'
+              : 'bg-stone-900 border-stone-700 text-stone-400'
           }`}
         >
           {isPatched ? (
@@ -228,7 +228,7 @@ export const HardwarePatchPanel: React.FC<HardwarePatchPanelProps> = ({
         </div>
 
         {/* Studio Connector Sockets Panel */}
-        <div className="flex items-center justify-around bg-slate-900/95 border border-slate-800 rounded-sm p-1.5 h-20">
+        <div className="flex items-center justify-around bg-stone-900/95 border border-stone-800 rounded-sm p-1.5 h-20">
           {/* Female XLR Input Socket (CH 1) */}
           <div className="flex flex-col items-center gap-0.5">
             <button
@@ -269,7 +269,7 @@ export const HardwarePatchPanel: React.FC<HardwarePatchPanelProps> = ({
                 />
               </div>
             </button>
-            <span className={`text-[7.5px] font-mono uppercase font-bold ${isPatched && activeSocket === 'xlr' ? 'text-emerald-400' : 'text-slate-400'}`}>
+            <span className={`text-[7.5px] font-mono uppercase font-bold ${isPatched && activeSocket === 'xlr' ? 'text-emerald-400' : 'text-stone-400'}`}>
               XLR IN
             </span>
           </div>
@@ -296,7 +296,7 @@ export const HardwarePatchPanel: React.FC<HardwarePatchPanelProps> = ({
                 </div>
               </div>
             </button>
-            <span className={`text-[7.5px] font-mono uppercase font-bold tracking-tight ${isPatched && activeSocket === 'trs' ? 'text-amber-400' : 'text-slate-400'}`}>
+            <span className={`text-[7.5px] font-mono uppercase font-bold tracking-tight ${isPatched && activeSocket === 'trs' ? 'text-amber-400' : 'text-stone-400'}`}>
               1/4&quot; TRS
             </span>
           </div>
@@ -310,7 +310,7 @@ export const HardwarePatchPanel: React.FC<HardwarePatchPanelProps> = ({
                 <div className="w-1.2 h-1.2 rounded-full bg-yellow-400 border border-yellow-200 absolute bottom-0.5 shadow-[0_0_2px_#facc15]" />
               </div>
             </div>
-            <span className="text-[7.5px] font-mono text-slate-400 uppercase font-semibold">
+            <span className="text-[7.5px] font-mono text-stone-400 uppercase font-semibold">
               XLR OUT
             </span>
           </div>
@@ -318,9 +318,9 @@ export const HardwarePatchPanel: React.FC<HardwarePatchPanelProps> = ({
       </div>
 
       {/* Footer Readout: Analog Signal Flow Telemetry */}
-      <div className="mt-1 pt-1.5 border-t border-slate-800/80 flex items-center justify-between text-[9px] font-mono px-2">
-        <span className="text-slate-400 flex items-center gap-1">
-          <ShieldCheck size={12} className={isPatched ? 'text-emerald-400' : 'text-slate-500'} />
+      <div className="mt-1 pt-1.5 border-t border-stone-800/80 flex items-center justify-between text-[9px] font-mono px-2">
+        <span className="text-stone-400 flex items-center gap-1">
+          <ShieldCheck size={12} className={isPatched ? 'text-emerald-400' : 'text-stone-500'} />
           <span>
             {isPatched
               ? `SIGNAL LOCKED: ${activeSocket === 'xlr' ? 'XLR BALANCED (+4dBu)' : '1/4" INSERT (TUBE DRIVE)'} • 600Ω • COND ${condition}%`

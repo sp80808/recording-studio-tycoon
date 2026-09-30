@@ -15,9 +15,9 @@ const TrendIcon = ({ direction }: { direction: TrendDirection }) => {
     case 'rising': return <ArrowUp className="h-4 w-4 text-green-500" />;
     case 'falling': return <ArrowDown className="h-4 w-4 text-red-500" />;
     case 'stable': return <MinusCircle className="h-4 w-4 text-yellow-500" />;
-    case 'emerging': return <TrendingUp className="h-4 w-4 text-blue-500" />;
-    case 'fading': return <TrendingDown className="h-4 w-4 text-gray-500" />;
-    default: return <AlertCircle className="h-4 w-4 text-gray-400" />;
+    case 'emerging': return <TrendingUp className="h-4 w-4 text-amber-400" />;
+    case 'fading': return <TrendingDown className="h-4 w-4 text-stone-500" />;
+    default: return <AlertCircle className="h-4 w-4 text-stone-400" />;
   }
 };
 
@@ -40,29 +40,29 @@ export const MusicIndustryReport: React.FC<MusicIndustryReportProps> = () => {
   }
 
   return (
-    <Card className="w-full shadow-lg bg-slate-800 text-gray-100 border-slate-700">
+    <Card className="w-full shadow-lg bg-stone-800 text-stone-100 border-stone-700">
       <CardHeader>
         <CardTitle className="text-2xl font-bold text-purple-400">Music Industry Report</CardTitle>
-        <CardDescription className="text-slate-400">Current market trends and genre popularity.</CardDescription>
+        <CardDescription className="text-stone-400">Current market trends and genre popularity.</CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
-            <TableRow className="border-slate-700 hover:bg-slate-700/30">
-              <TableHead className="text-slate-300">Genre</TableHead>
-              <TableHead className="text-slate-300">SubGenre</TableHead>
-              <TableHead className="text-slate-300 text-right">Popularity</TableHead>
-              <TableHead className="text-slate-300 text-center">Trend</TableHead>
-              <TableHead className="text-slate-300 text-right">Growth Rate</TableHead>
+            <TableRow className="border-stone-700 hover:bg-stone-700/30">
+              <TableHead className="text-stone-300">Genre</TableHead>
+              <TableHead className="text-stone-300">SubGenre</TableHead>
+              <TableHead className="text-stone-300 text-right">Popularity</TableHead>
+              <TableHead className="text-stone-300 text-center">Trend</TableHead>
+              <TableHead className="text-stone-300 text-right">Growth Rate</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {allTrends.map((trend) => {
               const subGenre = trend.subGenreId ? marketService.getSubGenreById(trend.subGenreId) : null;
               return (
-                <TableRow key={trend.id} className="border-slate-700 hover:bg-slate-700/30">
-                  <TableCell className="font-medium capitalize text-slate-200">{trend.genreId}</TableCell>
-                  <TableCell className="capitalize text-slate-400">{subGenre ? subGenre.name : '-'}</TableCell>
+                <TableRow key={trend.id} className="border-stone-700 hover:bg-stone-700/30">
+                  <TableCell className="font-medium capitalize text-stone-200">{trend.genreId}</TableCell>
+                  <TableCell className="capitalize text-stone-400">{subGenre ? subGenre.name : '-'}</TableCell>
                   <TableCell className="text-right">
                     <Badge variant={trend.popularity > 70 ? "default" : trend.popularity > 40 ? "secondary" : "outline"}
                            className={

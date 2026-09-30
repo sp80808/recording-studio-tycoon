@@ -38,7 +38,7 @@ export const GamepadHUD: React.FC<GamepadHUDProps> = ({ className = '', hasOpenM
   return (
     <aside
       aria-label="Gamepad Controls Guide"
-      className={`fixed bottom-2 right-4 z-40 flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-slate-950/90 border border-slate-700/70 shadow-2xl backdrop-blur-md text-[11px] text-slate-300 pointer-events-none select-none transition-all duration-200 animate-in fade-in ${className}`}
+      className={`fixed bottom-2 right-4 z-40 flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-stone-950/90 border border-stone-700/70 shadow-2xl backdrop-blur-md text-[11px] text-stone-300 pointer-events-none select-none transition-all duration-200 animate-in fade-in ${className}`}
     >
       {onSlider ? (
         <div className="flex items-center gap-1.5 text-amber-300 font-semibold">
@@ -54,14 +54,14 @@ export const GamepadHUD: React.FC<GamepadHUDProps> = ({ className = '', hasOpenM
         </div>
       )}
 
-      <div className="h-3 w-px bg-slate-700/60" />
+      <div className="h-3 w-px bg-stone-700/60" />
 
       <div className="flex items-center gap-1.5">
         <GamepadGlyph button="dpadUp" size="xs" />
         <span>{onSlider ? 'Next Slider' : 'Navigate'}</span>
       </div>
 
-      <div className="h-3 w-px bg-slate-700/60" />
+      <div className="h-3 w-px bg-stone-700/60" />
 
       <div className="flex items-center gap-1">
         <GamepadGlyph button="south" size="xs" />
@@ -70,13 +70,13 @@ export const GamepadHUD: React.FC<GamepadHUDProps> = ({ className = '', hasOpenM
 
       {hasOpenModal ? (
         <>
-          <div className="h-3 w-px bg-slate-700/60" />
+          <div className="h-3 w-px bg-stone-700/60" />
           <div className="flex items-center gap-1">
             <GamepadGlyph button="east" size="xs" />
             <span>Close</span>
           </div>
 
-          <div className="h-3 w-px bg-slate-700/60" />
+          <div className="h-3 w-px bg-stone-700/60" />
           <div className="flex items-center gap-1">
             <GamepadGlyph button="rs" size="xs" />
             <span>Scroll</span>
@@ -84,13 +84,13 @@ export const GamepadHUD: React.FC<GamepadHUDProps> = ({ className = '', hasOpenM
         </>
       ) : (
         <>
-          <div className="h-3 w-px bg-slate-700/60" />
+          <div className="h-3 w-px bg-stone-700/60" />
           <div className="flex items-center gap-1">
             <GamepadGlyph button="west" size="xs" />
             <span>Work</span>
           </div>
 
-          <div className="h-3 w-px bg-slate-700/60" />
+          <div className="h-3 w-px bg-stone-700/60" />
           <div className="flex items-center gap-1">
             <GamepadGlyph button="north" size="xs" />
             <span>Advance</span>

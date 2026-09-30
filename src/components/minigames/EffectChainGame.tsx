@@ -237,17 +237,17 @@ export const EffectChainGame: React.FC<EffectChainGameProps> = ({
 
   if (!gameStarted) {
     return (
-      <Card className="w-full max-w-4xl mx-auto bg-gray-800 text-white border-gray-700">
+      <Card className="w-full max-w-4xl mx-auto bg-stone-800 text-white border-stone-700">
         <MinigameChrome title="🔗 Effect Chain Builder" score={score} accent="blue">
         <div className="p-6 text-center space-y-4">
-          <p className="text-gray-300">
+          <p className="text-stone-300">
             Build the perfect effect chain for {genre} music!
             Order matters - effects process in sequence.
           </p>
-          <div className="text-sm text-blue-400 bg-blue-900/30 p-3 rounded">
+          <div className="text-sm text-[var(--rst-live)] bg-white/[0.04] border border-[var(--rst-line)] p-3 rounded">
             💡 Hint: {getGenreHint()}
           </div>
-          <KenneyButton variant="blue" onClick={startGame}>
+          <KenneyButton variant="yellow" onClick={startGame}>
             Start Building
           </KenneyButton>
         </div>
@@ -258,20 +258,20 @@ export const EffectChainGame: React.FC<EffectChainGameProps> = ({
 
   if (gameCompleted) {
     return (
-      <Card className="w-full max-w-4xl mx-auto bg-gray-800 text-white border-gray-700">
+      <Card className="w-full max-w-4xl mx-auto bg-stone-800 text-white border-stone-700">
         <MinigameChrome title="🔗 Effect Chain Builder" score={score} accent="blue">
         <div className="p-6 text-center space-y-4">
           <h2 className={`text-2xl font-bold text-yellow-400 ${score >= 80 ? 'mg-perfect-pop' : ''}`}>Effect Chain Complete!</h2>
           <div className="space-y-2">
             <div className="text-lg text-white">Score: {score}</div>
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-stone-400">
               Effects Used: {effectChain.length} | Target: {targetChain.length}
             </div>
             {score >= 80 && (
               <div className="text-green-400 font-bold text-xl mg-perfect-pop">🎉 Professional Chain!</div>
             )}
             {score >= 60 && score < 80 && (
-              <div className="text-blue-400 font-bold">👍 Good Mix!</div>
+              <div className="text-[var(--rst-live)] font-bold">👍 Good Mix!</div>
             )}
           </div>
           <KenneyButton variant="green" onClick={onClose}>
@@ -284,11 +284,11 @@ export const EffectChainGame: React.FC<EffectChainGameProps> = ({
   }
 
   return (
-    <Card className="w-full max-w-6xl mx-auto bg-gray-800 text-white border-gray-700">
+    <Card className="w-full max-w-6xl mx-auto bg-stone-800 text-white border-stone-700">
       <MinigameChrome title="🔗 Effect Chain Builder" score={score} timeLeft={timeLeft} accent="blue">
       <div className="p-6">
       <div className="text-center mb-6">
-        <p className="text-gray-300">Genre: {genre.charAt(0).toUpperCase() + genre.slice(1)}</p>
+        <p className="text-stone-300">Genre: {genre.charAt(0).toUpperCase() + genre.slice(1)}</p>
 
         {feedback && (
           <div key={feedback} className={`mt-2 text-center text-lg font-bold ${feedback.startsWith('✅') ? 'text-green-400 mg-perfect-pop' : 'text-yellow-300 mg-miss-shake'}`}>
@@ -321,7 +321,7 @@ export const EffectChainGame: React.FC<EffectChainGameProps> = ({
           <h3 className="text-xl font-bold text-white mb-4">🔗 Your Effect Chain</h3>
           <div className="space-y-3 min-h-[300px]">
             {effectChain.length === 0 ? (
-              <div className="text-gray-500 text-center p-8 border-2 border-dashed border-gray-600 rounded">
+              <div className="text-stone-500 text-center p-8 border-2 border-dashed border-stone-600 rounded">
                 Drag effects here to build your chain
               </div>
             ) : (
@@ -369,15 +369,15 @@ export const EffectChainGame: React.FC<EffectChainGameProps> = ({
           </div>
 
           {/* Target Chain Hint */}
-          <div className="mt-4 p-3 bg-blue-900/30 rounded border border-blue-600/50">
-            <div className="text-sm text-blue-300">
+          <div className="mt-4 p-3 bg-white/[0.04] border border-[var(--rst-line)] rounded border border-[var(--rst-live)]/50">
+            <div className="text-sm text-[var(--rst-live)]">
               <div className="font-semibold mb-1">💡 Optimal {genre} Chain:</div>
               <div className="flex gap-2 flex-wrap">
                 {targetChain.map((effect, index) => (
                   <Badge 
                     key={index} 
                     variant="outline" 
-                    className="text-blue-400 border-blue-400"
+                    className="text-[var(--rst-live)] border-[var(--rst-live)]"
                   >
                     {index + 1}. {effect.name}
                   </Badge>

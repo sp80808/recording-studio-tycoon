@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { GamePanel } from '@/components/ui/GamePanel';
 import { GameState, Project } from '@/types/game';
 import { generateNewProjects } from '@/utils/projectUtils';
 import {
@@ -13,7 +12,18 @@ import {
   MotionNumber,
 } from '@/components/motion/primitives';
 import { gameAudio } from '@/utils/audioSystem';
-import { Check, XCircle, PhoneCall, PhoneOff } from 'lucide-react';
+import { getOriginEffects, gigRefreshCostFor } from '@/narrative/originPerks';
+import { getRivalAccent, getRivalLines, initialsOf } from '@/narrative/rivalCast';
+import { RIVAL_STUDIOS } from '@/narrative/studioLore';
+import {
+  STAKE_MIN_LEVEL,
+  STAKE_ORDER,
+  STAKE_LABEL,
+  describeStake,
+  isStakeUnlocked,
+  type ContractStake,
+} from '@/rpg/contractStakes';
+import { Check, Lock, Mic, Star, XCircle, PhoneCall, PhoneOff, Inbox, RefreshCw } from 'lucide-react';
 
 interface ProjectListProps {
   gameState: GameState;
@@ -23,14 +33,14 @@ interface ProjectListProps {
   onRefreshProjects?: () => boolean;
 }
 
-const getFitClasses = (matchRating: Project['matchRating']) => {
+const fitChip = (matchRating: Project['matchRating']) => {
   switch (matchRating) {
     case 'Excellent':
-      return 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
+      return 'rst-chip-money';
     case 'Good':
-      return 'bg-amber-500/15 text-amber-300 border-amber-500/30';
+      return 'rst-chip-brass';
     default:
-      return 'bg-red-500/15 text-red-300 border-red-500/30';
+      return 'rst-chip-danger';
   }
 };
 
@@ -54,6 +64,47 @@ const getOpportunityNote = (project: Project) => {
   return 'Balanced booking — reliable cash, experience and relationship potential.';
 };
 
+/** Safe / Ambitious / Moonshot picker. Locked tiers say which level opens them. */
+const StakePicker: React.FC<{
+  value: ContractStake;
+  level: number;
+  locked?: boolean;
+  onChange: (stake: ContractStake) => void;
+}> = ({ value, level, locked, onChange }) => (
+  <div>
+    <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+      <span className="rst-kicker">Contract stake</span>
+      {locked && (
+        <span className="rst-chip rst-chip-story !py-0.5 text-[10px]">
+          <Lock size={10} aria-hidden="true" /> Fixed by the story
+        </span>
+      )}
+    </div>
+    <div className="mt-1.5 grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="Contract stake">
+      {STAKE_ORDER.map((stake) => {
+        const unlocked = isStakeUnlocked(stake, level);
+        const selected = value === stake;
+        return (
+          <button
+            key={stake}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            disabled={locked || !unlocked}
+            onClick={() => onChange(stake)}
+            className={`rst-btn !min-h-9 !px-2 !text-xs ${selected ? 'rst-btn-primary' : ''}`}
+            title={unlocked ? describeStake(stake) : `Unlocks at producer level ${STAKE_MIN_LEVEL[stake]}`}
+          >
+            {!unlocked && <Lock size={11} aria-hidden="true" />}
+            {STAKE_LABEL[stake]}
+          </button>
+        );
+      })}
+    </div>
+    <p className="rst-muted mt-1.5 text-[11px] leading-relaxed">{describeStake(value)}</p>
+  </div>
+);
+
 export const ProjectList: React.FC<ProjectListProps> = ({
   gameState,
   setGameState,
@@ -62,8 +113,11 @@ export const ProjectList: React.FC<ProjectListProps> = ({
 }) => {
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [decliningId, setDecliningId] = useState<string | null>(null);
+  const [stakes, setStakes] = useState<Record<string, ContractStake>>({});
   const cooldownLeft = gigRefreshCooldownRemaining(gameState);
   const refreshReady = cooldownLeft === 0;
+  const refreshCost = gigRefreshCostFor(GIG_REFRESH_COST, getOriginEffects(gameState));
+  const level = gameState.playerData.level;
 
   const handleRefresh = () => {
     void gameAudio.playTactileClick();
@@ -90,9 +144,12 @@ export const ProjectList: React.FC<ProjectListProps> = ({
     setBookingId(project.id);
     void gameAudio.playTactileClick();
 
+    // The player's chosen gamble rides along (story contracts keep their fixed stake).
+    const stake = project.stakeLocked ? project.stake ?? 'safe' : stakes[project.id] ?? project.stake ?? 'safe';
+
     // Tactile action feedback communicated within short beat (~180ms)
     window.setTimeout(() => {
-      startProject(project);
+      startProject({ ...project, stake });
       setBookingId(null);
     }, 180);
   };
@@ -112,28 +169,29 @@ export const ProjectList: React.FC<ProjectListProps> = ({
     }, 180);
   };
 
+  // Story contracts are pinned to the top; everything else keeps its arrival order.
+  const board = [...gameState.availableProjects].sort(
+    (a, b) => Number(Boolean(b.isStoryContract)) - Number(Boolean(a.isStoryContract)),
+  );
+
   return (
-    <GamePanel className="p-4 flex-1 min-h-0 w-full flex flex-col backdrop-blur-sm">
-      <div className="flex items-start justify-between gap-3 mb-4 shrink-0">
+    <section className="rst-surface flex min-h-0 w-full flex-1 flex-col p-4" aria-label="Artist enquiries">
+      <div className="mb-4 flex shrink-0 items-start justify-between gap-3">
         <div>
-          <h2 className="text-xl font-bold text-white tracking-wide">Artist Enquiries</h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <h2 className="rst-title text-xl">Artist Enquiries</h2>
+          <p className="rst-muted mt-1 text-xs">
             Choose the sessions that best fit your room, staff and current cashflow.
           </p>
         </div>
         <MotionButton
           onClick={handleRefresh}
           disabled={!refreshReady}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-            refreshReady
-              ? 'bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white shadow-md'
-              : 'bg-slate-800 text-slate-400 border border-slate-700'
-          }`}
+          className={`rst-btn !min-h-9 !px-3 !text-xs ${refreshReady ? 'rst-btn-primary' : ''}`}
         >
           {refreshReady ? (
             <>
               <PhoneCall size={14} aria-hidden="true" />
-              <span>Refresh ${GIG_REFRESH_COST}</span>
+              <span>{refreshCost > 0 ? `Refresh $${refreshCost}` : 'Refresh · free'}</span>
             </>
           ) : (
             <>
@@ -146,47 +204,59 @@ export const ProjectList: React.FC<ProjectListProps> = ({
 
       {gameState.activeProject && (
         <MotionReveal direction="down" distance={10}>
-          <GamePanel variant="cyan" className="p-3 mb-4 shrink-0">
-            <div className="text-xs text-cyan-300 mb-1 font-bold uppercase tracking-wider">🎙 Session in progress</div>
-            <div className="text-sm font-bold text-white mb-1">{gameState.activeProject.title}</div>
-            <div className="text-xs text-cyan-200/90 mb-2">
+          <div className="mb-4 shrink-0 rounded-xl border border-[rgba(95,208,192,0.35)] bg-[rgba(95,208,192,0.06)] p-3">
+            <p className="rst-kicker flex items-center gap-1.5 !text-[var(--rst-live)]">
+              <Mic size={12} aria-hidden="true" /> Session in progress
+            </p>
+            <div className="mt-1 text-sm font-semibold text-[var(--rst-ivory)]">{gameState.activeProject.title}</div>
+            <div className="rst-muted mt-0.5 text-xs">
               Stage {gameState.activeProject.currentStageIndex + 1} of {gameState.activeProject.stages.length}
             </div>
-            <div className="text-xs text-slate-300 bg-slate-950/60 p-2 rounded border-l-2 border-cyan-400">
-              The session can keep progressing through the existing studio workflow. Optional interventions should add upside rather than block completion.
-            </div>
 
-            <div className="mt-2.5 pt-2 border-t border-cyan-500/20">
-              <div className="text-[11px] text-cyan-300/80 mb-1 font-semibold">On the session:</div>
+            <div className="mt-2.5 border-t border-[var(--rst-line)] pt-2">
+              <div className="rst-kicker mb-1">On the session</div>
               {gameState.hiredStaff
                 .filter(s => s.assignedProjectId === gameState.activeProject?.id)
                 .map(staff => (
-                  <div key={staff.id} className="text-xs text-slate-200">
-                    👤 {staff.name} ({staff.role})
+                  <div key={staff.id} className="text-xs text-stone-200">
+                    {staff.name} <span className="text-stone-500">· {staff.role}</span>
                   </div>
                 ))}
               {gameState.hiredStaff.filter(s => s.assignedProjectId === gameState.activeProject?.id).length === 0 && (
-                <div className="text-xs text-slate-400">You are handling this one yourself.</div>
+                <div className="rst-muted text-xs">You are handling this one yourself.</div>
               )}
             </div>
-          </GamePanel>
+          </div>
         </MotionReveal>
       )}
 
-      <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1 edge-fade-b">
-        {gameState.availableProjects.length === 0 && (
-          <div className="text-center py-10 px-4">
-            <div className="text-2xl mb-2">📭</div>
-            <div className="text-sm text-gray-300 font-medium">No enquiries waiting</div>
-            <div className="text-xs text-gray-500 mt-1">
-              Finish work, build reputation, or check the inbox for another lead.
+      <div className="edge-fade-b min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+        {board.length === 0 && (
+          <div className="px-4 py-10 text-center">
+            <Inbox size={34} strokeWidth={1.4} className="mx-auto mb-3 text-[var(--rst-brass-400)]" aria-hidden="true" />
+            <div className="text-sm font-medium text-stone-200">No enquiries waiting</div>
+            <div className="rst-muted mt-1 text-xs">
+              Finish work, build reputation, or use the phone to chase another lead.
             </div>
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={!refreshReady}
+              className="rst-btn mt-4 !min-h-9 !px-3 !text-xs"
+            >
+              <RefreshCw size={13} aria-hidden="true" />
+              {refreshReady ? 'Chase a new lead' : `Phone is quiet · ${cooldownLeft}d`}
+            </button>
           </div>
         )}
 
-        {gameState.availableProjects.map((project, index) => {
+        {board.map((project, index) => {
           const isBookingThis = bookingId === project.id;
           const isDecliningThis = decliningId === project.id;
+          const isStory = Boolean(project.isStoryContract);
+          const rival = isStory ? RIVAL_STUDIOS.find((r) => r.id === project.rivalStudioId) : undefined;
+          const accent = rival ? getRivalAccent(rival.id) : undefined;
+          const chosenStake: ContractStake = project.stakeLocked ? project.stake ?? 'safe' : stakes[project.id] ?? project.stake ?? 'safe';
 
           return (
             <MotionReveal
@@ -196,73 +266,96 @@ export const ProjectList: React.FC<ProjectListProps> = ({
               staggerIndex={index}
               staggerDelay={0.04}
             >
-              <GamePanel
-                variant="interactive"
-                className={`p-3.5 game-interactive transition-opacity ${
-                  isDecliningThis ? 'opacity-40 scale-95' : 'opacity-100'
-                }`}
+              <article
+                className={`rst-surface p-3.5 transition-opacity ${isDecliningThis ? 'scale-95 opacity-40' : 'opacity-100'}`}
+                style={isStory && accent ? { borderColor: `${accent}66` } : undefined}
+                data-story-contract={isStory ? 'true' : undefined}
               >
-                <div className="flex justify-between items-start gap-3 mb-3">
+                {isStory && rival && accent && (
+                  <div className="mb-3 flex items-start gap-3 border-b border-[var(--rst-line)] pb-3">
+                    <span
+                      aria-hidden="true"
+                      className="rst-serif grid h-10 w-10 shrink-0 place-items-center rounded-full border text-sm font-bold"
+                      style={{ borderColor: `${accent}88`, color: accent, background: `${accent}14` }}
+                    >
+                      {initialsOf(rival.headProducer)}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="rst-kicker flex items-center gap-1.5" style={{ color: accent }}>
+                        <Star size={11} aria-hidden="true" /> Story contract · {rival.headProducer}
+                      </p>
+                      <p className="mt-0.5 font-[var(--rst-serif)] text-xs italic leading-relaxed text-[var(--rst-ivory-soft)]">
+                        {getRivalLines(rival.id).challenge}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="mb-3 flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-bold text-white text-base">{project.title}</h3>
-                    <div className="text-xs text-slate-400 mt-0.5">
+                    <h3 className="text-base font-semibold text-[var(--rst-ivory)]">{project.title}</h3>
+                    <div className="rst-muted mt-0.5 text-xs">
                       {project.clientName || project.clientType} · {project.genre}
                     </div>
                     {project.clientId && gameState.clientRelationships?.[project.clientId] && (
-                      <div className="text-[11px] text-purple-300 mt-1">
+                      <div className="mt-1 text-[11px] text-[var(--rst-story)]">
                         ↻ {gameState.clientRelationships[project.clientId].tier} client · {gameState.clientRelationships[project.clientId].sessionsCompleted} previous session{gameState.clientRelationships[project.clientId].sessionsCompleted === 1 ? '' : 's'}
                       </div>
                     )}
                   </div>
-                  <span
-                    className={`text-[11px] font-bold border px-2 py-0.5 rounded-full whitespace-nowrap ${getFitClasses(project.matchRating)}`}
-                  >
+                  <span className={`rst-chip ${fitChip(project.matchRating)} whitespace-nowrap`}>
                     {project.matchRating} fit
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 mb-3">
-                  <div className="rounded border border-slate-700/60 bg-slate-950/70 p-2 shadow-inner">
-                    <div className="text-[10px] uppercase font-bold tracking-wide text-slate-400">Fee</div>
-                    <div className="text-sm text-emerald-400 font-black">
+                <div className="mb-3 grid grid-cols-3 gap-2">
+                  <div className="rounded-lg border border-[var(--rst-line)] bg-black/25 p-2">
+                    <div className="rst-kicker !text-[10px]">Fee</div>
+                    <div className="text-sm font-bold text-[var(--rst-money)]">
                       <MotionNumber value={project.payoutBase} prefix="$" />
                     </div>
                   </div>
-                  <div className="rounded border border-slate-700/60 bg-slate-950/70 p-2 shadow-inner">
-                    <div className="text-[10px] uppercase font-bold tracking-wide text-slate-400">Rep</div>
-                    <div className="text-sm text-sky-400 font-black">
+                  <div className="rounded-lg border border-[var(--rst-line)] bg-black/25 p-2">
+                    <div className="rst-kicker !text-[10px]">Rep</div>
+                    <div className="text-sm font-bold text-[var(--rst-brass-300)]">
                       <MotionNumber value={project.repGainBase} prefix="+" />
                     </div>
                   </div>
-                  <div className="rounded border border-slate-700/60 bg-slate-950/70 p-2 shadow-inner">
-                    <div className="text-[10px] uppercase font-bold tracking-wide text-slate-400">Time</div>
-                    <div className="text-sm text-amber-300 font-black">
+                  <div className="rounded-lg border border-[var(--rst-line)] bg-black/25 p-2">
+                    <div className="rst-kicker !text-[10px]">Time</div>
+                    <div className="text-sm font-bold text-[var(--rst-ivory)]">
                       <MotionNumber value={project.durationDaysTotal} suffix="d" />
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-xs mb-2">
-                  <span className="text-slate-400">Session difficulty</span>
-                  <span className="text-amber-300 font-bold">{project.difficulty}/10</span>
+                <div className="mb-2 flex items-center justify-between text-xs">
+                  <span className="rst-muted">Session difficulty</span>
+                  <span className="font-semibold text-[var(--rst-brass-300)]">{project.difficulty}/10</span>
                 </div>
 
-                <div className="text-xs text-slate-300 bg-slate-950/60 border border-slate-800 rounded p-2.5 leading-relaxed">
-                  {getOpportunityNote(project)}
+                <div className="mb-3 rounded-lg border border-[var(--rst-line)] bg-black/20 p-2.5 text-xs leading-relaxed text-stone-300">
+                  {isStory
+                    ? 'The rival is watching this one. A strong result counts toward the campaign objective.'
+                    : getOpportunityNote(project)}
                 </div>
 
-                <div className="flex items-center gap-2 mt-3">
+                <StakePicker
+                  value={chosenStake}
+                  level={level}
+                  locked={Boolean(project.stakeLocked)}
+                  onChange={(stake) => {
+                    void gameAudio.playUISound('buttonClick');
+                    setStakes((prev) => ({ ...prev, [project.id]: stake }));
+                  }}
+                />
+
+                <div className="mt-3 flex items-center gap-2">
                   <MotionButton
                     magnetic
                     onClick={() => handleAcceptEnquiry(project)}
                     disabled={!!gameState.activeProject || !!bookingId || !!decliningId}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold tracking-wide transition-colors ${
-                      isBookingThis
-                        ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
-                        : gameState.activeProject
-                          ? 'bg-slate-800 text-slate-400 cursor-not-allowed'
-                          : 'bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white shadow'
-                    }`}
+                    className={`rst-btn flex-1 ${gameState.activeProject ? '' : 'rst-btn-primary'} ${isBookingThis ? 'rst-btn-success' : ''}`}
                   >
                     {isBookingThis ? (
                       <>
@@ -276,11 +369,11 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                     )}
                   </MotionButton>
 
-                  {!gameState.activeProject && (
+                  {!gameState.activeProject && !isStory && (
                     <MotionButton
                       onClick={() => handleDeclineEnquiry(project.id)}
                       disabled={!!bookingId || !!decliningId}
-                      className="p-2 rounded-lg text-slate-400 hover:text-red-300 hover:bg-red-950/40 border border-slate-700/60 transition-colors"
+                      className="rst-btn rst-btn-ghost !min-h-9 !px-2.5 text-stone-400 hover:!text-rose-300"
                       title="Decline enquiry"
                       aria-label={`Decline enquiry from ${project.title}`}
                     >
@@ -288,12 +381,12 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                     </MotionButton>
                   )}
                 </div>
-              </GamePanel>
+              </article>
             </MotionReveal>
           );
         })}
       </div>
-    </GamePanel>
+    </section>
   );
 };
 

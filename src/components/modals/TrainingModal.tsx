@@ -28,28 +28,28 @@ export const TrainingModal: React.FC<TrainingModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-gray-900 border-gray-600 text-white max-w-2xl">
+      <DialogContent className="bg-stone-900 border-stone-600 text-white max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-white">Training for {staff.name}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 max-h-96 overflow-y-auto">
           {availableTrainingCourses.map(course => (
-            <Card key={course.id} className="p-4 bg-gray-800 border-gray-600">
+            <Card key={course.id} className="p-4 bg-stone-800 border-stone-600">
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <h4 className="text-lg font-bold text-white">{course.name}</h4>
-                  <p className="text-gray-300 text-sm mt-1">{course.description}</p>
+                  <p className="text-stone-300 text-sm mt-1">{course.description}</p>
                 </div>
                 <div className="text-right">
                   <div className="text-red-400 font-bold">${course.cost}</div>
-                  <div className="text-sm text-gray-400">{course.duration} days</div>
+                  <div className="text-sm text-stone-400">{course.duration} days</div>
                 </div>
               </div>
               
               <div className="space-y-2 mb-3">
                 <div className="text-sm font-semibold text-yellow-400">Benefits:</div>
                 {course.effects.statBoosts && (
-                  <div className="text-xs text-gray-300">
+                  <div className="text-xs text-stone-300">
                     Stats: {Object.entries(course.effects.statBoosts).map(([stat, boost]) => 
                       `+${boost} ${stat}`
                     ).join(', ')}
@@ -73,7 +73,7 @@ export const TrainingModal: React.FC<TrainingModalProps> = ({
                   onClose();
                 }}
                 disabled={gameState.money < course.cost || staff.status !== 'Idle'}
-                className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600"
+                className="w-full bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] disabled:bg-stone-600"
               >
                 {gameState.money < course.cost ? 'Insufficient Funds' : 
                  staff.status !== 'Idle' ? 'Staff Unavailable' : 'Send to Training'}

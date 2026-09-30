@@ -65,7 +65,7 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
           newBlobs.push({
             id: `creativity-${i}`,
             value: i === blobCount - 1 ? creativityGain - (valuePerBlob * (blobCount - 1)) : valuePerBlob,
-            color: '#3b82f6',
+            color: '#d49f45',
             startX: Math.random() * 200 + 50,
             startY: Math.random() * 100 + 50,
             targetX,

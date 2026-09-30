@@ -24,8 +24,13 @@ export default {
 				display: ['"Fredoka"', 'system-ui', 'sans-serif'],
 				body: ['"Outfit"', 'system-ui', 'sans-serif'],
 				sans: ['"Outfit"', 'system-ui', 'sans-serif'],
+				serif: ['"Iowan Old Style"', '"Palatino Linotype"', 'Palatino', '"Book Antiqua"', 'Georgia', 'serif'],
 			},
 			colors: {
+				// Studio theme tokens (see src/styles/studio-theme.css)
+				ink: { 950: 'var(--rst-ink-950)', 900: 'var(--rst-ink-900)', 850: 'var(--rst-ink-850)', 800: 'var(--rst-ink-800)', 700: 'var(--rst-ink-700)', 600: 'var(--rst-ink-600)' },
+				ivory: { DEFAULT: 'var(--rst-ivory)', soft: 'var(--rst-ivory-soft)' },
+				brass: { 200: 'var(--rst-brass-200)', 300: 'var(--rst-brass-300)', 400: 'var(--rst-brass-400)', 500: 'var(--rst-brass-500)', 600: 'var(--rst-brass-600)' },
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',

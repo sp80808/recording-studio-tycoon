@@ -47,7 +47,7 @@ export const BandManagement: React.FC<BandManagementProps> = ({
         {canCreateBand && (
           <Button
             onClick={() => setShowCreateModal(true)}
-            className="bg-purple-600 hover:bg-purple-700"
+            className="bg-purple-400/[0.14] ring-1 ring-inset ring-purple-400/45 hover:bg-purple-400/[0.24]"
           >
             Create Band
           </Button>
@@ -55,8 +55,8 @@ export const BandManagement: React.FC<BandManagementProps> = ({
       </div>
 
       {!canCreateBand && (
-        <Card className="p-4 bg-gray-800/50 border-gray-600">
-          <div className="text-center text-gray-400">
+        <Card className="p-4 bg-stone-800/50 border-stone-600">
+          <div className="text-center text-stone-400">
             <div className="text-4xl mb-2">🔒</div>
             <h3 className="font-semibold mb-1">Band Management Locked</h3>
             <p className="text-sm">
@@ -70,8 +70,8 @@ export const BandManagement: React.FC<BandManagementProps> = ({
       )}
 
       {gameState.playerBands.length === 0 && canCreateBand && (
-        <Card className="p-4 bg-gray-800/50 border-gray-600">
-          <div className="text-center text-gray-400">
+        <Card className="p-4 bg-stone-800/50 border-stone-600">
+          <div className="text-center text-stone-400">
             <div className="text-4xl mb-2">🎤</div>
             <h3 className="font-semibold mb-1">No Bands Created</h3>
             <p className="text-sm">Create your first band to start making original music!</p>
@@ -84,11 +84,11 @@ export const BandManagement: React.FC<BandManagementProps> = ({
         const canTour = canGoOnTour(band);
         
         return (
-          <Card key={band.id} className="p-4 bg-gray-800/50 border-gray-600">
+          <Card key={band.id} className="p-4 bg-stone-800/50 border-stone-600">
             <div className="flex justify-between items-start mb-3">
               <div>
                 <h3 className="text-lg font-bold text-white">{band.bandName}</h3>
-                <p className="text-gray-300 text-sm">{band.genre}</p>
+                <p className="text-stone-300 text-sm">{band.genre}</p>
               </div>
               <div className="text-right">
                 <div className="flex items-center gap-4 text-sm">
@@ -100,12 +100,12 @@ export const BandManagement: React.FC<BandManagementProps> = ({
 
             {/* Tour Status */}
             {band.tourStatus.isOnTour && (
-              <div className="mb-3 p-2 bg-blue-900/50 border border-blue-500 rounded">
+              <div className="mb-3 p-2 bg-stone-900/50 border border-amber-500 rounded">
                 <div className="flex items-center justify-between">
-                  <span className="text-blue-300">🚌 On Tour</span>
-                  <span className="text-blue-300">{band.tourStatus.daysRemaining} days left</span>
+                  <span className="text-amber-200">🚌 On Tour</span>
+                  <span className="text-amber-200">{band.tourStatus.daysRemaining} days left</span>
                 </div>
-                <div className="text-xs text-blue-400">
+                <div className="text-xs text-amber-300">
                   Earning ${band.tourStatus.dailyIncome} per day
                 </div>
               </div>
@@ -113,12 +113,12 @@ export const BandManagement: React.FC<BandManagementProps> = ({
 
             {/* Band Members */}
             <div className="mb-3">
-              <h4 className="text-sm font-semibold text-gray-300 mb-1">Members:</h4>
+              <h4 className="text-sm font-semibold text-stone-300 mb-1">Members:</h4>
               <div className="flex flex-wrap gap-2">
                 {members.map(member => (
                   <span
                     key={member.id}
-                    className="text-xs bg-gray-700 px-2 py-1 rounded flex items-center"
+                    className="text-xs bg-stone-700 px-2 py-1 rounded flex items-center"
                   >
                     {member.name} ({member.role})
                     <MoodIndicator mood={member.mood} />
@@ -130,14 +130,14 @@ export const BandManagement: React.FC<BandManagementProps> = ({
             {/* Past Releases */}
             {band.pastReleases.length > 0 && (
               <div className="mb-3">
-                <h4 className="text-sm font-semibold text-gray-300 mb-1">Past Releases:</h4>
+                <h4 className="text-sm font-semibold text-stone-300 mb-1">Past Releases:</h4>
                 <div className="space-y-1">
                   {band.pastReleases.slice(-3).map(release => (
                     <div key={release.id} className="flex justify-between items-center text-xs">
-                      <span className="text-gray-300">{release.trackTitle}</span>
+                      <span className="text-stone-300">{release.trackTitle}</span>
                       <div className="flex items-center gap-2">
                         <span>{getReviewEmoji(release.reviewScore)}</span>
-                        <span className="text-gray-400">{release.reviewScore}/10</span>
+                        <span className="text-stone-400">{release.reviewScore}/10</span>
                         <span className="text-green-400">${release.totalSales}</span>
                       </div>
                     </div>
@@ -155,7 +155,7 @@ export const BandManagement: React.FC<BandManagementProps> = ({
                   setShowRecordTrackModal(true);
                 }}
                 disabled={gameState.activeProject !== null || gameState.activeOriginalTrack !== null || band.tourStatus.isOnTour}
-                className="flex-1 bg-green-600 hover:bg-green-700"
+                className="flex-1 bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24]"
               >
                 🎵 Record Track
               </Button>
@@ -164,7 +164,7 @@ export const BandManagement: React.FC<BandManagementProps> = ({
                   size="sm"
                   onClick={() => onStartTour(band.id)}
                   disabled={band.tourStatus.isOnTour}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24]"
                 >
                   🚌 Tour
                 </Button>
