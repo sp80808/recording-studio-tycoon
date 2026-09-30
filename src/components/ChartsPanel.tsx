@@ -59,23 +59,23 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
     
     // Comprehensive audio map with intelligent cross-genre blending
     const audioMap: { [key: string]: string[] } = {
-      'rock': ['60s-chart-track5.mp3', '80s-Power-Chord1.mp3', '80s-Power-Chord2.mp3', '00sAlt-Rock-Energy1.mp3', '00sNu-Metal-Vibe2.mp3'],
-      'pop': ['60s-Pop2.mp3', '80schart-anthem1.mp3', '00sStreaming-Ready1.mp3', '80s-Power-Chord1.mp3', '00s-rnb2.mp3'],
-      'electronic': ['80s-Synthesizer1.mp3', '2000s-Electronic1.mp3', '00sElectronic-Hybrid2.mp3', '80schart-anthem1.mp3', '00sNu-Metal-Vibe2.mp3'],
-      'hip-hop': ['80s-Power-Chord2.mp3', '00sNu-Metal-Vibe2.mp3', '00sElectronic-Hybrid2.mp3', '00s-rnb3.mp3', '2000s-Electronic1.mp3'],
-      'r&b': ['00s-rnb1.mp3', '00s-rnb2.mp3', '00s-rnb3.mp3', '60s-Pop2.mp3', '80schart-anthem1.mp3'],
-      'country': ['2000s-Country3.mp3', '60s-chart-track5.mp3', '80s-Power-Chord1.mp3', '00sAlt-Rock-Energy1.mp3'],
-      'jazz': ['60s-chart-track5.mp3', '00s-rnb1.mp3', '00s-rnb2.mp3'],
-      'indie': ['00sAlt-Rock-Energy1.mp3', '80s-Synthesizer1.mp3', '60s-Pop2.mp3', '60s-chart-track5.mp3'],
-      'alternative': ['00sNu-Metal-Vibe2.mp3', '00sAlt-Rock-Energy1.mp3', '80s-Power-Chord2.mp3', '00sElectronic-Hybrid2.mp3'],
-      'metal': ['00sNu-Metal-Vibe2.mp3', '80s-Power-Chord2.mp3', '80s-Power-Chord1.mp3'],
-      'punk': ['80s-Power-Chord2.mp3', '00sAlt-Rock-Energy1.mp3', '00sNu-Metal-Vibe2.mp3'],
-      'dance': ['80s-Synthesizer1.mp3', '2000s-Electronic1.mp3', '00sElectronic-Hybrid2.mp3', '80schart-anthem1.mp3'],
-      'funk': ['00s-rnb2.mp3', '80s-Power-Chord1.mp3', '00s-rnb3.mp3'],
-      'soul': ['00s-rnb1.mp3', '00s-rnb3.mp3', '60s-Pop2.mp3'],
-      'blues': ['60s-chart-track5.mp3', '80s-Power-Chord1.mp3', '00s-rnb1.mp3'],
-      'folk': ['60s-chart-track5.mp3', '2000s-Country3.mp3', '60s-Pop2.mp3'],
-      'reggae': ['00s-rnb2.mp3', '80s-Power-Chord1.mp3', '60s-Pop2.mp3']
+      'rock': ['60s-chart-track5.m4a', '80s-Power-Chord1.m4a', '80s-Power-Chord2.m4a', '00sAlt-Rock-Energy1.m4a', '00sNu-Metal-Vibe2.m4a'],
+      'pop': ['60s-Pop2.m4a', '80schart-anthem1.m4a', '00sStreaming-Ready1.m4a', '80s-Power-Chord1.m4a', '00s-rnb2.m4a'],
+      'electronic': ['80s-Synthesizer1.m4a', '2000s-Electronic1.m4a', '00sElectronic-Hybrid2.m4a', '80schart-anthem1.m4a', '00sNu-Metal-Vibe2.m4a'],
+      'hip-hop': ['80s-Power-Chord2.m4a', '00sNu-Metal-Vibe2.m4a', '00sElectronic-Hybrid2.m4a', '00s-rnb3.m4a', '2000s-Electronic1.m4a'],
+      'r&b': ['00s-rnb1.m4a', '00s-rnb2.m4a', '00s-rnb3.m4a', '60s-Pop2.m4a', '80schart-anthem1.m4a'],
+      'country': ['2000s-Country3.m4a', '60s-chart-track5.m4a', '80s-Power-Chord1.m4a', '00sAlt-Rock-Energy1.m4a'],
+      'jazz': ['60s-chart-track5.m4a', '00s-rnb1.m4a', '00s-rnb2.m4a'],
+      'indie': ['00sAlt-Rock-Energy1.m4a', '80s-Synthesizer1.m4a', '60s-Pop2.m4a', '60s-chart-track5.m4a'],
+      'alternative': ['00sNu-Metal-Vibe2.m4a', '00sAlt-Rock-Energy1.m4a', '80s-Power-Chord2.m4a', '00sElectronic-Hybrid2.m4a'],
+      'metal': ['00sNu-Metal-Vibe2.m4a', '80s-Power-Chord2.m4a', '80s-Power-Chord1.m4a'],
+      'punk': ['80s-Power-Chord2.m4a', '00sAlt-Rock-Energy1.m4a', '00sNu-Metal-Vibe2.m4a'],
+      'dance': ['80s-Synthesizer1.m4a', '2000s-Electronic1.m4a', '00sElectronic-Hybrid2.m4a', '80schart-anthem1.m4a'],
+      'funk': ['00s-rnb2.m4a', '80s-Power-Chord1.m4a', '00s-rnb3.m4a'],
+      'soul': ['00s-rnb1.m4a', '00s-rnb3.m4a', '60s-Pop2.m4a'],
+      'blues': ['60s-chart-track5.m4a', '80s-Power-Chord1.m4a', '00s-rnb1.m4a'],
+      'folk': ['60s-chart-track5.m4a', '2000s-Country3.m4a', '60s-Pop2.m4a'],
+      'reggae': ['00s-rnb2.m4a', '80s-Power-Chord1.m4a', '60s-Pop2.m4a']
     };
 
     // Get clips for the genre, with fallback to similar genres

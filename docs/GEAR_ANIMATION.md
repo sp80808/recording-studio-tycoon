@@ -17,7 +17,7 @@ Visuals never write equipment condition.
 - Serializable `GearSpriteVisualState` adapter (no React/Pixi imports).
 
 ## AnimatedSprite spike
-`gearSpriteAnimation.ts` builds an 8-frame tape-reel `AnimatedSprite` from Pixi Graphics textures (one shared frame set per renderer). `applyReelState` stops and parks on frame 0 when off, stopped or reduced-motion, so a static reel costs no ticker work. Authored frames beat runtime DOM animation for in-world indicators: one texture swap per tick, no React renders, no layout. Status: math is unit-tested; the texture/sprite path is type-checked but not yet mounted in the Living Studio or run against a GPU.
+`gearSpriteAnimation.ts` builds an 8-frame tape-reel `AnimatedSprite` from Pixi Graphics textures (one shared frame set per renderer). `applyReelState` stops and parks on frame 0 when off, stopped or reduced-motion, so a static reel costs no ticker work. Authored frames beat runtime DOM animation for in-world indicators: one texture swap per tick, no React renders, no layout. Status: mounted in the Living Studio (`WebGLCanvas.tsx`, tier-1 tape machine). Reels are parked on frame 0 unless a project is active and motion is allowed; they are advanced from the scene ticker (`autoUpdate: false`), so the `targetFps` cap and the hidden-tab early return apply.
 
 ## Performance contract (Node CPU only; no GPU or browser in the cloud session)
 Measured by `tests/gear-bench.check.ts` (state mapping + meter sampling):
@@ -33,3 +33,30 @@ Adds a WASM runtime and a per-canvas lifecycle, needs a separate authoring workf
 
 ## #80 reward FX (same PR)
 `fx/rewardFx.ts`: renderer-independent preset/request types, per-rarity effect budgets (common none, uncommon sweep, rare sweep + small burst, vintage/legendary add family flourish), data-driven gear families with bounded cycles, seeded FX randomness, 4 s hard cap. `PixiParticleBurst` is now seeded, cancels when the tab is hidden, and completes once. `RarityMaterialSweep` is one-shot; `AnimatedGearFlourish` settles after a few cycles. Renderer decision: keep the lightweight Canvas 2D burst for now (Pixi is not mounted over normal gameplay, and #80 forbids a second persistent WebGL renderer). Still open: wiring `RARITY_FX_POLICY` into `FlightCaseReveal` (belongs with #96/#76 to avoid conflicts), removing the duplicate `canvas-confetti`, the dev gallery, and #74 qualification.
+
+## Browser evidence (headless Chromium, software WebGL via SwiftShader; not a real GPU)
+Driven with Playwright against the real game (new 1960s studio -> Open the studio), 1440x900, three 6 s rAF samples each:
+| Build | Mean frame time per run |
+|---|---|
+| main (static ellipse reels) | 361, 391, 350 ms |
+| this branch (AnimatedSprite reels, idle/parked) | 332, 369, 379 ms |
+Software GL runs the whole scene at about 2.7 fps, so absolute numbers mean nothing, but the two builds are within run-to-run noise: parked sprite reels add no measurable per-frame cost. Screenshot: `docs/img/gear-reels-living-studio.png`.
+
+### Playing state (session booked via the real UI), same setup, mean frame time over three 6 s runs
+| State | Mean frame time per run |
+|---|---|
+| idle (reels parked) | 402, 391, 371 ms |
+| session active (reels playing) | 400, 417, 384 ms |
+| session active, reduced motion (reels parked) | 364, 364, 368 ms |
+Playing is about 3% above idle on average, inside the run-to-run spread. Reduced motion is faster mainly because it disables other scene effects too, so it is not a clean control.
+
+### Inspector React commits (`tests/gear-rack.html` + React Profiler, headless Chromium)
+| Condition | Commits |
+|---|---|
+| powered, normal motion | 40 per 10 s (4/s, the 250 ms meter step; the old loop was 8.3/s of random state) |
+| powered, reduced motion | 0 |
+| tab hidden | 0 per 3 s |
+| powered off | 0 per 3 s |
+
+### Real-GPU gap
+All browser numbers above are software WebGL (SwiftShader) in a cloud container. No real-GPU frame cost has been measured; that comes from the engine/WebGPU audit thread. Tiers 2-5 reels wait on the Blender desk bodies (#117); only tier 1 has a tape machine today.

@@ -31,7 +31,7 @@ const ERA_CHALLENGE: Record<string, string> = {
   modern: 'Everyone has a home studio. Win on taste and relationships.',
 };
 
-const STEPS = ['Era', 'Producer', 'Begin'] as const;
+const STEPS = ['Era', 'Character', 'Role', 'Begin'] as const;
 
 const stepClass = (active: boolean, done: boolean) =>
   `flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] ${
@@ -39,9 +39,11 @@ const stepClass = (active: boolean, done: boolean) =>
   }`;
 
 export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
-  const [step, setStep] = useState<0 | 1>(0);
+  const [step, setStep] = useState<0 | 1 | 2>(0);
   const [eraId, setEraId] = useState<string | null>(null);
   const [originId, setOriginId] = useState<ProducerBackgroundId | null>(null);
+  const [moniker, setMoniker] = useState('The Architect');
+
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   const era = useMemo(() => AVAILABLE_ERAS.find((e) => e.id === eraId) ?? null, [eraId]);
@@ -53,15 +55,18 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
     if (step === 0 && era) {
       click();
       setStep(1);
-    } else if (step === 1 && era && origin) {
+    } else if (step === 1 && moniker.trim()) {
+      click();
+      setStep(2);
+    } else if (step === 2 && era && origin) {
       click();
       onBegin(era, origin.id);
     }
-  }, [step, era, origin, onBegin]);
+  }, [step, era, origin, moniker, onBegin]);
 
   const goBack = useCallback(() => {
     click();
-    if (step === 1) setStep(0);
+    if (step > 0) setStep((current) => (current - 1) as 0 | 1 | 2);
     else onBack();
   }, [step, onBack]);
 
@@ -116,14 +121,16 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
         </header>
 
         <div className="mt-8 text-center animate-rst-rise" key={step}>
-          <p className="rst-kicker">{step === 0 ? 'Chapter one' : 'Chapter two'}</p>
+          <p className="rst-kicker">{step === 0 ? 'Chapter one' : step === 1 ? 'Chapter two' : 'Chapter three'}</p>
           <h1 ref={headingRef} tabIndex={-1} className="rst-title mt-2 text-3xl outline-none sm:text-5xl">
-            {step === 0 ? 'When does your studio open?' : 'Who is behind the console?'}
+            {step === 0 ? 'When does your studio open?' : step === 1 ? 'Make the face behind the faders' : 'Who is behind the console?'}
           </h1>
           <p className="rst-body mx-auto mt-3 max-w-2xl text-sm sm:text-base">
             {step === 0
               ? 'Each era changes your gear, your genres, your budget and the industry breathing down your neck.'
-              : 'Your producer origin gives you a real edge — and a rival who will not let you forget it.'}
+              : step === 1
+                ? 'Give your producer a name, a calling card, and a little room to become legendary.'
+                : 'Your producer origin gives you a real edge — and a rival who will not let you forget it.'}
           </p>
         </div>
 
@@ -196,6 +203,20 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
         )}
 
         {step === 1 && (
+          <section className="rst-option mx-auto mt-8 w-full max-w-xl !p-7" aria-label="Producer name">
+            <div className="mx-auto max-w-md text-center">
+              <div className="mx-auto grid h-20 w-20 place-items-center rounded-full border border-[var(--rst-brass-400)]/60 bg-[var(--rst-brass-400)]/10 text-3xl text-[var(--rst-brass-200)]" aria-hidden="true">?</div>
+              <p className="rst-kicker mt-5">Character model preview</p>
+              <p className="rst-body mt-2 text-xs">Your selected producer will appear here once the modular character creator is connected to the game sprite.</p>
+              <label className="mt-6 block text-left text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">
+                Producer name
+                <input value={moniker} onChange={(e) => setMoniker(e.target.value.slice(0, 24))} maxLength={24} autoFocus className="rst-input mt-2 w-full" placeholder="The Architect" />
+              </label>
+            </div>
+          </section>
+        )}
+
+        {step === 2 && (
           <div
             role="radiogroup"
             aria-label="Choose a producer origin"
@@ -283,17 +304,19 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
           <p className="min-w-0 flex-1 text-xs text-stone-300" aria-live="polite">
             {era ? <b className="text-[var(--rst-brass-200)]">{era.displayName}</b> : <span className="text-stone-500">No era chosen</span>}
             <span className="mx-2 text-stone-600">·</span>
-            {origin ? <b className="text-[var(--rst-brass-200)]">{origin.name}</b> : <span className="text-stone-500">No origin chosen</span>}
+            <b className="text-[var(--rst-brass-200)]">{moniker || 'Unnamed producer'}</b>
+            <span className="mx-2 text-stone-600">·</span>
+            {origin ? <b className="text-[var(--rst-brass-200)]">{origin.name}</b> : <span className="text-stone-500">No role chosen</span>}
             {era && <span className="ml-2 text-stone-500">${era.startingMoney.toLocaleString()} to start</span>}
             {rival && <span className="ml-2 hidden text-stone-500 sm:inline">· facing {rival.headProducer}</span>}
           </p>
           <button
             type="button"
             className="rst-btn rst-btn-primary min-w-44"
-            disabled={step === 0 ? !era : !(era && origin)}
+            disabled={step === 0 ? !era : step === 1 ? !moniker.trim() : !(era && origin)}
             onClick={goNext}
           >
-            {step === 0 ? 'Choose your producer' : 'Open the studio'}
+            {step === 0 ? 'Create your producer' : step === 1 ? 'Choose a role' : 'Open the studio'}
             <ArrowRight size={15} aria-hidden="true" />
           </button>
         </div>

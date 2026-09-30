@@ -1,6 +1,7 @@
 
 import { useCallback } from 'react';
 import { GameState } from '@/types/game';
+import { earn } from '@/economy/ledger';
 import { Band, OriginalTrackProject } from '@/types/bands';
 import { generateBandName } from '@/utils/bandUtils';
 import { toast } from '@/hooks/use-toast';
@@ -285,9 +286,8 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
       });
 
       return {
-        ...prev,
+        ...earn(prev, totalIncome, { category: 'reward-income', memo: 'Tour income' }),
         playerBands: updatedBands,
-        money: prev.money + totalIncome
       };
     });
 

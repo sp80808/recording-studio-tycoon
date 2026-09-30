@@ -62,7 +62,7 @@ ok(idle.state.reputation === 10 && idle.resolutions[0].record.chosenFocus === 'n
 
 // Big day skip resolves multiple seasons, capped, in order.
 const skip = advanceSeasonClock({ ...base(), currentDay: 200 } as GameState);
-ok(skip.resolutions.length === 4 && skip.resolutions[3].awards.length === 3, 'day skip resolves in order; year end judges 3 awards');
+ok(skip.resolutions.length === 4 && skip.resolutions[3].awards.length === 6, 'day skip resolves in order; year end judges 6 awards');
 
 // Awards: criteria, status, supporting sessions.
 const ds = [
@@ -73,9 +73,31 @@ const ds = [
 const aw = evaluateAwards(ds as never);
 ok(aw[0].status === 'winner' && aw[0].projectIds[0] === 'p1', 'recording award names the actual session');
 ok(aw[1].status === 'winner' && aw[1].projectIds.length === 3 && /Ana/.test(aw[1].why), 'client award cites the client and sessions');
-ok(aw[2].status === 'winner', 'growth award from revenue');
+ok(aw[3].status === 'winner', 'growth award from revenue');
 ok(evaluateAwards([]).every(a => a.status === 'not_nominated'), 'empty year has no nominees');
-ok(currentAwardStanding(base()).length === 3, 'criteria + standing visible all year');
+ok(currentAwardStanding(base()).length === 6, 'criteria + standing visible all year');
+
+// New awards.
+const mk = (n: number, o: Record<string, unknown>) => ({ ...d(n), seasonNumber: 1, isRepeat: false, sessionNumber: 1, day: n, ...o });
+const eng = evaluateAwards([mk(1, { staffName: 'Kai', quality: 80 }), mk(2, { staffName: 'Kai', quality: 70 }), mk(3, { staffName: 'Kai', quality: 75 })] as never);
+ok(eng[2].status === 'winner' && /Kai delivered 3 sessions averaging 75/.test(eng[2].why), 'Engineer Development names the staff engineer');
+ok(eng[4].status === 'nominated', 'Reliable Operator: 3 steady deliveries is a nomination');
+const steady = evaluateAwards([1, 2, 3, 4].map(n => mk(n, { quality: 70 })) as never);
+ok(steady[4].status === 'winner', 'Reliable Operator: 4 deliveries none under 60 wins');
+const jump = evaluateAwards([mk(1, { clientKey: 'z', clientName: 'Zed', quality: 60 }), mk(2, { clientKey: 'z', clientName: 'Zed', quality: 82 })] as never);
+ok(jump[5].status === 'winner' && /beat Zed's previous session by 22/.test(jump[5].why) && jump[5].projectIds[0] === 'p2', 'Breakthrough Session cites the jump and session');
+
+// Efficiency + Discovery focuses.
+let e = chooseFocus(base(), 'efficiency');
+for (let n = 1; n <= 4; n++) e = recordSeasonDelivery(e, d(n, { revenue: 900 }));
+ok(currentObjectives(e).every(x => x.done), 'efficiency: throughput and paid-solid objectives complete');
+let dc = chooseFocus(base(), 'discovery');
+dc = recordSeasonDelivery(dc, d(1, { genre: 'rock' }));
+dc = recordSeasonDelivery(dc, d(2, { genre: 'rock' }));
+dc = recordSeasonDelivery(dc, d(3, { genre: 'jazz' }));
+ok(currentObjectives(dc)[0].current === 2 && /jazz is a new genre/.test(currentObjectives(dc)[0].reason), 'discovery counts distinct genres causally');
+ok(!currentObjectives(dc)[1].done, 'no synergy found yet');
+ok(currentObjectives({ ...dc, discoveredSynergies: ['a'] } as GameState)[1].done, 'a new synergy completes discovery');
 
 // Rewards are horizontal + small, through the shared bundle path.
 const won = applySeasonTick({ ...skip.state, currentDay: 200 } as GameState);
@@ -88,10 +110,23 @@ const y = applySeasonTick(yr);
 ok((y.state.gems ?? 0) === 30 && y.state.studioSeasons!.titles.length === 3, 'award wins grant plaques + gems (small rewards)');
 ok(y.state.reputation === 10 + 6, 'reputation reward is small (+2 per award)');
 
+// Ceremony event.
+import { gameEvents } from '@/engine/gameEventBus';
+import { announceAwards } from '@/economy/seasonRewards';
+let heard: Array<{ seasonId: string; year: number; awards: unknown[]; rewards: Array<{ label: string }> }> = [];
+const off = gameEvents.on('season:awards', p => { heard.push(p); });
+announceAwards(skip.resolutions);
+off();
+ok(heard.length === 1 && heard[0].seasonId === 'S4' && heard[0].year === 1 && heard[0].awards.length === 6, 'year-end resolution announces one ceremony with 6 categories');
+heard = [];
+announceAwards(y.resolutions);
+ok(y.resolutions.length === 1, 'year-end tick resolves one season');
+
 // Wiring.
 ok(/recordSeasonDelivery/.test(read('src/hooks/useProjectManagement.tsx')), 'completeProject records the delivery');
 ok(/applySeasonTick/.test(read('src/pages/Index.tsx')), 'day tick drives the season clock');
 ok(/SeasonPanel/.test(read('src/components/CareerHub.tsx')), 'compact progress surface lives in the career hub');
+ok(/SeasonAwardsCeremony/.test(read('src/pages/Index.tsx')) && /season:awards/.test(read('src/components/SeasonAwardsCeremony.tsx')), 'award ceremony is mounted and listens for the event');
 ok(/seasonNote/.test(read('src/components/modals/ProjectReviewModal.tsx')), 'project review links season progress');
 
 console.log(`${passed} season checks passed`);

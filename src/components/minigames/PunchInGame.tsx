@@ -22,7 +22,7 @@ interface Take {
 
 const TOTAL_TAKES = 5;
 const WINDOW_WIDTH = 16;
-const SWEEP_MS = 20; // playhead step interval; 0->100 in ~2s
+const SWEEP_MS = 18; // subtle pace increase while keeping the timing readable
 
 function makeTakes(): Take[] {
   return Array.from({ length: TOTAL_TAKES }, () => ({

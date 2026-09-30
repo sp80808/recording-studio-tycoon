@@ -1,3 +1,4 @@
+import { applyKnowHowEvents } from '../rpg/studioKnowHow';
 import { GameState, Project, ProjectReport, StaffMember } from '../types/game';
 import { generateProjectReview } from '../utils/projectReviewUtils';
 import { grantSkillXp } from '../utils/skillUtils';
@@ -18,6 +19,8 @@ import {
 import { getGenreMarketMultiplier } from '../utils/eraProgression';
 import { getSettlementBonuses } from '../utils/settlementBonuses';
 import { getOriginEffects } from '../narrative/originPerks';
+import { addAllocations, earn } from '../economy/ledger';
+import { calculateEquipmentUpkeep } from '../economy/upkeep';
 import { growFamiliarity } from '@/rpg/signalChain';
 import {
   findProjectForReport,
@@ -345,15 +348,39 @@ export function applyReportToState(state: GameState, report: ProjectReport): Gam
         }
     }
 
+    const project =
+        state.activeProject?.id === report.projectId
+            ? state.activeProject
+            : [...(state.activeProjects ?? []), ...(state.availableProjects ?? [])]
+                .find(p => p?.id === report.projectId);
+    const days = Math.max(1, project?.durationDaysTotal ?? 1);
+    const assigned = state.hiredStaff.filter(s => s.assignedProjectId === report.projectId);
+    const staffShare = assigned.reduce((t, s) => t + s.salary, 0) * days;
+    const overheadShare = Math.round(calculateEquipmentUpkeep(state.ownedEquipment, getOriginEffects(state)) * days);
+    const booked = addAllocations(
+        earn(state, report.moneyGained, {
+            category: 'session-income',
+            projectId: report.projectId,
+            sourceId: `settle-${report.projectId}-${state.financials.reports.length}`,
+            memo: report.projectTitle,
+        }),
+        [
+            { projectId: report.projectId, day: state.currentDay, kind: 'staff', amount: staffShare },
+            { projectId: report.projectId, day: state.currentDay, kind: 'overhead', amount: overheadShare },
+        ],
+    );
+
     return {
-        ...state,
-        money: state.money + report.moneyGained,
+        ...booked,
         reputation: state.reputation + report.reputationGained,
         influence: state.influence + influenceGained,
         playerData,
         hiredStaff: releasedStaff,
         clientRelationships,
-        studioKnowHow: (state.studioKnowHow ?? 0) + (report.knowHowGained ?? 0),
+        // Polishing feeds the same Know-How pool as everything else (#66).
+        studioKnowHow: applyKnowHowEvents(state, report.knowHowGained
+            ? [{ kind: 'polish', eventId: `polish:${report.projectId}`, amount: report.knowHowGained }]
+            : []).game.studioKnowHow,
         financials: {
             ...state.financials,
             income,

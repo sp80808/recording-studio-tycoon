@@ -6,6 +6,7 @@
 // ownedEquipment (the used-gear economy owns that).
 
 import type { GameState } from '@/types/game';
+import { bookGems, earn, spend } from './ledger';
 import {
   FLIGHT_CASES,
   FLIGHT_CASE_TIER_ORDER,
@@ -43,6 +44,8 @@ export const GEM_PACKS = [
 export interface RewardBundle {
   money?: number;
   gems?: number;
+  /** Ledger memo (what this payout was for). */
+  memo?: string;
   cases?: Array<{ tier: FlightCaseTier; source?: CaseSource }>;
 }
 
@@ -88,8 +91,11 @@ export function grantRewardBundle(
 ): { state: GameState; granted: RewardBundle } {
   let next = state;
   const money = Math.max(0, Math.floor(bundle.money ?? 0));
-  if (money > 0) next = { ...next, money: next.money + money };
-  next = grantGems(next, bundle.gems ?? 0);
+  const gems = Math.max(0, Math.floor(bundle.gems ?? 0));
+  const memo = bundle.memo ?? 'Reward';
+  if (money > 0) next = earn(next, money, { category: 'reward-income', memo });
+  next = grantGems(next, gems);
+  if (gems > 0) next = bookGems(next, gems, { memo });
   for (const c of bundle.cases ?? []) next = awardCase(next, c.tier, c.source ?? 'reward');
   return { state: next, granted: { ...bundle, money, gems: Math.max(0, Math.floor(bundle.gems ?? 0)) } };
 }
@@ -120,8 +126,11 @@ export function buyFlightCase(state: GameState, tier: FlightCaseTier, currency: 
   if (!isCaseUnlocked(state, tier)) return { ok: false, reason: 'locked' };
   const balance = currency === 'money' ? state.money : getGems(state);
   if (balance < price) return { ok: false, reason: 'insufficient_funds' };
+  const memo = `Flight case: ${tier}`;
   const paid: GameState =
-    currency === 'money' ? { ...state, money: state.money - price } : { ...state, gems: balance - price };
+    currency === 'money'
+      ? spend(state, price, { category: 'other', memo })
+      : bookGems({ ...state, gems: balance - price }, -price, { category: 'other', memo });
   return { ok: true, state: awardCase(paid, tier, currency === 'money' ? 'shop_money' : 'shop_gems') };
 }
 

@@ -55,8 +55,9 @@ These come from general tycoon/management-game practice, not from reviews of thi
 - every option leaves a unique flag, which later callbacks and epilogues can read;
 - each era has at least three, so a long campaign does not exhaust its era's pool.
 
+- **Third beats:** four callbacks (union, crew, compromise, hero legacy) now have a third, epilogue beat. See `EVENT_DIRECTOR.md` for the engine under them.
+
 ## Ideas for later (not built)
-- Third-beat "consequence" stage for the highest-impact callbacks.
 - More title-keyed callbacks (Act III titles are flags too, but the campaign ends with them).
 
 ## Checks

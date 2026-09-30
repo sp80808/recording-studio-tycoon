@@ -1,8 +1,12 @@
+import { lastTake, nodOffset } from '@/utils/takeFeedback';
 import React, { useEffect, useRef } from 'react';
-import { Application, Container, Graphics, Matrix, Sprite, Text } from 'pixi.js';
+import { AnimatedSprite, Application, Container, Graphics, Matrix, Sprite, Text, type Renderer } from 'pixi.js';
+import { applyReelState, buildReelTextures, createReelSprite } from '@/features/gearStudio/gearSpriteAnimation';
+import { toSpriteVisualState } from '@/features/gearStudio/gearVisualState';
 import { getPropTexture, loadPropSprites } from '@/components/studio/propSprites';
 import { visualEraId } from '@/utils/eraProgression';
 import { useSettings } from '@/contexts/SettingsContext';
+import { resolveRendererOrder } from '@/lib/render/rendererChoice';
 import { claimPixiApplication, STUDIO_FLOOR_OWNER } from '@/lib/motion/pixiGuard';
 import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from '@/components/studio/isoMath';
 import {
@@ -152,6 +156,8 @@ export interface StudioSceneState {
   activity: number;
   /** Whether a project is currently in production */
   hasActiveProject: boolean;
+  /** Who is in the booth (client / band name) for the active session */
+  artistName?: string;
   /** Number of staff physically on the studio floor */
   staffOnFloor: number;
   /** Player's equipment count (fills the gear shelf) */
@@ -349,6 +355,8 @@ interface SceneRefs {
   clockHand: Graphics | null;
   setClockTime: ((hour: number, minute: number) => void) | null;
   staffFigures: { fig: Container; baseY: number }[];
+  /** The booked artist, standing at the live-room mic while a session is in progress. */
+  artist: { fig: Container; baseY: number; tag: Text; shown: string } | null;
   nightTintLayer: Container | null;
   hoverGlows: Record<string, Graphics>;
   hoverGlowTargets: Record<string, number>;
@@ -359,6 +367,8 @@ interface SceneRefs {
   vignetteLayer: Container | null;
   dynamicBloomG: Graphics | null;
   decor: DecorLights | null;
+  /** Tier-1 tape machine reels (Pixi AnimatedSprite, #81); empty on other tiers. */
+  reels: AnimatedSprite[];
 }
 
 interface BuiltScene {
@@ -411,7 +421,8 @@ const buildScene = (
   width: number,
   height: number,
   state: StudioSceneState,
-  onSelect?: (id: StudioHotspotId) => void
+  onSelect?: (id: StudioHotspotId) => void,
+  renderer?: Renderer
 ): BuiltScene => {
   const root = new Container();
   const refs: SceneRefs = {
@@ -421,6 +432,7 @@ const buildScene = (
     clockHand: null,
     setClockTime: null,
     staffFigures: [],
+    artist: null,
     nightTintLayer: null,
     hoverGlows: {},
     hoverGlowTargets: {},
@@ -431,6 +443,7 @@ const buildScene = (
     vignetteLayer: null,
     dynamicBloomG: null,
     decor: null,
+    reels: [],
   };
 
   // Era colour grade + studio tier drive the room's look (beads goj.3 / ifx.3)
@@ -909,10 +922,23 @@ const buildScene = (
     // Tape reels
     const reel1 = dPt(5.64, 4.20);
     const reel2 = dPt(5.70, 4.42);
-    channelG.ellipse(reel1.x, reel1.y, 4.5, 2.5).fill(0x718096);
-    channelG.ellipse(reel1.x, reel1.y, 1.8, 1.0).fill(0x1a202c);
-    channelG.ellipse(reel2.x, reel2.y, 4.5, 2.5).fill(0x718096);
-    channelG.ellipse(reel2.x, reel2.y, 1.8, 1.0).fill(0x1a202c);
+    if (renderer) {
+      // Authored-frame reels: parked on frame 0 (static) until the transport runs
+      const textures = buildReelTextures(renderer, 10);
+      [reel1, reel2].forEach((pt) => {
+        const reel = createReelSprite(textures);
+        reel.position.set(pt.x, pt.y);
+        reel.scale.set(0.45, 0.25); // iso squash to match the desk plane
+        reel.gotoAndStop(0);
+        channelG.addChild(reel);
+        refs.reels.push(reel);
+      });
+    } else {
+      channelG.ellipse(reel1.x, reel1.y, 4.5, 2.5).fill(0x718096);
+      channelG.ellipse(reel1.x, reel1.y, 1.8, 1.0).fill(0x1a202c);
+      channelG.ellipse(reel2.x, reel2.y, 4.5, 2.5).fill(0x718096);
+      channelG.ellipse(reel2.x, reel2.y, 1.8, 1.0).fill(0x1a202c);
+    }
   } else {
     // Outboard Rack modules
     for (let u = 0; u < consoleProfile.outboardUnits; u++) {
@@ -1026,6 +1052,39 @@ const buildScene = (
     fig.addChild(body);
     fig.zIndex = Z.depth + spot.y;
     refs.staffFigures.push({ fig, baseY: spot.y });
+    root.addChild(fig);
+  }
+
+  /* ---- Booked artist: appears at the live-room mic during a session ---- */
+  {
+    const spot = iso(2.3, 1.55);
+    const fig = new Container();
+    fig.position.set(spot.x, spot.y);
+    const body = new Graphics();
+    body.ellipse(0, 1, 15, 7).fill({ color: 0x000000, alpha: .35 });
+    body.roundRect(-8, -13, 7, 14, 2).fill(0x1d1a24);
+    body.roundRect(1, -13, 7, 14, 2).fill(0x1d1a24);
+    body.roundRect(-15, -34, 5, 18, 2).fill(0xd9a27c);
+    body.roundRect(10, -34, 5, 18, 2).fill(0xd9a27c);
+    body.roundRect(-11, -36, 22, 27, 5).fill(0xc2414b);
+    body.roundRect(-11, -36, 22, 27, 5).stroke({ width: 2, color: 0x2a1519, alpha: .55 });
+    body.circle(0, -45, 11).fill(0xe8b48c);
+    body.ellipse(0, -52, 12, 6).fill(0x5a2e1c);
+    body.circle(-4, -44, 1).fill(0x273040);
+    body.circle(4, -44, 1).fill(0x273040);
+    fig.addChild(body);
+    const tag = new Text({
+      text: '',
+      style: { fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: 11, fontWeight: '700', fill: 0xffe3a3, stroke: { color: 0x0b0906, width: 3 } },
+    });
+    tag.anchor.set(0.5, 1);
+    tag.position.set(0, -66);
+    tag.eventMode = 'none';
+    fig.addChild(tag);
+    fig.eventMode = 'none';
+    fig.visible = false;
+    fig.zIndex = Z.depth + spot.y;
+    refs.artist = { fig, baseY: spot.y, tag, shown: '' };
     root.addChild(fig);
   }
 
@@ -1190,6 +1249,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   const gestureMidpointRef = useRef<{ x: number; y: number } | null>(null);
   const lastCanvasInputRef = useRef(0);
   const lastFrameTimeRef = useRef(0);
+  const reelKeyRef = useRef('');
   const clockMinuteRef = useRef(-1);
 
   const { settings } = useSettings();
@@ -1259,8 +1319,10 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
       app.screen.width,
       app.screen.height,
       stateRef.current,
-      (id) => { if (!suppressTapRef.current) selectRef.current?.(id); }
+      (id) => { if (!suppressTapRef.current) selectRef.current?.(id); },
+      app.renderer
     );
+    reelKeyRef.current = '';
     const zoom = cameraRef.current.zoom ?? 1.0;
     scene.root.scale.set(scene.baseScale * zoom);
     scene.root.position.set(
@@ -1355,7 +1417,9 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           window.devicePixelRatio || 1,
           settingsRef.current?.resolutionScale
         );
+        const rendererOrder = await resolveRendererOrder();
         await app.init({
+          preference: rendererOrder[0],
           background: 0x0e0c0a,
           resizeTo: container,
           antialias: !(typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches),
@@ -1372,6 +1436,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         container.appendChild(app.canvas);
         app.canvas.id = 'pixi-studio-canvas';
         app.canvas.setAttribute('data-engine', 'pixi');
+        app.canvas.setAttribute('data-renderer', String(app.renderer.name ?? 'unknown'));
         app.canvas.style.touchAction = 'none';
         app.canvas.setAttribute('aria-label', 'Interactive studio floor. Tap objects to inspect. Pinch to zoom or use two fingers to pan.');
         await loadPropSprites();
@@ -1681,11 +1746,44 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           // Decor lighting: window shaft + motes, ON AIR lamp, era glow, steam
           refs.decor?.update(t, reduceMotion, s.hasActiveProject);
 
+          // Tape reels (#81): only touch the sprites when transport state changes
+          if (refs.reels.length > 0) {
+            const reelKey = `${s.hasActiveProject}:${reduceMotion}`;
+            if (reelKeyRef.current !== reelKey) {
+              reelKeyRef.current = reelKey;
+              const reelState = toSpriteVisualState('studio-tape', 'tape-machine', {
+                powered: true,
+                activity: s.activity,
+                condition: 100,
+                transport: s.hasActiveProject ? 'play' : 'stopped',
+              });
+              refs.reels.forEach((r) => applyReelState(r, reelState, reduceMotion));
+            }
+            // Manual update: honours the frame-rate cap and hidden-tab early return above
+            refs.reels.forEach((r) => { if (r.playing) r.update(ticker); });
+          }
+
           // Staff idle bobbing
           refs.staffFigures.forEach((f, i) => {
             f.fig.y = f.baseY + Math.sin(t * 2 + i * 1.4) * 2;
             f.fig.scale.y = 1 + Math.sin(t * 3 + i) * 0.02;
           });
+
+          // Booked artist: steps up to the mic for the session, swaying harder as the work ramps up
+          if (refs.artist) {
+            const a = refs.artist;
+            a.fig.visible = s.hasActiveProject;
+            const name = s.artistName ?? '';
+            if (a.shown !== name) { a.tag.text = name; a.shown = name; }
+            if (s.hasActiveProject) {
+              const sway = reduceMotion ? 0 : 1;
+              const tk = lastTake();
+              const nod = tk && !reduceMotion ? nodOffset(performance.now() - tk.at, tk.grade) : 0;
+              a.fig.y = a.baseY + Math.sin(t * 5) * 1.5 * s.activity * sway + nod;
+              a.fig.rotation = Math.sin(t * 2.3) * 0.05 * s.activity * sway;
+              a.fig.scale.y = 1 + Math.abs(Math.sin(t * 4)) * 0.03 * s.activity * sway;
+            }
+          }
 
           // Phone ring pulse (faster when the studio is waiting for a gig)
           if (refs.phoneRing) {

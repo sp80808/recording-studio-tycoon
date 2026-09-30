@@ -8,6 +8,15 @@ import { getRivalForNode, getRivalLines, toGameEraId } from '@/narrative/rivalCa
 import { ERA_SUBPLOTS } from '@/narrative/subplotCatalog';
 import { CALLBACK_SUBPLOTS } from '@/narrative/callbackSubplots';
 import { INDUSTRY_SUBPLOTS } from '@/narrative/industrySubplots';
+import {
+  addMemory,
+  applyFamilyAntiRepeat,
+  DIRECTOR_GAP_DAYS,
+  getDirector,
+  pickWeighted,
+  recordSelection,
+  type DirectorState,
+} from '@/narrative/eventDirector';
 
 export interface RunSeedContext {
   saveSeed: number | string;
@@ -76,12 +85,13 @@ export interface StorylineBranchRecord {
 
 export interface ActiveSubplotState {
   subplotId: string;
-  currentStage: 1 | 2;
+  currentStage: 1 | 2 | 3;
   startedDay: number;
   stage1ChoiceId?: string;
+  stage2ChoiceId?: string;
 }
 
-export type ChronicleKind = 'campaign' | 'subplot' | 'ending';
+export type ChronicleKind = 'campaign' | 'subplot' | 'ending' | 'event';
 
 /** One line of the studio's story so far — shown in CareerHub's chronicle. */
 export interface ChronicleEntry {
@@ -103,6 +113,8 @@ export interface StorylineState {
   chronicle?: ChronicleEntry[];
   /** Day the last subplot ended — drives the spawn cooldown. */
   lastSubplotEndDay?: number;
+  /** Studio Event Director ledger (memories, history, pending event). Absent on older saves = empty. */
+  director?: DirectorState;
 }
 
 export interface CampaignTree {
@@ -111,7 +123,7 @@ export interface CampaignTree {
 }
 
 export interface SubplotStage {
-  stageNumber: 1 | 2;
+  stageNumber: 1 | 2 | 3;
   title: string;
   context: string;
   options: Array<{
@@ -139,7 +151,8 @@ export interface EmergentSubplot {
   minDay: number;
   triggerCondition: (state: GameState) => boolean;
   daysBetweenStages: number;
-  stages: [SubplotStage, SubplotStage];
+  /** Two beats, or three for a long callback (the third is the epilogue beat). */
+  stages: [SubplotStage, SubplotStage] | [SubplotStage, SubplotStage, SubplotStage];
   /** Callback subplots: earlier story flag → phrase shown in the chronicle ("Because you …"). */
   becauseOf?: Readonly<Record<string, string>>;
 }
@@ -769,6 +782,9 @@ const LEGACY_SUBPLOTS: readonly EmergentSubplot[] = [
 /** Every emergent subplot: the original three plus the era-aware catalog. */
 export const EMERGENT_SUBPLOTS: readonly EmergentSubplot[] = [...LEGACY_SUBPLOTS, ...ERA_SUBPLOTS, ...INDUSTRY_SUBPLOTS, ...CALLBACK_SUBPLOTS];
 
+/** Director family for a subplot: its kicker category ("LABOUR // …" → "LABOUR"), else its own id. */
+const subplotFamily = (s: EmergentSubplot): string => (s.kicker ? s.kicker.split('//')[0].trim() : s.id);
+
 /** Era the player is living in right now (progression era id). */
 const currentGameEra = (state: GameState): string => toGameEraId(state.currentEra || state.selectedEra);
 
@@ -789,14 +805,13 @@ export const advanceSubplotStage = (
   active: ActiveSubplotState,
   choiceId: string,
   currentDay: number,
+  stageCount = 2,
 ): ActiveSubplotState | { resolved: true; choiceId: string } => {
   if (active.currentStage === 1) {
-    return {
-      ...active,
-      currentStage: 2,
-      stage1ChoiceId: choiceId,
-      startedDay: currentDay,
-    };
+    return { ...active, currentStage: 2, stage1ChoiceId: choiceId, startedDay: currentDay };
+  }
+  if (active.currentStage === 2 && stageCount >= 3) {
+    return { ...active, currentStage: 3, stage2ChoiceId: choiceId, startedDay: currentDay };
   }
   return { resolved: true, choiceId };
 };
@@ -854,7 +869,7 @@ export const resolveSubplotChoice = (state: GameState, optionId: string): GameSt
 
   const story = state.storylineState;
   const { consequences } = option;
-  const advanced = advanceSubplotStage(pending.active, option.id, state.currentDay);
+  const advanced = advanceSubplotStage(pending.active, option.id, state.currentDay, pending.subplot.stages.length);
   const resolved = 'resolved' in advanced;
 
   let nextStory: StorylineState = {
@@ -864,7 +879,13 @@ export const resolveSubplotChoice = (state: GameState, optionId: string): GameSt
     resolvedSubplotIds: resolved ? [...story.resolvedSubplotIds, pending.subplot.id] : story.resolvedSubplotIds,
     lastSubplotEndDay: resolved ? state.currentDay : story.lastSubplotEndDay,
   };
-  nextStory = withChronicle(nextStory, {
+  // Every subplot choice is also a studio memory, so director events can remember it.
+  const remembered = addMemory({ ...state, storylineState: nextStory }, {
+    scope: 'studio',
+    key: option.storyFlag,
+    sourceEventId: pending.subplot.id,
+  });
+  nextStory = withChronicle(remembered.storylineState ?? nextStory, {
     day: state.currentDay,
     kind: 'subplot',
     title: `${pending.subplot.title}${resolved ? '' : ' — part 1'}`,
@@ -1035,19 +1056,30 @@ export const evaluateStorylineTick = (state: GameState): GameState => {
   // and the last story beat has had time to breathe. The pick is seeded from the run seed and the
   // number of resolved subplots, so the same save always tells the same story.
   const branchWaiting = typeof story.storyFlags[PENDING_BRANCH_FLAG] === 'string';
-  const cooledDown = next.currentDay - (story.lastSubplotEndDay ?? -SUBPLOT_COOLDOWN_DAYS) >= SUBPLOT_COOLDOWN_DAYS;
-  if (story.activeSubplots.length === 0 && !branchWaiting && cooledDown) {
+  const director = getDirector(next);
+  const cooledDown =
+    next.currentDay - (story.lastSubplotEndDay ?? -SUBPLOT_COOLDOWN_DAYS) >= SUBPLOT_COOLDOWN_DAYS &&
+    next.currentDay - (director.lastEventDay ?? -DIRECTOR_GAP_DAYS) >= DIRECTOR_GAP_DAYS;
+  if (story.activeSubplots.length === 0 && !branchWaiting && !director.pending && cooledDown) {
     const eligible = getEligibleSubplots(next, story.resolvedSubplotIds);
-    if (eligible.length > 0) {
-      const rng = createNodeRng(story.runSeed, 'subplot-spawn', story.resolvedSubplotIds.length);
-      const pick = pickWithRandom(rng, eligible);
-      next = {
-        ...next,
-        storylineState: {
-          ...story,
-          activeSubplots: [{ subplotId: pick.id, currentStage: 1, startedDay: next.currentDay }],
+    // One selection path: the Event Director applies its same-family anti-repeat, then a seeded weighted pick.
+    const candidates = applyFamilyAntiRepeat(
+      next,
+      eligible.map((sp) => ({ sp, id: sp.id, family: subplotFamily(sp), weight: 1 })),
+    );
+    const chosen = pickWeighted(next, candidates, `subplot:${story.resolvedSubplotIds.length}`);
+    if (chosen) {
+      const pick = chosen.sp;
+      next = recordSelection(
+        {
+          ...next,
+          storylineState: {
+            ...story,
+            activeSubplots: [{ subplotId: pick.id, currentStage: 1, startedDay: next.currentDay }],
+          },
         },
-      };
+        { eventId: pick.id, family: subplotFamily(pick) },
+      );
     }
   }
 

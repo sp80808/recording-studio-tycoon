@@ -25,6 +25,7 @@ import { resolveSessionEquipment } from '@/utils/gameUtils';
 import { createSeededRandom } from '@/simulation/seededRandom';
 import { evaluateProjectSynergies, calculateSynergyBonuses, recordDiscoveredSynergies } from '@/utils/synergyUtils';
 import { advanceFlow } from '@/rpg/focusFlow';
+import { applyKnowHowEvents, domainForStage, sessionTemplateBonus, type KnowHowEvent } from '@/rpg/studioKnowHow';
 import { gradeStage, focusMatchFraction } from '@/rpg/stageGrades';
 import {
   getActiveBuffMagnitude,
@@ -402,7 +403,12 @@ export const useStageWork = ({
       Math.floor((baseTakeUnits + stageEfficiencyBonus) * roomSpeedMultiplier * synergyBonuses.workUnitSpeedMultiplier * takeMultiplier)
     );
     // Ensure at least 1 unit of progress if energy was spent and stage is not complete
-    const actualWorkUnitsToAdd = (workUnitsToAdd === 0 && !currentStage.completed && totalPointsGenerated > 0) ? 1 : workUnitsToAdd; // Ensure progress if any points generated
+    const templateBonus = sessionTemplateBonus(
+      gameState.studioKnowHow,
+      `${project.genre}:${currentStage.stageName}`.toLowerCase(),
+      (project.stageSessionsTaken ?? [])[currentStageIndex] ?? 0
+    );
+    const actualWorkUnitsToAdd = ((workUnitsToAdd === 0 && !currentStage.completed && totalPointsGenerated > 0) ? 1 : workUnitsToAdd) + templateBonus; // Ensure progress if any points generated
 
     const newWorkUnitsCompleted = Math.min(
       currentStage.workUnitsCompleted + actualWorkUnitsToAdd, // Use actualWorkUnitsToAdd
@@ -510,10 +516,30 @@ export const useStageWork = ({
         });
       }
 
+      // 📚 Studio Know-How (#66): explicit gameplay events only.
+      const knowHowEvents: KnowHowEvent[] = [];
+      if (stageCompleted && !currentStage.completed) {
+        knowHowEvents.push({
+          kind: 'session',
+          eventId: `session:${project.id}:${currentStageIndex}`,
+          domain: domainForStage(currentStage.stageName),
+          repeatKey: `${project.genre}:${currentStage.stageName}`.toLowerCase(),
+          grade: completedGrade?.grade ?? 'Silver',
+          service: project.stake === 'safe' || project.stake === undefined,
+        });
+      }
+      newlyDiscovered.forEach(syn => knowHowEvents.push({
+        kind: 'discovery',
+        eventId: `synergy:${syn.id}`,
+        domain: 'production',
+        label: syn.name,
+      }));
+      const { game: withKnowHow } = applyKnowHowEvents(prev, knowHowEvents);
+
       const gemGain = stageCompleted && completedGrade?.grade === 'Gold' ? 2 : stageCompleted && completedGrade?.grade === 'Silver' ? 1 : 0;
 
       return withDailyTracking({
-        ...prev,
+        ...withKnowHow,
         gems: (prev.gems ?? 0) + gemGain,
         activeProject: updatedProject,
         discoveredSynergies: updatedDiscovered,

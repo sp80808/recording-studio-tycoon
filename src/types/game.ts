@@ -280,6 +280,10 @@ export interface TrainingCourse {
     specialEffects?: string[];
   };
   requiredLevel: number;
+  /** Know-How cost + domain familiarity required to enrol (#66). */
+  knowHow?: import('@/rpg/studioKnowHow').KnowHowGate;
+  /** Domain that completing this course teaches. */
+  domain?: import('@/rpg/studioKnowHow').KnowHowDomain;
 }
 
 import { Band, SessionMusician, OriginalTrackProject } from './bands';
@@ -307,14 +311,19 @@ export interface GameState {
   equipmentPlacements?: EquipmentPlacement[];
   availableProjects: Project[];
   financials: Financials;
+  /** Append-only money journal (issue #83). Absent on legacy saves; starts on first booking. */
+  ledger?: import('@/economy/ledger').LedgerState;
   /** Optional: absent on old saves, treated as a fresh day. */
   dailyTracking?: DailyTracking;
   clientRelationships?: Record<string, ClientRelationship>;
   studioLevel?: number; // Studio tier level (1-5), drives visible studio room and console upgrades
   studioTier?: number; // Alias for studioLevel
   studioRooms: StudioRoom[]; // Physical bookable studio suites; drives concurrent capacity
+  /** Studio Know-How progression (#66). Absent on legacy saves; migrated to an empty state. */
+  studioKnowHow?: import('@/rpg/studioKnowHow').StudioKnowHow;
+  /** Studio premises tier (#70): 0 borrowed room, 1 project studio. Absent on legacy saves = 0. */
+  premisesTier?: 0 | 1;
   chainTemplates?: import('@/rpg/signalChain').SignalChain[]; // Saved chain templates (#86)
-  studioKnowHow?: number; // Bounded learning from polished sessions (#87)
   discoveredBriefCombos?: string[]; // Named brief/recipe combos discovered (#48)
   discoveredSynergies?: string[]; // IDs of discovered studio synergies (Kairosoft recipe codex)
   
@@ -334,6 +343,8 @@ export interface GameState {
   playerBands: Band[];
   /** A&R roster of signed artists (artist contracts). Absent on legacy saves. */
   signedArtists?: import('@/simulation/artistContracts').SignedArtist[];
+  /** Ambient active-play trickle counters (economy/ambientIncome). Absent on legacy saves. */
+  ambientIncome?: import('@/economy/ambientIncome').AmbientIncomeState;
   /** Prospect ids the player negotiated with and walked away from. Absent on legacy saves. */
   passedProspects?: string[];
   availableSessionMusicians: SessionMusician[];

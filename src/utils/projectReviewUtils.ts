@@ -25,6 +25,8 @@ export interface SettlementContext {
   marketMultiplier?: number;
   /** Override for match-rating multiplier; defaults from project.matchRating. */
   matchRatingMultiplier?: number;
+  /** Flat quality points (0-8) from signed A&R artists working the session. */
+  artistQualityBonus?: number;
   /** Flat quality points (0-12) from the producer's origin on this genre. */
   originQualityBonus?: number;
   /** Extra payout multiplier from the producer's origin (clamped 0.5-2). */
@@ -220,6 +222,7 @@ export const generateProjectReview = (
   const difficultyBonus = project.difficulty * 1.5;
   const synergyBonus = clamp(Math.round(settlementContext?.synergyQualityBonus ?? 0), 0, 12);
   const originBonus = clamp(Math.round(settlementContext?.originQualityBonus ?? 0), 0, 12);
+  const artistBonus = clamp(Math.round(settlementContext?.artistQualityBonus ?? 0), 0, 8);
   let overallQualityScore = Math.floor(
     averageSkillScore * 0.5 +
     pointsFactor +
@@ -230,7 +233,8 @@ export const generateProjectReview = (
     equipBonusExtra +
     minigameBonus +
     synergyBonus +
-    originBonus
+    originBonus +
+    artistBonus
   );
   overallQualityScore = clamp(overallQualityScore + randomInt(rng, -5, 4), 0, 100);
 
@@ -321,6 +325,7 @@ export const generateProjectReview = (
   if (studioBonus >= 6) factorNotes.push('studio genre expertise showed');
   if (equipBonusExtra >= 6) factorNotes.push('the gear chain stayed clean');
   if (focusBonus >= 6) factorNotes.push('sharp focus direction paid off');
+  if (artistBonus >= 4) factorNotes.push('your signed artist elevated the session');
   if (minigameBonus >= 4) factorNotes.push('standout session takes boosted the result');
   if (marketMultiplier >= 1.05) factorNotes.push('the current market wanted this sound');
   else if (marketMultiplier < 0.95) factorNotes.push('the current market was cool on this genre');
