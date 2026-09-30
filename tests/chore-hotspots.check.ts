@@ -8,7 +8,7 @@ const chores = Object.values(state.chores);
 
 const consoleChores = chores.filter(c => c.hotspotId === 'console');
 const shelfChores = chores.filter(c => c.hotspotId === 'shelf');
-const liveroomChores = chores.filter(c => c.hotspotId === 'liveroom');
+const liveroomChores = chores.filter(c => c.hotspotId === 'liveRoom');
 
 assert(consoleChores.length >= 2, 'Console should have tape and calibration chores');
 assert(shelfChores.length >= 1, 'Shelf/lounge should have coffee/hospitality chore');

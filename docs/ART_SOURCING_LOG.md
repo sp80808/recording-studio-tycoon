@@ -90,3 +90,9 @@ beads issue `recording-studio-tycoon-art.X` (3D models + skins/sticker UI):
 - `higgsfield-generate` skill (GPT Image 2 / Seedance / Nano Banana) — reserved for gaps with no CC0 coverage; nothing generated this pass because CC0 covers all current needs.
 - Web search + fetch (Kenney.nl, OpenGameArt.org) — used this pass; URLs above verified live Sept 2026.
 - No binary assets downloaded this pass (keeps the diff reviewable); PNG trimming is queue item 1–3 above.
+
+## 7. In-house reward sprites (CC0)
+
+`public/assets/rewards/coin.svg`, `xp-star.svg`, `spark.svg` were hand-drawn as SVG
+for this project (no external source, no AI generation) and are released CC0. Used by
+`RewardFlights` for cash/XP loot travel.
