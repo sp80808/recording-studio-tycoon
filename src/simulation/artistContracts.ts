@@ -210,3 +210,40 @@ export const canSign = (
   if (money < terms.advance) return { ok: false, reason: 'Not enough cash for the advance.' };
   return { ok: true };
 };
+
+/** Cap on the flat quality points a whole roster adds to a session. */
+export const MAX_ARTIST_QUALITY_BONUS = 8;
+/** Cap on the extra chart-quality points a roster's name value adds to a debut. */
+export const MAX_ARTIST_CHART_BOOST = 8;
+
+/**
+ * Flat session-quality points from signed artists: a matching-genre artist
+ * contributes their skill in full, others only a little guest-spot polish.
+ */
+export const artistQualityBonus = (
+  roster: readonly Pick<SignedArtist, 'skill' | 'genre'>[] | undefined,
+  genre: string | undefined
+): number => {
+  if (!roster?.length) return 0;
+  const total = roster.reduce(
+    (sum, a) => sum + (a.skill / 10) * (a.genre.toLowerCase() === genre?.toLowerCase() ? 4 : 1.5),
+    0
+  );
+  return Math.min(MAX_ARTIST_QUALITY_BONUS, Math.round(total));
+};
+
+/**
+ * Extra chart-odds points from signed artists' name value (fame), added to the
+ * quality a debut is placed with. Matching genre counts for much more.
+ */
+export const artistChartBoost = (
+  roster: readonly Pick<SignedArtist, 'fame' | 'genre'>[] | undefined,
+  genre: string | undefined
+): number => {
+  if (!roster?.length) return 0;
+  const total = roster.reduce(
+    (sum, a) => sum + a.fame / (a.genre.toLowerCase() === genre?.toLowerCase() ? 25 : 60),
+    0
+  );
+  return Math.min(MAX_ARTIST_CHART_BOOST, Math.round(total));
+};

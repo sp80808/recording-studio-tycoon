@@ -12,7 +12,7 @@ interface StoryEventModalProps {
   onDone: () => void;
 }
 
-/** Emergent subplot beat: a two-part story with honest costs — unaffordable options are disabled, not hidden. */
+/** Emergent subplot beat: a two- or three-part story with honest costs — unaffordable options are disabled, not hidden. */
 export const StoryEventModal: React.FC<StoryEventModalProps> = ({ event, gameState, open, onChoose, onDeferred, onDone }) => {
   const content = useMemo<DecisionContent | null>(() => {
     if (!event) return null;
@@ -20,7 +20,7 @@ export const StoryEventModal: React.FC<StoryEventModalProps> = ({ event, gameSta
     return {
       key: `${subplot.id}:${active.currentStage}`,
       kicker: subplot.kicker ?? 'STUDIO STORY',
-      badge: `Part ${stage.stageNumber} of 2`,
+      badge: `Part ${stage.stageNumber} of ${subplot.stages.length}`,
       title: stage.title,
       context: stage.context,
       prompt: 'What do you do?',

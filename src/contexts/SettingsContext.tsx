@@ -1,3 +1,4 @@
+import { applyFeelAttributes } from '@/lib/motion/feelMode';
 import React, { useState, useEffect, ReactNode } from 'react';
 import { gameAudio } from '../utils/audioSystem';
 import { SettingsContext, GameSettings, useSettings } from './settings-context-types';
@@ -50,6 +51,11 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
       void i18n.changeLanguage(lng);
     }
   }, [settings.language]);
+
+  // Mirror motion mode onto <html> so feel.css honours the in-game setting, not just the OS query
+  useEffect(() => {
+    applyFeelAttributes(document.documentElement, settings);
+  }, [settings.reducedMotion, settings.graphicsPreset]);
 
   const updateSettings = (newSettings: Partial<GameSettings>) => {
     const normalised: Partial<GameSettings> = { ...newSettings };

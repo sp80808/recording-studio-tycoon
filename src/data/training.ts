@@ -14,7 +14,8 @@ export const availableTrainingCourses: TrainingCourse[] = [
         technical: 5,
         creativity: 2
       }
-    }
+    },
+    domain: 'tracking'
   },
   {
     id: 'train02',
@@ -47,7 +48,9 @@ export const availableTrainingCourses: TrainingCourse[] = [
         creativity: 5
       },
       specialEffects: ['Mixing Master']
-    }
+    },
+    domain: 'mixing',
+    knowHow: { cost: 6, domain: 'mixing', minDomain: 15 }
   },
   {
     id: 'train04',
@@ -81,6 +84,25 @@ export const availableTrainingCourses: TrainingCourse[] = [
         technical: 4
       },
       specialEffects: ['Team Leader']
-    }
+    },
+    domain: 'business',
+    knowHow: { cost: 8, domain: 'business', minDomain: 10 }
+  },
+  {
+    id: 'train06',
+    name: 'Mastering QC',
+    description: 'Critical listening, loudness targets and delivery checks.',
+    cost: 1600,
+    duration: 4,
+    requiredLevel: 3,
+    effects: {
+      statBoosts: {
+        technical: 9,
+        speed: 3
+      },
+      specialEffects: ['Golden Ears']
+    },
+    domain: 'mastering',
+    knowHow: { cost: 5, domain: 'mastering', minDomain: 10 }
   }
 ];

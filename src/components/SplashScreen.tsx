@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Maximize, Minimize, Play, Plus, Settings, Volume2, VolumeX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Era } from './EraSelectionModal';
@@ -37,6 +37,8 @@ const TIP_KEYS = [
 
 export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScreenProps) {
   const [showEraSelection, setShowEraSelection] = useState(false);
+  const [isEnteringStudio, setIsEnteringStudio] = useState(false);
+  const transitionTimer = useRef<number | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false);
   const [saveInfo, setSaveInfo] = useState<SaveInspectionResult>(() => inspectSaveGame());
@@ -48,6 +50,12 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
   const { settings, updateSettings } = useSettings();
   const music = useBackgroundMusic();
   const { isFullscreen, toggleFullscreen } = useFullscreen('root');
+
+  useEffect(() => {
+    return () => {
+      if (transitionTimer.current !== null) window.clearTimeout(transitionTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (saveInfo.isCorrupt && !errorMessage) {
@@ -109,13 +117,31 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
   const musicLabel = settings.musicEnabled ? t('splash_mute_music') : t('splash_play_music');
   const fullscreenLabel = isFullscreen ? t('exit_fullscreen') : t('enter_fullscreen');
 
+  const handleBeginStudio = (era: Era, originId: ProducerBackgroundId) => {
+    setIsEnteringStudio(true);
+    transitionTimer.current = window.setTimeout(() => {
+      setShowEraSelection(false);
+      setIsEnteringStudio(false);
+      onStartGame(era, originId);
+    }, 900);
+  };
+
+  if (isEnteringStudio) {
+    return (
+      <main className="studio-boot-gate" role="status" aria-live="polite" aria-busy="true">
+        <span className="studio-boot-gate-mark">RST</span>
+        <p className="studio-boot-gate-title">Opening the studio…</p>
+        <p className="studio-boot-gate-copy">Setting the room, routing the signal, and finding the good pencil.</p>
+        <div className="studio-boot-skeleton" aria-hidden="true"><span /><span /><span /></div>
+        <div className="studio-boot-progress" aria-hidden="true"><i /></div>
+      </main>
+    );
+  }
+
   if (showEraSelection) {
     return (
       <CareerStartScreen
-        onBegin={(era, originId) => {
-          setShowEraSelection(false);
-          onStartGame(era, originId);
-        }}
+        onBegin={handleBeginStudio}
         onBack={() => setShowEraSelection(false)}
       />
     );

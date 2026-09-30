@@ -37,7 +37,7 @@ interface CareerHubProps {
   onChooseSeasonFocus?: (focus: StudioFocus) => void;
 }
 
-const CHRONICLE_ICON: Record<ChronicleKind, typeof Scroll> = { campaign: Flag, subplot: Feather, ending: Scroll };
+const CHRONICLE_ICON: Record<ChronicleKind, typeof Scroll> = { campaign: Flag, subplot: Feather, ending: Scroll, event: Sparkles };
 
 const careerTitle = (level: number): string =>
   level >= 12

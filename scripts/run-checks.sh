@@ -35,7 +35,7 @@ for check in tools-assets audio-system confetti-juice minigames-audio user-inter
 done
 
 echo "=== gamepad service & controller suites ==="
-for check in gamepad-service gamepad-glyph gamepad-navigation radial-wheel beat-pad-game tape-jog-game console-ride-game gamepad-suite; do
+for check in gamepad-service gamepad-glyph gamepad-navigation radial-wheel beat-pad-game tape-jog-game console-ride-game vocal-comp album-sequence gamepad-suite; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
   node "/tmp/rst-$check.cjs"
 done
@@ -67,6 +67,10 @@ node /tmp/rst-branching-storylines.cjs
 echo "=== callback subplots (story remembers earlier choices) ==="
 ./node_modules/.bin/esbuild tests/callback-subplots.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-callback-subplots.cjs --alias:@=./src >/dev/null
 node /tmp/rst-callback-subplots.cjs
+
+echo "=== studio event director (#56) ==="
+./node_modules/.bin/esbuild tests/event-director.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-event-director.cjs --alias:@=./src >/dev/null
+node /tmp/rst-event-director.cjs
 
 echo "=== industry-history subplots ==="
 ./node_modules/.bin/esbuild tests/industry-subplots.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-industry-subplots.cjs --alias:@=./src >/dev/null
@@ -109,6 +113,12 @@ fi
 echo "=== i18n locales (en / en-GB / pl key parity) ==="
 ./node_modules/.bin/esbuild tests/i18n-locales.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-i18n-locales.cjs --alias:@=./src >/dev/null
 node /tmp/rst-i18n-locales.cjs
+
+echo "=== sprite factory & asset pipeline (#78, #79) ==="
+for check in sprite-factory asset-pipeline; do
+  ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
+  node "/tmp/rst-$check.cjs"
+done
 
 echo "=== game engine back-end & graphics tech suites ==="
 for check in game-event-bus engine-loop engine-settings graphics-postfx; do
@@ -165,7 +175,7 @@ for check in origin-perks career-start design-system; do
 done
 
 echo "=== era-authentic gigs, story contracts & economy floors ==="
-for check in project-era-starters project-brief session-issues signal-chain economy-income story-contracts achievements campaign-endings studio-hotkeys; do
+for check in project-era-starters project-brief session-issues signal-chain economy-income story-contracts achievements campaign-endings studio-hotkeys studio-know-how studio-premises; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
   node "/tmp/rst-$check.cjs"
 done
@@ -173,7 +183,6 @@ done
 echo "=== ambient earning (#105) ==="
 ./node_modules/.bin/esbuild tests/ambient-income.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-ambient-income.cjs --alias:@=./src >/dev/null
 node /tmp/rst-ambient-income.cjs
-
 
 echo "=== studio seasons (#63) ==="
 ./node_modules/.bin/esbuild tests/studio-seasons.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-seasons.cjs --alias:@=./src >/dev/null
@@ -195,5 +204,9 @@ echo "=== balance sweep (determinism, config overrides, runaway flags) ==="
 node /tmp/rst-balance-sweep.cjs
 # Report-only: a small mid-game sweep; RUNAWAY lines are for humans, not a gate.
 node /tmp/rst-balance.cjs --sweep 20 --days 60 --scenario mid --seed 7 --out /tmp/rst-balance | grep -E "RUNAWAY|runaway flags" || true
+
+echo "=== feel layer ==="
+./node_modules/.bin/esbuild tests/feel-mode.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-feel-mode.cjs --alias:@=./src >/dev/null
+node /tmp/rst-feel-mode.cjs
 
 echo "All automated checks passed."

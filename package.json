@@ -21,6 +21,9 @@
     "clean:appledouble": "python3 scripts/clean-appledouble.py",
     "lint": "eslint .",
     "test": "bash scripts/run-checks.sh",
+    "assets:build": "node scripts/assets.cjs build",
+    "assets:validate": "node scripts/assets.cjs validate",
+    "assets:inspect": "node scripts/assets.cjs inspect",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -104,6 +107,7 @@
     "eslint": "^9.9.0",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.9",
+    "ffmpeg-static": "^5.3.0",
     "globals": "^15.9.0",
     "lovable-tagger": "^1.1.7",
     "postcss": "^8.5.6",
