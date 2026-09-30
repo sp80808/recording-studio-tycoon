@@ -308,7 +308,11 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       {/* Top-right overlay stack: camera recentre, then the lounge chore chip beneath it. */}
       <div className="studio-room-overlay-tr">
         <button className="studio-camera-center studio-dock-button bg-stone-950/70 border border-white/10 flex items-center gap-1.5"
-          onClick={() => setCameraReset(value => value + 1)} aria-label="Center studio camera" title="Center studio camera">
+          onClick={() => {
+            setCameraReset(value => value + 1);
+            playClick();
+            toast({ title: 'Studio view centered', description: 'The room camera is back at its default position.' });
+          }} aria-label="Center studio camera" title="Center studio camera">
           {gamepad.isConnected && gamepad.lastInputType === 'gamepad' && (
             <GamepadGlyph button="rs" size="xs" />
           )}
