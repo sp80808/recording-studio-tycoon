@@ -8,12 +8,14 @@ import MoodIndicator from './MoodIndicator'; // Import MoodIndicator
 import { CreateBandModal } from './modals/CreateBandModal';
 import { RecordTrackModal } from './modals/RecordTrackModal';
 import { canGoOnTour } from '@/utils/bandUtils';
+import { ShowPlan, VENUES, MARKETING_OPTIONS, MarketingTier, SoundcheckTier, SOUNDCHECK_OPTIONS, venueDisplayName, canPlayShow, suggestedTicketPrice, totalCost, getVenue } from '@/simulation/liveShows';
 import { toast } from '@/hooks/use-toast';
 
 interface BandManagementProps {
   gameState: GameState;
   onCreateBand: (bandName: string, memberIds: string[]) => void;
   onStartTour: (bandId: string) => void;
+  onPlayShow?: (bandId: string, plan: ShowPlan) => void;
   onCreateOriginalTrack: (bandId: string) => void;
 }
 
@@ -21,11 +23,18 @@ export const BandManagement: React.FC<BandManagementProps> = ({
   gameState,
   onCreateBand,
   onStartTour,
+  onPlayShow,
   onCreateOriginalTrack
 }) => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRecordTrackModal, setShowRecordTrackModal] = useState(false);
   const [selectedBandForTrack, setSelectedBandForTrack] = useState<Band | null>(null);
+
+  const [showPlanBandId, setShowPlanBandId] = useState<string | null>(null);
+  const [venueId, setVenueId] = useState(VENUES[0].id);
+  const [marketing, setMarketing] = useState<MarketingTier>('flyers');
+  const [soundcheck, setSoundcheck] = useState<SoundcheckTier>('quick');
+  const [ticketPrice, setTicketPrice] = useState(suggestedTicketPrice(VENUES[0]));
 
   const canCreateBand = gameState.playerData.level >= 4 && gameState.hiredStaff.length >= 1;
 
@@ -169,7 +178,89 @@ export const BandManagement: React.FC<BandManagementProps> = ({
                   🚌 Tour
                 </Button>
               )}
+              {onPlayShow && (
+                <Button
+                  size="sm"
+                  onClick={() => setShowPlanBandId(showPlanBandId === band.id ? null : band.id)}
+                  disabled={band.tourStatus.isOnTour}
+                  className="bg-sky-400/[0.14] ring-1 ring-inset ring-sky-400/45 hover:bg-sky-400/[0.24]"
+                >
+                  🎤 Show
+                </Button>
+              )}
             </div>
+
+            {onPlayShow && showPlanBandId === band.id && (() => {
+              const plan: ShowPlan = { venueId, marketing, ticketPrice, soundcheck };
+              const check = canPlayShow(
+                { fame: band.fame, isOnTour: band.tourStatus.isOnTour, lastShowDay: band.lastShowDay },
+                gameState.reputation, plan, gameState.money, gameState.currentDay
+              );
+              return (
+                <div className="mt-3 space-y-2 rounded border border-stone-600 p-2 text-xs text-stone-300" data-testid="live-show-planner">
+                  <div className="flex gap-2">
+                    <label className="flex-1">Venue
+                      <select
+                        className="mt-1 w-full rounded bg-stone-800 p-1"
+                        value={venueId}
+                        onChange={e => {
+                          setVenueId(e.target.value);
+                          const v = getVenue(e.target.value);
+                          if (v) setTicketPrice(suggestedTicketPrice(v));
+                        }}
+                      >
+                        {VENUES.map(v => (
+                          <option key={v.id} value={v.id}>
+                            {venueDisplayName(v, gameState.currentEra)} ({v.capacity}) — fame {v.minFame}+, rep {v.minReputation}+
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="flex-1">Marketing
+                      <select
+                        className="mt-1 w-full rounded bg-stone-800 p-1"
+                        value={marketing}
+                        onChange={e => setMarketing(e.target.value as MarketingTier)}
+                      >
+                        {MARKETING_OPTIONS.map(m => (
+                          <option key={m.id} value={m.id}>{m.label} (${m.cost})</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="flex-1">Soundcheck
+                      <select
+                        className="mt-1 w-full rounded bg-stone-800 p-1"
+                        value={soundcheck}
+                        onChange={e => setSoundcheck(e.target.value as SoundcheckTier)}
+                      >
+                        {SOUNDCHECK_OPTIONS.map(o => (
+                          <option key={o.id} value={o.id}>{o.label} (${o.cost}, {Math.round(o.mishapChance * 100)}% mishap)</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="w-20">Ticket $
+                      <input
+                        type="number"
+                        min={1}
+                        className="mt-1 w-full rounded bg-stone-800 p-1"
+                        value={ticketPrice}
+                        onChange={e => setTicketPrice(Math.max(1, Number(e.target.value) || 1))}
+                      />
+                    </label>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Up-front cost ${totalCost(plan)}{!check.ok && <span className="ml-2 text-red-300">{check.reason}</span>}</span>
+                    <Button
+                      size="sm"
+                      disabled={!check.ok}
+                      onClick={() => { onPlayShow(band.id, plan); setShowPlanBandId(null); }}
+                    >
+                      Play the night
+                    </Button>
+                  </div>
+                </div>
+              );
+            })()}
           </Card>
         );
       })}

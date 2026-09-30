@@ -20,6 +20,7 @@ import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import { gameAudio } from '@/utils/audioSystem';
 import { inspectSaveGame, SaveInspectionResult } from '@/utils/savePreview';
+import { INDUSTRY_TIPS } from '@/data/flavour';
 import './splash.css';
 
 interface SplashScreenProps {
@@ -55,7 +56,7 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
   }, [saveInfo, errorMessage, t]);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setTip(index => (index + 1) % TIP_KEYS.length), 5000);
+    const timer = window.setInterval(() => setTip(index => (index + 1) % (INDUSTRY_TIPS.length * 2)), 5000);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -71,7 +72,7 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
     if (enabled) {
       void gameAudio.userGestureSignal().catch(() => {});
       music.playTrack(1);
-    } else music.stop();
+    } else music.pauseMusic();
   };
 
   const handleContinue = () => {
@@ -188,8 +189,8 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
       </section>
 
       <footer className="splash-footer">
-        <span className="splash-footer-label">{t('splash_producer_note', { n: String(tip + 1).padStart(2, '0') })}</span>
-        <p key={tip}>{t(TIP_KEYS[tip])}</p>
+        <span className="splash-footer-label">{t('splash_producer_note', { n: String(Math.floor(tip / 2) + 1).padStart(2, '0') })}</span>
+        <p key={tip}>{tip % 2 === 0 ? t(TIP_KEYS[(tip / 2) % TIP_KEYS.length]) : INDUSTRY_TIPS[(tip - 1) / 2]}</p>
       </footer>
     </main>
 

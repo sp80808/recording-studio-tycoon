@@ -1,7 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { Application, Container, Graphics, Text } from 'pixi.js';
+import { Application, Container, Graphics, Matrix, Sprite, Text } from 'pixi.js';
+import { getPropTexture, loadPropSprites } from '@/components/studio/propSprites';
 import { visualEraId } from '@/utils/eraProgression';
 import { useSettings } from '@/contexts/SettingsContext';
+import { claimPixiApplication, STUDIO_FLOOR_OWNER } from '@/lib/motion/pixiGuard';
 import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from '@/components/studio/isoMath';
 import {
   buildDecorLights,
@@ -615,7 +617,19 @@ const buildScene = (
     isoQuad(thresh, 0, 3.15, 0.55, 4.35, 0);
     thresh.fill({ color: 0x2a2118, alpha: 0.85 });
     doorWrap.addChild(thresh);
-    doorWrap.addChild(doorGfx);
+    const doorTex = getPropTexture('door');
+    if (doorTex) {
+      // Sprite is authored flat; shear it into the left-wall plane.
+      const doorSprite = new Sprite(doorTex);
+      doorSprite.setFromMatrix(new Matrix(
+        (doorB.x - doorA.x) / doorTex.width, (doorB.y - doorA.y) / doorTex.width,
+        0, doorH / doorTex.height,
+        doorA.x, doorA.y - doorH,
+      ));
+      doorWrap.addChild(doorSprite);
+    } else {
+      doorWrap.addChild(doorGfx);
+    }
     const lintel = new Graphics();
     lintel
       .poly([
@@ -1185,6 +1199,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     settingsRef.current = settings;
     const app = appRef.current;
     if (app && app.renderer) {
+      // Hard-cap the ticker so 90/120Hz phones don't wake the GPU every vsync (0 = uncapped)
+      app.ticker.maxFPS = settings.targetFps > 0 ? settings.targetFps : 0;
       const dpr = window.devicePixelRatio || 1;
       const effectiveRes = calculateEffectiveResolution(dpr, settings.resolutionScale);
       if (Math.abs(app.renderer.resolution - effectiveRes) > 0.01) {
@@ -1269,6 +1285,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     if (!container) return;
 
     let disposed = false;
+    let releasePixiClaim: (() => void) | null = null;
     let lastW = 0;
     let lastH = 0;
     let detachInteractions: (() => void) | undefined;
@@ -1332,6 +1349,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
 
     const boot = async () => {
       try {
+        releasePixiClaim = claimPixiApplication(STUDIO_FLOOR_OWNER);
         const app = new Application();
         const initialRes = calculateEffectiveResolution(
           window.devicePixelRatio || 1,
@@ -1340,12 +1358,14 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         await app.init({
           background: 0x0e0c0a,
           resizeTo: container,
-          antialias: true,
+          antialias: !(typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches),
           autoDensity: true,
+          powerPreference: 'high-performance',
           resolution: initialRes,
         });
         if (disposed) {
           app.destroy(true, { children: true });
+          releasePixiClaim?.();
           return;
         }
         appRef.current = app;
@@ -1354,6 +1374,11 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         app.canvas.setAttribute('data-engine', 'pixi');
         app.canvas.style.touchAction = 'none';
         app.canvas.setAttribute('aria-label', 'Interactive studio floor. Tap objects to inspect. Pinch to zoom or use two fingers to pan.');
+        await loadPropSprites();
+        if (disposed) {
+          app.destroy(true, { children: true });
+          return;
+        }
         lastW = app.screen.width;
         lastH = app.screen.height;
         rebuild();
@@ -1370,10 +1395,24 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           const pointers = [...gestureRef.current.values()];
           return { x: (pointers[0].x + pointers[1].x) / 2, y: (pointers[0].y + pointers[1].y) / 2 };
         };
+        // Touch: one-finger drag pans (after a 10px slop so taps on hotspots still select); double-tap resets the camera.
+        let touchDrag: { id: number; x: number; y: number; moved: boolean } | null = null;
+        let lastTap = { t: 0, x: 0, y: 0 };
+        const resetCamera = () => {
+          cameraRef.current = { x: 0, y: 0, zoom: 1.0 };
+          const sc = sceneRef.current;
+          if (sc) {
+            sc.root.scale.set(sc.baseScale);
+            sc.root.position.set(sc.basePosition.x, sc.basePosition.y);
+          }
+        };
         const onPointerDown = (event: PointerEvent) => {
           markCanvasInput();
           if (gestureRef.current.size === 0) suppressTapRef.current = false;
           gestureRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          touchDrag = event.pointerType !== 'mouse' && gestureRef.current.size === 1
+            ? { id: event.pointerId, x: event.clientX, y: event.clientY, moved: false }
+            : null;
           if (gestureRef.current.size === 2) {
             suppressTapRef.current = true;
             gestureMidpointRef.current = midpoint();
@@ -1390,6 +1429,18 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           markCanvasInput();
           if (!gestureRef.current.has(event.pointerId)) return;
           gestureRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          if (gestureRef.current.size === 1 && touchDrag && touchDrag.id === event.pointerId) {
+            const dx = event.clientX - touchDrag.x;
+            const dy = event.clientY - touchDrag.y;
+            if (!touchDrag.moved && Math.hypot(dx, dy) < 10) return;
+            touchDrag.moved = true;
+            suppressTapRef.current = true;
+            event.preventDefault();
+            panBy(dx, dy);
+            touchDrag.x = event.clientX;
+            touchDrag.y = event.clientY;
+            return;
+          }
           if (gestureRef.current.size !== 2) return;
           event.preventDefault();
 
@@ -1412,6 +1463,18 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           gestureDistance = nextDist;
         };
         const onPointerUp = (event: PointerEvent) => {
+          if (touchDrag && touchDrag.id === event.pointerId) {
+            if (!touchDrag.moved && event.type === 'pointerup' && event.pointerType !== 'mouse') {
+              const now = performance.now();
+              if (now - lastTap.t < 300 && Math.hypot(event.clientX - lastTap.x, event.clientY - lastTap.y) < 30) {
+                resetCamera();
+                lastTap = { t: 0, x: 0, y: 0 };
+              } else {
+                lastTap = { t: now, x: event.clientX, y: event.clientY };
+              }
+            }
+            touchDrag = null;
+          }
           gestureRef.current.delete(event.pointerId);
           if (gestureRef.current.size < 2) {
             gestureMidpointRef.current = null;
@@ -1727,6 +1790,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
 
     return () => {
       disposed = true;
+      releasePixiClaim?.();
       observer.disconnect();
       detachInteractions?.();
       const app = appRef.current;

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { EMPTY_STATES } from '@/data/flavour';
 import { GameState, Project } from '@/types/game';
 import { StudioHotspotId } from '@/components/WebGLCanvas';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
@@ -305,7 +306,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
         <StatRow label="Reputation" value={<MotionNumber value={gameState.reputation} />} valueClass="text-amber-300" />
         <StatRow label="Influence" value={<MotionNumber value={gameState.influence} />} valueClass="text-purple-300" />
         {topEntries.length === 0 && (
-          <div className="text-xs text-stone-400">No chart data yet — release tracks with a band to enter the charts.</div>
+          <div className="text-xs text-stone-400">{EMPTY_STATES.chart.title} {EMPTY_STATES.chart.hint}</div>
         )}
         {topEntries.map(({ chart, entry }) => (
           <div key={`${chart}-${entry.position}-${entry.song?.id ?? entry.song?.title ?? ''}`} className="flex items-center gap-2 text-xs">
@@ -427,10 +428,10 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   const crew = gameState.hiredStaff;
   return (
     <Shell hotspot={hotspot} onClose={onClose}>
-      {!project && <div className="text-xs text-stone-400">No session booked — the live room is empty.</div>}
+      {!project && <div className="text-xs text-stone-400">{EMPTY_STATES.sessionRoom.title} {EMPTY_STATES.sessionRoom.hint}</div>}
       {crew.length === 0 && (
         <div className="text-xs text-stone-400">
-          No crew hired yet. Hire staff through the Staff panel while the studio is quiet.
+          {EMPTY_STATES.crew.title} {EMPTY_STATES.crew.hint}
         </div>
       )}
       {crew.map((member) => {
