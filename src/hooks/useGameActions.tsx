@@ -23,22 +23,13 @@ import {
 } from '@/simulation/choreEngine';
 import { advanceStory } from '@/narrative/storyProgression';
 import {
-  NEUTRAL_ORIGIN_EFFECTS,
-  applyUpkeepDiscount,
   getOriginEffects,
   gigRefreshCostFor,
-  type OriginEffects,
 } from '@/narrative/originPerks';
+import { calculateEquipmentUpkeep } from '@/economy/upkeep';
+import { bookEntry, spend } from '@/economy/ledger';
 
-/** Daily equipment upkeep: 0.1% of item price per day, minimum $2/item */
-export const calculateEquipmentUpkeep = (
-  equipment: GameState['ownedEquipment'],
-  effects: OriginEffects = NEUTRAL_ORIGIN_EFFECTS,
-): number => {
-  if (!equipment || equipment.length === 0) return 0;
-  const base = equipment.reduce((sum, item) => sum + Math.max(2, Math.round(item.price * 0.001)), 0);
-  return applyUpkeepDiscount(base, effects);
-};
+export { calculateEquipmentUpkeep };
 
 /** Cost + cooldown for chasing new gig offers (bead goj.3). */
 export const GIG_REFRESH_COST = 50;
@@ -163,8 +154,17 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       }
 
       const newExpenses = prev.financials.expenses + totalDailyExpenses;
+      const ledgerDay = { currentDay: newDay };
+      const paidPayroll = bookEntry({ ...prev, ...ledgerDay }, {
+        category: 'staff-payroll', amount: -totalSalaries, sourceId: `payroll-d${newDay}`,
+        memo: `${prev.hiredStaff.length} crew`,
+      });
+      const booked = bookEntry(paidPayroll, {
+        category: 'equipment-upkeep', amount: -equipmentUpkeep, sourceId: `upkeep-d${newDay}`,
+      });
       const baseUpdatedState: GameState = {
         ...prev, 
+        ledger: booked.ledger,
         currentDay: newDay,
         currentYear: newYear,
         lastSalaryDay: newDay,
@@ -309,8 +309,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     }
 
     setGameState(prev => ({
-      ...prev,
-      money: prev.money - cost,
+      ...spend(prev, cost, { category: 'marketing', memo: 'Candidate search' }),
       availableCandidates: generateCandidates(3)
     }));
 
@@ -352,8 +351,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     }
 
     setGameState(prev => ({
-      ...prev,
-      money: prev.money - refreshCost,
+      ...spend(prev, refreshCost, { category: 'marketing', memo: 'Chase new gigs' }),
       lastGigRefreshDay: prev.currentDay,
       availableProjects: [
         ...prev.availableProjects,

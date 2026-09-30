@@ -11,6 +11,7 @@ import { getProducerOrigin } from '@/narrative/characterOrigins';
 import { getRivalAccent, getRivalForNode, initialsOf } from '@/narrative/rivalCast';
 import type { ProducerBackgroundId } from '@/types/character';
 import { AchievementsPanel } from './AchievementsPanel';
+import { LedgerPanel } from './LedgerPanel';
 import {
   getActiveCampaignNode,
   getPendingSubplotEvent,
@@ -358,6 +359,8 @@ export function CareerHub({
           </div>
         )}
       </div>
+
+      <LedgerPanel gameState={gameState} />
     </section>
   );
 }

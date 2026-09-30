@@ -298,6 +298,8 @@ export interface GameState {
   equipmentPlacements?: EquipmentPlacement[];
   availableProjects: Project[];
   financials: Financials;
+  /** Append-only money journal (issue #83). Absent on legacy saves; starts on first booking. */
+  ledger?: import('@/economy/ledger').LedgerState;
   /** Optional: absent on old saves, treated as a fresh day. */
   dailyTracking?: DailyTracking;
   clientRelationships?: Record<string, ClientRelationship>;
