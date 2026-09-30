@@ -203,4 +203,7 @@ echo "=== feel layer ==="
 ./node_modules/.bin/esbuild tests/feel-mode.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-feel-mode.cjs --alias:@=./src >/dev/null
 node /tmp/rst-feel-mode.cjs
 
+./node_modules/.bin/esbuild tests/take-feedback.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-take-feedback.cjs --alias:@=./src >/dev/null
+node /tmp/rst-take-feedback.cjs
+
 echo "All automated checks passed."

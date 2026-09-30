@@ -1,3 +1,4 @@
+import { emitTakeFeedback } from '@/utils/takeFeedback';
 import { MotionButton, MotionReveal, MotionNumber } from '@/components/motion/primitives';
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
@@ -459,6 +460,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       setGoldStreak(0);
     }
 
+    if (verdict.grade === 'Gold' || verdict.grade === 'Silver' || verdict.grade === 'Solid') emitTakeFeedback(verdict.grade);
     setLastTakeGrade({
       grade: verdict.grade,
       text: `${verdict.label}! +${verdict.qualityBonus} Quality (${Math.round((verdict.multiplier - 1) * 100)}% Boost)`

@@ -23,7 +23,8 @@ Goal: every frequent player action answers back within ~100 ms with something sm
 | 8 | Stage complete | per stage | Burst + shake | Exists |
 | 9 | Take grade S/A | per take | Bigger callout + confetti | Exists |
 | 10 | Level up, era change, chart reveal | rare | Full-screen payoff | Exists |
-| 11 | Staff reactions on good takes | per take | Bob / emote above head | Round 3 |
+| 11 | Take lock in the world | per take | VU flash, floating grade and artist speech bubble over the booth, artist nod (`takeFeedback.ts`) | Round 3 (done) |
+| 11b | Staff speech bubbles and emotes | per take | Needs distinct sprites (#103) and event director (#56) | Handed off |
 | 12 | Denied action (not enough money/energy) | occasional | Shake + red flash | Exists (`deny-shake`) |
 | 13 | Hover sheen on primary CTAs | constant | Slow light sweep, high graphics only | Round 1 |
 
@@ -31,6 +32,6 @@ Goal: every frequent player action answers back within ~100 ms with something sm
 
 1. Feel layer: motion mode attributes, `feel.css` (press/hover, sheen, stagger, pop, attention, land ring), `Button` press, HUD land ring, drawer lists staggered, tests.
 2. Wire pop/check into purchases and hires, drawer tab underline slide, tooltips fade.
-3. Staff emotes, hotspot hover glow in the Pixi room, transition between day advance states.
+3. Take lock feedback in the room (artist nod, bubble, VU flash, floating grade); staff bubbles wait on #103/#56. Also: hotspot hover glow in the Pixi room, transition between day advance states.
 
 Out of scope: used-gear economy, audio changes (already tactile).
