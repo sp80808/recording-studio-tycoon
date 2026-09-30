@@ -15,7 +15,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-import { useSidebar, SidebarProvider } from "@/components/ui/sidebar/sidebar-context"
+import { Slot } from "@radix-ui/react-slot"
+import { useSidebar } from "@/components/ui/sidebar/sidebar-context"
+import { SidebarProvider } from "@/components/ui/sidebar/sidebar-provider"
 import { SIDEBAR_WIDTH, SIDEBAR_WIDTH_MOBILE, SIDEBAR_WIDTH_ICON } from "@/lib/sidebar-constants"
 
 const Sidebar = React.forwardRef<

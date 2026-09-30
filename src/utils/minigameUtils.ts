@@ -248,6 +248,15 @@ export const getTriggeredMinigames = (
     });
   }
 
+  // ALBUM SEQUENCE - order the record at the end of a project
+  if (stageName.includes('mastering') || stageName.includes('final') || stageName.includes('release')) {
+    triggers.push({
+      minigameType: 'album-sequence',
+      triggerReason: 'Mastered and ready - decide the track listing!',
+      priority: 9
+    });
+  }
+
   // VOCAL COMP - pick the best take per line after vocals have been tracked
   if (stageName.includes('vocal') || stageName.includes('takes') || stageName.includes('overdub') ||
       (project.genre === 'Pop' && stageName.includes('recording'))) {

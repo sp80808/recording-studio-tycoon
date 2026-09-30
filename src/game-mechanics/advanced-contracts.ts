@@ -1,4 +1,4 @@
-import { GenreId, MoodId, EntityId, ProjectId } from './common.types';
+import { GenreId, SubGenreId, MoodId, EntityId, ProjectId } from './common.types';
 import { MarketTrend } from './market-trends'; // To assess genre popularity
 import { RecordLabel, Client } from './relationship-management'; // For relationship scores
 

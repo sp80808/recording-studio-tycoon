@@ -176,7 +176,7 @@ export interface StaffMember {
   energy: number;
   mood: number; // 0-100, affects work effectiveness
   salary: number;
-  status: 'Idle' | 'Working' | 'Resting' | 'Training' | 'Researching';
+  status: 'Idle' | 'Working' | 'Resting' | 'Training' | 'Researching' | 'On Tour';
   assignedProjectId: string | null;
   trainingEndDay?: number;
   trainingCourse?: string;
@@ -311,6 +311,8 @@ export interface GameState {
   equipmentPlacements?: EquipmentPlacement[];
   availableProjects: Project[];
   financials: Financials;
+  /** Append-only money journal (issue #83). Absent on legacy saves; starts on first booking. */
+  ledger?: import('@/economy/ledger').LedgerState;
   /** Optional: absent on old saves, treated as a fresh day. */
   dailyTracking?: DailyTracking;
   clientRelationships?: Record<string, ClientRelationship>;
@@ -438,6 +440,7 @@ export interface ProjectAnimationState {
   workIntensity: number; // 0-1, affects animation speed/intensity
   staffCount: number; // Number of staff working on this project
   progressPulse: boolean; // Whether to show progress bar pulse
+  automationPulse?: boolean; // Whether the automation system is acting on this project
   lastUpdate: number; // Timestamp of last animation update
 }
 

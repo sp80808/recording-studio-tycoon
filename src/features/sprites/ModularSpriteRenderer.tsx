@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, type TargetAndTransition, type Transition } from 'framer-motion';
 import { ModularNpcDefinition } from './spriteTypes';
 import { NpcAnimationState, domMotionFor } from './npcAnimation';
 
@@ -36,7 +36,7 @@ export const ModularSpriteRenderer: React.FC<ModularSpriteRendererProps> = ({
   const height = 48 * scale;
 
   // Animation variants
-  const bobVariants = useMemo(() => {
+  const bobVariants = useMemo((): { animate: TargetAndTransition; transition: Transition } => {
     switch (domMotionFor(animationState)) {
       case 'headbob':
         return {

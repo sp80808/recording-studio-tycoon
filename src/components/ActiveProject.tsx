@@ -1,3 +1,4 @@
+import { emitTakeFeedback } from '@/utils/takeFeedback';
 import { MotionButton, MotionReveal, MotionNumber } from '@/components/motion/primitives';
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,7 @@ import {
   getStageFocusRecommendations 
 } from '@/utils/stageUtils';
 
+import { earn } from '@/economy/ledger';
 import { GameState, FocusAllocation, Project, PlayerData } from '@/types/game';
 import { useFeatureFlag } from '@/stores/featureFlagStore';
 import ProductionQueuePanel from '@/components/ProductionQueue/ProductionQueuePanel';
@@ -47,7 +49,7 @@ interface ActiveProjectProps {
   setGameState: (state: GameState | ((prev: GameState) => GameState)) => void; // Made non-optional as it's crucial for updating project focus
   // focusAllocation prop is removed, as it will be derived from gameState.activeProject.focusAllocation
   // setFocusAllocation prop is removed, will be handled by a new specific updater function if manual adjustment is kept, or via setGameState
-  performDailyWork?: () => { isComplete: boolean; finalProjectData?: Project } | undefined;
+  performDailyWork?: (options?: import('@/hooks/useStageWork').PerformDailyWorkOptions) => { isComplete: boolean; finalProjectData?: Project } | undefined;
   onMinigameReward?: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string, rawScore?: number) => void;
   onProjectComplete?: (completedProject: Project) => void;
   onProjectSelect?: (project: Project) => void;
@@ -122,8 +124,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const handleStreakBank = (result: BankResult) => {
     if (!gameState.activeProject) return;
     setGameState(prev => ({
-      ...prev,
-      money: prev.money + result.cash,
+      ...earn(prev, result.cash, { category: 'reward-income', projectId: prev.activeProject?.id, memo: 'Streak bank' }),
       playerData: {
         ...prev.playerData,
         xp: prev.playerData.xp + result.xp,
@@ -310,6 +311,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       'beatmaking',
       'vocal',
       'vocal-comp',
+      'album-sequence',
       'layering'
     ]).has(autoTriggeredMinigame.type);
 
@@ -436,7 +438,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
     if (result?.isComplete && result.finalProjectData) {
       playSound('project-complete', 0.8);
-      const isMilestone = verdict.grade === 'Gold' || verdict.grade === 'Platinum' || (result.finalProjectData.overallQualityScore ?? 0) >= 80;
+      const isMilestone = verdict.grade === 'Gold';
       if (isMilestone) {
         setCelebrationDisplayData({ title: result.finalProjectData.title, genre: result.finalProjectData.genre });
         setProjectDataForCompletionCall(result.finalProjectData);
@@ -458,6 +460,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       setGoldStreak(0);
     }
 
+    if (verdict.grade === 'Gold' || verdict.grade === 'Silver' || verdict.grade === 'Solid') emitTakeFeedback(verdict.grade);
     setLastTakeGrade({
       grade: verdict.grade,
       text: `${verdict.label}! +${verdict.qualityBonus} Quality (${Math.round((verdict.multiplier - 1) * 100)}% Boost)`

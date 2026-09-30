@@ -23,7 +23,7 @@ export function applySeasonTick(state: GameState): { state: GameState; resolutio
   let next = ticked.state;
   for (const r of ticked.resolutions) {
     next = grantRewardBundle(next, rewardForResolution(r)).state;
-    const notes = [{
+    const notes: Array<{ id: string; message: string; type: 'success' | 'info'; timestamp: number; priority: 'medium' }> = [{
       id: `season-${r.record.seasonId}`,
       message: describeResolution(r),
       type: 'success' as const,

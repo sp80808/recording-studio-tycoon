@@ -1,7 +1,9 @@
 import { meetsKnowHowGate, spendKnowHow, createInitialKnowHow } from '@/rpg/studioKnowHow';
 import { useArtistContracts } from '@/hooks/useArtistContracts';
+import type { PerformDailyWorkOptions } from '@/hooks/useStageWork';
 import { gameEvents } from '@/engine/gameEventBus';
 import { useState, useCallback, useMemo } from 'react'; // Added useMemo
+import { spend } from '@/economy/ledger';
 import { GameState, StaffMember, PlayerAttributes, ProjectReport, Project } from '@/types/game';
 import { toast } from '@/hooks/use-toast';
 import { availableTrainingCourses } from '@/data/training';
@@ -109,9 +111,9 @@ export const useGameLogic = (
     }
   };
 
-  const handlePerformDailyWork = () => {
+  const handlePerformDailyWork = (options?: PerformDailyWorkOptions) => {
     console.log('=== HANDLE PERFORM DAILY WORK ===');
-    const result = performDailyWork(); // Now returns { isComplete: boolean, finalProjectData?: Project }
+    const result = performDailyWork(options); // Now returns { isComplete: boolean, finalProjectData?: Project }
     
     if (result?.isComplete && result.finalProjectData) {
       console.log('Project work units complete. Passing up final project data for celebration:', result.finalProjectData.title);
@@ -157,7 +159,9 @@ export const useGameLogic = (
     // Deduct money and add equipment
     updatedGameState = {
       ...updatedGameState,
-      money: updatedGameState.money - equipment.price,
+      ...spend(updatedGameState, equipment.price, {
+        category: 'equipment-purchase', equipmentId: equipment.id, memo: equipment.name,
+      }),
       ownedEquipment: [...updatedGameState.ownedEquipment, { ...equipment, condition: 100 }]
     };
 
@@ -190,8 +194,9 @@ export const useGameLogic = (
     );
 
     setGameState(prev => ({
-      ...updatedGameState,
-      money: prev.money - course.cost,
+      ...spend({ ...updatedGameState, money: prev.money, ledger: prev.ledger }, course.cost, {
+        category: 'training', staffId, memo: course.name,
+      }),
       studioKnowHow: course.knowHow
         ? (spendKnowHow(prev.studioKnowHow ?? createInitialKnowHow(), course.knowHow.cost) ?? prev.studioKnowHow)
         : prev.studioKnowHow,
@@ -313,8 +318,7 @@ export const useGameLogic = (
 
     // Deduct money and update game state
     setGameState(prev => ({
-      ...prev,
-      money: prev.money - offer,
+      ...spend(prev, offer, { category: 'marketing', memo: 'Artist outreach offer' }),
       chartsData: {
         ...prev.chartsData,
         contactedArtists: [...(prev.chartsData?.contactedArtists || []), contact]

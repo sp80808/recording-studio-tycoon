@@ -1,4 +1,5 @@
-import { SidebarProvider, useSidebar } from "./sidebar/sidebar-context"
+import { useSidebar } from "./sidebar/sidebar-context"
+import { SidebarProvider } from "./sidebar/sidebar-provider"
 import { Sidebar } from "./sidebar/sidebar"
 import { SidebarTrigger } from "./sidebar/sidebar-trigger"
 import { SidebarRail } from "./sidebar/sidebar-rail"

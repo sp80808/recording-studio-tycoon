@@ -17,12 +17,12 @@ export const MarketTrendsDisplay: React.FC<MarketTrendsDisplayProps> = ({
       <div className="grid grid-cols-2 gap-2">
         {marketTrends.slice(0, 6).map(trend => (
           <div
-            key={trend.genre}
+            key={trend.genreId}
             className="p-2 bg-stone-700/50 rounded text-sm flex items-center justify-between"
           >
             <div className="flex items-center gap-2">
-              <span className="text-lg">{getGenreEmoji(trend.genre)}</span>
-              <span className="capitalize text-stone-300">{trend.genre}</span>
+              <span className="text-lg">{getGenreEmoji(trend.genreId)}</span>
+              <span className="capitalize text-stone-300">{trend.genreId}</span>
             </div>
             <div className="flex items-center gap-1">
               <span className="text-white font-medium">{trend.popularity}%</span>
