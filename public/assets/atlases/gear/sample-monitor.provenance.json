@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 2,
+  "assetId": "gear-sample-monitor",
+  "sourceType": "blender_render",
+  "author": "RST in-house",
+  "license": "In-house (CC0)",
+  "toolVersion": "Blender-render intake format (frames named <tag>_<nnn>.png); sample drawn by scripts/assets/make-samples.ts",
+  "pipelineSteps": [
+    "draw-in-house",
+    "export-png-sequence",
+    "pack-frames"
+  ],
+  "dimensions": {
+    "width": 256,
+    "height": 64
+  },
+  "sourceDimensions": {
+    "width": 48,
+    "height": 40
+  },
+  "paletteId": "rst-sample-monitor",
+  "palette": [
+    "#111827",
+    "#1f2937",
+    "#0f766e",
+    "#14b8a6",
+    "#3a3f45",
+    "#2f353c"
+  ],
+  "frameTags": [
+    "idle",
+    "powered"
+  ],
+  "creationTimestamp": "2026-09-30T00:00:00.000Z",
+  "checksum": "529fd739fff0425b7880596d2f3403d0f4514824b9125fb70edcf36c34d429de"
+}

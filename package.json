@@ -21,6 +21,9 @@
     "clean:appledouble": "python3 scripts/clean-appledouble.py",
     "lint": "eslint .",
     "test": "bash scripts/run-checks.sh",
+    "assets:build": "node scripts/assets.cjs build",
+    "assets:validate": "node scripts/assets.cjs validate",
+    "assets:inspect": "node scripts/assets.cjs inspect",
     "preview": "vite preview"
   },
   "dependencies": {
