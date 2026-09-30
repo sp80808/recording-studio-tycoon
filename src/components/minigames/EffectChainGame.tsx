@@ -244,7 +244,7 @@ export const EffectChainGame: React.FC<EffectChainGameProps> = ({
             Build the perfect effect chain for {genre} music!
             Order matters - effects process in sequence.
           </p>
-          <div className="text-sm text-blue-400 bg-blue-900/30 p-3 rounded">
+          <div className="text-sm text-[var(--rst-live)] bg-white/[0.04] border border-[var(--rst-line)] p-3 rounded">
             💡 Hint: {getGenreHint()}
           </div>
           <KenneyButton variant="yellow" onClick={startGame}>
@@ -271,7 +271,7 @@ export const EffectChainGame: React.FC<EffectChainGameProps> = ({
               <div className="text-green-400 font-bold text-xl mg-perfect-pop">🎉 Professional Chain!</div>
             )}
             {score >= 60 && score < 80 && (
-              <div className="text-blue-400 font-bold">👍 Good Mix!</div>
+              <div className="text-[var(--rst-live)] font-bold">👍 Good Mix!</div>
             )}
           </div>
           <KenneyButton variant="green" onClick={onClose}>
@@ -369,15 +369,15 @@ export const EffectChainGame: React.FC<EffectChainGameProps> = ({
           </div>
 
           {/* Target Chain Hint */}
-          <div className="mt-4 p-3 bg-blue-900/30 rounded border border-blue-600/50">
-            <div className="text-sm text-blue-300">
+          <div className="mt-4 p-3 bg-white/[0.04] border border-[var(--rst-line)] rounded border border-[var(--rst-live)]/50">
+            <div className="text-sm text-[var(--rst-live)]">
               <div className="font-semibold mb-1">💡 Optimal {genre} Chain:</div>
               <div className="flex gap-2 flex-wrap">
                 {targetChain.map((effect, index) => (
                   <Badge 
                     key={index} 
                     variant="outline" 
-                    className="text-blue-400 border-blue-400"
+                    className="text-[var(--rst-live)] border-[var(--rst-live)]"
                   >
                     {index + 1}. {effect.name}
                   </Badge>

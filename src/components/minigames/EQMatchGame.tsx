@@ -70,11 +70,11 @@ export const EQMatchGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
         <div className="mb-6">
           <div className="flex justify-between text-sm text-stone-300 mb-1">
             <span>Match Meter</span>
-            <span className={`font-mono ${matchPercent >= 90 ? 'mg-combo-pulse text-cyan-300' : ''}`}>{matchPercent.toFixed(1)}%</span>
+            <span className={`font-mono ${matchPercent >= 90 ? 'mg-combo-pulse text-[var(--rst-brass-300)]' : ''}`}>{matchPercent.toFixed(1)}%</span>
           </div>
           <div className="h-4 bg-stone-700 rounded overflow-hidden">
             <div
-              className={`h-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-150 ${isGoodMatch ? 'mg-meter-glow' : ''}`}
+              className={`h-full bg-[var(--rst-live)] transition-all duration-150 ${isGoodMatch ? 'mg-meter-glow' : ''}`}
               style={{ width: `${matchPercent}%` }}
             />
           </div>

@@ -244,10 +244,10 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
         {/* Progress */}
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-blue-300">
+            <span className="text-[var(--rst-live)]">
               Sequence: {currentSequence.name} (Difficulty: {currentSequence.difficulty}/3)
             </span>
-            <span className="text-cyan-300">
+            <span className="text-[var(--rst-brass-300)]">
               {currentSequenceIndex + 1}/{TARGET_SEQUENCES.length}
             </span>
           </div>
@@ -257,7 +257,7 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
         {/* MIDI Controls */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-black/30 rounded-lg p-4">
           <div>
-            <label className="block text-sm font-semibold mb-2 text-cyan-400">Note Selection</label>
+            <label className="block text-sm font-semibold mb-2 text-[var(--rst-brass-300)]">Note Selection</label>
             <div className="grid grid-cols-4 gap-1">
               {OCTAVES.map(octave => 
                 NOTE_NAMES.map((noteName, noteIndex) => {
@@ -268,7 +268,7 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
                       onClick={() => setSelectedNote(midiNote)}
                       className={`text-xs p-1 ${
                         selectedNote === midiNote 
-                          ? 'bg-cyan-500 text-black font-bold' 
+                          ? 'bg-[var(--rst-brass-400)] text-black font-bold' 
                           : 'bg-stone-700 hover:bg-stone-600'
                       }`}
                     >
@@ -282,7 +282,7 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold mb-2 text-cyan-400">
+              <label className="block text-sm font-semibold mb-2 text-[var(--rst-brass-300)]">
                 Velocity: {selectedVelocity[0]}
               </label>
               <Slider
@@ -295,7 +295,7 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-2 text-cyan-400">Note Length</label>
+              <label className="block text-sm font-semibold mb-2 text-[var(--rst-brass-300)]">Note Length</label>
               <div className="flex gap-1">
                 {[1, 2, 4].map(length => (
                   <Button
@@ -303,7 +303,7 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
                     onClick={() => setSelectedLength(length)}
                     className={`text-xs ${
                       selectedLength === length 
-                        ? 'bg-cyan-500 text-black' 
+                        ? 'bg-[var(--rst-brass-400)] text-black' 
                         : 'bg-stone-700 hover:bg-stone-600'
                     }`}
                   >
@@ -316,7 +316,7 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
 
           <div className="flex flex-col justify-center space-y-2">
             <div className="text-center p-3 bg-stone-800 rounded">
-              <div className="text-lg font-bold text-cyan-400">
+              <div className="text-lg font-bold text-[var(--rst-brass-300)]">
                 {getNoteName(selectedNote)}
               </div>
               <div className="text-sm text-stone-400">
@@ -329,7 +329,7 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
         {/* Sequencer Grid */}
         <div className="bg-black/30 rounded-lg p-4">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-cyan-400 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-[var(--rst-brass-300)] flex items-center gap-2">
               <Music className="w-5 h-5" />
               MIDI Sequencer
             </h3>
@@ -361,7 +361,7 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
               <div
                 key={i}
                 className={`h-3 rounded text-center text-xs flex items-center justify-center ${
-                  currentPosition === i ? 'bg-cyan-400 text-black font-bold' : 'bg-stone-600 text-stone-300'
+                  currentPosition === i ? 'bg-[var(--rst-brass-400)] text-black font-bold' : 'bg-stone-600 text-stone-300'
                 }`}
               >
                 {i + 1}
@@ -380,18 +380,18 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
                 <div
                   key={position}
                   className={`h-16 border-2 rounded cursor-pointer transition-all duration-200 relative ${
-                    currentPosition === position ? 'ring-2 ring-cyan-400' : ''
+                    currentPosition === position ? 'ring-2 ring-[var(--rst-brass-400)]' : ''
                   } ${
                     notesAtPosition.length > 0 
-                      ? 'border-cyan-400 bg-cyan-400/20' 
-                      : 'border-stone-600 hover:border-blue-400 hover:bg-blue-400/10'
+                      ? 'border-[var(--rst-brass-400)] bg-[rgba(230,184,102,0.18)]' 
+                      : 'border-stone-600 hover:border-[var(--rst-live)] hover:bg-blue-400/10'
                   }`}
                   onClick={() => handleGridClick(position)}
                 >
                   {notesAtPosition.map((note, index) => (
                     <div
                       key={index}
-                      className="absolute inset-1 bg-gradient-to-r from-cyan-500 to-blue-500 rounded text-xs flex flex-col items-center justify-center text-black font-bold"
+                      className="absolute inset-1 bg-[var(--rst-brass-400)] rounded text-xs flex flex-col items-center justify-center text-black font-bold"
                       style={{ opacity: note.velocity / 127 }}
                     >
                       <div className="text-[10px]">{getNoteName(note.note)}</div>
@@ -406,7 +406,7 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
 
         {/* Target Reference */}
         <div className="bg-black/20 rounded-lg p-3">
-          <h4 className="text-sm font-semibold text-blue-300 mb-2">Target: {currentSequence.name}</h4>
+          <h4 className="text-sm font-semibold text-[var(--rst-live)] mb-2">Target: {currentSequence.name}</h4>
           <div className="text-xs text-stone-400">
             Program the MIDI sequence to match the target pattern. 
             Use the correct notes, timing, and velocity for maximum score.

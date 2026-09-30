@@ -102,7 +102,7 @@ export const MasteringGame: React.FC<MasteringGameProps> = ({ onComplete, onClos
       <div className="p-6">
       <div className="text-center mb-6">
         <p className="text-stone-300">Master the track to match the target sound!</p>
-        <div className="mt-4 text-lg font-bold text-blue-400">Target: {target.name}</div>
+        <div className="mt-4 text-lg font-bold text-[var(--rst-live)]">Target: {target.name}</div>
       </div>
 
       {feedback && (

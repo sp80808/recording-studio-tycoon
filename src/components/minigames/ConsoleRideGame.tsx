@@ -235,7 +235,7 @@ export const ConsoleRideGame: React.FC<MinigameComponentProps> = ({ minigameId, 
     >
       <div className="space-y-4 max-w-lg mx-auto select-none">
         {/* Hardware Channel Strip Chassis */}
-        <div className="p-5 bg-gradient-to-b from-stone-900 to-stone-950 border-2 border-stone-700/80 rounded-xl shadow-2xl flex flex-col items-center">
+        <div className="p-5 bg-stone-950/85 border-2 border-stone-700/80 rounded-xl shadow-2xl flex flex-col items-center">
           {/* Top Status & VU Meter Section */}
           <div className="w-full flex items-center justify-between mb-4 px-2">
             <div>

@@ -105,7 +105,7 @@ export const PunchInGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
       : r === 'Great'
         ? 'text-green-400'
         : r === 'Good'
-          ? 'text-blue-400'
+          ? 'text-[var(--rst-live)]'
           : 'text-red-400';
 
   return (
@@ -142,7 +142,7 @@ export const PunchInGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
             <Button
               onClick={handleRec}
               disabled={gameOver}
-              className="bg-gradient-to-b from-red-500 to-red-700 hover:from-red-400 hover:to-red-600 font-bold px-8 mg-hit-flash active:scale-95"
+              className="bg-red-600 hover:bg-red-500 font-bold px-8 mg-hit-flash active:scale-95"
             >
               ● REC
             </Button>

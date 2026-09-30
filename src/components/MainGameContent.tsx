@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { ContextDrawer, ContextDrawerTab } from './ContextDrawer';
 import { MotionNumber, MotionButton } from '@/components/motion/primitives';
 import { Headphones, Phone, SlidersHorizontal, Sparkles, Users, Disc3, Trophy, X, Minimize2, Moon } from 'lucide-react';
@@ -16,7 +16,9 @@ import { FeatureBoundary } from './FeatureBoundary';
 import { checkForNewEvents, applyEventEffects, HistoricalEvent } from '@/utils/historicalEvents';
 import { useBandManagement } from '@/hooks/useBandManagement';
 import { MinigameType } from './minigames/MinigameManager';
-import { GamepadNavProvider, DockTabId } from '@/contexts/GamepadNavContext';
+import { GamepadNavProvider, DockTabId, DOCK_TABS } from '@/contexts/GamepadNavContext';
+import { useStudioHotkeys, type HotkeyBinding } from '@/hooks/useStudioHotkeys';
+import { ShortcutsOverlay } from './ShortcutsOverlay';
 import { GamepadHUD } from '@/components/ui/GamepadHUD';
 import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
 import { RadialActionWheel } from '@/components/ui/RadialActionWheel';
@@ -63,6 +65,16 @@ interface MainGameContentProps {
 
 
 type Panel = 'bookings' | 'session' | 'studio' | 'career';
+
+const DOCK_LABELS: Record<DockTabId, string> = {
+  bookings: 'Bookings',
+  session: 'Session',
+  gear: 'Gear',
+  crew: 'Crew',
+  bands: 'Artists',
+  charts: 'Charts',
+  career: 'Career',
+};
 export const MainGameContent: React.FC<MainGameContentProps> = ({
   gameState,
   setGameState,
@@ -156,6 +168,22 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         break;
     }
   }, []);
+
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const hotkeyBindings = useMemo<HotkeyBinding[]>(
+    () => [
+      ...DOCK_TABS.map((id, index) => ({
+        key: String(index + 1),
+        label: DOCK_LABELS[id],
+        description: `Open ${DOCK_LABELS[id]}`,
+        run: () => handleDockTabChange(id),
+      })),
+      { key: '?', label: 'Shortcuts', description: 'Show this list', run: () => setShowShortcuts(true) },
+    ],
+    [handleDockTabChange],
+  );
+  // The console tab hosts keyboard-driven minigames, so number keys stand down there.
+  useStudioHotkeys(hotkeyBindings, panel !== 'session' && !(compactStudioMode && desktopStripEnabled));
 
   const handleRadialSelect = useCallback((sliceId: string) => {
     switch (sliceId) {
@@ -298,8 +326,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             ['bands', Disc3, 'Artists', () => handleOpenDashboardTab('bands')],
             ['charts', Trophy, 'Charts', () => handleOpenDashboardTab('charts')],
             ['career', Sparkles, 'Career', () => openPanel('career')],
-          ] as const).map(([id, Icon, label, action]) => (
-            <button key={id} onClick={action} className="studio-dock-button" title={label} aria-label={label}>
+          ] as const).map(([id, Icon, label, action], dockIndex) => (
+            <button key={id} onClick={action} className="studio-dock-button" title={`${label} (${dockIndex + 1})`} aria-label={label} aria-keyshortcuts={String(dockIndex + 1)}>
               <Icon size={21} aria-hidden="true" /><span>{label}</span>
               {id === 'bookings' && gameState.availableProjects.length > 0 && (
                 <i className="studio-dock-badge"><MotionNumber value={gameState.availableProjects.length} /></i>
@@ -309,6 +337,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           ))}
         </nav>
       </div>
+
+      <ShortcutsOverlay open={showShortcuts} onOpenChange={setShowShortcuts} bindings={hotkeyBindings} />
 
       <ContextDrawer
         isOpen={panel !== null}

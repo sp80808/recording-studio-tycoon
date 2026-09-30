@@ -1,8 +1,10 @@
 import './minigame-juice.css';
 
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { Flame, Timer } from 'lucide-react';
 
-type MinigameAccent = 'blue' | 'green' | 'red' | 'yellow';
+/** Kept for call-site compatibility: cyan/purple fold into the closest palette accent. */
+type MinigameAccent = 'blue' | 'green' | 'red' | 'yellow' | 'cyan' | 'purple';
 
 interface MinigameChromeProps {
   title: string;
@@ -14,12 +16,21 @@ interface MinigameChromeProps {
   children: ReactNode;
 }
 
-const ACCENT_HEADER_STYLES: Record<MinigameAccent, string> = {
-  blue: 'bg-sky-500/20 border-sky-400/40',
-  green: 'bg-emerald-500/20 border-emerald-400/40',
-  red: 'bg-rose-500/20 border-rose-400/40',
-  yellow: 'bg-amber-400/20 border-amber-300/40',
+/**
+ * Accent = one small colour bar + kicker, never a tinted header fill.
+ * live (teal) for technical work, money-green for building, danger for risk, brass for craft, story-violet for creative.
+ */
+const ACCENT: Record<MinigameAccent, string> = {
+  blue: 'var(--rst-live)',
+  cyan: 'var(--rst-live)',
+  green: 'var(--rst-money)',
+  red: 'var(--rst-danger)',
+  yellow: 'var(--rst-brass-400)',
+  purple: 'var(--rst-story)',
 };
+
+/** Titles were authored with a leading emoji; the chrome drops it so every game header reads the same. */
+const stripLeadingEmoji = (title: string) => title.replace(/^[\p{Extended_Pictographic}️‍\s]+/u, '');
 
 export function MinigameChrome({
   title,
@@ -31,33 +42,34 @@ export function MinigameChrome({
   children,
 }: MinigameChromeProps) {
   const timeDanger = timeLeft !== undefined && timeLeft <= 10;
+  const accentColor = ACCENT[accent] ?? ACCENT.blue;
 
   return (
-    <div className="flex w-full flex-col overflow-hidden rounded-xl border border-white/10 bg-stone-900 shadow-lg">
-      <div
-        className={`flex items-center justify-between gap-2 border-b px-4 py-2 ${ACCENT_HEADER_STYLES[accent]}`}
-      >
-        <h3 className="min-w-0 flex-1 truncate text-left text-sm font-bold text-white">
-          {title}
+    <div className="rst-surface flex w-full flex-col overflow-hidden">
+      <div className="flex items-center justify-between gap-2 border-b border-[var(--rst-line)] px-4 py-2.5">
+        <h3 className="flex min-w-0 flex-1 items-center gap-2 truncate text-left text-sm font-semibold text-[var(--rst-ivory)]">
+          <span aria-hidden="true" className="h-4 w-1 shrink-0 rounded-full" style={{ background: accentColor }} />
+          <span className="truncate">{stripLeadingEmoji(title)}</span>
         </h3>
-        <div className="flex flex-1 items-center justify-center gap-2 text-sm font-semibold text-white">
+        <div className="flex flex-1 items-center justify-center gap-2 text-sm font-semibold text-[var(--rst-ivory)]">
           <span>
             Score: <span className="tabular-nums">{score}</span>
           </span>
           {streak !== undefined && streak >= 2 && (
-            <span className="mg-combo-pulse" aria-label={`${streak} streak`}>
-              🔥x{streak}
+            <span className="mg-combo-pulse inline-flex items-center gap-1 text-[var(--rst-brass-300)]" aria-label={`${streak} streak`}>
+              <Flame size={14} aria-hidden="true" />x{streak}
             </span>
           )}
         </div>
         {timeLeft !== undefined && (
           <div
-            className={`flex-1 text-right text-sm font-bold tabular-nums ${
-              timeDanger ? 'animate-pulse text-red-400' : 'text-white'
+            className={`flex flex-1 items-center justify-end gap-1 text-sm font-bold tabular-nums ${
+              timeDanger ? 'animate-pulse text-[var(--rst-danger)]' : 'text-[var(--rst-ivory)]'
             }`}
             aria-live="polite"
           >
-            ⏱ {timeLeft}
+            <Timer size={14} aria-hidden="true" />
+            {timeLeft}
             {timeUnit}
           </div>
         )}

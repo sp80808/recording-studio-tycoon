@@ -98,9 +98,9 @@ export const MixingBoardGame: React.FC<MixingBoardGameProps> = ({ onComplete, on
       <div className="mixing-desk p-4 sm:p-6">
         {phase === 'ready' ? (
           <div className="mx-auto max-w-sm space-y-5 py-6 text-center">
-            <SlidersHorizontal className="mx-auto h-12 w-12 text-sky-300" aria-hidden="true" />
+            <SlidersHorizontal className="mx-auto h-12 w-12 text-[var(--rst-live)]" aria-hidden="true" />
             <div>
-              <p className="text-xs font-bold uppercase tracking-[.2em] text-sky-300">15 seconds · 4 channels</p>
+              <p className="text-xs font-bold uppercase tracking-[.2em] text-[var(--rst-live)]">15 seconds · 4 channels</p>
               <h4 className="mt-2 text-2xl font-bold text-white">Find the sweet spot.</h4>
               <p className="mt-3 text-sm leading-relaxed text-stone-300">Slide every fader into its green target band. Balance all four channels for a perfect mix.</p>
             </div>

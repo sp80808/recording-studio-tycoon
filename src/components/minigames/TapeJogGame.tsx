@@ -258,7 +258,7 @@ export const TapeJogGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
     >
       <div className="space-y-4 max-w-lg mx-auto select-none">
         {/* Tape Machine Deck Display */}
-        <div className="relative p-5 bg-gradient-to-b from-stone-900 to-stone-950 border-2 border-stone-700/80 rounded-xl shadow-2xl flex flex-col items-center">
+        <div className="relative p-5 bg-stone-950/85 border-2 border-stone-700/80 rounded-xl shadow-2xl flex flex-col items-center">
           {/* Dual Rotating Tape Reels */}
           <div className="w-full flex items-center justify-between px-6 mb-4">
             <div className="flex flex-col items-center">
@@ -319,7 +319,7 @@ export const TapeJogGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
                 style={{ left: `${markedOut}%` }}
                 className="absolute top-0 bottom-0 w-0.5 bg-sky-400 shadow-[0_0_8px_#38bdf8] z-20"
               >
-                <span className="absolute -top-3 -left-2 text-[9px] font-bold text-sky-400 font-mono">OUT</span>
+                <span className="absolute -top-3 -left-2 text-[9px] font-bold text-[var(--rst-live)] font-mono">OUT</span>
               </div>
             )}
 

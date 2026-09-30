@@ -174,7 +174,7 @@ export const VocalRecordingGame: React.FC<VocalRecordingGameProps> = ({ onComple
               <div className="mg-perfect-pop text-green-400 font-bold text-xl">🌟 Polished Vocals!</div>
             )}
             {getAccuracy() >= 70 && getAccuracy() < 90 && (
-              <div className="text-blue-400 font-bold">🎵 Good Performance!</div>
+              <div className="text-[var(--rst-live)] font-bold">🎵 Good Performance!</div>
             )}
           </div>
           <KenneyButton variant="green" onClick={onClose}>

@@ -306,7 +306,7 @@ export const BeatPadGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
                 lastGrade.grade === 'Perfect'
                   ? 'text-emerald-400'
                   : lastGrade.grade === 'Great'
-                  ? 'text-sky-400'
+                  ? 'text-[var(--rst-live)]'
                   : lastGrade.grade === 'Good'
                   ? 'text-yellow-400'
                   : 'text-red-400'

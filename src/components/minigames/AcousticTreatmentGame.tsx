@@ -268,7 +268,7 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
             Optimize your studio acoustics for {recordingType} recording!
             Use your budget wisely to create the perfect acoustic environment.
           </p>
-          <div className="text-sm text-blue-400 bg-blue-900/30 p-3 rounded">
+          <div className="text-sm text-[var(--rst-live)] bg-white/[0.04] border border-[var(--rst-line)] p-3 rounded">
             💡 Hint: {getRecordingTypeHint()}
           </div>
           <div className="text-lg text-yellow-400">
@@ -298,7 +298,7 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
               <div className="text-green-400 font-bold text-xl mg-perfect-pop">🎉 Professional Studio!</div>
             )}
             {score >= 60 && score < 80 && (
-              <div className="text-blue-400 font-bold">👍 Well-Treated Room!</div>
+              <div className="text-[var(--rst-live)] font-bold">👍 Well-Treated Room!</div>
             )}
           </div>
           <KenneyButton variant="green" onClick={onClose}>
@@ -360,8 +360,8 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
             ))}
           </div>
 
-          <div className="mt-4 p-3 bg-blue-900/30 rounded border border-blue-600/50">
-            <div className="text-sm text-blue-300">
+          <div className="mt-4 p-3 bg-white/[0.04] border border-[var(--rst-line)] rounded border border-[var(--rst-live)]/50">
+            <div className="text-sm text-[var(--rst-live)]">
               <div className="font-semibold mb-2">Treatment Tips:</div>
               <ul className="text-xs space-y-1">
                 <li>🔺 Bass traps work best in corners</li>

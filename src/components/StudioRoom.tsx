@@ -312,7 +312,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
         </div>
       ) : (
         <p className="studio-room-hint absolute bottom-2 left-3 text-[10px] text-stone-400 pointer-events-none">
-          Tap objects · pinch to zoom · two-finger pan
+          Tap objects · pinch to zoom · two-finger pan<span className="hidden [@media(pointer:fine)]:inline"> · press ? for shortcuts</span>
         </p>
       )}
       {pendingTierUpgrade && (
