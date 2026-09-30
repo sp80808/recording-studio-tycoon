@@ -15,6 +15,15 @@ export type StudioChoreId =
 
 export type ChoreCategory = 'maintenance' | 'acoustics' | 'hospitality';
 
+/** Real-time duration keeps chores readable while rewarding better rooms and eras. */
+export function getChoreDurationMs(chore: StudioChore, eraId: string, ownedEquipmentCount: number): number {
+  const eraBonus = eraId === '1960s' || eraId === '1960' ? 0.92 : eraId === '1970s' || eraId === '1970' ? 0.96 : 1;
+  const equipmentBonus = Math.min(0.22, Math.max(0, ownedEquipmentCount) * 0.025);
+  const base = chore.category === 'hospitality' ? 900 : chore.category === 'acoustics' ? 1500 : 1800;
+  return Math.round(base * eraBonus * (1 - equipmentBonus));
+}
+
+
 export interface StudioChore {
   id: StudioChoreId;
   title: string;
