@@ -43,6 +43,7 @@ export interface StudioInspectorProps {
   /** Ask the DOM dashboard to reveal a tab (charts/studio/staff/...). */
   onOpenDashboardTab: (tab: 'studio' | 'skills' | 'bands' | 'charts' | 'staff') => void;
   onConsoleFocus?: () => void;
+  onCompleteChore?: (hotspot: StudioHotspotId) => boolean;
 }
 
 const ANCHORS: Record<StudioHotspotId, string> = {
@@ -140,6 +141,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   onUnassignStaff,
   onOpenDashboardTab,
   onConsoleFocus,
+  onCompleteChore,
 }) => {
   const [actingGigId, setActingGigId] = useState<string | null>(null);
   const [actingStaffId, setActingStaffId] = useState<string | null>(null);

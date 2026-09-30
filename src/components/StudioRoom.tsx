@@ -39,6 +39,7 @@ interface StudioRoomProps {
   onOpenDashboardTab?: (tab: 'studio' | 'skills' | 'bands' | 'charts' | 'staff') => void;
   onConsoleFocus: () => void;
   onCompleteChore?: (hotspot: StudioHotspotId) => boolean;
+  activeChoreId?: string | null;
   onBookings?: () => void;
   className?: string;
   style?: React.CSSProperties;
@@ -59,6 +60,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
   onOpenDashboardTab,
   onConsoleFocus,
   onCompleteChore,
+  activeChoreId,
   onBookings,
   className = '',
   style,
@@ -275,11 +277,12 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
                 <MotionReveal direction="up" distance={6}>
                   <button
                     onClick={() => handleHotspot('console')}
-                    className={`rst-duty-chip feel-attention ${consoleStyle ? '' : 'studio-duty-console absolute bottom-14 left-6 z-20'}`}
+                    className={`rst-duty-chip feel-attention ${consoleStyle ? '' : 'studio-duty-console absolute bottom-14 left-6 z-20'} ${activeChoreId ? 'pointer-events-none opacity-70' : ''}`}
                     title={`${pendingConsoleChores.length} Console Maintenance Duty Pending`}
+                    aria-disabled={Boolean(activeChoreId)}
                   >
                     <span>🔧</span>
-                    <span>{pendingConsoleChores[0].title}</span>
+                    <span>{activeChoreId === pendingConsoleChores[0].id ? `Working… ${pendingConsoleChores[0].title}` : pendingConsoleChores[0].title}</span>
                   </button>
                 </MotionReveal>
               </div>
@@ -289,11 +292,12 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
                 <MotionReveal direction="up" distance={6}>
                   <button
                     onClick={() => handleHotspot('liveRoom')}
-                    className={`rst-duty-chip feel-attention ${liveStyle ? '' : 'studio-duty-live absolute bottom-16 right-6 z-20'}`}
+                    className={`rst-duty-chip feel-attention ${liveStyle ? '' : 'studio-duty-live absolute bottom-16 right-6 z-20'} ${activeChoreId ? 'pointer-events-none opacity-70' : ''}`}
                     title="Live Room: Tune Acoustics"
+                    aria-disabled={Boolean(activeChoreId)}
                   >
                     <span>✨</span>
-                    <span>Tune Acoustics</span>
+                    <span>{activeChoreId === pendingLiveRoomChores[0].id ? 'Working… Tune Acoustics' : 'Tune Acoustics'}</span>
                   </button>
                 </MotionReveal>
               </div>

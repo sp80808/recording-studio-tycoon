@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, Swords } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Swords, UserRound, Sparkles } from 'lucide-react';
 import { AVAILABLE_ERAS } from '@/data/eras';
 import type { Era } from '@/types/game';
 import type { ProducerBackgroundId } from '@/types/character';
@@ -31,7 +31,7 @@ const ERA_CHALLENGE: Record<string, string> = {
   modern: 'Everyone has a home studio. Win on taste and relationships.',
 };
 
-const STEPS = ['Era', 'Producer', 'Begin'] as const;
+const STEPS = ['Era', 'Character', 'Role', 'Begin'] as const;
 
 const stepClass = (active: boolean, done: boolean) =>
   `flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] ${
@@ -39,9 +39,12 @@ const stepClass = (active: boolean, done: boolean) =>
   }`;
 
 export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
-  const [step, setStep] = useState<0 | 1>(0);
+  const [step, setStep] = useState<0 | 1 | 2>(0);
   const [eraId, setEraId] = useState<string | null>(null);
   const [originId, setOriginId] = useState<ProducerBackgroundId | null>(null);
+  const [moniker, setMoniker] = useState('The Architect');
+  const [motto, setMotto] = useState('In sound we trust');
+  const [avatar, setAvatar] = useState('◆');
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   const era = useMemo(() => AVAILABLE_ERAS.find((e) => e.id === eraId) ?? null, [eraId]);
@@ -53,15 +56,18 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
     if (step === 0 && era) {
       click();
       setStep(1);
-    } else if (step === 1 && era && origin) {
+    } else if (step === 1 && moniker.trim()) {
+      click();
+      setStep(2);
+    } else if (step === 2 && era && origin) {
       click();
       onBegin(era, origin.id);
     }
-  }, [step, era, origin, onBegin]);
+  }, [step, era, origin, moniker, onBegin]);
 
   const goBack = useCallback(() => {
     click();
-    if (step === 1) setStep(0);
+    if (step > 0) setStep((current) => (current - 1) as 0 | 1 | 2);
     else onBack();
   }, [step, onBack]);
 
@@ -116,14 +122,16 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
         </header>
 
         <div className="mt-8 text-center animate-rst-rise" key={step}>
-          <p className="rst-kicker">{step === 0 ? 'Chapter one' : 'Chapter two'}</p>
+          <p className="rst-kicker">{step === 0 ? 'Chapter one' : step === 1 ? 'Chapter two' : 'Chapter three'}</p>
           <h1 ref={headingRef} tabIndex={-1} className="rst-title mt-2 text-3xl outline-none sm:text-5xl">
-            {step === 0 ? 'When does your studio open?' : 'Who is behind the console?'}
+            {step === 0 ? 'When does your studio open?' : step === 1 ? 'Make the face behind the faders' : 'Who is behind the console?'}
           </h1>
           <p className="rst-body mx-auto mt-3 max-w-2xl text-sm sm:text-base">
             {step === 0
               ? 'Each era changes your gear, your genres, your budget and the industry breathing down your neck.'
-              : 'Your producer origin gives you a real edge — and a rival who will not let you forget it.'}
+              : step === 1
+                ? 'Give your producer a name, a calling card, and a little room to become legendary.'
+                : 'Your producer origin gives you a real edge — and a rival who will not let you forget it.'}
           </p>
         </div>
 
@@ -196,6 +204,42 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
         )}
 
         {step === 1 && (
+          <div className="mx-auto mt-8 grid w-full max-w-3xl gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+            <section className="rst-option flex flex-col items-center justify-center gap-4 !p-8 text-center" aria-label="Character preview">
+              <div className="relative grid h-36 w-36 place-items-center rounded-full border-2 border-[var(--rst-brass-400)] bg-[radial-gradient(circle_at_32%_24%,rgba(247,190,86,.42),transparent_66%),rgba(0,0,0,.35)] shadow-[0_0_42px_rgba(220,164,61,.18)]">
+                <span className="rst-serif text-5xl text-[var(--rst-brass-200)]" aria-hidden="true">{avatar}</span>
+                <span className="absolute -bottom-2 rounded-full border border-[var(--rst-line-strong)] bg-[#171310] px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--rst-brass-200)]">Producer</span>
+              </div>
+              <div>
+                <p className="rst-title text-2xl">{moniker || 'Unnamed producer'}</p>
+                <p className="rst-body mt-1 text-xs italic">“{motto || 'Your sound, your rules.'}”</p>
+              </div>
+            </section>
+            <section className="rst-option !p-6" aria-label="Character details">
+              <div className="space-y-4">
+                <label className="block text-left text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">
+                  Producer name
+                  <input value={moniker} onChange={(e) => setMoniker(e.target.value.slice(0, 24))} maxLength={24} autoFocus className="rst-input mt-2 w-full" placeholder="The Architect" />
+                </label>
+                <label className="block text-left text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">
+                  Studio motto
+                  <input value={motto} onChange={(e) => setMotto(e.target.value.slice(0, 42))} maxLength={42} className="rst-input mt-2 w-full" placeholder="In sound we trust" />
+                </label>
+                <fieldset>
+                  <legend className="text-left text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">Calling card</legend>
+                  <div className="mt-2 grid grid-cols-4 gap-2" role="radiogroup" aria-label="Choose a calling card">
+                    {['◆', '✦', '◉', '✚'].map((mark) => (
+                      <button key={mark} type="button" role="radio" aria-checked={avatar === mark} onClick={() => { click(); setAvatar(mark); }} className={`rst-chip grid h-11 place-items-center text-lg ${avatar === mark ? 'border-[var(--rst-brass-300)] bg-[var(--rst-brass-400)]/15 text-[var(--rst-brass-200)]' : ''}`}>{mark}</button>
+                    ))}
+                  </div>
+                </fieldset>
+                <p className="border-t border-[var(--rst-line)] pt-3 text-left text-xs leading-relaxed text-stone-400">This identity is set before your role and origin. Choose a name you will recognise on contracts, charts, and rival dossiers.</p>
+              </div>
+            </section>
+          </div>
+        )}
+
+        {step === 2 && (
           <div
             role="radiogroup"
             aria-label="Choose a producer origin"
@@ -283,17 +327,19 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
           <p className="min-w-0 flex-1 text-xs text-stone-300" aria-live="polite">
             {era ? <b className="text-[var(--rst-brass-200)]">{era.displayName}</b> : <span className="text-stone-500">No era chosen</span>}
             <span className="mx-2 text-stone-600">·</span>
-            {origin ? <b className="text-[var(--rst-brass-200)]">{origin.name}</b> : <span className="text-stone-500">No origin chosen</span>}
+            <b className="text-[var(--rst-brass-200)]">{moniker || 'Unnamed producer'}</b>
+            <span className="mx-2 text-stone-600">·</span>
+            {origin ? <b className="text-[var(--rst-brass-200)]">{origin.name}</b> : <span className="text-stone-500">No role chosen</span>}
             {era && <span className="ml-2 text-stone-500">${era.startingMoney.toLocaleString()} to start</span>}
             {rival && <span className="ml-2 hidden text-stone-500 sm:inline">· facing {rival.headProducer}</span>}
           </p>
           <button
             type="button"
             className="rst-btn rst-btn-primary min-w-44"
-            disabled={step === 0 ? !era : !(era && origin)}
+            disabled={step === 0 ? !era : step === 1 ? !moniker.trim() : !(era && origin)}
             onClick={goNext}
           >
-            {step === 0 ? 'Choose your producer' : 'Open the studio'}
+            {step === 0 ? 'Create your producer' : step === 1 ? 'Choose a role' : 'Open the studio'}
             <ArrowRight size={15} aria-hidden="true" />
           </button>
         </div>

@@ -29,7 +29,7 @@ import { RadialActionWheel } from '@/components/ui/RadialActionWheel';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useSettings } from '@/contexts/settings-context-types';
 import { FlightCaseDepot } from './FlightCaseDepot';
-import { executeStudioChore, createInitialChoreState, type StudioChoreId } from '@/simulation/choreEngine';
+import { executeStudioChore, createInitialChoreState, getChoreDurationMs, type StudioChoreId } from '@/simulation/choreEngine';
 import './studio-play.css';
 
 interface MainGameContentProps {
@@ -126,6 +126,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   }, [showHistoricalNews, currentHistoricalEvent, onHistoricalNewsOpenChange]);
   const [lastCheckedDay, setLastCheckedDay] = useState(0);
   const [dashboardTab, setDashboardTab] = useState<'studio' | 'skills' | 'bands' | 'charts' | 'staff'>('studio');
+  const [activeChoreId, setActiveChoreId] = useState<StudioChoreId | null>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const previousProjectId = useRef(gameState.activeProject?.id);
@@ -304,24 +305,25 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   const project = gameState.activeProject;
   const sessionLabel = project?.awaitingReview ? 'Collect release' : project ? 'Continue session' : 'Book your first session';
   const completeFloorChore = (hotspot: string) => {
+    if (activeChoreId) return true;
     const choreState = gameState.choreState || createInitialChoreState();
-    const choreId: StudioChoreId | null = hotspot === 'console'
-      ? (choreState.chores.clean_tape_heads.completed ? 'calibrate_outboard' : 'clean_tape_heads')
-      : hotspot === 'liveRoom'
-        ? 'tune_acoustics'
-        : null;
-    if (!choreId) return false;
+    const targetHotspot = hotspot === 'liveRoom' ? 'liveRoom' : 'console';
+    const chore = (Object.values(choreState.chores).find((candidate) =>
+      !candidate.completed && candidate.hotspotId === targetHotspot
+    ));
+    if (!chore) return false;
+    if (gameState.playerData.dailyWorkCapacity < chore.energyCost) return false;
 
-    const chore = choreState.chores[choreId];
-    // Do not swallow the hotspot click when the duty is already done or the
-    // player cannot afford its energy cost; the inspector remains dismissible.
-    if (!chore || chore.completed || gameState.playerData.dailyWorkCapacity < chore.energyCost) return false;
-
-    setGameState(prev => {
-      const result = executeStudioChore(prev.choreState || createInitialChoreState(), choreId, prev.playerData.dailyWorkCapacity);
-      if (!result) return prev;
-      return { ...prev, choreState: result.nextChoreState, playerData: { ...prev.playerData, xp: prev.playerData.xp + result.xpAwarded, dailyWorkCapacity: Math.max(0, prev.playerData.dailyWorkCapacity - result.energyBurned) } };
-    });
+    setActiveChoreId(chore.id);
+    const duration = getChoreDurationMs(chore, gameState.currentEra, gameState.ownedEquipment.length);
+    window.setTimeout(() => {
+      setGameState(prev => {
+        const result = executeStudioChore(prev.choreState || createInitialChoreState(), chore.id, prev.playerData.dailyWorkCapacity);
+        if (!result) return prev;
+        return { ...prev, choreState: result.nextChoreState, playerData: { ...prev.playerData, xp: prev.playerData.xp + result.xpAwarded, dailyWorkCapacity: Math.max(0, prev.playerData.dailyWorkCapacity - result.energyBurned) } };
+      });
+      setActiveChoreId(null);
+    }, duration);
     return true;
   };
   const titles = { bookings: 'Bookings', session: 'At the console', studio: 'Studio management', career: 'Your producer story' };
@@ -331,7 +333,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         <div className="studio-play-world" data-reward-source="floor">
           <StudioRoom gameState={gameState} onAdvanceDay={advanceDay} onRefreshProjects={refreshProjects}
             onStartProject={bookProject} onAssignStaff={assignStaffToProject} onUnassignStaff={unassignStaffFromProject}
-            onOpenDashboardTab={handleOpenDashboardTab} onConsoleFocus={() => openPanel('session')} onCompleteChore={completeFloorChore}
+            onOpenDashboardTab={handleOpenDashboardTab} onConsoleFocus={() => openPanel('session')} onCompleteChore={completeFloorChore} activeChoreId={activeChoreId}
             onBookings={() => openPanel('bookings')} className="studio-play-room" />
         </div>
         <div className="studio-play-status">
