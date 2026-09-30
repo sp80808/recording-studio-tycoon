@@ -151,6 +151,8 @@ export interface StudioSceneState {
   activity: number;
   /** Whether a project is currently in production */
   hasActiveProject: boolean;
+  /** Who is in the booth (client / band name) for the active session */
+  artistName?: string;
   /** Number of staff physically on the studio floor */
   staffOnFloor: number;
   /** Player's equipment count (fills the gear shelf) */
@@ -348,6 +350,8 @@ interface SceneRefs {
   clockHand: Graphics | null;
   setClockTime: ((hour: number, minute: number) => void) | null;
   staffFigures: { fig: Container; baseY: number }[];
+  /** The booked artist, standing at the live-room mic while a session is in progress. */
+  artist: { fig: Container; baseY: number; tag: Text; shown: string } | null;
   nightTintLayer: Container | null;
   hoverGlows: Record<string, Graphics>;
   hoverGlowTargets: Record<string, number>;
@@ -420,6 +424,7 @@ const buildScene = (
     clockHand: null,
     setClockTime: null,
     staffFigures: [],
+    artist: null,
     nightTintLayer: null,
     hoverGlows: {},
     hoverGlowTargets: {},
@@ -1025,6 +1030,39 @@ const buildScene = (
     fig.addChild(body);
     fig.zIndex = Z.depth + spot.y;
     refs.staffFigures.push({ fig, baseY: spot.y });
+    root.addChild(fig);
+  }
+
+  /* ---- Booked artist: appears at the live-room mic during a session ---- */
+  {
+    const spot = iso(2.3, 1.55);
+    const fig = new Container();
+    fig.position.set(spot.x, spot.y);
+    const body = new Graphics();
+    body.ellipse(0, 1, 15, 7).fill({ color: 0x000000, alpha: .35 });
+    body.roundRect(-8, -13, 7, 14, 2).fill(0x1d1a24);
+    body.roundRect(1, -13, 7, 14, 2).fill(0x1d1a24);
+    body.roundRect(-15, -34, 5, 18, 2).fill(0xd9a27c);
+    body.roundRect(10, -34, 5, 18, 2).fill(0xd9a27c);
+    body.roundRect(-11, -36, 22, 27, 5).fill(0xc2414b);
+    body.roundRect(-11, -36, 22, 27, 5).stroke({ width: 2, color: 0x2a1519, alpha: .55 });
+    body.circle(0, -45, 11).fill(0xe8b48c);
+    body.ellipse(0, -52, 12, 6).fill(0x5a2e1c);
+    body.circle(-4, -44, 1).fill(0x273040);
+    body.circle(4, -44, 1).fill(0x273040);
+    fig.addChild(body);
+    const tag = new Text({
+      text: '',
+      style: { fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: 11, fontWeight: '700', fill: 0xffe3a3, stroke: { color: 0x0b0906, width: 3 } },
+    });
+    tag.anchor.set(0.5, 1);
+    tag.position.set(0, -66);
+    tag.eventMode = 'none';
+    fig.addChild(tag);
+    fig.eventMode = 'none';
+    fig.visible = false;
+    fig.zIndex = Z.depth + spot.y;
+    refs.artist = { fig, baseY: spot.y, tag, shown: '' };
     root.addChild(fig);
   }
 
@@ -1682,6 +1720,20 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             f.fig.y = f.baseY + Math.sin(t * 2 + i * 1.4) * 2;
             f.fig.scale.y = 1 + Math.sin(t * 3 + i) * 0.02;
           });
+
+          // Booked artist: steps up to the mic for the session, swaying harder as the work ramps up
+          if (refs.artist) {
+            const a = refs.artist;
+            a.fig.visible = s.hasActiveProject;
+            const name = s.artistName ?? '';
+            if (a.shown !== name) { a.tag.text = name; a.shown = name; }
+            if (s.hasActiveProject) {
+              const sway = reduceMotion ? 0 : 1;
+              a.fig.y = a.baseY + Math.sin(t * 5) * 1.5 * s.activity * sway;
+              a.fig.rotation = Math.sin(t * 2.3) * 0.05 * s.activity * sway;
+              a.fig.scale.y = 1 + Math.abs(Math.sin(t * 4)) * 0.03 * s.activity * sway;
+            }
+          }
 
           // Phone ring pulse (faster when the studio is waiting for a gig)
           if (refs.phoneRing) {
