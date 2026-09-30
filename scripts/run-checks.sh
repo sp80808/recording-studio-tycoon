@@ -166,6 +166,10 @@ for check in project-era-starters project-brief session-issues signal-chain econ
   node "/tmp/rst-$check.cjs"
 done
 
+echo "=== pixi GPU exclusivity guard ==="
+./node_modules/.bin/esbuild tests/pixi-exclusivity.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-pixi-exclusivity.cjs --alias:@=./src >/dev/null
+node /tmp/rst-pixi-exclusivity.cjs
+
 echo "=== balance harness invariants (10 days, seed 7) ==="
 ./node_modules/.bin/esbuild src/dev/balance/run.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-balance.cjs --alias:@=./src >/dev/null
 mkdir -p /tmp/rst-balance
