@@ -61,3 +61,19 @@ export function collectRewardItems(moment: RewardMoment): RewardItem[] {
   providers.forEach(p => { try { out.push(...p(moment)); } catch { /* a bad provider must not break the scene */ } });
   return out;
 }
+
+/** Minimum final quality (0-100) for a finished project to chart at all. */
+export const MIN_CHART_QUALITY = 60;
+
+/**
+ * Deterministic chart position for a finished project: better quality lands
+ * higher, with a small seeded spread inside each band. Null = doesn't chart.
+ */
+export function estimateChartPosition(quality: number, seed: string): number | null {
+  if (!Number.isFinite(quality) || quality < MIN_CHART_QUALITY) return null;
+  const bands: Array<[number, number, number]> = [
+    [97, 1, 2], [92, 3, 10], [82, 11, 25], [72, 26, 40], [MIN_CHART_QUALITY, 41, 95],
+  ];
+  const [, lo, hi] = bands.find(([min]) => quality >= min)!;
+  return lo + Math.floor(createSeededRandom(seed)() * (hi - lo + 1));
+}
