@@ -33,6 +33,7 @@ import {
   type RewardBundle,
 } from '@/economy/flightCaseEconomy';
 import { gradeForMinigameScore } from '@/economy/rewardHookup';
+import { applyAmbientTick, ambientDailyCap } from '@/economy/ambientIncome';
 import { createSeededRandom } from '@/simulation/seededRandom';
 import type { FlightCaseTier } from '@/data/flightCases';
 import type { ClientRelationship, GameState, PlayerData, Project, Skill } from '@/types/game';
@@ -99,6 +100,12 @@ export interface RewardTotals {
   chartPlacements: number;
   number1s: number;
   minigames: number;
+  /** Cash earned from ambient ticks (already included in run cash). */
+  ambient: number;
+  /** Largest ambient total on any single day. */
+  maxAmbientDay: number;
+  /** Highest daily cap the catalog reached. */
+  ambientCap: number;
 }
 
 export interface BalanceRun {
@@ -168,6 +175,9 @@ export const emptyRewards = (): RewardTotals => ({
   chartPlacements: 0,
   number1s: 0,
   minigames: 0,
+  ambient: 0,
+  maxAmbientDay: 0,
+  ambientCap: 0,
 });
 
 /** Simulate `days` days under one strategy. Same seed + strategy + config => identical result. */
@@ -215,6 +225,15 @@ export const simulateStrategy = (
       pendingCrates: [],
     } as unknown as GameState;
 
+    // Ambient earning (#109): stand-in state for the pure tick functions.
+    let ambientState = {
+      money: 0,
+      currentDay: 1,
+      saveSeed: seed,
+      studioLevel: config.studioLevel,
+      financials: { income: 0, profit: 0, reports: [] as unknown[] },
+    } as unknown as GameState;
+
     /** Grant a bundle, open every crate it produced, return its cash-equivalent. */
     const settleReward = (bundle: RewardBundle, day: number): number => {
       if (!bundle.gems && !bundle.cases?.length) return 0;
@@ -238,6 +257,7 @@ export const simulateStrategy = (
     };
 
     /** One booked session at a time (single room); it settles on its last day. */
+    let ambientCapSeen = 0;
     let active: { project: Project; report: ReturnType<typeof generateProjectReview>; endDay: number } | null = null;
 
     for (let day = 1; day <= days; day++) {
@@ -350,6 +370,22 @@ export const simulateStrategy = (
         });
       }
 
+      // Ambient ticks from active play: capped per day by the real rules.
+      if (config.play.ambientTicksPerDay > 0) {
+        ambientState = {
+          ...ambientState,
+          currentDay: day,
+          financials: { ...ambientState.financials, reports: new Array(settledIds.length).fill({}) },
+        } as GameState;
+        const before = ambientState.money;
+        for (let t = 0; t < config.play.ambientTicksPerDay; t++) ambientState = applyAmbientTick(ambientState).state;
+        const gained = ambientState.money - before;
+        cash += gained;
+        rewards.ambient += gained;
+        rewards.maxAmbientDay = Math.max(rewards.maxAmbientDay, gained);
+        ambientCapSeen = Math.max(ambientCapSeen, ambientDailyCap(ambientState));
+      }
+
       // Weekly chart moves for songs already on the chart (mirrors Index.tsx).
       const nextRun: ChartRunEntry[] = [];
       for (const entry of chartRun) {
@@ -374,6 +410,8 @@ export const simulateStrategy = (
       repHistory.push(reputation);
     }
 
+    rewards.ambient = Math.round(rewards.ambient);
+    rewards.ambientCap = ambientCapSeen;
     rewards.rewardCash = Math.round(rewards.rewardCash);
     rewards.maxCaseLoot = Math.round(rewards.maxCaseLoot);
     const completed = settledIds.length;

@@ -47,6 +47,10 @@ export interface StrategyStats {
   /** Reward cash-equivalent as a share of session fees earned. */
   rewardShare: number;
   repeatSessionShare: number;
+  meanAmbientPerDay: number;
+  /** Ambient cash as a share of all income (session fees + ambient). */
+  ambientShare: number;
+  maxAmbientDay: number;
   maxSessionPayoutMultiple: number;
   maxCaseLoot: number;
   invariantFailures: number;
@@ -100,6 +104,9 @@ export const summarize = (strategy: Strategy, runs: BalanceRun[], days: number):
     meanLootValue: r2(mean(runs.map((r) => r.rewards.lootValue))),
     meanRewardCash: r2(mean(runs.map((r) => r.rewards.rewardCash))),
     rewardShare: r2(rewardCash / Math.max(1, earned)),
+    meanAmbientPerDay: r2(runs.reduce((a, r) => a + r.rewards.ambient, 0) / Math.max(1, runs.length * days)),
+    ambientShare: r2(runs.reduce((a, r) => a + r.rewards.ambient, 0) / Math.max(1, earned + runs.reduce((a, r) => a + r.rewards.ambient, 0))),
+    maxAmbientDay: runs.reduce((m, r) => Math.max(m, r.rewards.maxAmbientDay), 0),
     repeatSessionShare: r2(runs.reduce((s, r) => s + r.repeatSessions, 0) / Math.max(1, sessions)),
     maxSessionPayoutMultiple: runs.reduce((m, r) => r.perDay.reduce((mm, d) => Math.max(mm, d.payoutMultiple), m), 0),
     maxCaseLoot: runs.reduce((m, r) => Math.max(m, r.rewards.maxCaseLoot), 0),
@@ -121,6 +128,10 @@ export const detectRunaways = (stats: StrategyStats[], config: BalanceConfig): R
       flags.push({ kind: 'death-spiral', strategy: s.strategy, value: s.bankruptcyRate, limit: L.maxBankruptcyRate, detail: 'too many seeds dipped below zero cash' });
     if (s.meanDailyIncome > L.maxDailyIncome)
       flags.push({ kind: 'daily-income', strategy: s.strategy, value: s.meanDailyIncome, limit: L.maxDailyIncome, detail: 'mean session income per day exceeds the runaway ceiling' });
+    if (config.play.ambientTicksPerDay > 0 && s.ambientShare > L.maxAmbientShare)
+      flags.push({ kind: 'ambient-high', strategy: s.strategy, value: s.ambientShare, limit: L.maxAmbientShare, detail: 'ambient earning is a larger share of income than a background trickle should be' });
+    if (config.play.ambientTicksPerDay > 0 && s.ambientShare < L.minAmbientShare)
+      flags.push({ kind: 'ambient-low', strategy: s.strategy, value: s.ambientShare, limit: L.minAmbientShare, detail: 'ambient earning is too small to register next to session fees' });
     if (s.invariantFailures > 0)
       flags.push({ kind: 'invariant', strategy: s.strategy, value: s.invariantFailures, limit: 0, detail: 'runs violated an economy invariant' });
   }

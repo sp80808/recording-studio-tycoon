@@ -22,12 +22,14 @@ export interface PlayProfile {
   staffContribution: number;
   studioQualityBonus: number;
   equipmentQualityBonus: number;
+  /** Ambient-income ticks earned per in-game day of active play (one tick = 45s of input, see ambientIncome.ts). */
+  ambientTicksPerDay: number;
 }
 
 /** Attended: locks takes, rides the console. Auto: the room runs itself with no player input. */
 export const PLAY_PROFILES: Record<'attended' | 'auto', PlayProfile> = {
-  attended: { cPoints: 60, tPoints: 60, minigamePoints: 4, stageGrade: 'Silver', focusEffectiveness: 1.1, staffContribution: 0, studioQualityBonus: 2, equipmentQualityBonus: 0 },
-  auto: { cPoints: 0, tPoints: 0, minigamePoints: 0, stageGrade: null, focusEffectiveness: 1, staffContribution: 0, studioQualityBonus: 0, equipmentQualityBonus: 0 },
+  attended: { cPoints: 60, tPoints: 60, minigamePoints: 4, stageGrade: 'Silver', focusEffectiveness: 1.1, staffContribution: 0, studioQualityBonus: 2, equipmentQualityBonus: 0, ambientTicksPerDay: 10 },
+  auto: { cPoints: 0, tPoints: 0, minigamePoints: 0, stageGrade: null, focusEffectiveness: 1, staffContribution: 0, studioQualityBonus: 0, equipmentQualityBonus: 0, ambientTicksPerDay: 0 },
 };
 
 export interface BalanceConfig {
@@ -35,6 +37,8 @@ export interface BalanceConfig {
   startingReputation: number;
   /** Every player skill starts at this level (scenario snapshots: early 1, mid 6, late 12). */
   startingSkillLevel: number;
+  /** Studio tier 1-5 (feeds ambient income). */
+  studioLevel: number;
   /** Fixed daily upkeep (rent + wages stand-in). */
   dailyCost: number;
   projectsPerDay: number;
@@ -68,6 +72,10 @@ export interface RunawayLimits {
   maxBankruptcyRate: number;
   /** A strategy earning per day above this (late game) is flagged as runaway income. */
   maxDailyIncome: number;
+  /** Ambient income above this share of total income is too generous... */
+  maxAmbientShare: number;
+  /** ...and below this share it is not noticeable as a side income (only judged when ticks > 0). */
+  minAmbientShare: number;
 }
 
 export const DEFAULT_LIMITS: RunawayLimits = {
@@ -77,12 +85,15 @@ export const DEFAULT_LIMITS: RunawayLimits = {
   maxCaseLootValue: 6000,
   maxBankruptcyRate: 0.25,
   maxDailyIncome: 6000,
+  maxAmbientShare: 0.12,
+  minAmbientShare: 0.01,
 };
 
 export const DEFAULT_BALANCE_CONFIG: BalanceConfig = {
   startingCash: 500,
   startingReputation: 0,
   startingSkillLevel: 1,
+  studioLevel: 1,
   dailyCost: 25,
   projectsPerDay: 3,
   equipmentQuality: 50,
@@ -99,8 +110,8 @@ export const DEFAULT_BALANCE_CONFIG: BalanceConfig = {
 /** Snapshot scenarios: a known progression state + the overrides that define it. */
 export const SCENARIOS: Record<string, Partial<BalanceConfig>> = {
   early: {},
-  mid: { startingCash: 6000, startingReputation: 120, startingSkillLevel: 6, dailyCost: 120, equipmentQuality: 65 },
-  late: { startingCash: 30000, startingReputation: 450, startingSkillLevel: 12, dailyCost: 400, equipmentQuality: 85 },
+  mid: { startingCash: 6000, startingReputation: 120, startingSkillLevel: 6, studioLevel: 3, dailyCost: 120, equipmentQuality: 65 },
+  late: { startingCash: 30000, startingReputation: 450, startingSkillLevel: 12, studioLevel: 5, dailyCost: 400, equipmentQuality: 85 },
 };
 
 export const resolveConfig = (overrides: Partial<BalanceConfig> = {}): BalanceConfig => ({

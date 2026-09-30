@@ -92,7 +92,7 @@ export const checkInvariants = (run: BalanceRun): InvariantResult[] => {
   // Reward economy: gems and loot can only add, chart positions stay on the chart,
   // and every case granted is accounted for.
   const r = run.rewards;
-  const rewardNumbers = [r.gems, r.lootValue, r.maxCaseLoot, r.rewardCash, r.chartDebuts, r.chartPlacements, r.number1s, r.minigames, ...Object.values(r.cases)];
+  const rewardNumbers = [r.gems, r.lootValue, r.maxCaseLoot, r.rewardCash, r.chartDebuts, r.chartPlacements, r.number1s, r.minigames, r.ambient, r.maxAmbientDay, ...Object.values(r.cases)];
   results.push({
     name: 'rewards-finite-nonnegative',
     passed: rewardNumbers.every((n) => isFiniteNumber(n) && n >= 0),
@@ -103,6 +103,12 @@ export const checkInvariants = (run: BalanceRun): InvariantResult[] => {
     name: 'chart-accounting',
     passed: r.chartPlacements >= r.chartDebuts && r.number1s <= r.chartPlacements && r.chartDebuts <= run.completed,
     detail: `debuts=${r.chartDebuts} placements=${r.chartPlacements} number1s=${r.number1s} sessions=${run.completed}`,
+  });
+
+  results.push({
+    name: 'ambient-within-daily-cap',
+    passed: r.maxAmbientDay <= Math.max(r.ambientCap, 0),
+    detail: `max ambient day ${r.maxAmbientDay} vs cap reached ${r.ambientCap}`,
   });
 
   const worstMultiple = run.perDay.reduce((m, d) => Math.max(m, d.payoutMultiple), 0);

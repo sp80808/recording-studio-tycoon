@@ -65,7 +65,7 @@ const main = (): void => {
     if (!(opts.scenario in SCENARIOS)) throw new Error(`unknown scenario ${opts.scenario}; use ${Object.keys(SCENARIOS).join('/')}`);
     const result = runScenarioSweep({ seeds: opts.sweep, days: opts.days, era: opts.era, scenario: opts.scenario, firstSeed: opts.seed });
     console.log(`sweep: scenario=${result.scenario} seeds=${result.seeds}`);
-    console.table(result.stats.map(({ strategy, bankruptcyRate, medianCash, meanDailyIncome, meanFirstUpgradeDay, rewardShare, repeatSessionShare }) => ({ strategy, bankruptcyRate, medianCash, meanDailyIncome, meanFirstUpgradeDay, rewardShare, repeatSessionShare })));
+    console.table(result.stats.map(({ strategy, bankruptcyRate, medianCash, meanDailyIncome, meanFirstUpgradeDay, rewardShare, repeatSessionShare, ambientShare, meanAmbientPerDay }) => ({ strategy, bankruptcyRate, medianCash, meanDailyIncome, meanFirstUpgradeDay, rewardShare, repeatSessionShare, ambientShare, meanAmbientPerDay })));
     if (result.flags.length === 0) console.log('runaway flags: none');
     for (const f of result.flags) console.log(`RUNAWAY ${f.kind} [${f.strategy}] value=${f.value} limit=${f.limit} - ${f.detail}`);
     const outDir = opts.out ?? path.resolve(process.cwd(), 'src/dev/balance/results');

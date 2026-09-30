@@ -47,6 +47,12 @@ const late = simulateStrategy(2, 'highest-fee', 90, 'analog60s', SCENARIOS.late)
 ok(late.rewards.chartDebuts > 0 && late.rewards.gems > 0, 'late scenario charts songs and earns gems');
 ok(late.rewards.chartPlacements >= late.rewards.chartDebuts, 'weekly chart moves add to debuts');
 
+// Ambient earning (#109): attended play earns it, automation does not, and the daily cap holds.
+ok(attended.rewards.ambient > 0 && auto.rewards.ambient === 0, 'ambient income accrues only with active play');
+const grind = simulateStrategy(9, 'balanced', 60, 'analog60s', { play: { ...PLAY_PROFILES.attended, ambientTicksPerDay: 500 } });
+ok(grind.rewards.maxAmbientDay <= 120 && grind.rewards.maxAmbientDay === grind.rewards.ambientCap, 'extreme active play is held to the daily ambient cap');
+ok(allPassed(checkInvariants(grind)), 'invariants hold under extreme ambient ticks');
+
 // Invariants catch a corrupted run.
 const dup = { ...a, settledIds: [...a.settledIds, a.settledIds[0]] };
 ok(!allPassed(checkInvariants(dup)), 'duplicate settlement is detected');
@@ -62,6 +68,7 @@ const csv = sweepToCsv(sweep).trim().split('\n');
 ok(csv.length === 1 + STRATEGIES.length && csv[0].startsWith('scenario,days,era,strategy'), 'CSV has a header and one row per strategy');
 const tight = runScenarioSweep({ scenario: 'late', seeds: 4, days: 60, config: { limits: { maxRewardShare: 0, maxDailyIncome: 1, maxStrategyDominance: 1 } as never } });
 ok(tight.flags.some((f) => f.kind === 'reward-share'), 'tight limits raise a reward-share flag');
+ok(runScenarioSweep({ scenario: 'early', seeds: 4, days: 60, config: { limits: { maxAmbientShare: 0 } as never } }).flags.some((f) => f.kind === 'ambient-high'), 'tight limits raise an ambient-high flag');
 ok(tight.flags.some((f) => f.kind === 'daily-income'), 'tight limits raise a daily-income flag');
 
 console.log(`balance-sweep: ${passed} checks passed`);
