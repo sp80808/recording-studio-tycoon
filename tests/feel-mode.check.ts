@@ -7,7 +7,7 @@ assert.deepStrictEqual(feelAttributes({ reducedMotion: true, graphicsPreset: 'lo
 assert.deepStrictEqual(feelAttributes({}), { 'data-reduced-motion': 'false', 'data-graphics': 'high' });
 
 const css = readFileSync('src/styles/feel.css', 'utf8');
-for (const cls of ['feel-press', 'feel-stagger', 'feel-pop', 'feel-attention', 'feel-land', 'feel-sheen']) {
+for (const cls of ['feel-press', 'feel-stagger', 'feel-pop', 'feel-attention', 'feel-land', 'feel-sheen', 'feel-underline']) {
   assert.ok(css.includes(`.${cls}`), `${cls} defined`);
   assert.ok(css.includes(`[data-reduced-motion='true'] .${cls}`) || css.includes(`.${cls}, `) || css.includes(`.${cls}:`) || css.includes(`.${cls}::`) , `${cls} has reduced-motion handling`);
 }
