@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { ContextDrawer, ContextDrawerTab } from './ContextDrawer';
 import { MotionNumber, MotionButton } from '@/components/motion/primitives';
-import { Headphones, Phone, SlidersHorizontal, Sparkles, Users, Disc3, Trophy, X, Minimize2, Moon } from 'lucide-react';
+import { Headphones, Phone, SlidersHorizontal, Sparkles, Users, Disc3, Trophy, X, Minimize2, Moon, Package } from 'lucide-react';
 import { GameState, StaffMember, PlayerAttributes, Project } from '@/types/game';
 import { ProjectList } from './ProjectList';
 import { ProgressiveProjectInterface } from './ProgressiveProjectInterface';
@@ -24,6 +24,7 @@ import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
 import { RadialActionWheel } from '@/components/ui/RadialActionWheel';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useSettings } from '@/contexts/settings-context-types';
+import { FlightCaseDepot } from './FlightCaseDepot';
 import './studio-play.css';
 
 interface MainGameContentProps {
@@ -64,7 +65,7 @@ interface MainGameContentProps {
 }
 
 
-type Panel = 'bookings' | 'session' | 'studio' | 'career';
+type Panel = 'bookings' | 'session' | 'studio' | 'career' | 'cases';
 
 const DOCK_LABELS: Record<DockTabId, string> = {
   bookings: 'Bookings',
@@ -348,7 +349,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             ? 'artist'
             : panel === 'session'
               ? 'session'
-              : panel === 'career'
+              : panel === 'career' || panel === 'cases'
                 ? 'career'
                 : dashboardTab === 'staff'
                   ? 'staff'
@@ -446,6 +447,11 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
               startResearchMod={startResearchMod}
             />
           )}
+          {panel === 'cases' && (
+            <div className="flex-1 min-h-0 w-full flex flex-col overflow-y-auto">
+              <FlightCaseDepot gameState={gameState} setGameState={setGameState} />
+            </div>
+          )}
           {panel === 'career' && (
             <div className="flex-1 min-h-0 w-full flex flex-col overflow-y-auto">
               <CareerHub
@@ -461,6 +467,9 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
               <div className="grid gap-2.5 p-1 pt-3 sm:grid-cols-2">
                 <button className="rst-btn" onClick={() => handleOpenDashboardTab('skills')}>
                   <Sparkles size={17} />Skills & research
+                </button>
+                <button className="rst-btn" onClick={() => openPanel('cases')}>
+                  <Package size={17} />Flight cases
                 </button>
                 <button className="rst-btn" onClick={advanceDay}>
                   <Moon size={17} />Rest & advance day

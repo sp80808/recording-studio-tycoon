@@ -478,8 +478,11 @@ export const useStageWork = ({
         });
       }
 
+      const gemGain = stageCompleted && completedGrade?.grade === 'S' ? 2 : stageCompleted && completedGrade?.grade === 'A' ? 1 : 0;
+
       return withDailyTracking({
         ...prev,
+        gems: (prev.gems ?? 0) + gemGain,
         activeProject: updatedProject,
         discoveredSynergies: updatedDiscovered,
         choreState: nextChoreState,
