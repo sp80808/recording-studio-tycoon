@@ -31,14 +31,14 @@ export const WelcomeBackSummaryModal: React.FC<WelcomeBackSummaryModalProps> = (
 
   return (
     <Dialog open={!!summary} onOpenChange={open => !open && onClose()}>
-      <DialogContent className="bg-gray-950 border-gray-700 text-white max-w-md">
+      <DialogContent className="bg-stone-950 border-stone-700 text-white max-w-md">
         <DialogHeader>
           <DialogTitle>While you were away</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-3 text-sm">
-          <div className="rounded-lg border border-gray-800 bg-gray-900 p-3">
-            <div className="text-gray-400 text-xs uppercase tracking-wide">Studio time credited</div>
+          <div className="rounded-lg border border-stone-800 bg-stone-900 p-3">
+            <div className="text-stone-400 text-xs uppercase tracking-wide">Studio time credited</div>
             <div className="text-lg font-semibold mt-1">
               {formatDuration(summary.productiveMs || summary.creditedMs)}
             </div>
@@ -51,14 +51,14 @@ export const WelcomeBackSummaryModal: React.FC<WelcomeBackSummaryModalProps> = (
 
           {summary.workUnitsAdded > 0 && (
             <div className="flex justify-between">
-              <span className="text-gray-400">Session progress</span>
+              <span className="text-stone-400">Session progress</span>
               <span className="font-medium">+{summary.workUnitsAdded.toFixed(1)} work</span>
             </div>
           )}
 
           {summary.stagesCompleted.length > 0 && (
             <div>
-              <div className="text-gray-400 mb-1">Stages completed</div>
+              <div className="text-stone-400 mb-1">Stages completed</div>
               <div className="space-y-1">
                 {summary.stagesCompleted.map((stage, index) => (
                   <div key={`${stage}-${index}`} className="text-green-300">
@@ -73,7 +73,7 @@ export const WelcomeBackSummaryModal: React.FC<WelcomeBackSummaryModalProps> = (
             <div className="rounded-lg border border-purple-500/30 bg-purple-500/10 p-3">
               <div className="font-medium text-purple-200">Session ready for delivery</div>
               {summary.projectsReadyForReview.map(project => (
-                <div key={project.projectId} className="text-sm text-gray-300 mt-1">
+                <div key={project.projectId} className="text-sm text-stone-300 mt-1">
                   {project.title}
                 </div>
               ))}
@@ -82,8 +82,8 @@ export const WelcomeBackSummaryModal: React.FC<WelcomeBackSummaryModalProps> = (
 
           {summary.staffEnergySpent > 0 && (
             <div className="flex justify-between text-xs">
-              <span className="text-gray-500">Staff energy used</span>
-              <span className="text-gray-400">{summary.staffEnergySpent.toFixed(0)}</span>
+              <span className="text-stone-500">Staff energy used</span>
+              <span className="text-stone-400">{summary.staffEnergySpent.toFixed(0)}</span>
             </div>
           )}
         </div>

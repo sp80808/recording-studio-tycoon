@@ -6,7 +6,7 @@ export const ProductionTaskItem: React.FC<{ task: ProductionTask; onPause: () =>
     <div className="p-2 border rounded flex justify-between items-center" role="listitem">
       <div>
         <div className="font-semibold">{task.name || task.type}</div>
-        <div className="text-sm text-gray-600">{task.progress}% • {task.estimatedDuration}s</div>
+        <div className="text-sm text-stone-600">{task.progress}% • {task.estimatedDuration}s</div>
       </div>
       <div className="flex gap-2">
         <button onClick={onPause} className="px-2 py-1 bg-yellow-500 text-white rounded">{task.status === 'paused' ? 'Resume' : 'Pause'}</button>

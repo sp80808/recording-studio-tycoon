@@ -167,13 +167,13 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
   const finished = !gameActive && timeLeft === 0;
 
   return (
-    <Card className="w-full max-w-2xl mx-auto bg-gray-800 text-white border-gray-700">
+    <Card className="w-full max-w-2xl mx-auto bg-stone-800 text-white border-stone-700">
       <MinigameChrome title="🎵 Rhythm Timing Challenge" score={score} timeLeft={gameActive ? timeLeft : undefined} streak={combo} accent="blue">
       <CardContent>
 
       <div 
         ref={gameAreaRef}
-        className="relative h-32 bg-gray-800 rounded-lg border-2 border-gray-600 overflow-hidden mb-4"
+        className="relative h-32 bg-stone-800 rounded-lg border-2 border-stone-600 overflow-hidden mb-4"
       >
         {/* Target zone with perfect timing indicator */}
         <div className="absolute left-72 top-0 w-12 h-full bg-green-500/30 border-2 border-green-400 flex items-center justify-center">
@@ -214,25 +214,25 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
         ))}
 
         {/* Guide line */}
-        <div className="absolute left-0 top-1/2 w-full h-0.5 bg-gray-600"></div>
+        <div className="absolute left-0 top-1/2 w-full h-0.5 bg-stone-600"></div>
       </div>
 
       <div className="text-center space-y-3">
         {!gameActive && timeLeft === 30 ? (
-          <KenneyButton variant="blue" onClick={startGame}>
+          <KenneyButton variant="yellow" onClick={startGame}>
             Start Rhythm Challenge
           </KenneyButton>
         ) : finished ? (
           <div key={score} className="space-y-2">
             <div className={`text-lg font-bold text-yellow-400 ${score > 0 ? 'mg-perfect-pop' : ''}`}>Game Complete!</div>
-            <div className="text-sm text-gray-300">Final Score: {score}</div>
+            <div className="text-sm text-stone-300">Final Score: {score}</div>
             <KenneyButton variant="green" onClick={onClose}>
               Collect Rewards
             </KenneyButton>
           </div>
         ) : (
           <div className="space-y-2">
-            <div className="text-sm text-gray-300">
+            <div className="text-sm text-stone-300">
               Press SPACE when beats hit the <span className="text-yellow-400 font-bold">yellow line</span> for PERFECT timing!
             </div>
             <KenneyButton variant="yellow" onClick={hitBeat} className="w-full mg-hit-flash active:scale-95">

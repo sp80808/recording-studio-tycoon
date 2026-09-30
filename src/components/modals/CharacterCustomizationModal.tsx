@@ -90,14 +90,14 @@ export const CharacterCustomizationModal: React.FC<CharacterCustomizationModalPr
         className="relative z-10 w-full max-w-2xl max-h-[92vh] flex flex-col p-4 sm:p-6 shadow-2xl animate-inspector-pop"
       >
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 mb-3 border-b-2 border-slate-700/80 shrink-0">
+        <div className="flex items-center justify-between pb-3 mb-3 border-b-2 border-stone-700/80 shrink-0">
           <div className="flex items-center gap-2">
             <span className="text-xl">🎛️</span>
             <div>
               <h2 id="character-customization-title" className="text-lg font-black tracking-wide text-white uppercase">
                 Producer Profile & Style
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-stone-400">
                 Craft your studio identity, origin background, and audio philosophy.
               </p>
             </div>
@@ -117,7 +117,7 @@ export const CharacterCustomizationModal: React.FC<CharacterCustomizationModalPr
         {/* Identity Inputs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 shrink-0">
           <div>
-            <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+            <label className="block text-[11px] font-bold text-stone-300 uppercase tracking-wider mb-1">
               Producer Moniker / Alias
             </label>
             <input
@@ -125,12 +125,12 @@ export const CharacterCustomizationModal: React.FC<CharacterCustomizationModalPr
               value={moniker}
               onChange={(e) => setMoniker(e.target.value)}
               maxLength={24}
-              className="w-full bg-slate-950/80 border-2 border-slate-700 rounded-md px-3 py-1.5 text-sm font-bold text-amber-200 focus:border-amber-400 focus:outline-none"
+              className="w-full bg-stone-950/80 border-2 border-stone-700 rounded-md px-3 py-1.5 text-sm font-bold text-amber-200 focus:border-amber-400 focus:outline-none"
               placeholder="e.g. The Architect"
             />
           </div>
           <div>
-            <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+            <label className="block text-[11px] font-bold text-stone-300 uppercase tracking-wider mb-1">
               Console Motto
             </label>
             <input
@@ -138,21 +138,21 @@ export const CharacterCustomizationModal: React.FC<CharacterCustomizationModalPr
               value={motto}
               onChange={(e) => setMotto(e.target.value)}
               maxLength={36}
-              className="w-full bg-slate-950/80 border-2 border-slate-700 rounded-md px-3 py-1.5 text-sm font-medium text-slate-200 focus:border-amber-400 focus:outline-none"
+              className="w-full bg-stone-950/80 border-2 border-stone-700 rounded-md px-3 py-1.5 text-sm font-medium text-stone-200 focus:border-amber-400 focus:outline-none"
               placeholder="e.g. In Sound We Trust"
             />
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="grid grid-cols-3 gap-1.5 mb-3 bg-slate-950/60 p-1 rounded-lg border border-slate-800 shrink-0">
+        <div className="grid grid-cols-3 gap-1.5 mb-3 bg-stone-950/60 p-1 rounded-lg border border-stone-800 shrink-0">
           <button
             type="button"
             onClick={() => { setActiveTab('origin'); void gameAudio.playClick().catch(() => {}); }}
             className={`flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded transition-all ${
               activeTab === 'origin'
                 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50 shadow'
-                : 'text-slate-400 hover:text-white'
+                : 'text-stone-400 hover:text-white'
             }`}
           >
             <User size={14} /> Origin Lore
@@ -162,8 +162,8 @@ export const CharacterCustomizationModal: React.FC<CharacterCustomizationModalPr
             onClick={() => { setActiveTab('playstyle'); void gameAudio.playClick().catch(() => {}); }}
             className={`flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded transition-all ${
               activeTab === 'playstyle'
-                ? 'bg-sky-500/20 text-sky-300 border border-sky-500/50 shadow'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-amber-500/20 text-amber-200 border border-amber-500/50 shadow'
+                : 'text-stone-400 hover:text-white'
             }`}
           >
             <Sliders size={14} /> Play Style
@@ -174,7 +174,7 @@ export const CharacterCustomizationModal: React.FC<CharacterCustomizationModalPr
             className={`flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded transition-all ${
               activeTab === 'visuals'
                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 shadow'
-                : 'text-slate-400 hover:text-white'
+                : 'text-stone-400 hover:text-white'
             }`}
           >
             <Palette size={14} /> Studio Theme
@@ -185,7 +185,7 @@ export const CharacterCustomizationModal: React.FC<CharacterCustomizationModalPr
         <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2.5">
           {activeTab === 'origin' && (
             <div className="space-y-2.5">
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-stone-400">
                 Your origin determines starting stat bonuses and signature acoustic traits.
               </p>
               <div className="grid grid-cols-1 gap-2">
@@ -198,7 +198,7 @@ export const CharacterCustomizationModal: React.FC<CharacterCustomizationModalPr
                       className={`cursor-pointer rounded-lg border-2 p-3 transition-all game-interactive ${
                         isSelected
                           ? 'border-amber-400/80 bg-amber-950/30 shadow-[0_0_12px_rgba(245,158,11,0.2)]'
-                          : 'border-slate-700/70 bg-slate-900/60 hover:border-slate-500'
+                          : 'border-stone-700/70 bg-stone-900/60 hover:border-stone-500'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -211,20 +211,20 @@ export const CharacterCustomizationModal: React.FC<CharacterCustomizationModalPr
                             "{origin.tagline}"
                           </p>
                         </div>
-                        <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                        <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded bg-stone-800 text-stone-300 border border-stone-700">
                           {origin.primaryPlaystyle}
                         </span>
                       </div>
 
-                      <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                      <p className="text-xs text-stone-300 mt-2 leading-relaxed">
                         {origin.lore}
                       </p>
 
-                      <div className="mt-2.5 pt-2 border-t border-slate-800 flex flex-wrap gap-2 text-[11px]">
-                        <span className="bg-slate-950/80 px-2 py-0.5 rounded border border-slate-700 text-emerald-300 font-semibold">
+                      <div className="mt-2.5 pt-2 border-t border-stone-800 flex flex-wrap gap-2 text-[11px]">
+                        <span className="bg-stone-950/80 px-2 py-0.5 rounded border border-stone-700 text-emerald-300 font-semibold">
                           ⚡ {origin.passivePerk.name}: {origin.passivePerk.description}
                         </span>
-                        <span className="bg-slate-950/80 px-2 py-0.5 rounded border border-slate-700 text-slate-400">
+                        <span className="bg-stone-950/80 px-2 py-0.5 rounded border border-stone-700 text-stone-400">
                           🎙 Signature: {origin.signatureGenres.slice(0, 3).join(', ')}
                         </span>
                       </div>
@@ -237,7 +237,7 @@ export const CharacterCustomizationModal: React.FC<CharacterCustomizationModalPr
 
           {activeTab === 'playstyle' && (
             <div className="space-y-2.5">
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-stone-400">
                 Choose the philosophy that drives your contracts, client bookings, and awards.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -250,23 +250,23 @@ export const CharacterCustomizationModal: React.FC<CharacterCustomizationModalPr
                         onClick={() => handleSelectPlaystyle(styleKey)}
                         className={`cursor-pointer rounded-lg border-2 p-3 transition-all game-interactive flex flex-col justify-between ${
                           isSelected
-                            ? 'border-sky-400/80 bg-sky-950/30 shadow-[0_0_12px_rgba(56,189,248,0.2)]'
-                            : 'border-slate-700/70 bg-slate-900/60 hover:border-slate-500'
+                            ? 'border-amber-400/80 bg-stone-950/30 shadow-[0_0_12px_rgba(56,189,248,0.2)]'
+                            : 'border-stone-700/70 bg-stone-900/60 hover:border-stone-500'
                         }`}
                       >
                         <div>
                           <div className="flex items-center justify-between mb-1">
                             <h4 className="text-sm font-bold text-white">{config.label}</h4>
-                            {isSelected && <CheckCircle2 size={16} className="text-sky-400" />}
+                            {isSelected && <CheckCircle2 size={16} className="text-amber-300" />}
                           </div>
-                          <p className="text-[11px] text-sky-200 font-medium italic mb-2">
+                          <p className="text-[11px] text-stone-200 font-medium italic mb-2">
                             {config.tagline}
                           </p>
-                          <p className="text-xs text-slate-300 leading-relaxed mb-3">
+                          <p className="text-xs text-stone-300 leading-relaxed mb-3">
                             {config.focusBonusDescription}
                           </p>
                         </div>
-                        <div className="pt-2 border-t border-slate-800 text-[10px] text-slate-400 font-mono">
+                        <div className="pt-2 border-t border-stone-800 text-[10px] text-stone-400 font-mono">
                           Award Weight: x{config.preferredAwardsWeight} · Trend Sensitivity: x{config.marketTrendSensitivity}
                         </div>
                       </div>
@@ -279,7 +279,7 @@ export const CharacterCustomizationModal: React.FC<CharacterCustomizationModalPr
 
           {activeTab === 'visuals' && (
             <div className="space-y-2.5">
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-stone-400">
                 Select your control room aesthetic and hardware meter styling.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -293,7 +293,7 @@ export const CharacterCustomizationModal: React.FC<CharacterCustomizationModalPr
                         className={`cursor-pointer rounded-lg border-2 p-3 transition-all game-interactive ${
                           isSelected
                             ? `${theme.panelBorderClass} ${theme.panelBackgroundClass} ${theme.glowClass}`
-                            : 'border-slate-700/70 bg-slate-900/60 hover:border-slate-500'
+                            : 'border-stone-700/70 bg-stone-900/60 hover:border-stone-500'
                         }`}
                       >
                         <div className="flex items-center justify-between mb-1">
@@ -303,11 +303,11 @@ export const CharacterCustomizationModal: React.FC<CharacterCustomizationModalPr
                           </h4>
                           {isSelected && <CheckCircle2 size={16} style={{ color: theme.primaryColor }} />}
                         </div>
-                        <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                        <p className="text-xs text-stone-300 mt-1 leading-relaxed">
                           {theme.description}
                         </p>
                         <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-between text-[11px]">
-                          <span className="text-slate-400">Meters: <strong className="text-white uppercase">{theme.meterStyle}</strong></span>
+                          <span className="text-stone-400">Meters: <strong className="text-white uppercase">{theme.meterStyle}</strong></span>
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${theme.uiBadgeClass}`}>
                             Preview
                           </span>
@@ -322,9 +322,9 @@ export const CharacterCustomizationModal: React.FC<CharacterCustomizationModalPr
         </div>
 
         {/* Footer Actions */}
-        <div className="mt-4 pt-3 border-t-2 border-slate-700/80 flex items-center justify-between gap-3 shrink-0">
-          <div className="text-xs text-slate-400 truncate">
-            Active: <strong className="text-amber-300">{currentOrigin.name}</strong> · <span className="text-sky-300">{currentPlaystyleConfig.label}</span>
+        <div className="mt-4 pt-3 border-t-2 border-stone-700/80 flex items-center justify-between gap-3 shrink-0">
+          <div className="text-xs text-stone-400 truncate">
+            Active: <strong className="text-amber-300">{currentOrigin.name}</strong> · <span className="text-amber-200">{currentPlaystyleConfig.label}</span>
           </div>
           <div className="flex items-center gap-2">
             <KenneyButton

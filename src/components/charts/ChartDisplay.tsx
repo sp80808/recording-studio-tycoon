@@ -45,13 +45,13 @@ export const ChartDisplay: React.FC<ChartDisplayProps> = ({
     switch (movement) {
       case 'up': return 'text-green-400';
       case 'down': return 'text-red-400';
-      case 'new': return 'text-blue-400';
-      default: return 'text-gray-400';
+      case 'new': return 'text-amber-300';
+      default: return 'text-stone-400';
     }
   };
 
   return (
-    <Card className="bg-gray-800/50 border-gray-600 p-4">
+    <Card className="bg-stone-800/50 border-stone-600 p-4">
       <div className="flex items-center justify-between mb-3">
         <h4 className="font-semibold text-white">{chart.name}</h4>
         <div className="flex items-center gap-2">
@@ -64,7 +64,7 @@ export const ChartDisplay: React.FC<ChartDisplayProps> = ({
         </div>
       </div>
 
-      <p className="text-sm text-gray-400 mb-4">{chart.description}</p>
+      <p className="text-sm text-stone-400 mb-4">{chart.description}</p>
 
       {/* Chart Entries - Enhanced Layout like Billboard */}
       <div className="space-y-3 max-h-80 overflow-y-auto">
@@ -85,7 +85,7 @@ export const ChartDisplay: React.FC<ChartDisplayProps> = ({
           return (
             <Card
               key={trackId}
-              className="p-3 bg-gray-700/30 border-gray-600/50 hover:bg-gray-700/50 transition-all duration-200"
+              className="p-3 bg-stone-700/30 border-stone-600/50 hover:bg-stone-700/50 transition-all duration-200"
             >
               <div className="flex items-center justify-between gap-4">
                 {/* Chart Position & Movement */}
@@ -115,13 +115,13 @@ export const ChartDisplay: React.FC<ChartDisplayProps> = ({
                       {entry.song.title}
                     </h4>
                   </HoverPreview>
-                  <p className="text-sm text-gray-300 truncate">
+                  <p className="text-sm text-stone-300 truncate">
                     {entry.song.artist.name}
                   </p>
                 </div>
 
                 {/* Genre, Weeks, Peak */}
-                <div className="flex items-center gap-3 text-xs text-gray-500 min-w-[150px] justify-end">
+                <div className="flex items-center gap-3 text-xs text-stone-500 min-w-[150px] justify-end">
                    <Badge variant="outline" className="text-xs px-2 py-0 capitalize flex items-center gap-1">
                       {getGenreEmoji(entry.song.genre)} {entry.song.genre}
                     </Badge>
@@ -148,23 +148,23 @@ export const ChartDisplay: React.FC<ChartDisplayProps> = ({
                       isPlaying
                         ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg animate-pulse'
                         : hasAudio
-                          ? 'bg-gray-600 hover:bg-gray-500 text-gray-200'
-                          : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                          ? 'bg-stone-600 hover:bg-stone-500 text-stone-200'
+                          : 'bg-stone-800 text-stone-500 cursor-not-allowed'
                     }`}
                     title={hasAudio ? `Play preview: ${segment.displayTime}` : 'No preview available'}
                   >
                     {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                      {hasAudio && !isPlaying && (
-                      <div className="absolute -top-1 -right-1 h-3 w-3 bg-blue-500 rounded-full text-[8px] flex items-center justify-center font-bold text-white">
+                      <div className="absolute -top-1 -right-1 h-3 w-3 bg-amber-500 rounded-full text-[8px] flex items-center justify-center font-bold text-stone-950">
                         {segment.segmentNumber}
                       </div>
                     )}
                   </Button>
                    {hasAudio && (progress > 0 || isPlaying) && (
-                    <div className="w-8 h-1 bg-gray-600 rounded-full overflow-hidden">
+                    <div className="w-8 h-1 bg-stone-600 rounded-full overflow-hidden">
                       <div
                         className={`h-full transition-all duration-75 ${
-                          isPlaying ? 'bg-green-400' : 'bg-gray-400'
+                          isPlaying ? 'bg-green-400' : 'bg-stone-400'
                         }`}
                         style={{ width: `${progress}%` }}
                       />

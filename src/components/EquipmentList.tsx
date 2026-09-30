@@ -50,12 +50,12 @@ export const EquipmentList: React.FC<EquipmentListProps> = ({
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold text-white">🛒 Equipment Shop</h3>
-        <span className="text-xs text-gray-400">💰 Sorted by price</span>
+        <span className="text-xs text-stone-400">💰 Sorted by price</span>
       </div>
       
       {sortedEquipment.length === 0 ? (
-        <Card className="p-4 bg-gray-800/50 border-gray-600 flex-1 flex items-center justify-center">
-          <div className="text-center text-gray-400">
+        <Card className="p-4 bg-stone-800/50 border-stone-600 flex-1 flex items-center justify-center">
+          <div className="text-center text-stone-400">
             <div className="text-2xl mb-2">✅</div>
             <p>All equipment purchased!</p>
           </div>
@@ -68,7 +68,7 @@ export const EquipmentList: React.FC<EquipmentListProps> = ({
             const isVintage = equipment.isVintage && (gameState.currentYear || 2024) > (equipment.availableUntil || equipment.availableFrom + 20);
             
             return (
-              <Card key={equipment.id} className="p-3 bg-gray-800/50 border-gray-600">
+              <Card key={equipment.id} className="p-3 bg-stone-800/50 border-stone-600">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
@@ -82,11 +82,11 @@ export const EquipmentList: React.FC<EquipmentListProps> = ({
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-stone-400">
                           {equipment.eraDescription || equipment.description}
                         </p>
                         {equipment.skillRequirement && (
-                          <div className="text-xs text-blue-400 mt-1">
+                          <div className="text-xs text-amber-300 mt-1">
                             📈 Requires {equipment.skillRequirement.skill} Level {equipment.skillRequirement.level}
                           </div>
                         )}

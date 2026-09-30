@@ -9,7 +9,7 @@ interface DynamicResponseChartProps {
 
 export const DynamicResponseChart: React.FC<DynamicResponseChartProps> = ({ dynamicData }) => {
   return (
-    <Card className="p-4 bg-gray-800/50 border-gray-600">
+    <Card className="p-4 bg-stone-800/50 border-stone-600">
       <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
         <Zap className="h-4 w-4" />
         Dynamic Response
@@ -18,12 +18,12 @@ export const DynamicResponseChart: React.FC<DynamicResponseChartProps> = ({ dyna
         <AreaChart data={dynamicData}>
           <XAxis 
             dataKey="time" 
-            tick={{ fontSize: 10, fill: '#9ca3af' }}
+            tick={{ fontSize: 10, fill: '#aaa6a1' }}
           />
           <YAxis 
             domain={[-40, 0]} 
-            tick={{ fontSize: 10, fill: '#9ca3af' }}
-            label={{ value: 'dB', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#9ca3af' } }}
+            tick={{ fontSize: 10, fill: '#aaa6a1' }}
+            label={{ value: 'dB', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#aaa6a1' } }}
           />
           <Area
             type="monotone"
@@ -43,7 +43,7 @@ export const DynamicResponseChart: React.FC<DynamicResponseChartProps> = ({ dyna
           />
         </AreaChart>
       </ResponsiveContainer>
-      <div className="flex justify-between text-xs text-gray-500 mt-1">
+      <div className="flex justify-between text-xs text-stone-500 mt-1">
         <span>🔴 Input</span>
         <span>🟢 Output</span>
       </div>

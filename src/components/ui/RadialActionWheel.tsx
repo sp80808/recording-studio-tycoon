@@ -84,13 +84,13 @@ export const RadialActionWheel: React.FC<RadialActionWheelProps> = ({ isOpen, on
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-80 h-80 rounded-full border-2 border-slate-700/80 bg-slate-950/95 shadow-[0_0_50px_rgba(0,0,0,0.8)] flex items-center justify-center select-none">
+      <div className="relative w-80 h-80 rounded-full border-2 border-stone-700/80 bg-stone-950/95 shadow-[0_0_50px_rgba(0,0,0,0.8)] flex items-center justify-center select-none">
         {/* Subtle radial division lines */}
         <div className="absolute inset-0 rounded-full pointer-events-none border border-amber-500/20" />
-        <div className="absolute inset-4 rounded-full pointer-events-none border border-slate-800" />
+        <div className="absolute inset-4 rounded-full pointer-events-none border border-stone-800" />
 
         {/* Center Hub */}
-        <div className="relative z-10 w-24 h-24 rounded-full bg-slate-900 border border-slate-700 flex flex-col items-center justify-center shadow-inner text-center p-2">
+        <div className="relative z-10 w-24 h-24 rounded-full bg-stone-900 border border-stone-700 flex flex-col items-center justify-center shadow-inner text-center p-2">
           {activeSlice ? (
             <>
               <activeSlice.icon size={22} className="text-amber-400 mb-0.5 animate-pulse" />
@@ -100,8 +100,8 @@ export const RadialActionWheel: React.FC<RadialActionWheelProps> = ({ isOpen, on
             </>
           ) : (
             <>
-              <span className="text-[10px] text-slate-400 font-mono">Flick Stick</span>
-              <span className="text-[9px] text-slate-500">to Select</span>
+              <span className="text-[10px] text-stone-400 font-mono">Flick Stick</span>
+              <span className="text-[9px] text-stone-500">to Select</span>
             </>
           )}
         </div>
@@ -129,8 +129,8 @@ export const RadialActionWheel: React.FC<RadialActionWheelProps> = ({ isOpen, on
               }}
               className={`absolute flex flex-col items-center justify-center w-14 h-14 rounded-full transition-all duration-150 ${
                 isSelected
-                  ? 'bg-amber-500 text-slate-950 scale-110 shadow-[0_0_20px_rgba(245,158,11,0.6)] font-bold'
-                  : 'bg-slate-900/90 text-slate-300 border border-slate-700/70 hover:border-amber-400/50'
+                  ? 'bg-amber-500 text-stone-950 scale-110 shadow-[0_0_20px_rgba(245,158,11,0.6)] font-bold'
+                  : 'bg-stone-900/90 text-stone-300 border border-stone-700/70 hover:border-amber-400/50'
               }`}
             >
               <Icon size={18} />
@@ -142,10 +142,10 @@ export const RadialActionWheel: React.FC<RadialActionWheelProps> = ({ isOpen, on
         })}
 
         {/* Bottom Help Prompt */}
-        <div className="absolute -bottom-10 flex items-center gap-2 text-xs text-slate-300 bg-slate-900/90 px-3 py-1 rounded-full border border-slate-800">
+        <div className="absolute -bottom-10 flex items-center gap-2 text-xs text-stone-300 bg-stone-900/90 px-3 py-1 rounded-full border border-stone-800">
           <GamepadGlyph button="south" size="xs" />
           <span>Confirm</span>
-          <span className="text-slate-600">|</span>
+          <span className="text-stone-600">|</span>
           <GamepadGlyph button="east" size="xs" />
           <span>Cancel</span>
         </div>

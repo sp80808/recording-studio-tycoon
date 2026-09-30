@@ -49,7 +49,7 @@ export const OrbAnimationStyles: React.FC = () => {
       }
 
       .orb.creativity {
-        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        background: linear-gradient(135deg, #d49f45 0%, #1d4ed8 100%);
         box-shadow: 0 0 20px rgba(59, 130, 246, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.3);
         border: 2px solid rgba(255, 255, 255, 0.4);
       }

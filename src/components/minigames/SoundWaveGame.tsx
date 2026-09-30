@@ -257,14 +257,14 @@ export const SoundWaveGame: React.FC<SoundWaveGameProps> = ({
   }, [targetWave, playerWave, currentLevel, generateTargetWave]);
 
   return (
-    <Card className="w-full max-w-2xl mx-auto bg-gray-800 text-white border-gray-700">
+    <Card className="w-full max-w-2xl mx-auto bg-stone-800 text-white border-stone-700">
       <MinigameChrome title="🌊 Sound Wave Matching" score={score} timeLeft={gameActive ? timeLeft : undefined} streak={currentLevel >= 2 ? currentLevel : undefined} accent="green">
       <CardContent>
-        <div className="mb-3 text-center text-sm text-gray-300">Level {currentLevel} — draw the orange wave to match the green target!</div>
+        <div className="mb-3 text-center text-sm text-stone-300">Level {currentLevel} — draw the orange wave to match the green target!</div>
 
       {!gameActive && timeLeft === 30 ? (
         <div className="text-center space-y-4 py-4">
-          <p className="text-gray-300">Draw the orange wave to match the green target wave!</p>
+          <p className="text-stone-300">Draw the orange wave to match the green target wave!</p>
           <KenneyButton variant="green" onClick={startGame}>
             Start Wave Challenge
           </KenneyButton>
@@ -272,21 +272,21 @@ export const SoundWaveGame: React.FC<SoundWaveGameProps> = ({
       ) : !gameActive && timeLeft === 0 ? (
         <div key={score} className="space-y-2 py-4 text-center">
           <div className={`text-lg font-bold text-yellow-400 ${score > 0 ? 'mg-perfect-pop' : ''}`}>Challenge Complete!</div>
-          <div className="text-sm text-gray-300">Final Score: {score}</div>
+          <div className="text-sm text-stone-300">Final Score: {score}</div>
           <KenneyButton variant="green" onClick={onClose}>
             Collect Rewards
           </KenneyButton>
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="text-center text-sm text-gray-300">
+          <div className="text-center text-sm text-stone-300">
             Click and drag to draw the wave. Match the green line as closely as possible!
           </div>
           
-          <div className="border-2 border-gray-600 rounded-lg overflow-hidden">
+          <div className="border-2 border-stone-600 rounded-lg overflow-hidden">
             <canvas
               ref={canvasRef}
-              className="bg-gray-800 cursor-crosshair w-full h-48 block"
+              className="bg-stone-800 cursor-crosshair w-full h-48 block"
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}

@@ -185,7 +185,7 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
       toast({
         title: "🎮 Minigame Complete!",
         description: `Rewards: +${creativityBonus} C, +${technicalBonus} T, +${xpBonus} XP`,
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         variant: success === false ? "destructive" : "default", // Indicate if it wasn't fully successful
       });
     }

@@ -258,17 +258,17 @@ export const TapeJogGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
     >
       <div className="space-y-4 max-w-lg mx-auto select-none">
         {/* Tape Machine Deck Display */}
-        <div className="relative p-5 bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-slate-700/80 rounded-xl shadow-2xl flex flex-col items-center">
+        <div className="relative p-5 bg-gradient-to-b from-stone-900 to-stone-950 border-2 border-stone-700/80 rounded-xl shadow-2xl flex flex-col items-center">
           {/* Dual Rotating Tape Reels */}
           <div className="w-full flex items-center justify-between px-6 mb-4">
             <div className="flex flex-col items-center">
               <div
                 style={{ transform: `rotate(${reelAngle}deg)` }}
-                className="w-20 h-20 rounded-full border-4 border-slate-600 bg-slate-800 flex items-center justify-center shadow-lg transition-transform"
+                className="w-20 h-20 rounded-full border-4 border-stone-600 bg-stone-800 flex items-center justify-center shadow-lg transition-transform"
               >
-                <Disc size={64} className="text-slate-400" />
+                <Disc size={64} className="text-stone-400" />
               </div>
-              <span className="text-[10px] text-slate-400 font-mono mt-1">SUPPLY REEL</span>
+              <span className="text-[10px] text-stone-400 font-mono mt-1">SUPPLY REEL</span>
             </div>
 
             {/* Magnetic Playhead Center Block */}
@@ -282,16 +282,16 @@ export const TapeJogGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
             <div className="flex flex-col items-center">
               <div
                 style={{ transform: `rotate(${reelAngle}deg)` }}
-                className="w-20 h-20 rounded-full border-4 border-slate-600 bg-slate-800 flex items-center justify-center shadow-lg transition-transform"
+                className="w-20 h-20 rounded-full border-4 border-stone-600 bg-stone-800 flex items-center justify-center shadow-lg transition-transform"
               >
-                <Disc size={64} className="text-slate-400" />
+                <Disc size={64} className="text-stone-400" />
               </div>
-              <span className="text-[10px] text-slate-400 font-mono mt-1">TAKE-UP REEL</span>
+              <span className="text-[10px] text-stone-400 font-mono mt-1">TAKE-UP REEL</span>
             </div>
           </div>
 
           {/* Magnetic Tape Ribbon & Waveform Strip */}
-          <div className="relative w-full h-16 bg-slate-950 rounded-lg border border-slate-800 overflow-hidden flex items-center shadow-inner">
+          <div className="relative w-full h-16 bg-stone-950 rounded-lg border border-stone-800 overflow-hidden flex items-center shadow-inner">
             {/* Target Glitch / Off-key take region */}
             <div
               style={{
@@ -333,7 +333,7 @@ export const TapeJogGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
           </div>
 
           {/* Cut Progress & Info */}
-          <div className="w-full flex items-center justify-between text-xs text-slate-300 mt-3 px-1">
+          <div className="w-full flex items-center justify-between text-xs text-stone-300 mt-3 px-1">
             <div>
               Splice <span className="font-bold text-amber-400">{currentCut + 1}</span> of {TOTAL_CUTS}
             </div>
@@ -350,7 +350,7 @@ export const TapeJogGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
         <div className="grid grid-cols-3 gap-2">
           <KenneyButton
             onClick={handleMarkIn}
-            variant="blue"
+            variant="yellow"
             className="flex items-center justify-center gap-1.5 py-2.5 text-xs"
           >
             <GamepadGlyph button="lt" size="xs" />
@@ -369,7 +369,7 @@ export const TapeJogGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
 
           <KenneyButton
             onClick={handleMarkOut}
-            variant="blue"
+            variant="yellow"
             className="flex items-center justify-center gap-1.5 py-2.5 text-xs"
           >
             <GamepadGlyph button="rt" size="xs" />
@@ -380,7 +380,7 @@ export const TapeJogGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
         {gameOver && (
           <div className="p-3 bg-emerald-950/60 border border-emerald-500/50 rounded-lg text-center animate-in zoom-in-95">
             <h4 className="font-bold text-emerald-300 mb-1">Master Tape Spliced!</h4>
-            <p className="text-xs text-slate-300 mb-3">
+            <p className="text-xs text-stone-300 mb-3">
               Total Score: <span className="font-mono text-amber-300 font-bold">{totalScore}</span> / 1000
             </p>
             <KenneyButton onClick={handleFinalize} variant="green" className="w-full">

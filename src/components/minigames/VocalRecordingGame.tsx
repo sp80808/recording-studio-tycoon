@@ -149,14 +149,14 @@ export const VocalRecordingGame: React.FC<VocalRecordingGameProps> = ({ onComple
   const finished = gameStarted && !gameActive;
 
   return (
-    <Card className="w-full max-w-4xl mx-auto bg-gray-800 text-white border-gray-700">
+    <Card className="w-full max-w-4xl mx-auto bg-stone-800 text-white border-stone-700">
       <MinigameChrome title="🎤 Vocal Tuning Challenge" score={score} streak={streak >= 2 ? streak : undefined} accent="red">
       <CardContent>
-        <p className="mb-3 text-center text-sm text-gray-300">Hit the pitch blocks when the cursor reaches them! Hits: {hitCount}/{totalBlocks}</p>
+        <p className="mb-3 text-center text-sm text-stone-300">Hit the pitch blocks when the cursor reaches them! Hits: {hitCount}/{totalBlocks}</p>
 
       {!gameStarted ? (
         <div className="space-y-4 py-4 text-center">
-          <p className="text-gray-300">
+          <p className="text-stone-300">
             Click or press SPACEBAR when the cursor line hits each pitch block.
             Perfect timing gives you maximum creativity points!
           </p>
@@ -186,7 +186,7 @@ export const VocalRecordingGame: React.FC<VocalRecordingGameProps> = ({ onComple
           {/* Game area */}
           <div 
             ref={gameContainerRef}
-            className="relative h-32 bg-gray-800 rounded-lg border-2 border-gray-600 overflow-hidden cursor-pointer"
+            className="relative h-32 bg-stone-800 rounded-lg border-2 border-stone-600 overflow-hidden cursor-pointer"
             onClick={handleHit}
           >
             {/* Vocal waveform background */}

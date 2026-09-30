@@ -13,7 +13,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
       toast({
         title: "❌ Invalid Band Creation",
         description: "Band name and at least one member are required.",
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive"
       });
       return;
@@ -25,7 +25,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
       toast({
         title: "❌ Invalid Staff Selection",
         description: "Some selected staff members are not available.",
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive"
       });
       return;
@@ -68,7 +68,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
     toast({
       title: "🎸 Band Created!",
       description: `${bandName} is ready to make music!`,
-      className: "bg-gray-800 border-gray-600 text-white",
+      className: "bg-stone-800 border-stone-600 text-white",
       duration: 3000
     });
 
@@ -83,7 +83,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
       toast({
         title: "❌ Band Not Found",
         description: "Cannot start tour for unknown band.",
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive"
       });
       return;
@@ -93,7 +93,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
       toast({
         title: "⭐ Not Enough Fame",
         description: "Your band needs at least 50 fame to go on tour.",
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive"
       });
       return;
@@ -103,7 +103,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
       toast({
         title: "🚌 Already on Tour",
         description: "This band is already touring.",
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive"
       });
       return;
@@ -137,7 +137,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
     toast({
       title: "🚌 Tour Started!",
       description: `${band.bandName} is on tour, earning $${dailyIncome} per day!`,
-      className: "bg-gray-800 border-gray-600 text-white",
+      className: "bg-stone-800 border-stone-600 text-white",
       duration: 3000
     });
   }, [gameState.playerBands, setGameState]);
@@ -150,7 +150,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
       toast({
         title: "❌ Band Not Found",
         description: "Cannot create track for unknown band.",
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive"
       });
       return;
@@ -160,7 +160,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
       toast({
         title: "⏳ Studio Busy",
         description: "Complete your current project first.",
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive"
       });
       return;
@@ -185,7 +185,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
     toast({
       title: "🎵 Original Track Started!",
       description: `${band.bandName} is working on a new track!`,
-      className: "bg-gray-800 border-gray-600 text-white",
+      className: "bg-stone-800 border-stone-600 text-white",
       duration: 3000
     });
   }, [gameState.playerBands, gameState.activeProject, gameState.activeOriginalTrack, gameState.currentDay, setGameState]);

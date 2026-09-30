@@ -28,7 +28,7 @@ export const RankRevealOverlay: React.FC<{
       ? 'from-yellow-300 via-amber-400 to-yellow-600 text-black'
       : rank === 'S'
         ? 'from-yellow-400 to-amber-600 text-black'
-        : 'from-slate-600 to-slate-800 text-white';
+        : 'from-stone-600 to-stone-800 text-white';
 
   return (
     <div

@@ -55,12 +55,20 @@
 }
 
 /* When Session drawer is open, park coach left and out of progress/meter */
-[data-studio-drawer='session'] ~ * .first-session-guide,
-body:has([data-studio-drawer='session']) .first-session-guide {
+[data-studio-drawer] ~ * .first-session-guide,
+body:has([data-studio-drawer]) .first-session-guide {
   left: max(12px, env(safe-area-inset-left, 0px));
   right: auto;
   top: max(152px, calc(env(safe-area-inset-top, 0px) + 136px));
   width: min(260px, 28vw);
+}
+
+/* The wide Session console spans the viewport, so the coach steps aside until it closes. */
+body:has([data-studio-drawer='session']) .first-session-guide { display: none; }
+
+/* Tablet / phone: the drawer owns the whole width, so the coach steps aside until it closes. */
+@media (max-width: 768px) {
+  body:has([data-studio-drawer]) .first-session-guide { display: none; }
 }
 
 /* Take Calibration / session-critical: never cover PocketMeter or feedback */

@@ -179,10 +179,10 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
     </main>
 
     <AlertDialog open={showOverwriteConfirm} onOpenChange={setShowOverwriteConfirm}>
-      <AlertDialogContent className="border border-amber-400/30 bg-slate-900 text-slate-100 sm:max-w-md">
+      <AlertDialogContent className="border border-amber-400/30 bg-stone-900 text-stone-100 sm:max-w-md">
         <AlertDialogHeader>
           <AlertDialogTitle className="text-amber-200">{t('splash_overwrite_title')}</AlertDialogTitle>
-          <AlertDialogDescription className="text-slate-300">
+          <AlertDialogDescription className="text-stone-300">
             {saveInfo.preview ? (
               <span>
                 {t('splash_overwrite_body', {
@@ -201,12 +201,12 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="mt-4 gap-2 sm:gap-2">
-          <AlertDialogCancel className="border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700">
+          <AlertDialogCancel className="border-stone-700 bg-stone-800 text-stone-200 hover:bg-stone-700">
             {t('splash_keep_career')}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirmOverwrite}
-            className="border border-amber-400/50 bg-amber-500 font-bold text-slate-950 hover:bg-amber-400"
+            className="border border-amber-400/50 bg-amber-500 font-bold text-stone-950 hover:bg-amber-400"
           >
             {t('splash_overwrite_confirm')}
           </AlertDialogAction>

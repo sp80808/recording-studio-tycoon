@@ -97,11 +97,11 @@ export const MasteringGame: React.FC<MasteringGameProps> = ({ onComplete, onClos
   const masteringDone = timeLeft === 0;
 
   return (
-    <Card className="w-full max-w-4xl mx-auto bg-gray-800 text-white border-gray-700">
+    <Card className="w-full max-w-4xl mx-auto bg-stone-800 text-white border-stone-700">
       <MinigameChrome title="🎚️ Mastering Challenge" score={score} timeLeft={timeLeft} accent="yellow">
       <div className="p-6">
       <div className="text-center mb-6">
-        <p className="text-gray-300">Master the track to match the target sound!</p>
+        <p className="text-stone-300">Master the track to match the target sound!</p>
         <div className="mt-4 text-lg font-bold text-blue-400">Target: {target.name}</div>
       </div>
 
@@ -116,7 +116,7 @@ export const MasteringGame: React.FC<MasteringGameProps> = ({ onComplete, onClos
           <div>
             <div className="flex justify-between items-center mb-2">
               <label className="text-white font-semibold">🔊 Volume</label>
-              <span className="text-gray-400">{parameters.volume[0]}%</span>
+              <span className="text-stone-400">{parameters.volume[0]}%</span>
             </div>
             <Slider
               value={parameters.volume}
@@ -131,7 +131,7 @@ export const MasteringGame: React.FC<MasteringGameProps> = ({ onComplete, onClos
           <div>
             <div className="flex justify-between items-center mb-2">
               <label className="text-white font-semibold">🗜️ Compression</label>
-              <span className="text-gray-400">{parameters.compression[0]}%</span>
+              <span className="text-stone-400">{parameters.compression[0]}%</span>
             </div>
             <Slider
               value={parameters.compression}
@@ -148,7 +148,7 @@ export const MasteringGame: React.FC<MasteringGameProps> = ({ onComplete, onClos
           <div>
             <div className="flex justify-between items-center mb-2">
               <label className="text-white font-semibold">🎛️ EQ</label>
-              <span className="text-gray-400">{parameters.eq[0]}%</span>
+              <span className="text-stone-400">{parameters.eq[0]}%</span>
             </div>
             <Slider
               value={parameters.eq}
@@ -163,7 +163,7 @@ export const MasteringGame: React.FC<MasteringGameProps> = ({ onComplete, onClos
           <div>
             <div className="flex justify-between items-center mb-2">
               <label className="text-white font-semibold">📻 Stereo Width</label>
-              <span className="text-gray-400">{parameters.stereoWidth[0]}%</span>
+              <span className="text-stone-400">{parameters.stereoWidth[0]}%</span>
             </div>
             <Slider
               value={parameters.stereoWidth}
@@ -181,7 +181,7 @@ export const MasteringGame: React.FC<MasteringGameProps> = ({ onComplete, onClos
         <div className="text-lg font-bold text-white mb-2">
           Accuracy: {accuracy}%
         </div>
-        <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+        <div className="w-full bg-stone-700 rounded-full h-3 overflow-hidden">
           <div
             className={`h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 transition-all duration-300 ${accuracy >= 80 ? 'mg-meter-glow' : ''}`}
             style={{ width: `${accuracy}%` }}
@@ -193,7 +193,7 @@ export const MasteringGame: React.FC<MasteringGameProps> = ({ onComplete, onClos
         <KenneyButton variant="green" onClick={checkTarget}>
           ✨ Check Master
         </KenneyButton>
-        <KenneyButton variant="blue" onClick={handleComplete}>
+        <KenneyButton variant="yellow" onClick={handleComplete}>
           Finish Early
         </KenneyButton>
         <KenneyButton variant="grey" onClick={onClose}>
@@ -210,7 +210,7 @@ export const MasteringGame: React.FC<MasteringGameProps> = ({ onComplete, onClos
                 ? 'bg-green-500'
                 : index === currentTarget
                   ? 'bg-blue-500 animate-pulse'
-                  : 'bg-gray-600'
+                  : 'bg-stone-600'
             }`}
           />
         ))}

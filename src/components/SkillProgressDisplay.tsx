@@ -18,7 +18,7 @@ export const SkillProgressDisplay: React.FC<SkillProgressDisplayProps> = ({
     return (
       <div className={`skill-progress-display ${className}`}>
         <h3 className="text-lg font-bold text-white mb-4">Studio Skills</h3>
-        <p className="text-gray-400">No skills data available</p>
+        <p className="text-stone-400">No skills data available</p>
       </div>
     );
   }
@@ -29,7 +29,7 @@ export const SkillProgressDisplay: React.FC<SkillProgressDisplayProps> = ({
     return (
       <div className={`skill-progress-display ${className}`}>
         <h3 className="text-lg font-bold text-white mb-4">Studio Skills</h3>
-        <p className="text-gray-400">No skills learned yet</p>
+        <p className="text-stone-400">No skills learned yet</p>
       </div>
     );
   }
@@ -38,10 +38,10 @@ export const SkillProgressDisplay: React.FC<SkillProgressDisplayProps> = ({
     <div className={`skill-progress-display space-y-3 ${className}`}>
       <h3 className="text-lg font-bold text-white mb-4">Studio Skills</h3>
       {skillsArray.map(skill => (
-        <div key={skill.name} className="bg-gray-800/50 p-3 rounded-lg border border-gray-600">
+        <div key={skill.name} className="bg-stone-800/50 p-3 rounded-lg border border-stone-600">
           <div className="flex items-center justify-between mb-2">
             <span className="text-white font-medium">{skill.name}</span>
-            <span className="text-sm text-gray-300">Level {skill.level}</span>
+            <span className="text-sm text-stone-300">Level {skill.level}</span>
           </div>
           <XPProgressBar
             currentXP={skill.xp}
@@ -50,7 +50,7 @@ export const SkillProgressDisplay: React.FC<SkillProgressDisplayProps> = ({
             showNumbers={false}
             className="mb-2"
           />
-          <div className="text-xs text-gray-400">
+          <div className="text-xs text-stone-400">
             Bonus: +{skill.level * 5}% efficiency for {skill.name} projects
           </div>
         </div>

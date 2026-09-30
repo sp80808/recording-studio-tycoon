@@ -137,7 +137,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
       {/* Tab Navigation (Pinned) */}
       <nav
         aria-label="Management panels"
-        className="grid grid-cols-6 shrink-0 mb-2.5 overflow-hidden rounded-lg border border-slate-700/80 bg-gradient-to-b from-slate-700/70 to-slate-950 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_4px_14px_rgba(0,0,0,0.3)]"
+        className="grid grid-cols-6 shrink-0 mb-2.5 overflow-hidden rounded-lg border border-stone-700/80 bg-gradient-to-b from-stone-700/70 to-stone-950 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_4px_14px_rgba(0,0,0,0.3)]"
       >
         {DASHBOARD_TABS.map(({ id, label, icon: Icon }) => {
           const selected = activeTab === id;
@@ -149,16 +149,16 @@ export const RightPanel: React.FC<RightPanelProps> = ({
               aria-pressed={selected}
               onClick={() => selectTab(id)}
               title={id === 'synergies' ? 'Studio Recipe & Synergy Codex' : label}
-              className={`relative flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[10px] font-bold leading-none transition-all focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-950 ${
+              className={`relative flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[10px] font-bold leading-none transition-all focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-1 focus-visible:ring-offset-stone-950 ${
                 selected
-                  ? 'bg-gradient-to-b from-slate-950 to-slate-800 text-amber-200 shadow-[inset_0_2px_5px_rgba(0,0,0,0.9),inset_0_-1px_0_rgba(255,255,255,0.08)]'
-                  : 'text-slate-400 hover:bg-white/5 hover:text-slate-100 active:translate-y-px'
+                  ? 'bg-gradient-to-b from-stone-950 to-stone-800 text-amber-200 shadow-[inset_0_2px_5px_rgba(0,0,0,0.9),inset_0_-1px_0_rgba(255,255,255,0.08)]'
+                  : 'text-stone-400 hover:bg-white/5 hover:text-stone-100 active:translate-y-px'
               }`}
             >
               <Icon aria-hidden="true" className={`h-4 w-4 ${selected ? 'drop-shadow-[0_0_5px_rgba(251,191,36,0.45)]' : ''}`} strokeWidth={2.1} />
               <span className="truncate">{label}</span>
               {discoveryCount > 0 && (
-                <span className="absolute right-1 top-1 min-w-3.5 rounded-full bg-amber-400 px-1 text-[8px] leading-3.5 text-slate-950 shadow">
+                <span className="absolute right-1 top-1 min-w-3.5 rounded-full bg-amber-400 px-1 text-[8px] leading-3.5 text-stone-950 shadow">
                   {discoveryCount}
                 </span>
               )}
@@ -172,13 +172,13 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         {activeTab === 'studio' && (
           <div className="space-y-3">
             {/* Prominent Advance Day Action Banner */}
-            <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-gradient-to-r from-purple-950/80 via-indigo-950/70 to-slate-900 border border-purple-500/50 shadow-md">
+            <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-gradient-to-r from-purple-950/80 via-violet-950/70 to-stone-900 border border-purple-500/50 shadow-md">
               <div className="min-w-0">
                 <div className="text-xs font-bold text-white flex items-center gap-1.5">
                   <span className="text-amber-300 font-extrabold">☀ Day {gameState.currentDay}</span>
                   <span className="text-[10px] text-purple-300 font-medium">({gameState.currentYear})</span>
                 </div>
-                <div className="text-[10px] text-slate-400 truncate">
+                <div className="text-[10px] text-stone-400 truncate">
                   Advances calendar & restores producer sessions
                 </div>
               </div>
@@ -196,15 +196,15 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             <StudioProgressionPanel gameState={gameState} />
 
             {/* Studio Rooms */}
-            <div className="rounded-lg border border-gray-700 bg-gray-950/50 p-2.5">
+            <div className="rounded-lg border border-stone-700 bg-stone-950/50 p-2.5">
               <div className="flex items-center justify-between mb-2">
                 <div>
                   <h3 className="text-xs font-bold text-white">🏢 Studio Rooms</h3>
-                  <p className="text-[10px] text-gray-400">
+                  <p className="text-[10px] text-stone-400">
                     {unlockedRooms.length} owned · {roomExpansionLimit} allowed
                   </p>
                 </div>
-                <div className="text-[10px] text-gray-400">
+                <div className="text-[10px] text-stone-400">
                   {occupiedRoomIds.size}/{unlockedRooms.length} occupied
                 </div>
               </div>
@@ -222,21 +222,21 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                       className={`rounded border p-2 ${
                         room.unlocked
                           ? occupied
-                            ? 'border-blue-500/40 bg-blue-950/20'
+                            ? 'border-amber-500/40 bg-stone-950/20'
                             : 'border-green-500/30 bg-green-950/10'
-                          : 'border-gray-700 bg-gray-900/60'
+                          : 'border-stone-700 bg-stone-900/60'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <div className="text-xs font-medium text-gray-100">{room.name}</div>
-                          <div className="text-[10px] text-gray-500 capitalize">
+                          <div className="text-xs font-medium text-stone-100">{room.name}</div>
+                          <div className="text-[10px] text-stone-500 capitalize">
                             {room.type.replace('-', ' ')} · Q+{room.qualityBonus} · S+{room.speedBonus}
                           </div>
                         </div>
                         {room.unlocked ? (
                           <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${
-                            occupied ? 'bg-blue-500/15 text-blue-300' : 'bg-green-500/15 text-green-300'
+                            occupied ? 'bg-amber-500/15 text-amber-200' : 'bg-green-500/15 text-green-300'
                           }`}>
                             {occupied ? 'In session' : 'Available'}
                           </span>
@@ -266,7 +266,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             </div>
             
             {/* Equipment Shop Section */}
-            <div className="rounded-lg border border-gray-700 bg-gray-950/50 p-2.5 max-h-72 overflow-y-auto pr-1">
+            <div className="rounded-lg border border-stone-700 bg-stone-950/50 p-2.5 max-h-72 overflow-y-auto pr-1">
               <EquipmentList purchaseEquipment={purchaseEquipment} gameState={gameState} />
             </div>
 
@@ -275,24 +275,24 @@ export const RightPanel: React.FC<RightPanelProps> = ({
 
             {/* Quick mod access when research unlocks hardware mods */}
             {gameState.researchedMods && gameState.researchedMods.length > 0 && gameState.ownedEquipment.length > 0 && (
-              <div className="rounded-lg border border-gray-700 bg-gray-950/50 p-2.5">
+              <div className="rounded-lg border border-stone-700 bg-stone-950/50 p-2.5">
                 <h3 className="text-xs font-bold text-white mb-2">🛠️ Gear mods</h3>
                 <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
                   {gameState.ownedEquipment.map(equip => {
                     const currentMod = equip.appliedModId ? availableMods.find(m => m.id === equip.appliedModId) : null;
                     return (
-                      <Card key={equip.id} className="p-2 bg-gray-800/60 border-gray-700">
+                      <Card key={equip.id} className="p-2 bg-stone-800/60 border-stone-700">
                         <div className="flex justify-between items-center text-xs">
                           <div className="min-w-0 pr-2">
-                            <p className="font-semibold text-gray-200 truncate">
+                            <p className="font-semibold text-stone-200 truncate">
                               {equip.icon} {equip.name}
                               {currentMod && <span className="text-[10px] text-yellow-400 ml-1">{currentMod.nameSuffix || `(${currentMod.name})`}</span>}
                             </p>
-                            <p className="text-[10px] text-gray-400">Condition: {equip.condition}%</p>
+                            <p className="text-[10px] text-stone-400">Condition: {equip.condition}%</p>
                           </div>
                           <KenneyButton
                             size="sm"
-                            variant="blue"
+                            variant="yellow"
                             className="text-[10px] py-0.5 px-2 shrink-0"
                             onClick={() => {
                               setSelectedEquipmentForModding(equip);
@@ -314,8 +314,8 @@ export const RightPanel: React.FC<RightPanelProps> = ({
       {activeTab === 'skills' && (
         <div className="space-y-4">
           <h2 className="text-xl font-bold text-white">Player Progression</h2>
-          <div className="text-gray-300">Level: {gameState.playerData.level}</div>
-          <div className="text-gray-300">XP: {gameState.playerData.xp} / {gameState.playerData.xpToNextLevel}</div>
+          <div className="text-stone-300">Level: {gameState.playerData.level}</div>
+          <div className="text-stone-300">XP: {gameState.playerData.xp} / {gameState.playerData.xpToNextLevel}</div>
           <div className="text-green-400">Perk Points: {gameState.playerData.perkPoints}</div>
 
           <KenneyButton onClick={() => setShowAttributesModal(true)} variant="blue" size="md" className="w-full">
@@ -335,7 +335,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         <div className="space-y-4">
           <h2 className="text-xl font-bold text-white">👥 Staff Management</h2>
           
-          <div className="text-sm text-gray-400 mb-4">
+          <div className="text-sm text-stone-400 mb-4">
             Hire and manage studio staff to help with projects
           </div>
 
@@ -353,21 +353,21 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             <h3 className="text-lg font-semibold text-white">Available Staff</h3>
             {gameState.availableCandidates && gameState.availableCandidates.length > 0 ? (
               gameState.availableCandidates.map((candidate, index) => (
-                <div key={candidate.id || index} className="bg-gray-800 p-3 rounded-lg">
+                <div key={candidate.id || index} className="bg-stone-800 p-3 rounded-lg">
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <div className="text-white font-medium">{candidate.name}</div>
-                      <div className="text-gray-400 text-sm">{candidate.role}</div>
+                      <div className="text-stone-400 text-sm">{candidate.role}</div>
                     </div>
                     <div className="text-green-400 font-bold">${candidate.salary}/day</div>
                   </div>
-                  <div className="text-xs text-gray-500 mb-2">
+                  <div className="text-xs text-stone-500 mb-2">
                     Creativity: {candidate.primaryStats.creativity}, Technical: {candidate.primaryStats.technical}, Speed: {candidate.primaryStats.speed}
                   </div>
                   {gameState.activeProject && (() => {
                     const fit = calculateStaffProjectFit(candidate, gameState.activeProject!);
                     return (
-                      <div className="text-[11px] text-blue-300 mb-2">
+                      <div className="text-[11px] text-amber-200 mb-2">
                         Current-session fit {fit.score}/100 · {fit.reasons.slice(0, 2).join(' · ')}
                       </div>
                     );
@@ -389,7 +389,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                 </div>
               ))
             ) : (
-              <div className="text-gray-400 text-center py-4">
+              <div className="text-stone-400 text-center py-4">
                 No candidates available. Click refresh to find new staff!
               </div>
             )}
@@ -400,17 +400,17 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             <div className="space-y-2 mt-6">
               <h3 className="text-lg font-semibold text-white">Current Staff</h3>
               {gameState.hiredStaff.map(staff => (
-                <div key={staff.id} className="bg-gray-800 p-3 rounded-lg">
+                <div key={staff.id} className="bg-stone-800 p-3 rounded-lg">
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <div className="text-white font-medium">{staff.name}</div>
-                      <div className="text-gray-400 text-sm">{staff.role}</div>
+                      <div className="text-stone-400 text-sm">{staff.role}</div>
                     </div>
                     <div className="text-right">
                       <div className="text-green-400 text-sm">${staff.salary}/day</div>
                       <div className={`text-xs ${
-                        staff.status === 'Working' ? 'text-blue-400' : 
-                        staff.status === 'Idle' ? 'text-gray-400' : 
+                        staff.status === 'Working' ? 'text-amber-300' : 
+                        staff.status === 'Idle' ? 'text-stone-400' : 
                         staff.status === 'Resting' ? 'text-yellow-400' : 'text-purple-400'
                       }`}>
                         {staff.status}
@@ -420,7 +420,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                   {gameState.activeProject && (() => {
                     const fit = calculateStaffProjectFit(staff, gameState.activeProject!);
                     return (
-                      <div className="text-[11px] text-blue-300 mb-2">
+                      <div className="text-[11px] text-amber-200 mb-2">
                         Session fit {fit.score}/100 · {fit.reasons.slice(0, 3).join(' · ')}
                       </div>
                     );
@@ -504,7 +504,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
       {activeTab === 'charts' && gameState.playerData.level < 1 && (
         <div className="space-y-4">
           <h2 className="text-xl font-bold text-white">📈 Industry Charts</h2>
-          <div className="text-center text-gray-400 py-8">
+          <div className="text-center text-stone-400 py-8">
             <div className="text-4xl mb-2">🔒</div>
             <div className="text-sm">Charts access unlocks at Level 1</div>
             <div className="text-xs mt-1">Complete projects to access industry charts!</div>

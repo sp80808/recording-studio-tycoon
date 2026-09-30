@@ -26,7 +26,7 @@ export const InteractivePatchCable: React.FC<InteractivePatchCableProps> = ({
     vintage: { main: '#c084fc', glow: 'rgba(192, 132, 252, 0.7)', text: 'text-purple-400', label: 'Vintage Cloth Bantam' },
     rare: { main: '#22d3ee', glow: 'rgba(34, 211, 238, 0.7)', text: 'text-cyan-400', label: 'Studio Pro XLR Line' },
     uncommon: { main: '#34d399', glow: 'rgba(52, 211, 153, 0.7)', text: 'text-emerald-400', label: 'Balanced TRS Patch' },
-    common: { main: '#94a3b8', glow: 'rgba(148, 163, 184, 0.6)', text: 'text-slate-300', label: 'Standard Studio Cord' },
+    common: { main: '#94a3b8', glow: 'rgba(148, 163, 184, 0.6)', text: 'text-stone-300', label: 'Standard Studio Cord' },
   };
   const cord = cableColorMap[rarity] || cableColorMap.common;
 
@@ -178,7 +178,7 @@ export const InteractivePatchCable: React.FC<InteractivePatchCableProps> = ({
           className={`flex-1 py-1.5 px-3 rounded-sm border font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer ${
             isPatched
               ? 'bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-stone-950 border-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.4)]'
-              : 'bg-slate-900 hover:bg-slate-800 text-slate-200 border-slate-700 hover:border-amber-400'
+              : 'bg-stone-900 hover:bg-stone-800 text-stone-200 border-stone-700 hover:border-amber-400'
           }`}
         >
           {isPatched ? (
@@ -194,7 +194,7 @@ export const InteractivePatchCable: React.FC<InteractivePatchCableProps> = ({
           )}
         </button>
 
-        <span className="text-[10px] font-mono text-slate-400 hidden sm:inline-block">
+        <span className="text-[10px] font-mono text-stone-400 hidden sm:inline-block">
           {cord.label}
         </span>
       </div>

@@ -166,32 +166,32 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   return (
     <>
       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <Card className="w-full max-w-3xl bg-slate-950 border-slate-700/80 shadow-2xl p-6 max-h-[90vh] flex flex-col overflow-hidden text-slate-100">
+        <Card className="w-full max-w-3xl bg-stone-950 border-stone-700/80 shadow-2xl p-6 max-h-[90vh] flex flex-col overflow-hidden text-stone-100">
           {/* Header */}
-          <div className="flex justify-between items-center pb-4 border-b border-slate-800">
+          <div className="flex justify-between items-center pb-4 border-b border-stone-800">
             <div>
               <h2 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
                 <span>⚙️</span> {t('settings_title')}
               </h2>
-              <p className="text-xs text-slate-400">{t('settings_subtitle')}</p>
+              <p className="text-xs text-stone-400">{t('settings_subtitle')}</p>
             </div>
             {gamepad.isConnected && (
-              <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-900 px-3 py-1.5 rounded-full border border-slate-800">
+              <div className="flex items-center gap-2 text-xs text-stone-400 bg-stone-900 px-3 py-1.5 rounded-full border border-stone-800">
                 <GamepadGlyph button="lb" size="xs" />
-                <span className="font-semibold text-slate-300">{t('settings_tabs_hint')}</span>
+                <span className="font-semibold text-stone-300">{t('settings_tabs_hint')}</span>
                 <GamepadGlyph button="rb" size="xs" />
               </div>
             )}
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex gap-1.5 pt-3 pb-3 border-b border-slate-800/80 overflow-x-auto select-none">
+          <div className="flex gap-1.5 pt-3 pb-3 border-b border-stone-800/80 overflow-x-auto select-none">
             <button
               onClick={() => setActiveTab('audio')}
               className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'audio'
-                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                  : 'bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-800'
+                  ? 'bg-amber-500 text-stone-950 shadow-md shadow-amber-500/20'
+                  : 'bg-stone-900/80 text-stone-400 hover:text-white hover:bg-stone-800'
               }`}
             >
               <span>🔊</span> {t('settings_tab_audio')}
@@ -200,8 +200,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               onClick={() => setActiveTab('graphics')}
               className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'graphics'
-                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                  : 'bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-800'
+                  ? 'bg-amber-500 text-stone-950 shadow-md shadow-amber-500/20'
+                  : 'bg-stone-900/80 text-stone-400 hover:text-white hover:bg-stone-800'
               }`}
             >
               <span>📺</span> {t('settings_tab_graphics')}
@@ -210,8 +210,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               onClick={() => setActiveTab('gameplay')}
               className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'gameplay'
-                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                  : 'bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-800'
+                  ? 'bg-amber-500 text-stone-950 shadow-md shadow-amber-500/20'
+                  : 'bg-stone-900/80 text-stone-400 hover:text-white hover:bg-stone-800'
               }`}
             >
               <span>🎮</span> {t('settings_tab_gameplay')}
@@ -220,8 +220,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               onClick={() => setActiveTab('accessibility')}
               className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'accessibility'
-                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                  : 'bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-800'
+                  ? 'bg-amber-500 text-stone-950 shadow-md shadow-amber-500/20'
+                  : 'bg-stone-900/80 text-stone-400 hover:text-white hover:bg-stone-800'
               }`}
             >
               <span>♿</span> {t('settings_tab_accessibility')}
@@ -230,8 +230,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               onClick={() => setActiveTab('system')}
               className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'system'
-                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                  : 'bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-800'
+                  ? 'bg-amber-500 text-stone-950 shadow-md shadow-amber-500/20'
+                  : 'bg-stone-900/80 text-stone-400 hover:text-white hover:bg-stone-800'
               }`}
             >
               <span>🌐</span> {t('settings_tab_system')}
@@ -243,7 +243,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             {/* 1. AUDIO TAB */}
             {activeTab === 'audio' && (
               <div className="space-y-5 animate-in fade-in duration-200">
-                <div className="space-y-2 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                <div className="space-y-2 bg-stone-900/50 p-4 rounded-lg border border-stone-800">
                   <div className="flex justify-between items-center">
                     <label className="text-white font-medium text-sm">{t('settings_master_volume')}</label>
                     <span className="text-amber-400 font-mono text-xs">{Math.round(settings.masterVolume * 100)}%</span>
@@ -257,7 +257,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   />
                 </div>
 
-                <div className="space-y-2 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                <div className="space-y-2 bg-stone-900/50 p-4 rounded-lg border border-stone-800">
                   <div className="flex justify-between items-center">
                     <label className="text-white font-medium text-sm">{t('settings_sfx_volume')}</label>
                     <div className="flex items-center gap-3">
@@ -278,7 +278,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   />
                 </div>
 
-                <div className="space-y-2 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                <div className="space-y-2 bg-stone-900/50 p-4 rounded-lg border border-stone-800">
                   <div className="flex justify-between items-center">
                     <label className="text-white font-medium text-sm">{t('settings_music_volume')}</label>
                     <div className="flex items-center gap-3">
@@ -305,7 +305,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             {activeTab === 'graphics' && (
               <div className="space-y-5 animate-in fade-in duration-200">
                 {/* Preset Selector */}
-                <div className="bg-slate-900/50 p-4 rounded-lg border border-slate-800 space-y-3">
+                <div className="bg-stone-900/50 p-4 rounded-lg border border-stone-800 space-y-3">
                   <label className="text-white font-medium text-sm block">Graphics Quality Preset</label>
                   <div className="grid grid-cols-4 gap-2">
                     {(['low', 'medium', 'high', 'ultra'] as const).map((preset) => (
@@ -314,8 +314,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         onClick={() => handlePresetSelect(preset)}
                         className={`py-2 px-3 rounded text-xs font-bold uppercase tracking-wider transition-all border ${
                           settings.graphicsPreset === preset
-                            ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md shadow-amber-500/20'
-                            : 'bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-800'
+                            ? 'bg-amber-500 text-stone-950 border-amber-400 shadow-md shadow-amber-500/20'
+                            : 'bg-stone-900 text-stone-300 border-stone-700 hover:bg-stone-800'
                         }`}
                       >
                         {preset}
@@ -326,19 +326,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 {/* Resolution Scaling & Target FPS */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-slate-900/50 p-4 rounded-lg border border-slate-800 space-y-2">
+                  <div className="bg-stone-900/50 p-4 rounded-lg border border-stone-800 space-y-2">
                     <div className="flex justify-between items-center">
                       <label className="text-white font-medium text-sm">Resolution Scale</label>
-                      <span className="text-cyan-400 font-mono text-xs">{settings.resolutionScale}x</span>
+                      <span className="text-teal-400 font-mono text-xs">{settings.resolutionScale}x</span>
                     </div>
                     <Select
                       value={String(settings.resolutionScale)}
                       onValueChange={(val) => updateSettings({ resolutionScale: Number(val) as any })}
                     >
-                      <SelectTrigger className="w-full bg-slate-900 border-slate-700 text-white">
+                      <SelectTrigger className="w-full bg-stone-900 border-stone-700 text-white">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                      <SelectContent className="bg-stone-900 border-stone-700 text-white">
                         <SelectItem value="0.75">0.75x (Performance / Low-end)</SelectItem>
                         <SelectItem value="1">1.0x (Standard 1080p native)</SelectItem>
                         <SelectItem value="1.25">1.25x (Crisp High-DPI)</SelectItem>
@@ -348,10 +348,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </Select>
                   </div>
 
-                  <div className="bg-slate-900/50 p-4 rounded-lg border border-slate-800 space-y-2">
+                  <div className="bg-stone-900/50 p-4 rounded-lg border border-stone-800 space-y-2">
                     <div className="flex justify-between items-center">
                       <label className="text-white font-medium text-sm">Target Frame Rate</label>
-                      <span className="text-cyan-400 font-mono text-xs">
+                      <span className="text-teal-400 font-mono text-xs">
                         {settings.targetFps === 0 ? 'V-Sync Uncapped' : `${settings.targetFps} FPS`}
                       </span>
                     </div>
@@ -359,10 +359,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       value={String(settings.targetFps)}
                       onValueChange={(val) => updateSettings({ targetFps: Number(val) as any })}
                     >
-                      <SelectTrigger className="w-full bg-slate-900 border-slate-700 text-white">
+                      <SelectTrigger className="w-full bg-stone-900 border-stone-700 text-white">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                      <SelectContent className="bg-stone-900 border-stone-700 text-white">
                         <SelectItem value="30">30 FPS (Battery Saver / Focus)</SelectItem>
                         <SelectItem value="60">60 FPS (Smooth Standard)</SelectItem>
                         <SelectItem value="120">120 FPS (High Refresh Rate)</SelectItem>
@@ -373,13 +373,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 {/* Post-Processing Toggles */}
-                <div className="space-y-3 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Visual Enhancements & Shaders</h4>
+                <div className="space-y-3 bg-stone-900/50 p-4 rounded-lg border border-stone-800">
+                  <h4 className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Visual Enhancements & Shaders</h4>
 
-                  <div className="flex justify-between items-center py-2 border-b border-slate-800">
+                  <div className="flex justify-between items-center py-2 border-b border-stone-800">
                     <div>
                       <label className="text-white text-sm font-medium">Retro CRT Scanlines & Curvature</label>
-                      <p className="text-xs text-slate-400">Renders procedural scanlines over the isometric studio</p>
+                      <p className="text-xs text-stone-400">Renders procedural scanlines over the isometric studio</p>
                     </div>
                     <Switch
                       checked={settings.crtScanlines}
@@ -387,10 +387,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     />
                   </div>
 
-                  <div className="flex justify-between items-center py-2 border-b border-slate-800">
+                  <div className="flex justify-between items-center py-2 border-b border-stone-800">
                     <div>
                       <label className="text-white text-sm font-medium">{t('settings_analog_tape_warmth')}</label>
-                      <p className="text-xs text-slate-400">Applies era-specific analog saturation and warm corner vignette</p>
+                      <p className="text-xs text-stone-400">Applies era-specific analog saturation and warm corner vignette</p>
                     </div>
                     <Switch
                       checked={settings.analogTapeWarmth}
@@ -401,7 +401,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <div className="flex justify-between items-center py-2">
                     <div>
                       <label className="text-white text-sm font-medium">Console Hardware Emissive Bloom</label>
-                      <p className="text-xs text-slate-400">Illuminates VU meter lamps, console switches, and DAW monitors</p>
+                      <p className="text-xs text-stone-400">Illuminates VU meter lamps, console switches, and DAW monitors</p>
                     </div>
                     <Switch
                       checked={settings.bloomAndGlow}
@@ -415,16 +415,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             {/* 3. GAMEPLAY & CONTROLLER TAB */}
             {activeTab === 'gameplay' && (
               <div className="space-y-5 animate-in fade-in duration-200">
-                <div className="space-y-2 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                <div className="space-y-2 bg-stone-900/50 p-4 rounded-lg border border-stone-800">
                   <label className="text-white font-medium text-sm">Difficulty Level</label>
                   <Select
                     value={settings.difficulty}
                     onValueChange={(val: 'easy' | 'medium' | 'hard') => updateSettings({ difficulty: val })}
                   >
-                    <SelectTrigger className="w-full bg-slate-900 border-slate-700 text-white">
+                    <SelectTrigger className="w-full bg-stone-900 border-stone-700 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                    <SelectContent className="bg-stone-900 border-stone-700 text-white">
                       <SelectItem value="easy">Easy - Relaxed commercial payouts & generous deadlines</SelectItem>
                       <SelectItem value="medium">Medium - Balanced authentic studio challenge</SelectItem>
                       <SelectItem value="hard">Hard - High client expectations & strict maintenance fees</SelectItem>
@@ -432,10 +432,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </Select>
                 </div>
 
-                <div className="flex justify-between items-center bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                <div className="flex justify-between items-center bg-stone-900/50 p-4 rounded-lg border border-stone-800">
                   <div>
                     <label className="text-white font-medium text-sm">Auto Save</label>
-                    <p className="text-xs text-slate-400">Save studio state automatically after key milestones and daily ticks</p>
+                    <p className="text-xs text-stone-400">Save studio state automatically after key milestones and daily ticks</p>
                   </div>
                   <Switch
                     checked={settings.autoSave}
@@ -444,11 +444,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 {/* Controller Layout */}
-                <div className="space-y-3 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                <div className="space-y-3 bg-stone-900/50 p-4 rounded-lg border border-stone-800">
                   <div className="flex justify-between items-center">
                     <div>
                       <label className="text-white font-medium text-sm">Gamepad Layout & Glyphs</label>
-                      <p className="text-xs text-slate-400">Choose glyph set or auto-detect from connected controller</p>
+                      <p className="text-xs text-stone-400">Choose glyph set or auto-detect from connected controller</p>
                     </div>
                   </div>
                   <Select
@@ -458,10 +458,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       gameAudio.playClick();
                     }}
                   >
-                    <SelectTrigger className="w-full bg-slate-900 border-slate-700 text-white">
+                    <SelectTrigger className="w-full bg-stone-900 border-stone-700 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                    <SelectContent className="bg-stone-900 border-stone-700 text-white">
                       {CONTROLLER_LAYOUT_OPTIONS.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
@@ -471,7 +471,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </Select>
 
                   <div className="flex items-center gap-3 pt-2">
-                    <span className="text-slate-400 text-xs font-mono">
+                    <span className="text-stone-400 text-xs font-mono">
                       {settings.controllerLayout === 'auto'
                         ? 'Preview (Auto)'
                         : CONTROLLER_TYPE_NAMES[controllerPreviewType]}:
@@ -488,10 +488,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                <div className="flex justify-between items-center bg-stone-900/50 p-4 rounded-lg border border-stone-800">
                   <div>
                     <label className="text-white font-medium text-sm">Gamepad Haptics & Vibration</label>
-                    <p className="text-xs text-slate-400">Tactile rumble during PocketMeter groove and Gold takes</p>
+                    <p className="text-xs text-stone-400">Tactile rumble during PocketMeter groove and Gold takes</p>
                   </div>
                   <Switch
                     checked={settings.gamepadHaptics}
@@ -504,10 +504,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             {/* 4. ACCESSIBILITY TAB */}
             {activeTab === 'accessibility' && (
               <div className="space-y-5 animate-in fade-in duration-200">
-                <div className="flex justify-between items-center bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                <div className="flex justify-between items-center bg-stone-900/50 p-4 rounded-lg border border-stone-800">
                   <div>
                     <label className="text-white font-medium text-sm">Screen Shake & Camera Kick</label>
-                    <p className="text-xs text-slate-400">Milestone celebrations and studio tier-up camera shake</p>
+                    <p className="text-xs text-stone-400">Milestone celebrations and studio tier-up camera shake</p>
                   </div>
                   <Switch
                     checked={settings.screenShake}
@@ -515,10 +515,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   />
                 </div>
 
-                <div className="flex justify-between items-center bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                <div className="flex justify-between items-center bg-stone-900/50 p-4 rounded-lg border border-stone-800">
                   <div>
                     <label className="text-white font-medium text-sm">Reduced Motion</label>
-                    <p className="text-xs text-slate-400">Disable fast animated spring transitions and camera zooms</p>
+                    <p className="text-xs text-stone-400">Disable fast animated spring transitions and camera zooms</p>
                   </div>
                   <Switch
                     checked={settings.reducedMotion}
@@ -526,17 +526,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   />
                 </div>
 
-                <div className="space-y-2 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                <div className="space-y-2 bg-stone-900/50 p-4 rounded-lg border border-stone-800">
                   <label className="text-white font-medium text-sm">{t('settings_pocket_meter_assist')}</label>
-                  <p className="text-xs text-slate-400">{t('settings_pocket_meter_assist_hint')}</p>
+                  <p className="text-xs text-stone-400">{t('settings_pocket_meter_assist_hint')}</p>
                   <Select
                     value={settings.pocketMeterAssistance}
                     onValueChange={(val: 'strict' | 'normal' | 'generous') => updateSettings({ pocketMeterAssistance: val })}
                   >
-                    <SelectTrigger className="w-full bg-slate-900 border-slate-700 text-white">
+                    <SelectTrigger className="w-full bg-stone-900 border-stone-700 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                    <SelectContent className="bg-stone-900 border-stone-700 text-white">
                       <SelectItem value="strict">{t('settings_pocket_strict')}</SelectItem>
                       <SelectItem value="normal">{t('settings_pocket_normal')}</SelectItem>
                       <SelectItem value="generous">{t('settings_pocket_generous')}</SelectItem>
@@ -551,16 +551,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <div className="space-y-5 animate-in fade-in duration-200">
                 {/* Language & Theme */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                  <div className="space-y-2 bg-stone-900/50 p-4 rounded-lg border border-stone-800">
                     <label className="text-white font-medium text-sm">🌐 {t('settings_language')}</label>
                     <Select
                       value={settings.language}
                       onValueChange={handleLanguageChange}
                     >
-                      <SelectTrigger className="w-full bg-slate-900 border-slate-700 text-white">
+                      <SelectTrigger className="w-full bg-stone-900 border-stone-700 text-white">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                      <SelectContent className="bg-stone-900 border-stone-700 text-white">
                         {SUPPORTED_LOCALES.map((locale) => (
                           <SelectItem key={locale.code} value={locale.code}>
                             {locale.nativeLabel}
@@ -570,16 +570,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </Select>
                   </div>
 
-                  <div className="space-y-2 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                  <div className="space-y-2 bg-stone-900/50 p-4 rounded-lg border border-stone-800">
                     <label className="text-white font-medium text-sm">🎨 {t('settings_theme')}</label>
                     <Select
                       value={settings.theme}
                       onValueChange={(val: any) => updateSettings({ theme: val })}
                     >
-                      <SelectTrigger className="w-full bg-slate-900 border-slate-700 text-white">
+                      <SelectTrigger className="w-full bg-stone-900 border-stone-700 text-white">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                      <SelectContent className="bg-stone-900 border-stone-700 text-white">
                         <SelectItem value="default">{t('settings_theme_default')}</SelectItem>
                         <SelectItem value="sunrise-studio">{t('settings_theme_sunrise')}</SelectItem>
                         <SelectItem value="neon-nights">{t('settings_theme_neon')}</SelectItem>
@@ -590,16 +590,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 {/* Import / Export Save */}
-                <div className="space-y-3 bg-slate-900/50 p-4 rounded-lg border border-slate-800">
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">💾 {t('settings_data_management')}</h4>
+                <div className="space-y-3 bg-stone-900/50 p-4 rounded-lg border border-stone-800">
+                  <h4 className="text-xs font-bold text-stone-400 uppercase tracking-wider">💾 {t('settings_data_management')}</h4>
                   <div className="space-y-2">
-                    <label htmlFor="import-save-string" className="text-xs font-medium text-slate-300">{t('settings_import_label')}</label>
+                    <label htmlFor="import-save-string" className="text-xs font-medium text-stone-300">{t('settings_import_label')}</label>
                     <Textarea
                       id="import-save-string"
                       value={importSaveString}
                       onChange={(e) => setImportSaveString(e.target.value)}
                       placeholder={t('settings_import_placeholder')}
-                      className="bg-slate-900 border-slate-700 text-xs font-mono min-h-[60px]"
+                      className="bg-stone-900 border-stone-700 text-xs font-mono min-h-[60px]"
                     />
                     <Button onClick={handleImportGameData} className="w-full bg-emerald-600 hover:bg-emerald-700 text-xs py-1.5 h-auto">
                       {t('settings_import_button')}
@@ -607,7 +607,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </div>
 
                   {context === 'ingame' && gameState && (
-                    <div className="space-y-2 pt-2 border-t border-slate-800">
+                    <div className="space-y-2 pt-2 border-t border-stone-800">
                       <Button onClick={handleExportGameData} className="w-full bg-amber-600 hover:bg-amber-700 text-xs py-1.5 h-auto">
                         {t('settings_export_button')}
                       </Button>
@@ -616,9 +616,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           <Textarea
                             value={exportedSaveString}
                             readOnly
-                            className="bg-slate-900 border-slate-700 text-xs font-mono min-h-[60px]"
+                            className="bg-stone-900 border-stone-700 text-xs font-mono min-h-[60px]"
                           />
-                          <Button onClick={handleCopyToClipboard} className="w-full bg-sky-600 hover:bg-sky-700 text-xs py-1.5 h-auto">
+                          <Button onClick={handleCopyToClipboard} className="w-full bg-amber-600 hover:bg-amber-700 text-xs py-1.5 h-auto">
                             {t('settings_copy_clipboard')}
                           </Button>
                         </>
@@ -629,18 +629,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 {/* Developer Tools — opt-in floating chrome; defaults OFF */}
                 {isDevBuild && (
-                  <div className="space-y-3 bg-slate-900/50 p-4 rounded-lg border border-amber-500/30">
+                  <div className="space-y-3 bg-stone-900/50 p-4 rounded-lg border border-amber-500/30">
                     <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider">
                       Developer Tools
                     </h4>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-stone-400">
                       Floating DEV controls stay hidden by default so they never cover the studio dock. Enable only what you need.
                     </p>
 
-                    <div className="flex justify-between items-center py-2 border-b border-slate-800">
+                    <div className="flex justify-between items-center py-2 border-b border-stone-800">
                       <div>
                         <label className="text-white text-sm font-medium">Show Spawn Box Drop</label>
-                        <p className="text-xs text-slate-400">Floating button over the studio HUD (off by default)</p>
+                        <p className="text-xs text-stone-400">Floating button over the studio HUD (off by default)</p>
                       </div>
                       <Switch
                         checked={settings.devShowBoxDropButton === true}
@@ -651,10 +651,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       />
                     </div>
 
-                    <div className="flex justify-between items-center py-2 border-b border-slate-800">
+                    <div className="flex justify-between items-center py-2 border-b border-stone-800">
                       <div>
                         <label className="text-white text-sm font-medium">Show Perf HUD</label>
-                        <p className="text-xs text-slate-400">Performance / WebGL audit overlay (off by default)</p>
+                        <p className="text-xs text-stone-400">Performance / WebGL audit overlay (off by default)</p>
                       </div>
                       <Switch
                         checked={settings.devShowPerfHud === true}
@@ -672,7 +672,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         gameAudio.playClick();
                         toast.success(t('toast_dev_box_drop_spawned'));
                       }}
-                      className="w-full bg-sky-600 hover:bg-sky-700 text-white text-xs py-2 h-auto"
+                      className="w-full bg-amber-600 hover:bg-amber-700 text-stone-950 text-xs py-2 h-auto"
                     >
                       Spawn Box Drop Now
                     </Button>
@@ -684,7 +684,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <Button
                     onClick={handleResetSettings}
                     variant="outline"
-                    className="w-full bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-700 text-xs"
+                    className="w-full bg-stone-900 hover:bg-stone-800 text-stone-300 border-stone-700 text-xs"
                   >
                     {t('settings_reset_defaults')}
                   </Button>
@@ -703,10 +703,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
 
           {/* Footer Save & Close */}
-          <div className="pt-4 border-t border-slate-800 flex justify-end">
+          <div className="pt-4 border-t border-stone-800 flex justify-end">
             <Button
               onClick={onClose}
-              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-6"
+              className="bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold px-6"
             >
               Done & Close
             </Button>

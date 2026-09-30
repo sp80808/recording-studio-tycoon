@@ -91,13 +91,13 @@ export const StudioDutiesClipboard: React.FC<StudioDutiesClipboardProps> = ({
       toast({
         title: '🏆 All Daily Duties Complete!',
         description: 'Your studio is in peak pristine condition.',
-        className: 'bg-gradient-to-r from-emerald-950 to-slate-900 border border-emerald-500 text-white'
+        className: 'bg-gradient-to-r from-emerald-950 to-stone-900 border border-emerald-500 text-white'
       });
     } else {
       toast({
         title: `🔧 Completed: ${chore.title}`,
         description: `+${result.xpAwarded} XP • Buff active for next session!`,
-        className: 'bg-slate-900 border border-slate-700 text-white'
+        className: 'bg-stone-900 border border-stone-700 text-white'
       });
     }
 
@@ -136,7 +136,7 @@ export const StudioDutiesClipboard: React.FC<StudioDutiesClipboardProps> = ({
     toast({
       title: '🤖 Duties Auto-Assigned',
       description: 'Chores assigned to best suited staff based on speed and ability!',
-      className: 'bg-slate-900 border border-sky-500 text-white'
+      className: 'bg-stone-900 border border-amber-500 text-white'
     });
   };
 
@@ -147,17 +147,17 @@ export const StudioDutiesClipboard: React.FC<StudioDutiesClipboardProps> = ({
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <MotionPanel
           direction="scale"
-          className="studio-clipboard-panel w-full max-w-xl p-6 text-slate-100 relative"
+          className="studio-clipboard-panel w-full max-w-xl p-6 text-stone-100 relative"
         >
           {/* Weathered Metal Spring Clip */}
           <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-44 h-7 studio-clipboard-clip flex items-center justify-center shadow-lg">
-            <div className="w-12 h-2 rounded bg-slate-700/60 border border-slate-500/40" />
+            <div className="w-12 h-2 rounded bg-stone-700/60 border border-stone-500/40" />
           </div>
 
           {/* Close button */}
           <MotionButton
             onClick={onClose}
-            className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors"
+            className="absolute top-4 right-4 p-1.5 rounded-lg text-stone-400 hover:text-white hover:bg-stone-800/80 transition-colors"
             title="Close Clipboard"
           >
             <X size={18} />
@@ -171,20 +171,20 @@ export const StudioDutiesClipboard: React.FC<StudioDutiesClipboardProps> = ({
                 <h2 className="text-lg font-bold text-amber-200 tracking-wide">
                   Daily Studio Duties & Upkeep
                 </h2>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-stone-400">
                   Maintain gear to earn session buffs & streak crates.
                 </p>
               </div>
             </div>
 
             {/* Streak & Crate Counter */}
-            <div className="flex items-center gap-2 bg-slate-900/80 border border-amber-500/30 px-3 py-1.5 rounded-lg text-xs">
+            <div className="flex items-center gap-2 bg-stone-900/80 border border-amber-500/30 px-3 py-1.5 rounded-lg text-xs">
               <Award className="text-amber-400" size={16} />
               <div>
                 <span className="font-semibold text-amber-300">
                   Streak: <MotionNumber value={streak} /> {streak === 1 ? 'Day' : 'Days'}
                 </span>
-                <span className="text-slate-400 block text-[10px]">
+                <span className="text-stone-400 block text-[10px]">
                   {daysUntilCrate} {daysUntilCrate === 1 ? 'day' : 'days'} to Flight Case
                 </span>
               </div>
@@ -193,13 +193,13 @@ export const StudioDutiesClipboard: React.FC<StudioDutiesClipboardProps> = ({
 
           {/* Auto-Assign Toolbar */}
           <div className="flex items-center justify-between mb-3 text-xs">
-            <span className="text-slate-400">
+            <span className="text-stone-400">
               Energy Available: <strong className="text-amber-300"><MotionNumber value={gameState.playerData.dailyWorkCapacity} suffix="⚡" /></strong>
             </span>
             <MotionButton
               magnetic
               onClick={handleAutoAssignAll}
-              className="flex items-center gap-1.5 px-2.5 py-1 bg-sky-950/80 hover:bg-sky-900 border border-sky-500/40 text-sky-200 rounded text-xs transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-stone-950/80 hover:bg-stone-900 border border-amber-500/40 text-stone-200 rounded text-xs transition-colors"
             >
               <Bot size={13} />
               Auto-Assign Staff
@@ -226,7 +226,7 @@ export const StudioDutiesClipboard: React.FC<StudioDutiesClipboardProps> = ({
                         ? 'chore-card-done'
                         : focusedIndex === index
                         ? 'chore-card-active'
-                        : 'border-slate-800 hover:border-slate-700'
+                        : 'border-stone-800 hover:border-stone-700'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -234,7 +234,7 @@ export const StudioDutiesClipboard: React.FC<StudioDutiesClipboardProps> = ({
                         <button
                           onClick={() => !isDone && handlePerformDuty(chore.id)}
                           disabled={isDone}
-                          className="mt-0.5 text-slate-400 hover:text-emerald-400 disabled:opacity-80 transition-colors"
+                          className="mt-0.5 text-stone-400 hover:text-emerald-400 disabled:opacity-80 transition-colors"
                         >
                           {isDone ? (
                             <CheckCircle2 size={18} className="text-emerald-400" />
@@ -245,28 +245,28 @@ export const StudioDutiesClipboard: React.FC<StudioDutiesClipboardProps> = ({
 
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <span className={`font-medium text-sm ${isDone ? 'line-through text-slate-500' : 'text-slate-200'}`}>
+                            <span className={`font-medium text-sm ${isDone ? 'line-through text-stone-500' : 'text-stone-200'}`}>
                               {chore.title}
                             </span>
-                            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 border border-slate-700">
+                            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-stone-800 text-stone-300 border border-stone-700">
                               {CATEGORY_ICONS[chore.category]}
                               {chore.category}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">
+                          <p className="text-xs text-stone-400 mt-0.5 line-clamp-1">
                             {chore.description}
                           </p>
 
                           {/* Staff Assignment & Speed Ability Display */}
                           <div className="flex items-center gap-2 mt-2 text-xs">
-                            <span className="text-slate-500 text-[11px] flex items-center gap-1">
+                            <span className="text-stone-500 text-[11px] flex items-center gap-1">
                               <Users size={12} /> Assigned:
                             </span>
                             <select
                               value={chore.assignedStaffId || ''}
                               onChange={(e) => handleAssignStaff(chore.id, e.target.value || null)}
                               disabled={isDone}
-                              className="bg-slate-900 border border-slate-700 text-slate-300 text-[11px] rounded px-2 py-0.5 disabled:opacity-50"
+                              className="bg-stone-900 border border-stone-700 text-stone-300 text-[11px] rounded px-2 py-0.5 disabled:opacity-50"
                             >
                               <option value="">Manual (Self)</option>
                               {gameState.hiredStaff.map(s => (
@@ -277,7 +277,7 @@ export const StudioDutiesClipboard: React.FC<StudioDutiesClipboardProps> = ({
                             </select>
 
                             {assignedStaff && (
-                              <span className="text-[10px] text-sky-400">
+                              <span className="text-[10px] text-amber-300">
                                 ⚡ Spd {(1 + ((assignedStaff.primaryStats?.speed || 50) - 50) / 100).toFixed(1)}x
                               </span>
                             )}
@@ -294,7 +294,7 @@ export const StudioDutiesClipboard: React.FC<StudioDutiesClipboardProps> = ({
                           <MotionButton
                             magnetic
                             onClick={() => handlePerformDuty(chore.id)}
-                            className="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-slate-950 font-bold rounded text-xs transition-colors flex items-center gap-1"
+                            className="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-stone-950 font-bold rounded text-xs transition-colors flex items-center gap-1"
                           >
                             <GamepadGlyph input="south" size="sm" />
                             Do Duty
@@ -313,7 +313,7 @@ export const StudioDutiesClipboard: React.FC<StudioDutiesClipboardProps> = ({
           </div>
 
           {/* Footer Navigation */}
-          <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+          <div className="mt-4 pt-3 border-t border-stone-800/80 flex items-center justify-between text-xs text-stone-400">
             <span className="flex items-center gap-1.5">
               <GamepadGlyph input="dpad" size="sm" /> Navigate
               <span className="mx-1.5">•</span>
@@ -321,7 +321,7 @@ export const StudioDutiesClipboard: React.FC<StudioDutiesClipboardProps> = ({
             </span>
             <MotionButton
               onClick={onClose}
-              className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded transition-colors"
+              className="px-3 py-1 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded transition-colors"
             >
               Close
             </MotionButton>

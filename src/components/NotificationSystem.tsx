@@ -26,11 +26,11 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
 
   const getNotificationColor = (type: string) => {
     switch (type) {
-      case 'success': return 'bg-gray-800 border-green-500 text-white';
-      case 'warning': return 'bg-gray-800 border-yellow-500 text-white';
-      case 'error': return 'bg-gray-800 border-red-500 text-white';
-      case 'historical': return 'bg-gray-800 border-purple-500 text-white';
-      default: return 'bg-gray-800 border-blue-500 text-white';
+      case 'success': return 'rst-toast rst-toast-success';
+      case 'warning': return 'rst-toast rst-toast-warning';
+      case 'error': return 'rst-toast rst-toast-error';
+      case 'historical': return 'rst-toast [border-left-color:var(--rst-story)_!important]';
+      default: return 'rst-toast rst-toast-info';
     }
   };
 
@@ -39,11 +39,11 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
       {notifications.map(notification => (
         <div
           key={notification.id}
-          className={`p-3 rounded-lg border text-white shadow-lg animate-fade-in ${getNotificationColor(notification.type)}${notification.type === 'error' ? ' deny-shake' : ''}`}
+          className={`cursor-pointer px-4 py-3 text-sm animate-rst-rise ${getNotificationColor(notification.type)}${notification.type === 'error' ? ' deny-shake' : ''}`}
           onClick={() => removeNotification(notification.id)}
         >
-          <div className="text-sm">{notification.message}</div>
-          <div className="text-xs opacity-75 mt-1">Click to dismiss</div>
+          <div className="leading-snug">{notification.message}</div>
+          <div className="rst-muted mt-1 text-[10px] uppercase tracking-[0.18em]">Click to dismiss</div>
         </div>
       ))}
     </div>

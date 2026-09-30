@@ -77,7 +77,7 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
       <div className="flex-1 min-h-0 w-full flex flex-col overflow-hidden p-0.5">        
         {/* Hint about upcoming multi-project capability */}
         {progressionStatus.progressToNext > 0.7 && progressionStatus.nextMilestone && (
-          <Alert className="border-yellow-600/70 bg-gray-900/90 shrink-0 mb-2 py-2">
+          <Alert className="border-yellow-600/70 bg-stone-900/90 shrink-0 mb-2 py-2">
             <TrendingUp className="w-4 h-4 text-yellow-400" />
             <AlertDescription className="text-yellow-200 text-xs">
               <strong>Studio Expansion Coming Soon:</strong> You're close to unlocking multi-project management. 
@@ -109,7 +109,7 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
     return (
       <div className="space-y-6 flex-1 min-h-0 w-full flex flex-col overflow-y-auto p-1">        
         {/* New Feature Announcement */}
-        <Alert className="border-green-600 bg-gray-800">
+        <Alert className="border-green-600 bg-stone-800">
           <Zap className="w-4 h-4 text-green-400" />
           <AlertDescription className="text-green-200">
             <strong>🎉 Multi-Project Management Unlocked!</strong> Your studio can now handle multiple projects simultaneously. 
@@ -118,7 +118,7 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
         </Alert>
 
         {/* Choice between views */}
-        <div className="flex items-center justify-center space-x-4 p-4 bg-gray-800 rounded-lg border border-gray-700">
+        <div className="flex items-center justify-center space-x-4 p-4 bg-stone-800 rounded-lg border border-stone-700">
           <Button
             onClick={() => setShowMultiProjectInTransition(false)}
             variant={!showMultiProjectInTransition ? 'default' : 'outline'}

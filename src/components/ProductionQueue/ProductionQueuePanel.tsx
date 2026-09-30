@@ -15,7 +15,7 @@ export const ProductionQueuePanel: React.FC<{ roomId: string }> = ({ roomId }) =
         {tasks.map((t: any) => (
           <ProductionTaskItem key={t.id} task={t} onPause={() => pause(roomId, t.id)} onRemove={() => remove(roomId, t.id)} />
         ))}
-        {tasks.length === 0 && <div className="text-sm text-gray-500">No queued tasks</div>}
+        {tasks.length === 0 && <div className="text-sm text-stone-500">No queued tasks</div>}
       </div>
     </div>
   )

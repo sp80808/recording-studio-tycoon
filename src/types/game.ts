@@ -141,6 +141,14 @@ export interface Project {
   progress?: number; // 0-100, completion percentage for animated cards
   cardState?: CardState; // Current visual state for PixiJS rendering
   textureAtlasKey?: string; // Reference to texture atlas for this project type
+  /** Campaign node this featured gig belongs to (story contracts). Absent on ordinary enquiries. */
+  storyNodeId?: string;
+  /** True for authored story contracts: one per active campaign node, pinned to the top of Bookings. */
+  isStoryContract?: boolean;
+  /** Rival studio this contract is a showdown against (display + review flavour). */
+  rivalStudioId?: string;
+  /** Story contracts fix their stake; the booking UI must not let the player downgrade them. */
+  stakeLocked?: boolean;
 }
 
 export interface StaffMember {
@@ -348,6 +356,10 @@ export interface GameState {
     source: 'chore_streak' | 's_grade_take' | 'yard_sale';
     tier: 'standard' | 'vintage_flight_case';
   }>;
+  /** Unlocked achievements: id -> game day it was earned. Absent on legacy saves. */
+  unlockedAchievements?: Record<string, number>;
+  /** Set once the campaign epilogue has been shown, so it never replays. */
+  endingSeen?: boolean;
 }
 
 export interface Artist {

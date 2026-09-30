@@ -280,13 +280,13 @@ export const StreakBankControl: React.FC<StreakBankControlProps> = ({
           >
             🏦 {result.label}
           </div>
-          <div className="text-[10px] text-slate-400 truncate">{result.sublabel}</div>
+          <div className="text-[10px] text-stone-400 truncate">{result.sublabel}</div>
         </div>
         <div className="flex items-center gap-2 shrink-0 font-mono">
           <span className="text-sm font-black text-emerald-300">
             <AnimatedCounter value={result.cash} prefix="$" duration={reduceMotion ? 0 : 700} />
           </span>
-          <span className="text-[10px] font-bold text-sky-300">+{result.xp} XP</span>
+          <span className="text-[10px] font-bold text-amber-200">+{result.xp} XP</span>
           <span className="text-[10px] font-black text-amber-300">
             {result.keepsCombo ? `⚡×${combo} KEPT` : '⚡ SPENT'}
           </span>
@@ -300,18 +300,18 @@ export const StreakBankControl: React.FC<StreakBankControlProps> = ({
   if (phase === 'charging') {
     return (
       <div
-        className={`border border-slate-700 bg-slate-950/85 rounded-[2px] p-2 space-y-1.5 kenney-bevel ${className}`}
+        className={`border border-stone-700 bg-stone-950/85 rounded-[2px] p-2 space-y-1.5 kenney-bevel ${className}`}
         aria-label={`Charging streak bank, ${Math.round(progress * 100)} percent`}
       >
         <div className="flex items-center justify-between text-[10px] font-mono font-bold tracking-wider">
           <span className="text-amber-300">🏦 STREAK BANK · ⚡×{combo}</span>
-          <span className={inGold ? 'text-amber-200 font-black' : 'text-slate-300'}>
+          <span className={inGold ? 'text-amber-200 font-black' : 'text-stone-300'}>
             {inGold ? '★ RELEASE NOW! ★' : `SWEEP ${Math.round(progress * 100)}%`}
           </span>
         </div>
-        <div className="relative h-8 rounded-[2px] bg-slate-900 border border-slate-700 overflow-hidden">
+        <div className="relative h-8 rounded-[2px] bg-stone-900 border border-stone-700 overflow-hidden">
           <div
-            className="absolute inset-y-0 left-0 bg-slate-800/90"
+            className="absolute inset-y-0 left-0 bg-stone-800/90"
             style={{ width: `${GOLD_ZONE[0] * 100}%` }}
           />
           <div
@@ -325,7 +325,7 @@ export const StreakBankControl: React.FC<StreakBankControlProps> = ({
           {TICK_STEPS.map((t) => (
             <div
               key={t}
-              className="absolute top-0 w-px h-1.5 bg-slate-500/70"
+              className="absolute top-0 w-px h-1.5 bg-stone-500/70"
               style={{ left: `${t * 100}%` }}
             />
           ))}
@@ -334,7 +334,7 @@ export const StreakBankControl: React.FC<StreakBankControlProps> = ({
             style={{ left: `calc(${progress * 100}% - 1px)` }}
           />
         </div>
-        <p className="text-[10px] text-center text-slate-400 leading-tight">
+        <p className="text-[10px] text-center text-stone-400 leading-tight">
           Release inside the <span className="text-amber-300 font-bold">GOLD</span> band for ×1.6 + streak
           kept · let it fill for a safe ×1.0
         </p>
@@ -347,7 +347,7 @@ export const StreakBankControl: React.FC<StreakBankControlProps> = ({
     if (combo < PREVIEW_COMBO) return null;
     return (
       <div
-        className={`flex items-center justify-between px-2.5 py-1.5 rounded-[2px] border border-slate-800 bg-slate-900/50 text-[10px] font-mono text-slate-500 ${className}`}
+        className={`flex items-center justify-between px-2.5 py-1.5 rounded-[2px] border border-stone-800 bg-stone-900/50 text-[10px] font-mono text-stone-500 ${className}`}
         aria-label={`Streak Bank unlocks at combo 3 (currently ${combo})`}
       >
         <span>🏦 STREAK BANK LOCKED</span>
@@ -367,7 +367,7 @@ export const StreakBankControl: React.FC<StreakBankControlProps> = ({
       onKeyUp={handleKeyUp}
       aria-label={`Streak Bank: tap to bank combo ${combo} for ${quote.cash} dollars, or hold to amplify up to ${maxCash}`}
       title="TAP: bank safely. HOLD: release in the GOLD window for ×1.6 and keep the streak."
-      className={`w-full rounded-[2px] border border-amber-500/50 bg-gradient-to-b from-amber-950/80 to-slate-950 text-left select-none touch-none cursor-pointer kenney-bevel chip-grain ${
+      className={`w-full rounded-[2px] border border-amber-500/50 bg-gradient-to-b from-amber-950/80 to-stone-950 text-left select-none touch-none cursor-pointer kenney-bevel chip-grain ${
         reduceMotion ? '' : 'shadow-[0_0_10px_rgba(251,191,36,0.3)] animate-pulse'
       } ${className}`}
       style={reduceMotion ? { boxShadow: '0 0 10px rgba(251,191,36,0.3)' } : undefined}
@@ -390,7 +390,7 @@ export const StreakBankControl: React.FC<StreakBankControlProps> = ({
           )}
         </span>
       </span>
-      <span className="block pb-1.5 text-[9px] uppercase tracking-[0.18em] text-slate-400 px-2.5">
+      <span className="block pb-1.5 text-[9px] uppercase tracking-[0.18em] text-stone-400 px-2.5">
         tap to bank · hold to amplify
       </span>
     </button>

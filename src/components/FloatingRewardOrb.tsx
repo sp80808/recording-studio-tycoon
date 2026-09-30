@@ -26,13 +26,13 @@ export const FloatingRewardOrb: React.FC<FloatingRewardOrbProps> = ({
   const getOrbStyle = () => {
     switch (type) {
       case 'xp':
-        return 'bg-gradient-to-r from-purple-500 to-cyan-400 text-white';
+        return 'bg-gradient-to-r from-purple-500 to-teal-400 text-white';
       case 'money':
         return 'bg-gradient-to-r from-green-500 to-emerald-400 text-white';
       case 'reputation':
         return 'bg-gradient-to-r from-yellow-500 to-orange-400 text-white';
       default:
-        return 'bg-gradient-to-r from-gray-500 to-gray-400 text-white';
+        return 'bg-gradient-to-r from-stone-500 to-stone-400 text-white';
     }
   };
 

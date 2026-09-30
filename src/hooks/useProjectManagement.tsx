@@ -17,7 +17,7 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
       toast({
         title: "🎵 Session Already Active",
         description: "Finish or move the current session before booking another into this workflow.",
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive"
       });
       return false;
@@ -28,7 +28,7 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
       toast({
         title: "🏢 Studio Fully Booked",
         description: "No unlocked studio suite is currently free for this session.",
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive"
       });
       return false;
@@ -52,7 +52,7 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
     toast({
       title: "🚀 Session Booked!",
       description: `Booked "${project.title}" into ${room.name}.`,
-      className: "bg-gray-800 border-gray-600 text-white",
+      className: "bg-stone-800 border-stone-600 text-white",
     });
     return true;
   }, [gameState, setGameState]);

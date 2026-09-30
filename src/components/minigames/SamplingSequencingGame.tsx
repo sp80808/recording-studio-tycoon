@@ -198,7 +198,7 @@ export const SamplingSequencingGame: React.FC<SamplingSequencingGameProps> = ({
   const getSampleById = (id: string) => SAMPLES.find(s => s.id === id);
 
   return (
-    <Card className="w-full max-w-6xl mx-auto bg-gray-800 text-white border-gray-700">
+    <Card className="w-full max-w-6xl mx-auto bg-stone-800 text-white border-stone-700">
       <MinigameChrome
         title="🥁 Sampling & Sequencing"
         score={score}
@@ -217,7 +217,7 @@ export const SamplingSequencingGame: React.FC<SamplingSequencingGameProps> = ({
               {Math.floor((timeLeft / 90) * 100)}% Complete
             </span>
           </div>
-          <Progress value={(timeLeft / 90) * 100} className="h-2 bg-gray-800" />
+          <Progress value={(timeLeft / 90) * 100} className="h-2 bg-stone-800" />
         </div>
 
         {/* Sample Bank */}
@@ -279,7 +279,7 @@ export const SamplingSequencingGame: React.FC<SamplingSequencingGameProps> = ({
               <div
                 key={i}
                 className={`h-2 rounded ${
-                  currentStep === i ? 'bg-cyan-400' : 'bg-gray-600'
+                  currentStep === i ? 'bg-cyan-400' : 'bg-stone-600'
                 }`}
               />
             ))}
@@ -289,7 +289,7 @@ export const SamplingSequencingGame: React.FC<SamplingSequencingGameProps> = ({
           <div className="mb-4">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-16 text-sm font-semibold text-purple-300">Track 1</div>
-              <Volume2 className="w-4 h-4 text-gray-400" />
+              <Volume2 className="w-4 h-4 text-stone-400" />
             </div>
             <div className="grid grid-cols-8 gap-1">
               {sequence[0].map((step, i) => (
@@ -298,7 +298,7 @@ export const SamplingSequencingGame: React.FC<SamplingSequencingGameProps> = ({
                   className={`relative h-12 border-2 rounded cursor-pointer transition-all duration-200 ${
                     step.sampleId
                       ? 'border-cyan-400 shadow-lg shadow-cyan-400/30'
-                      : 'border-gray-600 hover:border-purple-400'
+                      : 'border-stone-600 hover:border-purple-400'
                   } ${currentStep === i ? 'ring-2 ring-yellow-400' : ''}`}
                   onClick={() => selectedSample ? handleStepClick(0, i) : clearStep(0, i)}
                   onContextMenu={(e) => {
@@ -325,7 +325,7 @@ export const SamplingSequencingGame: React.FC<SamplingSequencingGameProps> = ({
           <div>
             <div className="flex items-center gap-2 mb-2">
               <div className="w-16 text-sm font-semibold text-purple-300">Track 2</div>
-              <Volume2 className="w-4 h-4 text-gray-400" />
+              <Volume2 className="w-4 h-4 text-stone-400" />
             </div>
             <div className="grid grid-cols-8 gap-1">
               {sequence[1].map((step, i) => (
@@ -334,7 +334,7 @@ export const SamplingSequencingGame: React.FC<SamplingSequencingGameProps> = ({
                   className={`relative h-12 border-2 rounded cursor-pointer transition-all duration-200 ${
                     step.sampleId
                       ? 'border-cyan-400 shadow-lg shadow-cyan-400/30'
-                      : 'border-gray-600 hover:border-purple-400'
+                      : 'border-stone-600 hover:border-purple-400'
                   } ${currentStep === i ? 'ring-2 ring-yellow-400' : ''}`}
                   onClick={() => selectedSample ? handleStepClick(1, i) : clearStep(1, i)}
                   onContextMenu={(e) => {
@@ -361,7 +361,7 @@ export const SamplingSequencingGame: React.FC<SamplingSequencingGameProps> = ({
         </CardContent>
       </MinigameChrome>
       <DialogFooter className="p-4">
-        <KenneyButton variant="blue" onClick={onClose}>
+        <KenneyButton variant="yellow" onClick={onClose}>
           Exit
         </KenneyButton>
         <KenneyButton variant="green" onClick={checkPattern}>

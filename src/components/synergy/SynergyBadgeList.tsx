@@ -52,16 +52,16 @@ export const SynergyBadgeList: React.FC<SynergyBadgeListProps> = ({
               </TooltipTrigger>
               <TooltipContent
                 side="top"
-                className="max-w-xs p-2.5 bg-gray-950/95 border border-amber-500/40 text-gray-100 shadow-xl rounded-lg"
+                className="max-w-xs p-2.5 bg-stone-950/95 border border-amber-500/40 text-stone-100 shadow-xl rounded-lg"
               >
                 <div className="flex items-center gap-1.5 font-bold text-amber-300 text-xs">
                   <span>{synergy.icon}</span>
                   <span>{synergy.name}</span>
                   <span className="text-[10px] text-amber-500/80 font-normal">Active Synergy</span>
                 </div>
-                <div className="text-[11px] text-gray-300 mt-1">{synergy.description}</div>
+                <div className="text-[11px] text-stone-300 mt-1">{synergy.description}</div>
                 {bonusParts.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2 pt-1.5 border-t border-gray-800">
+                  <div className="flex flex-wrap gap-1 mt-2 pt-1.5 border-t border-stone-800">
                     {bonusParts.map((b, idx) => (
                       <span
                         key={idx}

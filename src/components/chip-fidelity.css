@@ -7,7 +7,7 @@
   --chip-spring: cubic-bezier(.34, 1.56, .64, 1);
   --chip-bevel-hi: #ffffff22;
   --chip-bevel-lo: #00000055;
-  --chip-edge: #080b13;
+  --chip-edge: #100e0b;
 }
 
 /* True bevel so new cards sit in the same light world as Kenney sprites. */

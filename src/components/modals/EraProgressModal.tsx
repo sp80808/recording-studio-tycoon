@@ -40,15 +40,15 @@ export const EraProgressModal: React.FC<EraProgressModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl bg-gradient-to-b from-[#182030] to-[#0f1422] border-slate-700 text-white shadow-2xl overflow-hidden p-6">
-        <DialogHeader className="border-b border-slate-800 pb-3">
-          <DialogTitle className="flex items-center gap-3 text-lg font-bold text-slate-100">
+      <DialogContent className="max-w-2xl bg-gradient-to-b from-[#29251f] to-[#1d1914] border-stone-700 text-white shadow-2xl overflow-hidden p-6">
+        <DialogHeader className="border-b border-stone-800 pb-3">
+          <DialogTitle className="flex items-center gap-3 text-lg font-bold text-stone-100">
             <span className="p-1.5 bg-purple-500/20 text-purple-400 rounded-lg border border-purple-500/30">
               <Disc3 className="w-5 h-5 animate-spin" style={{ animationDuration: '8s' }} />
             </span>
             <div className="flex items-center gap-2">
               <span>Era Progression Timeline</span>
-              <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+              <span className="text-xs font-mono px-2 py-0.5 rounded bg-stone-800 text-stone-300 border border-stone-700">
                 Day {gameState.currentDay}
               </span>
             </div>
@@ -57,7 +57,7 @@ export const EraProgressModal: React.FC<EraProgressModalProps> = ({
 
         <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-1">
           {/* Current Era Info */}
-          <div className="bg-slate-900/70 p-4 rounded-xl border border-slate-800 space-y-3">
+          <div className="bg-stone-900/70 p-4 rounded-xl border border-stone-800 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-2xl">{currentEra.icon}</span>
@@ -69,11 +69,11 @@ export const EraProgressModal: React.FC<EraProgressModalProps> = ({
                 Year: {gameState.currentYear}
               </Badge>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed">{currentEra.description}</p>
+            <p className="text-xs text-stone-300 leading-relaxed">{currentEra.description}</p>
             
             {/* Era Features */}
             <div>
-              <h4 className="text-xs font-mono uppercase tracking-wider text-slate-400 mb-2">Epoch Innovations:</h4>
+              <h4 className="text-xs font-mono uppercase tracking-wider text-stone-400 mb-2">Epoch Innovations:</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {currentEra.features.map((feature, index) => (
                   <MotionReveal
@@ -82,7 +82,7 @@ export const EraProgressModal: React.FC<EraProgressModalProps> = ({
                     staggerDelay={capabilities.reducedMotion ? 0 : 0.04}
                     direction="up"
                     distance={capabilities.reducedMotion ? 0 : 8}
-                    className="flex items-center gap-2 text-xs text-slate-300 bg-slate-950/40 px-2.5 py-1.5 rounded border border-slate-800/80"
+                    className="flex items-center gap-2 text-xs text-stone-300 bg-stone-950/40 px-2.5 py-1.5 rounded border border-stone-800/80"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                     <span>{feature}</span>
@@ -93,7 +93,7 @@ export const EraProgressModal: React.FC<EraProgressModalProps> = ({
 
             {/* Available Genres */}
             <div>
-              <h4 className="text-xs font-mono uppercase tracking-wider text-slate-400 mb-1.5">Dominant Genres:</h4>
+              <h4 className="text-xs font-mono uppercase tracking-wider text-stone-400 mb-1.5">Dominant Genres:</h4>
               <div className="flex flex-wrap gap-1.5">
                 {currentEra.availableGenres.map((genre) => (
                   <span
@@ -109,9 +109,9 @@ export const EraProgressModal: React.FC<EraProgressModalProps> = ({
 
           {/* Progress to Next Era */}
           {nextEra && (
-            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 space-y-3">
+            <div className="bg-stone-900/50 p-4 rounded-xl border border-stone-800 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <span className="text-xs font-mono uppercase tracking-wider text-stone-400 flex items-center gap-1.5">
                   <span>{nextEra.icon}</span>
                   <span>Next Era Horizon: {nextEra.name}</span>
                 </span>
@@ -121,15 +121,15 @@ export const EraProgressModal: React.FC<EraProgressModalProps> = ({
               </div>
               <Progress
                 value={progressPercent}
-                className="h-2 bg-slate-950"
+                className="h-2 bg-stone-950"
                 aria-label="Progress to next era"
               />
 
               {/* Requirements Checklist */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-xs">
                 {nextEra.unlockRequirements.minReputation && (
-                  <div className="bg-slate-950/60 p-2 rounded border border-slate-800">
-                    <div className="text-[10px] text-slate-400 flex items-center gap-1 mb-0.5">
+                  <div className="bg-stone-950/60 p-2 rounded border border-stone-800">
+                    <div className="text-[10px] text-stone-400 flex items-center gap-1 mb-0.5">
                       <Award className="w-3 h-3 text-amber-400" /> Reputation
                     </div>
                     <div className={gameState.reputation >= nextEra.unlockRequirements.minReputation ? 'text-emerald-400 font-bold font-mono' : 'text-amber-400 font-mono'}>
@@ -138,9 +138,9 @@ export const EraProgressModal: React.FC<EraProgressModalProps> = ({
                   </div>
                 )}
                 {nextEra.unlockRequirements.minLevel && (
-                  <div className="bg-slate-950/60 p-2 rounded border border-slate-800">
-                    <div className="text-[10px] text-slate-400 flex items-center gap-1 mb-0.5">
-                      <Sparkles className="w-3 h-3 text-blue-400" /> Producer Level
+                  <div className="bg-stone-950/60 p-2 rounded border border-stone-800">
+                    <div className="text-[10px] text-stone-400 flex items-center gap-1 mb-0.5">
+                      <Sparkles className="w-3 h-3 text-amber-300" /> Producer Level
                     </div>
                     <div className={gameState.playerData.level >= nextEra.unlockRequirements.minLevel ? 'text-emerald-400 font-bold font-mono' : 'text-amber-400 font-mono'}>
                       {gameState.playerData.level} / {nextEra.unlockRequirements.minLevel}
@@ -148,9 +148,9 @@ export const EraProgressModal: React.FC<EraProgressModalProps> = ({
                   </div>
                 )}
                 {nextEra.unlockRequirements.minDays && (
-                  <div className="bg-slate-950/60 p-2 rounded border border-slate-800">
-                    <div className="text-[10px] text-slate-400 flex items-center gap-1 mb-0.5">
-                      <Calendar className="w-3 h-3 text-slate-400" /> Studio Days
+                  <div className="bg-stone-950/60 p-2 rounded border border-stone-800">
+                    <div className="text-[10px] text-stone-400 flex items-center gap-1 mb-0.5">
+                      <Calendar className="w-3 h-3 text-stone-400" /> Studio Days
                     </div>
                     <div className={gameState.currentDay >= nextEra.unlockRequirements.minDays ? 'text-emerald-400 font-bold font-mono' : 'text-amber-400 font-mono'}>
                       {gameState.currentDay} / {nextEra.unlockRequirements.minDays}
@@ -168,21 +168,21 @@ export const EraProgressModal: React.FC<EraProgressModalProps> = ({
                 <span>📰</span>
                 <span>Upcoming Historical Event: {nextHistoricalEvent.title}</span>
               </h4>
-              <div className="text-slate-400">
+              <div className="text-stone-400">
                 Expected in {nextHistoricalEvent.triggerDay - gameState.currentDay} days ({nextHistoricalEvent.year})
               </div>
             </div>
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-2 border-t border-slate-800">
+          <div className="flex gap-3 pt-2 border-t border-stone-800">
             {canTransition ? (
               <MotionButton 
                 onClick={() => {
                   triggerEraTransition();
                   onClose();
                 }}
-                className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-2 px-4 rounded-lg shadow-lg flex items-center justify-center gap-2"
+                className="flex-1 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-bold py-2 px-4 rounded-lg shadow-lg flex items-center justify-center gap-2"
               >
                 <span>🚀 Advance to {nextEra?.name}</span>
                 {gamepad.isConnected && <GamepadGlyph button="south" size="xs" />}
@@ -190,7 +190,7 @@ export const EraProgressModal: React.FC<EraProgressModalProps> = ({
             ) : (
               <Button 
                 disabled
-                className="flex-1 bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed text-xs font-mono"
+                className="flex-1 bg-stone-800 text-stone-500 border border-stone-700 cursor-not-allowed text-xs font-mono"
               >
                 {nextEra ? 'Requirements Pending' : 'Latest Era Reached'}
               </Button>
@@ -198,7 +198,7 @@ export const EraProgressModal: React.FC<EraProgressModalProps> = ({
             
             <MotionButton 
               onClick={onClose}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg border border-slate-700 flex items-center gap-1.5"
+              className="px-4 py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs rounded-lg border border-stone-700 flex items-center gap-1.5"
             >
               <span>Close</span>
               {gamepad.isConnected && <GamepadGlyph button="east" size="xs" />}

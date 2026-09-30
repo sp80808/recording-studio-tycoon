@@ -17,8 +17,8 @@ export const EraProgress: React.FC<EraProgressProps> = ({ gameState, triggerEraT
   const capabilities = useMotionCapabilities();
 
   return (
-    <Card className="bg-slate-900/95 border-slate-700 p-4 mb-4 text-slate-100 shadow-lg">
-      <div className="flex items-center justify-between mb-3 border-b border-slate-800 pb-2">
+    <Card className="bg-stone-900/95 border-stone-700 p-4 mb-4 text-stone-100 shadow-lg">
+      <div className="flex items-center justify-between mb-3 border-b border-stone-800 pb-2">
         <h3 className="text-base font-bold text-white flex items-center gap-2">
           <span>🎵</span>
           <span>Era Progression</span>
@@ -30,43 +30,43 @@ export const EraProgress: React.FC<EraProgressProps> = ({ gameState, triggerEraT
 
       <div className="space-y-3">
         {/* Current Era Info */}
-        <div className="bg-slate-950/50 p-2.5 rounded-lg border border-slate-800">
+        <div className="bg-stone-950/50 p-2.5 rounded-lg border border-stone-800">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Current Epoch</span>
+            <span className="text-[10px] font-mono uppercase tracking-wider text-stone-400">Current Epoch</span>
             <span className="text-xs">{currentEra.icon}</span>
           </div>
           <div className="text-sm font-black text-amber-300">{currentEra.name}</div>
-          <div className="text-xs text-slate-400 mt-0.5 line-clamp-2">{currentEra.description}</div>
+          <div className="text-xs text-stone-400 mt-0.5 line-clamp-2">{currentEra.description}</div>
         </div>
 
         {/* Progress Bar towards Next Era */}
         <div>
-          <div className="flex justify-between text-xs text-slate-400 mb-1 font-mono">
+          <div className="flex justify-between text-xs text-stone-400 mb-1 font-mono">
             <span>Epoch Timeline</span>
             <span className="text-purple-300 font-bold">{Math.round(progressPercent)}%</span>
           </div>
           <Progress
             value={progressPercent}
-            className="h-2 bg-slate-800"
+            className="h-2 bg-stone-800"
             aria-label="Era progression progress"
           />
         </div>
 
         {/* Next Era Requirements */}
         {nextEra && (
-          <div className="pt-2 border-t border-slate-800/80">
+          <div className="pt-2 border-t border-stone-800/80">
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
                 <span>{nextEra.icon}</span>
                 <span>Next: {nextEra.name}</span>
               </span>
-              <span className="text-[10px] font-mono text-slate-400">{nextEra.startYear}+</span>
+              <span className="text-[10px] font-mono text-stone-400">{nextEra.startYear}+</span>
             </div>
 
             <div className="grid grid-cols-1 gap-1.5 text-xs">
               {nextEra.unlockRequirements.minReputation && (
-                <div className="flex justify-between items-center bg-slate-950/30 px-2 py-1 rounded">
-                  <span className="text-slate-400 flex items-center gap-1">
+                <div className="flex justify-between items-center bg-stone-950/30 px-2 py-1 rounded">
+                  <span className="text-stone-400 flex items-center gap-1">
                     <Award className="w-3 h-3 text-amber-400" /> Reputation
                   </span>
                   <span
@@ -81,9 +81,9 @@ export const EraProgress: React.FC<EraProgressProps> = ({ gameState, triggerEraT
                 </div>
               )}
               {nextEra.unlockRequirements.minLevel && (
-                <div className="flex justify-between items-center bg-slate-950/30 px-2 py-1 rounded">
-                  <span className="text-slate-400 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-blue-400" /> Producer Level
+                <div className="flex justify-between items-center bg-stone-950/30 px-2 py-1 rounded">
+                  <span className="text-stone-400 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-amber-300" /> Producer Level
                   </span>
                   <span
                     className={
@@ -97,9 +97,9 @@ export const EraProgress: React.FC<EraProgressProps> = ({ gameState, triggerEraT
                 </div>
               )}
               {nextEra.unlockRequirements.minDays && (
-                <div className="flex justify-between items-center bg-slate-950/30 px-2 py-1 rounded">
-                  <span className="text-slate-400 flex items-center gap-1">
-                    <Calendar className="w-3 h-3 text-slate-400" /> Studio Days
+                <div className="flex justify-between items-center bg-stone-950/30 px-2 py-1 rounded">
+                  <span className="text-stone-400 flex items-center gap-1">
+                    <Calendar className="w-3 h-3 text-stone-400" /> Studio Days
                   </span>
                   <span
                     className={
@@ -121,7 +121,7 @@ export const EraProgress: React.FC<EraProgressProps> = ({ gameState, triggerEraT
           <MotionReveal direction="up" distance={8} delay={0.1}>
             <MotionButton
               onClick={triggerEraTransition}
-              className="w-full mt-2 py-2.5 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs rounded-lg shadow-lg flex items-center justify-center gap-2"
+              className="w-full mt-2 py-2.5 px-4 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-bold text-xs rounded-lg shadow-lg flex items-center justify-center gap-2"
             >
               <span>Advance to {nextEra?.name}</span>
               <ArrowRight className="w-4 h-4" />
@@ -130,7 +130,7 @@ export const EraProgress: React.FC<EraProgressProps> = ({ gameState, triggerEraT
         )}
 
         {!nextEra && (
-          <div className="text-center text-slate-400 text-xs py-2">
+          <div className="text-center text-stone-400 text-xs py-2">
             🏆 You have reached the pinnacle era!
           </div>
         )}

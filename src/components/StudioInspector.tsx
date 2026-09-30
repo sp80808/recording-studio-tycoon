@@ -91,7 +91,7 @@ const Shell: React.FC<{
       direction="scale"
       role="dialog"
       aria-label={INSPECTOR_META[hotspot].label}
-      className={`absolute ${ANCHORS[hotspot]} w-72 max-w-[80vw] max-h-[78%] overflow-y-auto rounded-lg border border-amber-400/30 bg-[#0e1320]/95 backdrop-blur-md shadow-2xl shadow-black/60`}
+      className={`absolute ${ANCHORS[hotspot]} w-72 max-w-[80vw] max-h-[78%] overflow-y-auto rounded-lg border border-amber-400/30 bg-[#1b1813]/95 backdrop-blur-md shadow-2xl shadow-black/60`}
       onClick={(e: React.MouseEvent) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-black/40 sticky top-0 z-10">
@@ -102,12 +102,12 @@ const Shell: React.FC<{
             onClose();
           }}
           aria-label="Close inspector"
-          className="rounded p-1 text-gray-400 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+          className="rounded p-1 text-stone-400 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
         >
           <X aria-hidden="true" className="h-4 w-4" />
         </MotionButton>
       </div>
-      <div className="p-3 space-y-3 text-sm text-gray-100">{children}</div>
+      <div className="p-3 space-y-3 text-sm text-stone-100">{children}</div>
     </MotionPanel>
   </div>
 );
@@ -116,7 +116,7 @@ const StatRow: React.FC<{ label: string; value: React.ReactNode; valueClass?: st
   label, value, valueClass = 'text-white',
 }) => (
   <div className="flex items-center justify-between text-xs">
-    <span className="text-gray-400">{label}</span>
+    <span className="text-stone-400">{label}</span>
     <span className={`font-semibold ${valueClass}`}>{value}</span>
   </div>
 );
@@ -190,7 +190,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
     const gigs = gameState.availableProjects.slice(0, 4);
     return (
       <Shell hotspot={hotspot} onClose={onClose}>
-        {gigs.length === 0 && <div className="text-xs text-gray-400">No offers on the desk. Chase fresh gigs below.</div>}
+        {gigs.length === 0 && <div className="text-xs text-stone-400">No offers on the desk. Chase fresh gigs below.</div>}
         {gigs.map((gig) => (
           <div key={gig.id} className="rounded border border-white/10 bg-white/5 p-2 space-y-1">
             <div className="flex items-start justify-between gap-2">
@@ -199,7 +199,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
             </div>
             <StatRow label="Genre" value={gig.genre} />
             <StatRow label="Payout" value={`$${gig.payoutBase}`} valueClass="text-green-400" />
-            <StatRow label="Rep" value={`+${gig.repGainBase}`} valueClass="text-blue-400" />
+            <StatRow label="Rep" value={`+${gig.repGainBase}`} valueClass="text-amber-300" />
             <MotionButton
               size="sm"
               className="w-full h-7 mt-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold"
@@ -220,7 +220,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           <MotionButton
             size="sm"
             variant="outline"
-            className={`w-full h-7 text-xs border-white/20 ${ready ? 'text-amber-200 hover:bg-amber-500/10' : 'text-gray-500'}`}
+            className={`w-full h-7 text-xs border-white/20 ${ready ? 'text-amber-200 hover:bg-amber-500/10' : 'text-stone-500'}`}
             onClick={() => {
               void gameAudio.playTactileClick();
               onRefreshProjects?.();
@@ -254,9 +254,9 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
             label="Studio tier"
             value={status.currentMilestone ? `L${status.currentMilestone.level}` : 'L1'}
           />
-          <div className="mt-1"><MiniBar value={(status.progressToNext ?? 0) * 100} className="bg-blue-400" /></div>
+          <div className="mt-1"><MiniBar value={(status.progressToNext ?? 0) * 100} className="bg-amber-400" /></div>
           {nextReq && (
-            <div className="mt-1 text-[10px] text-gray-400">
+            <div className="mt-1 text-[10px] text-stone-400">
               Next: L{nextReq.levelNeeded} · {nextReq.currentStaff}/{nextReq.staffNeeded} staff · {nextReq.currentProjects}/{nextReq.projectsNeeded} projects
             </div>
           )}
@@ -283,9 +283,9 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                 </span>
                 {challenge.done && <span className="text-xs text-green-400">✓ Done</span>}
               </div>
-              <div className="text-[10px] text-gray-400">{challenge.def.description}</div>
+              <div className="text-[10px] text-stone-400">{challenge.def.description}</div>
               <MiniBar value={(challenge.progress / challenge.def.target) * 100} className="bg-amber-400" />
-              <div className="text-[10px] text-gray-400">
+              <div className="text-[10px] text-stone-400">
                 {challenge.progress}/{challenge.def.target} · Reward: ${challenge.def.reward.money}, +{challenge.def.reward.reputation} rep, +{challenge.def.reward.xp} XP
               </div>
             </div>
@@ -301,10 +301,10 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
     const topEntries = charts.flatMap((c) => c.entries.slice(0, 2).map((e) => ({ chart: c.name, entry: e }))).slice(0, 4);
     return (
       <Shell hotspot={hotspot} onClose={onClose}>
-        <StatRow label="Reputation" value={<MotionNumber value={gameState.reputation} />} valueClass="text-blue-400" />
+        <StatRow label="Reputation" value={<MotionNumber value={gameState.reputation} />} valueClass="text-amber-300" />
         <StatRow label="Influence" value={<MotionNumber value={gameState.influence} />} valueClass="text-purple-300" />
         {topEntries.length === 0 && (
-          <div className="text-xs text-gray-400">No chart data yet — release tracks with a band to enter the charts.</div>
+          <div className="text-xs text-stone-400">No chart data yet — release tracks with a band to enter the charts.</div>
         )}
         {topEntries.map(({ chart, entry }) => (
           <div key={`${chart}-${entry.position}-${entry.song?.id ?? entry.song?.title ?? ''}`} className="flex items-center gap-2 text-xs">
@@ -318,7 +318,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
         <MotionButton
           size="sm"
           variant="outline"
-          className="w-full h-7 text-xs border-white/20 text-gray-200 hover:bg-white/10"
+          className="w-full h-7 text-xs border-white/20 text-stone-200 hover:bg-white/10"
           onClick={() => {
             void gameAudio.playTactileClick();
             onOpenDashboardTab('charts');
@@ -354,12 +354,12 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
               />
             </div>
           ))}
-          {gear.length === 0 && <div className="text-xs text-gray-400">Bare shelves — buy gear from the Equipment Shop.</div>}
+          {gear.length === 0 && <div className="text-xs text-stone-400">Bare shelves — buy gear from the Equipment Shop.</div>}
         </div>
         <MotionButton
           size="sm"
           variant="outline"
-          className="w-full h-7 text-xs border-white/20 text-gray-200 hover:bg-white/10"
+          className="w-full h-7 text-xs border-white/20 text-stone-200 hover:bg-white/10"
           onClick={() => {
             void gameAudio.playTactileClick();
             onOpenDashboardTab('studio');
@@ -378,12 +378,12 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
     if (!project) {
       return (
         <Shell hotspot={hotspot} onClose={onClose}>
-          <div className="text-xs text-gray-400">
+          <div className="text-xs text-stone-400">
             The console is dark. Take a gig from the phone to start tracking.
           </div>
           <MotionButton
             size="sm"
-            className="w-full h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold"
+            className="w-full h-7 text-xs bg-amber-600 hover:bg-amber-700 text-stone-950 font-bold"
             onClick={() => onConsoleFocus?.()}
           >
             <ActionIcon icon={SlidersHorizontal} />
@@ -408,7 +408,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
         )}
         <MotionButton
           size="sm"
-          className="w-full h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold"
+          className="w-full h-7 text-xs bg-amber-600 hover:bg-amber-700 text-stone-950 font-bold"
           onClick={() => {
             void gameAudio.playTactileClick();
             onConsoleFocus?.();
@@ -426,9 +426,9 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   const crew = gameState.hiredStaff;
   return (
     <Shell hotspot={hotspot} onClose={onClose}>
-      {!project && <div className="text-xs text-gray-400">No session booked — the live room is empty.</div>}
+      {!project && <div className="text-xs text-stone-400">No session booked — the live room is empty.</div>}
       {crew.length === 0 && (
-        <div className="text-xs text-gray-400">
+        <div className="text-xs text-stone-400">
           No crew hired yet. Hire staff through the Staff panel while the studio is quiet.
         </div>
       )}
@@ -439,18 +439,18 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           <div key={member.id} className="rounded border border-white/10 bg-white/5 p-2 space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-white truncate">{member.name}</span>
-              <span className="text-[10px] text-gray-400">{member.role}</span>
+              <span className="text-[10px] text-stone-400">{member.role}</span>
             </div>
             <div className="flex items-center gap-2 text-[10px]">
               <span className="text-pink-300">♪ {Math.round(member.mood)}</span>
               <span className="text-yellow-300">⚡ {Math.round(member.energy)}</span>
-              <span className="ml-auto text-gray-400">{member.status}</span>
+              <span className="ml-auto text-stone-400">{member.status}</span>
             </div>
             {project && (
               <MotionButton
                 size="sm"
                 className={`w-full h-6 text-[10px] font-bold ${
-                  assignedHere ? 'bg-gray-700 hover:bg-gray-600' : 'bg-emerald-600 hover:bg-emerald-700'
+                  assignedHere ? 'bg-stone-700 hover:bg-stone-600' : 'bg-emerald-600 hover:bg-emerald-700'
                 } text-white`}
                 disabled={isActing}
                 onClick={() => handleToggleStaff(member.id, assignedHere)}

@@ -257,7 +257,7 @@ export const TapeSplicingGame: React.FC<TapeSplicingGameProps> = ({ onComplete, 
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto bg-gray-800 text-white border-gray-700">
+    <Card className="w-full max-w-4xl mx-auto bg-stone-800 text-white border-stone-700">
       <MinigameChrome
         title="🎞️ Tape Splicing Studio"
         score={score}
@@ -331,7 +331,7 @@ export const TapeSplicingGame: React.FC<TapeSplicingGameProps> = ({ onComplete, 
             </div>
             <Progress 
               value={((3 - cutsRemaining) / 3) * 100} 
-              className="h-2 bg-gray-700"
+              className="h-2 bg-stone-700"
             />
             
             {feedback && (

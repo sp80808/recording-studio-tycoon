@@ -24,7 +24,7 @@ export const GameModals: React.FC<GameModalsProps> = ({
 }) => {
   return (
     <Dialog open={showReviewModal} onOpenChange={setShowReviewModal}>
-      <DialogContent className="bg-gray-900 border-gray-600 text-white mx-4 max-w-md">
+      <DialogContent className="bg-stone-900 border-stone-600 text-white mx-4 max-w-md">
         <DialogHeader>
           <DialogTitle className="text-white text-lg">Project Complete! 🎉</DialogTitle>
         </DialogHeader>
@@ -35,12 +35,12 @@ export const GameModals: React.FC<GameModalsProps> = ({
               <div>
                 <div className="text-2xl mb-2">💙</div>
                 <div className="font-bold text-white">{lastReview.creativityPoints}</div>
-                <div className="text-sm text-gray-400">Creativity</div>
+                <div className="text-sm text-stone-400">Creativity</div>
               </div>
               <div>
                 <div className="text-2xl mb-2">💚</div>
                 <div className="font-bold text-white">{lastReview.technicalPoints}</div>
-                <div className="text-sm text-gray-400">Technical</div>
+                <div className="text-sm text-stone-400">Technical</div>
               </div>
             </div>
             <div className="text-center">
@@ -49,15 +49,15 @@ export const GameModals: React.FC<GameModalsProps> = ({
             </div>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-gray-300">Payment:</span>
+                <span className="text-stone-300">Payment:</span>
                 <span className="text-green-400 font-bold">${lastReview.payout}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-300">Reputation:</span>
-                <span className="text-blue-400 font-bold">+{lastReview.repGain}</span>
+                <span className="text-stone-300">Reputation:</span>
+                <span className="text-amber-300 font-bold">+{lastReview.repGain}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-300">Experience:</span>
+                <span className="text-stone-300">Experience:</span>
                 <span className="text-purple-400 font-bold">+{lastReview.xpGain} XP</span>
               </div>
             </div>

@@ -18,6 +18,9 @@ const KENNEY_VARIANT_DIRS: Record<KenneyButtonVariant, string> = {
   grey: 'Grey',
 };
 
+/** Light sprites (yellow/grey) need dark type; saturated sprites keep white type with a drop shadow. */
+const LIGHT_VARIANTS: ReadonlySet<KenneyButtonVariant> = new Set(['yellow', 'grey']);
+
 const KENNEY_BUTTON_SPRITE = 'button_rectangle_depth_flat.png';
 
 const SIZE_STYLES: Record<KenneyButtonSize, { px: string; py: string; fontSize: string }> = {
@@ -31,7 +34,7 @@ const SIZE_STYLES: Record<KenneyButtonSize, { px: string; py: string; fontSize: 
  * Includes interactive hover brightness, press-down active state, and SFX feedback.
  */
 export const KenneyButton = React.forwardRef<HTMLButtonElement, KenneyButtonProps>(
-  ({ variant = 'blue', size = 'md', playSfx = true, className = '', style, type = 'button', onClick, disabled, ...rest }, ref) => {
+  ({ variant = 'yellow', size = 'md', playSfx = true, className = '', style, type = 'button', onClick, disabled, ...rest }, ref) => {
     const spriteUrl = `/assets/kenney-ui/PNG/${KENNEY_VARIANT_DIRS[variant]}/Default/${KENNEY_BUTTON_SPRITE}`;
     const sizeStyle = SIZE_STYLES[size];
 
@@ -49,7 +52,7 @@ export const KenneyButton = React.forwardRef<HTMLButtonElement, KenneyButtonProp
         type={type}
         disabled={disabled}
         onClick={handleClick}
-        className={`inline-flex items-center justify-center font-bold text-white tracking-wide transition-all select-none
+        className={`inline-flex items-center justify-center font-bold ${LIGHT_VARIANTS.has(variant) ? 'text-stone-900' : 'text-white'} tracking-wide transition-all select-none
           cursor-pointer hover:brightness-110 active:translate-y-[2px] active:brightness-95
           disabled:cursor-not-allowed disabled:opacity-50 disabled:transform-none disabled:brightness-90
           ${sizeStyle.px} ${sizeStyle.py} ${sizeStyle.fontSize} ${className}`}
@@ -60,7 +63,7 @@ export const KenneyButton = React.forwardRef<HTMLButtonElement, KenneyButtonProp
           borderImageSlice: 10,
           borderImageRepeat: 'stretch',
           backgroundColor: 'transparent',
-          textShadow: '0 2px 2px rgba(0, 0, 0, 0.65)',
+          textShadow: LIGHT_VARIANTS.has(variant) ? '0 1px 0 rgba(255, 255, 255, 0.4)' : '0 2px 2px rgba(0, 0, 0, 0.65)',
           ...style,
         }}
         {...rest}

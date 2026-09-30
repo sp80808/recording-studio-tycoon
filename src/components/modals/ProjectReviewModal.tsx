@@ -131,7 +131,7 @@ const SkillDisplay: React.FC<SkillDisplayProps> = ({ skillDetail, onAnimationCom
   const calculateXpToNextLevel = (level: number): number => Math.floor(100 * Math.pow(level, 1.5));
 
   return (
-    <li className="text-sm p-2 bg-gray-750 rounded shadow">
+    <li className="text-sm p-2 bg-stone-750 rounded shadow">
       <div className="flex justify-between items-center mb-1">
         <span className={`font-semibold capitalize ${levelUpFlash ? 'text-yellow-300 animate-pulse-strong' : 'text-white'}`}>
           {skillDetail.skillName}: Lvl {currentLevel}
@@ -140,9 +140,9 @@ const SkillDisplay: React.FC<SkillDisplayProps> = ({ skillDetail, onAnimationCom
           {score}/100
         </span>
       </div>
-      <div className="w-full bg-gray-600 rounded h-4 overflow-hidden relative">
+      <div className="w-full bg-stone-600 rounded h-4 overflow-hidden relative">
         <div 
-          className="bg-blue-500 h-full transition-all duration-500 ease-out" 
+          className="bg-amber-500 h-full transition-all duration-500 ease-out" 
           style={{ width: `${xpBarProgress}%` }}
         />
         <span className="absolute inset-0 flex items-center justify-center text-xs text-white font-bold drop-shadow-md">
@@ -310,7 +310,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
       }}
     >
       <DialogContent 
-        className="bg-black border-gray-700 text-gray-50 shadow-2xl max-w-4xl w-[calc(100%-2rem)] max-h-[calc(100dvh-2rem)] overflow-hidden rounded-xl z-[60] flex flex-col !animate-none"
+        className="bg-black border-stone-700 text-stone-50 shadow-2xl max-w-4xl w-[calc(100%-2rem)] max-h-[calc(100dvh-2rem)] overflow-hidden rounded-xl z-[60] flex flex-col !animate-none"
         onInteractOutside={(e) => {
           // Prevent closing when clicking outside if animation is not complete
           if (!showContinueButton) {
@@ -321,10 +321,10 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
         }}
         aria-describedby={descriptionId} // Add aria-describedby for accessibility
       >
-        <DialogHeader className="pt-5 px-6 border-b border-gray-800/80 pb-3 flex-shrink-0">
+        <DialogHeader className="pt-5 px-6 border-b border-stone-800/80 pb-3 flex-shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-2xl font-bold text-yellow-400">Project Complete: {report.projectTitle}</DialogTitle>
-            <span className="text-xs font-mono px-2.5 py-1 rounded bg-gray-800 text-gray-300 border border-gray-700">
+            <span className="text-xs font-mono px-2.5 py-1 rounded bg-stone-800 text-stone-300 border border-stone-700">
               {report.genre}
             </span>
           </div>
@@ -354,9 +354,9 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
                       🎛️ Mastering album art & press review...
                     </div>
                   ) : (
-                    <div className="w-full p-3.5 bg-slate-900/90 border border-slate-700/80 rounded-lg shadow-inner text-center">
+                    <div className="w-full p-3.5 bg-stone-900/90 border border-stone-700/80 rounded-lg shadow-inner text-center">
                       <p className="text-[10px] font-mono tracking-widest text-amber-400/80 uppercase mb-1">Press Critique</p>
-                      <p className="text-sm text-slate-200 italic leading-relaxed">
+                      <p className="text-sm text-stone-200 italic leading-relaxed">
                         "{reviewText || typedSnippet || report.reviewSnippet}"
                       </p>
                     </div>
@@ -369,7 +369,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
                     active={showRewards}
                     glow={true}
                     glowTone="gold"
-                    className="w-full max-w-sm pt-2 space-y-1 text-center bg-slate-900/70 border border-amber-500/30 rounded-lg p-3 shadow"
+                    className="w-full max-w-sm pt-2 space-y-1 text-center bg-stone-900/70 border border-amber-500/30 rounded-lg p-3 shadow"
                   >
                     <h4 className="text-xl font-semibold text-yellow-200">Rewards</h4>
                     <p className="text-lg text-white flex items-center justify-center gap-1.5">
@@ -378,7 +378,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
                     </p>
                     <p className="text-lg text-white flex items-center justify-center gap-1.5">
                       <span>🌟 Reputation:</span>
-                      <span className="text-sky-400 font-bold"><MotionNumber value={report.reputationGained} prefix="+" /></span>
+                      <span className="text-amber-300 font-bold"><MotionNumber value={report.reputationGained} prefix="+" /></span>
                     </p>
                     {report.assignedPerson.type === 'staff' && report.playerManagementXpGained > 0 && (
                       <p className="text-lg text-white flex items-center justify-center gap-1.5">
@@ -393,16 +393,16 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
               {/* Right Column: Overall Quality & Skill Progression */}
               <div className="space-y-4">
                 {showOverallQuality && (
-                  <div className="p-3 bg-slate-900/80 border border-yellow-500/40 rounded-lg shadow text-center">
+                  <div className="p-3 bg-stone-900/80 border border-yellow-500/40 rounded-lg shadow text-center">
                     <h3 className="text-2xl font-bold text-center text-yellow-300 mb-1">
                       Overall Quality: <AnimatedNumber targetValue={report.overallQualityScore} duration={1000} className="text-3xl" /> / 100
                     </h3>
-                    <Progress value={animatedOverallQualityValue} className="h-5 bg-gray-700 [&>*]:bg-green-500 transition-all duration-300" />
+                    <Progress value={animatedOverallQualityValue} className="h-5 bg-stone-700 [&>*]:bg-green-500 transition-all duration-300" />
                   </div>
                 )}
 
                 {report.skillBreakdown.length > 0 && (
-                  <div className="bg-slate-950/60 border border-gray-800/80 rounded-lg p-3 space-y-2">
+                  <div className="bg-stone-950/60 border border-stone-800/80 rounded-lg p-3 space-y-2">
                     <h4 className="text-xl font-semibold text-yellow-200 mb-2">Skill Progression ({report.assignedPerson.name})</h4>
                     <ul className="space-y-2">
                       {report.skillBreakdown.map((skillDetail, index) => (
@@ -427,7 +427,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
               onDone={() => setRankStamp(null)}
             />
           )}
-          <CardFooter className="shrink-0 p-4 border-t border-gray-800/80 bg-gray-950/90">
+          <CardFooter className="shrink-0 p-4 border-t border-stone-800/80 bg-stone-950/90">
             {showContinueButton ? (
               <MotionButton
                 onClick={() => {
@@ -435,12 +435,12 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
                   gameAudio.playSound('button_click', 'sfx'); 
                   onClose();
                 }} 
-                className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold text-lg py-3 rounded"
+                className="w-full bg-yellow-500 hover:bg-yellow-600 text-stone-900 font-bold text-lg py-3 rounded"
               >
                 Awesome!
               </MotionButton>
             ) : (
-              <div className="w-full text-center text-gray-400 italic">Calculating...</div>
+              <div className="w-full text-center text-stone-400 italic">Calculating...</div>
             )}
           </CardFooter>
         </Card>

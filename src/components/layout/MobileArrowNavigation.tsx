@@ -58,11 +58,11 @@ const MobileArrowNavigation: React.FC<MobileArrowNavigationProps> = ({ tabs, act
   return (
     // Main container for the arrow navigation.
     // Uses flexbox for layout and applies mobile-only styling (md:hidden).
-    <div className="flex items-center justify-between p-2 bg-gray-800 text-white md:hidden">
+    <div className="flex items-center justify-between p-2 bg-stone-800 text-white md:hidden">
       {/* Previous Arrow Button */}
       <button 
         onClick={handlePrevious} 
-        className="p-3 rounded-full hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors"
+        className="p-3 rounded-full hover:bg-stone-700 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors"
         aria-label="Previous Tab" // Accessibility label
       >
         <ChevronLeft size={28} /> {/* Icon for previous */}
@@ -74,7 +74,7 @@ const MobileArrowNavigation: React.FC<MobileArrowNavigationProps> = ({ tabs, act
       {/* Next Arrow Button */}
       <button 
         onClick={handleNext} 
-        className="p-3 rounded-full hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors"
+        className="p-3 rounded-full hover:bg-stone-700 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors"
         aria-label="Next Tab" // Accessibility label
       >
         <ChevronRight size={28} /> {/* Icon for next */}

@@ -137,7 +137,7 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-600">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-stone-900 border-stone-600">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3 text-white">
             <span className="text-2xl">{equipment.icon}</span>
@@ -165,12 +165,12 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column - Description & Specs */}
           <div className="space-y-4">
-            <Card className="p-4 bg-gray-800/50 border-gray-600">
+            <Card className="p-4 bg-stone-800/50 border-stone-600">
               <h3 className="font-semibold text-white mb-2 flex items-center gap-2">
                 <Info className="h-4 w-4" />
                 Description
               </h3>
-              <p className="text-gray-300 text-sm leading-relaxed">
+              <p className="text-stone-300 text-sm leading-relaxed">
                 {equipment.eraDescription || equipment.description}
               </p>
             </Card>
@@ -191,7 +191,7 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
         </div>
 
         {/* Purchase Section */}
-        <div className="flex items-center justify-between pt-4 border-t border-gray-600">
+        <div className="flex items-center justify-between pt-4 border-t border-stone-600">
           <div className="flex items-center gap-4">
             <div className="text-right">
               <div className={`font-bold text-lg ${canAfford ? 'text-green-400' : 'text-red-400'}`}>
@@ -204,7 +204,7 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
               )}
             </div>
             {equipment.skillRequirement && (
-              <div className="text-xs text-blue-400">
+              <div className="text-xs text-amber-300">
                 Requires {equipment.skillRequirement.skill} Level {equipment.skillRequirement.level}
               </div>
             )}

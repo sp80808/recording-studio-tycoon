@@ -9,7 +9,7 @@ interface GameLayoutProps {
 
 export const GameLayout: React.FC<GameLayoutProps> = ({ children, eraId }) => {
   return (
-    <div className="h-[100dvh] w-full flex flex-col overflow-hidden bg-[#0c1017] text-white relative game-layout">
+    <div className="h-[100dvh] w-full flex flex-col overflow-hidden bg-[#0e0c0a] text-white relative game-layout">
       {/* Studio texture and atmosphere layers */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         {eraId && <EraGrade eraId={eraId} />}
@@ -26,7 +26,7 @@ export const GameLayout: React.FC<GameLayoutProps> = ({ children, eraId }) => {
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: 'radial-gradient(circle at center, transparent 40%, rgba(5, 8, 14, 0.75) 100%)',
+            background: 'radial-gradient(circle at center, transparent 40%, rgba(12, 10, 7, 0.75) 100%)',
           }}
           aria-hidden="true"
         />

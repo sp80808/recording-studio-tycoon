@@ -58,15 +58,15 @@ export const ChartEntryRow: React.FC<ChartEntryRowProps> = ({
     switch (movement) {
       case 'up': return 'text-green-400';
       case 'down': return 'text-red-400';
-      case 'new': return 'text-blue-400';
-      default: return 'text-gray-400';
+      case 'new': return 'text-amber-300';
+      default: return 'text-stone-400';
     }
   };
 
   return (
     <Card
       key={trackId}
-      className={`p-2 bg-gray-700/30 border-gray-600/50 transition-all duration-200 group hover:bg-gray-700/50 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer ${expandedEntryId === trackId ? 'ring-2 ring-blue-500' : ''}`}
+      className={`p-2 bg-stone-700/30 border-stone-600/50 transition-all duration-200 group hover:bg-stone-700/50 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer ${expandedEntryId === trackId ? 'ring-2 ring-amber-500' : ''}`}
       onClick={() => setExpandedEntryId(expandedEntryId === trackId ? null : trackId)}
     >
       <div className="flex items-center gap-3">
@@ -80,36 +80,36 @@ export const ChartEntryRow: React.FC<ChartEntryRowProps> = ({
 
         {/* Song & Artist Info */}
         <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-semibold text-white truncate group-hover:text-blue-300 transition-colors">
+          <h4 className="text-sm font-semibold text-white truncate group-hover:text-amber-200 transition-colors">
             {entry.song.title}
           </h4>
-          <p className="text-xs text-gray-300 truncate">
+          <p className="text-xs text-stone-300 truncate">
             {entry.song.artist.name}
           </p>
         </div>
 
         {/* Basic Chart Info (Weeks on Chart) */}
-        <div className="flex items-center gap-1 text-xs text-gray-500 min-w-[40px] justify-end">
+        <div className="flex items-center gap-1 text-xs text-stone-500 min-w-[40px] justify-end">
            <Clock className="h-3 w-3" />
            <span>{entry.weeksOnChart}w</span>
         </div>
       </div>
       {/* Expandable details */}
       {expandedEntryId === trackId && (
-        <div className="mt-3 pt-3 border-t border-gray-600/50 text-sm text-gray-300">
+        <div className="mt-3 pt-3 border-t border-stone-600/50 text-sm text-stone-300">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <div className="font-semibold text-white mb-2">Artist & Song Details:</div>
               <p className="text-xs mb-1">Artist Popularity: <Star className="h-3 w-3 inline text-yellow-500" /> {entry.song.artist.popularity}/100</p>
-              <p className="text-xs mb-1">Peak Position: <TrendingUp className="h-3 w-3 inline text-blue-400" /> #{entry.peakPosition}</p>
+              <p className="text-xs mb-1">Peak Position: <TrendingUp className="h-3 w-3 inline text-amber-300" /> #{entry.peakPosition}</p>
               {/* Placeholder for more artist stats */}
-              <p className="text-xs text-gray-500">[More Artist Stats Placeholder]</p>
+              <p className="text-xs text-stone-500">[More Artist Stats Placeholder]</p>
             </div>
             <div>
                <div className="font-semibold text-white mb-2">Sales & Charting:</div>
                {/* Placeholder for sales numbers and graphs */}
                <p className="text-xs mb-1">Estimated Sales: [Sales Data Placeholder]</p>
-               <p className="text-xs text-gray-500">[Chart Graph Placeholder]</p>
+               <p className="text-xs text-stone-500">[Chart Graph Placeholder]</p>
             </div>
           </div>
 
@@ -124,25 +124,25 @@ export const ChartEntryRow: React.FC<ChartEntryRowProps> = ({
                  isPlaying 
                    ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-600/25 animate-pulse' 
                    : hasAudio 
-                     ? 'bg-gray-600 hover:bg-gray-500 text-gray-200 hover:shadow-md hover:scale-105 active:scale-95' 
-                     : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                     ? 'bg-stone-600 hover:bg-stone-500 text-stone-200 hover:shadow-md hover:scale-105 active:scale-95' 
+                     : 'bg-stone-800 text-stone-500 cursor-not-allowed'
                }`}
                title={hasAudio ? `Play preview: ${segment.displayTime}` : 'No preview available'}
              >
                {isPlaying ? <Pause className="h-4 w-4 transition-transform duration-200" /> : <Play className="h-4 w-4 transition-transform duration-200" />}
              </Button>
              {hasAudio && (progress > 0 || isPlaying) && (
-               <div className="w-24 h-1.5 bg-gray-600 rounded-full overflow-hidden shadow-inner">
+               <div className="w-24 h-1.5 bg-stone-600 rounded-full overflow-hidden shadow-inner">
                  <div 
                    className={`h-full transition-all duration-200 ease-linear ${
-                     isPlaying ? 'bg-green-400 shadow-sm' : 'bg-gray-400'
+                     isPlaying ? 'bg-green-400 shadow-sm' : 'bg-stone-400'
                    }`}
                    style={{ width: `${progress}%` }}
                  />
                </div>
              )}
              {hasAudio && (
-               <div className="text-[8px] text-gray-500">
+               <div className="text-[8px] text-stone-500">
                  {segment.displayTime}
                </div>
              )}

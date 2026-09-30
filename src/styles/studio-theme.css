@@ -114,11 +114,10 @@ body { background: var(--rst-ink-900); color: var(--rst-ivory); }
     linear-gradient(180deg, #211c17 0%, #181512 60%, #12100e 100%);
   box-shadow: var(--rst-shadow-pop), inset 0 1px 0 rgba(255, 244, 214, 0.10), inset 0 0 0 1px rgba(0, 0, 0, 0.5);
   color: var(--rst-ivory);
-  overflow: hidden;
 }
 .rst-modal::before { /* thin brass highlight along the top edge */
   content: '';
-  position: absolute; inset: 0 0 auto 0; height: 1px;
+  position: absolute; inset: 0 18px auto 18px; height: 1px;
   background: linear-gradient(90deg, transparent, rgba(246, 226, 179, 0.7), transparent);
   pointer-events: none;
 }
@@ -206,6 +205,22 @@ body { background: var(--rst-ink-900); color: var(--rst-ivory); }
 .rst-option:active:not(:disabled) { transform: translateY(0); }
 .rst-option:disabled { opacity: 0.5; cursor: not-allowed; }
 .rst-option[aria-pressed='true'] { border-color: var(--rst-brass-400); background: rgba(230, 184, 102, 0.12); box-shadow: 0 0 0 1px var(--rst-brass-400) inset; }
+
+/* Floor duty / enquiry chips: one calm style for every "something needs attention" nudge */
+.rst-duty-chip {
+  pointer-events: auto;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 11px; border-radius: 999px;
+  border: 1px solid var(--rst-brass-line);
+  background: linear-gradient(180deg, rgba(46, 38, 28, 0.94), rgba(28, 23, 18, 0.94));
+  color: var(--rst-brass-200);
+  font-size: 11px; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 var(--rst-sheen);
+  backdrop-filter: blur(8px);
+  transition: transform 0.16s var(--rst-ease), border-color 0.16s, filter 0.16s;
+}
+.rst-duty-chip:hover { transform: translateY(-2px); border-color: var(--rst-brass-400); filter: brightness(1.1); }
+.rst-duty-chip:active { transform: translateY(0); }
 
 /* Loading shimmer for any skeleton block */
 .rst-shimmer { background: linear-gradient(90deg, rgba(243,236,221,0.04) 25%, rgba(243,236,221,0.10) 50%, rgba(243,236,221,0.04) 75%); background-size: 200% 100%; animation: rst-shimmer 1.6s linear infinite; }

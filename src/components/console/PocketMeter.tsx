@@ -141,21 +141,21 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
   return (
     <div
       onClick={handleMeterClick}
-      className={`relative bg-slate-950 border border-slate-700/80 p-2 rounded-[2px] shadow-[inset_0_2px_8px_rgba(0,0,0,0.8)] select-none cursor-pointer transition-all ${className}`}
+      className={`relative bg-stone-950 border border-stone-700/80 p-2 rounded-[2px] shadow-[inset_0_2px_8px_rgba(0,0,0,0.8)] select-none cursor-pointer transition-all ${className}`}
       title={isArmed ? 'Click to Lock Take in the Pocket!' : 'Analog Calibration Gauge'}
     >
       {/* Rackmount hardware corner hex bolts */}
-      <div className="absolute top-1 left-1 w-1.5 h-1.5 rounded-full bg-slate-700 border border-slate-600 shadow-inner flex items-center justify-center text-[7px] text-slate-400 font-mono">
+      <div className="absolute top-1 left-1 w-1.5 h-1.5 rounded-full bg-stone-700 border border-stone-600 shadow-inner flex items-center justify-center text-[7px] text-stone-400 font-mono">
         +
       </div>
-      <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-slate-700 border border-slate-600 shadow-inner flex items-center justify-center text-[7px] text-slate-400 font-mono">
+      <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-stone-700 border border-stone-600 shadow-inner flex items-center justify-center text-[7px] text-stone-400 font-mono">
         +
       </div>
 
       {/* Meter Header Label */}
-      <div className="flex justify-between items-center px-3 mb-1 text-[9px] font-mono tracking-widest text-slate-400">
+      <div className="flex justify-between items-center px-3 mb-1 text-[9px] font-mono tracking-widest text-stone-400">
         <span>TAKE CALIBRATION</span>
-        <span aria-live="polite" className={isInPocket ? 'text-amber-400 font-bold' : needlePos > goldMax ? 'text-red-400 font-bold' : 'text-cyan-300 font-bold'}>
+        <span aria-live="polite" className={isInPocket ? 'text-amber-400 font-bold' : needlePos > goldMax ? 'text-red-400 font-bold' : 'text-teal-300 font-bold'}>
           {meterFeedback}
         </span>
         <span>+4 dBu</span>
@@ -163,7 +163,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
 
       {/* Analog Faceplate */}
       <div
-        className="relative h-14 bg-gradient-to-b from-amber-950/20 via-slate-900 to-slate-950 border border-slate-800 rounded-[2px] overflow-hidden flex flex-col justify-between p-1.5"
+        className="relative h-14 bg-gradient-to-b from-amber-950/20 via-stone-900 to-stone-950 border border-stone-800 rounded-[2px] overflow-hidden flex flex-col justify-between p-1.5"
         role="meter"
         aria-label="Take timing meter"
         aria-valuemin={0}
@@ -172,9 +172,9 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
         aria-valuetext={`${meterFeedback}. Target is ${Math.round(goldMin * 100)} to ${Math.round(goldMax * 100)}.`}
       >
         {/* Arc Track / Pocket Highlight */}
-        <div className="relative w-full h-4 bg-slate-800/80 rounded-[1px] overflow-hidden flex">
+        <div className="relative w-full h-4 bg-stone-800/80 rounded-[1px] overflow-hidden flex">
           {/* Normal range */}
-          <div style={{ width: `${Math.max(0, goldMin - 0.20) * 100}%` }} className="h-full bg-slate-700/50" />
+          <div style={{ width: `${Math.max(0, goldMin - 0.20) * 100}%` }} className="h-full bg-stone-700/50" />
           {/* Warm zone */}
           <div style={{ width: `${(goldMin - Math.max(0, goldMin - 0.20)) * 100}%` }} className="h-full bg-emerald-600/40 border-l border-emerald-500/30" />
           {/* The Pocket Sweet Spot (amber/gold glowing) */}
@@ -183,7 +183,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
             className={`h-full bg-amber-500/80 border-x border-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)] flex items-center justify-center transition-all ${timingBonus > 0 ? 'ring-1 ring-amber-300' : ''}`}
             title={timingBonus > 0 ? `Tape Heads Cleaned: +${Math.round(timingBonus * 100)}% Sweet Spot` : 'Standard Sweet Spot'}
           >
-            <span className="text-[7px] font-black text-slate-950 uppercase tracking-tighter">
+            <span className="text-[7px] font-black text-stone-950 uppercase tracking-tighter">
               {timingBonus > 0 ? '+CAL' : 'POCKET'}
             </span>
           </div>
@@ -202,7 +202,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
         </div>
 
         {/* Silk-screened dB tick marks */}
-        <div className="flex justify-between text-[8px] font-mono text-slate-500 px-1">
+        <div className="flex justify-between text-[8px] font-mono text-stone-500 px-1">
           <span>-20dB</span>
           <span>-10dB</span>
           <span>-3dB</span>
@@ -221,8 +221,8 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
         aria-label={`Lock take. ${meterFeedback}. Target is ${Math.round(goldMin * 100)} to ${Math.round(goldMax * 100)}.`}
         className={`w-full py-3 mt-2 font-black tracking-wider uppercase text-sm rounded-[2px] border transition-all flex items-center justify-center gap-2 active:scale-[0.98] ${
           isInPocket
-            ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 border-amber-300 shadow-[0_0_18px_rgba(251,191,36,0.8)] animate-pulse'
-            : 'bg-gradient-to-r from-slate-800 to-slate-700 text-amber-300 border-slate-600 hover:border-amber-400/60 shadow-md'
+            ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-stone-950 border-amber-300 shadow-[0_0_18px_rgba(251,191,36,0.8)] animate-pulse'
+            : 'bg-gradient-to-r from-stone-800 to-stone-700 text-amber-300 border-stone-600 hover:border-amber-400/60 shadow-md'
         }`}
       >
         {gamepad.isConnected && gamepad.lastInputType === 'gamepad' && (

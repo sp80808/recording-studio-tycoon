@@ -33,7 +33,7 @@ export function MinigameChrome({
   const timeDanger = timeLeft !== undefined && timeLeft <= 10;
 
   return (
-    <div className="flex w-full flex-col overflow-hidden rounded-xl border border-white/10 bg-slate-900 shadow-lg">
+    <div className="flex w-full flex-col overflow-hidden rounded-xl border border-white/10 bg-stone-900 shadow-lg">
       <div
         className={`flex items-center justify-between gap-2 border-b bg-gradient-to-r px-4 py-2 ${ACCENT_HEADER_STYLES[accent]}`}
       >

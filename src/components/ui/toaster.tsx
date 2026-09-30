@@ -16,25 +16,24 @@ export const Toaster = ({ ...props }: ToasterProps) => {
       closeButton
       gap={10}
       icons={{
-        success: <CheckCircle2 className="mr-2 h-5 w-5" />,
-        info: <Info className="mr-2 h-5 w-5" />,
-        warning: <AlertTriangle className="mr-2 h-5 w-5" />,
-        error: <XCircle className="mr-2 h-5 w-5" />,
+        success: <CheckCircle2 className="mr-2 h-5 w-5 text-[var(--rst-money)]" />,
+        info: <Info className="mr-2 h-5 w-5 text-[var(--rst-brass-300)]" />,
+        warning: <AlertTriangle className="mr-2 h-5 w-5 text-[var(--rst-warn)]" />,
+        error: <XCircle className="mr-2 h-5 w-5 text-[var(--rst-danger)]" />,
         loading: <Loader2 className="mr-2 h-5 w-5 animate-spin" />,
       }}
       toastOptions={{
         classNames: {
-          toast:
-            "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg flex items-center",
-          description: "group-[.toast]:text-muted-foreground",
-          actionButton:
-            "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
-          cancelButton:
-            "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
-          success: "!bg-green-600 !border-green-700 !text-white",
-          error: "!bg-red-600 !border-red-700 !text-white",
-          info: "!bg-blue-600 !border-blue-700 !text-white",
-          warning: "!bg-yellow-500 !border-yellow-600 !text-black",
+          toast: "rst-toast group toast flex items-center gap-1 px-4 py-3",
+          title: "text-[13px] font-bold tracking-wide",
+          description: "text-xs leading-snug",
+          actionButton: "rst-btn rst-btn-primary !min-h-8 !px-3 !text-xs",
+          cancelButton: "rst-btn !min-h-8 !px-3 !text-xs",
+          closeButton: "!border-[var(--rst-line-strong)] !bg-[var(--rst-ink-800)] !text-stone-300",
+          success: "rst-toast-success",
+          error: "rst-toast-error",
+          info: "rst-toast-info",
+          warning: "rst-toast-warning",
         },
       }}
       {...props}

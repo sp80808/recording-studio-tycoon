@@ -9,8 +9,8 @@
   padding: max(16px, env(safe-area-inset-top)) 22px max(16px, env(safe-area-inset-bottom));
   color: #f3f1ee;
   background:
-    radial-gradient(ellipse 50% 42% at 50% 38%, #29324c 0%, #10172a 62%, transparent 100%),
-    linear-gradient(145deg, #0f1628, #070b15 62%, #14101d);
+    radial-gradient(ellipse 50% 42% at 50% 38%, #423c33 0%, #231e17 62%, transparent 100%),
+    linear-gradient(145deg, #211c16, #110e0b 62%, #191714);
   animation: splash-enter .55s ease-out both;
 }
 .splash-page::before {
@@ -28,29 +28,29 @@
 .splash-ambience span:nth-child(3) { width: min(178vw,1300px); border-color: #8baae609; }
 .splash-header { position: relative; z-index: 2; width: min(100%,1100px); display: flex; align-items: center; justify-content: space-between; }
 .splash-wordmark { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 900; letter-spacing: .24em; }
-.splash-header-muted { color: #8290ae; font-size: 10px; letter-spacing: .14em; }
+.splash-header-muted { color: #a3998d; font-size: 10px; letter-spacing: .14em; }
 .splash-live-dot { width: 8px; height: 8px; background: #f3bb67; border-radius: 50%; box-shadow: 0 0 14px #f5c872aa; animation:splash-live 2.2s ease-in-out infinite; }
 .splash-header-controls { display: flex; gap: 7px; }
-.splash-header-controls button { display: grid; place-items: center; width: 44px; height: 44px; color: #c7cfdf; border: 1px solid #afc3e13b; border-radius: 11px; background: #0b1222bd; backdrop-filter: blur(10px); transition: background .2s,color .2s; }
-.splash-header-controls button:hover { background: #26334a; color: #f5c872; }
+.splash-header-controls button { display: grid; place-items: center; width: 44px; height: 44px; color: #d9d4cd; border: 1px solid #cfc9c13b; border-radius: 11px; background: #1c1711bd; backdrop-filter: blur(10px); transition: background .2s,color .2s; }
+.splash-header-controls button:hover { background: #403930; color: #f5c872; }
 .splash-hero { position: relative; z-index: 1; flex: 1; width: 100%; max-width: 730px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 18px 0 22px; text-align: center; }
 .splash-title-group { margin: 0; }
 .splash-title-group h1 { margin: 0; line-height: .95; text-shadow: 0 8px 28px #000a; }
-.splash-title-group h1 span { display: block; color: #d8e1f1; font-size: clamp(20px,3vw,31px); font-weight: 600; letter-spacing: .24em; }
+.splash-title-group h1 span { display: block; color: #e8e5e1; font-size: clamp(20px,3vw,31px); font-weight: 600; letter-spacing: .24em; }
 .splash-title-group h1 strong { display: block; margin-top: 8px; font-size: clamp(40px,7vw,76px); font-weight: 900; letter-spacing: -.035em; background: linear-gradient(#fff1bb,#f3bd62 54%,#de8737); background-clip: text; -webkit-text-fill-color: transparent; }
-.splash-tagline { margin-top: 14px; color: #bdc9dc; font-size: 14px; }
+.splash-tagline { margin-top: 14px; color: #d3cdc6; font-size: 14px; }
 .splash-actions { width: min(100%,390px); display: flex; flex-direction: column; gap: 10px; margin-top: 29px; }
-.splash-action { width: 100%; display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 9px 16px; text-align: left; border: 1px solid #7b8ca957; border-radius: 12px; background: #172237e8; box-shadow: 0 6px 0 #030610, inset 0 1px #ffffff18; color: #e9f0fa; transition: transform .15s,box-shadow .15s,background .15s; }
-.splash-action:hover { background: #24344c; }
-.splash-action:active { transform: translateY(4px); box-shadow: 0 2px 0 #030610; }
-.splash-action-primary { border-color: #e8bc6c; color: #181d29; background: linear-gradient(#ffe0a0,#dfa94d); box-shadow: 0 6px 0 #805525,0 13px 40px #dba34944,inset 0 1px #fff5cb; }
+.splash-action { width: 100%; display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 9px 16px; text-align: left; border: 1px solid #9d948657; border-radius: 12px; background: #2e2820e8; box-shadow: 0 6px 0 #0c0a07, inset 0 1px #ffffff18; color: #f3f2f0; transition: transform .15s,box-shadow .15s,background .15s; }
+.splash-action:hover { background: #41392f; }
+.splash-action:active { transform: translateY(4px); box-shadow: 0 2px 0 #0c0a07; }
+.splash-action-primary { border-color: #e8bc6c; color: #24211d; background: linear-gradient(#ffe0a0,#dfa94d); box-shadow: 0 6px 0 #805525,0 13px 40px #dba34944,inset 0 1px #fff5cb; }
 .splash-action-primary:hover { background: linear-gradient(#ffedb7,#eaba69); }
-.splash-action-icon { display: grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: 9px; background: #1118271a; }
+.splash-action-icon { display: grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: 9px; background: #211d171a; }
 .splash-action strong,.splash-action small { display: block; }
 .splash-action strong { font-size: 16px; line-height: 1.2; }
 .splash-action small { margin-top: 2px; font-size: 11px; opacity: .7; }
 .splash-action-arrow { margin-left: auto; font-size: 20px; }
-.splash-footer { position: relative; z-index: 1; width: min(100%,680px); min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 12px; color: #9daac1; font-size: 11px; text-align: center; }
+.splash-footer { position: relative; z-index: 1; width: min(100%,680px); min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 12px; color: #b8b0a6; font-size: 11px; text-align: center; }
 .splash-footer-label { flex: none; color: #f3c476; font-size: 9px; font-weight: 900; letter-spacing: .1em; }
 .splash-footer p { line-height: 1.35; }
 .splash-page button:focus-visible { outline: 2px solid #ffdb8b; outline-offset: 4px; }

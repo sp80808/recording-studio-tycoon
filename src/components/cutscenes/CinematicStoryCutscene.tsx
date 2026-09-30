@@ -47,15 +47,15 @@ export function CinematicStoryCutscene({ payload, onComplete }: Props) {
         initial={reduceMotion ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: reduceMotion ? 0 : 0.35 }}
-        className="fixed inset-0 z-[240] flex items-center justify-center bg-[#05070c]/95 p-4 sm:p-8"
+        className="fixed inset-0 z-[240] flex items-center justify-center bg-[#0a0907]/95 p-4 sm:p-8"
         onMouseDown={(event) => event.target === event.currentTarget && onComplete()}
       >
         <motion.section
           initial={reduceMotion ? false : { y: 18, scale: 0.98 }}
           animate={{ y: 0, scale: 1 }}
-          className="relative grid w-full max-w-4xl overflow-hidden rounded-2xl border border-amber-300/25 bg-[#0d1018] text-white shadow-[0_28px_100px_rgba(0,0,0,.8)] md:grid-cols-[17rem_1fr]"
+          className="relative grid w-full max-w-4xl overflow-hidden rounded-2xl border border-amber-300/25 bg-[#151310] text-white shadow-[0_28px_100px_rgba(0,0,0,.8)] md:grid-cols-[17rem_1fr]"
         >
-          <aside className="relative min-h-48 overflow-hidden border-b border-amber-300/15 bg-gradient-to-br from-[#332313] via-[#15131a] to-[#080a10] p-7 md:min-h-[30rem] md:border-b-0 md:border-r">
+          <aside className="relative min-h-48 overflow-hidden border-b border-amber-300/15 bg-gradient-to-br from-[#332313] via-[#181715] to-[#0e0c0a] p-7 md:min-h-[30rem] md:border-b-0 md:border-r">
             <div aria-hidden="true" className="absolute -right-16 top-12 h-52 w-52 rounded-full border-[22px] border-amber-100/5 shadow-[0_0_0_18px_rgba(245,158,11,.04)]" />
             <div className="relative flex h-full flex-col justify-between gap-8">
               <div>
@@ -86,7 +86,7 @@ export function CinematicStoryCutscene({ payload, onComplete }: Props) {
                   key={lineIndex}
                   initial={reduceMotion ? false : { opacity: 0, x: 12 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="max-w-2xl text-lg leading-8 text-slate-200 sm:text-xl"
+                  className="max-w-2xl text-lg leading-8 text-stone-200 sm:text-xl"
                 >
                   {lines[lineIndex]}
                 </motion.p>

@@ -280,8 +280,8 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
     switch (movement) {
       case 'up': return 'text-green-400';
       case 'down': return 'text-red-400';
-      case 'new': return 'text-blue-400';
-      default: return 'text-gray-400';
+      case 'new': return 'text-amber-300';
+      default: return 'text-stone-400';
     }
   };
 
@@ -308,7 +308,7 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold text-white">📈 Industry Charts</h3>
-        <Badge variant="outline" className="text-blue-400 border-blue-400">
+        <Badge variant="outline" className="text-amber-300 border-amber-400">
           Level {gameState.playerData.level}
         </Badge>
       </div>
@@ -358,8 +358,8 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
 
       {/* Unlock Information */}
       {gameState.playerData.level < 10 && (
-        <Card className="bg-blue-900/20 border-blue-600/50 p-3">
-          <div className="text-sm text-blue-300">
+        <Card className="bg-stone-900/20 border-amber-600/50 p-3">
+          <div className="text-sm text-amber-200">
             <div className="font-semibold mb-1">🔓 Unlock More Charts</div>
             <div className="text-xs space-y-1">
               {gameState.playerData.level < 3 && <div>• Rock Charts at Level 3</div>}

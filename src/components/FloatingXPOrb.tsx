@@ -36,13 +36,13 @@ export const FloatingXPOrb: React.FC<FloatingXPOrbProps> = ({
   const getOrbStyle = () => {
     switch (type) {
       case 'xp':
-        return 'bg-gradient-to-r from-purple-500 to-blue-500 text-white';
+        return 'bg-gradient-to-r from-purple-500 to-amber-500 text-white';
       case 'money':
         return 'bg-gradient-to-r from-green-500 to-emerald-500 text-white';
       case 'skill':
         return 'bg-gradient-to-r from-orange-500 to-red-500 text-white';
       default:
-        return 'bg-gradient-to-r from-purple-500 to-blue-500 text-white';
+        return 'bg-gradient-to-r from-purple-500 to-amber-500 text-white';
     }
   };
 

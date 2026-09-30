@@ -75,7 +75,7 @@ export const EraTransitionAnimation: React.FC<EraTransitionAnimationProps> = ({
       aria-label="Era Transition"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none pointer-events-auto"
       style={{
-        backgroundColor: capabilities.heavyEffects ? 'rgba(7, 10, 18, 0.82)' : 'rgba(7, 10, 18, 0.94)',
+        backgroundColor: capabilities.heavyEffects ? 'rgba(15, 13, 10, 0.82)' : 'rgba(15, 13, 10, 0.94)',
         backdropFilter: capabilities.heavyEffects ? 'blur(12px)' : 'none',
       }}
     >
@@ -106,10 +106,10 @@ export const EraTransitionAnimation: React.FC<EraTransitionAnimationProps> = ({
 
       <MotionPanel
         direction="scale"
-        className="relative w-full max-w-2xl bg-gradient-to-b from-[#191f2e] to-[#0f1420] border-2 border-purple-500/40 rounded-2xl shadow-2xl p-6 sm:p-8 overflow-hidden text-slate-100"
+        className="relative w-full max-w-2xl bg-gradient-to-b from-[#28241f] to-[#1b1814] border-2 border-purple-500/40 rounded-2xl shadow-2xl p-6 sm:p-8 overflow-hidden text-stone-100"
       >
         {/* Header Ribbon */}
-        <div className="flex items-center justify-between mb-6 pb-3 border-b border-slate-700/60">
+        <div className="flex items-center justify-between mb-6 pb-3 border-b border-stone-700/60">
           <div className="flex items-center gap-2">
             <span className="p-1.5 bg-purple-500/20 text-purple-400 rounded-lg border border-purple-500/30">
               <Disc3 className="w-5 h-5 animate-spin" style={{ animationDuration: '6s' }} />
@@ -127,20 +127,20 @@ export const EraTransitionAnimation: React.FC<EraTransitionAnimationProps> = ({
             </div>
           </div>
           <div className="text-right">
-            <span className="text-[10px] font-mono tracking-wider text-slate-400 uppercase block">Epoch Year</span>
+            <span className="text-[10px] font-mono tracking-wider text-stone-400 uppercase block">Epoch Year</span>
             <span className="text-sm font-mono font-bold text-purple-300">{toEraData.startYear}+</span>
           </div>
         </div>
 
         {/* Era Shift Banner: From -> To */}
-        <div className="grid grid-cols-5 items-center gap-2 p-4 bg-slate-900/70 rounded-xl border border-slate-800 mb-6">
+        <div className="grid grid-cols-5 items-center gap-2 p-4 bg-stone-900/70 rounded-xl border border-stone-800 mb-6">
           <div className="col-span-2 text-center sm:text-left flex items-center gap-3">
-            <span className="text-3xl sm:text-4xl p-2 rounded-lg bg-slate-800/80 border border-slate-700">
+            <span className="text-3xl sm:text-4xl p-2 rounded-lg bg-stone-800/80 border border-stone-700">
               {fromEraData.icon}
             </span>
             <div className="truncate">
-              <span className="text-[10px] font-mono text-slate-400 block uppercase">Previous Era</span>
-              <p className="text-sm font-bold text-slate-300 truncate">{fromEraData.name}</p>
+              <span className="text-[10px] font-mono text-stone-400 block uppercase">Previous Era</span>
+              <p className="text-sm font-bold text-stone-300 truncate">{fromEraData.name}</p>
             </div>
           </div>
 
@@ -160,13 +160,13 @@ export const EraTransitionAnimation: React.FC<EraTransitionAnimationProps> = ({
         </div>
 
         {/* Era Description */}
-        <p className="text-sm text-slate-300 mb-5 leading-relaxed">
+        <p className="text-sm text-stone-300 mb-5 leading-relaxed">
           {toEraData.description}
         </p>
 
         {/* Unlocked Era Features */}
         <div className="mb-6">
-          <span className="text-[11px] font-mono tracking-widest text-slate-400 uppercase font-semibold block mb-2.5">
+          <span className="text-[11px] font-mono tracking-widest text-stone-400 uppercase font-semibold block mb-2.5">
             Key Epoch Innovations & Capabilities
           </span>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -177,7 +177,7 @@ export const EraTransitionAnimation: React.FC<EraTransitionAnimationProps> = ({
                 staggerDelay={capabilities.reducedMotion ? 0 : 0.06}
                 direction="up"
                 distance={capabilities.reducedMotion ? 0 : 10}
-                className="flex items-center gap-2 px-3 py-2 bg-slate-800/70 rounded-md border border-slate-700/50 text-xs text-slate-200"
+                className="flex items-center gap-2 px-3 py-2 bg-stone-800/70 rounded-md border border-stone-700/50 text-xs text-stone-200"
               >
                 <CheckCircle2 className="w-4 h-4 text-purple-400 shrink-0" />
                 <span>{feature}</span>
@@ -188,7 +188,7 @@ export const EraTransitionAnimation: React.FC<EraTransitionAnimationProps> = ({
 
         {/* Popular Genres in this era */}
         <div className="mb-6">
-          <span className="text-[11px] font-mono tracking-widest text-slate-400 uppercase font-semibold block mb-2">
+          <span className="text-[11px] font-mono tracking-widest text-stone-400 uppercase font-semibold block mb-2">
             Emerging & Trending Musical Genres
           </span>
           <div className="flex flex-wrap gap-1.5">
@@ -204,8 +204,8 @@ export const EraTransitionAnimation: React.FC<EraTransitionAnimationProps> = ({
         </div>
 
         {/* Footer controls: non-blocking, skippable */}
-        <div className="flex items-center justify-between pt-3 border-t border-slate-800">
-          <p className="text-[11px] text-slate-400">
+        <div className="flex items-center justify-between pt-3 border-t border-stone-800">
+          <p className="text-[11px] text-stone-400">
             Authoritative simulation active · Click or press key to resume
           </p>
           <div className="flex items-center gap-2">
@@ -217,7 +217,7 @@ export const EraTransitionAnimation: React.FC<EraTransitionAnimationProps> = ({
               {gamepad.isConnected ? (
                 <GamepadGlyph button="south" size="xs" />
               ) : (
-                <span className="text-[10px] bg-slate-950/30 px-1 py-0.5 rounded font-mono">Esc</span>
+                <span className="text-[10px] bg-stone-950/30 px-1 py-0.5 rounded font-mono">Esc</span>
               )}
             </MotionButton>
           </div>

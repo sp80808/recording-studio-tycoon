@@ -50,20 +50,20 @@ const AnimatedProjectCard: FC<AnimatedProjectCardProps> = ({
 
   return (
     <div
-      className={`p-4 border rounded-lg shadow-md bg-gray-800 text-white ${className}`}
+      className={`p-4 border rounded-lg shadow-md bg-stone-800 text-white ${className}`}
       onClick={() => onSelect(project.id)}
     >
       <h3 className="text-lg font-semibold mb-2">{project.title}</h3>
-      <p className="text-sm text-gray-400 mb-1">Stage: {currentStageName}</p>
-      <div className="w-full bg-gray-700 rounded-full h-2.5 mb-2">
+      <p className="text-sm text-stone-400 mb-1">Stage: {currentStageName}</p>
+      <div className="w-full bg-stone-700 rounded-full h-2.5 mb-2">
         <div
-          className="bg-blue-600 h-2.5 rounded-full"
+          className="bg-amber-600 h-2.5 rounded-full"
           style={{ width: `${progress}%` }}
         ></div>
       </div>
-      <p className="text-xs text-gray-300 mb-1">{progress}% Complete</p>
-      <p className="text-sm text-gray-400 mb-1">Staff: {staffCount}</p>
-      <p className="text-sm text-gray-400">Priority: {priority}</p>
+      <p className="text-xs text-stone-300 mb-1">{progress}% Complete</p>
+      <p className="text-sm text-stone-400 mb-1">Staff: {staffCount}</p>
+      <p className="text-sm text-stone-400">Priority: {priority}</p>
       <p className="text-sm text-green-400">Auto: {isAutomated ? 'ON' : 'OFF'}</p>
       {onRemove && (
         <button

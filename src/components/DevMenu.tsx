@@ -24,7 +24,7 @@ export const DevMenu: React.FC = () => {
           <button
             type="button"
             onClick={() => trigger('1970s', 2)}
-            className="pointer-events-auto px-3 py-2 bg-sky-600 text-white rounded text-xs font-semibold shadow border border-sky-400/40"
+            className="pointer-events-auto px-3 py-2 bg-amber-600 text-stone-950 rounded text-xs font-semibold shadow border border-amber-400/40"
           >
             DEV: Spawn Box Drop
           </button>

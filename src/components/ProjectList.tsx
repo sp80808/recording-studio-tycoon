@@ -117,7 +117,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
       <div className="flex items-start justify-between gap-3 mb-4 shrink-0">
         <div>
           <h2 className="text-xl font-bold text-white tracking-wide">Artist Enquiries</h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-stone-400 mt-1">
             Choose the sessions that best fit your room, staff and current cashflow.
           </p>
         </div>
@@ -126,8 +126,8 @@ export const ProjectList: React.FC<ProjectListProps> = ({
           disabled={!refreshReady}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
             refreshReady
-              ? 'bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white shadow-md'
-              : 'bg-slate-800 text-slate-400 border border-slate-700'
+              ? 'bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-stone-950 shadow-md'
+              : 'bg-stone-800 text-stone-400 border border-stone-700'
           }`}
         >
           {refreshReady ? (
@@ -147,26 +147,26 @@ export const ProjectList: React.FC<ProjectListProps> = ({
       {gameState.activeProject && (
         <MotionReveal direction="down" distance={10}>
           <GamePanel variant="cyan" className="p-3 mb-4 shrink-0">
-            <div className="text-xs text-cyan-300 mb-1 font-bold uppercase tracking-wider">🎙 Session in progress</div>
+            <div className="text-xs text-teal-300 mb-1 font-bold uppercase tracking-wider">🎙 Session in progress</div>
             <div className="text-sm font-bold text-white mb-1">{gameState.activeProject.title}</div>
-            <div className="text-xs text-cyan-200/90 mb-2">
+            <div className="text-xs text-teal-200/90 mb-2">
               Stage {gameState.activeProject.currentStageIndex + 1} of {gameState.activeProject.stages.length}
             </div>
-            <div className="text-xs text-slate-300 bg-slate-950/60 p-2 rounded border-l-2 border-cyan-400">
+            <div className="text-xs text-stone-300 bg-stone-950/60 p-2 rounded border-l-2 border-teal-400">
               The session can keep progressing through the existing studio workflow. Optional interventions should add upside rather than block completion.
             </div>
 
-            <div className="mt-2.5 pt-2 border-t border-cyan-500/20">
-              <div className="text-[11px] text-cyan-300/80 mb-1 font-semibold">On the session:</div>
+            <div className="mt-2.5 pt-2 border-t border-teal-500/20">
+              <div className="text-[11px] text-teal-300/80 mb-1 font-semibold">On the session:</div>
               {gameState.hiredStaff
                 .filter(s => s.assignedProjectId === gameState.activeProject?.id)
                 .map(staff => (
-                  <div key={staff.id} className="text-xs text-slate-200">
+                  <div key={staff.id} className="text-xs text-stone-200">
                     👤 {staff.name} ({staff.role})
                   </div>
                 ))}
               {gameState.hiredStaff.filter(s => s.assignedProjectId === gameState.activeProject?.id).length === 0 && (
-                <div className="text-xs text-slate-400">You are handling this one yourself.</div>
+                <div className="text-xs text-stone-400">You are handling this one yourself.</div>
               )}
             </div>
           </GamePanel>
@@ -177,8 +177,8 @@ export const ProjectList: React.FC<ProjectListProps> = ({
         {gameState.availableProjects.length === 0 && (
           <div className="text-center py-10 px-4">
             <div className="text-2xl mb-2">📭</div>
-            <div className="text-sm text-gray-300 font-medium">No enquiries waiting</div>
-            <div className="text-xs text-gray-500 mt-1">
+            <div className="text-sm text-stone-300 font-medium">No enquiries waiting</div>
+            <div className="text-xs text-stone-500 mt-1">
               Finish work, build reputation, or check the inbox for another lead.
             </div>
           </div>
@@ -205,7 +205,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                 <div className="flex justify-between items-start gap-3 mb-3">
                   <div>
                     <h3 className="font-bold text-white text-base">{project.title}</h3>
-                    <div className="text-xs text-slate-400 mt-0.5">
+                    <div className="text-xs text-stone-400 mt-0.5">
                       {project.clientName || project.clientType} · {project.genre}
                     </div>
                     {project.clientId && gameState.clientRelationships?.[project.clientId] && (
@@ -222,20 +222,20 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 mb-3">
-                  <div className="rounded border border-slate-700/60 bg-slate-950/70 p-2 shadow-inner">
-                    <div className="text-[10px] uppercase font-bold tracking-wide text-slate-400">Fee</div>
+                  <div className="rounded border border-stone-700/60 bg-stone-950/70 p-2 shadow-inner">
+                    <div className="text-[10px] uppercase font-bold tracking-wide text-stone-400">Fee</div>
                     <div className="text-sm text-emerald-400 font-black">
                       <MotionNumber value={project.payoutBase} prefix="$" />
                     </div>
                   </div>
-                  <div className="rounded border border-slate-700/60 bg-slate-950/70 p-2 shadow-inner">
-                    <div className="text-[10px] uppercase font-bold tracking-wide text-slate-400">Rep</div>
-                    <div className="text-sm text-sky-400 font-black">
+                  <div className="rounded border border-stone-700/60 bg-stone-950/70 p-2 shadow-inner">
+                    <div className="text-[10px] uppercase font-bold tracking-wide text-stone-400">Rep</div>
+                    <div className="text-sm text-amber-300 font-black">
                       <MotionNumber value={project.repGainBase} prefix="+" />
                     </div>
                   </div>
-                  <div className="rounded border border-slate-700/60 bg-slate-950/70 p-2 shadow-inner">
-                    <div className="text-[10px] uppercase font-bold tracking-wide text-slate-400">Time</div>
+                  <div className="rounded border border-stone-700/60 bg-stone-950/70 p-2 shadow-inner">
+                    <div className="text-[10px] uppercase font-bold tracking-wide text-stone-400">Time</div>
                     <div className="text-sm text-amber-300 font-black">
                       <MotionNumber value={project.durationDaysTotal} suffix="d" />
                     </div>
@@ -243,11 +243,11 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                 </div>
 
                 <div className="flex items-center justify-between text-xs mb-2">
-                  <span className="text-slate-400">Session difficulty</span>
+                  <span className="text-stone-400">Session difficulty</span>
                   <span className="text-amber-300 font-bold">{project.difficulty}/10</span>
                 </div>
 
-                <div className="text-xs text-slate-300 bg-slate-950/60 border border-slate-800 rounded p-2.5 leading-relaxed">
+                <div className="text-xs text-stone-300 bg-stone-950/60 border border-stone-800 rounded p-2.5 leading-relaxed">
                   {getOpportunityNote(project)}
                 </div>
 
@@ -260,7 +260,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                       isBookingThis
                         ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
                         : gameState.activeProject
-                          ? 'bg-slate-800 text-slate-400 cursor-not-allowed'
+                          ? 'bg-stone-800 text-stone-400 cursor-not-allowed'
                           : 'bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white shadow'
                     }`}
                   >
@@ -280,7 +280,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                     <MotionButton
                       onClick={() => handleDeclineEnquiry(project.id)}
                       disabled={!!bookingId || !!decliningId}
-                      className="p-2 rounded-lg text-slate-400 hover:text-red-300 hover:bg-red-950/40 border border-slate-700/60 transition-colors"
+                      className="p-2 rounded-lg text-stone-400 hover:text-red-300 hover:bg-red-950/40 border border-stone-700/60 transition-colors"
                       title="Decline enquiry"
                       aria-label={`Decline enquiry from ${project.title}`}
                     >

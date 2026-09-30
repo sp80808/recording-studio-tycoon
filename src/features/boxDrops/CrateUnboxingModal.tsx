@@ -57,7 +57,7 @@ export const CrateUnboxingModal: React.FC<CrateUnboxingModalProps> = ({
           toast({
             title: 'Hardware Secured',
             description: messages[action] || messages.claim,
-            className: 'bg-slate-900 border-slate-700 text-white',
+            className: 'bg-stone-900 border-stone-700 text-white',
           });
         }
 

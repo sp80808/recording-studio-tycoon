@@ -75,38 +75,38 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onComplete
 
   return (
     <aside className="first-session-guide" aria-label="First session guide" data-toast-host="coach">
-      <Card className="overflow-hidden border-amber-400/40 bg-gray-950/95 text-white shadow-2xl backdrop-blur">
-        <div className="flex items-center gap-3 border-b border-gray-700/80 px-3 py-2">
+      <Card className="rst-surface overflow-hidden !border-[var(--rst-brass-line)] text-white backdrop-blur animate-rst-rise">
+        <div className="flex items-center gap-2.5 border-b border-[var(--rst-line)] px-3 py-2.5">
           <div className="grid h-9 w-9 place-items-center rounded-full bg-amber-400/15 text-amber-300">
             <step.Icon size={19} aria-hidden="true" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300">First session</p>
-            <p className="truncate text-sm font-semibold">{step.title}</p>
+            <p className="rst-kicker whitespace-nowrap !text-[10px]">First session</p>
+            <p className="line-clamp-2 text-sm font-semibold leading-snug">{step.title}</p>
           </div>
-          <Button variant="ghost" size="icon" className="h-11 w-11 text-gray-400 hover:text-white" onClick={() => setCollapsed(value => !value)} aria-label={collapsed ? 'Expand guide' : 'Collapse guide'}>
+          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-stone-400 hover:text-white" onClick={() => setCollapsed(value => !value)} aria-label={collapsed ? 'Expand guide' : 'Collapse guide'}>
             <ChevronDown size={18} className={`transition-transform ${collapsed ? '' : 'rotate-180'}`} />
           </Button>
-          <Button variant="ghost" size="icon" className="h-11 w-11 text-gray-400 hover:text-white" onClick={finish} aria-label="Dismiss first session guide">
+          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-stone-400 hover:text-white" onClick={finish} aria-label="Dismiss first session guide">
             <X size={18} />
           </Button>
         </div>
 
         {!collapsed && (
           <div className="space-y-2 px-4 pb-3 pt-2">
-            <p className="text-sm leading-relaxed text-gray-300">{step.body}</p>
-            <div className="flex items-center gap-2 rounded-lg border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-sm font-medium text-amber-100">
+            <p className="text-sm leading-relaxed text-stone-300">{step.body}</p>
+            <div className="flex items-center gap-2 rounded-lg border border-[var(--rst-brass-line)] bg-[rgba(230,184,102,0.08)] px-3 py-2 text-sm font-medium text-[var(--rst-brass-200)]">
               {step.id === 'reinvest' && <Users size={16} aria-hidden="true" />}
               {step.action}
             </div>
             <ol className="flex gap-2" aria-label={`Guide progress: step ${currentIndex + 1} of ${STEPS.length}`}>
               {STEPS.map((item, index) => (
-                <li key={item.id} className={`h-1.5 flex-1 rounded-full ${index < currentIndex ? 'bg-emerald-400' : index === currentIndex ? 'bg-amber-300' : 'bg-gray-700'}`}>
+                <li key={item.id} className={`h-1.5 flex-1 rounded-full ${index < currentIndex ? 'bg-emerald-400' : index === currentIndex ? 'bg-amber-300' : 'bg-stone-700'}`}>
                   <span className="sr-only">{index < currentIndex ? 'Complete' : index === currentIndex ? 'Current' : 'Upcoming'}: {item.title}</span>
                 </li>
               ))}
             </ol>
-            <p className="flex items-center gap-1.5 text-xs text-gray-500"><Check size={13} />Progress updates from what you do in the studio.</p>
+            <p className="flex items-center gap-1.5 text-xs text-stone-500"><Check size={13} />Progress updates from what you do in the studio.</p>
           </div>
         )}
       </Card>

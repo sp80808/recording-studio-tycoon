@@ -131,7 +131,7 @@ const GearMaintenanceGame: React.FC<GearMaintenanceGameProps> = ({ equipment, on
   }
 
   return (
-    <Card className="w-full max-w-lg mx-auto bg-gray-800 text-white border-gray-700">
+    <Card className="w-full max-w-lg mx-auto bg-stone-800 text-white border-stone-700">
       <MinigameChrome
         title={`🔧 Gear Maintenance: ${equipment.name}`}
         score={minigameState.successfulAdjustmentsLastAttempt * 25}
@@ -150,8 +150,8 @@ const GearMaintenanceGame: React.FC<GearMaintenanceGameProps> = ({ equipment, on
           )}
           
           {minigameState.dials.map((dialValue, index) => (
-            <div key={index} className="space-y-2 bg-gray-900/60 p-3 rounded-lg border border-gray-700">
-              <div className="flex justify-between text-xs font-semibold text-gray-300">
+            <div key={index} className="space-y-2 bg-stone-900/60 p-3 rounded-lg border border-stone-700">
+              <div className="flex justify-between text-xs font-semibold text-stone-300">
                 <span>Dial {index + 1}</span>
                 <span className="font-mono">Current: {dialValue} / Target: ~{minigameState.targetValues[index]}</span>
               </div>
@@ -159,13 +159,13 @@ const GearMaintenanceGame: React.FC<GearMaintenanceGameProps> = ({ equipment, on
                 <Button
                   size="sm"
                   variant="outline"
-                  className="w-8 h-8 text-gray-200 border-gray-600 hover:bg-gray-700"
+                  className="w-8 h-8 text-stone-200 border-stone-600 hover:bg-stone-700"
                   onClick={() => handleDialChange(index, 'down')}
                   disabled={minigameState.attemptsLeft <= 0}
                 >
                   -
                 </Button>
-                <div className="w-full h-7 bg-gray-700 rounded overflow-hidden relative shadow-inner">
+                <div className="w-full h-7 bg-stone-700 rounded overflow-hidden relative shadow-inner">
                   <motion.div
                     className={`h-full ${getDialColor(dialValue, minigameState.targetValues[index])}`}
                     initial={{ width: `${dialValue}%` }}
@@ -185,7 +185,7 @@ const GearMaintenanceGame: React.FC<GearMaintenanceGameProps> = ({ equipment, on
                 <Button
                   size="sm"
                   variant="outline"
-                  className="w-8 h-8 text-gray-200 border-gray-600 hover:bg-gray-700"
+                  className="w-8 h-8 text-stone-200 border-stone-600 hover:bg-stone-700"
                   onClick={() => handleDialChange(index, 'up')}
                   disabled={minigameState.attemptsLeft <= 0}
                 >
@@ -201,7 +201,7 @@ const GearMaintenanceGame: React.FC<GearMaintenanceGameProps> = ({ equipment, on
           Close
         </KenneyButton>
         {minigameState.attemptsLeft > 0 ? (
-          <KenneyButton variant="blue" onClick={handleSubmitAttempt}>
+          <KenneyButton variant="yellow" onClick={handleSubmitAttempt}>
             Submit Calibration
           </KenneyButton>
         ) : (

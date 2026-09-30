@@ -27,13 +27,13 @@ export const MinigameTutorialPopup: React.FC<MinigameTutorialPopupProps> = ({
       onClick={onClose} // Close on backdrop click
     >
       <Card 
-        className="w-full max-w-lg bg-gray-800 border-purple-500 shadow-2xl text-white relative"
+        className="w-full max-w-lg bg-stone-800 border-purple-500 shadow-2xl text-white relative"
         onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside the card
       >
         <Button 
             variant="ghost" 
             size="icon" 
-            className="absolute top-3 right-3 text-gray-400 hover:text-white"
+            className="absolute top-3 right-3 text-stone-400 hover:text-white"
             onClick={onClose}
             aria-label="Close tutorial"
         >
@@ -44,15 +44,15 @@ export const MinigameTutorialPopup: React.FC<MinigameTutorialPopupProps> = ({
             <span role="img" aria-label="controller icon" className="mr-2 text-3xl">🎮</span> 
             {title}
           </CardTitle>
-          <CardDescription className="text-gray-300">
+          <CardDescription className="text-stone-300">
             Here's a quick guide before you start!
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {instructions.map((item, index) => (
-            <div key={index} className="flex items-start space-x-3 p-3 bg-gray-700/50 rounded-md">
+            <div key={index} className="flex items-start space-x-3 p-3 bg-stone-700/50 rounded-md">
               <span className="text-2xl pt-0.5">{item.icon}</span>
-              <p className="text-gray-200 text-sm leading-relaxed">{item.text}</p>
+              <p className="text-stone-200 text-sm leading-relaxed">{item.text}</p>
             </div>
           ))}
           <Button 

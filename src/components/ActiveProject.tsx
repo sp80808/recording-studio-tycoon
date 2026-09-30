@@ -101,7 +101,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
         title: '⚡ Not Enough Energy',
         description: 'Overdrive burns 2 energy — advance the day to recharge.',
         variant: 'destructive',
-        className: 'bg-gray-800 border-gray-600 text-white',
+        className: 'bg-stone-800 border-stone-600 text-white',
       });
       return;
     }
@@ -136,7 +136,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     toast({
       title: `🏦 ${result.label}`,
       description: `+$${result.cash} cash · +${result.xp} XP${result.keepsCombo ? ' · ⚡ streak kept!' : ''}`,
-      className: 'bg-gray-800 border-gray-600 text-white',
+      className: 'bg-stone-800 border-stone-600 text-white',
       duration: 2600,
     });
   };
@@ -151,7 +151,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       toast({
         title: "🎯 Optional Studio Intervention",
         description: autoTriggeredMinigame.reason,
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         duration: 4500
       });
 
@@ -213,22 +213,22 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     return (
       <div className="flex-1 space-y-4">
         {/* Studio Header */}
-        <div className="bg-gradient-to-r from-purple-900/30 to-blue-900/30 border border-purple-500/30 rounded-lg p-3">
+        <div className="bg-gradient-to-r from-purple-900/30 to-stone-900/30 border border-purple-500/30 rounded-lg p-3">
           <div className="flex items-center gap-2">
             <span className="text-2xl">🎵</span>
             <div>
               <h2 className="text-lg font-bold text-white">Studio Workspace</h2>
-              <p className="text-sm text-gray-300">Work on your projects here</p>
+              <p className="text-sm text-stone-300">Work on your projects here</p>
             </div>
           </div>
         </div>
         
         <GamePanel className="flex-1 p-6 backdrop-blur-sm">
-          <div className="text-center text-slate-400 animate-fade-in">
+          <div className="text-center text-stone-400 animate-fade-in">
             <div className="text-6xl mb-4 animate-pulse">🎵</div>
             <h3 className="text-xl font-bold mb-2 text-white">Studio Ready</h3>
-            <p className="mb-4 text-slate-300">Choose an artist enquiry, then bring their session into the room.</p>
-            <div className="bg-slate-950/60 border border-slate-700/80 rounded-lg p-4 text-sm text-sky-300 shadow-inner">
+            <p className="mb-4 text-stone-300">Choose an artist enquiry, then bring their session into the room.</p>
+            <div className="bg-stone-950/60 border border-stone-700/80 rounded-lg p-4 text-sm text-amber-200 shadow-inner">
               <p className="font-semibold mb-2">📱 Your next move:</p>
               <p>1. Browse the Artist Enquiries board</p>
               <p>2. Book a session that fits your room and crew</p>
@@ -328,7 +328,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       toast({
         title: "👥 Intervention Delegated",
         description: `${staff.name} handled it · ${fit.reasons.slice(0, 3).join(' · ')} · +${creativityBonus} C / +${technicalBonus} T`,
-        className: "bg-gray-800 border-gray-600 text-white",
+        className: "bg-stone-800 border-stone-600 text-white",
         duration: 3500
       });
     }, 180);
@@ -385,7 +385,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     toast({
       title: "🎉 Intervention Complete",
       description: `+${cappedCreativity} creativity, +${cappedTechnical} technical, +${cappedXp} XP`,
-      className: "bg-gray-800 border-gray-600 text-white",
+      className: "bg-stone-800 border-stone-600 text-white",
       duration: 3000
     });
   };
@@ -453,7 +453,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     toast({
       title: verdict.grade === 'Gold' ? '🔥 IN THE POCKET! (Gold Take)' : verdict.grade === 'Silver' ? '✨ TIGHT TAKE! (Silver Take)' : '🎵 SOLID TAKE',
       description: `${verdict.label}: Advanced stage with ${energyCost} energy spent.`,
-      className: verdict.grade === 'Gold' ? 'bg-amber-950 border-amber-500 text-amber-200' : 'bg-gray-800 border-gray-600 text-white',
+      className: verdict.grade === 'Gold' ? 'bg-amber-950 border-amber-500 text-amber-200' : 'bg-stone-800 border-stone-600 text-white',
       duration: 3000
     });
   };
@@ -520,15 +520,15 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       {/* Studio Workspace Card: Scaled DAW / Console Layout */}
       <div 
         ref={containerRef} 
-        className="flex-1 min-h-0 flex flex-col w-full overflow-hidden bg-slate-950 border border-slate-700/80 rounded-[2px] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_12px_40px_rgba(0,0,0,0.85)] relative"
+        className="flex-1 min-h-0 flex flex-col w-full overflow-hidden bg-stone-950 border border-stone-700/80 rounded-[2px] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_12px_40px_rgba(0,0,0,0.85)] relative"
       >
-        <div className="absolute top-1 left-1 w-2 h-2 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-[8px] text-slate-400 font-mono shadow-inner">+</div>
-        <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-[8px] text-slate-400 font-mono shadow-inner">+</div>
-        <div className="absolute bottom-1 left-1 w-2 h-2 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-[8px] text-slate-400 font-mono shadow-inner">+</div>
-        <div className="absolute bottom-1 right-1 w-2 h-2 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-[8px] text-slate-400 font-mono shadow-inner">+</div>
+        <div className="absolute top-1 left-1 w-2 h-2 rounded-full bg-stone-700 border border-stone-600 flex items-center justify-center text-[8px] text-stone-400 font-mono shadow-inner">+</div>
+        <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-stone-700 border border-stone-600 flex items-center justify-center text-[8px] text-stone-400 font-mono shadow-inner">+</div>
+        <div className="absolute bottom-1 left-1 w-2 h-2 rounded-full bg-stone-700 border border-stone-600 flex items-center justify-center text-[8px] text-stone-400 font-mono shadow-inner">+</div>
+        <div className="absolute bottom-1 right-1 w-2 h-2 rounded-full bg-stone-700 border border-stone-600 flex items-center justify-center text-[8px] text-stone-400 font-mono shadow-inner">+</div>
 
         {/* Pinned Top Bar: Project Meta & LED telemetry */}
-        <div className="shrink-0 mb-2.5 bg-gradient-to-r from-slate-950 via-indigo-950/70 to-slate-950 border border-slate-800/90 rounded-[2px] p-2.5 shadow-inner relative z-10">
+        <div className="shrink-0 mb-2.5 bg-gradient-to-r from-stone-950 via-violet-950/70 to-stone-950 border border-stone-800/90 rounded-[2px] p-2.5 shadow-inner relative z-10">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
@@ -539,7 +539,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   {project.title}
                 </h3>
               </div>
-              <div className="text-xs text-slate-400 flex flex-wrap items-center gap-2 mt-0.5">
+              <div className="text-xs text-stone-400 flex flex-wrap items-center gap-2 mt-0.5">
                 <span>{project.genre} · {project.clientName || project.clientType}</span>
                 <span className="text-emerald-400 font-semibold">💰 ${Math.round(project.payoutBase)}</span>
                 <span className="text-amber-300">⭐ Diff {project.difficulty}</span>
@@ -549,7 +549,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             <div className="flex items-center gap-3 text-xs tabular-nums">
               <div className="text-right">
                 <div className="text-[11px] text-amber-300 font-semibold">{project.durationDaysTotal}d duration</div>
-                <div className="text-[10px] text-slate-400">{Math.round(project.workSessionCount || 0)} sessions</div>
+                <div className="text-[10px] text-stone-400">{Math.round(project.workSessionCount || 0)} sessions</div>
               </div>
               <button
                 onClick={() => setShowDutiesClipboard(true)}
@@ -562,11 +562,11 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   {Object.values(gameState.choreState?.chores || {}).filter(c => c.completed).length}/5
                 </span>
               </button>
-              <div className="flex items-center gap-2 bg-slate-900/90 px-2 py-1 rounded border border-slate-700/70">
-                <div id="creativity-points" data-creativity-target className="text-sky-400 font-bold flex items-center gap-1 text-xs">
+              <div className="flex items-center gap-2 bg-stone-900/90 px-2 py-1 rounded border border-stone-700/70">
+                <div id="creativity-points" data-creativity-target className="text-amber-300 font-bold flex items-center gap-1 text-xs">
                   <span>🎨</span> {Math.round(project.accumulatedCPoints || 0)}
                 </div>
-                <div className="w-px h-3 bg-slate-700" />
+                <div className="w-px h-3 bg-stone-700" />
                 <div id="technical-points" data-technical-target className="text-emerald-400 font-bold flex items-center gap-1 text-xs">
                   <span>⚙️</span> {Math.round(project.accumulatedTPoints || 0)}
                 </div>
@@ -577,8 +577,8 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
         {/* Active Session Hardware & Maintenance Buff Chips */}
         {gameState.choreState?.activeBuffs && gameState.choreState.activeBuffs.length > 0 && (
-          <div className="shrink-0 mb-2 px-2.5 py-1.5 bg-slate-900/90 border border-slate-700/60 rounded-[2px] flex items-center gap-2 overflow-x-auto select-none shadow-inner">
-            <div className="text-[10px] font-mono text-slate-400 uppercase tracking-widest flex items-center gap-1 shrink-0">
+          <div className="shrink-0 mb-2 px-2.5 py-1.5 bg-stone-900/90 border border-stone-700/60 rounded-[2px] flex items-center gap-2 overflow-x-auto select-none shadow-inner">
+            <div className="text-[10px] font-mono text-stone-400 uppercase tracking-widest flex items-center gap-1 shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span>ACTIVE BUFFS:</span>
             </div>
@@ -588,9 +588,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   timing_bonus: { icon: '🧲', label: `+${Math.round(buff.magnitude * 100)}% Pocket Sweet Spot`, bg: 'bg-amber-950/70 border-amber-500/50 text-amber-300' },
                   tech_bonus: { icon: '🎛️', label: `+${Math.round(buff.magnitude * 100)}% Technical Gain`, bg: 'bg-emerald-950/70 border-emerald-500/50 text-emerald-300' },
                   creativity_bonus: { icon: '✨', label: `+${Math.round(buff.magnitude * 100)}% Creativity Gain`, bg: 'bg-purple-950/70 border-purple-500/50 text-purple-300' },
-                  energy_saver: { icon: '⚡', label: `Overdrive -${buff.magnitude}⚡ Cost`, bg: 'bg-sky-950/70 border-sky-500/50 text-sky-300' },
+                  energy_saver: { icon: '⚡', label: `Overdrive -${buff.magnitude}⚡ Cost`, bg: 'bg-stone-950/70 border-amber-500/50 text-amber-200' },
                   vibe_boost: { icon: '☕', label: `+${Math.round(buff.magnitude * 100)}% Client Vibe`, bg: 'bg-rose-950/70 border-rose-500/50 text-rose-300' },
-                }[buff.buffType] || { icon: '🔧', label: buff.buffType, bg: 'bg-slate-800 border-slate-600 text-slate-300' };
+                }[buff.buffType] || { icon: '🔧', label: buff.buffType, bg: 'bg-stone-800 border-stone-600 text-stone-300' };
 
                 return (
                   <span
@@ -621,11 +621,11 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
           {/* Optional intervention opportunity */}
           {autoTriggeredMinigame && (
-            <div className="p-3 bg-gradient-to-r from-purple-900/50 to-blue-900/50 border border-purple-500/70 rounded-lg animate-scale-in">
+            <div className="p-3 bg-gradient-to-r from-purple-900/50 to-stone-900/50 border border-purple-500/70 rounded-lg animate-scale-in">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h4 className="text-yellow-300 font-semibold text-xs mb-0.5">🎯 Optional Studio Intervention</h4>
-                  <p className="text-gray-300 text-xs">{autoTriggeredMinigame.reason}</p>
+                  <p className="text-stone-300 text-xs">{autoTriggeredMinigame.reason}</p>
                 </div>
                 <div className="text-xl">🎮</div>
               </div>
@@ -639,14 +639,14 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 <MotionButton
                   onClick={handleDelegateIntervention}
                   disabled={!bestDelegate}
-                  className="h-7 text-xs border border-blue-500/50 text-blue-200 hover:bg-blue-900/30 rounded"
+                  className="h-7 text-xs border border-amber-500/50 text-stone-200 hover:bg-stone-900/30 rounded"
                   title={bestDelegate ? bestDelegate.fit.reasons.join(' · ') : 'No available staff'}
                 >
                   {bestDelegate ? `Delegate: ${bestDelegate.staff.name.split(' ')[0]}` : 'Delegate'}
                 </MotionButton>
                 <MotionButton
                   onClick={handleSkipIntervention}
-                  className="h-7 text-xs text-gray-300 hover:bg-slate-800/50 rounded"
+                  className="h-7 text-xs text-stone-300 hover:bg-stone-800/50 rounded"
                 >
                   Skip
                 </MotionButton>
@@ -659,7 +659,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             <div className="p-3 bg-gradient-to-r from-green-900/50 to-emerald-900/50 border border-green-500/70 rounded-lg animate-scale-in flex items-center justify-between">
               <div>
                 <h4 className="text-green-400 font-semibold text-xs">✅ Stage Complete!</h4>
-                <p className="text-gray-300 text-xs">
+                <p className="text-stone-300 text-xs">
                   {currentStage.stageName} finished. Work next session to advance.
                 </p>
               </div>
@@ -669,7 +669,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
           {/* Active Studio Synergies (Kairosoft Combos) */}
           {activeSynergies.length > 0 && (
-            <div className="flex flex-wrap items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-950/40 via-yellow-950/20 to-slate-900/60 border border-amber-500/30">
+            <div className="flex flex-wrap items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-950/40 via-yellow-950/20 to-stone-900/60 border border-amber-500/30">
               <span className="text-[10px] uppercase font-bold tracking-wider text-amber-300 flex items-center gap-1 shrink-0">
                 <span>✨</span>
                 <span>Active Combos ({activeSynergies.length}):</span>
@@ -679,21 +679,21 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           )}
 
           {/* Dual Progress Meters */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-[2px] p-2.5">
+          <div className="bg-stone-900/90 border border-stone-800 rounded-[2px] p-2.5">
             <div className="flex justify-between items-center text-xs mb-1.5">
               <span className="font-semibold text-white flex items-center gap-1.5">
-                <span className="text-slate-400">Stage {project.currentStageIndex + 1}/{project.stages.length}:</span>
-                <span className="text-sky-300 font-bold">{currentStage?.stageName}</span>
+                <span className="text-stone-400">Stage {project.currentStageIndex + 1}/{project.stages.length}:</span>
+                <span className="text-amber-200 font-bold">{currentStage?.stageName}</span>
                 {focusEffectiveness.effectiveness > 0.8 && (
                   <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
                     🚀 Optimized
                   </span>
                 )}
               </span>
-              <span className="text-slate-400 text-xs tabular-nums flex items-center gap-1.5">
+              <span className="text-stone-400 text-xs tabular-nums flex items-center gap-1.5">
                 <span>{Math.round(currentStage?.workUnitsCompleted || 0)} / {currentStage?.workUnitsBase || 0} units</span>
                 {focusEffectiveness.effectiveness > 0.7 && (
-                  <span className="text-[10px] px-1 rounded bg-sky-500/20 text-sky-300">⚡ Efficient</span>
+                  <span className="text-[10px] px-1 rounded bg-amber-500/20 text-amber-200">⚡ Efficient</span>
                 )}
               </span>
             </div>
@@ -703,22 +703,22 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
               aria-label={`${currentStage?.stageName || 'Current stage'} progress`}
             />
 
-            <div className="flex justify-between items-center text-[11px] text-slate-400 mt-1">
+            <div className="flex justify-between items-center text-[11px] text-stone-400 mt-1">
               <span>Overall Track Progress</span>
-              <span className="font-bold text-slate-300 tabular-nums">{Math.round(overallProgress)}%</span>
+              <span className="font-bold text-stone-300 tabular-nums">{Math.round(overallProgress)}%</span>
             </div>
             <Progress 
               value={overallProgress} 
-              className="h-1.5 bg-slate-800 progress-bar transition-all duration-300"
+              className="h-1.5 bg-stone-800 progress-bar transition-all duration-300"
               aria-label="Overall project progress"
             />
           </div>
 
           {/* Focus Allocation Console Module */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-[2px] p-2.5 space-y-2">
+          <div className="bg-stone-900/90 border border-stone-800 rounded-[2px] p-2.5 space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                <span className="text-xs font-bold uppercase tracking-wider text-stone-300">
                   🎛️ Session Focus Allocation
                 </span>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
@@ -751,8 +751,8 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 variant="outline"
                 className={`text-[11px] h-7 px-2.5 border transition-colors ${
                   canUseOptimalFocusButton
-                    ? 'bg-indigo-900/40 border-indigo-500/50 text-indigo-200 hover:bg-indigo-800/60'
-                    : 'bg-slate-800/40 border-slate-700 text-slate-500 cursor-not-allowed'
+                    ? 'bg-violet-900/40 border-violet-500/50 text-violet-200 hover:bg-violet-800/60'
+                    : 'bg-stone-800/40 border-stone-700 text-stone-500 cursor-not-allowed'
                 }`}
                 title={canUseOptimalFocusButton ? 'Auto-align to stage target' : 'Requires Level 5+ or Management Level 3+'}
               >
@@ -763,9 +763,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             {/* 3-Channel Mixing Strips */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {/* Channel 1: Performance */}
-              <div className="bg-slate-900/80 border border-slate-800/90 p-2 rounded-md">
+              <div className="bg-stone-900/80 border border-stone-800/90 p-2 rounded-md">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-slate-200 truncate">
+                  <span className="text-xs font-semibold text-stone-200 truncate">
                     {stageFocusLabels.performance.label}
                   </span>
                   <span className={`text-[11px] font-mono font-bold px-1.5 py-0.2 rounded ${
@@ -791,18 +791,18 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                         : 'slider-default'
                   }`}
                 />
-                <div className="flex justify-between items-center text-[10px] text-slate-400 mt-1">
+                <div className="flex justify-between items-center text-[10px] text-stone-400 mt-1">
                   <span>Target: {Math.max(0, optimalFocus.performance - 10)}–{Math.min(100, optimalFocus.performance + 10)}%</span>
-                  <span className={Math.abs(projectFocus.performance - optimalFocus.performance) <= 10 ? 'text-emerald-400 font-semibold' : 'text-slate-500'}>
+                  <span className={Math.abs(projectFocus.performance - optimalFocus.performance) <= 10 ? 'text-emerald-400 font-semibold' : 'text-stone-500'}>
                     {Math.abs(projectFocus.performance - optimalFocus.performance) <= 10 ? '✓ Optimal' : 'Adjust'}
                   </span>
                 </div>
               </div>
 
               {/* Channel 2: Sound Capture */}
-              <div className="bg-slate-900/80 border border-slate-800/90 p-2 rounded-md">
+              <div className="bg-stone-900/80 border border-stone-800/90 p-2 rounded-md">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-slate-200 truncate">
+                  <span className="text-xs font-semibold text-stone-200 truncate">
                     {stageFocusLabels.soundCapture.label}
                   </span>
                   <span className={`text-[11px] font-mono font-bold px-1.5 py-0.2 rounded ${
@@ -828,18 +828,18 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                         : 'slider-default'
                   }`}
                 />
-                <div className="flex justify-between items-center text-[10px] text-slate-400 mt-1">
+                <div className="flex justify-between items-center text-[10px] text-stone-400 mt-1">
                   <span>Target: {Math.max(0, optimalFocus.soundCapture - 10)}–{Math.min(100, optimalFocus.soundCapture + 10)}%</span>
-                  <span className={Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 10 ? 'text-emerald-400 font-semibold' : 'text-slate-500'}>
+                  <span className={Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 10 ? 'text-emerald-400 font-semibold' : 'text-stone-500'}>
                     {Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 10 ? '✓ Optimal' : 'Adjust'}
                   </span>
                 </div>
               </div>
 
               {/* Channel 3: Layering */}
-              <div className="bg-slate-900/80 border border-slate-800/90 p-2 rounded-md">
+              <div className="bg-stone-900/80 border border-stone-800/90 p-2 rounded-md">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-slate-200 truncate">
+                  <span className="text-xs font-semibold text-stone-200 truncate">
                     {stageFocusLabels.layering.label}
                   </span>
                   <span className={`text-[11px] font-mono font-bold px-1.5 py-0.2 rounded ${
@@ -865,9 +865,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                         : 'slider-default'
                   }`}
                 />
-                <div className="flex justify-between items-center text-[10px] text-slate-400 mt-1">
+                <div className="flex justify-between items-center text-[10px] text-stone-400 mt-1">
                   <span>Target: {Math.max(0, optimalFocus.layering - 10)}–{Math.min(100, optimalFocus.layering + 10)}%</span>
-                  <span className={Math.abs(projectFocus.layering - optimalFocus.layering) <= 10 ? 'text-emerald-400 font-semibold' : 'text-slate-500'}>
+                  <span className={Math.abs(projectFocus.layering - optimalFocus.layering) <= 10 ? 'text-emerald-400 font-semibold' : 'text-stone-500'}>
                     {Math.abs(projectFocus.layering - optimalFocus.layering) <= 10 ? '✓ Optimal' : 'Adjust'}
                   </span>
                 </div>
@@ -875,16 +875,16 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             </div>
 
             {/* Stage Guidance Note */}
-            <div className="text-[11px] text-slate-400 bg-slate-900/60 px-2.5 py-1.5 rounded border border-slate-800 flex items-center gap-1.5">
-              <span className="text-sky-400">💡</span>
-              <span className="text-slate-300 font-medium">{currentStage.stageName}:</span>
+            <div className="text-[11px] text-stone-400 bg-stone-900/60 px-2.5 py-1.5 rounded border border-stone-800 flex items-center gap-1.5">
+              <span className="text-amber-300">💡</span>
+              <span className="text-stone-300 font-medium">{currentStage.stageName}:</span>
               <span className="truncate">{optimalFocus.reasoning}</span>
             </div>
           </div>
         </div>
 
         {/* Industrial Console Transport Dock */}
-        <div className="shrink-0 pt-2.5 mt-2 border-t border-slate-800 bg-slate-950/95 relative z-10">
+        <div className="shrink-0 pt-2.5 mt-2 border-t border-stone-800 bg-stone-950/95 relative z-10">
           {takeState === 'tracking' ? (
             <div className="space-y-2">
               <PocketMeter
@@ -903,7 +903,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 )}
                 {goldStreak > 1 && (
                   <MotionReveal direction="up" distance={6}>
-                    <div className="px-2.5 py-1 text-xs font-black tracking-wider text-slate-950 bg-gradient-to-r from-amber-400 to-yellow-300 border border-amber-200 rounded-[2px] shadow-[0_0_12px_rgba(251,191,36,0.8)] flex items-center gap-1 shrink-0">
+                    <div className="px-2.5 py-1 text-xs font-black tracking-wider text-stone-950 bg-gradient-to-r from-amber-400 to-yellow-300 border border-amber-200 rounded-[2px] shadow-[0_0_12px_rgba(251,191,36,0.8)] flex items-center gap-1 shrink-0">
                       <span>🔥</span>
                       <span>{goldStreak}X GOLD STREAK!</span>
                     </div>
@@ -932,7 +932,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   className={`h-9 text-xs font-mono font-bold uppercase rounded-[2px] flex-1 border transition-all flex items-center justify-center gap-1.5 ${
                     overdriveArmed
                       ? 'bg-orange-600 border-orange-400 text-white shadow-[0_0_10px_rgba(234,88,12,0.6)]'
-                      : 'bg-slate-900 border-slate-700 text-orange-400 hover:bg-slate-800'
+                      : 'bg-stone-900 border-stone-700 text-orange-400 hover:bg-stone-800'
                   }`}
                 >
                   {gamepad.isConnected && gamepad.lastInputType === 'gamepad' && (
@@ -955,7 +955,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                     ? 'bg-emerald-600 border-emerald-400 text-white'
                     : availableEnergy > 0
                     ? 'bg-red-600 hover:bg-red-500 border-red-400 text-white shadow-[0_0_12px_rgba(220,38,38,0.5)] active:scale-[0.99]'
-                    : 'bg-slate-900 border-slate-800 text-slate-500 cursor-not-allowed'
+                    : 'bg-stone-900 border-stone-800 text-stone-500 cursor-not-allowed'
                 }`}
               >
                 {isProjectComplete ? (

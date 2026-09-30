@@ -39,12 +39,12 @@ export const StudioAmbientBackdrop: React.FC<StudioAmbientBackdropProps> = ({
           {isTabVisible && (
             <div className="absolute top-10 right-14 flex items-center gap-6 opacity-25">
               <div className="ambient-reel-spinning w-24 h-24 rounded-full border-2 border-amber-300/40 flex items-center justify-center relative">
-                <div className="w-8 h-8 rounded-full border border-amber-300/60 bg-slate-900" />
+                <div className="w-8 h-8 rounded-full border border-amber-300/60 bg-stone-900" />
                 <div className="absolute w-full h-0.5 bg-amber-300/30" />
                 <div className="absolute h-full w-0.5 bg-amber-300/30" />
               </div>
               <div className="ambient-reel-spinning w-24 h-24 rounded-full border-2 border-amber-300/40 flex items-center justify-center relative" style={{ animationDirection: 'reverse' }}>
-                <div className="w-8 h-8 rounded-full border border-amber-300/60 bg-slate-900" />
+                <div className="w-8 h-8 rounded-full border border-amber-300/60 bg-stone-900" />
                 <div className="absolute w-full h-0.5 bg-amber-300/30" />
                 <div className="absolute h-full w-0.5 bg-amber-300/30" />
               </div>
@@ -77,7 +77,7 @@ export const StudioAmbientBackdrop: React.FC<StudioAmbientBackdropProps> = ({
             {[30, 60, 45, 80, 55, 90, 70, 40, 85, 65, 50, 75].map((h, i) => (
               <div
                 key={i}
-                className="w-1.5 rounded-t bg-indigo-400/80 transition-all duration-300"
+                className="w-1.5 rounded-t bg-violet-400/80 transition-all duration-300"
                 style={{ height: `${h * 0.4}px` }}
               />
             ))}

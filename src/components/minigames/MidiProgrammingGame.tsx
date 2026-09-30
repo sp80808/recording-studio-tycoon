@@ -232,7 +232,7 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
   const currentSequence = TARGET_SEQUENCES[currentSequenceIndex];
 
   return (
-    <Card className="w-full max-w-7xl mx-auto bg-gray-800 text-white border-gray-700">
+    <Card className="w-full max-w-7xl mx-auto bg-stone-800 text-white border-stone-700">
       <MinigameChrome
         title="🎹 MIDI Programming"
         score={score}
@@ -251,7 +251,7 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
               {currentSequenceIndex + 1}/{TARGET_SEQUENCES.length}
             </span>
           </div>
-          <Progress value={((currentSequenceIndex + 1) / TARGET_SEQUENCES.length) * 100} className="h-2 bg-gray-800" />
+          <Progress value={((currentSequenceIndex + 1) / TARGET_SEQUENCES.length) * 100} className="h-2 bg-stone-800" />
         </div>
 
         {/* MIDI Controls */}
@@ -269,7 +269,7 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
                       className={`text-xs p-1 ${
                         selectedNote === midiNote 
                           ? 'bg-cyan-500 text-black font-bold' 
-                          : 'bg-gray-700 hover:bg-gray-600'
+                          : 'bg-stone-700 hover:bg-stone-600'
                       }`}
                     >
                       {noteName}{octave}
@@ -304,7 +304,7 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
                     className={`text-xs ${
                       selectedLength === length 
                         ? 'bg-cyan-500 text-black' 
-                        : 'bg-gray-700 hover:bg-gray-600'
+                        : 'bg-stone-700 hover:bg-stone-600'
                     }`}
                   >
                     {length === 1 ? '♩' : length === 2 ? '♪' : '♫'}
@@ -315,11 +315,11 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
           </div>
 
           <div className="flex flex-col justify-center space-y-2">
-            <div className="text-center p-3 bg-gray-800 rounded">
+            <div className="text-center p-3 bg-stone-800 rounded">
               <div className="text-lg font-bold text-cyan-400">
                 {getNoteName(selectedNote)}
               </div>
-              <div className="text-sm text-gray-400">
+              <div className="text-sm text-stone-400">
                 Vel: {selectedVelocity[0]} | Len: {selectedLength}
               </div>
             </div>
@@ -361,7 +361,7 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
               <div
                 key={i}
                 className={`h-3 rounded text-center text-xs flex items-center justify-center ${
-                  currentPosition === i ? 'bg-cyan-400 text-black font-bold' : 'bg-gray-600 text-gray-300'
+                  currentPosition === i ? 'bg-cyan-400 text-black font-bold' : 'bg-stone-600 text-stone-300'
                 }`}
               >
                 {i + 1}
@@ -384,7 +384,7 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
                   } ${
                     notesAtPosition.length > 0 
                       ? 'border-cyan-400 bg-cyan-400/20' 
-                      : 'border-gray-600 hover:border-blue-400 hover:bg-blue-400/10'
+                      : 'border-stone-600 hover:border-blue-400 hover:bg-blue-400/10'
                   }`}
                   onClick={() => handleGridClick(position)}
                 >
@@ -407,7 +407,7 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
         {/* Target Reference */}
         <div className="bg-black/20 rounded-lg p-3">
           <h4 className="text-sm font-semibold text-blue-300 mb-2">Target: {currentSequence.name}</h4>
-          <div className="text-xs text-gray-400">
+          <div className="text-xs text-stone-400">
             Program the MIDI sequence to match the target pattern. 
             Use the correct notes, timing, and velocity for maximum score.
           </div>
@@ -416,7 +416,7 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
         </CardContent>
       </MinigameChrome>
       <DialogFooter className="p-4">
-        <KenneyButton variant="blue" onClick={onClose}>
+        <KenneyButton variant="yellow" onClick={onClose}>
           Exit
         </KenneyButton>
         <KenneyButton variant="green" onClick={checkSequence}>
