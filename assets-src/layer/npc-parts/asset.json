@@ -1,0 +1,22 @@
+{
+  "id": "npc-parts",
+  "kind": "layer",
+  "sourceType": "vector_authored",
+  "author": "RST in-house",
+  "license": "In-house (CC0)",
+  "toolVersion": "scripts/assets/make-layer-parts.ts (procedural rectangles)",
+  "paletteId": "rst-npc-parts-tintable",
+  "palette": [
+    "#ffffff",
+    "#d6d6d6",
+    "#9b9b9b",
+    "#171717",
+    "#7c2d12",
+    "#3f2212"
+  ],
+  "createdAt": "2026-09-30T00:00:00.000Z",
+  "pipelineSteps": [
+    "draw-in-house",
+    "export-png-sequence"
+  ]
+}

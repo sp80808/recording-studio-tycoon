@@ -30,6 +30,12 @@ export interface GameEventPayloads {
     position: number;
     previousPosition?: number;
   };
+  'season:awards': {
+    seasonId: string;
+    year: number;
+    awards: Array<{ id: string; name: string; status: 'winner' | 'nominated' | 'not_nominated'; why: string }>;
+    rewards: Array<{ id: string; label: string; icon?: string }>;
+  };
   'minigame:success': {
     minigameType?: string;
     score: number;

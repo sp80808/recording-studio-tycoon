@@ -25,5 +25,5 @@ export const SettleTicker: React.FC<{
     };
   }, [value]);
 
-  return <span className={ticking ? 'settle-tick' : ''} style={{ display: 'inline-flex', alignItems: 'center' }}>{children}</span>;
+  return <span className={ticking ? 'settle-tick feel-land' : ''} style={{ display: 'inline-flex', alignItems: 'center' }}>{children}</span>;
 };

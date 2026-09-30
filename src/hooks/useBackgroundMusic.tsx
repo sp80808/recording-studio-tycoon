@@ -145,12 +145,12 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
 
     try {
       const currentSrcBase = globalAudioRef.src.substring(globalAudioRef.src.lastIndexOf('/') + 1);
-      const newSrcBase = `tycoon-bgm${trackNumber}.mp3`;
+      const newSrcBase = `tycoon-bgm${trackNumber}.m4a`;
 
       // Only reload and play if the track is different or if it's not playing
       if (currentSrcBase !== newSrcBase || globalAudioRef.paused) {
         console.log(`BGM: Loading and playing track ${trackNumber}`);
-        globalAudioRef.src = `/audio/music/tycoon-bgm${trackNumber}.mp3`;
+        globalAudioRef.src = `/audio/music/tycoon-bgm${trackNumber}.m4a`;
         globalAudioRef.currentTime = 0; // Reset time for new track or replay
         await globalAudioRef.play();
         globalCurrentTrack = trackNumber;

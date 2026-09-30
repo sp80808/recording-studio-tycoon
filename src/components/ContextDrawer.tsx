@@ -248,7 +248,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
               </div>
 
               {/* Drawer Content Body */}
-              <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
+              <div className="feel-stagger flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
                 {children}
               </div>
 

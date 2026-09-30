@@ -1,0 +1,193 @@
+{
+  "frames": {
+    "npc/sample-engineer/idle/000": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "npc/sample-engineer/idle/001": {
+      "frame": {
+        "x": 32,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "npc/sample-engineer/work/000": {
+      "frame": {
+        "x": 64,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "npc/sample-engineer/work/001": {
+      "frame": {
+        "x": 96,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "npc/sample-engineer/celebrate/000": {
+      "frame": {
+        "x": 128,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "npc/sample-engineer/celebrate/001": {
+      "frame": {
+        "x": 160,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    }
+  },
+  "animations": {
+    "idle": [
+      "npc/sample-engineer/idle/000",
+      "npc/sample-engineer/idle/001"
+    ],
+    "work": [
+      "npc/sample-engineer/work/000",
+      "npc/sample-engineer/work/001"
+    ],
+    "celebrate": [
+      "npc/sample-engineer/celebrate/000",
+      "npc/sample-engineer/celebrate/001"
+    ]
+  },
+  "meta": {
+    "app": "https://www.aseprite.org/",
+    "version": "1.3.x (format reference; sample drawn in-house)",
+    "image": "sample-engineer.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 192,
+      "h": 48
+    },
+    "scale": "1",
+    "tags": [
+      {
+        "name": "idle",
+        "from": 0,
+        "to": 1,
+        "direction": "forward"
+      },
+      {
+        "name": "work",
+        "from": 2,
+        "to": 3,
+        "direction": "pingpong"
+      },
+      {
+        "name": "celebrate",
+        "from": 4,
+        "to": 5,
+        "direction": "forward"
+      }
+    ]
+  }
+}

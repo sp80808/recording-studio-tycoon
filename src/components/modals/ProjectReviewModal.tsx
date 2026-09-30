@@ -36,17 +36,28 @@ interface SkillDisplayProps {
   skillDetail: ProjectReportSkillEntry;
   onAnimationComplete: () => void;
   startAnimation: boolean;
+  skipped?: boolean;
 }
 
-const SkillDisplay: React.FC<SkillDisplayProps> = ({ skillDetail, onAnimationComplete, startAnimation }) => {
+const SkillDisplay: React.FC<SkillDisplayProps> = ({ skillDetail, onAnimationComplete, startAnimation, skipped = false }) => {
   const [xpBarProgress, setXpBarProgress] = useState(0);
   const [currentLevel, setCurrentLevel] = useState(skillDetail.initialLevel);
   const [levelUpFlash, setLevelUpFlash] = useState(false);
   const [score, setScore] = useState(0);
   const [xpText, setXpText] = useState(skillDetail.initialXp);
 
+  // Fast-forward: jump straight to the final values when the player skips the reveal.
   useEffect(() => {
-    if (!startAnimation) return;
+    if (!skipped) return;
+    setLevelUpFlash(false);
+    setCurrentLevel(skillDetail.finalLevel);
+    setXpText(skillDetail.finalXp);
+    setXpBarProgress(skillDetail.xpToNextLevelAfter > 0 ? (skillDetail.finalXp / skillDetail.xpToNextLevelAfter) * 100 : 0);
+    setScore(skillDetail.score);
+  }, [skipped, skillDetail]);
+
+  useEffect(() => {
+    if (!startAnimation || skipped) return;
 
     let animationStep = 0;
     const timeouts: NodeJS.Timeout[] = [];
@@ -126,7 +137,7 @@ const SkillDisplay: React.FC<SkillDisplayProps> = ({ skillDetail, onAnimationCom
         if (scoreIntervalId) clearInterval(scoreIntervalId);
     };
 
-  }, [startAnimation, skillDetail, onAnimationComplete]);
+  }, [startAnimation, skipped, skillDetail, onAnimationComplete]);
   
   const calculateXpToNextLevel = (level: number): number => Math.floor(100 * Math.pow(level, 1.5));
 
@@ -160,9 +171,11 @@ interface ProjectReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   report: ProjectReport | null;
+  /** Studio Seasons link: what this delivery adds to the chosen focus (#63). */
+  seasonNote?: string | null;
 }
 
-export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, onClose, report }) => {
+export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, onClose, report, seasonNote }) => {
   const [currentSkillIndex, setCurrentSkillIndex] = useState(-1);
   const [showOverallQuality, setShowOverallQuality] = useState(false);
   const [showRewards, setShowRewards] = useState(false);
@@ -173,6 +186,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
   const [reviewText, setReviewText] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [rankStamp, setRankStamp] = useState<RankResult | null>(null);
+  const [skipped, setSkipped] = useState(false);
 
   const totalAnimationStages = (report?.skillBreakdown.length || 0) + 3; 
 
@@ -180,8 +194,33 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
     setCurrentSkillIndex(prev => prev + 1);
   }, []);
 
+  const skipReveal = useCallback(() => {
+    if (!report) return;
+    setSkipped(true);
+    setShowOverallQuality(true);
+    setAnimatedOverallQualityValue(report.overallQualityScore);
+    setShowRewards(true);
+    setShowSnippet(true);
+    setTypedSnippet(report.reviewSnippet);
+    setCurrentSkillIndex(totalAnimationStages);
+  }, [report, totalAnimationStages]);
+
+  // Space / Enter fast-forwards the reveal so a review never locks the game for its full length.
+  useEffect(() => {
+    if (!isOpen || showContinueButton) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code === 'Space' || e.key === 'Enter') {
+        e.preventDefault();
+        skipReveal();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, showContinueButton, skipReveal]);
+
   useEffect(() => {
     if (isOpen && report) {
+      setSkipped(false);
       setCurrentSkillIndex(-1);
       setShowOverallQuality(false);
       setShowRewards(false);
@@ -363,6 +402,12 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
                   )}
                 </div>
 
+                {seasonNote && (
+                  <p className="w-full rounded-md border border-amber-500/30 bg-stone-900/70 px-3 py-2 text-center text-xs text-amber-200" data-testid="season-review-note">
+                    {seasonNote}
+                  </p>
+                )}
+
                 {/* Rewards */}
                 {showRewards && (
                   <MotionReward
@@ -410,6 +455,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
                           key={skillDetail.skillName} 
                           skillDetail={skillDetail}
                           startAnimation={currentSkillIndex === index}
+                          skipped={skipped}
                           onAnimationComplete={handleNextAnimation} 
                         />
                       ))}
@@ -440,7 +486,16 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
                 Awesome!
               </MotionButton>
             ) : (
-              <div className="w-full text-center text-stone-400 italic">Calculating...</div>
+              <div className="flex w-full items-center justify-between gap-3">
+                <span className="text-stone-400 italic">Calculating...</span>
+                <button
+                  type="button"
+                  onClick={skipReveal}
+                  className="rounded border border-amber-400/40 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-amber-200 hover:bg-amber-400/15"
+                >
+                  Skip (Space)
+                </button>
+              </div>
             )}
           </CardFooter>
         </Card>

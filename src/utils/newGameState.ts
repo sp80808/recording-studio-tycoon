@@ -10,6 +10,7 @@ import { generateSessionMusicians } from '@/utils/bandUtils';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
 import { resolvePlayerLevelUps } from '@/utils/playerUtils';
 import { initializeSkillsPlayer } from '@/utils/skillUtils';
+import { createInitialKnowHow } from '@/rpg/studioKnowHow';
 import { createDefaultStudioRooms } from '@/utils/studioRoomUtils';
 import { visualEraId } from '@/utils/eraProgression';
 import { createInitialChoreState } from '@/simulation/choreEngine';
@@ -90,6 +91,8 @@ export const createDefaultGameState = (options?: Partial<EraInitOptions>): GameS
     availableProjects: [],
     studioRooms: createDefaultStudioRooms(),
     discoveredSynergies: [],
+    studioKnowHow: createInitialKnowHow(),
+    premisesTier: 0,
     activeProject: null, // Keep for backward compatibility
     // Multi-project system
     activeProjects: [], // New multi-project array
