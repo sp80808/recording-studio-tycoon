@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -26,21 +27,22 @@ export const StaffModal: React.FC<StaffModalProps> = ({
   toggleStaffRest,
   openTrainingModal
 }) => {
+  const { t } = useTranslation();
   return (
     <Dialog open={showStaffModal} onOpenChange={setShowStaffModal}>
       <DialogTrigger asChild>
         <Button variant="outline" className="bg-stone-800/80 hover:bg-stone-700/80 text-white border-stone-600">
-          My Staff 👥
+          {t('staff_modal_button')}
         </Button>
       </DialogTrigger>
       <DialogContent className="bg-stone-900 border-stone-600 text-white max-w-4xl">
         <DialogHeader>
-          <DialogTitle className="text-white">Staff Management</DialogTitle>
+          <DialogTitle className="text-white">{t('staff_modal_title')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 max-h-96 overflow-y-auto">
           {gameState.hiredStaff.length === 0 ? (
             <div className="text-center text-stone-400 py-8">
-              No staff hired yet. Visit the recruitment center to hire your first team members!
+              {t('staff_modal_no_staff')}
             </div>
           ) : (
             gameState.hiredStaff.map(staff => (
@@ -48,91 +50,91 @@ export const StaffModal: React.FC<StaffModalProps> = ({
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <h4 className="text-lg font-bold text-white">{staff.name}</h4>
-                    <p className="text-stone-300">{staff.role} - Level {staff.levelInRole}</p>
+                    <p className="text-stone-300">{t('staff_modal_role_level', { role: staff.role, level: staff.levelInRole })}</p>
                     {staff.status === 'Training' && staff.trainingEndDay && (
                       <p className="text-yellow-400 text-sm">
-                        Training until Day {staff.trainingEndDay}
+                        {t('staff_modal_training_until', { day: staff.trainingEndDay })}
                       </p>
                     )}
                   </div>
                   <div className="text-right">
                     <div className={`font-bold ${getStaffStatusColor(staff.status)}`}>{staff.status}</div>
-                    <div className="text-sm text-stone-400">${staff.salary}/week</div>
+                    <div className="text-sm text-stone-400">{t('staff_modal_salary_per_week', { salary: staff.salary })}</div>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-3 gap-4 mb-3">
                   <div className="text-center">
                     <div className="text-amber-300 font-bold">{staff.primaryStats.creativity}</div>
-                    <div className="text-xs text-stone-400">Creativity</div>
+                    <div className="text-xs text-stone-400">{t('stat_creativity')}</div>
                   </div>
                   <div className="text-center">
                     <div className="text-green-400 font-bold">{staff.primaryStats.technical}</div>
-                    <div className="text-xs text-stone-400">Technical</div>
+                    <div className="text-xs text-stone-400">{t('stat_technical')}</div>
                   </div>
                   <div className="text-center">
                     <div className="text-yellow-400 font-bold">{staff.primaryStats.speed}</div>
-                    <div className="text-xs text-stone-400">Speed</div>
+                    <div className="text-xs text-stone-400">{t('stat_speed')}</div>
                   </div>
                 </div>
-                
+
                 <div className="mb-3">
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-stone-300">Energy</span>
+                    <span className="text-stone-300">{t('stat_energy_label')}</span>
                     <span className={getEnergyColor(staff.energy)}>{staff.energy}/100</span>
                   </div>
-                  <Progress 
-                    value={staff.energy} 
+                  <Progress
+                    value={staff.energy}
                     className="h-2"
-                    aria-label={`${staff.name} energy level`}
+                    aria-label={t('staff_modal_energy_aria', { name: staff.name })}
                   />
                 </div>
-                
+
                 {staff.genreAffinity && (
                   <div className="mb-3 text-sm">
-                    <span className="text-purple-400">Genre Affinity: </span>
-                    <span className="text-white">{staff.genreAffinity.genre} (+{staff.genreAffinity.bonus}%)</span>
+                    <span className="text-purple-400">{t('staff_modal_genre_affinity_label')}</span>
+                    <span className="text-white">{t('staff_modal_genre_affinity_value', { genre: staff.genreAffinity.genre, bonus: staff.genreAffinity.bonus })}</span>
                   </div>
                 )}
-                
+
                 <div className="flex gap-2 flex-wrap">
                   {staff.status === 'Idle' && gameState.activeProject && (
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       onClick={() => assignStaffToProject(staff.id)}
                       className="bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24]"
                     >
-                      Assign to Project
+                      {t('staff_modal_assign_button')}
                     </Button>
                   )}
-                  
+
                   {staff.status === 'Working' && (
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       onClick={() => unassignStaffFromProject(staff.id)}
                       className="bg-red-400/[0.14] ring-1 ring-inset ring-red-400/45 hover:bg-red-400/[0.24]"
                     >
-                      Unassign
+                      {t('staff_modal_unassign_button')}
                     </Button>
                   )}
-                  
+
                   {staff.status !== 'Working' && staff.status !== 'Training' && (
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       onClick={() => toggleStaffRest(staff.id)}
                       className="bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24]"
                     >
-                      {staff.status === 'Resting' ? 'Stop Resting' : 'Rest'}
+                      {staff.status === 'Resting' ? t('staff_modal_stop_resting_button') : t('staff_modal_rest_button')}
                     </Button>
                   )}
 
                   {staff.status === 'Idle' && openTrainingModal && (
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       onClick={() => openTrainingModal(staff)}
                       className="bg-purple-400/[0.14] ring-1 ring-inset ring-purple-400/45 hover:bg-purple-400/[0.24]"
                     >
-                      Send to Training
+                      {t('staff_modal_send_training_button')}
                     </Button>
                   )}
                 </div>

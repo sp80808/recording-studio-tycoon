@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import {
   X,
   Phone,
@@ -21,8 +22,8 @@ export type ContextDrawerTab = 'artist' | 'room' | 'staff' | 'gear' | 'session' 
 
 export interface DrawerTabItem {
   id: ContextDrawerTab;
-  label: string;
-  shortLabel: string;
+  labelKey: string;
+  shortLabelKey: string;
   icon: React.ComponentType<{ size?: number; className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>;
   badge?: number;
 }
@@ -44,12 +45,12 @@ export interface ContextDrawerProps {
 }
 
 const TAB_CONFIGS: DrawerTabItem[] = [
-  { id: 'artist', label: 'Artist Enquiries', shortLabel: 'Artist', icon: Phone },
-  { id: 'session', label: 'Session Console', shortLabel: 'Session', icon: Headphones },
-  { id: 'gear', label: 'Gear Locker', shortLabel: 'Gear', icon: SlidersHorizontal },
-  { id: 'staff', label: 'Studio Crew', shortLabel: 'Crew', icon: Users },
-  { id: 'room', label: 'Studio Room', shortLabel: 'Room', icon: Building2 },
-  { id: 'career', label: 'Producer Story', shortLabel: 'Career', icon: Sparkles },
+  { id: 'artist', labelKey: 'nav_artist_enquiries', shortLabelKey: 'nav_artist_short', icon: Phone },
+  { id: 'session', labelKey: 'nav_session_console', shortLabelKey: 'nav_session_short', icon: Headphones },
+  { id: 'gear', labelKey: 'nav_gear_locker', shortLabelKey: 'nav_gear_short', icon: SlidersHorizontal },
+  { id: 'staff', labelKey: 'nav_studio_crew', shortLabelKey: 'nav_crew_short', icon: Users },
+  { id: 'room', labelKey: 'nav_studio_room', shortLabelKey: 'nav_room_short', icon: Building2 },
+  { id: 'career', labelKey: 'nav_producer_story', shortLabelKey: 'nav_career_short', icon: Sparkles },
 ];
 
 /**
@@ -78,6 +79,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
   returnFocusRef,
   unreadEnquiries = 0,
 }) => {
+  const { t } = useTranslation();
   const { reducedMotion } = useMotionCapabilities();
   const drawerRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -135,8 +137,10 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
 
   const resolvedTitle =
     title ||
-    TAB_CONFIGS.find((t) => t.id === activeTab)?.label ||
-    'Context Inspector';
+    (TAB_CONFIGS.find((tab) => tab.id === activeTab)?.labelKey
+      ? t(TAB_CONFIGS.find((tab) => tab.id === activeTab)!.labelKey)
+      : undefined) ||
+    t('context_drawer_default_title');
 
   const widthStyle =
     width === 'session'
@@ -177,7 +181,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
               <div className="shrink-0 px-5 pt-4 pb-3 border-b border-[var(--rst-line)]">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="rst-kicker">{subtitle || 'STUDIO CONTEXT'}</p>
+                    <p className="rst-kicker">{subtitle || t('context_drawer_kicker')}</p>
                     <h2
                       id="context-drawer-title"
                       ref={headingRef}
@@ -192,7 +196,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
                     {headerActions}
                     <MotionButton
                       onClick={handleClose}
-                      aria-label="Close drawer"
+                      aria-label={t('context_drawer_close_aria')}
                       className="grid h-9 w-9 place-items-center rounded-full border border-[var(--rst-line-strong)] bg-white/[0.03] text-stone-300 transition-colors hover:border-[var(--rst-brass-line)] hover:bg-white/[0.07] hover:text-[var(--rst-brass-200)]"
                     >
                       <X size={16} aria-hidden="true" />
@@ -204,7 +208,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
                 {onTabChange && (
                   <div
                     role="tablist"
-                    aria-label="Studio contextual views"
+                    aria-label={t('context_drawer_tabs_aria')}
                     className="mt-3 grid gap-1 rounded-xl border border-[var(--rst-line)] bg-black/25 p-1"
                     style={{ gridTemplateColumns: `repeat(${TAB_CONFIGS.length}, minmax(0, 1fr))` }}
                   >
@@ -218,7 +222,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
                           key={tab.id}
                           role="tab"
                           aria-selected={isActive}
-                          aria-label={tab.label}
+                          aria-label={t(tab.labelKey)}
                           onClick={() => handleTabClick(tab.id)}
                           className={`relative flex flex-col items-center gap-0.5 rounded-lg px-0.5 pb-1.5 pt-1.5 text-[10px] max-[420px]:text-[9px] font-semibold tracking-wide transition-colors ${
                             isActive
@@ -227,7 +231,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
                           }`}
                         >
                           <Icon size={16} aria-hidden="true" />
-                          <span className="max-w-full truncate">{tab.shortLabel}</span>
+                          <span className="max-w-full truncate">{t(tab.shortLabelKey)}</span>
                           {isActive && (
                             <span aria-hidden="true" className="absolute inset-x-3 bottom-0 h-[2px] rounded-full bg-[var(--rst-brass-400)]" />
                           )}
