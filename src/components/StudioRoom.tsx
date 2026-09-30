@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import WebGLCanvas, { StudioHotspotId } from '@/components/WebGLCanvas';
+import WebGLCanvas, { StudioHotspotId, HotspotAnchors } from '@/components/WebGLCanvas';
 import { StudioInspector } from '@/components/StudioInspector';
 import { GameState, Project } from '@/types/game';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -64,6 +64,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
   const { settings } = useSettings();
   const [activeInspector, setActiveInspector] = useState<StudioHotspotId | null>(null);
   const [cameraReset, setCameraReset] = useState(0);
+  const [anchors, setAnchors] = useState<HotspotAnchors>({});
   const [tierFlash, setTierFlash] = useState(false);
   const [pendingTierUpgrade, setPendingTierUpgrade] = useState<{ oldTier: number; newTier: number } | null>(null);
   const playClick = () => { if (settings.sfxEnabled) gameAudio.playUISound('buttonClick'); };
@@ -194,7 +195,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       className={`relative overflow-hidden rounded-lg border border-stone-700/70 bg-[#1b1815] transition-all duration-300 ${className}`} 
       style={style}
     >
-      <WebGLCanvas state={sceneState} onHotspotSelect={handleHotspot} resetCameraKey={cameraReset} />
+      <WebGLCanvas state={sceneState} onHotspotSelect={handleHotspot} resetCameraKey={cameraReset} onHotspotAnchors={setAnchors} />
       {tierFlash && <div className="tier-flash-overlay" />}
       {activeInspector && (
         <StudioInspector
@@ -247,31 +248,50 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
         const pendingConsoleChores = Object.values(choreState.chores).filter(c => c.hotspotId === 'console' && !c.completed);
         const pendingLiveRoomChores = Object.values(choreState.chores).filter(c => AUTHORED_CHORES[c.id]?.hotspotId === 'liveRoom' && !c.completed);
 
+        // Badges ride on their hotspot so pan/zoom never strands them; fixed corners are the pre-first-frame fallback.
+        const anchorStyle = (id: StudioHotspotId): React.CSSProperties | undefined => {
+          const a = anchors[id];
+          if (!a) return undefined;
+          return {
+            position: 'absolute',
+            left: `clamp(80px, ${a.x}px, calc(100% - 80px))`,
+            top: `max(${a.y}px, 40px)`,
+            transform: 'translate(-50%, calc(-100% - 8px))',
+            zIndex: 20,
+          };
+        };
+        const consoleStyle = anchorStyle('console');
+        const liveStyle = anchorStyle('liveRoom');
+
         return (
           <>
             {pendingConsoleChores.length > 0 && (
-              <MotionReveal direction="up" distance={6}>
-                <button
-                  onClick={() => handleHotspot('console')}
-                  className="rst-duty-chip studio-duty-console absolute bottom-14 left-6 z-20"
-                  title={`${pendingConsoleChores.length} Console Maintenance Duty Pending`}
-                >
-                  <span>🔧</span>
-                  <span>{pendingConsoleChores[0].title}</span>
-                </button>
-              </MotionReveal>
+              <div style={consoleStyle}>
+                <MotionReveal direction="up" distance={6}>
+                  <button
+                    onClick={() => handleHotspot('console')}
+                    className={`rst-duty-chip ${consoleStyle ? '' : 'studio-duty-console absolute bottom-14 left-6 z-20'}`}
+                    title={`${pendingConsoleChores.length} Console Maintenance Duty Pending`}
+                  >
+                    <span>🔧</span>
+                    <span>{pendingConsoleChores[0].title}</span>
+                  </button>
+                </MotionReveal>
+              </div>
             )}
             {pendingLiveRoomChores.length > 0 && (
-              <MotionReveal direction="up" distance={6}>
-                <button
-                  onClick={() => handleHotspot('liveRoom')}
-                  className="rst-duty-chip studio-duty-live absolute bottom-16 right-6 z-20"
-                  title="Live Room: Tune Acoustics"
-                >
-                  <span>✨</span>
-                  <span>Tune Acoustics</span>
-                </button>
-              </MotionReveal>
+              <div style={liveStyle}>
+                <MotionReveal direction="up" distance={6}>
+                  <button
+                    onClick={() => handleHotspot('liveRoom')}
+                    className={`rst-duty-chip ${liveStyle ? '' : 'studio-duty-live absolute bottom-16 right-6 z-20'}`}
+                    title="Live Room: Tune Acoustics"
+                  >
+                    <span>✨</span>
+                    <span>Tune Acoustics</span>
+                  </button>
+                </MotionReveal>
+              </div>
             )}
           </>
         );

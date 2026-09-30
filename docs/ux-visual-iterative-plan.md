@@ -44,7 +44,7 @@ Storyline stays free; monetisation stays optional cosmetics/gear only (see fligh
 ## P1 — Next polish pass
 
 ### HUD / viewport
-1. **World-anchored chore badges** — project DOM badges from Pixi hotspot screen positions (or draw badges in Pixi) so pan/zoom does not strand them.
+1. ~~**World-anchored chore badges**~~ — **done** for the console and live-room badges: `WebGLCanvas` reports hotspot screen anchors (`onHotspotAnchors`, only when they move) and `StudioRoom` pins the badges to them. The lounge chip stays in the top-right stack.
 2. **Safe-area insets** for camera reset / year label vs notch and strip shell ([DESKTOP_STRIP_SHELL.md](./architecture/DESKTOP_STRIP_SHELL.md)).
 3. **Resolution / FPS settings** already exist — expose a “Performance” preset that forces CRT/bloom off + lower `targetFps` for integrated GPUs (document in Settings UX, no second WebGL).
 

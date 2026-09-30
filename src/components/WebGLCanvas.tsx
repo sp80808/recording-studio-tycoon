@@ -132,6 +132,8 @@ export const calculateTapeSaturationWarmth = (
  */
 export type StudioHotspotId = 'console' | 'liveRoom' | 'phone' | 'clock' | 'tv' | 'shelf';
 
+export type HotspotAnchors = Partial<Record<StudioHotspotId, { x: number; y: number }>>;
+
 /**
  * Live state fed into the scene. Purely presentational — the scene reads the
  * latest values from a ref every animation frame, so React can update it
@@ -162,6 +164,8 @@ interface WebGLCanvasProps {
   state?: Partial<StudioSceneState>;
   onHotspotSelect?: (id: StudioHotspotId) => void;
   resetCameraKey?: number;
+  /** Top-centre of each hotspot in canvas CSS pixels; follows pan/zoom so DOM badges stay attached. */
+  onHotspotAnchors?: (anchors: HotspotAnchors) => void;
   className?: string;
 }
 
@@ -340,6 +344,7 @@ interface SceneRefs {
   nightTintLayer: Container | null;
   hoverGlows: Record<string, Graphics>;
   hoverGlowTargets: Record<string, number>;
+  hotspotHits: Partial<Record<StudioHotspotId, Container>>;
   idleHints: Partial<Record<'phone' | 'console', Graphics>>;
   crtLayer: Container | null;
   bloomLayer: Container | null;
@@ -381,6 +386,7 @@ const addHotspot = (
   hit.eventMode = 'static';
   hit.cursor = 'pointer';
   hit.alpha = 0; // invisible for rendering, still receives pointer events
+  refs.hotspotHits[id] = hit;
   hit.on('pointerover', () => { refs.hoverGlowTargets[id] = 0.85; });
   hit.on('pointerout', () => { refs.hoverGlowTargets[id] = 0; });
   // The canvas gesture guard suppresses selection after a two-finger pan.
@@ -407,6 +413,7 @@ const buildScene = (
     nightTintLayer: null,
     hoverGlows: {},
     hoverGlowTargets: {},
+    hotspotHits: {},
     idleHints: {},
     crtLayer: null,
     bloomLayer: null,
@@ -1128,12 +1135,14 @@ const buildScene = (
 /* ---------------------------------------------------------------------------
  * Component
  * ------------------------------------------------------------------------- */
-const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, className, resetCameraKey }) => {
+const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, className, resetCameraKey, onHotspotAnchors }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const sceneRef = useRef<BuiltScene | null>(null);
   const stateRef = useRef<StudioSceneState>({ ...DEFAULT_STATE, ...state });
   const selectRef = useRef(onHotspotSelect);
+  const anchorsCbRef = useRef(onHotspotAnchors);
+  const lastAnchorsRef = useRef<HotspotAnchors>({});
   const timeRef = useRef(0);
   const cameraRef = useRef({ x: 0, y: 0, zoom: 1.0 });
   const gestureRef = useRef(new Map<number, { x: number; y: number }>());
@@ -1173,6 +1182,10 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   useEffect(() => {
     selectRef.current = onHotspotSelect;
   }, [onHotspotSelect]);
+
+  useEffect(() => {
+    anchorsCbRef.current = onHotspotAnchors;
+  }, [onHotspotAnchors]);
 
   useEffect(() => {
     cameraRef.current = { x: 0, y: 0, zoom: 1.0 };
@@ -1485,6 +1498,24 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
               glow.alpha += (target - glow.alpha) * 0.18;
             }
           });
+
+          // Report hotspot screen anchors (only when something moved) so DOM badges follow pan/zoom
+          if (anchorsCbRef.current) {
+            const next: HotspotAnchors = {};
+            let changed = false;
+            (Object.keys(refs.hotspotHits) as StudioHotspotId[]).forEach((id) => {
+              const b = refs.hotspotHits[id]?.getBounds();
+              if (!b || b.maxX <= b.minX) return;
+              const pt = { x: Math.round((b.minX + b.maxX) / 2), y: Math.round(b.minY) };
+              next[id] = pt;
+              const prev = lastAnchorsRef.current[id];
+              if (!prev || prev.x !== pt.x || prev.y !== pt.y) changed = true;
+            });
+            if (changed) {
+              lastAnchorsRef.current = next;
+              anchorsCbRef.current(next);
+            }
+          }
 
           // Console VU meters — amplitude follows live activity
           const vuPeaks: { x: number; y: number; width: number }[] = [];
