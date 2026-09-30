@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Building2 } from 'lucide-react';
 import type { GameState } from '@/types/game';
+import { bookEntry } from '@/economy/ledger';
 import { applyPremisesMove, getPremisesDef, getPremisesOffer } from '@/rpg/premises';
 
 interface PremisesPanelProps {
@@ -35,7 +36,12 @@ export function PremisesPanel({ gameState, setGameState }: PremisesPanelProps) {
             onClick={() => {
               if (!confirming) return setConfirming(true);
               setConfirming(false);
-              setGameState(prev => applyPremisesMove(prev));
+              setGameState(prev => {
+                const moved = applyPremisesMove(prev);
+                return moved === prev
+                  ? prev
+                  : bookEntry(moved, { category: 'premises-rent', amount: moved.money - prev.money, sourceId: 'premises-deposit', memo: 'Studio deposit' });
+              });
             }}
           >
             {confirming ? 'Confirm move' : 'Move to a project studio'}

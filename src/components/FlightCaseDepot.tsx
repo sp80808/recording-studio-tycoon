@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Gem, Package } from 'lucide-react';
 import type { GameState } from '@/types/game';
+import { earn } from '@/economy/ledger';
 import { FLIGHT_CASES } from '@/data/flightCases';
 import type { Era } from '@/features/boxDrops/lootGenerator';
 import { useBoxDropsStore } from '@/features/boxDrops/boxDropsStore';
@@ -39,7 +40,7 @@ export function FlightCaseDepot({ gameState, setGameState }: Props) {
     showItems(items, (item, action) =>
       setGameState((prev) =>
         action === 'sell'
-          ? { ...prev, money: prev.money + item.baseValue }
+          ? earn(prev, item.baseValue, { category: 'equipment-sale', memo: item.name })
           : { ...prev, caseFinds: [...(prev.caseFinds ?? []), { ...item }] },
       ),
     );

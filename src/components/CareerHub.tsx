@@ -12,6 +12,7 @@ import { getProducerOrigin } from '@/narrative/characterOrigins';
 import { getRivalAccent, getRivalForNode, initialsOf } from '@/narrative/rivalCast';
 import type { ProducerBackgroundId } from '@/types/character';
 import { AchievementsPanel } from './AchievementsPanel';
+import { LedgerPanel } from './LedgerPanel';
 import { SeasonPanel } from './SeasonPanel';
 import type { StudioFocus } from '@/rpg/studioSeasons';
 import {
@@ -366,6 +367,8 @@ export function CareerHub({
           </div>
         )}
       </div>
+
+      <LedgerPanel gameState={gameState} />
     </section>
   );
 }

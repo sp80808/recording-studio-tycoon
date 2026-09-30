@@ -35,6 +35,7 @@ import {
   getStageFocusRecommendations 
 } from '@/utils/stageUtils';
 
+import { earn } from '@/economy/ledger';
 import { GameState, FocusAllocation, Project, PlayerData } from '@/types/game';
 import { useFeatureFlag } from '@/stores/featureFlagStore';
 import ProductionQueuePanel from '@/components/ProductionQueue/ProductionQueuePanel';
@@ -123,8 +124,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const handleStreakBank = (result: BankResult) => {
     if (!gameState.activeProject) return;
     setGameState(prev => ({
-      ...prev,
-      money: prev.money + result.cash,
+      ...earn(prev, result.cash, { category: 'reward-income', projectId: prev.activeProject?.id, memo: 'Streak bank' }),
       playerData: {
         ...prev.playerData,
         xp: prev.playerData.xp + result.xp,
