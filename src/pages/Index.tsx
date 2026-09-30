@@ -6,6 +6,7 @@ import { RewardFlights } from '@/components/RewardFlights';
 import { gameEvents } from '@/engine/gameEventBus';
 import { advanceChartWeek, debutChartRun, weeksDue } from '@/utils/chartRun';
 import { ChartRevealScene } from '@/components/ChartRevealScene';
+import { SeasonAwardsCeremony } from '@/components/SeasonAwardsCeremony';
 import { NotificationSystem } from '@/components/NotificationSystem';
 import { TrainingModal } from '@/components/modals/TrainingModal';
 import { GameModals } from '@/components/GameModals';
@@ -16,7 +17,7 @@ import { Era } from '@/components/EraSelectionModal'; // Era type
 import '@/components/studio-play.css';
 import { useGameState } from '@/hooks/useGameState';
 import { installFlightCaseRewards } from '@/economy/rewardHookup';
-import { applySeasonTick } from '@/economy/seasonRewards';
+import { announceAwards, applySeasonTick } from '@/economy/seasonRewards';
 import { seasonReviewNote } from '@/rpg/studioSeasons';
 import { GameState, Project, ProjectReport, StaffMember } from '@/types/game'; // Import GameState, Project, ProjectReport, StaffMember
 import DeliveryChoiceDialog from '@/components/DeliveryChoiceDialog';
@@ -359,6 +360,7 @@ const MusicStudioTycoon = () => {
 
   // Studio Seasons (#63): the season clock resolves once per season; legacy saves get state lazily.
   useEffect(() => {
+    announceAwards(applySeasonTick(gameState).resolutions);
     setGameState(prev => {
       const { state, resolutions } = applySeasonTick(prev);
       return resolutions.length || !prev.studioSeasons ? state : prev;
@@ -574,6 +576,7 @@ const MusicStudioTycoon = () => {
     <GameLayout eraId={gameState.currentEra}>
       {!effectiveCompactStudioMode && <RewardFlights gameState={gameState} />}
       <ChartRevealScene playerLevel={gameState.playerData.level} />
+      <SeasonAwardsCeremony />
       <div className="flex flex-col h-full">
         {!effectiveCompactStudioMode && (
           <GameHeader 
@@ -682,6 +685,7 @@ const MusicStudioTycoon = () => {
             const p = [gameState.activeProject, ...(gameState.activeProjects ?? [])].find(x => x?.id === activeProjectReport.projectId);
             const rel = p?.clientId ? gameState.clientRelationships?.[p.clientId] : undefined;
             return seasonReviewNote(gameState, {
+              genre: p?.genre,
               quality: activeProjectReport.overallQualityScore,
               isRepeat: (rel?.sessionsCompleted ?? 0) > 0,
               clientName: p?.clientName,
