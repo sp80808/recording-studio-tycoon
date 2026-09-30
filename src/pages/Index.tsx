@@ -3,6 +3,7 @@ import { GameLayout } from '@/components/GameLayout';
 import { GameHeader } from '@/components/GameHeader';
 import { MainGameContent } from '@/components/MainGameContent';
 import { RewardFlights } from '@/components/RewardFlights';
+import { ChartRevealScene } from '@/components/ChartRevealScene';
 import { NotificationSystem } from '@/components/NotificationSystem';
 import { TrainingModal } from '@/components/modals/TrainingModal';
 import { GameModals } from '@/components/GameModals';
@@ -517,6 +518,7 @@ const MusicStudioTycoon = () => {
   return (
     <GameLayout eraId={gameState.currentEra}>
       {!effectiveCompactStudioMode && <RewardFlights gameState={gameState} />}
+      <ChartRevealScene playerLevel={gameState.playerData.level} />
       <div className="flex flex-col h-full">
         {!effectiveCompactStudioMode && (
           <GameHeader 
