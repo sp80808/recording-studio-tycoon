@@ -9,6 +9,7 @@ import { getPrimaryRival, getRivalAccent, initialsOf } from '@/narrative/rivalCa
 import { getEraDecor } from '@/components/studio/studioDecorConfig';
 import { THEME_VISUAL_CONFIGS } from '@/narrative/playstyleTheme';
 import { visualEraId } from '@/utils/eraProgression';
+import { getEraGrade } from '@/components/WebGLCanvas';
 import { gameAudio } from '@/utils/audioSystem';
 import { EraEmblem, type EraEmblemId } from './EraEmblems';
 import './splash.css';
@@ -137,6 +138,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
               const visual = visualEraId(e.id) as EraEmblemId;
               const deco = getEraDecor(e.id);
               const glow = hex(deco.glow);
+              const grade = getEraGrade(e.id);
               const selected = e.id === eraId;
               return (
                 <button
@@ -169,6 +171,11 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                   <span>
                     <span className="block text-[11px] font-bold uppercase tracking-[0.22em]" style={{ color: glow }}>{e.startYear}s</span>
                     <span className="rst-title mt-0.5 block text-xl">{e.displayName}</span>
+                  </span>
+                  <span className="flex gap-1" aria-hidden="true" title="Room palette">
+                    {[grade.wallLeft, grade.wallRight, grade.accent].map((c, i) => (
+                      <span key={i} className="h-2 w-7 rounded-sm border border-white/10" style={{ background: hex(c) }} />
+                    ))}
                   </span>
                   <span className="rst-body block text-xs leading-relaxed">{e.description}</span>
                   <span className="block text-[11px] italic leading-snug text-stone-400">“{e.funnyDescription}”</span>

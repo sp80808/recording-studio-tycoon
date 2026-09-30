@@ -21,7 +21,7 @@ export interface StudioChore {
   description: string;
   category: ChoreCategory;
   energyCost: number;       // 0 or 1
-  hotspotId: 'console' | 'liveroom' | 'phone' | 'shelf' | 'crt';
+  hotspotId: 'console' | 'liveRoom' | 'phone' | 'shelf' | 'tv';
   completed: boolean;
   buffDurationSessions: number; // default 1 session
   buffType: 'timing_bonus' | 'tech_bonus' | 'creativity_bonus' | 'energy_saver' | 'vibe_boost';
@@ -102,7 +102,7 @@ export const AUTHORED_CHORES: Record<StudioChoreId, Omit<StudioChore, 'completed
     description: 'Position gobos and diffuser panels around the drum booth for richer room ambience.',
     category: 'acoustics',
     energyCost: 1,
-    hotspotId: 'liveroom',
+    hotspotId: 'liveRoom',
     buffDurationSessions: 1,
     buffType: 'creativity_bonus',
     buffMagnitude: 0.15, // +15% creativity gain

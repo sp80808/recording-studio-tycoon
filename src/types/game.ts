@@ -330,7 +330,12 @@ export interface GameState {
   lastGigRefreshDay?: number;
   notifications: GameNotification[];
   bands: Band[]; // All bands (AI and player-created)
-  playerBands: Band[]; // Player's own bands
+  /** Player's own bands */
+  playerBands: Band[];
+  /** A&R roster of signed artists (artist contracts). Absent on legacy saves. */
+  signedArtists?: import('@/simulation/artistContracts').SignedArtist[];
+  /** Prospect ids the player negotiated with and walked away from. Absent on legacy saves. */
+  passedProspects?: string[];
   availableSessionMusicians: SessionMusician[];
   activeOriginalTrack: OriginalTrackProject | null;
   // Charts system data
@@ -341,6 +346,8 @@ export interface GameState {
     discoveredArtists: Artist[]; // Artists found in charts
     lastChartUpdate: number; // Day when charts were last updated
   };
+  /** Player songs currently on the weekly chart run (see utils/chartRun). */
+  chartRun?: import('../utils/chartRun').ChartRunEntry[];
   researchedMods: string[]; // Array of researched mod IDs
   clients?: Client[];
   recordLabels?: RecordLabel[];
@@ -365,9 +372,14 @@ export interface GameState {
   pendingCrates?: Array<{
     id: string;
     era: string;
-    source: 'chore_streak' | 's_grade_take' | 'yard_sale';
-    tier: 'standard' | 'vintage_flight_case';
+    source: 'chore_streak' | 's_grade_take' | 'yard_sale' | 'shop_money' | 'shop_gems' | 'reward';
+    /** Legacy 2-tier ids stay valid; the economy resolves them via legacyTierToFlightCase. */
+    tier: 'standard' | 'vintage_flight_case' | 'cardboard_box' | 'road_case' | 'tour_trunk' | 'holy_grail_vault';
   }>;
+  /** Premium-feel soft currency (bead: flight cases + gems). Absent on legacy saves = 0. */
+  gems?: number;
+  /** Holding area for flight case finds the player stashed/equipped; the gear economy can claim from here. */
+  caseFinds?: Array<{ id: string; name: string; era: string; rarity: string; condition: number; baseValue: number }>;
   /** Unlocked achievements: id -> game day it was earned. Absent on legacy saves. */
   unlockedAchievements?: Record<string, number>;
   /** Set once the campaign epilogue has been shown, so it never replays. */

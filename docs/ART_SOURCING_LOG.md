@@ -90,3 +90,43 @@ beads issue `recording-studio-tycoon-art.X` (3D models + skins/sticker UI):
 - `higgsfield-generate` skill (GPT Image 2 / Seedance / Nano Banana) — reserved for gaps with no CC0 coverage; nothing generated this pass because CC0 covers all current needs.
 - Web search + fetch (Kenney.nl, OpenGameArt.org) — used this pass; URLs above verified live Sept 2026.
 - No binary assets downloaded this pass (keeps the diff reviewable); PNG trimming is queue item 1–3 above.
+
+## 8. Signature studio props (door, wall clock, mic stand, mug, notepad, stool, music stand)
+
+Kenney.nl / OpenGameArt were unreachable from the build environment, so these
+these were drawn in-house. License: **In-house (CC0)**. Source SVGs live in
+`public/assets/props/*.svg`; PNGs are 2x renders via
+`scripts/render-prop-sprites.cjs`. Loaded by `src/components/studio/propSprites.ts`;
+the scene falls back to the original procedural drawing if a texture is missing.
+
+| Sprite | File | Used in |
+| --- | --- | --- |
+| Studio door | `public/assets/props/door.png` | `WebGLCanvas.tsx` (left wall, sheared into wall plane) |
+| Wall clock face | `public/assets/props/wall-clock.png` | `studioDecor.ts` `buildWallClock` (hands stay live) |
+| Booth mic stand | `public/assets/props/mic-stand.png` | `studioDecor.ts` `buildLiveBooth` |
+| Booth stool | `public/assets/props/stool.png` | `studioDecor.ts` `buildLiveBooth` |
+| Booth music stand | `public/assets/props/music-stand.png` | `studioDecor.ts` `buildLiveBooth` |
+| Desk mug | `public/assets/props/mug.png` | `studioDecor.ts` `buildDeskProps` |
+| Desk notepad | `public/assets/props/notepad.png` | `studioDecor.ts` `buildDeskProps` (sheared onto desk plane) |
+
+Swap for Kenney/OGA CC0 art later by replacing the PNGs (same sizes).
+
+Second batch (same in-house CC0 pipeline, same folder):
+
+| Sprite | File | Used in |
+| --- | --- | --- |
+| Floor rug | `public/assets/props/rug.png` | `studioDecor.ts` `buildRug` (sheared onto floor plane) |
+| Brass floor lamp (1960s) | `public/assets/props/brass-lamp.png` | `studioDecor.ts` era prop |
+| Lava lamp (2000s) | `public/assets/props/lava-lamp.png` | `studioDecor.ts` era prop (animated blobs still drawn on top) |
+| Ring light (2020s) | `public/assets/props/ring-light.png` | `studioDecor.ts` era prop |
+
+Third batch (in-house CC0):
+
+- Trophy wall plaques (`trophy-gold|platinum|award.png`) replace the procedural plaques in `buildWallDressing`, sheared into the right-wall plane. Not yet screenshot-verified in-game (needs earned trophies).
+- Booking icons in `public/assets/icons/booking/` (`brief`, `fit-S|A|B|C`, `approach-safe`, `approach-moonshot`) are standalone SVGs, deliberately not wired in, so the booking enquiry card work in #101 can import them.
+
+## 7. In-house reward sprites (CC0)
+
+`public/assets/rewards/coin.svg`, `xp-star.svg`, `spark.svg` were hand-drawn as SVG
+for this project (no external source, no AI generation) and are released CC0. Used by
+`RewardFlights` for cash/XP loot travel.
