@@ -72,6 +72,10 @@ echo "=== studio event director (#56) ==="
 ./node_modules/.bin/esbuild tests/event-director.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-event-director.cjs --alias:@=./src >/dev/null
 node /tmp/rst-event-director.cjs
 
+echo "=== end-of-day beat (immersion #8) ==="
+./node_modules/.bin/esbuild tests/day-close.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-day-close.cjs --alias:@=./src >/dev/null
+node /tmp/rst-day-close.cjs
+
 echo "=== industry-history subplots ==="
 ./node_modules/.bin/esbuild tests/industry-subplots.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-industry-subplots.cjs --alias:@=./src >/dev/null
 node /tmp/rst-industry-subplots.cjs

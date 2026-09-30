@@ -25,6 +25,7 @@ import {
   autoAssignAvailableChores
 } from '@/simulation/choreEngine';
 import { advanceStory } from '@/narrative/storyProgression';
+import { withDayCloseBeat } from '@/narrative/dayClose';
 import {
   NEUTRAL_ORIGIN_EFFECTS,
   applyUpkeepDiscount,
@@ -207,7 +208,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       };
 
       if (triggeredEvents.length === 0) {
-        return advanceStory(baseUpdatedState);
+        return withDayCloseBeat(prev, advanceStory(baseUpdatedState));
       }
 
       const { state: postEventsState, results } = applyEventsToState(baseUpdatedState, triggeredEvents);
@@ -230,10 +231,10 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
         });
       });
 
-      return advanceStory({
+      return withDayCloseBeat(prev, advanceStory({
         ...postEventsState,
         notifications: [...postEventsState.notifications, ...newNotifications]
-      });
+      }));
     });
     
     // Show era transition notification if available
