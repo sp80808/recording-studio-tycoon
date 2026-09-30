@@ -490,6 +490,27 @@ const MusicStudioTycoon = () => {
     return () => window.removeEventListener('autoSave', handleAutoSave);
   }, [gameInitialized, gameState, saveGame]);
 
+  // Autosave only ticked every 30s, so closing or backgrounding the tab (the normal way
+  // to leave on mobile) lost the latest day/settlement. Save on hide and on each new day.
+  const latestStateRef = useRef(gameState);
+  latestStateRef.current = gameState;
+  useEffect(() => {
+    if (!gameInitialized || !settings.autoSave) return;
+    const flush = () => saveGame(latestStateRef.current);
+    const onVisibility = () => { if (document.visibilityState === 'hidden') flush(); };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pagehide', flush);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pagehide', flush);
+    };
+  }, [gameInitialized, settings.autoSave, saveGame]);
+
+  useEffect(() => {
+    if (gameInitialized && settings.autoSave) saveGame(latestStateRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameInitialized, gameState.currentDay]);
+
   // Passive work stops at review-ready rather than settling rewards. Once any
   // welcome-back summary is dismissed, hand the completed project to the
   // existing authoritative review/completion flow.
