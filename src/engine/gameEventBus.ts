@@ -24,6 +24,16 @@ export interface GameEventPayloads {
     revenue: number;
     reputationGain: number;
   };
+  'chart:placement': {
+    chartName: string;
+    title: string;
+    position: number;
+    previousPosition?: number;
+  };
+  'minigame:success': {
+    minigameType?: string;
+    score: number;
+  };
   'studio:tier_upgraded': {
     oldTier: number;
     newTier: number;
