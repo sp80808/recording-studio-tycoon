@@ -138,6 +138,14 @@ export interface Project {
   flowStreak?: number;
   flowMultiplier?: number;
   focusAllocation: FocusAllocation; // ADDED: Stores current focus settings for the project
+  /** Creative brief (#48). Optional: old saves derive one on read via getProjectBrief. */
+  brief?: import('@/rpg/projectBrief').ProjectBrief;
+  /** Vocal signal chain chosen at booking (#86). */
+  signalChain?: import('@/rpg/signalChain').SignalChain;
+  /** Open quality issues left by phase events (#87). Cleared by great takes or by polishing before delivery. */
+  unresolvedIssues?: import('@/rpg/sessionIssues').UnresolvedIssue[];
+  /** Production approach chosen at booking (#48). */
+  approachId?: import('@/rpg/projectBrief').ProductionApproach['id'];
   progress?: number; // 0-100, completion percentage for animated cards
   cardState?: CardState; // Current visual state for PixiJS rendering
   textureAtlasKey?: string; // Reference to texture atlas for this project type
@@ -163,6 +171,7 @@ export interface StaffMember {
   xpInRole: number;
   levelInRole: number;
   genreAffinity: { genre: string; bonus: number } | null;
+  gearFamiliarity?: Record<string, number>; // Sessions using each piece of gear in a chain (#86, capped)
   clientFamiliarity?: Record<string, number>; // Completed sessions with recurring clients
   energy: number;
   mood: number; // 0-100, affects work effectiveness
@@ -304,6 +313,9 @@ export interface GameState {
   studioLevel?: number; // Studio tier level (1-5), drives visible studio room and console upgrades
   studioTier?: number; // Alias for studioLevel
   studioRooms: StudioRoom[]; // Physical bookable studio suites; drives concurrent capacity
+  chainTemplates?: import('@/rpg/signalChain').SignalChain[]; // Saved chain templates (#86)
+  studioKnowHow?: number; // Bounded learning from polished sessions (#87)
+  discoveredBriefCombos?: string[]; // Named brief/recipe combos discovered (#48)
   discoveredSynergies?: string[]; // IDs of discovered studio synergies (Kairosoft recipe codex)
   
   // Multi-project system
@@ -318,7 +330,12 @@ export interface GameState {
   lastGigRefreshDay?: number;
   notifications: GameNotification[];
   bands: Band[]; // All bands (AI and player-created)
-  playerBands: Band[]; // Player's own bands
+  /** Player's own bands */
+  playerBands: Band[];
+  /** A&R roster of signed artists (artist contracts). Absent on legacy saves. */
+  signedArtists?: import('@/simulation/artistContracts').SignedArtist[];
+  /** Prospect ids the player negotiated with and walked away from. Absent on legacy saves. */
+  passedProspects?: string[];
   availableSessionMusicians: SessionMusician[];
   activeOriginalTrack: OriginalTrackProject | null;
   // Charts system data
@@ -329,6 +346,10 @@ export interface GameState {
     discoveredArtists: Artist[]; // Artists found in charts
     lastChartUpdate: number; // Day when charts were last updated
   };
+  /** Player songs currently on the weekly chart run (see utils/chartRun). */
+  chartRun?: import('../utils/chartRun').ChartRunEntry[];
+  /** Studio Seasons (#63): season clock, focus, delivery ledger and yearbook. Absent on legacy saves. */
+  studioSeasons?: import('@/rpg/studioSeasons').StudioSeasonState;
   researchedMods: string[]; // Array of researched mod IDs
   clients?: Client[];
   recordLabels?: RecordLabel[];
@@ -353,9 +374,14 @@ export interface GameState {
   pendingCrates?: Array<{
     id: string;
     era: string;
-    source: 'chore_streak' | 's_grade_take' | 'yard_sale';
-    tier: 'standard' | 'vintage_flight_case';
+    source: 'chore_streak' | 's_grade_take' | 'yard_sale' | 'shop_money' | 'shop_gems' | 'reward';
+    /** Legacy 2-tier ids stay valid; the economy resolves them via legacyTierToFlightCase. */
+    tier: 'standard' | 'vintage_flight_case' | 'cardboard_box' | 'road_case' | 'tour_trunk' | 'holy_grail_vault';
   }>;
+  /** Premium-feel soft currency (bead: flight cases + gems). Absent on legacy saves = 0. */
+  gems?: number;
+  /** Holding area for flight case finds the player stashed/equipped; the gear economy can claim from here. */
+  caseFinds?: Array<{ id: string; name: string; era: string; rarity: string; condition: number; baseValue: number }>;
   /** Unlocked achievements: id -> game day it was earned. Absent on legacy saves. */
   unlockedAchievements?: Record<string, number>;
   /** Set once the campaign epilogue has been shown, so it never replays. */
@@ -450,6 +476,8 @@ export interface ProjectReport {
     name: string;
   };
   genre?: string;
+  /** Studio Know-How earned by resolving issues before delivery (#87, capped per project). */
+  knowHowGained?: number;
 }
 
 export interface Financials {

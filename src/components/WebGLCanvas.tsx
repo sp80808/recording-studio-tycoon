@@ -1,7 +1,9 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import { Application, Container, Graphics, Sprite, Text } from 'pixi.js';
+import React, { useEffect, useRef } from 'react';
+import { Application, Container, Graphics, Matrix, Sprite, Text } from 'pixi.js';
+import { getPropTexture, loadPropSprites } from '@/components/studio/propSprites';
 import { visualEraId } from '@/utils/eraProgression';
 import { useSettings } from '@/contexts/SettingsContext';
+import { claimPixiApplication, STUDIO_FLOOR_OWNER } from '@/lib/motion/pixiGuard';
 import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from '@/components/studio/isoMath';
 import {
   buildDecorLights,
@@ -134,6 +136,14 @@ export const calculateTapeSaturationWarmth = (
 export type StudioHotspotId = 'console' | 'liveRoom' | 'phone' | 'clock' | 'tv' | 'shelf';
 
 /**
+ * Draw-order bands inside the room. Floor, walls and big fixed furniture keep add order at `world`;
+ * y-sorted pieces (characters, free-standing tier props) share `depth + y`; glow/light FX always sit on top.
+ */
+const Z = { world: 0, depth: 100, fx: 3000 } as const;
+
+export type HotspotAnchors = Partial<Record<StudioHotspotId, { x: number; y: number }>>;
+
+/**
  * Live state fed into the scene. Purely presentational — the scene reads the
  * latest values from a ref every animation frame, so React can update it
  * cheaply without rebuilding the room.
@@ -171,6 +181,8 @@ interface WebGLCanvasProps {
   state?: Partial<StudioSceneState>;
   onHotspotSelect?: (id: StudioHotspotId) => void;
   resetCameraKey?: number;
+  /** Top-centre of each hotspot in canvas CSS pixels; follows pan/zoom so DOM badges stay attached. */
+  onHotspotAnchors?: (anchors: HotspotAnchors) => void;
   className?: string;
 }
 
@@ -349,14 +361,13 @@ interface SceneRefs {
   nightTintLayer: Container | null;
   hoverGlows: Record<string, Graphics>;
   hoverGlowTargets: Record<string, number>;
+  hotspotHits: Partial<Record<StudioHotspotId, Container>>;
   idleHints: Partial<Record<'phone' | 'console', Graphics>>;
   crtLayer: Container | null;
   bloomLayer: Container | null;
   vignetteLayer: Container | null;
   dynamicBloomG: Graphics | null;
   decor: DecorLights | null;
-  /** World-space (pre-camera-transform) anchor per hotspot, for DOM badges that must track pan/zoom. */
-  hotspotAnchors: Partial<Record<StudioHotspotId, { x: number; y: number }>>;
   /**
    * Set true the instant this build is torn down (rebuild or unmount). Async
    * work kicked off during buildScene (optional sprite texture loads) must
@@ -364,12 +375,6 @@ interface SceneRefs {
    * after the scene it belongs to has already been destroyed.
    */
   disposed: boolean;
-}
-
-/** Imperative handle so DOM overlays (chore badges) can track the Pixi camera without per-frame React state. */
-export interface StudioCameraHandle {
-  /** Screen-space (canvas pixel) position of a hotspot's world anchor, accounting for current pan/zoom. Null before boot. */
-  getHotspotScreenPosition: (id: StudioHotspotId) => { x: number; y: number } | null;
 }
 
 interface BuiltScene {
@@ -381,23 +386,7 @@ interface BuiltScene {
   baseScale: number;
 }
 
-/**
- * Depth-band z-indices (pixi-presentation-audit §2/§7 "staff/furniture depth
- * bands"). Every top-level child of `root` gets an explicit zIndex on the
- * same scale as `iso(x, y).y` (staff already sorted this way) so paint order
- * always matches apparent depth instead of insertion order. Backgrounds pin
- * to a sentinel below any tile position; FX/light layers pin above any prop.
- */
-const Z_BACKGROUND = -1000;
-const Z_LIGHTING = 5000;
-const Z_FX = 100000;
-
-/**
- * Attach an interactive hit area + hover glow around a visual group.
- * `anchor` is the hotspot's world-space (pre-camera-transform) point — it
- * doubles as the depth-band zIndex (iso-Y scale) and is recorded so DOM
- * overlays (chore badges) can project it through the live camera transform.
- */
+/** Attach an interactive hit area + hover glow around a visual group. */
 const addHotspot = (
   parent: Container,
   id: StudioHotspotId,
@@ -405,12 +394,10 @@ const addHotspot = (
   visual: Container,
   refs: SceneRefs,
   onSelect?: (id: StudioHotspotId) => void,
-  anchor?: { x: number; y: number }
+  zIndex?: number
 ) => {
-  const zIndex = anchor?.y ?? 0;
-  if (anchor) refs.hotspotAnchors[id] = anchor;
   const wrap = new Container();
-  wrap.zIndex = zIndex;
+  if (zIndex !== undefined) wrap.zIndex = zIndex;
   if (visual) wrap.addChild(visual);
 
   // Glow ring shown on hover (populated by the caller with real coordinates)
@@ -421,12 +408,13 @@ const addHotspot = (
   wrap.addChild(glow);
 
   const hit = new Container();
-  hit.zIndex = zIndex;
   hit.addChild(hitArea);
   hit.eventMode = 'static';
   hit.cursor = 'pointer';
   hit.alpha = 0; // invisible for rendering, still receives pointer events
-  hit.on('pointerover', () => { refs.hoverGlowTargets[id] = 0.85; });
+  if (zIndex !== undefined) hit.zIndex = zIndex;
+  refs.hotspotHits[id] = hit;
+  hit.on('pointerover', () => { refs.hoverGlowTargets[id] = 1; });
   hit.on('pointerout', () => { refs.hoverGlowTargets[id] = 0; });
   // The canvas gesture guard suppresses selection after a two-finger pan.
   hit.on('pointertap', () => { onSelect?.(id); });
@@ -442,9 +430,6 @@ const buildScene = (
   onSelect?: (id: StudioHotspotId) => void
 ): BuiltScene => {
   const root = new Container();
-  root.sortableChildren = true;
-  /** Depth-band key for a tile anchor: same scale `iso().y` uses for staff. */
-  const depthY = (gx: number, gy: number) => iso(gx, gy).y;
   const refs: SceneRefs = {
     vuBars: [],
     tvBars: [],
@@ -455,13 +440,13 @@ const buildScene = (
     nightTintLayer: null,
     hoverGlows: {},
     hoverGlowTargets: {},
+    hotspotHits: {},
     idleHints: {},
     crtLayer: null,
     bloomLayer: null,
     vignetteLayer: null,
     dynamicBloomG: null,
     decor: null,
-    hotspotAnchors: {},
     disposed: false,
   };
 
@@ -488,9 +473,7 @@ const buildScene = (
   const trophyInput: TrophyInput = state.trophies ?? { platinum: 0, gold: 0, awards: 0 };
 
   // Room slab + ground shadow sit under everything else.
-  const roomShell = buildRoomShell();
-  roomShell.zIndex = Z_BACKGROUND;
-  root.addChild(roomShell);
+  root.addChild(buildRoomShell());
 
   /* ---- Back walls ------------------------------------------------------ */
   const walls = new Graphics();
@@ -519,10 +502,8 @@ const buildScene = (
   walls
     .poly([wl0.x, wl0.y, wl0.x, wl0.y - WALL_H])
     .stroke({ width: 2, color: COLORS.wallTrim, alpha: 0.6 });
-  walls.zIndex = Z_BACKGROUND;
   root.addChild(walls);
   const dressing = buildWallDressing(decorSpec, trophyInput, tier);
-  dressing.container.zIndex = Z_BACKGROUND;
   root.addChild(dressing.container);
 
   /* ---- Window (right wall) -------------------------------------------- */
@@ -535,7 +516,6 @@ const buildScene = (
   const winMidX = (winA.x + winB.x) / 2;
   const winMidY = (winA.y + winB.y) / 2;
   windowGfx.rect(winMidX - 2, winMidY - 78, 4, 64).fill(COLORS.wallTrim);
-  windowGfx.zIndex = Z_BACKGROUND;
   root.addChild(windowGfx);
 
   /* ---- Charts TV (left wall) ------------------------------------------ */
@@ -559,7 +539,7 @@ const buildScene = (
   tvHit
     .poly([tvA.x, tvA.y - 110, tvB.x, tvB.y - 110, tvB.x, tvB.y - 50, tvA.x, tvA.y - 50])
     .fill(0xffffff);
-  addHotspot(root, 'tv', tvHit, tvWrap, refs, onSelect, iso(0, 5.5));
+  addHotspot(root, 'tv', tvHit, tvWrap, refs, onSelect);
   refs.hoverGlows['tv']
     ?.poly([tvA.x, tvA.y - 110, tvB.x, tvB.y - 110, tvB.x, tvB.y - 50, tvA.x, tvA.y - 50])
     .stroke({ width: 3, color: 0x5aa9e6 });
@@ -574,34 +554,26 @@ const buildScene = (
   root.addChild(clockWrap);
   const clockHit = new Graphics();
   clockHit.ellipse(clockCx, clockCy, 26, 24).fill(0xffffff);
-  addHotspot(root, 'clock', clockHit, clockWrap, refs, onSelect, iso(0, 2.0));
+  addHotspot(root, 'clock', clockHit, clockWrap, refs, onSelect);
   refs.hoverGlows['clock']
     ?.ellipse(clockCx, clockCy, 21, 19)
     .stroke({ width: 2, color: 0xffd166 });
 
   /* ---- Floor ---------------------------------------------------------- */
   const floor = buildPlankFloor(decorSpec, decorSeed);
-  floor.zIndex = Z_BACKGROUND;
   root.addChild(floor);
-  const rug = buildRug();
-  rug.zIndex = Z_BACKGROUND;
-  root.addChild(rug);
-  // Free-standing era props sit on top of the floor but are not individually
-  // depth-sorted against staff/furniture yet — tracked as a follow-up slice.
-  dressing.props.zIndex = Z_BACKGROUND + 1;
-  root.addChild(dressing.props);
+  root.addChild(buildRug());
+  root.addChild(dressing.props); // free-standing era props sit on top of the floor
 
   // Window spill and contact shadow place furniture on the floor plane.
   const lightAndShadow = new Graphics();
   const deskFoot = iso(4.5, 4.25);
   lightAndShadow.ellipse(deskFoot.x, deskFoot.y + 3, 63, 23).fill({ color: 0x131620, alpha: .28 });
-  lightAndShadow.zIndex = Z_BACKGROUND;
   root.addChild(lightAndShadow);
 
   const outline = new Graphics();
   isoQuad(outline, 0, 0, ROOM_W, ROOM_D);
   outline.stroke({ width: 3, color: COLORS.wallTrim });
-  outline.zIndex = Z_BACKGROUND;
   root.addChild(outline);
 
   /* ---- Studio door (left wall, between clock & TV) ----------------------
@@ -662,7 +634,19 @@ const buildScene = (
     isoQuad(thresh, 0, 3.15, 0.55, 4.35, 0);
     thresh.fill({ color: 0x2a2118, alpha: 0.85 });
     doorWrap.addChild(thresh);
-    doorWrap.addChild(doorGfx);
+    const doorTex = getPropTexture('door');
+    if (doorTex) {
+      // Sprite is authored flat; shear it into the left-wall plane.
+      const doorSprite = new Sprite(doorTex);
+      doorSprite.setFromMatrix(new Matrix(
+        (doorB.x - doorA.x) / doorTex.width, (doorB.y - doorA.y) / doorTex.width,
+        0, doorH / doorTex.height,
+        doorA.x, doorA.y - doorH,
+      ));
+      doorWrap.addChild(doorSprite);
+    } else {
+      doorWrap.addChild(doorGfx);
+    }
     const lintel = new Graphics();
     lintel
       .poly([
@@ -673,7 +657,6 @@ const buildScene = (
       ])
       .fill(COLORS.wallTrim);
     doorWrap.addChild(lintel);
-    doorWrap.zIndex = depthY(0, 3.75);
     root.addChild(doorWrap);
   }
 
@@ -687,7 +670,7 @@ const buildScene = (
 
   const liveHit = new Graphics();
   liveHit.poly([gA.x, gA.y, gB.x, gB.y, gB.x, gB.y - 90, gA.x, gA.y - 90]).fill(0xffffff);
-  addHotspot(root, 'liveRoom', liveHit, liveWrap, refs, onSelect, iso((boothX0 + boothX1) / 2, boothGlassY));
+  addHotspot(root, 'liveRoom', liveHit, liveWrap, refs, onSelect);
   refs.hoverGlows['liveRoom']
     ?.poly([gA.x, gA.y - 90, gB.x, gB.y - 90, gB.x, gB.y, gA.x, gA.y])
     .stroke({ width: 3, color: COLORS.glass });
@@ -757,7 +740,7 @@ const buildScene = (
   }
   const shelfHit = new Graphics();
   shelfHit.poly([q1.x, q1.y - 60, q2.x, q2.y - 60, q3.x, q3.y, q4.x, q4.y]).fill(0xffffff);
-  addHotspot(root, 'shelf', shelfHit, shelfWrap, refs, onSelect, iso(1.25, 5.5));
+  addHotspot(root, 'shelf', shelfHit, shelfWrap, refs, onSelect);
   refs.hoverGlows['shelf']
     ?.poly([q1.x, q1.y - 60, q2.x, q2.y - 60, q3.x, q3.y, q4.x, q4.y])
     .stroke({ width: 3, color: 0xc77dff });
@@ -1002,23 +985,26 @@ const buildScene = (
   // Desk interaction hit area and hover glow
   const deskHit = new Graphics();
   deskHit.poly([p1.x, p1.y - bridgeH - 18, p2.x, p2.y - bridgeH - 18, p3.x, p3.y + 4, p4.x, p4.y + 4]).fill(0xffffff);
-  const consoleAnchor = iso(4.5, 4.25);
-  addHotspot(root, 'console', deskHit, deskWrap, refs, onSelect, consoleAnchor);
+  // The desk (and everything sitting on it) y-sorts with the staff at its front-left corner, so
+  // staff standing behind it are hidden by it and staff in front of it draw over it.
+  const deskZ = Z.depth + iso(3.0, 5.0).y;
+  addHotspot(root, 'console', deskHit, deskWrap, refs, onSelect, deskZ);
   refs.hoverGlows['console']
     ?.poly([p1.x, p1.y - bridgeH - 18, p2.x, p2.y - bridgeH - 18, p3.x, p3.y + 4, p4.x, p4.y + 4])
     .stroke({ width: 3, color: 0x7bd389 });
 
   const consoleHint = new Graphics();
-  consoleHint
-    .poly([p1.x, p1.y - bridgeH - 20, p2.x, p2.y - bridgeH - 20, p3.x, p3.y + 6, p4.x, p4.y + 6])
-    .stroke({ width: 3.5, color: grade.accent, alpha: 0.95 });
+  const consoleHintPoly = [p1.x, p1.y - bridgeH - 20, p2.x, p2.y - bridgeH - 20, p3.x, p3.y + 6, p4.x, p4.y + 6];
+  // Dark keyline under the coloured ring keeps the hint findable under every era / night tint.
+  consoleHint.poly(consoleHintPoly).stroke({ width: 7, color: 0x0b0906, alpha: 0.55 });
+  consoleHint.poly(consoleHintPoly).stroke({ width: 3.5, color: grade.accent, alpha: 0.95 });
   consoleHint.alpha = 0;
   consoleHint.eventMode = 'none';
-  consoleHint.zIndex = consoleAnchor.y + 1;
   refs.idleHints.console = consoleHint;
+  consoleHint.zIndex = Z.fx;
   root.addChild(consoleHint);
   const deskProps = buildDeskProps(deskH);
-  deskProps.zIndex = consoleAnchor.y;
+  deskProps.zIndex = deskZ;
   root.addChild(deskProps);
 
   /* ---- Studio phone (on the desk corner) ------------------------------ */
@@ -1044,18 +1030,18 @@ const buildScene = (
 
   const phoneHit = new Graphics();
   phoneHit.ellipse(pPos.x, pPos.y - 3, 24, 14).fill(0xffffff);
-  const phoneAnchor = iso(5.66, 3.58);
-  addHotspot(root, 'phone', phoneHit, phoneWrap, refs, onSelect, phoneAnchor);
+  addHotspot(root, 'phone', phoneHit, phoneWrap, refs, onSelect, deskZ);
   refs.hoverGlows['phone']
     ?.ellipse(pPos.x, pPos.y - 3, 22, 12)
     .stroke({ width: 3, color: 0xffd166 });
 
   const phoneHint = new Graphics();
+  phoneHint.ellipse(pPos.x, pPos.y - 3, 24, 13).stroke({ width: 7, color: 0x0b0906, alpha: 0.55 });
   phoneHint.ellipse(pPos.x, pPos.y - 3, 24, 13).stroke({ width: 3.5, color: 0xffd166, alpha: 0.95 });
   phoneHint.alpha = 0;
   phoneHint.eventMode = 'none';
-  phoneHint.zIndex = phoneAnchor.y + 1;
   refs.idleHints.phone = phoneHint;
+  phoneHint.zIndex = Z.fx;
   root.addChild(phoneHint);
 
   /* ---- Staff / artist figures on the floor ---------------------------- */
@@ -1087,15 +1073,15 @@ const buildScene = (
     body.circle(-11, -43, 3).fill(grade.accent);
     body.circle(11, -43, 3).fill(grade.accent);
     fig.addChild(body);
-    fig.zIndex = spot.y;
+    fig.zIndex = Z.depth + spot.y;
     refs.staffFigures.push({ fig, baseY: spot.y });
     root.addChild(fig);
   }
 
+  root.sortableChildren = true;
+
   /* ---- Tier upgrade furniture (bead ifx.3) ---------------------------- */
   // Each ProgressionSystem milestone visibly adds/replaces studio furniture.
-  // Depth-band zIndex on the same iso-Y scale as staff (§2 depth bands) so a
-  // figure standing in front of/behind a tier prop paints correctly either way.
   if (tier >= 2) {
     const upgrades = new Graphics();
     // Potted plant in the back-left corner
@@ -1105,7 +1091,7 @@ const buildScene = (
     upgrades.circle(plantBase.x, plantBase.y - 30, 16).fill(0x3f7d4f);
     upgrades.circle(plantBase.x - 10, plantBase.y - 24, 10).fill(0x4f9a5f);
     upgrades.circle(plantBase.x + 10, plantBase.y - 26, 11).fill(0x357044);
-    upgrades.zIndex = depthY(0.55, 1.5);
+    upgrades.zIndex = Z.depth + plantBase.y;
     root.addChild(upgrades);
   }
 
@@ -1117,15 +1103,16 @@ const buildScene = (
     lounge.roundRect(sofa.x - 26, sofa.y - 34, 52, 12, 5).fill(0x6d4c85);
     lounge.rect(sofa.x - 22, sofa.y - 2, 6, 6).fill(0x2a1f33);
     lounge.rect(sofa.x + 16, sofa.y - 2, 6, 6).fill(0x2a1f33);
-    // Road case next to the console
-    const rc = iso(4.9, 2.4);
-    lounge.rect(rc.x - 14, rc.y - 22, 28, 22).fill(0x38414f);
-    lounge.rect(rc.x - 14, rc.y - 22, 28, 6).fill(0x4c5769);
-    lounge.rect(rc.x - 14, rc.y - 11, 28, 3).fill(0x232a36);
-    // One depth-sorted container can't fully serve two anchors (sofa vs road
-    // case); the sofa — the larger, more depth-sensitive prop — wins for now.
-    lounge.zIndex = depthY(6.0, 5.6);
+    lounge.zIndex = Z.depth + sofa.y;
     root.addChild(lounge);
+    // Road case next to the console (its own node so it sorts by its own depth)
+    const roadCase = new Graphics();
+    const rc = iso(4.9, 2.4);
+    roadCase.rect(rc.x - 14, rc.y - 22, 28, 22).fill(0x38414f);
+    roadCase.rect(rc.x - 14, rc.y - 22, 28, 6).fill(0x4c5769);
+    roadCase.rect(rc.x - 14, rc.y - 11, 28, 3).fill(0x232a36);
+    roadCase.zIndex = Z.depth + rc.y;
+    root.addChild(roadCase);
   }
 
   if (tier >= 4) {
@@ -1135,7 +1122,7 @@ const buildScene = (
     pro.rect(rig.x - 16, rig.y - 34, 32, 34).fill(0x2a221c);
     pro.rect(rig.x - 12, rig.y - 29, 24, 16).fill(grade.accent);
     pro.rect(rig.x - 16, rig.y - 34, 32, 34).stroke({ width: 2, color: 0x120d09 });
-    pro.zIndex = depthY(7.0, 3.2);
+    pro.zIndex = Z.depth + rig.y;
     root.addChild(pro);
   }
 
@@ -1158,16 +1145,13 @@ const buildScene = (
     empire
       .poly([neonA.x, neonA.y - 82, neonB.x, neonB.y - 82, neonB.x, neonB.y - 76, neonA.x, neonA.y - 76])
       .fill(grade.accent);
-    // Floor trim + wall trophies read as background dressing rather than a
-    // floor-standing prop, so this sits just above the base floor band.
-    empire.zIndex = Z_BACKGROUND + 2;
     root.addChild(empire);
   }
 
   /* ---- Additive lighting: window shaft, motes, lamp pools, era glow ------- */
   const lights = buildDecorLights({ spec: decorSpec });
   refs.decor = lights;
-  lights.container.zIndex = Z_LIGHTING;
+  lights.container.zIndex = Z.fx;
   root.addChild(lights.container);
 
   /* ---- Screen-space backdrop behind the room ---------------------------- */
@@ -1231,7 +1215,7 @@ const buildScene = (
   bloomLayer.addChild(dynamicBloomG);
   refs.dynamicBloomG = dynamicBloomG;
   refs.bloomLayer = bloomLayer;
-  bloomLayer.zIndex = Z_FX;
+  bloomLayer.zIndex = Z.fx;
   root.addChild(bloomLayer);
 
   return { root, underlayRoot, overlayRoot, refs, basePosition: { x: originX, y: originY }, baseScale: fitScale };
@@ -1240,12 +1224,14 @@ const buildScene = (
 /* ---------------------------------------------------------------------------
  * Component
  * ------------------------------------------------------------------------- */
-const WebGLCanvas = forwardRef<StudioCameraHandle, WebGLCanvasProps>(({ state, onHotspotSelect, className, resetCameraKey }, ref) => {
+const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, className, resetCameraKey, onHotspotAnchors }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const sceneRef = useRef<BuiltScene | null>(null);
   const stateRef = useRef<StudioSceneState>({ ...DEFAULT_STATE, ...state });
   const selectRef = useRef(onHotspotSelect);
+  const anchorsCbRef = useRef(onHotspotAnchors);
+  const lastAnchorsRef = useRef<HotspotAnchors>({});
   const timeRef = useRef(0);
   const cameraRef = useRef({ x: 0, y: 0, zoom: 1.0 });
   const gestureRef = useRef(new Map<number, { x: number; y: number }>());
@@ -1262,6 +1248,8 @@ const WebGLCanvas = forwardRef<StudioCameraHandle, WebGLCanvasProps>(({ state, o
     settingsRef.current = settings;
     const app = appRef.current;
     if (app && app.renderer) {
+      // Hard-cap the ticker so 90/120Hz phones don't wake the GPU every vsync (0 = uncapped)
+      app.ticker.maxFPS = settings.targetFps > 0 ? settings.targetFps : 0;
       const dpr = window.devicePixelRatio || 1;
       const effectiveRes = calculateEffectiveResolution(dpr, settings.resolutionScale);
       if (Math.abs(app.renderer.resolution - effectiveRes) > 0.01) {
@@ -1285,6 +1273,10 @@ const WebGLCanvas = forwardRef<StudioCameraHandle, WebGLCanvasProps>(({ state, o
   useEffect(() => {
     selectRef.current = onHotspotSelect;
   }, [onHotspotSelect]);
+
+  useEffect(() => {
+    anchorsCbRef.current = onHotspotAnchors;
+  }, [onHotspotAnchors]);
 
   useEffect(() => {
     cameraRef.current = { x: 0, y: 0, zoom: 1.0 };
@@ -1343,6 +1335,7 @@ const WebGLCanvas = forwardRef<StudioCameraHandle, WebGLCanvasProps>(({ state, o
     if (!container) return;
 
     let disposed = false;
+    let releasePixiClaim: (() => void) | null = null;
     let lastW = 0;
     let lastH = 0;
     let detachInteractions: (() => void) | undefined;
@@ -1406,6 +1399,7 @@ const WebGLCanvas = forwardRef<StudioCameraHandle, WebGLCanvasProps>(({ state, o
 
     const boot = async () => {
       try {
+        releasePixiClaim = claimPixiApplication(STUDIO_FLOOR_OWNER);
         const app = new Application();
         const initialRes = calculateEffectiveResolution(
           window.devicePixelRatio || 1,
@@ -1414,12 +1408,14 @@ const WebGLCanvas = forwardRef<StudioCameraHandle, WebGLCanvasProps>(({ state, o
         await app.init({
           background: 0x0e0c0a,
           resizeTo: container,
-          antialias: true,
+          antialias: !(typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches),
           autoDensity: true,
+          powerPreference: 'high-performance',
           resolution: initialRes,
         });
         if (disposed) {
           app.destroy(true, { children: true });
+          releasePixiClaim?.();
           return;
         }
         appRef.current = app;
@@ -1428,6 +1424,11 @@ const WebGLCanvas = forwardRef<StudioCameraHandle, WebGLCanvasProps>(({ state, o
         app.canvas.setAttribute('data-engine', 'pixi');
         app.canvas.style.touchAction = 'none';
         app.canvas.setAttribute('aria-label', 'Interactive studio floor. Tap objects to inspect. Pinch to zoom or use two fingers to pan.');
+        await loadPropSprites();
+        if (disposed) {
+          app.destroy(true, { children: true });
+          return;
+        }
         lastW = app.screen.width;
         lastH = app.screen.height;
         rebuild();
@@ -1444,10 +1445,24 @@ const WebGLCanvas = forwardRef<StudioCameraHandle, WebGLCanvasProps>(({ state, o
           const pointers = [...gestureRef.current.values()];
           return { x: (pointers[0].x + pointers[1].x) / 2, y: (pointers[0].y + pointers[1].y) / 2 };
         };
+        // Touch: one-finger drag pans (after a 10px slop so taps on hotspots still select); double-tap resets the camera.
+        let touchDrag: { id: number; x: number; y: number; moved: boolean } | null = null;
+        let lastTap = { t: 0, x: 0, y: 0 };
+        const resetCamera = () => {
+          cameraRef.current = { x: 0, y: 0, zoom: 1.0 };
+          const sc = sceneRef.current;
+          if (sc) {
+            sc.root.scale.set(sc.baseScale);
+            sc.root.position.set(sc.basePosition.x, sc.basePosition.y);
+          }
+        };
         const onPointerDown = (event: PointerEvent) => {
           markCanvasInput();
           if (gestureRef.current.size === 0) suppressTapRef.current = false;
           gestureRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          touchDrag = event.pointerType !== 'mouse' && gestureRef.current.size === 1
+            ? { id: event.pointerId, x: event.clientX, y: event.clientY, moved: false }
+            : null;
           if (gestureRef.current.size === 2) {
             suppressTapRef.current = true;
             gestureMidpointRef.current = midpoint();
@@ -1464,6 +1479,18 @@ const WebGLCanvas = forwardRef<StudioCameraHandle, WebGLCanvasProps>(({ state, o
           markCanvasInput();
           if (!gestureRef.current.has(event.pointerId)) return;
           gestureRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          if (gestureRef.current.size === 1 && touchDrag && touchDrag.id === event.pointerId) {
+            const dx = event.clientX - touchDrag.x;
+            const dy = event.clientY - touchDrag.y;
+            if (!touchDrag.moved && Math.hypot(dx, dy) < 10) return;
+            touchDrag.moved = true;
+            suppressTapRef.current = true;
+            event.preventDefault();
+            panBy(dx, dy);
+            touchDrag.x = event.clientX;
+            touchDrag.y = event.clientY;
+            return;
+          }
           if (gestureRef.current.size !== 2) return;
           event.preventDefault();
 
@@ -1486,6 +1513,18 @@ const WebGLCanvas = forwardRef<StudioCameraHandle, WebGLCanvasProps>(({ state, o
           gestureDistance = nextDist;
         };
         const onPointerUp = (event: PointerEvent) => {
+          if (touchDrag && touchDrag.id === event.pointerId) {
+            if (!touchDrag.moved && event.type === 'pointerup' && event.pointerType !== 'mouse') {
+              const now = performance.now();
+              if (now - lastTap.t < 300 && Math.hypot(event.clientX - lastTap.x, event.clientY - lastTap.y) < 30) {
+                resetCamera();
+                lastTap = { t: 0, x: 0, y: 0 };
+              } else {
+                lastTap = { t: now, x: event.clientX, y: event.clientY };
+              }
+            }
+            touchDrag = null;
+          }
           gestureRef.current.delete(event.pointerId);
           if (gestureRef.current.size < 2) {
             gestureMidpointRef.current = null;
@@ -1598,6 +1637,24 @@ const WebGLCanvas = forwardRef<StudioCameraHandle, WebGLCanvasProps>(({ state, o
               glow.alpha += (target - glow.alpha) * 0.18;
             }
           });
+
+          // Report hotspot screen anchors (only when something moved) so DOM badges follow pan/zoom
+          if (anchorsCbRef.current) {
+            const next: HotspotAnchors = {};
+            let changed = false;
+            (Object.keys(refs.hotspotHits) as StudioHotspotId[]).forEach((id) => {
+              const b = refs.hotspotHits[id]?.getBounds();
+              if (!b || b.maxX <= b.minX) return;
+              const pt = { x: Math.round((b.minX + b.maxX) / 2), y: Math.round(b.minY) };
+              next[id] = pt;
+              const prev = lastAnchorsRef.current[id];
+              if (!prev || prev.x !== pt.x || prev.y !== pt.y) changed = true;
+            });
+            if (changed) {
+              lastAnchorsRef.current = next;
+              anchorsCbRef.current(next);
+            }
+          }
 
           // Console VU meters — amplitude follows live activity
           const vuPeaks: { x: number; y: number; width: number }[] = [];
@@ -1784,6 +1841,7 @@ const WebGLCanvas = forwardRef<StudioCameraHandle, WebGLCanvasProps>(({ state, o
     return () => {
       disposed = true;
       if (sceneRef.current) sceneRef.current.refs.disposed = true;
+      releasePixiClaim?.();
       observer.disconnect();
       detachInteractions?.();
       const app = appRef.current;
@@ -1801,19 +1859,6 @@ const WebGLCanvas = forwardRef<StudioCameraHandle, WebGLCanvasProps>(({ state, o
     if (appRef.current) rebuild();
   }, [structuralKey]);
 
-  // World-anchored DOM overlays (chore badges) project a hotspot's world
-  // anchor through the live camera transform on demand — no per-frame React
-  // state, per the #46 performance contract.
-  useImperativeHandle(ref, () => ({
-    getHotspotScreenPosition: (id) => {
-      const scene = sceneRef.current;
-      const anchor = scene?.refs.hotspotAnchors[id];
-      if (!scene || !anchor) return null;
-      const p = scene.root.toGlobal(anchor);
-      return { x: p.x, y: p.y };
-    },
-  }), []);
-
   return (
     <div
       ref={containerRef}
@@ -1821,8 +1866,6 @@ const WebGLCanvas = forwardRef<StudioCameraHandle, WebGLCanvasProps>(({ state, o
       style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}
     />
   );
-});
-
-WebGLCanvas.displayName = 'WebGLCanvas';
+};
 
 export default WebGLCanvas;

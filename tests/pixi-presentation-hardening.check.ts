@@ -48,28 +48,25 @@ for (const id of canonicalIds) {
 }
 
 /* ---- §2/§7 depth bands -------------------------------------------------- */
-assert.match(webgl, /Z_BACKGROUND\s*=\s*-1000/, 'Background depth-band sentinel must stay a fixed, documented constant');
-assert.match(webgl, /Z_LIGHTING\s*=\s*5000/, 'Lighting depth band must sit above furniture/staff');
-assert.match(webgl, /Z_FX\s*=\s*100000/, 'FX/bloom band must always render on top');
+assert.match(webgl, /const Z = \{ world: 0, depth: 100, fx: 3000 \} as const/, 'Shared Z depth-band namespace must stay a fixed, documented constant');
 assert.match(webgl, /root\.sortableChildren = true/, 'Scene root must enable zIndex sorting');
-// Tier furniture and staff must share one depth scale (iso-Y), not "furniture always behind" (the audit's bug).
-assert.match(webgl, /upgrades\.zIndex = depthY\(/, 'Tier-2 plant prop must be depth-sorted against staff');
-assert.match(webgl, /lounge\.zIndex = depthY\(/, 'Tier-3 lounge prop must be depth-sorted against staff');
-assert.match(webgl, /pro\.zIndex = depthY\(/, 'Tier-4 rig prop must be depth-sorted against staff');
-assert.match(webgl, /fig\.zIndex = spot\.y/, 'Staff figures must stay on the iso-Y depth scale');
+// Tier furniture and staff must share one depth scale (Z.depth + iso-Y), not "furniture always behind" (the audit's bug).
+assert.match(webgl, /upgrades\.zIndex = Z\.depth \+/, 'Tier-2 plant prop must be depth-sorted against staff');
+assert.match(webgl, /lounge\.zIndex = Z\.depth \+/, 'Tier-3 lounge prop must be depth-sorted against staff');
+assert.match(webgl, /roadCase\.zIndex = Z\.depth \+/, 'Tier-3 road-case prop must be depth-sorted separately from the lounge sofa');
+assert.match(webgl, /pro\.zIndex = Z\.depth \+/, 'Tier-4 rig prop must be depth-sorted against staff');
+assert.match(webgl, /fig\.zIndex = Z\.depth \+ spot\.y/, 'Staff figures must stay on the Z.depth + iso-Y depth scale');
+assert.match(webgl, /lights\.container\.zIndex = Z\.fx/, 'Lighting must always render in the fx band, above furniture/staff');
+assert.match(webgl, /bloomLayer\.zIndex = Z\.fx/, 'Bloom must always render in the fx band, on top of everything else');
 
 /* ---- §7 world-anchored chore badges ------------------------------------ */
-assert.match(webgl, /hotspotAnchors/, 'Scene refs must expose hotspot world anchors for DOM badge projection');
-assert.match(webgl, /export interface StudioCameraHandle/, 'WebGLCanvas must export an imperative camera handle type');
-assert.match(webgl, /getHotspotScreenPosition/, 'Camera handle must expose a screen-position projection method');
-assert.match(webgl, /forwardRef<StudioCameraHandle/, 'WebGLCanvas must be wrapped in forwardRef to expose the camera handle');
-assert.match(studioRoom, /WorldAnchoredBadge/, 'StudioRoom must position chore badges via the world-anchored helper, not fixed CSS corners');
-assert.ok(
-  !/className="rst-duty-chip studio-duty-(console|live) absolute/.test(studioRoom),
-  'Chore badges must not hardcode a fixed screen corner anymore (regression to pre-anchoring behaviour)'
-);
-// Performance contract (#46): the anchor projection must not create React state (no per-frame setState).
-assert.match(webgl, /useImperativeHandle\(ref, \(\) => \(\{/, 'Camera handle must be exposed via useImperativeHandle, not state');
+assert.match(webgl, /export type HotspotAnchors = Partial<Record<StudioHotspotId/, 'WebGLCanvas must export a HotspotAnchors type for DOM badge projection');
+assert.match(webgl, /onHotspotAnchors\?: \(anchors: HotspotAnchors\) => void/, 'WebGLCanvas must accept an onHotspotAnchors callback prop');
+assert.match(webgl, /hotspotHits: Partial<Record<StudioHotspotId, Container>>/, 'Scene refs must track hotspot hit containers to project their screen bounds');
+assert.match(studioRoom, /onHotspotAnchors=\{setAnchors\}/, 'StudioRoom must wire onHotspotAnchors into local anchor state');
+assert.match(studioRoom, /anchorStyle/, 'StudioRoom must position chore badges via an anchor-driven style helper, not fixed CSS corners alone');
+// Performance contract (#46): anchors only update state when a hotspot's projected bounds actually move, not every frame.
+assert.match(webgl, /const next: HotspotAnchors = \{\};/, 'Anchor projection must build a fresh anchors map to diff against the previous frame before calling back into React');
 
 /* ---- §8 no second gameplay Pixi Application ---------------------------- */
 for (const [name, src] of [

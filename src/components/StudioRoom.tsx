@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import WebGLCanvas, { StudioCameraHandle, StudioHotspotId } from '@/components/WebGLCanvas';
+import WebGLCanvas, { StudioHotspotId, HotspotAnchors } from '@/components/WebGLCanvas';
 import { StudioInspector } from '@/components/StudioInspector';
 import { GameState, Project } from '@/types/game';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -10,6 +10,7 @@ import { toast } from '@/hooks/use-toast';
 import { LocateFixed, Phone } from 'lucide-react';
 import { getTrophyInput } from '@/components/studio/studioDecorConfig';
 import { triggerScreenShake } from '@/utils/screenShake';
+import { AUTHORED_CHORES } from '@/simulation/choreEngine';
 import { useGamepad } from '@/hooks/useGamepad';
 import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
 import {
@@ -18,9 +19,6 @@ import {
   MotionButton,
 } from '@/components/motion/primitives';
 
-// Canonical ids must match WebGLCanvas's StudioHotspotId union exactly — a
-// mismatch here silently desyncs gamepad focus/labels from the Pixi scene
-// (bead: pixi-presentation-audit §5 hotspot alias drift).
 const STUDIO_HOTSPOTS: StudioHotspotId[] = ['console', 'phone', 'liveRoom', 'shelf', 'tv', 'clock'];
 const HOTSPOT_NAMES: Record<StudioHotspotId, string> = {
   console: 'Console Desk',
@@ -29,50 +27,6 @@ const HOTSPOT_NAMES: Record<StudioHotspotId, string> = {
   shelf: 'Vinyl Shelf',
   tv: 'Charts & TV',
   clock: 'Studio Clock',
-};
-
-/**
- * Positions its children at a Pixi hotspot's live screen position, tracking
- * pan/zoom (pixi-presentation-audit §7 "world-anchored chore badges"). Reads
- * the camera transform imperatively via rAF instead of React state, so
- * panning/zooming the studio never triggers a re-render (bead: #46
- * performance contract — no per-frame React state updates).
- */
-const WorldAnchoredBadge: React.FC<{
-  canvasRef: React.RefObject<StudioCameraHandle>;
-  hotspotId: StudioHotspotId;
-  offsetX?: number;
-  offsetY?: number;
-  className?: string;
-  children: React.ReactNode;
-}> = ({ canvasRef, hotspotId, offsetX = 0, offsetY = 0, className = '', children }) => {
-  const elRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    let raf = 0;
-    const tick = () => {
-      const el = elRef.current;
-      const pos = canvasRef.current?.getHotspotScreenPosition(hotspotId) ?? null;
-      if (el) {
-        if (pos) {
-          el.style.transform = `translate(${Math.round(pos.x + offsetX)}px, ${Math.round(pos.y + offsetY)}px)`;
-          el.style.visibility = 'visible';
-        } else {
-          // Before boot / no anchor yet — stay hidden rather than jump to (0,0).
-          el.style.visibility = 'hidden';
-        }
-      }
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [canvasRef, hotspotId, offsetX, offsetY]);
-
-  return (
-    <div ref={elRef} className={`absolute left-0 top-0 z-20 ${className}`} style={{ willChange: 'transform', visibility: 'hidden' }}>
-      {children}
-    </div>
-  );
 };
 
 interface StudioRoomProps {
@@ -108,9 +62,9 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
   style,
 }) => {
   const { settings } = useSettings();
-  const canvasHandleRef = useRef<StudioCameraHandle>(null);
   const [activeInspector, setActiveInspector] = useState<StudioHotspotId | null>(null);
   const [cameraReset, setCameraReset] = useState(0);
+  const [anchors, setAnchors] = useState<HotspotAnchors>({});
   const [tierFlash, setTierFlash] = useState(false);
   const [pendingTierUpgrade, setPendingTierUpgrade] = useState<{ oldTier: number; newTier: number } | null>(null);
   const playClick = () => { if (settings.sfxEnabled) gameAudio.playUISound('buttonClick'); };
@@ -176,13 +130,11 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
 
   /** Every hotspot now opens its contextual inspector (bead goj.2). */
   const handleHotspot = (id: StudioHotspotId) => {
-    // Restrained audio polish (issue #58 §F): each hotspot family gets its own
-    // small, distinct tactile cue rather than one generic click everywhere.
     if (settings.sfxEnabled) {
       if (id === 'console') {
-        void gameAudio.playLatch(); // heavier mechanical engage — opening the console
+        void gameAudio.playLatch();
       } else if (id === 'shelf') {
-        void gameAudio.playRackSelect(); // lighter click — browsing the gear rack
+        void gameAudio.playRackSelect();
       } else if (id === 'phone') {
         void gameAudio.playEnquiryTone();
       } else {
@@ -248,7 +200,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       className={`relative overflow-hidden rounded-lg border border-stone-700/70 bg-[#1b1815] transition-all duration-300 ${className}`} 
       style={style}
     >
-      <WebGLCanvas state={sceneState} onHotspotSelect={handleHotspot} resetCameraKey={cameraReset} ref={canvasHandleRef} />
+      <WebGLCanvas state={sceneState} onHotspotSelect={handleHotspot} resetCameraKey={cameraReset} onHotspotAnchors={setAnchors} />
       {tierFlash && <div className="tier-flash-overlay" />}
       {activeInspector && (
         <StudioInspector
@@ -299,37 +251,52 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
         const choreState = gameState.choreState;
         if (!choreState) return null;
         const pendingConsoleChores = Object.values(choreState.chores).filter(c => c.hotspotId === 'console' && !c.completed);
-        const pendingLiveRoomChores = Object.values(choreState.chores).filter(c => c.hotspotId === 'liveroom' && !c.completed);
+        const pendingLiveRoomChores = Object.values(choreState.chores).filter(c => AUTHORED_CHORES[c.id]?.hotspotId === 'liveRoom' && !c.completed);
+
+        // Badges ride on their hotspot so pan/zoom never strands them; fixed corners are the pre-first-frame fallback.
+        const anchorStyle = (id: StudioHotspotId): React.CSSProperties | undefined => {
+          const a = anchors[id];
+          if (!a) return undefined;
+          return {
+            position: 'absolute',
+            left: `clamp(80px, ${a.x}px, calc(100% - 80px))`,
+            top: `max(${a.y}px, 40px)`,
+            transform: 'translate(-50%, calc(-100% - 8px))',
+            zIndex: 20,
+          };
+        };
+        const consoleStyle = anchorStyle('console');
+        const liveStyle = anchorStyle('liveRoom');
 
         return (
           <>
             {pendingConsoleChores.length > 0 && (
-              <WorldAnchoredBadge canvasRef={canvasHandleRef} hotspotId="console" offsetX={-70} offsetY={-30} className="studio-duty-console">
+              <div style={consoleStyle}>
                 <MotionReveal direction="up" distance={6}>
                   <button
                     onClick={() => handleHotspot('console')}
-                    className="rst-duty-chip"
+                    className={`rst-duty-chip ${consoleStyle ? '' : 'studio-duty-console absolute bottom-14 left-6 z-20'}`}
                     title={`${pendingConsoleChores.length} Console Maintenance Duty Pending`}
                   >
                     <span>🔧</span>
                     <span>{pendingConsoleChores[0].title}</span>
                   </button>
                 </MotionReveal>
-              </WorldAnchoredBadge>
+              </div>
             )}
             {pendingLiveRoomChores.length > 0 && (
-              <WorldAnchoredBadge canvasRef={canvasHandleRef} hotspotId="liveRoom" offsetX={-60} offsetY={-100} className="studio-duty-live">
+              <div style={liveStyle}>
                 <MotionReveal direction="up" distance={6}>
                   <button
                     onClick={() => handleHotspot('liveRoom')}
-                    className="rst-duty-chip"
+                    className={`rst-duty-chip ${liveStyle ? '' : 'studio-duty-live absolute bottom-16 right-6 z-20'}`}
                     title="Live Room: Tune Acoustics"
                   >
                     <span>✨</span>
                     <span>Tune Acoustics</span>
                   </button>
                 </MotionReveal>
-              </WorldAnchoredBadge>
+              </div>
             )}
           </>
         );

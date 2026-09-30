@@ -20,6 +20,10 @@ echo "=== talents & atomicity ==="
 ./node_modules/.bin/esbuild tests/talents-atomicity.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-talents.cjs --alias:@=./src >/dev/null
 node /tmp/rst-talents.cjs
 
+echo "=== flavour copy ==="
+./node_modules/.bin/esbuild tests/flavour-copy.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-flavour-copy.cjs --alias:@=./src >/dev/null
+node /tmp/rst-flavour-copy.cjs
+
 echo "=== studio synergies ==="
 ./node_modules/.bin/esbuild tests/synergies.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-synergies.cjs --alias:@=./src >/dev/null
 node /tmp/rst-synergies.cjs
@@ -51,7 +55,7 @@ if [ -f tests/studio-strip-desktop-gate.check.ts ]; then
 fi
 
 echo "=== studio chores, progression & crate unboxing suites ==="
-for check in chore-engine chore-progression-coupling studio-duties-clipboard chore-hotspots crate-unboxing flight-case-reveal flight-case-connectors reward-animation-sprite-pipeline; do
+for check in chart-reveal chart-run chore-engine chore-progression-coupling studio-duties-clipboard chore-hotspots crate-unboxing flight-case-economy flight-case-reveal flight-case-connectors reward-animation-sprite-pipeline; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
   node "/tmp/rst-$check.cjs"
 done
@@ -60,9 +64,25 @@ echo "=== branching deterministic storylines ==="
 ./node_modules/.bin/esbuild tests/branching-storylines.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-branching-storylines.cjs --alias:@=./src >/dev/null
 node /tmp/rst-branching-storylines.cjs
 
+echo "=== callback subplots (story remembers earlier choices) ==="
+./node_modules/.bin/esbuild tests/callback-subplots.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-callback-subplots.cjs --alias:@=./src >/dev/null
+node /tmp/rst-callback-subplots.cjs
+
+echo "=== industry-history subplots ==="
+./node_modules/.bin/esbuild tests/industry-subplots.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-industry-subplots.cjs --alias:@=./src >/dev/null
+node /tmp/rst-industry-subplots.cjs
+
 echo "=== story events, rival cast & truthful objectives ==="
 ./node_modules/.bin/esbuild tests/story-events.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-story-events.cjs --alias:@=./src >/dev/null
 node /tmp/rst-story-events.cjs
+
+echo "=== live shows ==="
+./node_modules/.bin/esbuild tests/live-shows.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-live-shows.cjs --alias:@=./src >/dev/null
+node /tmp/rst-live-shows.cjs
+
+echo "=== artist contracts ==="
+./node_modules/.bin/esbuild tests/artist-contracts.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-artist-contracts.cjs --alias:@=./src >/dev/null
+node /tmp/rst-artist-contracts.cjs
 
 echo "=== equipment slots / gear racks (8om) ==="
 ./node_modules/.bin/esbuild tests/equipment-slots.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-equipment-slots.cjs --alias:@=./src >/dev/null
@@ -116,6 +136,16 @@ echo "=== studio os motion pass (#75) ==="
 ./node_modules/.bin/esbuild tests/studio-os-motion.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-os-motion.cjs --alias:@=./src >/dev/null
 node /tmp/rst-studio-os-motion.cjs
 
+echo "=== gear bench & reward FX policy (#81, #80) ==="
+for check in gear-bench reward-fx-policy; do
+  ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
+  node "/tmp/rst-$check.cjs"
+done
+
+echo "=== gear visual state (#81) ==="
+./node_modules/.bin/esbuild tests/gear-visual-state.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-gear-visual-state.cjs --alias:@=./src >/dev/null
+node /tmp/rst-gear-visual-state.cjs
+
 echo "=== DEV overlays opt-in (hidden by default) ==="
 ./node_modules/.bin/esbuild tests/dev-overlays-opt-in.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-dev-overlays-opt-in.cjs --alias:@=./src >/dev/null
 node /tmp/rst-dev-overlays-opt-in.cjs
@@ -143,10 +173,18 @@ for check in origin-perks career-start design-system; do
 done
 
 echo "=== era-authentic gigs, story contracts & economy floors ==="
-for check in project-era-starters economy-income story-contracts achievements campaign-endings studio-hotkeys; do
+for check in project-era-starters project-brief session-issues signal-chain economy-income story-contracts achievements campaign-endings studio-hotkeys; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
   node "/tmp/rst-$check.cjs"
 done
+
+echo "=== studio seasons (#63) ==="
+./node_modules/.bin/esbuild tests/studio-seasons.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-seasons.cjs --alias:@=./src >/dev/null
+node /tmp/rst-studio-seasons.cjs
+
+echo "=== pixi GPU exclusivity guard ==="
+./node_modules/.bin/esbuild tests/pixi-exclusivity.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-pixi-exclusivity.cjs --alias:@=./src >/dev/null
+node /tmp/rst-pixi-exclusivity.cjs
 
 echo "=== balance harness invariants (10 days, seed 7) ==="
 ./node_modules/.bin/esbuild src/dev/balance/run.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-balance.cjs --alias:@=./src >/dev/null

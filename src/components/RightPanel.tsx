@@ -1,3 +1,6 @@
+import { ArtistRoster } from '@/components/ArtistRoster';
+import type { ArtistProspect, ContractTerms, NegotiationOutcome } from '@/simulation/artistContracts';
+import { ShowPlan } from '@/simulation/liveShows';
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -50,6 +53,12 @@ export interface RightPanelProps {
   onEraTransition: () => { fromEra?: string; toEra?: string } | void;
   createBand: (bandName: string, memberIds: string[]) => void;
   startTour: (bandId: string) => void;
+  playShow: (bandId: string, plan: ShowPlan) => void;
+  artistContracts: {
+    makeOffer: (prospect: ArtistProspect, offer: ContractTerms) => NegotiationOutcome;
+    signContract: (prospect: ArtistProspect, terms: ContractTerms) => boolean;
+    passOnProspect: (prospectId: string) => void;
+  };
   createOriginalTrack: (bandId: string) => void;
   startResearchMod?: (staffId: string, modId: string) => boolean;
 }
@@ -70,6 +79,8 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   onEraTransition,
   createBand,
   startTour,
+  playShow,
+  artistContracts,
   createOriginalTrack,
   startResearchMod,
   requestedTab
@@ -490,7 +501,17 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           gameState={gameState}
           onCreateBand={createBand}
           onStartTour={startTour}
+          onPlayShow={playShow}
           onCreateOriginalTrack={createOriginalTrack}
+        />
+      )}
+
+      {activeTab === 'bands' && (
+        <ArtistRoster
+          gameState={gameState}
+          onMakeOffer={artistContracts.makeOffer}
+          onSignContract={artistContracts.signContract}
+          onPass={artistContracts.passOnProspect}
         />
       )}
 
