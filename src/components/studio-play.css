@@ -206,3 +206,28 @@
   .studio-hud-stats > *, .studio-hud-controls > *, .studio-hud-title { min-height:44px; }
   .studio-panel-heading button, .studio-activity-panel button[aria-label] { min-width:44px; min-height:44px; }
 }
+
+/* ---- Session console on short viewports (landscape phones, small Androids) -------------------
+   The console sheet goes full-bleed, the drawer header collapses, and the transport dock becomes a
+   compact two-column row (Overdrive | Take) so the Take button is always on screen. */
+@media (max-height:500px) {
+  .studio-drawer-shell { inset:0 !important; }
+  .studio-drawer-shell > * { border-radius:0 !important; }
+  body:has([data-studio-drawer]) .studio-hud { visibility:hidden; }
+  .studio-drawer-head { padding:6px 12px 6px !important; }
+  .studio-drawer-head .rst-kicker { display:none; }
+  .studio-drawer-head .rst-title { margin-top:0 !important; font-size:15px !important; }
+  .studio-drawer-tabs { margin-top:4px !important; }
+  .studio-drawer-tabs button { padding-top:3px !important; padding-bottom:3px !important; flex-direction:row !important; gap:6px !important; justify-content:center; }
+  .rst-transport-dock { margin-top:4px !important; padding-top:6px !important; }
+  .rst-transport-stack { display:grid; grid-template-columns:1fr 1.3fr; gap:6px; align-items:stretch; }
+  .rst-transport-stack > * { margin:0 !important; }
+  .rst-transport-stack > :first-child:empty { display:none; }
+  .rst-transport-stack > :not(button):not(div:has(> button)) { grid-column:1 / -1; }
+  .rst-transport-stack button { padding-top:8px !important; padding-bottom:8px !important; min-height:44px; }
+}
+@media (max-width:540px) and (max-height:700px) {
+  .studio-drawer-head { padding:8px 14px 8px !important; }
+  .studio-drawer-head .rst-kicker { display:none; }
+  .studio-drawer-tabs { margin-top:6px !important; }
+}
