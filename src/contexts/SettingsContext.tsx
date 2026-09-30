@@ -4,16 +4,14 @@ import { SettingsContext, GameSettings, useSettings } from './settings-context-t
 import { defaultSettings } from '../data/defaultSettings';
 import { gameEvents } from '../engine/gameEventBus';
 import i18n from '../i18n';
-import { DEFAULT_LOCALE, isSupportedLocale } from '../i18n/supportedLocales';
+import { resolveSupportedLocale } from '../i18n/supportedLocales';
 
 export { useSettings };
 
 const SETTINGS_STORAGE_KEY = 'rst_game_settings';
 
 function resolveLanguage(raw: unknown): string {
-  if (typeof raw === 'string' && isSupportedLocale(raw)) return raw;
-  if (raw === 'en-US' || raw === 'en-us') return 'en';
-  return DEFAULT_LOCALE;
+  return resolveSupportedLocale(raw);
 }
 
 interface SettingsProviderProps {

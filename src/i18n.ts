@@ -33,4 +33,9 @@ i18n
     },
   });
 
+// Keep <html lang> aligned with the active locale for screen readers and browser font selection
+i18n.on('languageChanged', (lng) => {
+  if (typeof document !== 'undefined') document.documentElement.lang = lng;
+});
+
 export default i18n;
