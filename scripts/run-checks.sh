@@ -64,6 +64,10 @@ echo "=== callback subplots (story remembers earlier choices) ==="
 ./node_modules/.bin/esbuild tests/callback-subplots.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-callback-subplots.cjs --alias:@=./src >/dev/null
 node /tmp/rst-callback-subplots.cjs
 
+echo "=== industry-history subplots ==="
+./node_modules/.bin/esbuild tests/industry-subplots.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-industry-subplots.cjs --alias:@=./src >/dev/null
+node /tmp/rst-industry-subplots.cjs
+
 echo "=== story events, rival cast & truthful objectives ==="
 ./node_modules/.bin/esbuild tests/story-events.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-story-events.cjs --alias:@=./src >/dev/null
 node /tmp/rst-story-events.cjs

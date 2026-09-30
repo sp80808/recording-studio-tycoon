@@ -29,9 +29,35 @@ Their own flags feed the epilogue: `held_the_line`, `confessed_old_deal`, `credi
 - **Rival finale codas:** each rival has a few closing sentences in their own voice keyed to choices that touch their world (e.g. Silas on mono and signature sound, Chad on payola and voice clones, Roxy on leaks and credit, Dr. Thorne on voice policy and disclosure). The first matching flag wins; generic codas (`held_the_line`, `took_the_second_offer`, `confessed_old_deal`, `stonewalled_journalist`, `credited_the_crew`, `took_the_spotlight`) are the fallback.
 - **Title callback:** `subplot_title_reputation` spawns once the studio has earned an Act I/II campaign title (`Studio Trailblazer`, `Tone Connoisseur`, `Commercial Machine`), tying the campaign spine to the subplot layer.
 
+## Industry-history subplots (`industrySubplots.ts`)
+Twelve two-beat subplots that dramatise real turning points in recording history. Pop culture appears only by allusion (no real names, brands or quotes; a test enforces this).
+
+| Era | Subplot | Real-world echo |
+|---|---|---|
+| 1960s | The Disc Jockey's Envelope | radio payola scandals and hearings |
+| 1960s | The Echo Chamber | the "wall of sound" and basement echo chambers |
+| 1960s | The Record With No Singles | the studio as instrument; album-as-art-form turn |
+| 1980s | The Happy Accident | gated-reverb drums from a talkback mic |
+| 1980s | The Machine in the Corner | drum-machine panic among session drummers |
+| 1980s | The Global Jukebox | all-star charity single and the credits row |
+| 2000s | The Loudness War | brickwalled masters vs dynamics |
+| 2000s | The Perfect Voice | hard pitch-correction as effect, and the live show |
+| 2000s | The Talent Show Winner | televised-contest winners on a deadline |
+| 2020s | The Girl Who Studies Forever | endless lo-fi study streams |
+| 2020s | The Fifteen-Second Hook | short-video revival of a back-catalogue track |
+| 2020s | The Pressing Plant Waiting List | vinyl revival and pressing bottlenecks |
+
+### Design rules applied
+These come from general tycoon/management-game practice, not from reviews of this specific game (none were available to me):
+- every choice is a trade-off; a test rejects any pair where one option is strictly better on both money and reputation;
+- costs are bounded (no option costs more than $1,500) so early-era studios are never locked out;
+- humour is dry and situational, with no fourth-wall jokes;
+- every option leaves a unique flag, which later callbacks and epilogues can read;
+- each era has at least three, so a long campaign does not exhaust its era's pool.
+
 ## Ideas for later (not built)
 - Third-beat "consequence" stage for the highest-impact callbacks.
 - More title-keyed callbacks (Act III titles are flags too, but the campaign ends with them).
 
 ## Checks
-`tests/callback-subplots.check.ts` (run by `pnpm test`): unique ids, two stages, unique flags, gating on flags and era, every callback reachable from an existing flag.
+`tests/industry-subplots.check.ts` covers the industry subplots; `tests/callback-subplots.check.ts` (both run by `pnpm test`): unique ids, two stages, unique flags, gating on flags and era, every callback reachable from an existing flag.
