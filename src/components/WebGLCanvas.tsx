@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react';
-import { Application, Container, Graphics, Matrix, Sprite, Text } from 'pixi.js';
+import { AnimatedSprite, Application, Container, Graphics, Matrix, Sprite, Text, type Renderer } from 'pixi.js';
+import { applyReelState, buildReelTextures, createReelSprite } from '@/features/gearStudio/gearSpriteAnimation';
+import { toSpriteVisualState } from '@/features/gearStudio/gearVisualState';
 import { getPropTexture, loadPropSprites } from '@/components/studio/propSprites';
 import { visualEraId } from '@/utils/eraProgression';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -358,6 +360,8 @@ interface SceneRefs {
   vignetteLayer: Container | null;
   dynamicBloomG: Graphics | null;
   decor: DecorLights | null;
+  /** Tier-1 tape machine reels (Pixi AnimatedSprite, #81); empty on other tiers. */
+  reels: AnimatedSprite[];
 }
 
 interface BuiltScene {
@@ -410,7 +414,8 @@ const buildScene = (
   width: number,
   height: number,
   state: StudioSceneState,
-  onSelect?: (id: StudioHotspotId) => void
+  onSelect?: (id: StudioHotspotId) => void,
+  renderer?: Renderer
 ): BuiltScene => {
   const root = new Container();
   const refs: SceneRefs = {
@@ -430,6 +435,7 @@ const buildScene = (
     vignetteLayer: null,
     dynamicBloomG: null,
     decor: null,
+    reels: [],
   };
 
   // Era colour grade + studio tier drive the room's look (beads goj.3 / ifx.3)
@@ -908,10 +914,23 @@ const buildScene = (
     // Tape reels
     const reel1 = dPt(5.64, 4.20);
     const reel2 = dPt(5.70, 4.42);
-    channelG.ellipse(reel1.x, reel1.y, 4.5, 2.5).fill(0x718096);
-    channelG.ellipse(reel1.x, reel1.y, 1.8, 1.0).fill(0x1a202c);
-    channelG.ellipse(reel2.x, reel2.y, 4.5, 2.5).fill(0x718096);
-    channelG.ellipse(reel2.x, reel2.y, 1.8, 1.0).fill(0x1a202c);
+    if (renderer) {
+      // Authored-frame reels: parked on frame 0 (static) until the transport runs
+      const textures = buildReelTextures(renderer, 10);
+      [reel1, reel2].forEach((pt) => {
+        const reel = createReelSprite(textures);
+        reel.position.set(pt.x, pt.y);
+        reel.scale.set(0.45, 0.25); // iso squash to match the desk plane
+        reel.gotoAndStop(0);
+        channelG.addChild(reel);
+        refs.reels.push(reel);
+      });
+    } else {
+      channelG.ellipse(reel1.x, reel1.y, 4.5, 2.5).fill(0x718096);
+      channelG.ellipse(reel1.x, reel1.y, 1.8, 1.0).fill(0x1a202c);
+      channelG.ellipse(reel2.x, reel2.y, 4.5, 2.5).fill(0x718096);
+      channelG.ellipse(reel2.x, reel2.y, 1.8, 1.0).fill(0x1a202c);
+    }
   } else {
     // Outboard Rack modules
     for (let u = 0; u < consoleProfile.outboardUnits; u++) {
@@ -1189,6 +1208,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   const gestureMidpointRef = useRef<{ x: number; y: number } | null>(null);
   const lastCanvasInputRef = useRef(0);
   const lastFrameTimeRef = useRef(0);
+  const reelKeyRef = useRef('');
   const clockMinuteRef = useRef(-1);
 
   const { settings } = useSettings();
@@ -1258,8 +1278,10 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
       app.screen.width,
       app.screen.height,
       stateRef.current,
-      (id) => { if (!suppressTapRef.current) selectRef.current?.(id); }
+      (id) => { if (!suppressTapRef.current) selectRef.current?.(id); },
+      app.renderer
     );
+    reelKeyRef.current = '';
     const zoom = cameraRef.current.zoom ?? 1.0;
     scene.root.scale.set(scene.baseScale * zoom);
     scene.root.position.set(
@@ -1676,6 +1698,23 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
 
           // Decor lighting: window shaft + motes, ON AIR lamp, era glow, steam
           refs.decor?.update(t, reduceMotion, s.hasActiveProject);
+
+          // Tape reels (#81): only touch the sprites when transport state changes
+          if (refs.reels.length > 0) {
+            const reelKey = `${s.hasActiveProject}:${reduceMotion}`;
+            if (reelKeyRef.current !== reelKey) {
+              reelKeyRef.current = reelKey;
+              const reelState = toSpriteVisualState('studio-tape', 'tape-machine', {
+                powered: true,
+                activity: s.activity,
+                condition: 100,
+                transport: s.hasActiveProject ? 'play' : 'stopped',
+              });
+              refs.reels.forEach((r) => applyReelState(r, reelState, reduceMotion));
+            }
+            // Manual update: honours the frame-rate cap and hidden-tab early return above
+            refs.reels.forEach((r) => { if (r.playing) r.update(ticker); });
+          }
 
           // Staff idle bobbing
           refs.staffFigures.forEach((f, i) => {
