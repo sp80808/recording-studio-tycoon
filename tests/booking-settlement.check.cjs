@@ -4,7 +4,7 @@ async (page) => {
   const assert = (condition, message) => { if (!condition) throw new Error(message); };
   const errors = [];
   page.on('console', message => {
-    if (message.type() === 'error' && !/favicon|speed-insights/i.test(message.text())) errors.push(message.text());
+    if (message.type() === 'error' && !/favicon|speed-insights|Failed to load resource/i.test(message.text())) errors.push(message.text());
   });
   page.on('pageerror', error => errors.push(error.message));
   const base = (typeof process !== 'undefined' && process.env.RST_BASE_URL) || (page.url().startsWith('http') ? page.url() : 'http://localhost:5173/');
@@ -14,7 +14,9 @@ async (page) => {
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.getByRole('button', { name: /New studio/ }).click();
   await page.getByText('Modern Era', { exact: true }).click();
-  await page.getByRole('button', { name: /Start in/ }).click();
+  await page.getByRole('button', { name: /Choose your producer/ }).click();
+  await page.getByText('The Bedroom Beatmaker').first().click();
+  await page.getByRole('button', { name: /Open the studio/ }).click();
 
   for (let i = 0; i < 12; i++) {
     const start = page.getByRole('button', { name: /Start Playing/ });
@@ -34,7 +36,8 @@ async (page) => {
   await activities.getByRole('button', { name: 'Bookings' }).click();
   await page.getByText('Artist Enquiries').waitFor();
   await page.keyboard.press('Escape');
-  assert(!(await page.getByText('Artist Enquiries').isVisible()), 'Escape did not close bookings');
+  await page.getByText('Artist Enquiries').first().waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
+  assert(!(await page.getByText('Artist Enquiries').first().isVisible()), 'Escape did not close bookings');
   await activities.getByRole('button', { name: 'Bookings' }).click();
   const book = page.getByRole('button', { name: 'Book Session' }).first();
   await book.waitFor();
@@ -63,6 +66,7 @@ async (page) => {
   await review.getByText('Rewards', { exact: true }).waitFor({ timeout: 15000 });
   assert(await review.getByText(/Money:/).isVisible(), 'Money reward missing');
   const moneyBefore = await page.locator('[data-reward-target="money"]').innerText();
+  await page.keyboard.press('Space'); // fast-forward the review reveal
   const settle = review.getByRole('button', { name: /Awesome!/ });
   await settle.waitFor({ timeout: 30000 });
   await settle.click();

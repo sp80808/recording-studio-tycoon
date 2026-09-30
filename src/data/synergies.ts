@@ -70,6 +70,7 @@ export const STUDIO_SYNERGIES: StudioSynergy[] = [
     icon: '🎛️',
     criteria: {
       requiredEquipmentCategories: ['microphone', 'outboard', 'interface'],
+      chainSlots: ['microphone', 'preamp', 'recorderInterface'],
     },
     bonuses: {
       technicalMultiplier: 1.12,

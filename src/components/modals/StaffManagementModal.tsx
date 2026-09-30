@@ -1,4 +1,5 @@
 
+import { EMPTY_STATES } from '@/data/flavour';
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -98,8 +99,8 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
               {availableStaff.length === 0 ? (
                 <div className="text-center text-stone-400 py-8">
                   <Users className="w-12 h-12 mx-auto mb-4 text-stone-600" />
-                  <div>No staff members hired yet.</div>
-                  <div className="text-sm mt-2">Visit the Recruitment Center to hire your first team member!</div>
+                  <div>{EMPTY_STATES.staff.title}</div>
+                  <div className="text-sm mt-2">{EMPTY_STATES.staff.hint}</div>
                 </div>
               ) : (
                 availableStaff.map(staff => (
