@@ -206,8 +206,10 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           onConsoleFocus={onConsoleFocus}
         />
       )}
-      <div className="absolute inset-0 pointer-events-none select-none">
-        <div className="studio-room-label absolute top-2 left-3 flex items-center gap-2">
+      {/* Top-left overlay stack: sits below the HUD (see .studio-room-overlay-tl) and flows
+          vertically so the label, enquiry pill and any future chips can never overlap. */}
+      <div className="studio-room-overlay-tl select-none">
+        <div className="studio-room-label flex items-center gap-2 pointer-events-none">
           <span className="px-2 py-1 text-[10px] font-black tracking-[0.2em] text-gray-100 bg-black/50 border border-white/10 rounded">
             🎛 STUDIO FLOOR
           </span>
@@ -215,32 +217,30 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
             {gameState.currentYear}
           </span>
         </div>
+        {/* Peripheral Unread Enquiry Indicator (Issue #75: short spatial/opacity motion, NO infinite bounce/pulse, NO modal takeover) */}
+        {availableCount > 0 && (
+          <MotionReveal direction="down" distance={8}>
+            <button
+              onClick={() => handleHotspot('phone')}
+              className="studio-room-chip bg-sky-950/90 hover:bg-sky-900 border border-sky-400/50 hover:border-sky-300 text-sky-200 px-2.5 py-1 rounded-full text-[11px] font-bold shadow-lg flex items-center gap-1.5 backdrop-blur-md transition-colors"
+              title={`${availableCount} Artist ${availableCount === 1 ? 'Enquiry' : 'Enquiries'} Waiting`}
+              aria-label={`${availableCount} Artist Enquiries Waiting`}
+            >
+              <Phone size={12} className="text-sky-300" aria-hidden="true" />
+              <span className="text-[10px] font-medium tracking-wide">Enquiry</span>
+              <span className="px-1.5 py-0.2 text-[9px] font-black rounded-full bg-amber-400 text-slate-950">
+                <MotionNumber value={availableCount} />
+              </span>
+            </button>
+          </MotionReveal>
+        )}
       </div>
-
-      {/* Peripheral Unread Enquiry Indicator (Issue #75: short spatial/opacity motion, NO infinite bounce/pulse, NO modal takeover) */}
-      {availableCount > 0 && (
-        <MotionReveal direction="down" distance={8}>
-          <button
-            onClick={() => handleHotspot('phone')}
-            className="absolute top-11 left-3 bg-sky-950/90 hover:bg-sky-900 border border-sky-400/50 hover:border-sky-300 text-sky-200 px-2.5 py-1 rounded-full text-[11px] font-bold shadow-lg flex items-center gap-1.5 z-20 pointer-events-auto backdrop-blur-md transition-colors"
-            title={`${availableCount} Artist ${availableCount === 1 ? 'Enquiry' : 'Enquiries'} Waiting`}
-            aria-label={`${availableCount} Artist Enquiries Waiting`}
-          >
-            <Phone size={12} className="text-sky-300" aria-hidden="true" />
-            <span className="text-[10px] font-medium tracking-wide">Enquiry</span>
-            <span className="px-1.5 py-0.2 text-[9px] font-black rounded-full bg-amber-400 text-slate-950">
-              <MotionNumber value={availableCount} />
-            </span>
-          </button>
-        </MotionReveal>
-      )}
 
       {/* Floating Chore Hotspot Attention Badges (Settled one-shot reveal, NO infinite bounce/pulse) */}
       {(() => {
         const choreState = gameState.choreState;
         if (!choreState) return null;
         const pendingConsoleChores = Object.values(choreState.chores).filter(c => c.hotspotId === 'console' && !c.completed);
-        const pendingShelfChores = Object.values(choreState.chores).filter(c => c.hotspotId === 'shelf' && !c.completed);
         const pendingLiveRoomChores = Object.values(choreState.chores).filter(c => c.hotspotId === 'liveroom' && !c.completed);
 
         return (
@@ -254,18 +254,6 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
                 >
                   <span>🔧</span>
                   <span>{pendingConsoleChores[0].title}</span>
-                </button>
-              </MotionReveal>
-            )}
-            {pendingShelfChores.length > 0 && (
-              <MotionReveal direction="down" distance={6}>
-                <button
-                  onClick={() => handleHotspot('shelf')}
-                  className="absolute top-28 right-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-lg border border-emerald-300 flex items-center gap-1 z-20 pointer-events-auto transition-transform active:scale-95"
-                  title="Lounge: Brew Espresso"
-                >
-                  <span>☕</span>
-                  <span>Brew Espresso</span>
                 </button>
               </MotionReveal>
             )}
@@ -284,13 +272,32 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           </>
         );
       })()}
-      <button className="studio-camera-center absolute right-3 top-2 studio-dock-button bg-slate-950/70 border border-white/10 flex items-center gap-1.5"
-        onClick={() => setCameraReset(value => value + 1)} aria-label="Center studio camera" title="Center studio camera">
-        {gamepad.isConnected && gamepad.lastInputType === 'gamepad' && (
-          <GamepadGlyph button="rs" size="xs" />
-        )}
-        <LocateFixed size={18} />
-      </button>
+      {/* Top-right overlay stack: camera recentre, then the lounge chore chip beneath it. */}
+      <div className="studio-room-overlay-tr">
+        <button className="studio-camera-center studio-dock-button bg-slate-950/70 border border-white/10 flex items-center gap-1.5"
+          onClick={() => setCameraReset(value => value + 1)} aria-label="Center studio camera" title="Center studio camera">
+          {gamepad.isConnected && gamepad.lastInputType === 'gamepad' && (
+            <GamepadGlyph button="rs" size="xs" />
+          )}
+          <LocateFixed size={18} />
+        </button>
+        {(() => {
+          const shelfChores = Object.values(gameState.choreState?.chores ?? {}).filter(c => c.hotspotId === 'shelf' && !c.completed);
+          if (shelfChores.length === 0) return null;
+          return (
+            <MotionReveal direction="down" distance={6}>
+              <button
+                onClick={() => handleHotspot('shelf')}
+                className="studio-room-chip bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-lg border border-emerald-300 flex items-center gap-1 transition-transform active:scale-95"
+                title="Lounge: Brew Espresso"
+              >
+                <span>☕</span>
+                <span>Brew Espresso</span>
+              </button>
+            </MotionReveal>
+          );
+        })()}
+      </div>
       {gamepad.isConnected && gamepad.lastInputType === 'gamepad' ? (
         <div className="absolute bottom-2 left-3 flex items-center gap-2 bg-slate-950/85 px-2.5 py-1.5 rounded-full border border-slate-700/60 shadow-lg text-[11px] text-slate-300 pointer-events-none select-none animate-in fade-in">
           <GamepadGlyph button="dpadLeft" size="xs" />

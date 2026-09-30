@@ -1,7 +1,13 @@
 .studio-play { --studio-dock-clearance: calc(118px + env(safe-area-inset-bottom, 0px)); height:100%; min-height:0; display:flex; flex-direction:column; position:relative; isolation:isolate; background:#11151f; }
 .studio-play-world { position:absolute; inset:0; }
-.studio-play-room .studio-room-label { top:74px; }
-.studio-play-room .studio-camera-center { top:74px; }
+.studio-play-room { --studio-hud-clearance: 74px; }
+/* Overlay stacks live under the HUD and flow vertically, so chips never overlap the HUD or each other. */
+.studio-room-overlay-tl, .studio-room-overlay-tr { position:absolute; top:var(--studio-hud-clearance, 74px); z-index:20; display:flex; flex-direction:column; gap:8px; pointer-events:none; }
+.studio-room-overlay-tl { left:12px; align-items:flex-start; }
+.studio-room-overlay-tr { right:12px; align-items:flex-end; }
+.studio-room-overlay-tl > *, .studio-room-overlay-tr > * { pointer-events:auto; }
+.studio-room-overlay-tl > .studio-room-label { pointer-events:none; }
+.studio-room-chip { pointer-events:auto; }
 .studio-play-room .studio-room-hint { bottom:calc(var(--studio-dock-clearance) + 8px); left:12px; max-width:min(280px, calc(100% - 24px)); }
 .studio-play-room { height:100%; border:0!important; border-radius:0!important; }
 .studio-play-status { display:flex; align-items:center; gap:10px; padding:6px 12px; font-size:12px; color:#b7c4d9; position:absolute; bottom:calc(var(--studio-dock-clearance) + 52px); left:50%; transform:translateX(-50%); z-index:28; max-width:min(560px, calc(100% - 24px)); border:1px solid #ffffff12; border-radius:20px; background:#121b2bcc; pointer-events:none; }
@@ -50,7 +56,7 @@
   .studio-command-dock { width:100%; justify-content:space-between; gap:0; padding:4px; }
   .studio-command-dock .studio-dock-button { width:auto; flex:1; min-width:40px; }
   .studio-play-actions { padding-left:6px; padding-right:6px; width:100%; left:0; transform:none; }
-  .studio-play-room .studio-room-label, .studio-play-room .studio-camera-center { top:calc(218px + env(safe-area-inset-top)); }
+  .studio-play-room { --studio-hud-clearance: calc(218px + env(safe-area-inset-top)); }
   .studio-play-status { font-size:10px; gap:6px; bottom:calc(var(--studio-dock-clearance) + 48px); }
   .studio-hud { gap:2px 8px; }
   .studio-hud-stats,.studio-hud-controls { gap:8px; }
