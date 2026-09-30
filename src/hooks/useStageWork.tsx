@@ -32,6 +32,14 @@ import {
   consumeChoreBuffSession
 } from '@/simulation/choreEngine';
 
+/** Take-driven overrides for a work session (cost, grade and quality bonus from the lock-take dock). */
+export interface PerformDailyWorkOptions {
+  energyCost?: number;
+  takeGrade?: TakeGrade;
+  takeMultiplier?: number;
+  qualityBonus?: number;
+}
+
 interface UseStageWorkProps {
   gameState: GameState;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
@@ -204,12 +212,7 @@ export const useStageWork = ({
 
   // getMoodEffectiveness is now imported from playerUtils
 
-  const performDailyWork = useCallback((options?: {
-    energyCost?: number;
-    takeGrade?: TakeGrade;
-    takeMultiplier?: number;
-    qualityBonus?: number;
-  }): { finalProjectData?: Project; isComplete: boolean } | undefined => {
+  const performDailyWork = useCallback((options?: PerformDailyWorkOptions): { finalProjectData?: Project; isComplete: boolean } | undefined => {
     console.log('🚀 === PERFORMING DAILY WORK ===');
     
     if (!gameState.activeProject) {

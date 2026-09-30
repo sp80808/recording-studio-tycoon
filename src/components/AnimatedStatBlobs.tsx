@@ -58,7 +58,7 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
         console.log('💙 Creating creativity blobs at target:', { targetX, targetY, targetRect, containerRect });
 
         // Create multiple blobs for better visual effect
-        const blobCount = Math.min(creativityGain, 12); // Increased from 8 to 12 for more impressive effect
+        const blobCount = 1; // one "+N" chip per stat; dozens of "+1" discs scattered over the work card
         const valuePerBlob = Math.ceil(creativityGain / blobCount);
 
         for (let i = 0; i < blobCount; i++) {
@@ -85,7 +85,7 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
 
         console.log('💚 Creating technical blobs at target:', { targetX, targetY, targetRect, containerRect });
 
-        const blobCount = Math.min(technicalGain, 12); // Increased from 8 to 12 for more impressive effect
+        const blobCount = 1;
         const valuePerBlob = Math.ceil(technicalGain / blobCount);
 
         for (let i = 0; i < blobCount; i++) {

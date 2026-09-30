@@ -4,6 +4,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+echo "=== typecheck (tsc must stay at zero errors) ==="
+./node_modules/.bin/tsc -p tsconfig.app.json --noEmit
+
 echo "=== tutorial and room purchases ==="
 for check in first-session-guide studio-room-purchase toast-spam; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null

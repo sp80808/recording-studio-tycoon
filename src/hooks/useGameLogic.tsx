@@ -1,5 +1,6 @@
 import { meetsKnowHowGate, spendKnowHow, createInitialKnowHow } from '@/rpg/studioKnowHow';
 import { useArtistContracts } from '@/hooks/useArtistContracts';
+import type { PerformDailyWorkOptions } from '@/hooks/useStageWork';
 import { gameEvents } from '@/engine/gameEventBus';
 import { useState, useCallback, useMemo } from 'react'; // Added useMemo
 import { spend } from '@/economy/ledger';
@@ -110,9 +111,9 @@ export const useGameLogic = (
     }
   };
 
-  const handlePerformDailyWork = () => {
+  const handlePerformDailyWork = (options?: PerformDailyWorkOptions) => {
     console.log('=== HANDLE PERFORM DAILY WORK ===');
-    const result = performDailyWork(); // Now returns { isComplete: boolean, finalProjectData?: Project }
+    const result = performDailyWork(options); // Now returns { isComplete: boolean, finalProjectData?: Project }
     
     if (result?.isComplete && result.finalProjectData) {
       console.log('Project work units complete. Passing up final project data for celebration:', result.finalProjectData.title);

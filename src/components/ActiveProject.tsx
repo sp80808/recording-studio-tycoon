@@ -49,7 +49,7 @@ interface ActiveProjectProps {
   setGameState: (state: GameState | ((prev: GameState) => GameState)) => void; // Made non-optional as it's crucial for updating project focus
   // focusAllocation prop is removed, as it will be derived from gameState.activeProject.focusAllocation
   // setFocusAllocation prop is removed, will be handled by a new specific updater function if manual adjustment is kept, or via setGameState
-  performDailyWork?: () => { isComplete: boolean; finalProjectData?: Project } | undefined;
+  performDailyWork?: (options?: import('@/hooks/useStageWork').PerformDailyWorkOptions) => { isComplete: boolean; finalProjectData?: Project } | undefined;
   onMinigameReward?: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string, rawScore?: number) => void;
   onProjectComplete?: (completedProject: Project) => void;
   onProjectSelect?: (project: Project) => void;
@@ -438,7 +438,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
     if (result?.isComplete && result.finalProjectData) {
       playSound('project-complete', 0.8);
-      const isMilestone = verdict.grade === 'Gold' || verdict.grade === 'Platinum' || (result.finalProjectData.overallQualityScore ?? 0) >= 80;
+      const isMilestone = verdict.grade === 'Gold';
       if (isMilestone) {
         setCelebrationDisplayData({ title: result.finalProjectData.title, genre: result.finalProjectData.genre });
         setProjectDataForCompletionCall(result.finalProjectData);

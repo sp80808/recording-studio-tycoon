@@ -12,7 +12,6 @@ import { ChartRevealScene } from '@/components/ChartRevealScene';
 import { SeasonAwardsCeremony } from '@/components/SeasonAwardsCeremony';
 import { NotificationSystem } from '@/components/NotificationSystem';
 import { TrainingModal } from '@/components/modals/TrainingModal';
-import { GameModals } from '@/components/GameModals';
 import { SettingsModal } from '@/components/modals/SettingsModal';
 import { TutorialModal } from '@/components/TutorialModal';
 import { SplashScreen } from '@/components/SplashScreen';

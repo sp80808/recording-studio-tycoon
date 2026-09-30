@@ -47,6 +47,8 @@ async (page) => {
   const reviewTitle = page.getByText(/Project Complete:/);
   for (let i = 0; i < 30; i++) {
     if (await reviewTitle.isVisible()) break;
+    const deliver = page.getByRole('button', { name: /Deliver now/ });
+    if (await deliver.isVisible()) { await deliver.click(); continue; }
     const release = page.getByRole('button', { name: 'View session review' });
     if (await release.isVisible()) { await release.click(); continue; }
     const skip = page.getByRole('button', { name: /Skip intervention|Skip/ }).first();

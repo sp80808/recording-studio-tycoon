@@ -42,7 +42,7 @@ initializeMockData();
 export const marketService = {
   updateAllMarketTrends: (
     gameState: GameState,
-    playerProjectsCompletedSinceLastUpdate: Project[] = [],
+    playerProjectsCompletedSinceLastUpdate: (Project & { qualityScore?: number })[] = [],
     globalEventsHappenedSinceLastUpdate: TrendEvent[] = []
   ): MarketTrend[] => {
     console.log('MarketService: Updating all market trends...');

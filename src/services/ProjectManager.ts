@@ -352,7 +352,7 @@ export class ProjectManager {
 
     let minigameToStart: string | null = null;
 
-    switch (currentStage.name) {
+    switch (currentStage.stageName) {
       case 'Recording':
         minigameToStart = 'rhythm';
         break;

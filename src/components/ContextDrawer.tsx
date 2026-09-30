@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useCallback } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import {
@@ -24,7 +25,7 @@ export interface DrawerTabItem {
   id: ContextDrawerTab;
   labelKey: string;
   shortLabelKey: string;
-  icon: React.ComponentType<{ size?: number; className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>;
+  icon: LucideIcon;
   badge?: number;
 }
 

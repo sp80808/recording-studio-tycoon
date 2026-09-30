@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import { Phone, Headphones, Sliders, Users, Disc3, Trophy, Sparkles, Settings as SettingsIcon } from 'lucide-react';
 import { GamepadGlyph } from './GamepadGlyph';
 import { useGamepad } from '@/hooks/useGamepad';
@@ -7,7 +8,7 @@ import { useSettings } from '@/contexts/settings-context-types';
 export interface RadialSlice {
   id: string;
   label: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: LucideIcon;
   angleDeg: number;
 }
 

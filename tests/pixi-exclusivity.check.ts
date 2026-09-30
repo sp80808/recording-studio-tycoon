@@ -27,8 +27,18 @@ describe('pixi GPU exclusivity guard', () => {
   });
 
   it('every `new Application` in src is behind the guard', () => {
-    for (const file of ['src/components/WebGLCanvas.tsx', 'src/components/PixiProjectCardsBridge.tsx']) {
-      assert.match(fs.readFileSync(file, 'utf8'), /claimPixiApplication\(/, `${file} must claim the GPU viewport`);
-    }
+    const offenders: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const p = `${dir}/${entry.name}`;
+        if (entry.isDirectory()) walk(p);
+        else if (/\.(ts|tsx)$/.test(entry.name)) {
+          const src = fs.readFileSync(p, 'utf8');
+          if (/new Application\(/.test(src) && !/claimPixiApplication\(/.test(src)) offenders.push(p);
+        }
+      }
+    };
+    walk('src');
+    assert.deepEqual(offenders, [], 'Pixi Applications must claim the GPU viewport first');
   });
 });
