@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useReducedMotion } from 'framer-motion';
+import { clampFxDuration, createFxRandom } from './rewardFx';
 
 export type ParticleBurstPreset = 'foam' | 'sparks' | 'motes' | 'tape' | 'rarity_gold';
 
@@ -20,6 +21,8 @@ interface Particle {
 interface PixiParticleBurstProps {
   preset: ParticleBurstPreset;
   count?: number;
+  /** Debug/capture seed: same seed reproduces burst layout. Does not affect rewards. */
+  seed?: number;
   durationMs?: number;
   className?: string;
   onComplete?: () => void;
@@ -33,12 +36,14 @@ interface PixiParticleBurstProps {
 export const PixiParticleBurst: React.FC<PixiParticleBurstProps> = ({
   preset,
   count = 48,
-  durationMs = 1200,
+  seed,
+  durationMs: requestedDurationMs = 1200,
   className = '',
   onComplete,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const reducedMotion = useReducedMotion();
+  const durationMs = clampFxDuration(requestedDurationMs);
 
   useEffect(() => {
     if (reducedMotion || typeof window === 'undefined') {
@@ -57,67 +62,81 @@ export const PixiParticleBurst: React.FC<PixiParticleBurstProps> = ({
     const originX = width / 2;
     const originY = height / 2;
 
+    const rand = createFxRandom(seed, preset);
     const particles: Particle[] = [];
 
     for (let i = 0; i < count; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      let speed = 2 + Math.random() * 5;
-      let size = 2 + Math.random() * 3;
+      const angle = rand() * Math.PI * 2;
+      let speed = 2 + rand() * 5;
+      let size = 2 + rand() * 3;
       let color = '#78716c';
-      let decay = 0.015 + Math.random() * 0.02;
+      let decay = 0.015 + rand() * 0.02;
       let shape: 'rect' | 'circle' | 'line' = 'rect';
 
       if (preset === 'foam') {
         // Charcoal foam bits
-        color = Math.random() > 0.4 ? '#292524' : '#57534e';
-        size = 2 + Math.random() * 4;
-        speed = 1.5 + Math.random() * 4;
+        color = rand() > 0.4 ? '#292524' : '#57534e';
+        size = 2 + rand() * 4;
+        speed = 1.5 + rand() * 4;
         decay = 0.018;
       } else if (preset === 'sparks') {
         // High-velocity electric sparks
-        color = Math.random() > 0.3 ? '#f59e0b' : '#38bdf8';
-        size = 1.5 + Math.random() * 2;
-        speed = 4 + Math.random() * 7;
+        color = rand() > 0.3 ? '#f59e0b' : '#38bdf8';
+        size = 1.5 + rand() * 2;
+        speed = 4 + rand() * 7;
         shape = 'line';
         decay = 0.028;
       } else if (preset === 'motes' || preset === 'rarity_gold') {
         // Gentle golden rising motes
-        color = Math.random() > 0.5 ? '#facc15' : '#fbbf24';
-        size = 2 + Math.random() * 3;
-        speed = 1 + Math.random() * 2.5;
+        color = rand() > 0.5 ? '#facc15' : '#fbbf24';
+        size = 2 + rand() * 3;
+        speed = 1 + rand() * 2.5;
         shape = 'circle';
         decay = 0.012;
       } else if (preset === 'tape') {
         // Magnetic tape ribbon flakes
         color = '#451a03';
-        size = 3 + Math.random() * 5;
+        size = 3 + rand() * 5;
         shape = 'rect';
-        speed = 2 + Math.random() * 3.5;
+        speed = 2 + rand() * 3.5;
       }
 
       particles.push({
-        x: originX + (Math.random() - 0.5) * 20,
-        y: originY + (Math.random() - 0.5) * 10,
+        x: originX + (rand() - 0.5) * 20,
+        y: originY + (rand() - 0.5) * 10,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed - (preset === 'motes' ? 1.5 : 0),
         size,
         alpha: 1.0,
         decay,
         color,
-        rotation: Math.random() * Math.PI,
-        vRot: (Math.random() - 0.5) * 0.2,
+        rotation: rand() * Math.PI,
+        vRot: (rand() - 0.5) * 0.2,
         shape,
       });
     }
 
     let animId: number;
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      ctx.clearRect(0, 0, width, height);
+      onComplete?.();
+    };
+    const onVisibility = () => {
+      if (document.hidden) {
+        if (animId) cancelAnimationFrame(animId);
+        finish();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
     let startTime = performance.now();
 
     const render = (now: number) => {
       const elapsed = now - startTime;
       if (elapsed > durationMs) {
-        ctx.clearRect(0, 0, width, height);
-        onComplete?.();
+        finish();
         return;
       }
 
@@ -170,17 +189,19 @@ export const PixiParticleBurst: React.FC<PixiParticleBurstProps> = ({
       if (anyAlive) {
         animId = requestAnimationFrame(render);
       } else {
-        onComplete?.();
+        finish();
       }
     };
 
     animId = requestAnimationFrame(render);
 
     return () => {
+      done = true;
+      document.removeEventListener('visibilitychange', onVisibility);
       if (animId) cancelAnimationFrame(animId);
       if (ctx) ctx.clearRect(0, 0, width, height);
     };
-  }, [preset, count, durationMs, reducedMotion, onComplete]);
+  }, [preset, count, seed, durationMs, reducedMotion, onComplete]);
 
   if (reducedMotion) return null;
 
