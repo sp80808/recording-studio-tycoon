@@ -347,6 +347,7 @@ export function applyReportToState(state: GameState, report: ProjectReport): Gam
         playerData,
         hiredStaff: releasedStaff,
         clientRelationships,
+        studioKnowHow: (state.studioKnowHow ?? 0) + (report.knowHowGained ?? 0),
         financials: {
             ...state.financials,
             income,

@@ -1,3 +1,4 @@
+import { applySessionEvent, phaseForStage, rollPhaseEvent, type SessionEvent } from '@/rpg/sessionIssues';
 import { evaluateProjectBriefFit, BRIEF_FIT_MULTIPLIER, recordBriefDiscoveries } from '@/rpg/projectBrief';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { GameState, FocusAllocation, Project } from '@/types/game';
@@ -429,13 +430,30 @@ export const useStageWork = ({
       console.log(`🏅 Stage grade: ${completedGrade.grade} (+${completedGrade.qualityCarry} carry${completedGrade.capsProjectAtA ? ', caps project at A' : ''})`);
     }
 
+    // 🎚️ Phase event (#87): deterministic, at most one per finished stage.
+    let phaseEvent: SessionEvent | null = null;
+    if (stageCompleted && !currentStage.completed) {
+      const phase = phaseForStage(currentStage.stageName, currentStageIndex, project.stages.length);
+      if (phase) {
+        const gear = resolveSessionEquipment(gameState, project.bookingRoomId);
+        phaseEvent = rollPhaseEvent(project, phase, currentStageIndex, {
+          staff: assignedStaff,
+          worstGearCondition: gear.length ? Math.min(...gear.map(e => e.condition ?? 100)) : 100,
+          fitScore: briefFit.score,
+        });
+      }
+    }
+
     // FIXED: Immutable state update for React re-rendering
     setGameState(prev => {
       console.log('🔄 Updating game state with immutable update...');
       
       // Deep copy the active project to avoid mutation
+      const baseProject = phaseEvent
+        ? applySessionEvent(prev.activeProject!, phaseEvent, currentStageIndex)
+        : prev.activeProject!;
       const updatedProject = {
-        ...prev.activeProject!,
+        ...baseProject,
         stages: prev.activeProject!.stages.map((stage, index) => {
           if (index === currentStageIndex) {
             console.log(`🔄 Updating stage ${index}: ${stage.workUnitsCompleted} -> ${newWorkUnitsCompleted}, completed: ${stageCompleted}`);
@@ -540,6 +558,14 @@ export const useStageWork = ({
       }
     }
 
+    if (phaseEvent) {
+      toast({
+        title: phaseEvent.issue ? `⚠️ ${phaseEvent.label}` : `✨ ${phaseEvent.label}`,
+        description: phaseEvent.why,
+        className: "bg-stone-800 border-stone-600 text-white",
+      });
+    }
+
     // Check if project is complete
     const allStagesComplete = project.stages.every((stage, index) => 
       index === currentStageIndex ? stageCompleted : stage.completed
@@ -548,7 +574,7 @@ export const useStageWork = ({
     if (allStagesComplete) {
       console.log('🎉 PROJECT WORK UNITS COMPLETE! Preparing data for celebration.');
       const finalProjectData = { // Capture all necessary details for the celebration and eventual completion call
-        ...project, // This is gameState.activeProject at this point
+        ...(phaseEvent ? applySessionEvent(project, phaseEvent, currentStageIndex) : project), // gameState.activeProject plus this stage's event
         stages: project.stages.map((stage, index) => {
           if (index === currentStageIndex) {
             return { ...stage, workUnitsCompleted: newWorkUnitsCompleted, completed: stageCompleted };

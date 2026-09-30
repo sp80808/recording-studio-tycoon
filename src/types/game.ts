@@ -140,6 +140,8 @@ export interface Project {
   focusAllocation: FocusAllocation; // ADDED: Stores current focus settings for the project
   /** Creative brief (#48). Optional: old saves derive one on read via getProjectBrief. */
   brief?: import('@/rpg/projectBrief').ProjectBrief;
+  /** Open quality issues left by phase events (#87). Cleared by great takes or by polishing before delivery. */
+  unresolvedIssues?: import('@/rpg/sessionIssues').UnresolvedIssue[];
   /** Production approach chosen at booking (#48). */
   approachId?: import('@/rpg/projectBrief').ProductionApproach['id'];
   progress?: number; // 0-100, completion percentage for animated cards
@@ -308,6 +310,7 @@ export interface GameState {
   studioLevel?: number; // Studio tier level (1-5), drives visible studio room and console upgrades
   studioTier?: number; // Alias for studioLevel
   studioRooms: StudioRoom[]; // Physical bookable studio suites; drives concurrent capacity
+  studioKnowHow?: number; // Bounded learning from polished sessions (#87)
   discoveredBriefCombos?: string[]; // Named brief/recipe combos discovered (#48)
   discoveredSynergies?: string[]; // IDs of discovered studio synergies (Kairosoft recipe codex)
   
@@ -455,6 +458,8 @@ export interface ProjectReport {
     name: string;
   };
   genre?: string;
+  /** Studio Know-How earned by resolving issues before delivery (#87, capped per project). */
+  knowHowGained?: number;
 }
 
 export interface Financials {
