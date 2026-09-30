@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { GameState } from '@/types/game';
 import {
   ArtistProspect, ContractTerms, NegotiationOutcome, MAX_ROSTER, MIN_DURATION_DAYS, MAX_DURATION_DAYS,
-  dailyStudioShare, generateProspects, scoutingBatchDay, PROSPECT_REFRESH_DAYS,
+  artistQualityBonus, dailyStudioShare, generateProspects, scoutingBatchDay, PROSPECT_REFRESH_DAYS,
 } from '@/simulation/artistContracts';
 
 interface ArtistRosterProps {
@@ -53,7 +53,7 @@ export const ArtistRoster: React.FC<ArtistRosterProps> = ({ gameState, onMakeOff
             Fame {Math.round(a.fame)} · Skill {a.skill}/10 · {termsLine(a.terms)}
           </div>
           <div className="text-xs text-stone-400">
-            {Math.max(0, a.expiresDay - gameState.currentDay)} days left · earned ${a.totalEarned}
+            {Math.max(0, a.expiresDay - gameState.currentDay)} days left · earned ${a.totalEarned} · +{artistQualityBonus([a], a.genre)} quality on {a.genre} sessions
           </div>
         </Card>
       ))}

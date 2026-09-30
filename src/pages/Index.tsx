@@ -4,6 +4,7 @@ import { GameHeader } from '@/components/GameHeader';
 import { MainGameContent } from '@/components/MainGameContent';
 import { RewardFlights } from '@/components/RewardFlights';
 import { gameEvents } from '@/engine/gameEventBus';
+import { artistChartBoost } from '@/simulation/artistContracts';
 import { advanceChartWeek, debutChartRun, weeksDue } from '@/utils/chartRun';
 import { ChartRevealScene } from '@/components/ChartRevealScene';
 import { NotificationSystem } from '@/components/NotificationSystem';
@@ -303,7 +304,9 @@ const MusicStudioTycoon = () => {
     console.log('Index.tsx: Finalizing project completion for:', activeProjectReport.projectTitle);
     completeProject(activeProjectReport); // Call the updated completeProject with the report
 
-    const debut = debutChartRun(activeProjectReport.projectId, activeProjectReport.projectTitle, activeProjectReport.overallQualityScore, gameState.currentDay);
+    // Signed artists' name value raises the quality a debut is placed (and climbs) with.
+    const chartQuality = Math.min(100, activeProjectReport.overallQualityScore + artistChartBoost(gameState.signedArtists, activeProjectReport.genre));
+    const debut = debutChartRun(activeProjectReport.projectId, activeProjectReport.projectTitle, chartQuality, gameState.currentDay);
     if (debut) {
       setGameState(prev => ({ ...prev, chartRun: [...(prev.chartRun ?? []).filter(e => e.projectId !== debut.projectId), debut] }));
       gameEvents.emit('chart:placement', { chartName: debut.chartName, title: debut.title, position: debut.position });
@@ -320,7 +323,7 @@ const MusicStudioTycoon = () => {
     if (settings.sfxEnabled) {
       audioSystem.playUISound('success'); 
     }
-  }, [activeProjectReport, completeProject, settings.sfxEnabled, setGameState, gameState.currentDay]);
+  }, [activeProjectReport, completeProject, settings.sfxEnabled, setGameState, gameState.currentDay, gameState.signedArtists]);
 
   // Weekly chart run: songs on the chart rise and fall, each move gets its own reveal.
   useEffect(() => {
