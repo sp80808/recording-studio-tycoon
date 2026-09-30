@@ -1,4 +1,5 @@
 
+import { meetsKnowHowGate, spendKnowHow, createInitialKnowHow } from '@/rpg/studioKnowHow';
 import { useCallback } from 'react';
 import { GameState, StaffMember, EquipmentMod, FocusAllocation } from '@/types/game'; // Added FocusAllocation
 import { toast } from '@/hooks/use-toast';
@@ -162,6 +163,9 @@ export const useStaffManagement = (
     if (!course || !staff || gameState.money < course.cost || staff.status !== 'Idle') {
       return;
     }
+    if (course.knowHow && !meetsKnowHowGate(gameState.studioKnowHow ?? createInitialKnowHow(), course.knowHow)) {
+      return;
+    }
 
     if (staff.levelInRole < course.requiredLevel) {
       toast({
@@ -176,6 +180,9 @@ export const useStaffManagement = (
     setGameState(prev => ({
       ...prev,
       money: prev.money - course.cost,
+      studioKnowHow: course.knowHow
+        ? (spendKnowHow(prev.studioKnowHow ?? createInitialKnowHow(), course.knowHow.cost) ?? prev.studioKnowHow)
+        : prev.studioKnowHow,
       hiredStaff: prev.hiredStaff.map(s => 
         s.id === staffId 
           ? { 

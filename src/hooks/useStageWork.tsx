@@ -22,6 +22,7 @@ import { resolveSessionEquipment } from '@/utils/gameUtils';
 import { createSeededRandom } from '@/simulation/seededRandom';
 import { evaluateProjectSynergies, calculateSynergyBonuses, recordDiscoveredSynergies } from '@/utils/synergyUtils';
 import { advanceFlow } from '@/rpg/focusFlow';
+import { applyKnowHowEvents, domainForStage, type KnowHowEvent } from '@/rpg/studioKnowHow';
 import { gradeStage, focusMatchFraction } from '@/rpg/stageGrades';
 import {
   getActiveBuffMagnitude,
@@ -478,8 +479,28 @@ export const useStageWork = ({
         });
       }
 
+      // 📚 Studio Know-How (#66): explicit gameplay events only.
+      const knowHowEvents: KnowHowEvent[] = [];
+      if (stageCompleted && !currentStage.completed) {
+        knowHowEvents.push({
+          kind: 'session',
+          eventId: `session:${project.id}:${currentStageIndex}`,
+          domain: domainForStage(currentStage.stageName),
+          repeatKey: `${project.genre}:${currentStage.stageName}`.toLowerCase(),
+          grade: completedGrade?.grade ?? 'B',
+          service: project.stake === 'safe' || project.stake === undefined,
+        });
+      }
+      newlyDiscovered.forEach(syn => knowHowEvents.push({
+        kind: 'discovery',
+        eventId: `synergy:${syn.id}`,
+        domain: 'production',
+        label: syn.name,
+      }));
+      const { game: withKnowHow } = applyKnowHowEvents(prev, knowHowEvents);
+
       return withDailyTracking({
-        ...prev,
+        ...withKnowHow,
         activeProject: updatedProject,
         discoveredSynergies: updatedDiscovered,
         choreState: nextChoreState,

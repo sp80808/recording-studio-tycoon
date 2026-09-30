@@ -10,6 +10,8 @@ import {
   getEraSpecificEquipmentMultiplier 
 } from '@/utils/eraProgression';
 import { availableMods } from '@/data/equipmentMods';
+import { availableTrainingCourses } from '@/data/training';
+import { applyKnowHowEvents, type KnowHowEvent } from '@/rpg/studioKnowHow';
 import { applyEventsToState, rollDailyEvents } from '@/game-mechanics/eventIntegration';
 import { RandomEvent } from '@/game-mechanics/random-events';
 import { freshDailyTracking } from '@/utils/dailyChallenges';
@@ -65,6 +67,8 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     // Process training and research completions
     const completedTraining: string[] = [];
     const completedResearch: string[] = [];
+    const completedCourseIds: string[] = [];
+    const completedModIds: string[] = [];
     const newResearchedMods = [...gameState.researchedMods];
 
     // Staff salary + equipment upkeep expenses (bead ruc.3)
@@ -78,6 +82,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     const updatedStaff = gameState.hiredStaff.map(staff => {
       let updatedStaffMember = { ...staff };
       if (staff.status === 'Training' && staff.trainingEndDay && newDay >= staff.trainingEndDay) {
+        if (staff.trainingCourse) completedCourseIds.push(staff.trainingCourse);
         completedTraining.push(`${staff.name} completed training for ${staff.trainingCourse}!`); // Assuming trainingCourse stores the name or ID
         updatedStaffMember = {
           ...updatedStaffMember,
@@ -91,6 +96,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
         const mod = availableMods.find(m => m.id === staff.researchingModId);
         if (mod) {
           completedResearch.push(`${staff.name} completed research for ${mod.name}!`);
+          completedModIds.push(mod.id);
           if (!newResearchedMods.includes(mod.id)) {
             newResearchedMods.push(mod.id);
           }
@@ -176,6 +182,15 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
           profit: prev.financials.income - newExpenses,
         },
         researchedMods: newResearchedMods,
+        studioKnowHow: applyKnowHowEvents(prev, [
+          ...completedCourseIds.map((courseId): KnowHowEvent => ({
+            kind: 'training',
+            eventId: `training:${courseId}:${newDay}`,
+            courseId,
+            domain: availableTrainingCourses.find(c => c.id === courseId)?.domain ?? 'production',
+          })),
+          ...completedModIds.map((modId): KnowHowEvent => ({ kind: 'research', eventId: `research:${modId}`, modId })),
+        ]).game.studioKnowHow,
         dailyTracking: freshDailyTracking(newDay, prev.dailyTracking), // New day, new challenge (streak carried)
         hiredStaff: staffAfterChores.map(s => 
           s.status === 'Resting' 

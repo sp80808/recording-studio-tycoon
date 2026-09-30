@@ -5,6 +5,7 @@ import {
   buildDefaultPlacements,
 } from '@/types/equipmentSlots';
 import { initializeStorylineState } from '@/narrative/branchingStorylineEngine';
+import { migrateKnowHow } from '@/rpg/studioKnowHow';
 
 const DEFAULT_FOCUS_ALLOCATION: FocusAllocation = {
   performance: 33,
@@ -142,6 +143,9 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
   if (!Array.isArray(processedState.discoveredSynergies)) {
     processedState.discoveredSynergies = [];
   }
+
+  // Studio Know-How (#66): legacy saves start empty; corrupt blobs are repaired.
+  processedState.studioKnowHow = migrateKnowHow(processedState.studioKnowHow);
 
   // Slot-based equipment placements (bead 8om). Legacy saves have no
   // placements at all — treat every owned item as globally available and

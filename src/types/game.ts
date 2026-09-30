@@ -271,6 +271,10 @@ export interface TrainingCourse {
     specialEffects?: string[];
   };
   requiredLevel: number;
+  /** Know-How cost + domain familiarity required to enrol (#66). */
+  knowHow?: import('@/rpg/studioKnowHow').KnowHowGate;
+  /** Domain that completing this course teaches. */
+  domain?: import('@/rpg/studioKnowHow').KnowHowDomain;
 }
 
 import { Band, SessionMusician, OriginalTrackProject } from './bands';
@@ -304,6 +308,8 @@ export interface GameState {
   studioLevel?: number; // Studio tier level (1-5), drives visible studio room and console upgrades
   studioTier?: number; // Alias for studioLevel
   studioRooms: StudioRoom[]; // Physical bookable studio suites; drives concurrent capacity
+  /** Studio Know-How progression (#66). Absent on legacy saves; migrated to an empty state. */
+  studioKnowHow?: import('@/rpg/studioKnowHow').StudioKnowHow;
   discoveredSynergies?: string[]; // IDs of discovered studio synergies (Kairosoft recipe codex)
   
   // Multi-project system
