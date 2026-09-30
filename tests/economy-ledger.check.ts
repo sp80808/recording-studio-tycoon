@@ -6,6 +6,7 @@ import {
   addAllocations, bookEntry, earn, getCashFlowForDays, getCategorySpend, getCostBreakdown,
   getGemFlow, getProfit, getProjectPnl, getRunway, getTotalExpenses, getTotalIncome, spend,
 } from '../src/economy/ledger';
+import { applyAmbientTick } from '../src/economy/ambientIncome';
 import type { ProjectReport } from '../src/types/game';
 
 console.log('Testing studio ledger...');
@@ -68,6 +69,13 @@ assert.strictEqual(getTotalIncome(rewarded), 40);
 assert.deepStrictEqual(getGemFlow(rewarded), { gained: 6, spent: 0 });
 const shop = buyFlightCase({ ...base, currentDay: 200, gems: 50 }, 'road_case', 'gems');
 assert(shop.ok && getGemFlow(shop.state).spent === 30 && getTotalExpenses(shop.state) === 0);
+
+// ambient income books under its own category, never as project revenue
+const amb = applyAmbientTick({ ...base, saveSeed: 'amb' }).state;
+assert(amb.money > base.money);
+assert.strictEqual(getCategorySpend(amb, 'ambient-income'), amb.money - base.money);
+assert.strictEqual(getTotalIncome(amb), amb.money - base.money);
+assert.strictEqual(getProjectPnl(amb, 'anything').revenue, 0);
 
 // runway: zero burn, bands, negative cash explainable
 assert.strictEqual(getRunway({ ...base, money: 500 }, 0).days, Infinity);

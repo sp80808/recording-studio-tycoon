@@ -6,7 +6,7 @@ import { calculateEquipmentUpkeep } from '@/economy/upkeep';
 import { getOriginEffects } from '@/narrative/originPerks';
 import {
   CATEGORY_LABELS, getCashFlowForDays, getCostBreakdown, getDailyNetSeries, getGemFlow,
-  getLedger, getProjectPnl, getRunway, type RunwayBand,
+  getCategorySpend, getLedger, getProjectPnl, getRunway, type RunwayBand,
 } from '@/economy/ledger';
 
 const fmt = (n: number) => `${n < 0 ? '-' : ''}$${Math.abs(Math.round(n)).toLocaleString()}`;
@@ -32,6 +32,7 @@ export function LedgerPanel({ gameState }: { gameState: GameState }) {
       costs: getCostBreakdown(gameState, getCashFlowForDays(gameState, 30).range).slice(0, 4),
       series: getDailyNetSeries(gameState, 14),
       gems: getGemFlow(gameState),
+      ambient: getCategorySpend(gameState, 'ambient-income', getCashFlowForDays(gameState, 30).range),
       pnl: last && getLedger(gameState).entries.some(e => e.projectId === last.projectId)
         ? { title: last.projectTitle, ...getProjectPnl(gameState, last.projectId) }
         : null,
@@ -111,6 +112,9 @@ export function LedgerPanel({ gameState }: { gameState: GameState }) {
                 <li className="flex justify-between font-semibold text-stone-100"><span>Contribution</span><span>{fmt(view.pnl.contribution)}</span></li>
               </ul>
             </div>
+          )}
+          {view.ambient > 0 && (
+            <p className="text-stone-400">Ambient earnings (30 days, kept apart from project revenue): {fmt(view.ambient)}.</p>
           )}
           {(view.gems.gained > 0 || view.gems.spent > 0) && (
             <p className="text-stone-400">Gems (in-game only): +{view.gems.gained} earned, -{view.gems.spent} spent.</p>

@@ -8,6 +8,7 @@ export type LedgerCategory =
   | 'session-income'
   | 'deposit-income'
   | 'reward-income'
+  | 'ambient-income'
   | 'staff-payroll'
   | 'staff-hiring'
   | 'freelancer-fee'
@@ -58,13 +59,14 @@ export interface LedgerState {
 export type LedgerEntryInput = Omit<LedgerEntry, 'id' | 'day'> & { day?: number };
 
 export const INFLOW_CATEGORIES: readonly LedgerCategory[] = [
-  'session-income', 'deposit-income', 'reward-income', 'equipment-sale',
+  'session-income', 'deposit-income', 'reward-income', 'ambient-income', 'equipment-sale',
 ];
 
 export const CATEGORY_LABELS: Record<LedgerCategory, string> = {
   'session-income': 'Session income',
   'deposit-income': 'Deposits',
   'reward-income': 'Rewards & tours',
+  'ambient-income': 'Ambient earnings',
   'staff-payroll': 'Payroll',
   'staff-hiring': 'Hiring fees',
   'freelancer-fee': 'Freelancers',
