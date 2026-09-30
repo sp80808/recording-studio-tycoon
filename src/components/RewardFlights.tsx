@@ -17,8 +17,8 @@ type Pop = { id: number; label: string; tier: RewardTier; tone: 'xp' | 'money' |
 
 /** Kenney sprite chips for loot flights (decorative — amount text is the payload). */
 const FLIGHT_SPRITE: Record<RewardKind, string> = {
-  money: '/assets/kenney-ui/PNG/Green/Double/star.png',
-  xp: '/assets/kenney-ui/PNG/Yellow/Double/star.png',
+  money: '/assets/rewards/coin.svg',
+  xp: '/assets/rewards/xp-star.svg',
 };
 
 const POP_TONE: Record<Pop['tone'], string> = {
