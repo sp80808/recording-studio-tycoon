@@ -1,0 +1,43 @@
+/** #81 gear visual state: mapping, archetypes, conditions, deterministic demo meter, cleanup. */
+import assert from 'node:assert';
+import fs from 'node:fs';
+import {
+  GEAR_ARCHETYPES, GEAR_ARCHETYPE_LIST, GEAR_FIDELITY, activityBand, conditionBand,
+  conditionVisuals, demoMeterLevel, toSpriteVisualState,
+} from '@/features/gearStudio/gearVisualState';
+
+let passed = 0;
+const ok = (c: boolean, m: string) => { assert(c, `FAIL: ${m}`); passed += 1; console.log(`PASS: ${m}`); };
+
+ok(GEAR_ARCHETYPE_LIST.length === 10, 'ten archetypes registered');
+ok(GEAR_ARCHETYPE_LIST.every((a) => GEAR_ARCHETYPES[a].primitives.length > 0 && GEAR_ARCHETYPES[a].archetype === a), 'every archetype maps to primitives');
+
+ok(conditionBand(95) === 'pristine' && conditionBand(70) === 'used' && conditionBand(40) === 'worn' && conditionBand(10) === 'failing', 'condition bands');
+ok(conditionVisuals(95).scratchOpacity === 0 && !conditionVisuals(95).warningLed, 'pristine has no wear');
+ok(conditionVisuals(10).warningLed && conditionVisuals(10).lampFlicker && conditionVisuals(10).meterNoise > conditionVisuals(70).meterNoise, 'failing is noisy with warning LED');
+
+const args = { seed: 'unit-1176', base: 0.5, wobble: 0.1 };
+ok(demoMeterLevel({ ...args, timeMs: 5000 }) === demoMeterLevel({ ...args, timeMs: 5000 }), 'demo meter deterministic');
+ok(demoMeterLevel({ ...args, timeMs: 5000 }) === demoMeterLevel({ ...args, timeMs: 5100 }), 'demo meter steady within a step');
+let inRange = true;
+for (let t = 0; t < 60000; t += 250) { const v = demoMeterLevel({ ...args, timeMs: t }); if (v < 0.05 || v > 0.98) inRange = false; }
+ok(inRange, 'demo meter stays in range');
+
+ok(activityBand(0) === 'idle' && activityBand(0.5) === 'mid' && activityBand(0.95) === 'peak', 'activity bands');
+const base = { powered: true, activity: 0.7, condition: 90 };
+ok(toSpriteVisualState('eq1', 'compressor', base).activityBand === 'high', 'sprite state maps activity');
+ok(toSpriteVisualState('eq1', 'compressor', { ...base, powered: false }).activityBand === 'idle', 'powered off is idle');
+ok(toSpriteVisualState('eq1', 'compressor', base, 'minimal').activityBand === 'idle', 'minimal fidelity is static');
+ok(toSpriteVisualState('eq1', 'tape-machine', { ...base, condition: 10 }).warning, 'failing condition raises warning');
+ok(JSON.parse(JSON.stringify(toSpriteVisualState('eq1', 'synth', base))).archetype === 'synth', 'sprite state serializable');
+ok(GEAR_FIDELITY.minimal.updateHz === 0 && !GEAR_FIDELITY.minimal.animated, 'minimal fidelity stops updates');
+ok(GEAR_FIDELITY['living-studio'].updateHz < GEAR_FIDELITY.inspector.updateHz, 'living studio updates slower than inspector');
+
+const domain = fs.readFileSync('src/features/gearStudio/gearVisualState.ts', 'utf8');
+ok(!/from 'react'|pixi|Math\.random/.test(domain), 'domain module has no React/Pixi/Math.random');
+const hook = fs.readFileSync('src/features/gearStudio/useDemoMeter.ts', 'utf8');
+ok(hook.includes('clearInterval') && hook.includes('removeEventListener') && hook.includes('document.hidden'), 'hook cleans interval/listener and pauses when hidden');
+const rack = fs.readFileSync('src/features/gearStudio/InteractiveStudioRackGear.tsx', 'utf8');
+ok(!rack.includes('Math.random') && rack.includes('reducedMotion') && rack.includes('./primitives'), 'rack gear uses shared primitives, no random, honours reduced motion');
+
+console.log(`${passed} gear visual checks passed`);

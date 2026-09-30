@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Rarity } from '@/features/boxDrops/lootGenerator';
+import { RARITY_FX_POLICY } from './rewardFx';
 
 interface RarityMaterialSweepProps {
   rarity: Rarity;
@@ -8,7 +9,8 @@ interface RarityMaterialSweepProps {
 }
 
 const RARITY_GRADIENTS: Record<Rarity, string> = {
-  standard: 'from-transparent via-stone-400/25 to-transparent',
+  common: 'from-transparent via-stone-400/25 to-transparent',
+  uncommon: 'from-transparent via-emerald-400/30 to-transparent',
   rare: 'from-transparent via-sky-400/40 to-transparent',
   vintage: 'from-transparent via-amber-400/50 to-transparent',
   legendary: 'from-transparent via-purple-400/60 to-transparent',
@@ -16,7 +18,7 @@ const RARITY_GRADIENTS: Record<Rarity, string> = {
 
 /**
  * Rarity Material Sweep Component
- * Sweeps a specular light gleam across the unboxed hardware card, tailored to the item's rarity.
+ * Sweeps a specular light gleam once (one-shot, settles) across the unboxed hardware card, tailored to the item's rarity.
  */
 export const RarityMaterialSweep: React.FC<RarityMaterialSweepProps> = ({
   rarity,
@@ -24,7 +26,7 @@ export const RarityMaterialSweep: React.FC<RarityMaterialSweepProps> = ({
 }) => {
   const reducedMotion = useReducedMotion();
 
-  if (reducedMotion) return null;
+  if (reducedMotion || !RARITY_FX_POLICY[rarity].sweep) return null;
 
   return (
     <div className={`pointer-events-none absolute inset-0 overflow-hidden rounded-sm ${className}`}>
@@ -34,8 +36,6 @@ export const RarityMaterialSweep: React.FC<RarityMaterialSweepProps> = ({
         transition={{
           duration: 1.1,
           ease: 'easeInOut',
-          repeat: Infinity,
-          repeatDelay: 3.5,
         }}
         className={`absolute inset-y-0 w-1/2 bg-gradient-to-r ${RARITY_GRADIENTS[rarity]} blur-[1px]`}
       />
