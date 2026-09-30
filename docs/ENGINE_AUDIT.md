@@ -24,3 +24,12 @@ Under WebGPU the console showed `Instance dropped in popErrorScope` and, in one 
 1. Try `?renderer=webgpu` on real hardware (Chrome desktop, Android) and compare frame times; flip the default to `auto` if visuals match.
 2. NPC layer slowdown (29.5 fps at 6 NPCs, 18.3 at 12 under software WebGL, from #103): likely fill cost from overlapping layers. Candidates: bake NPC layers into one texture or atlas, reduce overdrawn alpha layers, cull offscreen sprites. Not yet profiled here.
 3. Clear the tsc debt, then consider a fixed-timestep simulation loop and a versioned save schema.
+
+## Update: NPC draw cost (merged)
+`bakeLayeredNpc` collapses the ~15-layer NPC into one sprite. Bench (software GL): 12 NPCs 37.5 fps layered vs 60 fps baked. Details in `docs/SPRITE_FACTORY.md`. The floor does not call it yet; wire it in when NPCs are placed on the studio scene.
+
+## Loop and save audit (read-only findings)
+tsc is still at 92 errors (the cleanup in #104 round 2 has not landed), so no refactors here.
+- **Timers:** gameplay uses `setInterval` (`Index.tsx:452`, `useAmbientIncome.ts:21`), not a fixed timestep. Background tabs throttle these to about 1 Hz, so time-driven progress can stall or bunch up. Fix: derive elapsed time from `Date.now()` deltas and cap catch-up.
+- **Saves** (`SaveSystemContext.tsx`): a single localStorage key, `saveFormat: 'v2'` is written but migration keys off the app version via `migrateAndInitializeGameState`, so there is no per-format migration chain. A failed write (quota) only logs to the console; the player is not told. Each save logs `console.log`. There is no rolling backup, so a bad write or bad migration loses the career.
+- **Suggested order:** (1) write to a second key before overwriting and surface save failures as a toast, (2) add a `schemaVersion` with explicit migration steps, (3) move timers to delta-time with a catch-up cap.
