@@ -1,3 +1,4 @@
+import { meetsKnowHowGate, spendKnowHow, createInitialKnowHow } from '@/rpg/studioKnowHow';
 import { useArtistContracts } from '@/hooks/useArtistContracts';
 import { gameEvents } from '@/engine/gameEventBus';
 import { useState, useCallback, useMemo } from 'react'; // Added useMemo
@@ -149,7 +150,7 @@ export const useGameLogic = (
     }
 
     // Play purchase sound
-    playSound('ui sfx/purchase-complete.mp3', 0.6);
+    playSound('ui sfx/purchase-complete.m4a', 0.6);
 
     // Apply equipment effects and update state
     let updatedGameState = applyEquipmentEffects(equipment, gameState);
@@ -180,6 +181,9 @@ export const useGameLogic = (
     if (!course || !staff || gameState.money < course.cost || staff.status !== 'Idle') {
       return;
     }
+    if (course.knowHow && !meetsKnowHowGate(gameState.studioKnowHow ?? createInitialKnowHow(), course.knowHow)) {
+      return;
+    }
 
     const updatedGameState = addNotification(
       gameState,
@@ -192,6 +196,9 @@ export const useGameLogic = (
       ...spend({ ...updatedGameState, money: prev.money, ledger: prev.ledger }, course.cost, {
         category: 'training', staffId, memo: course.name,
       }),
+      studioKnowHow: course.knowHow
+        ? (spendKnowHow(prev.studioKnowHow ?? createInitialKnowHow(), course.knowHow.cost) ?? prev.studioKnowHow)
+        : prev.studioKnowHow,
       hiredStaff: prev.hiredStaff.map(s => 
         s.id === staffId 
           ? { 

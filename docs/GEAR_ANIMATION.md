@@ -17,7 +17,7 @@ Visuals never write equipment condition.
 - Serializable `GearSpriteVisualState` adapter (no React/Pixi imports).
 
 ## AnimatedSprite spike
-`gearSpriteAnimation.ts` builds an 8-frame tape-reel `AnimatedSprite` from Pixi Graphics textures (one shared frame set per renderer). `applyReelState` stops and parks on frame 0 when off, stopped or reduced-motion, so a static reel costs no ticker work. Authored frames beat runtime DOM animation for in-world indicators: one texture swap per tick, no React renders, no layout. Status: math is unit-tested; the texture/sprite path is type-checked but not yet mounted in the Living Studio or run against a GPU.
+`gearSpriteAnimation.ts` builds an 8-frame tape-reel `AnimatedSprite` from Pixi Graphics textures (one shared frame set per renderer). `applyReelState` stops and parks on frame 0 when off, stopped or reduced-motion, so a static reel costs no ticker work. Authored frames beat runtime DOM animation for in-world indicators: one texture swap per tick, no React renders, no layout. Status: mounted in the Living Studio (`WebGLCanvas.tsx`, tier-1 tape machine). Reels are parked on frame 0 unless a project is active and motion is allowed; they are advanced from the scene ticker (`autoUpdate: false`), so the `targetFps` cap and the hidden-tab early return apply.
 
 ## Performance contract (Node CPU only; no GPU or browser in the cloud session)
 Measured by `tests/gear-bench.check.ts` (state mapping + meter sampling):
@@ -33,3 +33,13 @@ Adds a WASM runtime and a per-canvas lifecycle, needs a separate authoring workf
 
 ## #80 reward FX (same PR)
 `fx/rewardFx.ts`: renderer-independent preset/request types, per-rarity effect budgets (common none, uncommon sweep, rare sweep + small burst, vintage/legendary add family flourish), data-driven gear families with bounded cycles, seeded FX randomness, 4 s hard cap. `PixiParticleBurst` is now seeded, cancels when the tab is hidden, and completes once. `RarityMaterialSweep` is one-shot; `AnimatedGearFlourish` settles after a few cycles. Renderer decision: keep the lightweight Canvas 2D burst for now (Pixi is not mounted over normal gameplay, and #80 forbids a second persistent WebGL renderer). Still open: wiring `RARITY_FX_POLICY` into `FlightCaseReveal` (belongs with #96/#76 to avoid conflicts), removing the duplicate `canvas-confetti`, the dev gallery, and #74 qualification.
+
+## Browser evidence (headless Chromium, software WebGL via SwiftShader; not a real GPU)
+Driven with Playwright against the real game (new 1960s studio -> Open the studio), 1440x900, three 6 s rAF samples each:
+| Build | Mean frame time per run |
+|---|---|
+| main (static ellipse reels) | 361, 391, 350 ms |
+| this branch (AnimatedSprite reels, idle/parked) | 332, 369, 379 ms |
+Software GL runs the whole scene at about 2.7 fps, so absolute numbers mean nothing, but the two builds are within run-to-run noise: parked sprite reels add no measurable per-frame cost. Screenshot: `docs/img/gear-reels-living-studio.png`.
+
+Not measured: playing-state reel cost (needs a booked session), React commit counts for the inspector, and real-GPU numbers. These remain follow-ups on #81.

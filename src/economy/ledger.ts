@@ -246,11 +246,9 @@ export const RUNWAY_BANDS: { band: RunwayBand; minDays: number }[] = [
   { band: 'critical', minDays: 0 },
 ];
 
-/** Unavoidable daily burn = payroll + baseline upkeep (passed in) + recent rent booked. */
-export function getRunway(s: HasLedger & Pick<GameState, 'money'>, payrollAndUpkeep: number): Runway {
-  const rentRange = { from: s.currentDay - 6, to: s.currentDay };
-  const rent = getCategorySpend(s, 'premises-rent', rentRange) / 7;
-  const dailyBurn = Math.max(0, payrollAndUpkeep + rent);
+/** Unavoidable daily burn = payroll + baseline upkeep + rent (all passed in as today's daily figure). */
+export function getRunway(s: HasLedger & Pick<GameState, 'money'>, dailyFixedCosts: number): Runway {
+  const dailyBurn = Math.max(0, dailyFixedCosts);
   const cash = s.money;
   let days: number;
   let explanation: string;
@@ -259,10 +257,10 @@ export function getRunway(s: HasLedger & Pick<GameState, 'money'>, payrollAndUpk
     explanation = 'No fixed daily costs right now.';
   } else if (cash <= 0) {
     days = 0;
-    explanation = `Cash is $${Math.round(cash).toLocaleString()} against $${Math.round(dailyBurn)}/day of payroll and upkeep. Finish a session or sell gear to recover.`;
+    explanation = `Cash is $${Math.round(cash).toLocaleString()} against $${Math.round(dailyBurn)}/day of payroll, rent and upkeep. Finish a session or sell gear to recover.`;
   } else {
     days = cash / dailyBurn;
-    explanation = `$${Math.round(cash).toLocaleString()} cash ÷ $${Math.round(dailyBurn)}/day of payroll and upkeep.`;
+    explanation = `$${Math.round(cash).toLocaleString()} cash ÷ $${Math.round(dailyBurn)}/day of payroll, rent and upkeep.`;
   }
   const band = RUNWAY_BANDS.find(b => days >= b.minDays)!.band;
   return { cash, dailyBurn, days, band, explanation };

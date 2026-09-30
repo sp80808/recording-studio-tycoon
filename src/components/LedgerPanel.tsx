@@ -3,6 +3,7 @@ import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
 import { ChevronDown, Landmark } from 'lucide-react';
 import type { GameState } from '@/types/game';
 import { calculateEquipmentUpkeep } from '@/economy/upkeep';
+import { premisesDailyRent } from '@/rpg/premises';
 import { getOriginEffects } from '@/narrative/originPerks';
 import {
   CATEGORY_LABELS, getCashFlowForDays, getCostBreakdown, getDailyNetSeries, getGemFlow,
@@ -26,7 +27,7 @@ export function LedgerPanel({ gameState }: { gameState: GameState }) {
     const upkeep = calculateEquipmentUpkeep(gameState.ownedEquipment, getOriginEffects(gameState));
     const last = gameState.financials.reports[gameState.financials.reports.length - 1];
     return {
-      runway: getRunway(gameState, payroll + upkeep),
+      runway: getRunway(gameState, payroll + upkeep + premisesDailyRent(gameState)),
       week: getCashFlowForDays(gameState, 7),
       month: getCashFlowForDays(gameState, 30),
       costs: getCostBreakdown(gameState, getCashFlowForDays(gameState, 30).range).slice(0, 4),

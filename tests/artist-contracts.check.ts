@@ -3,8 +3,13 @@ import assert from 'node:assert';
 import {
   generateProspects, evaluateOffer, offerValue, signArtist, processContractsDay, canSign, validateTerms,
   dailyCatalogIncome, dailyStudioShare, scoutingBatchDay, MAX_ROSTER, PROSPECT_COUNT, PROSPECT_REFRESH_DAYS,
+  artistQualityBonus, artistChartBoost, MAX_ARTIST_QUALITY_BONUS, MAX_ARTIST_CHART_BOOST,
   ContractTerms, SignedArtist,
 } from '../src/simulation/artistContracts';
+import { generateProjectReview } from '../src/utils/projectReviewUtils';
+import { getSettlementBonuses } from '../src/utils/settlementBonuses';
+import { initializeSkillsPlayer } from '../src/utils/skillUtils';
+import type { GameState, PlayerData, Project } from '../src/types/game';
 
 let passed = 0;
 const ok = (cond: boolean, msg: string): void => {
@@ -69,5 +74,41 @@ ok(!canSign([], 50, terms).ok, 'advance must be affordable');
 ok(canSign([], 500, terms).ok, 'valid signing allowed');
 ok(validateTerms({ ...terms, artistSplit: 0.9 }) !== null, 'split above 70% invalid');
 ok(validateTerms({ ...terms, durationDays: 5 }) !== null, 'too-short contract invalid');
+
+// Artist effects on sessions and charts
+const pop = { skill: 8, fame: 50, genre: 'Pop' };
+const jazz = { skill: 8, fame: 50, genre: 'Jazz' };
+ok(artistQualityBonus(undefined, 'Pop') === 0 && artistQualityBonus([], 'Pop') === 0, 'no roster means no bonus');
+ok(artistQualityBonus([pop], 'Pop') > artistQualityBonus([jazz], 'Pop'), 'matching genre beats off-genre quality');
+ok(artistQualityBonus([jazz], 'Pop') > 0, 'off-genre guest spot still helps a little');
+ok(artistQualityBonus([pop], 'pop') === artistQualityBonus([pop], 'Pop'), 'genre match ignores case');
+ok(artistQualityBonus(Array(4).fill(pop), 'Pop') === MAX_ARTIST_QUALITY_BONUS, 'quality bonus is capped');
+ok(artistChartBoost([pop], 'Pop') > artistChartBoost([jazz], 'Pop'), 'matching genre beats off-genre chart boost');
+ok(artistChartBoost([{ skill: 1, fame: 0, genre: 'Pop' }], 'Pop') === 0, 'unknown artist adds no chart boost');
+ok(artistChartBoost(Array(4).fill({ skill: 9, fame: 100, genre: 'Pop' }), 'Pop') === MAX_ARTIST_CHART_BOOST, 'chart boost is capped');
+
+// End to end: a signed artist lifts the real session review score
+const project = {
+  id: 'proj-art', title: 'Test Session', genre: 'Pop', clientType: 'Indie Band', difficulty: 3, durationDaysTotal: 4,
+  payoutBase: 1000, repGainBase: 20, requiredSkills: {}, stages: [], matchRating: 'Good', accumulatedCPoints: 10,
+  accumulatedTPoints: 10, currentStageIndex: 0, completedStages: [], workSessionCount: 4,
+  focusAllocation: { performance: 33, soundCapture: 33, layering: 34 },
+} as unknown as Project;
+const player = {
+  xp: 0, level: 3, xpToNextLevel: 100, perkPoints: 0, dailyWorkCapacity: 5, reputation: 10,
+  attributes: { focusMastery: 1, creativeIntuition: 1, technicalAptitude: 1, businessAcumen: 1 },
+  skills: initializeSkillsPlayer(),
+} as unknown as PlayerData;
+const stateFor = (signedArtists: SignedArtist[]) => ({
+  playerData: player, studioRooms: [], hiredStaff: [], ownedEquipment: [], clientRelationships: {}, signedArtists,
+}) as unknown as GameState;
+const popArtist: SignedArtist = { ...s, genre: 'Pop', skill: 9 };
+const withArtist = getSettlementBonuses(stateFor([popArtist]), project);
+const without = getSettlementBonuses(stateFor([]), project);
+ok(without.artistQualityBonus === 0 && withArtist.artistQualityBonus > 0, 'settlement bonuses include the artist bonus');
+const run = (b: typeof withArtist) =>
+  generateProjectReview(project, { type: 'player', id: 'player', name: 'You' }, 60, player, [], b);
+ok(run(withArtist).overallQualityScore > run(without).overallQualityScore, 'signed artist raises the real review score');
+ok(run(withArtist).reviewSnippet.includes('signed artist') || withArtist.artistQualityBonus < 4, 'big artist bonus is credited in the review');
 
 console.log(`artist-contracts: ${passed} checks passed`);

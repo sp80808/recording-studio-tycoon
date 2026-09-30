@@ -38,6 +38,8 @@ interface StudioRoomProps {
   onUnassignStaff?: (staffId: string) => void;
   onOpenDashboardTab?: (tab: 'studio' | 'skills' | 'bands' | 'charts' | 'staff') => void;
   onConsoleFocus: () => void;
+  onCompleteChore?: (hotspot: StudioHotspotId) => boolean;
+  activeChoreId?: string | null;
   onBookings?: () => void;
   className?: string;
   style?: React.CSSProperties;
@@ -57,6 +59,8 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
   onUnassignStaff,
   onOpenDashboardTab,
   onConsoleFocus,
+  onCompleteChore,
+  activeChoreId,
   onBookings,
   className = '',
   style,
@@ -117,6 +121,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     return {
       activity,
       hasActiveProject: !!project,
+      artistName: project ? (project.clientName ?? project.title) : undefined,
       staffOnFloor: Math.min(5, 1 + presentStaff),
       ownedEquipment: gameState.ownedEquipment.length,
       day: gameState.currentDay,
@@ -136,6 +141,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
         void gameAudio.playTactileClick();
       }
     }
+    if ((id === 'console' || id === 'liveRoom') && onCompleteChore?.(id)) return;
     if (id === 'console') { onConsoleFocus(); return; }
     if (id === 'phone' && onBookings) { onBookings(); return; }
     setActiveInspector(id);
@@ -209,6 +215,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           onUnassignStaff={onUnassignStaff ?? (() => {})}
           onOpenDashboardTab={onOpenDashboardTab ?? (() => {})}
           onConsoleFocus={onConsoleFocus}
+          onCompleteChore={onCompleteChore}
         />
       )}
       {/* Top-left overlay stack: sits below the HUD (see .studio-room-overlay-tl) and flows
@@ -270,11 +277,12 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
                 <MotionReveal direction="up" distance={6}>
                   <button
                     onClick={() => handleHotspot('console')}
-                    className={`rst-duty-chip ${consoleStyle ? '' : 'studio-duty-console absolute bottom-14 left-6 z-20'}`}
+                    className={`rst-duty-chip feel-attention ${consoleStyle ? '' : 'studio-duty-console absolute bottom-14 left-6 z-20'} ${activeChoreId ? 'pointer-events-none opacity-70' : ''}`}
                     title={`${pendingConsoleChores.length} Console Maintenance Duty Pending`}
+                    aria-disabled={Boolean(activeChoreId)}
                   >
                     <span>🔧</span>
-                    <span>{pendingConsoleChores[0].title}</span>
+                    <span>{activeChoreId === pendingConsoleChores[0].id ? `Working… ${pendingConsoleChores[0].title}` : pendingConsoleChores[0].title}</span>
                   </button>
                 </MotionReveal>
               </div>
@@ -284,11 +292,12 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
                 <MotionReveal direction="up" distance={6}>
                   <button
                     onClick={() => handleHotspot('liveRoom')}
-                    className={`rst-duty-chip ${liveStyle ? '' : 'studio-duty-live absolute bottom-16 right-6 z-20'}`}
+                    className={`rst-duty-chip feel-attention ${liveStyle ? '' : 'studio-duty-live absolute bottom-16 right-6 z-20'} ${activeChoreId ? 'pointer-events-none opacity-70' : ''}`}
                     title="Live Room: Tune Acoustics"
+                    aria-disabled={Boolean(activeChoreId)}
                   >
                     <span>✨</span>
-                    <span>Tune Acoustics</span>
+                    <span>{activeChoreId === pendingLiveRoomChores[0].id ? 'Working… Tune Acoustics' : 'Tune Acoustics'}</span>
                   </button>
                 </MotionReveal>
               </div>
@@ -297,9 +306,13 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
         );
       })()}
       {/* Top-right overlay stack: camera recentre, then the lounge chore chip beneath it. */}
-      <div className="studio-room-overlay-tr">
+      {roomTier > 1 && <div className="studio-room-overlay-tr">
         <button className="studio-camera-center studio-dock-button bg-stone-950/70 border border-white/10 flex items-center gap-1.5"
-          onClick={() => setCameraReset(value => value + 1)} aria-label="Center studio camera" title="Center studio camera">
+          onClick={() => {
+            setCameraReset(value => value + 1);
+            playClick();
+            toast({ title: 'Studio view centered', description: 'The room camera is back at its default position.' });
+          }} aria-label="Center studio camera" title="Center studio camera">
           {gamepad.isConnected && gamepad.lastInputType === 'gamepad' && (
             <GamepadGlyph button="rs" size="xs" />
           )}
@@ -321,7 +334,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
             </MotionReveal>
           );
         })()}
-      </div>
+      </div>}
       {gamepad.isConnected && gamepad.lastInputType === 'gamepad' ? (
         <div className="absolute bottom-2 left-3 flex items-center gap-2 bg-stone-950/85 px-2.5 py-1.5 rounded-full border border-stone-700/60 shadow-lg text-[11px] text-stone-300 pointer-events-none select-none animate-in fade-in">
           <GamepadGlyph button="dpadLeft" size="xs" />

@@ -1,4 +1,6 @@
+import { premisesStaffCap, getPremisesDef } from '@/rpg/premises';
 
+import { meetsKnowHowGate, spendKnowHow, createInitialKnowHow } from '@/rpg/studioKnowHow';
 import { useCallback } from 'react';
 import { spend } from '@/economy/ledger';
 import { GameState, StaffMember, EquipmentMod, FocusAllocation } from '@/types/game'; // Added FocusAllocation
@@ -16,6 +18,16 @@ export const useStaffManagement = (
   const hireStaff = useCallback((candidateIndex: number): boolean => {
     const candidate = gameState.availableCandidates[candidateIndex];
     if (!candidate) return false;
+
+    if (gameState.hiredStaff.length >= premisesStaffCap(gameState)) {
+      toast({
+        title: "🏠 No Room For More Staff",
+        description: `Your ${getPremisesDef(gameState).name.toLowerCase()} fits ${premisesStaffCap(gameState)} people. Move to bigger premises to hire more.`,
+        className: "bg-stone-800 border-stone-600 text-white",
+        variant: "destructive"
+      });
+      return false;
+    }
 
     const signingFee = candidate.salary * 3; // 3x daily salary as signing fee
     if (gameState.money < signingFee) {
@@ -161,6 +173,9 @@ export const useStaffManagement = (
     if (!course || !staff || gameState.money < course.cost || staff.status !== 'Idle') {
       return;
     }
+    if (course.knowHow && !meetsKnowHowGate(gameState.studioKnowHow ?? createInitialKnowHow(), course.knowHow)) {
+      return;
+    }
 
     if (staff.levelInRole < course.requiredLevel) {
       toast({
@@ -174,6 +189,9 @@ export const useStaffManagement = (
 
     setGameState(prev => ({
       ...spend(prev, course.cost, { category: 'training', staffId, memo: course.name }),
+      studioKnowHow: course.knowHow
+        ? (spendKnowHow(prev.studioKnowHow ?? createInitialKnowHow(), course.knowHow.cost) ?? prev.studioKnowHow)
+        : prev.studioKnowHow,
       hiredStaff: prev.hiredStaff.map(s => 
         s.id === staffId 
           ? { 

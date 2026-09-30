@@ -22,8 +22,8 @@ const MAX_RESOLVES_PER_TICK = SEASONS_PER_YEAR;
 const MAX_LEDGER = 120;
 const MAX_HISTORY = 40;
 
-export type StudioFocus = 'craft' | 'relationships' | 'growth';
-export const STUDIO_FOCUSES: StudioFocus[] = ['craft', 'relationships', 'growth'];
+export type StudioFocus = 'craft' | 'relationships' | 'growth' | 'efficiency' | 'discovery';
+export const STUDIO_FOCUSES: StudioFocus[] = ['craft', 'relationships', 'growth', 'efficiency', 'discovery'];
 
 export interface SeasonDelivery {
   seasonNumber: number;
@@ -32,6 +32,7 @@ export interface SeasonDelivery {
   title: string;
   clientKey?: string;
   clientName?: string;
+  genre?: string;
   quality: number;
   revenue: number;
   /** The client had delivered before. */
@@ -68,6 +69,8 @@ export interface StudioSeasonState {
   startDay: number;
   focus: StudioFocus | null;
   startRooms: number;
+  /** Synergies known when the season began (Discovery baseline). Absent on season-1 legacy state. */
+  startSynergies?: number;
   deliveries: SeasonDelivery[];
   history: StudioSeasonRecord[];
   /** Plaques and titles earned (horizontal rewards, no multipliers). */
@@ -92,11 +95,14 @@ export const FOCUS_INFO: Record<StudioFocus, { name: string; tagline: string; ti
   craft: { name: 'Craft', tagline: 'Deliver consistently excellent work.', title: 'Craftsman plaque' },
   relationships: { name: 'Relationships', tagline: 'Become the studio artists come back to.', title: 'Open-door plaque' },
   growth: { name: 'Growth', tagline: 'Expand capacity responsibly.', title: 'Growth plaque' },
+  efficiency: { name: 'Efficiency', tagline: 'Run a tight operation.', title: 'Tight-ship plaque' },
+  discovery: { name: 'Discovery', tagline: 'Explore new sounds and workflows.', title: 'Explorer plaque' },
 };
 
 const SOLID_QUALITY = 70;
 const STANDOUT_QUALITY = 85;
 const GROWTH_REVENUE = 3000;
+const EFFICIENT_PAYOUT = 800;
 const TIER_ORDER: ClientRelationshipTier[] = ['Unknown', 'Acquaintance', 'Friendly', 'Regular', 'Loyal', 'Advocate'];
 const tierRank = (t?: ClientRelationshipTier): number => Math.max(0, TIER_ORDER.indexOf(t ?? 'Unknown'));
 
@@ -106,12 +112,13 @@ const who = (d: SeasonDelivery): string => d.clientName ?? 'The studio';
 
 // ── State helpers ─────────────────────────────────────────────────────────
 
-export function createSeasonState(startDay: number, startRooms = 0): StudioSeasonState {
+export function createSeasonState(startDay: number, startRooms = 0, startSynergies = 0): StudioSeasonState {
   return {
     seasonNumber: 1,
     startDay: Math.max(1, Math.floor(startDay)),
     focus: null,
     startRooms,
+    startSynergies,
     deliveries: [],
     history: [],
     titles: [],
@@ -119,12 +126,13 @@ export function createSeasonState(startDay: number, startRooms = 0): StudioSeaso
   };
 }
 
+const knownSynergies = (s: GameState): number => s.discoveredSynergies?.length ?? 0;
 const unlockedRooms = (s: GameState): number => (s.studioRooms ?? []).filter(r => r.unlocked).length;
 
 /** Lazily adds season state to legacy saves. */
 export function ensureSeasons(state: GameState): GameState {
   if (state.studioSeasons) return state;
-  return { ...state, studioSeasons: createSeasonState(state.currentDay, unlockedRooms(state)) };
+  return { ...state, studioSeasons: createSeasonState(state.currentDay, unlockedRooms(state), knownSynergies(state)) };
 }
 
 export const seasonId = (n: number): string => `S${n}`;
@@ -148,6 +156,7 @@ export interface DeliveryInput {
   title: string;
   clientKey?: string;
   clientName?: string;
+  genre?: string;
   quality: number;
   revenue: number;
   sessionsBefore: number;
@@ -172,6 +181,7 @@ export function recordSeasonDelivery(state: GameState, input: DeliveryInput): Ga
     title: input.title,
     clientKey: input.clientKey,
     clientName: input.clientName,
+    genre: input.genre,
     quality: Math.max(0, Math.min(100, Math.round(input.quality))),
     revenue: Math.max(0, Math.round(input.revenue)),
     isRepeat: input.sessionsBefore > 0,
@@ -195,6 +205,7 @@ export function evaluateObjectives(
   focus: StudioFocus,
   seasons: StudioSeasonState,
   rooms: number,
+  synergies = seasons.startSynergies ?? 0,
 ): ObjectiveProgress[] {
   const ds = seasonDeliveries(seasons);
   const mk = (
@@ -233,6 +244,28 @@ export function evaluateObjectives(
           : 'Deliver well for a client until their tier rises.'),
     ];
   }
+  if (focus === 'efficiency') {
+    const lastDone = ds[ds.length - 1];
+    const worthwhile = ds.filter(d => d.quality >= SOLID_QUALITY && d.revenue >= EFFICIENT_PAYOUT);
+    const lastWorth = worthwhile[worthwhile.length - 1];
+    return [
+      mk('eff-throughput', 'Deliver 4 sessions', ds.length, 4,
+        lastDone ? `"${lastDone.title}" shipped on day ${lastDone.day}.` : 'Every finished delivery counts.'),
+      mk('eff-paid', `Deliver 2 solid sessions paying $${EFFICIENT_PAYOUT}+`, worthwhile.length, 2,
+        lastWorth ? `"${lastWorth.title}" scored ${lastWorth.quality} and paid $${lastWorth.revenue.toLocaleString()}.` : `Quality ${SOLID_QUALITY}+ with a $${EFFICIENT_PAYOUT}+ payout counts.`),
+    ];
+  }
+  if (focus === 'discovery') {
+    const genres = [...new Set(ds.map(d => d.genre).filter((g): g is string => !!g))];
+    const lastNew = genres[genres.length - 1];
+    const found = Math.max(0, synergies - (seasons.startSynergies ?? synergies));
+    return [
+      mk('disc-genres', 'Deliver work in 3 different genres', genres.length, 3,
+        lastNew ? `${lastNew} is a new genre for this season (${genres.join(', ')}).` : 'Each new genre delivered this season counts once.'),
+      mk('disc-synergy', 'Discover a new studio synergy', found, 1,
+        found ? 'A new synergy entered the codex.' : 'Try a new gear and room combination.'),
+    ];
+  }
   const revenue = ds.reduce((sum, d) => sum + d.revenue, 0);
   const lastPaid = [...ds].reverse().find(d => d.revenue > 0);
   const roomsAdded = Math.max(0, rooms - seasons.startRooms);
@@ -247,7 +280,7 @@ export function evaluateObjectives(
 export function currentObjectives(state: GameState): ObjectiveProgress[] {
   const seasons = state.studioSeasons;
   if (!seasons?.focus) return [];
-  return evaluateObjectives(seasons.focus, seasons, unlockedRooms(state));
+  return evaluateObjectives(seasons.focus, seasons, unlockedRooms(state), knownSynergies(state));
 }
 
 // ── Annual awards ─────────────────────────────────────────────────────────
@@ -255,47 +288,91 @@ export function currentObjectives(state: GameState): ObjectiveProgress[] {
 export const AWARD_CRITERIA = [
   { id: 'recording', name: 'Recording of the Year', criteria: 'Highest-quality delivery of the year. Winner 80+, nominated 65+.' },
   { id: 'relationships', name: 'Best Client Relationships', criteria: 'Most sessions with one client. Winner 3+, nominated 2.' },
+  { id: 'engineer', name: 'Engineer Development', criteria: 'Most sessions delivered by one staff engineer. Winner 3+ at an average of 70+, nominated 2+.' },
   { id: 'growth', name: 'Studio Growth', criteria: 'Delivery revenue across the year. Winner $10,000+, nominated $6,000+.' },
+  { id: 'reliable', name: 'Reliable Operator', criteria: 'Steady work: Winner 4+ deliveries with none under 60, nominated 3+ with at most one under 60.' },
+  { id: 'breakthrough', name: 'Breakthrough Session', criteria: "A client's session that beat their previous one. Winner +15 and 75+, nominated +8." },
 ] as const;
+
+const byId = (id: (typeof AWARD_CRITERIA)[number]['id']) => AWARD_CRITERIA.find(c => c.id === id)!;
 
 /** Judges a year's worth of deliveries. Also used live so criteria + standing are visible all year. */
 export function evaluateAwards(deliveries: SeasonDelivery[]): AwardResult[] {
   const out: AwardResult[] = [];
-  const [rec, rel, gro] = AWARD_CRITERIA;
+  const sorted = [...deliveries].sort((a, b) => a.day - b.day);
 
-  const best = deliveries.reduce<SeasonDelivery | null>((b, d) => (!b || d.quality > b.quality ? d : b), null);
-  const recStatus: AwardStatus = !best ? 'not_nominated' : best.quality >= 80 ? 'winner' : best.quality >= 65 ? 'nominated' : 'not_nominated';
+  const best = sorted.reduce<SeasonDelivery | null>((b, d) => (!b || d.quality > b.quality ? d : b), null);
   out.push({
-    ...rec,
-    status: recStatus,
+    ...byId('recording'),
+    status: !best ? 'not_nominated' : best.quality >= 80 ? 'winner' : best.quality >= 65 ? 'nominated' : 'not_nominated',
     why: best ? `"${best.title}" scored ${best.quality}${best.clientName ? ` for ${best.clientName}` : ''}.` : 'No deliveries yet this year.',
     projectIds: best ? [best.projectId] : [],
   });
 
   const perClient = new Map<string, SeasonDelivery[]>();
-  for (const d of deliveries) {
+  for (const d of sorted) {
     if (!d.clientKey) continue;
     perClient.set(d.clientKey, [...(perClient.get(d.clientKey) ?? []), d]);
   }
   let topClient: SeasonDelivery[] = [];
   for (const list of perClient.values()) if (list.length > topClient.length) topClient = list;
-  const relStatus: AwardStatus = topClient.length >= 3 ? 'winner' : topClient.length >= 2 ? 'nominated' : 'not_nominated';
   out.push({
-    ...rel,
-    status: relStatus,
+    ...byId('relationships'),
+    status: topClient.length >= 3 ? 'winner' : topClient.length >= 2 ? 'nominated' : 'not_nominated',
     why: topClient.length
       ? `${topClient.length} session${topClient.length === 1 ? '' : 's'} with ${topClient[0].clientName ?? 'one client'} this year.`
       : 'No client sessions yet this year.',
     projectIds: topClient.map(d => d.projectId),
   });
 
-  const revenue = deliveries.reduce((s, d) => s + d.revenue, 0);
-  const groStatus: AwardStatus = revenue >= 10000 ? 'winner' : revenue >= 6000 ? 'nominated' : 'not_nominated';
+  const perStaff = new Map<string, SeasonDelivery[]>();
+  for (const d of sorted) {
+    if (!d.staffName) continue;
+    perStaff.set(d.staffName, [...(perStaff.get(d.staffName) ?? []), d]);
+  }
+  let topStaff: SeasonDelivery[] = [];
+  for (const list of perStaff.values()) if (list.length > topStaff.length) topStaff = list;
+  const staffAvg = topStaff.length ? Math.round(topStaff.reduce((sum, d) => sum + d.quality, 0) / topStaff.length) : 0;
   out.push({
-    ...gro,
-    status: groStatus,
-    why: `$${revenue.toLocaleString()} from ${deliveries.length} deliver${deliveries.length === 1 ? 'y' : 'ies'} this year.`,
-    projectIds: [...deliveries].sort((a, b) => b.revenue - a.revenue).slice(0, 3).map(d => d.projectId),
+    ...byId('engineer'),
+    status: topStaff.length >= 3 && staffAvg >= 70 ? 'winner' : topStaff.length >= 2 ? 'nominated' : 'not_nominated',
+    why: topStaff.length
+      ? `${topStaff[0].staffName} delivered ${topStaff.length} session${topStaff.length === 1 ? '' : 's'} averaging ${staffAvg}.`
+      : 'No staff-led sessions yet this year.',
+    projectIds: topStaff.map(d => d.projectId),
+  });
+
+  const revenue = sorted.reduce((s, d) => s + d.revenue, 0);
+  out.push({
+    ...byId('growth'),
+    status: revenue >= 10000 ? 'winner' : revenue >= 6000 ? 'nominated' : 'not_nominated',
+    why: `$${revenue.toLocaleString()} from ${sorted.length} deliver${sorted.length === 1 ? 'y' : 'ies'} this year.`,
+    projectIds: [...sorted].sort((a, b) => b.revenue - a.revenue).slice(0, 3).map(d => d.projectId),
+  });
+
+  const weak = sorted.filter(d => d.quality < 60).length;
+  out.push({
+    ...byId('reliable'),
+    status: sorted.length >= 4 && weak === 0 ? 'winner' : sorted.length >= 3 && weak <= 1 ? 'nominated' : 'not_nominated',
+    why: `${sorted.length} deliver${sorted.length === 1 ? 'y' : 'ies'}, ${weak} under 60.`,
+    projectIds: sorted.map(d => d.projectId).slice(0, 6),
+  });
+
+  let jump: { d: SeasonDelivery; gain: number } | null = null;
+  const lastByClient = new Map<string, SeasonDelivery>();
+  for (const d of sorted) {
+    if (!d.clientKey) continue;
+    const prev = lastByClient.get(d.clientKey);
+    if (prev && (!jump || d.quality - prev.quality > jump.gain)) jump = { d, gain: d.quality - prev.quality };
+    lastByClient.set(d.clientKey, d);
+  }
+  out.push({
+    ...byId('breakthrough'),
+    status: jump && jump.gain >= 15 && jump.d.quality >= 75 ? 'winner' : jump && jump.gain >= 8 ? 'nominated' : 'not_nominated',
+    why: jump && jump.gain > 0
+      ? `"${jump.d.title}" beat ${jump.d.clientName ?? 'the client'}'s previous session by ${jump.gain} points.`
+      : 'No client session has beaten the one before it yet.',
+    projectIds: jump && jump.gain > 0 ? [jump.d.projectId] : [],
   });
   return out;
 }
@@ -328,7 +405,7 @@ export function resolveSeasonIfDue(state: GameState): { state: GameState; resolu
   if (s.resolved.includes(s.seasonNumber)) return null;
 
   const rooms = unlockedRooms(base);
-  const objectives = s.focus ? evaluateObjectives(s.focus, s, rooms) : [];
+  const objectives = s.focus ? evaluateObjectives(s.focus, s, rooms, knownSynergies(base)) : [];
   const completed = objectives.filter(o => o.done);
   const ds = seasonDeliveries(s);
   const notable = [...ds].sort((a, b) => b.quality - a.quality).slice(0, 3).map(d => d.projectId);
@@ -362,6 +439,7 @@ export function resolveSeasonIfDue(state: GameState): { state: GameState; resolu
     startDay: seasonEndDay(s),
     focus: null,
     startRooms: rooms,
+    startSynergies: knownSynergies(base),
     // Keep the rest of the current year for awards; drop older years.
     deliveries: s.deliveries.filter(d => yearOfSeason(d.seasonNumber) >= yearOfSeason(s.seasonNumber + 1)),
     history: [...s.history, record].slice(-MAX_HISTORY),
@@ -404,11 +482,11 @@ export function describeResolution(r: SeasonResolution): string {
  */
 export function seasonReviewNote(
   state: GameState,
-  delivery: { quality: number; isRepeat: boolean; clientName?: string },
+  delivery: { quality: number; isRepeat: boolean; clientName?: string; genre?: string },
 ): string | null {
   const s = state.studioSeasons;
   if (!s?.focus) return null;
-  const objs = evaluateObjectives(s.focus, s, unlockedRooms(state));
+  const objs = evaluateObjectives(s.focus, s, unlockedRooms(state), knownSynergies(state));
   const name = FOCUS_INFO[s.focus].name;
   const show = (id: string, verb: string): string | null => {
     const o = objs.find(x => x.id === id);
@@ -420,6 +498,13 @@ export function seasonReviewNote(
   }
   if (s.focus === 'relationships' && delivery.isRepeat) {
     return show('rel-repeat', `${delivery.clientName ?? 'this client'} counts as a repeat booking`);
+  }
+  if (s.focus === 'efficiency') {
+    return show('eff-throughput', 'this delivery counts toward your throughput');
+  }
+  if (s.focus === 'discovery' && delivery.genre) {
+    const seen = seasonDeliveries(s).some(d => d.genre === delivery.genre);
+    return seen ? null : show('disc-genres', `${delivery.genre} is a new genre this season`);
   }
   if (s.focus === 'growth') return `${name} season: this payout counts toward $${GROWTH_REVENUE.toLocaleString()} in delivery revenue`;
   return null;

@@ -1,3 +1,4 @@
+import { applyKnowHowEvents } from '../rpg/studioKnowHow';
 import { GameState, Project, ProjectReport, StaffMember } from '../types/game';
 import { generateProjectReview } from '../utils/projectReviewUtils';
 import { grantSkillXp } from '../utils/skillUtils';
@@ -376,7 +377,10 @@ export function applyReportToState(state: GameState, report: ProjectReport): Gam
         playerData,
         hiredStaff: releasedStaff,
         clientRelationships,
-        studioKnowHow: (state.studioKnowHow ?? 0) + (report.knowHowGained ?? 0),
+        // Polishing feeds the same Know-How pool as everything else (#66).
+        studioKnowHow: applyKnowHowEvents(state, report.knowHowGained
+            ? [{ kind: 'polish', eventId: `polish:${report.projectId}`, amount: report.knowHowGained }]
+            : []).game.studioKnowHow,
         financials: {
             ...state.financials,
             income,

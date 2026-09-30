@@ -88,7 +88,5 @@ const broke = getRunway({ ...base, money: -250 }, 100);
 assert.strictEqual(broke.days, 0);
 assert.strictEqual(broke.band, 'critical');
 assert(broke.explanation.includes('-250'));
-const rented = spend({ ...base, currentDay: 10 }, 700, { category: 'premises-rent' });
-assert.strictEqual(getRunway(rented, 0).dailyBurn, 100);
 
 console.log('Studio ledger checks passed.');
