@@ -59,3 +59,6 @@ export const resolveLayerFrames = (
   }
   return { drawable, missingRequired };
 };
+
+/** Atlas frame name for a layer variant (`hair/afro` -> `layer/npc-parts/hair_afro/000`). */
+export const layerFrameName = (variant: string, set = 'npc-parts') => `layer/${set}/${variant.replace('/', '_')}/000`;

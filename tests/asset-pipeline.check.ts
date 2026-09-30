@@ -15,6 +15,8 @@ import {
 } from '../src/features/sprites';
 import { Texture, TextureSource } from 'pixi.js';
 import { buildSpritesheet, createAtlasAnimation } from '../src/features/sprites/pipeline/pixiAtlasLoader';
+import { createLayeredNpc } from '../src/features/sprites/pixiNpc';
+import { generateModularNpc } from '../src/features/sprites';
 
 console.log('Testing asset pipeline (#79)...');
 
@@ -138,5 +140,15 @@ try {
   assert.equal(sprite!.totalFrames, 2);
   assert.deepEqual([sprite!.anchor.x, sprite!.anchor.y], [0.5, 1]);
   assert.equal(createAtlasAnimation(loaded, 'nope', ['also-nope']), null, 'nothing resolves -> caller draws its fallback');
+  // Layered NPC: the in-house part atlas covers every required layer of every generated NPC
+  const parts = JSON.parse(fs.readFileSync('public/assets/atlases/layer/npc-parts.json', 'utf8')) as PixiTextureAtlasSchema;
+  const partsLoaded = await buildSpritesheet(parts, new Texture({ source: new TextureSource({ width: parts.meta.size.w, height: parts.meta.size.h }) }));
+  for (let seed = 0; seed < 300; seed++) {
+    const npc = generateModularNpc(seed);
+    const layered = createLayeredNpc(partsLoaded, npc);
+    assert.deepEqual(layered.missingRequired, [], `${npc.id} has art for every required layer`);
+    assert.equal(layered.container.children.length, layered.spriteCount);
+    assert.ok(layered.spriteCount >= 6);
+  }
   console.log('asset-pipeline: all checks passed');
 })().catch((e) => { console.error(e); process.exit(1); });

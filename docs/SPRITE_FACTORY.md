@@ -13,9 +13,17 @@ Definitions are plain JSON. `npcLayers.ts` turns a definition into an ordered la
 ## Animation states
 `idle walk waiting working recording mixing break celebrate leaving` (`npcAnimation.ts`), each with an atlas tag fallback chain ending at `idle`. Presentation only: nothing authoritative waits on a clip. The DOM renderer collapses them onto its four existing motions (`domMotionFor`); `headbob` is kept as a legacy alias.
 
-## Layered Pixi vs DOM/SVG: status
-- Done: atlas -> `AnimatedSprite` path (`pixiAtlasLoader.ts`) is tested headless, and the layer-stack build costs ~0.005-0.01 ms per frame for 3/6/12 NPCs (`tests/sprite-factory.check.ts`).
-- **Not done:** an on-screen render benchmark of layered Pixi vs DOM/SVG at 3/6/12 NPCs, and a complete layered NPC drawn from authored layer art (there is no per-layer art yet; the Blender character work is the intended source). The issue's acceptance items for those stay open. Recommendation until measured: keep DOM/SVG for UI portraits, use layered Pixi atlases for the Living Studio once layer art exists.
+## Layered Pixi vs DOM/SVG
+- **Layered NPC art:** `assets-src/layer/npc-parts` holds 40 in-house CC0 parts (3 builds, 6 lowers, 6 shoes, 8 tops, 9 hair shapes, 6 faces, shadow, headphones) drawn white/grey on the shared 32x48 canvas. `scripts/assets/make-layer-parts.ts` regenerates them; `createLayeredNpc` (`pixiNpc.ts`) tints them from the NPC definition. A test builds 300 generated NPCs and asserts every required layer has art. Glasses, facial hair, jewellery, outerwear and most role props have no part art yet, so those optional layers are skipped (the DOM renderer still draws them). Blender-made parts can replace or add to these through the `layer` kind.
+- **Benchmark** (`node scripts/bench/npc-render-bench.cjs`, headless Chromium with SwiftShader software GL, 4 s window, 3 animated NPCs of the same seeds in each renderer at 3x scale). Main-thread time is the reliable signal; fps under software GL is limited by CPU rasterisation, not by what a real GPU would do:
+
+| NPCs | Pixi fps | DOM fps | Pixi main-thread ms/frame | DOM main-thread ms/frame |
+| --- | --- | --- | --- | --- |
+| 3 | 60.3 | 60.0 | 0.97 | 1.57 |
+| 6 | 29.5 | 60.3 | 1.11 | 1.97 |
+| 12 | 18.3 | 60.3 | 0.92 | 3.47 |
+
+  Pixi's main-thread cost stays flat (~1 ms/frame) while DOM/SVG grows with NPC count (1.6 -> 3.5 ms/frame). Pixi's fps drop at 6 and 12 NPCs comes from the software-GL fill cost of ~15 overlapping layer sprites per NPC, which I expect (but have not verified) to vanish on real GPUs. So: the benchmark supports layered Pixi for main-thread cost, is inconclusive on GPU throughput, and needs a real-device run (phone + laptop) before it is treated as the final adoption call. Recommendation: use layered Pixi for the Living Studio (where the Pixi scene already exists), keep DOM/SVG for UI portraits, and cut draw cost by baking layers into one texture per NPC if a device run shows fill-rate limits.
 
 ## Spine: defer
 Decision: **defer Spine, keep layered Pixi.** Reasons (from public information; re-verify versions/pricing before any adoption): the Spine Pixi v8 runtime targets newer Pixi 8.x than the pinned 8.10.1 and the issue forbids upgrading Pixi just for this; Spine needs a paid Editor licence for authoring and runtime use requires a valid licence for the project; the runtime adds bundle weight versus zero extra dependencies for atlas layers; and RST's characters are small 32x48 sprites where per-layer tinting already gives variety. Revisit only if skeletal blending or mesh deformation becomes a requirement.

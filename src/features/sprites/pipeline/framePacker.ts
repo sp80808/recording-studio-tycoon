@@ -14,9 +14,9 @@ export interface LooseFrame {
   h: number;
 }
 
-/** `idle_003.png` / `work-001.png` / `celebrate.0002.png` -> { tag, index }; null if unparseable. */
+/** `idle_003.png` / `work-001.png` / `celebrate.0002.png` / `hair_afro_000.png` -> { tag, index }; null if unparseable. */
 export const parseFrameFilename = (filename: string): { tag: string; index: number } | null => {
-  const m = /^([a-z][a-z0-9]*)[_.-](\d{1,4})\.png$/i.exec(filename);
+  const m = /^([a-z][a-z0-9_]*)[_.-](\d{1,4})\.png$/i.exec(filename);
   return m ? { tag: m[1].toLowerCase(), index: Number(m[2]) } : null;
 };
 

@@ -20,6 +20,7 @@ Issue codes (`FRAME_OUT_OF_BOUNDS`, `PIVOT_INVALID`, `TAG_REQUIRED_MISSING`, `AN
 | Kind | Native frame | Pivot | Required tags | Optional tags | Trim |
 | --- | --- | --- | --- | --- | --- |
 | `npc` | 32x48 | feet (0.5, 1) | `idle` | `walk wait work record mix break celebrate headbob` | no |
+| `layer` | 32x48 | feet (0.5, 1) | none (one single-frame tag per part, e.g. `hair_afro`) | any | no |
 | `gear` | any, uniform | base (0.5, 1) | `idle` | `powered active broken` | no |
 | `prop` | any, uniform | base (0.5, 1) | `idle` | `active` | no |
 | `fx` | any | centre (0.5, 0.5) | `play` | `loop` | yes |

@@ -7,7 +7,7 @@
  * Static props consumed by the prop loader (PR #98, public/assets/props/<id>.png) stay single PNGs;
  * the `prop` kind here can also emit that flat PNG, see `flatPngPath`.
  */
-export const ASSET_KINDS = ['npc', 'gear', 'prop', 'fx'] as const;
+export const ASSET_KINDS = ['npc', 'layer', 'gear', 'prop', 'fx'] as const;
 export type AssetKind = (typeof ASSET_KINDS)[number];
 
 export interface AssetConvention {
@@ -24,6 +24,8 @@ export interface AssetConvention {
   /** Trimming is allowed only if spriteSourceSize/sourceSize keep the original canvas. */
   trimAllowed: boolean;
   scaleVariants: readonly string[];
+  /** Any tag name is fine (layer sheets use one single-frame tag per part variant, e.g. `hair_afro`). */
+  freeformTags?: boolean;
 }
 
 export const ASSET_CONVENTIONS: Record<AssetKind, AssetConvention> = {
@@ -35,6 +37,18 @@ export const ASSET_CONVENTIONS: Record<AssetKind, AssetConvention> = {
     padding: 1,
     trimAllowed: false,
     scaleVariants: ['1', '2'],
+  },
+  // Shared-canvas body/clothing/hair parts for layered NPCs: each tag is one single-frame part drawn
+  // white/grey so it can be tinted at runtime. Frame name: layer/<set>/<slot>_<variant>/000.
+  layer: {
+    nativeFrame: { w: 32, h: 48 },
+    pivot: { x: 0.5, y: 1 },
+    requiredTags: [],
+    optionalTags: [],
+    padding: 1,
+    trimAllowed: false,
+    scaleVariants: ['1', '2'],
+    freeformTags: true,
   },
   gear: {
     nativeFrame: null,
@@ -66,7 +80,7 @@ export const ASSET_CONVENTIONS: Record<AssetKind, AssetConvention> = {
 };
 
 export const ASSET_ID_PATTERN = /^[a-z0-9]+(?:[-_][a-z0-9]+)*$/;
-export const FRAME_NAME_PATTERN = /^(npc|gear|prop|fx)\/[a-z0-9]+(?:[-_][a-z0-9]+)*\/[a-z0-9_]+(?:\/\d{3})?$/;
+export const FRAME_NAME_PATTERN = /^(npc|layer|gear|prop|fx)\/[a-z0-9]+(?:[-_][a-z0-9]+)*\/[a-z0-9_]+(?:\/\d{3})?$/;
 export const SUPPORTED_ATLAS_FORMATS = ['RGBA8888', 'RGBA4444', 'RGB888'] as const;
 
 export const flatPngPath = (id: string) => `assets/props/${id}.png`;

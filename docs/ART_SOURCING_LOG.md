@@ -139,5 +139,6 @@ Procedurally drawn in-house (rectangles, no third-party art). License: **In-hous
 | --- | --- | --- |
 | `npc/sample-engineer` (idle/work/celebrate, feet pivot) | `assets-src/npc/sample-engineer/` (Aseprite-format JSON + PNG, written by `scripts/assets/make-samples.ts`) | `public/assets/atlases/npc/sample-engineer.*` |
 | `gear/sample-monitor` (idle/powered) | `assets-src/gear/sample-monitor/frames/` (Blender-style loose frames) | `public/assets/atlases/gear/sample-monitor.*` |
+| `layer/npc-parts` (40 tintable NPC parts: body, hair, tops, lowers, shoes, faces, headphones) | `scripts/assets/make-layer-parts.ts` -> `assets-src/layer/npc-parts/frames/` | `public/assets/atlases/layer/npc-parts.*` |
 
 Every built atlas has a `*.provenance.json` (schema in `docs/ASSET_PIPELINE.md`). Real Aseprite/Blender exports have not been run through the pipeline yet.

@@ -129,7 +129,7 @@ export function validateAtlasReport(atlas: PixiTextureAtlasSchema, options: Vali
       if (!animNames.has(req)) add('TAG_REQUIRED_MISSING', 'animations', `Missing required animation tag "${req}" for ${options.kind} assets.`);
     }
     for (const name of animNames) {
-      if (![...conv.requiredTags, ...conv.optionalTags].includes(name)) {
+      if (!conv.freeformTags && ![...conv.requiredTags, ...conv.optionalTags].includes(name)) {
         add('TAG_UNKNOWN', `animations.${name}`, `Animation tag "${name}" is not in the ${options.kind} convention.`, 'warning');
       }
     }
