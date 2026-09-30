@@ -109,6 +109,10 @@ src/
 | **AnalogVignette** | CSS Radial Gradient | Yes | Low (<0.2ms GPU composite) | **Yes** (suppressed in Focus/Minimal) | Unmounted | 30 FPS | Unmounted |
 | **ParticleBurst** | Canvas 2D / DOM | No (one-shot ~1.5s) | Medium (~1.0ms peak) | **Yes** (milestones only) | Instant toast / audio cue | 60 FPS | Cancelled immediately |
 | **VUMeterNeedle** | SVG / CSS Transform | Yes (during audio playback) | Low (<0.3ms CPU) | **Yes** | Static peak LED indicator | 60 FPS | Paused |
+| **RewardParticleBurst** | Canvas 2D | No (one-shot, <=1.2s) | Low (<1ms CPU) | No | Skip particles; final card shown | 60 FPS | Cancelled |
+| **RarityMaterialSweep** | CSS Transform | No (one-shot) | Negligible | No | No sweep; static card | 60 FPS | Settled |
+| **GearFlourish** | DOM / Motion | No (bounded cycles) | Low (<0.3ms CPU) | No | Static family accent | 60 FPS | Settled |
+| **GearDemoMeter** | SVG | Yes (inspector only, 4 Hz) | Low (<0.1ms CPU) | **Yes** | Static needle | 4 Hz | Paused |
 | **TapeFlutter** | CSS Transform | Yes (during reel scrub) | Low (<0.2ms GPU) | **Yes** (Studio A / Reel) | Static reel graphic | 30 FPS | Paused |
 | **FlightCaseGleam** | CSS Gradient | No (one-shot modal reveal) | Low (<0.3ms GPU) | **Yes** (crate modal only) | Static metallic bevel | 60 FPS | Paused |
 | **SecondaryWebGLStudio** | WebGL | Yes | Prohibitive (>8.0ms GPU) | **No (DISQUALIFIED)** | Banned — PixiJS studio floor exclusive | 0 FPS | Terminated |

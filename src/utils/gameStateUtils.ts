@@ -143,6 +143,13 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
     processedState.discoveredSynergies = [];
   }
 
+  if (!Array.isArray(processedState.chainTemplates)) {
+    processedState.chainTemplates = [];
+  }
+  if (!Array.isArray(processedState.discoveredBriefCombos)) {
+    processedState.discoveredBriefCombos = [];
+  }
+
   // Slot-based equipment placements (bead 8om). Legacy saves have no
   // placements at all — treat every owned item as globally available and
   // seed the placement list with inventory entries so future moves are

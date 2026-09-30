@@ -10,6 +10,7 @@ import { applyCompletedSessionToRelationship, createClientRelationshipFromProjec
 import { findAvailableStudioRoom } from '@/utils/studioRoomUtils';
 import { advanceStory } from '@/narrative/storyProgression';
 import { getOriginEffects } from '@/narrative/originPerks';
+import { recordSeasonDelivery } from '@/rpg/studioSeasons';
 
 export const useProjectManagement = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
   const startProject = useCallback((project: Project) => {
@@ -116,9 +117,33 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
         getOriginEffects(prev).repeatClientPremium
       );
 
+      const prevRelationship = completedProject?.clientId
+        ? prev.clientRelationships?.[completedProject.clientId]
+        : undefined;
+      const nextRelationship = completedProject?.clientId
+        ? updatedClientRelationships[completedProject.clientId]
+        : undefined;
+      const withSeasonLedger = recordSeasonDelivery(
+        { ...settled, clientRelationships: updatedClientRelationships },
+        {
+          projectId,
+          title: projectReport.projectTitle,
+          clientKey: completedProject?.clientId,
+          clientName: completedProject?.clientName,
+          quality: projectReport.overallQualityScore,
+          revenue: projectReport.moneyGained,
+          sessionsBefore: prevRelationship?.sessionsCompleted ?? 0,
+          sessionsAfter: nextRelationship?.sessionsCompleted ?? 0,
+          tierBefore: prevRelationship?.tier,
+          tierAfter: nextRelationship?.tier,
+          staffName: projectReport.assignedPerson.type === 'staff' ? projectReport.assignedPerson.name : undefined,
+          day: prev.currentDay,
+        },
+      );
+
       return advanceStory(
         withDailyTracking({
-          ...settled,
+          ...withSeasonLedger,
           activeProject: null,
           activeProjects: (settled.activeProjects || []).filter(p => p.id !== projectId),
           availableProjects: [...settled.availableProjects, ...nextEnquiries],
