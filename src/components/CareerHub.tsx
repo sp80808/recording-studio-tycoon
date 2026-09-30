@@ -10,6 +10,7 @@ import { resolveCareerNextAction } from '@/utils/careerNextAction';
 import { getProducerOrigin } from '@/narrative/characterOrigins';
 import { getRivalAccent, getRivalForNode, initialsOf } from '@/narrative/rivalCast';
 import type { ProducerBackgroundId } from '@/types/character';
+import { AchievementsPanel } from './AchievementsPanel';
 import {
   getActiveCampaignNode,
   getPendingSubplotEvent,
@@ -291,6 +292,8 @@ export function CareerHub({
           )}
         </div>
       )}
+
+      <AchievementsPanel gameState={gameState} />
 
       {/* Daily goal + expansion */}
       <div className="rst-surface overflow-hidden text-xs">

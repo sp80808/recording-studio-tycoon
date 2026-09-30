@@ -55,6 +55,8 @@ interface MainGameContentProps {
   /** Open StorylineBranchModal when a pending Act choice exists. */
   onOpenStorylineBranch?: () => void;
   onOpenStoryEvent?: () => void;
+  /** Lets the page hold story popups back while a news popup is on screen. */
+  onHistoricalNewsOpenChange?: (open: boolean) => void;
   /** zel.6: Tauri + feature-flag gate; when false, strip entry is hidden and compact is ignored. */
   desktopStripEnabled: boolean;
 }
@@ -86,6 +88,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   clearAutoTriggeredMinigame,
   onOpenStorylineBranch,
   onOpenStoryEvent,
+  onHistoricalNewsOpenChange,
   startResearchMod,
   refreshProjects,
   compactStudioMode,
@@ -99,6 +102,10 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   const [eraTransitionInfo, setEraTransitionInfo] = useState<{ fromEra: string; toEra: string } | null>(null);
   const [showHistoricalNews, setShowHistoricalNews] = useState(false);
   const [currentHistoricalEvent, setCurrentHistoricalEvent] = useState<HistoricalEvent | null>(null);
+  useEffect(() => {
+    onHistoricalNewsOpenChange?.(showHistoricalNews && Boolean(currentHistoricalEvent));
+    return () => onHistoricalNewsOpenChange?.(false);
+  }, [showHistoricalNews, currentHistoricalEvent, onHistoricalNewsOpenChange]);
   const [lastCheckedDay, setLastCheckedDay] = useState(0);
   const [dashboardTab, setDashboardTab] = useState<'studio' | 'skills' | 'bands' | 'charts' | 'staff'>('studio');
   const returnFocusRef = useRef<HTMLElement | null>(null);

@@ -135,6 +135,7 @@ export const withStoryContract = (state: GameState): GameState => {
     message: `Story contract: ${contract.title} — ${node.rivalName} is watching.`,
     type: 'info',
     timestamp: state.currentDay * 86_400_000,
+    duration: 9000,
     priority: 'medium',
   };
   return {

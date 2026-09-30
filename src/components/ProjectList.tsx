@@ -72,7 +72,7 @@ const StakePicker: React.FC<{
   onChange: (stake: ContractStake) => void;
 }> = ({ value, level, locked, onChange }) => (
   <div>
-    <div className="flex items-center justify-between">
+    <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
       <span className="rst-kicker">Contract stake</span>
       {locked && (
         <span className="rst-chip rst-chip-story !py-0.5 text-[10px]">

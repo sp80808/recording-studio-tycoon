@@ -28,6 +28,9 @@ import { MinigameType } from '@/components/minigames/MinigameManager'; // Import
 import { WelcomeBackSummaryModal } from '@/components/modals/WelcomeBackSummaryModal';
 import { StorylineBranchModal } from '@/components/modals/StorylineBranchModal';
 import { StoryEventModal } from '@/components/modals/StoryEventModal';
+import { CinematicStoryCutscene } from '@/components/cutscenes/CinematicStoryCutscene';
+import { getCampaignEnding } from '@/narrative/endings';
+import { buildActIntroCutscene, buildEndingCutscene } from '@/narrative/actCinematics';
 import {
   advanceSimulation,
   DEFAULT_MAX_OFFLINE_MS,
@@ -37,6 +40,7 @@ import {
 import { getBookedStudioRoom } from '@/utils/studioRoomUtils';
 import {
   getPendingStorylineBranch,
+  getActiveCampaignNode,
   getPendingSubplotEvent,
   resolveStorylineBranch,
   resolveSubplotChoice,
@@ -88,6 +92,7 @@ const MusicStudioTycoon = () => {
   const [showStorylineBranchModal, setShowStorylineBranchModal] = useState(false);
   // Key of a subplot beat the player chose to decide later; cleared when the beat changes or they reopen it.
   const [deferredStoryEventKey, setDeferredStoryEventKey] = useState<string | null>(null);
+  const [historicalNewsOpen, setHistoricalNewsOpen] = useState(false);
   const [compactStudioMode, setCompactStudioMode] = useState(false);
   // zel.6: compact strip is desktop-shell only — browser must never blank the playable UI.
   const desktopStripFlag = useFeatureFlag('desktop-studio-strip');
@@ -153,6 +158,30 @@ const MusicStudioTycoon = () => {
   const pendingStoryEventKey = pendingStoryEvent
     ? `${pendingStoryEvent.subplot.id}:${pendingStoryEvent.active.currentStage}`
     : null;
+
+  // Story cinematics (act openings + epilogue) wait for every other story popup to clear.
+  const storyEventOpen =
+    pendingStoryEventKey !== null && pendingStoryEventKey !== deferredStoryEventKey && !historicalNewsOpen;
+  const storyStageClear =
+    gameInitialized &&
+    !showSplashScreen &&
+    !effectiveCompactStudioMode &&
+    !offlineSummary &&
+    !showReviewModal &&
+    !(showStorylineBranchModal && Boolean(pendingStorylineBranch)) &&
+    !storyEventOpen &&
+    !historicalNewsOpen &&
+    settings.tutorialCompleted;
+  const campaignEnding = gameState.storylineState?.campaignCompleted ? getCampaignEnding(gameState) : null;
+  const activeCampaignNode = gameState.storylineState ? getActiveCampaignNode(gameState) : null;
+  const actIntroFlag = activeCampaignNode ? `intro_seen_${activeCampaignNode.id}` : null;
+  const showEpilogue = Boolean(campaignEnding) && !gameState.endingSeen && storyStageClear;
+  const showActIntro =
+    !showEpilogue &&
+    storyStageClear &&
+    Boolean(activeCampaignNode && activeCampaignNode.act >= 2 && actIntroFlag) &&
+    !gameState.storylineState?.campaignCompleted &&
+    !gameState.storylineState?.storyFlags[actIntroFlag!];
 
   const handleStoryEventChoice = useCallback(
     (optionId: string) => {
@@ -530,6 +559,7 @@ const MusicStudioTycoon = () => {
             setCompactStudioMode={setCompactStudioMode}
             onOpenStorylineBranch={() => setShowStorylineBranchModal(true)}
             onOpenStoryEvent={() => setDeferredStoryEventKey(null)}
+            onHistoricalNewsOpenChange={setHistoricalNewsOpen}
             desktopStripEnabled={desktopStripEnabled}
           />
         </div>
@@ -588,6 +618,7 @@ const MusicStudioTycoon = () => {
           !effectiveCompactStudioMode &&
           !offlineSummary &&
           !showReviewModal &&
+          !historicalNewsOpen &&
           Boolean(pendingStorylineBranch)
         }
         node={pendingStorylineBranch?.node ?? null}
@@ -605,6 +636,7 @@ const MusicStudioTycoon = () => {
           !offlineSummary &&
           !showReviewModal &&
           !showStorylineBranchModal &&
+          !historicalNewsOpen &&
           settings.tutorialCompleted &&
           pendingStoryEventKey !== null &&
           pendingStoryEventKey !== deferredStoryEventKey
@@ -613,6 +645,32 @@ const MusicStudioTycoon = () => {
         onDeferred={() => setDeferredStoryEventKey(pendingStoryEventKey)}
         onDone={() => setDeferredStoryEventKey(null)}
       />
+
+      {showEpilogue && campaignEnding && (
+        <CinematicStoryCutscene
+          payload={buildEndingCutscene(campaignEnding)}
+          onComplete={() => setGameState((prev) => ({ ...prev, endingSeen: true }))}
+        />
+      )}
+
+      {showActIntro && activeCampaignNode && actIntroFlag && (
+        <CinematicStoryCutscene
+          payload={buildActIntroCutscene(activeCampaignNode, gameState.playerData.playstyle)}
+          onComplete={() =>
+            setGameState((prev) =>
+              prev.storylineState
+                ? {
+                    ...prev,
+                    storylineState: {
+                      ...prev.storylineState,
+                      storyFlags: { ...prev.storylineState.storyFlags, [actIntroFlag]: true },
+                    },
+                  }
+                : prev,
+            )
+          }
+        />
+      )}
     </GameLayout>
   );
 };

@@ -1,7 +1,6 @@
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { ArrowRight, Briefcase, Cpu, Drama, Newspaper, Scale, TrendingDown, TrendingUp, Users, type LucideIcon } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { HistoricalEvent } from '@/utils/historicalEvents';
 
 interface HistoricalNewsModalProps {
@@ -10,146 +9,114 @@ interface HistoricalNewsModalProps {
   onClose: () => void;
 }
 
-const getEventTypeColor = (type: string) => {
-  switch (type) {
-    case 'technology': return 'bg-amber-600';
-    case 'cultural': return 'bg-purple-600';
-    case 'business': return 'bg-green-600';
-    case 'legal': return 'bg-red-600';
-    case 'social': return 'bg-orange-600';
-    default: return 'bg-stone-600';
-  }
+const TYPE_META: Record<string, { icon: LucideIcon; chip: string }> = {
+  technology: { icon: Cpu, chip: 'rst-chip-live' },
+  cultural: { icon: Drama, chip: 'rst-chip-story' },
+  business: { icon: Briefcase, chip: 'rst-chip-money' },
+  legal: { icon: Scale, chip: 'rst-chip-danger' },
+  social: { icon: Users, chip: 'rst-chip-brass' },
 };
 
-const getEventTypeIcon = (type: string) => {
-  switch (type) {
-    case 'technology': return '⚡';
-    case 'cultural': return '🎭';
-    case 'business': return '💼';
-    case 'legal': return '⚖️';
-    case 'social': return '👥';
-    default: return '📰';
-  }
-};
+const typeMeta = (type: string) => TYPE_META[type] ?? { icon: Newspaper, chip: '' };
 
-export const HistoricalNewsModal: React.FC<HistoricalNewsModalProps> = ({
-  event,
-  isOpen,
-  onClose
-}) => {
+/** Signed pill: green for a rise, rose for a fall. Text carries the direction, never colour alone. */
+const Delta: React.FC<{ label: string; positive: boolean; value: string }> = ({ label, positive, value }) => (
+  <span className={`rst-chip ${positive ? 'rst-chip-money' : 'rst-chip-danger'}`}>
+    {positive ? <TrendingUp size={12} aria-hidden="true" /> : <TrendingDown size={12} aria-hidden="true" />}
+    {label} {positive ? '+' : '−'}{value}
+  </span>
+);
+
+export const HistoricalNewsModal: React.FC<HistoricalNewsModalProps> = ({ event, isOpen, onClose }) => {
   if (!event) return null;
 
-  const hasImpact = event.impact.genrePopularityChanges || 
-                   event.impact.equipmentDemandChanges || 
-                   event.impact.marketChanges;
+  const meta = typeMeta(event.type);
+  const Icon = meta.icon;
+  const { genrePopularityChanges, equipmentDemandChanges, marketChanges } = event.impact;
+  const hasImpact = genrePopularityChanges || equipmentDemandChanges || marketChanges;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl bg-stone-800 border-stone-600 text-white">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3 text-xl">
-            <span className="text-2xl">{getEventTypeIcon(event.type)}</span>
-            <span>Breaking News - {event.year}</span>
-            <Badge className={`${getEventTypeColor(event.type)} text-white ml-auto`}>
-              {event.type.charAt(0).toUpperCase() + event.type.slice(1)}
-            </Badge>
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          {/* Event Title */}
-          <h3 className="text-2xl font-bold text-yellow-400">
-            {event.title}
-          </h3>
-
-          {/* Event Description */}
-          <p className="text-stone-300 leading-relaxed">
-            {event.description}
+    <Dialog open={isOpen} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="max-w-2xl" data-testid="historical-news-modal">
+        <div className="flex flex-wrap items-center gap-2 pr-9">
+          <p className="rst-kicker flex items-center gap-1.5">
+            <Newspaper size={13} aria-hidden="true" /> Breaking news · {event.year}
           </p>
+          <span className={`rst-chip ml-auto ${meta.chip}`}>
+            <Icon size={12} aria-hidden="true" />
+            {event.type.charAt(0).toUpperCase() + event.type.slice(1)}
+          </span>
+        </div>
 
-          {/* Educational Info */}
-          {event.educationalInfo && (
-            <div className="bg-stone-900/30 border border-amber-700 rounded-lg p-4">
-              <h4 className="font-semibold text-amber-200 mb-2">📚 Industry Context:</h4>
-              <p className="text-stone-300 text-sm">
-                {event.educationalInfo}
-              </p>
-            </div>
-          )}
+        <DialogTitle className="text-2xl">{event.title.replace(/^\p{Extended_Pictographic}\uFE0F?\s*/u, '')}</DialogTitle>
+        <DialogDescription className="rst-body">{event.description}</DialogDescription>
 
-          {/* Impact Analysis */}
-          {hasImpact && (
-            <div className="bg-stone-700/50 rounded-lg p-4">
-              <h4 className="font-semibold text-green-400 mb-3">📈 Industry Impact:</h4>
-              
-              <div className="space-y-3">
-                {/* Genre Popularity Changes */}
-                {event.impact.genrePopularityChanges && (
-                  <div>
-                    <h5 className="text-sm font-medium text-stone-300 mb-2">Genre Trends:</h5>
-                    <div className="flex flex-wrap gap-2">
-                      {Object.entries(event.impact.genrePopularityChanges).map(([genre, change]) => (
-                        <Badge 
-                          key={genre}
-                          className={`${change > 0 ? 'bg-green-600' : 'bg-red-600'} text-white`}
-                        >
-                          {genre} {change > 0 ? '↗' : '↘'} {Math.abs(change)}%
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Equipment Demand Changes */}
-                {event.impact.equipmentDemandChanges && (
-                  <div>
-                    <h5 className="text-sm font-medium text-stone-300 mb-2">Equipment Demand:</h5>
-                    <div className="flex flex-wrap gap-2">
-                      {Object.entries(event.impact.equipmentDemandChanges).map(([equipment, multiplier]) => (
-                        <Badge 
-                          key={equipment}
-                          className={`${multiplier > 1 ? 'bg-amber-600' : 'bg-orange-600'} text-stone-950`}
-                        >
-                          {equipment.replace('_', ' ')} {multiplier > 1 ? '↗' : '↘'} {(multiplier * 100).toFixed(0)}%
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Market Changes */}
-                {event.impact.marketChanges && (
-                  <div>
-                    <h5 className="text-sm font-medium text-stone-300 mb-2">Market Effects:</h5>
-                    <div className="flex flex-wrap gap-2">
-                      {event.impact.marketChanges.payoutMultiplier && (
-                        <Badge className={`${event.impact.marketChanges.payoutMultiplier > 1 ? 'bg-green-600' : 'bg-red-600'} text-white`}>
-                          Project Revenue {event.impact.marketChanges.payoutMultiplier > 1 ? '↗' : '↘'} 
-                          {((event.impact.marketChanges.payoutMultiplier - 1) * 100).toFixed(0)}%
-                        </Badge>
-                      )}
-                      {event.impact.marketChanges.reputationMultiplier && (
-                        <Badge className={`${event.impact.marketChanges.reputationMultiplier > 1 ? 'bg-purple-600' : 'bg-stone-600'} text-white`}>
-                          Reputation Gain {event.impact.marketChanges.reputationMultiplier > 1 ? '↗' : '↘'} 
-                          {((event.impact.marketChanges.reputationMultiplier - 1) * 100).toFixed(0)}%
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Action Button */}
-          <div className="flex justify-center pt-4">
-            <Button 
-              onClick={onClose}
-              className="bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-amber-100 px-8"
-            >
-              Continue Building Your Legacy
-            </Button>
+        {event.educationalInfo && (
+          <div className="rounded-xl border border-[var(--rst-brass-line)] bg-[var(--rst-brass-fill)] p-4">
+            <p className="rst-kicker mb-1.5 text-[var(--rst-brass-300)]">Industry context</p>
+            <p className="text-sm leading-relaxed text-[var(--rst-ivory-soft)]">{event.educationalInfo}</p>
           </div>
+        )}
+
+        {hasImpact && (
+          <div className="grid gap-3 rounded-xl border border-[var(--rst-line)] bg-[var(--rst-fill-1)] p-4">
+            <p className="rst-kicker">What it means for your studio</p>
+
+            {genrePopularityChanges && (
+              <div>
+                <p className="rst-muted mb-1.5 text-xs">Genre trends</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {Object.entries(genrePopularityChanges).map(([genre, change]) => (
+                    <Delta key={genre} label={genre} positive={change > 0} value={`${Math.abs(change)}%`} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {equipmentDemandChanges && (
+              <div>
+                <p className="rst-muted mb-1.5 text-xs">Equipment demand</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {Object.entries(equipmentDemandChanges).map(([equipment, multiplier]) => (
+                    <Delta
+                      key={equipment}
+                      label={equipment.replace(/_/g, ' ')}
+                      positive={multiplier > 1}
+                      value={`${Math.abs(Math.round((multiplier - 1) * 100))}%`}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {marketChanges && (
+              <div>
+                <p className="rst-muted mb-1.5 text-xs">Market effects</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {marketChanges.payoutMultiplier && (
+                    <Delta
+                      label="Project revenue"
+                      positive={marketChanges.payoutMultiplier > 1}
+                      value={`${Math.abs(Math.round((marketChanges.payoutMultiplier - 1) * 100))}%`}
+                    />
+                  )}
+                  {marketChanges.reputationMultiplier && (
+                    <Delta
+                      label="Reputation gain"
+                      positive={marketChanges.reputationMultiplier > 1}
+                      value={`${Math.abs(Math.round((marketChanges.reputationMultiplier - 1) * 100))}%`}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="flex justify-end">
+          <button type="button" onClick={onClose} className="rst-btn rst-btn-primary" autoFocus>
+            Back to the studio <ArrowRight size={14} aria-hidden="true" />
+          </button>
         </div>
       </DialogContent>
     </Dialog>

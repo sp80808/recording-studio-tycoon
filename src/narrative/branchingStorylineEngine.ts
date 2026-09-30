@@ -525,7 +525,7 @@ export const getObjectiveRequirements = (node: StorylineNode, state: GameState):
 
   if (req.minQuality && req.genre && req.sessionCount) {
     const matching = matchingSessionCount(req, state);
-    push('sessions', `${matching}/${req.sessionCount} sessions ≥ ${req.minQuality}`, matching, req.sessionCount);
+    push('sessions', `${Math.min(matching, req.sessionCount)}/${req.sessionCount} sessions ≥ ${req.minQuality}`, matching, req.sessionCount);
   } else if (req.minQuality) {
     const best = bestQuality(state);
     push('quality', `Best session ${best}/${req.minQuality}`, best, req.minQuality);

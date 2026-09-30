@@ -3,6 +3,9 @@ import React, { useEffect } from 'react';
 import { GameNotification } from '@/types/game';
 import './chip-fidelity.css';
 
+const DEFAULT_TOAST_MS = 9000;
+const MAX_VISIBLE_TOASTS = 3;
+
 interface NotificationSystemProps {
   notifications: GameNotification[];
   removeNotification: (id: string) => void;
@@ -12,16 +15,12 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
   notifications,
   removeNotification
 }) => {
+  // Every toast leaves on its own (9s by default) so a burst of story beats or trophies can never pile up over the UI.
   useEffect(() => {
-    notifications.forEach(notification => {
-      if (notification.duration) {
-        const timer = setTimeout(() => {
-          removeNotification(notification.id);
-        }, notification.duration);
-        
-        return () => clearTimeout(timer);
-      }
-    });
+    const timers = notifications.map((notification) =>
+      setTimeout(() => removeNotification(notification.id), notification.duration ?? DEFAULT_TOAST_MS),
+    );
+    return () => timers.forEach(clearTimeout);
   }, [notifications, removeNotification]);
 
   const getNotificationColor = (type: string) => {
@@ -36,7 +35,7 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
 
   return (
     <div className="fixed bottom-4 right-4 z-50 space-y-2 max-w-sm">
-      {notifications.map(notification => (
+      {notifications.slice(-MAX_VISIBLE_TOASTS).map(notification => (
         <div
           key={notification.id}
           className={`cursor-pointer px-4 py-3 text-sm animate-rst-rise ${getNotificationColor(notification.type)}${notification.type === 'error' ? ' deny-shake' : ''}`}

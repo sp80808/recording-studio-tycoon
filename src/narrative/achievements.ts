@@ -124,6 +124,7 @@ export const evaluateAchievements = (state: GameState): AchievementEvaluation =>
     message: `Achievement unlocked: ${a.title} — ${a.description}`,
     type: 'success',
     timestamp: state.currentDay * 86_400_000,
+    duration: 7000,
     priority: a.tier === 'gold' ? 'high' : 'medium',
   }));
 
