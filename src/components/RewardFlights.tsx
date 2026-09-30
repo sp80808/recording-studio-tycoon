@@ -99,7 +99,6 @@ export function RewardFlights({ gameState }: { gameState: GameState }) {
 
     if (isLevelUp(before.level, next.level)) {
       setLevelBanner(next.level);
-      timers.push(window.setTimeout(() => setLevelBanner(null), 2600));
     }
 
     const from = sourcePoint();
@@ -125,6 +124,13 @@ export function RewardFlights({ gameState }: { gameState: GameState }) {
     return () => timers.forEach(window.clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState.money, gameState.playerData.xp, gameState.playerData.level, gameState.currentDay, gameState.choreState?.streakDays]);
+
+  // Level banner dismissal is independent of reward-state reruns.
+  useEffect(() => {
+    if (levelBanner === null) return;
+    const timer = window.setTimeout(() => setLevelBanner(null), 2600);
+    return () => window.clearTimeout(timer);
+  }, [levelBanner]);
 
   // Action callouts (take grades etc.) emitted by gameplay components.
   useEffect(() => {
@@ -204,24 +210,23 @@ export function RewardFlights({ gameState }: { gameState: GameState }) {
 /** A fan of sprite dots that burst from the work surface and sweep into the HUD counter. */
 function LootFlight({ flight, onDone }: { flight: Flight; onDone: () => void }) {
   const { type, tier, count, from, to, id } = flight;
-  const finished = useRef(0);
   const dots = Array.from({ length: count }, (_, i) => ({ i, arc: lootArc(from, to, i, count, id), dur: lootDuration(id, i), delay: lootDelay(i) + (type === 'xp' ? .1 : 0) }));
   const size = tier === 'jackpot' ? 24 : tier === 'big' ? 21 : 17;
   return <>
     {dots.map(d => <motion.img key={d.i} aria-hidden="true" alt="" src={FLIGHT_SPRITE[type]}
       width={size} height={size} className="studio-loot-dot"
       initial={{ x: from.x, y: from.y, opacity: 0, scale: .4 }}
-      animate={{ x: d.arc.x, y: d.arc.y, opacity: [0, 1, 1, 1, 0], scale: [.4, 1.2, 1, .9, .5], rotate: [0, 120, 240, 360] }}
+      animate={{ x: d.arc.x, y: d.arc.y, opacity: [0, 1, 1, 0], scale: [.4, 1.2, 1, .5], rotate: [0, 120, 240, 360] }}
       transition={{ duration: d.dur, delay: d.delay, times: [0, .3, .65, 1], ease: 'easeInOut' }}
       onAnimationComplete={() => {
         pulseTarget(type);
-        if (++finished.current >= count) onDone();
       }} />)}
     <motion.div aria-hidden="true"
       className={`studio-reward-flight ${type === 'money' ? 'text-emerald-200' : 'text-amber-200'}`}
       initial={{ x: to.x, y: to.y, opacity: 0, scale: .8 }}
       animate={{ opacity: [0, 1, 1, 0], scale: [.8, 1.1, 1, .95] }}
-      transition={{ duration: 1.1 + count * .05, delay: .55, times: [0, .2, .75, 1] }}>
+      transition={{ duration: 1.1 + count * .05, delay: .55, times: [0, .2, .75, 1] }}
+      onAnimationComplete={onDone}>
       {formatGain(type, flight.amount)}
     </motion.div>
   </>;
