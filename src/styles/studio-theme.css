@@ -175,6 +175,14 @@ body { background: var(--rst-ink-900); color: var(--rst-ivory); }
 .rst-btn-primary:hover:not(:disabled)::after { animation: rst-sheen-sweep 0.9s ease-out; }
 .rst-btn-ghost { background: transparent; box-shadow: none; border-color: transparent; color: var(--rst-ivory-soft); }
 .rst-btn-ghost:hover:not(:disabled) { background: rgba(243, 236, 221, 0.06); border-color: var(--rst-line); }
+.rst-btn-success {
+  position: relative; overflow: hidden;
+  border-color: rgba(127, 214, 166, 0.45);
+  background: linear-gradient(180deg, #58c08a, #2f9a68 60%, #217a52);
+  color: #06210f;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+  box-shadow: 0 2px 0 #124a30, 0 8px 18px rgba(47, 154, 104, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
 .rst-btn-danger { border-color: rgba(240, 119, 107, 0.4); color: #ffd7d2; background: linear-gradient(180deg, #3a1f1c, #2a1715); }
 
 /* ---------------------------------------------------------- chips & stats */

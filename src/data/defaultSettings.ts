@@ -44,7 +44,7 @@ export const defaultSettings: GameSettings = {
   graphicsPreset: 'high',
   resolutionScale: 1.0,
   targetFps: 60,
-  crtScanlines: true,
+  crtScanlines: false,
   analogTapeWarmth: true,
   bloomAndGlow: true,
   difficulty: 'medium',

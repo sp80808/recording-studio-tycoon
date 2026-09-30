@@ -7,7 +7,7 @@
  * studioDecorConfig.ts so this file only draws. Every animated element honours
  * `reduceMotion` by freezing to a pleasant static pose.
  */
-import { Container, Graphics } from 'pixi.js';
+import { Container, Graphics, Sprite, Texture } from 'pixi.js';
 import {
   ROOM_D,
   ROOM_W,
@@ -154,7 +154,10 @@ export const buildRug = (): Graphics => {
 /* --------------------------------------------------------- wall dressing */
 
 export interface WallDressing {
+  /** Wall-mounted dressing: draw right after the walls (behind the floor). */
   container: Container;
+  /** Free-standing era props (lamps, ring light): must be added AFTER the floor or it paints over their bases. */
+  props: Container;
 }
 
 export const buildWallDressing = (
@@ -243,7 +246,8 @@ export const buildWallDressing = (
   container.addChild(g);
 
   // Era signature prop (physical parts)
-  const prop = new Graphics();
+  const propG = new Graphics();
+  const prop = propG;
   if (spec.prop === 'brass-lamp') {
     const b = iso(7.55, 2.3);
     prop.ellipse(b.x, b.y, 9, 4).fill(0x2a1c10);
@@ -269,9 +273,8 @@ export const buildWallDressing = (
     prop.ellipse(s.x, s.y, 8, 3.5).fill(0x1a1a1f);
     prop.rect(s.x - 1, s.y - 64, 2, 64).fill(0x2c2c34);
   }
-  container.addChild(prop);
   void tier;
-  return { container };
+  return { container, props: prop as unknown as Container };
 };
 
 /* ------------------------------------------------------------- desk props */
@@ -377,7 +380,7 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
   /* ON AIR lamp above the studio door */
   const onAir = new Graphics();
   container.addChild(onAir);
-  const airPos = leftWallPt(3.75, 104);
+  const airPos = BOOTH_HEADER_LAMP;
 
   /* Mug steam */
   const steam = new Graphics();
@@ -497,6 +500,223 @@ export const hslToHex = (h: number, s: number, l: number): number => {
   return (r << 16) | (g << 8) | b;
 };
 
+/* -------------------------------------------------------------- wall clock */
+
+/**
+ * Point on a wall-mounted face. `u` runs to the viewer's right along the wall, `v` runs up.
+ * For the left wall the reading direction is up-and-right on screen (0.894, -0.447).
+ */
+const leftFace = (cx: number, cy: number, u: number, v: number) => ({
+  x: cx + u * 0.894,
+  y: cy - u * 0.447 - v,
+});
+
+export interface WallClock {
+  container: Container;
+  /** Redraw the hands. `hour` is 0..12, `minute` is 0..60. */
+  setTime: (hour: number, minute: number) => void;
+}
+
+/** A proper brass-rimmed wall clock drawn *in the left wall plane* (ticks, numerals-as-dots, hands). */
+export const buildWallClock = (cx: number, cy: number): WallClock => {
+  const container = new Container();
+  const g = new Graphics();
+  const R = 17;
+  const ring = (r: number, steps = 40) => {
+    const pts: number[] = [];
+    for (let i = 0; i < steps; i++) {
+      const a = (i / steps) * Math.PI * 2;
+      const p = leftFace(cx, cy, Math.cos(a) * r, Math.sin(a) * r);
+      pts.push(p.x, p.y);
+    }
+    return pts;
+  };
+  // Soft shadow on the wall, offset down-right
+  const shadow = ring(R + 1.5).map((v, i) => (i % 2 === 0 ? v + 2.2 : v + 3));
+  g.poly(shadow).fill({ color: 0x000000, alpha: 0.28 });
+  // Brass rim, dark inner rim, cream face
+  g.poly(ring(R)).fill(0xc9974a);
+  g.poly(ring(R)).stroke({ width: 0.8, color: 0x6b4a1c });
+  g.poly(ring(R - 2.2)).fill(0x2a1f14);
+  g.poly(ring(R - 3.2)).fill(0xf3ead6);
+  // Hour ticks (12) and quarter markers
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
+    const long = i % 3 === 0;
+    const r0 = R - 3.6;
+    const r1 = R - (long ? 8 : 6);
+    const p0 = leftFace(cx, cy, Math.sin(a) * r0, Math.cos(a) * r0);
+    const p1 = leftFace(cx, cy, Math.sin(a) * r1, Math.cos(a) * r1);
+    g.moveTo(p0.x, p0.y).lineTo(p1.x, p1.y).stroke({ width: long ? 1.6 : 0.8, color: 0x2b2118 });
+  }
+  container.addChild(g);
+
+  const hands = new Graphics();
+  container.addChild(hands);
+  const hub = new Graphics();
+  const c0 = leftFace(cx, cy, 0, 0);
+  hub.circle(c0.x, c0.y, 1.6).fill(0x8a2323);
+  container.addChild(hub);
+
+  const setTime = (hour: number, minute: number) => {
+    hands.clear();
+    const hAng = (((hour % 12) + minute / 60) / 12) * Math.PI * 2;
+    const mAng = (minute / 60) * Math.PI * 2;
+    const tip = (ang: number, len: number) => leftFace(cx, cy, Math.sin(ang) * len, Math.cos(ang) * len);
+    const tail = (ang: number, len: number) => leftFace(cx, cy, -Math.sin(ang) * len, -Math.cos(ang) * len);
+    const h = tip(hAng, 8);
+    const ht = tail(hAng, 2);
+    const m = tip(mAng, 12.5);
+    const mt = tail(mAng, 2.5);
+    hands.moveTo(ht.x, ht.y).lineTo(h.x, h.y).stroke({ width: 2.2, color: 0x2b2118, cap: 'round' });
+    hands.moveTo(mt.x, mt.y).lineTo(m.x, m.y).stroke({ width: 1.4, color: 0x2b2118, cap: 'round' });
+  };
+  setTime(10, 8);
+  return { container, setTime };
+};
+
+/* --------------------------------------------------------------- live booth */
+
+/** Lamp position (world px) on the booth header, used by the lighting layer's ON AIR lamp. */
+export const BOOTH_HEADER_LAMP = (() => {
+  const p = iso(2.25, 1.0);
+  return { x: p.x, y: p.y - 79 };
+})();
+
+/**
+ * A properly enclosed vocal booth against the right wall: carpeted floor, foam-lined
+ * interior, side walls, a flat roof, a header beam and a glass front with posts and a door.
+ * Replaces the old bare glass pane that floated in the room.
+ */
+export const buildLiveBooth = (): Container => {
+  const c = new Container();
+  const g = new Graphics();
+  const x0 = 1.0;
+  const x1 = 3.5;
+  const y0 = 0;
+  const y1 = 1.0;
+  const GH = 74; // glass height
+  const H = 86; // roof height
+  const P = (x: number, y: number, l = 0) => {
+    const p = iso(x, y);
+    return { x: p.x, y: p.y - l };
+  };
+  const quad = (a: ReturnType<typeof P>, b: ReturnType<typeof P>, c2: ReturnType<typeof P>, d: ReturnType<typeof P>) => [a.x, a.y, b.x, b.y, c2.x, c2.y, d.x, d.y];
+
+  // Carpet
+  g.poly(quad(P(x0, y0), P(x1, y0), P(x1, y1), P(x0, y1))).fill(0x2e2521);
+  g.poly(quad(P(x0 + 0.08, y0 + 0.08), P(x1 - 0.08, y0 + 0.08), P(x1 - 0.08, y1 - 0.06), P(x0 + 0.08, y1 - 0.06))).stroke({ width: 0.8, color: BRASS, alpha: 0.25 });
+
+  // Foam on the back (right) wall: egg-crate checker
+  const cols = 10;
+  const rows = 4;
+  for (let i = 0; i < cols; i++) {
+    for (let j = 0; j < rows; j++) {
+      const xa = x0 + ((x1 - x0) * i) / cols;
+      const xb = x0 + ((x1 - x0) * (i + 1)) / cols;
+      const la = 4 + ((GH - 6) * j) / rows;
+      const lb = 4 + ((GH - 6) * (j + 1)) / rows;
+      g.poly(rightWallQuad(xa, xb, la, lb)).fill((i + j) % 2 ? 0x241d19 : 0x191411);
+    }
+  }
+  g.poly(rightWallQuad(x0, x1, 0, 4)).fill(0x120e0b);
+
+  // Inner face of the left side wall (x = x0), foam stripes
+  for (let j = 0; j < 6; j++) {
+    const la = 4 + ((GH - 4) * j) / 6;
+    const lb = 4 + ((GH - 4) * (j + 1)) / 6;
+    g.poly(quad(P(x0, y0, la), P(x0, y1, la), P(x0, y1, lb), P(x0, y0, lb))).fill(j % 2 ? 0x241d19 : 0x1a1512);
+  }
+
+  // Mic stand + pop filter + stool + music stand, deep in the booth
+  const base = P(2.25, 0.55);
+  g.ellipse(base.x, base.y, 12, 6).fill(0x1b1613);
+  g.rect(base.x - 1.6, base.y - 46, 3.2, 46).fill(0x8f98ab);
+  g.moveTo(base.x, base.y - 46).lineTo(base.x + 10, base.y - 52).stroke({ width: 2, color: 0x8f98ab });
+  g.circle(base.x + 11, base.y - 53, 5.5).fill(BRASS);
+  g.circle(base.x + 11, base.y - 53, 5.5).stroke({ width: 1, color: 0x6b4a1c });
+  g.circle(base.x + 4, base.y - 50, 8).stroke({ width: 1, color: 0x000000, alpha: 0.7 });
+  const stool = P(1.75, 0.7);
+  g.ellipse(stool.x, stool.y, 9, 4.2).fill({ color: 0x000000, alpha: 0.3 });
+  g.rect(stool.x - 1, stool.y - 18, 2, 18).fill(0x4a4038);
+  g.ellipse(stool.x, stool.y - 20, 9, 4.2).fill(0x6b3a2a);
+  g.ellipse(stool.x, stool.y - 20, 9, 4.2).stroke({ width: 0.8, color: 0x2a1610 });
+  const stand = P(2.85, 0.6);
+  g.rect(stand.x - 0.8, stand.y - 38, 1.6, 38).fill(0x3a3f45);
+  g.poly([stand.x - 9, stand.y - 42, stand.x + 9, stand.y - 48, stand.x + 9, stand.y - 36, stand.x - 9, stand.y - 30]).fill(0x2f353c);
+
+  // Glass front (y = y1)
+  const gl = quad(P(x0, y1), P(x1, y1), P(x1, y1, GH), P(x0, y1, GH));
+  g.poly(gl).fill({ color: 0xa6d8e6, alpha: 0.13 });
+  // reflection streaks
+  g.poly(quad(P(1.35, y1), P(1.6, y1), P(2.05, y1, GH), P(1.8, y1, GH))).fill({ color: 0xffffff, alpha: 0.07 });
+  g.poly(quad(P(2.0, y1), P(2.12, y1), P(2.55, y1, GH), P(2.43, y1, GH))).fill({ color: 0xffffff, alpha: 0.05 });
+  g.poly(gl).stroke({ width: 1.4, color: 0x9fb1b5, alpha: 0.85 });
+  // Posts (left, mid, door jamb, right)
+  for (const px of [x0, 1.9, 2.75, x1]) {
+    g.poly(quad(P(px - 0.035, y1), P(px + 0.035, y1), P(px + 0.035, y1, H), P(px - 0.035, y1, H))).fill(0x2a2521);
+    g.poly(quad(P(px - 0.035, y1), P(px + 0.035, y1), P(px + 0.035, y1, H), P(px - 0.035, y1, H))).stroke({ width: 0.6, color: BRASS, alpha: 0.6 });
+  }
+  // Door outline + handle between the last two posts
+  g.poly(quad(P(2.79, y1, 2), P(x1 - 0.04, y1, 2), P(x1 - 0.04, y1, GH - 2), P(2.79, y1, GH - 2))).stroke({ width: 1, color: 0xcfe0e4, alpha: 0.55 });
+  const hdl = P(2.88, y1, 36);
+  g.roundRect(hdl.x - 1, hdl.y - 6, 2, 12, 1).fill(BRASS);
+
+  // Header beam across the top of the glass
+  g.poly(quad(P(x0, y1, GH), P(x1, y1, GH), P(x1, y1, H), P(x0, y1, H))).fill(0x231b16);
+  g.poly(quad(P(x0, y1, GH), P(x1, y1, GH), P(x1, y1, GH + 1.6), P(x0, y1, GH + 1.6))).fill({ color: BRASS, alpha: 0.8 });
+  // Nameplate + lamp housing on the header
+  g.poly(quad(P(1.35, y1, 76), P(1.95, y1, 76), P(1.95, y1, 83), P(1.35, y1, 83))).fill(0x3a2c1f);
+  g.poly(quad(P(1.35, y1, 76), P(1.95, y1, 76), P(1.95, y1, 83), P(1.35, y1, 83))).stroke({ width: 0.7, color: BRASS, alpha: 0.7 });
+  const lamp = BOOTH_HEADER_LAMP;
+  g.roundRect(lamp.x - 7, lamp.y - 4, 14, 8, 2).fill(0x120d0a);
+  g.circle(lamp.x, lamp.y, 2.6).fill(0x5a1a14);
+
+  // Outer face of the right side wall (x = x1), facing the room
+  g.poly(quad(P(x1, y0), P(x1, y1), P(x1, y1, H), P(x1, y0, H))).fill(0x3d302a);
+  g.poly(quad(P(x1, y0), P(x1, y1), P(x1, y1, 38), P(x1, y0, 38))).fill(0x2a201b);
+  g.poly(quad(P(x1, y0, 38), P(x1, y1, 38), P(x1, y1, 41), P(x1, y0, 41))).fill({ color: BRASS, alpha: 0.5 });
+  g.poly(quad(P(x1, y0), P(x1, y1), P(x1, y1, H), P(x1, y0, H))).stroke({ width: 1, color: 0x120d09, alpha: 0.8 });
+
+  // Flat roof
+  g.poly(quad(P(x0, y0, H), P(x1, y0, H), P(x1, y1, H), P(x0, y1, H))).fill(0x4a3d34);
+  g.poly(quad(P(x0 + 0.1, y0 + 0.1, H), P(x1 - 0.1, y0 + 0.1, H), P(x1 - 0.1, y1 - 0.1, H), P(x0 + 0.1, y1 - 0.1, H))).fill(0x54463c);
+  g.poly(quad(P(x0, y0, H), P(x1, y0, H), P(x1, y1, H), P(x0, y1, H))).stroke({ width: 1.2, color: 0x120d09, alpha: 0.9 });
+  g.poly([P(x0, y1, H).x, P(x0, y1, H).y, P(x1, y1, H).x, P(x1, y1, H).y, P(x1, y1, H).x, P(x1, y1, H).y - 0.1]).stroke({ width: 1.2, color: BRASS, alpha: 0.7 });
+  c.addChild(g);
+  return c;
+};
+
+/* ------------------------------------------------------ smooth gradient sprites */
+
+/**
+ * A smooth radial gradient as a sprite (canvas texture). Stacked ellipses band visibly
+ * on big surfaces — this is what the backdrop halo and vignette use instead.
+ * `stops` are [offset 0..1, css colour] pairs. Returns null when no 2D canvas exists (tests/SSR).
+ */
+export const radialGradientSprite = (
+  width: number,
+  height: number,
+  stops: Array<[number, string]>,
+): Sprite | null => {
+  if (typeof document === 'undefined') return null;
+  const size = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  const grad = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  for (const [o, col] of stops) grad.addColorStop(o, col);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+  const sprite = new Sprite(Texture.from(canvas));
+  sprite.width = width;
+  sprite.height = height;
+  sprite.eventMode = 'none';
+  return sprite;
+};
+
 /* --------------------------------------------------------------- backdrop */
 
 /** Screen-space backdrop behind the room: warm ink with a soft halo under the diorama. */
@@ -505,12 +725,18 @@ export const buildUnderlay = (width: number, height: number, centre: { x: number
   c.eventMode = 'none';
   const g = new Graphics();
   g.rect(0, 0, width, height).fill(0x0e0c0a);
-  const rx = Math.max(width * 0.6, 240 * scale * 2);
-  const ry = Math.max(height * 0.62, 140 * scale * 2);
-  for (let i = 0; i < 10; i++) {
-    const k = 1 - i / 10;
-    g.ellipse(centre.x, centre.y, rx * k, ry * k).fill({ color: 0x4a3520, alpha: 0.06 });
-  }
   c.addChild(g);
+  const rx = Math.max(width * 0.62, 240 * scale * 2);
+  const ry = Math.max(height * 0.66, 140 * scale * 2);
+  const halo = radialGradientSprite(rx * 2, ry * 2, [
+    [0, 'rgba(92, 64, 36, 0.55)'],
+    [0.45, 'rgba(60, 42, 26, 0.26)'],
+    [1, 'rgba(14, 12, 10, 0)'],
+  ]);
+  if (halo) {
+    halo.anchor.set(0.5);
+    halo.position.set(centre.x, centre.y);
+    c.addChild(halo);
+  }
   return c;
 };

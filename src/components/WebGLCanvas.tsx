@@ -2,11 +2,14 @@ import React, { useEffect, useRef } from 'react';
 import { Application, Container, Graphics, Text } from 'pixi.js';
 import { visualEraId } from '@/utils/eraProgression';
 import { useSettings } from '@/contexts/SettingsContext';
-import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad } from '@/components/studio/isoMath';
+import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from '@/components/studio/isoMath';
 import {
   buildDecorLights,
   buildDeskProps,
+  buildLiveBooth,
   buildPlankFloor,
+  buildWallClock,
+  radialGradientSprite,
   buildRoomShell,
   buildRug,
   buildUnderlay,
@@ -38,21 +41,21 @@ export const getEraPostFxTuning = (eraId?: string): EraPostFxTuning => {
   switch (era) {
     case 'digital80s':
       return {
-        scanlineAlpha: 0.05,
+        scanlineAlpha: 0.022,
         scanlinePitch: 4,
         vignetteColor: 0x160c24, // Deep slate-violet
         vignetteAlpha: 0.18,
       };
     case 'internet2000s':
       return {
-        scanlineAlpha: 0.03,
+        scanlineAlpha: 0.016,
         scanlinePitch: 3,
         vignetteColor: 0x0a141d, // Cool studio navy
         vignetteAlpha: 0.15,
       };
     case 'streaming2020s':
       return {
-        scanlineAlpha: 0.018,
+        scanlineAlpha: 0.01,
         scanlinePitch: 3,
         vignetteColor: 0x080f0c, // Ultra-subtle charcoal
         vignetteAlpha: 0.12,
@@ -60,7 +63,7 @@ export const getEraPostFxTuning = (eraId?: string): EraPostFxTuning => {
     case 'analog60s':
     default:
       return {
-        scanlineAlpha: 0.045,
+        scanlineAlpha: 0.02,
         scanlinePitch: 4,
         vignetteColor: 0x1d1107, // Warm tape amber-sepia
         vignetteAlpha: 0.20,
@@ -322,6 +325,8 @@ interface AnimBar {
   color: number;
   width?: number;
   range?: number;
+  /** When set, the bar is drawn as a quad on the left-wall plane (tile y span + base lift). */
+  plane?: { y0: number; y1: number; lift: number };
 }
 
 /** Per-build dynamic refs the ticker animates */
@@ -330,6 +335,7 @@ interface SceneRefs {
   tvBars: AnimBar[];
   phoneRing: Graphics | null;
   clockHand: Graphics | null;
+  setClockTime: ((hour: number, minute: number) => void) | null;
   staffFigures: { fig: Container; baseY: number }[];
   nightTintLayer: Container | null;
   hoverGlows: Record<string, Graphics>;
@@ -396,6 +402,7 @@ const buildScene = (
     tvBars: [],
     phoneRing: null,
     clockHand: null,
+    setClockTime: null,
     staffFigures: [],
     nightTintLayer: null,
     hoverGlows: {},
@@ -461,7 +468,8 @@ const buildScene = (
     .poly([wl0.x, wl0.y, wl0.x, wl0.y - WALL_H])
     .stroke({ width: 2, color: COLORS.wallTrim, alpha: 0.6 });
   root.addChild(walls);
-  root.addChild(buildWallDressing(decorSpec, trophyInput, tier).container);
+  const dressing = buildWallDressing(decorSpec, trophyInput, tier);
+  root.addChild(dressing.container);
 
   /* ---- Window (right wall) -------------------------------------------- */
   const windowGfx = new Graphics();
@@ -484,14 +492,12 @@ const buildScene = (
   tv.poly(tvPoly).fill(0x11151f);
   tv.poly(tvPoly).stroke({ width: 3, color: 0x0a0d14 });
   tvWrap.addChild(tv);
-  // Animated equalizer bars on the TV screen
+  // Animated equalizer bars on the TV screen — drawn as wall-plane quads so they sit inside the bezel
   for (let i = 0; i < 5; i++) {
     const bar = new Graphics();
-    const t = (i + 0.5) / 5;
-    const bx = tvA.x + (tvB.x - tvA.x) * t;
-    const by = tvA.y - 66 + (tvB.y - tvA.y) * t;
+    const y0 = 4.72 + i * 0.32;
     tvWrap.addChild(bar);
-    refs.tvBars.push({ g: bar, x: bx, y: by, color: COLORS.gear[i % COLORS.gear.length] });
+    refs.tvBars.push({ g: bar, x: 0, y: 0, color: COLORS.gear[i % COLORS.gear.length], plane: { y0, y1: y0 + 0.22, lift: 60 } });
   }
   root.addChild(tvWrap);
   const tvHit = new Graphics();
@@ -503,44 +509,26 @@ const buildScene = (
     ?.poly([tvA.x, tvA.y - 110, tvB.x, tvB.y - 110, tvB.x, tvB.y - 50, tvA.x, tvA.y - 50])
     .stroke({ width: 3, color: 0x5aa9e6 });
 
-  /* ---- Wall clock (left wall, near back) — foreshortened to wall plane ---- */
-  const clockWrap = new Container();
+  /* ---- Wall clock (left wall) — a real face drawn in the wall plane ------ */
   const clockPos = iso(0, 2.0);
-  // Left-wall screen direction (for flush mounting)
-  const leftWallAngle = Math.atan2(wl1.y - wl0.y, wl1.x - wl0.x);
-  clockWrap.position.set(clockPos.x + 6, clockPos.y - 98);
-  // Compress + skew so the face reads as attached to the isometric left wall
-  // rather than a flat billboard facing the camera.
-  clockWrap.scale.set(0.78, 1);
-  clockWrap.skew.x = -0.32;
-  clockWrap.rotation = leftWallAngle * 0.12;
-  const clock = new Graphics();
-  clock.ellipse(0, 0, 15, 17).fill(0xf2f2f2);
-  clock.ellipse(0, 0, 15, 17).stroke({ width: 3, color: COLORS.wallTrim });
-  // Tick marks oriented on the face
-  for (let i = 0; i < 4; i++) {
-    const a = (i * Math.PI) / 2;
-    clock
-      .circle(Math.cos(a) * 11, Math.sin(a) * 12.5, 1.2)
-      .fill(0x333333);
-  }
-  clockWrap.addChild(clock);
-  const hand = new Graphics();
-  hand.rect(-1.5, -12, 3, 12).fill(0x222222);
-  refs.clockHand = hand;
-  clockWrap.addChild(hand);
+  const clockCx = clockPos.x;
+  const clockCy = clockPos.y - 92;
+  const clockFace = buildWallClock(clockCx, clockCy);
+  refs.setClockTime = clockFace.setTime;
+  const clockWrap = clockFace.container;
   root.addChild(clockWrap);
   const clockHit = new Graphics();
-  clockHit.ellipse(clockPos.x + 6, clockPos.y - 98, 28, 26).fill(0xffffff);
+  clockHit.ellipse(clockCx, clockCy, 26, 24).fill(0xffffff);
   addHotspot(root, 'clock', clockHit, clockWrap, refs, onSelect);
   refs.hoverGlows['clock']
-    ?.ellipse(clockPos.x + 6, clockPos.y - 98, 20, 18)
-    .stroke({ width: 3, color: 0xffd166 });
+    ?.ellipse(clockCx, clockCy, 21, 19)
+    .stroke({ width: 2, color: 0xffd166 });
 
   /* ---- Floor ---------------------------------------------------------- */
   const floor = buildPlankFloor(decorSpec, decorSeed);
   root.addChild(floor);
   root.addChild(buildRug());
+  root.addChild(dressing.props); // free-standing era props sit on top of the floor
 
   // Window spill and contact shadow place furniture on the floor plane.
   const lightAndShadow = new Graphics();
@@ -625,41 +613,13 @@ const buildScene = (
     root.addChild(doorWrap);
   }
 
-  /* ---- Live room booth: mic BEHIND glass (correct draw order) ---------- */
-  const liveWrap = new Container();
-  // Grid-aligned booth footprint (half-tile snap for sprite/model authoring)
-  const boothBackY = 0.5;
-  const boothGlassY = 1.0;
+  /* ---- Live room booth: enclosed (walls, roof, header, foam, glass front) ---- */
+  const liveWrap = buildLiveBooth();
   const boothX0 = 1.0;
   const boothX1 = 3.5;
-
-  // Booth carpet / raised floor behind the glass
-  const boothFloor = new Graphics();
-  isoQuad(boothFloor, boothX0, boothBackY, boothX1, boothGlassY);
-  boothFloor.fill({ color: 0x3a4558, alpha: 0.55 });
-  isoQuad(boothFloor, boothX0 + 0.1, boothBackY + 0.1, boothX1 - 0.1, boothGlassY - 0.05);
-  boothFloor.fill({ color: 0x2a3344, alpha: 0.35 });
-  liveWrap.addChild(boothFloor);
-
-  // Mic stand deep in the booth (smaller tile-Y = behind glass plane)
-  const micBase = iso(2.25, 0.55);
-  const mic = new Graphics();
-  mic.ellipse(micBase.x, micBase.y, 12, 6).fill(0x22283a);
-  mic.rect(micBase.x - 2, micBase.y - 44, 4, 44).fill(0x9aa4bf);
-  mic.circle(micBase.x, micBase.y - 50, 7).fill(0xd9a441);
-  liveWrap.addChild(mic);
-
-  // Isolation glass partition in FRONT of the mic
+  const boothGlassY = 1.0;
   const gA = iso(boothX0, boothGlassY);
   const gB = iso(boothX1, boothGlassY);
-  const glassPoly = [gA.x, gA.y, gB.x, gB.y, gB.x, gB.y - 74, gA.x, gA.y - 74];
-  const glass = new Graphics();
-  glass.poly(glassPoly).fill({ color: COLORS.glass, alpha: 0.28 });
-  glass.poly(glassPoly).stroke({ width: 3, color: COLORS.glassFrame, alpha: 0.9 });
-  // Subtle mullion
-  const gMid = iso((boothX0 + boothX1) / 2, boothGlassY);
-  glass.poly([gMid.x, gMid.y - 4, gMid.x, gMid.y - 70]).stroke({ width: 2, color: COLORS.glassFrame, alpha: 0.55 });
-  liveWrap.addChild(glass);
 
   const liveHit = new Graphics();
   liveHit.poly([gA.x, gA.y, gB.x, gB.y, gB.x, gB.y - 90, gA.x, gA.y - 90]).fill(0xffffff);
@@ -1122,20 +1082,22 @@ const buildScene = (
 
   const vignetteLayer = new Container();
   vignetteLayer.eventMode = 'none';
-  const vignetteG = new Graphics();
-  const cx = width / 2;
-  const cy = height / 2;
-  const stops = [
-    { radiusMult: 0.72, strokeW: Math.max(24, width * 0.08), alpha: postFxTuning.vignetteAlpha * 0.35 },
-    { radiusMult: 0.90, strokeW: Math.max(34, width * 0.12), alpha: postFxTuning.vignetteAlpha * 0.65 },
-    { radiusMult: 1.08, strokeW: Math.max(46, width * 0.16), alpha: postFxTuning.vignetteAlpha },
-  ];
-  for (const stop of stops) {
-    vignetteG
-      .ellipse(cx, cy, cx * stop.radiusMult, cy * stop.radiusMult)
-      .stroke({ color: postFxTuning.vignetteColor, width: stop.strokeW, alpha: stop.alpha });
+  {
+    const vc = postFxTuning.vignetteColor;
+    const css = (a: number) => `rgba(${(vc >> 16) & 255}, ${(vc >> 8) & 255}, ${vc & 255}, ${a})`;
+    const edge = Math.min(0.55, postFxTuning.vignetteAlpha * 2.6);
+    const sprite = radialGradientSprite(width * 1.5, height * 1.5, [
+      [0, css(0)],
+      [0.55, css(0)],
+      [0.82, css(edge * 0.55)],
+      [1, css(edge)],
+    ]);
+    if (sprite) {
+      sprite.anchor.set(0.5);
+      sprite.position.set(width / 2, height / 2);
+      vignetteLayer.addChild(sprite);
+    }
   }
-  vignetteLayer.addChild(vignetteG);
   refs.vignetteLayer = vignetteLayer;
   overlayRoot.addChild(vignetteLayer);
 
@@ -1179,6 +1141,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   const gestureMidpointRef = useRef<{ x: number; y: number } | null>(null);
   const lastCanvasInputRef = useRef(0);
   const lastFrameTimeRef = useRef(0);
+  const clockMinuteRef = useRef(-1);
 
   const { settings } = useSettings();
   const settingsRef = useRef(settings);
@@ -1535,13 +1498,22 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             vuPeaks.push({ x: bar.x, y: bar.y - h, width });
           });
 
-          // Charts TV equalizer
+          // Charts TV equalizer — bars are quads on the left-wall plane so they stay inside the bezel
           const tvPeaks: { x: number; y: number }[] = [];
           refs.tvBars.forEach((bar, i) => {
-            const h = 5 + (0.5 + 0.5 * Math.sin(t * 4 + i * 1.1)) * (5 + s.activity * 24);
+            const h = 4 + (0.5 + 0.5 * Math.sin(t * 4 + i * 1.1)) * (4 + s.activity * 22);
             bar.g.clear();
-            bar.g.rect(bar.x - 5, bar.y - h, 10, h).fill(bar.color);
-            tvPeaks.push({ x: bar.x, y: bar.y - h });
+            if (bar.plane) {
+              const a0 = leftWallPt(bar.plane.y0, bar.plane.lift);
+              const a1 = leftWallPt(bar.plane.y1, bar.plane.lift);
+              const b1 = leftWallPt(bar.plane.y1, bar.plane.lift + h);
+              const b0 = leftWallPt(bar.plane.y0, bar.plane.lift + h);
+              bar.g.poly([a0.x, a0.y, a1.x, a1.y, b1.x, b1.y, b0.x, b0.y]).fill(bar.color);
+              tvPeaks.push({ x: (b0.x + b1.x) / 2, y: b0.y });
+            } else {
+              bar.g.rect(bar.x - 5, bar.y - h, 10, h).fill(bar.color);
+              tvPeaks.push({ x: bar.x, y: bar.y - h });
+            }
           });
 
           // Emissive dynamic bloom updates (world-space, additive blend)
@@ -1603,9 +1575,14 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             refs.phoneRing.scale.set(1 + pulse * 0.25);
           }
 
-          // Wall clock hand sweeps as days pass
-          if (refs.clockHand) {
-            refs.clockHand.rotation = (t * 0.35 + s.day * 0.4) % (Math.PI * 2);
+          // Wall clock: real hands on the wall plane. One in-game hour passes every ~15s of play,
+          // offset per day so the clock never reads the same on consecutive mornings.
+          if (refs.setClockTime) {
+            const mins = Math.floor(s.day * 137 + t * 4) % 720;
+            if (mins !== clockMinuteRef.current) {
+              clockMinuteRef.current = mins;
+              refs.setClockTime(Math.floor(mins / 60), mins % 60);
+            }
           }
 
           // Ambient day/night tint — slow 90s cycle keeps the room alive
