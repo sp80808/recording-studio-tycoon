@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { Application, Container, Graphics, Text } from 'pixi.js';
+import { Application, Container, Graphics, Matrix, Sprite, Text } from 'pixi.js';
+import { getPropTexture, loadPropSprites } from '@/components/studio/propSprites';
 import { visualEraId } from '@/utils/eraProgression';
 import { useSettings } from '@/contexts/SettingsContext';
 import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from '@/components/studio/isoMath';
@@ -615,7 +616,19 @@ const buildScene = (
     isoQuad(thresh, 0, 3.15, 0.55, 4.35, 0);
     thresh.fill({ color: 0x2a2118, alpha: 0.85 });
     doorWrap.addChild(thresh);
-    doorWrap.addChild(doorGfx);
+    const doorTex = getPropTexture('door');
+    if (doorTex) {
+      // Sprite is authored flat; shear it into the left-wall plane.
+      const doorSprite = new Sprite(doorTex);
+      doorSprite.setFromMatrix(new Matrix(
+        (doorB.x - doorA.x) / doorTex.width, (doorB.y - doorA.y) / doorTex.width,
+        0, doorH / doorTex.height,
+        doorA.x, doorA.y - doorH,
+      ));
+      doorWrap.addChild(doorSprite);
+    } else {
+      doorWrap.addChild(doorGfx);
+    }
     const lintel = new Graphics();
     lintel
       .poly([
@@ -1357,6 +1370,11 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         app.canvas.setAttribute('data-engine', 'pixi');
         app.canvas.style.touchAction = 'none';
         app.canvas.setAttribute('aria-label', 'Interactive studio floor. Tap objects to inspect. Pinch to zoom or use two fingers to pan.');
+        await loadPropSprites();
+        if (disposed) {
+          app.destroy(true, { children: true });
+          return;
+        }
         lastW = app.screen.width;
         lastH = app.screen.height;
         rebuild();
