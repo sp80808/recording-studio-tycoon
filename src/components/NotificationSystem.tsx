@@ -34,7 +34,7 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 space-y-2 max-w-sm">
+    <div className="fixed bottom-4 right-4 md:right-auto md:left-4 z-50 space-y-2 max-w-sm">
       {notifications.slice(-MAX_VISIBLE_TOASTS).map(notification => (
         <div
           key={notification.id}
