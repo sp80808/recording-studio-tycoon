@@ -1,30 +1,35 @@
 import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Rarity } from '@/features/boxDrops/lootGenerator';
-import { Sparkles, Disc3, Radio, Zap } from 'lucide-react';
+import { Disc3, Radio, Zap } from 'lucide-react';
+import { GEAR_FAMILY_ACCENTS, resolveGearFamily, type GearFamily } from './rewardFx';
 
 interface AnimatedGearFlourishProps {
   rarity: Rarity;
   era: string;
   name: string;
+  /** Explicit equipment family; falls back to name/era hints. */
+  family?: GearFamily;
   className?: string;
 }
 
 /**
  * Animated Gear Flourish Component
- * Provides an authored visual burst (spinning tape reel, glowing vacuum tube filament, or digital LED bar)
+ * Provides a bounded authored flourish (settles static after a few cycles) (spinning tape reel, glowing vacuum tube filament, or digital LED bar)
  * when equipment materializes from silhouette into reality.
  */
 export const AnimatedGearFlourish: React.FC<AnimatedGearFlourishProps> = ({
   rarity,
   era,
   name,
+  family,
   className = '',
 }) => {
   const reducedMotion = useReducedMotion();
 
-  const isTapeGear = name.toLowerCase().includes('tape') || name.toLowerCase().includes('reel');
-  const isTubeGear = era.includes('1960') || era.includes('1970') || rarity === 'vintage';
+  const { accent, cycles } = GEAR_FAMILY_ACCENTS[resolveGearFamily({ family, name, era, rarity })];
+  const isTapeGear = accent === 'reels';
+  const isTubeGear = accent === 'filament';
 
   return (
     <div className={`relative flex items-center justify-center p-3 select-none ${className}`}>
@@ -33,7 +38,7 @@ export const AnimatedGearFlourish: React.FC<AnimatedGearFlourishProps> = ({
         <div className="flex items-center gap-3">
           <motion.div
             animate={reducedMotion ? {} : { rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 1.8, ease: 'linear' }}
+            transition={{ repeat: cycles - 1, duration: 1.8, ease: 'linear' }}
             className="w-12 h-12 rounded-full border-2 border-stone-400 bg-stone-900 flex items-center justify-center text-amber-400 shadow-md"
           >
             <Disc3 size={28} />
@@ -41,7 +46,7 @@ export const AnimatedGearFlourish: React.FC<AnimatedGearFlourishProps> = ({
           <div className="w-10 h-0.5 bg-amber-900 border-b border-amber-500/50" />
           <motion.div
             animate={reducedMotion ? {} : { rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 1.8, ease: 'linear' }}
+            transition={{ repeat: cycles - 1, duration: 1.8, ease: 'linear' }}
             className="w-12 h-12 rounded-full border-2 border-stone-400 bg-stone-900 flex items-center justify-center text-amber-400 shadow-md"
           >
             <Disc3 size={28} />
@@ -67,7 +72,7 @@ export const AnimatedGearFlourish: React.FC<AnimatedGearFlourishProps> = ({
                         scale: [0.95, 1.05, 0.95],
                       }
                 }
-                transition={{ repeat: Infinity, duration: 1.2, ease: 'easeInOut' }}
+                transition={{ repeat: cycles - 1, duration: 1.2, ease: 'easeInOut' }}
                 className="w-2.5 h-6 bg-gradient-to-b from-amber-300 via-orange-500 to-red-600 rounded-full blur-[1px] shadow-[0_0_8px_#f59e0b]"
               />
               <Zap size={10} className="text-amber-300 absolute bottom-1" />
@@ -78,7 +83,7 @@ export const AnimatedGearFlourish: React.FC<AnimatedGearFlourishProps> = ({
         /* Digital Studio Signal & LED Meter Flourish */
         <div className="flex flex-col items-center gap-1.5 bg-stone-950 border border-stone-800 rounded px-4 py-2">
           <div className="flex items-center gap-1">
-            <Radio size={12} className="text-cyan-400 animate-pulse" />
+            <Radio size={12} className="text-cyan-400" />
             <span className="text-[9px] font-mono font-bold text-cyan-400 uppercase tracking-widest">
               HARDWARE SIGNAL ACQUIRED
             </span>
@@ -95,7 +100,7 @@ export const AnimatedGearFlourish: React.FC<AnimatedGearFlourishProps> = ({
                       }
                 }
                 transition={{
-                  repeat: Infinity,
+                  repeat: cycles - 1,
                   duration: 0.6,
                   delay: led * 0.08,
                 }}
