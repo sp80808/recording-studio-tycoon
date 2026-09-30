@@ -6,6 +6,7 @@ import { GameHeader } from '@/components/GameHeader';
 import { MainGameContent } from '@/components/MainGameContent';
 import { RewardFlights } from '@/components/RewardFlights';
 import { gameEvents } from '@/engine/gameEventBus';
+import { artistChartBoost } from '@/simulation/artistContracts';
 import { advanceChartWeek, debutChartRun, weeksDue } from '@/utils/chartRun';
 import { ChartRevealScene } from '@/components/ChartRevealScene';
 import { SeasonAwardsCeremony } from '@/components/SeasonAwardsCeremony';
@@ -319,7 +320,9 @@ const MusicStudioTycoon = () => {
     console.log('Index.tsx: Finalizing project completion for:', activeProjectReport.projectTitle);
     completeProject(activeProjectReport); // Call the updated completeProject with the report
 
-    const debut = debutChartRun(activeProjectReport.projectId, activeProjectReport.projectTitle, activeProjectReport.overallQualityScore, gameState.currentDay);
+    // Signed artists' name value raises the quality a debut is placed (and climbs) with.
+    const chartQuality = Math.min(100, activeProjectReport.overallQualityScore + artistChartBoost(gameState.signedArtists, activeProjectReport.genre));
+    const debut = debutChartRun(activeProjectReport.projectId, activeProjectReport.projectTitle, chartQuality, gameState.currentDay);
     if (debut) {
       setGameState(prev => applyKnowHowEvents({
         ...prev,
@@ -339,7 +342,7 @@ const MusicStudioTycoon = () => {
     if (settings.sfxEnabled) {
       audioSystem.playUISound('success'); 
     }
-  }, [activeProjectReport, completeProject, settings.sfxEnabled, setGameState, gameState.currentDay]);
+  }, [activeProjectReport, completeProject, settings.sfxEnabled, setGameState, gameState.currentDay, gameState.signedArtists]);
 
   // Studio Know-How award toast (#66): one place, driven by the pool's lifetime total so save/load never re-fires.
   const lastKnowHowTotal = useRef<number | null>(null);
