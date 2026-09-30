@@ -1,0 +1,241 @@
+/**
+ * Studio theme — the shared "hardware" design language for every popup, panel and HUD.
+ *
+ * Palette philosophy: warm ink + walnut surfaces, ivory type, brass as the one
+ * signature accent. Cool colour is deliberately rare — teal marks live/recording
+ * state, emerald means money, rose means danger, violet means story. Blue is not
+ * used for text; informational copy is ivory or muted stone.
+ *
+ * Everything here is token-driven (--rst-*) so a future era skin can re-tint
+ * the whole UI by overriding a handful of variables on a wrapper element.
+ */
+:root {
+  /* Surfaces (darkest → lightest) */
+  --rst-ink-950: #0d0c0a;
+  --rst-ink-900: #141210;
+  --rst-ink-850: #191613;
+  --rst-ink-800: #1f1b17;
+  --rst-ink-700: #2a2520;
+  --rst-ink-600: #38322b;
+
+  /* Type */
+  --rst-ivory: #f3ecdd;
+  --rst-ivory-soft: #d9d0bd;
+  --rst-stone: #a89f8e;
+  --rst-stone-dim: #7c7466;
+
+  /* Brass (signature accent) */
+  --rst-brass-200: #f6e2b3;
+  --rst-brass-300: #efcf8a;
+  --rst-brass-400: #e6b866;
+  --rst-brass-500: #d49f45;
+  --rst-brass-600: #b4802f;
+
+  /* Semantic accents — each has one job */
+  --rst-money: #7fd6a6;
+  --rst-live: #5fd0c0;
+  --rst-danger: #f0776b;
+  --rst-story: #c4a1f0;
+  --rst-warn: #f2b25c;
+
+  /* Lines & light */
+  --rst-line: rgba(243, 236, 221, 0.09);
+  --rst-line-strong: rgba(243, 236, 221, 0.17);
+  --rst-brass-line: rgba(230, 184, 102, 0.34);
+  --rst-sheen: rgba(255, 244, 214, 0.07);
+  --rst-shadow-pop: 0 24px 64px rgba(0, 0, 0, 0.62), 0 4px 14px rgba(0, 0, 0, 0.45);
+  --rst-shadow-card: 0 10px 28px rgba(0, 0, 0, 0.4);
+  --rst-radius: 14px;
+  --rst-ease: cubic-bezier(0.22, 0.9, 0.32, 1);
+  --rst-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+}
+
+/* ------------------------------------------------------------------ base */
+html { color-scheme: dark; }
+body { background: var(--rst-ink-900); color: var(--rst-ivory); }
+::selection { background: rgba(230, 184, 102, 0.34); color: #fff8e6; }
+
+*:focus-visible {
+  outline: 2px solid var(--rst-brass-300);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Warm, unobtrusive scrollbars */
+* { scrollbar-width: thin; scrollbar-color: rgba(230, 184, 102, 0.28) transparent; }
+*::-webkit-scrollbar { width: 9px; height: 9px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: rgba(230, 184, 102, 0.22); border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
+*::-webkit-scrollbar-thumb:hover { background: rgba(230, 184, 102, 0.42); background-clip: padding-box; border: 2px solid transparent; }
+
+/* ---------------------------------------------------------- typography */
+.rst-serif { font-family: var(--rst-serif); }
+.rst-kicker {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--rst-brass-400);
+}
+.rst-title {
+  font-family: var(--rst-serif);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--rst-ivory);
+  line-height: 1.15;
+}
+.rst-body { color: var(--rst-ivory-soft); line-height: 1.6; }
+.rst-muted { color: var(--rst-stone); }
+
+/* Ornamental divider: hairline – diamond – hairline */
+.rst-divider { display: flex; align-items: center; gap: 10px; color: var(--rst-brass-500); }
+.rst-divider::before, .rst-divider::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--rst-brass-line), transparent); }
+.rst-divider > i { width: 6px; height: 6px; transform: rotate(45deg); background: currentColor; opacity: 0.85; }
+
+/* ------------------------------------------------------------ surfaces */
+.rst-surface {
+  position: relative;
+  border: 1px solid var(--rst-line-strong);
+  border-radius: var(--rst-radius);
+  background:
+    radial-gradient(120% 90% at 50% -20%, rgba(230, 184, 102, 0.07), transparent 60%),
+    linear-gradient(180deg, var(--rst-ink-800), var(--rst-ink-850) 55%, var(--rst-ink-900));
+  box-shadow: var(--rst-shadow-card), inset 0 1px 0 var(--rst-sheen);
+  color: var(--rst-ivory);
+}
+
+/* Modal frame: brass hairline, top sheen, soft grain */
+.rst-modal {
+  position: relative;
+  border: 1px solid var(--rst-brass-line);
+  border-radius: 18px;
+  background:
+    radial-gradient(90% 60% at 50% -10%, rgba(230, 184, 102, 0.10), transparent 70%),
+    linear-gradient(180deg, #211c17 0%, #181512 60%, #12100e 100%);
+  box-shadow: var(--rst-shadow-pop), inset 0 1px 0 rgba(255, 244, 214, 0.10), inset 0 0 0 1px rgba(0, 0, 0, 0.5);
+  color: var(--rst-ivory);
+  overflow: hidden;
+}
+.rst-modal::before { /* thin brass highlight along the top edge */
+  content: '';
+  position: absolute; inset: 0 0 auto 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(246, 226, 179, 0.7), transparent);
+  pointer-events: none;
+}
+.rst-modal-header { padding: 20px 24px 14px; border-bottom: 1px solid var(--rst-line); }
+.rst-modal-body { padding: 18px 24px; }
+.rst-modal-footer { padding: 14px 24px 20px; display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid var(--rst-line); background: rgba(0, 0, 0, 0.18); }
+
+/* Staggered entrance: header → body → footer, each rising a touch later. */
+.rst-enter > * { animation: rst-rise 0.42s var(--rst-ease) both; }
+.rst-enter > *:nth-child(2) { animation-delay: 0.05s; }
+.rst-enter > *:nth-child(3) { animation-delay: 0.10s; }
+.rst-enter > *:nth-child(4) { animation-delay: 0.15s; }
+.rst-enter > *:nth-child(5) { animation-delay: 0.20s; }
+.rst-enter > *:nth-child(n+6) { animation-delay: 0.24s; }
+
+@keyframes rst-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes rst-modal-in { from { opacity: 0; transform: translate(-50%, -47%) scale(0.965); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+@keyframes rst-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rst-sheen-sweep { from { transform: translateX(-120%) skewX(-18deg); } to { transform: translateX(260%) skewX(-18deg); } }
+@keyframes rst-shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
+@keyframes rst-pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(230, 184, 102, 0.45); } 100% { box-shadow: 0 0 0 10px rgba(230, 184, 102, 0); } }
+
+.rst-modal-pop { animation: rst-modal-in 0.34s var(--rst-ease) both; }
+.animate-rst-fade { animation: rst-fade 0.22s ease-out both; }
+.animate-rst-rise { animation: rst-rise 0.4s var(--rst-ease) both; }
+
+/* -------------------------------------------------------------- buttons */
+.rst-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 40px; padding: 8px 18px;
+  border-radius: 11px; border: 1px solid var(--rst-line-strong);
+  background: linear-gradient(180deg, #2b2620, #211d18);
+  color: var(--rst-ivory);
+  font-size: 13px; font-weight: 700; letter-spacing: 0.03em;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.55), inset 0 1px 0 var(--rst-sheen);
+  transition: transform 0.14s var(--rst-ease), filter 0.14s, background 0.14s, border-color 0.14s;
+  cursor: pointer; user-select: none;
+}
+.rst-btn:hover:not(:disabled) { border-color: var(--rst-brass-line); filter: brightness(1.12); }
+.rst-btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 0 0 rgba(0, 0, 0, 0.55), inset 0 1px 0 var(--rst-sheen); }
+.rst-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.rst-btn-primary {
+  position: relative; overflow: hidden;
+  border-color: rgba(246, 226, 179, 0.5);
+  background: linear-gradient(180deg, #f0cc86, #d49f45 55%, #b8863a);
+  color: #241a0a;
+  text-shadow: 0 1px 0 rgba(255, 244, 214, 0.35);
+  box-shadow: 0 2px 0 #6e4d18, 0 8px 20px rgba(212, 159, 69, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.rst-btn-primary::after { /* one slow sheen sweep on hover */
+  content: ''; position: absolute; inset: 0 auto 0 0; width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.38), transparent);
+  transform: translateX(-120%) skewX(-18deg); pointer-events: none;
+}
+.rst-btn-primary:hover:not(:disabled)::after { animation: rst-sheen-sweep 0.9s ease-out; }
+.rst-btn-ghost { background: transparent; box-shadow: none; border-color: transparent; color: var(--rst-ivory-soft); }
+.rst-btn-ghost:hover:not(:disabled) { background: rgba(243, 236, 221, 0.06); border-color: var(--rst-line); }
+.rst-btn-danger { border-color: rgba(240, 119, 107, 0.4); color: #ffd7d2; background: linear-gradient(180deg, #3a1f1c, #2a1715); }
+
+/* ---------------------------------------------------------- chips & stats */
+.rst-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: 999px;
+  border: 1px solid var(--rst-line-strong);
+  background: rgba(243, 236, 221, 0.05);
+  color: var(--rst-ivory-soft);
+  font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+}
+.rst-chip-brass { border-color: var(--rst-brass-line); background: rgba(230, 184, 102, 0.10); color: var(--rst-brass-300); }
+.rst-chip-money { border-color: rgba(127, 214, 166, 0.35); background: rgba(127, 214, 166, 0.09); color: var(--rst-money); }
+.rst-chip-live { border-color: rgba(95, 208, 192, 0.35); background: rgba(95, 208, 192, 0.09); color: var(--rst-live); }
+.rst-chip-danger { border-color: rgba(240, 119, 107, 0.4); background: rgba(240, 119, 107, 0.10); color: var(--rst-danger); }
+.rst-chip-story { border-color: rgba(196, 161, 240, 0.4); background: rgba(196, 161, 240, 0.10); color: var(--rst-story); }
+
+/* Option cards inside decision popups */
+.rst-option {
+  display: block; width: 100%; text-align: left;
+  padding: 14px 16px; border-radius: 12px;
+  border: 1px solid var(--rst-line-strong);
+  background: linear-gradient(180deg, rgba(243, 236, 221, 0.045), rgba(243, 236, 221, 0.02));
+  transition: transform 0.16s var(--rst-ease), border-color 0.16s, background 0.16s, box-shadow 0.16s;
+  cursor: pointer;
+}
+.rst-option:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--rst-brass-line); background: rgba(230, 184, 102, 0.07); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35); }
+.rst-option:active:not(:disabled) { transform: translateY(0); }
+.rst-option:disabled { opacity: 0.5; cursor: not-allowed; }
+.rst-option[aria-pressed='true'] { border-color: var(--rst-brass-400); background: rgba(230, 184, 102, 0.12); box-shadow: 0 0 0 1px var(--rst-brass-400) inset; }
+
+/* Loading shimmer for any skeleton block */
+.rst-shimmer { background: linear-gradient(90deg, rgba(243,236,221,0.04) 25%, rgba(243,236,221,0.10) 50%, rgba(243,236,221,0.04) 75%); background-size: 200% 100%; animation: rst-shimmer 1.6s linear infinite; }
+
+/* Notification pulse ring (used on badges that want attention once, not forever) */
+.rst-attention { animation: rst-pulse-ring 1.4s ease-out 3; }
+
+/* ----------------------------------------------------------------- toasts */
+.rst-toast {
+  position: relative;
+  border: 1px solid var(--rst-line-strong) !important;
+  border-left: 3px solid var(--rst-brass-400) !important;
+  border-radius: 12px !important;
+  background: linear-gradient(180deg, rgba(36, 31, 26, 0.97), rgba(24, 21, 18, 0.97)) !important;
+  color: var(--rst-ivory) !important;
+  box-shadow: var(--rst-shadow-card), inset 0 1px 0 var(--rst-sheen) !important;
+  backdrop-filter: blur(10px);
+}
+.rst-toast [data-title] { color: var(--rst-ivory); font-weight: 700; }
+.rst-toast [data-description] { color: var(--rst-stone) !important; }
+.rst-toast-success { border-left-color: var(--rst-money) !important; }
+.rst-toast-success [data-icon] { color: var(--rst-money); }
+.rst-toast-error { border-left-color: var(--rst-danger) !important; }
+.rst-toast-error [data-icon] { color: var(--rst-danger); }
+.rst-toast-warning { border-left-color: var(--rst-warn) !important; }
+.rst-toast-warning [data-icon] { color: var(--rst-warn); }
+.rst-toast-info [data-icon] { color: var(--rst-brass-300); }
+
+@media (prefers-reduced-motion: reduce) {
+  .rst-enter > *, .rst-modal-pop, .animate-rst-fade, .animate-rst-rise, .rst-shimmer, .rst-attention { animation: none !important; }
+  .rst-btn-primary:hover:not(:disabled)::after { animation: none; }
+  .rst-option, .rst-btn { transition: none; }
+}
