@@ -181,3 +181,12 @@
   .studio-play { --studio-dock-clearance: calc(96px + env(safe-area-inset-bottom, 0px)); }
   .studio-primary-action { min-height:42px; }
 }
+
+/* Touch: hover states stick after a tap on iOS/Android, so neutralise the lift/tint and rely on :active */
+@media (hover:none), (pointer:coarse) {
+  .studio-dock-button:hover { background:transparent; color:var(--rst-stone); transform:none; }
+  .studio-primary-action:hover { background:rgba(28,23,17,.86); transform:none; }
+  .studio-hud-title:hover { color:var(--rst-brass-200); }
+  .studio-splash-command:hover, .splash-command:hover { filter:none; }
+  .studio-dock-button:active { background:rgba(255,244,214,.12); color:var(--rst-brass-200); }
+}
