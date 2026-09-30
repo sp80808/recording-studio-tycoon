@@ -8,7 +8,6 @@ import { advanceChartWeek, debutChartRun, weeksDue } from '@/utils/chartRun';
 import { ChartRevealScene } from '@/components/ChartRevealScene';
 import { NotificationSystem } from '@/components/NotificationSystem';
 import { TrainingModal } from '@/components/modals/TrainingModal';
-import { GameModals } from '@/components/GameModals';
 import { SettingsModal } from '@/components/modals/SettingsModal';
 import { TutorialModal } from '@/components/TutorialModal';
 import { SplashScreen } from '@/components/SplashScreen';

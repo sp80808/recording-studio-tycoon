@@ -25,7 +25,7 @@ import './splash.css';
 
 interface SplashScreenProps {
   onStartGame: (era: Era, originId: ProducerBackgroundId) => void;
-  onLoadGame: () => boolean | void;
+  onLoadGame: () => boolean | void | Promise<boolean | void>;
   hasSaveGame?: boolean;
 }
 
@@ -75,14 +75,14 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
     } else music.pauseMusic();
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     wakeAudio();
     if (saveInfo.isCorrupt || !saveInfo.hasSave || !saveInfo.preview) {
       setErrorMessage(t('splash_cannot_continue'));
       return;
     }
     try {
-      const res = onLoadGame();
+      const res = await onLoadGame();
       if (res === false) {
         setErrorMessage(t('splash_load_failed'));
       }

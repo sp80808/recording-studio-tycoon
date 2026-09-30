@@ -8,7 +8,11 @@ type MinigameAccent = 'blue' | 'green' | 'red' | 'yellow' | 'cyan' | 'purple';
 
 interface MinigameChromeProps {
   title: string;
-  score: number;
+  subtitle?: string;
+  /** Omit for games without a running score; the score readout is hidden. */
+  score?: number;
+  /** Renders a close button in the header (games that run outside the dialog footer). */
+  onClose?: () => void;
   timeLeft?: number;
   timeUnit?: string;
   streak?: number;
@@ -34,7 +38,9 @@ const stripLeadingEmoji = (title: string) => title.replace(/^[\p{Extended_Pictog
 
 export function MinigameChrome({
   title,
+  subtitle,
   score,
+  onClose,
   timeLeft,
   timeUnit = 's',
   streak,
@@ -52,9 +58,11 @@ export function MinigameChrome({
           <span className="truncate">{stripLeadingEmoji(title)}</span>
         </h3>
         <div className="flex flex-1 items-center justify-center gap-2 text-sm font-semibold text-[var(--rst-ivory)]">
-          <span>
-            Score: <span className="tabular-nums">{score}</span>
-          </span>
+          {score !== undefined && (
+            <span>
+              Score: <span className="tabular-nums">{score}</span>
+            </span>
+          )}
           {streak !== undefined && streak >= 2 && (
             <span className="mg-combo-pulse inline-flex items-center gap-1 text-[var(--rst-brass-300)]" aria-label={`${streak} streak`}>
               <Flame size={14} aria-hidden="true" />x{streak}
@@ -73,7 +81,18 @@ export function MinigameChrome({
             {timeUnit}
           </div>
         )}
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close minigame"
+            className="ml-2 rounded px-2 py-0.5 text-sm font-bold text-[var(--rst-ivory)] hover:bg-white/10"
+          >
+            ✕
+          </button>
+        )}
       </div>
+      {subtitle && <p className="border-b border-[var(--rst-line)] px-4 py-1.5 text-left text-xs text-stone-400">{subtitle}</p>}
       <div className="w-full">{children}</div>
     </div>
   );

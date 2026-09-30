@@ -21,6 +21,7 @@
     "clean:appledouble": "python3 scripts/clean-appledouble.py",
     "lint": "eslint .",
     "test": "bash scripts/run-checks.sh",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit",
     "preview": "vite preview"
   },
   "dependencies": {

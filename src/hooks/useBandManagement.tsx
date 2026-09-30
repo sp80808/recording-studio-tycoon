@@ -1,7 +1,7 @@
 
 import { useCallback } from 'react';
 import { GameState } from '@/types/game';
-import { Band } from '@/types/bands'; // OriginalTrackProject and SessionMusician removed
+import { Band, OriginalTrackProject } from '@/types/bands';
 import { generateBandName } from '@/utils/bandUtils';
 import { toast } from '@/hooks/use-toast';
 import { canPlayShow, resolveShow, ShowPlan } from '@/simulation/liveShows';
@@ -51,6 +51,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
       bandName: bandName.trim(),
       genre: bandGenre,
       memberIds: memberIds,
+      isPlayerCreated: true,
       fame: 0,
       notoriety: 0,
       pastReleases: [],
@@ -225,14 +226,17 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
     }
 
     // Create an original track project
-    const originalTrack = {
+    const originalTrack: OriginalTrackProject = {
       id: `original_${Date.now()}`,
-      bandId: bandId,
-      trackTitle: `${band.bandName} - New Track`,
-      genre: band.genre,
-      startDate: gameState.currentDay,
-      estimatedDays: 7,
-      stage: 'writing' as const
+      title: `${band.bandName} - New Track`,
+      bandId,
+      sessionMusicianIds: [],
+      mode: 'band',
+      stages: [{ stageName: 'Writing', focusAreas: ['songwriting'], workUnitsBase: 7, workUnitsCompleted: 0, completed: false }],
+      currentStageIndex: 0,
+      accumulatedCPoints: 0,
+      accumulatedTPoints: 0,
+      workSessionCount: 0,
     };
 
     setGameState(prev => ({

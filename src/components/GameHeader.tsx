@@ -24,7 +24,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSetting
   const { isFullscreen, toggleFullscreen } = useFullscreen('root');
   const { t } = useTranslation();
   const player = gameState.playerData;
-  const signage = getStudioSignage(gameState.currentEra, gameState.milestones?.length ?? 0);
+  const signage = getStudioSignage(gameState.currentEra, Object.keys(gameState.unlockedAchievements ?? {}).length);
   return <>
     <header className={`studio-hud ${className}`} aria-label={t('studio_status_aria')}>
       <div className="studio-hud-stats">

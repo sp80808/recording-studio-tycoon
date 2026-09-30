@@ -35,7 +35,7 @@ interface MainGameContentProps {
   // focusAllocation: FocusAllocation; // REMOVED
   // setFocusAllocation: React.Dispatch<React.SetStateAction<FocusAllocation>>; // REMOVED
   startProject: (project: Project) => void;
-  performDailyWork: () => { isComplete: boolean; finalProjectData?: Project } | undefined;
+  performDailyWork: (options?: import('@/hooks/useStageWork').PerformDailyWorkOptions) => { isComplete: boolean; finalProjectData?: Project } | undefined;
   onProjectComplete?: (completedProject: Project) => void;
   onMinigameReward: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => void;
   spendPerkPoint: (attribute: keyof PlayerAttributes) => void;
