@@ -1,3 +1,4 @@
+import { canInspectGear } from '@/rpg/studioKnowHow';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   DndContext,
@@ -329,6 +330,23 @@ export const GearRackBoard: React.FC<GearRackBoardProps> = ({ gameState, setGame
             ))}
           </div>
         </section>
+
+        {canInspectGear(gameState.studioKnowHow) && (
+          <section aria-label="Gear inspection" className="text-[11px] text-stone-300">
+            <h4 className="font-bold text-cyan-300">Inspection</h4>
+            <ul className="space-y-0.5">
+              {gameState.ownedEquipment.map((e) => (
+                <li key={e.id}>
+                  {e.icon} {e.name}: condition {e.condition}%
+                  {e.bonuses.qualityBonus ? `, quality +${e.bonuses.qualityBonus}` : ''}
+                  {e.bonuses.speedBonus ? `, speed +${e.bonuses.speedBonus}` : ''}
+                  {e.bonuses.creativityBonus ? `, creativity +${e.bonuses.creativityBonus}` : ''}
+                  {e.bonuses.technicalBonus ? `, technical +${e.bonuses.technicalBonus}` : ''}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <DragOverlay dropAnimation={null}>
           {activeEquipment ? (

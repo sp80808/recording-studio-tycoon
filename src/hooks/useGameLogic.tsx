@@ -1,3 +1,4 @@
+import { meetsKnowHowGate, spendKnowHow, createInitialKnowHow } from '@/rpg/studioKnowHow';
 import { useArtistContracts } from '@/hooks/useArtistContracts';
 import { gameEvents } from '@/engine/gameEventBus';
 import { useState, useCallback, useMemo } from 'react'; // Added useMemo
@@ -177,6 +178,9 @@ export const useGameLogic = (
     if (!course || !staff || gameState.money < course.cost || staff.status !== 'Idle') {
       return;
     }
+    if (course.knowHow && !meetsKnowHowGate(gameState.studioKnowHow ?? createInitialKnowHow(), course.knowHow)) {
+      return;
+    }
 
     const updatedGameState = addNotification(
       gameState,
@@ -188,6 +192,9 @@ export const useGameLogic = (
     setGameState(prev => ({
       ...updatedGameState,
       money: prev.money - course.cost,
+      studioKnowHow: course.knowHow
+        ? (spendKnowHow(prev.studioKnowHow ?? createInitialKnowHow(), course.knowHow.cost) ?? prev.studioKnowHow)
+        : prev.studioKnowHow,
       hiredStaff: prev.hiredStaff.map(s => 
         s.id === staffId 
           ? { 

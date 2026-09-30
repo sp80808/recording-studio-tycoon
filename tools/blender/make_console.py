@@ -162,8 +162,8 @@ def build(tier):
     if tier == 1:
         box_g("tape", 5.54, 5.80, 4.05, 4.58, DESK_Z, DESK_Z + 0.09, mat("tape", 0x242D3D, 0.5), 0.02)
         for yy in (4.20, 4.42):
-            cyl(f"reel{yy}", G(5.67, yy, DESK_Z + 0.12), 0.09, 0.04, mat("reel", 0x718096, 0.4, metal=0.5), 12)
-            cyl(f"hub{yy}", G(5.67, yy, DESK_Z + 0.15), 0.035, 0.03, dark, 8)
+            # Reel bed only: the spinning reels are live Pixi sprites (WebGLCanvas.tsx) drawn on top.
+            cyl(f"reelbed{yy}", G(5.67, yy, DESK_Z + 0.10), 0.10, 0.02, dark, 12)
     else:
         units = cfg["racks"]
         h = 0.62 / units

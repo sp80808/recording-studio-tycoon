@@ -309,6 +309,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       'rhythm',
       'beatmaking',
       'vocal',
+      'vocal-comp',
       'layering'
     ]).has(autoTriggeredMinigame.type);
 
@@ -376,9 +377,6 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     if (onMinigameReward) {
       onMinigameReward(cappedCreativity, cappedTechnical, cappedXp, selectedMinigame, rawScore);
     }
-
-    const currentStageKey = `${project.id}-${project.currentStageIndex}`;
-    setCompletedMinigamesForStage(prev => new Set([...prev, currentStageKey]));
 
     setShowMinigame(false);
     clearAutoTriggeredMinigame?.();

@@ -1,5 +1,6 @@
 import { GameState, Project, StudioRoomType } from '@/types/game';
 import { StudioSynergy, SynergyBonuses } from '@/types/synergy';
+import { activeChainSlots } from '@/rpg/signalChain';
 import { STUDIO_SYNERGIES } from '@/data/synergies';
 
 /**
@@ -49,8 +50,15 @@ export function evaluateProjectSynergies(
       }
     }
 
+    // 1b. Chain-aware criteria (#86): with a chosen chain, the slots must be filled
+    // by the selected gear, not merely owned somewhere in storage.
+    const chainSlots = project.signalChain ? activeChainSlots(project, gameState) : null;
+    if (criteria.chainSlots && chainSlots) {
+      if (!criteria.chainSlots.every(slot => chainSlots.includes(slot))) return false;
+    }
+
     // 2. Equipment Category criteria (all required categories must be owned)
-    if (criteria.requiredEquipmentCategories && criteria.requiredEquipmentCategories.length > 0) {
+    if (criteria.requiredEquipmentCategories && criteria.requiredEquipmentCategories.length > 0 && !(criteria.chainSlots && chainSlots)) {
       const hasAllCategories = criteria.requiredEquipmentCategories.every(cat =>
         ownedCategories.has(cat)
       );

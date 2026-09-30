@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Application, Container } from 'pixi.js';
 import { PixiProjectCardsContainer } from '../pixi-ui/PixiProjectCardsContainer';
+import { claimPixiApplication } from '../lib/motion/pixiGuard';
 import { Project } from '../types/game';
 import { StaffMember } from '../types/game';
 
@@ -39,6 +40,8 @@ const PixiProjectCardsBridge: React.FC<PixiProjectCardsBridgeProps> = ({
   useEffect(() => {
     if (!canvasRef.current) return;
 
+    // Throws if the studio floor owns the GPU viewport (single-renderer invariant).
+    const releasePixiClaim = claimPixiApplication('project-cards-bridge');
     const app = new Application({
       width,
       height,
@@ -69,6 +72,7 @@ const PixiProjectCardsBridge: React.FC<PixiProjectCardsBridgeProps> = ({
     return () => {
       window.removeEventListener('resize', resizeHandler);
       app.destroy(true);
+      releasePixiClaim();
       appRef.current = null;
       containerRef.current = null;
     };
