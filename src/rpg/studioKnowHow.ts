@@ -37,7 +37,9 @@ export type KnowHowEvent =
   | { kind: 'session'; eventId: string; domain: KnowHowDomain; repeatKey: string; grade: string; service?: boolean }
   | { kind: 'discovery'; eventId: string; domain: KnowHowDomain; label: string }
   | { kind: 'training'; eventId: string; domain: KnowHowDomain; courseId: string }
-  | { kind: 'research'; eventId: string; modId: string };
+  | { kind: 'research'; eventId: string; modId: string }
+  /** Polishing a session before delivery (#87): bounded per project by the caller. */
+  | { kind: 'polish'; eventId: string; amount: number };
 
 export interface KnowHowAward {
   knowHow: number;
@@ -63,6 +65,11 @@ export const createInitialKnowHow = (): StudioKnowHow => ({
 /** Legacy saves (and corrupt blobs) become a valid empty state. */
 export const migrateKnowHow = (raw: unknown): StudioKnowHow => {
   const base = createInitialKnowHow();
+  // #87 briefly stored Know-How as a bare number; fold it into the single pool.
+  if (typeof raw === 'number' && Number.isFinite(raw) && raw > 0) {
+    const n = Math.floor(raw);
+    return { ...base, totalEarned: n, available: n };
+  }
   if (!raw || typeof raw !== 'object') return base;
   const r = raw as Partial<StudioKnowHow>;
   const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.floor(v) : 0);
@@ -122,7 +129,10 @@ export const awardKnowHow = (state: StudioKnowHow, event: KnowHowEvent): KnowHow
   let repeatCounts = state.repeatCounts;
   let discoveries = state.discoveries;
 
-  if (event.kind === 'session') {
+  if (event.kind === 'polish') {
+    const knowHow = Math.max(0, Math.min(3, Math.floor(event.amount)));
+    award = { knowHow, domain: 'production', domainXp: knowHow * 3, reason: 'Polishing the session taught you something.' };
+  } else if (event.kind === 'session') {
     const repeats = state.repeatCounts[event.repeatKey] ?? 0;
     award = sessionAward(event, repeats);
     repeatCounts = { ...state.repeatCounts, [event.repeatKey]: repeats + 1 };

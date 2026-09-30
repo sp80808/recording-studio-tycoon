@@ -7,6 +7,8 @@ export interface SynergyCriteria {
   roomTypes?: StudioRoomType[];
   /** Equipment categories required in studio inventory (all specified categories must be present). */
   requiredEquipmentCategories?: EquipmentCategory[];
+  /** When the project has a signal chain, these slots must be filled by the chosen gear (#86). Without a chain, the category check applies. */
+  chainSlots?: ('microphone' | 'preamp' | 'dynamics' | 'recorderInterface')[];
   /** Specific equipment IDs required in studio inventory. */
   requiredEquipmentIds?: string[];
   /** Staff roles where at least one of the assigned staff must have one of these roles. */

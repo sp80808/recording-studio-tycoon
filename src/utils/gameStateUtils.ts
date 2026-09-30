@@ -149,6 +149,12 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
 
   // Studio Know-How (#66): legacy saves start empty; corrupt blobs are repaired.
   processedState.studioKnowHow = migrateKnowHow(processedState.studioKnowHow);
+  if (!Array.isArray(processedState.chainTemplates)) {
+    processedState.chainTemplates = [];
+  }
+  if (!Array.isArray(processedState.discoveredBriefCombos)) {
+    processedState.discoveredBriefCombos = [];
+  }
 
   // Slot-based equipment placements (bead 8om). Legacy saves have no
   // placements at all — treat every owned item as globally available and

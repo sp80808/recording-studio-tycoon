@@ -18,7 +18,11 @@ import { Era } from '@/components/EraSelectionModal'; // Era type
 import '@/components/studio-play.css';
 import { useGameState } from '@/hooks/useGameState';
 import { installFlightCaseRewards } from '@/economy/rewardHookup';
+import { applySeasonTick } from '@/economy/seasonRewards';
+import { seasonReviewNote } from '@/rpg/studioSeasons';
 import { GameState, Project, ProjectReport, StaffMember } from '@/types/game'; // Import GameState, Project, ProjectReport, StaffMember
+import DeliveryChoiceDialog from '@/components/DeliveryChoiceDialog';
+import { applyDeliveryDecision, type UnresolvedIssue } from '@/rpg/sessionIssues';
 import { generateProjectReview } from '@/utils/projectReviewUtils'; // Import generateProjectReview
 import { getFocusEffectiveness, getMoodEffectiveness } from '@/utils/playerUtils';
 import { calculateStudioSkillBonus, getEquipmentBonuses, resolveSessionEquipment } from '@/utils/gameUtils';
@@ -105,6 +109,7 @@ const MusicStudioTycoon = () => {
   const desktopStripEnabled = desktopStripFlag && isTauriShell();
   const effectiveCompactStudioMode = compactStudioMode && desktopStripEnabled;
   const [activeProjectReport, setActiveProjectReport] = useState<ProjectReport | null>(null);
+  const [pendingDelivery, setPendingDelivery] = useState<{ report: ProjectReport; issues: UnresolvedIssue[]; projectId: string } | null>(null);
   const [offlineSummary, setOfflineSummary] = useState<SimulationSummary | null>(null);
   const simulationLastTickRef = useRef(Date.now());
   
@@ -289,9 +294,15 @@ const MusicStudioTycoon = () => {
       }
     );
     
-    setActiveProjectReport(report);
     setCompactStudioMode(false); // Reviews are full-studio moments; expand before presenting one.
-    setShowReviewModal(true); // This will trigger the new ProjectReviewModal
+    const openIssues = completedProjectData.unresolvedIssues ?? [];
+    if (openIssues.length > 0) {
+      // #87: the player chooses Deliver or Polish before the review is shown.
+      setPendingDelivery({ report, issues: openIssues, projectId: completedProjectData.id });
+    } else {
+      setActiveProjectReport(report);
+      setShowReviewModal(true); // This will trigger the new ProjectReviewModal
+    }
 
     if (settings.sfxEnabled) {
       audioSystem.playUISound('event'); // Sound for review screen appearing
@@ -365,6 +376,14 @@ const MusicStudioTycoon = () => {
     latest.forEach(m => gameEvents.emit('chart:placement', m));
   }, [gameState.currentDay]); // eslint-disable-line react-hooks/exhaustive-deps
 
+
+  // Studio Seasons (#63): the season clock resolves once per season; legacy saves get state lazily.
+  useEffect(() => {
+    setGameState(prev => {
+      const { state, resolutions } = applySeasonTick(prev);
+      return resolutions.length || !prev.studioSeasons ? state : prev;
+    });
+  }, [gameState.currentDay]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Advance-day path uses the same review/settlement flow as manual work:
   // if the auto work session finished the project, show the real report modal.
@@ -461,6 +480,7 @@ const MusicStudioTycoon = () => {
       project?.awaitingReview &&
       !offlineSummary &&
       !activeProjectReport &&
+      !pendingDelivery &&
       !showReviewModal
     ) {
       handleShowProjectReview(project);
@@ -470,6 +490,7 @@ const MusicStudioTycoon = () => {
     gameState.activeProject,
     offlineSummary,
     activeProjectReport,
+    pendingDelivery,
     showReviewModal,
     handleShowProjectReview
   ]);
@@ -659,12 +680,33 @@ const MusicStudioTycoon = () => {
         setShowReviewModal={setShowReviewModal}
         lastReview={lastReview} // This 'lastReview' state might be deprecated or used differently by GameModals
       /> */}
+      {pendingDelivery && (
+        <DeliveryChoiceDialog
+          issues={pendingDelivery.issues}
+          payout={pendingDelivery.report.moneyGained}
+          onChoose={(decision) => {
+            const adjusted = applyDeliveryDecision(pendingDelivery.report, pendingDelivery.issues, decision, pendingDelivery.projectId);
+            setPendingDelivery(null);
+            setActiveProjectReport(adjusted);
+            setShowReviewModal(true);
+          }}
+        />
+      )}
       {/* New Project Review Modal */}
       {activeProjectReport && (
         <ProjectReviewModal
           isOpen={showReviewModal}
           onClose={handleFinalizeProjectCompletion} // Finalizes completion when modal is closed
           report={activeProjectReport}
+          seasonNote={(() => {
+            const p = [gameState.activeProject, ...(gameState.activeProjects ?? [])].find(x => x?.id === activeProjectReport.projectId);
+            const rel = p?.clientId ? gameState.clientRelationships?.[p.clientId] : undefined;
+            return seasonReviewNote(gameState, {
+              quality: activeProjectReport.overallQualityScore,
+              isRepeat: (rel?.sessionsCompleted ?? 0) > 0,
+              clientName: p?.clientName,
+            });
+          })()}
         />
       )}
 

@@ -76,6 +76,11 @@ assert(sessionTemplateBonus(allCaps, 'k', 0) === 1, 'template speeds a known cha
 assert(sessionTemplateBonus(allCaps, 'k', 1) === 0 && sessionTemplateBonus(allCaps, 'new', 0) === 0, 'template only first take of a known chain');
 assert(briefReasonLimit(allCaps) > 2 && canInspectGear(allCaps) && grantsDelegation(allCaps), 'other capabilities active');
 
+// Polish (#87) feeds the same pool, bounded and deduped; legacy numeric saves fold in.
+const pol = awardKnowHow(createInitialKnowHow(), { kind: 'polish', eventId: 'polish:p1', amount: 99 });
+assert(pol.award!.knowHow === 3 && awardKnowHow(pol.state, { kind: 'polish', eventId: 'polish:p1', amount: 2 }).award === null, 'polish bounded and deduped');
+assert(migrateKnowHow(4).available === 4 && migrateKnowHow(4).totalEarned === 4, 'legacy numeric know-how folds into the pool');
+
 // Migration.
 assert(migrateKnowHow(undefined).available === 0, 'legacy save -> empty');
 assert(migrateKnowHow({ available: -5, totalEarned: 'x', domains: { mixing: 7 } }).domains.mixing === 7, 'partial blob repaired');

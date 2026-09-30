@@ -1,3 +1,4 @@
+import { applyKnowHowEvents } from '../rpg/studioKnowHow';
 import { GameState, Project, ProjectReport, StaffMember } from '../types/game';
 import { generateProjectReview } from '../utils/projectReviewUtils';
 import { grantSkillXp } from '../utils/skillUtils';
@@ -18,6 +19,7 @@ import {
 import { getGenreMarketMultiplier } from '../utils/eraProgression';
 import { getSettlementBonuses } from '../utils/settlementBonuses';
 import { getOriginEffects } from '../narrative/originPerks';
+import { growFamiliarity } from '@/rpg/signalChain';
 import {
   findProjectForReport,
   resolveDeliveryClient,
@@ -296,6 +298,11 @@ export function applyReportToState(state: GameState, report: ProjectReport): Gam
 
     // Release any crew still tied to this project.
     const projectId = report.projectId;
+    const chain = [state.activeProject, ...(state.activeProjects ?? [])].find(p => p?.id === projectId)?.signalChain;
+    const crewIds = new Set(hiredStaff.filter(s => s.assignedProjectId === projectId).map(s => s.id));
+    if (report.assignedPerson.type === 'staff') crewIds.add(report.assignedPerson.id);
+    // Gear familiarity grows from actual use (#86, capped at 10 sessions per item).
+    if (chain) hiredStaff = growFamiliarity(hiredStaff, chain, crewIds);
     const releasedStaff = hiredStaff.map(s =>
         s.assignedProjectId === projectId
             ? { ...s, status: 'Idle' as const, assignedProjectId: null }
@@ -347,6 +354,10 @@ export function applyReportToState(state: GameState, report: ProjectReport): Gam
         playerData,
         hiredStaff: releasedStaff,
         clientRelationships,
+        // Polishing feeds the same Know-How pool as everything else (#66).
+        studioKnowHow: applyKnowHowEvents(state, report.knowHowGained
+            ? [{ kind: 'polish', eventId: `polish:${report.projectId}`, amount: report.knowHowGained }]
+            : []).game.studioKnowHow,
         financials: {
             ...state.financials,
             income,

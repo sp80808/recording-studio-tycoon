@@ -9,6 +9,7 @@ import { ProgressiveProjectInterface } from './ProgressiveProjectInterface';
 import { CareerHub } from './CareerHub';
 import { KnowHowPanel } from './KnowHowPanel';
 import { createInitialKnowHow, unlockCapability } from '@/rpg/studioKnowHow';
+import { chooseFocus } from '@/rpg/studioSeasons';
 import { AttributesModal } from './modals/AttributesModal';
 import { RightPanel } from './RightPanel';
 import { StudioRoom } from './StudioRoom';
@@ -472,6 +473,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                 onStaff={() => handleOpenDashboardTab('staff')}
                 onOpenStorylineBranch={onOpenStorylineBranch}
                 onOpenStoryEvent={onOpenStoryEvent}
+                onChooseSeasonFocus={focus => setGameState(prev => chooseFocus(prev, focus))}
               />
               <KnowHowPanel
                 knowHow={gameState.studioKnowHow}
