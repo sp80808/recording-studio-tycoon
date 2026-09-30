@@ -348,6 +348,8 @@ export interface GameState {
   };
   /** Player songs currently on the weekly chart run (see utils/chartRun). */
   chartRun?: import('../utils/chartRun').ChartRunEntry[];
+  /** Studio Seasons (#63): season clock, focus, delivery ledger and yearbook. Absent on legacy saves. */
+  studioSeasons?: import('@/rpg/studioSeasons').StudioSeasonState;
   researchedMods: string[]; // Array of researched mod IDs
   clients?: Client[];
   recordLabels?: RecordLabel[];

@@ -171,9 +171,11 @@ interface ProjectReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   report: ProjectReport | null;
+  /** Studio Seasons link: what this delivery adds to the chosen focus (#63). */
+  seasonNote?: string | null;
 }
 
-export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, onClose, report }) => {
+export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, onClose, report, seasonNote }) => {
   const [currentSkillIndex, setCurrentSkillIndex] = useState(-1);
   const [showOverallQuality, setShowOverallQuality] = useState(false);
   const [showRewards, setShowRewards] = useState(false);
@@ -399,6 +401,12 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
                     </div>
                   )}
                 </div>
+
+                {seasonNote && (
+                  <p className="w-full rounded-md border border-amber-500/30 bg-stone-900/70 px-3 py-2 text-center text-xs text-amber-200" data-testid="season-review-note">
+                    {seasonNote}
+                  </p>
+                )}
 
                 {/* Rewards */}
                 {showRewards && (
