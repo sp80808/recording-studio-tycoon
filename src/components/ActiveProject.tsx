@@ -310,6 +310,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       'beatmaking',
       'vocal',
       'vocal-comp',
+      'album-sequence',
       'layering'
     ]).has(autoTriggeredMinigame.type);
 

@@ -19,6 +19,7 @@ import { BeatPadGame } from './BeatPadGame';
 import { TapeJogGame } from './TapeJogGame';
 import { ConsoleRideGame } from './ConsoleRideGame';
 import { VocalCompGame } from './VocalCompGame';
+import { AlbumSequenceGame } from './AlbumSequenceGame';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { toast } from '@/hooks/use-toast';
 import { useCutsceneQueue } from '@/hooks/useCutsceneQueue';
@@ -44,7 +45,8 @@ export type MinigameType =
   | 'beat-pad'
   | 'tape-jog'
   | 'console-ride' // Added controller-first pad minigames
-  | 'vocal-comp';
+  | 'vocal-comp'
+  | 'album-sequence';
   // Add new minigame types here and ensure they have corresponding entries in minigameTutorials
   // | 'songwriting' // Example: if SongwritingGame becomes a distinct minigame managed here
   // | 'tapeSplicing' // Example
@@ -167,6 +169,10 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         creativityBonus = Math.floor(score / 10);
         technicalBonus = Math.floor(score / 8);
         break;
+      case 'album-sequence':
+        creativityBonus = Math.floor(score / 9);
+        technicalBonus = Math.floor(score / 12);
+        break;
       case 'vocal-comp':
         creativityBonus = Math.floor(score / 8);
         technicalBonus = Math.floor(score / 10);
@@ -253,6 +259,8 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         return <TapeJogGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'console-ride':
         return <ConsoleRideGame {...commonGameProps} onComplete={standardOnComplete} />;
+      case 'album-sequence':
+        return <AlbumSequenceGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'vocal-comp':
         return <VocalCompGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'maintenance':
