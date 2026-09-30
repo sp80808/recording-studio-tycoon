@@ -1,0 +1,110 @@
+{
+  "frames": {
+    "gear/sample-monitor/idle/000": {
+      "frame": {
+        "x": 1,
+        "y": 1,
+        "w": 48,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 40
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "gear/sample-monitor/powered/000": {
+      "frame": {
+        "x": 50,
+        "y": 1,
+        "w": 48,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 40
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "gear/sample-monitor/powered/001": {
+      "frame": {
+        "x": 99,
+        "y": 1,
+        "w": 48,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 40
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    }
+  },
+  "animations": {
+    "idle": [
+      "gear/sample-monitor/idle/000"
+    ],
+    "powered": [
+      "gear/sample-monitor/powered/000",
+      "gear/sample-monitor/powered/001"
+    ]
+  },
+  "meta": {
+    "app": "rst-frame-packer",
+    "version": "1",
+    "image": "sample-monitor.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 256,
+      "h": 64
+    },
+    "scale": "1",
+    "tags": [
+      {
+        "name": "idle",
+        "from": 0,
+        "to": 0,
+        "direction": "forward"
+      },
+      {
+        "name": "powered",
+        "from": 1,
+        "to": 2,
+        "direction": "forward"
+      }
+    ]
+  }
+}

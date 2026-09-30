@@ -35,7 +35,7 @@ for check in tools-assets audio-system confetti-juice minigames-audio user-inter
 done
 
 echo "=== gamepad service & controller suites ==="
-for check in gamepad-service gamepad-glyph gamepad-navigation radial-wheel beat-pad-game tape-jog-game console-ride-game gamepad-suite; do
+for check in gamepad-service gamepad-glyph gamepad-navigation radial-wheel beat-pad-game tape-jog-game console-ride-game vocal-comp gamepad-suite; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
   node "/tmp/rst-$check.cjs"
 done
@@ -114,6 +114,12 @@ echo "=== i18n locales (en / en-GB / pl key parity) ==="
 ./node_modules/.bin/esbuild tests/i18n-locales.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-i18n-locales.cjs --alias:@=./src >/dev/null
 node /tmp/rst-i18n-locales.cjs
 
+echo "=== sprite factory & asset pipeline (#78, #79) ==="
+for check in sprite-factory asset-pipeline; do
+  ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
+  node "/tmp/rst-$check.cjs"
+done
+
 echo "=== game engine back-end & graphics tech suites ==="
 for check in game-event-bus engine-loop engine-settings graphics-postfx; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
@@ -169,7 +175,7 @@ for check in origin-perks career-start design-system; do
 done
 
 echo "=== era-authentic gigs, story contracts & economy floors ==="
-for check in project-era-starters project-brief session-issues signal-chain economy-income story-contracts achievements campaign-endings studio-hotkeys; do
+for check in project-era-starters project-brief session-issues signal-chain economy-income story-contracts achievements campaign-endings studio-hotkeys studio-know-how studio-premises; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
   node "/tmp/rst-$check.cjs"
 done
@@ -177,7 +183,6 @@ done
 echo "=== ambient earning (#105) ==="
 ./node_modules/.bin/esbuild tests/ambient-income.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-ambient-income.cjs --alias:@=./src >/dev/null
 node /tmp/rst-ambient-income.cjs
-
 
 echo "=== studio seasons (#63) ==="
 ./node_modules/.bin/esbuild tests/studio-seasons.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-seasons.cjs --alias:@=./src >/dev/null

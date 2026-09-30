@@ -130,6 +130,7 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
           title: projectReport.projectTitle,
           clientKey: completedProject?.clientId,
           clientName: completedProject?.clientName,
+          genre: completedProject?.genre,
           quality: projectReport.overallQualityScore,
           revenue: projectReport.moneyGained,
           sessionsBefore: prevRelationship?.sessionsCompleted ?? 0,

@@ -18,8 +18,6 @@ export default defineConfig(({ mode }) => ({
   define: {
     global: 'window',
   },
-  // Production builds drop debug chatter (139 console.log calls, several in per-take paths)
-  esbuild: mode === 'production' ? { pure: ['console.log', 'console.debug'] } : undefined,
   build: {
     rollupOptions: {
       output: {

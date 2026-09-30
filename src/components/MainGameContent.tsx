@@ -7,6 +7,8 @@ import { GameState, StaffMember, PlayerAttributes, Project } from '@/types/game'
 import { ProjectList } from './ProjectList';
 import { ProgressiveProjectInterface } from './ProgressiveProjectInterface';
 import { CareerHub } from './CareerHub';
+import { KnowHowPanel } from './KnowHowPanel';
+import { createInitialKnowHow, unlockCapability } from '@/rpg/studioKnowHow';
 import { chooseFocus } from '@/rpg/studioSeasons';
 import { AttributesModal } from './modals/AttributesModal';
 import { RightPanel } from './RightPanel';
@@ -472,6 +474,13 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                 onOpenStorylineBranch={onOpenStorylineBranch}
                 onOpenStoryEvent={onOpenStoryEvent}
                 onChooseSeasonFocus={focus => setGameState(prev => chooseFocus(prev, focus))}
+              />
+              <KnowHowPanel
+                knowHow={gameState.studioKnowHow}
+                onUnlock={id => setGameState(prev => {
+                  const next = unlockCapability(prev.studioKnowHow ?? createInitialKnowHow(), id);
+                  return next ? { ...prev, studioKnowHow: next } : prev;
+                })}
               />
               <div className="grid gap-2.5 p-1 pt-3 sm:grid-cols-2">
                 <button className="rst-btn" onClick={() => handleOpenDashboardTab('skills')}>

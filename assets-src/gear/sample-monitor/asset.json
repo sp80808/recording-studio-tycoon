@@ -1,0 +1,22 @@
+{
+  "id": "sample-monitor",
+  "kind": "gear",
+  "sourceType": "blender_render",
+  "author": "RST in-house",
+  "license": "In-house (CC0)",
+  "toolVersion": "Blender-render intake format (frames named <tag>_<nnn>.png); sample drawn by scripts/assets/make-samples.ts",
+  "paletteId": "rst-sample-monitor",
+  "palette": [
+    "#111827",
+    "#1f2937",
+    "#0f766e",
+    "#14b8a6",
+    "#3a3f45",
+    "#2f353c"
+  ],
+  "createdAt": "2026-09-30T00:00:00.000Z",
+  "pipelineSteps": [
+    "draw-in-house",
+    "export-png-sequence"
+  ]
+}
