@@ -143,6 +143,9 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
     processedState.discoveredSynergies = [];
   }
 
+  if (!Array.isArray(processedState.chainTemplates)) {
+    processedState.chainTemplates = [];
+  }
   if (!Array.isArray(processedState.discoveredBriefCombos)) {
     processedState.discoveredBriefCombos = [];
   }

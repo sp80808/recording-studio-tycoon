@@ -1,5 +1,6 @@
 import { applySessionEvent, phaseForStage, rollPhaseEvent, type SessionEvent } from '@/rpg/sessionIssues';
-import { evaluateProjectBriefFit, BRIEF_FIT_MULTIPLIER, recordBriefDiscoveries } from '@/rpg/projectBrief';
+import { chainMultiplier, evaluateChain, validateChain } from '@/rpg/signalChain';
+import { getProjectBrief, evaluateProjectBriefFit, BRIEF_FIT_MULTIPLIER, recordBriefDiscoveries } from '@/rpg/projectBrief';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { GameState, FocusAllocation, Project } from '@/types/game';
 import { TakeGrade, evaluateTakeAccuracy, calculateTakeEnergyCost } from '@/rpg/takeEvaluation';
@@ -355,7 +356,11 @@ export const useStageWork = ({
 
     // 🎛️ Creative brief fit (#48): small bounded modifier + named discoveries
     const briefFit = evaluateProjectBriefFit(project, gameState);
-    const briefMultiplier = BRIEF_FIT_MULTIPLIER[briefFit.grade];
+    const chainOk = project.signalChain && validateChain(project.signalChain, gameState, project.id).broken.length === 0;
+    const chainFactor = chainOk
+      ? chainMultiplier(evaluateChain(project.signalChain!, gameState, assignedStaff, getProjectBrief(project)))
+      : 1;
+    const briefMultiplier = BRIEF_FIT_MULTIPLIER[briefFit.grade] * chainFactor;
     const briefDiscoveries = recordBriefDiscoveries(gameState.discoveredBriefCombos, briefFit);
 
     // ⚡ Streak + 🔥 Overdrive + ✨ Synergy + 🔧 Chore multipliers applied to the final gains

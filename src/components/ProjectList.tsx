@@ -11,6 +11,8 @@ import {
   MotionButton,
   MotionNumber,
 } from '@/components/motion/primitives';
+import ChainComposer from '@/components/ChainComposer';
+import { saveTemplate, validateChain, type SignalChain } from '@/rpg/signalChain';
 import BriefPanel from '@/components/BriefPanel';
 import { getApproach, getProjectBrief, type ProductionApproach } from '@/rpg/projectBrief';
 import { gameAudio } from '@/utils/audioSystem';
@@ -116,6 +118,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [decliningId, setDecliningId] = useState<string | null>(null);
   const [approaches, setApproaches] = useState<Record<string, ProductionApproach['id'] | undefined>>({});
+  const [chains, setChains] = useState<Record<string, SignalChain | undefined>>({});
   const [stakes, setStakes] = useState<Record<string, ContractStake>>({});
   const cooldownLeft = gigRefreshCooldownRemaining(gameState);
   const refreshReady = cooldownLeft === 0;
@@ -153,9 +156,12 @@ export const ProjectList: React.FC<ProjectListProps> = ({
     // Tactile action feedback communicated within short beat (~180ms)
     window.setTimeout(() => {
       const approach = getApproach(approaches[project.id]);
+      const chain = chains[project.id];
+      const chainOk = chain && validateChain(chain, gameState, project.id).broken.length === 0;
       startProject({
         ...project,
         stake,
+        ...(chainOk ? { signalChain: chain } : {}),
         brief: getProjectBrief(project),
         ...(approach ? { approachId: approach.id, focusAllocation: approach.focus } : {}),
       });
@@ -358,6 +364,18 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                     setApproaches((prev) => ({ ...prev, [project.id]: prev[project.id] === id ? undefined : id }));
                   }}
                 />
+
+                {['vocal-production', 'tracking'].includes(getProjectBrief(project).serviceType) && (
+                  <ChainComposer
+                    project={project}
+                    state={gameState}
+                    chain={chains[project.id]}
+                    onChange={(c) => setChains((prev) => ({ ...prev, [project.id]: c }))}
+                    onSaveTemplate={(c, name) =>
+                      setGameState((prev) => ({ ...prev, chainTemplates: saveTemplate(prev.chainTemplates, c, name) }))
+                    }
+                  />
+                )}
 
                 <StakePicker
                   value={chosenStake}
