@@ -29,6 +29,7 @@ import { RadialActionWheel } from '@/components/ui/RadialActionWheel';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useSettings } from '@/contexts/settings-context-types';
 import { FlightCaseDepot } from './FlightCaseDepot';
+import { executeStudioChore, createInitialChoreState, type StudioChoreId } from '@/simulation/choreEngine';
 import './studio-play.css';
 
 interface MainGameContentProps {
@@ -302,6 +303,16 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
 
   const project = gameState.activeProject;
   const sessionLabel = project?.awaitingReview ? 'Collect release' : project ? 'Continue session' : 'Book your first session';
+  const completeFloorChore = (hotspot: string) => {
+    const choreId: StudioChoreId | null = hotspot === 'console' ? 'clean_tape_heads' : hotspot === 'liveRoom' ? 'tune_acoustics' : null;
+    if (!choreId) return false;
+    setGameState(prev => {
+      const result = executeStudioChore(prev.choreState || createInitialChoreState(), choreId, prev.playerData.dailyWorkCapacity);
+      if (!result) return prev;
+      return { ...prev, choreState: result.nextChoreState, playerData: { ...prev.playerData, xp: prev.playerData.xp + result.xpAwarded, dailyWorkCapacity: Math.max(0, prev.playerData.dailyWorkCapacity - result.energyBurned) } };
+    });
+    return true;
+  };
   const titles = { bookings: 'Bookings', session: 'At the console', studio: 'Studio management', career: 'Your producer story' };
   return (
     <GamepadNavProvider onTabChange={handleDockTabChange}>
@@ -309,7 +320,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         <div className="studio-play-world" data-reward-source="floor">
           <StudioRoom gameState={gameState} onAdvanceDay={advanceDay} onRefreshProjects={refreshProjects}
             onStartProject={bookProject} onAssignStaff={assignStaffToProject} onUnassignStaff={unassignStaffFromProject}
-            onOpenDashboardTab={handleOpenDashboardTab} onConsoleFocus={() => openPanel('session')}
+            onOpenDashboardTab={handleOpenDashboardTab} onConsoleFocus={() => openPanel('session')} onCompleteChore={completeFloorChore}
             onBookings={() => openPanel('bookings')} className="studio-play-room" />
         </div>
         <div className="studio-play-status">

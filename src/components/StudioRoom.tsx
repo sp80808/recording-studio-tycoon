@@ -38,6 +38,7 @@ interface StudioRoomProps {
   onUnassignStaff?: (staffId: string) => void;
   onOpenDashboardTab?: (tab: 'studio' | 'skills' | 'bands' | 'charts' | 'staff') => void;
   onConsoleFocus: () => void;
+  onCompleteChore?: (hotspot: StudioHotspotId) => boolean;
   onBookings?: () => void;
   className?: string;
   style?: React.CSSProperties;
@@ -57,6 +58,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
   onUnassignStaff,
   onOpenDashboardTab,
   onConsoleFocus,
+  onCompleteChore,
   onBookings,
   className = '',
   style,
@@ -137,6 +139,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
         void gameAudio.playTactileClick();
       }
     }
+    if ((id === 'console' || id === 'liveRoom') && onCompleteChore?.(id)) return;
     if (id === 'console') { onConsoleFocus(); return; }
     if (id === 'phone' && onBookings) { onBookings(); return; }
     setActiveInspector(id);
@@ -210,6 +213,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           onUnassignStaff={onUnassignStaff ?? (() => {})}
           onOpenDashboardTab={onOpenDashboardTab ?? (() => {})}
           onConsoleFocus={onConsoleFocus}
+          onCompleteChore={onCompleteChore}
         />
       )}
       {/* Top-left overlay stack: sits below the HUD (see .studio-room-overlay-tl) and flows
