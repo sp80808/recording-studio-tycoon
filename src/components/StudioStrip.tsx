@@ -1,4 +1,5 @@
 import React from 'react';
+import { IDLE_CHATTER, pickFlavour } from '@/data/flavour';
 import { GameState } from '@/types/game';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -55,7 +56,7 @@ export const StudioStrip: React.FC<StudioStripProps> = ({
                   ? assignedStaff.map(staff => staff.name).join(', ')
                   : activeProject
                     ? 'You are engineering'
-                    : 'Room idle'}
+                    : pickFlavour(IDLE_CHATTER, gameState.currentDay ?? 0)}
               </div>
             </div>
           </div>

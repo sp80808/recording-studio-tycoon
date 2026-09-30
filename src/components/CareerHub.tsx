@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { EMPTY_STATES } from '@/data/flavour';
 import { ArrowRight, BookOpen, Check, ChevronDown, Circle, Feather, Flag, Scroll, Sparkles, Swords, Target, Zap } from 'lucide-react';
 import { GameState } from '@/types/game';
 import { checkDailyChallenge } from '@/utils/dailyChallenges';
@@ -11,6 +12,8 @@ import { getProducerOrigin } from '@/narrative/characterOrigins';
 import { getRivalAccent, getRivalForNode, initialsOf } from '@/narrative/rivalCast';
 import type { ProducerBackgroundId } from '@/types/character';
 import { AchievementsPanel } from './AchievementsPanel';
+import { SeasonPanel } from './SeasonPanel';
+import type { StudioFocus } from '@/rpg/studioSeasons';
 import {
   getActiveCampaignNode,
   getPendingSubplotEvent,
@@ -30,6 +33,8 @@ interface CareerHubProps {
   onOpenStorylineBranch?: () => void;
   /** Reopen a subplot decision the player postponed. */
   onOpenStoryEvent?: () => void;
+  /** Choose the Studio Season focus (#63). */
+  onChooseSeasonFocus?: (focus: StudioFocus) => void;
 }
 
 const CHRONICLE_ICON: Record<ChronicleKind, typeof Scroll> = { campaign: Flag, subplot: Feather, ending: Scroll, event: Sparkles };
@@ -82,6 +87,7 @@ export function CareerHub({
   onStaff,
   onOpenStorylineBranch,
   onOpenStoryEvent,
+  onChooseSeasonFocus,
 }: CareerHubProps) {
   const [expanded, setExpanded] = useState(false);
   const [storyLogOpen, setStoryLogOpen] = useState(false);
@@ -157,6 +163,8 @@ export function CareerHub({
           </span>
         </span>
       </button>
+
+      <SeasonPanel gameState={gameState} onChooseFocus={onChooseSeasonFocus} />
 
       {/* Next action */}
       <div className="rst-surface flex flex-wrap items-center gap-3 p-4">
@@ -267,7 +275,7 @@ export function CareerHub({
               <div>
                 <p className="rst-kicker mb-1.5">Studio chronicle</p>
                 {chronicle.length === 0 ? (
-                  <p className="text-stone-400">Nothing written yet — the first chapter opens when a story beat finds you.</p>
+                  <p className="text-stone-400">{EMPTY_STATES.chronicle.title} {EMPTY_STATES.chronicle.hint}</p>
                 ) : (
                   <ol className="space-y-2.5">
                     {chronicle.slice(0, 12).map((entry, i) => {
