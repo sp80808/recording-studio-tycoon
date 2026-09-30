@@ -156,6 +156,10 @@ for check in project-era-starters economy-income story-contracts achievements ca
   node "/tmp/rst-$check.cjs"
 done
 
+echo "=== ambient earning (#105) ==="
+./node_modules/.bin/esbuild tests/ambient-income.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-ambient-income.cjs --alias:@=./src >/dev/null
+node /tmp/rst-ambient-income.cjs
+
 echo "=== balance harness invariants (10 days, seed 7) ==="
 ./node_modules/.bin/esbuild src/dev/balance/run.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-balance.cjs --alias:@=./src >/dev/null
 mkdir -p /tmp/rst-balance

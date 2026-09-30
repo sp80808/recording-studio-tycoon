@@ -16,6 +16,7 @@ import { Era } from '@/components/EraSelectionModal'; // Era type
 import '@/components/studio-play.css';
 import { useGameState } from '@/hooks/useGameState';
 import { installFlightCaseRewards } from '@/economy/rewardHookup';
+import { useAmbientIncome } from '@/hooks/useAmbientIncome';
 import { GameState, Project, ProjectReport, StaffMember } from '@/types/game'; // Import GameState, Project, ProjectReport, StaffMember
 import { generateProjectReview } from '@/utils/projectReviewUtils'; // Import generateProjectReview
 import { getFocusEffectiveness, getMoodEffectiveness } from '@/utils/playerUtils';
@@ -123,6 +124,7 @@ const MusicStudioTycoon = () => {
 
 
   useEffect(() => installFlightCaseRewards(setGameState), [setGameState]);
+  useAmbientIncome(gameInitialized && !showSplashScreen, setGameState);
 
   useEffect(() => {
     if (selectedStaffForTraining) {
