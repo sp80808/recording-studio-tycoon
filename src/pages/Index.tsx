@@ -3,6 +3,9 @@ import { GameLayout } from '@/components/GameLayout';
 import { GameHeader } from '@/components/GameHeader';
 import { MainGameContent } from '@/components/MainGameContent';
 import { RewardFlights } from '@/components/RewardFlights';
+import { gameEvents } from '@/engine/gameEventBus';
+import { advanceChartWeek, debutChartRun, weeksDue } from '@/utils/chartRun';
+import { ChartRevealScene } from '@/components/ChartRevealScene';
 import { NotificationSystem } from '@/components/NotificationSystem';
 import { TrainingModal } from '@/components/modals/TrainingModal';
 import { GameModals } from '@/components/GameModals';
@@ -297,6 +300,12 @@ const MusicStudioTycoon = () => {
     console.log('Index.tsx: Finalizing project completion for:', activeProjectReport.projectTitle);
     completeProject(activeProjectReport); // Call the updated completeProject with the report
 
+    const debut = debutChartRun(activeProjectReport.projectId, activeProjectReport.projectTitle, activeProjectReport.overallQualityScore, gameState.currentDay);
+    if (debut) {
+      setGameState(prev => ({ ...prev, chartRun: [...(prev.chartRun ?? []).filter(e => e.projectId !== debut.projectId), debut] }));
+      gameEvents.emit('chart:placement', { chartName: debut.chartName, title: debut.title, position: debut.position });
+    }
+
     // No need to update player XP here, as completeProject now handles all state updates based on the report.
     // Also, checkAndHandleLevelUp from usePlayerProgression should be called after gameState updates,
     // potentially within useGameLogic or triggered by a useEffect watching player XP/level.
@@ -308,7 +317,30 @@ const MusicStudioTycoon = () => {
     if (settings.sfxEnabled) {
       audioSystem.playUISound('success'); 
     }
-  }, [activeProjectReport, completeProject, settings.sfxEnabled, setGameState]);
+  }, [activeProjectReport, completeProject, settings.sfxEnabled, setGameState, gameState.currentDay]);
+
+  // Weekly chart run: songs on the chart rise and fall, each move gets its own reveal.
+  useEffect(() => {
+    const run = gameState.chartRun;
+    if (!run?.length) return;
+    const day = gameState.currentDay;
+    if (!run.some(e => weeksDue(e, day) > 0)) return;
+    const moves: Array<{ chartName: string; title: string; position: number; previousPosition: number }> = [];
+    const next = run.flatMap(entry => {
+      let current = entry;
+      for (let w = weeksDue(entry, day); w > 0; w--) {
+        const update = advanceChartWeek(current, day);
+        moves.push({ chartName: current.chartName, title: current.title, position: update.entry.position, previousPosition: update.previousPosition });
+        if (update.exited) return [];
+        current = update.entry;
+      }
+      return [current];
+    });
+    setGameState(prev => ({ ...prev, chartRun: next }));
+    // Only reveal the latest move per song so a long day-skip doesn't queue a flood.
+    const latest = new Map(moves.map(m => [m.title, m]));
+    latest.forEach(m => gameEvents.emit('chart:placement', m));
+  }, [gameState.currentDay]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   // Advance-day path uses the same review/settlement flow as manual work:
@@ -517,6 +549,7 @@ const MusicStudioTycoon = () => {
   return (
     <GameLayout eraId={gameState.currentEra}>
       {!effectiveCompactStudioMode && <RewardFlights gameState={gameState} />}
+      <ChartRevealScene playerLevel={gameState.playerData.level} />
       <div className="flex flex-col h-full">
         {!effectiveCompactStudioMode && (
           <GameHeader 
