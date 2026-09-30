@@ -82,8 +82,9 @@ export const ChartRevealScene: React.FC<{ playerLevel: number }> = ({ playerLeve
       setShown(null);
       land('top10');
     } else {
-      const tier = payoffTierForPosition(scene.position);
-      const steps = reducedMotion ? [scene.position] : buildRevealSteps(scene.position, `${scene.chartName}:${scene.title}:${scene.id}`);
+      const fell = scene.previous !== undefined && scene.position > scene.previous;
+      const tier = fell ? 'chart' : payoffTierForPosition(scene.position);
+      const steps = reducedMotion ? [scene.position] : buildRevealSteps(scene.position, `${scene.chartName}:${scene.title}:${scene.id}`, scene.previous ? Math.min(100, scene.previous + 15) : 100);
       let at = 0;
       steps.forEach((value, i) => {
         timers.push(window.setTimeout(() => {
@@ -109,7 +110,8 @@ export const ChartRevealScene: React.FC<{ playerLevel: number }> = ({ playerLeve
 
   if (!unlocked || !scene) return null;
 
-  const tier = scene.kind === 'chart' ? payoffTierForPosition(scene.position) : 'top10';
+  const fell = scene.kind === 'chart' && scene.previous !== undefined && scene.position > scene.previous;
+  const tier = scene.kind === 'chart' ? (fell ? 'chart' : payoffTierForPosition(scene.position)) : 'top10';
   const copy = TIER_COPY[tier];
   const label = scene.kind === 'chart'
     ? `${scene.title} charts at number ${scene.position} on ${scene.chartName}`
@@ -141,8 +143,8 @@ export const ChartRevealScene: React.FC<{ playerLevel: number }> = ({ playerLeve
         )}
         {landed ? (
           <div className="mt-3 text-base font-black tracking-wide">
-            {scene.kind === 'chart' ? copy.label : 'FLAWLESS RUN'}
-            {climbed > 0 ? ` · UP ${climbed}` : ''}
+            {scene.kind === 'chart' ? (fell ? 'SLIPPING' : copy.label) : 'FLAWLESS RUN'}
+            {climbed > 0 ? ` · UP ${climbed}` : fell && scene.kind === 'chart' ? ` · DOWN ${scene.position - (scene.previous ?? 0)}` : ''}
           </div>
         ) : (
           <div className="mt-3 text-sm font-bold opacity-70">WAITING ON THE NUMBERS…</div>
