@@ -1,3 +1,4 @@
+import { TAKE_FEEDBACK_EVENT, takeQuip, type TakeFeedbackDetail } from '@/utils/takeFeedback';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import WebGLCanvas, { StudioHotspotId, HotspotAnchors } from '@/components/WebGLCanvas';
 import { StudioInspector } from '@/components/StudioInspector';
@@ -101,6 +102,18 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     prevTierRef.current = roomTier;
   }, [roomTier]);
 
+  const [takeFx, setTakeFx] = useState<TakeFeedbackDetail | null>(null);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const onTake = (e: Event) => {
+      setTakeFx((e as CustomEvent<TakeFeedbackDetail>).detail);
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => setTakeFx(null), 1600);
+    };
+    window.addEventListener(TAKE_FEEDBACK_EVENT, onTake);
+    return () => { window.removeEventListener(TAKE_FEEDBACK_EVENT, onTake); if (timer) clearTimeout(timer); };
+  }, []);
+
   const sceneState = useMemo(() => {
     const project = gameState.activeProject;
     let progress = 0;
@@ -203,6 +216,13 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     >
       <WebGLCanvas state={sceneState} onHotspotSelect={handleHotspot} resetCameraKey={cameraReset} onHotspotAnchors={setAnchors} />
       {tierFlash && <div className="tier-flash-overlay" />}
+      {takeFx && (
+        <div key={takeFx.seq} className={`take-fx take-fx-${takeFx.grade.toLowerCase()}`} aria-hidden="true">
+          <div className="take-fx-vu">{Array.from({ length: 8 }, (_, i) => <i key={i} style={{ animationDelay: `${i * 18}ms` }} />)}</div>
+          <div className="take-fx-grade">{takeFx.grade === 'Gold' ? 'GOLD' : takeFx.grade === 'Silver' ? 'TIGHT' : 'SOLID'}</div>
+          <div className="take-fx-bubble">{takeQuip(takeFx.grade, takeFx.seq)}</div>
+        </div>
+      )}
       {activeInspector && (
         <StudioInspector
           hotspot={activeInspector}
