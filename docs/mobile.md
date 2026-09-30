@@ -9,3 +9,4 @@
 - **Native wrapper:** `capacitor.config.ts` is a scaffold only; dependencies are intentionally not installed.
 - **Open item:** `public/audio` is ~266MB (mostly `chart_clips`, loaded on demand). Re-encode to AAC/Opus (needs ffmpeg) to cut mobile data.
 - **Memory/startup:** background music is streamed via `<audio>`; it is no longer preloaded/decoded into AudioBuffers at boot. `vite.config.ts` splits pixi/tone/framer-motion into separate chunks.
+- **Audio format:** all music, chart clips and UI SFX are AAC-LC `.m4a` (96 kbps stereo music/clips, 64 kbps mono SFX; ~264MB → ~132MB). Re-run with `node scripts/compress-audio.mjs` (dev-only `ffmpeg-static`; run `node node_modules/ffmpeg-static/install.js` once since its download is disabled in `pnpm-workspace.yaml`). Short drum/click WAVs are kept uncompressed for zero-latency decode.

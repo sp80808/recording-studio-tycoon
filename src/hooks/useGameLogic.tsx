@@ -149,7 +149,7 @@ export const useGameLogic = (
     }
 
     // Play purchase sound
-    playSound('ui sfx/purchase-complete.mp3', 0.6);
+    playSound('ui sfx/purchase-complete.m4a', 0.6);
 
     // Apply equipment effects and update state
     let updatedGameState = applyEquipmentEffects(equipment, gameState);
