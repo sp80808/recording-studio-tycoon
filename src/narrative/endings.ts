@@ -90,6 +90,11 @@ const COMPROMISE_FLAGS = [
   'stalled_union',
   'licensed_the_hit',
   'charged_hero_full_rate',
+  'took_the_second_offer',
+  'stonewalled_journalist',
+  'skipped_union_meeting',
+  'skipped_team_dinner',
+  'took_the_spotlight',
 ] as const;
 
 /** Flags that earn a line in the closing paragraph, keyed to what the studio is remembered for. */
@@ -107,6 +112,12 @@ const REMEMBERED_FOR: Record<string, string> = {
   gave_hero_secret_session: 'kept a friend’s secret session secret',
   embraced_the_leak: 'gave an album away and sold out the tour',
   made_scene_comp: 'put a whole scene on one compilation',
+  held_the_line: 'turned down the same shortcut twice',
+  confessed_old_deal: 'owned up to its old deals before anyone asked',
+  credited_the_crew: 'put the whole crew in the credits',
+  vouched_for_scale: 'stood up for session players in public',
+  owned_signature_sound: 'built a signature sound on purpose',
+  guaranteed_clean_master: 'guaranteed its masters clean',
 };
 
 export const countCompromises = (state: GameState): number =>

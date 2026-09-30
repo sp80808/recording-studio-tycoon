@@ -6,6 +6,7 @@ import { ERA_DEFINITIONS } from '@/utils/eraProgression';
 import { PRODUCER_ORIGINS } from '@/narrative/characterOrigins';
 import { getRivalForNode, getRivalLines, toGameEraId } from '@/narrative/rivalCast';
 import { ERA_SUBPLOTS } from '@/narrative/subplotCatalog';
+import { CALLBACK_SUBPLOTS } from '@/narrative/callbackSubplots';
 
 export interface RunSeedContext {
   saveSeed: number | string;
@@ -763,7 +764,7 @@ const LEGACY_SUBPLOTS: readonly EmergentSubplot[] = [
 ] as const;
 
 /** Every emergent subplot: the original three plus the era-aware catalog. */
-export const EMERGENT_SUBPLOTS: readonly EmergentSubplot[] = [...LEGACY_SUBPLOTS, ...ERA_SUBPLOTS];
+export const EMERGENT_SUBPLOTS: readonly EmergentSubplot[] = [...LEGACY_SUBPLOTS, ...ERA_SUBPLOTS, ...CALLBACK_SUBPLOTS];
 
 /** Era the player is living in right now (progression era id). */
 const currentGameEra = (state: GameState): string => toGameEraId(state.currentEra || state.selectedEra);
