@@ -5,6 +5,7 @@ import { toSpriteVisualState } from '@/features/gearStudio/gearVisualState';
 import { getPropTexture, loadPropSprites } from '@/components/studio/propSprites';
 import { visualEraId } from '@/utils/eraProgression';
 import { useSettings } from '@/contexts/SettingsContext';
+import { resolveRendererOrder } from '@/lib/render/rendererChoice';
 import { claimPixiApplication, STUDIO_FLOOR_OWNER } from '@/lib/motion/pixiGuard';
 import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from '@/components/studio/isoMath';
 import {
@@ -1377,7 +1378,9 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           window.devicePixelRatio || 1,
           settingsRef.current?.resolutionScale
         );
+        const rendererOrder = await resolveRendererOrder();
         await app.init({
+          preference: rendererOrder[0],
           background: 0x0e0c0a,
           resizeTo: container,
           antialias: !(typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches),
@@ -1394,6 +1397,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         container.appendChild(app.canvas);
         app.canvas.id = 'pixi-studio-canvas';
         app.canvas.setAttribute('data-engine', 'pixi');
+        app.canvas.setAttribute('data-renderer', String(app.renderer.name ?? 'unknown'));
         app.canvas.style.touchAction = 'none';
         app.canvas.setAttribute('aria-label', 'Interactive studio floor. Tap objects to inspect. Pinch to zoom or use two fingers to pan.');
         await loadPropSprites();
