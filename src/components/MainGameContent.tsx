@@ -311,6 +311,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           <span className="studio-live-light" aria-hidden="true" />
           <span className="min-w-0 truncate">{project ? project.title : 'Your studio. Your next great record.'}</span>
           <span className="shrink-0 text-amber-200">{gameState.playerData.dailyWorkCapacity} sessions left</span>
+          {(gameState.gems ?? 0) > 0 && <span className="shrink-0 text-cyan-300" aria-label={`${gameState.gems} gems`}>💎 {gameState.gems}</span>}
         </div>
         <div className="studio-play-actions">
           <button className="studio-primary-action" onClick={() => openPanel(project ? 'session' : 'bookings')}>
@@ -333,7 +334,9 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
               {id === 'bookings' && gameState.availableProjects.length > 0 && (
                 <i className="studio-dock-badge"><MotionNumber value={gameState.availableProjects.length} /></i>
               )}
-              {id === 'career' && gameState.playerData.perkPoints > 0 && <i className="studio-dock-badge">{gameState.playerData.perkPoints}</i>}
+              {id === 'career' && gameState.playerData.perkPoints + (gameState.pendingCrates?.length ?? 0) > 0 && (
+                <i className="studio-dock-badge">{gameState.playerData.perkPoints + (gameState.pendingCrates?.length ?? 0)}</i>
+              )}
             </button>
           ))}
         </nav>

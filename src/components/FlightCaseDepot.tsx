@@ -63,6 +63,9 @@ export function FlightCaseDepot({ gameState, setGameState }: Props) {
       <section aria-label="Cases waiting to be opened">
         <h3 className="mb-2 text-sm uppercase tracking-wide text-stone-400">Waiting to open ({pending.length})</h3>
         {pending.length === 0 && <p className="text-sm text-stone-400">Earn cases from S-grade sessions, chore streaks and charts, or buy one below.</p>}
+        {pending.length > 1 && (
+          <p className="mb-2 text-xs text-stone-500">Cases open one at a time so every reveal gets its moment.</p>
+        )}
         <div className="grid gap-2">
           {pending.map((crate) => {
             const def = FLIGHT_CASES[resolveCrateTier(crate)];
