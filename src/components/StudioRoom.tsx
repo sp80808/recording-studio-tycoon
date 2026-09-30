@@ -117,6 +117,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     return {
       activity,
       hasActiveProject: !!project,
+      artistName: project ? (project.clientName ?? project.title) : undefined,
       staffOnFloor: Math.min(5, 1 + presentStaff),
       ownedEquipment: gameState.ownedEquipment.length,
       day: gameState.currentDay,

@@ -144,7 +144,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
 
   const widthStyle =
     width === 'session'
-      ? 'w-full max-w-none md:w-[min(100%,1100px)] lg:w-[min(100vw-24px,1280px)] xl:w-[min(96vw,1400px)]'
+      ? 'w-full max-w-none md:w-[min(100%,760px)] lg:w-[min(46vw,640px)] xl:w-[min(40vw,680px)]'
       : width === 'wide'
         ? 'w-full md:max-w-2xl'
         : 'w-full md:max-w-md lg:max-w-lg';
@@ -157,9 +157,13 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
           role="presentation"
           data-studio-drawer={width}
         >
-          {/* Soft scrim: the studio stays legible behind the panel and the Pixi canvas is never unmounted. */}
+          {/* Soft scrim: the studio stays legible behind the panel and the Pixi canvas is never unmounted. The session console docks to the side on desktop and leaves the room undimmed, so the artist keeps performing in view. */}
           <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity animate-rst-fade"
+            className={`absolute inset-0 transition-opacity animate-rst-fade ${
+              width === 'session'
+                ? 'bg-black/40 backdrop-blur-[2px] lg:bg-transparent lg:backdrop-blur-none'
+                : 'bg-black/40 backdrop-blur-[2px]'
+            }`}
             onClick={handleClose}
             aria-hidden="true"
           />
