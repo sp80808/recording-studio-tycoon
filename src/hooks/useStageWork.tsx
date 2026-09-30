@@ -1,3 +1,4 @@
+import { evaluateProjectBriefFit, BRIEF_FIT_MULTIPLIER, recordBriefDiscoveries } from '@/rpg/projectBrief';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { GameState, FocusAllocation, Project } from '@/types/game';
 import { TakeGrade, evaluateTakeAccuracy, calculateTakeEnergyCost } from '@/rpg/takeEvaluation';
@@ -351,12 +352,17 @@ export const useStageWork = ({
       activeSynergies
     );
 
+    // 🎛️ Creative brief fit (#48): small bounded modifier + named discoveries
+    const briefFit = evaluateProjectBriefFit(project, gameState);
+    const briefMultiplier = BRIEF_FIT_MULTIPLIER[briefFit.grade];
+    const briefDiscoveries = recordBriefDiscoveries(gameState.discoveredBriefCombos, briefFit);
+
     // ⚡ Streak + 🔥 Overdrive + ✨ Synergy + 🔧 Chore multipliers applied to the final gains
     const overdriveMultiplier = overdrive ? 1.75 : 1;
     const choreCreativityMultiplier = 1 + getActiveBuffMagnitude(gameState.choreState, 'creativity_bonus');
     const choreTechnicalMultiplier = 1 + getActiveBuffMagnitude(gameState.choreState, 'tech_bonus');
-    const creativityGain = Math.max(1, Math.round(workPoints.creativity * comboMultiplier * overdriveMultiplier * synergyBonuses.creativityMultiplier * flow.multiplier * choreCreativityMultiplier));
-    const technicalGain = Math.max(1, Math.round(workPoints.technical * comboMultiplier * overdriveMultiplier * synergyBonuses.technicalMultiplier * flow.multiplier * choreTechnicalMultiplier));
+    const creativityGain = Math.max(1, Math.round(workPoints.creativity * comboMultiplier * overdriveMultiplier * synergyBonuses.creativityMultiplier * briefMultiplier * flow.multiplier * choreCreativityMultiplier));
+    const technicalGain = Math.max(1, Math.round(workPoints.technical * comboMultiplier * overdriveMultiplier * synergyBonuses.technicalMultiplier * briefMultiplier * flow.multiplier * choreTechnicalMultiplier));
 
     // Create orb animations
     createOrb('creativity', creativityGain);
@@ -482,6 +488,7 @@ export const useStageWork = ({
         ...prev,
         activeProject: updatedProject,
         discoveredSynergies: updatedDiscovered,
+        discoveredBriefCombos: briefDiscoveries.list,
         choreState: nextChoreState,
         pendingCrates: nextPendingCrates,
         playerData: {

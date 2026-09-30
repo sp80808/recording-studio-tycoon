@@ -11,6 +11,8 @@ import {
   MotionButton,
   MotionNumber,
 } from '@/components/motion/primitives';
+import BriefPanel from '@/components/BriefPanel';
+import { getApproach, getProjectBrief, type ProductionApproach } from '@/rpg/projectBrief';
 import { gameAudio } from '@/utils/audioSystem';
 import { getOriginEffects, gigRefreshCostFor } from '@/narrative/originPerks';
 import { getRivalAccent, getRivalLines, initialsOf } from '@/narrative/rivalCast';
@@ -113,6 +115,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
 }) => {
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [decliningId, setDecliningId] = useState<string | null>(null);
+  const [approaches, setApproaches] = useState<Record<string, ProductionApproach['id'] | undefined>>({});
   const [stakes, setStakes] = useState<Record<string, ContractStake>>({});
   const cooldownLeft = gigRefreshCooldownRemaining(gameState);
   const refreshReady = cooldownLeft === 0;
@@ -149,7 +152,13 @@ export const ProjectList: React.FC<ProjectListProps> = ({
 
     // Tactile action feedback communicated within short beat (~180ms)
     window.setTimeout(() => {
-      startProject({ ...project, stake });
+      const approach = getApproach(approaches[project.id]);
+      startProject({
+        ...project,
+        stake,
+        brief: getProjectBrief(project),
+        ...(approach ? { approachId: approach.id, focusAllocation: approach.focus } : {}),
+      });
       setBookingId(null);
     }, 180);
   };
@@ -339,6 +348,16 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                     ? 'The rival is watching this one. A strong result counts toward the campaign objective.'
                     : getOpportunityNote(project)}
                 </div>
+
+                <BriefPanel
+                  project={project}
+                  state={gameState}
+                  approachId={approaches[project.id]}
+                  onApproach={(id) => {
+                    void gameAudio.playUISound('buttonClick');
+                    setApproaches((prev) => ({ ...prev, [project.id]: prev[project.id] === id ? undefined : id }));
+                  }}
+                />
 
                 <StakePicker
                   value={chosenStake}

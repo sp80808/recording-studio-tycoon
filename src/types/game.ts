@@ -138,6 +138,10 @@ export interface Project {
   flowStreak?: number;
   flowMultiplier?: number;
   focusAllocation: FocusAllocation; // ADDED: Stores current focus settings for the project
+  /** Creative brief (#48). Optional: old saves derive one on read via getProjectBrief. */
+  brief?: import('@/rpg/projectBrief').ProjectBrief;
+  /** Production approach chosen at booking (#48). */
+  approachId?: import('@/rpg/projectBrief').ProductionApproach['id'];
   progress?: number; // 0-100, completion percentage for animated cards
   cardState?: CardState; // Current visual state for PixiJS rendering
   textureAtlasKey?: string; // Reference to texture atlas for this project type
@@ -304,6 +308,7 @@ export interface GameState {
   studioLevel?: number; // Studio tier level (1-5), drives visible studio room and console upgrades
   studioTier?: number; // Alias for studioLevel
   studioRooms: StudioRoom[]; // Physical bookable studio suites; drives concurrent capacity
+  discoveredBriefCombos?: string[]; // Named brief/recipe combos discovered (#48)
   discoveredSynergies?: string[]; // IDs of discovered studio synergies (Kairosoft recipe codex)
   
   // Multi-project system
