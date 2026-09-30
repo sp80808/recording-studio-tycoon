@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Award, BookOpen, Check, Circle } from 'lucide-react';
 import type { GameState } from '@/types/game';
 import {
-  AWARD_CRITERIA,
   FOCUS_INFO,
   SEASON_LENGTH_DAYS,
   STUDIO_FOCUSES,
@@ -44,7 +43,7 @@ export function SeasonPanel({ gameState, onChooseFocus }: SeasonPanelProps) {
         </span>
       </header>
 
-      <div className="grid gap-2 sm:grid-cols-3" role="group" aria-label="Season focus">
+      <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5" role="group" aria-label="Season focus">
         {STUDIO_FOCUSES.map(f => (
           <button
             key={f}
@@ -87,10 +86,10 @@ export function SeasonPanel({ gameState, onChooseFocus }: SeasonPanelProps) {
           <div>
             <p className="rst-kicker mb-1">Annual awards, judged at the end of year {yearOfSeason(seasons.seasonNumber)}</p>
             <ul className="space-y-1.5">
-              {standing.map((a, i) => (
+              {standing.map(a => (
                 <li key={a.id}>
                   <p className="font-semibold">{a.name}: <span className="font-normal text-stone-300">{STATUS_LABEL[a.status]}</span></p>
-                  <p className="text-[11px] text-stone-400">{AWARD_CRITERIA[i].criteria}</p>
+                  <p className="text-[11px] text-stone-400">{a.criteria}</p>
                   <p className="text-[11px] text-stone-300">{a.why}</p>
                 </li>
               ))}
