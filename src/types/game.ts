@@ -334,6 +334,8 @@ export interface GameState {
     discoveredArtists: Artist[]; // Artists found in charts
     lastChartUpdate: number; // Day when charts were last updated
   };
+  /** Player songs currently on the weekly chart run (see utils/chartRun). */
+  chartRun?: import('../utils/chartRun').ChartRunEntry[];
   researchedMods: string[]; // Array of researched mod IDs
   clients?: Client[];
   recordLabels?: RecordLabel[];
