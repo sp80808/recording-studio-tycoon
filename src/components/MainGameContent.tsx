@@ -6,6 +6,7 @@ import { GameState, StaffMember, PlayerAttributes, Project } from '@/types/game'
 import { ProjectList } from './ProjectList';
 import { ProgressiveProjectInterface } from './ProgressiveProjectInterface';
 import { CareerHub } from './CareerHub';
+import { chooseFocus } from '@/rpg/studioSeasons';
 import { AttributesModal } from './modals/AttributesModal';
 import { RightPanel } from './RightPanel';
 import { StudioRoom } from './StudioRoom';
@@ -466,6 +467,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                 onStaff={() => handleOpenDashboardTab('staff')}
                 onOpenStorylineBranch={onOpenStorylineBranch}
                 onOpenStoryEvent={onOpenStoryEvent}
+                onChooseSeasonFocus={focus => setGameState(prev => chooseFocus(prev, focus))}
               />
               <div className="grid gap-2.5 p-1 pt-3 sm:grid-cols-2">
                 <button className="rst-btn" onClick={() => handleOpenDashboardTab('skills')}>

@@ -16,6 +16,8 @@ import { Era } from '@/components/EraSelectionModal'; // Era type
 import '@/components/studio-play.css';
 import { useGameState } from '@/hooks/useGameState';
 import { installFlightCaseRewards } from '@/economy/rewardHookup';
+import { applySeasonTick } from '@/economy/seasonRewards';
+import { seasonReviewNote } from '@/rpg/studioSeasons';
 import { GameState, Project, ProjectReport, StaffMember } from '@/types/game'; // Import GameState, Project, ProjectReport, StaffMember
 import { generateProjectReview } from '@/utils/projectReviewUtils'; // Import generateProjectReview
 import { getFocusEffectiveness, getMoodEffectiveness } from '@/utils/playerUtils';
@@ -346,6 +348,14 @@ const MusicStudioTycoon = () => {
   }, [gameState.currentDay]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
+  // Studio Seasons (#63): the season clock resolves once per season; legacy saves get state lazily.
+  useEffect(() => {
+    setGameState(prev => {
+      const { state, resolutions } = applySeasonTick(prev);
+      return resolutions.length || !prev.studioSeasons ? state : prev;
+    });
+  }, [gameState.currentDay]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Advance-day path uses the same review/settlement flow as manual work:
   // if the auto work session finished the project, show the real report modal.
   const handleAdvanceDayWithReview = useCallback(() => {
@@ -645,6 +655,15 @@ const MusicStudioTycoon = () => {
           isOpen={showReviewModal}
           onClose={handleFinalizeProjectCompletion} // Finalizes completion when modal is closed
           report={activeProjectReport}
+          seasonNote={(() => {
+            const p = [gameState.activeProject, ...(gameState.activeProjects ?? [])].find(x => x?.id === activeProjectReport.projectId);
+            const rel = p?.clientId ? gameState.clientRelationships?.[p.clientId] : undefined;
+            return seasonReviewNote(gameState, {
+              quality: activeProjectReport.overallQualityScore,
+              isRepeat: (rel?.sessionsCompleted ?? 0) > 0,
+              clientName: p?.clientName,
+            });
+          })()}
         />
       )}
 
