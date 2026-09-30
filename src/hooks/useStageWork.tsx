@@ -478,7 +478,7 @@ export const useStageWork = ({
         });
       }
 
-      const gemGain = stageCompleted && completedGrade?.grade === 'S' ? 2 : stageCompleted && completedGrade?.grade === 'A' ? 1 : 0;
+      const gemGain = stageCompleted && completedGrade?.grade === 'Gold' ? 2 : stageCompleted && completedGrade?.grade === 'Silver' ? 1 : 0;
 
       return withDailyTracking({
         ...prev,

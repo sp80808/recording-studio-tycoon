@@ -60,3 +60,21 @@ for (const tier of Object.keys(FLIGHT_CASES) as (keyof typeof FLIGHT_CASES)[]) {
   assert(Math.abs(total - 100) < 0.5, `${tier} odds sum ${total}`);
 }
 console.log('flight case economy ok');
+
+// reward hook: bus events grant, provider displays the same bundle
+import { gameEvents } from '../src/engine/gameEventBus';
+import { collectRewardItems } from '../src/utils/chartReveal';
+import { installFlightCaseRewards, gradeForMinigameScore } from '../src/economy/rewardHookup';
+let hookState = base;
+const uninstall = installFlightCaseRewards((fn) => { hookState = fn(hookState); });
+gameEvents.emit('chart:placement', { chartName: 'Hot 100', title: 'x', position: 1 });
+assert(hookState.gems! >= 25 && hookState.pendingCrates!.length >= 1);
+const shown = collectRewardItems({ source: 'chart', tier: 'top1', position: 1 });
+assert(shown.some((i) => i.label.includes('gems')) && shown.length >= 2);
+gameEvents.emit('minigame:success', { score: 950 });
+assert.strictEqual(gradeForMinigameScore(950), 'S');
+uninstall();
+const before = hookState.gems;
+gameEvents.emit('chart:placement', { chartName: 'Hot 100', title: 'x', position: 1 });
+assert.strictEqual(hookState.gems, before, 'uninstall stops grants');
+console.log('reward hook ok');
