@@ -304,8 +304,19 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   const project = gameState.activeProject;
   const sessionLabel = project?.awaitingReview ? 'Collect release' : project ? 'Continue session' : 'Book your first session';
   const completeFloorChore = (hotspot: string) => {
-    const choreId: StudioChoreId | null = hotspot === 'console' ? 'clean_tape_heads' : hotspot === 'liveRoom' ? 'tune_acoustics' : null;
+    const choreState = gameState.choreState || createInitialChoreState();
+    const choreId: StudioChoreId | null = hotspot === 'console'
+      ? (choreState.chores.clean_tape_heads.completed ? 'calibrate_outboard' : 'clean_tape_heads')
+      : hotspot === 'liveRoom'
+        ? 'tune_acoustics'
+        : null;
     if (!choreId) return false;
+
+    const chore = choreState.chores[choreId];
+    // Do not swallow the hotspot click when the duty is already done or the
+    // player cannot afford its energy cost; the inspector remains dismissible.
+    if (!chore || chore.completed || gameState.playerData.dailyWorkCapacity < chore.energyCost) return false;
+
     setGameState(prev => {
       const result = executeStudioChore(prev.choreState || createInitialChoreState(), choreId, prev.playerData.dailyWorkCapacity);
       if (!result) return prev;
