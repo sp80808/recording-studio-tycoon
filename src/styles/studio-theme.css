@@ -102,7 +102,6 @@ body { background: var(--rst-ink-900); color: var(--rst-ivory); }
 
 /* ------------------------------------------------------------ surfaces */
 .rst-surface {
-  position: relative;
   border: 1px solid var(--rst-line-strong);
   border-radius: var(--rst-radius);
   background: var(--rst-panel);
@@ -113,7 +112,8 @@ body { background: var(--rst-ink-900); color: var(--rst-ivory); }
 
 /* Modal frame: brass hairline, top sheen, soft grain */
 .rst-modal {
-  position: relative;
+  /* NB: no `position` here. Dialogs set fixed/absolute via utilities; a position rule in this
+     later stylesheet would override them and throw every dialog out of the viewport. */
   border: 1px solid var(--rst-brass-line);
   border-radius: 18px;
   background: #171411;

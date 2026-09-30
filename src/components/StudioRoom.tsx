@@ -252,7 +252,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
               <MotionReveal direction="up" distance={6}>
                 <button
                   onClick={() => handleHotspot('console')}
-                  className="rst-duty-chip absolute bottom-14 left-6 z-20"
+                  className="rst-duty-chip studio-duty-console absolute bottom-14 left-6 z-20"
                   title={`${pendingConsoleChores.length} Console Maintenance Duty Pending`}
                 >
                   <span>🔧</span>
@@ -264,7 +264,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
               <MotionReveal direction="up" distance={6}>
                 <button
                   onClick={() => handleHotspot('liveRoom')}
-                  className="rst-duty-chip absolute bottom-16 right-6 z-20"
+                  className="rst-duty-chip studio-duty-live absolute bottom-16 right-6 z-20"
                   title="Live Room: Tune Acoustics"
                 >
                   <span>✨</span>

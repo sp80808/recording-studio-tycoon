@@ -42,7 +42,8 @@
 
 @media (max-width: 540px) {
   .first-session-guide {
-    bottom: max(100px, calc(env(safe-area-inset-bottom, 0px) + 88px));
+    /* Sits in the empty band between the room and the status pill, never over the CTA / chips / dock */
+    bottom: max(214px, calc(env(safe-area-inset-bottom, 0px) + 206px));
   }
 }
 

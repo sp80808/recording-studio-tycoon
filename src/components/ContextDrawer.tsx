@@ -220,7 +220,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
                           aria-selected={isActive}
                           aria-label={tab.label}
                           onClick={() => handleTabClick(tab.id)}
-                          className={`relative flex flex-col items-center gap-0.5 rounded-lg px-1 pb-1.5 pt-1.5 text-[10px] font-semibold tracking-wide transition-colors ${
+                          className={`relative flex flex-col items-center gap-0.5 rounded-lg px-0.5 pb-1.5 pt-1.5 text-[10px] max-[420px]:text-[9px] font-semibold tracking-wide transition-colors ${
                             isActive
                               ? 'bg-[rgba(230,184,102,0.13)] text-[var(--rst-brass-200)]'
                               : 'text-stone-400 hover:bg-white/[0.05] hover:text-stone-200'
