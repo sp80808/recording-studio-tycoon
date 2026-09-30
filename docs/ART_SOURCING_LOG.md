@@ -119,3 +119,8 @@ Second batch (same in-house CC0 pipeline, same folder):
 | Brass floor lamp (1960s) | `public/assets/props/brass-lamp.png` | `studioDecor.ts` era prop |
 | Lava lamp (2000s) | `public/assets/props/lava-lamp.png` | `studioDecor.ts` era prop (animated blobs still drawn on top) |
 | Ring light (2020s) | `public/assets/props/ring-light.png` | `studioDecor.ts` era prop |
+
+Third batch (in-house CC0):
+
+- Trophy wall plaques (`trophy-gold|platinum|award.png`) replace the procedural plaques in `buildWallDressing`, sheared into the right-wall plane. Not yet screenshot-verified in-game (needs earned trophies).
+- Booking icons in `public/assets/icons/booking/` (`brief`, `fit-S|A|B|C`, `approach-safe`, `approach-moonshot`) are standalone SVGs, deliberately not wired in, so the booking enquiry card work in #101 can import them.

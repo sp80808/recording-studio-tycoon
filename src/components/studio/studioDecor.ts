@@ -239,6 +239,7 @@ export const buildWallDressing = (
   if (spec.prop !== 'neon-sign') diffuser(leftWallQuad, leftWallPt, 0.35, 1.3);
 
   // Trophy wall
+  const trophySprites: Sprite[] = [];
   const slots = getTrophyWall(trophies);
   for (const slot of slots) {
     const x0 = slot.x - 0.24;
@@ -248,6 +249,21 @@ export const buildWallDressing = (
       g.poly(frame).stroke({ width: 1, color: BRASS, alpha: 0.16 });
       const nail = rightWallPt(slot.x, 132);
       g.circle(nail.x, nail.y, 1.1).fill({ color: BRASS, alpha: 0.3 });
+      continue;
+    }
+    const trophyTex = getPropTexture(slot.kind === 'award' ? 'trophyAward' : slot.kind === 'platinum' ? 'trophyPlatinum' : 'trophyGold');
+    if (trophyTex) {
+      // Flat plaque art sheared into the right-wall plane.
+      const tl = rightWallPt(x0, 126);
+      const tr = rightWallPt(x1, 126);
+      const bl = rightWallPt(x0, 94);
+      const plaque = new Sprite(trophyTex);
+      plaque.setFromMatrix(new Matrix(
+        (tr.x - tl.x) / trophyTex.width, (tr.y - tl.y) / trophyTex.width,
+        (bl.x - tl.x) / trophyTex.height, (bl.y - tl.y) / trophyTex.height,
+        tl.x, tl.y,
+      ));
+      trophySprites.push(plaque);
       continue;
     }
     g.poly(frame).fill(0x2a1d14);
@@ -269,6 +285,7 @@ export const buildWallDressing = (
     }
   }
   container.addChild(g);
+  for (const sp of trophySprites) container.addChild(sp);
 
   // Era signature prop (physical parts)
   const propG = new Graphics();

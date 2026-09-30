@@ -5,7 +5,7 @@
 
 import { Assets, Texture } from 'pixi.js';
 
-export type PropSpriteId = 'door' | 'wallClock' | 'micStand' | 'mug' | 'notepad' | 'stool' | 'musicStand' | 'rug' | 'brassLamp' | 'lavaLamp' | 'ringLight';
+export type PropSpriteId = 'door' | 'wallClock' | 'micStand' | 'mug' | 'notepad' | 'stool' | 'musicStand' | 'rug' | 'brassLamp' | 'lavaLamp' | 'ringLight' | 'trophyGold' | 'trophyPlatinum' | 'trophyAward';
 
 const PROP_PATHS: Record<PropSpriteId, string> = {
   door: 'assets/props/door.png',
@@ -19,6 +19,9 @@ const PROP_PATHS: Record<PropSpriteId, string> = {
   brassLamp: 'assets/props/brass-lamp.png',
   lavaLamp: 'assets/props/lava-lamp.png',
   ringLight: 'assets/props/ring-light.png',
+  trophyGold: 'assets/props/trophy-gold.png',
+  trophyPlatinum: 'assets/props/trophy-platinum.png',
+  trophyAward: 'assets/props/trophy-award.png',
 };
 
 const loaded: Partial<Record<PropSpriteId, Texture>> = {};
