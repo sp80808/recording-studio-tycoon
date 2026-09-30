@@ -50,7 +50,7 @@ const ANCHORS: Record<StudioHotspotId, string> = {
   clock: 'top-10 left-1/2 -translate-x-1/2',
   tv: 'top-10 right-3',
   shelf: 'top-1/2 right-3 -translate-y-1/2',
-  console: 'bottom-9 left-3',
+  console: 'bottom-9 left-1/2 -translate-x-1/2',
   liveRoom: 'bottom-9 right-3',
 };
 
