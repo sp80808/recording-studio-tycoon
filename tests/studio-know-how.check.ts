@@ -1,7 +1,7 @@
 /** Studio Know-How (#66): dedupe, diminishing repeats, failure teaches, gates, migration, perk path. */
 import {
   awardKnowHow, createInitialKnowHow, migrateKnowHow, spendKnowHow, meetsKnowHowGate,
-  unlockCapability, domainForStage, applyKnowHowEvents, STUDIO_CAPABILITIES, type KnowHowEvent,
+  unlockCapability, domainForStage, sessionTemplateBonus, briefReasonLimit, canInspectGear, grantsDelegation, applyKnowHowEvents, STUDIO_CAPABILITIES, type KnowHowEvent,
 } from '../src/rpg/studioKnowHow';
 import { StudioUpgradeService } from '../src/game-mechanics/studio-perks';
 import { availableTrainingCourses } from '../src/data/training';
@@ -60,6 +60,16 @@ assert(unlockCapability(createInitialKnowHow(), 'session-templates') === null, '
 const trained = { ...rich, domains: { ...rich.domains, tracking: 25 } };
 const unlocked = unlockCapability(trained, 'session-templates');
 assert(!!unlocked && unlocked.discoveries.includes('capability:session-templates') && unlockCapability(unlocked!, 'session-templates') === null, 'capability unlocks once');
+
+// Capability effects change gameplay only once unlocked.
+const none = createInitialKnowHow();
+assert(sessionTemplateBonus(none, 'k', 0) === 0 && briefReasonLimit(none) === 2 && !canInspectGear(none) && !grantsDelegation(none), 'effects off by default');
+const all = { ...rich, available: 40, domains: { ...rich.domains, tracking: 30, production: 30, acoustics: 30, business: 30 }, repeatCounts: { k: 1 } };
+let allCaps: any = all;
+for (const c of STUDIO_CAPABILITIES) allCaps = unlockCapability(allCaps, c.id);
+assert(sessionTemplateBonus(allCaps, 'k', 0) === 1, 'template speeds a known chain');
+assert(sessionTemplateBonus(allCaps, 'k', 1) === 0 && sessionTemplateBonus(allCaps, 'new', 0) === 0, 'template only first take of a known chain');
+assert(briefReasonLimit(allCaps) > 2 && canInspectGear(allCaps) && grantsDelegation(allCaps), 'other capabilities active');
 
 // Migration.
 assert(migrateKnowHow(undefined).available === 0, 'legacy save -> empty');

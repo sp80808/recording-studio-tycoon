@@ -22,7 +22,7 @@ import { resolveSessionEquipment } from '@/utils/gameUtils';
 import { createSeededRandom } from '@/simulation/seededRandom';
 import { evaluateProjectSynergies, calculateSynergyBonuses, recordDiscoveredSynergies } from '@/utils/synergyUtils';
 import { advanceFlow } from '@/rpg/focusFlow';
-import { applyKnowHowEvents, domainForStage, type KnowHowEvent } from '@/rpg/studioKnowHow';
+import { applyKnowHowEvents, domainForStage, sessionTemplateBonus, type KnowHowEvent } from '@/rpg/studioKnowHow';
 import { gradeStage, focusMatchFraction } from '@/rpg/stageGrades';
 import {
   getActiveBuffMagnitude,
@@ -388,7 +388,12 @@ export const useStageWork = ({
       Math.floor((baseTakeUnits + stageEfficiencyBonus) * roomSpeedMultiplier * synergyBonuses.workUnitSpeedMultiplier * takeMultiplier)
     );
     // Ensure at least 1 unit of progress if energy was spent and stage is not complete
-    const actualWorkUnitsToAdd = (workUnitsToAdd === 0 && !currentStage.completed && totalPointsGenerated > 0) ? 1 : workUnitsToAdd; // Ensure progress if any points generated
+    const templateBonus = sessionTemplateBonus(
+      gameState.studioKnowHow,
+      `${project.genre}:${currentStage.stageName}`.toLowerCase(),
+      (project.stageSessionsTaken ?? [])[currentStageIndex] ?? 0
+    );
+    const actualWorkUnitsToAdd = ((workUnitsToAdd === 0 && !currentStage.completed && totalPointsGenerated > 0) ? 1 : workUnitsToAdd) + templateBonus; // Ensure progress if any points generated
 
     const newWorkUnitsCompleted = Math.min(
       currentStage.workUnitsCompleted + actualWorkUnitsToAdd, // Use actualWorkUnitsToAdd

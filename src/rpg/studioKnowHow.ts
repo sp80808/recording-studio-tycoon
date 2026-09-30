@@ -238,3 +238,29 @@ export const applyKnowHowEvents = <S extends { studioKnowHow?: StudioKnowHow }>(
   }
   return { game: { ...game, studioKnowHow: kh }, awards };
 };
+
+// ---------------------------------------------------------------------------
+// Capability effects — small horizontal gameplay changes, never raw quality.
+// ---------------------------------------------------------------------------
+
+/** Session Templates: the first take of a stage on a chain you've run before sets up one work unit faster. */
+export const sessionTemplateBonus = (
+  kh: StudioKnowHow | undefined,
+  repeatKey: string,
+  sessionsTakenOnStage: number,
+): number =>
+  kh && isCapabilityUnlocked(kh, 'session-templates') && sessionsTakenOnStage === 0 && (kh.repeatCounts[repeatKey] ?? 0) > 0
+    ? 1
+    : 0;
+
+/** Booking Fit Breakdown: how many brief-fit reasons the booking card shows (2 → full list). */
+export const briefReasonLimit = (kh: StudioKnowHow | undefined): number =>
+  kh && isCapabilityUnlocked(kh, 'fit-breakdown') ? 6 : 2;
+
+/** Gear Inspection Detail: reveals per-item condition and bonus breakdown. */
+export const canInspectGear = (kh: StudioKnowHow | undefined): boolean =>
+  !!kh && isCapabilityUnlocked(kh, 'gear-inspection');
+
+/** Delegation Policy: earns the basic automation feature without the producer-level gate. */
+export const grantsDelegation = (kh: StudioKnowHow | undefined): boolean =>
+  !!kh && isCapabilityUnlocked(kh, 'delegation-policy');

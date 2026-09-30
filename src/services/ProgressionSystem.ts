@@ -1,3 +1,4 @@
+import { grantsDelegation } from '@/rpg/studioKnowHow';
 // Multi-Project Progression System
 import { GameState } from '@/types/game';
 import { getPhysicalStudioCapacity } from '@/utils/studioRoomUtils';
@@ -188,6 +189,8 @@ export class ProgressionSystem {
    * Check if a specific feature is unlocked
    */
   static isFeatureUnlocked(gameState: GameState, feature: string): boolean {
+    // Delegation Policy (Know-How capability, #66) opens basic automation by play, not producer level.
+    if (feature === 'basic_automation' && grantsDelegation(gameState.studioKnowHow)) return true;
     const availableFeatures = this.getAvailableAutomationFeatures(gameState);
     return availableFeatures.includes(feature);
   }
