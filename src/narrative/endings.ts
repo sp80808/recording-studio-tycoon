@@ -121,10 +121,14 @@ const REMEMBERED_FOR: Record<string, string> = {
 };
 
 /**
- * A rival's closing line can pick up one extra sentence from a late-game callback choice, so the finale answers
- * how the studio actually played rather than only whether it was compromised. First matching flag wins.
+ * A rival's closing line can pick up one extra sentence from a choice the studio made along the way, so the
+ * finale answers how the studio actually played rather than only whether it was compromised.
+ * Each rival has lines in their own voice for the choices that touch their world; the first flag in a rival's
+ * list that the player set wins, and `GENERIC_CODA` covers everything else.
  */
-const RIVAL_FLAG_CODA: ReadonlyArray<readonly [string, string]> = [
+type Coda = ReadonlyArray<readonly [flag: string, line: string]>;
+
+const GENERIC_CODA: Coda = [
   ['took_the_second_offer', 'I heard you were offered the same shortcut twice. I know which answer cost more.'],
   ['held_the_line', 'They offered you the easy road twice. You said no twice. I did not expect that.'],
   ['stonewalled_journalist', 'Funny how a story you never told still found its way to me.'],
@@ -133,8 +137,44 @@ const RIVAL_FLAG_CODA: ReadonlyArray<readonly [string, string]> = [
   ['credited_the_crew', 'You put your whole crew in the credits. Nobody in my building would have.'],
 ];
 
-const rivalCoda = (state: GameState): string => {
-  const hit = RIVAL_FLAG_CODA.find(([flag]) => state.storylineState?.storyFlags?.[flag]);
+const RIVAL_CODA: Record<string, Coda> = {
+  'black-wax-vault': [
+    ['owned_signature_sound', 'You told them the sound was the room. Good. It always is.'],
+    ['defended_mono', 'You defended a single speaker against the whole industry. I felt that one in the lacquer.'],
+    ['honest_retrospective', 'You told the magazine about the mistakes. I never once printed mine.'],
+    ['polished_retrospective', 'A polished legend. I taught you that, did I not?'],
+    ['vouched_for_scale', 'You stood up for the players. The tape notices who was paid.'],
+    ['skipped_union_meeting', 'You stayed home when the players met. The tape notices that too.'],
+  ],
+  'apex-velocity': [
+    ['paid_the_curator', 'Pay-to-play works. Nobody says it in public. You did it quietly. Good.'],
+    ['doubled_down_payola', 'Twice the payola. Now you are speaking my language.'],
+    ['declined_payola', 'You refused a playlist slot and still landed here. I am going to need that in a slide.'],
+    ['took_the_second_offer', 'You took the second offer. Everyone does. I just did not expect it to be you.'],
+    ['held_the_line', 'Two offers, two refusals. Do you have any idea what that does to my forecast?'],
+    ['made_voice_clone', 'A synthetic singer. Scalable. I might steal it.'],
+  ],
+  'distortion-cellar': [
+    ['embraced_the_leak', 'You gave the record away and filled the venue. That is the whole manifesto.'],
+    ['made_scene_comp', 'One compilation, a whole scene. You did what I only shouted about.'],
+    ['claimed_scene_credit', 'You put your name on the scene’s record. The scene is going to have words.'],
+    ['locked_down_studio', 'You locked the doors. Since when did the cellar have locks?'],
+    ['credited_the_crew', 'Everybody in the credits. That is the only acceptable way to do it.'],
+    ['took_the_spotlight', 'All the spotlight and none of the crew. I have seen that band before. It broke up.'],
+  ],
+  'silicon-harmonics': [
+    ['owned_signature_sound', 'You owned the sound on purpose. Reproducible intent. I respect that.'],
+    ['refused_voice_clone', 'You refused the clone. Noise is a feature; you understood that.'],
+    ['published_voice_policy', 'You wrote the policy down. I had never seen anyone put a signal path in writing.'],
+    ['made_voice_clone', 'You cloned the voice. The waveform was flawless. I am not sure what it was.'],
+    ['confessed_old_deal', 'You published your own error bars. That is rarer than a good record.'],
+    ['stonewalled_journalist', 'You buried the result. A result unpublished is a result unmeasured.'],
+  ],
+};
+
+const rivalCoda = (state: GameState, rivalId: string): string => {
+  const flags = state.storylineState?.storyFlags;
+  const hit = [...(RIVAL_CODA[rivalId] ?? []), ...GENERIC_CODA].find(([flag]) => flags?.[flag]);
   return hit ? ` ${hit[1]}` : '';
 };
 
@@ -179,7 +219,7 @@ export const getCampaignEnding = (state: GameState): CampaignEnding | null => {
     rivalName: rival.headProducer,
     rivalInitials: initialsOf(rival.headProducer),
     rivalAccent: getRivalAccent(rival.id),
-    rivalLine: (compromised ? rivalLines.respect : rivalLines.defeated) + rivalCoda(state),
+    rivalLine: (compromised ? rivalLines.respect : rivalLines.defeated) + rivalCoda(state, rival.id),
     compromised,
     legacyTitle: copy.legacy,
     stats: [

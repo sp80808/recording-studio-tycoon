@@ -91,5 +91,18 @@ describe('callback subplots', () => {
     const held = getCampaignEnding({ ...base, storylineState: { ...base.storylineState, storyFlags: { held_the_line: true } } })!;
     assert.ok(held.rivalLine.startsWith(plain.rivalLine) && held.rivalLine.length > plain.rivalLine.length);
   });
+
+  it('rival codas are rival-specific and fall back to a generic line', () => {
+    const at = (node: string, flags: Record<string, boolean>) => {
+      const base: any = makeState({});
+      return getCampaignEnding({ ...base, storylineState: { ...base.storylineState, campaignCompleted: true, activeCampaignNodeId: node, storyFlags: flags } })!.rivalLine;
+    };
+    const silas = at('act3_golden_legend', { defended_mono: true });
+    const chad = at('act3_billboard_monopoly', { defended_mono: true });
+    assert.match(silas, /single speaker/);
+    assert.ok(!/single speaker/.test(chad), 'Chad has no mono line, so no coda from that flag');
+    assert.match(at('act3_billboard_monopoly', { paid_the_curator: true }), /Pay-to-play/);
+    assert.match(at('act3_rogue_factory', { held_the_line: true }), /easy road/);
+  });
 });
 console.log('callback-subplots checks registered');

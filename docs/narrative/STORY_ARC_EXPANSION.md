@@ -26,8 +26,7 @@ Their own flags feed the epilogue: `held_the_line`, `confessed_old_deal`, `credi
 
 ## Also built
 - **Chronicle link:** each callback has a `becauseOf` map; its first beat is logged as "Because you signed the union scale: …" so the player sees the cause.
-- **Rival finale coda:** a late-game flag (`held_the_line`, `took_the_second_offer`, `confessed_old_deal`, `stonewalled_journalist`, `credited_the_crew`, `took_the_spotlight`) adds one sentence to the rival's closing line.
-
+- **Rival finale codas:** each rival has a few closing sentences in their own voice keyed to choices that touch their world (e.g. Silas on mono and signature sound, Chad on payola and voice clones, Roxy on leaks and credit, Dr. Thorne on voice policy and disclosure). The first matching flag wins; generic codas (`held_the_line`, `took_the_second_offer`, `confessed_old_deal`, `stonewalled_journalist`, `credited_the_crew`, `took_the_spotlight`) are the fallback.
 - **Title callback:** `subplot_title_reputation` spawns once the studio has earned an Act I/II campaign title (`Studio Trailblazer`, `Tone Connoisseur`, `Commercial Machine`), tying the campaign spine to the subplot layer.
 
 ## Ideas for later (not built)
