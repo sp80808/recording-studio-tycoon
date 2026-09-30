@@ -32,6 +32,8 @@ import { MinigameType } from '@/components/minigames/MinigameManager'; // Import
 import { WelcomeBackSummaryModal } from '@/components/modals/WelcomeBackSummaryModal';
 import { StorylineBranchModal } from '@/components/modals/StorylineBranchModal';
 import { StoryEventModal } from '@/components/modals/StoryEventModal';
+import { DirectorEventModal } from '@/components/modals/DirectorEventModal';
+import { getPendingDirectorEvent, resolveDirectorChoice } from '@/narrative/directorEvents';
 import { CinematicStoryCutscene } from '@/components/cutscenes/CinematicStoryCutscene';
 import { getCampaignEnding } from '@/narrative/endings';
 import { buildActIntroCutscene, buildEndingCutscene } from '@/narrative/actCinematics';
@@ -161,9 +163,12 @@ const MusicStudioTycoon = () => {
 
   const pendingStorylineBranch = getPendingStorylineBranch(gameState);
   const pendingStoryEvent = getPendingSubplotEvent(gameState);
+  const pendingDirectorEvent = getPendingDirectorEvent(gameState);
   const pendingStoryEventKey = pendingStoryEvent
     ? `${pendingStoryEvent.subplot.id}:${pendingStoryEvent.active.currentStage}`
-    : null;
+    : pendingDirectorEvent
+      ? `director:${pendingDirectorEvent.def.id}:${pendingDirectorEvent.subject?.id ?? ''}`
+      : null;
 
   // Story cinematics (act openings + epilogue) wait for every other story popup to clear.
   const storyEventOpen =
@@ -192,6 +197,13 @@ const MusicStudioTycoon = () => {
   const handleStoryEventChoice = useCallback(
     (optionId: string) => {
       setGameState((prev) => resolveSubplotChoice(prev, optionId));
+    },
+    [setGameState],
+  );
+
+  const handleDirectorEventChoice = useCallback(
+    (optionId: string) => {
+      setGameState((prev) => resolveDirectorChoice(prev, optionId));
     },
     [setGameState],
   );
@@ -678,6 +690,26 @@ const MusicStudioTycoon = () => {
           pendingStoryEventKey !== deferredStoryEventKey
         }
         onChoose={handleStoryEventChoice}
+        onDeferred={() => setDeferredStoryEventKey(pendingStoryEventKey)}
+        onDone={() => setDeferredStoryEventKey(null)}
+      />
+
+      <DirectorEventModal
+        event={pendingStoryEvent ? null : pendingDirectorEvent}
+        open={
+          gameInitialized &&
+          !showSplashScreen &&
+          !effectiveCompactStudioMode &&
+          !offlineSummary &&
+          !showReviewModal &&
+          !showStorylineBranchModal &&
+          !historicalNewsOpen &&
+          settings.tutorialCompleted &&
+          !pendingStoryEvent &&
+          pendingStoryEventKey !== null &&
+          pendingStoryEventKey !== deferredStoryEventKey
+        }
+        onChoose={handleDirectorEventChoice}
         onDeferred={() => setDeferredStoryEventKey(pendingStoryEventKey)}
         onDone={() => setDeferredStoryEventKey(null)}
       />
