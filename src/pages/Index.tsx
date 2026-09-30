@@ -3,6 +3,8 @@ import { GameLayout } from '@/components/GameLayout';
 import { GameHeader } from '@/components/GameHeader';
 import { MainGameContent } from '@/components/MainGameContent';
 import { RewardFlights } from '@/components/RewardFlights';
+import { gameEvents } from '@/engine/gameEventBus';
+import { estimateChartPosition } from '@/utils/chartReveal';
 import { ChartRevealScene } from '@/components/ChartRevealScene';
 import { NotificationSystem } from '@/components/NotificationSystem';
 import { TrainingModal } from '@/components/modals/TrainingModal';
@@ -300,6 +302,15 @@ const MusicStudioTycoon = () => {
 
     console.log('Index.tsx: Finalizing project completion for:', activeProjectReport.projectTitle);
     completeProject(activeProjectReport); // Call the updated completeProject with the report
+
+    const chartPosition = estimateChartPosition(activeProjectReport.overallQualityScore, `${activeProjectReport.projectId}:chart`);
+    if (chartPosition !== null) {
+      gameEvents.emit('chart:placement', {
+        chartName: 'Hot 100',
+        title: activeProjectReport.projectTitle,
+        position: chartPosition,
+      });
+    }
 
     // No need to update player XP here, as completeProject now handles all state updates based on the report.
     // Also, checkAndHandleLevelUp from usePlayerProgression should be called after gameState updates,
