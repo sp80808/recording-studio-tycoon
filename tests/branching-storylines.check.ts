@@ -87,11 +87,13 @@ const withAct2Complete = (state: GameState, act2Id: string): GameState => {
     return {
       ...state,
       studioRooms: [{ unlocked: true }, { unlocked: true }] as GameState['studioRooms'],
+      playerData: { ...state.playerData, level: 4 },
     };
   }
   return {
     ...state,
     money: Math.max(state.money, 12000),
+    hiredStaff: [{ id: 's1' }, { id: 's2' }] as unknown as GameState['hiredStaff'],
   };
 };
 
@@ -459,7 +461,7 @@ describe('CareerHub / StorylineBranchModal UI contracts (Task 5)', () => {
         profit: 0,
         reports: [
           { genre: 'Rock', overallQualityScore: 80 },
-          { genre: 'Folk', overallQualityScore: 70 },
+          { genre: 'Folk', overallQualityScore: 50 }, // below the Act I bar (60)
         ],
       },
       studioRooms: [],

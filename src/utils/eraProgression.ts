@@ -40,7 +40,7 @@ export const ERA_DEFINITIONS: EraDefinition[] = [
     startYear: 1960,
     endYear: 1979,
     description: 'Basic analog equipment, 4-track recording, vinyl era',
-    availableGenres: ['Rock', 'Folk', 'Soul', 'Motown', 'Country', 'Jazz'],
+    availableGenres: ['Rock', 'Folk', 'Soul', 'Motown', 'Country', 'Jazz', 'Blues'],
     technologyLevel: 'analog',
     icon: '🎛️',
     colors: {
@@ -93,7 +93,7 @@ export const ERA_DEFINITIONS: EraDefinition[] = [
     startYear: 2000,
     endYear: 2019,
     description: 'DAWs, file sharing, digital distribution, social media',
-    availableGenres: ['Pop-punk', 'Emo', 'Electronic', 'Indie', 'Digital'],
+    availableGenres: ['Pop-punk', 'Emo', 'Electronic', 'Indie', 'Digital', 'Hip-Hop'],
     technologyLevel: 'digital',
     icon: '💻',
     colors: {
@@ -122,7 +122,7 @@ export const ERA_DEFINITIONS: EraDefinition[] = [
     startYear: 2020,
     endYear: 2030,
     description: 'Streaming dominance, AI tools, social media marketing',
-    availableGenres: ['EDM', 'Trap', 'Indie Pop', 'Lo-fi', 'TikTok Pop'],
+    availableGenres: ['EDM', 'Trap', 'Indie Pop', 'Lo-fi', 'TikTok Pop', 'Hip-Hop'],
     technologyLevel: 'modern',
     icon: '🎵',
     colors: {
@@ -280,20 +280,22 @@ export const getEraSpecificEquipmentMultiplier = (era: string, baseYear: number,
 export const getGenrePopularity = (genre: string, era: string): number => {
   const genreByEra: Record<string, Record<string, number>> = {
     'analog60s': {
-      'Rock': 90, 'Folk': 80, 'Soul': 85, 'Motown': 90, 'Country': 70, 'Jazz': 60
+      'Rock': 90, 'Folk': 80, 'Soul': 85, 'Motown': 90, 'Country': 70, 'Jazz': 60, 'Blues': 65
     },
     'digital80s': {
-      'New Wave': 90, 'Hip-Hop': 70, 'Electronic': 60, 'Hair Metal': 80, 'Punk': 75, 'Rock': 70
+      'New Wave': 90, 'Hip-Hop': 70, 'Electronic': 60, 'Hair Metal': 80, 'Punk': 75, 'Rock': 70, 'Disco': 60, 'Pop': 80
     },
     'internet2000s': {
-      'Pop-punk': 85, 'Emo': 80, 'Electronic': 90, 'Indie': 75, 'Hip-Hop': 85, 'Rock': 60
+      'Pop-punk': 85, 'Emo': 80, 'Electronic': 90, 'Indie': 75, 'Hip-Hop': 85, 'Rock': 60, 'Digital': 75, 'Pop': 80
     },
     'streaming2020s': {
-      'EDM': 90, 'Trap': 85, 'Indie Pop': 80, 'Lo-fi': 70, 'Hip-Hop': 95, 'Pop': 85
+      'EDM': 90, 'Trap': 85, 'Indie Pop': 80, 'Lo-fi': 70, 'Hip-Hop': 95, 'Pop': 85, 'TikTok Pop': 90
     }
   };
 
-  return genreByEra[era]?.[genre] || 50; // Default popularity
+  // Timeless staples that an era's chart doesn't name are off-trend, not dead: 60 → ×0.85.
+  const offTrendStaples = ['Rock', 'Acoustic', 'Folk', 'Jazz', 'Soul', 'Pop', 'Blues'];
+  return genreByEra[era]?.[genre] || (offTrendStaples.includes(genre) ? 60 : 50); // Default popularity
 };
 
 /** Popularity that maps to a neutral (1.0) payout multiplier. */

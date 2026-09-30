@@ -5,227 +5,28 @@ import { initializeSkillsStaff } from '@/utils/skillUtils'; // Added import
 import { calculateStudioSkillBonus, getEquipmentBonuses as getBaseEquipmentBonuses } from './gameUtils'; // Import from gameUtils and rename
 import { availableMods } from '@/data/equipmentMods'; // Import available mods
 import { bumpMatchRatingForReturn } from '@/game-mechanics/relationship-management'; // Issue #10: repeat-client match bump
+import { getEraGigPool, pickWeightedGig, type WeightedGig } from '@/data/gigTemplates';
 // Assuming getMoodEffectiveness will be moved to playerUtils or passed as arg
 // For now, let's define a placeholder or expect it as an argument for calculateStaffWorkContribution
 
 const genres = ['Rock', 'Pop', 'Electronic', 'Hip-hop', 'Acoustic'] as const;
 const clientTypes = ['Independent', 'Record Label', 'Commercial', 'Streaming'] as const;
 
-// Early-game project templates (grounded names)
-const earlyGameTemplates = [
-  {
-    titleTemplates: ['Bedroom Beat Session', 'First Synth Single', 'Club Demo'],
-    genre: 'Electronic',
-    clientType: 'Independent',
-    difficulty: 2,
-    baseStages: [
-      { stageName: 'Beat Programming', workUnitsBase: 7, focusAreas: ['layering', 'performance'] },
-      { stageName: 'Synth Tracking', workUnitsBase: 8, focusAreas: ['soundCapture', 'layering'] },
-      { stageName: 'Rough Mix', workUnitsBase: 6, focusAreas: ['layering', 'soundCapture'] }
-    ],
-    basePayout: 320,
-    baseRep: 3,
-    baseDuration: 4
-  },
-  {
-    titleTemplates: ['Bedroom Pop Single', 'Indie Chorus Session', 'First Release'],
-    genre: 'Indie Pop',
-    clientType: 'Independent',
-    difficulty: 2,
-    baseStages: [
-      { stageName: 'Vocal & Guitar Takes', workUnitsBase: 7, focusAreas: ['performance', 'soundCapture'] },
-      { stageName: 'Layer the Hook', workUnitsBase: 8, focusAreas: ['layering', 'performance'] },
-      { stageName: 'Streaming Master', workUnitsBase: 6, focusAreas: ['soundCapture', 'layering'] }
-    ],
-    basePayout: 330,
-    baseRep: 3,
-    baseDuration: 4
-  },
-  {
-    titleTemplates: ['Late Night Lo-fi', 'Study Beats EP', 'Tape Hiss Sessions'],
-    genre: 'Lo-fi',
-    clientType: 'Independent',
-    difficulty: 1,
-    baseStages: [
-      { stageName: 'Sample & Texture', workUnitsBase: 6, focusAreas: ['layering', 'performance'] },
-      { stageName: 'Warm Mix', workUnitsBase: 7, focusAreas: ['soundCapture', 'layering'] }
-    ],
-    basePayout: 260,
-    baseRep: 2,
-    baseDuration: 3
-  },
-  {
-    titleTemplates: ['Local Band Demo', 'Garage Band Recording', 'Indie Demo Session'],
-    genre: 'Rock',
-    clientType: 'Independent',
-    difficulty: 2,
-    baseStages: [
-      { stageName: 'Setup & Recording', workUnitsBase: 8, focusAreas: ['soundCapture', 'performance'] },
-      { stageName: 'Basic Mixing', workUnitsBase: 10, focusAreas: ['layering', 'soundCapture'] },
-      { stageName: 'Demo Master', workUnitsBase: 6, focusAreas: ['performance', 'layering'] }
-    ],
-    basePayout: 900,
-    baseRep: 3,
-    baseDuration: 4
-  },
-  {
-    titleTemplates: ['Coffee Shop Sessions', 'Acoustic Evening', 'Songwriter Demo'],
-    genre: 'Acoustic',
-    clientType: 'Independent',
-    difficulty: 1,
-    baseStages: [
-      { stageName: 'Live Recording', workUnitsBase: 6, focusAreas: ['soundCapture', 'performance'] },
-      { stageName: 'Light Production', workUnitsBase: 8, focusAreas: ['layering', 'soundCapture'] }
-    ],
-    basePayout: 600,
-    baseRep: 2,
-    baseDuration: 3
-  },
-  {
-    titleTemplates: ['Folk Harmony Sessions', 'Country Ballad Recording', 'Bluegrass Live Taping'],
-    genre: 'Folk',
-    clientType: 'Independent',
-    difficulty: 2,
-    baseStages: [
-      { stageName: 'Acoustic Setup', workUnitsBase: 7, focusAreas: ['performance', 'soundCapture'] },
-      { stageName: 'Multi-Vocal Recording', workUnitsBase: 9, focusAreas: ['layering', 'performance'] },
-      { stageName: 'Traditional Mix', workUnitsBase: 5, focusAreas: ['soundCapture', 'layering'] }
-    ],
-    basePayout: 850,
-    baseRep: 3,
-    baseDuration: 4
-  },
-  {
-    titleTemplates: ['Soul Vocal Session', 'Motown-Style Recording', 'R&B Groove Track'],
-    genre: 'Soul',
-    clientType: 'Independent',
-    difficulty: 3,
-    baseStages: [
-      { stageName: 'Rhythm Section Setup', workUnitsBase: 10, focusAreas: ['soundCapture', 'performance'] },
-      { stageName: 'Lead Vocal Recording', workUnitsBase: 12, focusAreas: ['performance', 'soundCapture'] },
-      { stageName: 'Horn Section Overdubs', workUnitsBase: 8, focusAreas: ['layering', 'performance'] }
-    ],
-    basePayout: 1000,
-    baseRep: 4,
-    baseDuration: 5
-  },
-  {
-    titleTemplates: ['Jazz Session Recording', 'Big Band Live Session', 'Trumpet & Piano Duo'],
-    genre: 'Jazz',
-    clientType: 'Independent',
-    difficulty: 3,
-    baseStages: [
-      { stageName: 'Live Setup & Mic Placement', workUnitsBase: 9, focusAreas: ['soundCapture', 'performance'] },
-      { stageName: 'Live Recording Session', workUnitsBase: 11, focusAreas: ['performance', 'soundCapture'] },
-      { stageName: 'Analog Mix & Press', workUnitsBase: 7, focusAreas: ['soundCapture', 'layering'] }
-    ],
-    basePayout: 950,
-    baseRep: 3,
-    baseDuration: 4
-  }
-];
-
-// Mid-to-late game project templates (more epic names)
-const advancedGameTemplates = [
-  {
-    titleTemplates: ['Symphony of Code', 'Digital Orchestra', 'Cyber Symphony'],
-    genre: 'Electronic',
-    clientType: 'Commercial',
-    difficulty: 8,
-    baseStages: [
-      { stageName: 'Thematic Composition', workUnitsBase: 16, focusAreas: ['performance', 'layering'] },
-      { stageName: 'Orchestration & Programming', workUnitsBase: 20, focusAreas: ['layering', 'soundCapture'] },
-      { stageName: 'Interactive Implementation', workUnitsBase: 18, focusAreas: ['performance', 'layering'] },
-      { stageName: 'Final Mix & Mastering', workUnitsBase: 14, focusAreas: ['layering', 'soundCapture'] }
-    ],
-    basePayout: 3200,
-    baseRep: 12,
-    baseDuration: 12
-  },
-  {
-    titleTemplates: ['Bass Drop Empire', 'Electronic Anthem', 'Festival Banger'],
-    genre: 'Electronic',
-    clientType: 'Commercial',
-    difficulty: 6,
-    baseStages: [
-      { stageName: 'Beat Programming & Sound Design', workUnitsBase: 14, focusAreas: ['layering', 'performance'] },
-      { stageName: 'Arrangement & Build-ups', workUnitsBase: 16, focusAreas: ['performance', 'layering'] },
-      { stageName: 'Mixing & Master', workUnitsBase: 12, focusAreas: ['layering', 'soundCapture'] }
-    ],
-    basePayout: 1800,
-    baseRep: 8,
-    baseDuration: 8
-  },
-  {
-    titleTemplates: ['Neon Dreams', 'Synthwave Journey', 'Retro Future'],
-    genre: 'Electronic',
-    clientType: 'Streaming',
-    difficulty: 5,
-    baseStages: [
-      { stageName: 'Concept & Sound Design', workUnitsBase: 12, focusAreas: ['layering', 'performance'] },
-      { stageName: 'Recording & Layering', workUnitsBase: 16, focusAreas: ['soundCapture', 'layering'] },
-      { stageName: 'Mixing & Mastering', workUnitsBase: 14, focusAreas: ['layering', 'performance'] }
-    ],
-    basePayout: 1600,
-    baseRep: 7,
-    baseDuration: 7
-  },
-  {
-    titleTemplates: ['Corporate Harmony', 'Brand Anthem', 'Commercial Melody'],
-    genre: 'Pop',
-    clientType: 'Commercial',
-    difficulty: 4,
-    baseStages: [
-      { stageName: 'Client Consultation & Concept', workUnitsBase: 8, focusAreas: ['performance', 'soundCapture'] },
-      { stageName: 'Multiple Variations & Testing', workUnitsBase: 12, focusAreas: ['layering', 'performance'] },
-      { stageName: 'Final Production & Delivery', workUnitsBase: 10, focusAreas: ['soundCapture', 'layering'] }
-    ],
-    basePayout: 1500,
-    baseRep: 6,
-    baseDuration: 6
-  },
-  {
-    titleTemplates: ['Rock Anthem', 'Power Ballad', 'Stadium Rocker'],
-    genre: 'Rock',
-    clientType: 'Record Label',
-    difficulty: 4,
-    baseStages: [
-      { stageName: 'Songwriting & Arrangement', workUnitsBase: 10, focusAreas: ['performance', 'soundCapture'] },
-      { stageName: 'Tracking & Recording', workUnitsBase: 14, focusAreas: ['soundCapture', 'layering'] },
-      { stageName: 'Mixing & Production', workUnitsBase: 12, focusAreas: ['layering', 'performance'] },
-      { stageName: 'Mastering & Polish', workUnitsBase: 8, focusAreas: ['soundCapture', 'layering'] }
-    ],
-    basePayout: 1700,
-    baseRep: 6,
-    baseDuration: 8
-  }
-];
-
 export const generateNewProjects = (count: number, playerLevel: number = 1, currentEra: string = 'analog60s', knownClients: ClientRelationship[] = [], repeatClientPremium: number = 1.1): Project[] => {
   const projects: Project[] = [];
   const usedTitles = new Set<string>();
   
-  // Get available genres for current era
+  // Era-authentic repertoire: native era genres at full weight, timeless staples at a reduced weight.
   const currentEraDefinition = ERA_DEFINITIONS.find(era => era.id === currentEra);
-  const baseAvailableGenres = currentEraDefinition?.availableGenres || ['Rock', 'Folk', 'Soul', 'Motown', 'Country', 'Jazz'];
-  const availableGenresSet = new Set(baseAvailableGenres); // Use a Set for O(1) lookups
-  
-  // Filter templates by era-appropriate genres
-  const eraAppropriateTemplates = earlyGameTemplates.filter(template => 
-    availableGenresSet.has(template.genre)
-  );
-  
-  const advancedEraTemplates = advancedGameTemplates.filter(template => 
-    availableGenresSet.has(template.genre)
-  );
-  const starterTemplates = eraAppropriateTemplates.length ? eraAppropriateTemplates : earlyGameTemplates;
-  const higherLevelTemplates = advancedEraTemplates.length ? advancedEraTemplates : advancedGameTemplates;
-  
+  const eraGenres = currentEraDefinition?.availableGenres || ERA_DEFINITIONS[0].availableGenres;
+  const starterPool = getEraGigPool(currentEra, 'starter', eraGenres);
+  const advancedPool = getEraGigPool(currentEra, 'advanced', eraGenres);
+
   // Choose appropriate template pool based on player level and era
   const isEarlyGame = playerLevel < 5;
-  const templatePool = isEarlyGame ? starterTemplates : [...starterTemplates, ...higherLevelTemplates];
-  const weightedPool = isEarlyGame ? starterTemplates : higherLevelTemplates;
-  
+  const templatePool: WeightedGig[] = isEarlyGame ? starterPool : [...starterPool, ...advancedPool];
+  const weightedPool: WeightedGig[] = isEarlyGame ? starterPool : advancedPool;
+
   for (let i = 0; i < count; i++) {
     let attempts = 0;
     let project: Project;
@@ -234,7 +35,7 @@ export const generateNewProjects = (count: number, playerLevel: number = 1, curr
       // 70% chance to use level-appropriate templates, 30% chance for variety
       const useAppropriateLevel = Math.random() < 0.7;
       const selectedPool = useAppropriateLevel ? weightedPool : templatePool;
-      const template = selectedPool[Math.floor(Math.random() * selectedPool.length)];
+      const template = pickWeightedGig(selectedPool, Math.random());
 
       // Issue #10 repeat-client weighting: one ~35% roll per offer slot — a
       // random existing relationship client returns (no hidden rolls beyond

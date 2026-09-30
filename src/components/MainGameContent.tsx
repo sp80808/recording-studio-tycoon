@@ -54,6 +54,7 @@ interface MainGameContentProps {
   setCompactStudioMode: React.Dispatch<React.SetStateAction<boolean>>;
   /** Open StorylineBranchModal when a pending Act choice exists. */
   onOpenStorylineBranch?: () => void;
+  onOpenStoryEvent?: () => void;
   /** zel.6: Tauri + feature-flag gate; when false, strip entry is hidden and compact is ignored. */
   desktopStripEnabled: boolean;
 }
@@ -84,6 +85,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   autoTriggeredMinigame,
   clearAutoTriggeredMinigame,
   onOpenStorylineBranch,
+  onOpenStoryEvent,
   startResearchMod,
   refreshProjects,
   compactStudioMode,
@@ -417,6 +419,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                 onRest={advanceDay}
                 onStaff={() => handleOpenDashboardTab('staff')}
                 onOpenStorylineBranch={onOpenStorylineBranch}
+                onOpenStoryEvent={onOpenStoryEvent}
               />
               <div className="grid gap-2.5 p-1 pt-3 sm:grid-cols-2">
                 <button className="rst-btn" onClick={() => handleOpenDashboardTab('skills')}>

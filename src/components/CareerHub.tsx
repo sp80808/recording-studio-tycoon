@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowRight, BookOpen, ChevronDown, Flag, Sparkles, Swords, Target, Zap } from 'lucide-react';
+import { ArrowRight, BookOpen, Check, ChevronDown, Circle, Feather, Flag, Scroll, Sparkles, Swords, Target, Zap } from 'lucide-react';
 import { GameState } from '@/types/game';
 import { checkDailyChallenge } from '@/utils/dailyChallenges';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
@@ -12,8 +12,10 @@ import { getRivalAccent, getRivalForNode, initialsOf } from '@/narrative/rivalCa
 import type { ProducerBackgroundId } from '@/types/character';
 import {
   getActiveCampaignNode,
+  getPendingSubplotEvent,
   getStorylineObjectiveProgress,
   hasPendingStorylineBranch,
+  type ChronicleKind,
 } from '@/narrative/branchingStorylineEngine';
 
 interface CareerHubProps {
@@ -25,7 +27,11 @@ interface CareerHubProps {
   onStaff: () => void;
   /** Open StorylineBranchModal when a pending Act choice exists. */
   onOpenStorylineBranch?: () => void;
+  /** Reopen a subplot decision the player postponed. */
+  onOpenStoryEvent?: () => void;
 }
+
+const CHRONICLE_ICON: Record<ChronicleKind, typeof Scroll> = { campaign: Flag, subplot: Feather, ending: Scroll };
 
 const careerTitle = (level: number): string =>
   level >= 12
@@ -74,6 +80,7 @@ export function CareerHub({
   onRest,
   onStaff,
   onOpenStorylineBranch,
+  onOpenStoryEvent,
 }: CareerHubProps) {
   const [expanded, setExpanded] = useState(false);
   const [storyLogOpen, setStoryLogOpen] = useState(false);
@@ -97,11 +104,8 @@ export function CareerHub({
   const pendingBranch = hasPendingStorylineBranch(gameState);
   const story = gameState.storylineState;
   const campaignDone = Boolean(story?.campaignCompleted);
-  const storyFlags = story
-    ? Object.entries(story.storyFlags).filter(
-        ([key, value]) => key !== 'pending_branch_choice' && value !== false,
-      )
-    : [];
+  const pendingEvent = getPendingSubplotEvent(gameState);
+  const chronicle = [...(story?.chronicle ?? [])].reverse();
   const rival = activeNode ? getRivalForNode(activeNode.id, player.playstyle) : null;
   const rivalAccent = rival ? getRivalAccent(rival.id) : '#e6b866';
 
@@ -183,30 +187,23 @@ export function CareerHub({
               <p className="rst-kicker">{campaignDone ? 'Campaign complete' : `Act ${activeNode.act} · ${rival?.name ?? 'Rival'}`}</p>
               <p className="rst-title mt-0.5 text-base">{activeNode.title.replace(/^Act [IVX]+:\s*/, '')}</p>
               {!campaignDone && objectiveProgress && (
-                <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                  <div
-                    className="h-1.5 w-28 overflow-hidden rounded-full bg-white/10 sm:w-36"
-                    role="progressbar"
-                    aria-label="Campaign objective progress"
-                    aria-valuemin={0}
-                    aria-valuemax={objectiveProgress.target}
-                    aria-valuenow={objectiveProgress.current}
-                  >
-                    <div
-                      className={`h-full rounded-full transition-all duration-300 ${
-                        pendingBranch || objectiveProgress.complete ? 'bg-[var(--rst-money)]' : 'bg-[var(--rst-brass-400)]'
-                      }`}
-                      style={{
-                        width: `${Math.min(100, (objectiveProgress.current / Math.max(1, objectiveProgress.target)) * 100)}%`,
-                      }}
-                    />
-                  </div>
-                  <span className={`tabular-nums ${pendingBranch || objectiveProgress.complete ? 'text-[var(--rst-money)]' : 'text-stone-300'}`}>
-                    {pendingBranch ? 'Objective met — choose your path' : objectiveProgress.label}
-                  </span>
-                </div>
+                <ul className="mt-2.5 space-y-1" aria-label="Campaign objectives">
+                  {objectiveProgress.requirements.map((req) => (
+                    <li key={req.id} className="flex items-center gap-2">
+                      {req.done ? (
+                        <Check size={13} className="shrink-0 text-[var(--rst-money)]" aria-label="Done" />
+                      ) : (
+                        <Circle size={13} className="shrink-0 text-stone-600" aria-label="Not yet" />
+                      )}
+                      <span className={`tabular-nums ${req.done ? 'text-[var(--rst-money)]' : 'text-stone-300'}`}>{req.label}</span>
+                    </li>
+                  ))}
+                  {pendingBranch && (
+                    <li className="pt-1 font-semibold text-[var(--rst-money)]">Objective met — choose your path</li>
+                  )}
+                </ul>
               )}
-              {!campaignDone && <p className="mt-1.5 leading-relaxed text-stone-400">{activeNode.objectiveDescription}</p>}
+              {!campaignDone && <p className="mt-2 leading-relaxed text-stone-500">{activeNode.objectiveDescription}</p>}
             </div>
           </div>
 
@@ -222,6 +219,19 @@ export function CareerHub({
               >
                 Decide path
                 <ArrowRight size={13} aria-hidden="true" />
+              </button>
+            )}
+            {pendingEvent && onOpenStoryEvent && (
+              <button
+                type="button"
+                onClick={() => {
+                  click();
+                  onOpenStoryEvent();
+                }}
+                className="rst-btn !min-h-9 !px-3 !text-xs !border-[rgba(196,161,240,0.4)] !text-[var(--rst-story)]"
+              >
+                <Feather size={13} aria-hidden="true" />
+                {pendingEvent.stage.title}
               </button>
             )}
             <button
@@ -254,36 +264,27 @@ export function CareerHub({
                 </div>
               )}
               <div>
-                <p className="rst-kicker mb-1">Branch decisions</p>
-                {story.branchHistory.length === 0 ? (
-                  <p className="text-stone-400">No branches chosen yet — finish Act 1 to open the first fork.</p>
+                <p className="rst-kicker mb-1.5">Studio chronicle</p>
+                {chronicle.length === 0 ? (
+                  <p className="text-stone-400">Nothing written yet — the first chapter opens when a story beat finds you.</p>
                 ) : (
-                  <ul className="space-y-1 text-stone-300">
-                    {story.branchHistory.map((entry) => (
-                      <li key={`${entry.nodeId}-${entry.chosenOptionId}-${entry.resolvedDay}`}>
-                        Day {entry.resolvedDay}: {entry.chosenOptionId.replace(/_/g, ' ')} → flag{' '}
-                        <span className="text-[var(--rst-brass-300)]">{entry.storyFlagGranted}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-              <div>
-                <p className="rst-kicker mb-1.5 flex items-center gap-1.5">
-                  <Flag size={12} aria-hidden="true" />
-                  Story flags
-                </p>
-                {storyFlags.length === 0 ? (
-                  <p className="text-stone-400">No story flags yet.</p>
-                ) : (
-                  <div className="flex flex-wrap gap-1.5">
-                    {storyFlags.map(([key, value]) => (
-                      <span key={key} className="rst-chip">
-                        {key}
-                        {typeof value === 'string' || typeof value === 'number' ? `: ${value}` : ''}
-                      </span>
-                    ))}
-                  </div>
+                  <ol className="space-y-2.5">
+                    {chronicle.slice(0, 12).map((entry, i) => {
+                      const Icon = CHRONICLE_ICON[entry.kind] ?? Flag;
+                      return (
+                        <li key={`${entry.day}-${entry.title}-${i}`} className="flex gap-2.5">
+                          <Icon size={13} className="mt-0.5 shrink-0 text-[var(--rst-brass-300)]" aria-hidden="true" />
+                          <span className="min-w-0">
+                            <span className="block text-stone-200">
+                              <span className="tabular-nums text-stone-500">Day {entry.day} · </span>
+                              {entry.title}
+                            </span>
+                            <span className="block leading-relaxed text-stone-400">{entry.outcome}</span>
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ol>
                 )}
               </div>
             </div>

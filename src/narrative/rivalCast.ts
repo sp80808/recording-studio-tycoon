@@ -28,6 +28,24 @@ export const toLoreEraId = (eraId?: string): string =>
   (eraId && (LORE_ERA_BY_GAME_ERA[eraId] ?? (Object.values(LORE_ERA_BY_GAME_ERA).includes(eraId) ? eraId : undefined))) ||
   'vintage-warmth';
 
+/** Lore era ids / legacy career-start ids → progression era ids (the ones ERA_DEFINITIONS uses). */
+const GAME_ERA_BY_ANY_ERA: Record<string, string> = {
+  'vintage-warmth': 'analog60s',
+  'retro-glam': 'digital80s',
+  'digital-revolution': 'internet2000s',
+  'modern-streaming': 'streaming2020s',
+  classic_rock: 'analog60s',
+  golden_age: 'digital80s',
+  digital_age: 'internet2000s',
+  modern: 'streaming2020s',
+  analog60s: 'analog60s',
+  digital80s: 'digital80s',
+  internet2000s: 'internet2000s',
+  streaming2020s: 'streaming2020s',
+};
+
+export const toGameEraId = (eraId?: string): string => (eraId && GAME_ERA_BY_ANY_ERA[eraId]) || 'analog60s';
+
 const PRIMARY_RIVAL_BY_PLAYSTYLE: Record<PlaystyleFocus, string> = {
   purist: 'black-wax-vault',
   'hit-maker': 'apex-velocity',

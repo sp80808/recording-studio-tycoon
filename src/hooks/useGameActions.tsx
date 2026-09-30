@@ -21,7 +21,7 @@ import {
   processAutomaticChores,
   autoAssignAvailableChores
 } from '@/simulation/choreEngine';
-import { evaluateStorylineTick } from '@/narrative/branchingStorylineEngine';
+import { advanceStory } from '@/narrative/storyProgression';
 import {
   NEUTRAL_ORIGIN_EFFECTS,
   applyUpkeepDiscount,
@@ -191,7 +191,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       };
 
       if (triggeredEvents.length === 0) {
-        return evaluateStorylineTick(baseUpdatedState);
+        return advanceStory(baseUpdatedState);
       }
 
       const { state: postEventsState, results } = applyEventsToState(baseUpdatedState, triggeredEvents);
@@ -214,7 +214,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
         });
       });
 
-      return evaluateStorylineTick({
+      return advanceStory({
         ...postEventsState,
         notifications: [...postEventsState.notifications, ...newNotifications]
       });

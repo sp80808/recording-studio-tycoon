@@ -8,7 +8,7 @@ import { gameAudio } from '@/utils/audioSystem';
 import { triggerScreenShake } from '@/utils/screenShake';
 import { applyCompletedSessionToRelationship, createClientRelationshipFromProject } from '@/utils/clientRelationshipUtils';
 import { findAvailableStudioRoom } from '@/utils/studioRoomUtils';
-import { evaluateStorylineTick } from '@/narrative/branchingStorylineEngine';
+import { advanceStory } from '@/narrative/storyProgression';
 import { getOriginEffects } from '@/narrative/originPerks';
 
 export const useProjectManagement = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
@@ -116,7 +116,7 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
         getOriginEffects(prev).repeatClientPremium
       );
 
-      return evaluateStorylineTick(
+      return advanceStory(
         withDailyTracking({
           ...settled,
           activeProject: null,

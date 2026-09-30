@@ -27,6 +27,7 @@ import { gameAudio as audioSystem } from '@/utils/audioSystem';
 import { MinigameType } from '@/components/minigames/MinigameManager'; // Import MinigameType
 import { WelcomeBackSummaryModal } from '@/components/modals/WelcomeBackSummaryModal';
 import { StorylineBranchModal } from '@/components/modals/StorylineBranchModal';
+import { StoryEventModal } from '@/components/modals/StoryEventModal';
 import {
   advanceSimulation,
   DEFAULT_MAX_OFFLINE_MS,
@@ -36,7 +37,9 @@ import {
 import { getBookedStudioRoom } from '@/utils/studioRoomUtils';
 import {
   getPendingStorylineBranch,
+  getPendingSubplotEvent,
   resolveStorylineBranch,
+  resolveSubplotChoice,
   type StorylineBranchOption,
 } from '@/narrative/branchingStorylineEngine';
 import { isTauriShell } from '@/utils/platform';
@@ -83,6 +86,8 @@ const MusicStudioTycoon = () => {
   // const [showRecruitmentModal, setShowRecruitmentModal] = useState(false); // Assuming this was intended to be used elsewhere or can be removed if not
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showStorylineBranchModal, setShowStorylineBranchModal] = useState(false);
+  // Key of a subplot beat the player chose to decide later; cleared when the beat changes or they reopen it.
+  const [deferredStoryEventKey, setDeferredStoryEventKey] = useState<string | null>(null);
   const [compactStudioMode, setCompactStudioMode] = useState(false);
   // zel.6: compact strip is desktop-shell only — browser must never blank the playable UI.
   const desktopStripFlag = useFeatureFlag('desktop-studio-strip');
@@ -144,6 +149,17 @@ const MusicStudioTycoon = () => {
   ]);
 
   const pendingStorylineBranch = getPendingStorylineBranch(gameState);
+  const pendingStoryEvent = getPendingSubplotEvent(gameState);
+  const pendingStoryEventKey = pendingStoryEvent
+    ? `${pendingStoryEvent.subplot.id}:${pendingStoryEvent.active.currentStage}`
+    : null;
+
+  const handleStoryEventChoice = useCallback(
+    (optionId: string) => {
+      setGameState((prev) => resolveSubplotChoice(prev, optionId));
+    },
+    [setGameState],
+  );
 
   const handleStorylineBranchChoice = useCallback(
     (option: StorylineBranchOption) => {
@@ -513,6 +529,7 @@ const MusicStudioTycoon = () => {
             compactStudioMode={effectiveCompactStudioMode}
             setCompactStudioMode={setCompactStudioMode}
             onOpenStorylineBranch={() => setShowStorylineBranchModal(true)}
+            onOpenStoryEvent={() => setDeferredStoryEventKey(null)}
             desktopStripEnabled={desktopStripEnabled}
           />
         </div>
@@ -576,6 +593,25 @@ const MusicStudioTycoon = () => {
         node={pendingStorylineBranch?.node ?? null}
         onChoose={handleStorylineBranchChoice}
         onClose={() => setShowStorylineBranchModal(false)}
+      />
+
+      <StoryEventModal
+        event={pendingStoryEvent}
+        gameState={gameState}
+        open={
+          gameInitialized &&
+          !showSplashScreen &&
+          !effectiveCompactStudioMode &&
+          !offlineSummary &&
+          !showReviewModal &&
+          !showStorylineBranchModal &&
+          settings.tutorialCompleted &&
+          pendingStoryEventKey !== null &&
+          pendingStoryEventKey !== deferredStoryEventKey
+        }
+        onChoose={handleStoryEventChoice}
+        onDeferred={() => setDeferredStoryEventKey(pendingStoryEventKey)}
+        onDone={() => setDeferredStoryEventKey(null)}
       />
     </GameLayout>
   );
