@@ -201,7 +201,7 @@ const advancedGameTemplates = [
   }
 ];
 
-export const generateNewProjects = (count: number, playerLevel: number = 1, currentEra: string = 'analog60s', knownClients: ClientRelationship[] = []): Project[] => {
+export const generateNewProjects = (count: number, playerLevel: number = 1, currentEra: string = 'analog60s', knownClients: ClientRelationship[] = [], repeatClientPremium: number = 1.1): Project[] => {
   const projects: Project[] = [];
   const usedTitles = new Set<string>();
   
@@ -275,8 +275,8 @@ export const generateNewProjects = (count: number, playerLevel: number = 1, curr
       const difficultyMultiplier = 1 + (finalDifficulty - 1) * 0.15; // Scales with difficulty
       const eraPopularityMultiplier = getGenreMarketMultiplier(template.genre, currentEra);
       
-      // Issue #10: repeat clients pay a flat 10% loyalty premium.
-      const repeatClientMultiplier = returningClient ? 1.1 : 1;
+      // Issue #10: repeat clients pay a loyalty premium (10% by default; some origins negotiate more).
+      const repeatClientMultiplier = returningClient ? Math.max(1, Math.min(1.5, repeatClientPremium)) : 1;
       const finalPayout = Math.floor(
         template.basePayout *
         marketMultiplier *

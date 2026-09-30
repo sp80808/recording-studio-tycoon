@@ -78,7 +78,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                           <Button
                             size="sm"
                             onClick={() => unassignStaffFromProject(staff.id)}
-                            className="bg-red-600 hover:bg-red-700"
+                            className="bg-red-400/[0.14] ring-1 ring-inset ring-red-400/45 hover:bg-red-400/[0.24]"
                           >
                             Unassign
                           </Button>
@@ -103,7 +103,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                 </div>
               ) : (
                 availableStaff.map(staff => (
-                  <Card key={staff.id} className="p-4 bg-stone-800 border-stone-600 hover:bg-stone-750 transition-colors">
+                  <Card key={staff.id} className="p-4 bg-white/[0.07] border-stone-600 hover:bg-stone-750 transition-colors">
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <h4 className="font-bold text-white">{staff.name}</h4>
@@ -150,7 +150,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                         <Button 
                           size="sm"
                           onClick={() => assignStaffToProject(staff.id)}
-                          className="bg-green-600 hover:bg-green-700"
+                          className="bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24]"
                         >
                           Assign to Project
                         </Button>
@@ -171,7 +171,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                         <Button 
                           size="sm"
                           onClick={() => openTrainingModal(staff)}
-                          className="bg-amber-600 hover:bg-amber-700"
+                          className="bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24]"
                         >
                           Training
                         </Button>

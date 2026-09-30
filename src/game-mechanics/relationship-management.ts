@@ -309,10 +309,15 @@ export function applyDeliveryToClientRelationships(
     qualityScore: number;
     matchRating?: string;
     currentDay: number;
+    /** Origin perk multiplier on relationship XP (default 1). */
+    xpMultiplier?: number;
   }
 ): AppliedClientRelationship {
   const prev = existing?.[opts.clientKey];
-  const xpGained = relationshipXpForDelivery(opts.qualityScore, opts.matchRating);
+  const xpGained = Math.round(
+    relationshipXpForDelivery(opts.qualityScore, opts.matchRating) *
+      Math.max(1, Math.min(3, opts.xpMultiplier ?? 1))
+  );
   const sessionsCompleted = (prev?.sessionsCompleted ?? 0) + 1;
   const xp = Math.max(0, Math.floor((prev?.relationshipXp ?? 0) + xpGained));
   const tier = tierForClientRelationship(xp, sessionsCompleted);

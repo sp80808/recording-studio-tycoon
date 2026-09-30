@@ -13,6 +13,7 @@ import {
   MotionNumber,
 } from '@/components/motion/primitives';
 import { gameAudio } from '@/utils/audioSystem';
+import { getOriginEffects, gigRefreshCostFor } from '@/narrative/originPerks';
 import { Check, XCircle, PhoneCall, PhoneOff } from 'lucide-react';
 
 interface ProjectListProps {
@@ -64,6 +65,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
   const [decliningId, setDecliningId] = useState<string | null>(null);
   const cooldownLeft = gigRefreshCooldownRemaining(gameState);
   const refreshReady = cooldownLeft === 0;
+  const refreshCost = gigRefreshCostFor(GIG_REFRESH_COST, getOriginEffects(gameState));
 
   const handleRefresh = () => {
     void gameAudio.playTactileClick();
@@ -124,16 +126,12 @@ export const ProjectList: React.FC<ProjectListProps> = ({
         <MotionButton
           onClick={handleRefresh}
           disabled={!refreshReady}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-            refreshReady
-              ? 'bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-stone-950 shadow-md'
-              : 'bg-stone-800 text-stone-400 border border-stone-700'
-          }`}
+          className={`rst-btn !min-h-9 !px-3 !text-xs ${refreshReady ? 'rst-btn-primary' : ''}`}
         >
           {refreshReady ? (
             <>
               <PhoneCall size={14} aria-hidden="true" />
-              <span>Refresh ${GIG_REFRESH_COST}</span>
+              <span>{refreshCost > 0 ? `Refresh $${refreshCost}` : 'Refresh · free'}</span>
             </>
           ) : (
             <>
@@ -256,13 +254,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                     magnetic
                     onClick={() => handleAcceptEnquiry(project)}
                     disabled={!!gameState.activeProject || !!bookingId || !!decliningId}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold tracking-wide transition-colors ${
-                      isBookingThis
-                        ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
-                        : gameState.activeProject
-                          ? 'bg-stone-800 text-stone-400 cursor-not-allowed'
-                          : 'bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white shadow'
-                    }`}
+                    className={`rst-btn flex-1 ${gameState.activeProject ? '' : 'rst-btn-primary'} ${isBookingThis ? 'rst-btn-success' : ''}`}
                   >
                     {isBookingThis ? (
                       <>
@@ -280,7 +272,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                     <MotionButton
                       onClick={() => handleDeclineEnquiry(project.id)}
                       disabled={!!bookingId || !!decliningId}
-                      className="p-2 rounded-lg text-stone-400 hover:text-red-300 hover:bg-red-950/40 border border-stone-700/60 transition-colors"
+                      className="rst-btn rst-btn-ghost !min-h-9 !px-2.5 text-stone-400 hover:!text-rose-300"
                       title="Decline enquiry"
                       aria-label={`Decline enquiry from ${project.title}`}
                     >

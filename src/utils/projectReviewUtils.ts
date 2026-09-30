@@ -25,6 +25,14 @@ export interface SettlementContext {
   marketMultiplier?: number;
   /** Override for match-rating multiplier; defaults from project.matchRating. */
   matchRatingMultiplier?: number;
+  /** Flat quality points (0-12) from the producer's origin on this genre. */
+  originQualityBonus?: number;
+  /** Extra payout multiplier from the producer's origin (clamped 0.5-2). */
+  payoutMultiplier?: number;
+  /** Skill XP multipliers keyed by skill name (origin perks). */
+  skillXpMultipliers?: Record<string, number>;
+  /** Extra reputation fraction applied to A-rank (80+) sessions. */
+  rankARepBonus?: number;
 }
 
 export const MATCH_RATING_MULTIPLIERS: Record<Project['matchRating'], number> = {
@@ -182,7 +190,8 @@ export const generateProjectReview = (
     const baseSkillXp = 20;
     const xpFromScore = Math.floor(skillScore * 0.75); // Max 75 XP from score
     const xpFromDifficulty = project.difficulty * 15;   // Max 75 XP from difficulty (assuming difficulty 1-5)
-    const skillXpGained = baseSkillXp + xpFromScore + xpFromDifficulty + randomInt(rng, 0, 24);
+    const rawSkillXp = baseSkillXp + xpFromScore + xpFromDifficulty + randomInt(rng, 0, 24);
+    const skillXpGained = Math.round(rawSkillXp * clamp(settlementContext?.skillXpMultipliers?.[skillName as string] ?? 1, 1, 2));
 
     const { updatedSkill, levelUps } = grantSkillXp(currentSkillState, skillXpGained);
 
@@ -210,6 +219,7 @@ export const generateProjectReview = (
   const pointsFactor = clamp((project.accumulatedCPoints + project.accumulatedTPoints) / 15, 0, 15);
   const difficultyBonus = project.difficulty * 1.5;
   const synergyBonus = clamp(Math.round(settlementContext?.synergyQualityBonus ?? 0), 0, 12);
+  const originBonus = clamp(Math.round(settlementContext?.originQualityBonus ?? 0), 0, 12);
   let overallQualityScore = Math.floor(
     averageSkillScore * 0.5 +
     pointsFactor +
@@ -219,7 +229,8 @@ export const generateProjectReview = (
     studioBonus +
     equipBonusExtra +
     minigameBonus +
-    synergyBonus
+    synergyBonus +
+    originBonus
   );
   overallQualityScore = clamp(overallQualityScore + randomInt(rng, -5, 4), 0, 100);
 
@@ -244,13 +255,16 @@ export const generateProjectReview = (
   // project type dominates — marketMultiplier comes from genre popularity).
   const qualityMultiplier = 0.5 + (overallQualityScore / 100) * 1.5; // Ranges from 0.5 to 2.0
   const difficultyFactor = 1 + (project.difficulty - 1) * 0.08;
+  const originPayout = clamp(settlementContext?.payoutMultiplier ?? 1, 0.5, 2);
   const moneyGained = Math.max(
     0,
-    Math.floor(project.payoutBase * qualityMultiplier * difficultyFactor * matchMultiplier * marketMultiplier * stakeSettle.payoutMult)
+    Math.floor(project.payoutBase * qualityMultiplier * difficultyFactor * matchMultiplier * marketMultiplier * stakeSettle.payoutMult * originPayout)
   );
+  // A-rank (80+) sessions earn bonus reputation for producers whose origin rewards prestige.
+  const rankARep = overallQualityScore >= 80 ? 1 + clamp(settlementContext?.rankARepBonus ?? 0, 0, 1) : 1;
   const reputationGained = Math.max(
     0,
-    Math.floor(project.repGainBase * qualityMultiplier * matchMultiplier * marketMultiplier) + stakeSettle.repDelta
+    Math.floor(project.repGainBase * qualityMultiplier * matchMultiplier * marketMultiplier * rankARep) + stakeSettle.repDelta
   );
   
   let playerManagementXpGained = 0;

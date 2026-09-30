@@ -40,7 +40,7 @@ export const EraProgressModal: React.FC<EraProgressModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl bg-gradient-to-b from-[#29251f] to-[#1d1914] border-stone-700 text-white shadow-2xl overflow-hidden p-6">
+      <DialogContent className="max-w-2xl overflow-hidden p-6">
         <DialogHeader className="border-b border-stone-800 pb-3">
           <DialogTitle className="flex items-center gap-3 text-lg font-bold text-stone-100">
             <span className="p-1.5 bg-purple-500/20 text-purple-400 rounded-lg border border-purple-500/30">
@@ -182,7 +182,7 @@ export const EraProgressModal: React.FC<EraProgressModalProps> = ({
                   triggerEraTransition();
                   onClose();
                 }}
-                className="flex-1 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-bold py-2 px-4 rounded-lg shadow-lg flex items-center justify-center gap-2"
+                className="rst-btn rst-btn-primary flex-1"
               >
                 <span>🚀 Advance to {nextEra?.name}</span>
                 {gamepad.isConnected && <GamepadGlyph button="south" size="xs" />}
@@ -198,7 +198,7 @@ export const EraProgressModal: React.FC<EraProgressModalProps> = ({
             
             <MotionButton 
               onClick={onClose}
-              className="px-4 py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs rounded-lg border border-stone-700 flex items-center gap-1.5"
+              className="px-4 py-2 bg-white/[0.07] hover:bg-white/[0.13] text-stone-300 text-xs rounded-lg border border-stone-700 flex items-center gap-1.5"
             >
               <span>Close</span>
               {gamepad.isConnected && <GamepadGlyph button="east" size="xs" />}

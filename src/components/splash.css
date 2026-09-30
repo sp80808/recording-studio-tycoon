@@ -43,8 +43,8 @@
 .splash-action { width: 100%; display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 9px 16px; text-align: left; border: 1px solid #9d948657; border-radius: 12px; background: #2e2820e8; box-shadow: 0 6px 0 #0c0a07, inset 0 1px #ffffff18; color: #f3f2f0; transition: transform .15s,box-shadow .15s,background .15s; }
 .splash-action:hover { background: #41392f; }
 .splash-action:active { transform: translateY(4px); box-shadow: 0 2px 0 #0c0a07; }
-.splash-action-primary { border-color: #e8bc6c; color: #24211d; background: linear-gradient(#ffe0a0,#dfa94d); box-shadow: 0 6px 0 #805525,0 13px 40px #dba34944,inset 0 1px #fff5cb; }
-.splash-action-primary:hover { background: linear-gradient(#ffedb7,#eaba69); }
+.splash-action-primary { border-color: rgba(232,188,108,.6); color: #f6e2b3; background: rgba(232,188,108,.13); box-shadow: 0 13px 40px rgba(219,163,73,.16); }
+.splash-action-primary:hover { background: rgba(232,188,108,.22); border-color: #e8bc6c; }
 .splash-action-icon { display: grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: 9px; background: #211d171a; }
 .splash-action strong,.splash-action small { display: block; }
 .splash-action strong { font-size: 16px; line-height: 1.2; }

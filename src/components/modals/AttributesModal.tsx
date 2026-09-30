@@ -79,7 +79,7 @@ export const AttributesModal: React.FC<AttributesModalProps> = ({
                 onClick={() => spendPerkPoint(attr.key)}
                 disabled={playerData.perkPoints <= 0 || playerData.attributes[attr.key] >= 10}
                 aria-label={`Upgrade ${attr.name}`}
-                className="bg-green-600 hover:bg-green-700 disabled:bg-stone-600"
+                className="bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] disabled:bg-stone-600"
               >
                 {playerData.attributes[attr.key] >= 10 ? 'Mastered' : '+1 rank · 1 point'}
               </Button>

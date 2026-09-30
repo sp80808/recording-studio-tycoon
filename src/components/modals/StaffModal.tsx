@@ -100,7 +100,7 @@ export const StaffModal: React.FC<StaffModalProps> = ({
                     <Button 
                       size="sm" 
                       onClick={() => assignStaffToProject(staff.id)}
-                      className="bg-green-600 hover:bg-green-700"
+                      className="bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24]"
                     >
                       Assign to Project
                     </Button>
@@ -110,7 +110,7 @@ export const StaffModal: React.FC<StaffModalProps> = ({
                     <Button 
                       size="sm" 
                       onClick={() => unassignStaffFromProject(staff.id)}
-                      className="bg-red-600 hover:bg-red-700"
+                      className="bg-red-400/[0.14] ring-1 ring-inset ring-red-400/45 hover:bg-red-400/[0.24]"
                     >
                       Unassign
                     </Button>
@@ -120,7 +120,7 @@ export const StaffModal: React.FC<StaffModalProps> = ({
                     <Button 
                       size="sm" 
                       onClick={() => toggleStaffRest(staff.id)}
-                      className="bg-amber-600 hover:bg-amber-700"
+                      className="bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24]"
                     >
                       {staff.status === 'Resting' ? 'Stop Resting' : 'Rest'}
                     </Button>
@@ -130,7 +130,7 @@ export const StaffModal: React.FC<StaffModalProps> = ({
                     <Button 
                       size="sm" 
                       onClick={() => openTrainingModal(staff)}
-                      className="bg-purple-600 hover:bg-purple-700"
+                      className="bg-purple-400/[0.14] ring-1 ring-inset ring-purple-400/45 hover:bg-purple-400/[0.24]"
                     >
                       Send to Training
                     </Button>

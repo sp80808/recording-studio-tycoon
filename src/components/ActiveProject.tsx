@@ -213,7 +213,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     return (
       <div className="flex-1 space-y-4">
         {/* Studio Header */}
-        <div className="bg-gradient-to-r from-purple-900/30 to-stone-900/30 border border-purple-500/30 rounded-lg p-3">
+        <div className="bg-purple-500/[0.08] border border-purple-500/30 rounded-lg p-3">
           <div className="flex items-center gap-2">
             <span className="text-2xl">🎵</span>
             <div>
@@ -528,7 +528,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
         <div className="absolute bottom-1 right-1 w-2 h-2 rounded-full bg-stone-700 border border-stone-600 flex items-center justify-center text-[8px] text-stone-400 font-mono shadow-inner">+</div>
 
         {/* Pinned Top Bar: Project Meta & LED telemetry */}
-        <div className="shrink-0 mb-2.5 bg-gradient-to-r from-stone-950 via-violet-950/70 to-stone-950 border border-stone-800/90 rounded-[2px] p-2.5 shadow-inner relative z-10">
+        <div className="shrink-0 mb-2.5 bg-stone-950/80 border border-stone-800/90 rounded-[2px] p-2.5 shadow-inner relative z-10">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
@@ -621,7 +621,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
           {/* Optional intervention opportunity */}
           {autoTriggeredMinigame && (
-            <div className="p-3 bg-gradient-to-r from-purple-900/50 to-stone-900/50 border border-purple-500/70 rounded-lg animate-scale-in">
+            <div className="p-3 bg-purple-500/[0.12] border border-purple-500/70 rounded-lg animate-scale-in">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h4 className="text-yellow-300 font-semibold text-xs mb-0.5">🎯 Optional Studio Intervention</h4>
@@ -632,7 +632,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
               <div className="grid grid-cols-3 gap-2 mt-2">
                 <MotionButton
                   onClick={handleStartIntervention}
-                  className="h-7 text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold rounded"
+                  className="h-7 text-xs bg-purple-400/[0.14] ring-1 ring-inset ring-purple-400/45 hover:bg-purple-400/[0.24] text-purple-100 font-bold rounded"
                 >
                   Intervene
                 </MotionButton>
@@ -656,7 +656,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
           {/* Stage Completion Notification */}
           {isCurrentStageComplete && !isProjectComplete && (
-            <div className="p-3 bg-gradient-to-r from-green-900/50 to-emerald-900/50 border border-green-500/70 rounded-lg animate-scale-in flex items-center justify-between">
+            <div className="p-3 bg-emerald-500/[0.10] border border-green-500/70 rounded-lg animate-scale-in flex items-center justify-between">
               <div>
                 <h4 className="text-green-400 font-semibold text-xs">✅ Stage Complete!</h4>
                 <p className="text-stone-300 text-xs">
@@ -669,7 +669,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
           {/* Active Studio Synergies (Kairosoft Combos) */}
           {activeSynergies.length > 0 && (
-            <div className="flex flex-wrap items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-950/40 via-yellow-950/20 to-stone-900/60 border border-amber-500/30">
+            <div className="flex flex-wrap items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-500/[0.08] border border-amber-500/30">
               <span className="text-[10px] uppercase font-bold tracking-wider text-amber-300 flex items-center gap-1 shrink-0">
                 <span>✨</span>
                 <span>Active Combos ({activeSynergies.length}):</span>
@@ -903,7 +903,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 )}
                 {goldStreak > 1 && (
                   <MotionReveal direction="up" distance={6}>
-                    <div className="px-2.5 py-1 text-xs font-black tracking-wider text-stone-950 bg-gradient-to-r from-amber-400 to-yellow-300 border border-amber-200 rounded-[2px] shadow-[0_0_12px_rgba(251,191,36,0.8)] flex items-center gap-1 shrink-0">
+                    <div className="px-2.5 py-1 text-xs font-black tracking-wider text-stone-950 bg-amber-300 border border-amber-200 rounded-[2px] shadow-[0_0_12px_rgba(251,191,36,0.8)] flex items-center gap-1 shrink-0">
                       <span>🔥</span>
                       <span>{goldStreak}X GOLD STREAK!</span>
                     </div>
@@ -931,7 +931,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   variant="outline"
                   className={`h-9 text-xs font-mono font-bold uppercase rounded-[2px] flex-1 border transition-all flex items-center justify-center gap-1.5 ${
                     overdriveArmed
-                      ? 'bg-orange-600 border-orange-400 text-white shadow-[0_0_10px_rgba(234,88,12,0.6)]'
+                      ? 'bg-orange-400/[0.16] border-orange-400/55 text-orange-100'
                       : 'bg-stone-900 border-stone-700 text-orange-400 hover:bg-stone-800'
                   }`}
                 >
@@ -952,9 +952,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 aria-label="Work on Project"
                 className={`w-full py-3.5 text-sm font-black uppercase tracking-wider rounded-[2px] border transition-all flex items-center justify-center gap-2 shadow-lg ${
                   isProjectComplete
-                    ? 'bg-emerald-600 border-emerald-400 text-white'
+                    ? 'bg-emerald-400/[0.16] border-emerald-400/55 text-emerald-100'
                     : availableEnergy > 0
-                    ? 'bg-red-600 hover:bg-red-500 border-red-400 text-white shadow-[0_0_12px_rgba(220,38,38,0.5)] active:scale-[0.99]'
+                    ? 'bg-red-400/[0.14] hover:bg-red-400/[0.24] border-red-400 text-red-100 shadow-[0_0_12px_rgba(220,38,38,0.5)] active:scale-[0.99]'
                     : 'bg-stone-900 border-stone-800 text-stone-500 cursor-not-allowed'
                 }`}
               >

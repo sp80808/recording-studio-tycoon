@@ -220,7 +220,7 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
                 onClose();
               }}
               disabled={!canAfford}
-              className="bg-green-600 hover:bg-green-700 disabled:opacity-50"
+              className="bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] disabled:opacity-50"
             >
               Buy Equipment
             </Button>

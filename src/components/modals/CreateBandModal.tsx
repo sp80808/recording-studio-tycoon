@@ -126,8 +126,8 @@ export const CreateBandModal: React.FC<CreateBandModalProps> = ({
                   key={staff.id}
                   className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                     selectedMembers.includes(staff.id)
-                      ? 'bg-amber-600 border-amber-500 text-stone-950'
-                      : 'bg-stone-800 border-stone-600 hover:bg-stone-700'
+                      ? 'bg-amber-400/[0.16] border-amber-400/55 text-amber-100'
+                      : 'bg-white/[0.07] border-stone-600 hover:bg-white/[0.13]'
                   }`}
                   onClick={() => toggleMember(staff.id)}
                 >

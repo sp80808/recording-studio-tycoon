@@ -223,7 +223,7 @@ export const ArtistContactModal: React.FC<ArtistContactModalProps> = ({
             <Button
               onClick={handleSubmit}
               disabled={offerAmount <= 0 || offerAmount > gameState.money}
-              className="flex-1 bg-purple-600 hover:bg-purple-700"
+              className="flex-1 bg-purple-400/[0.14] ring-1 ring-inset ring-purple-400/45 hover:bg-purple-400/[0.24]"
             >
               Send Request
             </Button>

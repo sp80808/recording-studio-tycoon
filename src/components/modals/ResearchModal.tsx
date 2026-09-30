@@ -136,7 +136,7 @@ export const ResearchModal: React.FC<ResearchModalProps> = ({
                 <Button
                   onClick={handleStartResearch}
                   disabled={!selectedMod || !selectedStaff || gameState.money < selectedMod.researchRequirements.cost}
-                  className="mt-4 w-full bg-green-600 hover:bg-green-700 text-white"
+                  className="mt-4 w-full bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] text-emerald-100"
                 >
                   Start Research for ${selectedMod.researchRequirements.cost}
                 </Button>

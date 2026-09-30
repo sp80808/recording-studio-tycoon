@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { AlertTriangle, Maximize, Minimize, Play, Plus, Settings, Volume2, VolumeX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { EraSelectionModal, Era } from './EraSelectionModal';
+import type { Era } from './EraSelectionModal';
+import type { ProducerBackgroundId } from '@/types/character';
+import { CareerStartScreen } from './CareerStartScreen';
 import { SettingsModal } from './modals/SettingsModal';
 import {
   AlertDialog,
@@ -21,7 +23,7 @@ import { inspectSaveGame, SaveInspectionResult } from '@/utils/savePreview';
 import './splash.css';
 
 interface SplashScreenProps {
-  onStartGame: (era: Era) => void;
+  onStartGame: (era: Era, originId: ProducerBackgroundId) => void;
   onLoadGame: () => boolean | void;
   hasSaveGame?: boolean;
 }
@@ -105,6 +107,18 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
   const hasValidSave = saveInfo.hasSave && !saveInfo.isCorrupt && saveInfo.preview !== null;
   const musicLabel = settings.musicEnabled ? t('splash_mute_music') : t('splash_play_music');
   const fullscreenLabel = isFullscreen ? t('exit_fullscreen') : t('enter_fullscreen');
+
+  if (showEraSelection) {
+    return (
+      <CareerStartScreen
+        onBegin={(era, originId) => {
+          setShowEraSelection(false);
+          onStartGame(era, originId);
+        }}
+        onBack={() => setShowEraSelection(false)}
+      />
+    );
+  }
 
   return <>
     <main className="splash-page">
@@ -201,12 +215,12 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="mt-4 gap-2 sm:gap-2">
-          <AlertDialogCancel className="border-stone-700 bg-stone-800 text-stone-200 hover:bg-stone-700">
+          <AlertDialogCancel className="border-stone-700 bg-white/[0.07] text-stone-200 hover:bg-white/[0.13]">
             {t('splash_keep_career')}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirmOverwrite}
-            className="border border-amber-400/50 bg-amber-500 font-bold text-stone-950 hover:bg-amber-400"
+            className="border border-amber-400/50 bg-amber-400/[0.14] font-bold text-amber-100 hover:bg-amber-400/[0.24]"
           >
             {t('splash_overwrite_confirm')}
           </AlertDialogAction>
@@ -214,7 +228,6 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
       </AlertDialogContent>
     </AlertDialog>
 
-    <EraSelectionModal isOpen={showEraSelection} onSelectEra={era => { setShowEraSelection(false); onStartGame(era); }} onClose={() => setShowEraSelection(false)} />
     {showSettings && <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} context="splash" />}
   </>;
 }

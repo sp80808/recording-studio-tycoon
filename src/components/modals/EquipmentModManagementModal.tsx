@@ -118,7 +118,7 @@ export const EquipmentModManagementModal: React.FC<EquipmentModManagementModalPr
           <Button 
             type="button" 
             onClick={handleApply}
-            className="bg-amber-600 hover:bg-amber-700 text-stone-950"
+            className="bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-amber-100"
             disabled={selectedModId === equipment.appliedModId} // Disabled if selection hasn't changed
           >
             Save Changes

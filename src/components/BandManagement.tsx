@@ -47,7 +47,7 @@ export const BandManagement: React.FC<BandManagementProps> = ({
         {canCreateBand && (
           <Button
             onClick={() => setShowCreateModal(true)}
-            className="bg-purple-600 hover:bg-purple-700"
+            className="bg-purple-400/[0.14] ring-1 ring-inset ring-purple-400/45 hover:bg-purple-400/[0.24]"
           >
             Create Band
           </Button>
@@ -155,7 +155,7 @@ export const BandManagement: React.FC<BandManagementProps> = ({
                   setShowRecordTrackModal(true);
                 }}
                 disabled={gameState.activeProject !== null || gameState.activeOriginalTrack !== null || band.tourStatus.isOnTour}
-                className="flex-1 bg-green-600 hover:bg-green-700"
+                className="flex-1 bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24]"
               >
                 🎵 Record Track
               </Button>
@@ -164,7 +164,7 @@ export const BandManagement: React.FC<BandManagementProps> = ({
                   size="sm"
                   onClick={() => onStartTour(band.id)}
                   disabled={band.tourStatus.isOnTour}
-                  className="bg-amber-600 hover:bg-amber-700"
+                  className="bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24]"
                 >
                   🚌 Tour
                 </Button>

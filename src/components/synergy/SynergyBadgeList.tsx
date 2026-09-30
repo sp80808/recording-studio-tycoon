@@ -42,7 +42,7 @@ export const SynergyBadgeList: React.FC<SynergyBadgeListProps> = ({
             <Tooltip key={synergy.id}>
               <TooltipTrigger asChild>
                 <div
-                  className={`inline-flex items-center gap-1 font-semibold rounded-full border border-amber-400/50 bg-gradient-to-r from-amber-500/20 to-yellow-600/20 text-amber-300 shadow-sm cursor-help hover:border-amber-300 hover:scale-105 transition-all ${
+                  className={`inline-flex items-center gap-1 font-semibold rounded-full border border-amber-400/50 bg-amber-500/15 text-amber-300 shadow-sm cursor-help hover:border-amber-300 hover:scale-105 transition-all ${
                     isSmall ? 'text-[10px] px-2 py-0.5' : 'text-xs px-2.5 py-1'
                   }`}
                 >

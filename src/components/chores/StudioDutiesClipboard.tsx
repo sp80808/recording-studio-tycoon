@@ -91,7 +91,7 @@ export const StudioDutiesClipboard: React.FC<StudioDutiesClipboardProps> = ({
       toast({
         title: '🏆 All Daily Duties Complete!',
         description: 'Your studio is in peak pristine condition.',
-        className: 'bg-gradient-to-r from-emerald-950 to-stone-900 border border-emerald-500 text-white'
+        className: 'bg-emerald-950/90 border border-emerald-500 text-white'
       });
     } else {
       toast({
@@ -294,7 +294,7 @@ export const StudioDutiesClipboard: React.FC<StudioDutiesClipboardProps> = ({
                           <MotionButton
                             magnetic
                             onClick={() => handlePerformDuty(chore.id)}
-                            className="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-stone-950 font-bold rounded text-xs transition-colors flex items-center gap-1"
+                            className="px-2.5 py-1 bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] active:bg-amber-400/[0.30] text-amber-100 font-bold rounded text-xs transition-colors flex items-center gap-1"
                           >
                             <GamepadGlyph input="south" size="sm" />
                             Do Duty
@@ -321,7 +321,7 @@ export const StudioDutiesClipboard: React.FC<StudioDutiesClipboardProps> = ({
             </span>
             <MotionButton
               onClick={onClose}
-              className="px-3 py-1 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded transition-colors"
+              className="px-3 py-1 bg-white/[0.07] ring-1 ring-inset ring-white/15 hover:bg-white/[0.13] text-stone-300 rounded transition-colors"
             >
               Close
             </MotionButton>

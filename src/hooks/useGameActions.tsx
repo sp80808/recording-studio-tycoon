@@ -22,11 +22,22 @@ import {
   autoAssignAvailableChores
 } from '@/simulation/choreEngine';
 import { evaluateStorylineTick } from '@/narrative/branchingStorylineEngine';
+import {
+  NEUTRAL_ORIGIN_EFFECTS,
+  applyUpkeepDiscount,
+  getOriginEffects,
+  gigRefreshCostFor,
+  type OriginEffects,
+} from '@/narrative/originPerks';
 
 /** Daily equipment upkeep: 0.1% of item price per day, minimum $2/item */
-export const calculateEquipmentUpkeep = (equipment: GameState['ownedEquipment']): number => {
+export const calculateEquipmentUpkeep = (
+  equipment: GameState['ownedEquipment'],
+  effects: OriginEffects = NEUTRAL_ORIGIN_EFFECTS,
+): number => {
   if (!equipment || equipment.length === 0) return 0;
-  return equipment.reduce((sum, item) => sum + Math.max(2, Math.round(item.price * 0.001)), 0);
+  const base = equipment.reduce((sum, item) => sum + Math.max(2, Math.round(item.price * 0.001)), 0);
+  return applyUpkeepDiscount(base, effects);
 };
 
 /** Cost + cooldown for chasing new gig offers (bead goj.3). */
@@ -58,7 +69,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
 
     // Staff salary + equipment upkeep expenses (bead ruc.3)
     const totalSalaries = gameState.hiredStaff.reduce((total, staff) => total + staff.salary, 0);
-    const equipmentUpkeep = calculateEquipmentUpkeep(gameState.ownedEquipment);
+    const equipmentUpkeep = calculateEquipmentUpkeep(gameState.ownedEquipment, getOriginEffects(gameState));
     const totalDailyExpenses = totalSalaries + equipmentUpkeep;
 
     // Unpaid salaries penalty check
@@ -328,11 +339,12 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       return false;
     }
 
-    if (gameState.money < GIG_REFRESH_COST) {
+    const refreshCost = gigRefreshCostFor(GIG_REFRESH_COST, getOriginEffects(gameState));
+    if (gameState.money < refreshCost) {
       gameAudio.playUISound('unavailable');
       toast({
         title: "💰 Insufficient Funds",
-        description: `Need $${GIG_REFRESH_COST} to chase new gigs.`,
+        description: `Need $${refreshCost} to chase new gigs.`,
         className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive",
       });
@@ -341,7 +353,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
 
     setGameState(prev => ({
       ...prev,
-      money: prev.money - GIG_REFRESH_COST,
+      money: prev.money - refreshCost,
       lastGigRefreshDay: prev.currentDay,
       availableProjects: [
         ...prev.availableProjects,
@@ -352,7 +364,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     gameAudio.playUISound('notice');
     toast({
       title: "📞 New Leads",
-      description: `Paid $${GIG_REFRESH_COST} — a fresh gig landed on your desk.`,
+      description: refreshCost > 0 ? `Paid $${refreshCost} — a fresh gig landed on your desk.` : 'A fresh gig landed on your desk — no fee for you.',
       className: "bg-stone-800 border-stone-600 text-white",
     });
     return true;

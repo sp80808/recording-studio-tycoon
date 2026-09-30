@@ -122,9 +122,9 @@ export const ChartEntryRow: React.FC<ChartEntryRowProps> = ({
                disabled={!hasAudio}
                className={`h-8 w-8 rounded-full p-0 transition-all duration-200 relative group/btn ${
                  isPlaying 
-                   ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-600/25 animate-pulse' 
+                   ? 'bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] text-emerald-100 shadow-lg shadow-green-600/25 animate-pulse' 
                    : hasAudio 
-                     ? 'bg-stone-600 hover:bg-stone-500 text-stone-200 hover:shadow-md hover:scale-105 active:scale-95' 
+                     ? 'bg-white/[0.07] ring-1 ring-inset ring-white/15 hover:bg-white/[0.13] text-stone-200 hover:shadow-md hover:scale-105 active:scale-95' 
                      : 'bg-stone-800 text-stone-500 cursor-not-allowed'
                }`}
                title={hasAudio ? `Play preview: ${segment.displayTime}` : 'No preview available'}

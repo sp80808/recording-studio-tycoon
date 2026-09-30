@@ -435,7 +435,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
                   gameAudio.playSound('button_click', 'sfx'); 
                   onClose();
                 }} 
-                className="w-full bg-yellow-500 hover:bg-yellow-600 text-stone-900 font-bold text-lg py-3 rounded"
+                className="w-full bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-amber-100 font-bold text-lg py-3 rounded"
               >
                 Awesome!
               </MotionButton>

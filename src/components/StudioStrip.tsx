@@ -41,7 +41,7 @@ export const StudioStrip: React.FC<StudioStripProps> = ({
   return (
     <div className="w-full h-[164px] bg-stone-950 border-t border-stone-700 flex items-stretch overflow-hidden">
       <div className="w-[34%] min-w-[280px] border-r border-stone-800 p-3 flex gap-3">
-        <div className="flex-1 rounded-lg border border-stone-700 bg-gradient-to-b from-stone-800 to-stone-900 relative overflow-hidden">
+        <div className="flex-1 rounded-lg border border-stone-700 bg-stone-900/80 relative overflow-hidden">
           <div className="absolute inset-x-0 bottom-0 h-2/3 bg-stone-900/70" />
           <div className="relative h-full p-3 flex flex-col justify-between">
             <div className="flex items-center gap-2 text-xs text-stone-400">
@@ -62,7 +62,7 @@ export const StudioStrip: React.FC<StudioStripProps> = ({
         </div>
 
         <div className="w-[38%] rounded-lg border border-stone-700 bg-stone-900 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-purple-500/5" />
+          <div className="absolute inset-0 bg-amber-500/[0.03]" />
           <div className="relative h-full p-3 flex flex-col justify-between">
             <div className="flex items-center gap-2 text-xs text-stone-400">
               <Mic2 size={14} />
@@ -162,7 +162,7 @@ export const StudioStrip: React.FC<StudioStripProps> = ({
             <Button
               onClick={onBookNextEnquiry}
               size="sm"
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+              className="flex-1 bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] text-emerald-100"
             >
               Book ${nextEnquiry.payoutBase}
             </Button>

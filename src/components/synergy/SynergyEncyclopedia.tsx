@@ -49,7 +49,7 @@ export const SynergyEncyclopedia: React.FC<SynergyEncyclopediaProps> = ({
   return (
     <div className={`space-y-3 ${className}`}>
       {/* Header & Discovery Progress Bar */}
-      <div className="rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-950/40 via-yellow-950/20 to-stone-900/60 p-3 shadow-md">
+      <div className="rounded-xl border border-amber-500/30 bg-amber-500/[0.06] p-3 shadow-md">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="text-xl">✨</span>
@@ -73,7 +73,7 @@ export const SynergyEncyclopedia: React.FC<SynergyEncyclopediaProps> = ({
         {/* Progress Bar */}
         <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-black/50 border border-white/10">
           <div
-            className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 transition-all duration-500 rounded-full"
+            className="h-full bg-amber-400 transition-all duration-500 rounded-full"
             style={{ width: `${discoveryPercent}%` }}
           />
         </div>
@@ -88,7 +88,7 @@ export const SynergyEncyclopedia: React.FC<SynergyEncyclopediaProps> = ({
           }}
           className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
             selectedCategory === 'all'
-              ? 'bg-amber-500 text-stone-950 shadow-sm scale-102'
+              ? 'bg-amber-400/[0.16] ring-1 ring-inset ring-amber-400/50 text-amber-100 scale-102'
               : 'bg-stone-800/80 text-stone-300 hover:bg-stone-700 hover:text-white border border-stone-700/60'
           }`}
         >
@@ -109,7 +109,7 @@ export const SynergyEncyclopedia: React.FC<SynergyEncyclopediaProps> = ({
               }}
               className={`px-2.5 py-1 text-xs font-bold rounded-lg flex items-center gap-1 transition-all ${
                 isSelected
-                  ? 'bg-amber-500 text-stone-950 shadow-sm scale-102'
+                  ? 'bg-amber-400/[0.16] ring-1 ring-inset ring-amber-400/50 text-amber-100 scale-102'
                   : 'bg-stone-800/80 text-stone-300 hover:bg-stone-700 hover:text-white border border-stone-700/60'
               }`}
             >
@@ -150,7 +150,7 @@ export const SynergyEncyclopedia: React.FC<SynergyEncyclopediaProps> = ({
             return (
               <div
                 key={synergy.id}
-                className="rounded-lg border border-amber-500/40 bg-gradient-to-br from-amber-950/20 via-stone-900/80 to-stone-950 p-2.5 shadow-sm transition-all hover:border-amber-400"
+                className="rounded-lg border border-amber-500/40 bg-stone-900/70 p-2.5 shadow-sm transition-all hover:border-amber-400"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">

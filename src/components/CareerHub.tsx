@@ -4,6 +4,7 @@ import { GameState } from '@/types/game';
 import { checkDailyChallenge } from '@/utils/dailyChallenges';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
 import { calculateEquipmentUpkeep } from '@/hooks/useGameActions';
+import { getOriginEffects } from '@/narrative/originPerks';
 import { gameAudio } from '@/utils/audioSystem';
 import { resolveCareerNextAction } from '@/utils/careerNextAction';
 import { getProducerOrigin } from '@/narrative/characterOrigins';
@@ -83,7 +84,7 @@ export function CareerHub({
     gameState.dailyTracking?.challengeDoneId === challenge.def.id;
   const next = ProgressionSystem.getNextUnlockRequirements(gameState);
   const expenses =
-    calculateEquipmentUpkeep(gameState.ownedEquipment) +
+    calculateEquipmentUpkeep(gameState.ownedEquipment, getOriginEffects(gameState)) +
     gameState.hiredStaff.reduce((sum, staff) => sum + staff.salary, 0);
   const origin = player.originId ? getProducerOrigin(player.originId as ProducerBackgroundId) : null;
   const xpRatio = player.xp / Math.max(1, player.xpToNextLevel);
@@ -132,7 +133,7 @@ export function CareerHub({
             aria-valuenow={player.xp}
           >
             <span
-              className="block h-full rounded-full bg-gradient-to-r from-[var(--rst-brass-500)] to-[var(--rst-brass-300)] motion-safe:transition-all motion-safe:duration-500"
+              className="block h-full rounded-full bg-[var(--rst-brass-400)] motion-safe:transition-all motion-safe:duration-500"
               style={{ width: `${Math.min(100, xpRatio * 100)}%` }}
             />
           </span>

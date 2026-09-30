@@ -87,7 +87,7 @@ export const RecordTrackModal: React.FC<RecordTrackModalProps> = ({
           <Button variant="outline" onClick={onClose} className="border-stone-600 text-stone-300 hover:bg-stone-700">
             Cancel
           </Button>
-          <Button onClick={handleCreateTrack} className="bg-green-600 hover:bg-green-700">
+          <Button onClick={handleCreateTrack} className="bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24]">
             Start Recording
           </Button>
         </DialogFooter>

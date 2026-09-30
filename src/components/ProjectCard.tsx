@@ -26,7 +26,7 @@ const ProjectCardComponent: React.FC<ProjectCardProps> = ({ project, onStartProj
       <Button 
         onClick={() => onStartProject(project)}
         disabled={isActiveProject}
-        className="w-full mt-3 bg-green-600 hover:bg-green-700 disabled:bg-stone-600 text-white"
+        className="w-full mt-3 bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] disabled:bg-stone-600 text-emerald-100"
         size="sm"
       >
         Start Project

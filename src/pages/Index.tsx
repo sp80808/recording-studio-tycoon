@@ -17,6 +17,7 @@ import { generateProjectReview } from '@/utils/projectReviewUtils'; // Import ge
 import { getFocusEffectiveness, getMoodEffectiveness } from '@/utils/playerUtils';
 import { calculateStudioSkillBonus, getEquipmentBonuses, resolveSessionEquipment } from '@/utils/gameUtils';
 import { getGenreMarketMultiplier } from '@/utils/eraProgression';
+import { getSettlementBonuses } from '@/utils/settlementBonuses';
 import { ProjectReviewModal } from '@/components/modals/ProjectReviewModal'; // Import ProjectReviewModal (assuming path)
 import { useGameLogic } from '@/hooks/useGameLogic';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -39,6 +40,7 @@ import {
   type StorylineBranchOption,
 } from '@/narrative/branchingStorylineEngine';
 import { isTauriShell } from '@/utils/platform';
+import type { ProducerBackgroundId } from '@/types/character';
 import { useFeatureFlag } from '@/stores/featureFlagStore';
 
 const MusicStudioTycoon = () => {
@@ -153,8 +155,9 @@ const MusicStudioTycoon = () => {
     [setGameState, settings.sfxEnabled],
   );
 
-  const handleStartNewGame = (era: Era) => {
+  const handleStartNewGame = (era: Era, originId?: ProducerBackgroundId) => {
     const newGameState = initializeGameState({
+      originId,
       startingMoney: era.startingMoney,
       selectedEra: era.id,
       eraStartYear: era.startYear,
@@ -225,6 +228,11 @@ const MusicStudioTycoon = () => {
           Math.min(10, Math.round((equipmentBonuses.quality || 0) / 2 + (equipmentBonuses.genre || 0) / 4))
         ),
         marketMultiplier: getGenreMarketMultiplier(completedProjectData.genre, gameState.currentEra),
+        ...getSettlementBonuses(
+          gameState,
+          completedProjectData,
+          getGenreMarketMultiplier(completedProjectData.genre, gameState.currentEra),
+        ),
       }
     );
     

@@ -15,10 +15,10 @@ interface MinigameChromeProps {
 }
 
 const ACCENT_HEADER_STYLES: Record<MinigameAccent, string> = {
-  blue: 'from-blue-600 to-blue-900 border-blue-400/40',
-  green: 'from-green-600 to-green-900 border-green-400/40',
-  red: 'from-red-600 to-red-900 border-red-400/40',
-  yellow: 'from-yellow-500 to-yellow-800 border-yellow-300/40',
+  blue: 'bg-sky-500/20 border-sky-400/40',
+  green: 'bg-emerald-500/20 border-emerald-400/40',
+  red: 'bg-rose-500/20 border-rose-400/40',
+  yellow: 'bg-amber-400/20 border-amber-300/40',
 };
 
 export function MinigameChrome({
@@ -35,7 +35,7 @@ export function MinigameChrome({
   return (
     <div className="flex w-full flex-col overflow-hidden rounded-xl border border-white/10 bg-stone-900 shadow-lg">
       <div
-        className={`flex items-center justify-between gap-2 border-b bg-gradient-to-r px-4 py-2 ${ACCENT_HEADER_STYLES[accent]}`}
+        className={`flex items-center justify-between gap-2 border-b px-4 py-2 ${ACCENT_HEADER_STYLES[accent]}`}
       >
         <h3 className="min-w-0 flex-1 truncate text-left text-sm font-bold text-white">
           {title}

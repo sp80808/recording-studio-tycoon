@@ -190,7 +190,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               onClick={() => setActiveTab('audio')}
               className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'audio'
-                  ? 'bg-amber-500 text-stone-950 shadow-md shadow-amber-500/20'
+                  ? 'bg-amber-400/[0.16] ring-1 ring-inset ring-amber-400/50 text-amber-100'
                   : 'bg-stone-900/80 text-stone-400 hover:text-white hover:bg-stone-800'
               }`}
             >
@@ -200,7 +200,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               onClick={() => setActiveTab('graphics')}
               className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'graphics'
-                  ? 'bg-amber-500 text-stone-950 shadow-md shadow-amber-500/20'
+                  ? 'bg-amber-400/[0.16] ring-1 ring-inset ring-amber-400/50 text-amber-100'
                   : 'bg-stone-900/80 text-stone-400 hover:text-white hover:bg-stone-800'
               }`}
             >
@@ -210,7 +210,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               onClick={() => setActiveTab('gameplay')}
               className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'gameplay'
-                  ? 'bg-amber-500 text-stone-950 shadow-md shadow-amber-500/20'
+                  ? 'bg-amber-400/[0.16] ring-1 ring-inset ring-amber-400/50 text-amber-100'
                   : 'bg-stone-900/80 text-stone-400 hover:text-white hover:bg-stone-800'
               }`}
             >
@@ -220,7 +220,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               onClick={() => setActiveTab('accessibility')}
               className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'accessibility'
-                  ? 'bg-amber-500 text-stone-950 shadow-md shadow-amber-500/20'
+                  ? 'bg-amber-400/[0.16] ring-1 ring-inset ring-amber-400/50 text-amber-100'
                   : 'bg-stone-900/80 text-stone-400 hover:text-white hover:bg-stone-800'
               }`}
             >
@@ -230,7 +230,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               onClick={() => setActiveTab('system')}
               className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'system'
-                  ? 'bg-amber-500 text-stone-950 shadow-md shadow-amber-500/20'
+                  ? 'bg-amber-400/[0.16] ring-1 ring-inset ring-amber-400/50 text-amber-100'
                   : 'bg-stone-900/80 text-stone-400 hover:text-white hover:bg-stone-800'
               }`}
             >
@@ -314,7 +314,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         onClick={() => handlePresetSelect(preset)}
                         className={`py-2 px-3 rounded text-xs font-bold uppercase tracking-wider transition-all border ${
                           settings.graphicsPreset === preset
-                            ? 'bg-amber-500 text-stone-950 border-amber-400 shadow-md shadow-amber-500/20'
+                            ? 'bg-amber-400/[0.16] text-amber-100 border-amber-400/55'
                             : 'bg-stone-900 text-stone-300 border-stone-700 hover:bg-stone-800'
                         }`}
                       >
@@ -601,14 +601,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       placeholder={t('settings_import_placeholder')}
                       className="bg-stone-900 border-stone-700 text-xs font-mono min-h-[60px]"
                     />
-                    <Button onClick={handleImportGameData} className="w-full bg-emerald-600 hover:bg-emerald-700 text-xs py-1.5 h-auto">
+                    <Button onClick={handleImportGameData} className="w-full bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] text-xs py-1.5 h-auto">
                       {t('settings_import_button')}
                     </Button>
                   </div>
 
                   {context === 'ingame' && gameState && (
                     <div className="space-y-2 pt-2 border-t border-stone-800">
-                      <Button onClick={handleExportGameData} className="w-full bg-amber-600 hover:bg-amber-700 text-xs py-1.5 h-auto">
+                      <Button onClick={handleExportGameData} className="w-full bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-xs py-1.5 h-auto">
                         {t('settings_export_button')}
                       </Button>
                       {exportedSaveString && (
@@ -618,7 +618,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             readOnly
                             className="bg-stone-900 border-stone-700 text-xs font-mono min-h-[60px]"
                           />
-                          <Button onClick={handleCopyToClipboard} className="w-full bg-amber-600 hover:bg-amber-700 text-xs py-1.5 h-auto">
+                          <Button onClick={handleCopyToClipboard} className="w-full bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-xs py-1.5 h-auto">
                             {t('settings_copy_clipboard')}
                           </Button>
                         </>
@@ -672,7 +672,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         gameAudio.playClick();
                         toast.success(t('toast_dev_box_drop_spawned'));
                       }}
-                      className="w-full bg-amber-600 hover:bg-amber-700 text-stone-950 text-xs py-2 h-auto"
+                      className="w-full bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-amber-100 text-xs py-2 h-auto"
                     >
                       Spawn Box Drop Now
                     </Button>
@@ -692,7 +692,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <Button
                       onClick={handleResetGame}
                       variant="destructive"
-                      className="w-full bg-red-600 hover:bg-red-700 text-white text-xs"
+                      className="w-full bg-red-400/[0.14] ring-1 ring-inset ring-red-400/45 hover:bg-red-400/[0.24] text-red-100 text-xs"
                     >
                       {t('settings_reset_game')}
                     </Button>
@@ -706,7 +706,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="pt-4 border-t border-stone-800 flex justify-end">
             <Button
               onClick={onClose}
-              className="bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold px-6"
+              className="bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-amber-100 font-bold px-6"
             >
               Done & Close
             </Button>

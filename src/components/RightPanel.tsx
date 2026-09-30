@@ -137,7 +137,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
       {/* Tab Navigation (Pinned) */}
       <nav
         aria-label="Management panels"
-        className="grid grid-cols-6 shrink-0 mb-2.5 overflow-hidden rounded-lg border border-stone-700/80 bg-gradient-to-b from-stone-700/70 to-stone-950 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_4px_14px_rgba(0,0,0,0.3)]"
+        className="grid grid-cols-6 shrink-0 mb-2.5 overflow-hidden rounded-lg border border-stone-700/80 bg-black/25 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_4px_14px_rgba(0,0,0,0.3)]"
       >
         {DASHBOARD_TABS.map(({ id, label, icon: Icon }) => {
           const selected = activeTab === id;
@@ -151,7 +151,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
               title={id === 'synergies' ? 'Studio Recipe & Synergy Codex' : label}
               className={`relative flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[10px] font-bold leading-none transition-all focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-1 focus-visible:ring-offset-stone-950 ${
                 selected
-                  ? 'bg-gradient-to-b from-stone-950 to-stone-800 text-amber-200 shadow-[inset_0_2px_5px_rgba(0,0,0,0.9),inset_0_-1px_0_rgba(255,255,255,0.08)]'
+                  ? 'bg-[rgba(230,184,102,0.13)] text-amber-200 shadow-[inset_0_2px_5px_rgba(0,0,0,0.9),inset_0_-1px_0_rgba(255,255,255,0.08)]'
                   : 'text-stone-400 hover:bg-white/5 hover:text-stone-100 active:translate-y-px'
               }`}
             >
@@ -172,7 +172,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
         {activeTab === 'studio' && (
           <div className="space-y-3">
             {/* Prominent Advance Day Action Banner */}
-            <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-gradient-to-r from-purple-950/80 via-violet-950/70 to-stone-900 border border-purple-500/50 shadow-md">
+            <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-purple-500/[0.10] border border-purple-500/50 shadow-md">
               <div className="min-w-0">
                 <div className="text-xs font-bold text-white flex items-center gap-1.5">
                   <span className="text-amber-300 font-extrabold">☀ Day {gameState.currentDay}</span>

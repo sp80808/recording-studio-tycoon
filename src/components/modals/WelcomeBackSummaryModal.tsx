@@ -88,7 +88,7 @@ export const WelcomeBackSummaryModal: React.FC<WelcomeBackSummaryModalProps> = (
           )}
         </div>
 
-        <Button onClick={onClose} className="w-full bg-green-600 hover:bg-green-700">
+        <Button onClick={onClose} className="w-full bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24]">
           Back to the studio
         </Button>
       </DialogContent>

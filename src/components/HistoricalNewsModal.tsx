@@ -145,7 +145,7 @@ export const HistoricalNewsModal: React.FC<HistoricalNewsModalProps> = ({
           <div className="flex justify-center pt-4">
             <Button 
               onClick={onClose}
-              className="bg-amber-600 hover:bg-amber-700 text-stone-950 px-8"
+              className="bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-amber-100 px-8"
             >
               Continue Building Your Legacy
             </Button>

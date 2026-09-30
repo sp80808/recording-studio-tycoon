@@ -146,9 +146,9 @@ export const ChartDisplay: React.FC<ChartDisplayProps> = ({
                     disabled={!hasAudio}
                     className={`h-8 w-8 rounded-full p-0 transition-all relative ${
                       isPlaying
-                        ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg animate-pulse'
+                        ? 'bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] text-emerald-100 shadow-lg animate-pulse'
                         : hasAudio
-                          ? 'bg-stone-600 hover:bg-stone-500 text-stone-200'
+                          ? 'bg-white/[0.07] ring-1 ring-inset ring-white/15 hover:bg-white/[0.13] text-stone-200'
                           : 'bg-stone-800 text-stone-500 cursor-not-allowed'
                     }`}
                     title={hasAudio ? `Play preview: ${segment.displayTime}` : 'No preview available'}
@@ -179,7 +179,7 @@ export const ChartDisplay: React.FC<ChartDisplayProps> = ({
                       size="sm"
                       onClick={() => onContactArtist(entry)}
                       disabled={!canAfford}
-                      className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-xs px-3"
+                      className="bg-purple-400/[0.14] ring-1 ring-inset ring-purple-400/45 hover:bg-purple-400/[0.24] disabled:opacity-50 text-xs px-3"
                     >
                       Contact
                     </Button>

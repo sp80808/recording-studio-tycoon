@@ -9,6 +9,7 @@ import { triggerScreenShake } from '@/utils/screenShake';
 import { applyCompletedSessionToRelationship, createClientRelationshipFromProject } from '@/utils/clientRelationshipUtils';
 import { findAvailableStudioRoom } from '@/utils/studioRoomUtils';
 import { evaluateStorylineTick } from '@/narrative/branchingStorylineEngine';
+import { getOriginEffects } from '@/narrative/originPerks';
 
 export const useProjectManagement = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
   const startProject = useCallback((project: Project) => {
@@ -88,7 +89,8 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
             applyCompletedSessionToRelationship(
               existingRelationship,
               projectReport.overallQualityScore,
-              prev.currentDay
+              prev.currentDay,
+              getOriginEffects(prev).relationshipXpMultiplier
             );
         }
 
@@ -110,7 +112,8 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
         1,
         settled.playerData.level,
         prev.currentEra,
-        Object.values(updatedClientRelationships)
+        Object.values(updatedClientRelationships),
+        getOriginEffects(prev).repeatClientPremium
       );
 
       return evaluateStorylineTick(

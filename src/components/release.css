@@ -5,7 +5,8 @@
 .release-copy p { font-size:11px; font-weight:900; letter-spacing:.25em; color:#f4c97c; }
 .release-copy h2 { margin:12px 0; font-size:clamp(29px,6vw,64px); line-height:1; font-weight:900; text-wrap:balance; overflow-wrap:anywhere; }
 .release-copy span { color:#d1cbc3; font-size:14px; }
-.release-continue { position:relative; display:flex; align-items:center; justify-content:center; gap:10px; min-height:48px; margin-top:10px; padding:10px 20px; border:1px solid #deb66d; border-radius:11px; color:#2a2621; background:linear-gradient(#ffe2a8,#e6ae56); font-weight:800; box-shadow:0 4px 0 #795327; }
+.release-continue { position:relative; display:flex; align-items:center; justify-content:center; gap:10px; min-height:48px; margin-top:10px; padding:10px 20px; border:1px solid rgba(230,184,102,.6); border-radius:11px; color:var(--rst-brass-200); background:rgba(230,184,102,.14); font-weight:700; }
+.release-continue:hover { background:rgba(230,184,102,.24); border-color:var(--rst-brass-400); }
 .release-continue:hover { filter:brightness(1.1); }
 .release-continue:focus-visible { outline:2px solid white; outline-offset:4px; }
 @keyframes release-in { from { opacity:0; } }

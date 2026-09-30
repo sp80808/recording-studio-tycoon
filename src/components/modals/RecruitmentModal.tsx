@@ -49,7 +49,7 @@ export const RecruitmentModal: React.FC<RecruitmentModalProps> = ({
               const signingFee = candidate.salary * 3; // 3x daily salary as signing fee
               
               return (
-                <Card key={index} className="p-4 bg-stone-800 border-stone-600 hover:bg-stone-750 transition-colors">
+                <Card key={index} className="p-4 bg-white/[0.07] border-stone-600 hover:bg-stone-750 transition-colors">
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <h4 className="text-lg font-bold text-white">{candidate.name}</h4>
@@ -89,7 +89,7 @@ export const RecruitmentModal: React.FC<RecruitmentModalProps> = ({
                     <Button 
                       onClick={() => hireStaff(index)}
                       disabled={gameState.money < signingFee}
-                      className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-stone-600"
+                      className="flex-1 bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] disabled:bg-stone-600"
                     >
                       {gameState.money < signingFee ? 'Insufficient Funds' : `Hire for $${signingFee}`}
                     </Button>
@@ -104,7 +104,7 @@ export const RecruitmentModal: React.FC<RecruitmentModalProps> = ({
           <Button 
             onClick={refreshCandidates}
             disabled={gameState.money < 50}
-            className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-stone-600"
+            className="w-full bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] disabled:bg-stone-600"
           >
             Find New Candidates ($50)
           </Button>

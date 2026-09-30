@@ -50,16 +50,13 @@ export const XPProgressBar: React.FC<XPProgressBarProps> = ({
           aria-label="Player experience progress"
         />
         
-        {/* Animated gradient overlay */}
+        {/* Solid brass fill; near a level-up it breathes once instead of shimmering */}
         <div 
-          className={`absolute inset-0 bg-gradient-to-r from-purple-500 via-amber-400 to-teal-300 rounded-full 
-                     ${isNearLevelUp ? 'animate-pulse opacity-90' : 'opacity-75'} 
+          className={`absolute inset-0 rounded-full bg-[var(--rst-brass-400)]
+                     ${isNearLevelUp ? 'animate-pulse opacity-95' : 'opacity-85'} 
                      ${animated ? 'transition-all duration-700' : ''}`}
           style={{ width: `${progressPercentage}%` }}
-        >
-          {/* Shine effect */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
-        </div>
+        />
         
         {/* Percentage text - only show when progress is significant */}
         {progressPercentage > 15 && (

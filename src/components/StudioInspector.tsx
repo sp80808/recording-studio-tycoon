@@ -22,6 +22,7 @@ import {
   X,
   Check,
 } from 'lucide-react';
+import { getOriginEffects } from '@/narrative/originPerks';
 import { gameAudio } from '@/utils/audioSystem';
 import {
   MotionPanel,
@@ -202,7 +203,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
             <StatRow label="Rep" value={`+${gig.repGainBase}`} valueClass="text-amber-300" />
             <MotionButton
               size="sm"
-              className="w-full h-7 mt-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold"
+              className="w-full h-7 mt-1 bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] text-emerald-100 text-xs font-bold"
               disabled={!!project || !!actingGigId}
               onClick={() => handleTakeGig(gig)}
             >
@@ -239,7 +240,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   /* -------------------------------- clock ------------------------------- */
   if (hotspot === 'clock') {
     const salaries = gameState.hiredStaff.reduce((sum, s) => sum + s.salary, 0);
-    const upkeep = calculateEquipmentUpkeep(gameState.ownedEquipment);
+    const upkeep = calculateEquipmentUpkeep(gameState.ownedEquipment, getOriginEffects(gameState));
     const nextReq = ProgressionSystem.getNextUnlockRequirements(gameState);
     const status = ProgressionSystem.getProgressionStatus(gameState);
     return (
@@ -263,7 +264,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
         </div>
         <MotionButton
           size="sm"
-          className="w-full h-8 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold"
+          className="w-full h-8 bg-purple-400/[0.14] ring-1 ring-inset ring-purple-400/45 hover:bg-purple-400/[0.24] text-purple-100 text-xs font-bold"
           onClick={() => {
             void gameAudio.playTactileClick();
             onAdvanceDay();
@@ -338,7 +339,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
     return (
       <Shell hotspot={hotspot} onClose={onClose}>
         <StatRow label="Owned gear" value={<MotionNumber value={gear.length} />} />
-        <StatRow label="Daily upkeep" value={`-$${calculateEquipmentUpkeep(gear)}`} valueClass="text-red-400" />
+        <StatRow label="Daily upkeep" value={`-$${calculateEquipmentUpkeep(gear, getOriginEffects(gameState))}`} valueClass="text-red-400" />
         <div className="space-y-2">
           {gear.slice(0, 6).map((item) => (
             <div key={item.id} className="space-y-1">
@@ -383,7 +384,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           </div>
           <MotionButton
             size="sm"
-            className="w-full h-7 text-xs bg-amber-600 hover:bg-amber-700 text-stone-950 font-bold"
+            className="w-full h-7 text-xs bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-amber-100 font-bold"
             onClick={() => onConsoleFocus?.()}
           >
             <ActionIcon icon={SlidersHorizontal} />
@@ -408,7 +409,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
         )}
         <MotionButton
           size="sm"
-          className="w-full h-7 text-xs bg-amber-600 hover:bg-amber-700 text-stone-950 font-bold"
+          className="w-full h-7 text-xs bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-amber-100 font-bold"
           onClick={() => {
             void gameAudio.playTactileClick();
             onConsoleFocus?.();
@@ -450,7 +451,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
               <MotionButton
                 size="sm"
                 className={`w-full h-6 text-[10px] font-bold ${
-                  assignedHere ? 'bg-stone-700 hover:bg-stone-600' : 'bg-emerald-600 hover:bg-emerald-700'
+                  assignedHere ? 'bg-white/[0.07] ring-1 ring-inset ring-white/15 hover:bg-white/[0.13]' : 'bg-emerald-400/[0.14] hover:bg-emerald-400/[0.24]'
                 } text-white`}
                 disabled={isActing}
                 onClick={() => handleToggleStaff(member.id, assignedHere)}

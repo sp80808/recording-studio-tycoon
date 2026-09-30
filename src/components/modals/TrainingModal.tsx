@@ -73,7 +73,7 @@ export const TrainingModal: React.FC<TrainingModalProps> = ({
                   onClose();
                 }}
                 disabled={gameState.money < course.cost || staff.status !== 'Idle'}
-                className="w-full bg-green-600 hover:bg-green-700 disabled:bg-stone-600"
+                className="w-full bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] disabled:bg-stone-600"
               >
                 {gameState.money < course.cost ? 'Insufficient Funds' : 
                  staff.status !== 'Idle' ? 'Staff Unavailable' : 'Send to Training'}

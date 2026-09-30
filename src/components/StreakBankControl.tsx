@@ -367,7 +367,7 @@ export const StreakBankControl: React.FC<StreakBankControlProps> = ({
       onKeyUp={handleKeyUp}
       aria-label={`Streak Bank: tap to bank combo ${combo} for ${quote.cash} dollars, or hold to amplify up to ${maxCash}`}
       title="TAP: bank safely. HOLD: release in the GOLD window for ×1.6 and keep the streak."
-      className={`w-full rounded-[2px] border border-amber-500/50 bg-gradient-to-b from-amber-950/80 to-stone-950 text-left select-none touch-none cursor-pointer kenney-bevel chip-grain ${
+      className={`w-full rounded-[2px] border border-amber-500/50 bg-amber-950/40 text-left select-none touch-none cursor-pointer kenney-bevel chip-grain ${
         reduceMotion ? '' : 'shadow-[0_0_10px_rgba(251,191,36,0.3)] animate-pulse'
       } ${className}`}
       style={reduceMotion ? { boxShadow: '0 0 10px rgba(251,191,36,0.3)' } : undefined}

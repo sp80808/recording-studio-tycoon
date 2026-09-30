@@ -16,6 +16,8 @@ import {
   getTechnicalMultiplier,
 } from '../utils/playerUtils';
 import { getGenreMarketMultiplier } from '../utils/eraProgression';
+import { getSettlementBonuses } from '../utils/settlementBonuses';
+import { getOriginEffects } from '../narrative/originPerks';
 import {
   findProjectForReport,
   resolveDeliveryClient,
@@ -164,6 +166,11 @@ export class ProjectService {
                 studioQualityBonus: computeStudioQualityBonus(this.gameState, project.genre),
                 equipmentQualityBonus: computeEquipmentQualityBonus(this.gameState, project.genre, project.bookingRoomId),
                 marketMultiplier: getGenreMarketMultiplier(project.genre, this.gameState.currentEra),
+                ...getSettlementBonuses(
+                    this.gameState,
+                    project,
+                    getGenreMarketMultiplier(project.genre, this.gameState.currentEra),
+                ),
             }
         );
 
@@ -313,6 +320,7 @@ export function applyReportToState(state: GameState, report: ProjectReport): Gam
             qualityScore: report.overallQualityScore,
             matchRating: deliveryClient.matchRating,
             currentDay: state.currentDay,
+            xpMultiplier: getOriginEffects(state).relationshipXpMultiplier,
         });
         clientRelationships = applied.relationships;
         const snippetLine = buildRelationshipSnippet(

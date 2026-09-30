@@ -94,7 +94,7 @@ export function RewardFlights({ gameState }: { gameState: GameState }) {
         initial={{ y: -50, opacity: 0, scale: 0.9 }}
         animate={{ y: 20, opacity: 1, scale: 1 }}
         exit={{ y: -50, opacity: 0 }}
-        className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-gradient-to-r from-amber-950 via-stone-900 to-amber-950 border-2 border-amber-400 rounded-full shadow-[0_0_25px_rgba(251,191,36,0.6)] text-amber-200 font-mono text-xs font-black tracking-wider flex items-center gap-2 select-none"
+        className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-stone-900/95 border-2 border-amber-400 rounded-full shadow-[0_0_25px_rgba(251,191,36,0.6)] text-amber-200 font-mono text-xs font-black tracking-wider flex items-center gap-2 select-none"
       >
         <span className="text-base animate-bounce">🏆</span>
         <span>{milestoneBanner}</span>

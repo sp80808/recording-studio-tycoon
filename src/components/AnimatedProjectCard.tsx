@@ -71,7 +71,7 @@ const AnimatedProjectCard: FC<AnimatedProjectCardProps> = ({
             e.stopPropagation(); // Prevent card selection when removing
             onRemove(project.id);
           }}
-          className="mt-2 text-xs bg-red-500 hover:bg-red-700 text-white py-1 px-2 rounded"
+          className="mt-2 text-xs bg-red-400/[0.14] ring-1 ring-inset ring-red-400/45 hover:bg-red-400/[0.24] text-red-100 py-1 px-2 rounded"
         >
           Remove
         </button>

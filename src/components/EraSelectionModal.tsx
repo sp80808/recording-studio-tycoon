@@ -51,7 +51,7 @@ export const EraSelectionModal: React.FC<EraSelectionModalProps> = ({
               className={`p-4 cursor-pointer transition-all duration-200 ${
                 selectedEra?.id === era.id
                   ? 'bg-stone-900/50 border-amber-500 ring-2 ring-amber-400'
-                  : 'bg-stone-800 border-stone-600 hover:bg-stone-700 hover:border-stone-500'
+                  : 'bg-white/[0.07] border-stone-600 hover:bg-white/[0.13] hover:border-stone-500'
               }`}
               onClick={() => setSelectedEra(era)}
             >
@@ -129,14 +129,14 @@ export const EraSelectionModal: React.FC<EraSelectionModalProps> = ({
           <Button
             onClick={onClose}
             variant="outline"
-            className="bg-stone-700 border-stone-600 text-stone-300 hover:bg-stone-600"
+            className="bg-white/[0.07] border-stone-600 text-stone-300 hover:bg-white/[0.13]"
           >
             Cancel
           </Button>
           <Button
             onClick={() => selectedEra && onSelectEra(selectedEra)}
             disabled={!selectedEra}
-            className="bg-amber-600 hover:bg-amber-700 text-stone-950 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-amber-100 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {selectedEra ? `Start in ${selectedEra.displayName}` : 'Select an Era'}
           </Button>
