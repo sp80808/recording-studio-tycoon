@@ -62,6 +62,7 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
 
     setGameState(prev => {
       const settled = applyReportToState(prev, projectReport);
+      if (settled === prev) return prev;
 
       const involvedStaffIds = new Set(
         prev.hiredStaff

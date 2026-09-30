@@ -1,3 +1,4 @@
+import { awardProjectCrate, recordGearUse } from '@/features/usedGear/session';
 import { GameState, Project, ProjectReport, StaffMember } from '../types/game';
 import { generateProjectReview } from '../utils/projectReviewUtils';
 import { grantSkillXp } from '../utils/skillUtils';
@@ -78,6 +79,10 @@ export class ProjectService {
         const completedIds: string[] = [];
 
         this.gameState.activeProjects.forEach(project => {
+            if (project.awaitingReview || project.stages.every(stage => stage.completed)) {
+                completedIds.push(project.id);
+                return;
+            }
             const assignedStaff = this.gameState.hiredStaff.filter(
                 s => s.assignedProjectId === project.id && s.status === 'Working'
             );
@@ -128,11 +133,13 @@ export class ProjectService {
                 completedIds.push(project.id);
             }
 
+            const gearUse = recordGearUse(this.gameState, project);
+            this.gameState = { ...gearUse.state };
+            project.gearNotes = gearUse.project.gearNotes;
+
             // Assigned crew tires passively, mirroring the foreground path.
-            assignedStaff.forEach(staff => {
-                staff.energy = Math.max(0, staff.energy - 10);
-                staff.mood = Math.max(0, staff.mood - 1);
-            });
+            this.gameState.hiredStaff = this.gameState.hiredStaff.map(staff => assignedStaff.some(assigned => assigned.id === staff.id)
+                ? { ...staff, energy: Math.max(0, staff.energy - 10), mood: Math.max(0, staff.mood - 1) } : staff);
         });
 
         completedIds.forEach(id => {
@@ -233,6 +240,7 @@ function computeStaffContribution(assignedStaff: StaffMember[], genre: string): 
  * @returns a NEW GameState; the input is never mutated.
  */
 export function applyReportToState(state: GameState, report: ProjectReport): GameState {
+    if (state.financials.reports.some(existing => existing.projectId === report.projectId)) return state;
     const influenceGained = Math.floor(report.overallQualityScore / 10 + report.reputationGained / 5);
     const income = state.financials.income + report.moneyGained;
 
@@ -331,7 +339,7 @@ export function applyReportToState(state: GameState, report: ProjectReport): Gam
         }
     }
 
-    return {
+    return awardProjectCrate({
         ...state,
         money: state.money + report.moneyGained,
         reputation: state.reputation + report.reputationGained,
@@ -345,5 +353,5 @@ export function applyReportToState(state: GameState, report: ProjectReport): Gam
             profit: income - state.financials.expenses,
             reports: [...state.financials.reports, report],
         },
-    };
+    }, state.activeProject?.id === report.projectId ? state.activeProject : state.activeProjects.find(project => project.id === report.projectId), report.overallQualityScore);
 }

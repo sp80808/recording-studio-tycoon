@@ -1,3 +1,4 @@
+import { refreshGearForDay } from '@/features/usedGear/economy';
 import { useState, useEffect } from 'react';
 import { GameState, FocusAllocation, PlayerData } from '@/types/game'; // Added PlayerData for skills
 import { generateNewProjects, generateCandidates } from '@/utils/projectUtils';
@@ -170,15 +171,15 @@ export const useGameState = () => {
       availableCandidates: initialCandidates,
       availableSessionMusicians: initialSessionMusicians,
       maxConcurrentProjects,
-      saveSeed: newGameState.saveSeed ?? Date.now(),
+      saveSeed: newGameState.saveSeed ?? crypto.getRandomValues(new Uint32Array(1))[0],
     });
 
-    return newGameState;
+    return refreshGearForDay(newGameState);
   };
 
   // Update game state to reflect progression changes
   const updateGameStateWithProgression = (newGameState: GameState): GameState => {
-    newGameState = resolvePlayerLevelUps(newGameState);
+    newGameState = refreshGearForDay(resolvePlayerLevelUps(newGameState));
     const maxConcurrentProjects = ProgressionSystem.getMaxConcurrentProjects(newGameState);
     const isMultiProjectUnlocked = ProgressionSystem.shouldUnlockMultiProject(newGameState);
     

@@ -1,3 +1,4 @@
+import { recordGearUse } from '@/features/usedGear/session';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { GameState, FocusAllocation, Project } from '@/types/game';
 import { TakeGrade, evaluateTakeAccuracy, calculateTakeEnergyCost } from '@/rpg/takeEvaluation';
@@ -425,6 +426,7 @@ export const useStageWork = ({
 
     // FIXED: Immutable state update for React re-rendering
     setGameState(prev => {
+      if (prev.activeProject?.id !== project.id || prev.activeProject.workSessionCount !== project.workSessionCount) return prev;
       console.log('🔄 Updating game state with immutable update...');
       
       // Deep copy the active project to avoid mutation
@@ -468,27 +470,18 @@ export const useStageWork = ({
         ? consumeChoreBuffSession(prev.choreState)
         : prev.choreState;
 
-      const nextPendingCrates = prev.pendingCrates ? [...prev.pendingCrates] : [];
-      if (stageCompleted && completedGrade?.grade === 'S' && Math.random() < 0.25) {
-        nextPendingCrates.push({
-          id: `crate-sgrade-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-          era: prev.selectedEra || '1970s',
-          source: 's_grade_take',
-          tier: 'standard'
-        });
-      }
+      const gearUse = recordGearUse(prev, updatedProject, 1, overdrive ? 2 : 1);
 
       return withDailyTracking({
-        ...prev,
-        activeProject: updatedProject,
+        ...gearUse.state,
+        activeProject: gearUse.project,
         discoveredSynergies: updatedDiscovered,
         choreState: nextChoreState,
-        pendingCrates: nextPendingCrates,
         playerData: {
           ...prev.playerData,
           dailyWorkCapacity: Math.max(0, prev.playerData.dailyWorkCapacity - energyCost)
         },
-        hiredStaff: prev.hiredStaff.map(s => {
+        hiredStaff: gearUse.state.hiredStaff.map(s => {
           if (s.assignedProjectId === project.id && s.status === 'Working') {
             // Decrease mood slightly after work, decrease energy
             return { 
@@ -515,7 +508,7 @@ export const useStageWork = ({
 
     // 🔥 Overdrive: big payoff, small risk — the session can burn out the crew
     if (overdrive) {
-      if (Math.random() < 0.25) {
+      if (createSeededRandom(`${gameState.saveSeed ?? 4242}:${project.id}:overdrive:${newWorkSessionCount}`)() < 0.25) {
         setGameState(prev => ({
           ...prev,
           hiredStaff: prev.hiredStaff.map(s =>
@@ -565,7 +558,7 @@ export const useStageWork = ({
       };
       // DO NOT CALL completeProject here.
       // Return the project details so the UI can display celebration BEFORE state is wiped.
-      return { finalProjectData, isComplete: true };
+      return { finalProjectData: recordGearUse(gameState, finalProjectData, 1, overdrive ? 2 : 1).project, isComplete: true };
     }
 
     // Show stage completion notification

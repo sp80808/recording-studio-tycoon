@@ -1,3 +1,4 @@
+import { refreshGearForDay } from '@/features/usedGear/economy';
 
 import { useCallback } from 'react';
 import { GameNotification, GameState } from '@/types/game';
@@ -119,6 +120,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     );
     
     setGameState(prev => {
+      if (prev.currentDay >= newDay) return prev;
       // Refresh studio daily chores and evaluate streak crates
       const initialChore = prev.choreState || createInitialChoreState();
       const { nextChoreState: refreshedChores, crateAwarded } = refreshDailyChores(initialChore, newDay);
@@ -144,7 +146,8 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       const updatedPendingCrates = prev.pendingCrates ? [...prev.pendingCrates] : [];
       if (crateAwarded) {
         updatedPendingCrates.push({
-          id: `crate-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          id: `crate:chore:${prev.saveSeed ?? 4242}:${newDay}`,
+          generatedDay: newDay, generatedYear: newYear, generatedPriceMultiplier: updatedEquipmentMultiplier,
           era: prev.selectedEra || '1970s',
           source: 'chore_streak',
           tier: 'vintage_flight_case'
@@ -152,7 +155,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       }
 
       const newExpenses = prev.financials.expenses + totalDailyExpenses;
-      const baseUpdatedState: GameState = {
+      const baseUpdatedState: GameState = refreshGearForDay({
         ...prev, 
         currentDay: newDay,
         currentYear: newYear,
@@ -177,7 +180,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
         },
         choreState: autoProcessedChores,
         pendingCrates: updatedPendingCrates
-      };
+      });
 
       if (triggeredEvents.length === 0) {
         return evaluateStorylineTick(baseUpdatedState);

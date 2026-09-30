@@ -1,3 +1,4 @@
+import { StudioRecycler } from '@/features/usedGear/StudioRecycler';
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -269,6 +270,8 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             <div className="rounded-lg border border-gray-700 bg-gray-950/50 p-2.5 max-h-72 overflow-y-auto pr-1">
               <EquipmentList purchaseEquipment={purchaseEquipment} gameState={gameState} />
             </div>
+
+            <StudioRecycler gameState={gameState} setGameState={setGameState} />
 
             {/* Slot-based gear racks (bead 8om) — drag owned gear into room chassis */}
             <GearRackBoard gameState={gameState} setGameState={setGameState} />

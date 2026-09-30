@@ -60,6 +60,10 @@ echo "=== branching deterministic storylines ==="
 ./node_modules/.bin/esbuild tests/branching-storylines.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-branching-storylines.cjs --alias:@=./src >/dev/null
 node /tmp/rst-branching-storylines.cjs
 
+echo "=== deterministic used gear, classifieds and maintenance ==="
+./node_modules/.bin/esbuild tests/used-gear.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-used-gear.cjs --alias:@=./src >/dev/null
+node /tmp/rst-used-gear.cjs
+
 echo "=== equipment slots / gear racks (8om) ==="
 ./node_modules/.bin/esbuild tests/equipment-slots.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-equipment-slots.cjs --alias:@=./src >/dev/null
 node /tmp/rst-equipment-slots.cjs
