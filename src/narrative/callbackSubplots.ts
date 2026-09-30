@@ -26,6 +26,10 @@ export const CALLBACK_SUBPLOTS: readonly EmergentSubplot[] = [
     minDay: 28,
     daysBetweenStages: 5,
     triggerCondition: (state) => hasFlag('signed_union_scale', 'stalled_union')(state) && state.reputation >= 15,
+    becauseOf: {
+      signed_union_scale: 'signed the union scale',
+      stalled_union: 'stalled the union',
+    },
     stages: [
       {
         stageNumber: 1,
@@ -81,6 +85,12 @@ export const CALLBACK_SUBPLOTS: readonly EmergentSubplot[] = [
     triggerCondition: (state) =>
       hasFlag('pushed_the_crew', 'kept_status_quo', 'gave_crew_time_off', 'offered_profit_share')(state) &&
       (state.hiredStaff?.length ?? 0) >= 1,
+    becauseOf: {
+      pushed_the_crew: 'pushed the crew through a deadline',
+      kept_status_quo: 'kept things as they were for the crew',
+      gave_crew_time_off: 'sent a burnt-out engineer home',
+      offered_profit_share: 'offered the crew a profit-share',
+    },
     stages: [
       {
         stageNumber: 1,
@@ -137,6 +147,12 @@ export const CALLBACK_SUBPLOTS: readonly EmergentSubplot[] = [
     minDay: 34,
     daysBetweenStages: 5,
     triggerCondition: (state) => hasFlag('went_stereo', 'defended_mono', 'went_big_eighties', 'kept_it_raw')(state),
+    becauseOf: {
+      went_stereo: 'rewired for stereo',
+      defended_mono: 'defended the mono mix',
+      went_big_eighties: 'went big on eighties production',
+      kept_it_raw: 'kept the sound raw',
+    },
     stages: [
       {
         stageNumber: 1,
@@ -194,6 +210,12 @@ export const CALLBACK_SUBPLOTS: readonly EmergentSubplot[] = [
     daysBetweenStages: 5,
     triggerCondition: (state) =>
       hasFlag('settled_sample_claim', 'fought_sample_claim', 'replayed_the_sample', 'weaponised_the_lawsuit')(state),
+    becauseOf: {
+      settled_sample_claim: 'settled a sample claim',
+      fought_sample_claim: 'fought a sample claim',
+      replayed_the_sample: 'replayed the sample',
+      weaponised_the_lawsuit: 'weaponised a lawsuit',
+    },
     stages: [
       {
         stageNumber: 1,
@@ -248,6 +270,11 @@ export const CALLBACK_SUBPLOTS: readonly EmergentSubplot[] = [
     minDay: 34,
     daysBetweenStages: 5,
     triggerCondition: (state) => hasFlag('embraced_the_leak', 'chased_the_leak', 'locked_down_studio')(state),
+    becauseOf: {
+      embraced_the_leak: 'embraced the leak',
+      chased_the_leak: 'chased the leak',
+      locked_down_studio: 'locked down the studio',
+    },
     stages: [
       {
         stageNumber: 1,
@@ -305,6 +332,12 @@ export const CALLBACK_SUBPLOTS: readonly EmergentSubplot[] = [
     daysBetweenStages: 5,
     triggerCondition: (state) =>
       hasFlag('declined_payola', 'refused_voice_clone', 'published_voice_policy', 'published_case_study')(state),
+    becauseOf: {
+      declined_payola: 'declined payola',
+      refused_voice_clone: 'refused a voice clone',
+      published_voice_policy: 'published a voice policy',
+      published_case_study: 'published a case study',
+    },
     stages: [
       {
         stageNumber: 1,
@@ -361,6 +394,14 @@ export const CALLBACK_SUBPLOTS: readonly EmergentSubplot[] = [
       hasFlag('major_label_syndicate', 'ghost_producer_contract', 'partnered_with_bootlegger', 'paid_the_curator', 'doubled_down_payola', 'made_voice_clone')(
         state,
       ),
+    becauseOf: {
+      major_label_syndicate: 'joined a major-label syndicate',
+      ghost_producer_contract: 'signed a ghost-producer contract',
+      partnered_with_bootlegger: 'partnered with a bootlegger',
+      paid_the_curator: 'paid a playlist curator',
+      doubled_down_payola: 'doubled down on payola',
+      made_voice_clone: 'made a voice clone',
+    },
     stages: [
       {
         stageNumber: 1,
@@ -418,6 +459,12 @@ export const CALLBACK_SUBPLOTS: readonly EmergentSubplot[] = [
     triggerCondition: (state) =>
       hasFlag('gave_hero_secret_session', 'took_hero_shoutout', 'hung_hero_plaque', 'charged_hero_full_rate')(state) &&
       state.reputation >= 45,
+    becauseOf: {
+      gave_hero_secret_session: 'kept the star’s secret session',
+      took_hero_shoutout: 'took the star’s shout-out',
+      hung_hero_plaque: 'hung the star’s plaque',
+      charged_hero_full_rate: 'charged the star full rate',
+    },
     stages: [
       {
         stageNumber: 1,

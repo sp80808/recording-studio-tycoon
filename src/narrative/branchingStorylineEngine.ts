@@ -139,6 +139,8 @@ export interface EmergentSubplot {
   triggerCondition: (state: GameState) => boolean;
   daysBetweenStages: number;
   stages: [SubplotStage, SubplotStage];
+  /** Callback subplots: earlier story flag → phrase shown in the chronicle ("Because you …"). */
+  becauseOf?: Readonly<Record<string, string>>;
 }
 
 export const deriveStorylineRunSeed = (ctx: RunSeedContext): number => {
@@ -831,6 +833,13 @@ export const getPendingSubplotEvent = (state: GameState): PendingSubplotEvent | 
 export const canAffordSubplotOption = (state: GameState, option: SubplotOption): boolean =>
   option.consequences.moneyDelta >= 0 || (state.money ?? 0) + option.consequences.moneyDelta >= 0;
 
+/** "Because you …" lead-in for a callback subplot's first chronicle line, so the player can see the link. */
+const becausePrefix = (subplot: EmergentSubplot, flags: StorylineState['storyFlags'], firstBeat: boolean): string => {
+  if (!firstBeat || !subplot.becauseOf) return '';
+  const flag = Object.keys(subplot.becauseOf).find((f) => flags[f]);
+  return flag ? `Because you ${subplot.becauseOf[flag]}: ` : '';
+};
+
 /**
  * Apply a subplot choice: consequences land, flag is granted, the subplot advances to stage 2 or resolves
  * (moving to `resolvedSubplotIds`, stamping the cooldown day and writing the chronicle). Unknown or unaffordable
@@ -858,7 +867,7 @@ export const resolveSubplotChoice = (state: GameState, optionId: string): GameSt
     day: state.currentDay,
     kind: 'subplot',
     title: `${pending.subplot.title}${resolved ? '' : ' — part 1'}`,
-    outcome: consequences.narrativeOutcome,
+    outcome: becausePrefix(pending.subplot, story.storyFlags, pending.active.currentStage === 1) + consequences.narrativeOutcome,
   });
 
   return {

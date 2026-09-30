@@ -1,7 +1,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { CALLBACK_SUBPLOTS } from '../src/narrative/callbackSubplots';
-import { EMERGENT_SUBPLOTS, getEligibleSubplots } from '../src/narrative/branchingStorylineEngine';
+import { getCampaignEnding } from '../src/narrative/endings';
+import { EMERGENT_SUBPLOTS, getEligibleSubplots, resolveSubplotChoice } from '../src/narrative/branchingStorylineEngine';
 
 
 const makeState = (flags: Record<string, boolean>, era = 'analog60s', day = 60): any => ({
@@ -60,6 +61,33 @@ describe('callback subplots', () => {
       );
       assert.ok(reachable, `${s.id} unreachable`);
     }
+  });
+
+  it('every becauseOf flag is one that triggers that callback', () => {
+    for (const s of CALLBACK_SUBPLOTS) {
+      assert.ok(s.becauseOf && Object.keys(s.becauseOf).length > 0, `${s.id} missing becauseOf`);
+      for (const f of Object.keys(s.becauseOf!)) {
+        const eligible = getEligibleSubplots(makeState({ [f]: true }, (s.eras ?? ['analog60s'])[0]), []).map((e) => e.id);
+        assert.ok(eligible.includes(s.id), `${s.id} not triggered by ${f}`);
+      }
+    }
+  });
+
+  it('first chronicle beat names the choice it follows', () => {
+    const st: any = makeState({ signed_union_scale: true });
+    st.storylineState = { ...st.storylineState, runSeed: 1, activeCampaignNodeId: 'x', campaignCompleted: false, branchHistory: [],
+      activeSubplots: [{ subplotId: 'subplot_union_reckoning', currentStage: 1, startedDay: 50 }] };
+    const out = resolveSubplotChoice(st, 'reckoning_vouch');
+    const last = out.storylineState!.chronicle!.slice(-1)[0];
+    assert.ok(last.outcome.startsWith('Because you signed the union scale: '), last.outcome);
+  });
+
+  it('rival finale line picks up a late-game callback flag', () => {
+    const base: any = makeState({});
+    base.storylineState = { ...base.storylineState, campaignCompleted: true, activeCampaignNodeId: 'act3_golden_legend' };
+    const plain = getCampaignEnding(base)!;
+    const held = getCampaignEnding({ ...base, storylineState: { ...base.storylineState, storyFlags: { held_the_line: true } } })!;
+    assert.ok(held.rivalLine.startsWith(plain.rivalLine) && held.rivalLine.length > plain.rivalLine.length);
   });
 });
 console.log('callback-subplots checks registered');

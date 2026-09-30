@@ -120,6 +120,24 @@ const REMEMBERED_FOR: Record<string, string> = {
   guaranteed_clean_master: 'guaranteed its masters clean',
 };
 
+/**
+ * A rival's closing line can pick up one extra sentence from a late-game callback choice, so the finale answers
+ * how the studio actually played rather than only whether it was compromised. First matching flag wins.
+ */
+const RIVAL_FLAG_CODA: ReadonlyArray<readonly [string, string]> = [
+  ['took_the_second_offer', 'I heard you were offered the same shortcut twice. I know which answer cost more.'],
+  ['held_the_line', 'They offered you the easy road twice. You said no twice. I did not expect that.'],
+  ['stonewalled_journalist', 'Funny how a story you never told still found its way to me.'],
+  ['confessed_old_deal', 'You told the story before anyone else could. That takes more nerve than winning.'],
+  ['took_the_spotlight', 'Enjoy the front row. Ask your crew who built it.'],
+  ['credited_the_crew', 'You put your whole crew in the credits. Nobody in my building would have.'],
+];
+
+const rivalCoda = (state: GameState): string => {
+  const hit = RIVAL_FLAG_CODA.find(([flag]) => state.storylineState?.storyFlags?.[flag]);
+  return hit ? ` ${hit[1]}` : '';
+};
+
 export const countCompromises = (state: GameState): number =>
   COMPROMISE_FLAGS.filter((f) => state.storylineState?.storyFlags?.[f]).length;
 
@@ -161,7 +179,7 @@ export const getCampaignEnding = (state: GameState): CampaignEnding | null => {
     rivalName: rival.headProducer,
     rivalInitials: initialsOf(rival.headProducer),
     rivalAccent: getRivalAccent(rival.id),
-    rivalLine: compromised ? rivalLines.respect : rivalLines.defeated,
+    rivalLine: (compromised ? rivalLines.respect : rivalLines.defeated) + rivalCoda(state),
     compromised,
     legacyTitle: copy.legacy,
     stats: [

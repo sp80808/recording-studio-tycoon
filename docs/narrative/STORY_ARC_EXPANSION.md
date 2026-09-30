@@ -24,11 +24,13 @@ Nine two-beat subplots that spawn only after the player left a specific flag in 
 
 Their own flags feed the epilogue: `held_the_line`, `confessed_old_deal`, `credited_the_crew`, `vouched_for_scale`, `owned_signature_sound` and `guaranteed_clean_master` earn "remembered for" lines; `took_the_second_offer`, `stonewalled_journalist`, `skipped_union_meeting`, `skipped_team_dinner` and `took_the_spotlight` count as compromises.
 
+## Also built
+- **Chronicle link:** each callback has a `becauseOf` map; its first beat is logged as "Because you signed the union scale: …" so the player sees the cause.
+- **Rival finale coda:** a late-game flag (`held_the_line`, `took_the_second_offer`, `confessed_old_deal`, `stonewalled_journalist`, `credited_the_crew`, `took_the_spotlight`) adds one sentence to the rival's closing line.
+
 ## Ideas for later (not built)
-- Flags that modify the rival's finale line, not only the epilogue.
 - Third-beat "consequence" stage for the highest-impact callbacks.
 - Callbacks keyed to playstyle arc rewards (e.g. Mogul of the Airwaves unlocks a hostile-takeover subplot).
-- Surface "because you chose X" in the chronicle so the link is visible to the player.
 
 ## Checks
 `tests/callback-subplots.check.ts` (run by `pnpm test`): unique ids, two stages, unique flags, gating on flags and era, every callback reachable from an existing flag.
