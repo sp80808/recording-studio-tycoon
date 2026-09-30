@@ -378,9 +378,6 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       onMinigameReward(cappedCreativity, cappedTechnical, cappedXp, selectedMinigame, rawScore);
     }
 
-    const currentStageKey = `${project.id}-${project.currentStageIndex}`;
-    setCompletedMinigamesForStage(prev => new Set([...prev, currentStageKey]));
-
     setShowMinigame(false);
     clearAutoTriggeredMinigame?.();
     setPulseAnimation(false);

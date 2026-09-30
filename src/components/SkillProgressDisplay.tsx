@@ -1,4 +1,5 @@
 
+import { EMPTY_STATES } from '@/data/flavour';
 import React from 'react';
 import { StudioSkill } from '@/types/game';
 import { XPProgressBar } from './XPProgressBar';
@@ -29,7 +30,7 @@ export const SkillProgressDisplay: React.FC<SkillProgressDisplayProps> = ({
     return (
       <div className={`skill-progress-display ${className}`}>
         <h3 className="text-lg font-bold text-white mb-4">Studio Skills</h3>
-        <p className="text-stone-400">No skills learned yet</p>
+        <p className="text-stone-400">{EMPTY_STATES.skills.title} {EMPTY_STATES.skills.hint}</p>
       </div>
     );
   }

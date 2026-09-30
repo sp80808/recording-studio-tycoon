@@ -138,6 +138,14 @@ export interface Project {
   flowStreak?: number;
   flowMultiplier?: number;
   focusAllocation: FocusAllocation; // ADDED: Stores current focus settings for the project
+  /** Creative brief (#48). Optional: old saves derive one on read via getProjectBrief. */
+  brief?: import('@/rpg/projectBrief').ProjectBrief;
+  /** Vocal signal chain chosen at booking (#86). */
+  signalChain?: import('@/rpg/signalChain').SignalChain;
+  /** Open quality issues left by phase events (#87). Cleared by great takes or by polishing before delivery. */
+  unresolvedIssues?: import('@/rpg/sessionIssues').UnresolvedIssue[];
+  /** Production approach chosen at booking (#48). */
+  approachId?: import('@/rpg/projectBrief').ProductionApproach['id'];
   progress?: number; // 0-100, completion percentage for animated cards
   cardState?: CardState; // Current visual state for PixiJS rendering
   textureAtlasKey?: string; // Reference to texture atlas for this project type
@@ -163,6 +171,7 @@ export interface StaffMember {
   xpInRole: number;
   levelInRole: number;
   genreAffinity: { genre: string; bonus: number } | null;
+  gearFamiliarity?: Record<string, number>; // Sessions using each piece of gear in a chain (#86, capped)
   clientFamiliarity?: Record<string, number>; // Completed sessions with recurring clients
   energy: number;
   mood: number; // 0-100, affects work effectiveness
@@ -304,6 +313,9 @@ export interface GameState {
   studioLevel?: number; // Studio tier level (1-5), drives visible studio room and console upgrades
   studioTier?: number; // Alias for studioLevel
   studioRooms: StudioRoom[]; // Physical bookable studio suites; drives concurrent capacity
+  chainTemplates?: import('@/rpg/signalChain').SignalChain[]; // Saved chain templates (#86)
+  studioKnowHow?: number; // Bounded learning from polished sessions (#87)
+  discoveredBriefCombos?: string[]; // Named brief/recipe combos discovered (#48)
   discoveredSynergies?: string[]; // IDs of discovered studio synergies (Kairosoft recipe codex)
   
   // Multi-project system
@@ -322,6 +334,8 @@ export interface GameState {
   playerBands: Band[];
   /** A&R roster of signed artists (artist contracts). Absent on legacy saves. */
   signedArtists?: import('@/simulation/artistContracts').SignedArtist[];
+  /** Ambient active-play trickle counters (economy/ambientIncome). Absent on legacy saves. */
+  ambientIncome?: import('@/economy/ambientIncome').AmbientIncomeState;
   /** Prospect ids the player negotiated with and walked away from. Absent on legacy saves. */
   passedProspects?: string[];
   availableSessionMusicians: SessionMusician[];
@@ -336,6 +350,8 @@ export interface GameState {
   };
   /** Player songs currently on the weekly chart run (see utils/chartRun). */
   chartRun?: import('../utils/chartRun').ChartRunEntry[];
+  /** Studio Seasons (#63): season clock, focus, delivery ledger and yearbook. Absent on legacy saves. */
+  studioSeasons?: import('@/rpg/studioSeasons').StudioSeasonState;
   researchedMods: string[]; // Array of researched mod IDs
   clients?: Client[];
   recordLabels?: RecordLabel[];
@@ -462,6 +478,8 @@ export interface ProjectReport {
     name: string;
   };
   genre?: string;
+  /** Studio Know-How earned by resolving issues before delivery (#87, capped per project). */
+  knowHowGained?: number;
 }
 
 export interface Financials {

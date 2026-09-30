@@ -7,7 +7,8 @@
  * studioDecorConfig.ts so this file only draws. Every animated element honours
  * `reduceMotion` by freezing to a pleasant static pose.
  */
-import { Container, Graphics, Sprite, Texture } from 'pixi.js';
+import { Container, Graphics, Matrix, Sprite, Texture } from 'pixi.js';
+import { getPropTexture } from '@/components/studio/propSprites';
 import {
   ROOM_D,
   ROOM_W,
@@ -128,8 +129,32 @@ export const buildPlankFloor = (spec: EraDecorSpec, seed: string | number): Grap
 };
 
 /** A patterned rug: dark field, gold border, inner medallion. Replaces the flat two-tone rug. */
+/** Bottom-centre anchored prop sprite, sized to `height` world px. `anchorY` is the feet row as a fraction of the texture. */
+const addPropSprite = (parent: Container, tex: Texture, x: number, y: number, anchorYFromBottom: number, height: number) => {
+  const sp = new Sprite(tex);
+  sp.anchor.set(0.5, 1 - anchorYFromBottom);
+  sp.scale.set(height / tex.height);
+  sp.position.set(x, y);
+  parent.addChild(sp);
+};
+
 export const buildRug = (): Graphics => {
   const g = new Graphics();
+  const rugTex = getPropTexture('rug');
+  if (rugTex) {
+    // Flat rug art sheared onto the floor plane: u along iso x (3..6), v along iso y (3.5..5).
+    const o = iso(3, 3.5);
+    const ux = iso(6, 3.5);
+    const vy = iso(3, 5);
+    const rug = new Sprite(rugTex);
+    rug.setFromMatrix(new Matrix(
+      (ux.x - o.x) / rugTex.width, (ux.y - o.y) / rugTex.width,
+      (vy.x - o.x) / rugTex.height, (vy.y - o.y) / rugTex.height,
+      o.x, o.y,
+    ));
+    g.addChild(rug);
+    return g;
+  }
   isoQuad(g, 3, 3.5, 6, 5);
   g.fill(0x6e2c2c);
   isoQuad(g, 3.08, 3.58, 5.92, 4.92);
@@ -214,6 +239,7 @@ export const buildWallDressing = (
   if (spec.prop !== 'neon-sign') diffuser(leftWallQuad, leftWallPt, 0.35, 1.3);
 
   // Trophy wall
+  const trophySprites: Sprite[] = [];
   const slots = getTrophyWall(trophies);
   for (const slot of slots) {
     const x0 = slot.x - 0.24;
@@ -223,6 +249,21 @@ export const buildWallDressing = (
       g.poly(frame).stroke({ width: 1, color: BRASS, alpha: 0.16 });
       const nail = rightWallPt(slot.x, 132);
       g.circle(nail.x, nail.y, 1.1).fill({ color: BRASS, alpha: 0.3 });
+      continue;
+    }
+    const trophyTex = getPropTexture(slot.kind === 'award' ? 'trophyAward' : slot.kind === 'platinum' ? 'trophyPlatinum' : 'trophyGold');
+    if (trophyTex) {
+      // Flat plaque art sheared into the right-wall plane.
+      const tl = rightWallPt(x0, 126);
+      const tr = rightWallPt(x1, 126);
+      const bl = rightWallPt(x0, 94);
+      const plaque = new Sprite(trophyTex);
+      plaque.setFromMatrix(new Matrix(
+        (tr.x - tl.x) / trophyTex.width, (tr.y - tl.y) / trophyTex.width,
+        (bl.x - tl.x) / trophyTex.height, (bl.y - tl.y) / trophyTex.height,
+        tl.x, tl.y,
+      ));
+      trophySprites.push(plaque);
       continue;
     }
     g.poly(frame).fill(0x2a1d14);
@@ -244,25 +285,36 @@ export const buildWallDressing = (
     }
   }
   container.addChild(g);
+  for (const sp of trophySprites) container.addChild(sp);
 
   // Era signature prop (physical parts)
   const propG = new Graphics();
   const prop = propG;
   if (spec.prop === 'brass-lamp') {
     const b = iso(7.55, 2.3);
-    prop.ellipse(b.x, b.y, 9, 4).fill(0x2a1c10);
-    prop.rect(b.x - 1.2, b.y - 58, 2.4, 58).fill(0xc9974a);
-    prop.poly([b.x - 13, b.y - 60, b.x + 13, b.y - 60, b.x + 8, b.y - 76, b.x - 8, b.y - 76]).fill(0xf0cf95);
-    prop.poly([b.x - 13, b.y - 60, b.x + 13, b.y - 60, b.x + 8, b.y - 76, b.x - 8, b.y - 76]).stroke({ width: 1, color: 0x8a6531 });
+    const lampTex = getPropTexture('brassLamp');
+    if (lampTex) {
+      addPropSprite(prop, lampTex, b.x, b.y + 2, 28 / 98, 86);
+    } else {
+      prop.ellipse(b.x, b.y, 9, 4).fill(0x2a1c10);
+      prop.rect(b.x - 1.2, b.y - 58, 2.4, 58).fill(0xc9974a);
+      prop.poly([b.x - 13, b.y - 60, b.x + 13, b.y - 60, b.x + 8, b.y - 76, b.x - 8, b.y - 76]).fill(0xf0cf95);
+      prop.poly([b.x - 13, b.y - 60, b.x + 13, b.y - 60, b.x + 8, b.y - 76, b.x - 8, b.y - 76]).stroke({ width: 1, color: 0x8a6531 });
+    }
   } else if (spec.prop === 'lava-lamp') {
     const t = iso(7.45, 1.1);
-    prop.poly([t.x - 15, t.y - 20, t.x + 15, t.y - 20, t.x + 15, t.y - 12, t.x - 15, t.y - 12]).fill(0x2c2a27);
-    prop.rect(t.x - 12, t.y - 12, 3, 12).fill(0x1c1a18);
-    prop.rect(t.x + 9, t.y - 12, 3, 12).fill(0x1c1a18);
-    prop.roundRect(t.x - 5, t.y - 52, 10, 32, 4).fill({ color: 0xff7a45, alpha: 0.22 });
-    prop.roundRect(t.x - 5, t.y - 52, 10, 32, 4).stroke({ width: 1, color: 0xffb08a, alpha: 0.8 });
-    prop.rect(t.x - 6, t.y - 22, 12, 4).fill(0x8d8478);
-    prop.rect(t.x - 4, t.y - 56, 8, 4).fill(0x8d8478);
+    const lavaTex = getPropTexture('lavaLamp');
+    if (lavaTex) {
+      addPropSprite(prop, lavaTex, t.x, t.y, 24 / 99, 62);
+    } else {
+      prop.poly([t.x - 15, t.y - 20, t.x + 15, t.y - 20, t.x + 15, t.y - 12, t.x - 15, t.y - 12]).fill(0x2c2a27);
+      prop.rect(t.x - 12, t.y - 12, 3, 12).fill(0x1c1a18);
+      prop.rect(t.x + 9, t.y - 12, 3, 12).fill(0x1c1a18);
+      prop.roundRect(t.x - 5, t.y - 52, 10, 32, 4).fill({ color: 0xff7a45, alpha: 0.22 });
+      prop.roundRect(t.x - 5, t.y - 52, 10, 32, 4).stroke({ width: 1, color: 0xffb08a, alpha: 0.8 });
+      prop.rect(t.x - 6, t.y - 22, 12, 4).fill(0x8d8478);
+      prop.rect(t.x - 4, t.y - 56, 8, 4).fill(0x8d8478);
+    }
   } else if (spec.prop === 'neon-sign') {
     // Backing plate for the neon bolt on the left wall
     g.poly(leftWallQuad(0.25, 1.2, 76, 122)).fill({ color: 0x0d0a12, alpha: 0.95 });
@@ -270,8 +322,13 @@ export const buildWallDressing = (
   } else if (spec.prop === 'led-strip') {
     // Ring light on a stand, front-right corner of the window side
     const s = iso(7.3, 1.6);
-    prop.ellipse(s.x, s.y, 8, 3.5).fill(0x1a1a1f);
-    prop.rect(s.x - 1, s.y - 64, 2, 64).fill(0x2c2c34);
+    const ringTex = getPropTexture('ringLight');
+    if (ringTex) {
+      addPropSprite(prop, ringTex, s.x, s.y + 2, 36 / 113, 88);
+    } else {
+      prop.ellipse(s.x, s.y, 8, 3.5).fill(0x1a1a1f);
+      prop.rect(s.x - 1, s.y - 64, 2, 64).fill(0x2c2c34);
+    }
   }
   void tier;
   return { container, props: prop as unknown as Container };
@@ -287,23 +344,44 @@ export const buildDeskProps = (deskH = 40): Container => {
     const p = iso(gx, gy);
     return { x: p.x, y: p.y - lift };
   };
+  const padTex = getPropTexture('notepad');
+  const mugTex = getPropTexture('mug');
   // Notepad
   const n1 = dPt(3.34, 4.62);
   const n2 = dPt(3.62, 4.62);
   const n3 = dPt(3.62, 4.8);
   const n4 = dPt(3.34, 4.8);
-  g.poly([n1.x, n1.y, n2.x, n2.y, n3.x, n3.y, n4.x, n4.y]).fill(0xf0e6cf);
-  g.poly([n1.x, n1.y, n2.x, n2.y, n3.x, n3.y, n4.x, n4.y]).stroke({ width: 0.6, color: 0x8a7a5a, alpha: 0.7 });
-  g.moveTo(n1.x + 3, n1.y + 1.5).lineTo(n2.x - 2, n2.y + 1.5).stroke({ width: 0.6, color: 0x6b7a99, alpha: 0.6 });
+  if (padTex) {
+    // Flat art sheared onto the desk plane (u along iso x, v along iso y).
+    const pad = new Sprite(padTex);
+    pad.setFromMatrix(new Matrix(
+      (n2.x - n1.x) / padTex.width, (n2.y - n1.y) / padTex.width,
+      (n4.x - n1.x) / padTex.height, (n4.y - n1.y) / padTex.height,
+      n1.x, n1.y,
+    ));
+    c.addChild(pad);
+  } else {
+    g.poly([n1.x, n1.y, n2.x, n2.y, n3.x, n3.y, n4.x, n4.y]).fill(0xf0e6cf);
+    g.poly([n1.x, n1.y, n2.x, n2.y, n3.x, n3.y, n4.x, n4.y]).stroke({ width: 0.6, color: 0x8a7a5a, alpha: 0.7 });
+    g.moveTo(n1.x + 3, n1.y + 1.5).lineTo(n2.x - 2, n2.y + 1.5).stroke({ width: 0.6, color: 0x6b7a99, alpha: 0.6 });
+  }
   // Mug
   const m = dPt(3.95, 4.78);
-  g.ellipse(m.x, m.y + 2, 6.5, 2.6).fill({ color: 0x000000, alpha: 0.28 });
-  g.rect(m.x - 5, m.y - 7, 10, 9).fill(0xe8e2d4);
-  g.ellipse(m.x, m.y + 2, 5, 2.2).fill(0xe8e2d4);
-  g.ellipse(m.x, m.y - 7, 5, 2.2).fill(0x3a1f12);
-  g.ellipse(m.x, m.y - 7, 5, 2.2).stroke({ width: 0.8, color: 0xffffff, alpha: 0.6 });
-  g.roundRect(m.x + 4, m.y - 5, 3.5, 5, 1.5).stroke({ width: 1.2, color: 0xe8e2d4 });
-  c.addChild(g);
+  if (mugTex) {
+    const mug = new Sprite(mugTex);
+    mug.anchor.set(22 / 48, 41 / 48);
+    mug.scale.set(18 / mugTex.height * 1.1);
+    mug.position.set(m.x, m.y + 3);
+    c.addChild(mug);
+  } else {
+    g.ellipse(m.x, m.y + 2, 6.5, 2.6).fill({ color: 0x000000, alpha: 0.28 });
+    g.rect(m.x - 5, m.y - 7, 10, 9).fill(0xe8e2d4);
+    g.ellipse(m.x, m.y + 2, 5, 2.2).fill(0xe8e2d4);
+    g.ellipse(m.x, m.y - 7, 5, 2.2).fill(0x3a1f12);
+    g.ellipse(m.x, m.y - 7, 5, 2.2).stroke({ width: 0.8, color: 0xffffff, alpha: 0.6 });
+    g.roundRect(m.x + 4, m.y - 5, 3.5, 5, 1.5).stroke({ width: 1.2, color: 0xe8e2d4 });
+  }
+  c.addChildAt(g, 0);
   return c;
 };
 
@@ -534,13 +612,23 @@ export const buildWallClock = (cx: number, cy: number): WallClock => {
   // Soft shadow on the wall, offset down-right
   const shadow = ring(R + 1.5).map((v, i) => (i % 2 === 0 ? v + 2.2 : v + 3));
   g.poly(shadow).fill({ color: 0x000000, alpha: 0.28 });
-  // Brass rim, dark inner rim, cream face
-  g.poly(ring(R)).fill(0xc9974a);
-  g.poly(ring(R)).stroke({ width: 0.8, color: 0x6b4a1c });
-  g.poly(ring(R - 2.2)).fill(0x2a1f14);
-  g.poly(ring(R - 3.2)).fill(0xf3ead6);
+  const faceTex = getPropTexture('wallClock');
+  if (faceTex) {
+    // Flat face art sheared into the left-wall plane; hands stay live below.
+    const k = (R * 2) / faceTex.width;
+    const face = new Sprite(faceTex);
+    const o = leftFace(cx, cy, -R, R);
+    face.setFromMatrix(new Matrix(0.894 * k, -0.447 * k, 0, k, o.x, o.y));
+    container.addChild(face);
+  } else {
+    // Brass rim, dark inner rim, cream face
+    g.poly(ring(R)).fill(0xc9974a);
+    g.poly(ring(R)).stroke({ width: 0.8, color: 0x6b4a1c });
+    g.poly(ring(R - 2.2)).fill(0x2a1f14);
+    g.poly(ring(R - 3.2)).fill(0xf3ead6);
+  }
   // Hour ticks (12) and quarter markers
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; !faceTex && i < 12; i++) {
     const a = (i / 12) * Math.PI * 2;
     const long = i % 3 === 0;
     const r0 = R - 3.6;
@@ -630,20 +718,49 @@ export const buildLiveBooth = (): Container => {
 
   // Mic stand + pop filter + stool + music stand, deep in the booth
   const base = P(2.25, 0.55);
-  g.ellipse(base.x, base.y, 12, 6).fill(0x1b1613);
-  g.rect(base.x - 1.6, base.y - 46, 3.2, 46).fill(0x8f98ab);
-  g.moveTo(base.x, base.y - 46).lineTo(base.x + 10, base.y - 52).stroke({ width: 2, color: 0x8f98ab });
-  g.circle(base.x + 11, base.y - 53, 5.5).fill(BRASS);
-  g.circle(base.x + 11, base.y - 53, 5.5).stroke({ width: 1, color: 0x6b4a1c });
-  g.circle(base.x + 4, base.y - 50, 8).stroke({ width: 1, color: 0x000000, alpha: 0.7 });
+  let micSpriteRef: Sprite | null = null;
+  const boothSprites: Sprite[] = [];
+  const micTex = getPropTexture('micStand');
+  if (micTex) {
+    const micSprite = new Sprite(micTex);
+    micSprite.scale.set(58 / micTex.height * 1.3);
+    micSprite.anchor.set(34 / 80, 150 / 160);
+    micSprite.position.set(base.x, base.y + 2);
+    micSpriteRef = micSprite;
+  } else {
+    g.ellipse(base.x, base.y, 12, 6).fill(0x1b1613);
+    g.rect(base.x - 1.6, base.y - 46, 3.2, 46).fill(0x8f98ab);
+    g.moveTo(base.x, base.y - 46).lineTo(base.x + 10, base.y - 52).stroke({ width: 2, color: 0x8f98ab });
+    g.circle(base.x + 11, base.y - 53, 5.5).fill(BRASS);
+    g.circle(base.x + 11, base.y - 53, 5.5).stroke({ width: 1, color: 0x6b4a1c });
+    g.circle(base.x + 4, base.y - 50, 8).stroke({ width: 1, color: 0x000000, alpha: 0.7 });
+  }
   const stool = P(1.75, 0.7);
-  g.ellipse(stool.x, stool.y, 9, 4.2).fill({ color: 0x000000, alpha: 0.3 });
-  g.rect(stool.x - 1, stool.y - 18, 2, 18).fill(0x4a4038);
-  g.ellipse(stool.x, stool.y - 20, 9, 4.2).fill(0x6b3a2a);
-  g.ellipse(stool.x, stool.y - 20, 9, 4.2).stroke({ width: 0.8, color: 0x2a1610 });
+  const stoolTex = getPropTexture('stool');
+  if (stoolTex) {
+    const sp = new Sprite(stoolTex);
+    sp.anchor.set(0.5, 72 / 80);
+    sp.scale.set(44 / stoolTex.height * 1.0);
+    sp.position.set(stool.x, stool.y);
+    boothSprites.push(sp);
+  } else {
+    g.ellipse(stool.x, stool.y, 9, 4.2).fill({ color: 0x000000, alpha: 0.3 });
+    g.rect(stool.x - 1, stool.y - 18, 2, 18).fill(0x4a4038);
+    g.ellipse(stool.x, stool.y - 20, 9, 4.2).fill(0x6b3a2a);
+    g.ellipse(stool.x, stool.y - 20, 9, 4.2).stroke({ width: 0.8, color: 0x2a1610 });
+  }
   const stand = P(2.85, 0.6);
-  g.rect(stand.x - 0.8, stand.y - 38, 1.6, 38).fill(0x3a3f45);
-  g.poly([stand.x - 9, stand.y - 42, stand.x + 9, stand.y - 48, stand.x + 9, stand.y - 36, stand.x - 9, stand.y - 30]).fill(0x2f353c);
+  const standTex = getPropTexture('musicStand');
+  if (standTex) {
+    const sp = new Sprite(standTex);
+    sp.anchor.set(0.5, 104 / 112);
+    sp.scale.set(54 / standTex.height * 1.0);
+    sp.position.set(stand.x, stand.y);
+    boothSprites.push(sp);
+  } else {
+    g.rect(stand.x - 0.8, stand.y - 38, 1.6, 38).fill(0x3a3f45);
+    g.poly([stand.x - 9, stand.y - 42, stand.x + 9, stand.y - 48, stand.x + 9, stand.y - 36, stand.x - 9, stand.y - 30]).fill(0x2f353c);
+  }
 
   // Glass front (y = y1)
   const gl = quad(P(x0, y1), P(x1, y1), P(x1, y1, GH), P(x0, y1, GH));
@@ -684,6 +801,8 @@ export const buildLiveBooth = (): Container => {
   g.poly(quad(P(x0, y0, H), P(x1, y0, H), P(x1, y1, H), P(x0, y1, H))).stroke({ width: 1.2, color: 0x120d09, alpha: 0.9 });
   g.poly([P(x0, y1, H).x, P(x0, y1, H).y, P(x1, y1, H).x, P(x1, y1, H).y, P(x1, y1, H).x, P(x1, y1, H).y - 0.1]).stroke({ width: 1.2, color: BRASS, alpha: 0.7 });
   c.addChild(g);
+  for (const sp of boothSprites) c.addChild(sp);
+  if (micSpriteRef) c.addChild(micSpriteRef);
   return c;
 };
 
