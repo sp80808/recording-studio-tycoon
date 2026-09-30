@@ -1,3 +1,4 @@
+import { useArtistContracts } from '@/hooks/useArtistContracts';
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { ContextDrawer, ContextDrawerTab } from './ContextDrawer';
 import { MotionNumber, MotionButton } from '@/components/motion/primitives';
@@ -284,6 +285,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   };
 
   // Band Management Integration
+  const { makeOffer, signContract, passOnProspect } = useArtistContracts(gameState, setGameState);
   const { createBand, startTour, playShow, createOriginalTrack } = useBandManagement(gameState, setGameState);
 
 
@@ -443,6 +445,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
               createBand={createBand}
               startTour={startTour}
               playShow={playShow}
+              artistContracts={{ makeOffer, signContract, passOnProspect }}
               createOriginalTrack={createOriginalTrack}
               startResearchMod={startResearchMod}
             />

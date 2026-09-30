@@ -68,6 +68,10 @@ echo "=== live shows ==="
 ./node_modules/.bin/esbuild tests/live-shows.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-live-shows.cjs --alias:@=./src >/dev/null
 node /tmp/rst-live-shows.cjs
 
+echo "=== artist contracts ==="
+./node_modules/.bin/esbuild tests/artist-contracts.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-artist-contracts.cjs --alias:@=./src >/dev/null
+node /tmp/rst-artist-contracts.cjs
+
 echo "=== equipment slots / gear racks (8om) ==="
 ./node_modules/.bin/esbuild tests/equipment-slots.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-equipment-slots.cjs --alias:@=./src >/dev/null
 node /tmp/rst-equipment-slots.cjs
