@@ -124,6 +124,14 @@ echo "=== studio ux presentation (HUD + love-room) ==="
 ./node_modules/.bin/esbuild tests/studio-ux-presentation.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-ux-presentation.cjs --alias:@=./src >/dev/null
 node /tmp/rst-studio-ux-presentation.cjs
 
+echo "=== pixi presentation hardening (hotspot ids, depth bands, GPU exclusivity) ==="
+./node_modules/.bin/esbuild tests/pixi-presentation-hardening.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-pixi-presentation-hardening.cjs --alias:@=./src >/dev/null
+node /tmp/rst-pixi-presentation-hardening.cjs
+
+echo "=== asset provenance (assets:verify + sprite fallback, issue #58) ==="
+./node_modules/.bin/esbuild tests/asset-provenance.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-asset-provenance.cjs --alias:@=./src --external:node:child_process --external:node:fs >/dev/null
+node /tmp/rst-asset-provenance.cjs
+
 echo "=== progression motion: studio-tier upgrades and era transitions (#77) ==="
 ./node_modules/.bin/esbuild tests/progression-motion.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-progression-motion.cjs --alias:@=./src >/dev/null
 node /tmp/rst-progression-motion.cjs

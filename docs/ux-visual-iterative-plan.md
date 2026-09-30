@@ -23,7 +23,7 @@ Storyline stays free; monetisation stays optional cosmetics/gear only (see fligh
 
 ### HUD / viewport scaling
 1. **Guarantee Work / Overdrive dock visibility** in windowed short viewports (Issue #54 path): reduce `StudioRoom` min clamp when `ActiveProject` is open, or make middle column a flex scroll with pinned dock — do not require fullscreen. *(partial — dock clearance CSS var landed; Session drawer uses viewport-aware widths)*
-2. **Unify hotspot IDs** across Pixi (`liveRoom`, `tv`) and `StudioRoom` gamepad/chore aliases (`liveroom`, `crt`) so controller focus and badges always hit the same targets. *(open)*
+2. ~~**Unify hotspot IDs**~~ — **done** (2026-09-30): `StudioRoom`'s `STUDIO_HOTSPOTS`/`HOTSPOT_NAMES` now match Pixi's canonical `liveRoom`/`tv` spelling exactly; regression-checked.
 3. ~~**Reposition DEV chrome**~~ — **done** (`5eaed315`): Settings opt-in, defaults OFF.
 4. ~~**Tag living studio canvas**~~ — **done**: `id="pixi-studio-canvas"` + `data-engine="pixi"`.
 
@@ -44,7 +44,7 @@ Storyline stays free; monetisation stays optional cosmetics/gear only (see fligh
 ## P1 — Next polish pass
 
 ### HUD / viewport
-1. **World-anchored chore badges** — project DOM badges from Pixi hotspot screen positions (or draw badges in Pixi) so pan/zoom does not strand them.
+1. ~~**World-anchored chore badges**~~ — **done** (2026-09-30): `WebGLCanvas` exposes hotspot screen positions via a `forwardRef` imperative handle; `StudioRoom`'s duty badges track them via ref-driven rAF (no per-frame React state), with the existing phone-width fixed-corner override preserved via `!important`.
 2. **Safe-area insets** for camera reset / year label vs notch and strip shell ([DESKTOP_STRIP_SHELL.md](./architecture/DESKTOP_STRIP_SHELL.md)).
 3. **Resolution / FPS settings** already exist — expose a “Performance” preset that forces CRT/bloom off + lower `targetFps` for integrated GPUs (document in Settings UX, no second WebGL).
 
@@ -53,8 +53,8 @@ Storyline stays free; monetisation stays optional cosmetics/gear only (see fligh
 5. **Era picker preview** tint samples using the same `ERA_GRADES` palette as the Pixi room for continuity.
 
 ### Isometric room
-6. **Depth bands:** assign explicit `zIndex` bands (floor → furniture → characters → glass → FX) instead of relying only on add order + staff `y`.
-7. **Swap 2–3 signature props to sprites** (mic stand, door, clock) from curated packs documented in `visual_studio_plan.md` / `equipmentArt.ts`, keeping everything else procedural.
+6. ~~**Depth bands**~~ — **done** (2026-09-30): explicit `zIndex` bands (`Z_BACKGROUND`/iso-Y furniture+staff/`Z_LIGHTING`/`Z_FX`) replace add-order-only sorting. Multi-anchor prop blocks (e.g. tier-3 sofa+roadcase in one Graphics) still share a single zIndex — a reasonable first pass, not fully per-prop sorted; left as a follow-up.
+7. **Swap 2–3 signature props to sprites** (mic stand, door, clock) from curated packs documented in `visual_studio_plan.md` / `equipmentArt.ts`, keeping everything else procedural. *(architecture for this now exists — see `studioAssets.ts` — but no network access this pass to source new curated packs; see `assets/README.md`.)*
 8. **Idle hint + hover glow** contrast pass under each era tint so phone/console remain findable at night-tint peaks.
 
 ### Particles / reward FX

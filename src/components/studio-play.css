@@ -148,11 +148,18 @@
   body:has([data-studio-drawer]) .studio-hud { visibility:hidden; }
 }
 
-/* Phones: lift the floor duty chips above the CTA + dock, and drop the gesture hint (it collides with them). */
+/* Phones: lift the floor duty chips above the CTA + dock, and drop the gesture hint (it collides with them).
+   Duty chips are otherwise world-anchored (JS sets `transform` every frame to track the Pixi hotspot through
+   pan/zoom — see WorldAnchoredBadge in StudioRoom.tsx); on phones the dock leaves too little vertical room for
+   that, so `!important` here pins them to a fixed corner instead (stylesheet `!important` beats inline style). */
 @media(max-width:540px) {
   .studio-play-room .studio-duty-console,
-  .studio-play-room .studio-duty-live { bottom:calc(var(--studio-dock-clearance) + 184px); }
-  .studio-play-room .studio-duty-console { left:12px; right:auto; }
-  .studio-play-room .studio-duty-live { right:12px; left:auto; }
+  .studio-play-room .studio-duty-live {
+    top:auto !important;
+    transform:none !important;
+    bottom:calc(var(--studio-dock-clearance) + 184px) !important;
+  }
+  .studio-play-room .studio-duty-console { left:12px !important; right:auto !important; }
+  .studio-play-room .studio-duty-live { right:12px !important; left:auto !important; }
   .studio-play-room .studio-room-hint { display:none; }
 }

@@ -124,6 +124,11 @@ class GameAudioSystem {
       { name: 'ui-tactile-click-alt', path: '/audio/ui-sfx/kenney/click2.wav' },
       { name: 'ui-gear-switch', path: '/audio/ui-sfx/kenney/switch1.wav' },
       { name: 'ui-gear-switch-alt', path: '/audio/ui-sfx/kenney/switch2.wav' },
+      // Kenney UI Audio — previously preloaded but unused (rack select / latch /
+      // enquiry tone). See assets/provenance.json for licensing.
+      { name: 'ui-rack-select', path: '/audio/ui-sfx/kenney/click3.wav' },
+      { name: 'ui-enquiry-tone', path: '/audio/ui-sfx/kenney/click4.wav' },
+      { name: 'ui-latch', path: '/audio/ui-sfx/kenney/switch3.wav' },
       // Music - Added paths
       { name: 'music-bgm1', path: '/audio/music/tycoon-bgm1.mp3' },
       { name: 'music-bgm2', path: '/audio/music/tycoon-bgm2.mp3' },
@@ -614,6 +619,31 @@ class GameAudioSystem {
 
   async playGearSwitch(volume: number = 0.7) {
     return this.playSound('ui-gear-switch', 'sfx', volume);
+  }
+
+  /** Rack/equipment select — a lighter, higher click than the general gear switch (gear shelf, rack browsing). */
+  async playRackSelect(volume: number = 0.6) {
+    return this.playSound('ui-rack-select', 'sfx', volume);
+  }
+
+  /** Mechanical latch — a heavier engage/disengage tactile cue (console focus, glass/booth toggles). */
+  async playLatch(volume: number = 0.7) {
+    return this.playSound('ui-latch', 'sfx', volume);
+  }
+
+  /** Phone/enquiry — a short distinct tone for enquiry-adjacent interactions, separate from generic UI clicks. */
+  async playEnquiryTone(volume: number = 0.6) {
+    return this.playSound('ui-enquiry-tone', 'sfx', volume);
+  }
+
+  /** Maintenance/duty completion — reuses the alternate gear-switch sample so it reads related to, but distinct from, playGearSwitch. */
+  async playMaintenanceComplete(volume: number = 0.7) {
+    return this.playSound('ui-gear-switch-alt', 'sfx', volume);
+  }
+
+  /** Purchase/equip confirmation — reserved for the equipment purchase flow; not yet wired to a call site in this pass. */
+  async playEquipConfirm(volume: number = 0.6) {
+    return this.playSound('ui-tactile-click-alt', 'sfx', volume);
   }
 
   async playZoneEnter() {

@@ -84,6 +84,15 @@ HUD chrome in `MainGameContent` clamps room height (`clamp(320px, 42vh, 500px)` 
 - `src/features/sprites/*` — modular sprite / atlas pipeline (future)
 - `src/pixi-ui/PixiProjectCard.ts` — uses `Sprite` + `Texture` / `Assets` for card chrome
 
+**2026-09-30 update:** the gear shelf is now wired to a small optional dressing
+layer (`src/components/studio/studioAssets.ts`) that resolves an owned
+equipment id to `equipmentArt.ts`'s sprite path and swaps a shelf slot from a
+procedural bar to a `Sprite` if (and only if) the texture actually loads.
+Since no PNGs are committed under `public/assets/items/` yet, every slot
+still renders the (now slightly more varied) procedural bar today — see
+`assets/README.md` for why no new binary assets were added this pass (no
+outbound network access) and how this layer lights up once real files land.
+
 **`PixiParticleBurst`** uses Canvas 2D primitives (rect/circle/line), not Pixi particles — name is historical.
 
 ---
@@ -132,10 +141,11 @@ Observed from the original procedural layout; status as of `20cad80a` polish:
 2. ~~**Flat clock**~~ — **Fixed:** foreshortened ellipse + skew/scale on the left wall plane.
 3. ~~**Missing door**~~ — **Fixed:** left-wall door between clock & TV with floor threshold (enter/exit anchor).
 4. ~~**DEV overlay collision**~~ — **Fixed** (`5eaed315`): floating Spawn/Perf chrome defaults OFF; Settings → System opt-in only.
-5. **Hotspot alias drift** — Still open: `tv` vs `crt`, `liveRoom` vs `liveroom` (see §5).
+5. ~~**Hotspot alias drift**~~ — **Fixed** (2026-09-30 presentation-hardening pass): `StudioRoom.tsx`'s `STUDIO_HOTSPOTS`/`HOTSPOT_NAMES` now use the canonical `liveRoom`/`tv` spellings; regression check in `tests/pixi-presentation-hardening.check.ts`.
 6. ~~**Canvas approval tagging**~~ — **Fixed:** living studio canvas tagged `id="pixi-studio-canvas"` + `data-engine="pixi"`.
-7. **Staff/furniture depth bands** — Still open: staff `zIndex = y` can paint over props without consistent furniture depth bands (P1 in iterative plan).
-8. **Second Pixi app** — Still open: avoid mounting `PixiProjectCardsBridge` during studio play (GPU exclusivity).
+7. ~~**Staff/furniture depth bands**~~ — **Fixed** (2026-09-30): every top-level scene child now gets an explicit `zIndex` on the same iso-Y scale as staff (`Z_BACKGROUND`/`Z_LIGHTING`/`Z_FX` bands in `WebGLCanvas.tsx`), so tier furniture (plant/sofa/rig) sorts correctly against staff instead of always painting behind them. Free-standing era props (`dressing.props`, multi-anchor tier blocks) are still one shared zIndex rather than individually sorted — noted as a follow-up slice, not a regression.
+8. ~~**Second Pixi app**~~ — Verified still unused: `PixiProjectCardsBridge` is not imported anywhere in the app tree today; `tests/pixi-presentation-hardening.check.ts` now asserts this so a future PR can't silently reintroduce it.
+9. ~~**World-anchored chore badges**~~ (P1 item, §6 below) — **Fixed** (2026-09-30): `WebGLCanvas` exposes a `StudioCameraHandle` (`getHotspotScreenPosition`) via `forwardRef`/`useImperativeHandle`; `StudioRoom`'s console/live-room duty badges track it every frame via a ref-driven rAF loop (no React state), with a phone-width `!important` CSS override preserving the earlier dock-collision fix.
 
 ---
 

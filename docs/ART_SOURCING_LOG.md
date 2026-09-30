@@ -85,6 +85,16 @@ beads issue `recording-studio-tycoon-art.X` (3D models + skins/sticker UI):
 - Skins equip UI, sticker slotting UI, shelf display scene (PixiJS).
 - AI-generated filler (Higgsfield `higgsfield-generate` skill) ONLY where no CC0 equivalent exists; must be logged here as in-house CC0.
 
+## 5a. Machine-checkable provenance manifest (2026-09-30, issue #58 first slice)
+
+`assets/provenance.json` + `pnpm assets:verify` (see `assets/README.md`) now
+formalize provenance for the assets that are actually **committed** to the
+repo (the Kenney UI pack, the Kenney click/switch audio) as a checkable
+manifest, separate from this narrative log. This log remains the place for
+sourcing *decisions* and the roadmap queue above; the manifest is the place
+CI/`pnpm test` can mechanically verify. Neither replaces the other yet — a
+future slice should decide whether to generate one from the other.
+
 ## 6. Image-generation connectors available
 
 - `higgsfield-generate` skill (GPT Image 2 / Seedance / Nano Banana) — reserved for gaps with no CC0 coverage; nothing generated this pass because CC0 covers all current needs.
