@@ -16,7 +16,7 @@ const WINDOW_MS = 4000;
 (async () => {
   const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   const rows = [];
-  for (const count of [3, 6, 12]) for (const mode of ['pixi', 'dom']) {
+  for (const count of [3, 6, 12]) for (const mode of ['pixi', 'pixibaked', 'dom']) {
     const page = await browser.newPage({ viewport: { width: 900, height: 500 } });
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));

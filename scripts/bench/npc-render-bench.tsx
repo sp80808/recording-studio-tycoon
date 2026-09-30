@@ -7,7 +7,7 @@ import atlas from '../../public/assets/atlases/layer/npc-parts.json';
 import atlasImage from '../../public/assets/atlases/layer/npc-parts.png';
 import { generateModularNpc, ModularSpriteRenderer, type NpcAnimationState } from '../../src/features/sprites';
 import { buildSpritesheet } from '../../src/features/sprites/pipeline/pixiAtlasLoader';
-import { createLayeredNpc } from '../../src/features/sprites/pixiNpc';
+import { bakeLayeredNpc, createLayeredNpc } from '../../src/features/sprites/pixiNpc';
 
 const [mode, countRaw] = location.hash.slice(1).split(':');
 const count = Number(countRaw) || 3;
@@ -37,8 +37,16 @@ const w2 = window as unknown as Record<string, unknown>;
     await app.init({ width: w, height: h, backgroundColor: 0x1f2937, antialias: false, resolution: 1, preference: 'webgl' });
     host.appendChild(app.canvas);
     const bobbers = npcs.map((n, i) => {
-      const { container, missingRequired } = createLayeredNpc(loaded, n);
-      if (missingRequired.length) console.warn('missing', n.id, missingRequired);
+      let container: import('pixi.js').Container;
+      if (mode === 'pixibaked') {
+        const baked = bakeLayeredNpc(app.renderer, loaded, n);
+        if (baked.missingRequired.length) console.warn('missing', n.id, baked.missingRequired);
+        container = baked.sprite;
+      } else {
+        const layered = createLayeredNpc(loaded, n);
+        if (layered.missingRequired.length) console.warn('missing', n.id, layered.missingRequired);
+        container = layered.container;
+      }
       container.scale.set(SCALE);
       container.position.set((i % COLS) * CELL_W + CELL_W / 2, Math.floor(i / COLS) * CELL_H + CELL_H - 8);
       app.stage.addChild(container);
