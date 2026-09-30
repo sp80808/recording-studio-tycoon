@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    allowedHosts: ["sb-6wflx0h2kzb6.vercel.run"],
+    allowedHosts: true,
   },
   plugins: [
     react(),
