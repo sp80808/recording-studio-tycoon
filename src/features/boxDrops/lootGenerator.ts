@@ -15,7 +15,7 @@ export interface EquipmentItem {
 }
 
 // Simple era-aware loot table. In a real game this would be data-driven.
-const LOOT_TABLE: Record<Era, Array<{ item: Omit<EquipmentItem, 'id' | 'condition'> & { weight: number }}>> = {
+export const LOOT_TABLE: Record<Era, Array<{ item: Omit<EquipmentItem, 'id' | 'condition'> & { weight: number }}>> = {
   '1960s': [
     { item: { name: 'Tube Microphone', era: '1960s', rarity: 'vintage', baseValue: 1200, weight: 1 } },
     { item: { name: 'Reel-to-Reel Tape Machine', era: '1960s', rarity: 'vintage', baseValue: 3000, weight: 1 } },
