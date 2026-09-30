@@ -9,6 +9,8 @@ export interface Band {
   isPlayerCreated: boolean;
   pastReleases: BandRelease[];
   tourStatus: TourStatus;
+  /** Game day of the last live show; gates the rest cooldown. Absent on older saves. */
+  lastShowDay?: number;
 }
 
 export interface BandRelease {
