@@ -10,6 +10,8 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { runAllStrategies, STRATEGIES, DEFAULT_ERA, type BalanceRun, type Strategy } from './simulate';
 import { checkInvariants, allPassed } from './invariants';
+import { runScenarioSweep, sweepToCsv } from './sweep';
+import { SCENARIOS } from './config';
 
 const DEFAULT_DAYS = 30;
 const DEFAULT_SEED = 42;
@@ -19,15 +21,19 @@ interface CliOptions {
   seed: number;
   era: string;
   out: string | null;
+  sweep: number;
+  scenario: string;
 }
 
 const parseArgs = (argv: string[]): CliOptions => {
-  const opts: CliOptions = { days: DEFAULT_DAYS, seed: DEFAULT_SEED, era: DEFAULT_ERA, out: null };
+  const opts: CliOptions = { days: DEFAULT_DAYS, seed: DEFAULT_SEED, era: DEFAULT_ERA, out: null, sweep: 0, scenario: 'early' };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--days' && i + 1 < argv.length) opts.days = Math.max(1, Math.floor(Number(argv[++i])));
     else if (arg === '--seed' && i + 1 < argv.length) opts.seed = Math.floor(Number(argv[++i]));
     else if (arg === '--era' && i + 1 < argv.length) opts.era = String(argv[++i]);
+    else if (arg === '--sweep' && i + 1 < argv.length) opts.sweep = Math.max(0, Math.floor(Number(argv[++i])));
+    else if (arg === '--scenario' && i + 1 < argv.length) opts.scenario = String(argv[++i]);
     else if (arg === '--out' && i + 1 < argv.length) opts.out = String(argv[++i]);
   }
   if (!Number.isFinite(opts.days)) opts.days = DEFAULT_DAYS;
@@ -54,6 +60,22 @@ const printTable = (runs: Record<Strategy, BalanceRun>): void => {
 const main = (): void => {
   const opts = parseArgs(process.argv.slice(2));
   console.log(`rst-balance: seed=${opts.seed} days=${opts.days} era=${opts.era}`);
+
+  if (opts.sweep > 0) {
+    if (!(opts.scenario in SCENARIOS)) throw new Error(`unknown scenario ${opts.scenario}; use ${Object.keys(SCENARIOS).join('/')}`);
+    const result = runScenarioSweep({ seeds: opts.sweep, days: opts.days, era: opts.era, scenario: opts.scenario, firstSeed: opts.seed });
+    console.log(`sweep: scenario=${result.scenario} seeds=${result.seeds}`);
+    console.table(result.stats.map(({ strategy, bankruptcyRate, medianCash, meanDailyIncome, meanFirstUpgradeDay, rewardShare, repeatSessionShare }) => ({ strategy, bankruptcyRate, medianCash, meanDailyIncome, meanFirstUpgradeDay, rewardShare, repeatSessionShare })));
+    if (result.flags.length === 0) console.log('runaway flags: none');
+    for (const f of result.flags) console.log(`RUNAWAY ${f.kind} [${f.strategy}] value=${f.value} limit=${f.limit} - ${f.detail}`);
+    const outDir = opts.out ?? path.resolve(process.cwd(), 'src/dev/balance/results');
+    fs.mkdirSync(outDir, { recursive: true });
+    const base = path.join(outDir, `sweep-${result.scenario}-${opts.seed}-${result.seeds}x${result.days}`);
+    fs.writeFileSync(`${base}.json`, JSON.stringify(result, null, 2));
+    fs.writeFileSync(`${base}.csv`, sweepToCsv(result));
+    console.log(`wrote ${base}.json and .csv`);
+    return;
+  }
 
   const runs = runAllStrategies(opts.seed, opts.days, opts.era);
   printTable(runs);

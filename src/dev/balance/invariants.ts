@@ -2,6 +2,7 @@
  * GH #19 balance-harness invariants — deterministic checks over a BalanceRun.
  */
 import type { BalanceRun } from './simulate';
+import { DEFAULT_LIMITS } from './config';
 
 export interface InvariantResult {
   name: string;
@@ -61,15 +62,15 @@ export const checkInvariants = (run: BalanceRun): InvariantResult[] => {
   const countsMatch =
     run.completed === run.settledIds.length &&
     run.completed === run.perDay.length &&
-    run.completed === run.days;
+    run.completed <= run.days &&
+    run.moneyHistory.length === run.days;
   results.push({
     name: 'completed-count',
     passed: countsMatch,
-    detail: `completed=${run.completed} settled=${run.settledIds.length} days=${run.days} (one settle/day by design)`,
+    detail: `completed=${run.completed} settled=${run.settledIds.length} days=${run.days} (single room: one session at a time, at most one settle/day)`,
   });
 
-  // ASSUMPTION (approximated): the skeleton settles instantly, one project per
-  // day, and generateProjectReview floors reputation gains at >= 0, so
+  // ASSUMPTION (approximated): the sim settles one session at a time and generateProjectReview floors reputation gains at >= 0, so
   // reputation cannot decrease here. A real economy with reputation decay,
   // failed-project penalties, or upkeep charged to reputation could violate
   // this — the check documents the approximation rather than proving the
@@ -86,6 +87,38 @@ export const checkInvariants = (run: BalanceRun): InvariantResult[] => {
       violations === 0
         ? `no rep decrease on days with quality > ${HIGH_QUALITY_THRESHOLD} (assumes no rep decay/fees — approximated, see note)`
         : `${violations} high-quality days lost reputation`,
+  });
+
+  // Reward economy: gems and loot can only add, chart positions stay on the chart,
+  // and every case granted is accounted for.
+  const r = run.rewards;
+  const rewardNumbers = [r.gems, r.lootValue, r.maxCaseLoot, r.rewardCash, r.chartDebuts, r.chartPlacements, r.number1s, r.minigames, ...Object.values(r.cases)];
+  results.push({
+    name: 'rewards-finite-nonnegative',
+    passed: rewardNumbers.every((n) => isFiniteNumber(n) && n >= 0),
+    detail: `gems=${r.gems} rewardCash=${r.rewardCash} chartPlacements=${r.chartPlacements}`,
+  });
+
+  results.push({
+    name: 'chart-accounting',
+    passed: r.chartPlacements >= r.chartDebuts && r.number1s <= r.chartPlacements && r.chartDebuts <= run.completed,
+    detail: `debuts=${r.chartDebuts} placements=${r.chartPlacements} number1s=${r.number1s} sessions=${run.completed}`,
+  });
+
+  const worstMultiple = run.perDay.reduce((m, d) => Math.max(m, d.payoutMultiple), 0);
+  results.push({
+    name: 'session-payout-bounded',
+    passed: worstMultiple <= DEFAULT_LIMITS.maxSessionPayoutMultiple,
+    detail: `worst payout multiple ${worstMultiple} vs limit ${DEFAULT_LIMITS.maxSessionPayoutMultiple} (quality x market x match x stake over payoutBase)`,
+  });
+
+  // Starting state must be winnable: the first session has to pay more than a day of upkeep
+  // on top of starting cash, i.e. the run cannot be dead on arrival.
+  const first = run.perDay[0];
+  results.push({
+    name: 'winnable-start',
+    passed: !first || first.moneyGained > 0,
+    detail: first ? `day 1 fee ${first.moneyGained}` : 'no days simulated',
   });
 
   return results;

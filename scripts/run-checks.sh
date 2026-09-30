@@ -147,4 +147,10 @@ node /tmp/rst-balance.cjs --days 10 --seed 7 --out /tmp/rst-balance > /tmp/rst-b
 cat /tmp/rst-balance.log | grep -E "invariants|PASS|FAIL" | tail -n 8
 if grep -q "FAIL" /tmp/rst-balance.log; then echo "Balance invariants FAILED"; exit 1; fi
 
+echo "=== balance sweep (determinism, config overrides, runaway flags) ==="
+./node_modules/.bin/esbuild tests/balance-sweep.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-balance-sweep.cjs --alias:@=./src >/dev/null
+node /tmp/rst-balance-sweep.cjs
+# Report-only: a small mid-game sweep; RUNAWAY lines are for humans, not a gate.
+node /tmp/rst-balance.cjs --sweep 20 --days 60 --scenario mid --seed 7 --out /tmp/rst-balance | grep -E "RUNAWAY|runaway flags" || true
+
 echo "All automated checks passed."
