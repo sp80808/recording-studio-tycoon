@@ -12,6 +12,7 @@ import { StudioRoom } from './StudioRoom';
 import { StudioStrip } from './StudioStrip';
 import { EraTransitionAnimation } from './EraTransitionAnimation';
 import { HistoricalNewsModal } from './HistoricalNewsModal';
+import { FeatureBoundary } from './FeatureBoundary';
 import { checkForNewEvents, applyEventEffects, HistoricalEvent } from '@/utils/historicalEvents';
 import { useBandManagement } from '@/hooks/useBandManagement';
 import { MinigameType } from './minigames/MinigameManager';
@@ -356,6 +357,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           ) : null
         }
       >
+        <FeatureBoundary feature={`drawer:${panel ?? 'closed'}:${dashboardTab}`} resetKey={`${panel}:${dashboardTab}`}>
         <div className="flex-1 min-h-0 min-w-0 flex flex-col relative" data-reward-source="activity">
           {panel === 'bookings' && (
             <ProjectList
@@ -416,15 +418,12 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                 onStaff={() => handleOpenDashboardTab('staff')}
                 onOpenStorylineBranch={onOpenStorylineBranch}
               />
-              <div className="grid gap-3 p-4">
-                <button
-                  className="studio-primary-action"
-                  onClick={() => handleOpenDashboardTab('skills')}
-                >
-                  <Sparkles size={20} />Skills & research
+              <div className="grid gap-2.5 p-1 pt-3 sm:grid-cols-2">
+                <button className="rst-btn" onClick={() => handleOpenDashboardTab('skills')}>
+                  <Sparkles size={17} />Skills & research
                 </button>
-                <button className="studio-primary-action" onClick={advanceDay}>
-                  <Moon size={20} />Rest & advance day
+                <button className="rst-btn" onClick={advanceDay}>
+                  <Moon size={17} />Rest & advance day
                 </button>
                 {desktopStripEnabled && (
                   <button
@@ -441,6 +440,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             </div>
           )}
         </div>
+        </FeatureBoundary>
       </ContextDrawer>
       <AttributesModal isOpen={showAttributesModal} onClose={() => setShowAttributesModal(false)}
         playerData={gameState.playerData} spendPerkPoint={spendPerkPoint} />

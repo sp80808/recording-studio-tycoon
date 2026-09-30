@@ -1,5 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { resolveCareerNextAction, countDeliveredSessions } from '../src/utils/careerNextAction';
 import { inspectSaveGame } from '../src/utils/savePreview';
 import { GameState, Project } from '../src/types/game';
 
@@ -96,7 +97,7 @@ describe('CareerHub Next-Action Priority Logic', () => {
       ownedEquipment: [],
       activeProject: null,
       availableProjects: [],
-      completedProjects: [],
+      financials: { income: 0, expenses: 0, profit: 0, reports: [] },
       clientRelationships: [],
       activeSynergies: [],
       discoveredSynergies: [],
@@ -104,38 +105,8 @@ describe('CareerHub Next-Action Priority Logic', () => {
     } as unknown as GameState;
   }
 
-  // Reproduces nextAction resolution logic from CareerHub.tsx
-  function resolveCareerHubAction(gameState: GameState) {
-    const project = gameState.activeProject;
-    const awaitingReview = Boolean(project?.awaitingReview);
-    const tired = gameState.playerData.dailyWorkCapacity <= 0;
-
-    if (awaitingReview) {
-      return {
-        type: 'awaitingReview',
-        label: 'Review & release',
-        subtext: 'Master complete · Ready to review and release',
-      };
-    }
-    if (tired) {
-      return {
-        type: 'rest',
-        label: 'Rest & advance day',
-      };
-    }
-    if (project) {
-      return {
-        type: 'continue',
-        label: 'Continue session',
-        subtext: project.title,
-      };
-    }
-    return {
-      type: 'book',
-      label: gameState.completedProjects.length === 0 ? 'Book your first session' : 'Find a gig',
-      subtext: 'Your next record starts with a booking.',
-    };
-  }
+  // Uses the REAL resolver shared with CareerHub.tsx (a hand-copied version once hid a crash).
+  const resolveCareerHubAction = resolveCareerNextAction;
 
   test('prioritizes awaitingReview over tired and in-progress session', () => {
     const state = createStubGameState({
@@ -195,7 +166,6 @@ describe('CareerHub Next-Action Priority Logic', () => {
   test('prompts booking first session when new player with no project', () => {
     const state = createStubGameState({
       activeProject: null,
-      completedProjects: [],
       playerData: {
         dailyWorkCapacity: 3,
         level: 1,
@@ -214,7 +184,7 @@ describe('CareerHub Next-Action Priority Logic', () => {
   test('prompts finding a gig when existing player has no active project', () => {
     const state = createStubGameState({
       activeProject: null,
-      completedProjects: [{ id: 'old-1' }] as unknown as Project[],
+      financials: { income: 0, expenses: 0, profit: 0, reports: [{ projectId: 'old-1' }] } as unknown as GameState['financials'],
       playerData: {
         dailyWorkCapacity: 3,
         level: 2,
@@ -229,4 +199,15 @@ describe('CareerHub Next-Action Priority Logic', () => {
     assert.equal(action.type, 'book');
     assert.equal(action.label, 'Find a gig');
   });
+
+  test('never throws on sparse or legacy state (regression: completedProjects crash)', () => {
+    // A save that predates the ledger, and one with no financials at all.
+    const legacy = { activeProject: null, playerData: { dailyWorkCapacity: 3 } } as unknown as GameState;
+    assert.doesNotThrow(() => resolveCareerHubAction(legacy));
+    assert.equal(resolveCareerHubAction(legacy).label, 'Book your first session');
+    assert.equal(countDeliveredSessions(legacy), 0);
+    const noPlayer = { activeProject: null } as unknown as GameState;
+    assert.doesNotThrow(() => resolveCareerHubAction(noPlayer));
+  });
 });
+
