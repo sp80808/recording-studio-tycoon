@@ -91,10 +91,10 @@ beads issue `recording-studio-tycoon-art.X` (3D models + skins/sticker UI):
 - Web search + fetch (Kenney.nl, OpenGameArt.org) — used this pass; URLs above verified live Sept 2026.
 - No binary assets downloaded this pass (keeps the diff reviewable); PNG trimming is queue item 1–3 above.
 
-## 7. Signature studio props (door, wall clock, mic stand)
+## 7. Signature studio props (door, wall clock, mic stand, mug, notepad, stool, music stand)
 
 Kenney.nl / OpenGameArt were unreachable from the build environment, so these
-three were drawn in-house. License: **In-house (CC0)**. Source SVGs live in
+these were drawn in-house. License: **In-house (CC0)**. Source SVGs live in
 `public/assets/props/*.svg`; PNGs are 2x renders via
 `scripts/render-prop-sprites.cjs`. Loaded by `src/components/studio/propSprites.ts`;
 the scene falls back to the original procedural drawing if a texture is missing.
@@ -104,5 +104,9 @@ the scene falls back to the original procedural drawing if a texture is missing.
 | Studio door | `public/assets/props/door.png` | `WebGLCanvas.tsx` (left wall, sheared into wall plane) |
 | Wall clock face | `public/assets/props/wall-clock.png` | `studioDecor.ts` `buildWallClock` (hands stay live) |
 | Booth mic stand | `public/assets/props/mic-stand.png` | `studioDecor.ts` `buildLiveBooth` |
+| Booth stool | `public/assets/props/stool.png` | `studioDecor.ts` `buildLiveBooth` |
+| Booth music stand | `public/assets/props/music-stand.png` | `studioDecor.ts` `buildLiveBooth` |
+| Desk mug | `public/assets/props/mug.png` | `studioDecor.ts` `buildDeskProps` |
+| Desk notepad | `public/assets/props/notepad.png` | `studioDecor.ts` `buildDeskProps` (sheared onto desk plane) |
 
 Swap for Kenney/OGA CC0 art later by replacing the PNGs (same sizes).

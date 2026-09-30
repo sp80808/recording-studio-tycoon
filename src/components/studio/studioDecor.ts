@@ -288,23 +288,44 @@ export const buildDeskProps = (deskH = 40): Container => {
     const p = iso(gx, gy);
     return { x: p.x, y: p.y - lift };
   };
+  const padTex = getPropTexture('notepad');
+  const mugTex = getPropTexture('mug');
   // Notepad
   const n1 = dPt(3.34, 4.62);
   const n2 = dPt(3.62, 4.62);
   const n3 = dPt(3.62, 4.8);
   const n4 = dPt(3.34, 4.8);
-  g.poly([n1.x, n1.y, n2.x, n2.y, n3.x, n3.y, n4.x, n4.y]).fill(0xf0e6cf);
-  g.poly([n1.x, n1.y, n2.x, n2.y, n3.x, n3.y, n4.x, n4.y]).stroke({ width: 0.6, color: 0x8a7a5a, alpha: 0.7 });
-  g.moveTo(n1.x + 3, n1.y + 1.5).lineTo(n2.x - 2, n2.y + 1.5).stroke({ width: 0.6, color: 0x6b7a99, alpha: 0.6 });
+  if (padTex) {
+    // Flat art sheared onto the desk plane (u along iso x, v along iso y).
+    const pad = new Sprite(padTex);
+    pad.setFromMatrix(new Matrix(
+      (n2.x - n1.x) / padTex.width, (n2.y - n1.y) / padTex.width,
+      (n4.x - n1.x) / padTex.height, (n4.y - n1.y) / padTex.height,
+      n1.x, n1.y,
+    ));
+    c.addChild(pad);
+  } else {
+    g.poly([n1.x, n1.y, n2.x, n2.y, n3.x, n3.y, n4.x, n4.y]).fill(0xf0e6cf);
+    g.poly([n1.x, n1.y, n2.x, n2.y, n3.x, n3.y, n4.x, n4.y]).stroke({ width: 0.6, color: 0x8a7a5a, alpha: 0.7 });
+    g.moveTo(n1.x + 3, n1.y + 1.5).lineTo(n2.x - 2, n2.y + 1.5).stroke({ width: 0.6, color: 0x6b7a99, alpha: 0.6 });
+  }
   // Mug
   const m = dPt(3.95, 4.78);
-  g.ellipse(m.x, m.y + 2, 6.5, 2.6).fill({ color: 0x000000, alpha: 0.28 });
-  g.rect(m.x - 5, m.y - 7, 10, 9).fill(0xe8e2d4);
-  g.ellipse(m.x, m.y + 2, 5, 2.2).fill(0xe8e2d4);
-  g.ellipse(m.x, m.y - 7, 5, 2.2).fill(0x3a1f12);
-  g.ellipse(m.x, m.y - 7, 5, 2.2).stroke({ width: 0.8, color: 0xffffff, alpha: 0.6 });
-  g.roundRect(m.x + 4, m.y - 5, 3.5, 5, 1.5).stroke({ width: 1.2, color: 0xe8e2d4 });
-  c.addChild(g);
+  if (mugTex) {
+    const mug = new Sprite(mugTex);
+    mug.anchor.set(22 / 48, 41 / 48);
+    mug.scale.set(18 / mugTex.height * 1.1);
+    mug.position.set(m.x, m.y + 3);
+    c.addChild(mug);
+  } else {
+    g.ellipse(m.x, m.y + 2, 6.5, 2.6).fill({ color: 0x000000, alpha: 0.28 });
+    g.rect(m.x - 5, m.y - 7, 10, 9).fill(0xe8e2d4);
+    g.ellipse(m.x, m.y + 2, 5, 2.2).fill(0xe8e2d4);
+    g.ellipse(m.x, m.y - 7, 5, 2.2).fill(0x3a1f12);
+    g.ellipse(m.x, m.y - 7, 5, 2.2).stroke({ width: 0.8, color: 0xffffff, alpha: 0.6 });
+    g.roundRect(m.x + 4, m.y - 5, 3.5, 5, 1.5).stroke({ width: 1.2, color: 0xe8e2d4 });
+  }
+  c.addChildAt(g, 0);
   return c;
 };
 
@@ -642,6 +663,7 @@ export const buildLiveBooth = (): Container => {
   // Mic stand + pop filter + stool + music stand, deep in the booth
   const base = P(2.25, 0.55);
   let micSpriteRef: Sprite | null = null;
+  const boothSprites: Sprite[] = [];
   const micTex = getPropTexture('micStand');
   if (micTex) {
     const micSprite = new Sprite(micTex);
@@ -658,13 +680,31 @@ export const buildLiveBooth = (): Container => {
     g.circle(base.x + 4, base.y - 50, 8).stroke({ width: 1, color: 0x000000, alpha: 0.7 });
   }
   const stool = P(1.75, 0.7);
-  g.ellipse(stool.x, stool.y, 9, 4.2).fill({ color: 0x000000, alpha: 0.3 });
-  g.rect(stool.x - 1, stool.y - 18, 2, 18).fill(0x4a4038);
-  g.ellipse(stool.x, stool.y - 20, 9, 4.2).fill(0x6b3a2a);
-  g.ellipse(stool.x, stool.y - 20, 9, 4.2).stroke({ width: 0.8, color: 0x2a1610 });
+  const stoolTex = getPropTexture('stool');
+  if (stoolTex) {
+    const sp = new Sprite(stoolTex);
+    sp.anchor.set(0.5, 72 / 80);
+    sp.scale.set(44 / stoolTex.height * 1.0);
+    sp.position.set(stool.x, stool.y);
+    boothSprites.push(sp);
+  } else {
+    g.ellipse(stool.x, stool.y, 9, 4.2).fill({ color: 0x000000, alpha: 0.3 });
+    g.rect(stool.x - 1, stool.y - 18, 2, 18).fill(0x4a4038);
+    g.ellipse(stool.x, stool.y - 20, 9, 4.2).fill(0x6b3a2a);
+    g.ellipse(stool.x, stool.y - 20, 9, 4.2).stroke({ width: 0.8, color: 0x2a1610 });
+  }
   const stand = P(2.85, 0.6);
-  g.rect(stand.x - 0.8, stand.y - 38, 1.6, 38).fill(0x3a3f45);
-  g.poly([stand.x - 9, stand.y - 42, stand.x + 9, stand.y - 48, stand.x + 9, stand.y - 36, stand.x - 9, stand.y - 30]).fill(0x2f353c);
+  const standTex = getPropTexture('musicStand');
+  if (standTex) {
+    const sp = new Sprite(standTex);
+    sp.anchor.set(0.5, 104 / 112);
+    sp.scale.set(54 / standTex.height * 1.0);
+    sp.position.set(stand.x, stand.y);
+    boothSprites.push(sp);
+  } else {
+    g.rect(stand.x - 0.8, stand.y - 38, 1.6, 38).fill(0x3a3f45);
+    g.poly([stand.x - 9, stand.y - 42, stand.x + 9, stand.y - 48, stand.x + 9, stand.y - 36, stand.x - 9, stand.y - 30]).fill(0x2f353c);
+  }
 
   // Glass front (y = y1)
   const gl = quad(P(x0, y1), P(x1, y1), P(x1, y1, GH), P(x0, y1, GH));
@@ -705,6 +745,7 @@ export const buildLiveBooth = (): Container => {
   g.poly(quad(P(x0, y0, H), P(x1, y0, H), P(x1, y1, H), P(x0, y1, H))).stroke({ width: 1.2, color: 0x120d09, alpha: 0.9 });
   g.poly([P(x0, y1, H).x, P(x0, y1, H).y, P(x1, y1, H).x, P(x1, y1, H).y, P(x1, y1, H).x, P(x1, y1, H).y - 0.1]).stroke({ width: 1.2, color: BRASS, alpha: 0.7 });
   c.addChild(g);
+  for (const sp of boothSprites) c.addChild(sp);
   if (micSpriteRef) c.addChild(micSpriteRef);
   return c;
 };

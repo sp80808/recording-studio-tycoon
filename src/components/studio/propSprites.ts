@@ -1,16 +1,20 @@
-// Sprite textures for the signature studio props (door, wall clock, mic stand).
+// Sprite textures for the signature studio props (door, wall clock, mic stand, mug, notepad, stool, music stand).
 // Sources are in-house CC0 SVG/PNG under public/assets/props (see docs/ART_SOURCING_LOG.md).
 // Scene builders call getPropTexture(); when a texture is missing they fall back
 // to the original procedural Graphics drawing, so nothing breaks if a load fails.
 
 import { Assets, Texture } from 'pixi.js';
 
-export type PropSpriteId = 'door' | 'wallClock' | 'micStand';
+export type PropSpriteId = 'door' | 'wallClock' | 'micStand' | 'mug' | 'notepad' | 'stool' | 'musicStand';
 
 const PROP_PATHS: Record<PropSpriteId, string> = {
   door: 'assets/props/door.png',
   wallClock: 'assets/props/wall-clock.png',
   micStand: 'assets/props/mic-stand.png',
+  mug: 'assets/props/mug.png',
+  notepad: 'assets/props/notepad.png',
+  stool: 'assets/props/stool.png',
+  musicStand: 'assets/props/music-stand.png',
 };
 
 const loaded: Partial<Record<PropSpriteId, Texture>> = {};
