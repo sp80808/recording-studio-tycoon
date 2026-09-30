@@ -90,3 +90,14 @@ beads issue `recording-studio-tycoon-art.X` (3D models + skins/sticker UI):
 - `higgsfield-generate` skill (GPT Image 2 / Seedance / Nano Banana) — reserved for gaps with no CC0 coverage; nothing generated this pass because CC0 covers all current needs.
 - Web search + fetch (Kenney.nl, OpenGameArt.org) — used this pass; URLs above verified live Sept 2026.
 - No binary assets downloaded this pass (keeps the diff reviewable); PNG trimming is queue item 1–3 above.
+
+## 8. Asset factory sample sources (issues #78, #79)
+
+Procedurally drawn in-house (rectangles, no third-party art). License: **In-house (CC0)**.
+
+| Asset | Source | Output |
+| --- | --- | --- |
+| `npc/sample-engineer` (idle/work/celebrate, feet pivot) | `assets-src/npc/sample-engineer/` (Aseprite-format JSON + PNG, written by `scripts/assets/make-samples.ts`) | `public/assets/atlases/npc/sample-engineer.*` |
+| `gear/sample-monitor` (idle/powered) | `assets-src/gear/sample-monitor/frames/` (Blender-style loose frames) | `public/assets/atlases/gear/sample-monitor.*` |
+
+Every built atlas has a `*.provenance.json` (schema in `docs/ASSET_PIPELINE.md`). Real Aseprite/Blender exports have not been run through the pipeline yet.
