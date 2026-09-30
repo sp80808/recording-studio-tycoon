@@ -195,4 +195,8 @@ node /tmp/rst-balance.cjs --days 10 --seed 7 --out /tmp/rst-balance > /tmp/rst-b
 cat /tmp/rst-balance.log | grep -E "invariants|PASS|FAIL" | tail -n 8
 if grep -q "FAIL" /tmp/rst-balance.log; then echo "Balance invariants FAILED"; exit 1; fi
 
+echo "=== feel layer ==="
+./node_modules/.bin/esbuild tests/feel-mode.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-feel-mode.cjs --alias:@=./src >/dev/null
+node /tmp/rst-feel-mode.cjs
+
 echo "All automated checks passed."

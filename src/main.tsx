@@ -5,6 +5,7 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 import App from './App.tsx';
 import './index.css';
 import './styles/studio-theme.css';
+import './styles/feel.css';
 import { useSettings, SettingsProvider } from './contexts/SettingsContext';
 import { SaveSystemProvider } from './contexts/SaveSystemContext';
 import { useEffect } from 'react';
