@@ -8,3 +8,4 @@
 - **Haptics:** `hapticTick()` (Android vibration only; iOS has no web API — use `@capacitor/haptics` in a wrapper).
 - **Native wrapper:** `capacitor.config.ts` is a scaffold only; dependencies are intentionally not installed.
 - **Open item:** `public/audio` is ~266MB (mostly `chart_clips`, loaded on demand). Re-encode to AAC/Opus (needs ffmpeg) to cut mobile data.
+- **Memory/startup:** background music is streamed via `<audio>`; it is no longer preloaded/decoded into AudioBuffers at boot. `vite.config.ts` splits pixi/tone/framer-motion into separate chunks.
