@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { gameEvents } from '@/engine/gameEventBus';
 import { gameAudio } from '@/utils/audioSystem';
+import { triggerMilestoneCelebration } from '@/utils/confettiJuice';
 import { useMotionCapabilities } from '@/lib/motion/capabilities';
 import {
   MINIGAME_SUCCESS_SCORE,
@@ -31,7 +32,7 @@ const TIER_COPY = {
  * Reduced motion: no ticker, straight to the result with its sound.
  */
 export const ChartRevealScene: React.FC<{ playerLevel: number }> = ({ playerLevel }) => {
-  const { reducedMotion } = useMotionCapabilities();
+  const { reducedMotion, particles } = useMotionCapabilities();
   const [scene, setScene] = useState<Scene | null>(null);
   const [shown, setShown] = useState<number | null>(null);
   const [landed, setLanded] = useState(false);
@@ -70,6 +71,9 @@ export const ChartRevealScene: React.FC<{ playerLevel: number }> = ({ playerLeve
         position: scene.kind === 'chart' ? scene.position : undefined,
         score: scene.kind === 'minigame' ? scene.score : undefined,
       }));
+      if (particles && (tier === 'top1' || tier === 'top10')) {
+        triggerMilestoneCelebration(tier === 'top1' ? 'S' : 'A', tier === 'top1' ? 'Platinum' : 'Gold');
+      }
       void gameAudio.playUISound(tier === 'top1' ? 'rankSPlus' : tier === 'top10' ? 'rankS' : 'comboUp');
       timers.push(window.setTimeout(next, 3200));
     };
@@ -91,7 +95,17 @@ export const ChartRevealScene: React.FC<{ playerLevel: number }> = ({ playerLeve
       });
     }
     return () => timers.forEach(window.clearTimeout);
-  }, [scene, reducedMotion, next]);
+  }, [scene, reducedMotion, particles, next]);
+
+  // Keyboard skip once the result has landed.
+  useEffect(() => {
+    if (!scene || !landed) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); next(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [scene, landed, next]);
 
   if (!unlocked || !scene) return null;
 
