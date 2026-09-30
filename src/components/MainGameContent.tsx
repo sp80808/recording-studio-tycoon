@@ -1,7 +1,8 @@
+import { useArtistContracts } from '@/hooks/useArtistContracts';
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { ContextDrawer, ContextDrawerTab } from './ContextDrawer';
 import { MotionNumber, MotionButton } from '@/components/motion/primitives';
-import { Headphones, Phone, SlidersHorizontal, Sparkles, Users, Disc3, Trophy, X, Minimize2, Moon } from 'lucide-react';
+import { Headphones, Phone, SlidersHorizontal, Sparkles, Users, Disc3, Trophy, X, Minimize2, Moon, Package } from 'lucide-react';
 import { GameState, StaffMember, PlayerAttributes, Project } from '@/types/game';
 import { ProjectList } from './ProjectList';
 import { ProgressiveProjectInterface } from './ProgressiveProjectInterface';
@@ -24,6 +25,7 @@ import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
 import { RadialActionWheel } from '@/components/ui/RadialActionWheel';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useSettings } from '@/contexts/settings-context-types';
+import { FlightCaseDepot } from './FlightCaseDepot';
 import './studio-play.css';
 
 interface MainGameContentProps {
@@ -64,7 +66,7 @@ interface MainGameContentProps {
 }
 
 
-type Panel = 'bookings' | 'session' | 'studio' | 'career';
+type Panel = 'bookings' | 'session' | 'studio' | 'career' | 'cases';
 
 const DOCK_LABELS: Record<DockTabId, string> = {
   bookings: 'Bookings',
@@ -284,7 +286,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   };
 
   // Band Management Integration
-  const { createBand, startTour, createOriginalTrack } = useBandManagement(gameState, setGameState);
+  const { makeOffer, signContract, passOnProspect } = useArtistContracts(gameState, setGameState);
+  const { createBand, startTour, playShow, createOriginalTrack } = useBandManagement(gameState, setGameState);
 
 
 
@@ -310,6 +313,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           <span className="studio-live-light" aria-hidden="true" />
           <span className="min-w-0 truncate">{project ? project.title : 'Your studio. Your next great record.'}</span>
           <span className="shrink-0 text-amber-200">{gameState.playerData.dailyWorkCapacity} sessions left</span>
+          {(gameState.gems ?? 0) > 0 && <span className="shrink-0 text-cyan-300" aria-label={`${gameState.gems} gems`}>💎 {gameState.gems}</span>}
         </div>
         <div className="studio-play-actions">
           <button className="studio-primary-action" onClick={() => openPanel(project ? 'session' : 'bookings')}>
@@ -332,7 +336,9 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
               {id === 'bookings' && gameState.availableProjects.length > 0 && (
                 <i className="studio-dock-badge"><MotionNumber value={gameState.availableProjects.length} /></i>
               )}
-              {id === 'career' && gameState.playerData.perkPoints > 0 && <i className="studio-dock-badge">{gameState.playerData.perkPoints}</i>}
+              {id === 'career' && gameState.playerData.perkPoints + (gameState.pendingCrates?.length ?? 0) > 0 && (
+                <i className="studio-dock-badge">{gameState.playerData.perkPoints + (gameState.pendingCrates?.length ?? 0)}</i>
+              )}
             </button>
           ))}
         </nav>
@@ -348,7 +354,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             ? 'artist'
             : panel === 'session'
               ? 'session'
-              : panel === 'career'
+              : panel === 'career' || panel === 'cases'
                 ? 'career'
                 : dashboardTab === 'staff'
                   ? 'staff'
@@ -442,9 +448,16 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
               onEraTransition={handleEraTransition}
               createBand={createBand}
               startTour={startTour}
+              playShow={playShow}
+              artistContracts={{ makeOffer, signContract, passOnProspect }}
               createOriginalTrack={createOriginalTrack}
               startResearchMod={startResearchMod}
             />
+          )}
+          {panel === 'cases' && (
+            <div className="flex-1 min-h-0 w-full flex flex-col overflow-y-auto">
+              <FlightCaseDepot gameState={gameState} setGameState={setGameState} />
+            </div>
           )}
           {panel === 'career' && (
             <div className="flex-1 min-h-0 w-full flex flex-col overflow-y-auto">
@@ -461,6 +474,9 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
               <div className="grid gap-2.5 p-1 pt-3 sm:grid-cols-2">
                 <button className="rst-btn" onClick={() => handleOpenDashboardTab('skills')}>
                   <Sparkles size={17} />Skills & research
+                </button>
+                <button className="rst-btn" onClick={() => openPanel('cases')}>
+                  <Package size={17} />Flight cases
                 </button>
                 <button className="rst-btn" onClick={advanceDay}>
                   <Moon size={17} />Rest & advance day

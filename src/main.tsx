@@ -10,12 +10,15 @@ import { useEffect } from 'react';
 import './i18n.ts'; // Import the i18n configuration
 import { gameAudio } from './utils/audioSystem'; // Import gameAudio
 import { initInteractionListener } from './utils/userInteraction'; // Import interaction listener
+import { initMobileAudioLifecycle, registerServiceWorker } from './utils/mobilePlatform';
 
 // Initialize audio system and interaction listener early
 gameAudio.initialize().then(() => {
   console.log('Game audio system initialized from main.tsx');
 }).catch(e => console.error("Error initializing game audio system from main.tsx:", e));
 initInteractionListener();
+initMobileAudioLifecycle();
+registerServiceWorker();
 
 const RootComponent = () => {
   const { settings } = useSettings();

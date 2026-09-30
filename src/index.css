@@ -330,7 +330,7 @@
   }
   
   .mobile-tab-container {
-    height: calc(100vh - 120px); /* Account for navigation and header */
+    height: calc(100dvh - 120px); /* Account for navigation and header */
     overflow: hidden;
   }
   
@@ -347,12 +347,12 @@
 }
 
 :fullscreen .game-layout {
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
 :fullscreen .main-game-content {
-  height: calc(100vh - 60px); /* Account for header height */
+  height: calc(100dvh - 60px); /* Account for header height */
   overflow: hidden;
 }
 
@@ -367,7 +367,7 @@
 /* Desktop fullscreen specific */
 @media (min-width: 769px) {
   :fullscreen .desktop-panel {
-    max-height: calc(100vh - 80px);
+    max-height: calc(100dvh - 80px);
     overflow-y: auto;
   }
 }
@@ -375,7 +375,7 @@
 /* Mobile fullscreen specific */
 @media (max-width: 768px) {
   :fullscreen .mobile-tab-container {
-    height: calc(100vh - 140px); /* Account for header and mobile nav */
+    height: calc(100dvh - 140px); /* Account for header and mobile nav */
     overflow: hidden;
   }
   
@@ -392,12 +392,12 @@
 }
 
 :-webkit-full-screen .game-layout {
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
 :-webkit-full-screen .main-game-content {
-  height: calc(100vh - 60px);
+  height: calc(100dvh - 60px);
   overflow: hidden;
 }
 
@@ -415,12 +415,12 @@
 }
 
 :-moz-full-screen .game-layout {
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
 :-moz-full-screen .main-game-content {
-  height: calc(100vh - 60px);
+  height: calc(100dvh - 60px);
   overflow: hidden;
 }
 
@@ -438,12 +438,12 @@
 }
 
 :-ms-fullscreen .game-layout {
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
 :-ms-fullscreen .main-game-content {
-  height: calc(100vh - 60px);
+  height: calc(100dvh - 60px);
   overflow: hidden;
 }
 
@@ -628,3 +628,12 @@
   }
 }
 
+
+
+/* Mobile / touch behaviour: no rubber-banding, no double-tap zoom, no text selection on game surfaces */
+html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
+button, [role="button"], a, .studio-dock-button, .studio-primary-action { touch-action: manipulation; }
+@media (pointer: coarse) {
+  body { -webkit-user-select: none; user-select: none; }
+  input, textarea, [contenteditable] { -webkit-user-select: text; user-select: text; }
+}

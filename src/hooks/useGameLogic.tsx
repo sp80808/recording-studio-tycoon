@@ -1,4 +1,5 @@
-
+import { useArtistContracts } from '@/hooks/useArtistContracts';
+import { gameEvents } from '@/engine/gameEventBus';
 import { useState, useCallback, useMemo } from 'react'; // Added useMemo
 import { GameState, StaffMember, PlayerAttributes, ProjectReport, Project } from '@/types/game';
 import { toast } from '@/hooks/use-toast';
@@ -55,6 +56,7 @@ export const useGameLogic = (
   const { startProject, completeProject } = useProjectManagement(gameState, setGameState);
   const { advanceDay, refreshCandidates, refreshProjects, triggerEraTransition } = useGameActions(gameState, setGameState);
 
+  const { processContracts } = useArtistContracts(gameState, setGameState);
   const { createBand, startTour, createOriginalTrack, processTourIncome } = useBandManagement(gameState, setGameState);
 
   const [selectedStaffForTraining, setSelectedStaffForTraining] = useState<StaffMember | null>(null);
@@ -90,6 +92,10 @@ export const useGameLogic = (
           lastMinigameType: minigameType || prev.playerData.lastMinigameType
         }
       }, { minigames: 1 }));
+
+      if (typeof rawScore === 'number' && Number.isFinite(rawScore)) {
+        gameEvents.emit('minigame:success', { minigameType, score: rawScore });
+      }
 
       toast({
         title: "🎯 Production Bonus!",
@@ -246,11 +252,12 @@ export const useGameLogic = (
 
     // Process tour income
     processTourIncome();
+    processContracts();
 
     // Advance the day (handles salaries, staff training, etc.)
     advanceDay();
     return workResult;
-  }, [gameState.activeProject, performDailyWork, processTourIncome, advanceDay]);
+  }, [gameState.activeProject, performDailyWork, processTourIncome, processContracts, advanceDay]);
 
   // Contact artist for collaboration
   const contactArtist = useCallback((artistId: string, offer: number) => {

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useBoxDropsStore } from '../features/boxDrops/boxDropsStore';
 import { PerformanceOverlay } from './dev/PerformanceOverlay';
+import { RewardFxGallery } from './dev/RewardFxGallery';
 import { useSettings } from '@/contexts/SettingsContext';
 
 /**
@@ -31,7 +32,10 @@ export const DevMenu: React.FC = () => {
         </div>
       )}
       {showPerfHud && (
-        <PerformanceOverlay onClose={() => updateSettings({ devShowPerfHud: false })} />
+        <>
+          <PerformanceOverlay onClose={() => updateSettings({ devShowPerfHud: false })} />
+          <RewardFxGallery />
+        </>
       )}
     </>
   );
