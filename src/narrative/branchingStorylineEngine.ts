@@ -6,6 +6,8 @@ import { ERA_DEFINITIONS } from '@/utils/eraProgression';
 import { PRODUCER_ORIGINS } from '@/narrative/characterOrigins';
 import { getRivalForNode, getRivalLines, toGameEraId } from '@/narrative/rivalCast';
 import { ERA_SUBPLOTS } from '@/narrative/subplotCatalog';
+import { CALLBACK_SUBPLOTS } from '@/narrative/callbackSubplots';
+import { INDUSTRY_SUBPLOTS } from '@/narrative/industrySubplots';
 
 export interface RunSeedContext {
   saveSeed: number | string;
@@ -138,6 +140,8 @@ export interface EmergentSubplot {
   triggerCondition: (state: GameState) => boolean;
   daysBetweenStages: number;
   stages: [SubplotStage, SubplotStage];
+  /** Callback subplots: earlier story flag → phrase shown in the chronicle ("Because you …"). */
+  becauseOf?: Readonly<Record<string, string>>;
 }
 
 export const deriveStorylineRunSeed = (ctx: RunSeedContext): number => {
@@ -763,7 +767,7 @@ const LEGACY_SUBPLOTS: readonly EmergentSubplot[] = [
 ] as const;
 
 /** Every emergent subplot: the original three plus the era-aware catalog. */
-export const EMERGENT_SUBPLOTS: readonly EmergentSubplot[] = [...LEGACY_SUBPLOTS, ...ERA_SUBPLOTS];
+export const EMERGENT_SUBPLOTS: readonly EmergentSubplot[] = [...LEGACY_SUBPLOTS, ...ERA_SUBPLOTS, ...INDUSTRY_SUBPLOTS, ...CALLBACK_SUBPLOTS];
 
 /** Era the player is living in right now (progression era id). */
 const currentGameEra = (state: GameState): string => toGameEraId(state.currentEra || state.selectedEra);
@@ -830,6 +834,13 @@ export const getPendingSubplotEvent = (state: GameState): PendingSubplotEvent | 
 export const canAffordSubplotOption = (state: GameState, option: SubplotOption): boolean =>
   option.consequences.moneyDelta >= 0 || (state.money ?? 0) + option.consequences.moneyDelta >= 0;
 
+/** "Because you …" lead-in for a callback subplot's first chronicle line, so the player can see the link. */
+const becausePrefix = (subplot: EmergentSubplot, flags: StorylineState['storyFlags'], firstBeat: boolean): string => {
+  if (!firstBeat || !subplot.becauseOf) return '';
+  const flag = Object.keys(subplot.becauseOf).find((f) => flags[f]);
+  return flag ? `Because you ${subplot.becauseOf[flag]}: ` : '';
+};
+
 /**
  * Apply a subplot choice: consequences land, flag is granted, the subplot advances to stage 2 or resolves
  * (moving to `resolvedSubplotIds`, stamping the cooldown day and writing the chronicle). Unknown or unaffordable
@@ -857,7 +868,7 @@ export const resolveSubplotChoice = (state: GameState, optionId: string): GameSt
     day: state.currentDay,
     kind: 'subplot',
     title: `${pending.subplot.title}${resolved ? '' : ' — part 1'}`,
-    outcome: consequences.narrativeOutcome,
+    outcome: becausePrefix(pending.subplot, story.storyFlags, pending.active.currentStage === 1) + consequences.narrativeOutcome,
   });
 
   return {

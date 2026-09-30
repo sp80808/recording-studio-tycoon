@@ -124,15 +124,8 @@ class GameAudioSystem {
       { name: 'ui-tactile-click-alt', path: '/audio/ui-sfx/kenney/click2.wav' },
       { name: 'ui-gear-switch', path: '/audio/ui-sfx/kenney/switch1.wav' },
       { name: 'ui-gear-switch-alt', path: '/audio/ui-sfx/kenney/switch2.wav' },
-      // Music - Added paths
-      { name: 'music-bgm1', path: '/audio/music/tycoon-bgm1.mp3' },
-      { name: 'music-bgm2', path: '/audio/music/tycoon-bgm2.mp3' },
-      { name: 'music-bgm3', path: '/audio/music/tycoon-bgm3.mp3' },
-      { name: 'music-bgm4', path: '/audio/music/tycoon-bgm4.mp3' },
-      { name: 'music-bgm5', path: '/audio/music/tycoon-bgm5.mp3' },
-      { name: 'music-bgm6', path: '/audio/music/tycoon-bgm6.mp3' },
-      { name: 'music-bgm7', path: '/audio/music/tycoon-bgm7.mp3' },
-      { name: 'music-bgm8', path: '/audio/music/tycoon-bgm8.mp3' },
+      // Music is streamed by useBackgroundMusic via an <audio> element. It is deliberately NOT preloaded
+      // here: decoding the 8 tracks (~39MB of mp3) into AudioBuffers cost hundreds of MB of RAM and blocked startup on mobile.
     ];
 
     // Filter out any files that might have been added with empty paths

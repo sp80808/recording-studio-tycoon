@@ -1,3 +1,4 @@
+import { useArtistContracts } from '@/hooks/useArtistContracts';
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { ContextDrawer, ContextDrawerTab } from './ContextDrawer';
 import { MotionNumber, MotionButton } from '@/components/motion/primitives';
@@ -6,6 +7,7 @@ import { GameState, StaffMember, PlayerAttributes, Project } from '@/types/game'
 import { ProjectList } from './ProjectList';
 import { ProgressiveProjectInterface } from './ProgressiveProjectInterface';
 import { CareerHub } from './CareerHub';
+import { chooseFocus } from '@/rpg/studioSeasons';
 import { AttributesModal } from './modals/AttributesModal';
 import { RightPanel } from './RightPanel';
 import { StudioRoom } from './StudioRoom';
@@ -285,7 +287,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   };
 
   // Band Management Integration
-  const { createBand, startTour, createOriginalTrack } = useBandManagement(gameState, setGameState);
+  const { makeOffer, signContract, passOnProspect } = useArtistContracts(gameState, setGameState);
+  const { createBand, startTour, playShow, createOriginalTrack } = useBandManagement(gameState, setGameState);
 
 
 
@@ -446,6 +449,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
               onEraTransition={handleEraTransition}
               createBand={createBand}
               startTour={startTour}
+              playShow={playShow}
+              artistContracts={{ makeOffer, signContract, passOnProspect }}
               createOriginalTrack={createOriginalTrack}
               startResearchMod={startResearchMod}
             />
@@ -466,6 +471,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                 onStaff={() => handleOpenDashboardTab('staff')}
                 onOpenStorylineBranch={onOpenStorylineBranch}
                 onOpenStoryEvent={onOpenStoryEvent}
+                onChooseSeasonFocus={focus => setGameState(prev => chooseFocus(prev, focus))}
               />
               <div className="grid gap-2.5 p-1 pt-3 sm:grid-cols-2">
                 <button className="rst-btn" onClick={() => handleOpenDashboardTab('skills')}>

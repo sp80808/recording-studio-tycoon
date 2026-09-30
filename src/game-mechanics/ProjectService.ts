@@ -20,6 +20,7 @@ import { getSettlementBonuses } from '../utils/settlementBonuses';
 import { getOriginEffects } from '../narrative/originPerks';
 import { addAllocations, earn } from '../economy/ledger';
 import { calculateEquipmentUpkeep } from '../economy/upkeep';
+import { growFamiliarity } from '@/rpg/signalChain';
 import {
   findProjectForReport,
   resolveDeliveryClient,
@@ -298,6 +299,11 @@ export function applyReportToState(state: GameState, report: ProjectReport): Gam
 
     // Release any crew still tied to this project.
     const projectId = report.projectId;
+    const chain = [state.activeProject, ...(state.activeProjects ?? [])].find(p => p?.id === projectId)?.signalChain;
+    const crewIds = new Set(hiredStaff.filter(s => s.assignedProjectId === projectId).map(s => s.id));
+    if (report.assignedPerson.type === 'staff') crewIds.add(report.assignedPerson.id);
+    // Gear familiarity grows from actual use (#86, capped at 10 sessions per item).
+    if (chain) hiredStaff = growFamiliarity(hiredStaff, chain, crewIds);
     const releasedStaff = hiredStaff.map(s =>
         s.assignedProjectId === projectId
             ? { ...s, status: 'Idle' as const, assignedProjectId: null }
@@ -370,6 +376,7 @@ export function applyReportToState(state: GameState, report: ProjectReport): Gam
         playerData,
         hiredStaff: releasedStaff,
         clientRelationships,
+        studioKnowHow: (state.studioKnowHow ?? 0) + (report.knowHowGained ?? 0),
         financials: {
             ...state.financials,
             income,
