@@ -50,7 +50,7 @@ Storyline stays free; monetisation stays optional cosmetics/gear only (see fligh
 
 ### Splash
 4. **Brand-first hero** with one studio still / short motion and a single primary CTA group; keep tips in footer (current `SplashScreen.tsx` structure is close — tighten visual hierarchy, avoid competing cards).
-5. **Era picker preview** tint samples using the same `ERA_GRADES` palette as the Pixi room for continuity.
+5. ~~**Era picker preview**~~ — **done**: each era card shows the room's left wall, right wall and accent colours from `ERA_GRADES`.
 
 ### Isometric room
 6. ~~**Depth bands**~~ — **done**: `Z` bands in `WebGLCanvas` (`world` by add order, `depth + y` for staff and free-standing tier props, `fx` for lights, bloom and idle hints). The console desk (with its props and phone) y-sorts with the staff at its front-left corner, so staff behind it are hidden and staff in front draw over it. The booth glass stays in the world band: no staff spot is inside the booth, so a separate glass band would change nothing visible yet.
