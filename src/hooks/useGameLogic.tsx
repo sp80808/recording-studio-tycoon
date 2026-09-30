@@ -1,4 +1,5 @@
 
+import { gameEvents } from '@/engine/gameEventBus';
 import { useState, useCallback, useMemo } from 'react'; // Added useMemo
 import { GameState, StaffMember, PlayerAttributes, ProjectReport, Project } from '@/types/game';
 import { toast } from '@/hooks/use-toast';
@@ -90,6 +91,10 @@ export const useGameLogic = (
           lastMinigameType: minigameType || prev.playerData.lastMinigameType
         }
       }, { minigames: 1 }));
+
+      if (typeof rawScore === 'number' && Number.isFinite(rawScore)) {
+        gameEvents.emit('minigame:success', { minigameType, score: rawScore });
+      }
 
       toast({
         title: "🎯 Production Bonus!",
