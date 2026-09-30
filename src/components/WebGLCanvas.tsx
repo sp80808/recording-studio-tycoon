@@ -132,6 +132,12 @@ export const calculateTapeSaturationWarmth = (
  */
 export type StudioHotspotId = 'console' | 'liveRoom' | 'phone' | 'clock' | 'tv' | 'shelf';
 
+/**
+ * Draw-order bands inside the room. Floor, walls and big fixed furniture keep add order at `world`;
+ * y-sorted pieces (characters, free-standing tier props) share `depth + y`; glow/light FX always sit on top.
+ */
+const Z = { world: 0, depth: 100, fx: 3000 } as const;
+
 export type HotspotAnchors = Partial<Record<StudioHotspotId, { x: number; y: number }>>;
 
 /**
@@ -387,7 +393,7 @@ const addHotspot = (
   hit.cursor = 'pointer';
   hit.alpha = 0; // invisible for rendering, still receives pointer events
   refs.hotspotHits[id] = hit;
-  hit.on('pointerover', () => { refs.hoverGlowTargets[id] = 0.85; });
+  hit.on('pointerover', () => { refs.hoverGlowTargets[id] = 1; });
   hit.on('pointerout', () => { refs.hoverGlowTargets[id] = 0; });
   // The canvas gesture guard suppresses selection after a two-finger pan.
   hit.on('pointertap', () => { onSelect?.(id); });
@@ -919,12 +925,14 @@ const buildScene = (
     .stroke({ width: 3, color: 0x7bd389 });
 
   const consoleHint = new Graphics();
-  consoleHint
-    .poly([p1.x, p1.y - bridgeH - 20, p2.x, p2.y - bridgeH - 20, p3.x, p3.y + 6, p4.x, p4.y + 6])
-    .stroke({ width: 3.5, color: grade.accent, alpha: 0.95 });
+  const consoleHintPoly = [p1.x, p1.y - bridgeH - 20, p2.x, p2.y - bridgeH - 20, p3.x, p3.y + 6, p4.x, p4.y + 6];
+  // Dark keyline under the coloured ring keeps the hint findable under every era / night tint.
+  consoleHint.poly(consoleHintPoly).stroke({ width: 7, color: 0x0b0906, alpha: 0.55 });
+  consoleHint.poly(consoleHintPoly).stroke({ width: 3.5, color: grade.accent, alpha: 0.95 });
   consoleHint.alpha = 0;
   consoleHint.eventMode = 'none';
   refs.idleHints.console = consoleHint;
+  consoleHint.zIndex = Z.fx;
   root.addChild(consoleHint);
   root.addChild(buildDeskProps(deskH));
 
@@ -957,10 +965,12 @@ const buildScene = (
     .stroke({ width: 3, color: 0xffd166 });
 
   const phoneHint = new Graphics();
+  phoneHint.ellipse(pPos.x, pPos.y - 3, 24, 13).stroke({ width: 7, color: 0x0b0906, alpha: 0.55 });
   phoneHint.ellipse(pPos.x, pPos.y - 3, 24, 13).stroke({ width: 3.5, color: 0xffd166, alpha: 0.95 });
   phoneHint.alpha = 0;
   phoneHint.eventMode = 'none';
   refs.idleHints.phone = phoneHint;
+  phoneHint.zIndex = Z.fx;
   root.addChild(phoneHint);
 
   /* ---- Staff / artist figures on the floor ---------------------------- */
@@ -992,7 +1002,7 @@ const buildScene = (
     body.circle(-11, -43, 3).fill(grade.accent);
     body.circle(11, -43, 3).fill(grade.accent);
     fig.addChild(body);
-    fig.zIndex = spot.y;
+    fig.zIndex = Z.depth + spot.y;
     refs.staffFigures.push({ fig, baseY: spot.y });
     root.addChild(fig);
   }
@@ -1010,6 +1020,7 @@ const buildScene = (
     upgrades.circle(plantBase.x, plantBase.y - 30, 16).fill(0x3f7d4f);
     upgrades.circle(plantBase.x - 10, plantBase.y - 24, 10).fill(0x4f9a5f);
     upgrades.circle(plantBase.x + 10, plantBase.y - 26, 11).fill(0x357044);
+    upgrades.zIndex = Z.depth + plantBase.y;
     root.addChild(upgrades);
   }
 
@@ -1021,12 +1032,16 @@ const buildScene = (
     lounge.roundRect(sofa.x - 26, sofa.y - 34, 52, 12, 5).fill(0x6d4c85);
     lounge.rect(sofa.x - 22, sofa.y - 2, 6, 6).fill(0x2a1f33);
     lounge.rect(sofa.x + 16, sofa.y - 2, 6, 6).fill(0x2a1f33);
-    // Road case next to the console
-    const rc = iso(4.9, 2.4);
-    lounge.rect(rc.x - 14, rc.y - 22, 28, 22).fill(0x38414f);
-    lounge.rect(rc.x - 14, rc.y - 22, 28, 6).fill(0x4c5769);
-    lounge.rect(rc.x - 14, rc.y - 11, 28, 3).fill(0x232a36);
+    lounge.zIndex = Z.depth + sofa.y;
     root.addChild(lounge);
+    // Road case next to the console (its own node so it sorts by its own depth)
+    const roadCase = new Graphics();
+    const rc = iso(4.9, 2.4);
+    roadCase.rect(rc.x - 14, rc.y - 22, 28, 22).fill(0x38414f);
+    roadCase.rect(rc.x - 14, rc.y - 22, 28, 6).fill(0x4c5769);
+    roadCase.rect(rc.x - 14, rc.y - 11, 28, 3).fill(0x232a36);
+    roadCase.zIndex = Z.depth + rc.y;
+    root.addChild(roadCase);
   }
 
   if (tier >= 4) {
@@ -1036,6 +1051,7 @@ const buildScene = (
     pro.rect(rig.x - 16, rig.y - 34, 32, 34).fill(0x2a221c);
     pro.rect(rig.x - 12, rig.y - 29, 24, 16).fill(grade.accent);
     pro.rect(rig.x - 16, rig.y - 34, 32, 34).stroke({ width: 2, color: 0x120d09 });
+    pro.zIndex = Z.depth + rig.y;
     root.addChild(pro);
   }
 
@@ -1064,6 +1080,7 @@ const buildScene = (
   /* ---- Additive lighting: window shaft, motes, lamp pools, era glow ------- */
   const lights = buildDecorLights({ spec: decorSpec });
   refs.decor = lights;
+  lights.container.zIndex = Z.fx;
   root.addChild(lights.container);
 
   /* ---- Screen-space backdrop behind the room ---------------------------- */
@@ -1127,6 +1144,7 @@ const buildScene = (
   bloomLayer.addChild(dynamicBloomG);
   refs.dynamicBloomG = dynamicBloomG;
   refs.bloomLayer = bloomLayer;
+  bloomLayer.zIndex = Z.fx;
   root.addChild(bloomLayer);
 
   return { root, underlayRoot, overlayRoot, refs, basePosition: { x: originX, y: originY }, baseScale: fitScale };
