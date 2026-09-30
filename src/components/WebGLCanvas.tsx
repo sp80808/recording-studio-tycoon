@@ -1,3 +1,4 @@
+import { lastTake, nodOffset } from '@/utils/takeFeedback';
 import React, { useEffect, useRef } from 'react';
 import { AnimatedSprite, Application, Container, Graphics, Matrix, Sprite, Text, type Renderer } from 'pixi.js';
 import { applyReelState, buildReelTextures, createReelSprite } from '@/features/gearStudio/gearSpriteAnimation';
@@ -1776,7 +1777,9 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             if (a.shown !== name) { a.tag.text = name; a.shown = name; }
             if (s.hasActiveProject) {
               const sway = reduceMotion ? 0 : 1;
-              a.fig.y = a.baseY + Math.sin(t * 5) * 1.5 * s.activity * sway;
+              const tk = lastTake();
+              const nod = tk && !reduceMotion ? nodOffset(performance.now() - tk.at, tk.grade) : 0;
+              a.fig.y = a.baseY + Math.sin(t * 5) * 1.5 * s.activity * sway + nod;
               a.fig.rotation = Math.sin(t * 2.3) * 0.05 * s.activity * sway;
               a.fig.scale.y = 1 + Math.abs(Math.sin(t * 4)) * 0.03 * s.activity * sway;
             }

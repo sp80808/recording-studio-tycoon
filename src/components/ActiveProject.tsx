@@ -1,3 +1,4 @@
+import { emitTakeFeedback } from '@/utils/takeFeedback';
 import { MotionButton, MotionReveal, MotionNumber } from '@/components/motion/primitives';
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,7 @@ import {
   getStageFocusRecommendations 
 } from '@/utils/stageUtils';
 
+import { earn } from '@/economy/ledger';
 import { GameState, FocusAllocation, Project, PlayerData } from '@/types/game';
 import { useFeatureFlag } from '@/stores/featureFlagStore';
 import ProductionQueuePanel from '@/components/ProductionQueue/ProductionQueuePanel';
@@ -122,8 +124,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const handleStreakBank = (result: BankResult) => {
     if (!gameState.activeProject) return;
     setGameState(prev => ({
-      ...prev,
-      money: prev.money + result.cash,
+      ...earn(prev, result.cash, { category: 'reward-income', projectId: prev.activeProject?.id, memo: 'Streak bank' }),
       playerData: {
         ...prev.playerData,
         xp: prev.playerData.xp + result.xp,
@@ -459,6 +460,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       setGoldStreak(0);
     }
 
+    if (verdict.grade === 'Gold' || verdict.grade === 'Silver' || verdict.grade === 'Solid') emitTakeFeedback(verdict.grade);
     setLastTakeGrade({
       grade: verdict.grade,
       text: `${verdict.label}! +${verdict.qualityBonus} Quality (${Math.round((verdict.multiplier - 1) * 100)}% Boost)`

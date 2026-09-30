@@ -1,4 +1,5 @@
 import { GameState } from '../types/game';
+import { spend } from '../economy/ledger';
 import { EventEffect, EventImpactTarget, RandomEvent, RandomEventService } from './random-events';
 import { SAMPLE_RANDOM_EVENTS } from './sample-data';
 
@@ -126,8 +127,7 @@ export function applyEventToState(state: GameState, event: RandomEvent): EventAp
       case 'OperatingCosts': {
         const expenses = next.financials.expenses + effect.magnitude;
         next = {
-          ...next,
-          money: next.money - effect.magnitude,
+          ...spend(next, effect.magnitude, { category: 'event-cost', memo: 'Operating costs event' }),
           financials: { ...next.financials, expenses, profit: next.financials.income - expenses },
         };
         record(effect, `${effect.magnitude >= 0 ? '-' : '+'}$${Math.abs(effect.magnitude)} operating costs`);
