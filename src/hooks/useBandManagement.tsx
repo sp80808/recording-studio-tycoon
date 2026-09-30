@@ -178,6 +178,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
       ...prev,
       money: prev.money + result.net,
       reputation: prev.reputation + result.reputationGain,
+      playerData: { ...prev.playerData, xp: prev.playerData.xp + result.xpGain },
       playerBands: prev.playerBands.map(b =>
         b.id === bandId
           ? { ...b, fame: b.fame + result.fameGain, lastShowDay: prev.currentDay }
@@ -193,7 +194,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
     }[result.verdict];
     toast({
       title: verdictTitle,
-      description: `${band.bandName} drew ${result.attendance} fans. Net ${result.net >= 0 ? '+' : '-'}$${Math.abs(result.net)}, +${result.fameGain} fame.`,
+      description: `${band.bandName} drew ${result.attendance} fans. Net ${result.net >= 0 ? '+' : '-'}$${Math.abs(result.net)}, +${result.fameGain} fame, +${result.xpGain} XP.${result.mishap ? ' A technical mishap hurt the night.' : ''}`,
       className: "bg-stone-800 border-stone-600 text-white",
       duration: 4000
     });

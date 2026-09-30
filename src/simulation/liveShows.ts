@@ -43,11 +43,44 @@ export const MARKETING_OPTIONS: readonly MarketingOption[] = [
 /** Days a band needs to rest after a show before it can play again. */
 export const SHOW_COOLDOWN_DAYS = 3;
 
+export type SoundcheckTier = 'skip' | 'quick' | 'full';
+
+export interface SoundcheckOption {
+  id: SoundcheckTier;
+  label: string;
+  cost: number;
+  /** Chance a technical mishap (feedback, dead mic) hits the night. */
+  mishapChance: number;
+}
+
+export const SOUNDCHECK_OPTIONS: readonly SoundcheckOption[] = [
+  { id: 'skip', label: 'Skip it', cost: 0, mishapChance: 0.4 },
+  { id: 'quick', label: 'Quick line check', cost: 30, mishapChance: 0.2 },
+  { id: 'full', label: 'Full soundcheck', cost: 120, mishapChance: 0.06 },
+];
+
+/** Era-flavoured venue names; venue ids and stats stay the same across eras. */
+const ERA_VENUE_NAMES: Record<string, Partial<Record<string, string>>> = {
+  analog60s: { basement: 'Coffeehouse', club: 'Dance Hall', theatre: 'Ballroom', arena: 'Civic Auditorium' },
+  classic_rock: { basement: 'Garage Bar', club: 'Rock Club', theatre: 'Concert Hall', arena: 'Stadium' },
+  golden_age: { basement: 'College Bar', club: 'MTV-era Club', theatre: 'Amphitheatre', arena: 'Mega Arena' },
+  digital_age: { basement: 'Indie Bar', club: 'Festival Tent', theatre: 'Grand Theatre', arena: 'Festival Main Stage' },
+  modern: { basement: 'Open-Mic Bar', club: 'Live House', theatre: 'Sold-Out Theatre', arena: 'Stadium Tour Stop' },
+};
+
+export const venueDisplayName = (venue: Venue, eraId?: string): string =>
+  (eraId && ERA_VENUE_NAMES[eraId]?.[venue.id]) || venue.name;
+
 export interface ShowPlan {
   venueId: string;
   marketing: MarketingTier;
   ticketPrice: number;
+  /** Absent on plans built before soundchecks existed; treated as 'quick'. */
+  soundcheck?: SoundcheckTier;
 }
+
+const getSoundcheck = (tier?: SoundcheckTier): SoundcheckOption =>
+  SOUNDCHECK_OPTIONS.find(o => o.id === (tier ?? 'quick')) ?? SOUNDCHECK_OPTIONS[1];
 
 export interface ShowBandInput {
   bandId: string;
@@ -66,6 +99,9 @@ export interface ShowResult {
   net: number;
   fameGain: number;
   reputationGain: number;
+  xpGain: number;
+  /** True when a technical mishap cost the band a verdict tier and part of the gate. */
+  mishap: boolean;
   /** 'flop' | 'ok' | 'hit' | 'legendary' — drives the toast copy. */
   verdict: 'flop' | 'ok' | 'hit' | 'legendary';
 }
@@ -82,7 +118,7 @@ export const suggestedTicketPrice = (venue: Venue): number =>
 export const totalCost = (plan: ShowPlan): number => {
   const venue = getVenue(plan.venueId);
   const marketing = MARKETING_OPTIONS.find(m => m.id === plan.marketing);
-  return (venue?.rentalCost ?? 0) + (marketing?.cost ?? 0);
+  return (venue?.rentalCost ?? 0) + (marketing?.cost ?? 0) + getSoundcheck(plan.soundcheck).cost;
 };
 
 export const canPlayShow = (
@@ -118,7 +154,7 @@ export const resolveShow = (
   const venue = getVenue(plan.venueId);
   const marketing = MARKETING_OPTIONS.find(m => m.id === plan.marketing);
   if (!venue || !marketing) {
-    return { ok: false, reason: 'Invalid show plan.', attendance: 0, sellOut: false, grossRevenue: 0, costs: 0, net: 0, fameGain: 0, reputationGain: 0, verdict: 'flop' };
+    return { ok: false, reason: 'Invalid show plan.', attendance: 0, sellOut: false, grossRevenue: 0, costs: 0, net: 0, fameGain: 0, reputationGain: 0, xpGain: 0, mishap: false, verdict: 'flop' };
   }
 
   const rng = createSeededRandom(seed);
@@ -134,15 +170,19 @@ export const resolveShow = (
   const attendance = Math.max(0, Math.min(venue.capacity, Math.round(demand)));
   const sellOut = attendance >= venue.capacity;
 
+  // Night-of mishap: drawn after luck so soundcheck choice never reshuffles turnout.
+  const mishap = rng() < getSoundcheck(plan.soundcheck).mishapChance;
+  const refundShare = mishap ? 0.1 : 0;
   const gate = attendance * plan.ticketPrice;
-  const grossRevenue = Math.round(gate * (1 - venue.houseCut));
+  const grossRevenue = Math.round(gate * (1 - venue.houseCut) * (1 - refundShare));
   const costs = totalCost(plan);
   const net = grossRevenue - costs;
 
   const fillRate = attendance / venue.capacity;
   const tierBonus = VENUES.indexOf(venue) + 1;
-  const verdict: ShowResult['verdict'] =
-    sellOut && luck > 1.1 ? 'legendary' : fillRate >= 0.75 ? 'hit' : fillRate >= 0.35 ? 'ok' : 'flop';
+  const tiers: ShowResult['verdict'][] = ['flop', 'ok', 'hit', 'legendary'];
+  const rawTier = sellOut && luck > 1.1 ? 3 : fillRate >= 0.75 ? 2 : fillRate >= 0.35 ? 1 : 0;
+  const verdict = tiers[Math.max(0, rawTier - (mishap ? 1 : 0))];
 
   const verdictScale = { flop: 0, ok: 1, hit: 2, legendary: 3 }[verdict];
   return {
@@ -154,6 +194,8 @@ export const resolveShow = (
     net,
     fameGain: verdictScale * tierBonus,
     reputationGain: verdict === 'flop' ? 0 : Math.max(1, Math.round(verdictScale * tierBonus * 0.5)),
+    xpGain: 10 * tierBonus + 10 * verdictScale,
+    mishap,
     verdict,
   };
 };

@@ -8,7 +8,7 @@ import MoodIndicator from './MoodIndicator'; // Import MoodIndicator
 import { CreateBandModal } from './modals/CreateBandModal';
 import { RecordTrackModal } from './modals/RecordTrackModal';
 import { canGoOnTour } from '@/utils/bandUtils';
-import { ShowPlan, VENUES, MARKETING_OPTIONS, MarketingTier, canPlayShow, suggestedTicketPrice, totalCost, getVenue } from '@/simulation/liveShows';
+import { ShowPlan, VENUES, MARKETING_OPTIONS, MarketingTier, SoundcheckTier, SOUNDCHECK_OPTIONS, venueDisplayName, canPlayShow, suggestedTicketPrice, totalCost, getVenue } from '@/simulation/liveShows';
 import { toast } from '@/hooks/use-toast';
 
 interface BandManagementProps {
@@ -33,6 +33,7 @@ export const BandManagement: React.FC<BandManagementProps> = ({
   const [showPlanBandId, setShowPlanBandId] = useState<string | null>(null);
   const [venueId, setVenueId] = useState(VENUES[0].id);
   const [marketing, setMarketing] = useState<MarketingTier>('flyers');
+  const [soundcheck, setSoundcheck] = useState<SoundcheckTier>('quick');
   const [ticketPrice, setTicketPrice] = useState(suggestedTicketPrice(VENUES[0]));
 
   const canCreateBand = gameState.playerData.level >= 4 && gameState.hiredStaff.length >= 1;
@@ -190,7 +191,7 @@ export const BandManagement: React.FC<BandManagementProps> = ({
             </div>
 
             {onPlayShow && showPlanBandId === band.id && (() => {
-              const plan: ShowPlan = { venueId, marketing, ticketPrice };
+              const plan: ShowPlan = { venueId, marketing, ticketPrice, soundcheck };
               const check = canPlayShow(
                 { fame: band.fame, isOnTour: band.tourStatus.isOnTour, lastShowDay: band.lastShowDay },
                 gameState.reputation, plan, gameState.money, gameState.currentDay
@@ -210,7 +211,7 @@ export const BandManagement: React.FC<BandManagementProps> = ({
                       >
                         {VENUES.map(v => (
                           <option key={v.id} value={v.id}>
-                            {v.name} ({v.capacity}) — fame {v.minFame}+, rep {v.minReputation}+
+                            {venueDisplayName(v, gameState.currentEra)} ({v.capacity}) — fame {v.minFame}+, rep {v.minReputation}+
                           </option>
                         ))}
                       </select>
@@ -223,6 +224,17 @@ export const BandManagement: React.FC<BandManagementProps> = ({
                       >
                         {MARKETING_OPTIONS.map(m => (
                           <option key={m.id} value={m.id}>{m.label} (${m.cost})</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="flex-1">Soundcheck
+                      <select
+                        className="mt-1 w-full rounded bg-stone-800 p-1"
+                        value={soundcheck}
+                        onChange={e => setSoundcheck(e.target.value as SoundcheckTier)}
+                      >
+                        {SOUNDCHECK_OPTIONS.map(o => (
+                          <option key={o.id} value={o.id}>{o.label} (${o.cost}, {Math.round(o.mishapChance * 100)}% mishap)</option>
                         ))}
                       </select>
                     </label>

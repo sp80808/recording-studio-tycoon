@@ -2,7 +2,7 @@
 import assert from 'node:assert';
 import {
   VENUES, MARKETING_OPTIONS, SHOW_COOLDOWN_DAYS, resolveShow, canPlayShow,
-  getAvailableVenues, suggestedTicketPrice, totalCost,
+  getAvailableVenues, suggestedTicketPrice, totalCost, SOUNDCHECK_OPTIONS, venueDisplayName,
 } from '../src/simulation/liveShows';
 
 let passed = 0;
@@ -62,5 +62,18 @@ ok(!gate(60, 40, 5000, 10, 10 + 0, false), 'same-day repeat blocked by cooldown'
 ok(gate(60, 40, 5000, 10 + SHOW_COOLDOWN_DAYS, 10), 'cooldown expires');
 ok(!gate(60, 40, 5000, 10, undefined, true), 'touring band cannot play shows');
 ok(MARKETING_OPTIONS.length === 4, 'four marketing tiers');
+
+
+// Soundchecks cost money, cut mishaps, and never reshuffle turnout.
+const rate = (tier: 'skip' | 'quick' | 'full') =>
+  Array.from({ length: 300 }, (_, i) => resolveShow(band, { ...plan, soundcheck: tier }, `sc:${i}`).mishap).filter(Boolean).length / 300;
+ok(rate('full') < rate('quick') && rate('quick') < rate('skip'), 'better soundcheck means fewer mishaps');
+ok(totalCost({ ...plan, soundcheck: 'full' }) - totalCost({ ...plan, soundcheck: 'skip' }) === SOUNDCHECK_OPTIONS[2].cost, 'soundcheck adds its cost');
+ok(resolveShow(band, { ...plan, soundcheck: 'skip' }, 'same').attendance === resolveShow(band, { ...plan, soundcheck: 'full' }, 'same').attendance, 'soundcheck does not change turnout');
+ok(totalCost({ venueId: club.id, marketing: 'radio', ticketPrice: 10 }) === totalCost({ ...plan, soundcheck: 'quick' }), 'missing soundcheck defaults to quick');
+const mishaps = Array.from({ length: 300 }, (_, i) => resolveShow(band, { ...plan, soundcheck: 'skip' }, `mx:${i}`)).filter(r => r.mishap);
+ok(mishaps.length > 0 && mishaps.every(r => r.verdict !== 'legendary'), 'mishap drops verdict a tier (never legendary)');
+ok(outcomes.every(o => o.xpGain > 0), 'every show grants xp');
+ok(venueDisplayName(VENUES[0], 'analog60s') === 'Coffeehouse' && venueDisplayName(VENUES[0]) === VENUES[0].name, 'era names with fallback');
 
 console.log(`live-shows: ${passed} checks passed`);
