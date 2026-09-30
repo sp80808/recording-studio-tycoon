@@ -8,6 +8,7 @@
  */
 import type { GameState, Project } from '@/types/game';
 import { getOriginEffects, originPayoutMultiplier, originQualityBonus } from '@/narrative/originPerks';
+import { artistQualityBonus } from '@/simulation/artistContracts';
 import { calculateSynergyBonuses, evaluateProjectSynergies } from '@/utils/synergyUtils';
 
 export interface SettlementBonuses {
@@ -15,6 +16,8 @@ export interface SettlementBonuses {
   synergyQualityBonus: number;
   /** Flat quality points (0-12) from the producer's origin on this genre. */
   originQualityBonus: number;
+  /** Flat quality points (0-8) from signed A&R artists working the session. */
+  artistQualityBonus: number;
   /** Extra payout multiplier from the origin. */
   payoutMultiplier: number;
   /** Skill XP multipliers keyed by skill name. */
@@ -34,6 +37,7 @@ export const getSettlementBonuses = (
   return {
     synergyQualityBonus: Math.min(12, Math.round(baseSynergy * effects.synergyMultiplier)),
     originQualityBonus: originQualityBonus(effects, project.genre),
+    artistQualityBonus: artistQualityBonus(state.signedArtists, project.genre),
     payoutMultiplier: originPayoutMultiplier(effects, project.genre, marketMultiplier),
     skillXpMultipliers: effects.skillXpMultipliers,
     rankARepBonus: effects.rankARepBonus,

@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { GameState } from '@/types/game';
 import { rewardGains } from '@/utils/rewardFeedback';
 import { useMotionCapabilities } from '@/lib/motion/capabilities';
+import { ambientPopLabel } from '@/economy/ambientIncome';
 import {
   REWARD_POP_EVENT, formatGain, isLevelUp, lootArc, lootDelay, lootDuration, rewardCoinCount,
   rewardPopScale, rewardTier, type Point, type RewardKind, type RewardPopDetail, type RewardTier,
@@ -54,9 +55,11 @@ export function RewardFlights({ gameState }: { gameState: GameState }) {
   };
   const previous = useRef(snapshot);
   const serial = useRef(0);
+  const ambientTicks = useRef(gameState.ambientIncome?.ticks ?? 0);
   const [flights, setFlights] = useState<Flight[]>([]);
   const [pops, setPops] = useState<Pop[]>([]);
   const [announcement, setAnnouncement] = useState('');
+  const [ticker, setTicker] = useState<string | null>(null);
   const [milestoneBanner, setMilestoneBanner] = useState<string | null>(null);
   const [levelBanner, setLevelBanner] = useState<number | null>(null);
   const reducedMotion = useReducedMotion();
@@ -91,6 +94,16 @@ export function RewardFlights({ gameState }: { gameState: GameState }) {
     const gains = rewardGains(before, next);
     const timers: number[] = [];
 
+    // Ambient trickle stays quiet: a tiny pop, no loot flight (and no double count).
+    const ambient = gameState.ambientIncome;
+    if (ambient && ambient.ticks > ambientTicks.current && ambient.last) {
+      gains.money = Math.max(0, gains.money - ambient.last.amount);
+      const at = sourcePoint();
+      addPop({ label: ambientPopLabel(ambient.last), tier: 'small', tone: 'plain', x: at.x - 46, y: at.y + 6 });
+      setTicker(ambient.last.line);
+    }
+    ambientTicks.current = ambient?.ticks ?? 0;
+
     // Evaluate 3-day streak milestone callout
     if (next.streak >= 3 && next.streak > (before.streak || 0) && next.streak % 3 === 0) {
       setMilestoneBanner(`🎉 ${next.streak}-DAY CHORE STREAK! VINTAGE FLIGHT CRATE UNLOCKED!`);
@@ -123,7 +136,13 @@ export function RewardFlights({ gameState }: { gameState: GameState }) {
     }
     return () => timers.forEach(window.clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameState.money, gameState.playerData.xp, gameState.playerData.level, gameState.currentDay, gameState.choreState?.streakDays]);
+  }, [gameState.money, gameState.playerData.xp, gameState.playerData.level, gameState.currentDay, gameState.choreState?.streakDays, gameState.ambientIncome?.ticks]);
+
+  useEffect(() => {
+    if (!ticker) return;
+    const timer = window.setTimeout(() => setTicker(null), 6000);
+    return () => window.clearTimeout(timer);
+  }, [ticker]);
 
   // Level banner dismissal is independent of reward-state reruns.
   useEffect(() => {
@@ -155,6 +174,15 @@ export function RewardFlights({ gameState }: { gameState: GameState }) {
 
   return createPortal(<>
     <span role="status" className="sr-only">{announcement}</span>
+
+    {ticker && (
+      <div
+        data-testid="ambient-ticker"
+        className="pointer-events-none fixed bottom-3 left-3 z-[60] max-w-[min(22rem,calc(100vw-1.5rem))] rounded-md border border-amber-200/20 bg-stone-900/70 px-3 py-1.5 text-xs italic text-amber-100/80 shadow-sm"
+      >
+        {ticker}
+      </div>
+    )}
 
     {milestoneBanner && (
       <motion.div

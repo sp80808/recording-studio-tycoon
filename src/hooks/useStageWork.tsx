@@ -1,3 +1,6 @@
+import { applySessionEvent, phaseForStage, rollPhaseEvent, type SessionEvent } from '@/rpg/sessionIssues';
+import { chainMultiplier, evaluateChain, validateChain } from '@/rpg/signalChain';
+import { getProjectBrief, evaluateProjectBriefFit, BRIEF_FIT_MULTIPLIER, recordBriefDiscoveries } from '@/rpg/projectBrief';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { GameState, FocusAllocation, Project } from '@/types/game';
 import { TakeGrade, evaluateTakeAccuracy, calculateTakeEnergyCost } from '@/rpg/takeEvaluation';
@@ -22,6 +25,7 @@ import { resolveSessionEquipment } from '@/utils/gameUtils';
 import { createSeededRandom } from '@/simulation/seededRandom';
 import { evaluateProjectSynergies, calculateSynergyBonuses, recordDiscoveredSynergies } from '@/utils/synergyUtils';
 import { advanceFlow } from '@/rpg/focusFlow';
+import { applyKnowHowEvents, domainForStage, sessionTemplateBonus, type KnowHowEvent } from '@/rpg/studioKnowHow';
 import { gradeStage, focusMatchFraction } from '@/rpg/stageGrades';
 import {
   getActiveBuffMagnitude,
@@ -351,12 +355,21 @@ export const useStageWork = ({
       activeSynergies
     );
 
+    // 🎛️ Creative brief fit (#48): small bounded modifier + named discoveries
+    const briefFit = evaluateProjectBriefFit(project, gameState);
+    const chainOk = project.signalChain && validateChain(project.signalChain, gameState, project.id).broken.length === 0;
+    const chainFactor = chainOk
+      ? chainMultiplier(evaluateChain(project.signalChain!, gameState, assignedStaff, getProjectBrief(project)))
+      : 1;
+    const briefMultiplier = BRIEF_FIT_MULTIPLIER[briefFit.grade] * chainFactor;
+    const briefDiscoveries = recordBriefDiscoveries(gameState.discoveredBriefCombos, briefFit);
+
     // ⚡ Streak + 🔥 Overdrive + ✨ Synergy + 🔧 Chore multipliers applied to the final gains
     const overdriveMultiplier = overdrive ? 1.75 : 1;
     const choreCreativityMultiplier = 1 + getActiveBuffMagnitude(gameState.choreState, 'creativity_bonus');
     const choreTechnicalMultiplier = 1 + getActiveBuffMagnitude(gameState.choreState, 'tech_bonus');
-    const creativityGain = Math.max(1, Math.round(workPoints.creativity * comboMultiplier * overdriveMultiplier * synergyBonuses.creativityMultiplier * flow.multiplier * choreCreativityMultiplier));
-    const technicalGain = Math.max(1, Math.round(workPoints.technical * comboMultiplier * overdriveMultiplier * synergyBonuses.technicalMultiplier * flow.multiplier * choreTechnicalMultiplier));
+    const creativityGain = Math.max(1, Math.round(workPoints.creativity * comboMultiplier * overdriveMultiplier * synergyBonuses.creativityMultiplier * briefMultiplier * flow.multiplier * choreCreativityMultiplier));
+    const technicalGain = Math.max(1, Math.round(workPoints.technical * comboMultiplier * overdriveMultiplier * synergyBonuses.technicalMultiplier * briefMultiplier * flow.multiplier * choreTechnicalMultiplier));
 
     // Create orb animations
     createOrb('creativity', creativityGain);
@@ -387,7 +400,12 @@ export const useStageWork = ({
       Math.floor((baseTakeUnits + stageEfficiencyBonus) * roomSpeedMultiplier * synergyBonuses.workUnitSpeedMultiplier * takeMultiplier)
     );
     // Ensure at least 1 unit of progress if energy was spent and stage is not complete
-    const actualWorkUnitsToAdd = (workUnitsToAdd === 0 && !currentStage.completed && totalPointsGenerated > 0) ? 1 : workUnitsToAdd; // Ensure progress if any points generated
+    const templateBonus = sessionTemplateBonus(
+      gameState.studioKnowHow,
+      `${project.genre}:${currentStage.stageName}`.toLowerCase(),
+      (project.stageSessionsTaken ?? [])[currentStageIndex] ?? 0
+    );
+    const actualWorkUnitsToAdd = ((workUnitsToAdd === 0 && !currentStage.completed && totalPointsGenerated > 0) ? 1 : workUnitsToAdd) + templateBonus; // Ensure progress if any points generated
 
     const newWorkUnitsCompleted = Math.min(
       currentStage.workUnitsCompleted + actualWorkUnitsToAdd, // Use actualWorkUnitsToAdd
@@ -423,13 +441,30 @@ export const useStageWork = ({
       console.log(`🏅 Stage grade: ${completedGrade.grade} (+${completedGrade.qualityCarry} carry${completedGrade.capsProjectAtA ? ', caps project at A' : ''})`);
     }
 
+    // 🎚️ Phase event (#87): deterministic, at most one per finished stage.
+    let phaseEvent: SessionEvent | null = null;
+    if (stageCompleted && !currentStage.completed) {
+      const phase = phaseForStage(currentStage.stageName, currentStageIndex, project.stages.length);
+      if (phase) {
+        const gear = resolveSessionEquipment(gameState, project.bookingRoomId);
+        phaseEvent = rollPhaseEvent(project, phase, currentStageIndex, {
+          staff: assignedStaff,
+          worstGearCondition: gear.length ? Math.min(...gear.map(e => e.condition ?? 100)) : 100,
+          fitScore: briefFit.score,
+        });
+      }
+    }
+
     // FIXED: Immutable state update for React re-rendering
     setGameState(prev => {
       console.log('🔄 Updating game state with immutable update...');
       
       // Deep copy the active project to avoid mutation
+      const baseProject = phaseEvent
+        ? applySessionEvent(prev.activeProject!, phaseEvent, currentStageIndex)
+        : prev.activeProject!;
       const updatedProject = {
-        ...prev.activeProject!,
+        ...baseProject,
         stages: prev.activeProject!.stages.map((stage, index) => {
           if (index === currentStageIndex) {
             console.log(`🔄 Updating stage ${index}: ${stage.workUnitsCompleted} -> ${newWorkUnitsCompleted}, completed: ${stageCompleted}`);
@@ -478,13 +513,34 @@ export const useStageWork = ({
         });
       }
 
+      // 📚 Studio Know-How (#66): explicit gameplay events only.
+      const knowHowEvents: KnowHowEvent[] = [];
+      if (stageCompleted && !currentStage.completed) {
+        knowHowEvents.push({
+          kind: 'session',
+          eventId: `session:${project.id}:${currentStageIndex}`,
+          domain: domainForStage(currentStage.stageName),
+          repeatKey: `${project.genre}:${currentStage.stageName}`.toLowerCase(),
+          grade: completedGrade?.grade ?? 'Silver',
+          service: project.stake === 'safe' || project.stake === undefined,
+        });
+      }
+      newlyDiscovered.forEach(syn => knowHowEvents.push({
+        kind: 'discovery',
+        eventId: `synergy:${syn.id}`,
+        domain: 'production',
+        label: syn.name,
+      }));
+      const { game: withKnowHow } = applyKnowHowEvents(prev, knowHowEvents);
+
       const gemGain = stageCompleted && completedGrade?.grade === 'Gold' ? 2 : stageCompleted && completedGrade?.grade === 'Silver' ? 1 : 0;
 
       return withDailyTracking({
-        ...prev,
+        ...withKnowHow,
         gems: (prev.gems ?? 0) + gemGain,
         activeProject: updatedProject,
         discoveredSynergies: updatedDiscovered,
+        discoveredBriefCombos: briefDiscoveries.list,
         choreState: nextChoreState,
         pendingCrates: nextPendingCrates,
         playerData: {
@@ -536,6 +592,14 @@ export const useStageWork = ({
       }
     }
 
+    if (phaseEvent) {
+      toast({
+        title: phaseEvent.issue ? `⚠️ ${phaseEvent.label}` : `✨ ${phaseEvent.label}`,
+        description: phaseEvent.why,
+        className: "bg-stone-800 border-stone-600 text-white",
+      });
+    }
+
     // Check if project is complete
     const allStagesComplete = project.stages.every((stage, index) => 
       index === currentStageIndex ? stageCompleted : stage.completed
@@ -544,7 +608,7 @@ export const useStageWork = ({
     if (allStagesComplete) {
       console.log('🎉 PROJECT WORK UNITS COMPLETE! Preparing data for celebration.');
       const finalProjectData = { // Capture all necessary details for the celebration and eventual completion call
-        ...project, // This is gameState.activeProject at this point
+        ...(phaseEvent ? applySessionEvent(project, phaseEvent, currentStageIndex) : project), // gameState.activeProject plus this stage's event
         stages: project.stages.map((stage, index) => {
           if (index === currentStageIndex) {
             return { ...stage, workUnitsCompleted: newWorkUnitsCompleted, completed: stageCompleted };

@@ -36,3 +36,9 @@ assert(reelAnimationSpeed({ ...tape, powered: false }, false) === 0 && reelAnima
 assert(reelAnimationSpeed({ ...tape, transport: 'rewind' }, false) < 0, 'rewind spins backwards');
 assert(reelFrameAngles().length === REEL_FRAME_COUNT, 'reel frame set size');
 console.log('gear bench checks passed');
+
+import fs from 'node:fs';
+const canvas = fs.readFileSync('src/components/WebGLCanvas.tsx', 'utf8');
+assert(canvas.includes('applyReelState') && canvas.includes('reel.gotoAndStop(0)'), 'Living Studio mounts parked AnimatedSprite reels');
+assert(canvas.includes('r.update(ticker)') && !canvas.includes('Ticker.shared'), 'reels advance from the scene ticker (respects fps cap / hidden tab)');
+console.log('living studio reel wiring checks passed');

@@ -113,7 +113,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
         ? { ...prev.activeProject, overdriveArmed: !prev.activeProject.overdriveArmed }
         : null,
     }));
-    playSound(overdriveArmed ? 'notification.wav' : 'ui sfx/purchase-complete.mp3', 0.5);
+    playSound(overdriveArmed ? 'notification.wav' : 'ui sfx/purchase-complete.m4a', 0.5);
   };
 
   // 🏦 Streak Bank (k6e.5): cash out the same-day take combo for instant cash
@@ -309,6 +309,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       'rhythm',
       'beatmaking',
       'vocal',
+      'vocal-comp',
       'layering'
     ]).has(autoTriggeredMinigame.type);
 
@@ -376,9 +377,6 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     if (onMinigameReward) {
       onMinigameReward(cappedCreativity, cappedTechnical, cappedXp, selectedMinigame, rawScore);
     }
-
-    const currentStageKey = `${project.id}-${project.currentStageIndex}`;
-    setCompletedMinigamesForStage(prev => new Set([...prev, currentStageKey]));
 
     setShowMinigame(false);
     clearAutoTriggeredMinigame?.();

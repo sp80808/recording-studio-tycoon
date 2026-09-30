@@ -1,11 +1,15 @@
+import { applyKnowHowEvents } from '@/rpg/studioKnowHow';
+import { toast } from '@/hooks/use-toast';
 import React, { useState, useEffect, useCallback, useRef } from 'react'; // Added useCallback
 import { GameLayout } from '@/components/GameLayout';
 import { GameHeader } from '@/components/GameHeader';
 import { MainGameContent } from '@/components/MainGameContent';
 import { RewardFlights } from '@/components/RewardFlights';
 import { gameEvents } from '@/engine/gameEventBus';
+import { artistChartBoost } from '@/simulation/artistContracts';
 import { advanceChartWeek, debutChartRun, weeksDue } from '@/utils/chartRun';
 import { ChartRevealScene } from '@/components/ChartRevealScene';
+import { SeasonAwardsCeremony } from '@/components/SeasonAwardsCeremony';
 import { NotificationSystem } from '@/components/NotificationSystem';
 import { TrainingModal } from '@/components/modals/TrainingModal';
 import { GameModals } from '@/components/GameModals';
@@ -16,7 +20,12 @@ import { Era } from '@/components/EraSelectionModal'; // Era type
 import '@/components/studio-play.css';
 import { useGameState } from '@/hooks/useGameState';
 import { installFlightCaseRewards } from '@/economy/rewardHookup';
+import { useAmbientIncome } from '@/hooks/useAmbientIncome';
+import { announceAwards, applySeasonTick } from '@/economy/seasonRewards';
+import { seasonReviewNote } from '@/rpg/studioSeasons';
 import { GameState, Project, ProjectReport, StaffMember } from '@/types/game'; // Import GameState, Project, ProjectReport, StaffMember
+import DeliveryChoiceDialog from '@/components/DeliveryChoiceDialog';
+import { applyDeliveryDecision, type UnresolvedIssue } from '@/rpg/sessionIssues';
 import { generateProjectReview } from '@/utils/projectReviewUtils'; // Import generateProjectReview
 import { getFocusEffectiveness, getMoodEffectiveness } from '@/utils/playerUtils';
 import { calculateStudioSkillBonus, getEquipmentBonuses, resolveSessionEquipment } from '@/utils/gameUtils';
@@ -103,6 +112,7 @@ const MusicStudioTycoon = () => {
   const desktopStripEnabled = desktopStripFlag && isTauriShell();
   const effectiveCompactStudioMode = compactStudioMode && desktopStripEnabled;
   const [activeProjectReport, setActiveProjectReport] = useState<ProjectReport | null>(null);
+  const [pendingDelivery, setPendingDelivery] = useState<{ report: ProjectReport; issues: UnresolvedIssue[]; projectId: string } | null>(null);
   const [offlineSummary, setOfflineSummary] = useState<SimulationSummary | null>(null);
   const simulationLastTickRef = useRef(Date.now());
   
@@ -123,6 +133,7 @@ const MusicStudioTycoon = () => {
 
 
   useEffect(() => installFlightCaseRewards(setGameState), [setGameState]);
+  useAmbientIncome(gameInitialized && !showSplashScreen, setGameState);
 
   useEffect(() => {
     if (selectedStaffForTraining) {
@@ -287,9 +298,15 @@ const MusicStudioTycoon = () => {
       }
     );
     
-    setActiveProjectReport(report);
     setCompactStudioMode(false); // Reviews are full-studio moments; expand before presenting one.
-    setShowReviewModal(true); // This will trigger the new ProjectReviewModal
+    const openIssues = completedProjectData.unresolvedIssues ?? [];
+    if (openIssues.length > 0) {
+      // #87: the player chooses Deliver or Polish before the review is shown.
+      setPendingDelivery({ report, issues: openIssues, projectId: completedProjectData.id });
+    } else {
+      setActiveProjectReport(report);
+      setShowReviewModal(true); // This will trigger the new ProjectReviewModal
+    }
 
     if (settings.sfxEnabled) {
       audioSystem.playUISound('event'); // Sound for review screen appearing
@@ -303,9 +320,14 @@ const MusicStudioTycoon = () => {
     console.log('Index.tsx: Finalizing project completion for:', activeProjectReport.projectTitle);
     completeProject(activeProjectReport); // Call the updated completeProject with the report
 
-    const debut = debutChartRun(activeProjectReport.projectId, activeProjectReport.projectTitle, activeProjectReport.overallQualityScore, gameState.currentDay);
+    // Signed artists' name value raises the quality a debut is placed (and climbs) with.
+    const chartQuality = Math.min(100, activeProjectReport.overallQualityScore + artistChartBoost(gameState.signedArtists, activeProjectReport.genre));
+    const debut = debutChartRun(activeProjectReport.projectId, activeProjectReport.projectTitle, chartQuality, gameState.currentDay);
     if (debut) {
-      setGameState(prev => ({ ...prev, chartRun: [...(prev.chartRun ?? []).filter(e => e.projectId !== debut.projectId), debut] }));
+      setGameState(prev => applyKnowHowEvents({
+        ...prev,
+        chartRun: [...(prev.chartRun ?? []).filter(e => e.projectId !== debut.projectId), debut],
+      }, [{ kind: 'discovery', eventId: `chart-debut:${debut.projectId}`, domain: 'business', label: `a ${debut.chartName} debut` }]).game);
       gameEvents.emit('chart:placement', { chartName: debut.chartName, title: debut.title, position: debut.position });
     }
 
@@ -320,7 +342,22 @@ const MusicStudioTycoon = () => {
     if (settings.sfxEnabled) {
       audioSystem.playUISound('success'); 
     }
-  }, [activeProjectReport, completeProject, settings.sfxEnabled, setGameState, gameState.currentDay]);
+  }, [activeProjectReport, completeProject, settings.sfxEnabled, setGameState, gameState.currentDay, gameState.signedArtists]);
+
+  // Studio Know-How award toast (#66): one place, driven by the pool's lifetime total so save/load never re-fires.
+  const lastKnowHowTotal = useRef<number | null>(null);
+  useEffect(() => {
+    const total = gameState.studioKnowHow?.totalEarned ?? 0;
+    const prev = lastKnowHowTotal.current;
+    lastKnowHowTotal.current = total;
+    if (prev !== null && total > prev) {
+      toast({
+        title: `Studio Know-How +${total - prev}`,
+        description: 'You learned from the work. Spend it in Career.',
+        className: 'bg-stone-800 border-cyan-500 text-white',
+      });
+    }
+  }, [gameState.studioKnowHow?.totalEarned]);
 
   // Weekly chart run: songs on the chart rise and fall, each move gets its own reveal.
   useEffect(() => {
@@ -345,6 +382,15 @@ const MusicStudioTycoon = () => {
     latest.forEach(m => gameEvents.emit('chart:placement', m));
   }, [gameState.currentDay]); // eslint-disable-line react-hooks/exhaustive-deps
 
+
+  // Studio Seasons (#63): the season clock resolves once per season; legacy saves get state lazily.
+  useEffect(() => {
+    announceAwards(applySeasonTick(gameState).resolutions);
+    setGameState(prev => {
+      const { state, resolutions } = applySeasonTick(prev);
+      return resolutions.length || !prev.studioSeasons ? state : prev;
+    });
+  }, [gameState.currentDay]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Advance-day path uses the same review/settlement flow as manual work:
   // if the auto work session finished the project, show the real report modal.
@@ -441,6 +487,7 @@ const MusicStudioTycoon = () => {
       project?.awaitingReview &&
       !offlineSummary &&
       !activeProjectReport &&
+      !pendingDelivery &&
       !showReviewModal
     ) {
       handleShowProjectReview(project);
@@ -450,6 +497,7 @@ const MusicStudioTycoon = () => {
     gameState.activeProject,
     offlineSummary,
     activeProjectReport,
+    pendingDelivery,
     showReviewModal,
     handleShowProjectReview
   ]);
@@ -553,6 +601,7 @@ const MusicStudioTycoon = () => {
     <GameLayout eraId={gameState.currentEra}>
       {!effectiveCompactStudioMode && <RewardFlights gameState={gameState} />}
       <ChartRevealScene playerLevel={gameState.playerData.level} />
+      <SeasonAwardsCeremony />
       <div className="flex flex-col h-full">
         {!effectiveCompactStudioMode && (
           <GameHeader 
@@ -639,12 +688,34 @@ const MusicStudioTycoon = () => {
         setShowReviewModal={setShowReviewModal}
         lastReview={lastReview} // This 'lastReview' state might be deprecated or used differently by GameModals
       /> */}
+      {pendingDelivery && (
+        <DeliveryChoiceDialog
+          issues={pendingDelivery.issues}
+          payout={pendingDelivery.report.moneyGained}
+          onChoose={(decision) => {
+            const adjusted = applyDeliveryDecision(pendingDelivery.report, pendingDelivery.issues, decision, pendingDelivery.projectId);
+            setPendingDelivery(null);
+            setActiveProjectReport(adjusted);
+            setShowReviewModal(true);
+          }}
+        />
+      )}
       {/* New Project Review Modal */}
       {activeProjectReport && (
         <ProjectReviewModal
           isOpen={showReviewModal}
           onClose={handleFinalizeProjectCompletion} // Finalizes completion when modal is closed
           report={activeProjectReport}
+          seasonNote={(() => {
+            const p = [gameState.activeProject, ...(gameState.activeProjects ?? [])].find(x => x?.id === activeProjectReport.projectId);
+            const rel = p?.clientId ? gameState.clientRelationships?.[p.clientId] : undefined;
+            return seasonReviewNote(gameState, {
+              genre: p?.genre,
+              quality: activeProjectReport.overallQualityScore,
+              isRepeat: (rel?.sessionsCompleted ?? 0) > 0,
+              clientName: p?.clientName,
+            });
+          })()}
         />
       )}
 

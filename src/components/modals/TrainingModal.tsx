@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { StaffMember, GameState } from '@/types/game';
 import { availableTrainingCourses } from '@/data/training';
+import { createInitialKnowHow, describeKnowHowGate, meetsKnowHowGate } from '@/rpg/studioKnowHow';
 
 interface TrainingModalProps {
   isOpen: boolean;
@@ -26,6 +27,8 @@ export const TrainingModal: React.FC<TrainingModalProps> = ({
     return null;
   }
 
+  const knowHow = gameState.studioKnowHow ?? createInitialKnowHow();
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-stone-900 border-stone-600 text-white max-w-2xl">
@@ -43,6 +46,9 @@ export const TrainingModal: React.FC<TrainingModalProps> = ({
                 <div className="text-right">
                   <div className="text-red-400 font-bold">${course.cost}</div>
                   <div className="text-sm text-stone-400">{course.duration} days</div>
+                  {course.knowHow && (
+                    <div className="text-xs text-cyan-300">{course.knowHow.cost} Know-How</div>
+                  )}
                 </div>
               </div>
               
@@ -72,10 +78,11 @@ export const TrainingModal: React.FC<TrainingModalProps> = ({
                   sendStaffToTraining(staff.id, course.id);
                   onClose();
                 }}
-                disabled={gameState.money < course.cost || staff.status !== 'Idle'}
+                disabled={gameState.money < course.cost || staff.status !== 'Idle' || (!!course.knowHow && !meetsKnowHowGate(knowHow, course.knowHow))}
                 className="w-full bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] disabled:bg-stone-600"
               >
-                {gameState.money < course.cost ? 'Insufficient Funds' : 
+                {course.knowHow && !meetsKnowHowGate(knowHow, course.knowHow) ? describeKnowHowGate(knowHow, course.knowHow) :
+                 gameState.money < course.cost ? 'Insufficient Funds' : 
                  staff.status !== 'Idle' ? 'Staff Unavailable' : 'Send to Training'}
               </Button>
             </Card>

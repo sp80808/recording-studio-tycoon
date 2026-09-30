@@ -1,9 +1,11 @@
 import React, { Suspense } from 'react'; // Import React and Suspense
+import { LOADING_LINES, pickFlavour } from '@/data/flavour';
 import { createRoot } from 'react-dom/client';
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import App from './App.tsx';
 import './index.css';
 import './styles/studio-theme.css';
+import './styles/feel.css';
 import { useSettings, SettingsProvider } from './contexts/SettingsContext';
 import { SaveSystemProvider } from './contexts/SaveSystemContext';
 import { useEffect } from 'react';
@@ -32,7 +34,7 @@ const RootComponent = () => {
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <Suspense fallback="Loading..."> {/* Wrap with Suspense for translation loading */}
+    <Suspense fallback={pickFlavour(LOADING_LINES, Date.now() % 97)}> {/* Wrap with Suspense for translation loading */}
       <SettingsProvider>
         <SaveSystemProvider>
           <RootComponent />
