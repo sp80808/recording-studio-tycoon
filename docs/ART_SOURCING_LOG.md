@@ -90,3 +90,19 @@ beads issue `recording-studio-tycoon-art.X` (3D models + skins/sticker UI):
 - `higgsfield-generate` skill (GPT Image 2 / Seedance / Nano Banana) — reserved for gaps with no CC0 coverage; nothing generated this pass because CC0 covers all current needs.
 - Web search + fetch (Kenney.nl, OpenGameArt.org) — used this pass; URLs above verified live Sept 2026.
 - No binary assets downloaded this pass (keeps the diff reviewable); PNG trimming is queue item 1–3 above.
+
+## 7. Signature studio props (door, wall clock, mic stand)
+
+Kenney.nl / OpenGameArt were unreachable from the build environment, so these
+three were drawn in-house. License: **In-house (CC0)**. Source SVGs live in
+`public/assets/props/*.svg`; PNGs are 2x renders via
+`scripts/render-prop-sprites.cjs`. Loaded by `src/components/studio/propSprites.ts`;
+the scene falls back to the original procedural drawing if a texture is missing.
+
+| Sprite | File | Used in |
+| --- | --- | --- |
+| Studio door | `public/assets/props/door.png` | `WebGLCanvas.tsx` (left wall, sheared into wall plane) |
+| Wall clock face | `public/assets/props/wall-clock.png` | `studioDecor.ts` `buildWallClock` (hands stay live) |
+| Booth mic stand | `public/assets/props/mic-stand.png` | `studioDecor.ts` `buildLiveBooth` |
+
+Swap for Kenney/OGA CC0 art later by replacing the PNGs (same sizes).

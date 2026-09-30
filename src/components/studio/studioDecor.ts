@@ -7,7 +7,8 @@
  * studioDecorConfig.ts so this file only draws. Every animated element honours
  * `reduceMotion` by freezing to a pleasant static pose.
  */
-import { Container, Graphics, Sprite, Texture } from 'pixi.js';
+import { Container, Graphics, Matrix, Sprite, Texture } from 'pixi.js';
+import { getPropTexture } from '@/components/studio/propSprites';
 import {
   ROOM_D,
   ROOM_W,
@@ -534,13 +535,23 @@ export const buildWallClock = (cx: number, cy: number): WallClock => {
   // Soft shadow on the wall, offset down-right
   const shadow = ring(R + 1.5).map((v, i) => (i % 2 === 0 ? v + 2.2 : v + 3));
   g.poly(shadow).fill({ color: 0x000000, alpha: 0.28 });
-  // Brass rim, dark inner rim, cream face
-  g.poly(ring(R)).fill(0xc9974a);
-  g.poly(ring(R)).stroke({ width: 0.8, color: 0x6b4a1c });
-  g.poly(ring(R - 2.2)).fill(0x2a1f14);
-  g.poly(ring(R - 3.2)).fill(0xf3ead6);
+  const faceTex = getPropTexture('wallClock');
+  if (faceTex) {
+    // Flat face art sheared into the left-wall plane; hands stay live below.
+    const k = (R * 2) / faceTex.width;
+    const face = new Sprite(faceTex);
+    const o = leftFace(cx, cy, -R, R);
+    face.setFromMatrix(new Matrix(0.894 * k, -0.447 * k, 0, k, o.x, o.y));
+    container.addChild(face);
+  } else {
+    // Brass rim, dark inner rim, cream face
+    g.poly(ring(R)).fill(0xc9974a);
+    g.poly(ring(R)).stroke({ width: 0.8, color: 0x6b4a1c });
+    g.poly(ring(R - 2.2)).fill(0x2a1f14);
+    g.poly(ring(R - 3.2)).fill(0xf3ead6);
+  }
   // Hour ticks (12) and quarter markers
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; !faceTex && i < 12; i++) {
     const a = (i / 12) * Math.PI * 2;
     const long = i % 3 === 0;
     const r0 = R - 3.6;
@@ -630,12 +641,22 @@ export const buildLiveBooth = (): Container => {
 
   // Mic stand + pop filter + stool + music stand, deep in the booth
   const base = P(2.25, 0.55);
-  g.ellipse(base.x, base.y, 12, 6).fill(0x1b1613);
-  g.rect(base.x - 1.6, base.y - 46, 3.2, 46).fill(0x8f98ab);
-  g.moveTo(base.x, base.y - 46).lineTo(base.x + 10, base.y - 52).stroke({ width: 2, color: 0x8f98ab });
-  g.circle(base.x + 11, base.y - 53, 5.5).fill(BRASS);
-  g.circle(base.x + 11, base.y - 53, 5.5).stroke({ width: 1, color: 0x6b4a1c });
-  g.circle(base.x + 4, base.y - 50, 8).stroke({ width: 1, color: 0x000000, alpha: 0.7 });
+  let micSpriteRef: Sprite | null = null;
+  const micTex = getPropTexture('micStand');
+  if (micTex) {
+    const micSprite = new Sprite(micTex);
+    micSprite.scale.set(58 / micTex.height * 1.3);
+    micSprite.anchor.set(34 / 80, 150 / 160);
+    micSprite.position.set(base.x, base.y + 2);
+    micSpriteRef = micSprite;
+  } else {
+    g.ellipse(base.x, base.y, 12, 6).fill(0x1b1613);
+    g.rect(base.x - 1.6, base.y - 46, 3.2, 46).fill(0x8f98ab);
+    g.moveTo(base.x, base.y - 46).lineTo(base.x + 10, base.y - 52).stroke({ width: 2, color: 0x8f98ab });
+    g.circle(base.x + 11, base.y - 53, 5.5).fill(BRASS);
+    g.circle(base.x + 11, base.y - 53, 5.5).stroke({ width: 1, color: 0x6b4a1c });
+    g.circle(base.x + 4, base.y - 50, 8).stroke({ width: 1, color: 0x000000, alpha: 0.7 });
+  }
   const stool = P(1.75, 0.7);
   g.ellipse(stool.x, stool.y, 9, 4.2).fill({ color: 0x000000, alpha: 0.3 });
   g.rect(stool.x - 1, stool.y - 18, 2, 18).fill(0x4a4038);
@@ -684,6 +705,7 @@ export const buildLiveBooth = (): Container => {
   g.poly(quad(P(x0, y0, H), P(x1, y0, H), P(x1, y1, H), P(x0, y1, H))).stroke({ width: 1.2, color: 0x120d09, alpha: 0.9 });
   g.poly([P(x0, y1, H).x, P(x0, y1, H).y, P(x1, y1, H).x, P(x1, y1, H).y, P(x1, y1, H).x, P(x1, y1, H).y - 0.1]).stroke({ width: 1.2, color: BRASS, alpha: 0.7 });
   c.addChild(g);
+  if (micSpriteRef) c.addChild(micSpriteRef);
   return c;
 };
 
