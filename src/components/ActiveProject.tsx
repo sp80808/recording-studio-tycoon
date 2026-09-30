@@ -40,6 +40,7 @@ import ProductionQueuePanel from '@/components/ProductionQueue/ProductionQueuePa
 import { rankStaffForProject } from '@/utils/staffFitUtils';
 import { evaluateProjectSynergies } from '@/utils/synergyUtils';
 import { SynergyBadgeList } from '@/components/synergy/SynergyBadgeList';
+import { hapticTick } from '@/utils/mobilePlatform';
 
 interface ActiveProjectProps {
   gameState: GameState;
@@ -396,6 +397,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
   const handleArmTake = () => {
     if (availableEnergy <= 0 || isProjectComplete) return;
+    hapticTick(14);
     playSound('ui-click', 0.5);
     if ((gameAudio as any).playGearSwitch) (gameAudio as any).playGearSwitch();
     setTakeState('tracking');

@@ -1185,6 +1185,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     settingsRef.current = settings;
     const app = appRef.current;
     if (app && app.renderer) {
+      // Hard-cap the ticker so 90/120Hz phones don't wake the GPU every vsync (0 = uncapped)
+      app.ticker.maxFPS = settings.targetFps > 0 ? settings.targetFps : 0;
       const dpr = window.devicePixelRatio || 1;
       const effectiveRes = calculateEffectiveResolution(dpr, settings.resolutionScale);
       if (Math.abs(app.renderer.resolution - effectiveRes) > 0.01) {
@@ -1340,8 +1342,9 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         await app.init({
           background: 0x0e0c0a,
           resizeTo: container,
-          antialias: true,
+          antialias: !(typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches),
           autoDensity: true,
+          powerPreference: 'high-performance',
           resolution: initialRes,
         });
         if (disposed) {
@@ -1370,10 +1373,24 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           const pointers = [...gestureRef.current.values()];
           return { x: (pointers[0].x + pointers[1].x) / 2, y: (pointers[0].y + pointers[1].y) / 2 };
         };
+        // Touch: one-finger drag pans (after a 10px slop so taps on hotspots still select); double-tap resets the camera.
+        let touchDrag: { id: number; x: number; y: number; moved: boolean } | null = null;
+        let lastTap = { t: 0, x: 0, y: 0 };
+        const resetCamera = () => {
+          cameraRef.current = { x: 0, y: 0, zoom: 1.0 };
+          const sc = sceneRef.current;
+          if (sc) {
+            sc.root.scale.set(sc.baseScale);
+            sc.root.position.set(sc.basePosition.x, sc.basePosition.y);
+          }
+        };
         const onPointerDown = (event: PointerEvent) => {
           markCanvasInput();
           if (gestureRef.current.size === 0) suppressTapRef.current = false;
           gestureRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          touchDrag = event.pointerType !== 'mouse' && gestureRef.current.size === 1
+            ? { id: event.pointerId, x: event.clientX, y: event.clientY, moved: false }
+            : null;
           if (gestureRef.current.size === 2) {
             suppressTapRef.current = true;
             gestureMidpointRef.current = midpoint();
@@ -1390,6 +1407,18 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           markCanvasInput();
           if (!gestureRef.current.has(event.pointerId)) return;
           gestureRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          if (gestureRef.current.size === 1 && touchDrag && touchDrag.id === event.pointerId) {
+            const dx = event.clientX - touchDrag.x;
+            const dy = event.clientY - touchDrag.y;
+            if (!touchDrag.moved && Math.hypot(dx, dy) < 10) return;
+            touchDrag.moved = true;
+            suppressTapRef.current = true;
+            event.preventDefault();
+            panBy(dx, dy);
+            touchDrag.x = event.clientX;
+            touchDrag.y = event.clientY;
+            return;
+          }
           if (gestureRef.current.size !== 2) return;
           event.preventDefault();
 
@@ -1412,6 +1441,18 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           gestureDistance = nextDist;
         };
         const onPointerUp = (event: PointerEvent) => {
+          if (touchDrag && touchDrag.id === event.pointerId) {
+            if (!touchDrag.moved && event.type === 'pointerup' && event.pointerType !== 'mouse') {
+              const now = performance.now();
+              if (now - lastTap.t < 300 && Math.hypot(event.clientX - lastTap.x, event.clientY - lastTap.y) < 30) {
+                resetCamera();
+                lastTap = { t: 0, x: 0, y: 0 };
+              } else {
+                lastTap = { t: now, x: event.clientX, y: event.clientY };
+              }
+            }
+            touchDrag = null;
+          }
           gestureRef.current.delete(event.pointerId);
           if (gestureRef.current.size < 2) {
             gestureMidpointRef.current = null;

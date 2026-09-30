@@ -18,6 +18,18 @@ export default defineConfig(({ mode }) => ({
   define: {
     global: 'window',
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Split heavy, rarely-changing vendors so phones parse/cache them independently of app code
+        manualChunks: {
+          pixi: ['pixi.js'],
+          tone: ['tone'],
+          motion: ['framer-motion'],
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
