@@ -318,7 +318,12 @@ export interface GameState {
   lastGigRefreshDay?: number;
   notifications: GameNotification[];
   bands: Band[]; // All bands (AI and player-created)
-  playerBands: Band[]; // Player's own bands
+  /** Player's own bands */
+  playerBands: Band[];
+  /** A&R roster of signed artists (artist contracts). Absent on legacy saves. */
+  signedArtists?: import('@/simulation/artistContracts').SignedArtist[];
+  /** Prospect ids the player negotiated with and walked away from. Absent on legacy saves. */
+  passedProspects?: string[];
   availableSessionMusicians: SessionMusician[];
   activeOriginalTrack: OriginalTrackProject | null;
   // Charts system data
