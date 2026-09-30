@@ -1,4 +1,4 @@
-
+import { useArtistContracts } from '@/hooks/useArtistContracts';
 import { gameEvents } from '@/engine/gameEventBus';
 import { useState, useCallback, useMemo } from 'react'; // Added useMemo
 import { GameState, StaffMember, PlayerAttributes, ProjectReport, Project } from '@/types/game';
@@ -56,6 +56,7 @@ export const useGameLogic = (
   const { startProject, completeProject } = useProjectManagement(gameState, setGameState);
   const { advanceDay, refreshCandidates, refreshProjects, triggerEraTransition } = useGameActions(gameState, setGameState);
 
+  const { processContracts } = useArtistContracts(gameState, setGameState);
   const { createBand, startTour, createOriginalTrack, processTourIncome } = useBandManagement(gameState, setGameState);
 
   const [selectedStaffForTraining, setSelectedStaffForTraining] = useState<StaffMember | null>(null);
@@ -251,11 +252,12 @@ export const useGameLogic = (
 
     // Process tour income
     processTourIncome();
+    processContracts();
 
     // Advance the day (handles salaries, staff training, etc.)
     advanceDay();
     return workResult;
-  }, [gameState.activeProject, performDailyWork, processTourIncome, advanceDay]);
+  }, [gameState.activeProject, performDailyWork, processTourIncome, processContracts, advanceDay]);
 
   // Contact artist for collaboration
   const contactArtist = useCallback((artistId: string, offer: number) => {

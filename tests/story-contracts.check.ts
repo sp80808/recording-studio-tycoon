@@ -158,7 +158,7 @@ describe('contract stake gating', () => {
     const src = fs.readFileSync('src/components/ProjectList.tsx', 'utf8');
     assert.match(src, /StakePicker/);
     assert.match(src, /project\.stakeLocked/);
-    assert.match(src, /startProject\(\{ \.\.\.project, stake \}\)/);
+    assert.match(src, /startProject\(\{\s*\.\.\.project,\s*stake,/);
     assert.ok(!/bg-gradient|linear-gradient/.test(src), 'no gradients on the booking board');
     assert.ok(!/text-(blue|sky|cyan|indigo)-/.test(src), 'no blue text on the booking board');
   });
