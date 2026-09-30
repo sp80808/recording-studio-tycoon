@@ -375,9 +375,11 @@ const addHotspot = (
   hitArea: Graphics,
   visual: Container,
   refs: SceneRefs,
-  onSelect?: (id: StudioHotspotId) => void
+  onSelect?: (id: StudioHotspotId) => void,
+  zIndex?: number
 ) => {
   const wrap = new Container();
+  if (zIndex !== undefined) wrap.zIndex = zIndex;
   if (visual) wrap.addChild(visual);
 
   // Glow ring shown on hover (populated by the caller with real coordinates)
@@ -392,6 +394,7 @@ const addHotspot = (
   hit.eventMode = 'static';
   hit.cursor = 'pointer';
   hit.alpha = 0; // invisible for rendering, still receives pointer events
+  if (zIndex !== undefined) hit.zIndex = zIndex;
   refs.hotspotHits[id] = hit;
   hit.on('pointerover', () => { refs.hoverGlowTargets[id] = 1; });
   hit.on('pointerout', () => { refs.hoverGlowTargets[id] = 0; });
@@ -919,7 +922,10 @@ const buildScene = (
   // Desk interaction hit area and hover glow
   const deskHit = new Graphics();
   deskHit.poly([p1.x, p1.y - bridgeH - 18, p2.x, p2.y - bridgeH - 18, p3.x, p3.y + 4, p4.x, p4.y + 4]).fill(0xffffff);
-  addHotspot(root, 'console', deskHit, deskWrap, refs, onSelect);
+  // The desk (and everything sitting on it) y-sorts with the staff at its front-left corner, so
+  // staff standing behind it are hidden by it and staff in front of it draw over it.
+  const deskZ = Z.depth + iso(3.0, 5.0).y;
+  addHotspot(root, 'console', deskHit, deskWrap, refs, onSelect, deskZ);
   refs.hoverGlows['console']
     ?.poly([p1.x, p1.y - bridgeH - 18, p2.x, p2.y - bridgeH - 18, p3.x, p3.y + 4, p4.x, p4.y + 4])
     .stroke({ width: 3, color: 0x7bd389 });
@@ -934,7 +940,9 @@ const buildScene = (
   refs.idleHints.console = consoleHint;
   consoleHint.zIndex = Z.fx;
   root.addChild(consoleHint);
-  root.addChild(buildDeskProps(deskH));
+  const deskProps = buildDeskProps(deskH);
+  deskProps.zIndex = deskZ;
+  root.addChild(deskProps);
 
   /* ---- Studio phone (on the desk corner) ------------------------------ */
   const phoneWrap = new Container();
@@ -959,7 +967,7 @@ const buildScene = (
 
   const phoneHit = new Graphics();
   phoneHit.ellipse(pPos.x, pPos.y - 3, 24, 14).fill(0xffffff);
-  addHotspot(root, 'phone', phoneHit, phoneWrap, refs, onSelect);
+  addHotspot(root, 'phone', phoneHit, phoneWrap, refs, onSelect, deskZ);
   refs.hoverGlows['phone']
     ?.ellipse(pPos.x, pPos.y - 3, 22, 12)
     .stroke({ width: 3, color: 0xffd166 });

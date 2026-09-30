@@ -53,7 +53,7 @@ Storyline stays free; monetisation stays optional cosmetics/gear only (see fligh
 5. **Era picker preview** tint samples using the same `ERA_GRADES` palette as the Pixi room for continuity.
 
 ### Isometric room
-6. ~~**Depth bands**~~ — **partly done**: `Z` bands in `WebGLCanvas` (`world` by add order, `depth + y` for staff and free-standing tier props, `fx` for lights, bloom and idle hints). The booth glass is not split out yet.
+6. ~~**Depth bands**~~ — **done**: `Z` bands in `WebGLCanvas` (`world` by add order, `depth + y` for staff and free-standing tier props, `fx` for lights, bloom and idle hints). The console desk (with its props and phone) y-sorts with the staff at its front-left corner, so staff behind it are hidden and staff in front draw over it. The booth glass stays in the world band: no staff spot is inside the booth, so a separate glass band would change nothing visible yet.
 7. **Swap 2–3 signature props to sprites** (mic stand, door, clock) from curated packs documented in `visual_studio_plan.md` / `equipmentArt.ts`, keeping everything else procedural.
 8. ~~**Idle hint + hover glow** contrast~~ — **done**: idle hints get a dark keyline under the coloured ring and hover glows peak at full alpha.
 
