@@ -2,6 +2,18 @@ import React, { useEffect, useRef } from 'react';
 import { Application, Container, Graphics, Text } from 'pixi.js';
 import { visualEraId } from '@/utils/eraProgression';
 import { useSettings } from '@/contexts/SettingsContext';
+import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad } from '@/components/studio/isoMath';
+import {
+  buildDecorLights,
+  buildDeskProps,
+  buildPlankFloor,
+  buildRoomShell,
+  buildRug,
+  buildUnderlay,
+  buildWallDressing,
+  type DecorLights,
+} from '@/components/studio/studioDecor';
+import { getEraDecor, trophyKey, type TrophyInput } from '@/components/studio/studioDecorConfig';
 
 export const calculateEffectiveResolution = (dpr: number, scale?: number) => {
   const clampedDpr = Math.max(1.0, Math.min(2.0, dpr || 1.0));
@@ -137,6 +149,10 @@ export interface StudioSceneState {
   eraId?: string;
   /** Studio tier 1-5 from ProgressionSystem — drives visible room upgrades (bead ifx.3) */
   roomTier?: number;
+  /** Records + achievements hung on the trophy wall (derived from the settlement ledger). */
+  trophies?: TrophyInput;
+  /** Stable per-run seed so plank layout / motes are identical across rebuilds. */
+  decorSeed?: string | number;
 }
 
 interface WebGLCanvasProps {
@@ -167,27 +183,8 @@ export const getIdleHintTarget = (
 };
 
 /* ---------------------------------------------------------------------------
- * Isometric helpers
+ * Isometric helpers live in ./studio/isoMath (shared with the decor layer)
  * ------------------------------------------------------------------------- */
-const TILE_W = 56;
-const TILE_H = 28;
-const ROOM_W = 8; // tiles along +x
-const ROOM_D = 7; // tiles along +y
-const WALL_H = 132;
-
-const iso = (x: number, y: number) => ({
-  x: (x - y) * (TILE_W / 2),
-  y: (x + y) * (TILE_H / 2),
-});
-
-/** Start an isometric quad path from tile coords (a,b) -> (c,d), lifted off the floor */
-const isoQuad = (g: Graphics, a: number, b: number, c: number, d: number, lift = 0) => {
-  const p1 = iso(a, b);
-  const p2 = iso(c, b);
-  const p3 = iso(c, d);
-  const p4 = iso(a, d);
-  g.poly([p1.x, p1.y - lift, p2.x, p2.y - lift, p3.x, p3.y - lift, p4.x, p4.y - lift]);
-};
 
 /** Room palette */
 const COLORS = {
@@ -197,7 +194,7 @@ const COLORS = {
   rugInner: 0x9c4747,
   wallLeft: 0x2a3345,
   wallRight: 0x323d52,
-  wallTrim: 0x1d2433,
+  wallTrim: 0x2a1f18,
   deskTop: 0x3d4459,
   deskSide: 0x2b3142,
   deskRight: 0x232a3a,
@@ -205,8 +202,8 @@ const COLORS = {
   shelfSide: 0x382c21,
   gear: [0xd9a441, 0x5aa9e6, 0xe05c5c, 0x7bd389, 0xc77dff, 0xf2f2f2],
   staff: [0x5aa9e6, 0xe08fa8, 0x7bd389, 0xf2c14e, 0xc77dff],
-  glass: 0x9fd3ff,
-  glassFrame: 0x7fb5dd,
+  glass: 0xa6d8e6,
+  glassFrame: 0x8fc0c8,
 };
 
 /**
@@ -215,10 +212,10 @@ const COLORS = {
  * overlay colour animated by the day/night cycle.
  */
 const ERA_GRADES: Record<string, { tint: number; wallLeft: number; wallRight: number; accent: number; label: string }> = {
-  analog60s:    { tint: 0x2a1c08, wallLeft: 0x3b3243, wallRight: 0x4a3c47, accent: 0xd9a441, label: 'ANALOG 60s' },
-  digital80s:   { tint: 0x1b0a2e, wallLeft: 0x2c2a4d, wallRight: 0x3a3058, accent: 0xc77dff, label: 'DIGITAL 80s' },
-  internet2000s:{ tint: 0x08171f, wallLeft: 0x263a44, wallRight: 0x2f4a52, accent: 0x5aa9e6, label: 'MILLENNIUM 2000s' },
-  streaming2020s:{ tint: 0x06140f, wallLeft: 0x22352e, wallRight: 0x2b463a, accent: 0x7bd389, label: 'STREAMING 2020s' },
+  analog60s:    { tint: 0x2a1c08, wallLeft: 0x4a3a33, wallRight: 0x5a4740, accent: 0xe6b866, label: 'ANALOG 60s' },
+  digital80s:   { tint: 0x1b0a2e, wallLeft: 0x3a2c4d, wallRight: 0x4a3862, accent: 0xd98cff, label: 'DIGITAL 80s' },
+  internet2000s:{ tint: 0x08171f, wallLeft: 0x2e4048, wallRight: 0x3a5058, accent: 0x5fd0c0, label: 'MILLENNIUM 2000s' },
+  streaming2020s:{ tint: 0x06140f, wallLeft: 0x2b3b36, wallRight: 0x35483f, accent: 0x7bd389, label: 'STREAMING 2020s' },
 };
 
 export const getEraGrade = (eraId?: string) => ERA_GRADES[visualEraId(eraId ?? 'analog60s')] ?? ERA_GRADES.analog60s;
@@ -342,10 +339,12 @@ interface SceneRefs {
   bloomLayer: Container | null;
   vignetteLayer: Container | null;
   dynamicBloomG: Graphics | null;
+  decor: DecorLights | null;
 }
 
 interface BuiltScene {
   root: Container;
+  underlayRoot: Container;
   overlayRoot: Container;
   refs: SceneRefs;
   basePosition: { x: number; y: number };
@@ -406,6 +405,7 @@ const buildScene = (
     bloomLayer: null,
     vignetteLayer: null,
     dynamicBloomG: null,
+    decor: null,
   };
 
   // Era colour grade + studio tier drive the room's look (beads goj.3 / ifx.3)
@@ -426,6 +426,13 @@ const buildScene = (
   const originY = (topInset + height - bottomInset) / 2 - ((bounds.minY + bounds.maxY) / 2) * fitScale;
   root.position.set(originX, originY);
 
+  const decorSpec = getEraDecor(state.eraId);
+  const decorSeed = state.decorSeed ?? 'studio';
+  const trophyInput: TrophyInput = state.trophies ?? { platinum: 0, gold: 0, awards: 0 };
+
+  // Room slab + ground shadow sit under everything else.
+  root.addChild(buildRoomShell());
+
   /* ---- Back walls ------------------------------------------------------ */
   const walls = new Graphics();
   const wl0 = iso(0, 0);
@@ -439,17 +446,6 @@ const buildScene = (
   walls
     .poly([wl0.x, wl0.y, wr1.x, wr1.y, wr1.x, wr1.y - WALL_H, wl0.x, wl0.y - WALL_H])
     .fill(grade.wallRight);
-  // Shallow acoustic panels make the room read as a recording space at every zoom.
-  for (let i = 0; i < 6; i++) {
-    const a = iso(0, i + .2);
-    const b = iso(0, i + .8);
-    walls.poly([a.x, a.y - 102, b.x, b.y - 102, b.x, b.y - 46, a.x, a.y - 46])
-      .fill({ color: 0x121a29, alpha: .22 });
-    const c = iso(i + .2, 0);
-    const d = iso(i + .8, 0);
-    walls.poly([c.x, c.y - 104, d.x, d.y - 104, d.x, d.y - 53, c.x, c.y - 53])
-      .fill({ color: 0x101827, alpha: .19 });
-  }
   // Wall trim / roof outline (left wall front -> left top -> back corner top -> right top -> right wall front)
   walls
     .poly([
@@ -465,6 +461,7 @@ const buildScene = (
     .poly([wl0.x, wl0.y, wl0.x, wl0.y - WALL_H])
     .stroke({ width: 2, color: COLORS.wallTrim, alpha: 0.6 });
   root.addChild(walls);
+  root.addChild(buildWallDressing(decorSpec, trophyInput, tier).container);
 
   /* ---- Window (right wall) -------------------------------------------- */
   const windowGfx = new Graphics();
@@ -541,29 +538,12 @@ const buildScene = (
     .stroke({ width: 3, color: 0xffd166 });
 
   /* ---- Floor ---------------------------------------------------------- */
-  const floor = new Graphics();
-  for (let x = 0; x < ROOM_W; x++) {
-    for (let y = 0; y < ROOM_D; y++) {
-      const shade = (x + y) % 2 === 0 ? COLORS.floorA : COLORS.floorB;
-      isoQuad(floor, x, y, x + 1, y + 1);
-      floor.fill(shade);
-      isoQuad(floor, x, y, x + 1, y + 1);
-      floor.stroke({ width: .7, color: 0xf1d6a4, alpha: .08 });
-    }
-  }
-  // Rug under console — snapped to half-tile grid matching desk footprint
-  isoQuad(floor, 3, 3.5, 6, 5);
-  floor.fill(COLORS.rug);
-  isoQuad(floor, 3.25, 3.75, 5.75, 4.75);
-  floor.fill(COLORS.rugInner);
-  isoQuad(floor, 3.25, 3.75, 5.75, 4.75);
-  floor.stroke({ width: 1.5, color: 0xe29d6c, alpha: .38 });
+  const floor = buildPlankFloor(decorSpec, decorSeed);
   root.addChild(floor);
+  root.addChild(buildRug());
 
   // Window spill and contact shadow place furniture on the floor plane.
   const lightAndShadow = new Graphics();
-  const sun = [iso(5, .5), iso(7, .5), iso(6.5, 3.5), iso(5, 3.5)];
-  lightAndShadow.poly(sun.flatMap(point => [point.x, point.y])).fill({ color: 0xb8ddf6, alpha: .075 });
   const deskFoot = iso(4.5, 4.25);
   lightAndShadow.ellipse(deskFoot.x, deskFoot.y + 3, 63, 23).fill({ color: 0x131620, alpha: .28 });
   root.addChild(lightAndShadow);
@@ -979,6 +959,7 @@ const buildScene = (
   consoleHint.eventMode = 'none';
   refs.idleHints.console = consoleHint;
   root.addChild(consoleHint);
+  root.addChild(buildDeskProps(deskH));
 
   /* ---- Studio phone (on the desk corner) ------------------------------ */
   const phoneWrap = new Container();
@@ -1062,12 +1043,6 @@ const buildScene = (
     upgrades.circle(plantBase.x, plantBase.y - 30, 16).fill(0x3f7d4f);
     upgrades.circle(plantBase.x - 10, plantBase.y - 24, 10).fill(0x4f9a5f);
     upgrades.circle(plantBase.x + 10, plantBase.y - 26, 11).fill(0x357044);
-    // First gold record frame on the right wall
-    const frameA = iso(6.6, 0);
-    const rec = { x: frameA.x, y: frameA.y - 88 };
-    upgrades.rect(rec.x - 12, rec.y - 12, 24, 24).fill(0x2a1f0d);
-    upgrades.rect(rec.x - 12, rec.y - 12, 24, 24).stroke({ width: 3, color: grade.accent });
-    upgrades.circle(rec.x, rec.y, 8).fill(0xd9a441);
     root.addChild(upgrades);
   }
 
@@ -1089,17 +1064,11 @@ const buildScene = (
 
   if (tier >= 4) {
     const pro = new Graphics();
-    // Acoustic treatment panels on the left wall
-    for (let i = 0; i < 3; i++) {
-      const p = iso(0, 3.1 + i * 0.8);
-      pro.rect(p.x - 10, p.y - 78, 20, 34).fill(i % 2 === 0 ? 0x37506b : 0x2d4257);
-      pro.rect(p.x - 10, p.y - 78, 20, 34).stroke({ width: 2, color: 0x1d2a3a });
-    }
     // Second workstation rig
     const rig = iso(7.0, 3.2);
-    pro.rect(rig.x - 16, rig.y - 34, 32, 34).fill(0x1d2433);
+    pro.rect(rig.x - 16, rig.y - 34, 32, 34).fill(0x2a221c);
     pro.rect(rig.x - 12, rig.y - 29, 24, 16).fill(grade.accent);
-    pro.rect(rig.x - 16, rig.y - 34, 32, 34).stroke({ width: 2, color: 0x0f1420 });
+    pro.rect(rig.x - 16, rig.y - 34, 32, 34).stroke({ width: 2, color: 0x120d09 });
     root.addChild(pro);
   }
 
@@ -1124,6 +1093,14 @@ const buildScene = (
       .fill(grade.accent);
     root.addChild(empire);
   }
+
+  /* ---- Additive lighting: window shaft, motes, lamp pools, era glow ------- */
+  const lights = buildDecorLights({ spec: decorSpec });
+  refs.decor = lights;
+  root.addChild(lights.container);
+
+  /* ---- Screen-space backdrop behind the room ---------------------------- */
+  const underlayRoot = buildUnderlay(width, height, { x: width / 2, y: (topInset + height - bottomInset) / 2 }, fitScale);
 
   /* ---- Screen-space Post-FX container (unaffected by camera pan/zoom) --- */
   const overlayRoot = new Container();
@@ -1183,7 +1160,7 @@ const buildScene = (
   refs.bloomLayer = bloomLayer;
   root.addChild(bloomLayer);
 
-  return { root, overlayRoot, refs, basePosition: { x: originX, y: originY }, baseScale: fitScale };
+  return { root, underlayRoot, overlayRoot, refs, basePosition: { x: originX, y: originY }, baseScale: fitScale };
 };
 
 /* ---------------------------------------------------------------------------
@@ -1244,13 +1221,15 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   }, [resetCameraKey]);
 
   // Structural key: only layout-affecting state triggers a scene rebuild
-  const structuralKey = `${state?.staffOnFloor ?? 1}|${state?.ownedEquipment ?? 3}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}`;
+  const structuralKey = `${state?.staffOnFloor ?? 1}|${state?.ownedEquipment ?? 3}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${trophyKey(state?.trophies ?? { platinum: 0, gold: 0, awards: 0 })}|${state?.decorSeed ?? 'studio'}`;
 
   // Rebuild the room (new window size or layout change)
   const rebuild = () => {
     const app = appRef.current;
     if (!app) return;
     if (sceneRef.current) {
+      app.stage.removeChild(sceneRef.current.underlayRoot);
+      sceneRef.current.underlayRoot.destroy({ children: true });
       app.stage.removeChild(sceneRef.current.root);
       sceneRef.current.root.destroy({ children: true });
       if (sceneRef.current.overlayRoot) {
@@ -1275,6 +1254,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
       if (scene.refs.vignetteLayer) scene.refs.vignetteLayer.visible = Boolean(settingsRef.current.analogTapeWarmth);
       if (scene.refs.bloomLayer) scene.refs.bloomLayer.visible = Boolean(settingsRef.current.bloomAndGlow);
     }
+    app.stage.addChild(scene.underlayRoot);
     app.stage.addChild(scene.root);
     if (scene.overlayRoot) {
       app.stage.addChild(scene.overlayRoot);
@@ -1356,7 +1336,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           settingsRef.current?.resolutionScale
         );
         await app.init({
-          background: 0x11151f,
+          background: 0x0e0c0a,
           resizeTo: container,
           antialias: true,
           autoDensity: true,
@@ -1606,6 +1586,9 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             }
           }
 
+          // Decor lighting: window shaft + motes, ON AIR lamp, era glow, steam
+          refs.decor?.update(t, reduceMotion, s.hasActiveProject);
+
           // Staff idle bobbing
           refs.staffFigures.forEach((f, i) => {
             f.fig.y = f.baseY + Math.sin(t * 2 + i * 1.4) * 2;
@@ -1628,7 +1611,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           // Ambient day/night tint — slow 90s cycle keeps the room alive
           if (refs.nightTintLayer) {
             const cycle = (Math.sin((t * Math.PI * 2) / 90) + 1) / 2;
-            refs.nightTintLayer.alpha = 0.05 + cycle * 0.28;
+            refs.nightTintLayer.alpha = 0.03 + cycle * 0.2;
           }
 
           // Dynamic analog tape saturation warmth (deepens subtly during active session takes)

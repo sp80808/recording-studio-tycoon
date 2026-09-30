@@ -8,6 +8,7 @@ import { ProgressionSystem } from '@/services/ProgressionSystem';
 import { TierUpgradeAnimation } from './TierUpgradeAnimation';
 import { toast } from '@/hooks/use-toast';
 import { LocateFixed, Phone } from 'lucide-react';
+import { getTrophyInput } from '@/components/studio/studioDecorConfig';
 import { triggerScreenShake } from '@/utils/screenShake';
 import { useGamepad } from '@/hooks/useGamepad';
 import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
@@ -119,8 +120,10 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       day: gameState.currentDay,
       eraId: gameState.currentEra,
       roomTier,
+      trophies: getTrophyInput(gameState),
+      decorSeed: String(gameState.saveSeed ?? 'studio'),
     };
-  }, [gameState.activeProject, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, roomTier]);
+  }, [gameState.activeProject, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, roomTier]);
 
   /** Every hotspot now opens its contextual inspector (bead goj.2). */
   const handleHotspot = (id: StudioHotspotId) => {
@@ -187,7 +190,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
 
   return (
     <div 
-      className={`relative overflow-hidden rounded-lg border border-gray-700/70 bg-[#11151f] transition-all duration-300 ${className}`} 
+      className={`relative overflow-hidden rounded-lg border border-stone-700/70 bg-[#1b1815] transition-all duration-300 ${className}`} 
       style={style}
     >
       <WebGLCanvas state={sceneState} onHotspotSelect={handleHotspot} resetCameraKey={cameraReset} />
@@ -210,10 +213,10 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           vertically so the label, enquiry pill and any future chips can never overlap. */}
       <div className="studio-room-overlay-tl select-none">
         <div className="studio-room-label flex items-center gap-2 pointer-events-none">
-          <span className="px-2 py-1 text-[10px] font-black tracking-[0.2em] text-gray-100 bg-black/50 border border-white/10 rounded">
+          <span className="px-2 py-1 text-[10px] font-black tracking-[0.2em] text-stone-100 bg-black/50 border border-white/10 rounded">
             🎛 STUDIO FLOOR
           </span>
-          <span className="px-2 py-1 text-[10px] font-bold tracking-wider text-emerald-300/90 bg-black/50 border border-white/10 rounded">
+          <span className="px-2 py-1 text-[10px] font-bold tracking-wider text-[var(--rst-brass-300)] bg-black/50 border border-white/10 rounded">
             {gameState.currentYear}
           </span>
         </div>
@@ -222,13 +225,13 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           <MotionReveal direction="down" distance={8}>
             <button
               onClick={() => handleHotspot('phone')}
-              className="studio-room-chip bg-sky-950/90 hover:bg-sky-900 border border-sky-400/50 hover:border-sky-300 text-sky-200 px-2.5 py-1 rounded-full text-[11px] font-bold shadow-lg flex items-center gap-1.5 backdrop-blur-md transition-colors"
+              className="studio-room-chip rst-duty-chip"
               title={`${availableCount} Artist ${availableCount === 1 ? 'Enquiry' : 'Enquiries'} Waiting`}
               aria-label={`${availableCount} Artist Enquiries Waiting`}
             >
-              <Phone size={12} className="text-sky-300" aria-hidden="true" />
+              <Phone size={12} className="text-amber-200" aria-hidden="true" />
               <span className="text-[10px] font-medium tracking-wide">Enquiry</span>
-              <span className="px-1.5 py-0.2 text-[9px] font-black rounded-full bg-amber-400 text-slate-950">
+              <span className="px-1.5 py-0.2 text-[9px] font-black rounded-full bg-amber-400 text-stone-950">
                 <MotionNumber value={availableCount} />
               </span>
             </button>
@@ -249,7 +252,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
               <MotionReveal direction="up" distance={6}>
                 <button
                   onClick={() => handleHotspot('console')}
-                  className="absolute bottom-14 left-6 bg-amber-500 hover:bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-lg border border-amber-300 flex items-center gap-1 z-20 pointer-events-auto transition-transform active:scale-95"
+                  className="rst-duty-chip absolute bottom-14 left-6 z-20"
                   title={`${pendingConsoleChores.length} Console Maintenance Duty Pending`}
                 >
                   <span>🔧</span>
@@ -261,7 +264,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
               <MotionReveal direction="up" distance={6}>
                 <button
                   onClick={() => handleHotspot('liveRoom')}
-                  className="absolute bottom-16 right-6 bg-purple-600 hover:bg-purple-500 text-white px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-lg border border-purple-300 flex items-center gap-1 z-20 pointer-events-auto transition-transform active:scale-95"
+                  className="rst-duty-chip absolute bottom-16 right-6 z-20"
                   title="Live Room: Tune Acoustics"
                 >
                   <span>✨</span>
@@ -274,7 +277,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       })()}
       {/* Top-right overlay stack: camera recentre, then the lounge chore chip beneath it. */}
       <div className="studio-room-overlay-tr">
-        <button className="studio-camera-center studio-dock-button bg-slate-950/70 border border-white/10 flex items-center gap-1.5"
+        <button className="studio-camera-center studio-dock-button bg-stone-950/70 border border-white/10 flex items-center gap-1.5"
           onClick={() => setCameraReset(value => value + 1)} aria-label="Center studio camera" title="Center studio camera">
           {gamepad.isConnected && gamepad.lastInputType === 'gamepad' && (
             <GamepadGlyph button="rs" size="xs" />
@@ -288,7 +291,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
             <MotionReveal direction="down" distance={6}>
               <button
                 onClick={() => handleHotspot('shelf')}
-                className="studio-room-chip bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-lg border border-emerald-300 flex items-center gap-1 transition-transform active:scale-95"
+                className="studio-room-chip rst-duty-chip"
                 title="Lounge: Brew Espresso"
               >
                 <span>☕</span>
@@ -299,16 +302,16 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
         })()}
       </div>
       {gamepad.isConnected && gamepad.lastInputType === 'gamepad' ? (
-        <div className="absolute bottom-2 left-3 flex items-center gap-2 bg-slate-950/85 px-2.5 py-1.5 rounded-full border border-slate-700/60 shadow-lg text-[11px] text-slate-300 pointer-events-none select-none animate-in fade-in">
+        <div className="absolute bottom-2 left-3 flex items-center gap-2 bg-stone-950/85 px-2.5 py-1.5 rounded-full border border-stone-700/60 shadow-lg text-[11px] text-stone-300 pointer-events-none select-none animate-in fade-in">
           <GamepadGlyph button="dpadLeft" size="xs" />
           <GamepadGlyph button="dpadRight" size="xs" />
           <span>Target: <b className="text-amber-300">{HOTSPOT_NAMES[STUDIO_HOTSPOTS[focusedHotspotIndex]]}</b></span>
-          <span className="text-slate-600">|</span>
+          <span className="text-stone-600">|</span>
           <GamepadGlyph button="south" size="xs" />
           <span>Inspect</span>
         </div>
       ) : (
-        <p className="studio-room-hint absolute bottom-2 left-3 text-[10px] text-slate-400 pointer-events-none">
+        <p className="studio-room-hint absolute bottom-2 left-3 text-[10px] text-stone-400 pointer-events-none">
           Tap objects · pinch to zoom · two-finger pan
         </p>
       )}
