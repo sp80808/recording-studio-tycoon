@@ -1,4 +1,5 @@
 
+import { popElement } from '@/utils/feelPop';
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -68,7 +69,7 @@ export const EquipmentList: React.FC<EquipmentListProps> = ({
             const isVintage = equipment.isVintage && (gameState.currentYear || 2024) > (equipment.availableUntil || equipment.availableFrom + 20);
             
             return (
-              <Card key={equipment.id} className="p-3 bg-stone-800/50 border-stone-600">
+              <Card key={equipment.id} data-feel-card className="p-3 bg-stone-800/50 border-stone-600">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
@@ -104,7 +105,7 @@ export const EquipmentList: React.FC<EquipmentListProps> = ({
                     </div>
                     <Button
                       size="sm"
-                      onClick={() => purchaseEquipment(equipment.id)}
+                      onClick={(e) => { popElement(e.currentTarget.closest('[data-feel-card]') ?? e.currentTarget); purchaseEquipment(equipment.id); }}
                       disabled={!canAfford}
                       className="mt-1 text-xs"
                     >

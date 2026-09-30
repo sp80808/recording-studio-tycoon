@@ -24,7 +24,10 @@
 .feel-pop { animation: feel-pop .5s var(--feel-spring) both; }
 
 /* 4. Attention ring for things that want a click; slow and quiet */
-.feel-attention { animation: feel-ring 2.2s ease-out infinite; }
+.feel-attention { animation: feel-ring 2.2s ease-out 3; }  /* three pulses then rest: no endless bounce (issue #75) */
+
+/* Tab underline grows from centre when a tab becomes active */
+.feel-underline { animation: feel-underline .28s var(--feel-out) both; transform-origin: center; }
 
 /* 5. Land ring: one brass ring when a HUD value rises (toggled by SettleTicker) */
 .feel-land { animation: feel-ring-once .7s ease-out 1; border-radius: 10px; }
@@ -41,6 +44,7 @@ html[data-graphics='ultra'] .feel-sheen:hover::after { transform: translateX(120
 
 @keyframes feel-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes feel-pop { 0% { transform: scale(.85); opacity: 0; } 60% { transform: scale(1.06); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes feel-underline { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes feel-ring { 0% { box-shadow: 0 0 0 0 rgba(230, 184, 102, .45); } 100% { box-shadow: 0 0 0 12px rgba(230, 184, 102, 0); } }
 @keyframes feel-ring-once { 0% { box-shadow: 0 0 0 0 rgba(230, 184, 102, .6); } 100% { box-shadow: 0 0 0 14px rgba(230, 184, 102, 0); } }
 
@@ -49,13 +53,14 @@ html[data-graphics='low'] .feel-attention,
 html[data-graphics='low'] .feel-sheen::after { animation: none; display: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  .feel-stagger > *, .feel-pop, .feel-attention, .feel-land { animation: none !important; }
+  .feel-stagger > *, .feel-pop, .feel-attention, .feel-land, .feel-underline { animation: none !important; }
   .feel-press, .feel-press:hover, .feel-press:active { transition: none; transform: none; }
   .feel-sheen::after { display: none; }
 }
 html[data-reduced-motion='true'] .feel-stagger > *,
 html[data-reduced-motion='true'] .feel-pop,
 html[data-reduced-motion='true'] .feel-attention,
+html[data-reduced-motion='true'] .feel-underline,
 html[data-reduced-motion='true'] .feel-land { animation: none !important; }
 html[data-reduced-motion='true'] .feel-press,
 html[data-reduced-motion='true'] .feel-press:hover,

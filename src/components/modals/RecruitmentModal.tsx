@@ -1,4 +1,5 @@
 
+import { popElement } from '@/utils/feelPop';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -89,7 +90,7 @@ export const RecruitmentModal: React.FC<RecruitmentModalProps> = ({
 
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => hireStaff(index)}
+                      onClick={(e) => { popElement(e.currentTarget); hireStaff(index); }}
                       disabled={gameState.money < signingFee}
                       className="flex-1 bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] disabled:bg-stone-600"
                     >

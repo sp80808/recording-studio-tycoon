@@ -237,7 +237,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
                           <Icon size={16} aria-hidden="true" />
                           <span className="max-w-full truncate">{t(tab.shortLabelKey)}</span>
                           {isActive && (
-                            <span aria-hidden="true" className="absolute inset-x-3 bottom-0 h-[2px] rounded-full bg-[var(--rst-brass-400)]" />
+                            <span aria-hidden="true" className="feel-underline absolute inset-x-3 bottom-0 h-[2px] rounded-full bg-[var(--rst-brass-400)]" />
                           )}
                           {badgeCount !== undefined && badgeCount > 0 && (
                             <span className="absolute right-1 top-0.5 min-w-[15px] rounded-full bg-[var(--rst-brass-400)] px-1 text-center text-[9px] font-black leading-[15px] text-stone-950">
