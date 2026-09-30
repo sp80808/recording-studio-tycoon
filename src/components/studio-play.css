@@ -190,3 +190,11 @@
   .studio-splash-command:hover, .splash-command:hover { filter:none; }
   .studio-dock-button:active { background:rgba(255,244,214,.12); color:var(--rst-brass-200); }
 }
+
+/* Larger touch targets (>=48px) on coarse pointers */
+@media (pointer:coarse) {
+  .studio-command-dock .studio-dock-button { min-height:48px; min-width:48px; }
+  .studio-primary-action { min-height:52px; }
+  .studio-hud-stats > *, .studio-hud-controls > *, .studio-hud-title { min-height:44px; }
+  .studio-panel-heading button, .studio-activity-panel button[aria-label] { min-width:44px; min-height:44px; }
+}
