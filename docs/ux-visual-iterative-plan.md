@@ -23,7 +23,7 @@ Storyline stays free; monetisation stays optional cosmetics/gear only (see fligh
 
 ### HUD / viewport scaling
 1. **Guarantee Work / Overdrive dock visibility** in windowed short viewports (Issue #54 path): reduce `StudioRoom` min clamp when `ActiveProject` is open, or make middle column a flex scroll with pinned dock — do not require fullscreen. *(partial — dock clearance CSS var landed; Session drawer uses viewport-aware widths)*
-2. **Unify hotspot IDs** across Pixi (`liveRoom`, `tv`) and `StudioRoom` gamepad/chore aliases (`liveroom`, `crt`) so controller focus and badges always hit the same targets. *(open)*
+2. ~~**Unify hotspot IDs**~~ — **done**: `StudioRoom` gamepad list/names and `choreEngine` chore hotspots now use the Pixi ids (`liveRoom`, `tv`); live-room badge reads the authored chore so older saves still show it.
 3. ~~**Reposition DEV chrome**~~ — **done** (`5eaed315`): Settings opt-in, defaults OFF.
 4. ~~**Tag living studio canvas**~~ — **done**: `id="pixi-studio-canvas"` + `data-engine="pixi"`.
 
@@ -44,18 +44,18 @@ Storyline stays free; monetisation stays optional cosmetics/gear only (see fligh
 ## P1 — Next polish pass
 
 ### HUD / viewport
-1. **World-anchored chore badges** — project DOM badges from Pixi hotspot screen positions (or draw badges in Pixi) so pan/zoom does not strand them.
+1. ~~**World-anchored chore badges**~~ — **done** for the console and live-room badges: `WebGLCanvas` reports hotspot screen anchors (`onHotspotAnchors`, only when they move) and `StudioRoom` pins the badges to them. The lounge chip stays in the top-right stack.
 2. **Safe-area insets** for camera reset / year label vs notch and strip shell ([DESKTOP_STRIP_SHELL.md](./architecture/DESKTOP_STRIP_SHELL.md)).
 3. **Resolution / FPS settings** already exist — expose a “Performance” preset that forces CRT/bloom off + lower `targetFps` for integrated GPUs (document in Settings UX, no second WebGL).
 
 ### Splash
 4. **Brand-first hero** with one studio still / short motion and a single primary CTA group; keep tips in footer (current `SplashScreen.tsx` structure is close — tighten visual hierarchy, avoid competing cards).
-5. **Era picker preview** tint samples using the same `ERA_GRADES` palette as the Pixi room for continuity.
+5. ~~**Era picker preview**~~ — **done**: each era card shows the room's left wall, right wall and accent colours from `ERA_GRADES`.
 
 ### Isometric room
-6. **Depth bands:** assign explicit `zIndex` bands (floor → furniture → characters → glass → FX) instead of relying only on add order + staff `y`.
+6. ~~**Depth bands**~~ — **done**: `Z` bands in `WebGLCanvas` (`world` by add order, `depth + y` for staff and free-standing tier props, `fx` for lights, bloom and idle hints). The console desk (with its props and phone) y-sorts with the staff at its front-left corner, so staff behind it are hidden and staff in front draw over it. The booth glass stays in the world band: no staff spot is inside the booth, so a separate glass band would change nothing visible yet.
 7. **Swap 2–3 signature props to sprites** (mic stand, door, clock) from curated packs documented in `visual_studio_plan.md` / `equipmentArt.ts`, keeping everything else procedural.
-8. **Idle hint + hover glow** contrast pass under each era tint so phone/console remain findable at night-tint peaks.
+8. ~~**Idle hint + hover glow** contrast~~ — **done**: idle hints get a dark keyline under the coloured ring and hover glows peak at full alpha.
 
 ### Particles / reward FX
 9. Keep `PixiParticleBurst` as Canvas 2D one-shots; never promote to continuous WebGL. Cap concurrent bursts to 1.

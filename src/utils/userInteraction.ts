@@ -58,6 +58,8 @@ export const initInteractionListener = () => {
     document.addEventListener('keydown', onFirstUserInteraction, { once: true, capture: true });
     document.addEventListener('mousedown', onFirstUserInteraction, { once: true, capture: true });
     document.addEventListener('touchstart', onFirstUserInteraction, { once: true, capture: true });
+    // iOS only unlocks audio from touchend/click, so the first touchstart alone is not enough
+    document.addEventListener('touchend', onFirstUserInteraction, { once: true, capture: true });
     window.__interactionListenerSetupDone = true;
     console.log('User interaction listeners initialized.');
   }

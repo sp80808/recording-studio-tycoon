@@ -94,7 +94,8 @@ export const domainForStage = (stageName: string): KnowHowDomain => {
   return 'tracking';
 };
 
-const GRADE_BASE: Record<string, number> = { 'S+': 4, S: 4, A: 3, B: 2, C: 1 };
+/** Stage grades are Gold/Silver/Bronze (src/rpg/stageGrades.ts); letter ranks kept for other callers. */
+const GRADE_BASE: Record<string, number> = { Gold: 4, Silver: 3, Bronze: 1, 'S+': 4, S: 4, A: 3, B: 2, C: 1 };
 
 const sessionAward = (e: Extract<KnowHowEvent, { kind: 'session' }>, repeats: number): KnowHowAward => {
   // A poor session still teaches (C still pays) but always pays less than a good one.
@@ -104,7 +105,7 @@ const sessionAward = (e: Extract<KnowHowEvent, { kind: 'session' }>, repeats: nu
   const knowHow = Math.floor(base * mult + (e.service ? 0.5 : 0));
   // Domain familiarity also dries up once the exact same action is exhausted.
   const domainXp = Math.round(base * 2 * mult);
-  const learned = e.grade === 'C' ? 'You learned from a rough session.' : 'You learned from the session.';
+  const learned = e.grade === 'C' || e.grade === 'Bronze' ? 'You learned from a rough session.' : 'You learned from the session.';
   return { knowHow: repeats >= REPEAT_CURVE.length ? 0 : Math.max(knowHow, 0), domain: e.domain, domainXp, reason: learned };
 };
 

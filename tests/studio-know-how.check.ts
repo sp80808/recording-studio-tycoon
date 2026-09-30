@@ -30,6 +30,11 @@ const domainAfter = farm.domains.tracking;
 farm = awardKnowHow(farm, session('f99', 'B')).state;
 assert(farm.domains.tracking === domainAfter, 'domain xp also dries up');
 
+// Real stage grades: Bronze teaches less than Gold.
+const bronzeAward = awardKnowHow(createInitialKnowHow(), session('b', 'Bronze', 'kb')).award!;
+const goldAward = awardKnowHow(createInitialKnowHow(), session('g', 'Gold', 'kg')).award!;
+assert(bronzeAward.domainXp > 0 && bronzeAward.knowHow < goldAward.knowHow && bronzeAward.domainXp < goldAward.domainXp, 'Bronze teaches but less than Gold');
+
 // Failure teaches, but less than success; fresh keys pay again.
 const fail = awardKnowHow(createInitialKnowHow(), session('x', 'C', 'k1')).award!;
 const good = awardKnowHow(createInitialKnowHow(), session('y', 'S', 'k2')).award!;
