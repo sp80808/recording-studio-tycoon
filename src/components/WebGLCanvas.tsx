@@ -134,6 +134,14 @@ export const calculateTapeSaturationWarmth = (
 export type StudioHotspotId = 'console' | 'liveRoom' | 'phone' | 'clock' | 'tv' | 'shelf';
 
 /**
+ * Draw-order bands inside the room. Floor, walls and big fixed furniture keep add order at `world`;
+ * y-sorted pieces (characters, free-standing tier props) share `depth + y`; glow/light FX always sit on top.
+ */
+const Z = { world: 0, depth: 100, fx: 3000 } as const;
+
+export type HotspotAnchors = Partial<Record<StudioHotspotId, { x: number; y: number }>>;
+
+/**
  * Live state fed into the scene. Purely presentational — the scene reads the
  * latest values from a ref every animation frame, so React can update it
  * cheaply without rebuilding the room.
@@ -163,6 +171,8 @@ interface WebGLCanvasProps {
   state?: Partial<StudioSceneState>;
   onHotspotSelect?: (id: StudioHotspotId) => void;
   resetCameraKey?: number;
+  /** Top-centre of each hotspot in canvas CSS pixels; follows pan/zoom so DOM badges stay attached. */
+  onHotspotAnchors?: (anchors: HotspotAnchors) => void;
   className?: string;
 }
 
@@ -341,6 +351,7 @@ interface SceneRefs {
   nightTintLayer: Container | null;
   hoverGlows: Record<string, Graphics>;
   hoverGlowTargets: Record<string, number>;
+  hotspotHits: Partial<Record<StudioHotspotId, Container>>;
   idleHints: Partial<Record<'phone' | 'console', Graphics>>;
   crtLayer: Container | null;
   bloomLayer: Container | null;
@@ -365,9 +376,11 @@ const addHotspot = (
   hitArea: Graphics,
   visual: Container,
   refs: SceneRefs,
-  onSelect?: (id: StudioHotspotId) => void
+  onSelect?: (id: StudioHotspotId) => void,
+  zIndex?: number
 ) => {
   const wrap = new Container();
+  if (zIndex !== undefined) wrap.zIndex = zIndex;
   if (visual) wrap.addChild(visual);
 
   // Glow ring shown on hover (populated by the caller with real coordinates)
@@ -382,7 +395,9 @@ const addHotspot = (
   hit.eventMode = 'static';
   hit.cursor = 'pointer';
   hit.alpha = 0; // invisible for rendering, still receives pointer events
-  hit.on('pointerover', () => { refs.hoverGlowTargets[id] = 0.85; });
+  if (zIndex !== undefined) hit.zIndex = zIndex;
+  refs.hotspotHits[id] = hit;
+  hit.on('pointerover', () => { refs.hoverGlowTargets[id] = 1; });
   hit.on('pointerout', () => { refs.hoverGlowTargets[id] = 0; });
   // The canvas gesture guard suppresses selection after a two-finger pan.
   hit.on('pointertap', () => { onSelect?.(id); });
@@ -408,6 +423,7 @@ const buildScene = (
     nightTintLayer: null,
     hoverGlows: {},
     hoverGlowTargets: {},
+    hotspotHits: {},
     idleHints: {},
     crtLayer: null,
     bloomLayer: null,
@@ -919,20 +935,27 @@ const buildScene = (
   // Desk interaction hit area and hover glow
   const deskHit = new Graphics();
   deskHit.poly([p1.x, p1.y - bridgeH - 18, p2.x, p2.y - bridgeH - 18, p3.x, p3.y + 4, p4.x, p4.y + 4]).fill(0xffffff);
-  addHotspot(root, 'console', deskHit, deskWrap, refs, onSelect);
+  // The desk (and everything sitting on it) y-sorts with the staff at its front-left corner, so
+  // staff standing behind it are hidden by it and staff in front of it draw over it.
+  const deskZ = Z.depth + iso(3.0, 5.0).y;
+  addHotspot(root, 'console', deskHit, deskWrap, refs, onSelect, deskZ);
   refs.hoverGlows['console']
     ?.poly([p1.x, p1.y - bridgeH - 18, p2.x, p2.y - bridgeH - 18, p3.x, p3.y + 4, p4.x, p4.y + 4])
     .stroke({ width: 3, color: 0x7bd389 });
 
   const consoleHint = new Graphics();
-  consoleHint
-    .poly([p1.x, p1.y - bridgeH - 20, p2.x, p2.y - bridgeH - 20, p3.x, p3.y + 6, p4.x, p4.y + 6])
-    .stroke({ width: 3.5, color: grade.accent, alpha: 0.95 });
+  const consoleHintPoly = [p1.x, p1.y - bridgeH - 20, p2.x, p2.y - bridgeH - 20, p3.x, p3.y + 6, p4.x, p4.y + 6];
+  // Dark keyline under the coloured ring keeps the hint findable under every era / night tint.
+  consoleHint.poly(consoleHintPoly).stroke({ width: 7, color: 0x0b0906, alpha: 0.55 });
+  consoleHint.poly(consoleHintPoly).stroke({ width: 3.5, color: grade.accent, alpha: 0.95 });
   consoleHint.alpha = 0;
   consoleHint.eventMode = 'none';
   refs.idleHints.console = consoleHint;
+  consoleHint.zIndex = Z.fx;
   root.addChild(consoleHint);
-  root.addChild(buildDeskProps(deskH));
+  const deskProps = buildDeskProps(deskH);
+  deskProps.zIndex = deskZ;
+  root.addChild(deskProps);
 
   /* ---- Studio phone (on the desk corner) ------------------------------ */
   const phoneWrap = new Container();
@@ -957,16 +980,18 @@ const buildScene = (
 
   const phoneHit = new Graphics();
   phoneHit.ellipse(pPos.x, pPos.y - 3, 24, 14).fill(0xffffff);
-  addHotspot(root, 'phone', phoneHit, phoneWrap, refs, onSelect);
+  addHotspot(root, 'phone', phoneHit, phoneWrap, refs, onSelect, deskZ);
   refs.hoverGlows['phone']
     ?.ellipse(pPos.x, pPos.y - 3, 22, 12)
     .stroke({ width: 3, color: 0xffd166 });
 
   const phoneHint = new Graphics();
+  phoneHint.ellipse(pPos.x, pPos.y - 3, 24, 13).stroke({ width: 7, color: 0x0b0906, alpha: 0.55 });
   phoneHint.ellipse(pPos.x, pPos.y - 3, 24, 13).stroke({ width: 3.5, color: 0xffd166, alpha: 0.95 });
   phoneHint.alpha = 0;
   phoneHint.eventMode = 'none';
   refs.idleHints.phone = phoneHint;
+  phoneHint.zIndex = Z.fx;
   root.addChild(phoneHint);
 
   /* ---- Staff / artist figures on the floor ---------------------------- */
@@ -998,7 +1023,7 @@ const buildScene = (
     body.circle(-11, -43, 3).fill(grade.accent);
     body.circle(11, -43, 3).fill(grade.accent);
     fig.addChild(body);
-    fig.zIndex = spot.y;
+    fig.zIndex = Z.depth + spot.y;
     refs.staffFigures.push({ fig, baseY: spot.y });
     root.addChild(fig);
   }
@@ -1016,6 +1041,7 @@ const buildScene = (
     upgrades.circle(plantBase.x, plantBase.y - 30, 16).fill(0x3f7d4f);
     upgrades.circle(plantBase.x - 10, plantBase.y - 24, 10).fill(0x4f9a5f);
     upgrades.circle(plantBase.x + 10, plantBase.y - 26, 11).fill(0x357044);
+    upgrades.zIndex = Z.depth + plantBase.y;
     root.addChild(upgrades);
   }
 
@@ -1027,12 +1053,16 @@ const buildScene = (
     lounge.roundRect(sofa.x - 26, sofa.y - 34, 52, 12, 5).fill(0x6d4c85);
     lounge.rect(sofa.x - 22, sofa.y - 2, 6, 6).fill(0x2a1f33);
     lounge.rect(sofa.x + 16, sofa.y - 2, 6, 6).fill(0x2a1f33);
-    // Road case next to the console
-    const rc = iso(4.9, 2.4);
-    lounge.rect(rc.x - 14, rc.y - 22, 28, 22).fill(0x38414f);
-    lounge.rect(rc.x - 14, rc.y - 22, 28, 6).fill(0x4c5769);
-    lounge.rect(rc.x - 14, rc.y - 11, 28, 3).fill(0x232a36);
+    lounge.zIndex = Z.depth + sofa.y;
     root.addChild(lounge);
+    // Road case next to the console (its own node so it sorts by its own depth)
+    const roadCase = new Graphics();
+    const rc = iso(4.9, 2.4);
+    roadCase.rect(rc.x - 14, rc.y - 22, 28, 22).fill(0x38414f);
+    roadCase.rect(rc.x - 14, rc.y - 22, 28, 6).fill(0x4c5769);
+    roadCase.rect(rc.x - 14, rc.y - 11, 28, 3).fill(0x232a36);
+    roadCase.zIndex = Z.depth + rc.y;
+    root.addChild(roadCase);
   }
 
   if (tier >= 4) {
@@ -1042,6 +1072,7 @@ const buildScene = (
     pro.rect(rig.x - 16, rig.y - 34, 32, 34).fill(0x2a221c);
     pro.rect(rig.x - 12, rig.y - 29, 24, 16).fill(grade.accent);
     pro.rect(rig.x - 16, rig.y - 34, 32, 34).stroke({ width: 2, color: 0x120d09 });
+    pro.zIndex = Z.depth + rig.y;
     root.addChild(pro);
   }
 
@@ -1070,6 +1101,7 @@ const buildScene = (
   /* ---- Additive lighting: window shaft, motes, lamp pools, era glow ------- */
   const lights = buildDecorLights({ spec: decorSpec });
   refs.decor = lights;
+  lights.container.zIndex = Z.fx;
   root.addChild(lights.container);
 
   /* ---- Screen-space backdrop behind the room ---------------------------- */
@@ -1133,6 +1165,7 @@ const buildScene = (
   bloomLayer.addChild(dynamicBloomG);
   refs.dynamicBloomG = dynamicBloomG;
   refs.bloomLayer = bloomLayer;
+  bloomLayer.zIndex = Z.fx;
   root.addChild(bloomLayer);
 
   return { root, underlayRoot, overlayRoot, refs, basePosition: { x: originX, y: originY }, baseScale: fitScale };
@@ -1141,12 +1174,14 @@ const buildScene = (
 /* ---------------------------------------------------------------------------
  * Component
  * ------------------------------------------------------------------------- */
-const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, className, resetCameraKey }) => {
+const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, className, resetCameraKey, onHotspotAnchors }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const sceneRef = useRef<BuiltScene | null>(null);
   const stateRef = useRef<StudioSceneState>({ ...DEFAULT_STATE, ...state });
   const selectRef = useRef(onHotspotSelect);
+  const anchorsCbRef = useRef(onHotspotAnchors);
+  const lastAnchorsRef = useRef<HotspotAnchors>({});
   const timeRef = useRef(0);
   const cameraRef = useRef({ x: 0, y: 0, zoom: 1.0 });
   const gestureRef = useRef(new Map<number, { x: number; y: number }>());
@@ -1163,6 +1198,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     settingsRef.current = settings;
     const app = appRef.current;
     if (app && app.renderer) {
+      // Hard-cap the ticker so 90/120Hz phones don't wake the GPU every vsync (0 = uncapped)
+      app.ticker.maxFPS = settings.targetFps > 0 ? settings.targetFps : 0;
       const dpr = window.devicePixelRatio || 1;
       const effectiveRes = calculateEffectiveResolution(dpr, settings.resolutionScale);
       if (Math.abs(app.renderer.resolution - effectiveRes) > 0.01) {
@@ -1186,6 +1223,10 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   useEffect(() => {
     selectRef.current = onHotspotSelect;
   }, [onHotspotSelect]);
+
+  useEffect(() => {
+    anchorsCbRef.current = onHotspotAnchors;
+  }, [onHotspotAnchors]);
 
   useEffect(() => {
     cameraRef.current = { x: 0, y: 0, zoom: 1.0 };
@@ -1314,8 +1355,9 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         await app.init({
           background: 0x0e0c0a,
           resizeTo: container,
-          antialias: true,
+          antialias: !(typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches),
           autoDensity: true,
+          powerPreference: 'high-performance',
           resolution: initialRes,
         });
         if (disposed) {
@@ -1349,10 +1391,24 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           const pointers = [...gestureRef.current.values()];
           return { x: (pointers[0].x + pointers[1].x) / 2, y: (pointers[0].y + pointers[1].y) / 2 };
         };
+        // Touch: one-finger drag pans (after a 10px slop so taps on hotspots still select); double-tap resets the camera.
+        let touchDrag: { id: number; x: number; y: number; moved: boolean } | null = null;
+        let lastTap = { t: 0, x: 0, y: 0 };
+        const resetCamera = () => {
+          cameraRef.current = { x: 0, y: 0, zoom: 1.0 };
+          const sc = sceneRef.current;
+          if (sc) {
+            sc.root.scale.set(sc.baseScale);
+            sc.root.position.set(sc.basePosition.x, sc.basePosition.y);
+          }
+        };
         const onPointerDown = (event: PointerEvent) => {
           markCanvasInput();
           if (gestureRef.current.size === 0) suppressTapRef.current = false;
           gestureRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          touchDrag = event.pointerType !== 'mouse' && gestureRef.current.size === 1
+            ? { id: event.pointerId, x: event.clientX, y: event.clientY, moved: false }
+            : null;
           if (gestureRef.current.size === 2) {
             suppressTapRef.current = true;
             gestureMidpointRef.current = midpoint();
@@ -1369,6 +1425,18 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           markCanvasInput();
           if (!gestureRef.current.has(event.pointerId)) return;
           gestureRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          if (gestureRef.current.size === 1 && touchDrag && touchDrag.id === event.pointerId) {
+            const dx = event.clientX - touchDrag.x;
+            const dy = event.clientY - touchDrag.y;
+            if (!touchDrag.moved && Math.hypot(dx, dy) < 10) return;
+            touchDrag.moved = true;
+            suppressTapRef.current = true;
+            event.preventDefault();
+            panBy(dx, dy);
+            touchDrag.x = event.clientX;
+            touchDrag.y = event.clientY;
+            return;
+          }
           if (gestureRef.current.size !== 2) return;
           event.preventDefault();
 
@@ -1391,6 +1459,18 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           gestureDistance = nextDist;
         };
         const onPointerUp = (event: PointerEvent) => {
+          if (touchDrag && touchDrag.id === event.pointerId) {
+            if (!touchDrag.moved && event.type === 'pointerup' && event.pointerType !== 'mouse') {
+              const now = performance.now();
+              if (now - lastTap.t < 300 && Math.hypot(event.clientX - lastTap.x, event.clientY - lastTap.y) < 30) {
+                resetCamera();
+                lastTap = { t: 0, x: 0, y: 0 };
+              } else {
+                lastTap = { t: now, x: event.clientX, y: event.clientY };
+              }
+            }
+            touchDrag = null;
+          }
           gestureRef.current.delete(event.pointerId);
           if (gestureRef.current.size < 2) {
             gestureMidpointRef.current = null;
@@ -1503,6 +1583,24 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
               glow.alpha += (target - glow.alpha) * 0.18;
             }
           });
+
+          // Report hotspot screen anchors (only when something moved) so DOM badges follow pan/zoom
+          if (anchorsCbRef.current) {
+            const next: HotspotAnchors = {};
+            let changed = false;
+            (Object.keys(refs.hotspotHits) as StudioHotspotId[]).forEach((id) => {
+              const b = refs.hotspotHits[id]?.getBounds();
+              if (!b || b.maxX <= b.minX) return;
+              const pt = { x: Math.round((b.minX + b.maxX) / 2), y: Math.round(b.minY) };
+              next[id] = pt;
+              const prev = lastAnchorsRef.current[id];
+              if (!prev || prev.x !== pt.x || prev.y !== pt.y) changed = true;
+            });
+            if (changed) {
+              lastAnchorsRef.current = next;
+              anchorsCbRef.current(next);
+            }
+          }
 
           // Console VU meters — amplitude follows live activity
           const vuPeaks: { x: number; y: number; width: number }[] = [];

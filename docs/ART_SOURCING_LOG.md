@@ -91,7 +91,7 @@ beads issue `recording-studio-tycoon-art.X` (3D models + skins/sticker UI):
 - Web search + fetch (Kenney.nl, OpenGameArt.org) — used this pass; URLs above verified live Sept 2026.
 - No binary assets downloaded this pass (keeps the diff reviewable); PNG trimming is queue item 1–3 above.
 
-## 7. Signature studio props (door, wall clock, mic stand, mug, notepad, stool, music stand)
+## 8. Signature studio props (door, wall clock, mic stand, mug, notepad, stool, music stand)
 
 Kenney.nl / OpenGameArt were unreachable from the build environment, so these
 these were drawn in-house. License: **In-house (CC0)**. Source SVGs live in
@@ -124,3 +124,9 @@ Third batch (in-house CC0):
 
 - Trophy wall plaques (`trophy-gold|platinum|award.png`) replace the procedural plaques in `buildWallDressing`, sheared into the right-wall plane. Not yet screenshot-verified in-game (needs earned trophies).
 - Booking icons in `public/assets/icons/booking/` (`brief`, `fit-S|A|B|C`, `approach-safe`, `approach-moonshot`) are standalone SVGs, deliberately not wired in, so the booking enquiry card work in #101 can import them.
+
+## 7. In-house reward sprites (CC0)
+
+`public/assets/rewards/coin.svg`, `xp-star.svg`, `spark.svg` were hand-drawn as SVG
+for this project (no external source, no AI generation) and are released CC0. Used by
+`RewardFlights` for cash/XP loot travel.

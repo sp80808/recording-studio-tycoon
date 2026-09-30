@@ -15,6 +15,7 @@ import { SplashScreen } from '@/components/SplashScreen';
 import { Era } from '@/components/EraSelectionModal'; // Era type
 import '@/components/studio-play.css';
 import { useGameState } from '@/hooks/useGameState';
+import { installFlightCaseRewards } from '@/economy/rewardHookup';
 import { GameState, Project, ProjectReport, StaffMember } from '@/types/game'; // Import GameState, Project, ProjectReport, StaffMember
 import { generateProjectReview } from '@/utils/projectReviewUtils'; // Import generateProjectReview
 import { getFocusEffectiveness, getMoodEffectiveness } from '@/utils/playerUtils';
@@ -120,6 +121,8 @@ const MusicStudioTycoon = () => {
 
   useBackgroundMusic();
 
+
+  useEffect(() => installFlightCaseRewards(setGameState), [setGameState]);
 
   useEffect(() => {
     if (selectedStaffForTraining) {

@@ -15,6 +15,7 @@ import { EnhancedAnimationStyles } from './EnhancedAnimationStyles';
 import { toast } from '@/hooks/use-toast';
 import { playSound, gameAudio } from '@/utils/audioSystem'; // Updated import
 import { triggerScreenShake } from '@/utils/screenShake';
+import { REWARD_POP_EVENT, takePopTier, type RewardPopDetail } from '@/utils/rewardFx';
 import { evaluateTakeAccuracy, calculateTakeEnergyCost } from '@/rpg/takeEvaluation';
 import { StreakBankControl } from './StreakBankControl';
 import type { BankResult } from '@/rpg/streakBank';
@@ -39,6 +40,7 @@ import ProductionQueuePanel from '@/components/ProductionQueue/ProductionQueuePa
 import { rankStaffForProject } from '@/utils/staffFitUtils';
 import { evaluateProjectSynergies } from '@/utils/synergyUtils';
 import { SynergyBadgeList } from '@/components/synergy/SynergyBadgeList';
+import { hapticTick } from '@/utils/mobilePlatform';
 
 interface ActiveProjectProps {
   gameState: GameState;
@@ -395,6 +397,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
   const handleArmTake = () => {
     if (availableEnergy <= 0 || isProjectComplete) return;
+    hapticTick(14);
     playSound('ui-click', 0.5);
     if ((gameAudio as any).playGearSwitch) (gameAudio as any).playGearSwitch();
     setTakeState('tracking');
@@ -408,6 +411,13 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     // Trigger Tone.js chord synthesis + SFX
     if ((gameAudio as any).playTakeChord) (gameAudio as any).playTakeChord(project.genre, verdict.grade);
     triggerScreenShake('light');
+    window.dispatchEvent(new CustomEvent<RewardPopDetail>(REWARD_POP_EVENT, {
+      detail: {
+        label: `${verdict.label.toUpperCase()} +${verdict.qualityBonus}Q`,
+        tier: takePopTier(verdict.grade),
+        tone: verdict.grade === 'Gold' ? 'gold' : verdict.grade === 'Silver' ? 'silver' : 'plain',
+      },
+    }));
 
     // Calculate expected gains for animation
     const baseCreativity = gameState.playerData.dailyWorkCapacity * gameState.playerData.attributes.creativeIntuition;
@@ -440,6 +450,11 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     }
 
     if (verdict.grade === 'Gold') {
+      if (goldStreak >= 1) {
+        window.dispatchEvent(new CustomEvent<RewardPopDetail>(REWARD_POP_EVENT, {
+          detail: { label: `${goldStreak + 1}X COMBO!`, tier: goldStreak >= 3 ? 'jackpot' : 'big', tone: 'gold' },
+        }));
+      }
       setGoldStreak(prev => prev + 1);
     } else if (verdict.grade !== 'Silver') {
       setGoldStreak(0);
