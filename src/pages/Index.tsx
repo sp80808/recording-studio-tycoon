@@ -1,3 +1,5 @@
+import { applyKnowHowEvents } from '@/rpg/studioKnowHow';
+import { toast } from '@/hooks/use-toast';
 import React, { useState, useEffect, useCallback, useRef } from 'react'; // Added useCallback
 import { GameLayout } from '@/components/GameLayout';
 import { GameHeader } from '@/components/GameHeader';
@@ -319,7 +321,10 @@ const MusicStudioTycoon = () => {
 
     const debut = debutChartRun(activeProjectReport.projectId, activeProjectReport.projectTitle, activeProjectReport.overallQualityScore, gameState.currentDay);
     if (debut) {
-      setGameState(prev => ({ ...prev, chartRun: [...(prev.chartRun ?? []).filter(e => e.projectId !== debut.projectId), debut] }));
+      setGameState(prev => applyKnowHowEvents({
+        ...prev,
+        chartRun: [...(prev.chartRun ?? []).filter(e => e.projectId !== debut.projectId), debut],
+      }, [{ kind: 'discovery', eventId: `chart-debut:${debut.projectId}`, domain: 'business', label: `a ${debut.chartName} debut` }]).game);
       gameEvents.emit('chart:placement', { chartName: debut.chartName, title: debut.title, position: debut.position });
     }
 
@@ -335,6 +340,21 @@ const MusicStudioTycoon = () => {
       audioSystem.playUISound('success'); 
     }
   }, [activeProjectReport, completeProject, settings.sfxEnabled, setGameState, gameState.currentDay]);
+
+  // Studio Know-How award toast (#66): one place, driven by the pool's lifetime total so save/load never re-fires.
+  const lastKnowHowTotal = useRef<number | null>(null);
+  useEffect(() => {
+    const total = gameState.studioKnowHow?.totalEarned ?? 0;
+    const prev = lastKnowHowTotal.current;
+    lastKnowHowTotal.current = total;
+    if (prev !== null && total > prev) {
+      toast({
+        title: `Studio Know-How +${total - prev}`,
+        description: 'You learned from the work. Spend it in Career.',
+        className: 'bg-stone-800 border-cyan-500 text-white',
+      });
+    }
+  }, [gameState.studioKnowHow?.totalEarned]);
 
   // Weekly chart run: songs on the chart rise and fall, each move gets its own reveal.
   useEffect(() => {
