@@ -76,3 +76,13 @@ export const clampFxDuration = (ms: number): number => Math.max(0, Math.min(REWA
 /** Deterministic random source for FX; same seed reproduces layout/direction. */
 export const createFxRandom = (seed: number | undefined, salt: string): (() => number) =>
   createSeededRandom(`fx:${salt}:${seed ?? 0}`);
+
+/** Maps the renderer-independent request preset onto the burst renderer's preset. */
+export const burstRendererPreset = (p: RewardFxPreset): 'foam' | 'sparks' | 'motes' | 'tape' | 'rarity_gold' => {
+  switch (p) {
+    case 'rare-cyan': return 'sparks';
+    case 'vintage-warm': return 'motes';
+    case 'legendary-gold': return 'rarity_gold';
+    default: return p;
+  }
+};

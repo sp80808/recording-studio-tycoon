@@ -33,3 +33,14 @@ const burst = read(fx + 'PixiParticleBurst.tsx');
 ok(!burst.includes('Math.random') && burst.includes('createFxRandom'), 'burst is seeded');
 ok(burst.includes('visibilitychange') && burst.includes('removeEventListener') && burst.includes('cancelAnimationFrame') && burst.includes('if (done) return'), 'burst cancels on hidden/unmount with single completion');
 console.log(`${n} reward FX checks passed`);
+
+// Wiring (#80): reveal uses the policy and no longer mounts confetti.
+{
+  const reveal = fs.readFileSync('src/components/motion/primitives/FlightCaseReveal.tsx', 'utf8');
+  assert(!reveal.includes('canvas-confetti'), 'FAIL: confetti removed from FlightCaseReveal');
+  assert(reveal.includes('RARITY_FX_POLICY') && reveal.includes('burstRendererPreset'), 'FAIL: reveal uses rarity policy');
+  const q = fs.readFileSync('src/lib/motion/qualification.ts', 'utf8');
+  for (const name of ['RewardParticleBurst', 'RarityMaterialSweep', 'GearFlourish', 'GearDemoMeter']) assert(q.includes(`${name}: {`), `FAIL: ${name} qualified`);
+  assert(fs.existsSync('src/components/dev/RewardFxGallery.tsx'), 'FAIL: dev gallery exists');
+  console.log('PASS: reveal wiring, qualification entries, dev gallery');
+}

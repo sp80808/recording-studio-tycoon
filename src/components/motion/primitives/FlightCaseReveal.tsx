@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useReducer } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import confetti from 'canvas-confetti';
 import {
   Sparkles,
   Wrench,
@@ -35,6 +34,8 @@ import {
   PixiParticleBurst,
   RarityMaterialSweep,
   AnimatedGearFlourish,
+  RARITY_FX_POLICY,
+  burstRendererPreset,
 } from "@/features/boxDrops/fx";
 
 import {
@@ -252,19 +253,8 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
     playSound('project-complete', 0.5);
     gamepad.triggerHaptic(0.7, 0.9, 140);
 
-    if (particles && typeof window !== 'undefined') {
-      try {
-        confetti({
-          particleCount: 50,
-          spread: 80,
-          origin: { y: 0.6 },
-          colors: [rarityInfo.rayColor, '#ffffff', '#f59e0b', '#38bdf8'],
-        });
-      } catch {
-        // Fallback gracefully in headless test environments
-      }
-    }
-  }, [gamepad, particles, rarityInfo.rayColor]);
+    // Visual celebration is owned by the rarity FX policy (burst at reveal); no second particle system.
+  }, [gamepad]);
 
   // Phase transition scheduler
   const scheduleNextPhase = useCallback(
@@ -563,8 +553,12 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
                     <PixiParticleBurst preset="sparks" count={24} durationMs={600} />
                   </>
                 )}
-                {state.phase === "reveal" && (
-                  <PixiParticleBurst preset="motes" count={42} durationMs={1200} />
+                {state.phase === "reveal" && particles && RARITY_FX_POLICY[currentItem.rarity].burst && (
+                  <PixiParticleBurst
+                    preset={burstRendererPreset(RARITY_FX_POLICY[currentItem.rarity].burst!.preset)}
+                    count={RARITY_FX_POLICY[currentItem.rarity].burst!.count}
+                    durationMs={RARITY_FX_POLICY[currentItem.rarity].burst!.durationMs}
+                  />
                 )}
                 {/* 3D Hinged Lid Lifting Off during Open/Silhouette/Reveal Phase */}
                 {(state.phase === 'open' || state.phase === 'silhouette') && !reducedMotion && (
