@@ -23,7 +23,7 @@ Storyline stays free; monetisation stays optional cosmetics/gear only (see fligh
 
 ### HUD / viewport scaling
 1. **Guarantee Work / Overdrive dock visibility** in windowed short viewports (Issue #54 path): reduce `StudioRoom` min clamp when `ActiveProject` is open, or make middle column a flex scroll with pinned dock — do not require fullscreen. *(partial — dock clearance CSS var landed; Session drawer uses viewport-aware widths)*
-2. **Unify hotspot IDs** across Pixi (`liveRoom`, `tv`) and `StudioRoom` gamepad/chore aliases (`liveroom`, `crt`) so controller focus and badges always hit the same targets. *(open)*
+2. ~~**Unify hotspot IDs**~~ — **done**: `StudioRoom` gamepad list/names and `choreEngine` chore hotspots now use the Pixi ids (`liveRoom`, `tv`); live-room badge reads the authored chore so older saves still show it.
 3. ~~**Reposition DEV chrome**~~ — **done** (`5eaed315`): Settings opt-in, defaults OFF.
 4. ~~**Tag living studio canvas**~~ — **done**: `id="pixi-studio-canvas"` + `data-engine="pixi"`.
 

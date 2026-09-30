@@ -10,6 +10,7 @@ import { toast } from '@/hooks/use-toast';
 import { LocateFixed, Phone } from 'lucide-react';
 import { getTrophyInput } from '@/components/studio/studioDecorConfig';
 import { triggerScreenShake } from '@/utils/screenShake';
+import { AUTHORED_CHORES } from '@/simulation/choreEngine';
 import { useGamepad } from '@/hooks/useGamepad';
 import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
 import {
@@ -18,13 +19,13 @@ import {
   MotionButton,
 } from '@/components/motion/primitives';
 
-const STUDIO_HOTSPOTS: StudioHotspotId[] = ['console', 'phone', 'liveroom', 'shelf', 'crt', 'clock'];
+const STUDIO_HOTSPOTS: StudioHotspotId[] = ['console', 'phone', 'liveRoom', 'shelf', 'tv', 'clock'];
 const HOTSPOT_NAMES: Record<StudioHotspotId, string> = {
   console: 'Console Desk',
   phone: 'Studio Phone',
-  liveroom: 'Live Room',
+  liveRoom: 'Live Room',
   shelf: 'Vinyl Shelf',
-  crt: 'Charts & TV',
+  tv: 'Charts & TV',
   clock: 'Studio Clock',
 };
 
@@ -244,7 +245,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
         const choreState = gameState.choreState;
         if (!choreState) return null;
         const pendingConsoleChores = Object.values(choreState.chores).filter(c => c.hotspotId === 'console' && !c.completed);
-        const pendingLiveRoomChores = Object.values(choreState.chores).filter(c => c.hotspotId === 'liveroom' && !c.completed);
+        const pendingLiveRoomChores = Object.values(choreState.chores).filter(c => AUTHORED_CHORES[c.id]?.hotspotId === 'liveRoom' && !c.completed);
 
         return (
           <>
