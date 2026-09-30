@@ -46,12 +46,13 @@ with tempfile.TemporaryDirectory(prefix='rst-studio-kit-') as temp:
     for name in kit['models']:
         image = Image.open(renders / f'{name}.png').convert('RGBA')
         assert image.size == (256, 256), f'Unexpected canvas for {name}'
-        # Discard sub-visible shadow noise; preserve an alpha-safe two-pixel gutter.
-        alpha = image.getchannel('A').point(lambda a: 0 if a < 4 else a)
+        # Cycles shadow-catcher noise below 5% alpha can span the entire canvas.
+        alpha = image.getchannel('A').point(lambda a: 0 if a < 12 else a)
         image.putalpha(alpha)
         bounds = alpha.getbbox()
         assert bounds, f'Empty sprite {name}'
         left, top, right, bottom = bounds
+        assert left > 0 and top > 0 and right < 256 and bottom < 256, f'Clipped sprite or unbounded shadow for {name}'
         cropped.append((name, image.crop(bounds), left, top))
     atlas = Image.new('RGBA', (1024, 512))
     x = y = row_height = 2
@@ -71,7 +72,7 @@ with tempfile.TemporaryDirectory(prefix='rst-studio-kit-') as temp:
     (destination / 'studio-kit.json').write_text(json.dumps(atlas_json, indent=2) + '\n')
     manifest = {'assetId': 'rst-studio-kit-v1', 'sourceType': 'blender', 'author': 'Kenney; RST material/camera adaptation',
                 'creationTimestamp': datetime.now(timezone.utc).isoformat(), 'toolVersion': (renders / 'blender-version.txt').read_text().strip(),
-                'pipelineSteps': ['Pinned CC0 OBJ/MTL extraction', 'RST palette remap', '30 degree elevation, 45 degree azimuth orthographic bake', 'Shared soft lighting and transparent contact shadows', 'Alpha trimming, 2px gutters, lossless WebP atlas'],
+                'pipelineSteps': ['Pinned CC0 OBJ/MTL extraction', 'RST palette remap and front-facing rotation', '30 degree elevation, 45 degree azimuth orthographic bake', 'Shared soft lighting and transparent contact shadows', 'Alpha trimming, 2px gutters, lossless WebP atlas'],
                 'dimensions': {'width': 1024, 'height': 512}, 'paletteId': 'rst-studio-slate-oak', 'frameTags': kit['models'],
                 'checksum': hashlib.sha256((destination / 'studio-kit.webp').read_bytes()).hexdigest(),
                 'source': {**kit['source'], 'models': kit['models']}}
@@ -81,7 +82,9 @@ with tempfile.TemporaryDirectory(prefix='rst-studio-kit-') as temp:
     draw = ImageDraw.Draw(preview)
     for index, (name, image, _, _) in enumerate(cropped):
         px, py = (index % 5) * 200, (index // 5) * 200
-        preview.alpha_composite(image, (px + (200 - image.width) // 2, py + 20))
+        image = image.resize((image.width * 3, image.height * 3), Image.Resampling.LANCZOS)
+        image.thumbnail((180, 145), Image.Resampling.LANCZOS)
+        preview.alpha_composite(image, (px + (200 - image.width) // 2, py + 155 - image.height))
         draw.text((px + 8, py + 170), name, fill='#e0d5c3')
-    preview.save(destination / 'preview.png')
+    preview.save(kit_dir / 'preview.png')
     print(f'Packed {len(frames)} sprites; runtime atlas {(destination / "studio-kit.webp").stat().st_size:,} bytes')

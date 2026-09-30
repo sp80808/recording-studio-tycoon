@@ -23,6 +23,7 @@ import {
   type DecorLights,
 } from '@/components/studio/studioDecor';
 import { getEraDecor, trophyKey, type TrophyInput } from '@/components/studio/studioDecorConfig';
+import { addStudioProps, loadStudioKit, type StudioKitTextures } from '@/features/sprites/studioKit';
 
 export const calculateEffectiveResolution = (dpr: number, scale?: number) => {
   const clampedDpr = Math.max(1.0, Math.min(2.0, dpr || 1.0));
@@ -422,7 +423,8 @@ const buildScene = (
   height: number,
   state: StudioSceneState,
   onSelect?: (id: StudioHotspotId) => void,
-  renderer?: Renderer
+  renderer?: Renderer,
+  kitTextures?: StudioKitTextures | null,
 ): BuiltScene => {
   const root = new Container();
   const refs: SceneRefs = {
@@ -658,6 +660,7 @@ const buildScene = (
 
   /* ---- Live room booth: enclosed (walls, roof, header, foam, glass front) ---- */
   const liveWrap = buildLiveBooth();
+  if (kitTextures) addStudioProps(root, kitTextures, tier, visualEraId(state.eraId ?? 'analog60s'));
   const boothX0 = 1.0;
   const boothX1 = 3.5;
   const boothGlassY = 1.0;
@@ -1096,12 +1099,20 @@ const buildScene = (
     const upgrades = new Graphics();
     // Potted plant in the back-left corner
     const plantBase = iso(0.55, 1.5);
-    upgrades.ellipse(plantBase.x, plantBase.y, 12, 6).fill(0x1c2433);
-    upgrades.rect(plantBase.x - 8, plantBase.y - 16, 16, 16).fill(0x7a4a2b);
-    upgrades.circle(plantBase.x, plantBase.y - 30, 16).fill(0x3f7d4f);
-    upgrades.circle(plantBase.x - 10, plantBase.y - 24, 10).fill(0x4f9a5f);
-    upgrades.circle(plantBase.x + 10, plantBase.y - 26, 11).fill(0x357044);
+    if (!kitTextures) {
+      upgrades.ellipse(plantBase.x, plantBase.y, 12, 6).fill(0x1c2433);
+      upgrades.rect(plantBase.x - 8, plantBase.y - 16, 16, 16).fill(0x7a4a2b);
+      upgrades.circle(plantBase.x, plantBase.y - 30, 16).fill(0x3f7d4f);
+      upgrades.circle(plantBase.x - 10, plantBase.y - 24, 10).fill(0x4f9a5f);
+      upgrades.circle(plantBase.x + 10, plantBase.y - 26, 11).fill(0x357044);
+    }
     upgrades.zIndex = Z.depth + plantBase.y;
+    // First gold record frame on the right wall
+    const frameA = iso(6.6, 0);
+    const rec = { x: frameA.x, y: frameA.y - 88 };
+    upgrades.rect(rec.x - 12, rec.y - 12, 24, 24).fill(0x2a1f0d);
+    upgrades.rect(rec.x - 12, rec.y - 12, 24, 24).stroke({ width: 3, color: grade.accent });
+    upgrades.circle(rec.x, rec.y, 8).fill(0xd9a441);
     root.addChild(upgrades);
   }
 
@@ -1109,10 +1120,12 @@ const buildScene = (
     const lounge = new Graphics();
     // Green-room sofa along the front-right corner
     const sofa = iso(6.0, 5.6);
-    lounge.roundRect(sofa.x - 26, sofa.y - 26, 52, 24, 6).fill(0x5b3f6e);
-    lounge.roundRect(sofa.x - 26, sofa.y - 34, 52, 12, 5).fill(0x6d4c85);
-    lounge.rect(sofa.x - 22, sofa.y - 2, 6, 6).fill(0x2a1f33);
-    lounge.rect(sofa.x + 16, sofa.y - 2, 6, 6).fill(0x2a1f33);
+    if (!kitTextures) {
+      lounge.roundRect(sofa.x - 26, sofa.y - 26, 52, 24, 6).fill(0x5b3f6e);
+      lounge.roundRect(sofa.x - 26, sofa.y - 34, 52, 12, 5).fill(0x6d4c85);
+      lounge.rect(sofa.x - 22, sofa.y - 2, 6, 6).fill(0x2a1f33);
+      lounge.rect(sofa.x + 16, sofa.y - 2, 6, 6).fill(0x2a1f33);
+    }
     lounge.zIndex = Z.depth + sofa.y;
     root.addChild(lounge);
     // Road case next to the console (its own node so it sorts by its own depth)
@@ -1129,9 +1142,11 @@ const buildScene = (
     const pro = new Graphics();
     // Second workstation rig
     const rig = iso(7.0, 3.2);
-    pro.rect(rig.x - 16, rig.y - 34, 32, 34).fill(0x2a221c);
-    pro.rect(rig.x - 12, rig.y - 29, 24, 16).fill(grade.accent);
-    pro.rect(rig.x - 16, rig.y - 34, 32, 34).stroke({ width: 2, color: 0x120d09 });
+    if (!kitTextures) {
+      pro.rect(rig.x - 16, rig.y - 34, 32, 34).fill(0x2a221c);
+      pro.rect(rig.x - 12, rig.y - 29, 24, 16).fill(grade.accent);
+      pro.rect(rig.x - 16, rig.y - 34, 32, 34).stroke({ width: 2, color: 0x120d09 });
+    }
     pro.zIndex = Z.depth + rig.y;
     root.addChild(pro);
   }
@@ -1238,6 +1253,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const sceneRef = useRef<BuiltScene | null>(null);
+  const kitTexturesRef = useRef<StudioKitTextures | null>(null);
   const stateRef = useRef<StudioSceneState>({ ...DEFAULT_STATE, ...state });
   const selectRef = useRef(onHotspotSelect);
   const anchorsCbRef = useRef(onHotspotAnchors);
@@ -1320,7 +1336,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
       app.screen.height,
       stateRef.current,
       (id) => { if (!suppressTapRef.current) selectRef.current?.(id); },
-      app.renderer
+      app.renderer,
+      kitTexturesRef.current,
     );
     reelKeyRef.current = '';
     const zoom = cameraRef.current.zoom ?? 1.0;
@@ -1340,6 +1357,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
       app.stage.addChild(scene.overlayRoot);
     }
     sceneRef.current = scene;
+    app.canvas.dataset.studioArt = kitTexturesRef.current ? 'cc0-v1' : 'built-in';
   };
 
   useEffect(() => {
@@ -1447,6 +1465,11 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         lastW = app.screen.width;
         lastH = app.screen.height;
         rebuild();
+        void loadStudioKit().then(textures => {
+          if (disposed || !textures) return;
+          kitTexturesRef.current = textures;
+          rebuild();
+        });
 
         const markCanvasInput = () => {
           lastCanvasInputRef.current = performance.now();

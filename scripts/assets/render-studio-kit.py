@@ -7,9 +7,10 @@ import math
 from pathlib import Path
 import sys
 import bpy
-from mathutils import Vector
+from mathutils import Matrix, Vector
 
-root, output = map(Path, sys.argv[sys.argv.index('--') + 1:])
+arguments = sys.argv[sys.argv.index('--') + 1:]
+root, output = map(Path, arguments[:2])
 kit = json.loads((root / 'art-source/studio-kit/kit.json').read_text())
 scene = bpy.context.scene
 for obj in list(scene.objects):
@@ -56,7 +57,7 @@ def linear(value):
     return value / 12.92 if value <= 0.04045 else ((value + 0.055) / 1.055) ** 2.4
 
 output.mkdir(parents=True, exist_ok=True)
-for name in kit['models']:
+for name in arguments[2:] or kit['models']:
     before = set(bpy.data.objects)
     bpy.ops.wm.obj_import(filepath=str(root / f'art-source/studio-kit/models/{name}.obj'), forward_axis='NEGATIVE_Z', up_axis='Y')
     objects = list(set(bpy.data.objects) - before)
@@ -65,6 +66,7 @@ for name in kit['models']:
                      (min(v.y for v in bounds) + max(v.y for v in bounds)) / 2, min(v.z for v in bounds)))
     for obj in objects:
         obj.location -= center
+        obj.matrix_world = Matrix.Rotation(math.pi, 4, 'Z') @ obj.matrix_world
         for material in obj.data.materials:
             color = kit['palette'].get(material.name.split('.')[0], '546071')
             rgb = tuple(linear(int(color[i:i+2], 16) / 255) for i in (0, 2, 4))

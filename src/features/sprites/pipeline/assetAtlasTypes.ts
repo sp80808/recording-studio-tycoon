@@ -85,4 +85,6 @@ export interface AssetProvenanceManifest {
   palette?: string[];
   generationSteps?: string[];
   sourceChecksum?: string;
+  /** CC0 pack provenance (e.g. studio-kit models): archive + included models. */
+  source?: { url: string; downloadUrl: string; license: 'CC0-1.0'; archiveSha256: string; models: string[] };
 }
