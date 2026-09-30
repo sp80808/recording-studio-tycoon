@@ -5,6 +5,7 @@ import { initializeSkillsStaff } from '@/utils/skillUtils'; // Added import
 import { calculateStudioSkillBonus, getEquipmentBonuses as getBaseEquipmentBonuses } from './gameUtils'; // Import from gameUtils and rename
 import { availableMods } from '@/data/equipmentMods'; // Import available mods
 import { bumpMatchRatingForReturn } from '@/game-mechanics/relationship-management'; // Issue #10: repeat-client match bump
+import { deriveBrief } from '@/rpg/projectBrief';
 import { getEraGigPool, pickWeightedGig, type WeightedGig } from '@/data/gigTemplates';
 // Assuming getMoodEffectiveness will be moved to playerUtils or passed as arg
 // For now, let's define a placeholder or expect it as an argument for calculateStaffWorkContribution
@@ -131,6 +132,7 @@ export const generateNewProjects = (count: number, playerLevel: number = 1, curr
       attempts++;
     } while (usedTitles.has(project.title) && attempts < 50); // Prevent infinite loops
     
+    project.brief = deriveBrief(project);
     // Add the unique title to our set and the project to our list
     usedTitles.add(project.title);
     projects.push(project);
