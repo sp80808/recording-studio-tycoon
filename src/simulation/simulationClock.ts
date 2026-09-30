@@ -1,3 +1,4 @@
+import { recordGearUse } from '@/features/usedGear/session';
 import { GameState, Project, StaffMember } from '@/types/game';
 import {
   applyEquipmentBonusesToWorkPoints,
@@ -262,10 +263,11 @@ export const advanceSimulation = (
     const energyCost = PASSIVE_STAFF_ENERGY_COST_PER_SESSION * sessionFraction * appliedRatio;
     const moodCost = PASSIVE_STAFF_MOOD_COST_PER_SESSION * sessionFraction * appliedRatio;
 
+    const gearUse = recordGearUse(state, updatedProject, sessionFraction * appliedRatio);
     state = {
-      ...state,
-      activeProject: updatedProject,
-      hiredStaff: state.hiredStaff.map(staff => {
+      ...gearUse.state,
+      activeProject: gearUse.project,
+      hiredStaff: gearUse.state.hiredStaff.map(staff => {
         if (!assignedStaff.some(assigned => assigned.id === staff.id)) return staff;
         const before = staff.energy;
         const after = Math.max(0, before - energyCost);

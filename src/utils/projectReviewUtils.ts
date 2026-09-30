@@ -360,6 +360,8 @@ export const generateProjectReview = (
   }
 
 
+  if (project.gearNotes?.length) reviewSnippet += ` Gear: ${project.gearNotes.slice(-3).join(" ")}`;
+
   return {
     projectId: project.id,
     projectTitle: project.title,

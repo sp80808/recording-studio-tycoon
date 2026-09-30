@@ -1,3 +1,4 @@
+import { asEquipmentInstance, refreshGearForDay } from '@/features/usedGear/economy';
 import { GameState, Project, FocusAllocation } from '@/types/game';
 import { createDefaultStudioRooms } from '@/utils/studioRoomUtils';
 import {
@@ -21,7 +22,7 @@ const DEFAULT_FOCUS_ALLOCATION: FocusAllocation = {
  * @returns The processed game state.
  */
 export const migrateAndInitializeGameState = (loadedGameState: GameState): GameState => {
-  const processedState = { ...loadedGameState };
+  const processedState = { ...loadedGameState, ownedEquipment: (loadedGameState.ownedEquipment ?? []).map(asEquipmentInstance) };
 
   // Ensure activeProjects have focusAllocation
   if (processedState.activeProjects) {
@@ -175,5 +176,5 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
 
   // Branching storylines (bead 283.3): legacy saves without storylineState
   // receive a deterministic campaign seed without mutating other fields.
-  return initializeStorylineState(processedState);
+  return refreshGearForDay(initializeStorylineState(processedState));
 };
