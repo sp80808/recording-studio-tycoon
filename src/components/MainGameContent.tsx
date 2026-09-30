@@ -284,7 +284,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   };
 
   // Band Management Integration
-  const { createBand, startTour, createOriginalTrack } = useBandManagement(gameState, setGameState);
+  const { createBand, startTour, playShow, createOriginalTrack } = useBandManagement(gameState, setGameState);
 
 
 
@@ -442,6 +442,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
               onEraTransition={handleEraTransition}
               createBand={createBand}
               startTour={startTour}
+              playShow={playShow}
               createOriginalTrack={createOriginalTrack}
               startResearchMod={startResearchMod}
             />

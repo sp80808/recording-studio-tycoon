@@ -4,6 +4,7 @@ import { GameState } from '@/types/game';
 import { Band } from '@/types/bands'; // OriginalTrackProject and SessionMusician removed
 import { generateBandName } from '@/utils/bandUtils';
 import { toast } from '@/hooks/use-toast';
+import { canPlayShow, resolveShow, ShowPlan } from '@/simulation/liveShows';
 
 export const useBandManagement = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
   const createBand = useCallback((bandName: string, memberIds: string[]) => {
@@ -142,6 +143,62 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
     });
   }, [gameState.playerBands, setGameState]);
 
+  const playShow = useCallback((bandId: string, plan: ShowPlan) => {
+    const band = gameState.playerBands.find(b => b.id === bandId);
+    if (!band) return;
+
+    const check = canPlayShow(
+      { fame: band.fame, isOnTour: band.tourStatus.isOnTour, lastShowDay: band.lastShowDay },
+      gameState.reputation,
+      plan,
+      gameState.money,
+      gameState.currentDay
+    );
+    if (!check.ok) {
+      toast({
+        title: "🎤 Can't Book Show",
+        description: check.reason,
+        className: "bg-stone-800 border-stone-600 text-white",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const active = band.pastReleases.filter(r => r.isActive);
+    const hitQuality = active.length
+      ? active.reduce((sum, r) => sum + r.reviewScore, 0) / active.length
+      : 5;
+    const result = resolveShow(
+      { bandId, fame: band.fame, hitQuality },
+      plan,
+      `${gameState.saveSeed ?? 'show'}:${bandId}:${gameState.currentDay}`
+    );
+
+    setGameState(prev => ({
+      ...prev,
+      money: prev.money + result.net,
+      reputation: prev.reputation + result.reputationGain,
+      playerBands: prev.playerBands.map(b =>
+        b.id === bandId
+          ? { ...b, fame: b.fame + result.fameGain, lastShowDay: prev.currentDay }
+          : b
+      )
+    }));
+
+    const verdictTitle = {
+      flop: '😬 Empty Room',
+      ok: '🎤 Decent Night',
+      hit: '🔥 Great Show',
+      legendary: '🌟 Sold Out & Legendary'
+    }[result.verdict];
+    toast({
+      title: verdictTitle,
+      description: `${band.bandName} drew ${result.attendance} fans. Net ${result.net >= 0 ? '+' : '-'}$${Math.abs(result.net)}, +${result.fameGain} fame.`,
+      className: "bg-stone-800 border-stone-600 text-white",
+      duration: 4000
+    });
+  }, [gameState.playerBands, gameState.reputation, gameState.money, gameState.currentDay, gameState.saveSeed, setGameState]);
+
   const createOriginalTrack = useCallback((bandId: string) => {
     console.log('Creating original track for band:', bandId);
     
@@ -241,6 +298,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
   return {
     createBand,
     startTour,
+    playShow,
     createOriginalTrack,
     processTourIncome
   };

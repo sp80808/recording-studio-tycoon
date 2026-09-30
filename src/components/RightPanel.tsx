@@ -1,3 +1,4 @@
+import { ShowPlan } from '@/simulation/liveShows';
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -50,6 +51,7 @@ export interface RightPanelProps {
   onEraTransition: () => { fromEra?: string; toEra?: string } | void;
   createBand: (bandName: string, memberIds: string[]) => void;
   startTour: (bandId: string) => void;
+  playShow: (bandId: string, plan: ShowPlan) => void;
   createOriginalTrack: (bandId: string) => void;
   startResearchMod?: (staffId: string, modId: string) => boolean;
 }
@@ -70,6 +72,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   onEraTransition,
   createBand,
   startTour,
+  playShow,
   createOriginalTrack,
   startResearchMod,
   requestedTab
@@ -490,6 +493,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           gameState={gameState}
           onCreateBand={createBand}
           onStartTour={startTour}
+          onPlayShow={playShow}
           onCreateOriginalTrack={createOriginalTrack}
         />
       )}
