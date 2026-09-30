@@ -129,8 +129,32 @@ export const buildPlankFloor = (spec: EraDecorSpec, seed: string | number): Grap
 };
 
 /** A patterned rug: dark field, gold border, inner medallion. Replaces the flat two-tone rug. */
+/** Bottom-centre anchored prop sprite, sized to `height` world px. `anchorY` is the feet row as a fraction of the texture. */
+const addPropSprite = (parent: Container, tex: Texture, x: number, y: number, anchorYFromBottom: number, height: number) => {
+  const sp = new Sprite(tex);
+  sp.anchor.set(0.5, 1 - anchorYFromBottom);
+  sp.scale.set(height / tex.height);
+  sp.position.set(x, y);
+  parent.addChild(sp);
+};
+
 export const buildRug = (): Graphics => {
   const g = new Graphics();
+  const rugTex = getPropTexture('rug');
+  if (rugTex) {
+    // Flat rug art sheared onto the floor plane: u along iso x (3..6), v along iso y (3.5..5).
+    const o = iso(3, 3.5);
+    const ux = iso(6, 3.5);
+    const vy = iso(3, 5);
+    const rug = new Sprite(rugTex);
+    rug.setFromMatrix(new Matrix(
+      (ux.x - o.x) / rugTex.width, (ux.y - o.y) / rugTex.width,
+      (vy.x - o.x) / rugTex.height, (vy.y - o.y) / rugTex.height,
+      o.x, o.y,
+    ));
+    g.addChild(rug);
+    return g;
+  }
   isoQuad(g, 3, 3.5, 6, 5);
   g.fill(0x6e2c2c);
   isoQuad(g, 3.08, 3.58, 5.92, 4.92);
@@ -251,19 +275,29 @@ export const buildWallDressing = (
   const prop = propG;
   if (spec.prop === 'brass-lamp') {
     const b = iso(7.55, 2.3);
-    prop.ellipse(b.x, b.y, 9, 4).fill(0x2a1c10);
-    prop.rect(b.x - 1.2, b.y - 58, 2.4, 58).fill(0xc9974a);
-    prop.poly([b.x - 13, b.y - 60, b.x + 13, b.y - 60, b.x + 8, b.y - 76, b.x - 8, b.y - 76]).fill(0xf0cf95);
-    prop.poly([b.x - 13, b.y - 60, b.x + 13, b.y - 60, b.x + 8, b.y - 76, b.x - 8, b.y - 76]).stroke({ width: 1, color: 0x8a6531 });
+    const lampTex = getPropTexture('brassLamp');
+    if (lampTex) {
+      addPropSprite(prop, lampTex, b.x, b.y + 2, 28 / 98, 86);
+    } else {
+      prop.ellipse(b.x, b.y, 9, 4).fill(0x2a1c10);
+      prop.rect(b.x - 1.2, b.y - 58, 2.4, 58).fill(0xc9974a);
+      prop.poly([b.x - 13, b.y - 60, b.x + 13, b.y - 60, b.x + 8, b.y - 76, b.x - 8, b.y - 76]).fill(0xf0cf95);
+      prop.poly([b.x - 13, b.y - 60, b.x + 13, b.y - 60, b.x + 8, b.y - 76, b.x - 8, b.y - 76]).stroke({ width: 1, color: 0x8a6531 });
+    }
   } else if (spec.prop === 'lava-lamp') {
     const t = iso(7.45, 1.1);
-    prop.poly([t.x - 15, t.y - 20, t.x + 15, t.y - 20, t.x + 15, t.y - 12, t.x - 15, t.y - 12]).fill(0x2c2a27);
-    prop.rect(t.x - 12, t.y - 12, 3, 12).fill(0x1c1a18);
-    prop.rect(t.x + 9, t.y - 12, 3, 12).fill(0x1c1a18);
-    prop.roundRect(t.x - 5, t.y - 52, 10, 32, 4).fill({ color: 0xff7a45, alpha: 0.22 });
-    prop.roundRect(t.x - 5, t.y - 52, 10, 32, 4).stroke({ width: 1, color: 0xffb08a, alpha: 0.8 });
-    prop.rect(t.x - 6, t.y - 22, 12, 4).fill(0x8d8478);
-    prop.rect(t.x - 4, t.y - 56, 8, 4).fill(0x8d8478);
+    const lavaTex = getPropTexture('lavaLamp');
+    if (lavaTex) {
+      addPropSprite(prop, lavaTex, t.x, t.y, 24 / 99, 62);
+    } else {
+      prop.poly([t.x - 15, t.y - 20, t.x + 15, t.y - 20, t.x + 15, t.y - 12, t.x - 15, t.y - 12]).fill(0x2c2a27);
+      prop.rect(t.x - 12, t.y - 12, 3, 12).fill(0x1c1a18);
+      prop.rect(t.x + 9, t.y - 12, 3, 12).fill(0x1c1a18);
+      prop.roundRect(t.x - 5, t.y - 52, 10, 32, 4).fill({ color: 0xff7a45, alpha: 0.22 });
+      prop.roundRect(t.x - 5, t.y - 52, 10, 32, 4).stroke({ width: 1, color: 0xffb08a, alpha: 0.8 });
+      prop.rect(t.x - 6, t.y - 22, 12, 4).fill(0x8d8478);
+      prop.rect(t.x - 4, t.y - 56, 8, 4).fill(0x8d8478);
+    }
   } else if (spec.prop === 'neon-sign') {
     // Backing plate for the neon bolt on the left wall
     g.poly(leftWallQuad(0.25, 1.2, 76, 122)).fill({ color: 0x0d0a12, alpha: 0.95 });
@@ -271,8 +305,13 @@ export const buildWallDressing = (
   } else if (spec.prop === 'led-strip') {
     // Ring light on a stand, front-right corner of the window side
     const s = iso(7.3, 1.6);
-    prop.ellipse(s.x, s.y, 8, 3.5).fill(0x1a1a1f);
-    prop.rect(s.x - 1, s.y - 64, 2, 64).fill(0x2c2c34);
+    const ringTex = getPropTexture('ringLight');
+    if (ringTex) {
+      addPropSprite(prop, ringTex, s.x, s.y + 2, 36 / 113, 88);
+    } else {
+      prop.ellipse(s.x, s.y, 8, 3.5).fill(0x1a1a1f);
+      prop.rect(s.x - 1, s.y - 64, 2, 64).fill(0x2c2c34);
+    }
   }
   void tier;
   return { container, props: prop as unknown as Container };

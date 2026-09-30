@@ -110,3 +110,12 @@ the scene falls back to the original procedural drawing if a texture is missing.
 | Desk notepad | `public/assets/props/notepad.png` | `studioDecor.ts` `buildDeskProps` (sheared onto desk plane) |
 
 Swap for Kenney/OGA CC0 art later by replacing the PNGs (same sizes).
+
+Second batch (same in-house CC0 pipeline, same folder):
+
+| Sprite | File | Used in |
+| --- | --- | --- |
+| Floor rug | `public/assets/props/rug.png` | `studioDecor.ts` `buildRug` (sheared onto floor plane) |
+| Brass floor lamp (1960s) | `public/assets/props/brass-lamp.png` | `studioDecor.ts` era prop |
+| Lava lamp (2000s) | `public/assets/props/lava-lamp.png` | `studioDecor.ts` era prop (animated blobs still drawn on top) |
+| Ring light (2020s) | `public/assets/props/ring-light.png` | `studioDecor.ts` era prop |
