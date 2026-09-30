@@ -54,6 +54,8 @@ describe('callback subplots', () => {
   it('each callback is reachable from at least one flag set by a non-callback subplot', () => {
     const prior = new Set<string>();
     const cb = new Set(CALLBACK_SUBPLOTS.map((s) => s.id));
+    // Campaign node titles are written to storyFlags on completion.
+    for (const t of ['Studio Trailblazer', 'Tone Connoisseur', 'Commercial Machine']) prior.add(t);
     for (const s of EMERGENT_SUBPLOTS) if (!cb.has(s.id)) for (const st of s.stages) for (const o of st.options) prior.add(o.storyFlag);
     for (const s of CALLBACK_SUBPLOTS) {
       const reachable = (s.eras ?? ['analog60s', 'digital80s', 'internet2000s', 'streaming2020s']).some((era) =>

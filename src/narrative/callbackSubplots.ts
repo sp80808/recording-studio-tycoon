@@ -511,4 +511,64 @@ export const CALLBACK_SUBPLOTS: readonly EmergentSubplot[] = [
       },
     ],
   },
+
+  // ───────────── Campaign titles ─────────────
+  {
+    id: 'subplot_title_reputation',
+    title: 'The Title Gets Noticed',
+    kicker: 'CAMPAIGN // A NAME THAT TRAVELS',
+    minDay: 30,
+    daysBetweenStages: 5,
+    triggerCondition: hasFlag('Studio Trailblazer', 'Tone Connoisseur', 'Commercial Machine'),
+    becauseOf: {
+      'Studio Trailblazer': 'earned the title Studio Trailblazer',
+      'Tone Connoisseur': 'earned the title Tone Connoisseur',
+      'Commercial Machine': 'earned the title Commercial Machine',
+    },
+    stages: [
+      {
+        stageNumber: 1,
+        title: 'The Title on the Door',
+        context:
+          'A trade paper has picked up the title your studio earned on the campaign trail and wants a profile. The angle they choose will follow you.',
+        options: [
+          {
+            id: 'title_lean_in',
+            label: 'Lean into the title for the profile',
+            flavorText: 'Let the label do some of the talking.',
+            storyFlag: 'leaned_into_title',
+            consequences: { moneyDelta: 0, repDelta: 9, narrativeOutcome: 'The profile runs with your name and your title above it.' },
+          },
+          {
+            id: 'title_play_down',
+            label: 'Play it down and talk about the people instead',
+            flavorText: 'Titles fade. Crews last.',
+            storyFlag: 'played_down_title',
+            consequences: { moneyDelta: 0, repDelta: 6, narrativeOutcome: 'The piece is warmer than expected, and your crew are mentioned by name.' },
+          },
+        ],
+      },
+      {
+        stageNumber: 2,
+        title: 'Living Up to It',
+        context: 'A big client books the studio because of the title. They expect the title to show up in the room, not just in print.',
+        options: [
+          {
+            id: 'title_overdeliver',
+            label: 'Clear the diary and over-deliver',
+            flavorText: 'Earn it again, this time in front of a client.',
+            storyFlag: 'lived_up_to_title',
+            consequences: { moneyDelta: -300, repDelta: 12, narrativeOutcome: 'The client leaves a testimonial that quotes the title back at you.' },
+          },
+          {
+            id: 'title_standard_job',
+            label: 'Deliver a solid, standard job',
+            flavorText: 'A good record is a good record.',
+            storyFlag: 'coasted_on_title',
+            consequences: { moneyDelta: 500, repDelta: 2, narrativeOutcome: 'Paid, pleased, and quietly unimpressed.' },
+          },
+        ],
+      },
+    ],
+  },
 ];

@@ -9,7 +9,7 @@
 Subplot flags only affected the ending epilogue. Choices did not change what the game offered next, so branching felt cosmetic mid-game.
 
 ## Addition: callback subplots (`callbackSubplots.ts`)
-Nine two-beat subplots that spawn only after the player left a specific flag in an earlier subplot. They use the existing `EmergentSubplot` shape and are merged into `EMERGENT_SUBPLOTS`, so no engine, save or UI changes were needed.
+Ten two-beat subplots that spawn only after the player left a specific flag in an earlier subplot. They use the existing `EmergentSubplot` shape and are merged into `EMERGENT_SUBPLOTS`, so no engine, save or UI changes were needed.
 
 | Callback subplot | Needs one of | Theme |
 |---|---|---|
@@ -28,9 +28,11 @@ Their own flags feed the epilogue: `held_the_line`, `confessed_old_deal`, `credi
 - **Chronicle link:** each callback has a `becauseOf` map; its first beat is logged as "Because you signed the union scale: …" so the player sees the cause.
 - **Rival finale coda:** a late-game flag (`held_the_line`, `took_the_second_offer`, `confessed_old_deal`, `stonewalled_journalist`, `credited_the_crew`, `took_the_spotlight`) adds one sentence to the rival's closing line.
 
+- **Title callback:** `subplot_title_reputation` spawns once the studio has earned an Act I/II campaign title (`Studio Trailblazer`, `Tone Connoisseur`, `Commercial Machine`), tying the campaign spine to the subplot layer.
+
 ## Ideas for later (not built)
 - Third-beat "consequence" stage for the highest-impact callbacks.
-- Callbacks keyed to playstyle arc rewards (e.g. Mogul of the Airwaves unlocks a hostile-takeover subplot).
+- More title-keyed callbacks (Act III titles are flags too, but the campaign ends with them).
 
 ## Checks
 `tests/callback-subplots.check.ts` (run by `pnpm test`): unique ids, two stages, unique flags, gating on flags and era, every callback reachable from an existing flag.
