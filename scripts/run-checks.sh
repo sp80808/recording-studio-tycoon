@@ -20,6 +20,10 @@ echo "=== talents & atomicity ==="
 ./node_modules/.bin/esbuild tests/talents-atomicity.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-talents.cjs --alias:@=./src >/dev/null
 node /tmp/rst-talents.cjs
 
+echo "=== flavour copy ==="
+./node_modules/.bin/esbuild tests/flavour-copy.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-flavour-copy.cjs --alias:@=./src >/dev/null
+node /tmp/rst-flavour-copy.cjs
+
 echo "=== studio synergies ==="
 ./node_modules/.bin/esbuild tests/synergies.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-synergies.cjs --alias:@=./src >/dev/null
 node /tmp/rst-synergies.cjs

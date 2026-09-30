@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { EMPTY_STATES } from '@/data/flavour';
 import { ArrowRight, BookOpen, Check, ChevronDown, Circle, Feather, Flag, Scroll, Sparkles, Swords, Target, Zap } from 'lucide-react';
 import { GameState } from '@/types/game';
 import { checkDailyChallenge } from '@/utils/dailyChallenges';
@@ -267,7 +268,7 @@ export function CareerHub({
               <div>
                 <p className="rst-kicker mb-1.5">Studio chronicle</p>
                 {chronicle.length === 0 ? (
-                  <p className="text-stone-400">Nothing written yet — the first chapter opens when a story beat finds you.</p>
+                  <p className="text-stone-400">{EMPTY_STATES.chronicle.title} {EMPTY_STATES.chronicle.hint}</p>
                 ) : (
                   <ol className="space-y-2.5">
                     {chronicle.slice(0, 12).map((entry, i) => {
