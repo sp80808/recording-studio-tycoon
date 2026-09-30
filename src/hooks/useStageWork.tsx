@@ -469,7 +469,7 @@ export const useStageWork = ({
         : prev.choreState;
 
       const nextPendingCrates = prev.pendingCrates ? [...prev.pendingCrates] : [];
-      if (stageCompleted && completedGrade?.grade === 'S' && Math.random() < 0.25) {
+      if (stageCompleted && completedGrade?.grade === 'Gold' && Math.random() < 0.15) {
         nextPendingCrates.push({
           id: `crate-sgrade-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
           era: prev.selectedEra || '1970s',
