@@ -213,7 +213,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
   if (!gameState.activeProject) {
     return (
-      <div className="flex-1 space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-4">
         {/* Studio Header */}
         <div className="bg-purple-500/[0.08] border border-purple-500/30 rounded-lg p-3">
           <div className="flex items-center gap-2">
@@ -897,7 +897,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
         </div>
 
         {/* Industrial Console Transport Dock */}
-        <div className="shrink-0 pt-2.5 mt-2 border-t border-stone-800 bg-stone-950/95 relative z-10">
+        <div className="rst-transport-dock shrink-0 pt-2.5 mt-2 border-t border-stone-800 bg-stone-950/95 relative z-10">
           {takeState === 'tracking' ? (
             <div className="space-y-2">
               <PocketMeter
@@ -907,7 +907,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
               />
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="rst-transport-stack space-y-2">
               <div className="flex items-center justify-between gap-2">
                 {lastTakeGrade && (
                   <div className="px-2 py-1 flex-1 text-center text-xs font-mono font-bold tracking-wide text-amber-300 bg-amber-950/60 border border-amber-500/40 rounded-[2px]">

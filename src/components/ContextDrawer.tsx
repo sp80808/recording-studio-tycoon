@@ -182,7 +182,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
               className={`rst-modal pointer-events-auto flex flex-col h-full ${widthStyle} ${className}`}
             >
               {/* Header */}
-              <div className="shrink-0 px-5 pt-4 pb-3 border-b border-[var(--rst-line)]">
+              <div className="studio-drawer-head shrink-0 px-5 pt-4 pb-3 border-b border-[var(--rst-line)]">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="rst-kicker">{subtitle || t('context_drawer_kicker')}</p>
@@ -213,7 +213,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
                   <div
                     role="tablist"
                     aria-label={t('context_drawer_tabs_aria')}
-                    className="mt-3 grid gap-1 rounded-xl border border-[var(--rst-line)] bg-black/25 p-1"
+                    className="studio-drawer-tabs mt-3 grid gap-1 rounded-xl border border-[var(--rst-line)] bg-black/25 p-1"
                     style={{ gridTemplateColumns: `repeat(${TAB_CONFIGS.length}, minmax(0, 1fr))` }}
                   >
                     {TAB_CONFIGS.map((tab) => {
@@ -252,7 +252,15 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
               </div>
 
               {/* Drawer Content Body */}
-              <div className="feel-stagger flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
+              <div
+                className={`feel-stagger flex-1 min-h-0 ${
+                  width === 'session'
+                    ? // Session console: body is a bounded flex column so the work area scrolls on its own
+                      // and the transport dock (Take / Overdrive) stays pinned inside the viewport.
+                      'flex flex-col overflow-hidden p-2 sm:p-4 gap-3'
+                    : 'overflow-y-auto p-4 space-y-4'
+                }`}
+              >
                 {children}
               </div>
 
