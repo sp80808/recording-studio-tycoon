@@ -169,6 +169,8 @@ export interface StudioSceneState {
   eraId?: string;
   /** Studio tier 1-5 from ProgressionSystem — drives visible room upgrades (bead ifx.3) */
   roomTier?: number;
+  /** Premises tier (#70): 1 adds the project-studio client bench + storage rack. */
+  premisesTier?: number;
   /** Records + achievements hung on the trophy wall (derived from the settlement ledger). */
   trophies?: TrophyInput;
   /** Stable per-run seed so plank layout / motes are identical across rebuilds. */
@@ -1138,6 +1140,28 @@ const buildScene = (
     root.addChild(roadCase);
   }
 
+  if ((state.premisesTier ?? 0) >= 1) {
+    // Project studio (#70): client waiting bench + wall-side storage rack.
+    const bench = new Graphics();
+    const b = iso(1.4, 5.4);
+    bench.roundRect(b.x - 30, b.y - 14, 60, 12, 4).fill(0x6b4a2f);
+    bench.roundRect(b.x - 30, b.y - 24, 60, 10, 4).fill(0x8a6340);
+    bench.rect(b.x - 26, b.y - 2, 5, 8).fill(0x2a1f14);
+    bench.rect(b.x + 21, b.y - 2, 5, 8).fill(0x2a1f14);
+    bench.zIndex = Z.depth + b.y;
+    root.addChild(bench);
+    const rack = new Graphics();
+    const r = iso(0.7, 3.3);
+    rack.rect(r.x - 16, r.y - 58, 32, 58).fill(0x2b3039);
+    rack.rect(r.x - 16, r.y - 58, 32, 58).stroke({ width: 2, color: 0x4c5769 });
+    for (let i = 0; i < 4; i++) {
+      rack.rect(r.x - 13, r.y - 54 + i * 13, 26, 9).fill(0x3d4452);
+      rack.circle(r.x + 9, r.y - 49.5 + i * 13, 1.8).fill(i % 2 ? 0x59d98a : 0xf0b84a);
+    }
+    rack.zIndex = Z.depth + r.y;
+    root.addChild(rack);
+  }
+
   if (tier >= 4) {
     const pro = new Graphics();
     // Second workstation rig
@@ -1315,7 +1339,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   }, [resetCameraKey]);
 
   // Structural key: only layout-affecting state triggers a scene rebuild
-  const structuralKey = `${state?.staffOnFloor ?? 1}|${state?.ownedEquipment ?? 3}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${trophyKey(state?.trophies ?? { platinum: 0, gold: 0, awards: 0 })}|${state?.decorSeed ?? 'studio'}`;
+  const structuralKey = `${state?.staffOnFloor ?? 1}|${state?.ownedEquipment ?? 3}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${state?.premisesTier ?? 0}|${trophyKey(state?.trophies ?? { platinum: 0, gold: 0, awards: 0 })}|${state?.decorSeed ?? 'studio'}`;
 
   // Rebuild the room (new window size or layout change)
   const rebuild = () => {
