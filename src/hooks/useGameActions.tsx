@@ -295,7 +295,14 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     if (newDay % 3 === 0) {
       setGameState(prev => ({
         ...prev,
-        availableCandidates: generateCandidates(premisesCandidateCount(prev))
+        availableCandidates: generateCandidates({
+          count: premisesCandidateCount(prev),
+          saveSeed: prev.saveSeed ?? 4242,
+          day: newDay,
+          era: prev.selectedEra || prev.currentEra,
+          year: prev.currentYear,
+          batchKey: `day-roll:${newDay}`,
+        })
       }));
     }
 
@@ -333,7 +340,14 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
 
     setGameState(prev => ({
       ...spend(prev, cost, { category: 'marketing', memo: 'Candidate search' }),
-      availableCandidates: generateCandidates(premisesCandidateCount(prev))
+      availableCandidates: generateCandidates({
+        count: premisesCandidateCount(prev),
+        saveSeed: prev.saveSeed ?? 4242,
+        day: prev.currentDay,
+        era: prev.selectedEra || prev.currentEra,
+        year: prev.currentYear,
+        batchKey: `refresh:${prev.currentDay}:${prev.availableCandidates.map(c => c.id).join(',')}`,
+      })
     }));
 
     gameAudio.playUISound('notice');

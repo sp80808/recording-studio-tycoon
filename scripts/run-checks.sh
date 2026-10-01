@@ -7,6 +7,10 @@ cd "$(dirname "$0")/.."
 echo "=== typecheck (tsc must stay at zero errors) ==="
 ./node_modules/.bin/tsc -p tsconfig.app.json --noEmit
 
+echo "=== hiring limits (space + reputation caps) ==="
+./node_modules/.bin/esbuild tests/hiring-limits.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-hiring-limits.cjs --alias:@=./src >/dev/null
+node /tmp/rst-hiring-limits.cjs
+
 echo "=== tutorial and room purchases ==="
 for check in first-session-guide studio-room-purchase toast-spam; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
@@ -186,7 +190,7 @@ for check in origin-perks career-start design-system; do
 done
 
 echo "=== era-authentic gigs, story contracts & economy floors ==="
-for check in project-era-starters project-brief session-issues signal-chain economy-income economy-ledger story-contracts achievements campaign-endings studio-hotkeys studio-know-how studio-premises; do
+for check in project-era-starters project-brief session-issues signal-chain economy-income economy-ledger story-contracts achievements campaign-endings studio-hotkeys studio-know-how studio-premises crew-recruitment-portal; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
   node "/tmp/rst-$check.cjs"
 done

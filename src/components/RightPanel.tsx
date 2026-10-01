@@ -22,10 +22,10 @@ import { StudioProgressionPanel } from '@/components/StudioProgressionPanel'; //
 import { toast } from '@/hooks/use-toast'; // Import toast
 import { ProgressionSystem } from '@/services/ProgressionSystem';
 import { getOperationalStudioRooms, getOccupiedRoomIds, applyStudioRoomPurchase, getStudioRoomPurchaseAvailability } from '@/utils/studioRoomUtils';
-import { calculateStaffProjectFit } from '@/utils/staffFitUtils';
 import { SynergyEncyclopedia } from '@/components/synergy/SynergyEncyclopedia';
 import { BarChart3, Building2, Guitar, Sparkles, TrendingUp, Users } from 'lucide-react';
 import { gameAudio } from '@/utils/audioSystem';
+import { CrewRecruitmentPortal } from '@/components/crew/CrewRecruitmentPortal';
 
 type DashboardTab = 'studio' | 'skills' | 'bands' | 'charts' | 'staff' | 'synergies';
 
@@ -349,154 +349,24 @@ export const RightPanel: React.FC<RightPanelProps> = ({
 
       {activeTab === 'staff' && (
         <div className="space-y-4">
-          <h2 className="text-xl font-bold text-white">👥 Staff Management</h2>
-          
-          <div className="text-sm text-stone-400 mb-4">
-            Hire and manage studio staff to help with projects
-          </div>
-
-          <KenneyButton 
-            onClick={refreshCandidates} 
-            variant="green"
-            size="md"
-            className="w-full mb-4"
-          >
-            🔄 Refresh Candidates
-          </KenneyButton>
-
-          {/* Staff candidates section */}
-          <div className="space-y-2">
-            <h3 className="text-lg font-semibold text-white">Available Staff</h3>
-            {gameState.availableCandidates && gameState.availableCandidates.length > 0 ? (
-              gameState.availableCandidates.map((candidate, index) => (
-                <div key={candidate.id || index} className="bg-stone-800 p-3 rounded-lg">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <div className="text-white font-medium">{candidate.name}</div>
-                      <div className="text-stone-400 text-sm">{candidate.role}</div>
-                    </div>
-                    <div className="text-green-400 font-bold">${candidate.salary}/day</div>
-                  </div>
-                  <div className="text-xs text-stone-500 mb-2">
-                    Creativity: {candidate.primaryStats.creativity}, Technical: {candidate.primaryStats.technical}, Speed: {candidate.primaryStats.speed}
-                  </div>
-                  {gameState.activeProject && (() => {
-                    const fit = calculateStaffProjectFit(candidate, gameState.activeProject!);
-                    return (
-                      <div className="text-[11px] text-amber-200 mb-2">
-                        Current-session fit {fit.score}/100 · {fit.reasons.slice(0, 2).join(' · ')}
-                      </div>
-                    );
-                  })()}
-                  {candidate.genreAffinity && (
-                    <div className="text-xs text-purple-400 mb-2">
-                      Specialty: {candidate.genreAffinity.genre} (+{candidate.genreAffinity.bonus}%)
-                    </div>
-                  )}
-                  <KenneyButton 
-                    onClick={() => hireStaff(index)}
-                    variant={gameState.money >= candidate.salary * 3 ? 'green' : 'grey'}
-                    size="sm"
-                    className="w-full"
-                    disabled={gameState.money < candidate.salary * 3}
-                  >
-                    {gameState.money >= candidate.salary * 3 ? `Hire for $${candidate.salary * 3}` : 'Insufficient Funds'}
-                  </KenneyButton>
-                </div>
-              ))
-            ) : (
-              <div className="text-stone-400 text-center py-4">
-                No candidates available. Click refresh to find new staff!
-              </div>
-            )}
-          </div>
-
-          {/* Hired staff section */}
-          {gameState.hiredStaff && gameState.hiredStaff.length > 0 && (
-            <div className="space-y-2 mt-6">
-              <h3 className="text-lg font-semibold text-white">Current Staff</h3>
-              {gameState.hiredStaff.map(staff => (
-                <div key={staff.id} className="bg-stone-800 p-3 rounded-lg">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <div className="text-white font-medium">{staff.name}</div>
-                      <div className="text-stone-400 text-sm">{staff.role}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-green-400 text-sm">${staff.salary}/day</div>
-                      <div className={`text-xs ${
-                        staff.status === 'Working' ? 'text-amber-300' : 
-                        staff.status === 'Idle' ? 'text-stone-400' : 
-                        staff.status === 'Resting' ? 'text-yellow-400' : 'text-purple-400'
-                      }`}>
-                        {staff.status}
-                      </div>
-                    </div>
-                  </div>
-                  {gameState.activeProject && (() => {
-                    const fit = calculateStaffProjectFit(staff, gameState.activeProject!);
-                    return (
-                      <div className="text-[11px] text-amber-200 mb-2">
-                        Session fit {fit.score}/100 · {fit.reasons.slice(0, 3).join(' · ')}
-                      </div>
-                    );
-                  })()}
-                  <div className="flex gap-2 mt-2">
-                    {staff.status === 'Idle' && (
-                      <KenneyButton 
-                        onClick={() => { void gameAudio.playGearSwitch(0.3); assignStaffToProject(staff.id); }}
-                        variant="blue"
-                        size="sm"
-                        className="flex-1 text-xs"
-                      >
-                        Assign
-                      </KenneyButton>
-                    )}
-                    {staff.status === 'Working' && (
-                      <KenneyButton 
-                        onClick={() => { void gameAudio.playTactileClick(); unassignStaffFromProject(staff.id); }}
-                        variant="red"
-                        size="sm"
-                        className="flex-1 text-xs"
-                      >
-                        Unassign
-                      </KenneyButton>
-                    )}
-                    <KenneyButton 
-                      onClick={() => { void gameAudio.playGearSwitch(0.2); toggleStaffRest(staff.id); }}
-                      variant="yellow"
-                      size="sm"
-                      className="flex-1 text-xs"
-                    >
-                      {staff.status === 'Resting' ? 'Wake' : 'Rest'}
-                    </KenneyButton>
-                    {staff.status === 'Idle' && (
-                      <KenneyButton 
-                        onClick={() => openTrainingModal(staff)}
-                        variant="blue"
-                        size="sm"
-                        className="flex-1 text-xs"
-                      >
-                        Train
-                      </KenneyButton>
-                    )}
-                    {staff.role === 'Engineer' && staff.status === 'Idle' && (
-                      <KenneyButton
-                        onClick={() => {
-                          // setSelectedEngineerForResearch(staff); // ResearchModal will handle staff selection internally
-                          setShowResearchModal(true);
-                        }}
-                        variant="green"
-                        size="sm"
-                        className="flex-1 text-xs"
-                      >
-                        Research
-                      </KenneyButton>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+          <CrewRecruitmentPortal
+            gameState={gameState}
+            hireStaff={hireStaff}
+            refreshCandidates={refreshCandidates}
+            assignStaffToProject={assignStaffToProject}
+            unassignStaffFromProject={unassignStaffFromProject}
+            toggleStaffRest={toggleStaffRest}
+            openTrainingModal={openTrainingModal}
+          />
+          {gameState.hiredStaff.some(s => s.role === 'Engineer' && s.status === 'Idle') && (
+            <KenneyButton
+              onClick={() => setShowResearchModal(true)}
+              variant="green"
+              size="md"
+              className="w-full"
+            >
+              Open gear research lab
+            </KenneyButton>
           )}
         </div>
       )}
