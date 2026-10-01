@@ -277,6 +277,16 @@ export const getTriggeredMinigames = (
     });
   }
 
+  // BUS & STEM MERGE - route the session into stems and a mix
+  if (stageName.includes('mixing') || stageName.includes('stem') || stageName.includes('bounce') ||
+      stageName.includes('routing')) {
+    triggers.push({
+      minigameType: 'bus-merge',
+      triggerReason: 'Time to route the session - merge tracks into buses, stems and the mix!',
+      priority: 7
+    });
+  }
+
   // VOCAL COMP - pick the best take per line after vocals have been tracked
   if (stageName.includes('vocal') || stageName.includes('takes') || stageName.includes('overdub') ||
       (project.genre === 'Pop' && stageName.includes('recording'))) {

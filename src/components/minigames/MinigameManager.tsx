@@ -22,6 +22,7 @@ import { VocalCompGame } from './VocalCompGame';
 import { AlbumSequenceGame } from './AlbumSequenceGame';
 import { FaultHuntGame } from './FaultHuntGame';
 import { ChainRecallGame } from './ChainRecallGame';
+import { BusMergeGame } from './BusMergeGame';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { toast } from '@/hooks/use-toast';
 import { useCutsceneQueue } from '@/hooks/useCutsceneQueue';
@@ -50,7 +51,8 @@ export type MinigameType =
   | 'vocal-comp'
   | 'album-sequence'
   | 'fault-hunt'
-  | 'chain-recall';
+  | 'chain-recall'
+  | 'bus-merge';
   // Add new minigame types here and ensure they have corresponding entries in minigameTutorials
   // | 'songwriting' // Example: if SongwritingGame becomes a distinct minigame managed here
   // | 'tapeSplicing' // Example
@@ -185,6 +187,10 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         creativityBonus = Math.floor(score / 12);
         technicalBonus = Math.floor(score / 9);
         break;
+      case 'bus-merge':
+        creativityBonus = Math.floor(score / 14);
+        technicalBonus = Math.floor(score / 8);
+        break;
       case 'vocal-comp':
         creativityBonus = Math.floor(score / 8);
         technicalBonus = Math.floor(score / 10);
@@ -277,6 +283,8 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         return <FaultHuntGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'chain-recall':
         return <ChainRecallGame {...commonGameProps} onComplete={standardOnComplete} />;
+      case 'bus-merge':
+        return <BusMergeGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'vocal-comp':
         return <VocalCompGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'maintenance':
