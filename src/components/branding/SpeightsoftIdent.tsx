@@ -46,6 +46,8 @@ export const SpeightsoftIdent: React.FC<SpeightsoftIdentProps> = ({
   }, []);
 
   useEffect(() => {
+    if (!visible) return;
+
     const timers: number[] = [];
     const resolvedDuration = reducedMotion
       ? Math.min(durationMs, REDUCED_MOTION_DURATION_MS)
@@ -77,11 +79,11 @@ export const SpeightsoftIdent: React.FC<SpeightsoftIdentProps> = ({
     document.addEventListener('visibilitychange', onVisibilityChange);
 
     return () => {
-      timers.forEach(window.clearTimeout);
+      timers.forEach((timer) => window.clearTimeout(timer));
       window.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [durationMs, finish, reducedMotion]);
+  }, [durationMs, finish, reducedMotion, visible]);
 
   const handleExitComplete = useCallback(() => {
     setMounted(false);
@@ -145,7 +147,14 @@ export const SpeightsoftIdent: React.FC<SpeightsoftIdentProps> = ({
                 transition={{ duration: 0.72, ease: [0.16, 1, 0.3, 1] }}
               >
                 <defs>
-                  <linearGradient id="speightsoft-signal" x1="18" y1="22" x2="104" y2="101">
+                  <linearGradient
+                    id="speightsoft-signal"
+                    x1="18"
+                    y1="22"
+                    x2="104"
+                    y2="101"
+                    gradientUnits="userSpaceOnUse"
+                  >
                     <stop offset="0%" stopColor="#f8fafc" />
                     <stop offset="44%" stopColor="#dff7ff" />
                     <stop offset="72%" stopColor="#ddd6fe" />
@@ -195,6 +204,7 @@ export const SpeightsoftIdent: React.FC<SpeightsoftIdentProps> = ({
                 <motion.path
                   d={SIGNAL_PATH}
                   className="speightsoft-ident__signal"
+                  stroke="url(#speightsoft-signal)"
                   initial={reducedMotion ? false : { pathLength: 0, opacity: 0.45 }}
                   animate={{ pathLength: 1, opacity: 1 }}
                   transition={{
@@ -255,15 +265,6 @@ export const SpeightsoftIdent: React.FC<SpeightsoftIdentProps> = ({
               transition={{ duration: reducedMotion ? 0 : 0.52, delay: reducedMotion ? 0 : 1.02, ease: [0.16, 1, 0.3, 1] }}
             />
 
-            <motion.span
-              className="speightsoft-ident__tag"
-              aria-hidden="true"
-              initial={reducedMotion ? false : { opacity: 0, y: 3 }}
-              animate={{ opacity: 0.64, y: 0 }}
-              transition={{ duration: reducedMotion ? 0 : 0.35, delay: reducedMotion ? 0 : 1.18 }}
-            >
-              PLAY / MAKE / REPEAT
-            </motion.span>
           </motion.div>
 
           <span className="sr-only">Speightsoft</span>
