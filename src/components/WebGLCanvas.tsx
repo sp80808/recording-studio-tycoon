@@ -1,4 +1,4 @@
-import { parseNpcVisualIdentity, resolveNpcAppearance, type NpcVisualIdentity } from '@/features/sprites/npcAppearance';
+import type { NpcVisualIdentity } from '@/features/sprites/npcAppearance';
 import { lastTake, nodOffset } from '@/utils/takeFeedback';
 import React, { useEffect, useRef } from 'react';
 import { AnimatedSprite, Application, Container, Graphics, Matrix, Sprite, Text, type Renderer } from 'pixi.js';
