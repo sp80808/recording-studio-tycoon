@@ -180,7 +180,7 @@ echo "=== progression motion: studio-tier upgrades and era transitions (#77) ===
 node /tmp/rst-progression-motion.cjs
 
 echo "=== producer origins, perks & career start ==="
-for check in origin-perks career-start design-system; do
+for check in origin-perks career-start character-creator-parts design-system; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
   node "/tmp/rst-$check.cjs"
 done
