@@ -23,6 +23,7 @@ import { toast } from '@/hooks/use-toast'; // Import toast
 import { ProgressionSystem } from '@/services/ProgressionSystem';
 import { getOperationalStudioRooms, getOccupiedRoomIds, applyStudioRoomPurchase, getStudioRoomPurchaseAvailability } from '@/utils/studioRoomUtils';
 import { calculateStaffProjectFit } from '@/utils/staffFitUtils';
+import { getHiringLimits, hiringBlockMessage } from '@/rpg/hiringLimits';
 import { SynergyEncyclopedia } from '@/components/synergy/SynergyEncyclopedia';
 import { BarChart3, Building2, Guitar, Sparkles, TrendingUp, Users } from 'lucide-react';
 import { gameAudio } from '@/utils/audioSystem';
@@ -355,6 +356,28 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             Hire and manage studio staff to help with projects
           </div>
 
+          {(() => {
+            const limits = getHiringLimits(gameState);
+            return (
+              <div
+                className={`rounded-lg border px-3 py-2 text-xs ${limits.canHire ? 'border-white/10 bg-black/30 text-stone-300' : 'border-amber-500/40 bg-amber-950/40 text-amber-100'}`}
+                role="status"
+              >
+                <div className="font-semibold text-white">
+                  Crew {limits.hired}/{limits.effectiveCap}
+                  {!limits.canHire && ' — hiring capped'}
+                </div>
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                  <span>Space ({limits.premisesName}): {limits.spaceCap}</span>
+                  <span>Reputation: {limits.reputationCap}</span>
+                </div>
+                {!limits.canHire && (
+                  <p className="mt-1 text-[11px] opacity-90">{hiringBlockMessage(limits)}</p>
+                )}
+              </div>
+            );
+          })()}
+
           <KenneyButton 
             onClick={refreshCandidates} 
             variant="green"
@@ -368,7 +391,12 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           <div className="space-y-2">
             <h3 className="text-lg font-semibold text-white">Available Staff</h3>
             {gameState.availableCandidates && gameState.availableCandidates.length > 0 ? (
-              gameState.availableCandidates.map((candidate, index) => (
+              gameState.availableCandidates.map((candidate, index) => {
+                const limits = getHiringLimits(gameState);
+                const signingFee = candidate.salary * 3;
+                const canAfford = gameState.money >= signingFee;
+                const canHireThis = limits.canHire && canAfford;
+                return (
                 <div key={candidate.id || index} className="bg-stone-800 p-3 rounded-lg">
                   <div className="flex justify-between items-start mb-2">
                     <div>
@@ -395,15 +423,19 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                   )}
                   <KenneyButton 
                     onClick={() => hireStaff(index)}
-                    variant={gameState.money >= candidate.salary * 3 ? 'green' : 'grey'}
+                    variant={canHireThis ? 'green' : 'grey'}
                     size="sm"
                     className="w-full"
-                    disabled={gameState.money < candidate.salary * 3}
+                    disabled={!canHireThis}
                   >
-                    {gameState.money >= candidate.salary * 3 ? `Hire for $${candidate.salary * 3}` : 'Insufficient Funds'}
+                    {!limits.canHire
+                      ? (limits.blocker === 'reputation' ? 'Need more reputation' : 'No space')
+                      : canAfford
+                        ? `Hire for $${signingFee}`
+                        : 'Insufficient Funds'}
                   </KenneyButton>
                 </div>
-              ))
+              );})
             ) : (
               <div className="text-stone-400 text-center py-4">
                 No candidates available. Click refresh to find new staff!

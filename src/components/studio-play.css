@@ -10,7 +10,10 @@
 .studio-room-chip { pointer-events:auto; }
 .studio-play-room .studio-room-hint { bottom:calc(var(--studio-dock-clearance) + 8px); left:12px; max-width:min(280px, calc(100% - 24px)); }
 .studio-play-room { height:100%; border:0!important; border-radius:0!important; }
-.studio-play-status { display:flex; align-items:center; gap:10px; padding:6px 14px; font-size:12px; color:var(--rst-ivory-soft); position:absolute; bottom:calc(var(--studio-dock-clearance) + 52px); left:50%; transform:translateX(-50%); z-index:28; max-width:min(560px, calc(100% - 24px)); border:1px solid var(--rst-line-strong); border-radius:20px; background:rgba(28,24,20,.82); backdrop-filter:blur(10px); pointer-events:none; }
+.studio-play-status { display:flex; align-items:center; gap:10px; padding:6px 14px; font-size:12px; color:var(--rst-ivory-soft); position:absolute; top:calc(var(--studio-hud-clearance, 74px) + 8px); right:12px; left:auto; bottom:auto; transform:none; z-index:28; max-width:min(360px, calc(100% - 24px)); border:1px solid var(--rst-line-strong); border-radius:14px; background:rgba(28,24,20,.82); backdrop-filter:blur(10px); pointer-events:none; }
+.studio-hud-day-group { display:flex; align-items:center; gap:8px; }
+.studio-hud .studio-hud-day-group .studio-hud-day,
+.studio-hud .studio-hud-day-group .studio-hud-advance { background:transparent; border:0; box-shadow:none; backdrop-filter:none; min-height:36px; padding:4px 6px; }
 .studio-live-light { width:6px; height:6px; border-radius:50%; background:var(--rst-live); box-shadow:0 0 12px var(--rst-live); flex:none; }
 .studio-play-actions { position:absolute; bottom:0; left:50%; transform:translateX(-50%); z-index:29; width:min(100%, 640px); display:flex; flex-direction:column; align-items:center; gap:8px; padding:6px 12px max(10px,env(safe-area-inset-bottom, 0px)); pointer-events:none; }
 .studio-play-actions > * { pointer-events:auto; }
@@ -65,7 +68,7 @@
   .studio-command-dock .studio-dock-button { width:auto; flex:1; min-width:40px; }
   .studio-play-actions { padding-left:6px; padding-right:6px; width:100%; left:0; transform:none; }
   .studio-play-room { --studio-hud-clearance: calc(218px + env(safe-area-inset-top)); }
-  .studio-play-status { font-size:10px; gap:6px; bottom:calc(var(--studio-dock-clearance) + 48px); }
+  .studio-play-status { font-size:10px; gap:6px; top:calc(var(--studio-hud-clearance, 74px) + 4px); right:8px; max-width:min(280px, calc(100% - 16px)); }
   .studio-hud { gap:2px 8px; }
   .studio-hud-stats,.studio-hud-controls { gap:8px; }
   .studio-hud-controls { width:100%; justify-content:flex-end; }
@@ -90,7 +93,7 @@
 }
 @media(max-height:500px) and (min-width:541px) {
   .studio-play-actions { position:absolute; bottom:0; right:8px; align-items:flex-end; }
-  .studio-play-status { left:12px; top:auto; bottom:12px; max-width:45%; }
+  .studio-play-status { right:8px; left:auto; top:calc(var(--studio-hud-clearance, 74px) + 4px); bottom:auto; max-width:min(240px, 55%); }
   .studio-command-dock .studio-dock-button { width:48px; }
   .studio-play-room .studio-room-hint { display:none; }
   .studio-activity-panel { top:50px; bottom:2px; }
@@ -230,4 +233,22 @@
   .studio-drawer-head { padding:8px 14px 8px !important; }
   .studio-drawer-head .rst-kicker { display:none; }
   .studio-drawer-tabs { margin-top:6px !important; }
+}
+
+.studio-play .studio-inspector-layer { inset:var(--studio-hud-clearance,74px) 12px calc(var(--studio-dock-clearance,118px) + 108px); }
+.studio-play .studio-inspector { top:0; right:0; left:auto; bottom:auto; transform:none; width:min(320px,100%); max-width:100%; max-height:100%; border-radius:10px; overscroll-behavior:contain; border:1px solid rgba(230,184,102,.35); background:#1b1813f2; box-shadow:0 18px 48px #000a; }
+.studio-inspector button { min-height:40px; }
+body:has(.studio-inspector-layer) .first-session-guide { display:none; }
+@media (max-width:540px) {
+  .studio-play .studio-inspector { top:auto; bottom:0; right:0; left:0; width:100%; }
+}
+@media (max-height:500px) {
+  .studio-play .studio-inspector-layer { bottom:76px; }
+}
+.studio-floor-exits { bottom:auto; top:calc(var(--studio-hud-clearance,74px) + 76px); }
+@media (max-width:540px) {
+  .studio-floor-exits { top:calc(var(--studio-hud-clearance,132px) + 180px); }
+}
+@media (max-height:500px) {
+  .studio-floor-exits { top:64px; right:12px; left:auto; bottom:auto; }
 }

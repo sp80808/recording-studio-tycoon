@@ -138,7 +138,7 @@ export const calculateTapeSaturationWarmth = (
 /**
  * Studio hotspots the player can click in the isometric room scene.
  */
-export type StudioHotspotId = 'console' | 'liveRoom' | 'phone' | 'clock' | 'tv' | 'shelf';
+export type StudioHotspotId = 'console' | 'liveRoom' | 'phone' | 'clock' | 'tv' | 'shelf' | 'door' | 'promotion';
 
 /**
  * Draw-order bands inside the room. Floor, walls and big fixed furniture keep add order at `world`;
@@ -566,6 +566,15 @@ const buildScene = (
   root.addChild(buildRug());
   root.addChild(dressing.props); // free-standing era props sit on top of the floor
 
+  // Streaming-era phone/ring-light: same era gate as the visible led-strip prop.
+  if (decorSpec.prop === 'led-strip') {
+    const s = iso(7.3, 1.6);
+    const promoHit = new Graphics().roundRect(s.x - 24, s.y - 92, 48, 98, 6).fill(0xffffff);
+    addHotspot(root, 'promotion', promoHit, dressing.props, refs, onSelect);
+    refs.hoverGlows.promotion?.roundRect(s.x - 24, s.y - 92, 48, 98, 6)
+      .stroke({ width: 2, color: decorSpec.glow });
+  }
+
   // Window spill and contact shadow place furniture on the floor plane.
   const lightAndShadow = new Graphics();
   const deskFoot = iso(4.5, 4.25);
@@ -659,6 +668,23 @@ const buildScene = (
       .fill(COLORS.wallTrim);
     doorWrap.addChild(lintel);
     root.addChild(doorWrap);
+    const doorHit = new Graphics()
+      .poly([
+        doorA.x, doorA.y,
+        doorB.x, doorB.y,
+        doorB.x, doorB.y - doorH,
+        doorA.x, doorA.y - doorH,
+      ])
+      .fill(0xffffff);
+    addHotspot(root, 'door', doorHit, doorWrap, refs, onSelect);
+    refs.hoverGlows.door
+      ?.poly([
+        doorA.x, doorA.y,
+        doorB.x, doorB.y,
+        doorB.x, doorB.y - doorH,
+        doorA.x, doorA.y - doorH,
+      ])
+      .stroke({ width: 2, color: 0xd9a441 });
   }
 
   /* ---- Live room booth: enclosed (walls, roof, header, foam, glass front) ---- */

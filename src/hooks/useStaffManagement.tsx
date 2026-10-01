@@ -1,4 +1,4 @@
-import { premisesStaffCap, getPremisesDef } from '@/rpg/premises';
+import { getHiringLimits, hiringBlockMessage } from '@/rpg/hiringLimits';
 
 import { meetsKnowHowGate, spendKnowHow, createInitialKnowHow } from '@/rpg/studioKnowHow';
 import { useCallback } from 'react';
@@ -19,10 +19,11 @@ export const useStaffManagement = (
     const candidate = gameState.availableCandidates[candidateIndex];
     if (!candidate) return false;
 
-    if (gameState.hiredStaff.length >= premisesStaffCap(gameState)) {
+    const limits = getHiringLimits(gameState);
+    if (!limits.canHire) {
       toast({
-        title: "🏠 No Room For More Staff",
-        description: `Your ${getPremisesDef(gameState).name.toLowerCase()} fits ${premisesStaffCap(gameState)} people. Move to bigger premises to hire more.`,
+        title: limits.blocker === 'reputation' ? '🌟 Need More Reputation' : '🏠 No Room For More Staff',
+        description: hiringBlockMessage(limits),
         className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive"
       });
@@ -46,11 +47,16 @@ export const useStaffManagement = (
       mood: 75 // Start with good mood
     };
 
-    setGameState(prev => ({
-      ...spend(prev, signingFee, { category: 'staff-hiring', staffId: newStaff.id, memo: candidate.name }),
-      hiredStaff: [...prev.hiredStaff, newStaff],
-      availableCandidates: prev.availableCandidates.filter((_, index) => index !== candidateIndex)
-    }));
+    // Re-check limits inside the updater so concurrent hires cannot bypass space/rep caps.
+    setGameState(prev => {
+      const nextLimits = getHiringLimits(prev);
+      if (!nextLimits.canHire || prev.money < signingFee) return prev;
+      return {
+        ...spend(prev, signingFee, { category: 'staff-hiring', staffId: newStaff.id, memo: candidate.name }),
+        hiredStaff: [...prev.hiredStaff, newStaff],
+        availableCandidates: prev.availableCandidates.filter((_, index) => index !== candidateIndex)
+      };
+    });
 
     toast({
       title: "👥 Staff Hired!",
@@ -59,7 +65,7 @@ export const useStaffManagement = (
     });
 
     return true;
-  }, [gameState.availableCandidates, gameState.money, setGameState]);
+  }, [gameState.availableCandidates, gameState.hiredStaff, gameState.money, gameState.reputation, gameState.premisesTier, setGameState]);
 
   const assignStaffToProject = useCallback((staffId: string) => {
     if (!gameState.activeProject) {
