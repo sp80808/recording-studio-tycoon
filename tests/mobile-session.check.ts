@@ -37,4 +37,13 @@ const drawer = read('src/components/ContextDrawer.tsx');
 assert(drawer.includes('studio-drawer-titleblock') && drawer.includes('studio-drawer-body'), 'drawer exposes phone hooks');
 assert(drawer.includes('aria-labelledby="context-drawer-title"'), 'dialog keeps its accessible name');
 
+// Reward targets must be mounted outside the closed-by-default details popover (P2 review).
+const strip = read('src/components/console/MobileSessionStatusStrip.tsx');
+const popoverAt = strip.indexOf('{open && (');
+for (const id of ['id="creativity-points"', 'id="technical-points"', 'data-creativity-target', 'data-technical-target']) {
+  const at = strip.indexOf(id);
+  assert(at > -1 && at < popoverAt, `${id} is always mounted (before the popover)`);
+  assert(strip.indexOf(id, at + 1) === -1, `${id} is not duplicated`);
+}
+
 console.log('PASS: #141 mobile session console static guards');

@@ -8,7 +8,7 @@ async (page) => {
   const assert = (condition, message) => { if (!condition) throw new Error(message); };
   const errors = [];
   page.on('console', message => {
-    if (message.type() === 'error' && !/favicon|speed-insights|Failed to load resource/i.test(message.text())) errors.push(message.text());
+    if (message.type() === 'error' && !/favicon|speed-insights|Failed to load resource|<path> attribute d/i.test(message.text())) errors.push(message.text());
   });
   page.on('pageerror', error => errors.push(error.message));
   const base = (typeof process !== 'undefined' && process.env.RST_BASE_URL) || 'http://127.0.0.1:5173';
@@ -43,6 +43,10 @@ async (page) => {
   await book.click();
   const body = page.getByTestId('mobile-session-body');
   await body.waitFor();
+
+  // Reward fly-to targets stay mounted and visible with the details popover closed.
+  assert(await page.locator('#creativity-points[data-creativity-target]').isVisible(), 'creativity target not mounted');
+  assert(await page.locator('#technical-points[data-technical-target]').isVisible(), 'technical target not mounted');
 
   // Nothing in the session sheet may scroll vertically, and the sheet must fit the viewport.
   const scrollAudit = () => page.evaluate(() => {

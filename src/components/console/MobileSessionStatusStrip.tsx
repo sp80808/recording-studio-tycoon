@@ -49,7 +49,7 @@ export const MobileSessionStatusStrip: React.FC<MobileSessionStatusStripProps> =
         </button>
       </div>
       <div className="mt-1 flex items-center gap-1.5 text-[10px] text-stone-400">
-        <span className="shrink-0 max-w-[40%] truncate text-amber-200 font-semibold">{p.stageLabel}</span>
+        <span className="shrink-0 max-w-[34%] truncate text-amber-200 font-semibold">{p.stageLabel}</span>
         <div
           className="relative h-1.5 flex-1 rounded-full bg-stone-800 overflow-hidden"
           role="progressbar"
@@ -60,15 +60,16 @@ export const MobileSessionStatusStrip: React.FC<MobileSessionStatusStripProps> =
         >
           <div className="absolute inset-y-0 left-0 bg-amber-400 transition-all duration-300" style={{ width: `${Math.min(100, p.stageProgress)}%` }} />
         </div>
-        <span className="shrink-0 tabular-nums" aria-label={`Overall progress ${Math.round(p.overallProgress)} percent`}>{Math.round(p.overallProgress)}% total</span>
+        {/* Always mounted: reward orbs / stat blobs (useStageWork, AnimatedStatBlobs) fly to these ids. */}
+        <span id="creativity-points" data-creativity-target className="shrink-0 text-amber-300 font-bold tabular-nums" aria-label="Creativity points">🎨{Math.round(p.creativityPoints)}</span>
+        <span id="technical-points" data-technical-target className="shrink-0 text-emerald-400 font-bold tabular-nums" aria-label="Technical points">⚙️{Math.round(p.technicalPoints)}</span>
+        <span className="shrink-0 tabular-nums" aria-label={`Overall progress ${Math.round(p.overallProgress)} percent`}>{Math.round(p.overallProgress)}%</span>
       </div>
       {open && (
         <div className="absolute left-0 right-0 top-full mt-1 z-30 rounded-[2px] border border-stone-600 bg-stone-950 p-2.5 text-xs text-stone-300 shadow-2xl space-y-1.5" role="region" aria-label="Session details">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span>{p.durationDays}d duration</span>
             <span>{Math.round(p.sessions)} sessions</span>
-            <span id="creativity-points" data-creativity-target className="text-amber-300 font-bold">🎨 {Math.round(p.creativityPoints)}</span>
-            <span id="technical-points" data-technical-target className="text-emerald-400 font-bold">⚙️ {Math.round(p.technicalPoints)}</span>
           </div>
           {p.activeBuffs.length > 0 && <div className="text-emerald-300">Buffs: {p.activeBuffs.join(' · ')}</div>}
           {p.synergyCount > 0 && <div className="text-amber-300">✨ {p.synergyCount} active combo{p.synergyCount === 1 ? '' : 's'}</div>}
