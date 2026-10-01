@@ -1,5 +1,7 @@
 import { navigationMenuTriggerStyle } from "@/lib/navigation-menu"
-import { NavigationMenu } from "./navigation-menu"
+import * as React from "react"
+import { cn } from "@/lib/utils"
+import { NavigationMenu } from "./navigation-menu/navigation-menu"
 import { NavigationMenuList } from "./navigation-menu-list"
 import { NavigationMenuTrigger } from "./navigation-menu-trigger"
 import { NavigationMenuContent } from "./navigation-menu-content"

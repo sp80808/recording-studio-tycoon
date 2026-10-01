@@ -2,6 +2,7 @@ import { premisesStaffCap, getPremisesDef } from '@/rpg/premises';
 
 import { meetsKnowHowGate, spendKnowHow, createInitialKnowHow } from '@/rpg/studioKnowHow';
 import { useCallback } from 'react';
+import { spend } from '@/economy/ledger';
 import { GameState, StaffMember, EquipmentMod, FocusAllocation } from '@/types/game'; // Added FocusAllocation
 import { toast } from '@/hooks/use-toast';
 import { availableTrainingCourses } from '@/data/training';
@@ -46,8 +47,7 @@ export const useStaffManagement = (
     };
 
     setGameState(prev => ({
-      ...prev,
-      money: prev.money - signingFee,
+      ...spend(prev, signingFee, { category: 'staff-hiring', staffId: newStaff.id, memo: candidate.name }),
       hiredStaff: [...prev.hiredStaff, newStaff],
       availableCandidates: prev.availableCandidates.filter((_, index) => index !== candidateIndex)
     }));
@@ -151,8 +151,7 @@ export const useStaffManagement = (
     }
 
     setGameState(prev => ({
-      ...prev,
-      money: prev.money - bonusAmount,
+      ...spend(prev, bonusAmount, { category: 'staff-payroll', staffId, memo: `Bonus for ${staff.name}` }),
       hiredStaff: prev.hiredStaff.map(s => 
         s.id === staffId 
           ? { ...s, mood: Math.min(100, s.mood + 30) }
@@ -189,8 +188,7 @@ export const useStaffManagement = (
     }
 
     setGameState(prev => ({
-      ...prev,
-      money: prev.money - course.cost,
+      ...spend(prev, course.cost, { category: 'training', staffId, memo: course.name }),
       studioKnowHow: course.knowHow
         ? (spendKnowHow(prev.studioKnowHow ?? createInitialKnowHow(), course.knowHow.cost) ?? prev.studioKnowHow)
         : prev.studioKnowHow,
@@ -313,8 +311,7 @@ export const useStaffManagement = (
     }
 
     setGameState(prev => ({
-      ...prev,
-      money: prev.money - modToResearch.researchRequirements.cost,
+      ...spend(prev, modToResearch.researchRequirements.cost, { category: 'research', staffId, memo: modToResearch.name }),
       hiredStaff: prev.hiredStaff.map(s =>
         s.id === staffId
           ? {

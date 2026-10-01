@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useCallback } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import {
@@ -24,7 +25,7 @@ export interface DrawerTabItem {
   id: ContextDrawerTab;
   labelKey: string;
   shortLabelKey: string;
-  icon: React.ComponentType<{ size?: number; className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>;
+  icon: LucideIcon;
   badge?: number;
 }
 
@@ -144,7 +145,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
 
   const widthStyle =
     width === 'session'
-      ? 'w-full max-w-none md:w-[min(100%,1100px)] lg:w-[min(100vw-24px,1280px)] xl:w-[min(96vw,1400px)]'
+      ? 'w-full max-w-none md:w-[min(100%,760px)] lg:w-[min(46vw,640px)] xl:w-[min(40vw,680px)]'
       : width === 'wide'
         ? 'w-full md:max-w-2xl'
         : 'w-full md:max-w-md lg:max-w-lg';
@@ -157,9 +158,13 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
           role="presentation"
           data-studio-drawer={width}
         >
-          {/* Soft scrim: the studio stays legible behind the panel and the Pixi canvas is never unmounted. */}
+          {/* Soft scrim: the studio stays legible behind the panel and the Pixi canvas is never unmounted. The session console docks to the side on desktop and leaves the room undimmed, so the artist keeps performing in view. */}
           <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity animate-rst-fade"
+            className={`absolute inset-0 transition-opacity animate-rst-fade ${
+              width === 'session'
+                ? 'bg-black/40 backdrop-blur-[2px] lg:bg-transparent lg:backdrop-blur-none'
+                : 'bg-black/40 backdrop-blur-[2px]'
+            }`}
             onClick={handleClose}
             aria-hidden="true"
           />
@@ -178,7 +183,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
               className={`rst-modal pointer-events-auto flex flex-col h-full ${widthStyle} ${className}`}
             >
               {/* Header */}
-              <div className="shrink-0 px-5 pt-4 pb-3 border-b border-[var(--rst-line)]">
+              <div className="studio-drawer-head shrink-0 px-5 pt-4 pb-3 border-b border-[var(--rst-line)]">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="rst-kicker">{subtitle || t('context_drawer_kicker')}</p>
@@ -209,7 +214,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
                   <div
                     role="tablist"
                     aria-label={t('context_drawer_tabs_aria')}
-                    className="mt-3 grid gap-1 rounded-xl border border-[var(--rst-line)] bg-black/25 p-1"
+                    className="studio-drawer-tabs mt-3 grid gap-1 rounded-xl border border-[var(--rst-line)] bg-black/25 p-1"
                     style={{ gridTemplateColumns: `repeat(${TAB_CONFIGS.length}, minmax(0, 1fr))` }}
                   >
                     {TAB_CONFIGS.map((tab) => {
@@ -233,7 +238,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
                           <Icon size={16} aria-hidden="true" />
                           <span className="max-w-full truncate">{t(tab.shortLabelKey)}</span>
                           {isActive && (
-                            <span aria-hidden="true" className="absolute inset-x-3 bottom-0 h-[2px] rounded-full bg-[var(--rst-brass-400)]" />
+                            <span aria-hidden="true" className="feel-underline absolute inset-x-3 bottom-0 h-[2px] rounded-full bg-[var(--rst-brass-400)]" />
                           )}
                           {badgeCount !== undefined && badgeCount > 0 && (
                             <span className="absolute right-1 top-0.5 min-w-[15px] rounded-full bg-[var(--rst-brass-400)] px-1 text-center text-[9px] font-black leading-[15px] text-stone-950">
@@ -248,7 +253,15 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
               </div>
 
               {/* Drawer Content Body */}
-              <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
+              <div
+                className={`feel-stagger flex-1 min-h-0 ${
+                  width === 'session'
+                    ? // Session console: body is a bounded flex column so the work area scrolls on its own
+                      // and the transport dock (Take / Overdrive) stays pinned inside the viewport.
+                      'flex flex-col overflow-hidden p-2 sm:p-4 gap-3'
+                    : 'overflow-y-auto p-4 space-y-4'
+                }`}
+              >
                 {children}
               </div>
 

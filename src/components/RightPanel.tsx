@@ -1,6 +1,7 @@
 import { ArtistRoster } from '@/components/ArtistRoster';
 import type { ArtistProspect, ContractTerms, NegotiationOutcome } from '@/simulation/artistContracts';
 import { ShowPlan } from '@/simulation/liveShows';
+import { StudioRecycler } from '@/features/usedGear/StudioRecycler';
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -282,6 +283,8 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             <div className="rounded-lg border border-stone-700 bg-stone-950/50 p-2.5 max-h-72 overflow-y-auto pr-1">
               <EquipmentList purchaseEquipment={purchaseEquipment} gameState={gameState} />
             </div>
+
+            <StudioRecycler gameState={gameState} setGameState={setGameState} />
 
             {/* Slot-based gear racks (bead 8om) — drag owned gear into room chassis */}
             <GearRackBoard gameState={gameState} setGameState={setGameState} />

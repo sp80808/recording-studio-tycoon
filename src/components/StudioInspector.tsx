@@ -43,6 +43,7 @@ export interface StudioInspectorProps {
   /** Ask the DOM dashboard to reveal a tab (charts/studio/staff/...). */
   onOpenDashboardTab: (tab: 'studio' | 'skills' | 'bands' | 'charts' | 'staff') => void;
   onConsoleFocus?: () => void;
+  onCompleteChore?: (hotspot: StudioHotspotId) => boolean;
 }
 
 const ANCHORS: Record<StudioHotspotId, string> = {
@@ -50,7 +51,7 @@ const ANCHORS: Record<StudioHotspotId, string> = {
   clock: 'top-10 left-1/2 -translate-x-1/2',
   tv: 'top-10 right-3',
   shelf: 'top-1/2 right-3 -translate-y-1/2',
-  console: 'bottom-9 left-3',
+  console: 'bottom-9 left-1/2 -translate-x-1/2',
   liveRoom: 'bottom-9 right-3',
 };
 
@@ -140,6 +141,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   onUnassignStaff,
   onOpenDashboardTab,
   onConsoleFocus,
+  onCompleteChore,
 }) => {
   const [actingGigId, setActingGigId] = useState<string | null>(null);
   const [actingStaffId, setActingStaffId] = useState<string | null>(null);
@@ -203,7 +205,6 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
             <StatRow label="Payout" value={`$${gig.payoutBase}`} valueClass="text-green-400" />
             <StatRow label="Rep" value={`+${gig.repGainBase}`} valueClass="text-amber-300" />
             <MotionButton
-              size="sm"
               className="w-full h-7 mt-1 bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] text-emerald-100 text-xs font-bold"
               disabled={!!project || !!actingGigId}
               onClick={() => handleTakeGig(gig)}
@@ -220,8 +221,6 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
         ))}
         <div className="pt-1 border-t border-white/10">
           <MotionButton
-            size="sm"
-            variant="outline"
             className={`w-full h-7 text-xs border-white/20 ${ready ? 'text-amber-200 hover:bg-amber-500/10' : 'text-stone-500'}`}
             onClick={() => {
               void gameAudio.playTactileClick();
@@ -264,7 +263,6 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           )}
         </div>
         <MotionButton
-          size="sm"
           className="w-full h-8 bg-purple-400/[0.14] ring-1 ring-inset ring-purple-400/45 hover:bg-purple-400/[0.24] text-purple-100 text-xs font-bold"
           onClick={() => {
             void gameAudio.playTactileClick();
@@ -318,8 +316,6 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           </div>
         ))}
         <MotionButton
-          size="sm"
-          variant="outline"
           className="w-full h-7 text-xs border-white/20 text-stone-200 hover:bg-white/10"
           onClick={() => {
             void gameAudio.playTactileClick();
@@ -359,8 +355,6 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           {gear.length === 0 && <div className="text-xs text-stone-400">Bare shelves — buy gear from the Equipment Shop.</div>}
         </div>
         <MotionButton
-          size="sm"
-          variant="outline"
           className="w-full h-7 text-xs border-white/20 text-stone-200 hover:bg-white/10"
           onClick={() => {
             void gameAudio.playTactileClick();
@@ -384,7 +378,6 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
             The console is dark. Take a gig from the phone to start tracking.
           </div>
           <MotionButton
-            size="sm"
             className="w-full h-7 text-xs bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-amber-100 font-bold"
             onClick={() => onConsoleFocus?.()}
           >
@@ -409,7 +402,6 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           <StatRow label="Combo" value={`⚡ x${project.comboCount}`} valueClass="text-amber-300" />
         )}
         <MotionButton
-          size="sm"
           className="w-full h-7 text-xs bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-amber-100 font-bold"
           onClick={() => {
             void gameAudio.playTactileClick();
@@ -450,7 +442,6 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
             </div>
             {project && (
               <MotionButton
-                size="sm"
                 className={`w-full h-6 text-[10px] font-bold ${
                   assignedHere ? 'bg-white/[0.07] ring-1 ring-inset ring-white/15 hover:bg-white/[0.13]' : 'bg-emerald-400/[0.14] hover:bg-emerald-400/[0.24]'
                 } text-white`}

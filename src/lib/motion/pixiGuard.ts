@@ -1,8 +1,9 @@
 /**
  * Runtime enforcement of the GPU-exclusivity invariant from qualification.ts:
  * only the living-studio Pixi Application may own a WebGL viewport during play.
- * Any other owner (e.g. the legacy project-cards bridge in src/pixi-ui) must not
- * create a second Application while the studio floor holds the claim.
+ * Any other owner must not create a second Application while the studio floor
+ * holds the claim. Every `new Application(` must call claimPixiApplication first
+ * (enforced by tests/pixi-exclusivity.check.ts).
  */
 export const STUDIO_FLOOR_OWNER = 'studio-floor';
 

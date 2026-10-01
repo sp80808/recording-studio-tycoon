@@ -1,0 +1,21 @@
+{
+  "source": {
+    "url": "https://kenney.nl/assets/furniture-kit",
+    "downloadUrl": "https://kenney.nl/media/pages/assets/furniture-kit/440e0608a4-1677580847/kenney_furniture-kit.zip",
+    "license": "CC0-1.0",
+    "archiveSha256": "e67652d0932cee41683f74711c03d3e192a2af9979ef8e6b237711f5482d46b0"
+  },
+  "palette": {
+    "wood": "806040", "woodDark": "382b35", "metal": "ced5dd",
+    "metalDark": "202939", "metalMedium": "465367", "carpet": "756285",
+    "carpetBlue": "365367", "carpetWhite": "8a97a5", "plant": "4f7854",
+    "lamp": "f4dba2", "_defaultMat": "546071"
+  },
+  "models": [
+    "pottedPlant", "plantSmall1", "plantSmall2", "plantSmall3",
+    "loungeSofa", "loungeDesignSofa", "chairDesk", "loungeChair",
+    "tableCoffee", "sideTable", "bookcaseOpen", "lampRoundFloor",
+    "lampRoundTable", "speaker", "speakerSmall", "radio", "laptop",
+    "kitchenCoffeeMachine", "cardboardBoxClosed"
+  ]
+}

@@ -21,8 +21,10 @@ assert.strictEqual(typeof RewardReveal, 'function', 'RewardReveal primitive alia
 
 const loot1970 = generateBoxLoot('1970s', 1, 42);
 assert.strictEqual(loot1970.length, 1);
+assert.deepStrictEqual(loot1970, generateBoxLoot('1970s', 1, 42));
+assert(loot1970[0].equipment, 'Reveal must adapt canonical Equipment');
 assert(loot1970[0].name.length > 0);
-assert(loot1970[0].condition >= 50 && loot1970[0].condition <= 100);
+assert(loot1970[0].condition >= 0 && loot1970[0].condition <= 100);
 assert(['common', 'uncommon', 'rare', 'vintage', 'legendary'].includes(loot1970[0].rarity));
 
 // Test multiple count

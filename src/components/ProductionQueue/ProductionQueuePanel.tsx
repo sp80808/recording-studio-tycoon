@@ -5,9 +5,9 @@ import { useProductionQueueStore } from '../../stores/rootStore'
 
 export const ProductionQueuePanel: React.FC<{ roomId: string }> = ({ roomId }) => {
   const { enabled, tasks } = useProductionQueue(roomId)
+  const remove = useProductionQueueStore((s: any) => s.removeFromQueue) as (roomId: string, taskId: string) => void
+  const pause = useProductionQueueStore((s: any) => s.pauseTask) as (roomId: string, taskId: string) => void
   if (!enabled) return null
-  const remove = useProductionQueueStore((s: any) => s.removeFromQueue)
-  const pause = useProductionQueueStore((s: any) => s.pauseTask)
   return (
     <div className="p-3" role="region" aria-label="Production Queue">
       <h4 className="font-bold mb-2">Production Queue</h4>

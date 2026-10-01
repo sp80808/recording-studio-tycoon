@@ -1,3 +1,4 @@
+import { lastTake, nodOffset } from '@/utils/takeFeedback';
 import React, { useEffect, useRef } from 'react';
 import { AnimatedSprite, Application, Container, Graphics, Matrix, Sprite, Text, type Renderer } from 'pixi.js';
 import { applyReelState, buildReelTextures, createReelSprite } from '@/features/gearStudio/gearSpriteAnimation';
@@ -32,6 +33,7 @@ import {
   type CharacterLook,
   type CharacterSprite,
 } from '@/components/studio/characters';
+import { addStudioProps, loadStudioKit, type StudioKitTextures } from '@/features/sprites/studioKit';
 
 export const calculateEffectiveResolution = (dpr: number, scale?: number) => {
   const clampedDpr = Math.max(1.0, Math.min(2.0, dpr || 1.0));
@@ -165,6 +167,8 @@ export interface StudioSceneState {
   activity: number;
   /** Whether a project is currently in production */
   hasActiveProject: boolean;
+  /** Who is in the booth (client / band name) for the active session */
+  artistName?: string;
   /** Number of staff physically on the studio floor */
   staffOnFloor: number;
   /** Player's equipment count (fills the gear shelf) */
@@ -177,6 +181,8 @@ export interface StudioSceneState {
   roomTier?: number;
   /** Optional per-crew appearance (index = floor position). Missing entries use the starter presets. */
   crewLooks?: CharacterLook[];
+  /** Premises tier (#70): 1 adds the project-studio client bench + storage rack. */
+  premisesTier?: number;
   /** Records + achievements hung on the trophy wall (derived from the settlement ledger). */
   trophies?: TrophyInput;
   /** Stable per-run seed so plank layout / motes are identical across rebuilds. */
@@ -366,6 +372,8 @@ interface SceneRefs {
   staffFigures: { fig: Container; baseY: number; character?: CharacterSprite; facing?: import('@/components/studio/characters').Facing; workSeat?: boolean; pose?: import('@/components/studio/characters').Pose }[];
   /** Animated fader caps on the console sprite (positions in world px). */
   faders: { g: Graphics; y0: number; y1: number; phase: number }[];
+  /** The booked artist, standing at the live-room mic while a session is in progress. */
+  artist: { fig: Container; baseY: number; tag: Text; shown: string } | null;
   nightTintLayer: Container | null;
   hoverGlows: Record<string, Graphics>;
   hoverGlowTargets: Record<string, number>;
@@ -431,7 +439,8 @@ const buildScene = (
   height: number,
   state: StudioSceneState,
   onSelect?: (id: StudioHotspotId) => void,
-  renderer?: Renderer
+  renderer?: Renderer,
+  kitTextures?: StudioKitTextures | null,
 ): BuiltScene => {
   const root = new Container();
   const refs: SceneRefs = {
@@ -442,6 +451,7 @@ const buildScene = (
     setClockTime: null,
     staffFigures: [],
     faders: [],
+    artist: null,
     nightTintLayer: null,
     hoverGlows: {},
     hoverGlowTargets: {},
@@ -667,6 +677,7 @@ const buildScene = (
 
   /* ---- Live room booth: enclosed (walls, roof, header, foam, glass front) ---- */
   const liveWrap = buildLiveBooth();
+  if (kitTextures) addStudioProps(root, kitTextures, tier, visualEraId(state.eraId ?? 'analog60s'));
   const boothX0 = 1.0;
   const boothX1 = 3.5;
   const boothGlassY = 1.0;
@@ -1123,6 +1134,39 @@ const buildScene = (
     root.addChild(fig);
   }
 
+  /* ---- Booked artist: appears at the live-room mic during a session ---- */
+  {
+    const spot = iso(2.3, 1.55);
+    const fig = new Container();
+    fig.position.set(spot.x, spot.y);
+    const body = new Graphics();
+    body.ellipse(0, 1, 15, 7).fill({ color: 0x000000, alpha: .35 });
+    body.roundRect(-8, -13, 7, 14, 2).fill(0x1d1a24);
+    body.roundRect(1, -13, 7, 14, 2).fill(0x1d1a24);
+    body.roundRect(-15, -34, 5, 18, 2).fill(0xd9a27c);
+    body.roundRect(10, -34, 5, 18, 2).fill(0xd9a27c);
+    body.roundRect(-11, -36, 22, 27, 5).fill(0xc2414b);
+    body.roundRect(-11, -36, 22, 27, 5).stroke({ width: 2, color: 0x2a1519, alpha: .55 });
+    body.circle(0, -45, 11).fill(0xe8b48c);
+    body.ellipse(0, -52, 12, 6).fill(0x5a2e1c);
+    body.circle(-4, -44, 1).fill(0x273040);
+    body.circle(4, -44, 1).fill(0x273040);
+    fig.addChild(body);
+    const tag = new Text({
+      text: '',
+      style: { fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: 11, fontWeight: '700', fill: 0xffe3a3, stroke: { color: 0x0b0906, width: 3 } },
+    });
+    tag.anchor.set(0.5, 1);
+    tag.position.set(0, -66);
+    tag.eventMode = 'none';
+    fig.addChild(tag);
+    fig.eventMode = 'none';
+    fig.visible = false;
+    fig.zIndex = Z.depth + spot.y;
+    refs.artist = { fig, baseY: spot.y, tag, shown: '' };
+    root.addChild(fig);
+  }
+
   root.sortableChildren = true;
 
   /* ---- Tier upgrade furniture (bead ifx.3) ---------------------------- */
@@ -1131,12 +1175,20 @@ const buildScene = (
     const upgrades = new Graphics();
     // Potted plant in the back-left corner
     const plantBase = iso(0.55, 1.5);
-    upgrades.ellipse(plantBase.x, plantBase.y, 12, 6).fill(0x1c2433);
-    upgrades.rect(plantBase.x - 8, plantBase.y - 16, 16, 16).fill(0x7a4a2b);
-    upgrades.circle(plantBase.x, plantBase.y - 30, 16).fill(0x3f7d4f);
-    upgrades.circle(plantBase.x - 10, plantBase.y - 24, 10).fill(0x4f9a5f);
-    upgrades.circle(plantBase.x + 10, plantBase.y - 26, 11).fill(0x357044);
+    if (!kitTextures) {
+      upgrades.ellipse(plantBase.x, plantBase.y, 12, 6).fill(0x1c2433);
+      upgrades.rect(plantBase.x - 8, plantBase.y - 16, 16, 16).fill(0x7a4a2b);
+      upgrades.circle(plantBase.x, plantBase.y - 30, 16).fill(0x3f7d4f);
+      upgrades.circle(plantBase.x - 10, plantBase.y - 24, 10).fill(0x4f9a5f);
+      upgrades.circle(plantBase.x + 10, plantBase.y - 26, 11).fill(0x357044);
+    }
     upgrades.zIndex = Z.depth + plantBase.y;
+    // First gold record frame on the right wall
+    const frameA = iso(6.6, 0);
+    const rec = { x: frameA.x, y: frameA.y - 88 };
+    upgrades.rect(rec.x - 12, rec.y - 12, 24, 24).fill(0x2a1f0d);
+    upgrades.rect(rec.x - 12, rec.y - 12, 24, 24).stroke({ width: 3, color: grade.accent });
+    upgrades.circle(rec.x, rec.y, 8).fill(0xd9a441);
     root.addChild(upgrades);
   }
 
@@ -1144,10 +1196,12 @@ const buildScene = (
     const lounge = new Graphics();
     // Green-room sofa along the front-right corner
     const sofa = iso(6.0, 5.6);
-    lounge.roundRect(sofa.x - 26, sofa.y - 26, 52, 24, 6).fill(0x5b3f6e);
-    lounge.roundRect(sofa.x - 26, sofa.y - 34, 52, 12, 5).fill(0x6d4c85);
-    lounge.rect(sofa.x - 22, sofa.y - 2, 6, 6).fill(0x2a1f33);
-    lounge.rect(sofa.x + 16, sofa.y - 2, 6, 6).fill(0x2a1f33);
+    if (!kitTextures) {
+      lounge.roundRect(sofa.x - 26, sofa.y - 26, 52, 24, 6).fill(0x5b3f6e);
+      lounge.roundRect(sofa.x - 26, sofa.y - 34, 52, 12, 5).fill(0x6d4c85);
+      lounge.rect(sofa.x - 22, sofa.y - 2, 6, 6).fill(0x2a1f33);
+      lounge.rect(sofa.x + 16, sofa.y - 2, 6, 6).fill(0x2a1f33);
+    }
     lounge.zIndex = Z.depth + sofa.y;
     root.addChild(lounge);
     // Road case next to the console (its own node so it sorts by its own depth)
@@ -1160,13 +1214,37 @@ const buildScene = (
     root.addChild(roadCase);
   }
 
+  if ((state.premisesTier ?? 0) >= 1) {
+    // Project studio (#70): client waiting bench + wall-side storage rack.
+    const bench = new Graphics();
+    const b = iso(1.4, 5.4);
+    bench.roundRect(b.x - 30, b.y - 14, 60, 12, 4).fill(0x6b4a2f);
+    bench.roundRect(b.x - 30, b.y - 24, 60, 10, 4).fill(0x8a6340);
+    bench.rect(b.x - 26, b.y - 2, 5, 8).fill(0x2a1f14);
+    bench.rect(b.x + 21, b.y - 2, 5, 8).fill(0x2a1f14);
+    bench.zIndex = Z.depth + b.y;
+    root.addChild(bench);
+    const rack = new Graphics();
+    const r = iso(0.7, 3.3);
+    rack.rect(r.x - 16, r.y - 58, 32, 58).fill(0x2b3039);
+    rack.rect(r.x - 16, r.y - 58, 32, 58).stroke({ width: 2, color: 0x4c5769 });
+    for (let i = 0; i < 4; i++) {
+      rack.rect(r.x - 13, r.y - 54 + i * 13, 26, 9).fill(0x3d4452);
+      rack.circle(r.x + 9, r.y - 49.5 + i * 13, 1.8).fill(i % 2 ? 0x59d98a : 0xf0b84a);
+    }
+    rack.zIndex = Z.depth + r.y;
+    root.addChild(rack);
+  }
+
   if (tier >= 4) {
     const pro = new Graphics();
     // Second workstation rig
     const rig = iso(7.0, 3.2);
-    pro.rect(rig.x - 16, rig.y - 34, 32, 34).fill(0x2a221c);
-    pro.rect(rig.x - 12, rig.y - 29, 24, 16).fill(grade.accent);
-    pro.rect(rig.x - 16, rig.y - 34, 32, 34).stroke({ width: 2, color: 0x120d09 });
+    if (!kitTextures) {
+      pro.rect(rig.x - 16, rig.y - 34, 32, 34).fill(0x2a221c);
+      pro.rect(rig.x - 12, rig.y - 29, 24, 16).fill(grade.accent);
+      pro.rect(rig.x - 16, rig.y - 34, 32, 34).stroke({ width: 2, color: 0x120d09 });
+    }
     pro.zIndex = Z.depth + rig.y;
     root.addChild(pro);
   }
@@ -1273,6 +1351,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const sceneRef = useRef<BuiltScene | null>(null);
+  const kitTexturesRef = useRef<StudioKitTextures | null>(null);
   const stateRef = useRef<StudioSceneState>({ ...DEFAULT_STATE, ...state });
   const selectRef = useRef(onHotspotSelect);
   const anchorsCbRef = useRef(onHotspotAnchors);
@@ -1334,7 +1413,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   }, [resetCameraKey]);
 
   // Structural key: only layout-affecting state triggers a scene rebuild
-  const structuralKey = `${state?.staffOnFloor ?? 1}|${state?.ownedEquipment ?? 3}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${trophyKey(state?.trophies ?? { platinum: 0, gold: 0, awards: 0 })}|${state?.decorSeed ?? 'studio'}|${JSON.stringify(state?.crewLooks ?? null)}`;
+  const structuralKey = `${state?.staffOnFloor ?? 1}|${state?.ownedEquipment ?? 3}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${state?.premisesTier ?? 0}|${trophyKey(state?.trophies ?? { platinum: 0, gold: 0, awards: 0 })}|${state?.decorSeed ?? 'studio'}|${JSON.stringify(state?.crewLooks ?? null)}`;
 
   // Rebuild the room (new window size or layout change)
   const rebuild = () => {
@@ -1355,7 +1434,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
       app.screen.height,
       stateRef.current,
       (id) => { if (!suppressTapRef.current) selectRef.current?.(id); },
-      app.renderer
+      app.renderer,
+      kitTexturesRef.current,
     );
     reelKeyRef.current = '';
     const zoom = cameraRef.current.zoom ?? 1.0;
@@ -1375,6 +1455,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
       app.stage.addChild(scene.overlayRoot);
     }
     sceneRef.current = scene;
+    app.canvas.dataset.studioArt = kitTexturesRef.current ? 'cc0-v1' : 'built-in';
   };
 
   useEffect(() => {
@@ -1482,6 +1563,11 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         lastW = app.screen.width;
         lastH = app.screen.height;
         rebuild();
+        void loadStudioKit().then(textures => {
+          if (disposed || !textures) return;
+          kitTexturesRef.current = textures;
+          rebuild();
+        });
 
         const markCanvasInput = () => {
           lastCanvasInputRef.current = performance.now();
@@ -1817,6 +1903,22 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             const pos = 0.5 + 0.45 * Math.sin(t * (0.5 + (f.phase % 3) * 0.21) + f.phase) * drive;
             f.g.y = f.y0 + (f.y1 - f.y0) * (1 - pos);
           });
+
+          // Booked artist: steps up to the mic for the session, swaying harder as the work ramps up
+          if (refs.artist) {
+            const a = refs.artist;
+            a.fig.visible = s.hasActiveProject;
+            const name = s.artistName ?? '';
+            if (a.shown !== name) { a.tag.text = name; a.shown = name; }
+            if (s.hasActiveProject) {
+              const sway = reduceMotion ? 0 : 1;
+              const tk = lastTake();
+              const nod = tk && !reduceMotion ? nodOffset(performance.now() - tk.at, tk.grade) : 0;
+              a.fig.y = a.baseY + Math.sin(t * 5) * 1.5 * s.activity * sway + nod;
+              a.fig.rotation = Math.sin(t * 2.3) * 0.05 * s.activity * sway;
+              a.fig.scale.y = 1 + Math.abs(Math.sin(t * 4)) * 0.03 * s.activity * sway;
+            }
+          }
 
           // Phone ring pulse (faster when the studio is waiting for a gig)
           if (refs.phoneRing) {

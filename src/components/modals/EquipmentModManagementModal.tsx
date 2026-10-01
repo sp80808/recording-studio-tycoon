@@ -31,7 +31,7 @@ export const EquipmentModManagementModal: React.FC<EquipmentModManagementModalPr
   if (!equipment) return null;
 
   const compatibleResearchedMods = availableMods.filter(mod =>
-    mod.modifiesEquipmentId === equipment.id && gameState.researchedMods.includes(mod.id)
+    mod.modifiesEquipmentId === (equipment.templateId ?? equipment.id) && gameState.researchedMods.includes(mod.id)
   );
 
   const currentModDetails = equipment.appliedModId 

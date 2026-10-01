@@ -1,3 +1,4 @@
+import type { GearInstanceFields, DailyClassifiedListing } from '@/features/usedGear/types';
 // Game type definitions
 import { Chart, ArtistContact, MarketTrend } from './charts';
 import { Client, RecordLabel } from '../game-mechanics/relationship-management';
@@ -124,6 +125,7 @@ export interface Project {
   overdriveArmed?: boolean; // 🔥 next session burns extra energy for bonus output
   awaitingReview?: boolean; // Work is complete but rewards have not yet been settled
   resolvedInterventionStageKeys?: string[]; // Persist one resolved/ignored intervention opportunity per stage
+  gearNotes?: string[]; // Bounded, factual session gear ledger for review
   bookingRoomId?: string; // Physical studio suite reserved for this session
   associatedBandId?: string;
   /** Booking gamble: safe default; ambitious/moonshot need rank bars (sd3.2). */
@@ -172,11 +174,12 @@ export interface StaffMember {
   levelInRole: number;
   genreAffinity: { genre: string; bonus: number } | null;
   gearFamiliarity?: Record<string, number>; // Sessions using each piece of gear in a chain (#86, capped)
+  equipmentFamiliarity?: Record<string, number>; // 0-5, grows through actual gear use
   clientFamiliarity?: Record<string, number>; // Completed sessions with recurring clients
   energy: number;
   mood: number; // 0-100, affects work effectiveness
   salary: number;
-  status: 'Idle' | 'Working' | 'Resting' | 'Training' | 'Researching';
+  status: 'Idle' | 'Working' | 'Resting' | 'Training' | 'Researching' | 'On Tour';
   assignedProjectId: string | null;
   trainingEndDay?: number;
   trainingCourse?: string;
@@ -197,7 +200,7 @@ export interface StaffMember {
 
 export type EquipmentCategory = 'microphone' | 'monitor' | 'interface' | 'outboard' | 'instrument' | 'software' | 'recorder' | 'mixer';
 
-export interface Equipment {
+export interface Equipment extends GearInstanceFields {
   id: string;
   name: string;
   category: EquipmentCategory;
@@ -307,10 +310,13 @@ export interface GameState {
   studioSkills: Record<string, StudioSkill>;
   ownedUpgrades: string[];
   ownedEquipment: Equipment[];
+  dailyClassifieds?: { day: number; listings: DailyClassifiedListing[] };
   /** Slot-based equipment placements (bead 8om). Absent on legacy saves. */
   equipmentPlacements?: EquipmentPlacement[];
   availableProjects: Project[];
   financials: Financials;
+  /** Append-only money journal (issue #83). Absent on legacy saves; starts on first booking. */
+  ledger?: import('@/economy/ledger').LedgerState;
   /** Optional: absent on old saves, treated as a fresh day. */
   dailyTracking?: DailyTracking;
   clientRelationships?: Record<string, ClientRelationship>;
@@ -386,6 +392,9 @@ export interface GameState {
     source: 'chore_streak' | 's_grade_take' | 'yard_sale' | 'shop_money' | 'shop_gems' | 'reward';
     /** Legacy 2-tier ids stay valid; the economy resolves them via legacyTierToFlightCase. */
     tier: 'standard' | 'vintage_flight_case' | 'cardboard_box' | 'road_case' | 'tour_trunk' | 'holy_grail_vault';
+    generatedDay?: number;
+    generatedYear?: number;
+    generatedPriceMultiplier?: number;
   }>;
   /** Premium-feel soft currency (bead: flight cases + gems). Absent on legacy saves = 0. */
   gems?: number;
@@ -438,6 +447,7 @@ export interface ProjectAnimationState {
   workIntensity: number; // 0-1, affects animation speed/intensity
   staffCount: number; // Number of staff working on this project
   progressPulse: boolean; // Whether to show progress bar pulse
+  automationPulse?: boolean; // Whether the automation system is acting on this project
   lastUpdate: number; // Timestamp of last animation update
 }
 

@@ -1,20 +1,22 @@
-// lootGenerator.ts
-// Small, deterministic loot generator for Box / Yard Sale Drops
+// Compatibility adapter for the existing flight-case reveal. Gameplay owns Equipment.
+import type { EquipmentInstance } from '@/features/usedGear/types';
+import { eraYear, gearCatalogue, generateGear, resaleValue } from '@/features/usedGear/generation';
+import { createSeededRandom, pickWithRandom } from '@/simulation/seededRandom';
 
-export type Era = '1960s' | '1970s' | '1980s' | '1990s' | '2000s' | '2010s' | '2020s'
-
-export type Rarity = 'common' | 'uncommon' | 'rare' | 'vintage' | 'legendary'
-
+export type Era = '1960s' | '1970s' | '1980s' | '1990s' | '2000s' | '2010s' | '2020s';
+export type Rarity = 'common' | 'uncommon' | 'rare' | 'vintage' | 'legendary';
 export interface EquipmentItem {
-  id: string
-  name: string
-  era: Era
-  rarity: Rarity
-  condition: number // 0-100
-  baseValue: number
+  id: string;
+  name: string;
+  era: Era;
+  rarity: Rarity;
+  condition: number;
+  baseValue: number;
+  equipment?: EquipmentInstance;
 }
 
 // Simple era-aware loot table. In a real game this would be data-driven.
+// Kept for the flight-case economy (odds display + weighted picks).
 export const LOOT_TABLE: Record<Era, Array<{ item: Omit<EquipmentItem, 'id' | 'condition'> & { weight: number }}>> = {
   '1960s': [
     { item: { name: 'Tube Microphone', era: '1960s', rarity: 'vintage', baseValue: 1200, weight: 1 } },
@@ -49,54 +51,20 @@ export const LOOT_TABLE: Record<Era, Array<{ item: Omit<EquipmentItem, 'id' | 'c
     { item: { name: 'Hybrid DSP Rack', era: '2020s', rarity: 'rare', baseValue: 2000, weight: 2 } },
     { item: { name: 'Portable Field Recorder', era: '2020s', rarity: 'uncommon', baseValue: 250, weight: 4 } },
   ],
+};
+
+export const toBoxEquipmentItem = (equipment: EquipmentInstance, era: Era): EquipmentItem => ({
+  id: equipment.id, name: equipment.name, era, condition: equipment.condition,
+  baseValue: resaleValue(equipment), equipment,
+  rarity: ({ standard: 'common', roadworn: 'uncommon', 'studio-classic': 'vintage', 'rare-mod': 'rare', 'holy-grail': 'legendary' } as const)[equipment.rarity],
+});
+
+export function pickLootForEra(era: Era, seed = 0, index = 0): EquipmentItem {
+  const year = eraYear(era);
+  const template = pickWithRandom(createSeededRandom(`${seed}:${era}:${index}:template`), gearCatalogue(year));
+  return toBoxEquipmentItem(generateGear(template, { saveSeed: seed, day: 0, year, source: 'box_drop', eventId: era, index }), era);
 }
 
-function seededRandom(seed: number) {
-  // xorshift32
-  let x = seed || 88675123
-  return function () {
-    x ^= x << 13
-    x ^= x >>> 17
-    x ^= x << 5
-    return (x >>> 0) / 4294967295
-  }
-}
-
-export function pickLootForEra(era: Era, seed?: number): EquipmentItem {
-  const entries = LOOT_TABLE[era]
-  const totalWeight = entries.reduce((s, e) => s + (e.item as any).weight, 0)
-  const rnd = seed == null ? Math.random() : seededRandom(seed)()
-  let target = rnd * totalWeight
-  for (const e of entries) {
-    target -= (e.item as any).weight
-    if (target <= 0) {
-      const condition = Math.floor(50 + Math.random() * 50) // 50-99 condition
-      return {
-        id: `${era}-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
-        name: e.item.name,
-        era: e.item.era,
-        rarity: e.item.rarity,
-        condition,
-        baseValue: e.item.baseValue,
-      }
-    }
-  }
-  // Fallback
-  const fallback = entries[0].item
-  return {
-    id: `${era}-${Date.now()}-fallback`,
-    name: fallback.name,
-    era: fallback.era,
-    rarity: fallback.rarity,
-    condition: 75,
-    baseValue: fallback.baseValue,
-  }
-}
-
-export function generateBoxLoot(era: Era, count = 1, seed?: number): EquipmentItem[] {
-  const items: EquipmentItem[] = []
-  for (let i = 0; i < count; i++) {
-    items.push(pickLootForEra(era, seed == null ? undefined : seed + i))
-  }
-  return items
+export function generateBoxLoot(era: Era, count = 1, seed = 0): EquipmentItem[] {
+  return Array.from({ length: Math.min(100, Math.max(0, Math.floor(Number.isFinite(count) ? count : 0))) }, (_, index) => pickLootForEra(era, seed, index));
 }

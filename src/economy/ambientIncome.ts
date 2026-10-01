@@ -8,6 +8,7 @@
 //  - does not touch the used-gear economy
 
 import type { GameState } from '@/types/game';
+import { earn } from './ledger';
 import { createSeededRandom } from '@/simulation/seededRandom';
 
 export type AmbientSource = 'residual' | 'tip' | 'sync';
@@ -118,8 +119,11 @@ export function applyAmbientTick(state: GameState): AmbientTickResult {
   return {
     roll: paid,
     state: {
-      ...state,
-      money: state.money + amount,
+      ...earn(state, amount, {
+        category: 'ambient-income',
+        sourceId: `tick-${ticks}`,
+        memo: SOURCE_LABEL[roll.source],
+      }),
       financials: {
         ...state.financials,
         income: state.financials.income + amount,

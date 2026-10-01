@@ -110,8 +110,8 @@ test('Studio OS V2 Motion (#75) - Settlement & Milestone Gating', () => {
   const reviewModalCode = read('src/components/modals/ProjectReviewModal.tsx');
   const celebrationCode = read('src/components/ProjectCompletionCelebration.tsx');
 
-  // ActiveProject milestone check: reserves full-screen celebration for Gold, Platinum, or score >= 80
-  assert.match(activeProjectCode, /const isMilestone = verdict\.grade === 'Gold' \|\| verdict\.grade === 'Platinum' \|\| \(result\.finalProjectData\.overallQualityScore \?\? 0\) >= 80;/, 'Milestone check gates celebration on high quality/grade');
+  // ActiveProject milestone check: reserves full-screen celebration for Gold takes (Project carries no quality score; the old Platinum/score branches were dead)
+  assert.match(activeProjectCode, /const isMilestone = verdict\.grade === 'Gold';/, 'Milestone check gates celebration on a Gold take');
   assert.match(activeProjectCode, /if \(isMilestone\) \{[\s\S]*?setShowCelebration\(true\);[\s\S]*?\} else \{[\s\S]*?onProjectComplete\?\.([\s\S]*?)\}/, 'Routine projects bypass full-screen celebration directly to review');
 
   // Review modal uses MotionNumber for compact deltas

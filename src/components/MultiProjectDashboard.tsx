@@ -10,7 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { AlertCircle, Users, Zap, Settings, Play, Pause, Plus, X } from 'lucide-react';
-import { GameState, Project, AutomationMode } from '@/types/game';
+import { GameState, Project, AutomationMode, AutomationSettings } from '@/types/game';
 import { useMultiProjectManagement } from '@/hooks/useMultiProjectManagement';
 import { calculateStaffProjectFit } from '@/utils/staffFitUtils';
 

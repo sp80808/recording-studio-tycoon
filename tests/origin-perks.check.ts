@@ -192,15 +192,24 @@ describe('economy perks', () => {
   it('returning clients pay the origin premium', () => {
     const known = [{ clientId: 'k1', clientName: 'Known Band', primaryGenre: 'Rock', relationshipXp: 200, tier: 'Friendly', sessionsCompleted: 3, lastSessionDay: 1, bestQualityScore: 80, referralCount: 0 }] as never;
     // Force every offer to be a returning client by generating many and comparing means of returning ones.
+    // generateNewProjects uses Math.random; replay the same seeded stream for both premiums so the
+    // comparison is paired and deterministic (unseeded noise made this assertion intermittently fail).
     const mean = (premium: number) => {
-      let sum = 0;
-      let n = 0;
-      for (let i = 0; i < 400; i++) {
-        for (const p of generateNewProjects(1, 3, 'analog60s', known, premium)) {
-          if (p.title.startsWith('Return:')) { sum += p.payoutBase / (p.difficulty ?? 1); n++; }
+      const realRandom = Math.random;
+      let seed = 12345;
+      Math.random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+      try {
+        let sum = 0;
+        let n = 0;
+        for (let i = 0; i < 400; i++) {
+          for (const p of generateNewProjects(1, 3, 'analog60s', known, premium)) {
+            if (p.title.startsWith('Return:')) { sum += p.payoutBase / (p.difficulty ?? 1); n++; }
+          }
         }
+        return n ? sum / n : 0;
+      } finally {
+        Math.random = realRandom;
       }
-      return n ? sum / n : 0;
     };
     assert.ok(mean(1.18) > mean(1.1) * 1.03, 'higher premium raises returning-client fees');
   });

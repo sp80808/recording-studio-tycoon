@@ -2,6 +2,7 @@
 // These hooks provide easy access to game mechanics services and state
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import type { GameState } from '@/types/game';
 import {
   MarketTrend,
   StaffMemberWellbeing,
@@ -165,7 +166,7 @@ export function useStudioPerks() {
   const attemptUnlockPerk = useCallback(async (perkId: string): Promise<boolean> => {
     try {
       // In a real implementation, this would get current game state
-      const gameState: GameState = {}; // getCurrentGameState();
+      const gameState = {} as GameState; // getCurrentGameState();
       const success = gameServices.studioUpgradeService.unlockPerk(perkId, gameState);
       if (success) {
         refreshPerks();

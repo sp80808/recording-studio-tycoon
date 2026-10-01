@@ -74,6 +74,27 @@ export const CALLBACK_SUBPLOTS: readonly EmergentSubplot[] = [
           },
         ],
       },
+      {
+        stageNumber: 3,
+        title: 'Ten Years On',
+        context: 'A young horn player you once hired at scale wants to start a session-players’ co-op, and asks whether the studio will be its first home.',
+        options: [
+          {
+            id: 'coop_host',
+            label: 'Host the co-op’s first sessions',
+            flavorText: 'Give the next generation a room.',
+            storyFlag: 'hosted_players_coop',
+            consequences: { moneyDelta: -350, repDelta: 10, narrativeOutcome: 'The co-op’s first record is recorded in your live room, and its name is on the label.' },
+          },
+          {
+            id: 'coop_advice',
+            label: 'Offer advice and a reference, nothing more',
+            flavorText: 'Wish them well from a distance.',
+            storyFlag: 'advised_players_coop',
+            consequences: { moneyDelta: 0, repDelta: 4, narrativeOutcome: 'A warm letter, a small thank-you, and a co-op that finds its own feet elsewhere.' },
+          },
+        ],
+      },
     ],
   },
   {
@@ -132,6 +153,27 @@ export const CALLBACK_SUBPLOTS: readonly EmergentSubplot[] = [
             flavorText: 'Bookings do not wait.',
             storyFlag: 'skipped_team_dinner',
             consequences: { moneyDelta: 400, repDelta: 0, narrativeOutcome: 'The diary stays full. The mood stays careful.' },
+          },
+        ],
+      },
+      {
+        stageNumber: 3,
+        title: 'The Reunion Dinner',
+        context: 'A former crew member turns up, now running a studio of their own, and asks whether the two rooms could share a project.',
+        options: [
+          {
+            id: 'reunion_joint_project',
+            label: 'Take on the joint project',
+            flavorText: 'Two rooms, one record.',
+            storyFlag: 'took_joint_project',
+            consequences: { moneyDelta: -400, repDelta: 11, narrativeOutcome: 'The shared record sounds like both studios and neither, which is the point.' },
+          },
+          {
+            id: 'reunion_friendly_rivals',
+            label: 'Stay friendly rivals',
+            flavorText: 'Better to compete than to merge.',
+            storyFlag: 'stayed_friendly_rivals',
+            consequences: { moneyDelta: 200, repDelta: 4, narrativeOutcome: 'Drinks, handshakes, and a fierce rivalry that helps both diaries.' },
           },
         ],
       },
@@ -446,6 +488,27 @@ export const CALLBACK_SUBPLOTS: readonly EmergentSubplot[] = [
           },
         ],
       },
+      {
+        stageNumber: 3,
+        title: 'The Audit',
+        context: 'An old deal has finally been dragged into the light by a tidy accountant. You can pay the bill openly or find a way around it.',
+        options: [
+          {
+            id: 'audit_pay_openly',
+            label: 'Pay it openly and publish the accounts',
+            flavorText: 'Let the whole story be told.',
+            storyFlag: 'paid_the_audit_openly',
+            consequences: { moneyDelta: -700, repDelta: 10, narrativeOutcome: 'The accounts are published. Nobody finds anything new, and everybody notices the gesture.' },
+          },
+          {
+            id: 'audit_find_loophole',
+            label: 'Find a clever loophole',
+            flavorText: 'Lawyers exist for a reason.',
+            storyFlag: 'used_audit_loophole',
+            consequences: { moneyDelta: 400, repDelta: -6, narrativeOutcome: 'The bill shrinks. So does the trust of anyone who reads the footnotes.' },
+          },
+        ],
+      },
     ],
   },
 
@@ -506,6 +569,27 @@ export const CALLBACK_SUBPLOTS: readonly EmergentSubplot[] = [
             flavorText: 'You earned this moment.',
             storyFlag: 'took_the_spotlight',
             consequences: { moneyDelta: 400, repDelta: 7, narrativeOutcome: 'Bigger bookings, and a few whispers in the control room.' },
+          },
+        ],
+      },
+      {
+        stageNumber: 3,
+        title: 'The Wall of Plaques',
+        context: 'Years later the star comes back one last time and offers the studio a quiet honour: a permanent place in their official story.',
+        options: [
+          {
+            id: 'legacy_accept_place',
+            label: 'Accept a place in their official story',
+            flavorText: 'Become part of the legend.',
+            storyFlag: 'accepted_legacy_place',
+            consequences: { moneyDelta: 0, repDelta: 12, narrativeOutcome: 'The studio appears in the star’s biography, in a paragraph you were allowed to edit.' },
+          },
+          {
+            id: 'legacy_decline_place',
+            label: 'Decline and let the work speak',
+            flavorText: 'The records are the credit.',
+            storyFlag: 'declined_legacy_place',
+            consequences: { moneyDelta: 300, repDelta: 6, narrativeOutcome: 'You decline gracefully. The star sends a bottle and does not argue.' },
           },
         ],
       },

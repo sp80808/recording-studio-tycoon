@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useReducer } from 'react';
+import type { StandardButton } from '@/types/gamepad';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles,
@@ -445,9 +446,14 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
   ]);
 
   // Gamepad mapping
+  const handledPressRef = useRef<typeof gamepad.justPressed | null>(null);
   useEffect(() => {
-    if (!gamepad.isConnected) return;
-    const unsub = gamepad.onButtonDown((btn) => {
+    if (!gamepad.isConnected || !gamepad.justPressed) return;
+    // Each poll yields a fresh justPressed snapshot; act on it once even if handler identities change.
+    if (handledPressRef.current === gamepad.justPressed) return;
+    handledPressRef.current = gamepad.justPressed;
+    const pressedButtons = (Object.keys(gamepad.justPressed) as StandardButton[]).filter((b) => gamepad.justPressed[b]);
+    pressedButtons.forEach((btn) => {
       if (state.phase === 'closed') {
         if (btn === 'south' || btn === 'start') {
           handleStartUnlatch();
@@ -471,9 +477,9 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
         }
       }
     });
-    return unsub;
   }, [
-    gamepad,
+    gamepad.isConnected,
+    gamepad.justPressed,
     state.phase,
     handleStartUnlatch,
     handleToggleLeftLatch,
@@ -954,7 +960,7 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
                   onAction={handleAction}
                   baseValue={currentItem.baseValue}
                   gamepadConnected={gamepad.isConnected}
-                  lastInputType={gamepad.lastInputType}
+                  lastInputType={gamepad.lastInputType === 'gamepad' ? 'gamepad' : 'keyboard'}
                 />
               </motion.div>
             ) : null}

@@ -1,6 +1,7 @@
 import { applySessionEvent, phaseForStage, rollPhaseEvent, type SessionEvent } from '@/rpg/sessionIssues';
 import { chainMultiplier, evaluateChain, validateChain } from '@/rpg/signalChain';
 import { getProjectBrief, evaluateProjectBriefFit, BRIEF_FIT_MULTIPLIER, recordBriefDiscoveries } from '@/rpg/projectBrief';
+import { recordGearUse } from '@/features/usedGear/session';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { GameState, FocusAllocation, Project } from '@/types/game';
 import { TakeGrade, evaluateTakeAccuracy, calculateTakeEnergyCost } from '@/rpg/takeEvaluation';
@@ -31,6 +32,14 @@ import {
   getActiveBuffMagnitude,
   consumeChoreBuffSession
 } from '@/simulation/choreEngine';
+
+/** Take-driven overrides for a work session (cost, grade and quality bonus from the lock-take dock). */
+export interface PerformDailyWorkOptions {
+  energyCost?: number;
+  takeGrade?: TakeGrade;
+  takeMultiplier?: number;
+  qualityBonus?: number;
+}
 
 interface UseStageWorkProps {
   gameState: GameState;
@@ -204,12 +213,7 @@ export const useStageWork = ({
 
   // getMoodEffectiveness is now imported from playerUtils
 
-  const performDailyWork = useCallback((options?: {
-    energyCost?: number;
-    takeGrade?: TakeGrade;
-    takeMultiplier?: number;
-    qualityBonus?: number;
-  }): { finalProjectData?: Project; isComplete: boolean } | undefined => {
+  const performDailyWork = useCallback((options?: PerformDailyWorkOptions): { finalProjectData?: Project; isComplete: boolean } | undefined => {
     console.log('🚀 === PERFORMING DAILY WORK ===');
     
     if (!gameState.activeProject) {
@@ -457,6 +461,7 @@ export const useStageWork = ({
 
     // FIXED: Immutable state update for React re-rendering
     setGameState(prev => {
+      if (prev.activeProject?.id !== project.id || prev.activeProject.workSessionCount !== project.workSessionCount) return prev;
       console.log('🔄 Updating game state with immutable update...');
       
       // Deep copy the active project to avoid mutation
@@ -503,7 +508,8 @@ export const useStageWork = ({
         ? consumeChoreBuffSession(prev.choreState)
         : prev.choreState;
 
-      const nextPendingCrates = prev.pendingCrates ? [...prev.pendingCrates] : [];
+      const gearUse = recordGearUse(prev, updatedProject, 1, overdrive ? 2 : 1);
+      const nextPendingCrates = [...(prev.pendingCrates ?? [])];
       if (stageCompleted && completedGrade?.grade === 'Gold' && Math.random() < 0.15) {
         nextPendingCrates.push({
           id: `crate-sgrade-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -537,17 +543,18 @@ export const useStageWork = ({
 
       return withDailyTracking({
         ...withKnowHow,
+        ...gearUse.state,
         gems: (prev.gems ?? 0) + gemGain,
-        activeProject: updatedProject,
+        activeProject: gearUse.project,
+        pendingCrates: nextPendingCrates,
         discoveredSynergies: updatedDiscovered,
         discoveredBriefCombos: briefDiscoveries.list,
         choreState: nextChoreState,
-        pendingCrates: nextPendingCrates,
         playerData: {
           ...prev.playerData,
           dailyWorkCapacity: Math.max(0, prev.playerData.dailyWorkCapacity - energyCost)
         },
-        hiredStaff: prev.hiredStaff.map(s => {
+        hiredStaff: gearUse.state.hiredStaff.map(s => {
           if (s.assignedProjectId === project.id && s.status === 'Working') {
             // Decrease mood slightly after work, decrease energy
             return { 
@@ -574,7 +581,7 @@ export const useStageWork = ({
 
     // 🔥 Overdrive: big payoff, small risk — the session can burn out the crew
     if (overdrive) {
-      if (Math.random() < 0.25) {
+      if (createSeededRandom(`${gameState.saveSeed ?? 4242}:${project.id}:overdrive:${newWorkSessionCount}`)() < 0.25) {
         setGameState(prev => ({
           ...prev,
           hiredStaff: prev.hiredStaff.map(s =>
@@ -632,7 +639,7 @@ export const useStageWork = ({
       };
       // DO NOT CALL completeProject here.
       // Return the project details so the UI can display celebration BEFORE state is wiped.
-      return { finalProjectData, isComplete: true };
+      return { finalProjectData: recordGearUse(gameState, finalProjectData, 1, overdrive ? 2 : 1).project, isComplete: true };
     }
 
     // Show stage completion notification

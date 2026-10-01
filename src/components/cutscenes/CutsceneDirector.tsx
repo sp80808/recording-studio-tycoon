@@ -46,7 +46,7 @@ export function CutsceneDirector() {
   const current = queue[0];
   
   if (current.type === 'outcome_vignette') {
-    return <MinigameOutcomeCutscene payload={current.payload} onComplete={dequeue} />;
+    return <MinigameOutcomeCutscene payload={current.payload as React.ComponentProps<typeof MinigameOutcomeCutscene>['payload']} onComplete={dequeue} />;
   }
 
   if (current.type === 'story_cinematic') {
@@ -54,7 +54,7 @@ export function CutsceneDirector() {
       if (choice) localStorage.setItem(CREED_KEY, choice.id);
       dequeue();
     };
-    return <CinematicStoryCutscene payload={current.payload} onComplete={completeStory} />;
+    return <CinematicStoryCutscene payload={current.payload as React.ComponentProps<typeof CinematicStoryCutscene>['payload']} onComplete={completeStory} />;
   }
   
   return null;

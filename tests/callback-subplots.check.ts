@@ -17,12 +17,12 @@ const makeState = (flags: Record<string, boolean>, era = 'analog60s', day = 60):
 });
 
 describe('callback subplots', () => {
-  it('are registered with unique ids and two stages each', () => {
+  it('are registered with unique ids and two or three stages each', () => {
     const ids = EMERGENT_SUBPLOTS.map((s) => s.id);
     assert.equal(new Set(ids).size, ids.length);
     for (const s of CALLBACK_SUBPLOTS) {
       assert.ok(ids.includes(s.id), s.id);
-      assert.equal(s.stages.length, 2);
+      assert.ok(s.stages.length === 2 || s.stages.length === 3);
       for (const st of s.stages) assert.ok(st.options.length >= 2);
     }
   });

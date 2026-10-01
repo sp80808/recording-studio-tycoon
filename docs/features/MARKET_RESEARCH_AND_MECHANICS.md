@@ -34,7 +34,7 @@ Scores are 1 to 5 (higher is better). "Confidence" is how sure we are it ships c
 | 1 | **Comp Session mini-game**: pick the best take for each line of a vocal. Visible waveforms for laypeople, hidden pitch/timing/emotion and flaw tags for insiders | 4 | 5 | 5 | **Built in this PR** |
 | 2 | **Ambient earning**: royalties trickle while you play and a "while you were out" summary on return. Subtle, capped, flavoured as catalogue royalties | 4 | 3 | 4 | Next. Wants the economy ledger (#83) so it is not an invisible faucet |
 | 3 | **Humour and charm pass**: loading tips, toasts, fax/email flavour, credits, all in one data file with a funny-check rule | 5 | 4 | 5 | Next. Tone rules below |
-| 4 | Album sequencing mini-game: order tracks for flow, vinyl-side length, single placement | 4 | 4 | 3 | Backlog |
+| 4 | Album sequencing mini-game: order tracks for flow, vinyl-side length, single placement | 4 | 4 | 3 | **Built** (`album-sequence`) |
 | 5 | Session templates and signal chains (#86) | 2 | 5 | 3 | In flight |
 | 6 | Studio Seasons and awards (#63) | 4 | 3 | 3 | In flight |
 | 7 | Load-in Tetris for gigs (pack the van) | 5 | 2 | 3 | Backlog, pairs with live shows |
