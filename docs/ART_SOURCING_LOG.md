@@ -142,3 +142,17 @@ Procedurally drawn in-house (rectangles, no third-party art). License: **In-hous
 | `layer/npc-parts` (40 tintable NPC parts: body, hair, tops, lowers, shoes, faces, headphones) | `scripts/assets/make-layer-parts.ts` -> `assets-src/layer/npc-parts/frames/` | `public/assets/atlases/layer/npc-parts.*` |
 
 Every built atlas has a `*.provenance.json` (schema in `docs/ASSET_PIPELINE.md`). Real Aseprite/Blender exports have not been run through the pipeline yet.
+
+## 10. Studio models rendered in Blender (`tools/blender`, `public/assets/studio`)
+
+In-house original low-poly models, CC0, no external source. Rendered headless from the scripts in
+`tools/blender` (see its README) so they can be regenerated or restyled.
+
+| Asset | Files | Used by |
+|---|---|---|
+| Crew characters: 18 tintable layers x 4 facings x 2 poses (idle, working) | `characters/*.png` | `characters.ts`, `WebGLCanvas.tsx` |
+| Mixing console, one body per studio tier (1-5) with fader/meter anchors | `console_t1..5.png`, `console.json` | `studioSprites.ts`, `WebGLCanvas.tsx` |
+| Vocal booth: interior and glass/frame layers | `booth_back.png`, `booth_front.png`, `booth.json` | `studioDecor.ts` (`buildLiveBooth`) |
+| Brass wall clock dial | `clock_face.png`, `clock.json` | `studioDecor.ts` (`buildWallClock`) |
+
+Every asset has a procedural Graphics fallback if its PNG fails to load.

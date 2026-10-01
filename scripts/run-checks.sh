@@ -156,6 +156,8 @@ node /tmp/rst-motion-qualification.cjs
 echo "=== studio os motion pass (#75) ==="
 ./node_modules/.bin/esbuild tests/studio-os-motion.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-os-motion.cjs --alias:@=./src >/dev/null
 node /tmp/rst-studio-os-motion.cjs
+./node_modules/.bin/esbuild tests/studio-art.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-art.cjs --alias:@=./src >/dev/null
+node /tmp/rst-studio-art.cjs
 
 echo "=== gear bench & reward FX policy (#81, #80) ==="
 for check in gear-bench reward-fx-policy; do
