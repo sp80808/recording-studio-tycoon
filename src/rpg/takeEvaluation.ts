@@ -79,7 +79,9 @@ export function calculateTakeEnergyCost(
 
 /**
  * Base work units before genre, staff, synergy, and grade multipliers.
+ * Tuned so a typical early stage (8–12 units) clears in ~2 takes, not 3–4
+ * full calibration cycles.
  */
 export function calculateTakeBaseUnits(energyCost: number): number {
-  return energyCost * 2;
+  return energyCost * 3;
 }

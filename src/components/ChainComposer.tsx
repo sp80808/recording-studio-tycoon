@@ -1,103 +1,262 @@
-import React, { useState } from 'react';
-import type { GameState, Project } from '@/types/game';
+import React, { useEffect, useRef, useState } from 'react';
+import { AudioWaveform, Disc3, Mic, Waves, type LucideIcon } from 'lucide-react';
+import type { Equipment, GameState, Project } from '@/types/game';
 import { getProjectBrief } from '@/rpg/projectBrief';
 import {
   SIGNAL_SLOTS,
   SLOT_LABELS,
   availableForSlot,
   evaluateChain,
-  resolveTemplates,
+  formatChainStatusLine,
   validateChain,
   type SignalChain,
   type SignalSlot,
 } from '@/rpg/signalChain';
+import { conditionBand, type GearConditionBand } from '@/features/gearStudio/gearVisualState';
+import { gameAudio } from '@/utils/audioSystem';
+import './chain-composer.css';
 
 interface ChainComposerProps {
   project: Project;
   state: GameState;
   chain?: SignalChain;
   onChange: (chain: SignalChain | undefined) => void;
-  onSaveTemplate: (chain: SignalChain, name: string) => void;
 }
 
-/** Compact slot composer (#86 V1): no drag and drop, just four selects and an explainable summary. */
-export const ChainComposer: React.FC<ChainComposerProps> = ({ project, state, chain, onChange, onSaveTemplate }) => {
-  const [name, setName] = useState('');
-  const brief = getProjectBrief(project);
-  const current: SignalChain = chain ?? { id: `chain-${project.id}`, name: 'Vocal chain', service: 'vocal-recording', roomId: project.bookingRoomId ?? 'studio-a', slots: {} };
-  const ev = chain ? evaluateChain(chain, state, state.hiredStaff, brief) : null;
-  const validation = chain ? validateChain(chain, state, project.id) : null;
-  const templates = resolveTemplates(state);
+const SLOT_ICON: Record<SignalSlot, LucideIcon> = {
+  microphone: Mic,
+  preamp: AudioWaveform,
+  dynamics: Waves,
+  recorderInterface: Disc3,
+};
 
-  const setSlot = (slot: SignalSlot, id: string) => {
-    const slots = { ...current.slots };
-    if (id) slots[slot] = id; else delete slots[slot];
+type SlotMotion = 'seat' | 'unseat';
+
+const emptyChain = (project: Project): SignalChain => ({
+  id: `chain-${project.id}`,
+  name: 'Vocal chain',
+  service: 'vocal-recording',
+  roomId: project.bookingRoomId ?? 'studio-a',
+  slots: {},
+});
+
+const gearById = (state: GameState, id?: string): Equipment | undefined =>
+  id ? (state.ownedEquipment ?? []).find((g) => g.id === id) : undefined;
+
+/** Diegetic four-slot vocal rack: tap a jack to assign or clear gear. */
+export const ChainComposer: React.FC<ChainComposerProps> = ({ project, state, chain, onChange }) => {
+  const [openSlot, setOpenSlot] = useState<SignalSlot | null>(null);
+  const [motion, setMotion] = useState<Partial<Record<SignalSlot, SlotMotion>>>({});
+  const [linger, setLinger] = useState<Partial<Record<SignalSlot, Equipment>>>({});
+  const rootRef = useRef<HTMLDivElement>(null);
+  const motionTimers = useRef<Partial<Record<SignalSlot, number>>>({});
+
+  const current = chain ?? emptyChain(project);
+  const brief = getProjectBrief(project);
+  const validation = chain ? validateChain(chain, state, project.id) : null;
+  const ev = chain ? evaluateChain(chain, state, state.hiredStaff, brief) : null;
+
+  useEffect(() => () => {
+    Object.values(motionTimers.current).forEach((id) => id && window.clearTimeout(id));
+  }, []);
+
+  useEffect(() => {
+    if (!openSlot) return;
+    const onPointer = (e: PointerEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpenSlot(null);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenSlot(null);
+    };
+    document.addEventListener('pointerdown', onPointer);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onPointer);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [openSlot]);
+
+  const pulse = (slot: SignalSlot, kind: SlotMotion, ms = 320) => {
+    const prev = motionTimers.current[slot];
+    if (prev) window.clearTimeout(prev);
+    setMotion((m) => ({ ...m, [slot]: kind }));
+    motionTimers.current[slot] = window.setTimeout(() => {
+      setMotion((m) => {
+        const next = { ...m };
+        delete next[slot];
+        return next;
+      });
+      if (kind === 'unseat') {
+        setLinger((l) => {
+          if (!l[slot]) return l;
+          const next = { ...l };
+          delete next[slot];
+          return next;
+        });
+      }
+    }, ms);
+  };
+
+  const writeSlots = (slots: SignalChain['slots']) => {
     onChange(Object.keys(slots).length ? { ...current, slots } : undefined);
   };
 
+  const setSlot = (slot: SignalSlot, id: string | undefined) => {
+    const slots = { ...current.slots };
+    const previous = gearById(state, slots[slot]);
+    if (id) {
+      slots[slot] = id;
+      setLinger((l) => {
+        if (!l[slot]) return l;
+        const next = { ...l };
+        delete next[slot];
+        return next;
+      });
+      pulse(slot, 'seat');
+      void gameAudio.playGearSwitch(0.45);
+      writeSlots(slots);
+      return;
+    }
+    delete slots[slot];
+    if (previous) {
+      setLinger((l) => ({ ...l, [slot]: previous }));
+      pulse(slot, 'unseat', 260);
+      void gameAudio.playTactileClick(0.5);
+    }
+    writeSlots(slots);
+  };
+
+  const onJack = (slot: SignalSlot) => {
+    void gameAudio.playTactileClick(0.4);
+    setOpenSlot((prev) => (prev === slot ? null : slot));
+  };
+
+  const options = openSlot ? availableForSlot(state, openSlot, project.id) : [];
+  const openFilledId = openSlot ? current.slots[openSlot] : undefined;
+  // Keep the currently seated piece visible in the tray even if another project would mark it busy.
+  const trayGear: Equipment[] = openSlot
+    ? (() => {
+        const list = [...options];
+        const seated = gearById(state, openFilledId);
+        if (seated && !list.some((g) => g.id === seated.id)) list.unshift(seated);
+        return list;
+      })()
+    : [];
+
+  const status = (() => {
+    if (!chain || !ev || !validation) return 'Tap a jack to patch mic → pre → dynamics → recorder';
+    return formatChainStatusLine(ev, validation.broken);
+  })();
+
   return (
-    <div className="mb-3 rounded-lg border border-[var(--rst-line)] bg-black/20 p-2.5 text-xs" data-testid="chain-composer">
-      <div className="rst-kicker mb-1.5 !text-[10px]">Vocal chain (optional)</div>
-      {templates.length > 0 && (
-        <select
-          aria-label="Saved chain template"
-          className="mb-1.5 w-full rounded border border-[var(--rst-line)] bg-black/30 px-1.5 py-1"
-          value=""
-          onChange={(e) => {
-            const t = templates.find((x) => x.chain.id === e.target.value);
-            if (t) onChange({ ...t.chain, id: `chain-${project.id}` });
-          }}
-        >
-          <option value="">Load template…</option>
-          {templates.map((t) => (
-            <option key={t.chain.id} value={t.chain.id}>
-              {t.chain.name}{t.validation.broken.length ? ` (missing: ${t.validation.broken.map((s) => SLOT_LABELS[s]).join(', ')})` : ''}
-            </option>
-          ))}
-        </select>
-      )}
-      <div className="space-y-1">
-        {SIGNAL_SLOTS.map((slot) => (
-          <label key={slot} className="flex items-center gap-2">
-            <span className="w-16 text-stone-400">{SLOT_LABELS[slot]}</span>
-            <select
-              className="min-w-0 flex-1 rounded border border-[var(--rst-line)] bg-black/30 px-1.5 py-1"
-              value={current.slots[slot] ?? ''}
-              onChange={(e) => setSlot(slot, e.target.value)}
-            >
-              <option value="">— empty —</option>
-              {availableForSlot(state, slot, project.id).map((g) => (
-                <option key={g.id} value={g.id}>{g.name} · {Math.round(g.condition)}%</option>
-              ))}
-            </select>
-          </label>
-        ))}
+    <div ref={rootRef} className="chain-rack" data-testid="chain-composer">
+      <div className="chain-rack__ears chain-rack__ears--l" aria-hidden="true">
+        <span className="chain-rack__screw" />
+        <span className="chain-rack__screw" />
       </div>
-      {ev && validation && (
-        <div className="mt-2 space-y-0.5 text-stone-300">
-          <div>
-            {ev.traits.length > 0 ? `Character: ${ev.traits.join(' / ')}` : 'Character: neutral'} · Setup {ev.setupTime} min · Reliability {ev.reliabilityRisk} · Crew familiarity {ev.familiarity}%
-          </div>
-          {validation.broken.length > 0 && <div className="text-rose-300">Unavailable: {validation.broken.map((s) => SLOT_LABELS[s]).join(', ')}</div>}
-          {ev.reasons.slice(0, 3).map((r) => <div key={r}>· {r}</div>)}
-          <div className="mt-1 flex gap-1.5">
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Template name"
-              className="min-w-0 flex-1 rounded border border-[var(--rst-line)] bg-black/30 px-1.5 py-1"
-            />
+      <div className="chain-rack__ears chain-rack__ears--r" aria-hidden="true">
+        <span className="chain-rack__screw" />
+        <span className="chain-rack__screw" />
+      </div>
+
+      <div className="chain-rack__head">
+        <span className="rst-kicker !text-[10px]">Vocal chain</span>
+        <span className="rst-muted text-[10px]">optional patch</span>
+      </div>
+
+      <div className="chain-rack__slots" role="group" aria-label="Vocal signal chain slots">
+        <div className="chain-rack__patch" aria-hidden="true">
+          {SIGNAL_SLOTS.slice(0, -1).map((slot, i) => {
+            const next = SIGNAL_SLOTS[i + 1];
+            const live = Boolean(current.slots[slot] && current.slots[next]);
+            return <span key={slot} className={`chain-rack__patch-seg${live ? ' is-live' : ''}`} />;
+          })}
+        </div>
+
+        {SIGNAL_SLOTS.map((slot) => {
+          const Icon = SLOT_ICON[slot];
+          const id = current.slots[slot];
+          const gear = gearById(state, id) ?? linger[slot];
+          const filled = Boolean(gear);
+          const broken = Boolean(id && validation?.broken.includes(slot));
+          const band: GearConditionBand | undefined = gear ? conditionBand(gear.condition ?? 100) : undefined;
+          const motionClass = motion[slot] === 'seat' ? ' is-seating' : motion[slot] === 'unseat' ? ' is-unseating' : '';
+          const hasOptions = Boolean(id) || Boolean(linger[slot]) || availableForSlot(state, slot, project.id).length > 0;
+
+          return (
             <button
+              key={slot}
               type="button"
-              className="rst-chip cursor-pointer"
-              disabled={!name.trim() || !validation.valid}
-              onClick={() => { onSaveTemplate(current, name); setName(''); }}
+              className={`chain-jack${filled ? ' is-filled' : ''}${openSlot === slot ? ' is-open' : ''}${motionClass}`}
+              aria-pressed={openSlot === slot}
+              aria-label={`${SLOT_LABELS[slot]}: ${gear?.name ?? 'empty jack'}`}
+              title={gear ? `${gear.name} · ${Math.round(gear.condition ?? 100)}%` : `${SLOT_LABELS[slot]} — empty`}
+              disabled={!hasOptions}
+              onClick={() => onJack(slot)}
             >
-              Save
+              <span
+                className={`chain-jack__well${filled ? ' is-filled' : ' is-empty'}${broken ? ' is-broken' : ''}`}
+              >
+                <Icon size={15} className="chain-jack__glyph" strokeWidth={1.75} aria-hidden="true" />
+                {band && <span className="chain-jack__cue" data-band={band} aria-hidden="true" />}
+              </span>
+              <span className="chain-jack__label">{SLOT_LABELS[slot]}</span>
             </button>
+          );
+        })}
+      </div>
+
+      {openSlot && (
+        <div className="chain-rack__tray" role="listbox" aria-label={`Assign ${SLOT_LABELS[openSlot]}`}>
+          <div className="chain-rack__tray-title">{SLOT_LABELS[openSlot]} bay</div>
+          <div className="chain-rack__options">
+            {openFilledId && (
+              <button
+                type="button"
+                role="option"
+                aria-selected={false}
+                className="chain-rack__opt is-clear"
+                onClick={() => {
+                  setSlot(openSlot, undefined);
+                  setOpenSlot(null);
+                }}
+              >
+                Open jack
+              </button>
+            )}
+            {trayGear.map((g) => {
+              const active = openFilledId === g.id;
+              return (
+                <button
+                  key={g.id}
+                  type="button"
+                  role="option"
+                  aria-selected={active}
+                  className={`chain-rack__opt${active ? ' is-active' : ''}`}
+                  onClick={() => {
+                    if (active) {
+                      setSlot(openSlot, undefined);
+                    } else {
+                      setSlot(openSlot, g.id);
+                    }
+                    setOpenSlot(null);
+                  }}
+                >
+                  <span className="truncate">{g.name}</span>
+                  <span className="chain-rack__opt-cond">{Math.round(g.condition ?? 100)}%</span>
+                </button>
+              );
+            })}
+            {trayGear.length === 0 && (
+              <p className="chain-rack__empty-hint">No matching gear free for this bay.</p>
+            )}
           </div>
         </div>
       )}
+
+      <p className={`chain-rack__status${validation && validation.broken.length > 0 ? ' is-warn' : ''}`}>
+        {status}
+      </p>
     </div>
   );
 };

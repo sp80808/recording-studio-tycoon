@@ -186,6 +186,47 @@ body { background: var(--rst-ink-900); color: var(--rst-ivory); }
 .rst-chip-danger { border-color: rgba(240, 119, 107, 0.4); background: rgba(240, 119, 107, 0.10); color: var(--rst-danger); }
 .rst-chip-story { border-color: rgba(196, 161, 240, 0.4); background: rgba(196, 161, 240, 0.10); color: var(--rst-story); }
 
+/* Stamped metal plates — status / duty / buff labels (not rounded pills) */
+.rst-stamp {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 8px; border-radius: 3px;
+  border: 1px solid var(--rst-brass-line);
+  background: rgba(24, 20, 16, 0.88);
+  color: var(--rst-brass-200);
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.11em; text-transform: uppercase;
+  white-space: nowrap; user-select: none;
+  box-shadow: inset 0 1px 0 rgba(255, 244, 214, 0.07);
+  font-variant-numeric: tabular-nums;
+}
+.rst-stamp__label { display: inline-flex; align-items: center; gap: 5px; line-height: 1.2; }
+.rst-stamp__meta {
+  padding: 1px 5px; border-radius: 2px;
+  border: 1px solid rgba(243, 236, 221, 0.12);
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--rst-stone);
+  font-size: 9px; font-weight: 700; letter-spacing: 0.06em;
+}
+button.rst-stamp {
+  cursor: pointer;
+  transition: border-color 0.14s var(--rst-ease), background 0.14s, color 0.14s;
+}
+button.rst-stamp:hover:not(:disabled) {
+  border-color: var(--rst-brass-400);
+  background: rgba(40, 32, 22, 0.94);
+  color: var(--rst-brass-200);
+}
+button.rst-stamp:focus-visible {
+  outline: 2px solid var(--rst-brass-300);
+  outline-offset: 2px;
+}
+.rst-stamp-brass { border-color: var(--rst-brass-line); background: rgba(24, 20, 16, 0.88); color: var(--rst-brass-200); }
+.rst-stamp-steel { border-color: var(--rst-line-strong); background: rgba(28, 26, 23, 0.9); color: var(--rst-ivory-soft); }
+.rst-stamp-steel .rst-stamp__meta { color: var(--rst-stone-dim); }
+.rst-stamp-live { border-color: rgba(95, 208, 192, 0.4); background: rgba(18, 28, 26, 0.9); color: var(--rst-live); }
+.rst-stamp-money { border-color: rgba(127, 214, 166, 0.38); background: rgba(18, 28, 22, 0.9); color: var(--rst-money); }
+.rst-stamp-warn { border-color: rgba(242, 178, 92, 0.4); background: rgba(28, 22, 14, 0.9); color: var(--rst-warn); }
+
 /* Option cards inside decision popups */
 .rst-option {
   width: 100%;
@@ -215,6 +256,113 @@ body { background: var(--rst-ink-900); color: var(--rst-ivory); }
 }
 .rst-duty-chip:hover { transform: translateY(-2px); border-color: var(--rst-brass-400); background: rgba(40, 32, 22, 0.9); }
 .rst-duty-chip:active { transform: translateY(0); }
+
+/*
+ * Hybrid chore hotspot button — stamped plate consistency (no emoji pills)
+ * with old duty-chip depth, icon plate, and working rail character.
+ */
+.rst-chore-btn {
+  pointer-events: auto;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: min(220px, 72vw);
+  padding: 5px 10px 5px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--rst-brass-line);
+  background: rgba(22, 19, 16, 0.9);
+  color: var(--rst-brass-200);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow:
+    0 7px 18px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 244, 214, 0.08);
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+}
+.rst-chore-btn__glyph {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 3px;
+  border: 1px solid rgba(243, 236, 221, 0.14);
+  background: rgba(0, 0, 0, 0.32);
+  box-shadow: inset 0 1px 0 rgba(255, 244, 214, 0.06);
+  color: inherit;
+}
+.rst-chore-btn__body {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.rst-chore-btn__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+.rst-chore-btn__meta {
+  flex-shrink: 0;
+  padding: 1px 5px;
+  border-radius: 2px;
+  border: 1px solid rgba(243, 236, 221, 0.12);
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--rst-stone);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.rst-chore-btn__rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: rgba(0, 0, 0, 0.35);
+}
+.rst-chore-btn__rail > i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--rst-brass-400);
+  box-shadow: 0 0 8px rgba(230, 184, 102, 0.45);
+}
+.rst-chore-btn__rail--indeterminate > i {
+  width: 42%;
+  animation: rst-chore-rail 1.1s ease-in-out infinite;
+}
+@keyframes rst-chore-rail {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(280%); }
+}
+button.rst-chore-btn:hover:not(:disabled) {
+  border-color: var(--rst-brass-400);
+  background: rgba(40, 32, 22, 0.94);
+  box-shadow:
+    0 10px 22px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 244, 214, 0.1);
+}
+button.rst-chore-btn:focus-visible {
+  outline: 2px solid var(--rst-brass-300);
+  outline-offset: 2px;
+}
+.rst-chore-btn--working {
+  border-color: var(--rst-brass-400);
+  color: var(--rst-brass-200);
+}
+.rst-chore-btn--brass { border-color: var(--rst-brass-line); color: var(--rst-brass-200); }
+.rst-chore-btn--steel { border-color: var(--rst-line-strong); color: var(--rst-ivory-soft); }
+.rst-chore-btn--live { border-color: rgba(95, 208, 192, 0.42); background: rgba(16, 26, 24, 0.92); color: var(--rst-live); }
+.rst-chore-btn--live .rst-chore-btn__rail > i { background: var(--rst-live); box-shadow: 0 0 8px rgba(95, 208, 192, 0.4); }
+.rst-chore-btn--warn { border-color: rgba(242, 178, 92, 0.42); background: rgba(28, 22, 14, 0.92); color: var(--rst-warn); }
+.rst-chore-btn--warn .rst-chore-btn__rail > i { background: var(--rst-warn); box-shadow: 0 0 8px rgba(242, 178, 92, 0.4); }
+.rst-chore-btn--money { border-color: rgba(127, 214, 166, 0.4); background: rgba(16, 26, 20, 0.92); color: var(--rst-money); }
 
 /* Loading shimmer for any skeleton block */
 .rst-shimmer { background: var(--rst-fill-2); animation: rst-skeleton-pulse 1.4s ease-in-out infinite; }
@@ -246,7 +394,8 @@ body { background: var(--rst-ink-900); color: var(--rst-ivory); }
 
 @media (prefers-reduced-motion: reduce) {
   .rst-enter > *, .rst-modal-pop, .animate-rst-fade, .animate-rst-rise, .rst-shimmer, .rst-attention { animation: none !important; }
-  .rst-option, .rst-btn { transition: none; }
+  .rst-option, .rst-btn, button.rst-stamp, button.rst-chore-btn { transition: none; }
+  .rst-chore-btn__rail--indeterminate > i { animation: none !important; }
 }
 
 /* ------------------------------------------------- career start (full-screen flow) */

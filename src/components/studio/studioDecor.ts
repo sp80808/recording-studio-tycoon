@@ -1,14 +1,20 @@
 /**
  * Studio decor renderer (Pixi). Draws the room's dressing — plank floor, slab,
- * wainscot, diffusers, trophy wall, era signature props — plus an additive
- * lighting layer with a window shaft, dust motes, lamp pools and a steaming mug.
+ * wainscot, diffusers, album-cover wall, era signature props — plus an additive
+ * lighting layer with a window shaft, dust motes, lamp pools, candle flicker,
+ * and a candle-table mug that steams after espresso is brewed.
  *
- * All decisions (which trophies, which era prop, plank/mote layout) come from
+ * All decisions (which covers, which era prop, plank/mote layout) come from
  * studioDecorConfig.ts so this file only draws. Every animated element honours
  * `reduceMotion` by freezing to a pleasant static pose.
  */
 import { Container, Graphics, Matrix, Sprite, Texture } from 'pixi.js';
 import { getPropTexture } from '@/components/studio/propSprites';
+import {
+  candleFlicker,
+  clockRimGlowAlpha,
+  coffeeSteamStrength,
+} from '@/components/studio/studioFloorLife';
 import {
   ROOM_D,
   ROOM_W,
@@ -22,11 +28,15 @@ import {
 } from './isoMath';
 import {
   advanceMote,
-  getDayness,
+  getDaynessFromClockMinutes,
   getEraLightingKit,
+  getInteriorLightBoost,
   getMoteSeeds,
   getPlankLayout,
   getTrophyWall,
+  REDUCED_MOTION_DAYNESS,
+  type AlbumCoverEntry,
+  type DayPhase,
   type EraDecorSpec,
   type EraLightingKit,
   type TrophyInput,
@@ -54,32 +64,76 @@ const radialGlow = (
   }
 };
 
-/** Points of a circle drawn *on* a wall plane (foreshortened along the wall's x axis). */
-const wallEllipse = (cx: number, cy: number, r: number, plane: 'left' | 'right', steps = 22): number[] => {
-  const ax = plane === 'right' ? 0.894 : -0.894;
-  const ay = 0.447;
-  const pts: number[] = [];
-  for (let i = 0; i < steps; i++) {
-    const th = (i / steps) * Math.PI * 2;
-    const c = Math.cos(th) * r;
-    const s = Math.sin(th) * r;
-    pts.push(cx + c * ax, cy + c * ay - s);
-  }
-  return pts;
+/* ---------------------------------------------------- album cover textures */
+
+type CoverPalette = { a: string; b: string; accent: string };
+
+const genrePalette = (genre?: string): CoverPalette => {
+  const g = (genre || '').toLowerCase();
+  if (/rock|metal|punk/.test(g)) return { a: '#1c0a0a', b: '#7f1d1d', accent: '#fb923c' };
+  if (/electronic|techno|synth|edm/.test(g)) return { a: '#0c1222', b: '#4c1d95', accent: '#22d3ee' };
+  if (/hip.?hop|rap|trap/.test(g)) return { a: '#0a0a0a', b: '#78350f', accent: '#fbbf24' };
+  if (/jazz|blues/.test(g)) return { a: '#0b1226', b: '#1e3a8a', accent: '#fcd34d' };
+  if (/acoustic|folk|country/.test(g)) return { a: '#0f1a12', b: '#365314', accent: '#6ee7b7' };
+  return { a: '#1e1033', b: '#4c1d95', accent: '#f9a8d4' };
 };
 
-const starPoints = (cx: number, cy: number, rOuter: number, rInner: number, plane: 'left' | 'right'): number[] => {
-  const ax = plane === 'right' ? 0.894 : -0.894;
-  const ay = 0.447;
-  const pts: number[] = [];
-  for (let i = 0; i < 10; i++) {
-    const th = (i / 10) * Math.PI * 2 - Math.PI / 2;
-    const r = i % 2 === 0 ? rOuter : rInner;
-    const c = Math.cos(th) * r;
-    const s = Math.sin(th) * r;
-    pts.push(cx + c * ax, cy + c * ay + s);
+const coverTextureCache = new Map<string, Texture>();
+
+/** Procedural sleeve art (mirrors AlbumCoverArt genre themes) for the booth wall. */
+const getAlbumCoverTexture = (cover: AlbumCoverEntry): Texture => {
+  const key = `${cover.projectId}|${cover.title}|${cover.genre ?? ''}|${cover.score}`;
+  const hit = coverTextureCache.get(key);
+  if (hit) return hit;
+
+  const size = 96;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    const empty = Texture.EMPTY;
+    coverTextureCache.set(key, empty);
+    return empty;
   }
-  return pts;
+
+  const pal = genrePalette(cover.genre);
+  const grad = ctx.createLinearGradient(0, 0, size, size);
+  grad.addColorStop(0, pal.a);
+  grad.addColorStop(1, pal.b);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+
+  ctx.beginPath();
+  ctx.arc(size * 0.55, size * 0.42, 28, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(size * 0.55, size * 0.42, 10, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  ctx.fill();
+
+  ctx.fillStyle = pal.accent;
+  ctx.globalAlpha = 0.85;
+  ctx.fillRect(6, size - 22, size - 12, 3);
+  ctx.globalAlpha = 1;
+
+  ctx.fillStyle = '#f8fafc';
+  ctx.font = 'bold 11px system-ui, sans-serif';
+  ctx.fillText((cover.title || 'Session').slice(0, 14), 7, size - 8);
+
+  if (cover.score >= 80) {
+    ctx.fillStyle = cover.score >= 90 ? 'rgba(226,232,240,0.92)' : 'rgba(230,184,102,0.92)';
+    ctx.fillRect(size - 28, 6, 22, 12);
+    ctx.fillStyle = '#111827';
+    ctx.font = 'bold 8px system-ui, sans-serif';
+    ctx.fillText(String(Math.round(cover.score)), size - 24, 15);
+  }
+
+  const tex = Texture.from(canvas);
+  coverTextureCache.set(key, tex);
+  return tex;
 };
 
 /* ----------------------------------------------------------- room shell */
@@ -240,54 +294,39 @@ export const buildWallDressing = (
   diffuser(rightWallQuad, rightWallPt, 7.1, 7.85);
   if (spec.prop !== 'neon-sign') diffuser(leftWallQuad, leftWallPt, 0.35, 1.3);
 
-  // Trophy wall
-  const trophySprites: Sprite[] = [];
+  // Album-cover wall above the booth (completed projects — never stars)
+  const coverSprites: Sprite[] = [];
   const slots = getTrophyWall(trophies);
   for (const slot of slots) {
     const x0 = slot.x - 0.24;
     const x1 = slot.x + 0.24;
     const frame = rightWallQuad(x0, x1, 94, 126);
-    if (slot.kind === 'empty') {
+    if (slot.kind === 'empty' || !slot.cover) {
+      // Subtle empty hanger — brass nail + faint frame, no star plaque
       g.poly(frame).stroke({ width: 1, color: BRASS, alpha: 0.16 });
       const nail = rightWallPt(slot.x, 132);
       g.circle(nail.x, nail.y, 1.1).fill({ color: BRASS, alpha: 0.3 });
       continue;
     }
-    const trophyTex = getPropTexture(slot.kind === 'award' ? 'trophyAward' : slot.kind === 'platinum' ? 'trophyPlatinum' : 'trophyGold');
-    if (trophyTex) {
-      // Flat plaque art sheared into the right-wall plane.
-      const tl = rightWallPt(x0, 126);
-      const tr = rightWallPt(x1, 126);
-      const bl = rightWallPt(x0, 94);
-      const plaque = new Sprite(trophyTex);
-      plaque.setFromMatrix(new Matrix(
-        (tr.x - tl.x) / trophyTex.width, (tr.y - tl.y) / trophyTex.width,
-        (bl.x - tl.x) / trophyTex.height, (bl.y - tl.y) / trophyTex.height,
+    g.poly(frame).fill(0x1a1410);
+    g.poly(frame).stroke({ width: 1.4, color: BRASS, alpha: 0.75 });
+    const coverTex = getAlbumCoverTexture(slot.cover);
+    if (coverTex && coverTex !== Texture.EMPTY) {
+      const inset = 0.03;
+      const tl = rightWallPt(x0 + inset, 124);
+      const tr = rightWallPt(x1 - inset, 124);
+      const bl = rightWallPt(x0 + inset, 96);
+      const sleeve = new Sprite(coverTex);
+      sleeve.setFromMatrix(new Matrix(
+        (tr.x - tl.x) / coverTex.width, (tr.y - tl.y) / coverTex.width,
+        (bl.x - tl.x) / coverTex.height, (bl.y - tl.y) / coverTex.height,
         tl.x, tl.y,
       ));
-      trophySprites.push(plaque);
-      continue;
-    }
-    g.poly(frame).fill(0x2a1d14);
-    g.poly(frame).stroke({ width: 1.6, color: BRASS, alpha: 0.9 });
-    g.poly(rightWallQuad(x0 + 0.04, x1 - 0.04, 98, 122)).fill(0x120d09);
-    const mid = rightWallPt(slot.x, 110);
-    if (slot.kind === 'award') {
-      g.poly(starPoints(mid.x, mid.y, 9, 4, 'right')).fill(BRASS);
-      g.poly(starPoints(mid.x, mid.y, 9, 4, 'right')).stroke({ width: 0.8, color: 0xfff1c9, alpha: 0.8 });
-    } else {
-      const platinum = slot.kind === 'platinum';
-      g.poly(wallEllipse(mid.x, mid.y, 10.5, 'right')).fill(platinum ? 0xdfe6ee : 0xe6b866);
-      g.poly(wallEllipse(mid.x, mid.y, 10.5, 'right')).stroke({ width: 0.8, color: 0x000000, alpha: 0.4 });
-      g.poly(wallEllipse(mid.x, mid.y, 7, 'right')).stroke({ width: 0.6, color: 0x000000, alpha: 0.28 });
-      g.poly(wallEllipse(mid.x, mid.y, 4.6, 'right')).stroke({ width: 0.6, color: 0x000000, alpha: 0.24 });
-      g.poly(wallEllipse(mid.x, mid.y, 3, 'right')).fill(platinum ? 0x8a3b3b : 0x3a2a20);
-      // glint
-      g.poly(wallEllipse(mid.x - 3, mid.y - 4, 2, 'right', 10)).fill({ color: 0xffffff, alpha: 0.55 });
+      coverSprites.push(sleeve);
     }
   }
   container.addChild(g);
-  for (const sp of trophySprites) container.addChild(sp);
+  for (const sp of coverSprites) container.addChild(sp);
 
   // Era signature prop (physical parts)
   const propG = new Graphics();
@@ -338,7 +377,7 @@ export const buildWallDressing = (
 
 /* ------------------------------------------------------------- desk props */
 
-/** Mug + notepad on the console's left edge. Drawn over the desk. */
+/** Notepad on the console's left edge. Drawn over the desk. (Mug lives on the candle table after brew.) */
 export const buildDeskProps = (deskH = 40): Container => {
   const c = new Container();
   const g = new Graphics();
@@ -347,7 +386,6 @@ export const buildDeskProps = (deskH = 40): Container => {
     return { x: p.x, y: p.y - lift };
   };
   const padTex = getPropTexture('notepad');
-  const mugTex = getPropTexture('mug');
   // Notepad
   const n1 = dPt(3.34, 4.62);
   const n2 = dPt(3.62, 4.62);
@@ -367,23 +405,117 @@ export const buildDeskProps = (deskH = 40): Container => {
     g.poly([n1.x, n1.y, n2.x, n2.y, n3.x, n3.y, n4.x, n4.y]).stroke({ width: 0.6, color: 0x8a7a5a, alpha: 0.7 });
     g.moveTo(n1.x + 3, n1.y + 1.5).lineTo(n2.x - 2, n2.y + 1.5).stroke({ width: 0.6, color: 0x6b7a99, alpha: 0.6 });
   }
-  // Mug
-  const m = dPt(3.95, 4.78);
+  c.addChildAt(g, 0);
+  return c;
+};
+
+/* ---------------------------------------------------------- candle table */
+
+/** Iso tile under the brass candle table (listening-side rug edge). */
+export const CANDLE_TABLE_TILE = { x: 6.55, y: 5.35 } as const;
+
+/** World-space flame tip used by the additive candle glow (must match `buildCandleTable`). */
+export const CANDLE_FLAME_POS = (() => {
+  const p = iso(CANDLE_TABLE_TILE.x, CANDLE_TABLE_TILE.y);
+  return { x: p.x, y: p.y - 28 };
+})();
+
+/**
+ * Mug rim on the candle table (beside the candlestick, toward camera).
+ * Steam / settle animation must target this — never the desk or window sill.
+ */
+export const CANDLE_MUG_POS = (() => {
+  const p = iso(CANDLE_TABLE_TILE.x + 0.22, CANDLE_TABLE_TILE.y + 0.14);
+  return { x: p.x + 1, y: p.y - 12 };
+})();
+
+/**
+ * Small brass side-table + candle near the front-right rug edge.
+ * Presentation only — not a hotspot (hit targets stay on shelf / console / door).
+ */
+export const buildCandleTable = (): Container => {
+  const c = new Container();
+  c.eventMode = 'none';
+  const g = new Graphics();
+  const base = iso(CANDLE_TABLE_TILE.x, CANDLE_TABLE_TILE.y);
+  // Round table top (iso squash)
+  g.ellipse(base.x, base.y, 14, 6).fill({ color: 0x000000, alpha: 0.28 });
+  g.ellipse(base.x, base.y - 2, 13, 5.5).fill(0x3a2a1c);
+  g.ellipse(base.x, base.y - 2, 13, 5.5).stroke({ width: 1, color: BRASS, alpha: 0.55 });
+  g.rect(base.x - 1.4, base.y - 2, 2.8, 10).fill(0x2a1c12);
+  // Brass candlestick + cream candle
+  g.ellipse(base.x, base.y - 12, 3.2, 1.4).fill(0xc9974a);
+  g.rect(base.x - 1.1, base.y - 24, 2.2, 12).fill(0xf3ead6);
+  g.ellipse(base.x, base.y - 24, 1.1, 0.6).fill(0xe8dcc4);
+  // Static wick tip (flame glow lives in the additive layer)
+  g.circle(base.x, base.y - 26.5, 1.1).fill(0xffc266);
+  c.addChild(g);
+  c.zIndex = base.y;
+  return c;
+};
+
+/**
+ * Espresso mug for the candle table. Starts hidden — floor shows it only after
+ * `brew_espresso` completes (cleared when daily chores refresh).
+ */
+export const buildCandleDrink = (): Container => {
+  const c = new Container();
+  c.eventMode = 'none';
+  const g = new Graphics();
+  const m = CANDLE_MUG_POS;
+  const mugTex = getPropTexture('mug');
   if (mugTex) {
     const mug = new Sprite(mugTex);
     mug.anchor.set(22 / 48, 41 / 48);
-    mug.scale.set(18 / mugTex.height * 1.1);
+    mug.scale.set(16 / mugTex.height * 1.05);
     mug.position.set(m.x, m.y + 3);
     c.addChild(mug);
   } else {
-    g.ellipse(m.x, m.y + 2, 6.5, 2.6).fill({ color: 0x000000, alpha: 0.28 });
-    g.rect(m.x - 5, m.y - 7, 10, 9).fill(0xe8e2d4);
-    g.ellipse(m.x, m.y + 2, 5, 2.2).fill(0xe8e2d4);
-    g.ellipse(m.x, m.y - 7, 5, 2.2).fill(0x3a1f12);
-    g.ellipse(m.x, m.y - 7, 5, 2.2).stroke({ width: 0.8, color: 0xffffff, alpha: 0.6 });
-    g.roundRect(m.x + 4, m.y - 5, 3.5, 5, 1.5).stroke({ width: 1.2, color: 0xe8e2d4 });
+    g.ellipse(m.x, m.y + 2, 5.5, 2.2).fill({ color: 0x000000, alpha: 0.28 });
+    g.rect(m.x - 4.5, m.y - 6, 9, 8).fill(0xe8e2d4);
+    g.ellipse(m.x, m.y + 2, 4.5, 1.9).fill(0xe8e2d4);
+    g.ellipse(m.x, m.y - 6, 4.5, 1.9).fill(0x3a1f12);
+    g.ellipse(m.x, m.y - 6, 4.5, 1.9).stroke({ width: 0.8, color: 0xffffff, alpha: 0.6 });
+    g.roundRect(m.x + 3.5, m.y - 4.5, 3, 4.5, 1.4).stroke({ width: 1.1, color: 0xe8e2d4 });
+    c.addChild(g);
   }
-  c.addChildAt(g, 0);
+  c.visible = false;
+  c.alpha = 0;
+  c.zIndex = iso(CANDLE_TABLE_TILE.x, CANDLE_TABLE_TILE.y).y + 1;
+  return c;
+};
+
+/** Settle-in duration (seconds) when the brew mug first appears on the candle table. */
+export const CANDLE_DRINK_SETTLE_SEC = 0.45;
+
+/** World-space beer bottle feet on the candle table (opposite the brew mug). */
+export const CANDLE_BEER_POS = (() => {
+  const p = iso(CANDLE_TABLE_TILE.x - 0.28, CANDLE_TABLE_TILE.y + 0.1);
+  return { x: p.x - 2, y: p.y - 6 };
+})();
+
+/**
+ * Rider beers for the candle table. Starts hidden — floor shows them when an
+ * active session's rider asks for drinks (coffee remains brew-gated via `buildCandleDrink`).
+ */
+export const buildCandleBeers = (): Container => {
+  const c = new Container();
+  c.eventMode = 'none';
+  const g = new Graphics();
+  const drawBottle = (ox: number, oy: number) => {
+    g.ellipse(ox, oy + 1, 3.2, 1.3).fill({ color: 0x000000, alpha: 0.25 });
+    g.rect(ox - 2.2, oy - 10, 4.4, 11).fill(0x8a5a22);
+    g.rect(ox - 1.2, oy - 14, 2.4, 4).fill(0x6e4818);
+    g.ellipse(ox, oy - 14, 1.2, 0.7).fill(0xd9c48a);
+    g.rect(ox - 2.0, oy - 6, 4.0, 2.2).fill(0xc9a227);
+  };
+  const m = CANDLE_BEER_POS;
+  drawBottle(m.x, m.y);
+  drawBottle(m.x + 5, m.y + 1);
+  c.addChild(g);
+  c.visible = false;
+  c.alpha = 0;
+  c.zIndex = iso(CANDLE_TABLE_TILE.x, CANDLE_TABLE_TILE.y).y + 1;
   return c;
 };
 
@@ -397,11 +529,23 @@ export interface DecorLightsInput {
   tier?: number;
 }
 
+export interface DecorLightsAmbient {
+  /** 0 = night, 1 = full daylight — from the studio clock (see studioDecorConfig). */
+  dayness: number;
+  /** Day phase for clock rim / candle mood (optional). */
+  dayPhase?: DayPhase;
+  /** True after `brew_espresso` completes — mug steam + heat shimmer. */
+  coffeeSteaming?: boolean;
+}
+
 export interface DecorLights {
   container: Container;
   kit: EraLightingKit;
-  /** `live` = a session is being recorded right now (lights the ON AIR lamp). */
-  update: (tSeconds: number, reduceMotion: boolean, live?: boolean) => void;
+  /**
+   * `live` = a session is being recorded right now (lights the ON AIR lamp).
+   * Pass `ambient.dayness` from the shared clock so shaft/motes match the wall hands + window.
+   */
+  update: (tSeconds: number, reduceMotion: boolean, live?: boolean, ambient?: DecorLightsAmbient) => void;
 }
 
 export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
@@ -474,13 +618,21 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
   container.addChild(onAir);
   const airPos = BOOTH_HEADER_LAMP;
 
-  /* Mug steam */
+  /* Candle flame + pool (physical prop is `buildCandleTable`) */
+  const candleG = new Graphics();
+  container.addChild(candleG);
+  const candlePos = CANDLE_FLAME_POS;
+
+  /* Mug steam — candle-table drink only (desk / sill never steam) */
   const steam = new Graphics();
   container.addChild(steam);
-  const mugPos = (() => {
-    const p = iso(3.95, 4.78);
-    return { x: p.x, y: p.y - 40 - 8 };
-  })();
+  const mugPos = CANDLE_MUG_POS;
+
+  /* Clock rim glow — additive halo so the wall face reads after dark. */
+  const clockGlowG = new Graphics();
+  container.addChild(clockGlowG);
+  const clockAnchor = iso(0, 2.0);
+  const clockFace = { x: clockAnchor.x, y: clockAnchor.y - 92 };
 
   const neonQuad = (u: number, v: number) => {
     const p = leftWallPt(0.25 + u * (1.2 - 0.25), 76 + v * (122 - 76));
@@ -491,11 +643,14 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
     [0.55, 0.92], [0.3, 0.5], [0.48, 0.5], [0.35, 0.1], [0.72, 0.58], [0.53, 0.58], [0.66, 0.92],
   ];
 
-  const update = (t: number, reduce: boolean, live = false) => {
-    const day = getDayness(reduce ? 0 : t);
-    shaft.alpha = 0.28 + 0.72 * day;
-    // Live sessions warm the desk/rug pools slightly without rebuilding geometry
-    pools.alpha = live ? 1.12 : 1.0;
+  const update = (t: number, reduce: boolean, live = false, ambient?: DecorLightsAmbient) => {
+    const day = reduce
+      ? REDUCED_MOTION_DAYNESS
+      : (ambient?.dayness ?? getDaynessFromClockMinutes(0));
+    const interiorBoost = getInteriorLightBoost(day);
+    shaft.alpha = 0.18 + 0.82 * day;
+    // Live sessions warm the desk/rug pools; night boosts practicals when the window dims
+    pools.alpha = (live ? 1.12 : 1.0) * interiorBoost;
 
     // Motes
     moteG.clear();
@@ -521,11 +676,12 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
     radialGlow(onAir, airPos.x, airPos.y, live ? 22 : 12, live ? 12 : 6, 0xff3b30, (live ? 0.6 : 0.10) * pulse, 5);
     onAir.circle(airPos.x, airPos.y, 2.6).fill({ color: 0xff6a5c, alpha: live ? 0.95 : 0.25 });
 
-    // Era prop glows (scaled by kit)
+    // Era prop glows (scaled by kit; brighter after dark so the room still reads)
     glowG.clear();
+    const nightGlow = glowScale * interiorBoost;
     if (spec.prop === 'brass-lamp') {
       const b = iso(7.55, 2.3);
-      const f = (reduce ? 1 : 0.96 + 0.04 * Math.sin(t * 2.1)) * glowScale;
+      const f = (reduce ? 1 : 0.96 + 0.04 * Math.sin(t * 2.1)) * nightGlow;
       radialGlow(glowG, b.x, b.y - 66, 34, 24, spec.glow, 0.32 * f, 6);
       radialGlow(glowG, b.x, b.y - 2, 80, 30, spec.glow2, 0.11 * f, 6);
     } else if (spec.prop === 'neon-sign') {
@@ -534,7 +690,7 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
         const p = neonQuad(u, v);
         return [p.x, p.y];
       });
-      const a = flick * glowScale;
+      const a = flick * nightGlow;
       glowG.poly(pts).stroke({ width: 7, color: spec.glow, alpha: 0.16 * a });
       glowG.poly(pts).stroke({ width: 3.5, color: spec.glow, alpha: 0.5 * a });
       glowG.poly(pts).stroke({ width: 1.4, color: 0xffe6fb, alpha: 0.9 * a });
@@ -545,8 +701,8 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
       radialGlow(glowG, wall.x, wall.y, 46, 34, spec.glow, 0.13 * a, 6);
     } else if (spec.prop === 'lava-lamp') {
       const t0 = iso(7.45, 1.1);
-      radialGlow(glowG, t0.x, t0.y - 34, 26, 30, spec.glow, 0.25 * glowScale, 6);
-      radialGlow(glowG, t0.x, t0.y, 60, 22, spec.glow, 0.09 * glowScale, 5);
+      radialGlow(glowG, t0.x, t0.y - 34, 26, 30, spec.glow, 0.25 * nightGlow, 6);
+      radialGlow(glowG, t0.x, t0.y, 60, 22, spec.glow, 0.09 * nightGlow, 5);
       for (let i = 0; i < 3; i++) {
         const y = t0.y - 28 - (reduce ? i * 8 : (Math.sin(t * (0.5 + i * 0.23) + i * 2) * 0.5 + 0.5) * 20);
         glowG.circle(t0.x + (reduce ? 0 : Math.sin(t * 0.9 + i) * 1.4), y, 2.6 + i * 0.7).fill({ color: 0xffa070, alpha: 0.75 });
@@ -560,15 +716,15 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
         const a1 = (i + 0.85) / segs;
         const r0 = rightWallPt(a0 * ROOM_W, WALL_H - 4);
         const r1 = rightWallPt(a1 * ROOM_W, WALL_H - 4);
-        glowG.moveTo(r0.x, r0.y).lineTo(r1.x, r1.y).stroke({ width: 5, color, alpha: 0.18 * glowScale });
+        glowG.moveTo(r0.x, r0.y).lineTo(r1.x, r1.y).stroke({ width: 5, color, alpha: 0.18 * nightGlow });
         glowG.moveTo(r0.x, r0.y).lineTo(r1.x, r1.y).stroke({ width: 2, color, alpha: 0.85 });
         const l0 = leftWallPt(a0 * ROOM_D, WALL_H - 4);
         const l1 = leftWallPt(a1 * ROOM_D, WALL_H - 4);
-        glowG.moveTo(l0.x, l0.y).lineTo(l1.x, l1.y).stroke({ width: 5, color, alpha: 0.18 * glowScale });
+        glowG.moveTo(l0.x, l0.y).lineTo(l1.x, l1.y).stroke({ width: 5, color, alpha: 0.18 * nightGlow });
         glowG.moveTo(l0.x, l0.y).lineTo(l1.x, l1.y).stroke({ width: 2, color, alpha: 0.85 });
       }
       const s0 = iso(7.3, 1.6);
-      radialGlow(glowG, s0.x, s0.y - 66, 14, 14, 0xffffff, 0.35 * glowScale, 5);
+      radialGlow(glowG, s0.x, s0.y - 66, 14, 14, 0xffffff, 0.35 * nightGlow, 5);
     }
 
     // Tier neon practical (booth glass strip) — honour bloom/CRT by living in the additive layer
@@ -596,15 +752,45 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
       );
     }
 
-    // Steam
+    // Steam + heat shimmer — only after espresso is brewed (chore / drinks state)
     steam.clear();
-    if (!reduce) {
-      for (let i = 0; i < 3; i++) {
-        const phase = (t * 0.45 + i / 3) % 1;
-        const y = mugPos.y - phase * 16;
-        const x = mugPos.x + Math.sin(phase * 5 + i * 2) * 2.4;
-        steam.circle(x, y, 1.6 + phase * 2.2).fill({ color: 0xffffff, alpha: 0.32 * (1 - phase) });
+    const steamAmt = coffeeSteamStrength(Boolean(ambient?.coffeeSteaming), t, reduce);
+    if (steamAmt > 0) {
+      const wisps = reduce ? 2 : 4;
+      for (let i = 0; i < wisps; i++) {
+        const phase = reduce ? i / wisps : (t * 0.45 + i / wisps) % 1;
+        const y = mugPos.y - phase * (14 + steamAmt * 6);
+        const x = mugPos.x + Math.sin(phase * 5 + i * 2) * (2.2 + steamAmt);
+        const r = (1.4 + phase * 2.4) * (0.85 + steamAmt * 0.25);
+        steam.circle(x, y, r).fill({ color: 0xfff6e8, alpha: 0.28 * steamAmt * (1 - phase) });
       }
+      // Soft heat shimmer pool just above the mug rim
+      if (!reduce) {
+        const shimmer = 0.5 + 0.5 * Math.sin(t * 2.8);
+        radialGlow(steam, mugPos.x, mugPos.y + 2, 10 + shimmer * 2, 5, 0xffe0a6, 0.06 * steamAmt, 4);
+      }
+    }
+
+    // Candle flicker — warm pool on the listening table
+    candleG.clear();
+    {
+      const flick = candleFlicker(t, reduce);
+      const nightLift = 0.85 + (1 - day) * 0.35;
+      radialGlow(candleG, candlePos.x, candlePos.y, 18 * flick, 12 * flick, 0xff9a4d, 0.22 * flick * nightLift, 5);
+      radialGlow(candleG, candlePos.x, candlePos.y + 10, 28, 10, 0xffc266, 0.08 * flick * nightLift, 4);
+      candleG.circle(candlePos.x, candlePos.y - 1, 1.6 + flick * 0.6).fill({
+        color: 0xffe6a0,
+        alpha: 0.55 + flick * 0.4,
+      });
+    }
+
+    // Clock rim glow — stronger in evening/night so the face still reads
+    clockGlowG.clear();
+    {
+      const phase: DayPhase = ambient?.dayPhase ?? (day < 0.2 ? 'night' : day < 0.45 ? 'evening' : day < 0.8 ? 'day' : 'morning');
+      const glowA = clockRimGlowAlpha(day, phase, t, reduce);
+      radialGlow(clockGlowG, clockFace.x, clockFace.y, 22, 18, BRASS, glowA * 0.55, 5);
+      radialGlow(clockGlowG, clockFace.x, clockFace.y, 12, 10, 0xffe0a6, glowA * 0.35, 4);
     }
   };
 

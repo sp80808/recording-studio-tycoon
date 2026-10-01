@@ -30,6 +30,7 @@ import { getFocusEffectiveness, getMoodEffectiveness } from '@/utils/playerUtils
 import { calculateStudioSkillBonus, getEquipmentBonuses, resolveSessionEquipment } from '@/utils/gameUtils';
 import { getGenreMarketMultiplier } from '@/utils/eraProgression';
 import { getSettlementBonuses } from '@/utils/settlementBonuses';
+import { hasActiveChoreBuff } from '@/simulation/choreEngine';
 import { ProjectReviewModal } from '@/components/modals/ProjectReviewModal'; // Import ProjectReviewModal (assuming path)
 import { useGameLogic } from '@/hooks/useGameLogic';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -62,6 +63,7 @@ import {
   resolveSubplotChoice,
   type StorylineBranchOption,
 } from '@/narrative/branchingStorylineEngine';
+import { creedFlagForChoice, STUDIO_CREED_EVENT } from '@/components/cutscenes/careerCutscenes';
 import { isTauriShell } from '@/utils/platform';
 import type { CareerProducer, ProducerBackgroundId } from '@/types/character';
 import { useFeatureFlag } from '@/stores/featureFlagStore';
@@ -137,6 +139,29 @@ const MusicStudioTycoon = () => {
 
   useEffect(() => installFlightCaseRewards(setGameState), [setGameState]);
   useAmbientIncome(gameInitialized && !showSplashScreen, setGameState);
+
+  // Rising Studio creed → storyFlags (CutsceneDirector lives outside game state).
+  useEffect(() => {
+    const onCreed = (event: Event) => {
+      const choiceId = (event as CustomEvent<{ choiceId?: string }>).detail?.choiceId;
+      const flag = creedFlagForChoice(choiceId);
+      if (!flag) return;
+      setGameState((prev) => {
+        if (!prev.storylineState) return prev;
+        const flags = prev.storylineState.storyFlags;
+        if (flags[flag]) return prev;
+        return {
+          ...prev,
+          storylineState: {
+            ...prev.storylineState,
+            storyFlags: { ...flags, [flag]: true },
+          },
+        };
+      });
+    };
+    window.addEventListener(STUDIO_CREED_EVENT, onCreed);
+    return () => window.removeEventListener(STUDIO_CREED_EVENT, onCreed);
+  }, [setGameState]);
 
   useEffect(() => {
     if (selectedStaffForTraining) {
@@ -304,6 +329,10 @@ const MusicStudioTycoon = () => {
           Math.min(10, Math.round((equipmentBonuses.quality || 0) / 2 + (equipmentBonuses.genre || 0) / 4))
         ),
         marketMultiplier: getGenreMarketMultiplier(completedProjectData.genre, gameState.currentEra),
+        sessionEquipment: resolveSessionEquipment(gameState, completedProjectData.bookingRoomId),
+        brewReady:
+          gameState.choreState?.chores.brew_espresso?.completed === true ||
+          hasActiveChoreBuff(gameState.choreState, 'vibe_boost'),
         ...getSettlementBonuses(
           gameState,
           completedProjectData,

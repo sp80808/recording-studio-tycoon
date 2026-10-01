@@ -4,6 +4,7 @@ import { createSeededRandom, pickWithRandom, randomInt } from '@/simulation/seed
 import { STAGE_GRADE_CARRY, gradeCapsProject, A_GRADE_CAP } from '@/rpg/stageGrades';
 import { gradeQuality } from '@/rpg/rankChase';
 import { settleStake } from '@/rpg/contractStakes';
+import { evaluateProjectRider } from '@/rpg/studioRider';
 
 /**
  * Optional settlement context for real lifecycle scoring (bead ruc.1).
@@ -35,6 +36,10 @@ export interface SettlementContext {
   skillXpMultipliers?: Record<string, number>;
   /** Extra reputation fraction applied to A-rank (80+) sessions. */
   rankARepBonus?: number;
+  /** Owned session gear for studio-rider resolution at settlement. */
+  sessionEquipment?: import('@/types/game').Equipment[];
+  /** True when brew/hospitality chore covered hospitality rider asks. */
+  brewReady?: boolean;
 }
 
 export const MATCH_RATING_MULTIPLIERS: Record<Project['matchRating'], number> = {
@@ -236,6 +241,14 @@ export const generateProjectReview = (
     originBonus +
     artistBonus
   );
+  const riderEval = project.rider
+    ? evaluateProjectRider(project, settlementContext?.sessionEquipment ?? [], {
+        brewReady: settlementContext?.brewReady,
+      })
+    : null;
+  if (riderEval) {
+    overallQualityScore = clamp(overallQualityScore + riderEval.qualityDelta, 0, 100);
+  }
   overallQualityScore = clamp(overallQualityScore + randomInt(rng, -5, 4), 0, 100);
 
   // Stage grades (sd3.2): Gold/Silver carry quality forward; a skipped/rough
@@ -331,6 +344,8 @@ export const generateProjectReview = (
   else if (marketMultiplier < 0.95) factorNotes.push('the current market was cool on this genre');
   if (project.matchRating === 'Excellent') factorNotes.push('a great client match helped');
   else if (project.matchRating === 'Poor') factorNotes.push('a tough client brief held it back');
+  if (riderEval?.met && project.rider) factorNotes.push('the studio rider was looked after');
+  else if (riderEval && !riderEval.met) factorNotes.push('the band noticed a short rider');
   if (factorNotes.length > 0) {
     reviewSnippet += ` Key factors: ${factorNotes.slice(0, 3).join('; ')}.`;
   }

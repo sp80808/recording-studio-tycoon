@@ -19,6 +19,7 @@ console.log('Testing granular character creator parts...');
 const era = '1980s' as const;
 const opts = creatorOptionsForEra(era);
 assert.ok(opts.body.length >= 4, 'body catalog');
+assert.ok(opts.build.length === 3, 'build catalog (slim / average / stocky)');
 assert.ok(opts.hair.length >= 3, 'hair catalog');
 assert.ok(opts.clothing.length >= 3, 'clothing catalog');
 assert.ok(opts.accessories.length >= 2, 'accessories catalog');
@@ -36,7 +37,18 @@ assert.equal(cycled.hair, 1);
 assert.equal(cyclePart(cycled, 'hair', -1, era).hair, 0);
 
 assert.equal(parseNpcPartPicks({ body: 1, hair: 2, clothing: 0, accessories: 0 })?.hair, 2);
+// Pre-split saves omit build but still load (build defaults to 0 downstream).
+assert.equal(parseNpcPartPicks({ body: 1, hair: 2, clothing: 0, accessories: 0 })?.build, undefined);
+assert.equal(normalizePartPicks(era, { body: 1, hair: 2, clothing: 0, accessories: 0 }).build, 0);
 assert.equal(parseNpcPartPicks({ body: 1, hair: 2 }), null);
+// Build cycles independently and drives physique without changing skin.
+assert.equal(cyclePart(normalizePartPicks(era, { body: 0, build: 0, hair: 0, clothing: 0, accessories: 0 }), 'build', 1, era).build, 1);
+{
+  const skinOnly = applyPartPicks(base, normalizePartPicks(era, { body: 1, build: 0, hair: 0, clothing: 0, accessories: 0 }));
+  const stocky = applyPartPicks(base, normalizePartPicks(era, { body: 1, build: 2, hair: 0, clothing: 0, accessories: 0 }));
+  assert.equal(stocky.body.skinTone, skinOnly.body.skinTone);
+  assert.notEqual(stocky.body.build, skinOnly.body.build);
+}
 assert.equal(parseNpcVisualIdentity({ seed: 3, role: 'producer', era, appearanceVersion: 1, parts: { body: 1 } }), null);
 
 const appearance = identityFromSeed(21, {

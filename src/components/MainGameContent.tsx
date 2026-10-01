@@ -1,8 +1,8 @@
 import { useArtistContracts } from '@/hooks/useArtistContracts';
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import { ContextDrawer, ContextDrawerTab } from './ContextDrawer';
+import { ContextDrawer, type ContextDrawerTab } from './ContextDrawer';
 import { MotionNumber, MotionButton } from '@/components/motion/primitives';
-import { Headphones, Phone, SlidersHorizontal, Sparkles, Users, Disc3, Trophy, X, Minimize2, Moon, Package } from 'lucide-react';
+import { Headphones, Phone, SlidersHorizontal, Sparkles, Users, Disc3, Trophy, Minimize2, Moon, Package } from 'lucide-react';
 import { GameState, StaffMember, PlayerAttributes, Project } from '@/types/game';
 import { ProjectList } from './ProjectList';
 import { ProgressiveProjectInterface } from './ProgressiveProjectInterface';
@@ -13,6 +13,7 @@ import { chooseFocus } from '@/rpg/studioSeasons';
 import { AttributesModal } from './modals/AttributesModal';
 import { RightPanel } from './RightPanel';
 import { StudioRoom } from './StudioRoom';
+import { SessionRail } from './SessionRail';
 import { StudioStrip } from './StudioStrip';
 import { EraTransitionAnimation } from './EraTransitionAnimation';
 import { HistoricalNewsModal } from './HistoricalNewsModal';
@@ -29,7 +30,9 @@ import { RadialActionWheel } from '@/components/ui/RadialActionWheel';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useSettings } from '@/contexts/settings-context-types';
 import { FlightCaseDepot } from './FlightCaseDepot';
-import { executeStudioChore, createInitialChoreState, getChoreDurationMs, type StudioChoreId } from '@/simulation/choreEngine';
+import { executeStudioChore, createInitialChoreState, getChoreDurationMs, findPendingChoreForHotspot, type StudioChoreId } from '@/simulation/choreEngine';
+import { toast } from '@/hooks/use-toast';
+import { gameAudio } from '@/utils/audioSystem';
 import './studio-play.css';
 
 interface MainGameContentProps {
@@ -115,6 +118,15 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
 }) => {
 
   const [panel, setPanel] = useState<Panel | null>(null);
+  // Studio floor + GUI reveal together: hold a lightweight loading veil until
+  // the Pixi canvas paints its first frame (with a timeout fallback).
+  const [studioReady, setStudioReady] = useState(false);
+  useEffect(() => {
+    if (studioReady) return;
+    const t = window.setTimeout(() => setStudioReady(true), 6000);
+    return () => window.clearTimeout(t);
+  }, [studioReady]);
+  const handleStudioReady = useCallback(() => setStudioReady(true), []);
   const [showAttributesModal, setShowAttributesModal] = useState(false);
   const [showEraTransition, setShowEraTransition] = useState(false);
   const [eraTransitionInfo, setEraTransitionInfo] = useState<{ fromEra: string; toEra: string } | null>(null);
@@ -307,26 +319,99 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   const completeFloorChore = (hotspot: string) => {
     if (activeChoreId) return true;
     const choreState = gameState.choreState || createInitialChoreState();
-    const targetHotspot = hotspot === 'liveRoom' ? 'liveRoom' : 'console';
-    const chore = (Object.values(choreState.chores).find((candidate) =>
-      !candidate.completed && candidate.hotspotId === targetHotspot
-    ));
+    const chore = findPendingChoreForHotspot(choreState, hotspot);
     if (!chore) return false;
-    if (gameState.playerData.dailyWorkCapacity < chore.energyCost) return false;
+
+    if (gameState.playerData.dailyWorkCapacity < chore.energyCost) {
+      toast({
+        title: 'Not enough energy',
+        description: `${chore.title} needs ${chore.energyCost}⚡ — rest or advance the day.`,
+        variant: 'destructive',
+      });
+      return false;
+    }
 
     setActiveChoreId(chore.id);
+    void gameAudio.playGearSwitch();
+    toast({
+      title: `Working: ${chore.title}`,
+      description: chore.description,
+      className: 'bg-stone-900 border border-stone-700 text-white',
+    });
+
     const duration = getChoreDurationMs(chore, gameState.currentEra, gameState.ownedEquipment.length);
     window.setTimeout(() => {
       setGameState(prev => {
-        const result = executeStudioChore(prev.choreState || createInitialChoreState(), chore.id, prev.playerData.dailyWorkCapacity);
+        const result = executeStudioChore(
+          prev.choreState || createInitialChoreState(),
+          chore.id,
+          prev.playerData.dailyWorkCapacity
+        );
         if (!result) return prev;
-        return { ...prev, choreState: result.nextChoreState, playerData: { ...prev.playerData, xp: prev.playerData.xp + result.xpAwarded, dailyWorkCapacity: Math.max(0, prev.playerData.dailyWorkCapacity - result.energyBurned) } };
+        const allDone = Object.values(result.nextChoreState.chores).every((c) => c.completed);
+        window.setTimeout(() => {
+          if (allDone) {
+            toast({
+              title: 'All daily duties complete',
+              description: 'Studio is in peak condition — session buffs locked in.',
+              className: 'bg-emerald-950/90 border border-emerald-500 text-white',
+            });
+          } else {
+            toast({
+              title: `Done: ${chore.title}`,
+              description: `+${result.xpAwarded} XP · buff active for the next session`,
+              className: 'bg-stone-900 border border-stone-700 text-white',
+            });
+          }
+        }, 0);
+        return {
+          ...prev,
+          choreState: result.nextChoreState,
+          playerData: {
+            ...prev.playerData,
+            xp: prev.playerData.xp + result.xpAwarded,
+            dailyWorkCapacity: Math.max(0, prev.playerData.dailyWorkCapacity - result.energyBurned),
+          },
+        };
       });
       setActiveChoreId(null);
     }, duration);
     return true;
   };
-  const titles = { bookings: 'Bookings', session: 'At the console', studio: 'Studio management', career: 'Your producer story' };
+  const drawerDestination: ContextDrawerTab =
+    panel === 'bookings'
+      ? 'artist'
+      : panel === 'session'
+        ? 'session'
+        : panel === 'career' || panel === 'cases'
+          ? 'career'
+          : dashboardTab === 'staff'
+            ? 'staff'
+            : dashboardTab === 'bands'
+              ? 'room'
+              : dashboardTab === 'charts'
+                ? 'room'
+                : 'gear';
+
+  const drawerTitle =
+    panel === 'bookings'
+      ? 'Bookings'
+      : panel === 'session'
+        ? 'At the console'
+        : panel === 'career'
+          ? 'Your producer story'
+          : panel === 'cases'
+            ? 'Flight cases'
+            : dashboardTab === 'staff'
+              ? 'Studio crew'
+              : dashboardTab === 'bands'
+                ? 'Artists'
+                : dashboardTab === 'charts'
+                  ? 'Charts'
+                  : dashboardTab === 'skills'
+                    ? 'Skills & research'
+                    : 'Gear locker';
+
   return (
     <GamepadNavProvider onTabChange={handleDockTabChange}>
       <div className="studio-play">
@@ -334,14 +419,20 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           <StudioRoom gameState={gameState} onAdvanceDay={advanceDay} onRefreshProjects={refreshProjects}
             onStartProject={bookProject} onAssignStaff={assignStaffToProject} onUnassignStaff={unassignStaffFromProject}
             onOpenDashboardTab={handleOpenDashboardTab} onConsoleFocus={() => openPanel('session')} onCompleteChore={completeFloorChore} activeChoreId={activeChoreId}
-            onBookings={() => openPanel('bookings')} className="studio-play-room" />
+            onBookings={() => openPanel('bookings')} onStudioReady={handleStudioReady} floorFocused={panel === null} className="studio-play-room" />
+          {!studioReady && (
+            <div className="studio-room-loading" role="status" aria-live="polite" aria-busy="true">
+              <span className="studio-boot-gate-mark">RST</span>
+              <p className="studio-boot-gate-title">Setting up the room…</p>
+              <div className="studio-boot-progress" aria-hidden="true"><i /></div>
+            </div>
+          )}
         </div>
-        <div className="studio-play-status">
-          <span className="studio-live-light" aria-hidden="true" />
-          <span className="min-w-0 truncate">{project ? project.title : 'Your studio. Your next great record.'}</span>
-          <span className="shrink-0 text-amber-200">{gameState.playerData.dailyWorkCapacity} sessions left</span>
-          {(gameState.gems ?? 0) > 0 && <span className="shrink-0 text-cyan-300" aria-label={`${gameState.gems} gems`}>💎 {gameState.gems}</span>}
-        </div>
+        <SessionRail
+          gameState={gameState}
+          onOpenSession={() => openPanel('session')}
+          onOpenBookings={() => openPanel('bookings')}
+        />
         <div className="studio-play-actions">
           <button className="studio-primary-action" onClick={() => openPanel(project ? 'session' : 'bookings')}>
             {gamepad.lastInputType === 'gamepad' && <GamepadGlyph button="south" size="xs" className="mr-1 inline-block" />}
@@ -376,47 +467,12 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
       <ContextDrawer
         isOpen={panel !== null}
         onClose={() => setPanel(null)}
-        activeTab={
-          panel === 'bookings'
-            ? 'artist'
-            : panel === 'session'
-              ? 'session'
-              : panel === 'career' || panel === 'cases'
-                ? 'career'
-                : dashboardTab === 'staff'
-                  ? 'staff'
-                  : 'gear'
-        }
-        onTabChange={(tab: ContextDrawerTab) => {
-          switch (tab) {
-            case 'artist':
-              setPanel('bookings');
-              break;
-            case 'session':
-              setPanel('session');
-              break;
-            case 'gear':
-              setPanel('studio');
-              setDashboardTab('studio');
-              break;
-            case 'staff':
-              setPanel('studio');
-              setDashboardTab('staff');
-              break;
-            case 'room':
-              setPanel('studio');
-              setDashboardTab('studio');
-              break;
-            case 'career':
-              setPanel('career');
-              break;
-          }
-        }}
-        title={panel ? titles[panel] : ''}
+        activeTab={drawerDestination}
+        destinationKey={panel ? `${panel}:${dashboardTab}` : undefined}
+        title={drawerTitle}
         subtitle="RECORDING STUDIO OS"
         width={panel === 'session' ? 'session' : 'default'}
         returnFocusRef={returnFocusRef}
-        unreadEnquiries={gameState.availableProjects.length}
         headerActions={
           panel === 'session' && gameState.playerData.dailyWorkCapacity <= 0 && !project?.awaitingReview ? (
             <MotionButton
@@ -463,7 +519,6 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
               gameState={gameState}
               setGameState={setGameState}
               spendPerkPoint={spendPerkPoint}
-              advanceDay={advanceDay}
               purchaseEquipment={purchaseEquipment}
               hireStaff={hireStaff}
               refreshCandidates={refreshCandidates}

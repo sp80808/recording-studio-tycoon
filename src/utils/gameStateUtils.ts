@@ -6,12 +6,29 @@ import {
   buildDefaultPlacements,
 } from '@/types/equipmentSlots';
 import { initializeStorylineState } from '@/narrative/branchingStorylineEngine';
+import { readCreedFlagFromStorage } from '@/components/cutscenes/careerCutscenes';
 import { migrateKnowHow } from '@/rpg/studioKnowHow';
 
 const DEFAULT_FOCUS_ALLOCATION: FocusAllocation = {
   performance: 33,
   soundCapture: 33,
   layering: 34,
+};
+
+/** Merge Rising Studio creed (localStorage) into storyline flags without overwriting an existing creed. */
+export const syncCreedFlagIntoState = (state: GameState): GameState => {
+  if (!state.storylineState) return state;
+  const flags = state.storylineState.storyFlags;
+  if (flags.creed_protect_the_take || flags.creed_master_the_moment) return state;
+  const creed = readCreedFlagFromStorage();
+  if (!creed) return state;
+  return {
+    ...state,
+    storylineState: {
+      ...state.storylineState,
+      storyFlags: { ...flags, [creed]: true },
+    },
+  };
 };
 
 /**
@@ -176,5 +193,6 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
 
   // Branching storylines (bead 283.3): legacy saves without storylineState
   // receive a deterministic campaign seed without mutating other fields.
-  return refreshGearForDay(initializeStorylineState(processedState));
+  // Creed chosen in the Rising Studio cutscene (localStorage) is mirrored into storyFlags.
+  return syncCreedFlagIntoState(refreshGearForDay(initializeStorylineState(processedState)));
 };

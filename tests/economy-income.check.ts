@@ -34,7 +34,11 @@ ok(pu.includes('getGenreMarketMultiplier'), 'offer uses centered market multipli
 ok(!pu.includes('genrePopularity / 100'), 'raw popularity tax removed');
 
 // Salary tiers over samples: all in 35-240, both ends reachable
-const cands = Array.from({ length: 5 }, () => generateCandidates(20)).flat();
+// generateCandidates(count) is deterministically seeded (batchKey 'default') —
+// identical batches carry no variance, so sample distinct refresh batches.
+const cands = Array.from({ length: 5 }, (_, batch) =>
+  generateCandidates({ count: 20, batchKey: `economy-audit-${batch}` }),
+).flat();
 const sals = cands.map((c) => c.salary);
 ok(Math.min(...sals) >= 35 && Math.max(...sals) <= 240, `tiers bounded 35-240 (got ${Math.min(...sals)}-${Math.max(...sals)})`);
 ok(sals.some((s) => s < 60), 'interns exist (day-1 hireable)');

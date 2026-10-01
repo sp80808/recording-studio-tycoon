@@ -146,6 +146,8 @@ export interface Project {
   focusAllocation: FocusAllocation; // ADDED: Stores current focus settings for the project
   /** Creative brief (#48). Optional: old saves derive one on read via getProjectBrief. */
   brief?: import('@/rpg/projectBrief').ProjectBrief;
+  /** Mid/late-game studio rider (hospitality + gear asks). Absent on early or ungated bookings. */
+  rider?: import('@/rpg/studioRider').StudioRider;
   /** Vocal signal chain chosen at booking (#86). */
   signalChain?: import('@/rpg/signalChain').SignalChain;
   /** Open quality issues left by phase events (#87). Cleared by great takes or by polishing before delivery. */

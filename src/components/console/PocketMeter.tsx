@@ -12,9 +12,11 @@ interface PocketMeterProps {
 }
 
 export const POCKET_METER_TIMING = {
-  // A subtle readability-friendly speed increase for quicker session flow.
-  cycleSeconds: 1.6,
-  autoLockSeconds: 3.3,
+  // Quick console-check pacing: faster than the 1.6s / 3.3s pass, but still
+  // slower than the original twitchy ~1.1s swing so Gold locks stay fair.
+  // autoLock matches the interactive-console design (2.5s fallback).
+  cycleSeconds: 1.35,
+  autoLockSeconds: 2.5,
 } as const;
 
 export const PocketMeter: React.FC<PocketMeterProps> = ({
@@ -112,14 +114,14 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
     if (pos >= goldMin && pos <= goldMax) {
       gamepad.triggerHaptic(0.6, 0.9, 130);
       confetti({
-        particleCount: 35,
-        spread: 70,
+        particleCount: 28,
+        spread: 62,
         origin: { y: 0.65 },
         colors: ['#f59e0b', '#fbbf24', '#fcd34d', '#ffffff'],
         disableForReducedMotion: true,
-        ticks: 120,
-        gravity: 1.2,
-        scalar: 0.8,
+        ticks: 70,
+        gravity: 1.35,
+        scalar: 0.75,
         zIndex: 100
       });
     } else {

@@ -1,5 +1,20 @@
 export const RISING_STUDIO_MILESTONE_ID = 'rising-studio-rival-arrival';
 
+/** localStorage key for the Rising Studio creed choice (legacy + live). */
+export const STUDIO_CREED_STORAGE_KEY = 'recordingStudioTycoon_studioCreed';
+
+/** Custom event when a player picks a creed in the Rising Studio cutscene. */
+export const STUDIO_CREED_EVENT = 'rst:studio-creed';
+
+/**
+ * Choice id → storyFlag written into storylineState so later subplots / endings can react.
+ * Keep choice ids stable — they are already persisted in localStorage for older saves.
+ */
+export const CREED_FLAGS: Readonly<Record<string, string>> = {
+  'protect-the-take': 'creed_protect_the_take',
+  'master-the-moment': 'creed_master_the_moment',
+};
+
 export interface CareerCutsceneChoice {
   id: string;
   label: string;
@@ -47,6 +62,21 @@ export const RISING_STUDIO_CUTSCENE: CareerCutscenePayload = {
     },
   ],
 };
+
+export function creedFlagForChoice(choiceId: string | null | undefined): string | null {
+  if (!choiceId) return null;
+  return CREED_FLAGS[choiceId] ?? null;
+}
+
+/** Read creed storyFlag from localStorage (browser only). Safe for SSR / node tests. */
+export function readCreedFlagFromStorage(): string | null {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    return creedFlagForChoice(localStorage.getItem(STUDIO_CREED_STORAGE_KEY));
+  } catch {
+    return null;
+  }
+}
 
 export function shouldTriggerRisingStudioCutscene(
   previousSave: string | null,

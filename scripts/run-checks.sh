@@ -31,6 +31,10 @@ echo "=== talents & atomicity ==="
 ./node_modules/.bin/esbuild tests/talents-atomicity.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-talents.cjs --alias:@=./src >/dev/null
 node /tmp/rst-talents.cjs
 
+echo "=== skill practice minigames ==="
+./node_modules/.bin/esbuild tests/skill-practice.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-skill-practice.cjs --alias:@=./src >/dev/null
+node /tmp/rst-skill-practice.cjs
+
 echo "=== flavour copy ==="
 ./node_modules/.bin/esbuild tests/flavour-copy.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-flavour-copy.cjs --alias:@=./src >/dev/null
 node /tmp/rst-flavour-copy.cjs
@@ -79,6 +83,10 @@ echo "=== callback subplots (story remembers earlier choices) ==="
 ./node_modules/.bin/esbuild tests/callback-subplots.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-callback-subplots.cjs --alias:@=./src >/dev/null
 node /tmp/rst-callback-subplots.cjs
 
+echo "=== narrative depth (era gates, creed, choice presentation) ==="
+./node_modules/.bin/esbuild tests/narrative-depth.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-narrative-depth.cjs --alias:@=./src >/dev/null
+node /tmp/rst-narrative-depth.cjs
+
 echo "=== studio event director (#56) ==="
 ./node_modules/.bin/esbuild tests/event-director.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-event-director.cjs --alias:@=./src >/dev/null
 node /tmp/rst-event-director.cjs
@@ -106,6 +114,10 @@ node /tmp/rst-artist-contracts.cjs
 echo "=== deterministic used gear, classifieds and maintenance ==="
 ./node_modules/.bin/esbuild tests/used-gear.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-used-gear.cjs --alias:@=./src >/dev/null
 node /tmp/rst-used-gear.cjs
+
+echo "=== used-gear salvage balance audit (4oq) ==="
+./node_modules/.bin/esbuild tests/used-gear-salvage-balance.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-used-gear-salvage-balance.cjs --alias:@=./src >/dev/null
+node /tmp/rst-used-gear-salvage-balance.cjs
 
 echo "=== equipment slots / gear racks (8om) ==="
 ./node_modules/.bin/esbuild tests/equipment-slots.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-equipment-slots.cjs --alias:@=./src >/dev/null
@@ -175,13 +187,33 @@ echo "=== gear visual state (#81) ==="
 ./node_modules/.bin/esbuild tests/gear-visual-state.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-gear-visual-state.cjs --alias:@=./src >/dev/null
 node /tmp/rst-gear-visual-state.cjs
 
+echo "=== booking forecast + hotspot ids (#55, audit 5) ==="
+./node_modules/.bin/esbuild tests/session-forecast.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-session-forecast.cjs --alias:@=./src >/dev/null
+node /tmp/rst-session-forecast.cjs
+
 echo "=== DEV overlays opt-in (hidden by default) ==="
 ./node_modules/.bin/esbuild tests/dev-overlays-opt-in.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-dev-overlays-opt-in.cjs --alias:@=./src >/dev/null
 node /tmp/rst-dev-overlays-opt-in.cjs
 
+echo "=== studio day/night + window (clock-linked ambience) ==="
+./node_modules/.bin/esbuild tests/studio-day-night.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-day-night.cjs --alias:@=./src >/dev/null
+node /tmp/rst-studio-day-night.cjs
+
+echo "=== drinks brew spawn (candle-table mug after espresso) ==="
+./node_modules/.bin/esbuild tests/drinks-brew-spawn.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-drinks-brew-spawn.cjs --alias:@=./src >/dev/null
+node /tmp/rst-drinks-brew-spawn.cjs
+
+echo "=== studio floor living FX (needles, candle, steam, shelf) ==="
+./node_modules/.bin/esbuild tests/studio-floor-life.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-floor-life.cjs --alias:@=./src >/dev/null
+node /tmp/rst-studio-floor-life.cjs
+
 echo "=== studio ux presentation (HUD + love-room) ==="
 ./node_modules/.bin/esbuild tests/studio-ux-presentation.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-ux-presentation.cjs --alias:@=./src >/dev/null
 node /tmp/rst-studio-ux-presentation.cjs
+
+echo "=== idle floor direction (auto-zoom + hotspot priority) ==="
+./node_modules/.bin/esbuild tests/idle-floor-direction.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-idle-floor-direction.cjs --alias:@=./src >/dev/null
+node /tmp/rst-idle-floor-direction.cjs
 
 echo "=== door enter/exit + equipment shelf sprites (P2 visual) ==="
 ./node_modules/.bin/esbuild tests/door-shelf-presentation.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-door-shelf-presentation.cjs --alias:@=./src >/dev/null
@@ -198,7 +230,7 @@ for check in origin-perks career-start character-creator-parts design-system; do
 done
 
 echo "=== era-authentic gigs, story contracts & economy floors ==="
-for check in project-era-starters project-brief session-issues signal-chain economy-income economy-ledger story-contracts achievements campaign-endings studio-hotkeys studio-know-how studio-premises crew-recruitment-portal; do
+for check in project-era-starters project-brief session-issues signal-chain economy-income economy-ledger story-contracts achievements album-cover-wall campaign-endings studio-hotkeys studio-know-how studio-premises crew-recruitment-portal studio-rider; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
   node "/tmp/rst-$check.cjs"
 done

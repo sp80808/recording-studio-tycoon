@@ -5,7 +5,7 @@ import type { Era } from '@/types/game';
 import { ModularSpriteRenderer } from '@/features/sprites/ModularSpriteRenderer';
 import { identityFromSeed, resolveNpcAppearance } from '@/features/sprites/npcAppearance';
 import {
-  CREATOR_PART_SLOTS,
+  creatorOptionsForEra,
   DEFAULT_PART_PICKS,
   cyclePart,
   normalizePartPicks,
@@ -47,6 +47,7 @@ const STEPS = ['Era', 'Character', 'Role'] as const;
 
 const PART_ROW_LABEL: Record<CreatorPartSlot, string> = {
   body: 'Body',
+  build: 'Build',
   hair: 'Hair',
   clothing: 'Clothing',
   accessories: 'Accessories',
@@ -72,29 +73,68 @@ function PartArrowRow({
   onCycle: (slot: CreatorPartSlot, delta: number) => void;
 }) {
   const label = PART_ROW_LABEL[slot];
-  const value = partLabel(era, slot, picks[slot]);
+  const value = partLabel(era, slot, picks[slot] ?? 0);
   return (
-    <div className="flex items-center gap-2" role="group" aria-label={`${label}: ${value}`}>
+    <div className="flex items-center gap-1.5" role="group" aria-label={`${label}: ${value}`}>
       <button
         type="button"
-        className="rst-btn rst-btn-ghost !min-h-10 !min-w-10 !px-0"
+        className="rst-btn rst-btn-ghost !min-h-9 !min-w-9 !px-0"
         aria-label={`Previous ${label}`}
         onClick={() => onCycle(slot, -1)}
       >
-        <ArrowLeft size={16} aria-hidden="true" />
+        <ArrowLeft size={15} aria-hidden="true" />
       </button>
-      <div className="min-w-0 flex-1 rounded-md border border-[var(--rst-line)] bg-black/25 px-3 py-2 text-center">
+      <div className="min-w-0 flex-1 rounded-md border border-[var(--rst-line)] bg-black/25 px-2.5 py-1.5 text-center">
         <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--rst-brass-200)]">{label}</span>
-        <span className="rst-title mt-0.5 block truncate text-base leading-tight">{value}</span>
+        <span className="rst-title mt-0.5 block truncate text-[15px] leading-tight">{value}</span>
       </div>
       <button
         type="button"
-        className="rst-btn rst-btn-ghost !min-h-10 !min-w-10 !px-0"
+        className="rst-btn rst-btn-ghost !min-h-9 !min-w-9 !px-0"
         aria-label={`Next ${label}`}
         onClick={() => onCycle(slot, 1)}
       >
-        <ArrowRight size={16} aria-hidden="true" />
+        <ArrowRight size={15} aria-hidden="true" />
       </button>
+    </div>
+  );
+}
+
+function PartSelectRow({
+  slot,
+  era,
+  picks,
+  onSelect,
+}: {
+  slot: CreatorPartSlot;
+  era: NpcEra;
+  picks: NpcPartPicks;
+  onSelect: (slot: CreatorPartSlot, index: number) => void;
+}) {
+  const label = PART_ROW_LABEL[slot];
+  const options = creatorOptionsForEra(era)[slot];
+  const value = picks[slot] ?? 0;
+  return (
+    <div className="flex items-center gap-1.5" role="group" aria-label={`${label} picker`}>
+      <label
+        htmlFor={`creator-${slot}`}
+        className="w-20 shrink-0 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--rst-brass-200)]"
+      >
+        {label}
+      </label>
+      <select
+        id={`creator-${slot}`}
+        value={value}
+        onChange={(e) => onSelect(slot, Number(e.target.value))}
+        className="rst-input min-w-0 flex-1 !min-h-9 !py-1.5 text-sm"
+        aria-label={`${label}: ${options[value]?.label ?? ''}`}
+      >
+        {options.map((opt) => (
+          <option key={opt.id} value={opt.index}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
@@ -293,25 +333,29 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
         )}
 
         {step === 1 && (
-          <section className="rst-option mx-auto mt-8 w-full max-w-xl !p-7" aria-label="Create your producer">
+          <section className="rst-option mx-auto mt-6 w-full max-w-xl !p-5 sm:!p-6" aria-label="Create your producer">
             <div className="mx-auto max-w-md text-center">
               <div className="mx-auto flex justify-center" aria-live="polite">
-                <ModularSpriteRenderer npc={producer} scale={4} />
+                <ModularSpriteRenderer npc={producer} scale={3} />
               </div>
-              <p className="rst-kicker mt-5">Create your producer</p>
-              <p className="rst-body mt-2 text-xs">
-                Use the arrows to mix layers. Clothing options follow your era; the live preview matches the studio floor figure.
+              <p className="rst-kicker mt-3">Create your producer</p>
+              <p className="rst-body mt-1.5 text-xs">
+                Arrows mix body, build, clothes and accessories — hair uses the dropdown. The preview matches the studio floor figure.
               </p>
-              <div className="mt-5 space-y-2.5 text-left">
-                {CREATOR_PART_SLOTS.map((slot) => (
-                  <PartArrowRow
-                    key={slot}
-                    slot={slot}
-                    era={characterEra}
-                    picks={parts}
-                    onCycle={cycleCreatorPart}
-                  />
-                ))}
+              <div className="mt-4 space-y-2 text-left">
+                <PartArrowRow slot="body" era={characterEra} picks={parts} onCycle={cycleCreatorPart} />
+                <PartArrowRow slot="build" era={characterEra} picks={parts} onCycle={cycleCreatorPart} />
+                <PartSelectRow
+                  slot="hair"
+                  era={characterEra}
+                  picks={parts}
+                  onSelect={(slot, index) => {
+                    click();
+                    setParts((current) => normalizePartPicks(characterEra, { ...current, [slot]: index }));
+                  }}
+                />
+                <PartArrowRow slot="clothing" era={characterEra} picks={parts} onCycle={cycleCreatorPart} />
+                <PartArrowRow slot="accessories" era={characterEra} picks={parts} onCycle={cycleCreatorPart} />
               </div>
               <button
                 type="button"

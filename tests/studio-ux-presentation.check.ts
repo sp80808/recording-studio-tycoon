@@ -34,7 +34,9 @@ assert.match(webgl, /getEraLightingKit/, 'Era lighting kits drive bloom/practica
 // Clock is drawn in the wall plane (real face + hands), not a skewed billboard ellipse
 assert.match(webgl, /buildWallClock\(/, 'Clock is a wall-plane face');
 assert.match(decor, /leftFace\(/, 'Clock geometry is projected onto the left wall plane');
-assert.match(webgl, /half-tile/, 'Props use half-tile grid snap');
+assert.match(webgl, /pickIdleDirectionTarget|idleFloorDirection/, 'Idle floor direction drives auto-zoom hints');
+assert.match(webgl, /idleFocusPoints/, 'Idle auto-zoom has hotspot focus points');
+assert.match(webgl, /IDLE_CAMERA_ZOOM|idleCameraRef/, 'Idle camera ease is wired');
 assert.match(decor, /getEraLightingKit|neonFromTier|kit\.moteCount/, 'Decor lighting is kit-driven');
 
 // HUD / splash

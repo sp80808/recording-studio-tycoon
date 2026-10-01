@@ -5,6 +5,7 @@ import { calculateStudioSkillBonus, getEquipmentBonuses as getBaseEquipmentBonus
 import { availableMods } from '@/data/equipmentMods'; // Import available mods
 import { bumpMatchRatingForReturn } from '@/game-mechanics/relationship-management'; // Issue #10: repeat-client match bump
 import { deriveBrief } from '@/rpg/projectBrief';
+import { deriveRider } from '@/rpg/studioRider';
 import { getEraGigPool, pickWeightedGig, type WeightedGig } from '@/data/gigTemplates';
 export { generateCandidates } from '@/utils/staffRecruitment';
 export type { CandidateGenerationContext } from '@/utils/staffRecruitment';
@@ -14,7 +15,14 @@ export type { CandidateGenerationContext } from '@/utils/staffRecruitment';
 const genres = ['Rock', 'Pop', 'Electronic', 'Hip-hop', 'Acoustic'] as const;
 const clientTypes = ['Independent', 'Record Label', 'Commercial', 'Streaming'] as const;
 
-export const generateNewProjects = (count: number, playerLevel: number = 1, currentEra: string = 'analog60s', knownClients: ClientRelationship[] = [], repeatClientPremium: number = 1.1): Project[] => {
+export const generateNewProjects = (
+  count: number,
+  playerLevel: number = 1,
+  currentEra: string = 'analog60s',
+  knownClients: ClientRelationship[] = [],
+  repeatClientPremium: number = 1.1,
+  reputation: number = 0,
+): Project[] => {
   const projects: Project[] = [];
   const usedTitles = new Set<string>();
   
@@ -134,6 +142,12 @@ export const generateNewProjects = (count: number, playerLevel: number = 1, curr
     } while (usedTitles.has(project.title) && attempts < 50); // Prevent infinite loops
     
     project.brief = deriveBrief(project);
+    const rider = deriveRider(project, {
+      reputation,
+      playerLevel,
+      eraId: currentEra,
+    });
+    if (rider) project.rider = rider;
     // Add the unique title to our set and the project to our list
     usedTitles.add(project.title);
     projects.push(project);

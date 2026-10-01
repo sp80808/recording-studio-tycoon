@@ -12,8 +12,9 @@ import {
   MotionNumber,
 } from '@/components/motion/primitives';
 import ChainComposer from '@/components/ChainComposer';
-import { saveTemplate, validateChain, type SignalChain } from '@/rpg/signalChain';
+import { validateChain, type SignalChain } from '@/rpg/signalChain';
 import BriefPanel from '@/components/BriefPanel';
+import RiderPanel from '@/components/RiderPanel';
 import { getApproach, getProjectBrief, type ProductionApproach } from '@/rpg/projectBrief';
 import { gameAudio } from '@/utils/audioSystem';
 import { getOriginEffects, gigRefreshCostFor } from '@/narrative/originPerks';
@@ -28,6 +29,8 @@ import {
   type ContractStake,
 } from '@/rpg/contractStakes';
 import { Check, Lock, Mic, Star, XCircle, PhoneCall, PhoneOff, Inbox, RefreshCw } from 'lucide-react';
+import { forecastSessionForBooking } from '@/rpg/sessionForecast';
+import SessionForecastView from '@/components/SessionForecast';
 
 interface ProjectListProps {
   gameState: GameState;
@@ -139,7 +142,9 @@ export const ProjectList: React.FC<ProjectListProps> = ({
           1,
           prev.playerData.level,
           prev.currentEra,
-          Object.values(prev.clientRelationships || {})
+          Object.values(prev.clientRelationships || {}),
+          1.1,
+          prev.reputation,
         )
       ]
     }));
@@ -355,6 +360,20 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                     : getOpportunityNote(project)}
                 </div>
 
+                <div className="mb-3">
+                  <SessionForecastView
+                    forecast={forecastSessionForBooking(project, gameState, {
+                      approachId: approaches[project.id] ?? null,
+                      chainState: (() => {
+                        const chain = chains[project.id];
+                        if (!chain) return 'none';
+                        return validateChain(chain, gameState, project.id).broken.length === 0 ? 'valid' : 'broken';
+                      })(),
+                      stake: chosenStake,
+                    })}
+                  />
+                </div>
+
                 <BriefPanel
                   project={project}
                   state={gameState}
@@ -365,15 +384,14 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                   }}
                 />
 
+                <RiderPanel project={project} state={gameState} mode="booking" />
+
                 {['vocal-production', 'tracking'].includes(getProjectBrief(project).serviceType) && (
                   <ChainComposer
                     project={project}
                     state={gameState}
                     chain={chains[project.id]}
                     onChange={(c) => setChains((prev) => ({ ...prev, [project.id]: c }))}
-                    onSaveTemplate={(c, name) =>
-                      setGameState((prev) => ({ ...prev, chainTemplates: saveTemplate(prev.chainTemplates, c, name) }))
-                    }
                   />
                 )}
 

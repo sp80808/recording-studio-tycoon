@@ -95,6 +95,7 @@ const COMPROMISE_FLAGS = [
   'skipped_union_meeting',
   'skipped_team_dinner',
   'took_the_spotlight',
+  'bent_the_creed',
 ] as const;
 
 /** Flags that earn a line in the closing paragraph, keyed to what the studio is remembered for. */
@@ -118,6 +119,9 @@ const REMEMBERED_FOR: Record<string, string> = {
   vouched_for_scale: 'stood up for session players in public',
   owned_signature_sound: 'built a signature sound on purpose',
   guaranteed_clean_master: 'guaranteed its masters clean',
+  held_the_creed: 'kept the studio creed when it cost money',
+  published_studio_creed: 'wrote the studio creed on the door',
+  delivered_path_promise: 'delivered exactly what its campaign path promised',
 };
 
 /**
@@ -145,6 +149,9 @@ const RIVAL_CODA: Record<string, Coda> = {
     ['polished_retrospective', 'A polished legend. I taught you that, did I not?'],
     ['vouched_for_scale', 'You stood up for the players. The tape notices who was paid.'],
     ['skipped_union_meeting', 'You stayed home when the players met. The tape notices that too.'],
+    ['held_the_creed', 'You held the creed when I tested it. I will remember that.'],
+    ['bent_the_creed', 'You bent the creed for a booking. Charts forget. Tape does not.'],
+    ['creed_protect_the_take', 'Protect the take. At least you said it once where I could hear.'],
   ],
   'apex-velocity': [
     ['paid_the_curator', 'Pay-to-play works. Nobody says it in public. You did it quietly. Good.'],

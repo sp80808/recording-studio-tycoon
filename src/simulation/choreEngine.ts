@@ -129,6 +129,27 @@ export const AUTHORED_CHORES: Record<StudioChoreId, Omit<StudioChore, 'completed
   },
 };
 
+/** Canonical hotspot for a chore — prefers authored mapping so older saves still resolve. */
+export function getChoreCanonicalHotspot(chore: Pick<StudioChore, 'id' | 'hotspotId'>): StudioChore['hotspotId'] {
+  return AUTHORED_CHORES[chore.id]?.hotspotId ?? chore.hotspotId;
+}
+
+/** First incomplete chore pinned to a floor hotspot (console / liveRoom / shelf / …). */
+export function findPendingChoreForHotspot(
+  state: StudioChoreState | null | undefined,
+  hotspotId: StudioChore['hotspotId'] | string
+): StudioChore | null {
+  if (!state?.chores) return null;
+  const key = hotspotId.trim().toLowerCase().replace(/[\s_]+/g, '');
+  const target = key === 'liveroom' ? 'liveRoom' : key === 'crt' ? 'tv' : hotspotId;
+  const canonical = target === 'liveroom' ? 'liveRoom' : target;
+  return (
+    Object.values(state.chores).find(
+      (chore) => !chore.completed && getChoreCanonicalHotspot(chore) === canonical
+    ) ?? null
+  );
+}
+
 /**
  * Initializes a clean chore state.
  */

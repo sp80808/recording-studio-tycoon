@@ -25,6 +25,7 @@ import {
   DoorOpen,
   Megaphone,
   Users,
+  Zap,
 } from 'lucide-react';
 import { getOriginEffects, gigRefreshCostFor } from '@/narrative/originPerks';
 import { getEraDecor } from '@/components/studio/studioDecorConfig';
@@ -34,6 +35,8 @@ import {
   MotionButton,
   MotionNumber,
 } from '@/components/motion/primitives';
+import { findPendingChoreForHotspot } from '@/simulation/choreEngine';
+import { ChoreHotspotButton } from '@/components/chores/ChoreHotspotButton';
 
 export interface StudioInspectorProps {
   hotspot: StudioHotspotId;
@@ -127,6 +130,47 @@ const MiniBar: React.FC<{ value: number; className?: string }> = ({ value, class
     <div className={`h-full ${className}`} style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
   </div>
 );
+
+/** Shared chore interaction surface — same language as floor ChoreHotspotButton. */
+const HotspotChorePanel: React.FC<{
+  hotspot: StudioHotspotId;
+  gameState: GameState;
+  onCompleteChore?: (hotspot: StudioHotspotId) => boolean;
+  onClose: () => void;
+}> = ({ hotspot, gameState, onCompleteChore, onClose }) => {
+  if (hotspot !== 'console' && hotspot !== 'liveRoom' && hotspot !== 'shelf') return null;
+  const chore = findPendingChoreForHotspot(gameState.choreState, hotspot);
+  if (!chore || !onCompleteChore) return null;
+  const shortLabel =
+    chore.id === 'tune_acoustics'
+      ? 'Tune Acoustics'
+      : chore.id === 'brew_espresso'
+        ? 'Brew Espresso'
+        : chore.title;
+  return (
+    <div className="rounded border border-[var(--rst-brass-line)] bg-[rgba(24,20,16,0.72)] p-2.5 space-y-2">
+      <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--rst-brass-300)]">
+        Floor duty
+      </div>
+      <p className="text-xs text-stone-400 leading-snug">{chore.description}</p>
+      <div className="flex items-center justify-between gap-2">
+        <ChoreHotspotButton
+          kind={chore.category}
+          label={shortLabel}
+          meta={chore.energyCost > 0 ? `${chore.energyCost}⚡` : 'Free'}
+          attention
+          onClick={() => {
+            if (onCompleteChore(hotspot)) onClose();
+          }}
+        />
+        <span className="text-[10px] text-stone-500 flex items-center gap-0.5 shrink-0">
+          <Zap size={10} aria-hidden="true" />
+          {gameState.playerData.dailyWorkCapacity} left
+        </span>
+      </div>
+    </div>
+  );
+};
 
 export const StudioInspector: React.FC<StudioInspectorProps> = ({
   hotspot,
@@ -384,6 +428,12 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
     const gear = gameState.ownedEquipment;
     return (
       <Shell hotspot={hotspot} onClose={onClose}>
+        <HotspotChorePanel
+          hotspot={hotspot}
+          gameState={gameState}
+          onCompleteChore={onCompleteChore}
+          onClose={onClose}
+        />
         <StatRow label="Owned gear" value={<MotionNumber value={gear.length} />} />
         <StatRow label="Daily upkeep" value={`-$${calculateEquipmentUpkeep(gear, getOriginEffects(gameState))}`} valueClass="text-red-400" />
         <div className="space-y-2">
@@ -423,6 +473,12 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
     if (!project) {
       return (
         <Shell hotspot={hotspot} onClose={onClose}>
+          <HotspotChorePanel
+            hotspot={hotspot}
+            gameState={gameState}
+            onCompleteChore={onCompleteChore}
+            onClose={onClose}
+          />
           <div className="text-xs text-stone-400">
             The console is dark. Take a gig from the phone to start tracking.
           </div>
@@ -442,6 +498,12 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
     const progress = project.stages.length ? ((done + frac) / project.stages.length) * 100 : 0;
     return (
       <Shell hotspot={hotspot} onClose={onClose}>
+        <HotspotChorePanel
+          hotspot={hotspot}
+          gameState={gameState}
+          onCompleteChore={onCompleteChore}
+          onClose={onClose}
+        />
         <div className="text-xs font-semibold text-white truncate">{project.title}</div>
         <StatRow label="Stage" value={`${project.currentStageIndex + 1}/${project.stages.length} · ${current?.stageName ?? ''}`} />
         <div><MiniBar value={progress} className="bg-emerald-400" /></div>
@@ -466,10 +528,45 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   }
 
   /* ------------------------------ liveRoom ------------------------------ */
+  // Secondary surface if opened programmatically; floor click prefers chore → session.
   const crew = gameState.hiredStaff;
   return (
     <Shell hotspot={hotspot} onClose={onClose}>
-      {!project && <div className="text-xs text-stone-400">{EMPTY_STATES.sessionRoom.title} {EMPTY_STATES.sessionRoom.hint}</div>}
+      <HotspotChorePanel
+        hotspot={hotspot}
+        gameState={gameState}
+        onCompleteChore={onCompleteChore}
+        onClose={onClose}
+      />
+      {!project && (
+        <div className="text-xs text-stone-400">
+          {EMPTY_STATES.sessionRoom.title} {EMPTY_STATES.sessionRoom.hint}
+        </div>
+      )}
+      {project && (
+        <>
+          <div className="text-xs font-semibold text-white truncate">{project.title}</div>
+          <StatRow label="Client" value={project.clientName ?? '—'} />
+        </>
+      )}
+      <MotionButton
+        className="w-full h-7 text-xs bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-amber-100 font-bold"
+        onClick={() => {
+          void gameAudio.playTactileClick();
+          onConsoleFocus?.();
+          onClose();
+        }}
+      >
+        <ActionIcon icon={SlidersHorizontal} />
+        {project ? 'Go to Work Panel' : 'Jump to Work Panel'}
+      </MotionButton>
+      <MotionButton
+        className="w-full h-7 text-xs border-white/20 text-stone-200 hover:bg-white/10"
+        onClick={() => openDashboard('staff')}
+      >
+        <ActionIcon icon={Users} />
+        Open Crew
+      </MotionButton>
       {crew.length === 0 && (
         <div className="text-xs text-stone-400">
           {EMPTY_STATES.crew.title} {EMPTY_STATES.crew.hint}

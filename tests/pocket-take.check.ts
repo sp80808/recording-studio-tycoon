@@ -31,9 +31,9 @@ ok(calculateTakeEnergyCost(0, false) === 0, '0 energy returns 0');
 ok(calculateTakeEnergyCost(6, true) === 3, 'overdrive adds +1 energy');
 ok(calculateTakeEnergyCost(2, true) === 2, 'overdrive with 2 energy burns 2 energy');
 
-// 3. Base Units Scaling
-ok(calculateTakeBaseUnits(2) === 4, '2 energy produces 4 base units');
-ok(calculateTakeBaseUnits(1) === 2, '1 energy produces 2 base units');
-ok(calculateTakeBaseUnits(3) === 6, '3 energy (overdrive) produces 6 base units');
+// 3. Base Units Scaling — early stages (~8–12 units) clear in ~2 takes.
+ok(calculateTakeBaseUnits(2) === 6, '2 energy produces 6 base units');
+ok(calculateTakeBaseUnits(1) === 3, '1 energy produces 3 base units');
+ok(calculateTakeBaseUnits(3) === 9, '3 energy (overdrive) produces 9 base units');
 
 console.log(`pocket-take: all ${passed} checks passed`);

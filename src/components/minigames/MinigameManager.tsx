@@ -20,6 +20,9 @@ import { TapeJogGame } from './TapeJogGame';
 import { ConsoleRideGame } from './ConsoleRideGame';
 import { VocalCompGame } from './VocalCompGame';
 import { AlbumSequenceGame } from './AlbumSequenceGame';
+import { LyricFocusGame } from './LyricFocusGame';
+import { TapeSplicingGame } from './TapeSplicingGame';
+import { SamplingSequencingGame } from './SamplingSequencingGame';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { toast } from '@/hooks/use-toast';
 import { useCutsceneQueue } from '@/hooks/useCutsceneQueue';
@@ -46,11 +49,10 @@ export type MinigameType =
   | 'tape-jog'
   | 'console-ride' // Added controller-first pad minigames
   | 'vocal-comp'
-  | 'album-sequence';
-  // Add new minigame types here and ensure they have corresponding entries in minigameTutorials
-  // | 'songwriting' // Example: if SongwritingGame becomes a distinct minigame managed here
-  // | 'tapeSplicing' // Example
-  // | 'midiProgramming' // Example
+  | 'album-sequence'
+  | 'lyric-focus'
+  | 'tape-splicing'
+  | 'sampling';
 
 interface MinigameManagerProps {
   isOpen: boolean;
@@ -58,7 +60,9 @@ interface MinigameManagerProps {
   gameType: MinigameType;
   onReward: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: MinigameType, rawScore?: number) => void;
   // Optional: Pass equipment details if relevant for the specific minigame (e.g., maintenance)
-  equipmentContext?: { name: string }; 
+  equipmentContext?: { name: string };
+  /** When 'practice', skip project C/T toast framing — craft skill XP is applied by the caller. */
+  rewardMode?: 'project' | 'practice';
 }
 
 export const MinigameManager: React.FC<MinigameManagerProps> = ({
@@ -67,6 +71,7 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
   gameType,
   onReward,
   equipmentContext, // Added equipmentContext
+  rewardMode = 'project',
 }) => {
   const [showGame, setShowGame] = useState(true);
   const backgroundMusic = useBackgroundMusic(); // Assuming this is for BeatMakingGame or similar
@@ -177,6 +182,18 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         creativityBonus = Math.floor(score / 8);
         technicalBonus = Math.floor(score / 10);
         break;
+      case 'lyric-focus':
+        creativityBonus = Math.floor(score / 6);
+        technicalBonus = Math.floor(score / 14);
+        break;
+      case 'tape-splicing':
+        creativityBonus = Math.floor(score / 14);
+        technicalBonus = Math.floor(score / 7);
+        break;
+      case 'sampling':
+        creativityBonus = Math.floor(score / 7);
+        technicalBonus = Math.floor(score / 11);
+        break;
       // Add cases for other minigames if their reward calculation differs
       default:
         // Generic fallback or throw error
@@ -185,6 +202,20 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
     }
 
     onReward(creativityBonus, technicalBonus, xpBonus, gameType, score);
+
+    if (rewardMode === 'practice') {
+      toast({
+        title: '🎧 Practice take in',
+        description: score >= 700
+          ? 'Strong run — reviewing the tape for craft XP.'
+          : score >= 400
+            ? 'Serviceable take. Room to tighten the next pass.'
+            : 'Rough pass. Little craft XP this time.',
+        className: 'bg-stone-800 border-stone-600 text-white',
+        variant: success === false ? 'destructive' : 'default',
+      });
+      return;
+    }
 
     // If it's an S-Rank or Botched take, show full-screen cutscene instead of toast
     if (score >= 850 || score <= 300) {
@@ -263,6 +294,19 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         return <AlbumSequenceGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'vocal-comp':
         return <VocalCompGame {...commonGameProps} onComplete={standardOnComplete} />;
+      case 'lyric-focus':
+        return (
+          <LyricFocusGame
+            {...commonGameProps}
+            genre="pop"
+            difficulty={4}
+            onComplete={(score) => handleGameComplete(score)}
+          />
+        );
+      case 'tape-splicing':
+        return <TapeSplicingGame {...commonGameProps} onComplete={standardOnComplete} />;
+      case 'sampling':
+        return <SamplingSequencingGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'maintenance':
         if (!equipmentContext) {
           console.error('Equipment context is required for maintenance minigame.');

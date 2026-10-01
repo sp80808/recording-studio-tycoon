@@ -1,10 +1,11 @@
 import { applySessionEvent, phaseForStage, rollPhaseEvent, type SessionEvent } from '@/rpg/sessionIssues';
 import { chainMultiplier, evaluateChain, validateChain } from '@/rpg/signalChain';
 import { getProjectBrief, evaluateProjectBriefFit, BRIEF_FIT_MULTIPLIER, recordBriefDiscoveries } from '@/rpg/projectBrief';
+import { evaluateProjectRider } from '@/rpg/studioRider';
 import { recordGearUse } from '@/features/usedGear/session';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { GameState, FocusAllocation, Project } from '@/types/game';
-import { TakeGrade, evaluateTakeAccuracy, calculateTakeEnergyCost } from '@/rpg/takeEvaluation';
+import { TakeGrade, evaluateTakeAccuracy, calculateTakeEnergyCost, calculateTakeBaseUnits } from '@/rpg/takeEvaluation';
 // calculateStudioSkillBonus and getEquipmentBonuses are now used within projectUtils
 import { getCreativityMultiplier, getTechnicalMultiplier, getFocusEffectiveness, getMoodEffectiveness } from '@/utils/playerUtils'; // Added getMoodEffectiveness
 import {
@@ -30,7 +31,8 @@ import { applyKnowHowEvents, domainForStage, sessionTemplateBonus, type KnowHowE
 import { gradeStage, focusMatchFraction } from '@/rpg/stageGrades';
 import {
   getActiveBuffMagnitude,
-  consumeChoreBuffSession
+  consumeChoreBuffSession,
+  hasActiveChoreBuff,
 } from '@/simulation/choreEngine';
 
 /** Take-driven overrides for a work session (cost, grade and quality bonus from the lock-take dock). */
@@ -368,12 +370,22 @@ export const useStageWork = ({
     const briefMultiplier = BRIEF_FIT_MULTIPLIER[briefFit.grade] * chainFactor;
     const briefDiscoveries = recordBriefDiscoveries(gameState.discoveredBriefCombos, briefFit);
 
+    const brewReady =
+      gameState.choreState?.chores.brew_espresso?.completed === true ||
+      hasActiveChoreBuff(gameState.choreState, 'vibe_boost');
+    const riderEval = evaluateProjectRider(
+      project,
+      resolveSessionEquipment(gameState, project.bookingRoomId),
+      { brewReady, sessionLive: true },
+    );
+    const riderMultiplier = riderEval.workMultiplier;
+
     // ⚡ Streak + 🔥 Overdrive + ✨ Synergy + 🔧 Chore multipliers applied to the final gains
     const overdriveMultiplier = overdrive ? 1.75 : 1;
     const choreCreativityMultiplier = 1 + getActiveBuffMagnitude(gameState.choreState, 'creativity_bonus');
     const choreTechnicalMultiplier = 1 + getActiveBuffMagnitude(gameState.choreState, 'tech_bonus');
-    const creativityGain = Math.max(1, Math.round(workPoints.creativity * comboMultiplier * overdriveMultiplier * synergyBonuses.creativityMultiplier * briefMultiplier * flow.multiplier * choreCreativityMultiplier));
-    const technicalGain = Math.max(1, Math.round(workPoints.technical * comboMultiplier * overdriveMultiplier * synergyBonuses.technicalMultiplier * briefMultiplier * flow.multiplier * choreTechnicalMultiplier));
+    const creativityGain = Math.max(1, Math.round(workPoints.creativity * comboMultiplier * overdriveMultiplier * synergyBonuses.creativityMultiplier * briefMultiplier * riderMultiplier * flow.multiplier * choreCreativityMultiplier));
+    const technicalGain = Math.max(1, Math.round(workPoints.technical * comboMultiplier * overdriveMultiplier * synergyBonuses.technicalMultiplier * briefMultiplier * riderMultiplier * flow.multiplier * choreTechnicalMultiplier));
 
     // Create orb animations
     createOrb('creativity', creativityGain);
@@ -393,7 +405,7 @@ export const useStageWork = ({
     // - Base conversion: points to work units (divide by 3 for faster progression)
     // - Minimum progress: Always make at least 1 work unit of progress if points > 0
     // - Stage difficulty scaling: Harder stages (more work units) get bonus efficiency
-    const baseTakeUnits = Math.max(1, Math.floor(energyCost * 2));
+    const baseTakeUnits = calculateTakeBaseUnits(energyCost);
     const minProgress = totalPointsGenerated > 0 ? 1 : 0;
     const stageEfficiencyBonus = Math.floor(currentStage.workUnitsBase / 10); // Bonus for longer stages
     
@@ -497,7 +509,14 @@ export const useStageWork = ({
           ? [...(prev.activeProject!.stageGrades ?? []), completedGrade.grade]
           : prev.activeProject!.stageGrades,
         // A fresh stage means a fresh take slate (skipped take caps at A).
-        stageTake: newCurrentStageIndex !== currentStageIndex ? null : prev.activeProject!.stageTake ?? null
+        stageTake: newCurrentStageIndex !== currentStageIndex ? null : prev.activeProject!.stageTake ?? null,
+        gearNotes: (() => {
+          const prior = prev.activeProject!.gearNotes ?? [];
+          if (!project.rider || riderEval.notes.length === 0) return prior;
+          const stamp = riderEval.met ? 'Rider met' : 'Rider short';
+          if (prior.some((n) => n.startsWith(stamp) || n.startsWith('Rider '))) return prior;
+          return [...prior, ...riderEval.notes.slice(0, 2)].slice(-6);
+        })(),
       };
 
       console.log(`📋 Project C points: ${prev.activeProject!.accumulatedCPoints} -> ${updatedProject.accumulatedCPoints}`);

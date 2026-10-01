@@ -21,10 +21,12 @@ import type {
 } from './spriteTypes';
 import * as data from './npcAppearanceData';
 
-export type CreatorPartSlot = 'body' | 'hair' | 'clothing' | 'accessories';
+export type CreatorPartSlot = 'body' | 'build' | 'hair' | 'clothing' | 'accessories';
 
 export interface NpcPartPicks {
   body: number;
+  /** Independent physique pick (slim / average / stocky). Optional on old saves — defaults to 0. */
+  build?: number;
   hair: number;
   clothing: number;
   accessories: number;
@@ -38,12 +40,14 @@ export interface CreatorPartOption {
 
 export const DEFAULT_PART_PICKS: NpcPartPicks = {
   body: 0,
+  build: 0,
   hair: 0,
   clothing: 0,
   accessories: 0,
 };
 
-export const CREATOR_PART_SLOTS: readonly CreatorPartSlot[] = ['body', 'hair', 'clothing', 'accessories'];
+/** Slots persisted to saves (build rides along when present; old saves omit it). */
+export const CREATOR_PART_SLOTS: readonly CreatorPartSlot[] = ['body', 'build', 'hair', 'clothing', 'accessories'];
 
 const unwrap = <T,>(pool: readonly data.Weighted<T>[]): T[] => {
   const out: T[] = [];
@@ -65,6 +69,8 @@ const optionsFrom = (ids: readonly string[]): CreatorPartOption[] =>
 
 export const bodyOptions = (): CreatorPartOption[] => optionsFrom(data.SKIN_TONES);
 
+export const buildOptions = (): CreatorPartOption[] => optionsFrom(unwrap(data.BUILDS) as readonly string[]);
+
 export const hairOptionsForEra = (era: NpcEra): CreatorPartOption[] =>
   optionsFrom(unwrap(data.ERA_HAIR_SHAPES[era]));
 
@@ -76,6 +82,7 @@ export const accessoryOptionsForEra = (era: NpcEra): CreatorPartOption[] =>
 
 export const creatorOptionsForEra = (era: NpcEra): Record<CreatorPartSlot, CreatorPartOption[]> => ({
   body: bodyOptions(),
+  build: buildOptions(),
   hair: hairOptionsForEra(era),
   clothing: clothingOptionsForEra(era),
   accessories: accessoryOptionsForEra(era),
@@ -92,6 +99,7 @@ export const normalizePartPicks = (
   };
   return {
     body: clamp(picks?.body, opts.body.length),
+    build: clamp(picks?.build, opts.build.length),
     hair: clamp(picks?.hair, opts.hair.length),
     clothing: clamp(picks?.clothing, opts.clothing.length),
     accessories: clamp(picks?.accessories, opts.accessories.length),
@@ -119,10 +127,16 @@ export const parseNpcPartPicks = (value: unknown): NpcPartPicks | null => {
   if (!value || typeof value !== 'object') return null;
   const record = value as Record<string, unknown>;
   const out: Partial<NpcPartPicks> = {};
-  for (const key of CREATOR_PART_SLOTS) {
+  // Core slots are required; build is optional so pre-split saves still load.
+  for (const key of ['body', 'hair', 'clothing', 'accessories'] as const) {
     const raw = record[key];
     if (typeof raw !== 'number' || !Number.isInteger(raw) || raw < 0) return null;
     out[key] = raw;
+  }
+  const buildRaw = record.build;
+  if (buildRaw !== undefined) {
+    if (typeof buildRaw !== 'number' || !Number.isInteger(buildRaw) || buildRaw < 0) return null;
+    out.build = buildRaw;
   }
   return out as NpcPartPicks;
 };
@@ -148,7 +162,7 @@ export const applyPartPicks = (
   const jewellery = unwrap(data.ERA_JEWELLERY[npc.era]) as Jewellery[];
 
   const skinTone = skins[picks.body % skins.length];
-  const build = builds[picks.body % builds.length];
+  const build = builds[(picks.build ?? picks.body) % builds.length];
   const skin = data.SKIN_PALETTES[skinTone];
 
   const hairShape = hairShapes[picks.hair % hairShapes.length];

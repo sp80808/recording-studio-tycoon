@@ -34,7 +34,7 @@ describe('design system: dialogs', () => {
 });
 
 describe('design system: flat, translucent chrome (no gradient fills)', () => {
-  const flatSelectors = ['.rst-surface', '.rst-modal', '.rst-btn', '.rst-btn-primary', '.rst-btn-success', '.rst-btn-danger', '.rst-option', '.rst-duty-chip', '.rst-toast', '.rst-chip'];
+  const flatSelectors = ['.rst-surface', '.rst-modal', '.rst-btn', '.rst-btn-primary', '.rst-btn-success', '.rst-btn-danger', '.rst-option', '.rst-duty-chip', '.rst-toast', '.rst-chip', '.rst-stamp', '.rst-stamp-brass', '.rst-stamp-steel', '.rst-stamp-live', '.rst-stamp-money', '.rst-stamp-warn', '.rst-chore-btn'];
   it('core control/panel classes contain no gradients', () => {
     for (const sel of flatSelectors) {
       assert.doesNotMatch(ruleBody(css, sel), /gradient/, `${sel} is flat`);
@@ -55,7 +55,7 @@ describe('design system: flat, translucent chrome (no gradient fills)', () => {
       assert.ok(line, `${sel} defined`);
       assert.doesNotMatch(line!, /gradient/, `${sel} is flat`);
     }
-    const hud = play.split('\n').find((l) => l.startsWith('.studio-hud-stats > *,'));
+    const hud = play.split('\n').find((l) => l.startsWith('.studio-hud-stats, .studio-hud-controls, .studio-hud-title {'));
     assert.ok(hud && !/gradient/.test(hud), 'HUD pills are flat');
   });
 

@@ -56,6 +56,15 @@ describe('callback subplots', () => {
     const cb = new Set(CALLBACK_SUBPLOTS.map((s) => s.id));
     // Campaign node titles are written to storyFlags on completion.
     for (const t of ['Studio Trailblazer', 'Tone Connoisseur', 'Commercial Machine']) prior.add(t);
+    // Campaign branch + Rising Studio creed flags (not subplot options, but authored priors).
+    for (const f of [
+      'chose_acoustic_heritage',
+      'chose_commercial_scale',
+      'creed_protect_the_take',
+      'creed_master_the_moment',
+    ]) {
+      prior.add(f);
+    }
     for (const s of EMERGENT_SUBPLOTS) if (!cb.has(s.id)) for (const st of s.stages) for (const o of st.options) prior.add(o.storyFlag);
     for (const s of CALLBACK_SUBPLOTS) {
       const reachable = (s.eras ?? ['analog60s', 'digital80s', 'internet2000s', 'streaming2020s']).some((era) =>

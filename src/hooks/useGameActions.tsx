@@ -392,7 +392,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       lastGigRefreshDay: prev.currentDay,
       availableProjects: [
         ...prev.availableProjects,
-        ...generateNewProjects(1, prev.playerData.level, prev.currentEra),
+        ...generateNewProjects(1, prev.playerData.level, prev.currentEra, [], 1.1, prev.reputation),
       ],
     }));
 

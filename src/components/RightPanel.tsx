@@ -23,27 +23,24 @@ import { toast } from '@/hooks/use-toast'; // Import toast
 import { ProgressionSystem } from '@/services/ProgressionSystem';
 import { getOperationalStudioRooms, getOccupiedRoomIds, applyStudioRoomPurchase, getStudioRoomPurchaseAvailability } from '@/utils/studioRoomUtils';
 import { SynergyEncyclopedia } from '@/components/synergy/SynergyEncyclopedia';
-import { BarChart3, Building2, Guitar, Sparkles, TrendingUp, Users } from 'lucide-react';
+import { Sparkles, TrendingUp } from 'lucide-react';
 import { gameAudio } from '@/utils/audioSystem';
 import { CrewRecruitmentPortal } from '@/components/crew/CrewRecruitmentPortal';
+import { SkillPracticePanel } from '@/components/skills/SkillPracticePanel';
 
 type DashboardTab = 'studio' | 'skills' | 'bands' | 'charts' | 'staff' | 'synergies';
 
-const DASHBOARD_TABS = [
-  { id: 'studio', label: 'Studio', icon: Building2 },
+/** Only Skills/Recipes live here; Gear/Crew/Artists/Charts open from the dock/hotspots. */
+const SECONDARY_TABS = [
   { id: 'skills', label: 'Skills', icon: TrendingUp },
-  { id: 'staff', label: 'Staff', icon: Users },
-  { id: 'bands', label: 'Bands', icon: Guitar },
-  { id: 'charts', label: 'Charts', icon: BarChart3 },
   { id: 'synergies', label: 'Recipes', icon: Sparkles },
-] as const satisfies ReadonlyArray<{ id: DashboardTab; label: string; icon: typeof Building2 }>;
+] as const satisfies ReadonlyArray<{ id: Extract<DashboardTab, 'skills' | 'synergies'>; label: string; icon: typeof TrendingUp }>;
 
 export interface RightPanelProps {
   requestedTab?: DashboardTab;
   gameState: GameState;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
   spendPerkPoint: (attribute: keyof PlayerAttributes) => void;
-  advanceDay: () => void;
   purchaseEquipment: (equipmentId: string) => void;
   hireStaff: (candidateIndex: number) => boolean;
   refreshCandidates: () => void;
@@ -69,7 +66,6 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   gameState,
   setGameState,
   spendPerkPoint,
-  advanceDay,
   purchaseEquipment,
   hireStaff,
   refreshCandidates,
@@ -147,12 +143,12 @@ export const RightPanel: React.FC<RightPanelProps> = ({
 
   return (
     <GamePanel className="p-3 flex-1 min-h-0 w-full flex flex-col overflow-hidden backdrop-blur-md animate-slide-in-right">
-      {/* Tab Navigation (Pinned) */}
+      {/* Secondary destinations only — Gear/Crew/Artists/Charts come from the floor dock. */}
       <nav
-        aria-label="Management panels"
-        className="grid grid-cols-6 shrink-0 mb-2.5 overflow-hidden rounded-lg border border-stone-700/80 bg-black/25 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_4px_14px_rgba(0,0,0,0.3)]"
+        aria-label="Skills and recipes"
+        className="grid grid-cols-2 shrink-0 mb-2.5 overflow-hidden rounded-lg border border-stone-700/80 bg-black/25 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_4px_14px_rgba(0,0,0,0.3)]"
       >
-        {DASHBOARD_TABS.map(({ id, label, icon: Icon }) => {
+        {SECONDARY_TABS.map(({ id, label, icon: Icon }) => {
           const selected = activeTab === id;
           const discoveryCount = id === 'synergies' ? (gameState.discoveredSynergies?.length ?? 0) : 0;
           return (
@@ -162,7 +158,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
               aria-pressed={selected}
               onClick={() => selectTab(id)}
               title={id === 'synergies' ? 'Studio Recipe & Synergy Codex' : label}
-              className={`relative flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[10px] font-bold leading-none transition-all focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-1 focus-visible:ring-offset-stone-950 ${
+              className={`relative flex min-w-0 flex-row items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-bold leading-none transition-all focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-1 focus-visible:ring-offset-stone-950 ${
                 selected
                   ? 'bg-[rgba(230,184,102,0.13)] text-amber-200 shadow-[inset_0_2px_5px_rgba(0,0,0,0.9),inset_0_-1px_0_rgba(255,255,255,0.08)]'
                   : 'text-stone-400 hover:bg-white/5 hover:text-stone-100 active:translate-y-px'
@@ -171,7 +167,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
               <Icon aria-hidden="true" className={`h-4 w-4 ${selected ? 'drop-shadow-[0_0_5px_rgba(251,191,36,0.45)]' : ''}`} strokeWidth={2.1} />
               <span className="truncate">{label}</span>
               {discoveryCount > 0 && (
-                <span className="absolute right-1 top-1 min-w-3.5 rounded-full bg-amber-400 px-1 text-[8px] leading-3.5 text-stone-950 shadow">
+                <span className="absolute right-1.5 top-1 min-w-3.5 rounded-full bg-amber-400 px-1 text-[8px] leading-3.5 text-stone-950 shadow">
                   {discoveryCount}
                 </span>
               )}
@@ -184,27 +180,6 @@ export const RightPanel: React.FC<RightPanelProps> = ({
       <div className="flex-1 min-h-0 overflow-y-auto pr-1">
         {activeTab === 'studio' && (
           <div className="space-y-3">
-            {/* Prominent Advance Day Action Banner */}
-            <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-purple-500/[0.10] border border-purple-500/50 shadow-md">
-              <div className="min-w-0">
-                <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <span className="text-amber-300 font-extrabold">☀ Day {gameState.currentDay}</span>
-                  <span className="text-[10px] text-purple-300 font-medium">({gameState.currentYear})</span>
-                </div>
-                <div className="text-[10px] text-stone-400 truncate">
-                  Advances calendar & restores producer sessions
-                </div>
-              </div>
-              <KenneyButton 
-                onClick={advanceDay} 
-                size="sm" 
-                variant="yellow"
-                className="shrink-0"
-              >
-                Advance Day ❯
-              </KenneyButton>
-            </div>
-
             {/* Studio Progression Panel */}
             <StudioProgressionPanel gameState={gameState} />
             <PremisesPanel gameState={gameState} setGameState={setGameState} />
@@ -329,21 +304,26 @@ export const RightPanel: React.FC<RightPanelProps> = ({
 
       {activeTab === 'skills' && (
         <div className="space-y-4">
-          <h2 className="text-xl font-bold text-white">Player Progression</h2>
-          <div className="text-stone-300">Level: {gameState.playerData.level}</div>
-          <div className="text-stone-300">XP: {gameState.playerData.xp} / {gameState.playerData.xpToNextLevel}</div>
-          <div className="text-green-400">Perk Points: {gameState.playerData.perkPoints}</div>
+          <SkillPracticePanel gameState={gameState} setGameState={setGameState} />
 
-          <KenneyButton onClick={() => setShowAttributesModal(true)} variant="blue" size="md" className="w-full">
-            Upgrade Attributes
-          </KenneyButton>
-          <KenneyButton onClick={() => setShowSkillsModal(true)} variant="blue" size="md" className="w-full">
-            View Studio Skills
-          </KenneyButton>
-
-          <div className="mt-4">
-            <StudioProgressionPanel gameState={gameState} />
+          <div className="rounded-[3px] border border-stone-700/80 bg-stone-950/50 p-2.5 space-y-2">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Producer desk</div>
+            <div className="text-xs text-stone-300 flex flex-wrap gap-x-3 gap-y-1">
+              <span>Level {gameState.playerData.level}</span>
+              <span>XP {gameState.playerData.xp}/{gameState.playerData.xpToNextLevel}</span>
+              <span className="text-amber-300">{gameState.playerData.perkPoints} talent pts</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <KenneyButton onClick={() => setShowAttributesModal(true)} variant="blue" size="sm" className="w-full">
+                Talents
+              </KenneyButton>
+              <KenneyButton onClick={() => setShowSkillsModal(true)} variant="grey" size="sm" className="w-full">
+                Genre skills
+              </KenneyButton>
+            </div>
           </div>
+
+          <StudioProgressionPanel gameState={gameState} />
         </div>
       )}
 

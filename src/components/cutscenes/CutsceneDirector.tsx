@@ -5,13 +5,14 @@ import { CinematicStoryCutscene } from './CinematicStoryCutscene';
 import {
   RISING_STUDIO_CUTSCENE,
   RISING_STUDIO_MILESTONE_ID,
+  STUDIO_CREED_EVENT,
+  STUDIO_CREED_STORAGE_KEY,
   shouldTriggerRisingStudioCutscene,
   type CareerCutsceneChoice,
 } from './careerCutscenes';
 
 const SAVE_KEY = 'recordingStudioTycoonSave';
 const SEEN_KEY = `recordingStudioTycoon_cutscene_${RISING_STUDIO_MILESTONE_ID}`;
-const CREED_KEY = 'recordingStudioTycoon_studioCreed';
 
 export function CutsceneDirector() {
   const { queue, dequeue, enqueue } = useCutsceneQueue();
@@ -51,7 +52,12 @@ export function CutsceneDirector() {
 
   if (current.type === 'story_cinematic') {
     const completeStory = (choice?: CareerCutsceneChoice) => {
-      if (choice) localStorage.setItem(CREED_KEY, choice.id);
+      if (choice) {
+        localStorage.setItem(STUDIO_CREED_STORAGE_KEY, choice.id);
+        window.dispatchEvent(
+          new CustomEvent(STUDIO_CREED_EVENT, { detail: { choiceId: choice.id } }),
+        );
+      }
       dequeue();
     };
     return <CinematicStoryCutscene payload={current.payload as React.ComponentProps<typeof CinematicStoryCutscene>['payload']} onComplete={completeStory} />;

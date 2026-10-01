@@ -111,10 +111,13 @@ describe('unlocking', () => {
     assert.doesNotThrow(() => evaluateAchievements(frozen as GameState));
   });
 
-  it('feeds the studio trophy wall and the story tick', () => {
+  it('feeds the album-cover wall from settled reports and the story tick', () => {
     const ticked = advanceStory(initializeStorylineState(base({ money: 12000, financials: reportsOf(92) })));
     assert.ok(countUnlocked(ticked) >= 5);
-    assert.equal(getTrophyInput(ticked).awards, countUnlocked(ticked));
+    const wall = getTrophyInput(ticked);
+    assert.equal(wall.covers.length, 1);
+    assert.equal(wall.covers[0].projectId, 'p0');
+    assert.equal(wall.covers[0].score, 92);
     assert.ok(getAchievement('perfect_pitch'));
   });
 });

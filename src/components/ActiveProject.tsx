@@ -22,7 +22,18 @@ import { StreakBankControl } from './StreakBankControl';
 import type { BankResult } from '@/rpg/streakBank';
 import { hasActiveChoreBuff, getActiveBuffMagnitude } from '@/simulation/choreEngine';
 import { PocketMeter } from '@/components/console/PocketMeter';
+
+/** Inter-take dock pacing — keep calibration a quick console check, not a chapter. */
+export const TAKE_SESSION_PACING = {
+  /** Brief beat after a lock so grade juice lands before the next needle arm. */
+  postTakeRearmMs: 320,
+  /** Take result toast — short so it does not outlast the next arm. */
+  takeToastMs: 1400,
+} as const;
 import { StudioDutiesClipboard } from './chores/StudioDutiesClipboard';
+import { StudioStampChip, type StudioStampTone } from './StudioStampChip';
+import { ChoreHotspotButton } from './chores/ChoreHotspotButton';
+import RiderPanel from '@/components/RiderPanel';
 import { ClipboardList } from 'lucide-react';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useSettings } from '@/contexts/settings-context-types';
@@ -176,6 +187,16 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const setTakeCalibrationFocused = useUiChromeStore((s) => s.setTakeCalibrationFocused);
   const availableEnergy = gameState.playerData.dailyWorkCapacity;
   const isProjectComplete = !!gameState.activeProject && gameState.activeProject.stages.every(stage => stage.completed);
+  const rearmTimerRef = useRef<number | null>(null);
+
+  const clearTakeRearm = () => {
+    if (rearmTimerRef.current !== null) {
+      window.clearTimeout(rearmTimerRef.current);
+      rearmTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => () => clearTakeRearm(), []);
 
   // Shared chrome host: hide First Session coach while Take Calibration owns the dock.
   useEffect(() => {
@@ -215,17 +236,6 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   if (!gameState.activeProject) {
     return (
       <div className="flex-1 min-h-0 overflow-y-auto space-y-4">
-        {/* Studio Header */}
-        <div className="bg-purple-500/[0.08] border border-purple-500/30 rounded-lg p-3">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🎵</span>
-            <div>
-              <h2 className="text-lg font-bold text-white">Studio Workspace</h2>
-              <p className="text-sm text-stone-300">Work on your projects here</p>
-            </div>
-          </div>
-        </div>
-        
         <GamePanel className="flex-1 p-6 backdrop-blur-sm">
           <div className="text-center text-stone-400 animate-fade-in">
             <div className="text-6xl mb-4 animate-pulse">🎵</div>
@@ -397,15 +407,23 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
   const handleArmTake = () => {
     if (availableEnergy <= 0 || isProjectComplete) return;
+    clearTakeRearm();
     hapticTick(14);
     playSound('ui-click', 0.5);
     if ((gameAudio as any).playGearSwitch) (gameAudio as any).playGearSwitch();
     setTakeState('tracking');
   };
 
+  const handleStandDown = () => {
+    clearTakeRearm();
+    setTakeState('idle');
+    playSound('ui-click', 0.35);
+  };
+
   const handleLockTake = (needlePosition: number) => {
     const timingBonus = getActiveBuffMagnitude(gameState.choreState, 'timing_bonus');
     const verdict = evaluateTakeAccuracy(needlePosition, timingBonus);
+    clearTakeRearm();
     setTakeState('idle');
 
     // Trigger Tone.js chord synthesis + SFX
@@ -428,6 +446,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     setLastGains({ creativity: creativityGain, technical: technicalGain });
     setShowBlobAnimation(true);
 
+    const energyBefore = availableEnergy;
     // Execute work in useStageWork with take bonuses
     const result = performDailyWork?.({
       energyCost,
@@ -470,8 +489,19 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       title: verdict.grade === 'Gold' ? '🔥 IN THE POCKET! (Gold Take)' : verdict.grade === 'Silver' ? '✨ TIGHT TAKE! (Silver Take)' : '🎵 SOLID TAKE',
       description: `${verdict.label}: Advanced stage with ${energyCost} energy spent.`,
       className: verdict.grade === 'Gold' ? 'bg-amber-950 border-amber-500 text-amber-200' : 'bg-stone-800 border-stone-600 text-white',
-      duration: 3000
+      duration: TAKE_SESSION_PACING.takeToastMs
     });
+
+    // Chain the next console check immediately when energy remains — no dead
+    // ARM TAKE wait between takes in the same energy burst.
+    const energyAfter = energyBefore - energyCost;
+    if (result && !result.isComplete && energyAfter > 0) {
+      rearmTimerRef.current = window.setTimeout(() => {
+        rearmTimerRef.current = null;
+        setTakeState('tracking');
+        if ((gameAudio as any).playGearSwitch) (gameAudio as any).playGearSwitch();
+      }, TAKE_SESSION_PACING.postTakeRearmMs);
+    }
   };
 
   const handleProjectCelebrationComplete = () => {
@@ -567,17 +597,14 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 <div className="text-[11px] text-amber-300 font-semibold">{project.durationDaysTotal}d duration</div>
                 <div className="text-[10px] text-stone-400">{Math.round(project.workSessionCount || 0)} sessions</div>
               </div>
-              <button
-                onClick={() => setShowDutiesClipboard(true)}
-                className="flex items-center gap-1.5 px-2 py-1 bg-amber-950/70 hover:bg-amber-900 border border-amber-500/40 rounded text-xs text-amber-200 transition-colors shadow-sm"
+              <ChoreHotspotButton
+                kind="duties"
+                icon={ClipboardList}
+                label="Duties"
+                meta={`${Object.values(gameState.choreState?.chores || {}).filter(c => c.completed).length}/5`}
                 title="Open Studio Maintenance Duties"
-              >
-                <ClipboardList size={13} className="text-amber-400" />
-                <span>Duties</span>
-                <span className="text-[10px] text-amber-400 font-bold bg-amber-900/60 px-1 rounded">
-                  {Object.values(gameState.choreState?.chores || {}).filter(c => c.completed).length}/5
-                </span>
-              </button>
+                onClick={() => setShowDutiesClipboard(true)}
+              />
               <div className="flex items-center gap-2 bg-stone-900/90 px-2 py-1 rounded border border-stone-700/70">
                 <div id="creativity-points" data-creativity-target className="text-amber-300 font-bold flex items-center gap-1 text-xs">
                   <span>🎨</span> {Math.round(project.accumulatedCPoints || 0)}
@@ -593,36 +620,64 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
         {/* Active Session Hardware & Maintenance Buff Chips */}
         {gameState.choreState?.activeBuffs && gameState.choreState.activeBuffs.length > 0 && (
-          <div className="shrink-0 mb-2 px-2.5 py-1.5 bg-stone-900/90 border border-stone-700/60 rounded-[2px] flex items-center gap-2 overflow-x-auto select-none shadow-inner">
-            <div className="text-[10px] font-mono text-stone-400 uppercase tracking-widest flex items-center gap-1 shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>ACTIVE BUFFS:</span>
-            </div>
+          <div className="shrink-0 mb-2 px-2.5 py-1.5 bg-[rgba(20,18,16,0.92)] border border-[var(--rst-line-strong)] rounded-[3px] flex items-center gap-2 overflow-x-auto select-none">
+            <span className="rst-kicker shrink-0 text-[9px] tracking-[0.18em] text-[var(--rst-stone)]">
+              Session buffs
+            </span>
             <div className="flex items-center gap-1.5 flex-nowrap">
               {gameState.choreState.activeBuffs.map(buff => {
-                const config = {
-                  timing_bonus: { icon: '🧲', label: `+${Math.round(buff.magnitude * 100)}% Pocket Sweet Spot`, bg: 'bg-amber-950/70 border-amber-500/50 text-amber-300' },
-                  tech_bonus: { icon: '🎛️', label: `+${Math.round(buff.magnitude * 100)}% Technical Gain`, bg: 'bg-emerald-950/70 border-emerald-500/50 text-emerald-300' },
-                  creativity_bonus: { icon: '✨', label: `+${Math.round(buff.magnitude * 100)}% Creativity Gain`, bg: 'bg-purple-950/70 border-purple-500/50 text-purple-300' },
-                  energy_saver: { icon: '⚡', label: `Overdrive -${buff.magnitude}⚡ Cost`, bg: 'bg-stone-950/70 border-amber-500/50 text-amber-200' },
-                  vibe_boost: { icon: '☕', label: `+${Math.round(buff.magnitude * 100)}% Client Vibe`, bg: 'bg-rose-950/70 border-rose-500/50 text-rose-300' },
-                }[buff.buffType] || { icon: '🔧', label: buff.buffType, bg: 'bg-stone-800 border-stone-600 text-stone-300' };
+                const pct = Math.round(buff.magnitude * 100);
+                const config: { label: string; tone: StudioStampTone; detail: string } = {
+                  timing_bonus: {
+                    label: `Pocket +${pct}%`,
+                    tone: 'brass' as const,
+                    detail: `+${pct}% pocket sweet-spot tolerance`,
+                  },
+                  tech_bonus: {
+                    label: `Tech +${pct}%`,
+                    tone: 'money' as const,
+                    detail: `+${pct}% technical gain`,
+                  },
+                  creativity_bonus: {
+                    label: `Creative +${pct}%`,
+                    tone: 'brass' as const,
+                    detail: `+${pct}% creativity gain`,
+                  },
+                  energy_saver: {
+                    label: `Overdrive −${buff.magnitude}`,
+                    tone: 'steel' as const,
+                    detail: `Overdrive energy cost −${buff.magnitude}`,
+                  },
+                  vibe_boost: {
+                    label: `Vibe +${pct}%`,
+                    tone: 'warn' as const,
+                    detail: `+${pct}% client vibe`,
+                  },
+                }[buff.buffType] || {
+                  label: buff.buffType.replace(/_/g, ' '),
+                  tone: 'steel' as const,
+                  detail: buff.buffType,
+                };
 
                 return (
-                  <span
+                  <StudioStampChip
                     key={buff.id}
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono border shadow-sm shrink-0 ${config.bg}`}
-                    title={`${config.label} (${buff.remainingSessions} session remaining)`}
+                    tone={config.tone}
+                    className="shrink-0"
+                    meta={`${buff.remainingSessions}s`}
+                    title={`${config.detail} · ${buff.remainingSessions} session${buff.remainingSessions === 1 ? '' : 's'} remaining`}
                   >
-                    <span>{config.icon}</span>
-                    <span className="font-semibold">{config.label}</span>
-                    <span className="opacity-70 text-[9px] bg-black/40 px-1 rounded font-sans">
-                      {buff.remainingSessions}s
-                    </span>
-                  </span>
+                    {config.label}
+                  </StudioStampChip>
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {project.rider && (
+          <div className="shrink-0 px-0.5">
+            <RiderPanel project={project} state={gameState} mode="session" />
           </div>
         )}
 
@@ -701,15 +756,13 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 <span className="text-stone-400">Stage {project.currentStageIndex + 1}/{project.stages.length}:</span>
                 <span className="text-amber-200 font-bold">{currentStage?.stageName}</span>
                 {focusEffectiveness.effectiveness > 0.8 && (
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                    🚀 Optimized
-                  </span>
+                  <StudioStampChip tone="live">Optimized</StudioStampChip>
                 )}
               </span>
               <span className="text-stone-400 text-xs tabular-nums flex items-center gap-1.5">
                 <span>{Math.round(currentStage?.workUnitsCompleted || 0)} / {currentStage?.workUnitsBase || 0} units</span>
                 {focusEffectiveness.effectiveness > 0.7 && (
-                  <span className="text-[10px] px-1 rounded bg-amber-500/20 text-amber-200">⚡ Efficient</span>
+                  <StudioStampChip tone="brass">Efficient</StudioStampChip>
                 )}
               </span>
             </div>
@@ -737,13 +790,17 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 <span className="text-xs font-bold uppercase tracking-wider text-stone-300">
                   🎛️ Session Focus Allocation
                 </span>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                  focusEffectiveness.effectiveness > 0.8 ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/40' :
-                  focusEffectiveness.effectiveness > 0.6 ? 'bg-amber-950 text-amber-300 border border-amber-500/40' :
-                  'bg-rose-950 text-rose-300 border border-rose-500/40'
-                }`}>
+                <StudioStampChip
+                  tone={
+                    focusEffectiveness.effectiveness > 0.8
+                      ? 'live'
+                      : focusEffectiveness.effectiveness > 0.6
+                        ? 'brass'
+                        : 'warn'
+                  }
+                >
                   {Math.round(focusEffectiveness.effectiveness * 100)}% Match
-                </span>
+                </StudioStampChip>
               </div>
               
               <Button
@@ -908,6 +965,13 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 onLock={handleLockTake}
                 timingBonus={getActiveBuffMagnitude(gameState.choreState, 'timing_bonus')}
               />
+              <button
+                type="button"
+                onClick={handleStandDown}
+                className="w-full py-2 text-[11px] font-mono font-bold uppercase tracking-wider rounded-[2px] border border-stone-700 bg-stone-900 text-stone-300 hover:border-stone-500 hover:text-stone-100 transition-colors"
+              >
+                Stand down — stop take burst
+              </button>
             </div>
           ) : (
             <div className="rst-transport-stack space-y-2">
