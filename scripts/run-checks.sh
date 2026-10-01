@@ -201,6 +201,10 @@ for check in project-era-starters project-brief session-issues signal-chain econ
   node "/tmp/rst-$check.cjs"
 done
 
+echo "=== explainable outcome forecast + 1,000-seed calibration (#55) ==="
+./node_modules/.bin/esbuild tests/session-forecast.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-session-forecast.cjs --alias:@=./src >/dev/null
+node /tmp/rst-session-forecast.cjs
+
 echo "=== ambient earning (#105) ==="
 ./node_modules/.bin/esbuild tests/ambient-income.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-ambient-income.cjs --alias:@=./src >/dev/null
 node /tmp/rst-ambient-income.cjs
