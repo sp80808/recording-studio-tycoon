@@ -169,6 +169,10 @@ echo "=== gear visual state (#81) ==="
 ./node_modules/.bin/esbuild tests/gear-visual-state.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-gear-visual-state.cjs --alias:@=./src >/dev/null
 node /tmp/rst-gear-visual-state.cjs
 
+echo "=== console tier gear animation (#81) ==="
+./node_modules/.bin/esbuild tests/console-tier-gear.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-console-tier-gear.cjs --alias:@=./src >/dev/null
+node /tmp/rst-console-tier-gear.cjs
+
 echo "=== DEV overlays opt-in (hidden by default) ==="
 ./node_modules/.bin/esbuild tests/dev-overlays-opt-in.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-dev-overlays-opt-in.cjs --alias:@=./src >/dev/null
 node /tmp/rst-dev-overlays-opt-in.cjs

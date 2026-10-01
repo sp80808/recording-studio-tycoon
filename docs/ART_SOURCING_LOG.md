@@ -156,3 +156,12 @@ In-house original low-poly models, CC0, no external source. Rendered headless fr
 | Brass wall clock dial | `clock_face.png`, `clock.json` | `studioDecor.ts` (`buildWallClock`) |
 
 Every asset has a procedural Graphics fallback if its PNG fails to load.
+
+## 11. Console-tier deck gear (issue #81, tiers 2-5)
+
+In-house original, CC0, no external source. Drawn procedurally in Pixi (`WebGLCanvas.tsx`, `gearSpriteAnimation.ts`); no new image files.
+
+| Asset | Source | Used by |
+|---|---|---|
+| Outboard tape-deck plate, valve glow lamps, status LEDs (tiers 2-5) | Pixi Graphics, drawn in code | `WebGLCanvas.tsx` (`buildScene`) |
+| Tier-tinted reel frames (silver, blue-steel, gold) | Same 8-frame procedural reel as tier 1, tinted per tier | `consoleTierGear.ts` |
