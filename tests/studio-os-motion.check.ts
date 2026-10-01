@@ -42,11 +42,11 @@ test('Studio OS V2 Motion (#75) - PixiJS Canvas Mount Invariant', () => {
   assert.match(mainGameContentCode, /<ContextDrawer\s+isOpen=\{panel !== null\}/, 'MainGameContent renders ContextDrawer as slide-over overlay');
 
   // ContextDrawer must use MotionPanel with direction support (right or scale)
-  assert.match(contextDrawerCode, /<MotionPanel[\s\S]*?direction=\{activeTab === 'session' \? 'scale' : 'right'\}/, 'ContextDrawer uses MotionPanel with direction right or scale');
+  assert.match(contextDrawerCode, /<MotionPanel[\s\S]*?direction=\{width === 'session' \? 'scale' : 'right'\}/, 'ContextDrawer uses session-aware MotionPanel direction');
 
-  // ContextDrawer must support quick-switching tabs without closing/reopening the drawer
-  assert.match(contextDrawerCode, /role="tablist"/, 'ContextDrawer has tablist for direct switcher');
-  assert.match(contextDrawerCode, /activeTab === tab\.id/, 'ContextDrawer checks active tab without dismounting');
+  // Activity navigation has one owner: the persistent Studio floor dock.
+  assert.doesNotMatch(contextDrawerCode, /role="tablist"|studio-drawer-tabs/, 'ContextDrawer does not duplicate the floor navigation');
+  assert.match(mainGameContentCode, /<nav aria-label="Studio activities" className="studio-command-dock">/, 'Studio floor dock owns activity navigation');
 });
 
 test('Studio OS V2 Motion (#75) - Enquiry Arrival & Peripheral Indication', () => {
