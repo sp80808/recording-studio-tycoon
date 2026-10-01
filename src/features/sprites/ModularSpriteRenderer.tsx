@@ -311,6 +311,7 @@ export const ModularSpriteRenderer: React.FC<ModularSpriteRendererProps> = ({
                 fill="none"
                 stroke={details.headphoneColor}
                 strokeWidth="0.8"
+                initial={{ d: 'M 10 13 Q 8 20 12 25' }}
                 animate={{
                   d: [
                     'M 10 13 Q 8 20 12 25',
