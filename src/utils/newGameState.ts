@@ -4,8 +4,8 @@
  * starting attributes, playstyle and origin id that the campaign, rival and perks read.
  */
 import type { GameState } from '@/types/game';
+import type { ProducerBackgroundId } from '@/types/character';
 import { parseNpcVisualIdentity } from '@/features/sprites/npcAppearance';
-import type { CareerProducer, ProducerBackgroundId } from '@/types/character';
 import { generateNewProjects, generateCandidates } from '@/utils/projectUtils';
 import { generateSessionMusicians } from '@/utils/bandUtils';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
@@ -17,6 +17,7 @@ import { visualEraId } from '@/utils/eraProgression';
 import { createInitialChoreState } from '@/simulation/choreEngine';
 import { initializeStorylineState } from '@/narrative/branchingStorylineEngine';
 import { getProducerOrigin } from '@/narrative/characterOrigins';
+import { createProducerCustomization } from '@/utils/producerCustomization';
 import { isProducerOriginId, startingAttributesFor } from '@/narrative/originPerks';
 
 export interface EraInitOptions {
@@ -27,15 +28,26 @@ export interface EraInitOptions {
   equipmentMultiplier: number;
   /** Producer origin picked at career start (perks, attributes, playstyle, rival). */
   originId?: ProducerBackgroundId;
-  /** Producer name + layered sprite identity from character creation. */
-  producer?: CareerProducer;
+  /** Producer name chosen at career start (#126). */
+  producerName?: string;
+  /** Hair / clothes colour / accessory picked at career start (#126); repaired if malformed. */
+  producerAppearance?: unknown;
+  /**
+   * Legacy creator payload (name + layered sprite identity). Still honoured so
+   * older callers and saves keep working; explicit producerName/Appearance win.
+   */
+  producer?: { name?: string; appearance?: unknown };
   /** Fixed run seed (tests / replays). Defaults to Date.now() for a fresh run. */
   saveSeed?: number | string;
 }
 
 export const createDefaultGameState = (options?: Partial<EraInitOptions>): GameState => {
   const originId = isProducerOriginId(options?.originId) ? options!.originId : undefined;
-  const appearance = parseNpcVisualIdentity(options?.producer?.appearance);
+  const legacyAppearance = parseNpcVisualIdentity(options?.producer?.appearance);
+  const producerName =
+    options?.producerName?.trim().slice(0, 24) ||
+    options?.producer?.name?.trim().slice(0, 24) ||
+    'The Architect';
   const baseAttributes = { focusMastery: 1, creativeIntuition: 1, technicalAptitude: 1, businessAcumen: 1 };
   return {
     money: options?.startingMoney || 3500,
@@ -49,9 +61,14 @@ export const createDefaultGameState = (options?: Partial<EraInitOptions>): GameS
     selectedEra: options?.selectedEra || 'analog60s',
     eraStartYear: options?.eraStartYear || 1960,
     equipmentMultiplier: options?.equipmentMultiplier || 0.3, // Lower prices in 1960s
+    producerCustomization: createProducerCustomization({
+      name: producerName,
+      originId,
+      appearance: options?.producerAppearance,
+    }),
     playerData: {
-      name: options?.producer?.name?.trim().slice(0, 24) || 'The Architect',
-      ...(appearance ? { appearance: { ...appearance, role: 'producer' as const } } : {}),
+      name: producerName,
+      ...(legacyAppearance ? { appearance: { ...legacyAppearance, role: 'producer' as const } } : {}),
       xp: 0,
       level: 1,
       xpToNextLevel: 100,
@@ -169,16 +186,8 @@ export const createDefaultGameState = (options?: Partial<EraInitOptions>): GameS
 export const createNewGameState = (options?: Partial<EraInitOptions>): GameState => {
   let newGameState = createDefaultGameState(options);
   const currentEra = newGameState.currentEra;
-  const saveSeed = newGameState.saveSeed ?? options?.saveSeed ?? Date.now();
   const initialProjects = generateNewProjects(3, 1, currentEra);
-  const initialCandidates = generateCandidates({
-    count: 3,
-    saveSeed,
-    day: newGameState.currentDay ?? 1,
-    era: newGameState.selectedEra || currentEra,
-    year: newGameState.currentYear,
-    batchKey: 'career-start',
-  });
+  const initialCandidates = generateCandidates(3);
   const initialSessionMusicians = generateSessionMusicians(5);
 
   // Set initial progression-based values
@@ -193,7 +202,7 @@ export const createNewGameState = (options?: Partial<EraInitOptions>): GameState
     availableCandidates: initialCandidates,
     availableSessionMusicians: initialSessionMusicians,
     maxConcurrentProjects,
-    saveSeed,
+    saveSeed: newGameState.saveSeed ?? options?.saveSeed ?? Date.now(),
   });
 
   return newGameState;

@@ -24,7 +24,7 @@ export function PremisesPanel({ gameState, setGameState }: PremisesPanelProps) {
       {offer && (
         <>
           <p className="mt-1 text-stone-300">Move to a project studio? Deposit ${offer.deposit.toLocaleString()}, rent ${offer.dailyRent}/day.</p>
-          <p className="text-stone-400">{offer.capacity}. Unlocks: {offer.unlocks.join(', ')}. Staff, gear, clients and Know-How come with you.</p>
+          <p className="text-stone-400">{offer.capacity}. Unlocks: {offer.unlocks.join(', ')}. Moving takes today's studio time (downtime: 1 day). Staff, gear, clients and Know-How come with you.</p>
           <ul className="mt-1.5 space-y-0.5">
             {offer.conditions.map(c => (
               <li key={c.label} className={c.met ? 'text-emerald-300' : 'text-stone-400'}>{c.met ? '✓' : '○'} {c.label}</li>

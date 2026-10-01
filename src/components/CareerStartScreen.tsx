@@ -2,19 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, Check, Swords } from 'lucide-react';
 import { AVAILABLE_ERAS } from '@/data/eras';
 import type { Era } from '@/types/game';
-import { ModularSpriteRenderer } from '@/features/sprites/ModularSpriteRenderer';
-import { identityFromSeed, resolveNpcAppearance } from '@/features/sprites/npcAppearance';
-import {
-  creatorOptionsForEra,
-  DEFAULT_PART_PICKS,
-  cyclePart,
-  normalizePartPicks,
-  partLabel,
-  type CreatorPartSlot,
-  type NpcPartPicks,
-} from '@/features/sprites/characterCreatorParts';
-import type { NpcEra } from '@/features/sprites/spriteTypes';
-import type { CareerProducer, ProducerBackgroundId } from '@/types/character';
+import type { ProducerBackgroundId } from '@/types/character';
 import { PRODUCER_ORIGINS } from '@/narrative/characterOrigins';
 import { describeOriginPerks } from '@/narrative/originPerks';
 import { getPrimaryRival, getRivalAccent, initialsOf } from '@/narrative/rivalCast';
@@ -23,11 +11,33 @@ import { THEME_VISUAL_CONFIGS } from '@/narrative/playstyleTheme';
 import { visualEraId } from '@/utils/eraProgression';
 import { getEraGrade } from '@/components/WebGLCanvas';
 import { gameAudio } from '@/utils/audioSystem';
+import { ModularSpriteRenderer } from '@/features/sprites/ModularSpriteRenderer';
+import {
+  ACCESSORY_LABELS,
+  BUILD_LABELS,
+  DEFAULT_PRODUCER_APPEARANCE,
+  PRODUCER_ACCESSORIES,
+  PRODUCER_BUILDS,
+  PRODUCER_CLOTHES_COLOURS,
+  PRODUCER_HAIR_COLOURS,
+  PRODUCER_HAIR_SHAPES,
+  buildProducerNpc,
+  type ProducerAccessory,
+  type ProducerAppearance,
+  type ProducerClothesColourId,
+} from '@/features/sprites/producerAppearance';
+import { HAIR_HEX, CLOTHING_PALETTES } from '@/features/sprites/npcAppearanceData';
 import { EraEmblem, type EraEmblemId } from './EraEmblems';
 import './splash.css';
 
+/** The producer the player made on this screen: name + sprite look (persisted as ProducerCustomization). */
+export interface ProducerSetup {
+  name: string;
+  appearance: ProducerAppearance;
+}
+
 interface CareerStartScreenProps {
-  onBegin: (era: Era, originId: ProducerBackgroundId, producer: CareerProducer) => void;
+  onBegin: (era: Era, originId: ProducerBackgroundId, producer: ProducerSetup) => void;
   onBack: () => void;
 }
 
@@ -43,56 +53,44 @@ const ERA_CHALLENGE: Record<string, string> = {
   modern: 'Everyone has a home studio. Win on taste and relationships.',
 };
 
-const STEPS = ['Era', 'Character', 'Role'] as const;
-
-const PART_ROW_LABEL: Record<CreatorPartSlot, string> = {
-  body: 'Body',
-  build: 'Build',
-  hair: 'Hair',
-  clothing: 'Clothing',
-  accessories: 'Accessories',
-};
-
-const eraToNpcEra = (eraId: string | undefined): NpcEra =>
-  eraId === 'classic_rock' ? '1960s' : eraId === 'golden_age' ? '1980s' : eraId === 'digital_age' ? '2000s' : 'modern';
+const STEPS = ['Era', 'Character', 'Role', 'Begin'] as const;
 
 const stepClass = (active: boolean, done: boolean) =>
   `flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] ${
     active ? 'text-[var(--rst-brass-300)]' : done ? 'text-stone-300' : 'text-stone-500'
   }`;
 
-function PartArrowRow({
-  slot,
-  era,
-  picks,
-  onCycle,
+/** Compact arrow stepper for one creator element (build, accessory, …). */
+function CreatorArrowRow({
+  label,
+  value,
+  onPrev,
+  onNext,
 }: {
-  slot: CreatorPartSlot;
-  era: NpcEra;
-  picks: NpcPartPicks;
-  onCycle: (slot: CreatorPartSlot, delta: number) => void;
+  label: string;
+  value: string;
+  onPrev: () => void;
+  onNext: () => void;
 }) {
-  const label = PART_ROW_LABEL[slot];
-  const value = partLabel(era, slot, picks[slot] ?? 0);
   return (
     <div className="flex items-center gap-1.5" role="group" aria-label={`${label}: ${value}`}>
+      <span className="w-20 shrink-0 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--rst-brass-200)]">
+        {label}
+      </span>
       <button
         type="button"
         className="rst-btn rst-btn-ghost !min-h-9 !min-w-9 !px-0"
         aria-label={`Previous ${label}`}
-        onClick={() => onCycle(slot, -1)}
+        onClick={onPrev}
       >
         <ArrowLeft size={15} aria-hidden="true" />
       </button>
-      <div className="min-w-0 flex-1 rounded-md border border-[var(--rst-line)] bg-black/25 px-2.5 py-1.5 text-center">
-        <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--rst-brass-200)]">{label}</span>
-        <span className="rst-title mt-0.5 block truncate text-[15px] leading-tight">{value}</span>
-      </div>
+      <span className="rst-title min-w-0 flex-1 truncate text-center text-[15px] leading-tight">{value}</span>
       <button
         type="button"
         className="rst-btn rst-btn-ghost !min-h-9 !min-w-9 !px-0"
         aria-label={`Next ${label}`}
-        onClick={() => onCycle(slot, 1)}
+        onClick={onNext}
       >
         <ArrowRight size={15} aria-hidden="true" />
       </button>
@@ -100,86 +98,31 @@ function PartArrowRow({
   );
 }
 
-function PartSelectRow({
-  slot,
-  era,
-  picks,
-  onSelect,
-}: {
-  slot: CreatorPartSlot;
-  era: NpcEra;
-  picks: NpcPartPicks;
-  onSelect: (slot: CreatorPartSlot, index: number) => void;
-}) {
-  const label = PART_ROW_LABEL[slot];
-  const options = creatorOptionsForEra(era)[slot];
-  const value = picks[slot] ?? 0;
-  return (
-    <div className="flex items-center gap-1.5" role="group" aria-label={`${label} picker`}>
-      <label
-        htmlFor={`creator-${slot}`}
-        className="w-20 shrink-0 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--rst-brass-200)]"
-      >
-        {label}
-      </label>
-      <select
-        id={`creator-${slot}`}
-        value={value}
-        onChange={(e) => onSelect(slot, Number(e.target.value))}
-        className="rst-input min-w-0 flex-1 !min-h-9 !py-1.5 text-sm"
-        aria-label={`${label}: ${options[value]?.label ?? ''}`}
-      >
-        {options.map((opt) => (
-          <option key={opt.id} value={opt.index}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
+/** Cycle one step through a fixed option list, wrapping around. */
+const cycleOption = <T extends string>(list: readonly T[], current: T, delta: number): T =>
+  list[(list.indexOf(current) + delta + list.length) % list.length];
 
 export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [eraId, setEraId] = useState<string | null>(null);
   const [originId, setOriginId] = useState<ProducerBackgroundId | null>(null);
   const [moniker, setMoniker] = useState('The Architect');
-  const [paletteSeed, setPaletteSeed] = useState(7);
-  const [parts, setParts] = useState<NpcPartPicks>(DEFAULT_PART_PICKS);
+  const [look, setLook] = useState<ProducerAppearance>(() => ({
+    ...DEFAULT_PRODUCER_APPEARANCE,
+    seed: Math.floor(Math.random() * 100000), // UI-only roll of the body; persisted once chosen
+  }));
+  const patchLook = (patch: Partial<ProducerAppearance>) => {
+    click();
+    setLook((current) => ({ ...current, ...patch }));
+  };
 
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   const era = useMemo(() => AVAILABLE_ERAS.find((e) => e.id === eraId) ?? null, [eraId]);
+  const previewNpc = useMemo(() => buildProducerNpc(look, moniker, eraId ?? undefined), [look, moniker, eraId]);
   const origin = useMemo(() => PRODUCER_ORIGINS.find((o) => o.id === originId) ?? null, [originId]);
 
-  const characterEra = eraToNpcEra(era?.id);
-  const appearance = useMemo(
-    () =>
-      identityFromSeed(paletteSeed, {
-        role: 'producer',
-        era: characterEra,
-        parts: normalizePartPicks(characterEra, parts),
-      }),
-    [paletteSeed, characterEra, parts],
-  );
-  const producer = useMemo(
-    () => resolveNpcAppearance(appearance, moniker.trim() || 'The Architect'),
-    [appearance, moniker],
-  );
-
-  useEffect(() => {
-    setParts(DEFAULT_PART_PICKS);
-  }, [characterEra]);
-
   const click = () => void gameAudio.playClick().catch(() => {});
-
-  const cycleCreatorPart = useCallback(
-    (slot: CreatorPartSlot, delta: number) => {
-      click();
-      setParts((current) => cyclePart(current, slot, delta, characterEra));
-    },
-    [characterEra],
-  );
 
   const goNext = useCallback(() => {
     if (step === 0 && era) {
@@ -190,9 +133,9 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
       setStep(2);
     } else if (step === 2 && era && origin) {
       click();
-      onBegin(era, origin.id, { name: moniker.trim(), appearance });
+      onBegin(era, origin.id, { name: moniker.trim(), appearance: look });
     }
-  }, [step, era, origin, moniker, appearance, onBegin]);
+  }, [step, era, origin, moniker, look, onBegin]);
 
   const goBack = useCallback(() => {
     click();
@@ -232,7 +175,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
         <header className="flex flex-wrap items-center justify-between gap-3">
           <button type="button" onClick={goBack} className="rst-btn rst-btn-ghost !min-h-9 !px-3 !text-xs">
             <ArrowLeft size={14} aria-hidden="true" />
-            {step === 0 ? 'Back' : step === 1 ? 'Change era' : 'Change character'}
+            {step === 0 ? 'Back' : 'Change era'}
           </button>
           <ol className="flex items-center gap-4" aria-label="Career setup progress">
             {STEPS.map((label, i) => (
@@ -259,7 +202,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
             {step === 0
               ? 'Each era changes your gear, your genres, your budget and the industry breathing down your neck.'
               : step === 1
-                ? 'Dial in body, hair, clothes and accessories — your producer shows up at the console exactly like this.'
+                ? 'Give your producer a name, a haircut, a favourite shirt and one signature accessory.'
                 : 'Your producer origin gives you a real edge — and a rival who will not let you forget it.'}
           </p>
         </div>
@@ -333,51 +276,79 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
         )}
 
         {step === 1 && (
-          <section className="rst-option mx-auto mt-6 w-full max-w-xl !p-5 sm:!p-6" aria-label="Create your producer">
-            <div className="mx-auto max-w-md text-center">
-              <div className="mx-auto flex justify-center" aria-live="polite">
-                <ModularSpriteRenderer npc={producer} scale={3} />
-              </div>
-              <p className="rst-kicker mt-3">Create your producer</p>
-              <p className="rst-body mt-1.5 text-xs">
-                Arrows mix body, build, clothes and accessories — hair uses the dropdown. The preview matches the studio floor figure.
-              </p>
-              <div className="mt-4 space-y-2 text-left">
-                <PartArrowRow slot="body" era={characterEra} picks={parts} onCycle={cycleCreatorPart} />
-                <PartArrowRow slot="build" era={characterEra} picks={parts} onCycle={cycleCreatorPart} />
-                <PartSelectRow
-                  slot="hair"
-                  era={characterEra}
-                  picks={parts}
-                  onSelect={(slot, index) => {
-                    click();
-                    setParts((current) => normalizePartPicks(characterEra, { ...current, [slot]: index }));
-                  }}
-                />
-                <PartArrowRow slot="clothing" era={characterEra} picks={parts} onCycle={cycleCreatorPart} />
-                <PartArrowRow slot="accessories" era={characterEra} picks={parts} onCycle={cycleCreatorPart} />
-              </div>
-              <button
-                type="button"
-                className="rst-btn rst-btn-ghost mt-4 w-full"
-                onClick={() => {
-                  click();
-                  setPaletteSeed((seed) => seed + 1);
-                }}
+          <section className="rst-option mx-auto mt-6 grid w-full max-w-xl gap-4 !p-5 sm:!p-6" aria-label="Producer customisation">
+            <div className="mx-auto flex flex-col items-center gap-2">
+              <div
+                className="grid place-items-center rounded-lg border border-[var(--rst-brass-400)]/50 px-6 pb-2 pt-3"
+                style={{ background: 'radial-gradient(circle at 50% 30%, rgba(217,160,70,0.22), rgba(0,0,0,0.55) 72%)' }}
+                data-testid="producer-preview"
               >
-                Shuffle colorway
-              </button>
-              <label className="mt-6 block text-left text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">
+                <ModularSpriteRenderer npc={previewNpc} animationState="idle" scale={3} showBadge={false} />
+              </div>
+              <p className="rst-kicker">Live character preview</p>
+            </div>
+
+            <div className="space-y-2.5 text-left">
+              <label className="block text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">
                 Producer name
-                <input
-                  value={moniker}
-                  onChange={(e) => setMoniker(e.target.value.slice(0, 24))}
-                  maxLength={24}
-                  autoFocus
-                  className="rst-input mt-2 w-full"
-                  placeholder="The Architect"
-                />
+                <input value={moniker} onChange={(e) => setMoniker(e.target.value.slice(0, 24))} maxLength={24} autoFocus className="rst-input mt-2 w-full" placeholder="The Architect" />
               </label>
+
+              <CreatorArrowRow
+                label="Build"
+                value={BUILD_LABELS[look.build ?? 'average']}
+                onPrev={() => patchLook({ build: cycleOption(PRODUCER_BUILDS, look.build ?? 'average', -1) })}
+                onNext={() => patchLook({ build: cycleOption(PRODUCER_BUILDS, look.build ?? 'average', 1) })}
+              />
+
+              <div className="flex items-center gap-1.5" role="group" aria-label="Hair style picker">
+                <label
+                  htmlFor="creator-hair"
+                  className="w-20 shrink-0 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--rst-brass-200)]"
+                >
+                  Hair
+                </label>
+                <select
+                  id="creator-hair"
+                  value={look.hair}
+                  onChange={(e) => patchLook({ hair: e.target.value as ProducerAppearance['hair'] })}
+                  className="rst-input min-w-0 flex-1 !min-h-9 !py-1.5 text-sm capitalize"
+                  aria-label={`Hair style: ${look.hair.replace(/_/g, ' ')}`}
+                >
+                  {PRODUCER_HAIR_SHAPES.map((shape) => (
+                    <option key={shape} value={shape}>
+                      {shape.replace(/_/g, ' ')}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-wrap gap-2 pl-[92px]" role="radiogroup" aria-label="Hair colour">
+                {PRODUCER_HAIR_COLOURS.map((colour) => (
+                  <button key={colour} type="button" role="radio" aria-checked={look.hairColour === colour} aria-label={colour.replace(/_/g, ' ')} title={colour.replace(/_/g, ' ')}
+                    onClick={() => patchLook({ hairColour: colour })}
+                    className={`h-6 w-6 rounded-full border-2 ${look.hairColour === colour ? 'border-[var(--rst-brass-300)] ring-2 ring-[var(--rst-brass-300)]/40' : 'border-white/15'}`}
+                    style={{ background: HAIR_HEX[colour] }} />
+                ))}
+              </div>
+
+              <fieldset>
+                <legend className="mb-1.5 text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">Clothes colour</legend>
+                <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Clothes colour">
+                  {PRODUCER_CLOTHES_COLOURS.map((c) => (
+                    <button key={c.id} type="button" role="radio" aria-checked={look.clothesColour === c.id} aria-label={c.label} title={c.label}
+                      onClick={() => patchLook({ clothesColour: (c.id as ProducerClothesColourId) })}
+                      className={`h-7 w-7 rounded-md border-2 ${look.clothesColour === c.id ? 'border-[var(--rst-brass-300)] ring-2 ring-[var(--rst-brass-300)]/40' : 'border-white/15'}`}
+                      style={{ background: `linear-gradient(135deg, ${CLOTHING_PALETTES[c.palette].primary} 60%, ${CLOTHING_PALETTES[c.palette].secondary} 60%)` }} />
+                  ))}
+                </div>
+              </fieldset>
+
+              <CreatorArrowRow
+                label="Accessory"
+                value={ACCESSORY_LABELS[look.accessory as ProducerAccessory]}
+                onPrev={() => patchLook({ accessory: cycleOption(PRODUCER_ACCESSORIES, look.accessory, -1) })}
+                onNext={() => patchLook({ accessory: cycleOption(PRODUCER_ACCESSORIES, look.accessory, 1) })}
+              />
             </div>
           </section>
         )}

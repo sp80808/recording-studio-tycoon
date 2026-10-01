@@ -3,7 +3,7 @@ import { lastTake, nodOffset } from '@/utils/takeFeedback';
 import React, { useEffect, useRef } from 'react';
 import { AnimatedSprite, Application, Container, Graphics, Matrix, Rectangle, Sprite, Text, type Renderer } from 'pixi.js';
 import { applyReelState, buildReelTextures, createReelSprite } from '@/features/gearStudio/gearSpriteAnimation';
-import { toSpriteVisualState } from '@/features/gearStudio/gearVisualState';
+import { dimTint, gearConditionKey, shelfConditionStyle, toSpriteVisualState } from '@/features/gearStudio/gearVisualState';
 import { getPropTexture, loadPropSprites } from '@/components/studio/propSprites';
 import {
   layoutShelfSlots,
@@ -239,6 +239,11 @@ export interface StudioSceneState {
    * `ownedEquipment` count is derived when ids are omitted (legacy / tests).
    */
   ownedEquipmentIds?: string[];
+  /**
+   * Authoritative gear condition (0..100) by equipment ID — drives restrained
+   * shelf wear (dimmed faces, failing-item warning LED). Absent = no wear.
+   */
+  gearConditions?: Record<string, number>;
   /** @deprecated Prefer ownedEquipmentIds — count still accepted for structural fallbacks. */
   ownedEquipment?: number;
   /** In-game day counter (drives the wall clock) */
@@ -959,6 +964,22 @@ const buildScene = (
         spriteFile: null,
       }];
   for (const slot of slotsToDraw) {
+    // Restrained wear from authoritative condition; unknown ids show no wear.
+    const rawCond = slot.equipmentId !== '_empty' ? state.gearConditions?.[slot.equipmentId] : undefined;
+    const wear = typeof rawCond === 'number' ? shelfConditionStyle(rawCond) : null;
+    const faceTint = wear ? dimTint(slot.tint, wear.dim) : slot.tint;
+    if (wear?.warn) {
+      // Failing-item warning LED rides the existing status-LED ticker (pulse + reduced-motion free).
+      const warnLed = new Graphics();
+      shelfWrap.addChild(warnLed);
+      refs.statusLeds.push({
+        g: warnLed,
+        x: slot.x + slot.width / 2 + 2,
+        y: slot.y - slot.height - 4,
+        color: 0xef4444,
+        radius: 1.4,
+      });
+    }
     const tex = slot.equipmentId !== '_empty' ? getEquipmentTexture(slot.equipmentId) : null;
     if (tex) {
       const sprite = new Sprite(tex);
@@ -968,7 +989,7 @@ const buildScene = (
       sprite.scale.set(scale);
       sprite.anchor.set(0.5, 1);
       sprite.position.set(slot.x, slot.y);
-      sprite.tint = slot.tint;
+      sprite.tint = faceTint;
       shelfWrap.addChild(sprite);
       refs.shelfItems.push({
         display: sprite,
@@ -980,7 +1001,7 @@ const buildScene = (
       void ensureEquipmentTexture(slot.equipmentId);
     } else {
       const item = new Graphics();
-      item.rect(slot.x - slot.width / 2, slot.y - slot.height, slot.width, slot.height).fill(slot.tint);
+      item.rect(slot.x - slot.width / 2, slot.y - slot.height, slot.width, slot.height).fill(faceTint);
       shelfWrap.addChild(item);
       if (slot.equipmentId !== '_empty') {
         refs.shelfItems.push({
@@ -1712,7 +1733,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   const floorKey = (state?.floorFigures ?? [])
     .map((f) => `${f.identity?.seed ?? f.seed ?? ''}:${f.animState ?? ''}:${f.role ?? ''}`)
     .join(',');
-  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${floorKey}|${state?.staffOnFloor ?? 1}|${gearKey}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${trophyKey(state?.trophies ?? { covers: [] })}|${state?.decorSeed ?? 'studio'}`;
+  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${floorKey}|${state?.staffOnFloor ?? 1}|${gearKey}|${gearConditionKey(state?.gearConditions)}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${trophyKey(state?.trophies ?? { covers: [] })}|${state?.decorSeed ?? 'studio'}`;
 
   // Rebuild the room (new window size or layout change)
   const rebuild = () => {

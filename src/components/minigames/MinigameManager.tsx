@@ -23,6 +23,9 @@ import { AlbumSequenceGame } from './AlbumSequenceGame';
 import { LyricFocusGame } from './LyricFocusGame';
 import { TapeSplicingGame } from './TapeSplicingGame';
 import { SamplingSequencingGame } from './SamplingSequencingGame';
+import { FaultHuntGame } from './FaultHuntGame';
+import { ChainRecallGame } from './ChainRecallGame';
+import { BusMergeGame } from './BusMergeGame';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { toast } from '@/hooks/use-toast';
 import { useCutsceneQueue } from '@/hooks/useCutsceneQueue';
@@ -52,7 +55,10 @@ export type MinigameType =
   | 'album-sequence'
   | 'lyric-focus'
   | 'tape-splicing'
-  | 'sampling';
+  | 'sampling'
+  | 'fault-hunt'
+  | 'chain-recall'
+  | 'bus-merge';
 
 interface MinigameManagerProps {
   isOpen: boolean;
@@ -194,6 +200,18 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         creativityBonus = Math.floor(score / 7);
         technicalBonus = Math.floor(score / 11);
         break;
+      case 'fault-hunt':
+        creativityBonus = Math.floor(score / 16);
+        technicalBonus = Math.floor(score / 7);
+        break;
+      case 'chain-recall':
+        creativityBonus = Math.floor(score / 12);
+        technicalBonus = Math.floor(score / 9);
+        break;
+      case 'bus-merge':
+        creativityBonus = Math.floor(score / 14);
+        technicalBonus = Math.floor(score / 8);
+        break;
       // Add cases for other minigames if their reward calculation differs
       default:
         // Generic fallback or throw error
@@ -307,6 +325,12 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         return <TapeSplicingGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'sampling':
         return <SamplingSequencingGame {...commonGameProps} onComplete={standardOnComplete} />;
+      case 'fault-hunt':
+        return <FaultHuntGame {...commonGameProps} onComplete={standardOnComplete} />;
+      case 'chain-recall':
+        return <ChainRecallGame {...commonGameProps} onComplete={standardOnComplete} />;
+      case 'bus-merge':
+        return <BusMergeGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'maintenance':
         if (!equipmentContext) {
           console.error('Equipment context is required for maintenance minigame.');

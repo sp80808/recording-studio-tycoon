@@ -323,3 +323,46 @@ body:has(.studio-inspector-layer) .first-session-guide { display:none; }
   .crew-portal__cv { position:static; }
   .crew-portal__list { max-height:min(42vh,360px); }
 }
+
+/* ---- #141 Mobile session console: zero-scroll single viewport --------------------------------
+   Phones (<=540px wide) and landscape phones / short windows (<=500px tall) only. Desktop and
+   tablet keep the standard drawer. One identity: the "Session" tab is the context, so the kicker
+   and the "At the console" heading collapse (heading stays in the DOM, visually hidden, for the
+   dialog's accessible name) and the six quick-switch tabs become one icon rail beside Close. */
+@media (max-width:540px), (max-height:500px) {
+  [data-studio-drawer='session'] .studio-drawer-shell {
+    inset:0 !important;
+    height:100vh; height:100dvh;
+    padding-top:env(safe-area-inset-top, 0px);
+    padding-left:env(safe-area-inset-left, 0px);
+    padding-right:env(safe-area-inset-right, 0px);
+  }
+  [data-studio-drawer='session'] .studio-drawer-shell > * { border-radius:0 !important; min-height:0; }
+  [data-studio-drawer='session'] .studio-drawer-head {
+    display:flex; align-items:center; gap:6px; padding:4px 6px !important;
+  }
+  [data-studio-drawer='session'] .studio-drawer-head > div:first-child { order:2; flex:0 0 auto; }
+  [data-studio-drawer='session'] .studio-drawer-head > div:first-child > div:first-child { /* title block */
+    position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap;
+  }
+  [data-studio-drawer='session'] .studio-drawer-head > div:first-child > .studio-drawer-actions { gap:4px; }
+  [data-studio-drawer='session'] .studio-drawer-head .rst-kicker { display:none; }
+  [data-studio-drawer='session'] .studio-drawer-tabs { order:1; flex:1; min-width:0; margin-top:0 !important; padding:2px !important; }
+  [data-studio-drawer='session'] .studio-drawer-tabs button {
+    flex-direction:row !important; justify-content:center; min-height:32px; padding:4px 0 !important;
+  }
+  [data-studio-drawer='session'] .studio-drawer-tab-label { display:none; }
+  [data-studio-drawer='session'] .studio-drawer-body {
+    overflow:hidden !important; padding:4px !important; gap:4px !important;
+  }
+  /* Transport dock: always in the viewport, clear of the iOS home indicator. */
+  [data-studio-drawer='session'] .rst-transport-dock {
+    padding-bottom:calc(4px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  [data-studio-drawer='session'] .rst-transport-stack { gap:4px !important; }
+  [data-studio-drawer='session'] .rst-transport-stack button { min-height:40px; }
+}
+/* Portrait phones: dock stacks Overdrive over Arm Take, so keep both rows compact. */
+@media (max-width:540px) and (min-height:501px) {
+  [data-studio-drawer='session'] .rst-transport-stack button { padding-top:6px !important; padding-bottom:6px !important; }
+}

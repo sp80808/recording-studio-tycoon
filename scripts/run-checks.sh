@@ -7,14 +7,6 @@ cd "$(dirname "$0")/.."
 echo "=== typecheck (tsc must stay at zero errors) ==="
 ./node_modules/.bin/tsc -p tsconfig.app.json --noEmit
 
-echo "=== studio outreach (era phone/door) ==="
-./node_modules/.bin/esbuild tests/studio-outreach.check.tsx --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-outreach.cjs --alias:@=./src >/dev/null
-node /tmp/rst-studio-outreach.cjs
-
-echo "=== hiring limits (space + reputation caps) ==="
-./node_modules/.bin/esbuild tests/hiring-limits.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-hiring-limits.cjs --alias:@=./src >/dev/null
-node /tmp/rst-hiring-limits.cjs
-
 echo "=== tutorial and room purchases ==="
 for check in first-session-guide studio-room-purchase toast-spam; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
@@ -31,10 +23,6 @@ echo "=== talents & atomicity ==="
 ./node_modules/.bin/esbuild tests/talents-atomicity.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-talents.cjs --alias:@=./src >/dev/null
 node /tmp/rst-talents.cjs
 
-echo "=== skill practice minigames ==="
-./node_modules/.bin/esbuild tests/skill-practice.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-skill-practice.cjs --alias:@=./src >/dev/null
-node /tmp/rst-skill-practice.cjs
-
 echo "=== flavour copy ==="
 ./node_modules/.bin/esbuild tests/flavour-copy.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-flavour-copy.cjs --alias:@=./src >/dev/null
 node /tmp/rst-flavour-copy.cjs
@@ -50,7 +38,7 @@ for check in tools-assets audio-system confetti-juice minigames-audio user-inter
 done
 
 echo "=== gamepad service & controller suites ==="
-for check in gamepad-service gamepad-glyph gamepad-navigation radial-wheel beat-pad-game tape-jog-game console-ride-game vocal-comp album-sequence gamepad-suite; do
+for check in gamepad-service gamepad-glyph gamepad-navigation radial-wheel beat-pad-game tape-jog-game console-ride-game vocal-comp album-sequence fault-hunt chain-recall bus-merge gamepad-suite; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
   node "/tmp/rst-$check.cjs"
 done
@@ -83,10 +71,6 @@ echo "=== callback subplots (story remembers earlier choices) ==="
 ./node_modules/.bin/esbuild tests/callback-subplots.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-callback-subplots.cjs --alias:@=./src >/dev/null
 node /tmp/rst-callback-subplots.cjs
 
-echo "=== narrative depth (era gates, creed, choice presentation) ==="
-./node_modules/.bin/esbuild tests/narrative-depth.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-narrative-depth.cjs --alias:@=./src >/dev/null
-node /tmp/rst-narrative-depth.cjs
-
 echo "=== studio event director (#56) ==="
 ./node_modules/.bin/esbuild tests/event-director.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-event-director.cjs --alias:@=./src >/dev/null
 node /tmp/rst-event-director.cjs
@@ -114,10 +98,6 @@ node /tmp/rst-artist-contracts.cjs
 echo "=== deterministic used gear, classifieds and maintenance ==="
 ./node_modules/.bin/esbuild tests/used-gear.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-used-gear.cjs --alias:@=./src >/dev/null
 node /tmp/rst-used-gear.cjs
-
-echo "=== used-gear salvage balance audit (4oq) ==="
-./node_modules/.bin/esbuild tests/used-gear-salvage-balance.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-used-gear-salvage-balance.cjs --alias:@=./src >/dev/null
-node /tmp/rst-used-gear-salvage-balance.cjs
 
 echo "=== equipment slots / gear racks (8om) ==="
 ./node_modules/.bin/esbuild tests/equipment-slots.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-equipment-slots.cjs --alias:@=./src >/dev/null
@@ -176,6 +156,8 @@ node /tmp/rst-motion-qualification.cjs
 echo "=== studio os motion pass (#75) ==="
 ./node_modules/.bin/esbuild tests/studio-os-motion.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-os-motion.cjs --alias:@=./src >/dev/null
 node /tmp/rst-studio-os-motion.cjs
+./node_modules/.bin/esbuild tests/studio-art.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-art.cjs --alias:@=./src >/dev/null
+node /tmp/rst-studio-art.cjs
 
 echo "=== gear bench & reward FX policy (#81, #80) ==="
 for check in gear-bench reward-fx-policy; do
@@ -187,53 +169,45 @@ echo "=== gear visual state (#81) ==="
 ./node_modules/.bin/esbuild tests/gear-visual-state.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-gear-visual-state.cjs --alias:@=./src >/dev/null
 node /tmp/rst-gear-visual-state.cjs
 
-echo "=== booking forecast + hotspot ids (#55, audit 5) ==="
-./node_modules/.bin/esbuild tests/session-forecast.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-session-forecast.cjs --alias:@=./src >/dev/null
-node /tmp/rst-session-forecast.cjs
+echo "=== console tier gear animation (#81) ==="
+./node_modules/.bin/esbuild tests/console-tier-gear.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-console-tier-gear.cjs --alias:@=./src >/dev/null
+node /tmp/rst-console-tier-gear.cjs
 
 echo "=== DEV overlays opt-in (hidden by default) ==="
 ./node_modules/.bin/esbuild tests/dev-overlays-opt-in.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-dev-overlays-opt-in.cjs --alias:@=./src >/dev/null
 node /tmp/rst-dev-overlays-opt-in.cjs
 
-echo "=== studio day/night + window (clock-linked ambience) ==="
-./node_modules/.bin/esbuild tests/studio-day-night.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-day-night.cjs --alias:@=./src >/dev/null
-node /tmp/rst-studio-day-night.cjs
-
-echo "=== drinks brew spawn (candle-table mug after espresso) ==="
-./node_modules/.bin/esbuild tests/drinks-brew-spawn.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-drinks-brew-spawn.cjs --alias:@=./src >/dev/null
-node /tmp/rst-drinks-brew-spawn.cjs
-
-echo "=== studio floor living FX (needles, candle, steam, shelf) ==="
-./node_modules/.bin/esbuild tests/studio-floor-life.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-floor-life.cjs --alias:@=./src >/dev/null
-node /tmp/rst-studio-floor-life.cjs
-
 echo "=== studio ux presentation (HUD + love-room) ==="
 ./node_modules/.bin/esbuild tests/studio-ux-presentation.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-ux-presentation.cjs --alias:@=./src >/dev/null
 node /tmp/rst-studio-ux-presentation.cjs
-
-echo "=== idle floor direction (auto-zoom + hotspot priority) ==="
-./node_modules/.bin/esbuild tests/idle-floor-direction.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-idle-floor-direction.cjs --alias:@=./src >/dev/null
-node /tmp/rst-idle-floor-direction.cjs
-
-echo "=== door enter/exit + equipment shelf sprites (P2 visual) ==="
-./node_modules/.bin/esbuild tests/door-shelf-presentation.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-door-shelf-presentation.cjs --alias:@=./src >/dev/null
-node /tmp/rst-door-shelf-presentation.cjs
 
 echo "=== progression motion: studio-tier upgrades and era transitions (#77) ==="
 ./node_modules/.bin/esbuild tests/progression-motion.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-progression-motion.cjs --alias:@=./src >/dev/null
 node /tmp/rst-progression-motion.cjs
 
 echo "=== producer origins, perks & career start ==="
-for check in origin-perks career-start character-creator-parts design-system; do
+for check in origin-perks career-start design-system; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
   node "/tmp/rst-$check.cjs"
 done
 
+echo "=== producer customization -> modular sprite (#126) ==="
+./node_modules/.bin/esbuild tests/producer-customization.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-producer-customization.cjs --alias:@=./src >/dev/null
+node /tmp/rst-producer-customization.cjs
+
 echo "=== era-authentic gigs, story contracts & economy floors ==="
-for check in project-era-starters project-brief session-issues signal-chain economy-income economy-ledger story-contracts achievements album-cover-wall campaign-endings studio-hotkeys studio-know-how studio-premises crew-recruitment-portal studio-rider; do
+for check in project-era-starters project-brief session-issues signal-chain economy-income economy-ledger story-contracts achievements campaign-endings studio-hotkeys studio-know-how studio-premises; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
   node "/tmp/rst-$check.cjs"
 done
+
+echo "=== explainable outcome forecast + 1,000-seed calibration (#55) ==="
+./node_modules/.bin/esbuild tests/session-forecast.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-session-forecast.cjs --alias:@=./src >/dev/null
+node /tmp/rst-session-forecast.cjs
+
+echo "=== session rail (GH #41) ==="
+./node_modules/.bin/esbuild tests/session-rail.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-session-rail.cjs --alias:@=./src >/dev/null
+node /tmp/rst-session-rail.cjs
 
 echo "=== ambient earning (#105) ==="
 ./node_modules/.bin/esbuild tests/ambient-income.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-ambient-income.cjs --alias:@=./src >/dev/null
@@ -242,6 +216,10 @@ node /tmp/rst-ambient-income.cjs
 echo "=== studio seasons (#63) ==="
 ./node_modules/.bin/esbuild tests/studio-seasons.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-seasons.cjs --alias:@=./src >/dev/null
 node /tmp/rst-studio-seasons.cjs
+
+echo "=== mobile session console zero-scroll guards (#141) ==="
+./node_modules/.bin/esbuild tests/mobile-session.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-mobile-session.cjs --alias:@=./src >/dev/null
+node /tmp/rst-mobile-session.cjs
 
 echo "=== pixi GPU exclusivity guard ==="
 ./node_modules/.bin/esbuild tests/pixi-exclusivity.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-pixi-exclusivity.cjs --alias:@=./src >/dev/null

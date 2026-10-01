@@ -10,6 +10,7 @@
  */
 import { Container, Graphics, Matrix, Sprite, Texture } from 'pixi.js';
 import { getPropTexture } from '@/components/studio/propSprites';
+import { getStudioTexture } from '@/components/studio/studioSprites';
 import {
   candleFlicker,
   clockRimGlowAlpha,
@@ -843,8 +844,17 @@ export const buildWallClock = (cx: number, cy: number): WallClock => {
   // Soft shadow on the wall, offset down-right
   const shadow = ring(R + 1.5).map((v, i) => (i % 2 === 0 ? v + 2.2 : v + 3));
   g.poly(shadow).fill({ color: 0x000000, alpha: 0.28 });
-  const faceTex = getPropTexture('wallClock');
-  if (faceTex) {
+  const renderedFace = getStudioTexture('clockFace');
+  const faceTex = renderedFace ? null : getPropTexture('wallClock');
+  if (renderedFace) {
+    // Blender-rendered brass dial with real depth, centred on the clock; hands stay live below.
+    const face = new Sprite(renderedFace);
+    face.anchor.set(0.5);
+    face.scale.set(0.5);
+    const c = leftFace(cx, cy, 0, 0);
+    face.position.set(c.x, c.y);
+    container.addChild(face);
+  } else if (faceTex) {
     // Flat face art sheared into the left-wall plane; hands stay live below.
     const k = (R * 2) / faceTex.width;
     const face = new Sprite(faceTex);
@@ -859,7 +869,7 @@ export const buildWallClock = (cx: number, cy: number): WallClock => {
     g.poly(ring(R - 3.2)).fill(0xf3ead6);
   }
   // Hour ticks (12) and quarter markers
-  for (let i = 0; !faceTex && i < 12; i++) {
+  for (let i = 0; !faceTex && !renderedFace && i < 12; i++) {
     const a = (i / 12) * Math.PI * 2;
     const long = i % 3 === 0;
     const r0 = R - 3.6;
@@ -908,6 +918,21 @@ export const BOOTH_HEADER_LAMP = (() => {
  * Replaces the old bare glass pane that floated in the room.
  */
 export const buildLiveBooth = (): Container => {
+  const backTex = getStudioTexture('boothBack');
+  const frontTex = getStudioTexture('boothFront');
+  if (backTex && frontTex) {
+    // Blender-rendered booth: interior (foam, mic, stool, stand) behind, glass + frame + roof in front.
+    const sprites = new Container();
+    const origin = iso(2.25, 1.0);
+    for (const tex of [backTex, frontTex]) {
+      const sp = new Sprite(tex);
+      sp.anchor.set(100 / tex.width, 235 / tex.height);
+      sp.scale.set(0.5);
+      sp.position.set(origin.x, origin.y);
+      sprites.addChild(sp);
+    }
+    return sprites;
+  }
   const c = new Container();
   const g = new Graphics();
   const x0 = 1.0;

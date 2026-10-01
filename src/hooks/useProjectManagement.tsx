@@ -7,7 +7,7 @@ import { withDailyTracking } from '@/utils/dailyChallenges';
 import { gameAudio } from '@/utils/audioSystem';
 import { triggerScreenShake } from '@/utils/screenShake';
 import { applyCompletedSessionToRelationship, createClientRelationshipFromProject } from '@/utils/clientRelationshipUtils';
-import { findAvailableStudioRoom } from '@/utils/studioRoomUtils';
+import { findAvailableStudioRoom, getOccupiedRoomIds, getOperationalStudioRooms } from '@/utils/studioRoomUtils';
 import { advanceStory } from '@/narrative/storyProgression';
 import { getOriginEffects } from '@/narrative/originPerks';
 import { recordSeasonDelivery } from '@/rpg/studioSeasons';
@@ -25,7 +25,11 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
       return false;
     }
 
-    const room = findAvailableStudioRoom(gameState, project);
+    // Honour a room the player picked while reading the forecast (#55) if it is still free.
+    const preferred = project.bookingRoomId
+      ? getOperationalStudioRooms(gameState).find(r => r.id === project.bookingRoomId && !getOccupiedRoomIds(gameState).has(r.id))
+      : undefined;
+    const room = preferred ?? findAvailableStudioRoom(gameState, project);
     if (!room) {
       toast({
         title: "🏢 Studio Fully Booked",

@@ -1,5 +1,5 @@
 import { applyKnowHowEvents } from '@/rpg/studioKnowHow';
-import { toast } from '@/hooks/use-toast';
+import { REWARD_POP_EVENT, type RewardPopDetail } from '@/utils/rewardFx';
 import React, { useState, useEffect, useCallback, useRef } from 'react'; // Added useCallback
 import { GameLayout } from '@/components/GameLayout';
 import { GameHeader } from '@/components/GameHeader';
@@ -63,9 +63,9 @@ import {
   resolveSubplotChoice,
   type StorylineBranchOption,
 } from '@/narrative/branchingStorylineEngine';
-import { creedFlagForChoice, STUDIO_CREED_EVENT } from '@/components/cutscenes/careerCutscenes';
 import { isTauriShell } from '@/utils/platform';
-import type { CareerProducer, ProducerBackgroundId } from '@/types/character';
+import type { ProducerBackgroundId } from '@/types/character';
+import type { ProducerSetup } from '@/components/CareerStartScreen';
 import { useFeatureFlag } from '@/stores/featureFlagStore';
 
 const MusicStudioTycoon = () => {
@@ -139,29 +139,6 @@ const MusicStudioTycoon = () => {
 
   useEffect(() => installFlightCaseRewards(setGameState), [setGameState]);
   useAmbientIncome(gameInitialized && !showSplashScreen, setGameState);
-
-  // Rising Studio creed → storyFlags (CutsceneDirector lives outside game state).
-  useEffect(() => {
-    const onCreed = (event: Event) => {
-      const choiceId = (event as CustomEvent<{ choiceId?: string }>).detail?.choiceId;
-      const flag = creedFlagForChoice(choiceId);
-      if (!flag) return;
-      setGameState((prev) => {
-        if (!prev.storylineState) return prev;
-        const flags = prev.storylineState.storyFlags;
-        if (flags[flag]) return prev;
-        return {
-          ...prev,
-          storylineState: {
-            ...prev.storylineState,
-            storyFlags: { ...flags, [flag]: true },
-          },
-        };
-      });
-    };
-    window.addEventListener(STUDIO_CREED_EVENT, onCreed);
-    return () => window.removeEventListener(STUDIO_CREED_EVENT, onCreed);
-  }, [setGameState]);
 
   useEffect(() => {
     if (selectedStaffForTraining) {
@@ -255,10 +232,11 @@ const MusicStudioTycoon = () => {
     [setGameState, settings.sfxEnabled],
   );
 
-  const handleStartNewGame = (era: Era, originId?: ProducerBackgroundId, producer?: CareerProducer) => {
+  const handleStartNewGame = (era: Era, originId?: ProducerBackgroundId, producer?: ProducerSetup) => {
     const newGameState = initializeGameState({
       originId,
-      producer,
+      producerName: producer?.name,
+      producerAppearance: producer?.appearance,
       startingMoney: era.startingMoney,
       selectedEra: era.id,
       eraStartYear: era.startYear,
@@ -329,7 +307,7 @@ const MusicStudioTycoon = () => {
           Math.min(10, Math.round((equipmentBonuses.quality || 0) / 2 + (equipmentBonuses.genre || 0) / 4))
         ),
         marketMultiplier: getGenreMarketMultiplier(completedProjectData.genre, gameState.currentEra),
-        sessionEquipment: resolveSessionEquipment(gameState, completedProjectData.bookingRoomId),
+        sessionEquipment,
         brewReady:
           gameState.choreState?.chores.brew_espresso?.completed === true ||
           hasActiveChoreBuff(gameState.choreState, 'vibe_boost'),
@@ -394,11 +372,11 @@ const MusicStudioTycoon = () => {
     const prev = lastKnowHowTotal.current;
     lastKnowHowTotal.current = total;
     if (prev !== null && total > prev) {
-      toast({
-        title: `Studio Know-How +${total - prev}`,
-        description: 'You learned from the work. Spend it in Career.',
-        className: 'bg-stone-800 border-cyan-500 text-white',
-      });
+      const gained = total - prev;
+      // Reuse the shared reward pop-up (#99) instead of a bespoke toast.
+      window.dispatchEvent(new CustomEvent<RewardPopDetail>(REWARD_POP_EVENT, {
+        detail: { label: `+${gained} Know-How`, tier: gained >= 4 ? 'big' : gained >= 2 ? 'medium' : 'small', tone: 'plain' },
+      }));
     }
   }, [gameState.studioKnowHow?.totalEarned]);
 

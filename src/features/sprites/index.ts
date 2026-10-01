@@ -5,6 +5,7 @@ export * from './characterCreatorParts';
 export * from './npcAnimation';
 export * from './npcLayers';
 export * from './floorNpcs';
+export * from './producerAppearance';
 export * from './ModularSpriteRenderer';
 // staffRoleToStudioRole also lives in floorNpcs — keep the broader floor helper on the barrel.
 export {

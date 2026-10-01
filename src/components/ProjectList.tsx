@@ -15,6 +15,8 @@ import ChainComposer from '@/components/ChainComposer';
 import { validateChain, type SignalChain } from '@/rpg/signalChain';
 import BriefPanel from '@/components/BriefPanel';
 import RiderPanel from '@/components/RiderPanel';
+import ForecastPanel from '@/components/ForecastPanel';
+import { defaultAssignment, type SessionAssignment } from '@/rpg/sessionForecast';
 import { getApproach, getProjectBrief, type ProductionApproach } from '@/rpg/projectBrief';
 import { gameAudio } from '@/utils/audioSystem';
 import { getOriginEffects, gigRefreshCostFor } from '@/narrative/originPerks';
@@ -29,8 +31,6 @@ import {
   type ContractStake,
 } from '@/rpg/contractStakes';
 import { Check, Lock, Mic, Star, XCircle, PhoneCall, PhoneOff, Inbox, RefreshCw } from 'lucide-react';
-import { forecastSessionForBooking } from '@/rpg/sessionForecast';
-import SessionForecastView from '@/components/SessionForecast';
 
 interface ProjectListProps {
   gameState: GameState;
@@ -123,6 +123,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
   const [approaches, setApproaches] = useState<Record<string, ProductionApproach['id'] | undefined>>({});
   const [chains, setChains] = useState<Record<string, SignalChain | undefined>>({});
   const [stakes, setStakes] = useState<Record<string, ContractStake>>({});
+  const [assignments, setAssignments] = useState<Record<string, SessionAssignment>>({});
   const cooldownLeft = gigRefreshCooldownRemaining(gameState);
   const refreshReady = cooldownLeft === 0;
   const refreshCost = gigRefreshCostFor(GIG_REFRESH_COST, getOriginEffects(gameState));
@@ -163,13 +164,26 @@ export const ProjectList: React.FC<ProjectListProps> = ({
       const approach = getApproach(approaches[project.id]);
       const chain = chains[project.id];
       const chainOk = chain && validateChain(chain, gameState, project.id).broken.length === 0;
+      const plan = assignments[project.id];
       startProject({
         ...project,
         stake,
+        // The room and crew the player forecast with are the ones that get booked (#55).
+        ...(plan?.roomId ? { bookingRoomId: plan.roomId } : {}),
         ...(chainOk ? { signalChain: chain } : {}),
         brief: getProjectBrief(project),
         ...(approach ? { approachId: approach.id, focusAllocation: approach.focus } : {}),
       });
+      if (plan && plan.staffIds.length > 0) {
+        setGameState(prev => prev.activeProject?.id !== project.id ? prev : {
+          ...prev,
+          hiredStaff: prev.hiredStaff.map(s =>
+            plan.staffIds.includes(s.id) && !s.assignedProjectId && s.status === 'Idle' && s.energy >= 20
+              ? { ...s, status: 'Working', assignedProjectId: project.id }
+              : s
+          ),
+        });
+      }
       setBookingId(null);
     }, 180);
   };
@@ -360,20 +374,6 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                     : getOpportunityNote(project)}
                 </div>
 
-                <div className="mb-3">
-                  <SessionForecastView
-                    forecast={forecastSessionForBooking(project, gameState, {
-                      approachId: approaches[project.id] ?? null,
-                      chainState: (() => {
-                        const chain = chains[project.id];
-                        if (!chain) return 'none';
-                        return validateChain(chain, gameState, project.id).broken.length === 0 ? 'valid' : 'broken';
-                      })(),
-                      stake: chosenStake,
-                    })}
-                  />
-                </div>
-
                 <BriefPanel
                   project={project}
                   state={gameState}
@@ -385,6 +385,19 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                 />
 
                 <RiderPanel project={project} state={gameState} mode="booking" />
+
+                <ForecastPanel
+                  project={project}
+                  state={gameState}
+                  assignment={{ ...(assignments[project.id] ?? defaultAssignment(gameState, project)), approachId: approaches[project.id] }}
+                  onChange={(next) => setAssignments((prev) => ({ ...prev, [project.id]: next }))}
+                  chainState={(() => {
+                    const chain = chains[project.id];
+                    if (!chain) return 'none';
+                    return validateChain(chain, gameState, project.id).broken.length === 0 ? 'valid' : 'broken';
+                  })()}
+                  stake={chosenStake}
+                />
 
                 {['vocal-production', 'tracking'].includes(getProjectBrief(project).serviceType) && (
                   <ChainComposer

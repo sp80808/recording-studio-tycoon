@@ -52,7 +52,7 @@ const clamp = (value: number, min: number, max: number): number =>
   Math.max(min, Math.min(max, value));
 
 // Helper to determine relevant skills for a project
-const getRelevantSkillsForProject = (
+export const getRelevantSkillsForProject = (
   project: Project, 
   personSkills: PlayerData['skills'] | StaffMember['skills']
 ): Array<keyof (PlayerData['skills'] | StaffMember['skills'])> => {

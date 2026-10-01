@@ -64,6 +64,8 @@ export interface ProducerCustomization {
   avatarIcon: string;
   unlockedThemes: VisualThemeId[];
   storyFlags: Record<string, boolean | number | string>;
+  /** Hair / clothes colour / accessory picked at career start; drives the player sprite (#126). */
+  appearance?: import('@/features/sprites/producerAppearance').ProducerAppearance;
 }
 
 export interface CareerProducer {
