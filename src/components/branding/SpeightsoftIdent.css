@@ -82,7 +82,6 @@
 }
 
 .speightsoft-ident__signal {
-  stroke: url(#speightsoft-signal);
   filter:
     drop-shadow(0 0 5px rgba(224, 242, 254, 0.34))
     drop-shadow(0 0 18px rgba(125, 211, 252, 0.14));
@@ -136,15 +135,6 @@
   margin-top: 12px;
   transform-origin: center;
   background: linear-gradient(90deg, transparent, rgba(226, 232, 240, 0.52), transparent);
-}
-
-.speightsoft-ident__tag {
-  margin-top: 9px;
-  font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(0.5rem, 1.4vw, 0.62rem);
-  font-weight: 500;
-  letter-spacing: 0.29em;
-  color: rgba(226, 232, 240, 0.66);
 }
 
 @media (max-width: 560px) {
