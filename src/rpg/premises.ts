@@ -32,6 +32,7 @@ const MIN_PAID_SESSIONS = 5;
 const MIN_RESERVE_AFTER_DEPOSIT = 500;
 
 type PremisesState = Pick<GameState, 'money' | 'financials' | 'clientRelationships' | 'studioRooms'> & {
+  playerData?: GameState['playerData'];
   premisesTier?: PremisesTier;
 };
 
@@ -79,6 +80,8 @@ export const applyPremisesMove = <S extends PremisesState>(s: S): S => {
     ...s,
     premisesTier: 1,
     money: s.money - offer.deposit,
+    // One day of downtime: moving day uses up today's work capacity (refills on the next day).
+    ...(s.playerData ? { playerData: { ...s.playerData, dailyWorkCapacity: 0 } } : {}),
     studioRooms: s.studioRooms.map(r => (r.id === def.grantsRoomId ? { ...r, unlocked: true } : r)),
   };
 };

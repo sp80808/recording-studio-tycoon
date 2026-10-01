@@ -1,3 +1,4 @@
+import { briefReasonLimit } from '@/rpg/studioKnowHow';
 import React from 'react';
 import type { GameState, Project } from '@/types/game';
 import {
@@ -46,7 +47,7 @@ export const BriefPanel: React.FC<BriefPanelProps> = ({ project, state, approach
         </span>
       </div>
       <ul className="space-y-0.5 text-stone-300">
-        {topReasons(fit).map((reason) => (
+        {topReasons(fit, briefReasonLimit(state.studioKnowHow)).map((reason) => (
           <li key={reason}>· {reason}</li>
         ))}
       </ul>

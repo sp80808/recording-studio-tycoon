@@ -1,5 +1,5 @@
 import { applyKnowHowEvents } from '@/rpg/studioKnowHow';
-import { toast } from '@/hooks/use-toast';
+import { REWARD_POP_EVENT, type RewardPopDetail } from '@/utils/rewardFx';
 import React, { useState, useEffect, useCallback, useRef } from 'react'; // Added useCallback
 import { GameLayout } from '@/components/GameLayout';
 import { GameHeader } from '@/components/GameHeader';
@@ -364,11 +364,11 @@ const MusicStudioTycoon = () => {
     const prev = lastKnowHowTotal.current;
     lastKnowHowTotal.current = total;
     if (prev !== null && total > prev) {
-      toast({
-        title: `Studio Know-How +${total - prev}`,
-        description: 'You learned from the work. Spend it in Career.',
-        className: 'bg-stone-800 border-cyan-500 text-white',
-      });
+      const gained = total - prev;
+      // Reuse the shared reward pop-up (#99) instead of a bespoke toast.
+      window.dispatchEvent(new CustomEvent<RewardPopDetail>(REWARD_POP_EVENT, {
+        detail: { label: `+${gained} Know-How`, tier: gained >= 4 ? 'big' : gained >= 2 ? 'medium' : 'small', tone: 'plain' },
+      }));
     }
   }, [gameState.studioKnowHow?.totalEarned]);
 
