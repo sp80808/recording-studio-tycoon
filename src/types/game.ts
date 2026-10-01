@@ -306,6 +306,8 @@ export interface GameState {
   saveSeed?: number | string;
   /** Branching campaign + subplot tracker (bead 283.3). Absent on legacy saves. */
   storylineState?: import('@/narrative/branchingStorylineEngine').StorylineState;
+  /** Producer name + sprite look chosen at career start (#126). Migrated onto legacy saves. */
+  producerCustomization?: import('@/types/character').ProducerCustomization;
   playerData: PlayerData;
   studioSkills: Record<string, StudioSkill>;
   ownedUpgrades: string[];
