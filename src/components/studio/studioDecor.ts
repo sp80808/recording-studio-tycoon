@@ -23,10 +23,12 @@ import {
 import {
   advanceMote,
   getDayness,
+  getEraLightingKit,
   getMoteSeeds,
   getPlankLayout,
   getTrophyWall,
   type EraDecorSpec,
+  type EraLightingKit,
   type TrophyInput,
 } from './studioDecorConfig';
 
@@ -389,16 +391,24 @@ export const buildDeskProps = (deskH = 40): Container => {
 
 export interface DecorLightsInput {
   spec: EraDecorSpec;
+  /** Optional override; defaults to `getEraLightingKit(spec.eraId)`. */
+  kit?: EraLightingKit;
+  /** Studio tier 1–5 — unlocks data-driven neon practicals. */
+  tier?: number;
 }
 
 export interface DecorLights {
   container: Container;
+  kit: EraLightingKit;
   /** `live` = a session is being recorded right now (lights the ON AIR lamp). */
   update: (tSeconds: number, reduceMotion: boolean, live?: boolean) => void;
 }
 
 export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
   const { spec } = input;
+  const kit = input.kit ?? getEraLightingKit(spec.eraId);
+  const tier = Math.max(1, Math.min(5, Math.floor(input.tier ?? 1)));
+  const glowScale = kit.propGlowScale;
   const container = new Container();
   container.eventMode = 'none';
   container.blendMode = 'add';
@@ -414,24 +424,24 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
   const f1 = iso(5.95, 3.9);
   const f2 = iso(6.9, 0.2);
   const f3 = iso(5.1, 0.2);
-  // Airborne beam
-  shaftG.poly([winA.x, winA.y, winB.x, winB.y, f1.x, f1.y, f0.x, f0.y]).fill({ color: spec.daylight, alpha: 0.035 });
-  shaftG.poly([winD.x, winD.y, winC.x, winC.y, f1.x, f1.y, f0.x, f0.y]).fill({ color: spec.daylight, alpha: 0.03 });
+  // Airborne beam — alphas from the era lighting kit
+  shaftG.poly([winA.x, winA.y, winB.x, winB.y, f1.x, f1.y, f0.x, f0.y]).fill({ color: spec.daylight, alpha: kit.shaftAirAlpha });
+  shaftG.poly([winD.x, winD.y, winC.x, winC.y, f1.x, f1.y, f0.x, f0.y]).fill({ color: spec.daylight, alpha: kit.shaftAirAlpha * 0.85 });
   // Floor pool, layered for a soft edge
-  for (let i = 0; i < 4; i++) {
-    const k = i / 4;
+  for (let i = 0; i < 5; i++) {
+    const k = i / 5;
     const lerp = (a: { x: number; y: number }, b: { x: number; y: number }) => ({ x: a.x + (b.x - a.x) * k * 0.28, y: a.y + (b.y - a.y) * k * 0.28 });
     const p0 = lerp(f0, f3);
     const p1 = lerp(f1, f2);
     const p2 = lerp(f2, f1);
     const p3 = lerp(f3, f0);
-    shaftG.poly([p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y]).fill({ color: spec.daylight, alpha: 0.045 });
+    shaftG.poly([p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y]).fill({ color: spec.daylight, alpha: kit.shaftFloorAlpha * (1 - k * 0.15) });
   }
   shaft.addChild(shaftG);
   container.addChild(shaft);
 
   /* Dust motes drifting through the beam */
-  const motes = getMoteSeeds(26, spec.eraId);
+  const motes = getMoteSeeds(kit.moteCount, spec.eraId);
   const moteG = new Graphics();
   container.addChild(moteG);
   const beamPoint = (u: number, v: number) => {
@@ -443,17 +453,21 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
     return { x: topX + (botX - topX) * u, y: topY + (botY - topY) * u };
   };
 
-  /* Lamp pools (warm glow on the floor around the console + rug) */
+  /* Lamp pools (warm glow on the floor around the console + rug) — kit colours */
   const pools = new Graphics();
   const rug = iso(4.5, 4.3);
-  radialGlow(pools, rug.x, rug.y + 4, 120, 46, 0xffb45a, 0.10);
+  radialGlow(pools, rug.x, rug.y + 4, kit.rugPool.rx, kit.rugPool.ry, kit.rugPool.color, kit.rugPool.alpha);
   const desk = iso(4.5, 4.05);
-  radialGlow(pools, desk.x, desk.y - 42, 70, 26, 0xffd58a, 0.06);
+  radialGlow(pools, desk.x, desk.y - 42, kit.deskPool.rx, kit.deskPool.ry, kit.deskPool.color, kit.deskPool.alpha);
   container.addChild(pools);
 
   /* Era signature glows */
   const glowG = new Graphics();
   container.addChild(glowG);
+
+  /* Tier neon strip behind the live-room glass (data-driven; was hard-coded in WebGLCanvas). */
+  const tierNeon = new Graphics();
+  container.addChild(tierNeon);
 
   /* ON AIR lamp above the studio door */
   const onAir = new Graphics();
@@ -479,7 +493,9 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
 
   const update = (t: number, reduce: boolean, live = false) => {
     const day = getDayness(reduce ? 0 : t);
-    shaft.alpha = 0.3 + 0.7 * day;
+    shaft.alpha = 0.28 + 0.72 * day;
+    // Live sessions warm the desk/rug pools slightly without rebuilding geometry
+    pools.alpha = live ? 1.12 : 1.0;
 
     // Motes
     moteG.clear();
@@ -487,12 +503,15 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
       for (const m of motes) {
         const s = advanceMote(m, t);
         const p = beamPoint(s.u, s.v);
-        moteG.circle(p.x, p.y, m.size).fill({ color: spec.daylight, alpha: 0.55 * s.alpha * (0.4 + 0.6 * day) });
+        moteG.circle(p.x, p.y, m.size).fill({
+          color: spec.daylight,
+          alpha: kit.moteBaseAlpha * s.alpha * (0.4 + 0.6 * day),
+        });
       }
     } else {
       for (const m of motes) {
         const p = beamPoint(m.u, m.v);
-        moteG.circle(p.x, p.y, m.size).fill({ color: spec.daylight, alpha: 0.22 });
+        moteG.circle(p.x, p.y, m.size).fill({ color: spec.daylight, alpha: kit.moteBaseAlpha * 0.4 });
       }
     }
 
@@ -502,11 +521,11 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
     radialGlow(onAir, airPos.x, airPos.y, live ? 22 : 12, live ? 12 : 6, 0xff3b30, (live ? 0.6 : 0.10) * pulse, 5);
     onAir.circle(airPos.x, airPos.y, 2.6).fill({ color: 0xff6a5c, alpha: live ? 0.95 : 0.25 });
 
-    // Era prop glows
+    // Era prop glows (scaled by kit)
     glowG.clear();
     if (spec.prop === 'brass-lamp') {
       const b = iso(7.55, 2.3);
-      const f = reduce ? 1 : 0.96 + 0.04 * Math.sin(t * 2.1);
+      const f = (reduce ? 1 : 0.96 + 0.04 * Math.sin(t * 2.1)) * glowScale;
       radialGlow(glowG, b.x, b.y - 66, 34, 24, spec.glow, 0.32 * f, 6);
       radialGlow(glowG, b.x, b.y - 2, 80, 30, spec.glow2, 0.11 * f, 6);
     } else if (spec.prop === 'neon-sign') {
@@ -515,18 +534,19 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
         const p = neonQuad(u, v);
         return [p.x, p.y];
       });
-      glowG.poly(pts).stroke({ width: 7, color: spec.glow, alpha: 0.16 * flick });
-      glowG.poly(pts).stroke({ width: 3.5, color: spec.glow, alpha: 0.5 * flick });
-      glowG.poly(pts).stroke({ width: 1.4, color: 0xffe6fb, alpha: 0.9 * flick });
-      const a = neonQuad(0.12, 0.06);
-      const b = neonQuad(0.82, 0.06);
-      glowG.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 2.4, color: spec.glow2, alpha: 0.7 * flick });
+      const a = flick * glowScale;
+      glowG.poly(pts).stroke({ width: 7, color: spec.glow, alpha: 0.16 * a });
+      glowG.poly(pts).stroke({ width: 3.5, color: spec.glow, alpha: 0.5 * a });
+      glowG.poly(pts).stroke({ width: 1.4, color: 0xffe6fb, alpha: 0.9 * a });
+      const n0 = neonQuad(0.12, 0.06);
+      const n1 = neonQuad(0.82, 0.06);
+      glowG.moveTo(n0.x, n0.y).lineTo(n1.x, n1.y).stroke({ width: 2.4, color: spec.glow2, alpha: 0.7 * a });
       const wall = leftWallPt(0.72, 96);
-      radialGlow(glowG, wall.x, wall.y, 46, 34, spec.glow, 0.13 * flick, 6);
+      radialGlow(glowG, wall.x, wall.y, 46, 34, spec.glow, 0.13 * a, 6);
     } else if (spec.prop === 'lava-lamp') {
       const t0 = iso(7.45, 1.1);
-      radialGlow(glowG, t0.x, t0.y - 34, 26, 30, spec.glow, 0.25, 6);
-      radialGlow(glowG, t0.x, t0.y, 60, 22, spec.glow, 0.09, 5);
+      radialGlow(glowG, t0.x, t0.y - 34, 26, 30, spec.glow, 0.25 * glowScale, 6);
+      radialGlow(glowG, t0.x, t0.y, 60, 22, spec.glow, 0.09 * glowScale, 5);
       for (let i = 0; i < 3; i++) {
         const y = t0.y - 28 - (reduce ? i * 8 : (Math.sin(t * (0.5 + i * 0.23) + i * 2) * 0.5 + 0.5) * 20);
         glowG.circle(t0.x + (reduce ? 0 : Math.sin(t * 0.9 + i) * 1.4), y, 2.6 + i * 0.7).fill({ color: 0xffa070, alpha: 0.75 });
@@ -540,15 +560,40 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
         const a1 = (i + 0.85) / segs;
         const r0 = rightWallPt(a0 * ROOM_W, WALL_H - 4);
         const r1 = rightWallPt(a1 * ROOM_W, WALL_H - 4);
-        glowG.moveTo(r0.x, r0.y).lineTo(r1.x, r1.y).stroke({ width: 5, color, alpha: 0.18 });
+        glowG.moveTo(r0.x, r0.y).lineTo(r1.x, r1.y).stroke({ width: 5, color, alpha: 0.18 * glowScale });
         glowG.moveTo(r0.x, r0.y).lineTo(r1.x, r1.y).stroke({ width: 2, color, alpha: 0.85 });
         const l0 = leftWallPt(a0 * ROOM_D, WALL_H - 4);
         const l1 = leftWallPt(a1 * ROOM_D, WALL_H - 4);
-        glowG.moveTo(l0.x, l0.y).lineTo(l1.x, l1.y).stroke({ width: 5, color, alpha: 0.18 });
+        glowG.moveTo(l0.x, l0.y).lineTo(l1.x, l1.y).stroke({ width: 5, color, alpha: 0.18 * glowScale });
         glowG.moveTo(l0.x, l0.y).lineTo(l1.x, l1.y).stroke({ width: 2, color, alpha: 0.85 });
       }
       const s0 = iso(7.3, 1.6);
-      radialGlow(glowG, s0.x, s0.y - 66, 14, 14, 0xffffff, 0.35, 5);
+      radialGlow(glowG, s0.x, s0.y - 66, 14, 14, 0xffffff, 0.35 * glowScale, 5);
+    }
+
+    // Tier neon practical (booth glass strip) — honour bloom/CRT by living in the additive layer
+    tierNeon.clear();
+    if (tier >= kit.neonFromTier) {
+      const neonA = iso(1.0, 0.7);
+      const neonB = iso(3.6, 0.7);
+      const breath = reduce ? 1 : 0.82 + 0.18 * Math.sin(t * kit.neonPulseHz * Math.PI * 2);
+      const liveBoost = live ? 1.15 : 1;
+      tierNeon
+        .poly([neonA.x, neonA.y - 84, neonB.x, neonB.y - 84, neonB.x, neonB.y - 74, neonA.x, neonA.y - 74])
+        .fill({ color: kit.neonPrimary, alpha: 0.22 * breath * liveBoost });
+      tierNeon
+        .poly([neonA.x, neonA.y - 82, neonB.x, neonB.y - 82, neonB.x, neonB.y - 76, neonA.x, neonA.y - 76])
+        .fill({ color: kit.neonSecondary, alpha: 0.55 * breath * liveBoost });
+      radialGlow(
+        tierNeon,
+        (neonA.x + neonB.x) / 2,
+        neonA.y - 79,
+        70,
+        18,
+        kit.neonPrimary,
+        0.14 * breath * liveBoost,
+        5,
+      );
     }
 
     // Steam
@@ -564,7 +609,7 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
   };
 
   update(0, true);
-  return { container, update };
+  return { container, kit, update };
 };
 
 /** HSL → 0xRRGGBB (h,s,l in 0..1). */

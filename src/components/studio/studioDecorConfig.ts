@@ -99,6 +99,98 @@ export const getEraDecor = (eraId?: string): EraDecorSpec => {
   return { eraId: ERA_DECOR[id] ? id : 'analog60s', ...spec };
 };
 
+/* -------------------------------------------------------- era lighting kits */
+
+/**
+ * Data-driven practicals / glow overlays (ux-visual P2).
+ * Values feed `buildDecorLights` — keep one continuous WebGL living studio.
+ */
+export interface EraLightingKit {
+  eraId: string;
+  /** Airborne window-shaft fill alpha (before dayness). */
+  shaftAirAlpha: number;
+  /** Floor spill fill alpha under the shaft. */
+  shaftFloorAlpha: number;
+  moteCount: number;
+  moteBaseAlpha: number;
+  rugPool: { color: number; alpha: number; rx: number; ry: number };
+  deskPool: { color: number; alpha: number; rx: number; ry: number };
+  /** Multiplier on era signature prop glows (lamp / neon / lava / LED). */
+  propGlowScale: number;
+  /** Tier at which the booth-header neon practical lights up (typically 5). */
+  neonFromTier: number;
+  neonPrimary: number;
+  neonSecondary: number;
+  neonPulseHz: number;
+  /** Soft bloom tint for dynamic console/TV cores when bloom is enabled. */
+  bloomAccent: number;
+}
+
+const ERA_LIGHTING: Record<string, Omit<EraLightingKit, 'eraId'>> = {
+  analog60s: {
+    shaftAirAlpha: 0.042,
+    shaftFloorAlpha: 0.052,
+    moteCount: 28,
+    moteBaseAlpha: 0.58,
+    rugPool: { color: 0xffb45a, alpha: 0.12, rx: 126, ry: 48 },
+    deskPool: { color: 0xffd58a, alpha: 0.075, rx: 76, ry: 28 },
+    propGlowScale: 1.08,
+    neonFromTier: 5,
+    neonPrimary: 0xffc266,
+    neonSecondary: 0xff9a4d,
+    neonPulseHz: 1.15,
+    bloomAccent: 0xffaa33,
+  },
+  digital80s: {
+    shaftAirAlpha: 0.034,
+    shaftFloorAlpha: 0.04,
+    moteCount: 22,
+    moteBaseAlpha: 0.5,
+    rugPool: { color: 0xc77dff, alpha: 0.1, rx: 118, ry: 44 },
+    deskPool: { color: 0x5aa9e6, alpha: 0.08, rx: 70, ry: 26 },
+    propGlowScale: 1.18,
+    neonFromTier: 5,
+    neonPrimary: 0xff4fd8,
+    neonSecondary: 0x4fd8ff,
+    neonPulseHz: 2.4,
+    bloomAccent: 0xc77dff,
+  },
+  internet2000s: {
+    shaftAirAlpha: 0.036,
+    shaftFloorAlpha: 0.044,
+    moteCount: 24,
+    moteBaseAlpha: 0.52,
+    rugPool: { color: 0xff7a45, alpha: 0.1, rx: 120, ry: 46 },
+    deskPool: { color: 0x7ad9ff, alpha: 0.07, rx: 72, ry: 26 },
+    propGlowScale: 1.12,
+    neonFromTier: 5,
+    neonPrimary: 0xff7a45,
+    neonSecondary: 0x7ad9ff,
+    neonPulseHz: 1.8,
+    bloomAccent: 0x5aa9e6,
+  },
+  streaming2020s: {
+    shaftAirAlpha: 0.03,
+    shaftFloorAlpha: 0.038,
+    moteCount: 18,
+    moteBaseAlpha: 0.48,
+    rugPool: { color: 0x7bf0c8, alpha: 0.09, rx: 114, ry: 42 },
+    deskPool: { color: 0xa78bfa, alpha: 0.08, rx: 68, ry: 24 },
+    propGlowScale: 1.22,
+    neonFromTier: 4,
+    neonPrimary: 0x7bf0c8,
+    neonSecondary: 0xa78bfa,
+    neonPulseHz: 2.8,
+    bloomAccent: 0x7bd389,
+  },
+};
+
+export const getEraLightingKit = (eraId?: string): EraLightingKit => {
+  const id = visualEraId(eraId ?? 'analog60s');
+  const kit = ERA_LIGHTING[id] ?? ERA_LIGHTING.analog60s;
+  return { eraId: ERA_LIGHTING[id] ? id : 'analog60s', ...kit };
+};
+
 /* -------------------------------------------------------- daylight cycle */
 
 /** Length of the ambient day/night cycle in seconds (must match the ticker's tint cycle). */
