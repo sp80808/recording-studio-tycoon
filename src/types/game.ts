@@ -1,3 +1,4 @@
+import type { NpcVisualIdentity } from '@/features/sprites/npcAppearance';
 import type { GearInstanceFields, DailyClassifiedListing } from '@/features/usedGear/types';
 // Game type definitions
 import { Chart, ArtistContact, MarketTrend } from './charts';
@@ -39,6 +40,8 @@ export interface PlayerAttributes {
 }
 
 export interface PlayerData {
+  name?: string;
+  appearance?: NpcVisualIdentity;
   xp: number;
   level: number;
   xpToNextLevel: number;

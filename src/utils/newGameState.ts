@@ -4,7 +4,8 @@
  * starting attributes, playstyle and origin id that the campaign, rival and perks read.
  */
 import type { GameState } from '@/types/game';
-import type { ProducerBackgroundId } from '@/types/character';
+import { parseNpcVisualIdentity } from '@/features/sprites/npcAppearance';
+import type { CareerProducer, ProducerBackgroundId } from '@/types/character';
 import { generateNewProjects, generateCandidates } from '@/utils/projectUtils';
 import { generateSessionMusicians } from '@/utils/bandUtils';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
@@ -26,12 +27,15 @@ export interface EraInitOptions {
   equipmentMultiplier: number;
   /** Producer origin picked at career start (perks, attributes, playstyle, rival). */
   originId?: ProducerBackgroundId;
+  /** Producer name + layered sprite identity from character creation. */
+  producer?: CareerProducer;
   /** Fixed run seed (tests / replays). Defaults to Date.now() for a fresh run. */
   saveSeed?: number | string;
 }
 
 export const createDefaultGameState = (options?: Partial<EraInitOptions>): GameState => {
   const originId = isProducerOriginId(options?.originId) ? options!.originId : undefined;
+  const appearance = parseNpcVisualIdentity(options?.producer?.appearance);
   const baseAttributes = { focusMastery: 1, creativeIntuition: 1, technicalAptitude: 1, businessAcumen: 1 };
   return {
     money: options?.startingMoney || 3500,
@@ -46,6 +50,8 @@ export const createDefaultGameState = (options?: Partial<EraInitOptions>): GameS
     eraStartYear: options?.eraStartYear || 1960,
     equipmentMultiplier: options?.equipmentMultiplier || 0.3, // Lower prices in 1960s
     playerData: {
+      name: options?.producer?.name?.trim().slice(0, 24) || 'The Architect',
+      ...(appearance ? { appearance: { ...appearance, role: 'producer' as const } } : {}),
       xp: 0,
       level: 1,
       xpToNextLevel: 100,

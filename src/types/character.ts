@@ -1,3 +1,4 @@
+import type { NpcVisualIdentity } from '@/features/sprites/npcAppearance';
 import { PlayerAttributes, PlayerData } from './game';
 
 export type ProducerBackgroundId =
@@ -63,4 +64,9 @@ export interface ProducerCustomization {
   avatarIcon: string;
   unlockedThemes: VisualThemeId[];
   storyFlags: Record<string, boolean | number | string>;
+}
+
+export interface CareerProducer {
+  name: string;
+  appearance: NpcVisualIdentity;
 }

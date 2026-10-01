@@ -9,12 +9,22 @@
 import { createSeededRandom, pickWithRandom, type RandomSource } from '@/simulation/seededRandom';
 import type { ModularNpcDefinition, NpcEra, StudioRole } from './spriteTypes';
 import * as data from './npcAppearanceData';
+import {
+  applyPartPicks,
+  normalizePartPicks,
+  parseNpcPartPicks,
+  type NpcPartPicks,
+} from './characterCreatorParts';
+
+export type { NpcPartPicks } from './characterCreatorParts';
 
 export interface NpcVisualIdentity {
   seed: number;
   role: StudioRole;
   era: NpcEra;
   appearanceVersion: number;
+  /** Optional granular creator indices (body/hair/clothing/accessories). */
+  parts?: NpcPartPicks;
 }
 
 export const LATEST_APPEARANCE_VERSION = 1;
@@ -41,7 +51,15 @@ export const parseNpcVisualIdentity = (value: unknown): NpcVisualIdentity | null
   if (!isStudioRole(v.role) || !isNpcEra(v.era)) return null;
   const version = v.appearanceVersion === undefined ? 1 : v.appearanceVersion;
   if (typeof version !== 'number' || !Number.isInteger(version) || version < 1) return null;
-  return { seed: v.seed, role: v.role, era: v.era, appearanceVersion: version };
+  const parts = v.parts === undefined ? undefined : parseNpcPartPicks(v.parts);
+  if (v.parts !== undefined && !parts) return null;
+  return {
+    seed: v.seed,
+    role: v.role,
+    era: v.era,
+    appearanceVersion: version,
+    ...(parts ? { parts: normalizePartPicks(v.era as NpcEra, parts) } : {}),
+  };
 };
 
 /** Seed stream for one identity. Role/era/version are hashed in so they decorrelate. */
@@ -109,14 +127,20 @@ const GENERATORS: Record<number, (id: NpcVisualIdentity, name?: string) => Modul
 export const resolveNpcAppearance = (id: NpcVisualIdentity, name?: string): ModularNpcDefinition => {
   const known = Object.keys(GENERATORS).map(Number).filter((v) => v <= id.appearanceVersion);
   const version = known.length ? Math.max(...known) : LATEST_APPEARANCE_VERSION;
-  return GENERATORS[version]({ ...id, appearanceVersion: version }, name);
+  const generated = GENERATORS[version]({ ...id, appearanceVersion: version }, name);
+  if (!id.parts) return generated;
+  return applyPartPicks(generated, normalizePartPicks(id.era, id.parts));
 };
 
-export const identityOf = (npc: Pick<ModularNpcDefinition, 'seed' | 'role' | 'era' | 'appearanceVersion'>): NpcVisualIdentity => ({
+export const identityOf = (
+  npc: Pick<ModularNpcDefinition, 'seed' | 'role' | 'era' | 'appearanceVersion'>,
+  parts?: NpcPartPicks,
+): NpcVisualIdentity => ({
   seed: npc.seed,
   role: npc.role,
   era: npc.era,
   appearanceVersion: npc.appearanceVersion ?? 1,
+  ...(parts ? { parts: normalizePartPicks(npc.era, parts) } : {}),
 });
 
 /** Serialise a definition losslessly (plain JSON data; no renderer objects). */
@@ -134,10 +158,16 @@ export const deserializeNpc = (json: string): ModularNpcDefinition | null => {
 /** Deterministic role/era choice for a bare seed (used when the caller supplies neither). */
 export const identityFromSeed = (
   seed: number,
-  options: { role?: StudioRole; era?: NpcEra; appearanceVersion?: number } = {},
+  options: { role?: StudioRole; era?: NpcEra; appearanceVersion?: number; parts?: NpcPartPicks } = {},
 ): NpcVisualIdentity => {
   const rng = createSeededRandom(`npc-identity:${seed}`);
   const era = options.era ?? pickWithRandom(rng, data.NPC_ERAS);
   const role = options.role ?? pickWithRandom(rng, data.STUDIO_ROLES);
-  return { seed, role, era, appearanceVersion: options.appearanceVersion ?? LATEST_APPEARANCE_VERSION };
+  return {
+    seed,
+    role,
+    era,
+    appearanceVersion: options.appearanceVersion ?? LATEST_APPEARANCE_VERSION,
+    ...(options.parts ? { parts: normalizePartPicks(era, options.parts) } : {}),
+  };
 };

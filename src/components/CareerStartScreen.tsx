@@ -2,7 +2,19 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, Check, Swords } from 'lucide-react';
 import { AVAILABLE_ERAS } from '@/data/eras';
 import type { Era } from '@/types/game';
-import type { ProducerBackgroundId } from '@/types/character';
+import { ModularSpriteRenderer } from '@/features/sprites/ModularSpriteRenderer';
+import { identityFromSeed, resolveNpcAppearance } from '@/features/sprites/npcAppearance';
+import {
+  CREATOR_PART_SLOTS,
+  DEFAULT_PART_PICKS,
+  cyclePart,
+  normalizePartPicks,
+  partLabel,
+  type CreatorPartSlot,
+  type NpcPartPicks,
+} from '@/features/sprites/characterCreatorParts';
+import type { NpcEra } from '@/features/sprites/spriteTypes';
+import type { CareerProducer, ProducerBackgroundId } from '@/types/character';
 import { PRODUCER_ORIGINS } from '@/narrative/characterOrigins';
 import { describeOriginPerks } from '@/narrative/originPerks';
 import { getPrimaryRival, getRivalAccent, initialsOf } from '@/narrative/rivalCast';
@@ -15,7 +27,7 @@ import { EraEmblem, type EraEmblemId } from './EraEmblems';
 import './splash.css';
 
 interface CareerStartScreenProps {
-  onBegin: (era: Era, originId: ProducerBackgroundId) => void;
+  onBegin: (era: Era, originId: ProducerBackgroundId, producer: CareerProducer) => void;
   onBack: () => void;
 }
 
@@ -31,25 +43,103 @@ const ERA_CHALLENGE: Record<string, string> = {
   modern: 'Everyone has a home studio. Win on taste and relationships.',
 };
 
-const STEPS = ['Era', 'Character', 'Role', 'Begin'] as const;
+const STEPS = ['Era', 'Character', 'Role'] as const;
+
+const PART_ROW_LABEL: Record<CreatorPartSlot, string> = {
+  body: 'Body',
+  hair: 'Hair',
+  clothing: 'Clothing',
+  accessories: 'Accessories',
+};
+
+const eraToNpcEra = (eraId: string | undefined): NpcEra =>
+  eraId === 'classic_rock' ? '1960s' : eraId === 'golden_age' ? '1980s' : eraId === 'digital_age' ? '2000s' : 'modern';
 
 const stepClass = (active: boolean, done: boolean) =>
   `flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] ${
     active ? 'text-[var(--rst-brass-300)]' : done ? 'text-stone-300' : 'text-stone-500'
   }`;
 
+function PartArrowRow({
+  slot,
+  era,
+  picks,
+  onCycle,
+}: {
+  slot: CreatorPartSlot;
+  era: NpcEra;
+  picks: NpcPartPicks;
+  onCycle: (slot: CreatorPartSlot, delta: number) => void;
+}) {
+  const label = PART_ROW_LABEL[slot];
+  const value = partLabel(era, slot, picks[slot]);
+  return (
+    <div className="flex items-center gap-2" role="group" aria-label={`${label}: ${value}`}>
+      <button
+        type="button"
+        className="rst-btn rst-btn-ghost !min-h-10 !min-w-10 !px-0"
+        aria-label={`Previous ${label}`}
+        onClick={() => onCycle(slot, -1)}
+      >
+        <ArrowLeft size={16} aria-hidden="true" />
+      </button>
+      <div className="min-w-0 flex-1 rounded-md border border-[var(--rst-line)] bg-black/25 px-3 py-2 text-center">
+        <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--rst-brass-200)]">{label}</span>
+        <span className="rst-title mt-0.5 block truncate text-base leading-tight">{value}</span>
+      </div>
+      <button
+        type="button"
+        className="rst-btn rst-btn-ghost !min-h-10 !min-w-10 !px-0"
+        aria-label={`Next ${label}`}
+        onClick={() => onCycle(slot, 1)}
+      >
+        <ArrowRight size={16} aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
 export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [eraId, setEraId] = useState<string | null>(null);
   const [originId, setOriginId] = useState<ProducerBackgroundId | null>(null);
   const [moniker, setMoniker] = useState('The Architect');
+  const [paletteSeed, setPaletteSeed] = useState(7);
+  const [parts, setParts] = useState<NpcPartPicks>(DEFAULT_PART_PICKS);
 
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   const era = useMemo(() => AVAILABLE_ERAS.find((e) => e.id === eraId) ?? null, [eraId]);
   const origin = useMemo(() => PRODUCER_ORIGINS.find((o) => o.id === originId) ?? null, [originId]);
 
+  const characterEra = eraToNpcEra(era?.id);
+  const appearance = useMemo(
+    () =>
+      identityFromSeed(paletteSeed, {
+        role: 'producer',
+        era: characterEra,
+        parts: normalizePartPicks(characterEra, parts),
+      }),
+    [paletteSeed, characterEra, parts],
+  );
+  const producer = useMemo(
+    () => resolveNpcAppearance(appearance, moniker.trim() || 'The Architect'),
+    [appearance, moniker],
+  );
+
+  useEffect(() => {
+    setParts(DEFAULT_PART_PICKS);
+  }, [characterEra]);
+
   const click = () => void gameAudio.playClick().catch(() => {});
+
+  const cycleCreatorPart = useCallback(
+    (slot: CreatorPartSlot, delta: number) => {
+      click();
+      setParts((current) => cyclePart(current, slot, delta, characterEra));
+    },
+    [characterEra],
+  );
 
   const goNext = useCallback(() => {
     if (step === 0 && era) {
@@ -60,9 +150,9 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
       setStep(2);
     } else if (step === 2 && era && origin) {
       click();
-      onBegin(era, origin.id);
+      onBegin(era, origin.id, { name: moniker.trim(), appearance });
     }
-  }, [step, era, origin, moniker, onBegin]);
+  }, [step, era, origin, moniker, appearance, onBegin]);
 
   const goBack = useCallback(() => {
     click();
@@ -102,7 +192,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
         <header className="flex flex-wrap items-center justify-between gap-3">
           <button type="button" onClick={goBack} className="rst-btn rst-btn-ghost !min-h-9 !px-3 !text-xs">
             <ArrowLeft size={14} aria-hidden="true" />
-            {step === 0 ? 'Back' : 'Change era'}
+            {step === 0 ? 'Back' : step === 1 ? 'Change era' : 'Change character'}
           </button>
           <ol className="flex items-center gap-4" aria-label="Career setup progress">
             {STEPS.map((label, i) => (
@@ -129,7 +219,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
             {step === 0
               ? 'Each era changes your gear, your genres, your budget and the industry breathing down your neck.'
               : step === 1
-                ? 'Give your producer a name, a calling card, and a little room to become legendary.'
+                ? 'Dial in body, hair, clothes and accessories — your producer shows up at the console exactly like this.'
                 : 'Your producer origin gives you a real edge — and a rival who will not let you forget it.'}
           </p>
         </div>
@@ -203,14 +293,46 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
         )}
 
         {step === 1 && (
-          <section className="rst-option mx-auto mt-8 w-full max-w-xl !p-7" aria-label="Producer name">
+          <section className="rst-option mx-auto mt-8 w-full max-w-xl !p-7" aria-label="Create your producer">
             <div className="mx-auto max-w-md text-center">
-              <div className="mx-auto grid h-20 w-20 place-items-center rounded-full border border-[var(--rst-brass-400)]/60 bg-[var(--rst-brass-400)]/10 text-3xl text-[var(--rst-brass-200)]" aria-hidden="true">?</div>
-              <p className="rst-kicker mt-5">Character model preview</p>
-              <p className="rst-body mt-2 text-xs">Your selected producer will appear here once the modular character creator is connected to the game sprite.</p>
+              <div className="mx-auto flex justify-center" aria-live="polite">
+                <ModularSpriteRenderer npc={producer} scale={4} />
+              </div>
+              <p className="rst-kicker mt-5">Create your producer</p>
+              <p className="rst-body mt-2 text-xs">
+                Use the arrows to mix layers. Clothing options follow your era; the live preview matches the studio floor figure.
+              </p>
+              <div className="mt-5 space-y-2.5 text-left">
+                {CREATOR_PART_SLOTS.map((slot) => (
+                  <PartArrowRow
+                    key={slot}
+                    slot={slot}
+                    era={characterEra}
+                    picks={parts}
+                    onCycle={cycleCreatorPart}
+                  />
+                ))}
+              </div>
+              <button
+                type="button"
+                className="rst-btn rst-btn-ghost mt-4 w-full"
+                onClick={() => {
+                  click();
+                  setPaletteSeed((seed) => seed + 1);
+                }}
+              >
+                Shuffle colorway
+              </button>
               <label className="mt-6 block text-left text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">
                 Producer name
-                <input value={moniker} onChange={(e) => setMoniker(e.target.value.slice(0, 24))} maxLength={24} autoFocus className="rst-input mt-2 w-full" placeholder="The Architect" />
+                <input
+                  value={moniker}
+                  onChange={(e) => setMoniker(e.target.value.slice(0, 24))}
+                  maxLength={24}
+                  autoFocus
+                  className="rst-input mt-2 w-full"
+                  placeholder="The Architect"
+                />
               </label>
             </div>
           </section>

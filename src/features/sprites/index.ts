@@ -1,6 +1,7 @@
 export * from './spriteTypes';
 export * from './npcGenerator';
 export * from './npcAppearance';
+export * from './characterCreatorParts';
 export * from './npcAnimation';
 export * from './npcLayers';
 export * from './ModularSpriteRenderer';

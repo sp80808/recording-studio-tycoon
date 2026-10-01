@@ -1,3 +1,4 @@
+import { parseNpcVisualIdentity, resolveNpcAppearance, type NpcVisualIdentity } from '@/features/sprites/npcAppearance';
 import { lastTake, nodOffset } from '@/utils/takeFeedback';
 import React, { useEffect, useRef } from 'react';
 import { AnimatedSprite, Application, Container, Graphics, Matrix, Sprite, Text, type Renderer } from 'pixi.js';
@@ -161,6 +162,8 @@ export interface StudioSceneState {
   artistName?: string;
   /** Number of staff physically on the studio floor */
   staffOnFloor: number;
+  /** Saved producer sprite identity — first floor figure uses this look when present. */
+  producerAppearance?: NpcVisualIdentity;
   /** Player's equipment count (fills the gear shelf) */
   ownedEquipment: number;
   /** In-game day counter (drives the wall clock) */
@@ -1038,16 +1041,32 @@ const buildScene = (
     const fig = new Container();
     fig.position.set(spot.x, spot.y);
     const body = new Graphics();
-    const color = COLORS.staff[i % COLORS.staff.length];
+    const identity = i === 0 ? parseNpcVisualIdentity(state.producerAppearance) : null;
+    const npc = identity ? resolveNpcAppearance(identity) : null;
+    const paint = (value: string) => parseInt(value.replace('#', ''), 16);
+    const color = npc ? paint(npc.clothes.topPrimaryHex) : COLORS.staff[i % COLORS.staff.length];
+    const skin = npc ? paint(npc.body.skinHex) : 0xf2c9a0;
+    const hair = npc ? paint(npc.hair.hairHex) : 0x2e3040;
+    const width = npc?.body.build === 'stocky' ? 27 : npc?.body.build === 'slim' ? 18 : 22;
     body.ellipse(0, 1, 15, 7).fill({ color: 0x000000, alpha: .35 });
-    body.roundRect(-8, -13, 7, 14, 2).fill(0x253047);
-    body.roundRect(1, -13, 7, 14, 2).fill(0x253047);
-    body.roundRect(-15, -34, 5, 18, 2).fill(0xe9bd96);
-    body.roundRect(10, -34, 5, 18, 2).fill(0xe9bd96);
-    body.roundRect(-11, -36, 22, 27, 5).fill(color);
-    body.roundRect(-11, -36, 22, 27, 5).stroke({ width: 2, color: 0x243044, alpha: .55 });
-    body.circle(0, -45, 11).fill(0xf2c9a0);
-    body.ellipse(0, -52, 11, 5).fill(0x2e3040);
+    body.roundRect(-8, -13, 7, 14, 2).fill(npc ? paint(npc.clothes.lowerHex) : 0x253047);
+    body.roundRect(1, -13, 7, 14, 2).fill(npc ? paint(npc.clothes.lowerHex) : 0x253047);
+    body.roundRect(-15, -34, 5, 18, 2).fill(skin);
+    body.roundRect(10, -34, 5, 18, 2).fill(skin);
+    body.roundRect(-width / 2, -36, width, 27, 5).fill(color);
+    body.roundRect(-width / 2, -36, width, 27, 5).stroke({ width: 2, color: 0x243044, alpha: .55 });
+    body.circle(0, -45, 11).fill(skin);
+    if (npc?.hair.shape !== 'bald') {
+      if (npc?.hair.shape === 'afro') body.circle(0, -54, 14).fill(hair);
+      else if (npc?.hair.shape === 'bob' || npc?.hair.shape === 'dreads') body.roundRect(-13, -57, 26, 18, 3).fill(hair);
+      else body.ellipse(0, -52, 11, npc?.hair.shape === 'buzzcut' ? 2 : 5).fill(hair);
+    }
+    if (npc?.clothes.outerwear !== 'none' && npc) {
+      body.rect(-width / 2, -34, 4, 23).fill(paint(npc.clothes.outerwearHex || npc.clothes.topSecondaryHex));
+      body.rect(width / 2 - 4, -34, 4, 23).fill(paint(npc.clothes.outerwearHex || npc.clothes.topSecondaryHex));
+    }
+    if (npc && npc.details.glasses !== 'none') body.rect(-8, -47, 16, 4).fill(0x18181b);
+    if (npc && npc.hair.facialHair !== 'none') body.rect(-5, -39, 10, npc.hair.facialHair === 'full_beard' ? 5 : 2).fill(hair);
     body.circle(-4, -44, 1).fill(0x273040);
     body.circle(4, -44, 1).fill(0x273040);
     body.circle(-11, -43, 3).fill(grade.accent);
@@ -1315,7 +1334,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   }, [resetCameraKey]);
 
   // Structural key: only layout-affecting state triggers a scene rebuild
-  const structuralKey = `${state?.staffOnFloor ?? 1}|${state?.ownedEquipment ?? 3}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${trophyKey(state?.trophies ?? { platinum: 0, gold: 0, awards: 0 })}|${state?.decorSeed ?? 'studio'}`;
+  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${state?.staffOnFloor ?? 1}|${state?.ownedEquipment ?? 3}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${trophyKey(state?.trophies ?? { platinum: 0, gold: 0, awards: 0 })}|${state?.decorSeed ?? 'studio'}`;
 
   // Rebuild the room (new window size or layout change)
   const rebuild = () => {

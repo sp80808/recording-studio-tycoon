@@ -135,6 +135,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       activity,
       hasActiveProject: !!project,
       artistName: project ? (project.clientName ?? project.title) : undefined,
+      producerAppearance: gameState.playerData.appearance,
       staffOnFloor: Math.min(5, 1 + presentStaff),
       ownedEquipment: gameState.ownedEquipment.length,
       day: gameState.currentDay,
@@ -143,7 +144,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       trophies: getTrophyInput(gameState),
       decorSeed: String(gameState.saveSeed ?? 'studio'),
     };
-  }, [gameState.activeProject, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, roomTier]);
+  }, [gameState.playerData.appearance, gameState.activeProject, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, roomTier]);
 
   /** Every hotspot now opens its contextual inspector (bead goj.2). */
   const handleHotspot = (id: StudioHotspotId) => {

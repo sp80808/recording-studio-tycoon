@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Maximize, Minimize, Play, Plus, Settings, Volume2, VolumeX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Era } from './EraSelectionModal';
-import type { ProducerBackgroundId } from '@/types/character';
+import type { CareerProducer, ProducerBackgroundId } from '@/types/character';
 import { CareerStartScreen } from './CareerStartScreen';
 import { SettingsModal } from './modals/SettingsModal';
 import {
@@ -24,7 +24,7 @@ import { INDUSTRY_TIPS } from '@/data/flavour';
 import './splash.css';
 
 interface SplashScreenProps {
-  onStartGame: (era: Era, originId: ProducerBackgroundId) => void;
+  onStartGame: (era: Era, originId: ProducerBackgroundId, producer: CareerProducer) => void;
   onLoadGame: () => boolean | void | Promise<boolean | void>;
   hasSaveGame?: boolean;
 }
@@ -117,12 +117,12 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
   const musicLabel = settings.musicEnabled ? t('splash_mute_music') : t('splash_play_music');
   const fullscreenLabel = isFullscreen ? t('exit_fullscreen') : t('enter_fullscreen');
 
-  const handleBeginStudio = (era: Era, originId: ProducerBackgroundId) => {
+  const handleBeginStudio = (era: Era, originId: ProducerBackgroundId, producer: CareerProducer) => {
     setIsEnteringStudio(true);
     transitionTimer.current = window.setTimeout(() => {
       setShowEraSelection(false);
       setIsEnteringStudio(false);
-      onStartGame(era, originId);
+      onStartGame(era, originId, producer);
     }, 900);
   };
 
