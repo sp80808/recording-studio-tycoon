@@ -16,6 +16,7 @@ import { visualEraId } from '@/utils/eraProgression';
 import { createInitialChoreState } from '@/simulation/choreEngine';
 import { initializeStorylineState } from '@/narrative/branchingStorylineEngine';
 import { getProducerOrigin } from '@/narrative/characterOrigins';
+import { createProducerCustomization } from '@/utils/producerCustomization';
 import { isProducerOriginId, startingAttributesFor } from '@/narrative/originPerks';
 
 export interface EraInitOptions {
@@ -26,6 +27,10 @@ export interface EraInitOptions {
   equipmentMultiplier: number;
   /** Producer origin picked at career start (perks, attributes, playstyle, rival). */
   originId?: ProducerBackgroundId;
+  /** Producer name chosen at career start (#126). */
+  producerName?: string;
+  /** Hair / clothes colour / accessory picked at career start (#126); repaired if malformed. */
+  producerAppearance?: unknown;
   /** Fixed run seed (tests / replays). Defaults to Date.now() for a fresh run. */
   saveSeed?: number | string;
 }
@@ -45,6 +50,11 @@ export const createDefaultGameState = (options?: Partial<EraInitOptions>): GameS
     selectedEra: options?.selectedEra || 'analog60s',
     eraStartYear: options?.eraStartYear || 1960,
     equipmentMultiplier: options?.equipmentMultiplier || 0.3, // Lower prices in 1960s
+    producerCustomization: createProducerCustomization({
+      name: options?.producerName,
+      originId,
+      appearance: options?.producerAppearance,
+    }),
     playerData: {
       xp: 0,
       level: 1,

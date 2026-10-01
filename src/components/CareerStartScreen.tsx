@@ -11,11 +11,29 @@ import { THEME_VISUAL_CONFIGS } from '@/narrative/playstyleTheme';
 import { visualEraId } from '@/utils/eraProgression';
 import { getEraGrade } from '@/components/WebGLCanvas';
 import { gameAudio } from '@/utils/audioSystem';
+import { ModularSpriteRenderer } from '@/features/sprites/ModularSpriteRenderer';
+import {
+  ACCESSORY_LABELS,
+  DEFAULT_PRODUCER_APPEARANCE,
+  PRODUCER_ACCESSORIES,
+  PRODUCER_CLOTHES_COLOURS,
+  PRODUCER_HAIR_COLOURS,
+  PRODUCER_HAIR_SHAPES,
+  buildProducerNpc,
+  type ProducerAppearance,
+} from '@/features/sprites/producerAppearance';
+import { HAIR_HEX, CLOTHING_PALETTES } from '@/features/sprites/npcAppearanceData';
 import { EraEmblem, type EraEmblemId } from './EraEmblems';
 import './splash.css';
 
+/** The producer the player made on this screen: name + sprite look (persisted as ProducerCustomization). */
+export interface ProducerSetup {
+  name: string;
+  appearance: ProducerAppearance;
+}
+
 interface CareerStartScreenProps {
-  onBegin: (era: Era, originId: ProducerBackgroundId) => void;
+  onBegin: (era: Era, originId: ProducerBackgroundId, producer: ProducerSetup) => void;
   onBack: () => void;
 }
 
@@ -43,10 +61,19 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
   const [eraId, setEraId] = useState<string | null>(null);
   const [originId, setOriginId] = useState<ProducerBackgroundId | null>(null);
   const [moniker, setMoniker] = useState('The Architect');
+  const [look, setLook] = useState<ProducerAppearance>(() => ({
+    ...DEFAULT_PRODUCER_APPEARANCE,
+    seed: Math.floor(Math.random() * 100000), // UI-only roll of the body; persisted once chosen
+  }));
+  const patchLook = (patch: Partial<ProducerAppearance>) => {
+    click();
+    setLook((current) => ({ ...current, ...patch }));
+  };
 
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   const era = useMemo(() => AVAILABLE_ERAS.find((e) => e.id === eraId) ?? null, [eraId]);
+  const previewNpc = useMemo(() => buildProducerNpc(look, moniker, eraId ?? undefined), [look, moniker, eraId]);
   const origin = useMemo(() => PRODUCER_ORIGINS.find((o) => o.id === originId) ?? null, [originId]);
 
   const click = () => void gameAudio.playClick().catch(() => {});
@@ -60,9 +87,9 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
       setStep(2);
     } else if (step === 2 && era && origin) {
       click();
-      onBegin(era, origin.id);
+      onBegin(era, origin.id, { name: moniker.trim(), appearance: look });
     }
-  }, [step, era, origin, moniker, onBegin]);
+  }, [step, era, origin, moniker, look, onBegin]);
 
   const goBack = useCallback(() => {
     click();
@@ -129,7 +156,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
             {step === 0
               ? 'Each era changes your gear, your genres, your budget and the industry breathing down your neck.'
               : step === 1
-                ? 'Give your producer a name, a calling card, and a little room to become legendary.'
+                ? 'Give your producer a name, a haircut, a favourite shirt and one signature accessory.'
                 : 'Your producer origin gives you a real edge — and a rival who will not let you forget it.'}
           </p>
         </div>
@@ -203,15 +230,70 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
         )}
 
         {step === 1 && (
-          <section className="rst-option mx-auto mt-8 w-full max-w-xl !p-7" aria-label="Producer name">
-            <div className="mx-auto max-w-md text-center">
-              <div className="mx-auto grid h-20 w-20 place-items-center rounded-full border border-[var(--rst-brass-400)]/60 bg-[var(--rst-brass-400)]/10 text-3xl text-[var(--rst-brass-200)]" aria-hidden="true">?</div>
-              <p className="rst-kicker mt-5">Character model preview</p>
-              <p className="rst-body mt-2 text-xs">Your selected producer will appear here once the modular character creator is connected to the game sprite.</p>
-              <label className="mt-6 block text-left text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">
+          <section className="rst-option mx-auto mt-8 grid w-full max-w-3xl gap-6 !p-6 sm:grid-cols-[auto_1fr] sm:!p-7" aria-label="Producer customisation">
+            <div className="flex flex-col items-center gap-3">
+              <div
+                className="grid place-items-center rounded-lg border border-[var(--rst-brass-400)]/50 px-6 pb-3 pt-4"
+                style={{ background: 'radial-gradient(circle at 50% 30%, rgba(217,160,70,0.22), rgba(0,0,0,0.55) 72%)' }}
+                data-testid="producer-preview"
+              >
+                <ModularSpriteRenderer npc={previewNpc} animationState="idle" scale={4} showBadge={false} />
+              </div>
+              <p className="rst-kicker">Live character preview</p>
+              <button type="button" className="rst-btn rst-btn-ghost !min-h-8 !px-3 !text-[11px]" onClick={() => patchLook({ seed: Math.floor(Math.random() * 100000) })}>
+                Shuffle build
+              </button>
+            </div>
+
+            <div className="space-y-4 text-left">
+              <label className="block text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">
                 Producer name
                 <input value={moniker} onChange={(e) => setMoniker(e.target.value.slice(0, 24))} maxLength={24} autoFocus className="rst-input mt-2 w-full" placeholder="The Architect" />
               </label>
+
+              <fieldset>
+                <legend className="mb-1.5 text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">Hair</legend>
+                <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Hair style">
+                  {PRODUCER_HAIR_SHAPES.map((shape) => (
+                    <button key={shape} type="button" role="radio" aria-checked={look.hair === shape} onClick={() => patchLook({ hair: shape })}
+                      className={`rst-chip cursor-pointer capitalize ${look.hair === shape ? '!border-[var(--rst-brass-300)] !text-[var(--rst-brass-200)]' : ''}`}>
+                      {shape.replace('_', ' ')}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-label="Hair colour">
+                  {PRODUCER_HAIR_COLOURS.map((colour) => (
+                    <button key={colour} type="button" role="radio" aria-checked={look.hairColour === colour} aria-label={colour.replace('_', ' ')} title={colour.replace('_', ' ')}
+                      onClick={() => patchLook({ hairColour: colour })}
+                      className={`h-6 w-6 rounded-full border-2 ${look.hairColour === colour ? 'border-[var(--rst-brass-300)] ring-2 ring-[var(--rst-brass-300)]/40' : 'border-white/15'}`}
+                      style={{ background: HAIR_HEX[colour] }} />
+                  ))}
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend className="mb-1.5 text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">Clothes colour</legend>
+                <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Clothes colour">
+                  {PRODUCER_CLOTHES_COLOURS.map((c) => (
+                    <button key={c.id} type="button" role="radio" aria-checked={look.clothesColour === c.id} aria-label={c.label} title={c.label}
+                      onClick={() => patchLook({ clothesColour: c.id })}
+                      className={`h-7 w-7 rounded-md border-2 ${look.clothesColour === c.id ? 'border-[var(--rst-brass-300)] ring-2 ring-[var(--rst-brass-300)]/40' : 'border-white/15'}`}
+                      style={{ background: `linear-gradient(135deg, ${CLOTHING_PALETTES[c.palette].primary} 60%, ${CLOTHING_PALETTES[c.palette].secondary} 60%)` }} />
+                  ))}
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend className="mb-1.5 text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">Accessory</legend>
+                <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Accessory">
+                  {PRODUCER_ACCESSORIES.map((a) => (
+                    <button key={a} type="button" role="radio" aria-checked={look.accessory === a} onClick={() => patchLook({ accessory: a })}
+                      className={`rst-chip cursor-pointer ${look.accessory === a ? '!border-[var(--rst-brass-300)] !text-[var(--rst-brass-200)]' : ''}`}>
+                      {ACCESSORY_LABELS[a]}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
             </div>
           </section>
         )}

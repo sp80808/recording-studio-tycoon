@@ -142,3 +142,14 @@ Procedurally drawn in-house (rectangles, no third-party art). License: **In-hous
 | `layer/npc-parts` (40 tintable NPC parts: body, hair, tops, lowers, shoes, faces, headphones) | `scripts/assets/make-layer-parts.ts` -> `assets-src/layer/npc-parts/frames/` | `public/assets/atlases/layer/npc-parts.*` |
 
 Every built atlas has a `*.provenance.json` (schema in `docs/ASSET_PIPELINE.md`). Real Aseprite/Blender exports have not been run through the pipeline yet.
+
+## Producer character creator (#126)
+
+In-house original pixel art, **CC0**, drawn as SVG rects/circles inside
+`src/features/sprites/ModularSpriteRenderer.tsx` (no external source, nothing bundled):
+
+- Hair shapes `messy_curly`, `long_wavy`, `topknot` (the renderer previously only drew 6 of the 10 shapes).
+- Headwear `flat_cap`, `beanie` (new `details.headwear`; tinted from the shirt's trim colour).
+- Over-ear cans are now optional per NPC (`details.headphones`); legacy NPCs keep drawing them.
+- Shirt colours reuse the existing in-house `CLOTHING_PALETTES` (warm analog subset).
+- Atlas frames `headwear/*` are optional layers for the Pixi renderer; missing art is skipped.
