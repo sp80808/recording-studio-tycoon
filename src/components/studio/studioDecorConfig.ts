@@ -99,16 +99,41 @@ export const getEraDecor = (eraId?: string): EraDecorSpec => {
   return { eraId: ERA_DECOR[id] ? id : 'analog60s', ...spec };
 };
 
-/* -------------------------------------------------------- daylight cycle */
+/* -------------------------------------------------------- studio time of day */
 
-/** Length of the ambient day/night cycle in seconds (must match the ticker's tint cycle). */
-export const DAY_CYCLE_SECONDS = 90;
+/**
+ * Real seconds for one in-game day on the wall clock. 12 minutes keeps the hour hand
+ * drifting slowly (30s per in-game hour) and the minute hand ticking twice a second,
+ * and the daylight follows the same clock so the window, tint and dial always agree.
+ */
+export const DAY_CYCLE_SECONDS = 720;
+/** The studio opens at 09:00 when the scene starts. */
+export const STUDIO_START_HOUR = 9;
 
-/** 0 = deepest night, 1 = full daylight. Mirrors the ticker's `nightTintLayer` sine so both agree. */
-export const getDayness = (tSeconds: number): number => {
-  const cycle = (Math.sin((tSeconds * Math.PI * 2) / DAY_CYCLE_SECONDS) + 1) / 2;
-  return 1 - cycle;
+export interface StudioTime {
+  /** 0..24 */
+  hours24: number;
+  /** 0..11 */
+  hour: number;
+  /** 0..59, whole minutes: the dial ticks rather than sweeps */
+  minute: number;
+  /** 0 = deepest night, 1 = full daylight */
+  dayness: number;
+}
+
+/** Wall-clock time and matching daylight for `tSeconds` of scene time. */
+export const getStudioTime = (tSeconds: number): StudioTime => {
+  const total = (STUDIO_START_HOUR + (tSeconds / DAY_CYCLE_SECONDS) * 24) % 24;
+  const hours24 = total < 0 ? total + 24 : total;
+  const minutesTotal = Math.floor(hours24 * 60 + 1e-6); // epsilon: float error must not flip a tick
+  // Brightest at 13:00, darkest at 01:00; clip the tails so midday and midnight hold a while.
+  const raw = 0.5 + 0.5 * Math.cos(((hours24 - 13) / 24) * Math.PI * 2);
+  const dayness = Math.min(1, Math.max(0, (raw - 0.2) / 0.6));
+  return { hours24, hour: Math.floor(minutesTotal / 60) % 12, minute: minutesTotal % 60, dayness };
 };
+
+/** 0 = deepest night, 1 = full daylight. Follows the wall clock (see getStudioTime). */
+export const getDayness = (tSeconds: number): number => getStudioTime(tSeconds).dayness;
 
 /* ---------------------------------------------------------- floor planks */
 

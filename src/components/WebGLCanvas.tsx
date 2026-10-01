@@ -2,6 +2,7 @@ import { lastTake, nodOffset } from '@/utils/takeFeedback';
 import React, { useEffect, useRef } from 'react';
 import { AnimatedSprite, Application, Container, Graphics, Matrix, Sprite, Text, type Renderer } from 'pixi.js';
 import { applyReelState, buildReelTextures, createReelSprite } from '@/features/gearStudio/gearSpriteAnimation';
+import { STATUS_LED_HEX, gearAttention, gearVisualKey, getConsoleTierGear, statusLedColor, tubeGlowLevel } from '@/features/gearStudio/consoleTierGear';
 import { toSpriteVisualState } from '@/features/gearStudio/gearVisualState';
 import { getPropTexture, loadPropSprites } from '@/components/studio/propSprites';
 import { visualEraId } from '@/utils/eraProgression';
@@ -22,7 +23,17 @@ import {
   buildWallDressing,
   type DecorLights,
 } from '@/components/studio/studioDecor';
-import { getEraDecor, trophyKey, type TrophyInput } from '@/components/studio/studioDecorConfig';
+import { getEraDecor, getStudioTime, trophyKey, type TrophyInput } from '@/components/studio/studioDecorConfig';
+import { getConsoleSprite, loadStudioSprites } from '@/components/studio/studioSprites';
+import {
+  buildCharacter,
+  ensureLook,
+  facingTowards,
+  getPresetLook,
+  CHARACTER_PRESETS,
+  type CharacterLook,
+  type CharacterSprite,
+} from '@/components/studio/characters';
 import { addStudioProps, loadStudioKit, type StudioKitTextures } from '@/features/sprites/studioKit';
 
 export const calculateEffectiveResolution = (dpr: number, scale?: number) => {
@@ -169,6 +180,8 @@ export interface StudioSceneState {
   eraId?: string;
   /** Studio tier 1-5 from ProgressionSystem — drives visible room upgrades (bead ifx.3) */
   roomTier?: number;
+  /** Optional per-crew appearance (index = floor position). Missing entries use the starter presets. */
+  crewLooks?: CharacterLook[];
   /** Premises tier (#70): 1 adds the project-studio client bench + storage rack. */
   premisesTier?: number;
   /** Records + achievements hung on the trophy wall (derived from the settlement ledger). */
@@ -357,7 +370,9 @@ interface SceneRefs {
   phoneRing: Graphics | null;
   clockHand: Graphics | null;
   setClockTime: ((hour: number, minute: number) => void) | null;
-  staffFigures: { fig: Container; baseY: number }[];
+  staffFigures: { fig: Container; baseY: number; character?: CharacterSprite; facing?: import('@/components/studio/characters').Facing; workSeat?: boolean; pose?: import('@/components/studio/characters').Pose }[];
+  /** Animated fader caps on the console sprite (positions in world px). */
+  faders: { g: Graphics; y0: number; y1: number; phase: number }[];
   /** The booked artist, standing at the live-room mic while a session is in progress. */
   artist: { fig: Container; baseY: number; tag: Text; shown: string } | null;
   nightTintLayer: Container | null;
@@ -370,8 +385,11 @@ interface SceneRefs {
   vignetteLayer: Container | null;
   dynamicBloomG: Graphics | null;
   decor: DecorLights | null;
-  /** Tier-1 tape machine reels (Pixi AnimatedSprite, #81); empty on other tiers. */
+  /** Tape machine reels (Pixi AnimatedSprite, #81): tier 1 baked machine, tiers 2-5 outboard deck. */
   reels: AnimatedSprite[];
+  /** Tier 2-5 outboard deck: valve glow lamps and status LEDs, restyled only when state changes (#81). */
+  gearTubes: Graphics[];
+  gearLeds: Graphics[];
 }
 
 interface BuiltScene {
@@ -436,6 +454,7 @@ const buildScene = (
     clockHand: null,
     setClockTime: null,
     staffFigures: [],
+    faders: [],
     artist: null,
     nightTintLayer: null,
     hoverGlows: {},
@@ -448,6 +467,8 @@ const buildScene = (
     dynamicBloomG: null,
     decor: null,
     reels: [],
+    gearTubes: [],
+    gearLeds: [],
   };
 
   // Era colour grade + studio tier drive the room's look (beads goj.3 / ifx.3)
@@ -718,6 +739,7 @@ const buildScene = (
   const deskWrap = new Container();
   const deskH = 40;
   const consoleProfile = getConsoleProfile(tier);
+  const vuStart = refs.vuBars.length;
 
   // Isometric point on the desk (or lifted above it)
   const dPt = (gx: number, gy: number, lift = deskH) => {
@@ -944,25 +966,107 @@ const buildScene = (
       channelG.ellipse(reel2.x, reel2.y, 4.5, 2.5).fill(0x718096);
       channelG.ellipse(reel2.x, reel2.y, 1.8, 1.0).fill(0x1a202c);
     }
-  } else {
-    // Outboard Rack modules
-    for (let u = 0; u < consoleProfile.outboardUnits; u++) {
-      const uGy1 = 4.02 + u * (0.62 / consoleProfile.outboardUnits);
-      const uGy2 = uGy1 + 0.62 / consoleProfile.outboardUnits * 0.85;
-      const r1 = dPt(5.54, uGy1);
-      const r2 = dPt(5.80, uGy1);
-      const r3 = dPt(5.80, uGy2);
-      const r4 = dPt(5.54, uGy2);
-      channelG.poly([r1.x, r1.y, r2.x, r2.y, r3.x, r3.y, r4.x, r4.y]).fill(0x1e2430);
-      channelG.poly([r1.x, r1.y, r2.x, r2.y, r3.x, r3.y, r4.x, r4.y]).stroke({ width: 0.8, color: 0x475569 });
-      // Status LEDs on rack unit
-      const ledPt = dPt(5.58, (uGy1 + uGy2) / 2);
-      channelG.circle(ledPt.x, ledPt.y, 1.2).fill(u % 2 === 0 ? 0x22c55e : 0xf59e0b);
-      const meterPt = dPt(5.66, (uGy1 + uGy2) / 2);
-      channelG.rect(meterPt.x, meterPt.y - 1, 6, 2).fill(0x38bdf8);
-    }
   }
   deskWrap.addChild(channelG);
+
+  // Blender-rendered console (one body per studio tier). The Graphics desk above stays as the
+  // fallback when the sprite is missing; with the sprite we keep only live VU ladders and faders.
+  const consoleSprite = getConsoleSprite(tier);
+  if (consoleSprite) {
+    const { texture, data, anchors } = consoleSprite;
+    desk.visible = false;
+    bridgeG.visible = false;
+    channelG.visible = false;
+    refs.vuBars.splice(vuStart).forEach((b) => {
+      deskWrap.removeChild(b.g);
+      b.g.destroy();
+    });
+    const origin = iso(data.originGame[0], data.originGame[1]);
+    const body = new Sprite(texture);
+    body.anchor.set(data.anchor[0] / texture.width, data.anchor[1] / texture.height);
+    body.scale.set(0.5);
+    body.position.set(origin.x, origin.y);
+    deskWrap.addChild(body);
+    // Tier 1's tape reels are live sprites: lift them out of the hidden Graphics onto the baked machine.
+    refs.reels.forEach((reel) => {
+      channelG.removeChild(reel);
+      reel.y -= 4;
+      deskWrap.addChild(reel);
+    });
+    anchors.meters.forEach((m, i) => {
+      const bar = new Graphics();
+      deskWrap.addChild(bar);
+      refs.vuBars.push({
+        g: bar,
+        x: origin.x + m.x,
+        y: origin.y + m.yBottom,
+        // Tier 1 has round dials: animate a thin needle over them instead of a LED ladder.
+        color: tier === 1 ? 0x8a2323 : COLORS.gear[i % COLORS.gear.length],
+        width: tier === 1 ? 1.4 : m.w,
+        range: Math.max(4, m.yBottom - m.yTop),
+      });
+    });
+    anchors.faders.forEach((f, i) => {
+      const cap = new Graphics();
+      cap.roundRect(-2.5, -1.5, 5, 3, 0.5).fill(0xe5e7eb);
+      cap.rect(-0.5, -1.5, 1, 3).fill(0x1f2937);
+      cap.position.set(origin.x + f.x, origin.y + (f.y0 + f.y1) / 2);
+      deskWrap.addChild(cap);
+      refs.faders.push({ g: cap, y0: origin.y + f.y0, y1: origin.y + f.y1, phase: i * 1.7 });
+    });
+  }
+
+  // Tiers 2-5 outboard deck (#81): tape machine reels, valve glow and status LEDs. Drawn on top of
+  // the baked body so it shows with or without the Blender sprite; reels fall back to static
+  // ellipses when there is no renderer. All of it is parked/static unless gearAttention allows spin.
+  if (tier >= 2) {
+    const gear = getConsoleTierGear(tier);
+    const gearG = new Graphics();
+    const d1 = dPt(5.54, 4.05);
+    const d2 = dPt(5.80, 4.05);
+    const d3 = dPt(5.80, 4.62);
+    const d4 = dPt(5.54, 4.62);
+    gearG.poly([d1.x, d1.y, d2.x, d2.y, d3.x, d3.y, d4.x, d4.y]).fill(0x1e2430);
+    gearG.poly([d1.x, d1.y, d2.x, d2.y, d3.x, d3.y, d4.x, d4.y]).stroke({ width: 1, color: tier >= 5 ? 0xd4a553 : 0x475569 });
+    const deckReels = [dPt(5.64, 4.20), dPt(5.70, 4.42)];
+    if (renderer) {
+      const textures = buildReelTextures(renderer, 10);
+      deckReels.forEach((pt) => {
+        const reel = createReelSprite(textures);
+        reel.position.set(pt.x, pt.y);
+        reel.scale.set(gear.reelScale, gear.reelScale * 0.55);
+        reel.tint = gear.reelTint;
+        reel.gotoAndStop(0);
+        gearG.addChild(reel);
+        refs.reels.push(reel);
+      });
+    } else {
+      deckReels.forEach((pt) => {
+        gearG.ellipse(pt.x, pt.y, 4.5, 2.5).fill(0x718096);
+        gearG.ellipse(pt.x, pt.y, 1.8, 1.0).fill(0x1a202c);
+      });
+    }
+    for (let i = 0; i < gear.tubes; i++) {
+      const tp = dPt(5.58 + i * 0.07, 4.09);
+      const tube = new Graphics();
+      tube.circle(0, 0, 2.6).fill({ color: 0xff9a3c, alpha: 0.35 });
+      tube.circle(0, 0, 1.2).fill(0xffd08a);
+      tube.position.set(tp.x, tp.y);
+      tube.alpha = 0.35;
+      gearG.addChild(tube);
+      refs.gearTubes.push(tube);
+    }
+    for (let i = 0; i < gear.statusLeds; i++) {
+      const lp = dPt(5.58 + i * (0.2 / Math.max(1, gear.statusLeds - 1 || 1)), 4.56);
+      const led = new Graphics();
+      led.circle(0, 0, 1.1).fill(0xffffff);
+      led.tint = STATUS_LED_HEX.green;
+      led.position.set(lp.x, lp.y);
+      gearG.addChild(led);
+      refs.gearLeds.push(led);
+    }
+    deskWrap.addChild(gearG);
+  }
 
   // Desk interaction hit area and hover glow
   const deskHit = new Graphics();
@@ -1027,36 +1131,47 @@ const buildScene = (
   root.addChild(phoneHint);
 
   /* ---- Staff / artist figures on the floor ---------------------------- */
-  const spots = [
-    iso(3.0, 5.6),
-    iso(6.2, 4.6),
-    iso(4.4, 2.4),
-    iso(6.8, 6.2),
-    iso(1.8, 3.2),
+  // Low-poly Blender characters (tintable layers, see characters.ts); the Graphics figure is the fallback.
+  const spotTiles = [
+    { x: 3.0, y: 5.6 },
+    { x: 6.2, y: 4.6 },
+    { x: 4.4, y: 2.4 },
+    { x: 6.8, y: 6.2 },
+    { x: 1.8, y: 3.2 },
   ];
-  const figureCount = Math.max(1, Math.min(spots.length, state.staffOnFloor));
+  const deskCentre = { x: 4.5, y: 4.25 };
+  const figureCount = Math.max(1, Math.min(spotTiles.length, state.staffOnFloor));
   for (let i = 0; i < figureCount; i++) {
-    const spot = spots[i];
+    const tile = spotTiles[i];
+    const spot = iso(tile.x, tile.y);
     const fig = new Container();
     fig.position.set(spot.x, spot.y);
-    const body = new Graphics();
-    const color = COLORS.staff[i % COLORS.staff.length];
-    body.ellipse(0, 1, 15, 7).fill({ color: 0x000000, alpha: .35 });
-    body.roundRect(-8, -13, 7, 14, 2).fill(0x253047);
-    body.roundRect(1, -13, 7, 14, 2).fill(0x253047);
-    body.roundRect(-15, -34, 5, 18, 2).fill(0xe9bd96);
-    body.roundRect(10, -34, 5, 18, 2).fill(0xe9bd96);
-    body.roundRect(-11, -36, 22, 27, 5).fill(color);
-    body.roundRect(-11, -36, 22, 27, 5).stroke({ width: 2, color: 0x243044, alpha: .55 });
-    body.circle(0, -45, 11).fill(0xf2c9a0);
-    body.ellipse(0, -52, 11, 5).fill(0x2e3040);
-    body.circle(-4, -44, 1).fill(0x273040);
-    body.circle(4, -44, 1).fill(0x273040);
-    body.circle(-11, -43, 3).fill(grade.accent);
-    body.circle(11, -43, 3).fill(grade.accent);
-    fig.addChild(body);
+    const shadow = new Graphics();
+    shadow.ellipse(0, 1, 12, 5.5).fill({ color: 0x000000, alpha: 0.32 });
+    fig.addChild(shadow);
+    const facing = facingTowards(tile, deskCentre);
+    const character = buildCharacter(state.crewLooks?.[i] ?? getPresetLook(i, grade.accent), facing, 'idle');
+    if (character) {
+      fig.addChild(character.container);
+    } else {
+      const body = new Graphics();
+      const color = COLORS.staff[i % COLORS.staff.length];
+      body.roundRect(-8, -13, 7, 14, 2).fill(0x253047);
+      body.roundRect(1, -13, 7, 14, 2).fill(0x253047);
+      body.roundRect(-15, -34, 5, 18, 2).fill(0xe9bd96);
+      body.roundRect(10, -34, 5, 18, 2).fill(0xe9bd96);
+      body.roundRect(-11, -36, 22, 27, 5).fill(color);
+      body.roundRect(-11, -36, 22, 27, 5).stroke({ width: 2, color: 0x243044, alpha: .55 });
+      body.circle(0, -45, 11).fill(0xf2c9a0);
+      body.ellipse(0, -52, 11, 5).fill(0x2e3040);
+      body.circle(-4, -44, 1).fill(0x273040);
+      body.circle(4, -44, 1).fill(0x273040);
+      body.circle(-11, -43, 3).fill(grade.accent);
+      body.circle(11, -43, 3).fill(grade.accent);
+      fig.addChild(body);
+    }
     fig.zIndex = Z.depth + spot.y;
-    refs.staffFigures.push({ fig, baseY: spot.y });
+    refs.staffFigures.push({ fig, baseY: spot.y, character: character ?? undefined, facing, workSeat: i < 2, pose: 'idle' });
     root.addChild(fig);
   }
 
@@ -1339,7 +1454,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   }, [resetCameraKey]);
 
   // Structural key: only layout-affecting state triggers a scene rebuild
-  const structuralKey = `${state?.staffOnFloor ?? 1}|${state?.ownedEquipment ?? 3}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${state?.premisesTier ?? 0}|${trophyKey(state?.trophies ?? { platinum: 0, gold: 0, awards: 0 })}|${state?.decorSeed ?? 'studio'}`;
+  const structuralKey = `${state?.staffOnFloor ?? 1}|${state?.ownedEquipment ?? 3}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${state?.premisesTier ?? 0}|${trophyKey(state?.trophies ?? { platinum: 0, gold: 0, awards: 0 })}|${state?.decorSeed ?? 'studio'}|${JSON.stringify(state?.crewLooks ?? null)}`;
 
   // Rebuild the room (new window size or layout change)
   const rebuild = () => {
@@ -1481,7 +1596,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         app.canvas.setAttribute('data-renderer', String(app.renderer.name ?? 'unknown'));
         app.canvas.style.touchAction = 'none';
         app.canvas.setAttribute('aria-label', 'Interactive studio floor. Tap objects to inspect. Pinch to zoom or use two fingers to pan.');
-        await loadPropSprites();
+        await Promise.all([loadPropSprites(), loadStudioSprites(), ...CHARACTER_PRESETS.map((look) => ensureLook(look))]);
         if (disposed) {
           app.destroy(true, { children: true });
           return;
@@ -1793,27 +1908,48 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           // Decor lighting: window shaft + motes, ON AIR lamp, era glow, steam
           refs.decor?.update(t, reduceMotion, s.hasActiveProject);
 
-          // Tape reels (#81): only touch the sprites when transport state changes
-          if (refs.reels.length > 0) {
-            const reelKey = `${s.hasActiveProject}:${reduceMotion}`;
+          // Tape reels, valve glow and deck LEDs (#81): restyle only when a visible value changes.
+          // Budget (#46/#74): reels are the single continuous effect, parked in calm/Focus modes.
+          if (refs.reels.length > 0 || refs.gearTubes.length > 0 || refs.gearLeds.length > 0) {
+            const calm = reduceMotion || Boolean(settingsRef.current?.reducedMotion);
+            const attention = gearAttention({ hasActiveProject: s.hasActiveProject, reducedMotion: reduceMotion, focusMode: Boolean(settingsRef.current?.reducedMotion) });
+            const reelState = toSpriteVisualState('studio-tape', 'tape-machine', {
+              powered: true,
+              activity: s.activity,
+              condition: 100,
+              transport: s.hasActiveProject ? 'play' : 'stopped',
+            });
+            const reelKey = gearVisualKey(reelState, attention);
             if (reelKeyRef.current !== reelKey) {
               reelKeyRef.current = reelKey;
-              const reelState = toSpriteVisualState('studio-tape', 'tape-machine', {
-                powered: true,
-                activity: s.activity,
-                condition: 100,
-                transport: s.hasActiveProject ? 'play' : 'stopped',
-              });
-              refs.reels.forEach((r) => applyReelState(r, reelState, reduceMotion));
+              refs.reels.forEach((r) => applyReelState(r, reelState, calm));
+              const glow = tubeGlowLevel(reelState);
+              refs.gearTubes.forEach((g) => { g.alpha = glow; });
+              const ledHex = STATUS_LED_HEX[statusLedColor(reelState)];
+              refs.gearLeds.forEach((g) => { g.tint = ledHex; });
             }
             // Manual update: honours the frame-rate cap and hidden-tab early return above
-            refs.reels.forEach((r) => { if (r.playing) r.update(ticker); });
+            if (attention.reelsSpin) refs.reels.forEach((r) => { if (r.playing) r.update(ticker); });
           }
 
-          // Staff idle bobbing
+          // Staff idle bobbing; crew nearest the desk switch to the working pose during a session
           refs.staffFigures.forEach((f, i) => {
-            f.fig.y = f.baseY + Math.sin(t * 2 + i * 1.4) * 2;
-            f.fig.scale.y = 1 + Math.sin(t * 3 + i) * 0.02;
+            f.fig.y = f.baseY + Math.sin(t * 2 + i * 1.4) * (f.character ? 1 : 2);
+            f.fig.scale.y = 1 + Math.sin(t * 3 + i) * (f.character ? 0.012 : 0.02);
+            if (f.character && f.facing) {
+              const pose = s.hasActiveProject && f.workSeat ? 'work' : 'idle';
+              if (pose !== f.pose) {
+                f.pose = pose;
+                f.character.setView(f.facing, pose);
+              }
+            }
+          });
+
+          // Console faders drift with the session (steadier when idle, livelier when working)
+          refs.faders.forEach((f) => {
+            const drive = reduceMotion ? 0.3 : 0.2 + s.activity * 0.8;
+            const pos = 0.5 + 0.45 * Math.sin(t * (0.5 + (f.phase % 3) * 0.21) + f.phase) * drive;
+            f.g.y = f.y0 + (f.y1 - f.y0) * (1 - pos);
           });
 
           // Booked artist: steps up to the mic for the session, swaying harder as the work ramps up
@@ -1840,20 +1976,18 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             refs.phoneRing.scale.set(1 + pulse * 0.25);
           }
 
-          // Wall clock: real hands on the wall plane. One in-game hour passes every ~15s of play,
-          // offset per day so the clock never reads the same on consecutive mornings.
+          // Wall clock and daylight run off one studio clock (30s per in-game hour): the minute
+          // hand ticks twice a second, the hour hand drifts, and the window tint follows the time.
+          const studioTime = getStudioTime(reduceMotion ? 0 : t);
           if (refs.setClockTime) {
-            const mins = Math.floor(s.day * 137 + t * 4) % 720;
+            const mins = studioTime.hour * 60 + studioTime.minute;
             if (mins !== clockMinuteRef.current) {
               clockMinuteRef.current = mins;
-              refs.setClockTime(Math.floor(mins / 60), mins % 60);
+              refs.setClockTime(studioTime.hour, studioTime.minute);
             }
           }
-
-          // Ambient day/night tint — slow 90s cycle keeps the room alive
           if (refs.nightTintLayer) {
-            const cycle = (Math.sin((t * Math.PI * 2) / 90) + 1) / 2;
-            refs.nightTintLayer.alpha = 0.03 + cycle * 0.2;
+            refs.nightTintLayer.alpha = 0.03 + (1 - studioTime.dayness) * 0.2;
           }
 
           // Dynamic analog tape saturation warmth (deepens subtly during active session takes)
@@ -1950,7 +2084,20 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
 
   // Rebuild when the room layout changes (staff hired, gear bought) — after boot
   useEffect(() => {
-    if (appRef.current) rebuild();
+    if (!appRef.current) return;
+    // Custom looks may need their layers fetched before the characters can be built.
+    const looks = stateRef.current?.crewLooks ?? [];
+    if (!looks.length) {
+      rebuild();
+      return;
+    }
+    let cancelled = false;
+    void Promise.all(looks.map((look) => ensureLook(look))).then(() => {
+      if (!cancelled && appRef.current) rebuild();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [structuralKey]);
 
   return (

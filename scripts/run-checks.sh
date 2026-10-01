@@ -38,7 +38,7 @@ for check in tools-assets audio-system confetti-juice minigames-audio user-inter
 done
 
 echo "=== gamepad service & controller suites ==="
-for check in gamepad-service gamepad-glyph gamepad-navigation radial-wheel beat-pad-game tape-jog-game console-ride-game vocal-comp album-sequence gamepad-suite; do
+for check in gamepad-service gamepad-glyph gamepad-navigation radial-wheel beat-pad-game tape-jog-game console-ride-game vocal-comp album-sequence fault-hunt chain-recall gamepad-suite; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
   node "/tmp/rst-$check.cjs"
 done
@@ -156,6 +156,8 @@ node /tmp/rst-motion-qualification.cjs
 echo "=== studio os motion pass (#75) ==="
 ./node_modules/.bin/esbuild tests/studio-os-motion.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-os-motion.cjs --alias:@=./src >/dev/null
 node /tmp/rst-studio-os-motion.cjs
+./node_modules/.bin/esbuild tests/studio-art.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-art.cjs --alias:@=./src >/dev/null
+node /tmp/rst-studio-art.cjs
 
 echo "=== gear bench & reward FX policy (#81, #80) ==="
 for check in gear-bench reward-fx-policy; do
@@ -166,6 +168,10 @@ done
 echo "=== gear visual state (#81) ==="
 ./node_modules/.bin/esbuild tests/gear-visual-state.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-gear-visual-state.cjs --alias:@=./src >/dev/null
 node /tmp/rst-gear-visual-state.cjs
+
+echo "=== console tier gear animation (#81) ==="
+./node_modules/.bin/esbuild tests/console-tier-gear.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-console-tier-gear.cjs --alias:@=./src >/dev/null
+node /tmp/rst-console-tier-gear.cjs
 
 echo "=== DEV overlays opt-in (hidden by default) ==="
 ./node_modules/.bin/esbuild tests/dev-overlays-opt-in.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-dev-overlays-opt-in.cjs --alias:@=./src >/dev/null
