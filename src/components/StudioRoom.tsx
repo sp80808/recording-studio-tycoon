@@ -19,6 +19,13 @@ import {
   MotionNumber,
   MotionButton,
 } from '@/components/motion/primitives';
+import { parseNpcVisualIdentity, type NpcVisualIdentity } from '@/features/sprites/npcAppearance';
+import {
+  animStateForStaffStatus,
+  hashSeed,
+  staffRoleToStudioRole,
+  type FloorNpcFigure,
+} from '@/features/sprites/floorNpcs';
 
 const STUDIO_HOTSPOTS: StudioHotspotId[] = ['console', 'phone', 'liveRoom', 'shelf', 'tv', 'clock', 'door'];
 const HOTSPOT_NAMES: Record<StudioHotspotId, string> = {
@@ -130,17 +137,44 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       progress = project.stages.length > 0 ? (done + currentFrac) / project.stages.length : 0;
     }
     const workingStaff = gameState.hiredStaff.filter((s) => s.status === 'Working').length;
-    const presentStaff = gameState.hiredStaff.filter((s) => s.status !== 'Resting').length;
+    const presentStaff = gameState.hiredStaff.filter((s) => s.status !== 'Resting');
     const activity = Math.min(
       1,
       0.08 + (project ? 0.3 + progress * 0.45 : 0) + workingStaff * 0.08
     );
+    // Optional appearance fields land with creator/crew siblings — duck-type until merge.
+    const playerAppearance = parseNpcVisualIdentity(
+      (gameState.playerData as { appearance?: unknown } | undefined)?.appearance,
+    );
+    const floorFigures: FloorNpcFigure[] = [
+      {
+        identity: playerAppearance ?? undefined,
+        seed: hashSeed(`producer:${gameState.saveSeed ?? 'studio'}`),
+        role: 'producer',
+        name: (gameState.playerData as { name?: string } | undefined)?.name,
+        animState: project ? 'mixing' : 'idle',
+      },
+      ...presentStaff.slice(0, 4).map((member, index): FloorNpcFigure => {
+        const withLook = member as typeof member & {
+          appearance?: NpcVisualIdentity;
+          portraitSeed?: number;
+        };
+        return {
+          identity: parseNpcVisualIdentity(withLook.appearance) ?? undefined,
+          seed: withLook.portraitSeed ?? hashSeed(member.id || `staff:${index}`),
+          role: staffRoleToStudioRole(member.role),
+          name: member.name,
+          animState: animStateForStaffStatus(member.status, !!project),
+        };
+      }),
+    ];
     return {
       activity,
       hasActiveProject: !!project,
       artistName: project ? (project.clientName ?? project.title) : undefined,
-      producerAppearance: gameState.playerData.appearance,
-      staffOnFloor: Math.min(5, 1 + presentStaff),
+      staffOnFloor: Math.min(5, Math.max(1, floorFigures.length)),
+      floorFigures,
+      producerAppearance: playerAppearance ?? undefined,
       ownedEquipmentIds: gameState.ownedEquipment.map((e) => e.id),
       ownedEquipment: gameState.ownedEquipment.length,
       day: gameState.currentDay,
@@ -149,7 +183,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       trophies: getTrophyInput(gameState),
       decorSeed: String(gameState.saveSeed ?? 'studio'),
     };
-  }, [gameState.playerData.appearance, gameState.activeProject, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, eraDecor.eraId, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, roomTier]);
+  }, [gameState.activeProject, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, eraDecor.eraId, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, gameState.playerData, roomTier]);
 
   /** Every hotspot now opens its contextual inspector (bead goj.2). */
   const handleHotspot = (id: StudioHotspotId) => {

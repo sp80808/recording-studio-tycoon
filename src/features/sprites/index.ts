@@ -4,6 +4,7 @@ export * from './npcAppearance';
 export * from './characterCreatorParts';
 export * from './npcAnimation';
 export * from './npcLayers';
+export * from './floorNpcs';
 export * from './ModularSpriteRenderer';
 export * from './staffPortrait';
 export * from './pipeline/assetAtlasTypes';

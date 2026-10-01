@@ -29,10 +29,13 @@ assert.match(webgl, /pixi-studio-canvas/, 'Studio canvas tagged for WebGL exclus
 assert.match(webgl, /Studio door/, 'Room has a studio door');
 assert.match(webgl, /layoutShelfSlots|equipmentShelfSprites/, 'Shelf sprites driven by owned gear ids');
 assert.match(webgl, /advanceClientTransit|clientDoorTransit/, 'Client enter/exit uses door transit');
+assert.match(webgl, /createFloorNpcVisual|loadNpcPartsAtlas/, 'Floor staff use sprite-factory NPCs');
+assert.match(webgl, /getEraLightingKit/, 'Era lighting kits drive bloom/practicals');
 // Clock is drawn in the wall plane (real face + hands), not a skewed billboard ellipse
 assert.match(webgl, /buildWallClock\(/, 'Clock is a wall-plane face');
 assert.match(decor, /leftFace\(/, 'Clock geometry is projected onto the left wall plane');
 assert.match(webgl, /half-tile/, 'Props use half-tile grid snap');
+assert.match(decor, /getEraLightingKit|neonFromTier|kit\.moteCount/, 'Decor lighting is kit-driven');
 
 // HUD / splash
 assert.match(playCss, /--studio-dock-clearance/, 'Dock clearance CSS variable');

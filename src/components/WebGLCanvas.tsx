@@ -41,8 +41,18 @@ import {
   buildWallDressing,
   type DecorLights,
 } from '@/components/studio/studioDecor';
-import { getEraDecor, trophyKey, type TrophyInput } from '@/components/studio/studioDecorConfig';
+import { getEraDecor, getEraLightingKit, trophyKey, type TrophyInput } from '@/components/studio/studioDecorConfig';
 import { addStudioProps, loadStudioKit, type StudioKitTextures } from '@/features/sprites/studioKit';
+import type { NpcVisualIdentity } from '@/features/sprites/npcAppearance';
+import type { FloorNpcFigure, FloorNpcHandle } from '@/features/sprites/floorNpcs';
+import {
+  applyFloorNpcMotion,
+  createFloorNpcVisual,
+  hashSeed,
+  loadNpcPartsAtlas,
+  resolveFloorNpcDefinition,
+} from '@/features/sprites/floorNpcs';
+import type { LoadedAtlas } from '@/features/sprites/pipeline/pixiAtlasLoader';
 
 export const calculateEffectiveResolution = (dpr: number, scale?: number) => {
   const clampedDpr = Math.max(1.0, Math.min(2.0, dpr || 1.0));
@@ -180,7 +190,12 @@ export interface StudioSceneState {
   artistName?: string;
   /** Number of staff physically on the studio floor */
   staffOnFloor: number;
-  /** Saved producer sprite identity — first floor figure uses this look when present. */
+  /**
+   * Optional per-figure looks + anim states (creator / recruitment identities).
+   * When shorter than `staffOnFloor`, remaining slots use deterministic seeds.
+   */
+  floorFigures?: FloorNpcFigure[];
+  /** Producer look when the first floor slot has no figure identity (sibling creator merge). */
   producerAppearance?: NpcVisualIdentity;
   /**
    * Owned gear IDs for the equipment shelf sprites.
@@ -383,9 +398,9 @@ interface SceneRefs {
   phoneRing: Graphics | null;
   clockHand: Graphics | null;
   setClockTime: ((hour: number, minute: number) => void) | null;
-  staffFigures: { fig: Container; baseY: number }[];
+  staffFigures: FloorNpcHandle[];
   /** The booked artist, standing at the live-room mic while a session is in progress. */
-  artist: { fig: Container; baseY: number; baseX: number; tag: Text; shown: string } | null;
+  artist: (FloorNpcHandle & { tag: Text; shown: string; baseX: number }) | null;
   /** Floor anchor just inside the door threshold (client enter/exit). */
   doorFloor: { x: number; y: number } | null;
   /** Live-room mic stand pose for the booked artist. */
@@ -457,6 +472,7 @@ const buildScene = (
   onSelect?: (id: StudioHotspotId) => void,
   renderer?: Renderer,
   kitTextures?: StudioKitTextures | null,
+  npcAtlas?: LoadedAtlas | null,
 ): BuiltScene => {
   const root = new Container();
   const refs: SceneRefs = {
@@ -1136,66 +1152,53 @@ const buildScene = (
     iso(1.8, 3.2),
   ];
   const figureCount = Math.max(1, Math.min(spots.length, state.staffOnFloor));
+  const seedBase = hashSeed(state.decorSeed ?? 'studio');
   for (let i = 0; i < figureCount; i++) {
     const spot = spots[i];
-    const fig = new Container();
-    fig.position.set(spot.x, spot.y);
-    const body = new Graphics();
-    const identity = i === 0 ? parseNpcVisualIdentity(state.producerAppearance) : null;
-    const npc = identity ? resolveNpcAppearance(identity) : null;
-    const paint = (value: string) => parseInt(value.replace('#', ''), 16);
-    const color = npc ? paint(npc.clothes.topPrimaryHex) : COLORS.staff[i % COLORS.staff.length];
-    const skin = npc ? paint(npc.body.skinHex) : 0xf2c9a0;
-    const hair = npc ? paint(npc.hair.hairHex) : 0x2e3040;
-    const width = npc?.body.build === 'stocky' ? 27 : npc?.body.build === 'slim' ? 18 : 22;
-    body.ellipse(0, 1, 15, 7).fill({ color: 0x000000, alpha: .35 });
-    body.roundRect(-8, -13, 7, 14, 2).fill(npc ? paint(npc.clothes.lowerHex) : 0x253047);
-    body.roundRect(1, -13, 7, 14, 2).fill(npc ? paint(npc.clothes.lowerHex) : 0x253047);
-    body.roundRect(-15, -34, 5, 18, 2).fill(skin);
-    body.roundRect(10, -34, 5, 18, 2).fill(skin);
-    body.roundRect(-width / 2, -36, width, 27, 5).fill(color);
-    body.roundRect(-width / 2, -36, width, 27, 5).stroke({ width: 2, color: 0x243044, alpha: .55 });
-    body.circle(0, -45, 11).fill(skin);
-    if (npc?.hair.shape !== 'bald') {
-      if (npc?.hair.shape === 'afro') body.circle(0, -54, 14).fill(hair);
-      else if (npc?.hair.shape === 'bob' || npc?.hair.shape === 'dreads') body.roundRect(-13, -57, 26, 18, 3).fill(hair);
-      else body.ellipse(0, -52, 11, npc?.hair.shape === 'buzzcut' ? 2 : 5).fill(hair);
-    }
-    if (npc?.clothes.outerwear !== 'none' && npc) {
-      body.rect(-width / 2, -34, 4, 23).fill(paint(npc.clothes.outerwearHex || npc.clothes.topSecondaryHex));
-      body.rect(width / 2 - 4, -34, 4, 23).fill(paint(npc.clothes.outerwearHex || npc.clothes.topSecondaryHex));
-    }
-    if (npc && npc.details.glasses !== 'none') body.rect(-8, -47, 16, 4).fill(0x18181b);
-    if (npc && npc.hair.facialHair !== 'none') body.rect(-5, -39, 10, npc.hair.facialHair === 'full_beard' ? 5 : 2).fill(hair);
-    body.circle(-4, -44, 1).fill(0x273040);
-    body.circle(4, -44, 1).fill(0x273040);
-    body.circle(-11, -43, 3).fill(grade.accent);
-    body.circle(11, -43, 3).fill(grade.accent);
-    fig.addChild(body);
-    fig.zIndex = Z.depth + spot.y;
-    refs.staffFigures.push({ fig, baseY: spot.y });
-    root.addChild(fig);
+    const provided = state.floorFigures?.[i];
+    const figure: FloorNpcFigure = provided ?? {
+      identity: i === 0 ? state.producerAppearance : undefined,
+      seed: seedBase + i * 97,
+      role: i === 0 ? 'producer' : 'engineer',
+      animState: state.hasActiveProject ? (i === 0 ? 'mixing' : 'working') : 'idle',
+    };
+    const npc = resolveFloorNpcDefinition(figure, state.eraId, seedBase + i * 97);
+    const visual = createFloorNpcVisual(npc, {
+      renderer,
+      atlas: npcAtlas,
+      accent: grade.accent,
+    });
+    visual.display.position.set(spot.x, spot.y);
+    visual.display.zIndex = Z.depth + spot.y;
+    refs.staffFigures.push({
+      fig: visual.display,
+      baseY: spot.y,
+      animState: figure.animState ?? (state.hasActiveProject ? 'working' : 'idle'),
+      destroy: visual.destroy,
+    });
+    root.addChild(visual.display);
   }
 
   /* ---- Booked artist: enters via the door, stands at the live-room mic ---- */
   {
     const spot = iso(2.3, 1.55);
     refs.artistStand = spot;
-    const fig = new Container();
-    fig.position.set(spot.x, spot.y);
-    const body = new Graphics();
-    body.ellipse(0, 1, 15, 7).fill({ color: 0x000000, alpha: .35 });
-    body.roundRect(-8, -13, 7, 14, 2).fill(0x1d1a24);
-    body.roundRect(1, -13, 7, 14, 2).fill(0x1d1a24);
-    body.roundRect(-15, -34, 5, 18, 2).fill(0xd9a27c);
-    body.roundRect(10, -34, 5, 18, 2).fill(0xd9a27c);
-    body.roundRect(-11, -36, 22, 27, 5).fill(0xc2414b);
-    body.roundRect(-11, -36, 22, 27, 5).stroke({ width: 2, color: 0x2a1519, alpha: .55 });
-    body.circle(0, -45, 11).fill(0xe8b48c);
-    body.ellipse(0, -52, 12, 6).fill(0x5a2e1c);
-    body.circle(-4, -44, 1).fill(0x273040);
-    body.circle(4, -44, 1).fill(0x273040);
-    fig.addChild(body);
+    const artistNpc = resolveFloorNpcDefinition(
+      {
+        seed: seedBase + 777,
+        role: 'artist',
+        name: state.artistName,
+        animState: 'recording',
+      },
+      state.eraId,
+      seedBase + 777,
+    );
+    const visual = createFloorNpcVisual(artistNpc, {
+      renderer,
+      atlas: npcAtlas,
+      accent: 0xc2414b,
+    });
+    visual.display.position.set(spot.x, spot.y);
     const tag = new Text({
       text: '',
       style: { fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: 11, fontWeight: '700', fill: 0xffe3a3, stroke: { color: 0x0b0906, width: 3 } },
@@ -1203,12 +1206,20 @@ const buildScene = (
     tag.anchor.set(0.5, 1);
     tag.position.set(0, -66);
     tag.eventMode = 'none';
-    fig.addChild(tag);
-    fig.eventMode = 'none';
-    fig.visible = false;
-    fig.zIndex = Z.depth + spot.y;
-    refs.artist = { fig, baseY: spot.y, baseX: spot.x, tag, shown: '' };
-    root.addChild(fig);
+    visual.display.addChild(tag);
+    visual.display.eventMode = 'none';
+    visual.display.visible = false;
+    visual.display.zIndex = Z.depth + spot.y;
+    refs.artist = {
+      fig: visual.display,
+      baseY: spot.y,
+      baseX: spot.x,
+      animState: 'recording',
+      tag,
+      shown: '',
+      destroy: visual.destroy,
+    };
+    root.addChild(visual.display);
   }
 
   root.sortableChildren = true;
@@ -1284,17 +1295,12 @@ const buildScene = (
       empire.rect(f.x - 10, ry - 10, 20, 20).stroke({ width: 2, color: 0xffd166 });
       empire.circle(f.x, ry, 6).fill(0xffd166);
     });
-    // Neon strip behind the live room glass
-    const neonA = iso(1.0, 0.7);
-    const neonB = iso(3.6, 0.7);
-    empire
-      .poly([neonA.x, neonA.y - 82, neonB.x, neonB.y - 82, neonB.x, neonB.y - 76, neonA.x, neonA.y - 76])
-      .fill(grade.accent);
+    // Neon strip lives in buildDecorLights (era lighting kit) once tier unlocks it.
     root.addChild(empire);
   }
 
   /* ---- Additive lighting: window shaft, motes, lamp pools, era glow ------- */
-  const lights = buildDecorLights({ spec: decorSpec });
+  const lights = buildDecorLights({ spec: decorSpec, kit: getEraLightingKit(state.eraId), tier });
   refs.decor = lights;
   lights.container.zIndex = Z.fx;
   root.addChild(lights.container);
@@ -1374,6 +1380,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   const appRef = useRef<Application | null>(null);
   const sceneRef = useRef<BuiltScene | null>(null);
   const kitTexturesRef = useRef<StudioKitTextures | null>(null);
+  const npcAtlasRef = useRef<LoadedAtlas | null>(null);
   const stateRef = useRef<StudioSceneState>({ ...DEFAULT_STATE, ...state });
   const selectRef = useRef(onHotspotSelect);
   const anchorsCbRef = useRef(onHotspotAnchors);
@@ -1440,13 +1447,18 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
 
   // Structural key: only layout-affecting state triggers a scene rebuild
   const gearKey = shelfStructuralKey(state?.ownedEquipmentIds, state?.ownedEquipment ?? 0);
-  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${state?.staffOnFloor ?? 1}|${gearKey}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${trophyKey(state?.trophies ?? { platinum: 0, gold: 0, awards: 0 })}|${state?.decorSeed ?? 'studio'}`;
+  const floorKey = (state?.floorFigures ?? [])
+    .map((f) => `${f.identity?.seed ?? f.seed ?? ''}:${f.animState ?? ''}:${f.role ?? ''}`)
+    .join(',');
+  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${floorKey}|${state?.staffOnFloor ?? 1}|${gearKey}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${trophyKey(state?.trophies ?? { platinum: 0, gold: 0, awards: 0 })}|${state?.decorSeed ?? 'studio'}`;
 
   // Rebuild the room (new window size or layout change)
   const rebuild = () => {
     const app = appRef.current;
     if (!app) return;
     if (sceneRef.current) {
+      sceneRef.current.refs.staffFigures.forEach((f) => f.destroy());
+      sceneRef.current.refs.artist?.destroy();
       app.stage.removeChild(sceneRef.current.underlayRoot);
       sceneRef.current.underlayRoot.destroy({ children: true });
       app.stage.removeChild(sceneRef.current.root);
@@ -1472,6 +1484,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
       },
       app.renderer,
       kitTexturesRef.current,
+      npcAtlasRef.current,
     );
     reelKeyRef.current = '';
     const zoom = cameraRef.current.zoom ?? 1.0;
@@ -1613,6 +1626,11 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         void loadStudioKit().then(textures => {
           if (disposed || !textures) return;
           kitTexturesRef.current = textures;
+          rebuild();
+        });
+        void loadNpcPartsAtlas().then(atlas => {
+          if (disposed || !atlas) return;
+          npcAtlasRef.current = atlas;
           rebuild();
         });
 
@@ -1921,11 +1939,12 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
                 .fill({ color: bloomParams.lampColor, alpha: bloomParams.lampAlpha * lampPulse });
             }
 
-            // 3. TV equalizer display bloom (soft cyan / era accent)
+            // 3. TV equalizer display bloom (era lighting kit accent)
+            const tvBloom = getEraLightingKit(s.eraId).bloomAccent;
             for (let i = 0; i < tvPeaks.length; i++) {
               const peak = tvPeaks[i];
               bg.circle(peak.x, peak.y, 5 * bloomParams.radiusMultiplier)
-                .fill({ color: 0x5aa9e6, alpha: bloomParams.meterAlpha * 0.35 });
+                .fill({ color: tvBloom, alpha: bloomParams.meterAlpha * 0.35 });
             }
           }
 
@@ -1949,13 +1968,18 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             refs.reels.forEach((r) => { if (r.playing) r.update(ticker); });
           }
 
-          // Staff idle bobbing
+          // Staff / artist motion from npcAnimation states (presentation only)
           refs.staffFigures.forEach((f, i) => {
-            f.fig.y = f.baseY + Math.sin(t * 2 + i * 1.4) * 2;
-            f.fig.scale.y = 1 + Math.sin(t * 3 + i) * 0.02;
+            const live = stateRef.current.floorFigures?.[i]?.animState;
+            if (live) f.animState = live;
+            else if (s.hasActiveProject && f.animState === 'idle') f.animState = 'working';
+            else if (!s.hasActiveProject && (f.animState === 'working' || f.animState === 'mixing' || f.animState === 'recording')) {
+              f.animState = 'idle';
+            }
+            applyFloorNpcMotion(f, t, i * 1.4, reduceMotion);
           });
 
-          // Booked artist: diegetic door enter/exit, then mic sway during the session
+          // Booked artist: diegetic door enter/exit, then mic motion during the session
           if (refs.artist) {
             const a = refs.artist;
             const door = refs.doorFloor ?? { x: a.baseX, y: a.baseY };
@@ -1973,12 +1997,12 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             if (a.shown !== name) { a.tag.text = name; a.shown = name; }
             const atMic = clientTransitRef.current.phase === 'present';
             if (atMic && s.hasActiveProject) {
-              const sway = reduceMotion ? 0 : 1;
+              a.animState = 'recording';
+              a.baseY = pose.y;
+              applyFloorNpcMotion(a, t, 0.7, reduceMotion);
               const tk = lastTake();
               const nod = tk && !reduceMotion ? nodOffset(performance.now() - tk.at, tk.grade) : 0;
-              a.fig.y = pose.y + Math.sin(t * 5) * 1.5 * s.activity * sway + nod;
-              a.fig.rotation = Math.sin(t * 2.3) * 0.05 * s.activity * sway;
-              a.fig.scale.y = 1 + Math.abs(Math.sin(t * 4)) * 0.03 * s.activity * sway;
+              a.fig.y += nod;
             } else {
               a.fig.y = pose.y;
               a.fig.rotation = 0;
