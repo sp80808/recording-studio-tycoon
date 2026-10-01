@@ -2,6 +2,8 @@ import {
   createBusMerge, move, canMove, finish, scoreBusMerge, mergeResult, mergeCost, BUS_DIFFICULTY, MILESTONES,
   type BusDir, type BusMergeState, type Track,
 } from '@/minigames/busMerge';
+import { GIG_TEMPLATES } from '@/data/gigTemplates';
+import { getTriggeredMinigames, shouldAutoTriggerMinigame } from '@/utils/minigameUtils';
 let n = 0;
 const ok = (c: boolean, m: string) => { if (!c) throw new Error(`FAIL: ${m}`); n++; console.log(`PASS: ${m}`); };
 const t = (kind: Track['kind'], depth = 0): Track => ({ kind, depth });
@@ -124,4 +126,29 @@ console.log('lookahead bot MIX rate', JSON.stringify(wins), 'of', trials);
 ok(wins[1] / trials >= 0.5, 'easy boards are solvable');
 ok(wins[2] / trials >= 0.4 && wins[3] / trials >= 0.3, 'harder boards are still winnable');
 ok(true, 'scores stay within 0..1000');
+// Reachability: real mixing-stage templates must be able to select Bus & Stem Merge.
+const mixStages = GIG_TEMPLATES.flatMap((g) => g.baseStages.filter((st) => st.stageName.toLowerCase().includes('mix')).map((st) => ({ g, st })));
+ok(mixStages.length > 0, 'real templates contain mixing stages');
+const fakeState = { ownedEquipment: [], playerData: { level: 10, lastMinigameType: '' } } as never;
+const focus = { performance: 30, soundCapture: 30, layering: 30 } as never;
+const projectFor = (g: (typeof mixStages)[number]['g'], st: (typeof mixStages)[number]['st'], progress = 0) => ({
+  genre: 'Rock', difficulty: 3, workSessionCount: 6, currentStageIndex: 0,
+  stages: [{ ...st, workUnitsCompleted: st.workUnitsBase * progress }, ...g.baseStages.filter((x) => x !== st)],
+}) as never;
+for (const { g, st } of mixStages) {
+  const trig = getTriggeredMinigames(projectFor(g, st), fakeState, focus);
+  if (!trig.some((x) => x.minigameType === 'bus-merge')) throw new Error(`FAIL: bus-merge missing for stage ${st.stageName}`);
+  if (trig.length > 3) throw new Error('FAIL: more than three triggers');
+}
+ok(true, 'every real mixing stage offers bus-merge within the selectable top three');
+const sample = mixStages[0];
+const picked = new Set<string>();
+for (const roll of [0, 0.4, 0.99]) {
+  for (const wc of [4, 6, 12]) {
+    const pick = shouldAutoTriggerMinigame(projectFor(sample.g, sample.st, 0.9), fakeState, focus, wc, () => roll);
+    if (pick) picked.add(pick.minigameType);
+  }
+}
+ok(picked.has('bus-merge'), 'auto-trigger can actually select bus-merge on a mixing stage');
+ok(picked.size > 1, 'existing mixing minigames are still selectable');
 console.log(`bus-merge: all ${n} checks passed`);

@@ -278,7 +278,7 @@ export const getTriggeredMinigames = (
   }
 
   // BUS & STEM MERGE - route the session into stems and a mix
-  if (stageName.includes('mixing') || stageName.includes('stem') || stageName.includes('bounce') ||
+  if (stageName.includes('mix') || stageName.includes('stem') || stageName.includes('bounce') ||
       stageName.includes('routing')) {
     triggers.push({
       minigameType: 'bus-merge',
@@ -298,7 +298,13 @@ export const getTriggeredMinigames = (
   }
 
   // Sort by priority (highest first) and return top 3 to avoid overwhelming
-  return triggers.sort((a, b) => b.priority - a.priority).slice(0, 3);
+  const sorted = triggers.sort((a, b) => b.priority - a.priority);
+  const top = sorted.slice(0, 3);
+  // Mix stages already list several priority-9 minigames; keep Bus & Stem Merge selectable by
+  // letting it take the last slot instead of being truncated away.
+  const bus = sorted.find((t) => t.minigameType === 'bus-merge');
+  if (bus && !top.includes(bus)) top[top.length - 1] = bus;
+  return top;
 };
 
 export const shouldAutoTriggerMinigame = (
