@@ -60,3 +60,10 @@ Playing is about 3% above idle on average, inside the run-to-run spread. Reduced
 
 ### Real-GPU gap
 All browser numbers above are software WebGL (SwiftShader) in a cloud container. No real-GPU frame cost has been measured; that comes from the engine/WebGPU audit thread. Tiers 2-5 reels wait on the Blender desk bodies (#117); only tier 1 has a tape machine today.
+
+## Console tiers 2-5 (follow-up to #81)
+`consoleTierGear.ts` holds the per-tier plan: every tier 2-5 gets an outboard tape deck with a reel pair (reuses the tier-1 AnimatedSprite frames, tinted per tier), valve glow lamps on the valve-era tiers 2-3, and status LEDs (2 to 5, growing with tier). Tier 1 keeps its baked machine.
+- State-driven: `toSpriteVisualState` -> `tubeGlowLevel` / `statusLedColor` (green ok, amber worn/failing, red overload) and `reelAnimationSpeed`. Lamps are restyled only when `gearVisualKey` changes, never per frame; nothing writes equipment condition (the console reports condition 100 until a console-condition source exists).
+- Budget (#46/#74): `gearAttention` allows at most one continuous effect (reels spinning while a session runs). Focus (`settings.reducedMotion`), OS reduced motion and a hidden tab park the reels on frame 0 and leave lamps as static levels.
+- Procedural fallback: no renderer gives static ellipse reels; no Blender body still shows the deck because it is drawn on top of the body.
+- Not measured: real-GPU cost (still pending), so #81 stays open.

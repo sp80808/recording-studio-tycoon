@@ -169,6 +169,10 @@ echo "=== gear visual state (#81) ==="
 ./node_modules/.bin/esbuild tests/gear-visual-state.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-gear-visual-state.cjs --alias:@=./src >/dev/null
 node /tmp/rst-gear-visual-state.cjs
 
+echo "=== console tier gear animation (#81) ==="
+./node_modules/.bin/esbuild tests/console-tier-gear.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-console-tier-gear.cjs --alias:@=./src >/dev/null
+node /tmp/rst-console-tier-gear.cjs
+
 echo "=== DEV overlays opt-in (hidden by default) ==="
 ./node_modules/.bin/esbuild tests/dev-overlays-opt-in.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-dev-overlays-opt-in.cjs --alias:@=./src >/dev/null
 node /tmp/rst-dev-overlays-opt-in.cjs
@@ -187,11 +191,19 @@ for check in origin-perks career-start design-system; do
   node "/tmp/rst-$check.cjs"
 done
 
+echo "=== producer customization -> modular sprite (#126) ==="
+./node_modules/.bin/esbuild tests/producer-customization.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-producer-customization.cjs --alias:@=./src >/dev/null
+node /tmp/rst-producer-customization.cjs
+
 echo "=== era-authentic gigs, story contracts & economy floors ==="
 for check in project-era-starters project-brief session-issues signal-chain economy-income economy-ledger story-contracts achievements campaign-endings studio-hotkeys studio-know-how studio-premises; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
   node "/tmp/rst-$check.cjs"
 done
+
+echo "=== explainable outcome forecast + 1,000-seed calibration (#55) ==="
+./node_modules/.bin/esbuild tests/session-forecast.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-session-forecast.cjs --alias:@=./src >/dev/null
+node /tmp/rst-session-forecast.cjs
 
 echo "=== ambient earning (#105) ==="
 ./node_modules/.bin/esbuild tests/ambient-income.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-ambient-income.cjs --alias:@=./src >/dev/null

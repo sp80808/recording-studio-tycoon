@@ -12,6 +12,7 @@ import { LocateFixed, Phone } from 'lucide-react';
 import { getTrophyInput } from '@/components/studio/studioDecorConfig';
 import { triggerScreenShake } from '@/utils/screenShake';
 import { AUTHORED_CHORES } from '@/simulation/choreEngine';
+import { ProducerSprite } from '@/components/ProducerSprite';
 import { useGamepad } from '@/hooks/useGamepad';
 import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
 import {
@@ -216,6 +217,18 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       style={style}
     >
       <WebGLCanvas state={sceneState} onHotspotSelect={handleHotspot} resetCameraKey={cameraReset} onHotspotAnchors={setAnchors} />
+      {/* The producer at the desk: same modular sprite as play mode, from saved career-start choices (#126). */}
+      <div className="pointer-events-none absolute bottom-3 left-3 z-[5] hidden select-none flex-col items-center rounded border border-[var(--rst-line-strong)] bg-black/40 px-2 pb-1.5 pt-1 backdrop-blur-[2px] sm:flex">
+        <ProducerSprite
+          producerCustomization={gameState.producerCustomization}
+          selectedEra={gameState.selectedEra}
+          animationState={gameState.activeProject ? 'working' : 'idle'}
+          scale={2}
+        />
+        <span className="mt-0.5 max-w-[96px] truncate text-[9px] font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-300)]">
+          {gameState.producerCustomization?.moniker ?? 'Producer'}
+        </span>
+      </div>
       {tierFlash && <div className="tier-flash-overlay" />}
       {takeFx && (
         <div key={takeFx.seq} className={`take-fx take-fx-${takeFx.grade.toLowerCase()}`} aria-hidden="true">

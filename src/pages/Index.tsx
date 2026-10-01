@@ -64,6 +64,7 @@ import {
 } from '@/narrative/branchingStorylineEngine';
 import { isTauriShell } from '@/utils/platform';
 import type { ProducerBackgroundId } from '@/types/character';
+import type { ProducerSetup } from '@/components/CareerStartScreen';
 import { useFeatureFlag } from '@/stores/featureFlagStore';
 
 const MusicStudioTycoon = () => {
@@ -230,9 +231,11 @@ const MusicStudioTycoon = () => {
     [setGameState, settings.sfxEnabled],
   );
 
-  const handleStartNewGame = (era: Era, originId?: ProducerBackgroundId) => {
+  const handleStartNewGame = (era: Era, originId?: ProducerBackgroundId, producer?: ProducerSetup) => {
     const newGameState = initializeGameState({
       originId,
+      producerName: producer?.name,
+      producerAppearance: producer?.appearance,
       startingMoney: era.startingMoney,
       selectedEra: era.id,
       eraStartYear: era.startYear,

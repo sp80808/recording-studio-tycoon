@@ -6,6 +6,7 @@ import {
   buildDefaultPlacements,
 } from '@/types/equipmentSlots';
 import { initializeStorylineState } from '@/narrative/branchingStorylineEngine';
+import { migrateProducerCustomization } from '@/utils/producerCustomization';
 import { migrateKnowHow } from '@/rpg/studioKnowHow';
 
 const DEFAULT_FOCUS_ALLOCATION: FocusAllocation = {
@@ -144,6 +145,9 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
   if (!Array.isArray(processedState.discoveredSynergies)) {
     processedState.discoveredSynergies = [];
   }
+
+  // Producer look (#126): legacy saves get a derived customization; corrupt blobs are repaired.
+  processedState.producerCustomization = migrateProducerCustomization(processedState);
 
   // Premises tier (#70): legacy saves start in the borrowed room.
   processedState.premisesTier = processedState.premisesTier === 1 ? 1 : 0;

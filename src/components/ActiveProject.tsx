@@ -1,4 +1,5 @@
 import { emitTakeFeedback } from '@/utils/takeFeedback';
+import { ProducerSprite } from '@/components/ProducerSprite';
 import { MotionButton, MotionReveal, MotionNumber } from '@/components/motion/primitives';
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
@@ -630,6 +631,14 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
         {/* Pinned Top Bar: Project Meta & LED telemetry */}
         <div className="shrink-0 mb-2.5 bg-stone-950/80 border border-stone-800/90 rounded-[2px] p-2.5 shadow-inner relative z-10">
           <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-3">
+            <ProducerSprite
+              className="hidden shrink-0 rounded border border-stone-800 bg-black/40 px-1 sm:block"
+              producerCustomization={gameState.producerCustomization}
+              selectedEra={gameState.selectedEra}
+              animationState={takeState === 'tracking' ? 'working' : 'idle'}
+              scale={1.25}
+            />
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse">
@@ -644,6 +653,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 <span className="text-emerald-400 font-semibold">💰 ${Math.round(project.payoutBase)}</span>
                 <span className="text-amber-300">⭐ Diff {project.difficulty}</span>
               </div>
+            </div>
             </div>
 
             <div className="flex items-center gap-3 text-xs tabular-nums">
