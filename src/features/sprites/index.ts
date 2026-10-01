@@ -3,6 +3,7 @@ export * from './npcGenerator';
 export * from './npcAppearance';
 export * from './npcAnimation';
 export * from './npcLayers';
+export * from './producerAppearance';
 export * from './ModularSpriteRenderer';
 export * from './pipeline/assetAtlasTypes';
 export * from './pipeline/exportPipelineUtils';

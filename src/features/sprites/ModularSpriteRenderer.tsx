@@ -248,12 +248,53 @@ export const ModularSpriteRenderer: React.FC<ModularSpriteRendererProps> = ({
             {hair.shape === 'slicked' && (
               <rect x="10.5" y="6.5" width="11" height="3" fill={hair.hairHex} />
             )}
+            {hair.shape === 'messy_curly' && (
+              <g fill={hair.hairHex}>
+                <rect x="10" y="5.5" width="12" height="4" />
+                <circle cx="11" cy="8" r="2.2" />
+                <circle cx="16" cy="6" r="2.4" />
+                <circle cx="21" cy="8" r="2.2" />
+                <rect x="9" y="9" width="2" height="4" />
+                <rect x="21" y="9" width="2" height="4" />
+              </g>
+            )}
+            {hair.shape === 'long_wavy' && (
+              <g fill={hair.hairHex}>
+                <rect x="10" y="6" width="12" height="4" />
+                <rect x="9" y="8" width="3" height="12" />
+                <rect x="20" y="8" width="3" height="12" />
+                <rect x="8" y="14" width="2" height="6" />
+                <rect x="22" y="14" width="2" height="6" />
+              </g>
+            )}
+            {hair.shape === 'topknot' && (
+              <g fill={hair.hairHex}>
+                <rect x="11" y="6.5" width="10" height="3" />
+                <circle cx="16" cy="4.5" r="2.5" />
+              </g>
+            )}
             {hair.shape === 'buzzcut' && (
               <rect x="11" y="7" width="10" height="2" fill={hair.hairHex} />
             )}
 
+            {/* Headwear (producer customisation): flat cap / knit beanie in the clothes' trim colour */}
+            {details.headwear === 'flat_cap' && (
+              <g fill={clothes.topSecondaryHex}>
+                <rect x="10" y="5" width="12" height="4" />
+                <rect x="9" y="8" width="14" height="1.5" />
+                <rect x="15" y="9" width="9" height="1.5" fill="#000" fillOpacity="0.35" />
+              </g>
+            )}
+            {details.headwear === 'beanie' && (
+              <g fill={clothes.topSecondaryHex}>
+                <rect x="10" y="4" width="12" height="5" />
+                <rect x="9" y="8" width="14" height="2" fill={clothes.topPrimaryHex} />
+                <rect x="15" y="2" width="2" height="2" fill={clothes.topPrimaryHex} />
+              </g>
+            )}
+
             {/* Layer 7: Studio Reference Headphones (Over-Ear or Around-Neck) */}
-            <g transform="translate(0, 0)">
+            {details.headphones !== false && (<g transform="translate(0, 0)">
               {/* Headband */}
               <path
                 d="M 10 9 C 10 4, 22 4, 22 9"
@@ -279,7 +320,7 @@ export const ModularSpriteRenderer: React.FC<ModularSpriteRendererProps> = ({
                 }}
                 transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
               />
-            </g>
+            </g>)}
 
             {/* Jewellery (Gold Chains) */}
             {details.jewellery === 'gold_chain' && (
