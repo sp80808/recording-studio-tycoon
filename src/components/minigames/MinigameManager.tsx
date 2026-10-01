@@ -20,6 +20,8 @@ import { TapeJogGame } from './TapeJogGame';
 import { ConsoleRideGame } from './ConsoleRideGame';
 import { VocalCompGame } from './VocalCompGame';
 import { AlbumSequenceGame } from './AlbumSequenceGame';
+import { FaultHuntGame } from './FaultHuntGame';
+import { ChainRecallGame } from './ChainRecallGame';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { toast } from '@/hooks/use-toast';
 import { useCutsceneQueue } from '@/hooks/useCutsceneQueue';
@@ -46,7 +48,9 @@ export type MinigameType =
   | 'tape-jog'
   | 'console-ride' // Added controller-first pad minigames
   | 'vocal-comp'
-  | 'album-sequence';
+  | 'album-sequence'
+  | 'fault-hunt'
+  | 'chain-recall';
   // Add new minigame types here and ensure they have corresponding entries in minigameTutorials
   // | 'songwriting' // Example: if SongwritingGame becomes a distinct minigame managed here
   // | 'tapeSplicing' // Example
@@ -173,6 +177,14 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         creativityBonus = Math.floor(score / 9);
         technicalBonus = Math.floor(score / 12);
         break;
+      case 'fault-hunt':
+        creativityBonus = Math.floor(score / 16);
+        technicalBonus = Math.floor(score / 7);
+        break;
+      case 'chain-recall':
+        creativityBonus = Math.floor(score / 12);
+        technicalBonus = Math.floor(score / 9);
+        break;
       case 'vocal-comp':
         creativityBonus = Math.floor(score / 8);
         technicalBonus = Math.floor(score / 10);
@@ -261,6 +273,10 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         return <ConsoleRideGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'album-sequence':
         return <AlbumSequenceGame {...commonGameProps} onComplete={standardOnComplete} />;
+      case 'fault-hunt':
+        return <FaultHuntGame {...commonGameProps} onComplete={standardOnComplete} />;
+      case 'chain-recall':
+        return <ChainRecallGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'vocal-comp':
         return <VocalCompGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'maintenance':
