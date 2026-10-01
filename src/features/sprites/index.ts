@@ -6,7 +6,16 @@ export * from './npcAnimation';
 export * from './npcLayers';
 export * from './floorNpcs';
 export * from './ModularSpriteRenderer';
-export * from './staffPortrait';
+// staffRoleToStudioRole also lives in floorNpcs — keep the broader floor helper on the barrel.
+export {
+  applyCreatorPieceIds,
+  eraIdToNpcEra,
+  identityFromStaffSeed,
+  pieceIdsFromAppearance,
+  resolveStaffPortrait,
+  staffPortraitSeed,
+} from './staffPortrait';
+export type { CreatorPieceIds, StaffPortraitSpec } from './staffPortrait';
 export * from './pipeline/assetAtlasTypes';
 export * from './pipeline/exportPipelineUtils';
 export * from './pipeline/assetConventions';

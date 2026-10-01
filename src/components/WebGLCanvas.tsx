@@ -43,7 +43,6 @@ import {
 } from '@/components/studio/studioDecor';
 import { getEraDecor, getEraLightingKit, trophyKey, type TrophyInput } from '@/components/studio/studioDecorConfig';
 import { addStudioProps, loadStudioKit, type StudioKitTextures } from '@/features/sprites/studioKit';
-import type { NpcVisualIdentity } from '@/features/sprites/npcAppearance';
 import type { FloorNpcFigure, FloorNpcHandle } from '@/features/sprites/floorNpcs';
 import {
   applyFloorNpcMotion,
