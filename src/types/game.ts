@@ -1,6 +1,5 @@
 import type { NpcVisualIdentity } from '@/features/sprites/npcAppearance';
 import type { GearInstanceFields, DailyClassifiedListing } from '@/features/usedGear/types';
-import type { NpcVisualIdentity } from '@/features/sprites/npcAppearance';
 import type { CreatorPieceIds } from '@/features/sprites/staffPortrait';
 // Game type definitions
 import { Chart, ArtistContact, MarketTrend } from './charts';
