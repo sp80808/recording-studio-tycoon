@@ -185,7 +185,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
               {/* Header */}
               <div className="studio-drawer-head shrink-0 px-5 pt-4 pb-3 border-b border-[var(--rst-line)]">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
+                  <div className="studio-drawer-titleblock min-w-0">
                     <p className="rst-kicker">{subtitle || t('context_drawer_kicker')}</p>
                     <h2
                       id="context-drawer-title"
@@ -197,7 +197,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
                     </h2>
                   </div>
 
-                  <div className="flex shrink-0 items-center gap-2">
+                  <div className="studio-drawer-actions flex shrink-0 items-center gap-2">
                     {headerActions}
                     <MotionButton
                       onClick={handleClose}
@@ -236,7 +236,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
                           }`}
                         >
                           <Icon size={16} aria-hidden="true" />
-                          <span className="max-w-full truncate">{t(tab.shortLabelKey)}</span>
+                          <span className="studio-drawer-tab-label max-w-full truncate">{t(tab.shortLabelKey)}</span>
                           {isActive && (
                             <span aria-hidden="true" className="feel-underline absolute inset-x-3 bottom-0 h-[2px] rounded-full bg-[var(--rst-brass-400)]" />
                           )}
@@ -254,7 +254,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
 
               {/* Drawer Content Body */}
               <div
-                className={`feel-stagger flex-1 min-h-0 ${
+                className={`studio-drawer-body feel-stagger flex-1 min-h-0 ${
                   width === 'session'
                     ? // Session console: body is a bounded flex column so the work area scrolls on its own
                       // and the transport dock (Take / Overdrive) stays pinned inside the viewport.

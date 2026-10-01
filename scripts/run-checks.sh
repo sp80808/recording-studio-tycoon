@@ -213,6 +213,10 @@ echo "=== studio seasons (#63) ==="
 ./node_modules/.bin/esbuild tests/studio-seasons.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-seasons.cjs --alias:@=./src >/dev/null
 node /tmp/rst-studio-seasons.cjs
 
+echo "=== mobile session console zero-scroll guards (#141) ==="
+./node_modules/.bin/esbuild tests/mobile-session.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-mobile-session.cjs --alias:@=./src >/dev/null
+node /tmp/rst-mobile-session.cjs
+
 echo "=== pixi GPU exclusivity guard ==="
 ./node_modules/.bin/esbuild tests/pixi-exclusivity.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-pixi-exclusivity.cjs --alias:@=./src >/dev/null
 node /tmp/rst-pixi-exclusivity.cjs
