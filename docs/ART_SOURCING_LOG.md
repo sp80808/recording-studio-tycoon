@@ -143,6 +143,17 @@ Procedurally drawn in-house (rectangles, no third-party art). License: **In-hous
 
 Every built atlas has a `*.provenance.json` (schema in `docs/ASSET_PIPELINE.md`). Real Aseprite/Blender exports have not been run through the pipeline yet.
 
+## Producer character creator (#126)
+
+In-house original pixel art, **CC0**, drawn as SVG rects/circles inside
+`src/features/sprites/ModularSpriteRenderer.tsx` (no external source, nothing bundled):
+
+- Hair shapes `messy_curly`, `long_wavy`, `topknot` (the renderer previously only drew 6 of the 10 shapes).
+- Headwear `flat_cap`, `beanie` (new `details.headwear`; tinted from the shirt's trim colour).
+- Over-ear cans are now optional per NPC (`details.headphones`); legacy NPCs keep drawing them.
+- Shirt colours reuse the existing in-house `CLOTHING_PALETTES` (warm analog subset).
+- Atlas frames `headwear/*` are optional layers for the Pixi renderer; missing art is skipped.
+
 ## 10. Studio models rendered in Blender (`tools/blender`, `public/assets/studio`)
 
 In-house original low-poly models, CC0, no external source. Rendered headless from the scripts in
@@ -157,9 +168,18 @@ In-house original low-poly models, CC0, no external source. Rendered headless fr
 
 Every asset has a procedural Graphics fallback if its PNG fails to load.
 
-## 11. Bus & Stem Merge track glyphs (`src/components/minigames/busMergeArt.tsx`, issue #138)
+## 12. Bus & Stem Merge track glyphs (`src/components/minigames/busMergeArt.tsx`, issue #138)
 
 In-house original vector glyphs, CC0, no external source. 19 single-stroke 32x32 inline SVG icons
 (kick, snare, overheads, guitar L/R, bass, keys, vocal lead/double, Hero Sample star, buses, stems,
 pre-mix, mix) drawn by hand in code and tinted per family (drums amber, music green, vox pink,
 mix gold, special blue). No raster files, nothing to attribute.
+
+## 11. Console-tier deck gear (issue #81, tiers 2-5)
+
+In-house original, CC0, no external source. Drawn procedurally in Pixi (`WebGLCanvas.tsx`, `gearSpriteAnimation.ts`); no new image files.
+
+| Asset | Source | Used by |
+|---|---|---|
+| Outboard tape-deck plate, valve glow lamps, status LEDs (tiers 2-5) | Pixi Graphics, drawn in code | `WebGLCanvas.tsx` (`buildScene`) |
+| Tier-tinted reel frames (silver, blue-steel, gold) | Same 8-frame procedural reel as tier 1, tinted per tier | `consoleTierGear.ts` |
