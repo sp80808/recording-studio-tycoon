@@ -43,6 +43,9 @@ import { rankStaffForProject } from '@/utils/staffFitUtils';
 import { evaluateProjectSynergies } from '@/utils/synergyUtils';
 import { SynergyBadgeList } from '@/components/synergy/SynergyBadgeList';
 import { hapticTick } from '@/utils/mobilePlatform';
+import { usePhoneSession } from '@/hooks/usePhoneSession';
+import { MobileSessionStatusStrip } from '@/components/console/MobileSessionStatusStrip';
+import { MobileFocusMixer } from '@/components/console/MobileFocusMixer';
 
 interface ActiveProjectProps {
   gameState: GameState;
@@ -165,6 +168,8 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
   // Hoisted above the early return: hooks must run unconditionally (Rules of Hooks).
   const showAdvancedQueue = useFeatureFlag('advanced-production-queue');
+  // #141: phones get a zero-scroll single-viewport composition; desktop is unchanged.
+  const isPhone = usePhoneSession();
   const activeSynergies = React.useMemo(
     () => gameState.activeProject ? evaluateProjectSynergies(gameState.activeProject, gameState) : [],
     [gameState]
@@ -504,6 +509,22 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     }));
   };
 
+  const handleAutoAlign = () => {
+    const newFocus = {
+      performance: optimalFocus.performance,
+      soundCapture: optimalFocus.soundCapture,
+      layering: optimalFocus.layering,
+    };
+    setGameState(prev => ({
+      ...prev,
+      activeProject: prev.activeProject ? { ...prev.activeProject, focusAllocation: newFocus } : null,
+      activeProjects: prev.activeProjects.map(p =>
+        p.id === project.id ? { ...p, focusAllocation: newFocus } : p
+      ),
+    }));
+    playSound('notification.wav', 0.4);
+  };
+
   return (
     <>
       <OrbAnimationStyles />
@@ -536,13 +557,76 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       {/* Studio Workspace Card: Scaled DAW / Console Layout */}
       <div 
         ref={containerRef} 
-        className="flex-1 min-h-0 flex flex-col w-full overflow-hidden bg-stone-950 border border-stone-700/80 rounded-[2px] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_12px_40px_rgba(0,0,0,0.85)] relative"
+        data-session-layout={isPhone ? 'phone' : 'desktop'}
+        className={`flex-1 min-h-0 flex flex-col w-full overflow-hidden bg-stone-950 border border-stone-700/80 rounded-[2px] ${isPhone ? 'p-1.5' : 'p-3'} shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_12px_40px_rgba(0,0,0,0.85)] relative`}
       >
         <div className="absolute top-1 left-1 w-2 h-2 rounded-full bg-stone-700 border border-stone-600 flex items-center justify-center text-[8px] text-stone-400 font-mono shadow-inner">+</div>
         <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-stone-700 border border-stone-600 flex items-center justify-center text-[8px] text-stone-400 font-mono shadow-inner">+</div>
         <div className="absolute bottom-1 left-1 w-2 h-2 rounded-full bg-stone-700 border border-stone-600 flex items-center justify-center text-[8px] text-stone-400 font-mono shadow-inner">+</div>
         <div className="absolute bottom-1 right-1 w-2 h-2 rounded-full bg-stone-700 border border-stone-600 flex items-center justify-center text-[8px] text-stone-400 font-mono shadow-inner">+</div>
 
+        {isPhone ? (
+          /* #141 phone composition: status strip / centre workspace (mixer <-> PocketMeter) / transport dock. */
+          <div className="flex-1 min-h-0 flex flex-col gap-1.5 overflow-hidden" data-testid="mobile-session-body">
+            <MobileSessionStatusStrip
+              title={project.title}
+              subtitle={String(project.clientName || project.clientType || project.genre)}
+              payout={project.payoutBase}
+              difficulty={project.difficulty}
+              stageLabel={`${project.currentStageIndex + 1}/${project.stages.length} ${currentStage?.stageName ?? ''}`}
+              stageProgress={currentStageProgress}
+              overallProgress={overallProgress}
+              energy={availableEnergy}
+              dutiesDone={Object.values(gameState.choreState?.chores || {}).filter(c => c.completed).length}
+              dutiesTotal={5}
+              creativityPoints={project.accumulatedCPoints || 0}
+              technicalPoints={project.accumulatedTPoints || 0}
+              durationDays={project.durationDaysTotal}
+              sessions={project.workSessionCount || 0}
+              activeBuffs={(gameState.choreState?.activeBuffs || []).map(b => `${b.buffType.replace('_', ' ')} (${b.remainingSessions}s)`)}
+              synergyCount={activeSynergies.length}
+              onOpenDuties={() => setShowDutiesClipboard(true)}
+            />
+
+            {autoTriggeredMinigame && takeState !== 'tracking' && (
+              <div className="shrink-0 flex items-center gap-1.5 px-2 py-1 bg-purple-500/[0.12] border border-purple-500/70 rounded">
+                <span className="min-w-0 flex-1 truncate text-[11px] text-yellow-300" title={autoTriggeredMinigame.reason}>🎯 {autoTriggeredMinigame.reason}</span>
+                <MotionButton onClick={handleStartIntervention} className="h-6 px-2 text-[11px] bg-purple-400/[0.14] ring-1 ring-inset ring-purple-400/45 text-purple-100 font-bold rounded">Intervene</MotionButton>
+                <MotionButton onClick={handleDelegateIntervention} disabled={!bestDelegate} className="h-6 px-2 text-[11px] border border-amber-500/50 text-stone-200 rounded">Delegate</MotionButton>
+                <MotionButton onClick={handleSkipIntervention} className="h-6 px-2 text-[11px] text-stone-300 rounded">Skip</MotionButton>
+              </div>
+            )}
+
+            {isCurrentStageComplete && !isProjectComplete && takeState !== 'tracking' && (
+              <div className="shrink-0 px-2 py-1 bg-emerald-500/[0.10] border border-green-500/70 rounded text-[11px] text-green-300 truncate">
+                ✅ {currentStage.stageName} complete. Work next session to advance.
+              </div>
+            )}
+
+            <div className="flex-1 min-h-0 min-w-0 flex flex-col justify-center overflow-hidden" data-testid="mobile-session-workspace">
+              {takeState === 'tracking' ? (
+                <PocketMeter
+                  isArmed={true}
+                  onLock={handleLockTake}
+                  timingBonus={getActiveBuffMagnitude(gameState.choreState, 'timing_bonus')}
+                />
+              ) : (
+                <MobileFocusMixer
+                  focus={projectFocus}
+                  optimal={optimalFocus}
+                  labels={stageFocusLabels}
+                  matchPct={Math.round(focusEffectiveness.effectiveness * 100)}
+                  guidanceTitle={currentStage.stageName}
+                  guidance={optimalFocus.reasoning}
+                  canAutoAlign={canUseOptimalFocusButton}
+                  onChange={handleFocusChange}
+                  onAutoAlign={handleAutoAlign}
+                />
+              )}
+            </div>
+          </div>
+        ) : (
+        <>
         {/* Pinned Top Bar: Project Meta & LED telemetry */}
         <div className="shrink-0 mb-2.5 bg-stone-950/80 border border-stone-800/90 rounded-[2px] p-2.5 shadow-inner relative z-10">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -747,21 +831,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
               </div>
               
               <Button
-                onClick={() => {
-                  const newFocus = {
-                    performance: optimalFocus.performance,
-                    soundCapture: optimalFocus.soundCapture,
-                    layering: optimalFocus.layering,
-                  };
-                  setGameState(prev => ({
-                    ...prev,
-                    activeProject: prev.activeProject ? { ...prev.activeProject, focusAllocation: newFocus } : null,
-                    activeProjects: prev.activeProjects.map(p => 
-                      p.id === project.id ? { ...p, focusAllocation: newFocus } : p
-                    ),
-                  }));
-                  playSound('notification.wav', 0.4);
-                }}
+                onClick={handleAutoAlign}
                 disabled={!canUseOptimalFocusButton}
                 size="sm"
                 variant="outline"
@@ -899,9 +969,16 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           </div>
         </div>
 
+        </>
+        )}
+
         {/* Industrial Console Transport Dock */}
         <div className="rst-transport-dock shrink-0 pt-2.5 mt-2 border-t border-stone-800 bg-stone-950/95 relative z-10">
-          {takeState === 'tracking' ? (
+          {takeState === 'tracking' && isPhone ? (
+            <div className="rst-take-armed py-2.5 text-center text-xs font-mono font-bold tracking-wider text-red-200 bg-red-400/[0.14] border border-red-400/60 rounded-[2px]" role="status">
+              <span className="inline-block w-2 h-2 mr-2 rounded-full bg-red-400 animate-ping" />TAKE ARMED - LOCK IT ABOVE
+            </div>
+          ) : takeState === 'tracking' ? (
             <div className="space-y-2">
               <PocketMeter
                 isArmed={true}
