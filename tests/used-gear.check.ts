@@ -58,6 +58,43 @@ check('complete box/drop/instance determinism and unique event identities', () =
     assert(listings[0].askingPrice <= 3500, 'New studios need an affordable workhorse');
     assert(listings.every(listing => gearCatalogue(1960).some(item => item.id === listing.equipment.templateId)));
   }
+  const upgraded = generateDailyClassifieds({ ...state(), saveSeed: 7, currentYear: 1960, premisesTier: 1, studioLevel: 3 });
+  const baseline = generateDailyClassifieds({ ...state(), saveSeed: 7, currentYear: 1960 });
+  assert(upgraded.length >= baseline.length && upgraded.length <= 5, 'Premises/studio progression can add listings without exceeding cap');
+  assert.deepEqual(
+    generateDailyClassifieds({ ...state(), saveSeed: 7, currentYear: 1960, premisesTier: 1, studioLevel: 5 }),
+    generateDailyClassifieds({ ...state(), saveSeed: 7, currentYear: 1960, premisesTier: 1, studioLevel: 5 }),
+  );
+  assert(gearCatalogue(1985).some(item => item.id === 'drum_machine_808'), 'Era signature instruments enter the seeded market');
+  assert(gearCatalogue(1970).some(item => item.category === 'recorder' || item.id.includes('tape')), 'Era tape/recorder gear enters the seeded market');
+});
+check('case finds stash/equip/sell and retail buys are deterministic gear-economy transactions', () => {
+  const find = { id: 'case-find-1', name: 'Reel-to-Reel Tape Machine', era: '1960s', rarity: 'vintage', condition: 72, baseValue: 400 };
+  const initial = { ...state(), caseFinds: [find], money: 5000 };
+  const kept = applyGearAction(initial, { type: 'claimFind', findId: find.id, disposition: 'keep' });
+  assert(kept.ok);
+  assert.equal(kept.state.caseFinds?.length ?? 0, 0);
+  assert.equal(kept.state.ownedEquipment.length, initial.ownedEquipment.length + 1);
+  assert.equal(kept.state.ownedEquipment.at(-1)?.condition, 72);
+  assert.deepEqual(
+    applyGearAction(initial, { type: 'claimFind', findId: find.id, disposition: 'keep' }).state.ownedEquipment.at(-1),
+    applyGearAction(initial, { type: 'claimFind', findId: find.id, disposition: 'keep' }).state.ownedEquipment.at(-1),
+  );
+  assert.equal(applyGearAction(kept.state, { type: 'claimFind', findId: find.id, disposition: 'keep' }).ok, false);
+  const sold = applyGearAction(initial, { type: 'claimFind', findId: find.id, disposition: 'sell' });
+  assert(sold.ok);
+  assert.equal(sold.state.money, initial.money + 400);
+  const live = applyGearAction(state(), { type: 'acquireFind', find, disposition: 'keep' });
+  assert(live.ok);
+  assert.equal((live.state.caseFinds ?? []).length, 0);
+  const stashed = applyGearAction(state(), { type: 'acquireFind', find, disposition: 'stash' });
+  assert.equal(stashed.state.caseFinds?.length, 1);
+  const retail = applyGearAction({ ...state(), money: 5000, ownedEquipment: [] }, { type: 'buyRetail', templateId: 'basic_interface' });
+  assert(retail.ok, retail.message);
+  assert.equal(retail.state.ownedEquipment.at(-1)?.origin, 'retail');
+  assert.equal(retail.state.ownedEquipment.at(-1)?.condition, 100);
+  assert.equal(retail.state.ownedEquipment.at(-1)?.templateId, 'basic_interface');
+  assert.equal(applyGearAction(retail.state, { type: 'buyRetail', templateId: 'basic_interface' }).ok, false);
 });
 check('classified stock persists through buy, reopen, migration and JSON reload; latest-state purchase is atomic', () => {
   const initial = refreshGearForDay(state());

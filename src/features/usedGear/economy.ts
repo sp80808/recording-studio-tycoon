@@ -1,8 +1,16 @@
 import type { Equipment, GameState } from '@/types/game';
 import { INVENTORY_SLOT_ID } from '@/types/equipmentSlots';
+import { availableEquipment, getEraAdjustedPrice } from '@/data/eraEquipment';
 import { grantSkillXp } from '@/utils/skillUtils';
 import { clampCondition, isMaintainable } from './condition';
-import { generateCrateGear, generateDailyClassifieds, resaleValue } from './generation';
+import {
+  generateCrateGear,
+  generateDailyClassifieds,
+  generateRetailGear,
+  materializeCaseFind,
+  resaleValue,
+  type CaseFind,
+} from './generation';
 import type { EquipmentInstance, GearMaintenance } from './types';
 
 export const asEquipmentInstance = (item: Equipment): EquipmentInstance => ({
@@ -59,11 +67,14 @@ export const maintenanceQuote = (item: Equipment, kind: GearMaintenance['kind'],
 
 export type GearAction =
   | { type: 'buy'; listingId: string }
+  | { type: 'buyRetail'; templateId: string }
   | { type: 'inspect'; equipmentId: string }
   | { type: 'maintain'; equipmentId: string; kind: GearMaintenance['kind']; mode?: GearMaintenance['mode'] }
   | { type: 'calibrate'; equipmentId: string; jobId: string; success: boolean }
   | { type: 'sell'; equipmentId: string }
-  | { type: 'claim'; crateId: string; disposition: 'keep' | 'sell' };
+  | { type: 'claim'; crateId: string; disposition: 'keep' | 'sell' }
+  | { type: 'claimFind'; findId: string; disposition: 'keep' | 'sell' }
+  | { type: 'acquireFind'; find: CaseFind; disposition: 'keep' | 'sell' | 'stash' };
 export interface GearActionResult { state: GameState; ok: boolean; message: string }
 
 const transactMoney = (state: GameState, delta: number): GameState => {
@@ -76,11 +87,56 @@ const addGear = (state: GameState, item: Equipment): GameState => ({
   equipmentPlacements: [...(state.equipmentPlacements ?? []), { equipmentId: item.id, slotId: INVENTORY_SLOT_ID }],
 });
 
+const ownsTemplate = (state: GameState, templateId: string): boolean =>
+  state.ownedEquipment.some(item => (item.templateId ?? item.id) === templateId);
+
 /** All guards and mutations share the latest state updater; callers supply ids only. */
 export const applyGearAction = (state: GameState, action: GearAction): GearActionResult => {
   const reject = (message: string): GearActionResult => ({ state, ok: false, message });
   const accept = (next: GameState, message: string): GearActionResult => ({ state: next, ok: true, message });
   if (!Number.isFinite(state.money) || !Number.isFinite(state.currentDay)) return reject('Invalid economy state.');
+
+  if (action.type === 'buyRetail') {
+    const template = availableEquipment.find(item => item.id === action.templateId);
+    if (!template || template.price <= 0) return reject('Equipment not found.');
+    if (ownsTemplate(state, template.id)) return reject('Already owned');
+    const price = Math.max(1, getEraAdjustedPrice(template, state.currentYear || 2024, state.equipmentMultiplier || 1));
+    if (state.money < price) return reject('Insufficient funds.');
+    const gear = { ...generateRetailGear(template, state), price };
+    return accept(addGear(transactMoney(state, -price), gear), `${gear.name} added to inventory.`);
+  }
+
+  if (action.type === 'acquireFind') {
+    const find = action.find;
+    if (!find?.id) return reject('Invalid find.');
+    if (action.disposition === 'stash') {
+      if ((state.caseFinds ?? []).some(item => item.id === find.id)) return reject('Already stashed.');
+      return accept({ ...state, caseFinds: [...(state.caseFinds ?? []), find] }, `${find.name} stashed for later.`);
+    }
+    const gear = materializeCaseFind(state, find);
+    if (!gear) return reject('Could not materialize find.');
+    if (action.disposition === 'sell') {
+      const value = Math.max(0, Math.floor(find.baseValue || resaleValue(gear)));
+      return accept(transactMoney(state, value), `Sold ${find.name} for $${value}.`);
+    }
+    if (state.ownedEquipment.some(item => item.id === gear.id)) return reject('Already in inventory.');
+    return accept(addGear(state, gear), `${gear.name} added to inventory.`);
+  }
+
+  if (action.type === 'claimFind') {
+    const find = state.caseFinds?.find(item => item.id === action.findId);
+    if (!find) return reject('Find already claimed or unavailable.');
+    const gear = materializeCaseFind(state, find);
+    if (!gear) return reject('Could not materialize find.');
+    const next: GameState = { ...state, caseFinds: (state.caseFinds ?? []).filter(item => item.id !== find.id) };
+    if (action.disposition === 'sell') {
+      const value = Math.max(0, Math.floor(find.baseValue || resaleValue(gear)));
+      return accept(transactMoney(next, value), `Sold ${find.name} for $${value}.`);
+    }
+    if (next.ownedEquipment.some(item => item.id === gear.id)) return reject('Already in inventory.');
+    return accept(addGear(next, gear), `${gear.name} added to inventory.`);
+  }
+
   if (action.type === 'buy') {
     if (state.dailyClassifieds?.day !== state.currentDay) return reject('This listing has expired.');
     const listing = state.dailyClassifieds.listings.find(item => item.id === action.listingId);
