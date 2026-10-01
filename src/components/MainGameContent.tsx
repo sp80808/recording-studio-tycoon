@@ -1,6 +1,6 @@
 import { useArtistContracts } from '@/hooks/useArtistContracts';
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import { ContextDrawer, ContextDrawerTab } from './ContextDrawer';
+import { ContextDrawer } from './ContextDrawer';
 import { MotionNumber, MotionButton } from '@/components/motion/primitives';
 import { Headphones, Phone, SlidersHorizontal, Sparkles, Users, Disc3, Trophy, X, Minimize2, Moon, Package } from 'lucide-react';
 import { GameState, StaffMember, PlayerAttributes, Project } from '@/types/game';
@@ -376,47 +376,10 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
       <ContextDrawer
         isOpen={panel !== null}
         onClose={() => setPanel(null)}
-        activeTab={
-          panel === 'bookings'
-            ? 'artist'
-            : panel === 'session'
-              ? 'session'
-              : panel === 'career' || panel === 'cases'
-                ? 'career'
-                : dashboardTab === 'staff'
-                  ? 'staff'
-                  : 'gear'
-        }
-        onTabChange={(tab: ContextDrawerTab) => {
-          switch (tab) {
-            case 'artist':
-              setPanel('bookings');
-              break;
-            case 'session':
-              setPanel('session');
-              break;
-            case 'gear':
-              setPanel('studio');
-              setDashboardTab('studio');
-              break;
-            case 'staff':
-              setPanel('studio');
-              setDashboardTab('staff');
-              break;
-            case 'room':
-              setPanel('studio');
-              setDashboardTab('studio');
-              break;
-            case 'career':
-              setPanel('career');
-              break;
-          }
-        }}
         title={panel ? titles[panel] : ''}
         subtitle="RECORDING STUDIO OS"
         width={panel === 'session' ? 'session' : 'default'}
         returnFocusRef={returnFocusRef}
-        unreadEnquiries={gameState.availableProjects.length}
         headerActions={
           panel === 'session' && gameState.playerData.dailyWorkCapacity <= 0 && !project?.awaitingReview ? (
             <MotionButton
