@@ -1,14 +1,14 @@
-import React, { Suspense } from 'react'; // Import React and Suspense
+import React, { Suspense, useEffect } from 'react'; // Import React and Suspense
 import { LOADING_LINES, pickFlavour } from '@/data/flavour';
 import { createRoot } from 'react-dom/client';
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import App from './App.tsx';
+import SpeightsoftIdent from './components/branding/SpeightsoftIdent';
 import './index.css';
 import './styles/studio-theme.css';
 import './styles/feel.css';
 import { useSettings, SettingsProvider } from './contexts/SettingsContext';
 import { SaveSystemProvider } from './contexts/SaveSystemContext';
-import { useEffect } from 'react';
 import './i18n.ts'; // Import the i18n configuration
 import { gameAudio } from './utils/audioSystem'; // Import gameAudio
 import { initInteractionListener } from './utils/userInteraction'; // Import interaction listener
@@ -29,7 +29,12 @@ const RootComponent = () => {
     document.documentElement.className = settings.theme;
   }, [settings.theme]);
 
-  return <App />;
+  return (
+    <>
+      <App />
+      <SpeightsoftIdent />
+    </>
+  );
 };
 
 createRoot(document.getElementById('root')!).render(
