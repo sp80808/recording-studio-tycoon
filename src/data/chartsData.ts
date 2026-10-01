@@ -123,6 +123,7 @@ const generateArtist = (id: string, genre: MusicGenre): Artist => {
     },
     specialties: [genre],
     socialMediaFollowers: popularity * 10000,
+    mood: Math.floor(Math.random() * 41) + 50, // 50-90: generated artists start in decent spirits
     description: 'A talented musician in the ' + genre + ' genre.',
     availability: {
       status: 'available',
@@ -276,8 +277,15 @@ export const generateMarketTrends = (): MarketTrend[] => {
     const popularity = Math.floor(Math.random() * 100) + 1;
     const growth = Math.floor(Math.random() * 100) - 50; // -50 to +50
     
+    const growthRate = growth / 10; // -5 to +5
     return {
-      genre,
+      id: `trend-${genre}`,
+      genreId: genre,
+      trendDirection: growth > 10 ? 'rising' : growth < -10 ? 'falling' : 'stable',
+      growthRate,
+      lastUpdated: Date.now(),
+      duration: 30,
+      startDay: 1,
       popularity,
       growth,
       seasonality: Array.from({ length: 12 }, () => Math.random() * 0.4 + 0.8), // 0.8 to 1.2 multiplier

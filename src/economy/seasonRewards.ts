@@ -4,7 +4,10 @@
 
 import type { GameState } from '@/types/game';
 import { advanceSeasonClock, describeResolution, type SeasonResolution } from '@/rpg/studioSeasons';
+import { gameEvents } from '@/engine/gameEventBus';
 import { grantRewardBundle, type RewardBundle } from './flightCaseEconomy';
+import { bundleToRewardItems } from './rewardHookup';
+import { yearOfSeason } from '@/rpg/studioSeasons';
 
 export const GEMS_PER_AWARD = 10;
 
@@ -20,7 +23,7 @@ export function applySeasonTick(state: GameState): { state: GameState; resolutio
   let next = ticked.state;
   for (const r of ticked.resolutions) {
     next = grantRewardBundle(next, rewardForResolution(r)).state;
-    const notes = [{
+    const notes: Array<{ id: string; message: string; type: 'success' | 'info'; timestamp: number; priority: 'medium' }> = [{
       id: `season-${r.record.seasonId}`,
       message: describeResolution(r),
       type: 'success' as const,
@@ -39,4 +42,18 @@ export function applySeasonTick(state: GameState): { state: GameState; resolutio
     next = { ...next, notifications: [...(next.notifications ?? []), ...notes] };
   }
   return { state: next, resolutions: ticked.resolutions };
+}
+
+/** Plays the award ceremony for year-end resolutions. Call outside state updaters. */
+export function announceAwards(resolutions: SeasonResolution[]): void {
+  for (const r of resolutions) {
+    if (!r.awards.length) continue;
+    const n = Number(r.record.seasonId.slice(1));
+    gameEvents.emit('season:awards', {
+      seasonId: r.record.seasonId,
+      year: yearOfSeason(n),
+      awards: r.awards.map(a => ({ id: a.id, name: a.name, status: a.status, why: a.why })),
+      rewards: bundleToRewardItems(rewardForResolution(r)),
+    });
+  }
 }

@@ -7,6 +7,8 @@ import { GameState, StaffMember, PlayerAttributes, Project } from '@/types/game'
 import { ProjectList } from './ProjectList';
 import { ProgressiveProjectInterface } from './ProgressiveProjectInterface';
 import { CareerHub } from './CareerHub';
+import { KnowHowPanel } from './KnowHowPanel';
+import { createInitialKnowHow, unlockCapability } from '@/rpg/studioKnowHow';
 import { chooseFocus } from '@/rpg/studioSeasons';
 import { AttributesModal } from './modals/AttributesModal';
 import { RightPanel } from './RightPanel';
@@ -27,6 +29,7 @@ import { RadialActionWheel } from '@/components/ui/RadialActionWheel';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useSettings } from '@/contexts/settings-context-types';
 import { FlightCaseDepot } from './FlightCaseDepot';
+import { executeStudioChore, createInitialChoreState, getChoreDurationMs, type StudioChoreId } from '@/simulation/choreEngine';
 import './studio-play.css';
 
 interface MainGameContentProps {
@@ -35,7 +38,7 @@ interface MainGameContentProps {
   // focusAllocation: FocusAllocation; // REMOVED
   // setFocusAllocation: React.Dispatch<React.SetStateAction<FocusAllocation>>; // REMOVED
   startProject: (project: Project) => void;
-  performDailyWork: () => { isComplete: boolean; finalProjectData?: Project } | undefined;
+  performDailyWork: (options?: import('@/hooks/useStageWork').PerformDailyWorkOptions) => { isComplete: boolean; finalProjectData?: Project } | undefined;
   onProjectComplete?: (completedProject: Project) => void;
   onMinigameReward: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => void;
   spendPerkPoint: (attribute: keyof PlayerAttributes) => void;
@@ -123,6 +126,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   }, [showHistoricalNews, currentHistoricalEvent, onHistoricalNewsOpenChange]);
   const [lastCheckedDay, setLastCheckedDay] = useState(0);
   const [dashboardTab, setDashboardTab] = useState<'studio' | 'skills' | 'bands' | 'charts' | 'staff'>('studio');
+  const [activeChoreId, setActiveChoreId] = useState<StudioChoreId | null>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const previousProjectId = useRef(gameState.activeProject?.id);
@@ -300,6 +304,28 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
 
   const project = gameState.activeProject;
   const sessionLabel = project?.awaitingReview ? 'Collect release' : project ? 'Continue session' : 'Book your first session';
+  const completeFloorChore = (hotspot: string) => {
+    if (activeChoreId) return true;
+    const choreState = gameState.choreState || createInitialChoreState();
+    const targetHotspot = hotspot === 'liveRoom' ? 'liveRoom' : 'console';
+    const chore = (Object.values(choreState.chores).find((candidate) =>
+      !candidate.completed && candidate.hotspotId === targetHotspot
+    ));
+    if (!chore) return false;
+    if (gameState.playerData.dailyWorkCapacity < chore.energyCost) return false;
+
+    setActiveChoreId(chore.id);
+    const duration = getChoreDurationMs(chore, gameState.currentEra, gameState.ownedEquipment.length);
+    window.setTimeout(() => {
+      setGameState(prev => {
+        const result = executeStudioChore(prev.choreState || createInitialChoreState(), chore.id, prev.playerData.dailyWorkCapacity);
+        if (!result) return prev;
+        return { ...prev, choreState: result.nextChoreState, playerData: { ...prev.playerData, xp: prev.playerData.xp + result.xpAwarded, dailyWorkCapacity: Math.max(0, prev.playerData.dailyWorkCapacity - result.energyBurned) } };
+      });
+      setActiveChoreId(null);
+    }, duration);
+    return true;
+  };
   const titles = { bookings: 'Bookings', session: 'At the console', studio: 'Studio management', career: 'Your producer story' };
   return (
     <GamepadNavProvider onTabChange={handleDockTabChange}>
@@ -307,7 +333,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         <div className="studio-play-world" data-reward-source="floor">
           <StudioRoom gameState={gameState} onAdvanceDay={advanceDay} onRefreshProjects={refreshProjects}
             onStartProject={bookProject} onAssignStaff={assignStaffToProject} onUnassignStaff={unassignStaffFromProject}
-            onOpenDashboardTab={handleOpenDashboardTab} onConsoleFocus={() => openPanel('session')}
+            onOpenDashboardTab={handleOpenDashboardTab} onConsoleFocus={() => openPanel('session')} onCompleteChore={completeFloorChore} activeChoreId={activeChoreId}
             onBookings={() => openPanel('bookings')} className="studio-play-room" />
         </div>
         <div className="studio-play-status">
@@ -472,6 +498,13 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                 onOpenStorylineBranch={onOpenStorylineBranch}
                 onOpenStoryEvent={onOpenStoryEvent}
                 onChooseSeasonFocus={focus => setGameState(prev => chooseFocus(prev, focus))}
+              />
+              <KnowHowPanel
+                knowHow={gameState.studioKnowHow}
+                onUnlock={id => setGameState(prev => {
+                  const next = unlockCapability(prev.studioKnowHow ?? createInitialKnowHow(), id);
+                  return next ? { ...prev, studioKnowHow: next } : prev;
+                })}
               />
               <div className="grid gap-2.5 p-1 pt-3 sm:grid-cols-2">
                 <button className="rst-btn" onClick={() => handleOpenDashboardTab('skills')}>

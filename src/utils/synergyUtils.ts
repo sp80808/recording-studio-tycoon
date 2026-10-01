@@ -1,3 +1,4 @@
+import { resolveSessionEquipment } from '@/utils/gameUtils';
 import { GameState, Project, StudioRoomType } from '@/types/game';
 import { StudioSynergy, SynergyBonuses } from '@/types/synergy';
 import { activeChainSlots } from '@/rpg/signalChain';
@@ -27,11 +28,10 @@ export function evaluateProjectSynergies(
   const assignedStaff = (gameState.hiredStaff || []).filter(
     s => s.assignedProjectId === project.id
   );
-  const ownedCategories = new Set(
-    (gameState.ownedEquipment || []).map(e => e.category)
-  );
+  const sessionEquipment = resolveSessionEquipment(gameState, project.bookingRoomId);
+  const ownedCategories = new Set(sessionEquipment.map(e => e.category));
   const ownedEquipmentIds = new Set(
-    (gameState.ownedEquipment || []).map(e => e.id)
+    sessionEquipment.flatMap(e => [e.id, e.templateId ?? e.id])
   );
 
   // Client relationship tier lookup

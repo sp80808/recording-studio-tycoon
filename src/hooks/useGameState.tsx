@@ -1,3 +1,4 @@
+import { refreshGearForDay } from '@/features/usedGear/economy';
 import { useState, useEffect } from 'react';
 import { GameState, FocusAllocation } from '@/types/game';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
@@ -17,7 +18,7 @@ export const useGameState = () => {
 
   // Update game state to reflect progression changes
   const updateGameStateWithProgression = (newGameState: GameState): GameState => {
-    newGameState = resolvePlayerLevelUps(newGameState);
+    newGameState = refreshGearForDay(resolvePlayerLevelUps(newGameState));
     const maxConcurrentProjects = ProgressionSystem.getMaxConcurrentProjects(newGameState);
     const isMultiProjectUnlocked = ProgressionSystem.shouldUnlockMultiProject(newGameState);
     

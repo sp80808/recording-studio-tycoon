@@ -1,0 +1,42 @@
+{
+ "size": [
+  128,
+  160
+ ],
+ "anchor": [
+  64,
+  140
+ ],
+ "scale": 0.5,
+ "dirs": [
+  "se",
+  "ne",
+  "nw",
+  "sw"
+ ],
+ "poses": [
+  "idle",
+  "work"
+ ],
+ "layers": [
+  "skin",
+  "face",
+  "shoes",
+  "bottom_jeans",
+  "bottom_shorts",
+  "bottom_skirt",
+  "top_tee",
+  "top_hoodie",
+  "top_jacket",
+  "hair_short",
+  "hair_quiff",
+  "hair_long",
+  "hair_bun",
+  "hair_puffy",
+  "acc_headphones",
+  "acc_glasses",
+  "acc_cap",
+  "acc_beanie"
+ ],
+ "note": "Layers composite bottom->top at the same origin; tintable layers are white."
+}

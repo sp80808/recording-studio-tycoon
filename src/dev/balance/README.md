@@ -1,9 +1,50 @@
-# GH #19 — Deterministic Balance Harness (skeleton)
+# GH #19 / #57 — Deterministic Balance Harness + Seeded Sweeps
 
 Headless economy probe: drives the real `generateNewProjects` +
-`generateProjectReview` (+ `grantSkillXp`, `getGenreMarketMultiplier`) with
-seeded randomness so balance tuning is reproducible. No React, no UI, no dev
-server, no new dependencies.
+`generateProjectReview`, the weekly chart run (`chartRun.ts`), and the flight
+case / gem economy (`flightCaseEconomy.ts`) with seeded randomness so balance
+tuning is reproducible. No React, no UI, no dev server, no new dependencies.
+The used-gear economy is out of scope: loot is valued at its rolled
+`baseValue` only (`lootResaleFactor` is a sim assumption).
+
+## Layout
+
+- `config.ts` — every simulation-side constant (`BalanceConfig`), play profiles
+  (`attended` / `auto`), snapshot scenarios (`early` / `mid` / `late`) and the
+  runaway limits. Change numbers here or pass overrides; the harness never
+  needs editing.
+- `simulate.ts` — one run: single room, one booked session at a time, settles
+  on its last day, chart debut + weekly moves, mini-game rolls, reward crates
+  opened immediately.
+- `invariants.ts` — 10 per-run invariants.
+- `sweep.ts` — `runScenarioSweep({ scenario, seeds, days })` across all
+  strategies; aggregates, judges against limits, exports CSV.
+- `run.ts` — CLI.
+
+## Strategy bots
+
+`cheapest`, `highest-fee`, `balanced` (fee / difficulty), `reputation-first`
+(highest rep gain), `repeat-client-first` (prefers returning clients).
+
+## Sweep mode
+
+```sh
+pnpm exec esbuild src/dev/balance/run.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-balance.cjs --alias:@=./src
+node /tmp/rst-balance.cjs --sweep 1000 --days 100 --scenario mid --seed 1
+```
+
+Writes `sweep-<scenario>-<seed>-<seeds>x<days>.json` and `.csv` into `--out`
+(default `src/dev/balance/results/`). 1,000 seeds x 5 strategies x 100 days
+runs in about two seconds. Lines starting `RUNAWAY` are report-only flags
+(reward share, single-session payout multiple, case loot value, strategy
+dominance, death spiral, daily income, invariant failures).
+
+## Extending for new systems
+
+Live shows + A&R contracts (#94), creative briefs (#101) and Know-How (#102)
+plug in the same way the chart run does: add their pure payout function to the
+day loop in `simulate.ts`, add a field to `RewardTotals` (or a new totals
+object), and a limit to `RunawayLimits`.
 
 ## Build + run (OFFLINE)
 

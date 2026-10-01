@@ -64,6 +64,7 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
 
     setGameState(prev => {
       const settled = applyReportToState(prev, projectReport);
+      if (settled === prev) return prev;
 
       const involvedStaffIds = new Set(
         prev.hiredStaff
@@ -130,6 +131,7 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
           title: projectReport.projectTitle,
           clientKey: completedProject?.clientId,
           clientName: completedProject?.clientName,
+          genre: completedProject?.genre,
           quality: projectReport.overallQualityScore,
           revenue: projectReport.moneyGained,
           sessionsBefore: prevRelationship?.sessionsCompleted ?? 0,

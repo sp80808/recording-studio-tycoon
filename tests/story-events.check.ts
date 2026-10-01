@@ -57,9 +57,8 @@ describe('subplot catalog', () => {
     for (const s of EMERGENT_SUBPLOTS) {
       assert.ok(!ids.has(s.id), `duplicate subplot id ${s.id}`);
       ids.add(s.id);
-      assert.equal(s.stages.length, 2, `${s.id} has two beats`);
-      assert.equal(s.stages[0].stageNumber, 1);
-      assert.equal(s.stages[1].stageNumber, 2);
+      assert.ok(s.stages.length === 2 || s.stages.length === 3, `${s.id} has two or three beats`);
+      s.stages.forEach((st, i) => assert.equal(st.stageNumber, i + 1, `${s.id} beat numbering`));
       for (const stage of s.stages) {
         assert.ok(stage.options.length >= 2, `${s.id} stage ${stage.stageNumber} offers a real choice`);
         for (const o of stage.options) {

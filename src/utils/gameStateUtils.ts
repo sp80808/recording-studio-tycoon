@@ -1,3 +1,4 @@
+import { asEquipmentInstance, refreshGearForDay } from '@/features/usedGear/economy';
 import { GameState, Project, FocusAllocation } from '@/types/game';
 import { createDefaultStudioRooms } from '@/utils/studioRoomUtils';
 import {
@@ -5,6 +6,7 @@ import {
   buildDefaultPlacements,
 } from '@/types/equipmentSlots';
 import { initializeStorylineState } from '@/narrative/branchingStorylineEngine';
+import { migrateKnowHow } from '@/rpg/studioKnowHow';
 
 const DEFAULT_FOCUS_ALLOCATION: FocusAllocation = {
   performance: 33,
@@ -20,7 +22,7 @@ const DEFAULT_FOCUS_ALLOCATION: FocusAllocation = {
  * @returns The processed game state.
  */
 export const migrateAndInitializeGameState = (loadedGameState: GameState): GameState => {
-  const processedState = { ...loadedGameState };
+  const processedState = { ...loadedGameState, ownedEquipment: (loadedGameState.ownedEquipment ?? []).map(asEquipmentInstance) };
 
   // Ensure activeProjects have focusAllocation
   if (processedState.activeProjects) {
@@ -143,6 +145,11 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
     processedState.discoveredSynergies = [];
   }
 
+  // Premises tier (#70): legacy saves start in the borrowed room.
+  processedState.premisesTier = processedState.premisesTier === 1 ? 1 : 0;
+
+  // Studio Know-How (#66): legacy saves start empty; corrupt blobs are repaired.
+  processedState.studioKnowHow = migrateKnowHow(processedState.studioKnowHow);
   if (!Array.isArray(processedState.chainTemplates)) {
     processedState.chainTemplates = [];
   }
@@ -169,5 +176,5 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
 
   // Branching storylines (bead 283.3): legacy saves without storylineState
   // receive a deterministic campaign seed without mutating other fields.
-  return initializeStorylineState(processedState);
+  return refreshGearForDay(initializeStorylineState(processedState));
 };

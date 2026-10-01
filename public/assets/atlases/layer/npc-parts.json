@@ -1,0 +1,1339 @@
+{
+  "frames": {
+    "layer/npc-parts/body_average/000": {
+      "frame": {
+        "x": 1,
+        "y": 1,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/body_shadow/000": {
+      "frame": {
+        "x": 34,
+        "y": 1,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/body_slim/000": {
+      "frame": {
+        "x": 67,
+        "y": 1,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/body_stocky/000": {
+      "frame": {
+        "x": 100,
+        "y": 1,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/face_chill/000": {
+      "frame": {
+        "x": 133,
+        "y": 1,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/face_eager/000": {
+      "frame": {
+        "x": 166,
+        "y": 1,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/face_ecstatic/000": {
+      "frame": {
+        "x": 199,
+        "y": 1,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/face_focused/000": {
+      "frame": {
+        "x": 232,
+        "y": 1,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/face_stern/000": {
+      "frame": {
+        "x": 265,
+        "y": 1,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/face_vintage_shades/000": {
+      "frame": {
+        "x": 298,
+        "y": 1,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/hair_afro/000": {
+      "frame": {
+        "x": 331,
+        "y": 1,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/hair_bob/000": {
+      "frame": {
+        "x": 364,
+        "y": 1,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/hair_buzzcut/000": {
+      "frame": {
+        "x": 397,
+        "y": 1,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/hair_dreads/000": {
+      "frame": {
+        "x": 430,
+        "y": 1,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/hair_long_wavy/000": {
+      "frame": {
+        "x": 463,
+        "y": 1,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/hair_messy_curly/000": {
+      "frame": {
+        "x": 1,
+        "y": 50,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/hair_pompadour/000": {
+      "frame": {
+        "x": 34,
+        "y": 50,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/hair_slicked/000": {
+      "frame": {
+        "x": 67,
+        "y": 50,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/hair_topknot/000": {
+      "frame": {
+        "x": 100,
+        "y": 50,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/lower_bell_bottoms/000": {
+      "frame": {
+        "x": 133,
+        "y": 50,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/lower_cargo_pants/000": {
+      "frame": {
+        "x": 166,
+        "y": 50,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/lower_corduroy_trousers/000": {
+      "frame": {
+        "x": 199,
+        "y": 50,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/lower_denim_jeans/000": {
+      "frame": {
+        "x": 232,
+        "y": 50,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/lower_joggers/000": {
+      "frame": {
+        "x": 265,
+        "y": 50,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/lower_ripped_jeans/000": {
+      "frame": {
+        "x": 298,
+        "y": 50,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/prop_headphones/000": {
+      "frame": {
+        "x": 331,
+        "y": 50,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/shoes_canvas_skaters/000": {
+      "frame": {
+        "x": 364,
+        "y": 50,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/shoes_creepers/000": {
+      "frame": {
+        "x": 397,
+        "y": 50,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/shoes_hi_tops/000": {
+      "frame": {
+        "x": 430,
+        "y": 50,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/shoes_leather_boots/000": {
+      "frame": {
+        "x": 463,
+        "y": 50,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/shoes_loafers/000": {
+      "frame": {
+        "x": 1,
+        "y": 99,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/shoes_vintage_sneakers/000": {
+      "frame": {
+        "x": 34,
+        "y": 99,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/top_band_tee/000": {
+      "frame": {
+        "x": 67,
+        "y": 99,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/top_denim_vest/000": {
+      "frame": {
+        "x": 100,
+        "y": 99,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/top_flannel_shirt/000": {
+      "frame": {
+        "x": 133,
+        "y": 99,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/top_leather_jacket/000": {
+      "frame": {
+        "x": 166,
+        "y": 99,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/top_oversized_hoodie/000": {
+      "frame": {
+        "x": 199,
+        "y": 99,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/top_tracksuit_jacket/000": {
+      "frame": {
+        "x": 232,
+        "y": 99,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/top_turtleneck/000": {
+      "frame": {
+        "x": 265,
+        "y": 99,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "layer/npc-parts/top_vintage_cardigan/000": {
+      "frame": {
+        "x": 298,
+        "y": 99,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 1
+      }
+    }
+  },
+  "animations": {
+    "body_average": [
+      "layer/npc-parts/body_average/000"
+    ],
+    "body_shadow": [
+      "layer/npc-parts/body_shadow/000"
+    ],
+    "body_slim": [
+      "layer/npc-parts/body_slim/000"
+    ],
+    "body_stocky": [
+      "layer/npc-parts/body_stocky/000"
+    ],
+    "face_chill": [
+      "layer/npc-parts/face_chill/000"
+    ],
+    "face_eager": [
+      "layer/npc-parts/face_eager/000"
+    ],
+    "face_ecstatic": [
+      "layer/npc-parts/face_ecstatic/000"
+    ],
+    "face_focused": [
+      "layer/npc-parts/face_focused/000"
+    ],
+    "face_stern": [
+      "layer/npc-parts/face_stern/000"
+    ],
+    "face_vintage_shades": [
+      "layer/npc-parts/face_vintage_shades/000"
+    ],
+    "hair_afro": [
+      "layer/npc-parts/hair_afro/000"
+    ],
+    "hair_bob": [
+      "layer/npc-parts/hair_bob/000"
+    ],
+    "hair_buzzcut": [
+      "layer/npc-parts/hair_buzzcut/000"
+    ],
+    "hair_dreads": [
+      "layer/npc-parts/hair_dreads/000"
+    ],
+    "hair_long_wavy": [
+      "layer/npc-parts/hair_long_wavy/000"
+    ],
+    "hair_messy_curly": [
+      "layer/npc-parts/hair_messy_curly/000"
+    ],
+    "hair_pompadour": [
+      "layer/npc-parts/hair_pompadour/000"
+    ],
+    "hair_slicked": [
+      "layer/npc-parts/hair_slicked/000"
+    ],
+    "hair_topknot": [
+      "layer/npc-parts/hair_topknot/000"
+    ],
+    "lower_bell_bottoms": [
+      "layer/npc-parts/lower_bell_bottoms/000"
+    ],
+    "lower_cargo_pants": [
+      "layer/npc-parts/lower_cargo_pants/000"
+    ],
+    "lower_corduroy_trousers": [
+      "layer/npc-parts/lower_corduroy_trousers/000"
+    ],
+    "lower_denim_jeans": [
+      "layer/npc-parts/lower_denim_jeans/000"
+    ],
+    "lower_joggers": [
+      "layer/npc-parts/lower_joggers/000"
+    ],
+    "lower_ripped_jeans": [
+      "layer/npc-parts/lower_ripped_jeans/000"
+    ],
+    "prop_headphones": [
+      "layer/npc-parts/prop_headphones/000"
+    ],
+    "shoes_canvas_skaters": [
+      "layer/npc-parts/shoes_canvas_skaters/000"
+    ],
+    "shoes_creepers": [
+      "layer/npc-parts/shoes_creepers/000"
+    ],
+    "shoes_hi_tops": [
+      "layer/npc-parts/shoes_hi_tops/000"
+    ],
+    "shoes_leather_boots": [
+      "layer/npc-parts/shoes_leather_boots/000"
+    ],
+    "shoes_loafers": [
+      "layer/npc-parts/shoes_loafers/000"
+    ],
+    "shoes_vintage_sneakers": [
+      "layer/npc-parts/shoes_vintage_sneakers/000"
+    ],
+    "top_band_tee": [
+      "layer/npc-parts/top_band_tee/000"
+    ],
+    "top_denim_vest": [
+      "layer/npc-parts/top_denim_vest/000"
+    ],
+    "top_flannel_shirt": [
+      "layer/npc-parts/top_flannel_shirt/000"
+    ],
+    "top_leather_jacket": [
+      "layer/npc-parts/top_leather_jacket/000"
+    ],
+    "top_oversized_hoodie": [
+      "layer/npc-parts/top_oversized_hoodie/000"
+    ],
+    "top_tracksuit_jacket": [
+      "layer/npc-parts/top_tracksuit_jacket/000"
+    ],
+    "top_turtleneck": [
+      "layer/npc-parts/top_turtleneck/000"
+    ],
+    "top_vintage_cardigan": [
+      "layer/npc-parts/top_vintage_cardigan/000"
+    ]
+  },
+  "meta": {
+    "app": "rst-frame-packer",
+    "version": "1",
+    "image": "npc-parts.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 512,
+      "h": 256
+    },
+    "scale": "1",
+    "tags": [
+      {
+        "name": "body_average",
+        "from": 0,
+        "to": 0,
+        "direction": "forward"
+      },
+      {
+        "name": "body_shadow",
+        "from": 1,
+        "to": 1,
+        "direction": "forward"
+      },
+      {
+        "name": "body_slim",
+        "from": 2,
+        "to": 2,
+        "direction": "forward"
+      },
+      {
+        "name": "body_stocky",
+        "from": 3,
+        "to": 3,
+        "direction": "forward"
+      },
+      {
+        "name": "face_chill",
+        "from": 4,
+        "to": 4,
+        "direction": "forward"
+      },
+      {
+        "name": "face_eager",
+        "from": 5,
+        "to": 5,
+        "direction": "forward"
+      },
+      {
+        "name": "face_ecstatic",
+        "from": 6,
+        "to": 6,
+        "direction": "forward"
+      },
+      {
+        "name": "face_focused",
+        "from": 7,
+        "to": 7,
+        "direction": "forward"
+      },
+      {
+        "name": "face_stern",
+        "from": 8,
+        "to": 8,
+        "direction": "forward"
+      },
+      {
+        "name": "face_vintage_shades",
+        "from": 9,
+        "to": 9,
+        "direction": "forward"
+      },
+      {
+        "name": "hair_afro",
+        "from": 10,
+        "to": 10,
+        "direction": "forward"
+      },
+      {
+        "name": "hair_bob",
+        "from": 11,
+        "to": 11,
+        "direction": "forward"
+      },
+      {
+        "name": "hair_buzzcut",
+        "from": 12,
+        "to": 12,
+        "direction": "forward"
+      },
+      {
+        "name": "hair_dreads",
+        "from": 13,
+        "to": 13,
+        "direction": "forward"
+      },
+      {
+        "name": "hair_long_wavy",
+        "from": 14,
+        "to": 14,
+        "direction": "forward"
+      },
+      {
+        "name": "hair_messy_curly",
+        "from": 15,
+        "to": 15,
+        "direction": "forward"
+      },
+      {
+        "name": "hair_pompadour",
+        "from": 16,
+        "to": 16,
+        "direction": "forward"
+      },
+      {
+        "name": "hair_slicked",
+        "from": 17,
+        "to": 17,
+        "direction": "forward"
+      },
+      {
+        "name": "hair_topknot",
+        "from": 18,
+        "to": 18,
+        "direction": "forward"
+      },
+      {
+        "name": "lower_bell_bottoms",
+        "from": 19,
+        "to": 19,
+        "direction": "forward"
+      },
+      {
+        "name": "lower_cargo_pants",
+        "from": 20,
+        "to": 20,
+        "direction": "forward"
+      },
+      {
+        "name": "lower_corduroy_trousers",
+        "from": 21,
+        "to": 21,
+        "direction": "forward"
+      },
+      {
+        "name": "lower_denim_jeans",
+        "from": 22,
+        "to": 22,
+        "direction": "forward"
+      },
+      {
+        "name": "lower_joggers",
+        "from": 23,
+        "to": 23,
+        "direction": "forward"
+      },
+      {
+        "name": "lower_ripped_jeans",
+        "from": 24,
+        "to": 24,
+        "direction": "forward"
+      },
+      {
+        "name": "prop_headphones",
+        "from": 25,
+        "to": 25,
+        "direction": "forward"
+      },
+      {
+        "name": "shoes_canvas_skaters",
+        "from": 26,
+        "to": 26,
+        "direction": "forward"
+      },
+      {
+        "name": "shoes_creepers",
+        "from": 27,
+        "to": 27,
+        "direction": "forward"
+      },
+      {
+        "name": "shoes_hi_tops",
+        "from": 28,
+        "to": 28,
+        "direction": "forward"
+      },
+      {
+        "name": "shoes_leather_boots",
+        "from": 29,
+        "to": 29,
+        "direction": "forward"
+      },
+      {
+        "name": "shoes_loafers",
+        "from": 30,
+        "to": 30,
+        "direction": "forward"
+      },
+      {
+        "name": "shoes_vintage_sneakers",
+        "from": 31,
+        "to": 31,
+        "direction": "forward"
+      },
+      {
+        "name": "top_band_tee",
+        "from": 32,
+        "to": 32,
+        "direction": "forward"
+      },
+      {
+        "name": "top_denim_vest",
+        "from": 33,
+        "to": 33,
+        "direction": "forward"
+      },
+      {
+        "name": "top_flannel_shirt",
+        "from": 34,
+        "to": 34,
+        "direction": "forward"
+      },
+      {
+        "name": "top_leather_jacket",
+        "from": 35,
+        "to": 35,
+        "direction": "forward"
+      },
+      {
+        "name": "top_oversized_hoodie",
+        "from": 36,
+        "to": 36,
+        "direction": "forward"
+      },
+      {
+        "name": "top_tracksuit_jacket",
+        "from": 37,
+        "to": 37,
+        "direction": "forward"
+      },
+      {
+        "name": "top_turtleneck",
+        "from": 38,
+        "to": 38,
+        "direction": "forward"
+      },
+      {
+        "name": "top_vintage_cardigan",
+        "from": 39,
+        "to": 39,
+        "direction": "forward"
+      }
+    ]
+  }
+}

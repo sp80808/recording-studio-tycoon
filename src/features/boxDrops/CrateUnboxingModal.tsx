@@ -27,7 +27,8 @@ export interface CrateUnboxingModalProps {
  * CrateUnboxingModal
  * Game-facing unboxing modal for RST.
  * Delegates the tactile unboxing choreography and reveal sequence to `FlightCaseReveal`.
- * Rewards are authoritatively settled before this modal mounts.
+ * Earned gear is settled by the caller through onClaim. Premium rewards are
+ * authoritatively fulfilled before this modal mounts.
  */
 export const CrateUnboxingModal: React.FC<CrateUnboxingModalProps> = ({
   items,

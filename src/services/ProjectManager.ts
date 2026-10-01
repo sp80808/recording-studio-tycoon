@@ -1,3 +1,4 @@
+import { recordGearUse } from '@/features/usedGear/session';
 // Project Management Service for Multi-Project Automation
 import { Project, StaffMember, GameState, AutomationMode, AutomationSettings } from '../types/game';
 import { ProgressionSystem } from './ProgressionSystem';
@@ -321,6 +322,12 @@ export class ProjectManager {
       workOutput += workContribution;
     });
 
+    if (workOutput > 0) {
+      const gearUse = recordGearUse(this.gameState, project, Math.min(1, workOutput));
+      Object.assign(this.gameState, gearUse.state);
+      project.gearNotes = gearUse.project.gearNotes;
+    }
+
     // Apply work to current stage
     currentStage.workUnitsCompleted += workOutput;
     
@@ -352,7 +359,7 @@ export class ProjectManager {
 
     let minigameToStart: string | null = null;
 
-    switch (currentStage.name) {
+    switch (currentStage.stageName) {
       case 'Recording':
         minigameToStart = 'rhythm';
         break;

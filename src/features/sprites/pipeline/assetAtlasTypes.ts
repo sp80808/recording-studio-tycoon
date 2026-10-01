@@ -52,15 +52,39 @@ export interface PixiTextureAtlasSchema {
   meta: PixiAtlasMetadata;
 }
 
+/**
+ * One provenance schema for atlases AND repo-wide art logging (#58). Fields beyond the original
+ * v1 set are optional in the type so older manifests still parse, but `validateProvenance`
+ * requires them for anything built by the asset pipeline (schemaVersion 2).
+ */
+export type AssetSourceType =
+  | 'aseprite'
+  | 'pixelorama'
+  | 'blender_render'
+  | 'vector_authored'
+  | 'generative_ai_cleaned';
+
 export interface AssetProvenanceManifest {
+  schemaVersion?: 2;
   assetId: string;
-  sourceType: 'aseprite' | 'pixelorama' | 'generative_ai_cleaned' | 'vector_authored';
+  sourceType: AssetSourceType;
   author: string;
   creationTimestamp: string;
   toolVersion: string;
   pipelineSteps: string[];
+  /** Exported atlas pixel size. */
   dimensions: { width: number; height: number };
   paletteId: string;
   frameTags: string[];
+  /** Content hash of the exported atlas image + json (sha256 hex from the CLI). */
   checksum: string;
+  license?: string;
+  /** Required when the art is not in-house. */
+  sourceUrl?: string;
+  sourceDimensions?: { width: number; height: number };
+  palette?: string[];
+  generationSteps?: string[];
+  sourceChecksum?: string;
+  /** CC0 pack provenance (e.g. studio-kit models): archive + included models. */
+  source?: { url: string; downloadUrl: string; license: 'CC0-1.0'; archiveSha256: string; models: string[] };
 }

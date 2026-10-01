@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { createSeededRandom, randomInt } from '@/simulation/seededRandom';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,6 +14,7 @@ interface GearMaintenanceGameProps {
   onComplete: (success: boolean, score: number) => void;
   onClose: () => void;
   minigameId: string;
+  seed?: string | number;
 }
 
 interface MinigameState {
@@ -23,30 +25,26 @@ interface MinigameState {
   successfulAdjustmentsLastAttempt: number; // Added to store this value for the close button
 }
 
-const GearMaintenanceGame: React.FC<GearMaintenanceGameProps> = ({ equipment, onComplete, onClose, minigameId }) => {
+const GearMaintenanceGame: React.FC<GearMaintenanceGameProps> = ({ equipment, onComplete, onClose, minigameId, seed }) => {
   const { settings, markMinigameTutorialAsSeen } = useSettings();
   const [showTutorial, setShowTutorial] = useState<boolean>(
     !settings.seenMinigameTutorials[minigameId]
   );
 
-  const [minigameState, setMinigameState] = useState<MinigameState>({
-    progress: 0,
-    dials: [50, 50, 50],
-    targetValues: [],
-    attemptsLeft: 5,
-    successfulAdjustmentsLastAttempt: 0, // Initialize
+  const completed = useRef(false);
+  const [minigameState, setMinigameState] = useState<MinigameState>(() => {
+    const rng = createSeededRandom(seed ?? `${equipment.name}:${minigameId}`);
+    return {
+      progress: 0,
+      dials: [50, 50, 50],
+      targetValues: Array.from({ length: 3 }, () => randomInt(rng, 10, 89)),
+      attemptsLeft: 5,
+      successfulAdjustmentsLastAttempt: 0,
+    };
   });
   const [feedbackMessage, setFeedbackMessage] = useState<string>('');
 
   useEffect(() => {
-    setMinigameState(prevState => ({
-      ...prevState,
-      targetValues: [
-        Math.floor(Math.random() * 80) + 10,
-        Math.floor(Math.random() * 80) + 10,
-        Math.floor(Math.random() * 80) + 10,
-      ]
-    }));
     if (!showTutorial) {
         playSound('notice');
     }
@@ -59,7 +57,7 @@ const GearMaintenanceGame: React.FC<GearMaintenanceGameProps> = ({ equipment, on
   };
 
   const handleDialChange = (dialIndex: number, direction: 'up' | 'down') => {
-    if (minigameState.attemptsLeft <= 0) return;
+    if (completed.current || minigameState.attemptsLeft <= 0) return;
     setMinigameState(prevState => {
       const newDials = [...prevState.dials];
       newDials[dialIndex] = Math.max(0, Math.min(100, newDials[dialIndex] + (direction === 'up' ? 5 : -5)));
@@ -69,7 +67,7 @@ const GearMaintenanceGame: React.FC<GearMaintenanceGameProps> = ({ equipment, on
   };
 
   const handleSubmitAttempt = () => {
-    if (minigameState.attemptsLeft <= 0) return;
+    if (completed.current || minigameState.attemptsLeft <= 0) return;
     playSound('proj-complete');
 
     let currentSuccessfulAdjustments = 0;
@@ -90,13 +88,16 @@ const GearMaintenanceGame: React.FC<GearMaintenanceGameProps> = ({ equipment, on
     }));
 
     if (currentSuccessfulAdjustments === minigameState.dials.length) {
-      setFeedbackMessage(`Perfect calibration! ${equipment.name} is in top condition!`);
+      setFeedbackMessage(`Calibration passed for ${equipment.name}.`);
       qualityImpact = 20;
+      completed.current = true;
+      setMinigameState(prev => ({ ...prev, attemptsLeft: 0 }));
       onComplete(true, qualityImpact);
     } else if (newAttemptsLeft <= 0) {
-      setFeedbackMessage(`Out of attempts. ${equipment.name} condition partially improved.`);
+      setFeedbackMessage(`Out of attempts. ${equipment.name} did not pass calibration.`);
       qualityImpact = currentSuccessfulAdjustments * 5;
-      onComplete(false, qualityImpact); // This will be called by the close button now
+      completed.current = true;
+      onComplete(false, qualityImpact);
     } else {
       setFeedbackMessage(
         `${currentSuccessfulAdjustments}/${minigameState.dials.length} dials calibrated. ${newAttemptsLeft} attempts left.`
@@ -113,13 +114,7 @@ const GearMaintenanceGame: React.FC<GearMaintenanceGameProps> = ({ equipment, on
 
   // Show tutorial if it hasn't been seen
   if (showTutorial) {
-    const tutorialContent = minigameTutorials[minigameId];
-    if (!tutorialContent) {
-      // Fallback if tutorial content is missing, though this shouldn't happen
-      console.warn(`Tutorial content for ${minigameId} not found.`);
-      handleTutorialClose(); // Close tutorial and proceed
-      return null; 
-    }
+    const tutorialContent = minigameTutorials[minigameId] ?? minigameTutorials.gearMaintenance;
     return (
       <MinigameTutorialPopup
         minigameId={minigameId}
@@ -160,6 +155,7 @@ const GearMaintenanceGame: React.FC<GearMaintenanceGameProps> = ({ equipment, on
                   size="sm"
                   variant="outline"
                   className="w-8 h-8 text-stone-200 border-stone-600 hover:bg-stone-700"
+                  aria-label={`Decrease dial ${index + 1}`}
                   onClick={() => handleDialChange(index, 'down')}
                   disabled={minigameState.attemptsLeft <= 0}
                 >
@@ -186,6 +182,7 @@ const GearMaintenanceGame: React.FC<GearMaintenanceGameProps> = ({ equipment, on
                   size="sm"
                   variant="outline"
                   className="w-8 h-8 text-stone-200 border-stone-600 hover:bg-stone-700"
+                  aria-label={`Increase dial ${index + 1}`}
                   onClick={() => handleDialChange(index, 'up')}
                   disabled={minigameState.attemptsLeft <= 0}
                 >
@@ -207,7 +204,7 @@ const GearMaintenanceGame: React.FC<GearMaintenanceGameProps> = ({ equipment, on
         ) : (
           <KenneyButton
             variant="green"
-            onClick={() => onComplete(false, minigameState.successfulAdjustmentsLastAttempt * 5)}
+            onClick={onClose}
           >
             Finish
           </KenneyButton>

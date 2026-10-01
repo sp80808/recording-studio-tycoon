@@ -42,6 +42,6 @@ assert.match(indexPage, /Warming up the studio/, 'Boot gate friendly copy');
 assert.match(guideCss, /max-width: 768px/, 'Coach has narrow breakpoint');
 assert.match(guideCss, /take-calibration/, 'Coach hides during take calibration');
 assert.match(drawer, /data-studio-drawer/, 'Session drawer marks chrome host');
-assert.match(drawer, /1400px/, 'Session drawer uses wide viewport width');
+assert.match(drawer, /min\(40vw,680px\)/, 'Session drawer docks beside the studio at a capped width');
 
 console.log('✓ studio-ux-presentation checks passed');

@@ -38,8 +38,8 @@ export const STORY_ARCS: readonly StoryArc[] = [
         loreBrief: 'Silas Vance mocks your digital preamps in an industry interview. You need to prove your room sounds timeless.',
         objectiveDescription: 'Complete at least 3 Rock, Jazz, or Acoustic sessions with Quality >= 75.',
         checkCompletion: (state) => {
-          const completedCount = state.financials?.history?.filter(
-            h => (['Rock', 'Jazz', 'Acoustic', 'Folk'].includes(h.genre || '')) && h.quality >= 75
+          const completedCount = state.financials?.reports?.filter(
+            h => (['Rock', 'Jazz', 'Acoustic', 'Folk'].includes(h.genre || '')) && h.overallQualityScore >= 75
           ).length ?? 0;
           return completedCount >= 3;
         },
@@ -72,7 +72,7 @@ export const STORY_ARCS: readonly StoryArc[] = [
         loreBrief: 'Silas challenges you to an analog duel at the Golden Reels ceremony. Only a pristine master will dethrone him.',
         objectiveDescription: 'Produce an S-Rank session (Quality >= 90) in an organic genre.',
         checkCompletion: (state) => {
-          return state.financials?.history?.some(h => h.quality >= 90) ?? false;
+          return state.financials?.reports?.some(h => h.overallQualityScore >= 90) ?? false;
         },
         reward: {
           money: 7500,
@@ -153,7 +153,7 @@ export const STORY_ARCS: readonly StoryArc[] = [
         loreBrief: 'Start a DIY cassette tape label and record local rebel bands at maximum volume.',
         objectiveDescription: 'Complete 3 Punk, Grunge, or Hip-Hop sessions without borrowing money.',
         checkCompletion: (state) => {
-          const completed = state.financials?.history?.filter(
+          const completed = state.financials?.reports?.filter(
             h => ['Punk', 'Grunge', 'Hip Hop', 'Alternative'].includes(h.genre || '')
           ).length ?? 0;
           return completed >= 3 && state.money >= 0;
@@ -187,8 +187,8 @@ export const STORY_ARCS: readonly StoryArc[] = [
         loreBrief: 'Roxy Riot rallies hundreds of independent musicians for an unpermitted warehouse festival. Put on the performance of a generation to permanently fund the underground movement.',
         objectiveDescription: 'Reach 150 Reputation and produce a high-caliber session (Quality >= 85) in an underground genre.',
         checkCompletion: (state) => {
-          const completedHighQuality = state.financials?.history?.some(
-            h => ['Punk', 'Grunge', 'Hip Hop', 'Alternative'].includes(h.genre || '') && h.quality >= 85
+          const completedHighQuality = state.financials?.reports?.some(
+            h => ['Punk', 'Grunge', 'Hip Hop', 'Alternative'].includes(h.genre || '') && h.overallQualityScore >= 85
           ) ?? false;
           return state.reputation >= 150 && completedHighQuality;
         },

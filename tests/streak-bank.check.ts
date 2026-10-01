@@ -82,7 +82,7 @@ const active = read('src/components/ActiveProject.tsx');
 ok(active.includes('<StreakBankControl'), 'ActiveProject renders StreakBankControl in the transport dock');
 ok(active.includes('comboCount: result.keepsCombo ? prev.activeProject.comboCount : 0'),
   'bank settlement resets combo unless gold kept it');
-ok(active.includes('money: prev.money + result.cash') && active.includes('xp: prev.playerData.xp + result.xp'),
+ok(active.includes('earn(prev, result.cash') && active.includes('xp: prev.playerData.xp + result.xp'),
   'settlement credits money and XP through setGameState');
 const control = read('src/components/StreakBankControl.tsx');
 for (const t of ['useReducedMotion', 'role="status"', 'setPointerCapture', 'handleKeyDown', "justPressed.select",

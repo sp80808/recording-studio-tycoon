@@ -1,14 +1,17 @@
+import { applyKnowHowEvents } from '@/rpg/studioKnowHow';
+import { REWARD_POP_EVENT, type RewardPopDetail } from '@/utils/rewardFx';
 import React, { useState, useEffect, useCallback, useRef } from 'react'; // Added useCallback
 import { GameLayout } from '@/components/GameLayout';
 import { GameHeader } from '@/components/GameHeader';
 import { MainGameContent } from '@/components/MainGameContent';
 import { RewardFlights } from '@/components/RewardFlights';
 import { gameEvents } from '@/engine/gameEventBus';
+import { artistChartBoost } from '@/simulation/artistContracts';
 import { advanceChartWeek, debutChartRun, weeksDue } from '@/utils/chartRun';
 import { ChartRevealScene } from '@/components/ChartRevealScene';
+import { SeasonAwardsCeremony } from '@/components/SeasonAwardsCeremony';
 import { NotificationSystem } from '@/components/NotificationSystem';
 import { TrainingModal } from '@/components/modals/TrainingModal';
-import { GameModals } from '@/components/GameModals';
 import { SettingsModal } from '@/components/modals/SettingsModal';
 import { TutorialModal } from '@/components/TutorialModal';
 import { SplashScreen } from '@/components/SplashScreen';
@@ -16,7 +19,8 @@ import { Era } from '@/components/EraSelectionModal'; // Era type
 import '@/components/studio-play.css';
 import { useGameState } from '@/hooks/useGameState';
 import { installFlightCaseRewards } from '@/economy/rewardHookup';
-import { applySeasonTick } from '@/economy/seasonRewards';
+import { useAmbientIncome } from '@/hooks/useAmbientIncome';
+import { announceAwards, applySeasonTick } from '@/economy/seasonRewards';
 import { seasonReviewNote } from '@/rpg/studioSeasons';
 import { GameState, Project, ProjectReport, StaffMember } from '@/types/game'; // Import GameState, Project, ProjectReport, StaffMember
 import DeliveryChoiceDialog from '@/components/DeliveryChoiceDialog';
@@ -36,6 +40,10 @@ import { MinigameType } from '@/components/minigames/MinigameManager'; // Import
 import { WelcomeBackSummaryModal } from '@/components/modals/WelcomeBackSummaryModal';
 import { StorylineBranchModal } from '@/components/modals/StorylineBranchModal';
 import { StoryEventModal } from '@/components/modals/StoryEventModal';
+import { DirectorEventModal } from '@/components/modals/DirectorEventModal';
+import { DayCloseBanner } from '@/components/DayCloseBanner';
+import { getDayCloseBeat } from '@/narrative/dayClose';
+import { getPendingDirectorEvent, resolveDirectorChoice } from '@/narrative/directorEvents';
 import { CinematicStoryCutscene } from '@/components/cutscenes/CinematicStoryCutscene';
 import { getCampaignEnding } from '@/narrative/endings';
 import { buildActIntroCutscene, buildEndingCutscene } from '@/narrative/actCinematics';
@@ -128,6 +136,7 @@ const MusicStudioTycoon = () => {
 
 
   useEffect(() => installFlightCaseRewards(setGameState), [setGameState]);
+  useAmbientIncome(gameInitialized && !showSplashScreen, setGameState);
 
   useEffect(() => {
     if (selectedStaffForTraining) {
@@ -166,9 +175,12 @@ const MusicStudioTycoon = () => {
 
   const pendingStorylineBranch = getPendingStorylineBranch(gameState);
   const pendingStoryEvent = getPendingSubplotEvent(gameState);
+  const pendingDirectorEvent = getPendingDirectorEvent(gameState);
   const pendingStoryEventKey = pendingStoryEvent
     ? `${pendingStoryEvent.subplot.id}:${pendingStoryEvent.active.currentStage}`
-    : null;
+    : pendingDirectorEvent
+      ? `director:${pendingDirectorEvent.def.id}:${pendingDirectorEvent.subject?.id ?? ''}`
+      : null;
 
   // Story cinematics (act openings + epilogue) wait for every other story popup to clear.
   const storyEventOpen =
@@ -197,6 +209,13 @@ const MusicStudioTycoon = () => {
   const handleStoryEventChoice = useCallback(
     (optionId: string) => {
       setGameState((prev) => resolveSubplotChoice(prev, optionId));
+    },
+    [setGameState],
+  );
+
+  const handleDirectorEventChoice = useCallback(
+    (optionId: string) => {
+      setGameState((prev) => resolveDirectorChoice(prev, optionId));
     },
     [setGameState],
   );
@@ -314,9 +333,14 @@ const MusicStudioTycoon = () => {
     console.log('Index.tsx: Finalizing project completion for:', activeProjectReport.projectTitle);
     completeProject(activeProjectReport); // Call the updated completeProject with the report
 
-    const debut = debutChartRun(activeProjectReport.projectId, activeProjectReport.projectTitle, activeProjectReport.overallQualityScore, gameState.currentDay);
+    // Signed artists' name value raises the quality a debut is placed (and climbs) with.
+    const chartQuality = Math.min(100, activeProjectReport.overallQualityScore + artistChartBoost(gameState.signedArtists, activeProjectReport.genre));
+    const debut = debutChartRun(activeProjectReport.projectId, activeProjectReport.projectTitle, chartQuality, gameState.currentDay);
     if (debut) {
-      setGameState(prev => ({ ...prev, chartRun: [...(prev.chartRun ?? []).filter(e => e.projectId !== debut.projectId), debut] }));
+      setGameState(prev => applyKnowHowEvents({
+        ...prev,
+        chartRun: [...(prev.chartRun ?? []).filter(e => e.projectId !== debut.projectId), debut],
+      }, [{ kind: 'discovery', eventId: `chart-debut:${debut.projectId}`, domain: 'business', label: `a ${debut.chartName} debut` }]).game);
       gameEvents.emit('chart:placement', { chartName: debut.chartName, title: debut.title, position: debut.position });
     }
 
@@ -331,7 +355,22 @@ const MusicStudioTycoon = () => {
     if (settings.sfxEnabled) {
       audioSystem.playUISound('success'); 
     }
-  }, [activeProjectReport, completeProject, settings.sfxEnabled, setGameState, gameState.currentDay]);
+  }, [activeProjectReport, completeProject, settings.sfxEnabled, setGameState, gameState.currentDay, gameState.signedArtists]);
+
+  // Studio Know-How award toast (#66): one place, driven by the pool's lifetime total so save/load never re-fires.
+  const lastKnowHowTotal = useRef<number | null>(null);
+  useEffect(() => {
+    const total = gameState.studioKnowHow?.totalEarned ?? 0;
+    const prev = lastKnowHowTotal.current;
+    lastKnowHowTotal.current = total;
+    if (prev !== null && total > prev) {
+      const gained = total - prev;
+      // Reuse the shared reward pop-up (#99) instead of a bespoke toast.
+      window.dispatchEvent(new CustomEvent<RewardPopDetail>(REWARD_POP_EVENT, {
+        detail: { label: `+${gained} Know-How`, tier: gained >= 4 ? 'big' : gained >= 2 ? 'medium' : 'small', tone: 'plain' },
+      }));
+    }
+  }, [gameState.studioKnowHow?.totalEarned]);
 
   // Weekly chart run: songs on the chart rise and fall, each move gets its own reveal.
   useEffect(() => {
@@ -359,6 +398,7 @@ const MusicStudioTycoon = () => {
 
   // Studio Seasons (#63): the season clock resolves once per season; legacy saves get state lazily.
   useEffect(() => {
+    announceAwards(applySeasonTick(gameState).resolutions);
     setGameState(prev => {
       const { state, resolutions } = applySeasonTick(prev);
       return resolutions.length || !prev.studioSeasons ? state : prev;
@@ -449,6 +489,27 @@ const MusicStudioTycoon = () => {
     window.addEventListener('autoSave', handleAutoSave);
     return () => window.removeEventListener('autoSave', handleAutoSave);
   }, [gameInitialized, gameState, saveGame]);
+
+  // Autosave only ticked every 30s, so closing or backgrounding the tab (the normal way
+  // to leave on mobile) lost the latest day/settlement. Save on hide and on each new day.
+  const latestStateRef = useRef(gameState);
+  latestStateRef.current = gameState;
+  useEffect(() => {
+    if (!gameInitialized || !settings.autoSave) return;
+    const flush = () => saveGame(latestStateRef.current);
+    const onVisibility = () => { if (document.visibilityState === 'hidden') flush(); };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pagehide', flush);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pagehide', flush);
+    };
+  }, [gameInitialized, settings.autoSave, saveGame]);
+
+  useEffect(() => {
+    if (gameInitialized && settings.autoSave) saveGame(latestStateRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameInitialized, gameState.currentDay]);
 
   // Passive work stops at review-ready rather than settling rewards. Once any
   // welcome-back summary is dismissed, hand the completed project to the
@@ -574,6 +635,7 @@ const MusicStudioTycoon = () => {
     <GameLayout eraId={gameState.currentEra}>
       {!effectiveCompactStudioMode && <RewardFlights gameState={gameState} />}
       <ChartRevealScene playerLevel={gameState.playerData.level} />
+      <SeasonAwardsCeremony />
       <div className="flex flex-col h-full">
         {!effectiveCompactStudioMode && (
           <GameHeader 
@@ -682,6 +744,7 @@ const MusicStudioTycoon = () => {
             const p = [gameState.activeProject, ...(gameState.activeProjects ?? [])].find(x => x?.id === activeProjectReport.projectId);
             const rel = p?.clientId ? gameState.clientRelationships?.[p.clientId] : undefined;
             return seasonReviewNote(gameState, {
+              genre: p?.genre,
               quality: activeProjectReport.overallQualityScore,
               isRepeat: (rel?.sessionsCompleted ?? 0) > 0,
               clientName: p?.clientName,
@@ -720,6 +783,37 @@ const MusicStudioTycoon = () => {
           pendingStoryEventKey !== deferredStoryEventKey
         }
         onChoose={handleStoryEventChoice}
+        onDeferred={() => setDeferredStoryEventKey(pendingStoryEventKey)}
+        onDone={() => setDeferredStoryEventKey(null)}
+      />
+
+      <DayCloseBanner
+        beat={gameInitialized && !showSplashScreen ? getDayCloseBeat(gameState) : null}
+        suppressed={
+          storyEventOpen ||
+          historicalNewsOpen ||
+          showReviewModal ||
+          Boolean(offlineSummary) ||
+          (showStorylineBranchModal && Boolean(pendingStorylineBranch))
+        }
+      />
+
+      <DirectorEventModal
+        event={pendingStoryEvent ? null : pendingDirectorEvent}
+        open={
+          gameInitialized &&
+          !showSplashScreen &&
+          !effectiveCompactStudioMode &&
+          !offlineSummary &&
+          !showReviewModal &&
+          !showStorylineBranchModal &&
+          !historicalNewsOpen &&
+          settings.tutorialCompleted &&
+          !pendingStoryEvent &&
+          pendingStoryEventKey !== null &&
+          pendingStoryEventKey !== deferredStoryEventKey
+        }
+        onChoose={handleDirectorEventChoice}
         onDeferred={() => setDeferredStoryEventKey(pendingStoryEventKey)}
         onDone={() => setDeferredStoryEventKey(null)}
       />

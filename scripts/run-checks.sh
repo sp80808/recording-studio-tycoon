@@ -4,6 +4,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+echo "=== typecheck (tsc must stay at zero errors) ==="
+./node_modules/.bin/tsc -p tsconfig.app.json --noEmit
+
 echo "=== tutorial and room purchases ==="
 for check in first-session-guide studio-room-purchase toast-spam; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
@@ -35,7 +38,7 @@ for check in tools-assets audio-system confetti-juice minigames-audio user-inter
 done
 
 echo "=== gamepad service & controller suites ==="
-for check in gamepad-service gamepad-glyph gamepad-navigation radial-wheel beat-pad-game tape-jog-game console-ride-game gamepad-suite; do
+for check in gamepad-service gamepad-glyph gamepad-navigation radial-wheel beat-pad-game tape-jog-game console-ride-game vocal-comp album-sequence fault-hunt chain-recall gamepad-suite; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
   node "/tmp/rst-$check.cjs"
 done
@@ -68,6 +71,14 @@ echo "=== callback subplots (story remembers earlier choices) ==="
 ./node_modules/.bin/esbuild tests/callback-subplots.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-callback-subplots.cjs --alias:@=./src >/dev/null
 node /tmp/rst-callback-subplots.cjs
 
+echo "=== studio event director (#56) ==="
+./node_modules/.bin/esbuild tests/event-director.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-event-director.cjs --alias:@=./src >/dev/null
+node /tmp/rst-event-director.cjs
+
+echo "=== end-of-day beat (immersion #8) ==="
+./node_modules/.bin/esbuild tests/day-close.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-day-close.cjs --alias:@=./src >/dev/null
+node /tmp/rst-day-close.cjs
+
 echo "=== industry-history subplots ==="
 ./node_modules/.bin/esbuild tests/industry-subplots.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-industry-subplots.cjs --alias:@=./src >/dev/null
 node /tmp/rst-industry-subplots.cjs
@@ -83,6 +94,10 @@ node /tmp/rst-live-shows.cjs
 echo "=== artist contracts ==="
 ./node_modules/.bin/esbuild tests/artist-contracts.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-artist-contracts.cjs --alias:@=./src >/dev/null
 node /tmp/rst-artist-contracts.cjs
+
+echo "=== deterministic used gear, classifieds and maintenance ==="
+./node_modules/.bin/esbuild tests/used-gear.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-used-gear.cjs --alias:@=./src >/dev/null
+node /tmp/rst-used-gear.cjs
 
 echo "=== equipment slots / gear racks (8om) ==="
 ./node_modules/.bin/esbuild tests/equipment-slots.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-equipment-slots.cjs --alias:@=./src >/dev/null
@@ -110,6 +125,12 @@ echo "=== i18n locales (en / en-GB / pl key parity) ==="
 ./node_modules/.bin/esbuild tests/i18n-locales.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-i18n-locales.cjs --alias:@=./src >/dev/null
 node /tmp/rst-i18n-locales.cjs
 
+echo "=== sprite factory & asset pipeline (#78, #79) ==="
+for check in sprite-factory asset-pipeline; do
+  ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
+  node "/tmp/rst-$check.cjs"
+done
+
 echo "=== game engine back-end & graphics tech suites ==="
 for check in game-event-bus engine-loop engine-settings graphics-postfx; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
@@ -135,6 +156,8 @@ node /tmp/rst-motion-qualification.cjs
 echo "=== studio os motion pass (#75) ==="
 ./node_modules/.bin/esbuild tests/studio-os-motion.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-os-motion.cjs --alias:@=./src >/dev/null
 node /tmp/rst-studio-os-motion.cjs
+./node_modules/.bin/esbuild tests/studio-art.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-art.cjs --alias:@=./src >/dev/null
+node /tmp/rst-studio-art.cjs
 
 echo "=== gear bench & reward FX policy (#81, #80) ==="
 for check in gear-bench reward-fx-policy; do
@@ -165,10 +188,14 @@ for check in origin-perks career-start design-system; do
 done
 
 echo "=== era-authentic gigs, story contracts & economy floors ==="
-for check in project-era-starters project-brief session-issues signal-chain economy-income story-contracts achievements campaign-endings studio-hotkeys; do
+for check in project-era-starters project-brief session-issues signal-chain economy-income economy-ledger story-contracts achievements campaign-endings studio-hotkeys studio-know-how studio-premises; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
   node "/tmp/rst-$check.cjs"
 done
+
+echo "=== ambient earning (#105) ==="
+./node_modules/.bin/esbuild tests/ambient-income.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-ambient-income.cjs --alias:@=./src >/dev/null
+node /tmp/rst-ambient-income.cjs
 
 echo "=== studio seasons (#63) ==="
 ./node_modules/.bin/esbuild tests/studio-seasons.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-seasons.cjs --alias:@=./src >/dev/null
@@ -184,5 +211,18 @@ mkdir -p /tmp/rst-balance
 node /tmp/rst-balance.cjs --days 10 --seed 7 --out /tmp/rst-balance > /tmp/rst-balance.log 2>&1
 cat /tmp/rst-balance.log | grep -E "invariants|PASS|FAIL" | tail -n 8
 if grep -q "FAIL" /tmp/rst-balance.log; then echo "Balance invariants FAILED"; exit 1; fi
+
+echo "=== balance sweep (determinism, config overrides, runaway flags) ==="
+./node_modules/.bin/esbuild tests/balance-sweep.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-balance-sweep.cjs --alias:@=./src >/dev/null
+node /tmp/rst-balance-sweep.cjs
+# Report-only: a small mid-game sweep; RUNAWAY lines are for humans, not a gate.
+node /tmp/rst-balance.cjs --sweep 20 --days 60 --scenario mid --seed 7 --out /tmp/rst-balance | grep -E "RUNAWAY|runaway flags" || true
+
+echo "=== feel layer ==="
+./node_modules/.bin/esbuild tests/feel-mode.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-feel-mode.cjs --alias:@=./src >/dev/null
+node /tmp/rst-feel-mode.cjs
+
+./node_modules/.bin/esbuild tests/take-feedback.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-take-feedback.cjs --alias:@=./src >/dev/null
+node /tmp/rst-take-feedback.cjs
 
 echo "All automated checks passed."

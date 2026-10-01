@@ -248,6 +248,45 @@ export const getTriggeredMinigames = (
     });
   }
 
+  // ALBUM SEQUENCE - order the record at the end of a project
+  if (stageName.includes('mastering') || stageName.includes('final') || stageName.includes('release')) {
+    triggers.push({
+      minigameType: 'album-sequence',
+      triggerReason: 'Mastered and ready - decide the track listing!',
+      priority: 9
+    });
+  }
+
+  // FAULT HUNT - diagnose the patchbay before a session gets going
+  if (stageName.includes('setup') || stageName.includes('tracking') || stageName.includes('track') ||
+      stageName.includes('preparation')) {
+    triggers.push({
+      minigameType: 'fault-hunt',
+      triggerReason: 'Something is humming in the patchbay - hunt down the faulty jacks!',
+      priority: 8
+    });
+  }
+
+  // CHAIN RECALL - patch the signal path from memory in processing stages
+  if (stageName.includes('production') || stageName.includes('effects') || stageName.includes('processing') ||
+      stageName.includes('mix')) {
+    triggers.push({
+      minigameType: 'chain-recall',
+      triggerReason: 'Re-patch the rack from memory - recall the signal chain!',
+      priority: 7
+    });
+  }
+
+  // VOCAL COMP - pick the best take per line after vocals have been tracked
+  if (stageName.includes('vocal') || stageName.includes('takes') || stageName.includes('overdub') ||
+      (project.genre === 'Pop' && stageName.includes('recording'))) {
+    triggers.push({
+      minigameType: 'vocal-comp',
+      triggerReason: 'Three takes of the lead vocal - time to comp the keeper!',
+      priority: stageName.includes('vocal') ? 10 : 9
+    });
+  }
+
   // Sort by priority (highest first) and return top 3 to avoid overwhelming
   return triggers.sort((a, b) => b.priority - a.priority).slice(0, 3);
 };

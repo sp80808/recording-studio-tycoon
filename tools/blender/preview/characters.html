@@ -1,0 +1,27 @@
+<!doctype html><meta charset="utf-8"><title>Character layer preview</title>
+<body style="margin:0;background:#2b3b36;color:#eee;font:12px sans-serif">
+<div id="out" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px"></div>
+<script type="module">
+const BASE='/public/assets/studio/characters/';
+const DIRS=['se','ne','nw','sw'], POSES=['idle','work'];
+const looks=[
+ {skin:0xf2c9a0,top:['top_hoodie',0x5aa9e6],bottom:['bottom_jeans',0x253047],shoes:0xf2f2f2,hair:['hair_quiff',0x2e3040],acc:[['acc_headphones',0xe6b866]]},
+ {skin:0x8d5a3b,top:['top_jacket',0xc77dff],bottom:['bottom_skirt',0x2a2f3c],shoes:0x1b2130,hair:['hair_puffy',0x1b1b1b],acc:[['acc_glasses',0xffffff]]},
+ {skin:0xe0ac88,top:['top_tee',0xe05c5c],bottom:['bottom_shorts',0x7a5a43],shoes:0xd9a441,hair:['hair_long',0xc98a2e],acc:[['acc_cap',0x7bd389]]},
+ {skin:0xffdcb8,top:['top_tee',0xf2c14e],bottom:['bottom_jeans',0x5aa9e6],shoes:0x1b2130,hair:['hair_bun',0x7a3b2a],acc:[['acc_beanie',0xe08fa8],['acc_glasses',0xffffff]]},
+];
+const img=n=>new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=BASE+n+'.png'});
+async function draw(look,dir,pose,scale){
+  const c=document.createElement('canvas');c.width=128*scale;c.height=160*scale;const x=c.getContext('2d');x.imageSmoothingEnabled=false;
+  const t=document.createElement('canvas');t.width=128;t.height=160;const tx=t.getContext('2d');
+  const stack=[['skin',look.skin],['face',null],['shoes',look.shoes],[look.bottom[0],look.bottom[1]],[look.top[0],look.top[1]],[look.hair[0],look.hair[1]],...look.acc.map(a=>[a[0],a[1]])];
+  for(const [n,tint] of stack){const im=await img(`${n}_${dir}_${pose}`);if(!im)continue;
+    tx.clearRect(0,0,128,160);tx.globalCompositeOperation='source-over';tx.drawImage(im,0,0);
+    if(tint!=null){tx.globalCompositeOperation='multiply';tx.fillStyle='#'+tint.toString(16).padStart(6,'0');tx.fillRect(0,0,128,160);tx.globalCompositeOperation='destination-in';tx.drawImage(im,0,0);}
+    x.drawImage(t,0,0,128*scale,160*scale);}
+  return c;}
+const out=document.getElementById('out');
+const S=+new URLSearchParams(location.search).get('s')||1;
+for(const look of looks)for(const pose of POSES){const row=document.createElement('div');row.style.cssText='display:flex;background:#35483f;border-radius:6px';
+ for(const d of DIRS)row.append(await draw(look,d,pose,S));out.append(row);}
+</script>
