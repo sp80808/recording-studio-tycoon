@@ -1,39 +1,17 @@
 import React, { useEffect, useRef, useCallback } from 'react';
-import type { LucideIcon } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import {
-  X,
-  Phone,
-  Headphones,
-  SlidersHorizontal,
-  Users,
-  Building2,
-  Sparkles,
-} from 'lucide-react';
+import { X } from 'lucide-react';
 import {
   MotionPanel,
   MotionButton,
-  MotionNumber,
 } from '@/components/motion/primitives';
 import { useMotionCapabilities } from '@/lib/motion/capabilities';
 import { gameAudio } from '@/utils/audioSystem';
 
-export type ContextDrawerTab = 'artist' | 'room' | 'staff' | 'gear' | 'session' | 'career';
-
-export interface DrawerTabItem {
-  id: ContextDrawerTab;
-  labelKey: string;
-  shortLabelKey: string;
-  icon: LucideIcon;
-  badge?: number;
-}
-
 export interface ContextDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  activeTab?: ContextDrawerTab;
-  onTabChange?: (tab: ContextDrawerTab) => void;
   title?: string;
   subtitle?: string;
   children: React.ReactNode;
@@ -42,24 +20,14 @@ export interface ContextDrawerProps {
   width?: 'default' | 'wide' | 'session';
   className?: string;
   returnFocusRef?: React.RefObject<HTMLElement | null> | HTMLElement | null;
-  unreadEnquiries?: number;
 }
-
-const TAB_CONFIGS: DrawerTabItem[] = [
-  { id: 'artist', labelKey: 'nav_artist_enquiries', shortLabelKey: 'nav_artist_short', icon: Phone },
-  { id: 'session', labelKey: 'nav_session_console', shortLabelKey: 'nav_session_short', icon: Headphones },
-  { id: 'gear', labelKey: 'nav_gear_locker', shortLabelKey: 'nav_gear_short', icon: SlidersHorizontal },
-  { id: 'staff', labelKey: 'nav_studio_crew', shortLabelKey: 'nav_crew_short', icon: Users },
-  { id: 'room', labelKey: 'nav_studio_room', shortLabelKey: 'nav_room_short', icon: Building2 },
-  { id: 'career', labelKey: 'nav_producer_story', shortLabelKey: 'nav_career_short', icon: Sparkles },
-];
 
 /**
  * Studio OS V2 Context Drawer (#75)
  *
  * Choreographed contextual slide-over panel powered by MotionPanel.
  * Features:
- * - Direct quick-switching tabs (Artist, Room, Staff, Gear, Session) without exit/re-enter thrash.
+ * - Navigation has one owner: the persistent Studio floor command dock.
  * - Crucial: Keeps PixiJS studio canvas mounted & undisturbed in background.
  * - Hardware tactile feedback for tab changes and dismissals.
  * - Accessibility & focus restoration on close.
@@ -68,8 +36,6 @@ const TAB_CONFIGS: DrawerTabItem[] = [
 export const ContextDrawer: React.FC<ContextDrawerProps> = ({
   isOpen,
   onClose,
-  activeTab = 'artist',
-  onTabChange,
   title,
   subtitle,
   children,
@@ -78,7 +44,6 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
   width = 'default',
   className = '',
   returnFocusRef,
-  unreadEnquiries = 0,
 }) => {
   const { t } = useTranslation();
   const { reducedMotion } = useMotionCapabilities();
@@ -125,23 +90,12 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, handleKeyDown]);
 
-  const handleTabClick = (tabId: ContextDrawerTab) => {
-    if (tabId === activeTab) return;
-    void gameAudio.playGearSwitch(0.35);
-    onTabChange?.(tabId);
-  };
-
   const handleClose = () => {
     void gameAudio.playUISound('menuClose');
     onClose();
   };
 
-  const resolvedTitle =
-    title ||
-    (TAB_CONFIGS.find((tab) => tab.id === activeTab)?.labelKey
-      ? t(TAB_CONFIGS.find((tab) => tab.id === activeTab)!.labelKey)
-      : undefined) ||
-    t('context_drawer_default_title');
+  const resolvedTitle = title || t('context_drawer_default_title');
 
   const widthStyle =
     width === 'session'
@@ -176,7 +130,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
           >
             <MotionPanel
               ref={drawerRef}
-              direction={activeTab === 'session' ? 'scale' : 'right'}
+              direction={width === 'session' ? 'scale' : 'right'}
               role="dialog"
               aria-modal="true"
               aria-labelledby="context-drawer-title"
@@ -209,47 +163,6 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
                   </div>
                 </div>
 
-                {/* Quick-switch tabs: equal-width icon-over-label cells so nothing ever clips. */}
-                {onTabChange && (
-                  <div
-                    role="tablist"
-                    aria-label={t('context_drawer_tabs_aria')}
-                    className="studio-drawer-tabs mt-3 grid gap-1 rounded-xl border border-[var(--rst-line)] bg-black/25 p-1"
-                    style={{ gridTemplateColumns: `repeat(${TAB_CONFIGS.length}, minmax(0, 1fr))` }}
-                  >
-                    {TAB_CONFIGS.map((tab) => {
-                      const isActive = activeTab === tab.id;
-                      const Icon = tab.icon;
-                      const badgeCount = tab.id === 'artist' ? unreadEnquiries : tab.badge;
-
-                      return (
-                        <MotionButton
-                          key={tab.id}
-                          role="tab"
-                          aria-selected={isActive}
-                          aria-label={t(tab.labelKey)}
-                          onClick={() => handleTabClick(tab.id)}
-                          className={`relative flex flex-col items-center gap-0.5 rounded-lg px-0.5 pb-1.5 pt-1.5 text-[10px] max-[420px]:text-[9px] font-semibold tracking-wide transition-colors ${
-                            isActive
-                              ? 'bg-[rgba(230,184,102,0.13)] text-[var(--rst-brass-200)]'
-                              : 'text-stone-400 hover:bg-white/[0.05] hover:text-stone-200'
-                          }`}
-                        >
-                          <Icon size={16} aria-hidden="true" />
-                          <span className="studio-drawer-tab-label max-w-full truncate">{t(tab.shortLabelKey)}</span>
-                          {isActive && (
-                            <span aria-hidden="true" className="feel-underline absolute inset-x-3 bottom-0 h-[2px] rounded-full bg-[var(--rst-brass-400)]" />
-                          )}
-                          {badgeCount !== undefined && badgeCount > 0 && (
-                            <span className="absolute right-1 top-0.5 min-w-[15px] rounded-full bg-[var(--rst-brass-400)] px-1 text-center text-[9px] font-black leading-[15px] text-stone-950">
-                              <MotionNumber value={badgeCount} />
-                            </span>
-                          )}
-                        </MotionButton>
-                      );
-                    })}
-                  </div>
-                )}
               </div>
 
               {/* Drawer Content Body */}
