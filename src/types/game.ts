@@ -422,8 +422,17 @@ export interface GameState {
   }>;
   /** Premium-feel soft currency (bead: flight cases + gems). Absent on legacy saves = 0. */
   gems?: number;
-  /** Holding area for flight case finds the player stashed/equipped; the gear economy can claim from here. */
-  caseFinds?: Array<{ id: string; name: string; era: string; rarity: string; condition: number; baseValue: number }>;
+  /** Holding area for flight case finds the player stashed; claim via used-gear economy into ownedEquipment. */
+  caseFinds?: Array<{
+    id: string;
+    name: string;
+    era: string;
+    rarity: string;
+    condition: number;
+    baseValue: number;
+    /** Present when the find was already materialized upstream (box-drop path). */
+    equipment?: import('@/features/usedGear/types').EquipmentInstance;
+  }>;
   /** Unlocked achievements: id -> game day it was earned. Absent on legacy saves. */
   unlockedAchievements?: Record<string, number>;
   /** Set once the campaign epilogue has been shown, so it never replays. */

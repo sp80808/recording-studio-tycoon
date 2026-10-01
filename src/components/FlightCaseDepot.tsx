@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Gem, Package } from 'lucide-react';
 import type { GameState } from '@/types/game';
-import { earn } from '@/economy/ledger';
 import { FLIGHT_CASES } from '@/data/flightCases';
 import type { Era } from '@/features/boxDrops/lootGenerator';
 import { useBoxDropsStore } from '@/features/boxDrops/boxDropsStore';
@@ -18,6 +17,7 @@ import {
   resolveCrateTier,
   type Currency,
 } from '@/economy/flightCaseEconomy';
+import { applyGearAction } from '@/features/usedGear/economy';
 
 interface Props {
   gameState: GameState;
@@ -38,11 +38,10 @@ export function FlightCaseDepot({ gameState, setGameState }: Props) {
     if (!items.length) return;
     setGameState((prev) => openFlightCase(prev, crateId).state);
     showItems(items, (item, action) =>
-      setGameState((prev) =>
-        action === 'sell'
-          ? earn(prev, item.baseValue, { category: 'equipment-sale', memo: item.name })
-          : { ...prev, caseFinds: [...(prev.caseFinds ?? []), { ...item }] },
-      ),
+      setGameState((prev) => {
+        const disposition = action === 'sell' ? 'sell' : action === 'stash' ? 'stash' : 'keep';
+        return applyGearAction(prev, { type: 'acquireFind', find: item, disposition }).state;
+      }),
     );
   };
 

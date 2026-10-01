@@ -47,6 +47,16 @@ export function StudioRecycler({ gameState, setGameState }: StudioRecyclerProps)
       <p className="font-medium">Earned finds</p>
       {gameState.pendingCrates.map(pending => <Button key={pending.id} variant="outline" className="min-h-11" onClick={() => setOpenCrateId(pending.id)}>Open earned case · {pending.source.replace(/_/g, ' ')}</Button>)}
     </div>}
+    {!!gameState.caseFinds?.length && <div className="space-y-2" aria-label="Stashed case finds">
+      <p className="font-medium">Stashed case finds</p>
+      {gameState.caseFinds.map(find => <div key={find.id} className="rounded border border-gray-700 p-2 space-y-1">
+        <p className="text-xs">{find.name} · {find.condition}% · {find.rarity} · est. {money(find.baseValue)}</p>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" className="min-h-11" onClick={() => act({ type: 'claimFind', findId: find.id, disposition: 'keep' })}>Equip</Button>
+          <Button size="sm" variant="outline" className="min-h-11" onClick={() => act({ type: 'claimFind', findId: find.id, disposition: 'sell' })}>Sell</Button>
+        </div>
+      </div>)}
+    </div>}
     <label className="block space-y-1">
       <span>Your gear</span>
       <select className="w-full min-h-11 rounded bg-gray-900 border border-gray-600 p-2" value={selectedId ?? ''} onChange={event => { setSelectedId(event.target.value || null); setShowCalibration(false); setMessage(''); }}>

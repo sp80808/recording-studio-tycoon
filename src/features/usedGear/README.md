@@ -12,15 +12,24 @@ template/index coordinates form identity; hashes drive flavour and RNG. Earned
 crate ids and their original year/price basis are saved, so waiting to open a
 case cannot change its reward. Premium flight-case fulfilment is separate.
 
-`refreshGearForDay(state)` finishes scheduled jobs and generates 3–4 listings
-only when the saved day differs from `currentDay`. New games, migrations,
-calendar advancement and the existing state setter call it. Stock and purchase
-flags are inside the career save. One daily listing is a low-cost workhorse.
-The game calendar advances in `useGameActions`, not `simulationClock`; idle
-wall time retains the existing calendar behaviour.
+`refreshGearForDay(state)` finishes scheduled jobs and generates 3–5 listings
+only when the saved day differs from `currentDay`. Borrowed-room / tier-1
+studios stay at 3–4; premises tier 1 and studio tier ≥3 can add listings (cap 5).
+Rarity bias follows studio/premises progression, but the day seed never includes
+those tiers so upgrading mid-day does not reshuffle stock. The market catalogue
+adds era signature `recorder` / `instrument` templates alongside the reliability
+categories; wear/repair still only apply to interfaces, mics, mixers and outboard.
+New games, migrations, calendar advancement and the existing state setter call
+it. Stock and purchase flags are inside the career save. One daily listing is a
+low-cost workhorse under a progression-scaled ceiling. The game calendar
+advances in `useGameActions`, not `simulationClock`; idle wall time retains the
+existing calendar behaviour.
 
-`applyGearAction(state, action)` receives ids and applies buy, claim, inspect,
-service, repair, calibration and sell atomically. Use it inside the latest
+`applyGearAction(state, action)` receives ids and applies buy, buyRetail, claim,
+claimFind, acquireFind, inspect, service, repair, calibration and sell
+atomically. Flight-case reveal equip/stash/sell routes through acquireFind;
+stashed `caseFinds` claim via claimFind. Retail shop purchases create
+`EquipmentInstance` rows through buyRetail. Use it inside the latest
 `setGameState` updater. Failed actions return the original state. Quotes expose
 cost, condition improvement and downtime. Outsource service adds up to 15
 condition in 1 day; repair adds up to 45 in 2 days, both topping out at 90.
@@ -31,7 +40,7 @@ collection are guarded by the saved job id/status.
 
 Resale is bounded by replacement price, condition and rarity. Repair parts
 always cost more than the entire resale improvement. As-is bargains yield at
-most $20 each, with at most four listings per day. Purchased flags prevent
+most $20 each, with at most five listings per day. Purchased flags prevent
 repeated flips; claimed crates are removed in the same transaction as delivery.
 
 The first reliability slice covers interfaces, microphones, mixers and outboard.
