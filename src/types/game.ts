@@ -1,5 +1,7 @@
 import type { NpcVisualIdentity } from '@/features/sprites/npcAppearance';
 import type { GearInstanceFields, DailyClassifiedListing } from '@/features/usedGear/types';
+import type { NpcVisualIdentity } from '@/features/sprites/npcAppearance';
+import type { CreatorPieceIds } from '@/features/sprites/staffPortrait';
 // Game type definitions
 import { Chart, ArtistContact, MarketTrend } from './charts';
 import { Client, RecordLabel } from '../game-mechanics/relationship-management';
@@ -164,6 +166,18 @@ export interface Project {
   stakeLocked?: boolean;
 }
 
+/** In-world CV shown in the Crew recruitment portal. Deterministic per candidate seed. */
+export interface StaffCurriculumVitae {
+  headline: string;
+  summary: string;
+  traits: string[];
+  previousStudios: string[];
+  notableCredits: string[];
+  yearsExperience: number;
+  education: string;
+  lookingFor: string;
+}
+
 export interface StaffMember {
   id: string;
   name: string;
@@ -188,6 +202,13 @@ export interface StaffMember {
   trainingCourse?: string;
   researchingModId?: string | null;
   researchEndDay?: number;
+  /** Deterministic modular portrait identity (create-a-character / npc-parts). */
+  appearance?: NpcVisualIdentity;
+  portraitSeed?: number;
+  /** Optional creator piece IDs; see staffPortrait.ts integration notes. */
+  pieceIds?: CreatorPieceIds;
+  /** Clickable CV for the recruitment portal. */
+  cv?: StaffCurriculumVitae;
   skills: { // UPDATED as per core_loop_plan.md
     songwriting: Skill;
     rhythm: Skill;

@@ -1,12 +1,13 @@
 import { Project, ProjectStage, StaffMember, FocusAllocation, StudioSkill, Equipment, PlayerAttributes, EquipmentMod, ClientRelationship } from '@/types/game'; // Changed OwnedEquipment to Equipment, Added EquipmentMod
 import { generateAIBand } from '@/utils/bandUtils';
 import { ERA_DEFINITIONS, getGenreMarketMultiplier } from '@/utils/eraProgression';
-import { initializeSkillsStaff } from '@/utils/skillUtils'; // Added import
 import { calculateStudioSkillBonus, getEquipmentBonuses as getBaseEquipmentBonuses } from './gameUtils'; // Import from gameUtils and rename
 import { availableMods } from '@/data/equipmentMods'; // Import available mods
 import { bumpMatchRatingForReturn } from '@/game-mechanics/relationship-management'; // Issue #10: repeat-client match bump
 import { deriveBrief } from '@/rpg/projectBrief';
 import { getEraGigPool, pickWeightedGig, type WeightedGig } from '@/data/gigTemplates';
+export { generateCandidates } from '@/utils/staffRecruitment';
+export type { CandidateGenerationContext } from '@/utils/staffRecruitment';
 // Assuming getMoodEffectiveness will be moved to playerUtils or passed as arg
 // For now, let's define a placeholder or expect it as an argument for calculateStaffWorkContribution
 
@@ -139,92 +140,6 @@ export const generateNewProjects = (count: number, playerLevel: number = 1, curr
   }
   
   return projects;
-};
-
-export const generateCandidates = (count: number): StaffMember[] => {
-  const names = [
-    'Alex Rivera', 'Sam Chen', 'Jordan Blake', 'Casey Smith', 'Taylor Johnson', 
-    'Morgan Davis', 'Riley Parker', 'Avery Wilson', 'Quinn Martinez', 'Sage Thompson',
-    'Kai Ito', 'Lena Petrova', 'Devon Washington', 'Priya Sharma', 'Mateo Garcia' // New names
-  ];
-  const roles: ('Engineer' | 'Producer' | 'Songwriter')[] = ['Engineer', 'Producer', 'Songwriter'];
-  const allGenres = ['Rock', 'Pop', 'Electronic', 'Hip-hop', 'Acoustic', 'Jazz', 'Folk', 'Soul']; // Expanded genres for affinity
-  const candidates: StaffMember[] = [];
-
-  for (let i = 0; i < count; i++) {
-    const role = roles[Math.floor(Math.random() * roles.length)];
-    const archetypeChance = Math.random();
-    let primaryStats: { creativity: number; technical: number; speed: number };
-    let genreAffinity: { genre: string; bonus: number } | null = null;
-    let salary = 80 + Math.floor(Math.random() * 120); // Base salary
-
-    if (archetypeChance < 0.3) { // 30% chance for a Specialist
-      primaryStats = {
-        creativity: 10 + Math.floor(Math.random() * 20), // 10-30
-        technical: 10 + Math.floor(Math.random() * 20), // 10-30
-        speed: 10 + Math.floor(Math.random() * 20)      // 10-30
-      };
-      const specialistStatBoost = 15 + Math.floor(Math.random() * 10); // 15-25 boost
-      const statToBoost = Math.floor(Math.random() * 3);
-      if (statToBoost === 0) primaryStats.creativity += specialistStatBoost;
-      else if (statToBoost === 1) primaryStats.technical += specialistStatBoost;
-      else primaryStats.speed += specialistStatBoost;
-      
-      // Higher chance of affinity and stronger affinity for specialists
-      if (Math.random() < 0.7) { // 70% chance
-        genreAffinity = {
-          genre: allGenres[Math.floor(Math.random() * allGenres.length)],
-          bonus: 20 + Math.floor(Math.random() * 20) // 20-40% bonus
-        };
-      }
-      salary += 50 + Math.floor(Math.random() * 50); // Higher salary for specialists
-    } else { // Generalist (or default)
-      primaryStats = {
-        creativity: 15 + Math.floor(Math.random() * 25), // 15-40 range
-        technical: 15 + Math.floor(Math.random() * 25),
-        speed: 15 + Math.floor(Math.random() * 25)
-      };
-      if (Math.random() < 0.4) { // 40% chance
-        genreAffinity = {
-          genre: allGenres[Math.floor(Math.random() * allGenres.length)],
-          bonus: 10 + Math.floor(Math.random() * 15) // 10-25% bonus
-        };
-      }
-    }
-    
-    // Salary tiers (sd3.4): interns are day-1 hireable, pros break even
-    // around day 40, specialists are empire-only. Classified AFTER stats and
-    // affinity are final so the tier always matches the candidate.
-    const bestStat = Math.max(primaryStats.creativity, primaryStats.technical, primaryStats.speed);
-    const affinityBonus = genreAffinity?.bonus ?? 0;
-    if (bestStat >= 45 || affinityBonus >= 25) {
-      salary = 160 + Math.floor(Math.random() * 81); // Specialist 160-240
-    } else if (bestStat >= 30 || affinityBonus >= 15) {
-      salary = 90 + Math.floor(Math.random() * 51); // Pro 90-140
-    } else {
-      salary = 35 + Math.floor(Math.random() * 21); // Intern 35-55
-    }
-
-    const candidate: StaffMember = {
-      id: '', // Will be assigned when hired
-      name: names[Math.floor(Math.random() * names.length)],
-      role,
-      primaryStats,
-      xpInRole: 0,
-      levelInRole: 1,
-      genreAffinity,
-      clientFamiliarity: {},
-      energy: 100,
-      mood: 75, // Start with good mood
-      salary,
-      status: 'Idle',
-      assignedProjectId: null,
-      skills: initializeSkillsStaff() // Initialize staff skills
-    };
-    
-    candidates.push(candidate);
-  }
-  return candidates;
 };
 
 export const calculateProjectDifficulty = (project: Project): number => {

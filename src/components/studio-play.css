@@ -252,3 +252,31 @@ body:has(.studio-inspector-layer) .first-session-guide { display:none; }
 @media (max-height:500px) {
   .studio-floor-exits { top:64px; right:12px; left:auto; bottom:auto; }
 }
+
+/* ---- Crew recruitment portal (Indeed / LinkedIn-style, in-world) ---- */
+.crew-portal__header { display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; align-items:flex-end; }
+.crew-portal__banner { padding:10px 12px; border-radius:12px; border:1px solid rgba(248,113,113,.35); background:rgba(69,10,10,.45); color:#fecaca; font-size:12px; line-height:1.4; }
+.crew-portal__tab { display:inline-flex; align-items:center; gap:6px; min-height:34px; padding:6px 12px; border-radius:10px; border:1px solid rgba(230,184,102,.28); background:rgba(20,16,12,.55); color:rgba(245,230,200,.78); font-size:12px; font-weight:600; }
+.crew-portal__tab.is-active { border-color:rgba(230,184,102,.7); color:var(--rst-brass-200, #e6b866); background:rgba(58,44,26,.72); }
+.crew-portal__layout { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr); gap:12px; align-items:start; }
+.crew-portal__list { display:flex; flex-direction:column; gap:8px; max-height:min(58vh,520px); overflow:auto; padding-right:2px; }
+.crew-portal__empty { text-align:center; color:#a8a29e; font-size:13px; padding:28px 12px; border:1px dashed rgba(255,255,255,.12); border-radius:14px; background:rgba(0,0,0,.18); }
+.crew-card { display:flex; gap:10px; width:100%; text-align:left; padding:10px; border-radius:14px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.04); transition:border-color .15s, background .15s; }
+.crew-card:hover { background:rgba(255,255,255,.07); border-color:rgba(230,184,102,.35); }
+.crew-card.is-active { border-color:rgba(230,184,102,.65); background:rgba(58,44,26,.45); box-shadow:inset 0 0 0 1px rgba(230,184,102,.18); }
+.crew-portal__cv { position:sticky; top:0; border-radius:16px; border:1px solid rgba(230,184,102,.28); background:linear-gradient(160deg, rgba(28,23,17,.92), rgba(12,10,8,.94)); padding:14px; min-height:220px; }
+.crew-cv { display:flex; flex-direction:column; gap:10px; }
+.crew-cv__hero { display:flex; gap:12px; align-items:center; }
+.crew-cv__chip { display:inline-flex; align-items:center; gap:6px; width:fit-content; padding:4px 8px; border-radius:999px; font-size:11px; color:#e9d5ff; background:rgba(88,28,135,.28); border:1px solid rgba(168,85,247,.35); }
+.crew-cv__block h4 { margin:0 0 4px; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:rgba(230,184,102,.85); }
+.crew-cv__block p, .crew-cv__block li { font-size:12px; color:#d6d3d1; line-height:1.45; }
+.crew-cv__block ul { margin:0; padding-left:16px; }
+.crew-cv__actions { margin-top:4px; padding-top:10px; border-top:1px solid rgba(255,255,255,.08); }
+.crew-portrait { width:56px; height:56px; border-radius:12px; overflow:hidden; border:1px solid rgba(230,184,102,.35); background:radial-gradient(circle at 40% 30%, rgba(88,70,40,.55), rgba(12,10,8,.95)); flex-shrink:0; }
+.crew-portrait__crop { display:flex; justify-content:center; transform:translateY(6px) scale(1.15); transform-origin:top center; }
+.crew-cv .crew-portrait { width:72px; height:72px; border-radius:16px; }
+@media (max-width:900px) {
+  .crew-portal__layout { grid-template-columns:1fr; }
+  .crew-portal__cv { position:static; }
+  .crew-portal__list { max-height:min(42vh,360px); }
+}

@@ -43,7 +43,9 @@ export const useStaffManagement = (
 
     const newStaff = {
       ...candidate,
-      id: `staff_${Date.now()}_${Math.random()}`,
+      id: candidate.id?.startsWith('candidate_')
+        ? candidate.id.replace(/^candidate_/, 'staff_')
+        : `staff_${candidate.portraitSeed ?? candidate.id ?? Date.now()}`,
       mood: 75 // Start with good mood
     };
 

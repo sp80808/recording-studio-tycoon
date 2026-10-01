@@ -169,8 +169,16 @@ export const createDefaultGameState = (options?: Partial<EraInitOptions>): GameS
 export const createNewGameState = (options?: Partial<EraInitOptions>): GameState => {
   let newGameState = createDefaultGameState(options);
   const currentEra = newGameState.currentEra;
+  const saveSeed = newGameState.saveSeed ?? options?.saveSeed ?? Date.now();
   const initialProjects = generateNewProjects(3, 1, currentEra);
-  const initialCandidates = generateCandidates(3);
+  const initialCandidates = generateCandidates({
+    count: 3,
+    saveSeed,
+    day: newGameState.currentDay ?? 1,
+    era: newGameState.selectedEra || currentEra,
+    year: newGameState.currentYear,
+    batchKey: 'career-start',
+  });
   const initialSessionMusicians = generateSessionMusicians(5);
 
   // Set initial progression-based values
@@ -185,7 +193,7 @@ export const createNewGameState = (options?: Partial<EraInitOptions>): GameState
     availableCandidates: initialCandidates,
     availableSessionMusicians: initialSessionMusicians,
     maxConcurrentProjects,
-    saveSeed: newGameState.saveSeed ?? options?.saveSeed ?? Date.now(),
+    saveSeed,
   });
 
   return newGameState;
