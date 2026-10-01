@@ -248,6 +248,16 @@ export const getTriggeredMinigames = (
     });
   }
 
+  // VOCAL COMP - pick the best take per line after vocals have been tracked
+  if (stageName.includes('vocal') || stageName.includes('takes') || stageName.includes('overdub') ||
+      (project.genre === 'Pop' && stageName.includes('recording'))) {
+    triggers.push({
+      minigameType: 'vocal-comp',
+      triggerReason: 'Three takes of the lead vocal - time to comp the keeper!',
+      priority: stageName.includes('vocal') ? 10 : 9
+    });
+  }
+
   // Sort by priority (highest first) and return top 3 to avoid overwhelming
   return triggers.sort((a, b) => b.priority - a.priority).slice(0, 3);
 };

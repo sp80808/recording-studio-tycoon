@@ -1,5 +1,6 @@
 import { GameState } from '../types/game';
 import { GenreId, SkillId } from './common.types';
+import { createInitialKnowHow, type KnowHowDomain } from '../rpg/studioKnowHow';
 
 export type PerkCategory = "Acoustics" | "Talent Acquisition" | "Marketing" | "ProductionWorkflow" | "Financial";
 
@@ -13,10 +14,12 @@ export interface StudioPerkEffect {
 }
 
 export interface UnlockCondition {
-  type: 'studioReputation' | 'completedProjectsInGenre' | 'staffSkillSum' | 'researchPoints' | 'specificPerkUnlocked';
+  type: 'studioReputation' | 'completedProjectsInGenre' | 'staffSkillSum' | 'researchPoints' | 'knowHowDomain' | 'specificPerkUnlocked';
   threshold?: number;
   genreId?: GenreId;
   skillId?: SkillId;
+  /** For 'knowHowDomain': earned domain familiarity (threshold = minimum). */
+  knowHowDomain?: KnowHowDomain;
   perkId?: string; // For prerequisite perks
   // count?: number; // For conditions like 'complete X projects'
 }
@@ -81,9 +84,17 @@ export class StudioUpgradeService {
         case 'specificPerkUnlocked':
           if (!this.unlockedPerkIds.has(condition.perkId!)) return false;
           break;
-        // case 'researchPoints': // Assuming research points are part of gameState or player resources
-        //   if (gameState.researchPoints < (condition.threshold || 0)) return false;
-        //   break;
+        case 'researchPoints': {
+          // Research points are Studio Know-How (#66): the one spendable pool.
+          const kh = gameState.studioKnowHow ?? createInitialKnowHow();
+          if (kh.available < (condition.threshold || 0)) return false;
+          break;
+        }
+        case 'knowHowDomain': {
+          const kh = gameState.studioKnowHow ?? createInitialKnowHow();
+          if (!condition.knowHowDomain || kh.domains[condition.knowHowDomain] < (condition.threshold || 0)) return false;
+          break;
+        }
         default:
           return false; // Unknown condition type
       }

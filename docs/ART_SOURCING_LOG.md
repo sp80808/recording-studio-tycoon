@@ -140,3 +140,15 @@ Third batch (in-house CC0):
 `public/assets/rewards/coin.svg`, `xp-star.svg`, `spark.svg` were hand-drawn as SVG
 for this project (no external source, no AI generation) and are released CC0. Used by
 `RewardFlights` for cash/XP loot travel.
+
+## 9. Asset factory sample sources (issues #78, #79)
+
+Procedurally drawn in-house (rectangles, no third-party art). License: **In-house (CC0)**.
+
+| Asset | Source | Output |
+| --- | --- | --- |
+| `npc/sample-engineer` (idle/work/celebrate, feet pivot) | `assets-src/npc/sample-engineer/` (Aseprite-format JSON + PNG, written by `scripts/assets/make-samples.ts`) | `public/assets/atlases/npc/sample-engineer.*` |
+| `gear/sample-monitor` (idle/powered) | `assets-src/gear/sample-monitor/frames/` (Blender-style loose frames) | `public/assets/atlases/gear/sample-monitor.*` |
+| `layer/npc-parts` (40 tintable NPC parts: body, hair, tops, lowers, shoes, faces, headphones) | `scripts/assets/make-layer-parts.ts` -> `assets-src/layer/npc-parts/frames/` | `public/assets/atlases/layer/npc-parts.*` |
+
+Every built atlas has a `*.provenance.json` (schema in `docs/ASSET_PIPELINE.md`). Real Aseprite/Blender exports have not been run through the pipeline yet.

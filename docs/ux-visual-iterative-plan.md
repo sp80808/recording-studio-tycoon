@@ -49,7 +49,7 @@ Storyline stays free; monetisation stays optional cosmetics/gear only (see fligh
 3. **Resolution / FPS settings** already exist — expose a “Performance” preset that forces CRT/bloom off + lower `targetFps` for integrated GPUs (document in Settings UX, no second WebGL).
 
 ### Splash
-4. **Brand-first hero** with one studio still / short motion and a single primary CTA group; keep tips in footer (current `SplashScreen.tsx` structure is close — tighten visual hierarchy, avoid competing cards).
+4. ~~**Brand-first hero**~~ — **done**: a real studio still (captured from the game, `public/assets/splash-studio.jpg`) sits above the title with softly faded edges; one primary CTA group, tips stay in the footer.
 5. ~~**Era picker preview**~~ — **done**: each era card shows the room's left wall, right wall and accent colours from `ERA_GRADES`.
 
 ### Isometric room

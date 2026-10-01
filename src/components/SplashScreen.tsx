@@ -138,6 +138,7 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
       </header>
 
       <section className="splash-hero" aria-label={t('game_title')}>
+        <img className="splash-still" src="/assets/splash-studio.jpg" alt="" aria-hidden="true" decoding="async" />
         <div className="splash-title-group">
           <h1><span>RECORDING</span><strong>STUDIO TYCOON</strong></h1>
           <p className="splash-tagline">{t('splash_tagline')}</p>

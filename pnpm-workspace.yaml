@@ -1,6 +1,7 @@
 allowBuilds:
   '@swc/core': true
   esbuild: true
+  ffmpeg-static: false
 overrides:
   esbuild: 0.21.5
 patchedDependencies:
