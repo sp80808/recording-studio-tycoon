@@ -7,7 +7,7 @@
  */
 import { createSeededRandom } from '@/simulation/seededRandom';
 import type { GameState } from '@/types/game';
-import { visualEraId } from '@/utils/eraProgression';
+import { ERA_DEFINITIONS, visualEraId } from '@/utils/eraProgression';
 
 /* ------------------------------------------------------------ trophy wall */
 
@@ -93,8 +93,10 @@ const ERA_DECOR: Record<string, Omit<EraDecorSpec, 'eraId'>> = {
   streaming2020s: { prop: 'led-strip', glow: 0x7bf0c8, glow2: 0xa78bfa, daylight: 0xeaf7ff, wainscot: 0x1f2b27, planks: [0x5a4a3e, 0x52443a, 0x4a3d33] },
 };
 
-export const getEraDecor = (eraId?: string): EraDecorSpec => {
-  const id = visualEraId(eraId ?? 'analog60s');
+export const getEraDecor = (eraId?: string, currentYear?: number): EraDecorSpec => {
+  // The displayed year also covers older saves whose era id disagrees with their date.
+  const id = ERA_DEFINITIONS.find(era => currentYear !== undefined && currentYear >= era.startYear && currentYear <= era.endYear)?.id
+    ?? visualEraId(eraId ?? 'analog60s');
   const spec = ERA_DECOR[id] ?? ERA_DECOR.analog60s;
   return { eraId: ERA_DECOR[id] ? id : 'analog60s', ...spec };
 };

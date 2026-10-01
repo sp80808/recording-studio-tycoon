@@ -7,6 +7,14 @@ cd "$(dirname "$0")/.."
 echo "=== typecheck (tsc must stay at zero errors) ==="
 ./node_modules/.bin/tsc -p tsconfig.app.json --noEmit
 
+echo "=== studio outreach (era phone/door) ==="
+./node_modules/.bin/esbuild tests/studio-outreach.check.tsx --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-outreach.cjs --alias:@=./src >/dev/null
+node /tmp/rst-studio-outreach.cjs
+
+echo "=== hiring space + reputation limits ==="
+./node_modules/.bin/esbuild tests/hiring-limits.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-hiring-limits.cjs --alias:@=./src >/dev/null
+node /tmp/rst-hiring-limits.cjs
+
 echo "=== tutorial and room purchases ==="
 for check in first-session-guide studio-room-purchase toast-spam; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null

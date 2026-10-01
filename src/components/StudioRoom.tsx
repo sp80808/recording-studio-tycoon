@@ -8,8 +8,8 @@ import { gameAudio } from '@/utils/audioSystem';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
 import { TierUpgradeAnimation } from './TierUpgradeAnimation';
 import { toast } from '@/hooks/use-toast';
-import { LocateFixed, Phone } from 'lucide-react';
-import { getTrophyInput } from '@/components/studio/studioDecorConfig';
+import { DoorOpen, LocateFixed, Megaphone, Phone } from 'lucide-react';
+import { getEraDecor, getTrophyInput } from '@/components/studio/studioDecorConfig';
 import { triggerScreenShake } from '@/utils/screenShake';
 import { AUTHORED_CHORES } from '@/simulation/choreEngine';
 import { useGamepad } from '@/hooks/useGamepad';
@@ -20,7 +20,7 @@ import {
   MotionButton,
 } from '@/components/motion/primitives';
 
-const STUDIO_HOTSPOTS: StudioHotspotId[] = ['console', 'phone', 'liveRoom', 'shelf', 'tv', 'clock'];
+const STUDIO_HOTSPOTS: StudioHotspotId[] = ['console', 'phone', 'liveRoom', 'shelf', 'tv', 'clock', 'door'];
 const HOTSPOT_NAMES: Record<StudioHotspotId, string> = {
   console: 'Console Desk',
   phone: 'Studio Phone',
@@ -28,6 +28,8 @@ const HOTSPOT_NAMES: Record<StudioHotspotId, string> = {
   shelf: 'Vinyl Shelf',
   tv: 'Charts & TV',
   clock: 'Studio Clock',
+  door: 'Studio Door',
+  promotion: 'Phone & Ring Light',
 };
 
 interface StudioRoomProps {
@@ -73,6 +75,8 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
   const [tierFlash, setTierFlash] = useState(false);
   const [pendingTierUpgrade, setPendingTierUpgrade] = useState<{ oldTier: number; newTier: number } | null>(null);
   const playClick = () => { if (settings.sfxEnabled) gameAudio.playUISound('buttonClick'); };
+  const eraDecor = getEraDecor(gameState.currentEra, gameState.currentYear);
+  const studioHotspots = eraDecor.prop === 'led-strip' ? [...STUDIO_HOTSPOTS, 'promotion' as const] : STUDIO_HOTSPOTS;
 
   // Studio tier (1-5) from the progression milestones — drives visible
   // room upgrades in the Pixi scene (bead ifx.3).
@@ -138,15 +142,16 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       staffOnFloor: Math.min(5, 1 + presentStaff),
       ownedEquipment: gameState.ownedEquipment.length,
       day: gameState.currentDay,
-      eraId: gameState.currentEra,
+      eraId: eraDecor.eraId,
       roomTier,
       trophies: getTrophyInput(gameState),
       decorSeed: String(gameState.saveSeed ?? 'studio'),
     };
-  }, [gameState.activeProject, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, roomTier]);
+  }, [gameState.activeProject, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, eraDecor.eraId, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, roomTier]);
 
   /** Every hotspot now opens its contextual inspector (bead goj.2). */
   const handleHotspot = (id: StudioHotspotId) => {
+    if (id === 'promotion' && eraDecor.prop !== 'led-strip') return;
     if (settings.sfxEnabled) {
       if (id === 'console' || id === 'shelf') {
         void gameAudio.playGearSwitch();
@@ -186,13 +191,13 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     if (!gamepad.isConnected || activeInspector) return;
 
     if (gamepad.justPressed.dpadRight || gamepad.justPressed.dpadDown) {
-      setFocusedHotspotIndex((prev) => (prev + 1) % STUDIO_HOTSPOTS.length);
+      setFocusedHotspotIndex((prev) => (prev + 1) % studioHotspots.length);
       gamepad.triggerHaptic(0.1, 0.15, 30);
     } else if (gamepad.justPressed.dpadLeft || gamepad.justPressed.dpadUp) {
-      setFocusedHotspotIndex((prev) => (prev - 1 + STUDIO_HOTSPOTS.length) % STUDIO_HOTSPOTS.length);
+      setFocusedHotspotIndex((prev) => (prev - 1 + studioHotspots.length) % studioHotspots.length);
       gamepad.triggerHaptic(0.1, 0.15, 30);
     } else if (gamepad.justPressed.south) {
-      const selected = STUDIO_HOTSPOTS[focusedHotspotIndex];
+      const selected = studioHotspots[focusedHotspotIndex % studioHotspots.length];
       handleHotspot(selected);
       gamepad.triggerHaptic(0.2, 0.3, 50);
     }
@@ -205,6 +210,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     gamepad.justPressed.dpadUp,
     gamepad.justPressed.south,
     focusedHotspotIndex,
+    studioHotspots.length,
   ]);
 
   const availableCount = gameState.availableProjects.length;
@@ -236,6 +242,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           onOpenDashboardTab={onOpenDashboardTab ?? (() => {})}
           onConsoleFocus={onConsoleFocus}
           onCompleteChore={onCompleteChore}
+          onBookings={onBookings}
         />
       )}
       {/* Top-left overlay stack: sits below the HUD (see .studio-room-overlay-tl) and flows
@@ -265,6 +272,17 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
               </span>
             </button>
           </MotionReveal>
+        )}
+      </div>
+
+      <div className="studio-floor-exits absolute left-3 z-10 flex gap-2">
+        <button type="button" onClick={() => handleHotspot('door')} className="studio-room-chip rst-duty-chip min-h-11 focus-visible:ring-2 focus-visible:ring-amber-300">
+          <DoorOpen size={14} aria-hidden="true" /> Go out
+        </button>
+        {eraDecor.prop === 'led-strip' && (
+          <button type="button" onClick={() => handleHotspot('promotion')} className="studio-room-chip rst-duty-chip min-h-11 focus-visible:ring-2 focus-visible:ring-amber-300">
+            <Megaphone size={14} aria-hidden="true" /> Promotion
+          </button>
         )}
       </div>
 
@@ -359,7 +377,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
         <div className="absolute bottom-2 left-3 flex items-center gap-2 bg-stone-950/85 px-2.5 py-1.5 rounded-full border border-stone-700/60 shadow-lg text-[11px] text-stone-300 pointer-events-none select-none animate-in fade-in">
           <GamepadGlyph button="dpadLeft" size="xs" />
           <GamepadGlyph button="dpadRight" size="xs" />
-          <span>Target: <b className="text-amber-300">{HOTSPOT_NAMES[STUDIO_HOTSPOTS[focusedHotspotIndex]]}</b></span>
+          <span>Target: <b className="text-amber-300">{HOTSPOT_NAMES[studioHotspots[focusedHotspotIndex % studioHotspots.length]]}</b></span>
           <span className="text-stone-600">|</span>
           <GamepadGlyph button="south" size="xs" />
           <span>Inspect</span>

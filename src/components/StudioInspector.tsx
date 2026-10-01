@@ -22,8 +22,12 @@ import {
   Tv,
   X,
   Check,
+  DoorOpen,
+  Megaphone,
+  Users,
 } from 'lucide-react';
-import { getOriginEffects } from '@/narrative/originPerks';
+import { getOriginEffects, gigRefreshCostFor } from '@/narrative/originPerks';
+import { getEraDecor } from '@/components/studio/studioDecorConfig';
 import { gameAudio } from '@/utils/audioSystem';
 import {
   MotionPanel,
@@ -44,16 +48,8 @@ export interface StudioInspectorProps {
   onOpenDashboardTab: (tab: 'studio' | 'skills' | 'bands' | 'charts' | 'staff') => void;
   onConsoleFocus?: () => void;
   onCompleteChore?: (hotspot: StudioHotspotId) => boolean;
+  onBookings?: () => void;
 }
-
-const ANCHORS: Record<StudioHotspotId, string> = {
-  phone: 'top-10 left-3',
-  clock: 'top-10 left-1/2 -translate-x-1/2',
-  tv: 'top-10 right-3',
-  shelf: 'top-1/2 right-3 -translate-y-1/2',
-  console: 'bottom-9 left-1/2 -translate-x-1/2',
-  liveRoom: 'bottom-9 right-3',
-};
 
 const INSPECTOR_META = {
   phone: { label: 'Booking Line', icon: Phone },
@@ -62,6 +58,8 @@ const INSPECTOR_META = {
   shelf: { label: 'Gear Locker', icon: Guitar },
   console: { label: 'Mixing Console', icon: SlidersHorizontal },
   liveRoom: { label: 'Live Room', icon: Mic2 },
+  door: { label: 'Go Out', icon: DoorOpen },
+  promotion: { label: 'Phone & Ring Light', icon: Megaphone },
 } as const satisfies Record<StudioHotspotId, { label: string; icon: typeof Phone }>;
 
 const ActionIcon: React.FC<{ icon: typeof Phone }> = ({ icon: Icon }) => (
@@ -84,17 +82,17 @@ const Shell: React.FC<{
   children: React.ReactNode;
 }> = ({ hotspot, onClose, children }) => (
   <div
-    className="absolute inset-0 z-20"
+    className="studio-inspector-layer absolute z-30"
     onClick={(e) => {
       if (e.target === e.currentTarget) onClose();
     }}
   >
-    <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]" />
+    <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]" onClick={onClose} aria-hidden="true" />
     <MotionPanel
       direction="scale"
       role="dialog"
       aria-label={INSPECTOR_META[hotspot].label}
-      className={`absolute ${ANCHORS[hotspot]} w-72 max-w-[80vw] max-h-[78%] overflow-y-auto rounded-lg border border-amber-400/30 bg-[#1b1813]/95 backdrop-blur-md shadow-2xl shadow-black/60`}
+      className="studio-inspector rst-modal absolute overflow-y-auto"
       onClick={(e: React.MouseEvent) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-black/40 sticky top-0 z-10">
@@ -105,7 +103,7 @@ const Shell: React.FC<{
             onClose();
           }}
           aria-label="Close inspector"
-          className="rounded p-1 text-stone-400 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-md text-stone-400 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
         >
           <X aria-hidden="true" className="h-4 w-4" />
         </MotionButton>
@@ -142,6 +140,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   onOpenDashboardTab,
   onConsoleFocus,
   onCompleteChore,
+  onBookings,
 }) => {
   const [actingGigId, setActingGigId] = useState<string | null>(null);
   const [actingStaffId, setActingStaffId] = useState<string | null>(null);
@@ -160,6 +159,56 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   }, [hotspot, onClose]);
 
   const project = gameState.activeProject;
+
+  const openDashboard = (tab: Parameters<StudioInspectorProps['onOpenDashboardTab']>[0]) => {
+    void gameAudio.playTactileClick();
+    onClose();
+    onOpenDashboardTab(tab);
+  };
+
+  if (hotspot === 'door') {
+    return (
+      <Shell hotspot={hotspot} onClose={onClose}>
+        <p className="text-xs text-stone-400">Step outside. Where are you heading?</p>
+        <MotionButton autoFocus className="rst-btn rst-btn-ghost w-full min-h-11" onClick={() => openDashboard('studio')}>
+          <ActionIcon icon={ShoppingCart} /> Buy equipment
+        </MotionButton>
+        <MotionButton className="rst-btn rst-btn-ghost w-full min-h-11" onClick={() => openDashboard('bands')}>
+          <ActionIcon icon={Guitar} /> Meet artists & book shows
+        </MotionButton>
+        <MotionButton className="rst-btn rst-btn-ghost w-full min-h-11" onClick={() => openDashboard('staff')}>
+          <ActionIcon icon={Users} /> Scout studio crew
+        </MotionButton>
+      </Shell>
+    );
+  }
+
+  if (hotspot === 'promotion') {
+    if (getEraDecor(gameState.currentEra, gameState.currentYear).prop !== 'led-strip') return null;
+    const cooldown = gigRefreshCooldownRemaining(gameState);
+    const cost = gigRefreshCostFor(GIG_REFRESH_COST, getOriginEffects(gameState));
+    return (
+      <Shell hotspot={hotspot} onClose={onClose}>
+        <p className="text-xs text-stone-400">Create studio marketing content to bring in a fresh enquiry, contact artists, or plan a promoted show.</p>
+        <MotionButton
+          className="rst-btn rst-btn-primary w-full min-h-11"
+          disabled={!onRefreshProjects || cooldown > 0 || gameState.money < cost}
+          onClick={() => { if (onRefreshProjects?.()) { onClose(); onBookings?.(); } }}
+        >
+          <ActionIcon icon={Megaphone} /> Create marketing content — ${cost}
+        </MotionButton>
+        <p className="text-[11px] text-stone-400" role="status">
+          {cooldown > 0 ? `Outreach ready in ${cooldown} day${cooldown === 1 ? '' : 's'}.` : gameState.money < cost ? `You need $${cost} for outreach.` : 'One new booking lead. Shares the gig-outreach cooldown.'}
+        </p>
+        <MotionButton autoFocus className="rst-btn rst-btn-ghost w-full min-h-11" onClick={() => openDashboard('charts')}>
+          <ActionIcon icon={PhoneCall} /> Contact artists
+        </MotionButton>
+        <MotionButton className="rst-btn rst-btn-ghost w-full min-h-11" onClick={() => openDashboard('bands')}>
+          <ActionIcon icon={Guitar} /> Plan shows & promotions
+        </MotionButton>
+      </Shell>
+    );
+  }
 
   const handleTakeGig = (gig: Project) => {
     if (project || actingGigId) return;

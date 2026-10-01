@@ -34,13 +34,25 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSetting
         <div className="studio-hud-stat text-[var(--rst-ivory)]" title={t('reputation')}>
           <Star size={16} className="text-[var(--rst-brass-400)]" fill="currentColor" aria-hidden="true" /><AnimatedCounter value={gameState.reputation} suffix={t('rep_suffix')} />
         </div>
-        <button
-          className="studio-dock-button studio-hud-day"
-          onClick={() => setShowEraProgress(true)}
-          aria-label={`${t('current_day', { day: gameState.currentDay })}, ${t('view_era_progress')}`}
-        >
-          <CalendarDays size={16} aria-hidden="true" />{t('current_day', { day: gameState.currentDay })}
-        </button>
+        <div className="studio-hud-day-group">
+          <button
+            className="studio-dock-button studio-hud-day"
+            onClick={() => setShowEraProgress(true)}
+            aria-label={`${t('current_day', { day: gameState.currentDay })}, ${t('view_era_progress')}`}
+          >
+            <CalendarDays size={16} aria-hidden="true" />{t('current_day', { day: gameState.currentDay })}
+          </button>
+          {onAdvanceDay && (
+            <button
+              className="studio-dock-button studio-hud-advance"
+              onClick={onAdvanceDay}
+              aria-label={t('rest_and_advance_day')}
+              title={t('rest_and_advance_day')}
+            >
+              <PressRipple><Sunrise size={19} /></PressRipple>
+            </button>
+          )}
+        </div>
         <StreakFlame streakCount={gameState.dailyTracking?.streakCount} />
       </div>
       <div
@@ -64,16 +76,6 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSetting
           <span>{t('level', { level: player.level })} <span className="float-right">{t('xp_label', { xp: player.xp })}</span></span>
           <progress aria-label={t('producer_experience_aria')} max={Math.max(1, player.xpToNextLevel)} value={player.xp} />
         </div>
-        {onAdvanceDay && (
-          <button
-            className="studio-dock-button studio-hud-advance"
-            onClick={onAdvanceDay}
-            aria-label={t('rest_and_advance_day')}
-            title={t('rest_and_advance_day')}
-          >
-            <PressRipple><Sunrise size={19} /></PressRipple>
-          </button>
-        )}
         <button
           className="studio-dock-button"
           onClick={toggleFullscreen}

@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { GameState } from '@/types/game';
 import { Users } from 'lucide-react';
+import { getHiringLimits, hiringBlockMessage } from '@/rpg/hiringLimits';
 
 interface RecruitmentModalProps {
   gameState: GameState;
@@ -41,6 +42,16 @@ export const RecruitmentModal: React.FC<RecruitmentModalProps> = ({
         </DialogHeader>
 
         <div className="space-y-4 max-h-96 overflow-y-auto">
+          {(() => {
+            const limits = getHiringLimits(gameState);
+            return (
+              <div className={`rounded border px-3 py-2 text-xs ${limits.canHire ? 'border-stone-600 bg-stone-800/60 text-stone-300' : 'border-amber-600/50 bg-amber-950/40 text-amber-100'}`} role="status">
+                <div className="font-semibold text-white">Crew {limits.hired}/{limits.effectiveCap}</div>
+                <div className="mt-1">Space ({limits.premisesName}): {limits.spaceCap} · Reputation: {limits.reputationCap}</div>
+                {!limits.canHire && <p className="mt-1">{hiringBlockMessage(limits)}</p>}
+              </div>
+            );
+          })()}
           {gameState.availableCandidates.length === 0 ? (
             <div className="text-center text-stone-400 py-8">
               <Users className="w-12 h-12 mx-auto mb-4 text-stone-600" />
@@ -50,6 +61,8 @@ export const RecruitmentModal: React.FC<RecruitmentModalProps> = ({
           ) : (
             gameState.availableCandidates.map((candidate, index) => {
               const signingFee = candidate.salary * 3; // 3x daily salary as signing fee
+              const limits = getHiringLimits(gameState);
+              const canHireThis = limits.canHire && gameState.money >= signingFee;
               
               return (
                 <Card key={index} className="p-4 bg-white/[0.07] border-stone-600 hover:bg-stone-750 transition-colors">
@@ -91,10 +104,14 @@ export const RecruitmentModal: React.FC<RecruitmentModalProps> = ({
                   <div className="flex gap-2">
                     <Button
                       onClick={(e) => { popElement(e.currentTarget); hireStaff(index); }}
-                      disabled={gameState.money < signingFee}
+                      disabled={!canHireThis}
                       className="flex-1 bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] disabled:bg-stone-600"
                     >
-                      {gameState.money < signingFee ? t('recruitment_insufficient_funds') : t('recruitment_hire_button', { fee: signingFee })}
+                      {!limits.canHire
+                        ? (limits.blocker === 'reputation' ? 'Need more reputation' : 'No space')
+                        : gameState.money < signingFee
+                          ? t('recruitment_insufficient_funds')
+                          : t('recruitment_hire_button', { fee: signingFee })}
                     </Button>
                   </div>
                 </Card>
