@@ -17,7 +17,7 @@ import { generateModularNpc } from '../src/features/sprites/npcGenerator';
 import { AVAILABLE_ERAS } from '../src/data/eras';
 
 const era = AVAILABLE_ERAS.find((e) => e.id === 'golden_age')!;
-const look: ProducerAppearance = { seed: 42, hair: 'long_wavy', hairColour: 'auburn', clothesColour: 'teal', accessory: 'flat_cap' };
+const look: ProducerAppearance = { seed: 42, build: 'average', hair: 'long_wavy', hairColour: 'auburn', clothesColour: 'teal', accessory: 'flat_cap' };
 const start = (extra: Record<string, unknown> = {}) =>
   createNewGameState({
     startingMoney: era.startingMoney, selectedEra: era.id, eraStartYear: era.startYear,
@@ -39,6 +39,19 @@ describe('producer customization (#126)', () => {
     const junk = sanitizeProducerAppearance({ seed: 'x', hair: 'mullet', hairColour: 3, clothesColour: null, accessory: 'jetpack' });
     assert.deepEqual(junk, DEFAULT_PRODUCER_APPEARANCE);
     assert.equal(sanitizeProducerAppearance({ ...look, accessory: 'nope' }).hair, 'long_wavy');
+    // Pre-build saves omit build but still load (explicit default, not a reseed).
+    assert.equal(sanitizeProducerAppearance({ ...look, build: undefined }).build, 'average');
+    assert.equal(sanitizeProducerAppearance({ ...look, build: 'sumo' }).build, 'average');
+  });
+
+  it('applies the explicit physique without touching the seed-driven face', () => {
+    for (const build of ['slim', 'average', 'stocky'] as const) {
+      assert.equal(buildProducerNpc({ ...look, build }, 'P', 'golden_age').body.build, build);
+    }
+    const slim = buildProducerNpc({ ...look, build: 'slim' }, 'P', 'golden_age');
+    const stocky = buildProducerNpc({ ...look, build: 'stocky' }, 'P', 'golden_age');
+    assert.equal(slim.body.skinTone, stocky.body.skinTone);
+    assert.notEqual(slim.body.build, stocky.body.build);
   });
 
   it('wires every picker value into the ModularNpcDefinition', () => {

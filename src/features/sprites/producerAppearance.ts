@@ -7,7 +7,7 @@
  * draw, so the player sprite is always derived data and never a second source of truth.
  */
 import { hashSeed } from '@/simulation/seededRandom';
-import type { HairColour, HairShape, Headwear, ModularNpcDefinition, NpcEra } from './spriteTypes';
+import type { BodyBuild, HairColour, HairShape, Headwear, ModularNpcDefinition, NpcEra } from './spriteTypes';
 import { resolveNpcAppearance } from './npcAppearance';
 import { CLOTHING_PALETTES, HAIR_HEX } from './npcAppearanceData';
 
@@ -34,6 +34,10 @@ export type ProducerClothesColourId = (typeof PRODUCER_CLOTHES_COLOURS)[number][
 export const PRODUCER_ACCESSORIES = ['none', 'headphones', 'round_glasses', 'wayfarers', 'flat_cap', 'beanie', 'gold_chain'] as const;
 export type ProducerAccessory = (typeof PRODUCER_ACCESSORIES)[number];
 
+/** Explicit physique picker (slim / average / stocky). Seed still drives skin and face. */
+export const PRODUCER_BUILDS: readonly BodyBuild[] = ['slim', 'average', 'stocky'];
+export const BUILD_LABELS: Record<BodyBuild, string> = { slim: 'Slim', average: 'Average', stocky: 'Stocky' };
+
 export const ACCESSORY_LABELS: Record<ProducerAccessory, string> = {
   none: 'Nothing',
   headphones: 'Cans',
@@ -45,8 +49,10 @@ export const ACCESSORY_LABELS: Record<ProducerAccessory, string> = {
 };
 
 export interface ProducerAppearance {
-  /** Seeds the body (build, skin, face, trousers, shoes). Stable per career. */
+  /** Seeds the body (skin, face, trousers, shoes). Stable per career. */
   seed: number;
+  /** Explicit physique. Optional so older saves keep loading (defaults to average). */
+  build?: BodyBuild;
   hair: HairShape;
   hairColour: HairColour;
   clothesColour: ProducerClothesColourId;
@@ -55,6 +61,7 @@ export interface ProducerAppearance {
 
 export const DEFAULT_PRODUCER_APPEARANCE: ProducerAppearance = {
   seed: 1960,
+  build: 'average',
   hair: 'pompadour',
   hairColour: 'dark_brown',
   clothesColour: 'amber',
@@ -70,6 +77,7 @@ export const sanitizeProducerAppearance = (value: unknown): ProducerAppearance =
   const d = DEFAULT_PRODUCER_APPEARANCE;
   return {
     seed: typeof v.seed === 'number' && Number.isFinite(v.seed) ? Math.trunc(v.seed) : d.seed,
+    build: oneOf(PRODUCER_BUILDS, v.build, d.build!),
     hair: oneOf(PRODUCER_HAIR_SHAPES, v.hair, d.hair),
     hairColour: oneOf(PRODUCER_HAIR_COLOURS, v.hairColour, d.hairColour),
     clothesColour: oneOf(PRODUCER_CLOTHES_COLOURS.map((c) => c.id), v.clothesColour, d.clothesColour),
@@ -85,7 +93,7 @@ export const npcEraForGameEra = (eraId: string | undefined): NpcEra =>
   }) as Record<string, NpcEra>)[eraId ?? ''] ?? 'modern';
 
 export const sameProducerAppearance = (a: ProducerAppearance, b: ProducerAppearance): boolean =>
-  a.seed === b.seed && a.hair === b.hair && a.hairColour === b.hairColour && a.clothesColour === b.clothesColour && a.accessory === b.accessory;
+  a.seed === b.seed && (a.build ?? 'average') === (b.build ?? 'average') && a.hair === b.hair && a.hairColour === b.hairColour && a.clothesColour === b.clothesColour && a.accessory === b.accessory;
 
 /** Pure: the full sprite definition for a producer. Same inputs always give the same NPC. */
 export const buildProducerNpc = (
@@ -119,6 +127,7 @@ export const buildProducerNpc = (
       jewellery: a.accessory === 'gold_chain' ? 'gold_chain' : 'none',
     },
     // The player's face shows (shades only come from an explicit glasses pick).
-    body: { ...base.body, face: base.body.face === 'vintage_shades' ? 'focused' : base.body.face },
+    // Physique is an explicit picker; the seed keeps driving skin and face.
+    body: { ...base.body, build: a.build ?? 'average', face: base.body.face === 'vintage_shades' ? 'focused' : base.body.face },
   };
 };

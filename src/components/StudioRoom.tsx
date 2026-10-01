@@ -19,6 +19,7 @@ import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
 import { MotionReveal } from '@/components/motion/primitives';
 import { ChoreHotspotButton } from '@/components/chores/ChoreHotspotButton';
 import { parseNpcVisualIdentity, type NpcVisualIdentity } from '@/features/sprites/npcAppearance';
+import { buildProducerNpc } from '@/features/sprites/producerAppearance';
 import {
   animStateForStaffStatus,
   hashSeed,
@@ -151,6 +152,16 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     const playerAppearance = parseNpcVisualIdentity(
       (gameState.playerData as { appearance?: unknown } | undefined)?.appearance,
     );
+    // Career-start customisation (#126/k5v): resolve the exact creator look so the
+    // on-floor producer matches the preview. Falls back to the seed figure when absent.
+    const customization = gameState.producerCustomization;
+    const producerNpc = customization
+      ? buildProducerNpc(
+          customization.appearance,
+          customization.moniker ?? (gameState.playerData as { name?: string } | undefined)?.name ?? 'Producer',
+          gameState.selectedEra ?? gameState.currentEra,
+        )
+      : undefined;
     const floorFigures: FloorNpcFigure[] = [
       {
         identity: playerAppearance ?? undefined,
@@ -188,6 +199,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       staffOnFloor: Math.min(5, Math.max(1, floorFigures.length)),
       floorFigures,
       producerAppearance: playerAppearance ?? undefined,
+      producerNpc,
       ownedEquipmentIds: gameState.ownedEquipment.map((e) => e.id),
       gearConditions: Object.fromEntries(
         gameState.ownedEquipment

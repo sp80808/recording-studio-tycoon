@@ -17,7 +17,7 @@ import type { ChronicleEntry, StorylineState } from './branchingStorylineEngine'
 
 // ───────────────────────────── Types ─────────────────────────────
 
-export type StudioMemoryScope = 'studio' | 'client' | 'staff' | 'project' | 'gear';
+export type StudioMemoryScope = 'studio' | 'client' | 'staff' | 'project' | 'gear' | 'band';
 
 export interface StudioMemory {
   id: string;
@@ -36,7 +36,22 @@ export type DomainEffect =
   | { kind: 'reputation'; amount: number }
   | { kind: 'xp'; amount: number }
   | { kind: 'clientXp'; amount: number }
+  | { kind: 'staffXp'; amount: number }
+  | { kind: 'gearCondition'; amount: number }
   | { kind: 'referral' };
+
+/** Read-only band facts (real `GameState.bands` rows, flattened for eligibility checks). */
+export interface StudioBandFacts {
+  id: string;
+  name: string;
+  genre: string;
+  fame: number;
+  notoriety: number;
+  onTour: boolean;
+  isPlayerCreated: boolean;
+  releases: number;
+  daysSinceShow?: number;
+}
 
 export interface MemoryWrite {
   scope?: StudioMemoryScope;
@@ -71,6 +86,8 @@ export interface StudioEventFacts {
   clients: readonly ClientRelationship[];
   staff: ReadonlyArray<{ id: string; name: string }>;
   gear: ReadonlyArray<{ id: string; name: string }>;
+  /** Bands on the studio's books (`GameState.bands`), for band-lifecycle events. */
+  bands: readonly StudioBandFacts[];
   /** Does the ledger hold `key` for the scope/entity? Expired memories never match. */
   has: (scope: StudioMemoryScope, key: string, entityId?: string) => boolean;
   flag: (name: string) => boolean;
@@ -143,7 +160,7 @@ const MEMORY_LIMIT = 200;
 const HISTORY_LIMIT = 120;
 
 /** Hard caps applied to any effect, whatever the narrative content asks for. */
-export const EFFECT_LIMITS = { money: 5000, reputation: 25, xp: 500, clientXp: 100 } as const;
+export const EFFECT_LIMITS = { money: 5000, reputation: 25, xp: 500, clientXp: 100, staffXp: 60, gearCondition: 15 } as const;
 
 const EMPTY: DirectorState = { memories: [], history: [], opportunitySeq: 0 };
 
@@ -204,6 +221,17 @@ export const buildFacts = (state: GameState): StudioEventFacts => ({
   clients: Object.values(state.clientRelationships ?? {}).sort((a, b) => a.clientId.localeCompare(b.clientId)),
   staff: (state.hiredStaff ?? []).map((m) => ({ id: m.id, name: m.name })),
   gear: (state.ownedEquipment ?? []).map((e) => ({ id: e.id, name: e.name })),
+  bands: (state.bands ?? []).map((b) => ({
+    id: b.id,
+    name: b.bandName,
+    genre: b.genre,
+    fame: b.fame ?? 0,
+    notoriety: b.notoriety ?? 0,
+    onTour: Boolean(b.tourStatus?.isOnTour),
+    isPlayerCreated: Boolean(b.isPlayerCreated),
+    releases: b.pastReleases?.length ?? 0,
+    daysSinceShow: typeof b.lastShowDay === 'number' ? state.currentDay - b.lastShowDay : undefined,
+  })),
   has: (scope, key, entityId) => hasMemory(state, scope, key, entityId),
   flag: (name) => Boolean(state.storylineState?.storyFlags?.[name]),
 });
@@ -350,7 +378,9 @@ export const validateEffects = (effects: readonly DomainEffect[]): ValidatedEffe
       case 'money':
       case 'reputation':
       case 'xp':
-      case 'clientXp': {
+      case 'clientXp':
+      case 'staffXp':
+      case 'gearCondition': {
         const cap = EFFECT_LIMITS[e.kind];
         const amount = Math.max(-cap, Math.min(cap, Math.round(Number(e.amount) || 0)));
         return amount === 0 ? [] : [{ kind: e.kind, amount }];
@@ -380,6 +410,22 @@ export const applyDomainEffects = (state: GameState, effects: readonly DomainEff
         break;
       case 'xp':
         next = { ...next, playerData: { ...next.playerData, xp: Math.max(0, (next.playerData?.xp ?? 0) + e.amount) } };
+        break;
+      case 'staffXp':
+        // Crew-wide nudge: every hired member gets role XP, never below zero.
+        next = {
+          ...next,
+          hiredStaff: (next.hiredStaff ?? []).map((m) => ({ ...m, xpInRole: Math.max(0, (m.xpInRole ?? 0) + e.amount) })),
+        };
+        break;
+      case 'gearCondition':
+        next = {
+          ...next,
+          ownedEquipment: (next.ownedEquipment ?? []).map((eq) => ({
+            ...eq,
+            condition: Math.max(0, Math.min(100, (eq.condition ?? 100) + e.amount)),
+          })),
+        };
         break;
       case 'clientXp':
       case 'referral': {

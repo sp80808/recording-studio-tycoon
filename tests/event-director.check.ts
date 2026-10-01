@@ -227,7 +227,7 @@ describe('event director: resolving', () => {
   it('presentation data cannot mutate state: definitions are plain data', () => {
     for (const d of DIRECTOR_EVENTS) for (const o of d.options) {
       assert.ok(Array.isArray(o.effects));
-      for (const e of o.effects) assert.ok(['money', 'reputation', 'xp', 'clientXp', 'referral'].includes(e.kind), `${d.id}/${o.id}`);
+      for (const e of o.effects) assert.ok(['money', 'reputation', 'xp', 'clientXp', 'staffXp', 'gearCondition', 'referral'].includes(e.kind), `${d.id}/${o.id}`);
     }
   });
 

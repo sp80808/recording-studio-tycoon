@@ -5,6 +5,7 @@ import {
   calculateSessionForecast,
   topImprovement,
   whyReasons,
+  withBookingStakes,
   type ForecastLevel,
   type SessionAssignment,
 } from '@/rpg/sessionForecast';
@@ -17,6 +18,10 @@ interface ForecastPanelProps {
   state: GameState;
   assignment: SessionAssignment;
   onChange: (next: SessionAssignment) => void;
+  /** Signal-chain composer state for this enquiry (booking-time pick). */
+  chainState?: 'none' | 'valid' | 'broken';
+  /** Contract stake riding on this booking. */
+  stake?: string | null;
 }
 
 /**
@@ -24,9 +29,12 @@ interface ForecastPanelProps {
  * fatigue risk, and the two or three strongest causes. Derived on render from
  * visible state only; nothing is stored. Crew and room pickers update it live.
  */
-export const ForecastPanel: React.FC<ForecastPanelProps> = ({ project, state, assignment, onChange }) => {
+export const ForecastPanel: React.FC<ForecastPanelProps> = ({ project, state, assignment, onChange, chainState, stake }) => {
   const [open, setOpen] = useState(false);
-  const forecast = useMemo(() => calculateSessionForecast(state, project, assignment), [state, project, assignment]);
+  const forecast = useMemo(
+    () => withBookingStakes(calculateSessionForecast(state, project, assignment), { chainState, stake }),
+    [state, project, assignment, chainState, stake],
+  );
   const rooms = (state.studioRooms ?? []).filter((r) => r.unlocked);
   const crew = state.hiredStaff.filter((s) => !s.assignedProjectId);
   const fix = topImprovement(forecast);

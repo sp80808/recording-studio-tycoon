@@ -1,4 +1,5 @@
 import type { NpcVisualIdentity } from '@/features/sprites/npcAppearance';
+import type { ModularNpcDefinition } from '@/features/sprites/spriteTypes';
 import { lastTake, nodOffset } from '@/utils/takeFeedback';
 import React, { useEffect, useRef } from 'react';
 import { AnimatedSprite, Application, Container, Graphics, Matrix, Rectangle, Sprite, Text, type Renderer } from 'pixi.js';
@@ -233,6 +234,12 @@ export interface StudioSceneState {
   floorFigures?: FloorNpcFigure[];
   /** Producer look when the first floor slot has no figure identity (sibling creator merge). */
   producerAppearance?: NpcVisualIdentity;
+  /**
+   * Fully resolved producer definition from career-start customisation (#126/k5v).
+   * When present, floor slot 0 renders it directly instead of seed-deriving a face,
+   * so the on-floor producer matches the creator preview exactly.
+   */
+  producerNpc?: ModularNpcDefinition;
   /**
    * Owned gear IDs for the equipment shelf sprites.
    * Falls back to coloured bars when PNG art is missing.
@@ -1416,7 +1423,8 @@ const buildScene = (
       role: i === 0 ? 'producer' : 'engineer',
       animState: state.hasActiveProject ? (i === 0 ? 'mixing' : 'working') : 'idle',
     };
-    const npc = resolveFloorNpcDefinition(figure, state.eraId, seedBase + i * 97);
+    // Slot 0 is the player: prefer the career-start customisation over a seed fill-in.
+    const npc = i === 0 && state.producerNpc ? state.producerNpc : resolveFloorNpcDefinition(figure, state.eraId, seedBase + i * 97);
     const visual = createFloorNpcVisual(npc, {
       renderer,
       atlas: npcAtlas,
@@ -1733,7 +1741,10 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   const floorKey = (state?.floorFigures ?? [])
     .map((f) => `${f.identity?.seed ?? f.seed ?? ''}:${f.animState ?? ''}:${f.role ?? ''}`)
     .join(',');
-  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${floorKey}|${state?.staffOnFloor ?? 1}|${gearKey}|${gearConditionKey(state?.gearConditions)}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${trophyKey(state?.trophies ?? { covers: [] })}|${state?.decorSeed ?? 'studio'}`;
+  const producerLookKey = state?.producerNpc
+    ? [state.producerNpc.hair.shape, state.producerNpc.hair.colour, state.producerNpc.body.build, state.producerNpc.clothes.topPrimaryHex].join(':')
+    : '';
+  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${producerLookKey}|${floorKey}|${state?.staffOnFloor ?? 1}|${gearKey}|${gearConditionKey(state?.gearConditions)}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${trophyKey(state?.trophies ?? { covers: [] })}|${state?.decorSeed ?? 'studio'}`;
 
   // Rebuild the room (new window size or layout change)
   const rebuild = () => {

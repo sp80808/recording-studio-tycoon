@@ -124,6 +124,46 @@ export const demoMeterLevel = (params: {
   return Math.max(0.05, Math.min(0.98, base + slow + jitter));
 };
 
+export interface ShelfConditionStyle {
+  /** Brightness multiplier for the shelf face (1 = pristine). */
+  dim: number;
+  /** Failing gear earns a small warning LED on the shelf. */
+  warn: boolean;
+}
+
+/** Restrained shelf wear so condition reads in-world without shouting. */
+export const shelfConditionStyle = (condition: number): ShelfConditionStyle => {
+  const band = conditionBand(condition);
+  switch (band) {
+    case 'pristine': return { dim: 1, warn: false };
+    case 'used': return { dim: 0.92, warn: false };
+    case 'worn': return { dim: 0.78, warn: false };
+    default: return { dim: 0.62, warn: true };
+  }
+};
+
+/** Multiply a 0xRRGGBB tint toward black by f (0..1). Pure integer maths. */
+export const dimTint = (tint: number, f: number): number => {
+  const k = Math.max(0, Math.min(1, f));
+  const r = Math.round(((tint >> 16) & 0xff) * k);
+  const g = Math.round(((tint >> 8) & 0xff) * k);
+  const b = Math.round((tint & 0xff) * k);
+  return (r << 16) | (g << 8) | b;
+};
+
+/**
+ * Structural key for the shelf: rebuilds only when a condition *band*
+ * changes, not on every maintenance point, so daily decay never thrashes
+ * the Pixi scene.
+ */
+export const gearConditionKey = (conditions?: Record<string, number> | null): string => {
+  if (!conditions) return '';
+  return Object.entries(conditions)
+    .map(([id, c]) => `${id}:${conditionBand(typeof c === 'number' ? c : 75)}`)
+    .sort()
+    .join(',');
+};
+
 /** Serializable adapter consumed by the Living Studio (Pixi) layer. */
 export interface GearSpriteVisualState {
   equipmentId: string;

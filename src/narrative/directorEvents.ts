@@ -24,6 +24,7 @@ import {
   type StudioEventDefinition,
   type StudioEventFacts,
 } from './eventDirector';
+import { NARRATIVE_EVENTS } from './narrativeEventPool';
 
 const HEALTHY = ['Friendly', 'Regular', 'Loyal', 'Advocate'];
 const ESTABLISHED = ['Regular', 'Loyal', 'Advocate'];
@@ -41,6 +42,7 @@ const clientOf = (facts: StudioEventFacts, s?: DirectorSubject) => facts.clients
 const opt = (o: DirectorOption): DirectorOption => o;
 
 export const DIRECTOR_EVENTS: readonly StudioEventDefinition[] = [
+  ...NARRATIVE_EVENTS,
   // ───────── Recurring-client chain ─────────
   {
     id: 'client_rush_request',

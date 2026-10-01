@@ -2,7 +2,13 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { DAY_CYCLE_SECONDS, STUDIO_START_HOUR, getDayness, getStudioTime } from '../src/components/studio/studioDecorConfig';
+import {
+  CLOCK_MINUTES_PER_REAL_SECOND,
+  getDaynessFromClockMinutes,
+  getStudioClockMinutes,
+  getWallClockTime,
+  STUDIO_DAY_MINUTES,
+} from '../src/components/studio/studioDecorConfig';
 import {
   ACCESSORIES,
   BOTTOM_STYLES,
@@ -19,44 +25,42 @@ import {
 const studioDir = path.join(process.cwd(), 'public', 'assets', 'studio');
 
 describe('studio clock', () => {
-  it('opens at 09:00 and keeps a calm pace', () => {
-    const t0 = getStudioTime(0);
-    assert.equal(t0.hour, STUDIO_START_HOUR);
-    assert.equal(t0.minute, 0);
-    // 30 real seconds per in-game hour.
-    const t30 = getStudioTime(30);
-    assert.equal(t30.hour, 10);
-    assert.equal(t30.minute, 0);
-    assert.equal(getStudioTime(15).minute, 30);
+  // Ported to the shared wall-clock stream (getStudioClockMinutes/getWallClockTime):
+  // 4 in-game minutes per real second, so one in-game hour drifts by 15 real seconds.
+  it('keeps a calm pace on the shared clock', () => {
+    const minutesAfter30s = getStudioClockMinutes(0, 30);
+    assert.equal(minutesAfter30s, 30 * CLOCK_MINUTES_PER_REAL_SECOND);
+    assert.equal(getStudioClockMinutes(0, 15) % 60, 0, 'one in-game hour every 15 real seconds');
+    assert.ok(Number.isInteger(minutesAfter30s), 'clock advances in whole minutes');
   });
 
   it('ticks whole minutes, at most two per second', () => {
-    let last = getStudioTime(0);
+    let last = getStudioClockMinutes(0, 0);
     for (let t = 0.05; t < 60; t += 0.05) {
-      const now = getStudioTime(t);
-      assert.ok(Number.isInteger(now.minute));
-      const steps = (now.hour * 60 + now.minute - (last.hour * 60 + last.minute) + 720) % 720;
+      const now = getStudioClockMinutes(0, t);
+      assert.ok(Number.isInteger(now));
+      const steps = now - last;
       assert.ok(steps <= 1, `minute jumped by ${steps} at t=${t}`);
       last = now;
     }
   });
 
   it('wraps after one day and keeps dayness in 0..1', () => {
-    const a = getStudioTime(1);
-    const b = getStudioTime(1 + DAY_CYCLE_SECONDS);
-    assert.equal(a.hour, b.hour);
-    assert.equal(a.minute, b.minute);
-    for (let t = 0; t < DAY_CYCLE_SECONDS; t += 7) {
-      const d = getDayness(t);
+    const daySeconds = STUDIO_DAY_MINUTES / CLOCK_MINUTES_PER_REAL_SECOND;
+    const a = getWallClockTime(0, 1);
+    const b = getWallClockTime(0, 1 + daySeconds);
+    assert.equal(a.minutesOfDay, b.minutesOfDay);
+    for (let t = 0; t <= daySeconds; t += 7) {
+      const d = getDaynessFromClockMinutes(getStudioClockMinutes(0, t));
       assert.ok(d >= 0 && d <= 1);
     }
   });
 
   it('is bright in the afternoon and dark at night, following the clock', () => {
-    const at = (h: number) => getDayness(((h - STUDIO_START_HOUR + 24) % 24) * (DAY_CYCLE_SECONDS / 24));
-    assert.ok(at(13) > 0.95);
-    assert.ok(at(1) < 0.05);
-    assert.ok(at(9) > at(3));
+    const at = (hour: number) => getDaynessFromClockMinutes(hour * 60);
+    assert.ok(at(13) > 0.95, '13:00 is full daylight');
+    assert.ok(at(1) < 0.05, '01:00 is deepest night');
+    assert.ok(at(9) > at(3), 'morning brighter than the small hours');
   });
 });
 
