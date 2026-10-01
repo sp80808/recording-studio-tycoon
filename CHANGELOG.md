@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.5.0
+- Bus & Stem Merge minigame (2048-style routing puzzle): merge tracks into buses, stems and the mix within a move limit, watching headroom and bus depth.
 - Warm flat design system (no gradient chrome, no blue text); restyled popups, drawer, HUD, toasts, news popup, minigame chrome.
 - Rebuilt isometric studio: enclosed booth, wall clock, trophy wall from real releases, era props.
 - Producer origins with real perks and a career-start flow.

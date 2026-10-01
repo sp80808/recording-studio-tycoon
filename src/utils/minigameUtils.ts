@@ -277,6 +277,16 @@ export const getTriggeredMinigames = (
     });
   }
 
+  // BUS & STEM MERGE - route the session into stems and a mix
+  if (stageName.includes('mix') || stageName.includes('stem') || stageName.includes('bounce') ||
+      stageName.includes('routing')) {
+    triggers.push({
+      minigameType: 'bus-merge',
+      triggerReason: 'Time to route the session - merge tracks into buses, stems and the mix!',
+      priority: 7
+    });
+  }
+
   // VOCAL COMP - pick the best take per line after vocals have been tracked
   if (stageName.includes('vocal') || stageName.includes('takes') || stageName.includes('overdub') ||
       (project.genre === 'Pop' && stageName.includes('recording'))) {
@@ -288,7 +298,13 @@ export const getTriggeredMinigames = (
   }
 
   // Sort by priority (highest first) and return top 3 to avoid overwhelming
-  return triggers.sort((a, b) => b.priority - a.priority).slice(0, 3);
+  const sorted = triggers.sort((a, b) => b.priority - a.priority);
+  const top = sorted.slice(0, 3);
+  // Mix stages already list several priority-9 minigames; keep Bus & Stem Merge selectable by
+  // letting it take the last slot instead of being truncated away.
+  const bus = sorted.find((t) => t.minigameType === 'bus-merge');
+  if (bus && !top.includes(bus)) top[top.length - 1] = bus;
+  return top;
 };
 
 export const shouldAutoTriggerMinigame = (

@@ -168,6 +168,13 @@ In-house original low-poly models, CC0, no external source. Rendered headless fr
 
 Every asset has a procedural Graphics fallback if its PNG fails to load.
 
+## 12. Bus & Stem Merge track glyphs (`src/components/minigames/busMergeArt.tsx`, issue #138)
+
+In-house original vector glyphs, CC0, no external source. 19 single-stroke 32x32 inline SVG icons
+(kick, snare, overheads, guitar L/R, bass, keys, vocal lead/double, Hero Sample star, buses, stems,
+pre-mix, mix) drawn by hand in code and tinted per family (drums amber, music green, vox pink,
+mix gold, special blue). No raster files, nothing to attribute.
+
 ## 11. Console-tier deck gear (issue #81, tiers 2-5)
 
 In-house original, CC0, no external source. Drawn procedurally in Pixi (`WebGLCanvas.tsx`, `gearSpriteAnimation.ts`); no new image files.
