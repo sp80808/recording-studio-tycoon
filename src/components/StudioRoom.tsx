@@ -136,6 +136,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       hasActiveProject: !!project,
       artistName: project ? (project.clientName ?? project.title) : undefined,
       staffOnFloor: Math.min(5, 1 + presentStaff),
+      ownedEquipmentIds: gameState.ownedEquipment.map((e) => e.id),
       ownedEquipment: gameState.ownedEquipment.length,
       day: gameState.currentDay,
       eraId: gameState.currentEra,
