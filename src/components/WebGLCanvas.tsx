@@ -5,6 +5,24 @@ import { AnimatedSprite, Application, Container, Graphics, Matrix, Sprite, Text,
 import { applyReelState, buildReelTextures, createReelSprite } from '@/features/gearStudio/gearSpriteAnimation';
 import { toSpriteVisualState } from '@/features/gearStudio/gearVisualState';
 import { getPropTexture, loadPropSprites } from '@/components/studio/propSprites';
+import {
+  layoutShelfSlots,
+  resolveShelfCapacity,
+  shelfStructuralKey,
+} from '@/components/studio/equipmentShelfSprites';
+import {
+  ensureEquipmentTexture,
+  getEquipmentTexture,
+  prefetchEquipmentTextures,
+} from '@/components/studio/equipmentTextures';
+import {
+  advanceClientTransit,
+  clientTransitPose,
+  createClientTransitState,
+  isClientTransitAnimating,
+  skipClientTransit,
+  type ClientTransitState,
+} from '@/components/studio/clientDoorTransit';
 import { visualEraId } from '@/utils/eraProgression';
 import { useSettings } from '@/contexts/SettingsContext';
 import { resolveRendererOrder } from '@/lib/render/rendererChoice';
@@ -164,8 +182,14 @@ export interface StudioSceneState {
   staffOnFloor: number;
   /** Saved producer sprite identity — first floor figure uses this look when present. */
   producerAppearance?: NpcVisualIdentity;
-  /** Player's equipment count (fills the gear shelf) */
-  ownedEquipment: number;
+  /**
+   * Owned gear IDs for the equipment shelf sprites.
+   * Falls back to coloured bars when PNG art is missing.
+   * `ownedEquipment` count is derived when ids are omitted (legacy / tests).
+   */
+  ownedEquipmentIds?: string[];
+  /** @deprecated Prefer ownedEquipmentIds — count still accepted for structural fallbacks. */
+  ownedEquipment?: number;
   /** In-game day counter (drives the wall clock) */
   day: number;
   /** Current era id — drives the room's colour grade + signage (bead goj.3) */
@@ -191,6 +215,7 @@ const DEFAULT_STATE: StudioSceneState = {
   activity: 0.2,
   hasActiveProject: false,
   staffOnFloor: 1,
+  ownedEquipmentIds: ['basic_mic', 'basic_monitors', 'audio_interface'],
   ownedEquipment: 3,
   day: 1,
   eraId: 'analog60s',
@@ -360,7 +385,11 @@ interface SceneRefs {
   setClockTime: ((hour: number, minute: number) => void) | null;
   staffFigures: { fig: Container; baseY: number }[];
   /** The booked artist, standing at the live-room mic while a session is in progress. */
-  artist: { fig: Container; baseY: number; tag: Text; shown: string } | null;
+  artist: { fig: Container; baseY: number; baseX: number; tag: Text; shown: string } | null;
+  /** Floor anchor just inside the door threshold (client enter/exit). */
+  doorFloor: { x: number; y: number } | null;
+  /** Live-room mic stand pose for the booked artist. */
+  artistStand: { x: number; y: number } | null;
   nightTintLayer: Container | null;
   hoverGlows: Record<string, Graphics>;
   hoverGlowTargets: Record<string, number>;
@@ -438,6 +467,8 @@ const buildScene = (
     setClockTime: null,
     staffFigures: [],
     artist: null,
+    doorFloor: null,
+    artistStand: null,
     nightTintLayer: null,
     hoverGlows: {},
     hoverGlowTargets: {},
@@ -588,7 +619,7 @@ const buildScene = (
 
   /* ---- Studio door (left wall, between clock & TV) ----------------------
    * Drawn after the floor so the threshold sits on the tile plane.
-   * Reserved as the client enter/exit anchor for future walk-in anims. */
+   * Door floor anchor drives diegetic client enter/exit walks. */
   {
     const doorA = iso(0, 3.15);
     const doorB = iso(0, 4.35);
@@ -685,6 +716,8 @@ const buildScene = (
         doorA.x, doorA.y - doorH,
       ])
       .stroke({ width: 2, color: 0xd9a441 });
+    // Just inside the threshold — start/end of client walk paths
+    refs.doorFloor = iso(0.45, 3.75);
   }
 
   /* ---- Live room booth: enclosed (walls, roof, header, foam, glass front) ---- */
@@ -720,19 +753,60 @@ const buildScene = (
   shelf.poly([q4.x, q4.y - shelfH, q3.x, q3.y - shelfH, q3.x, q3.y, q4.x, q4.y]).fill(COLORS.shelfSide);
   shelf.poly([q2.x, q2.y - shelfH, q3.x, q3.y - shelfH, q3.x, q3.y, q2.x, q2.y]).fill(COLORS.shelfSide);
   shelfWrap.addChild(shelf);
-  // Gear items — count scales with owned equipment; shelf capacity grows with tier
-  const gearCapacity = 6 + Math.round(shelfExtension * 4);
-  const gearCount = Math.max(1, Math.min(gearCapacity, Math.ceil(state.ownedEquipment / 2)));
-  const shelfSpanPx = Math.abs(q2.x - q1.x);
-  const gearW = Math.max(6, Math.min(16, Math.floor(shelfSpanPx / gearCapacity) - 1));
-  for (let i = 0; i < gearCount; i++) {
-    const t = (i + 0.5) / gearCapacity;
-    const gx = q1.x + (q2.x - q1.x) * t;
-    const gy = q1.y + (q2.y - q1.y) * t - shelfH;
-    const item = new Graphics();
-    const itemH = 13 + (i % 3) * 3;
-    item.rect(gx - gearW / 2, gy - itemH, gearW, itemH).fill(COLORS.gear[i % COLORS.gear.length]);
-    shelfWrap.addChild(item);
+  // Gear items — owned IDs drive sprites (equipmentArt / equipmentSpriteMap); missing art → tinted bars
+  const gearCapacity = resolveShelfCapacity(tier);
+  const ownedIds = state.ownedEquipmentIds?.length
+    ? state.ownedEquipmentIds
+    : Array.from(
+        {
+          length: Math.max(
+            0,
+            Math.min(gearCapacity, Math.ceil((state.ownedEquipment ?? 0) / 2)),
+          ),
+        },
+        (_, i) => `legacy_slot_${i}`,
+      );
+  const shelfSlots = layoutShelfSlots({
+    ownedIds,
+    capacity: gearCapacity,
+    q1,
+    q2,
+    shelfH,
+    palette: COLORS.gear,
+  });
+  // Always show at least one placeholder bar when the shelf is empty so the rack reads as furniture
+  const slotsToDraw = shelfSlots.length > 0
+    ? shelfSlots
+    : [{
+        equipmentId: '_empty',
+        x: q1.x + (q2.x - q1.x) * 0.5,
+        y: q1.y + (q2.y - q1.y) * 0.5 - shelfH,
+        width: 10,
+        height: 14,
+        tint: COLORS.gear[0],
+        spritePath: '',
+        spriteFile: null,
+      }];
+  for (const slot of slotsToDraw) {
+    const tex = slot.equipmentId !== '_empty' ? getEquipmentTexture(slot.equipmentId) : null;
+    if (tex) {
+      const sprite = new Sprite(tex);
+      const maxW = Math.max(10, slot.width * 1.6);
+      const maxH = Math.max(14, slot.height + 6);
+      const scale = Math.min(maxW / Math.max(1, tex.width), maxH / Math.max(1, tex.height));
+      sprite.scale.set(scale);
+      sprite.anchor.set(0.5, 1);
+      sprite.position.set(slot.x, slot.y);
+      sprite.tint = slot.tint;
+      shelfWrap.addChild(sprite);
+      // Warm the cache for ids that haven't resolved yet (async; next rebuild paints sprites)
+      void ensureEquipmentTexture(slot.equipmentId);
+    } else {
+      const item = new Graphics();
+      item.rect(slot.x - slot.width / 2, slot.y - slot.height, slot.width, slot.height).fill(slot.tint);
+      shelfWrap.addChild(item);
+      if (slot.equipmentId !== '_empty') void ensureEquipmentTexture(slot.equipmentId);
+    }
   }
   const shelfHit = new Graphics();
   shelfHit.poly([q1.x, q1.y - 60, q2.x, q2.y - 60, q3.x, q3.y, q4.x, q4.y]).fill(0xffffff);
@@ -1103,9 +1177,10 @@ const buildScene = (
     root.addChild(fig);
   }
 
-  /* ---- Booked artist: appears at the live-room mic during a session ---- */
+  /* ---- Booked artist: enters via the door, stands at the live-room mic ---- */
   {
     const spot = iso(2.3, 1.55);
+    refs.artistStand = spot;
     const fig = new Container();
     fig.position.set(spot.x, spot.y);
     const body = new Graphics();
@@ -1132,7 +1207,7 @@ const buildScene = (
     fig.eventMode = 'none';
     fig.visible = false;
     fig.zIndex = Z.depth + spot.y;
-    refs.artist = { fig, baseY: spot.y, tag, shown: '' };
+    refs.artist = { fig, baseY: spot.y, baseX: spot.x, tag, shown: '' };
     root.addChild(fig);
   }
 
@@ -1312,6 +1387,10 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   const lastFrameTimeRef = useRef(0);
   const reelKeyRef = useRef('');
   const clockMinuteRef = useRef(-1);
+  const clientTransitRef = useRef<ClientTransitState>(
+    createClientTransitState(Boolean(state?.hasActiveProject)),
+  );
+  const shelfPrefetchKeyRef = useRef('');
 
   const { settings } = useSettings();
   const settingsRef = useRef(settings);
@@ -1360,7 +1439,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   }, [resetCameraKey]);
 
   // Structural key: only layout-affecting state triggers a scene rebuild
-  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${state?.staffOnFloor ?? 1}|${state?.ownedEquipment ?? 3}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${trophyKey(state?.trophies ?? { platinum: 0, gold: 0, awards: 0 })}|${state?.decorSeed ?? 'studio'}`;
+  const gearKey = shelfStructuralKey(state?.ownedEquipmentIds, state?.ownedEquipment ?? 0);
+  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${state?.staffOnFloor ?? 1}|${gearKey}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${trophyKey(state?.trophies ?? { platinum: 0, gold: 0, awards: 0 })}|${state?.decorSeed ?? 'studio'}`;
 
   // Rebuild the room (new window size or layout change)
   const rebuild = () => {
@@ -1380,7 +1460,16 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
       app.screen.width,
       app.screen.height,
       stateRef.current,
-      (id) => { if (!suppressTapRef.current) selectRef.current?.(id); },
+      (id) => {
+        // Skip in-flight door walk so selection never feels blocked
+        if (isClientTransitAnimating(clientTransitRef.current)) {
+          clientTransitRef.current = skipClientTransit(
+            clientTransitRef.current,
+            Boolean(stateRef.current.hasActiveProject),
+          );
+        }
+        if (!suppressTapRef.current) selectRef.current?.(id);
+      },
       app.renderer,
       kitTexturesRef.current,
     );
@@ -1403,6 +1492,17 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     }
     sceneRef.current = scene;
     app.canvas.dataset.studioArt = kitTexturesRef.current ? 'cc0-v1' : 'built-in';
+
+    // Soft-upgrade coloured bars → sprites once PNG art resolves (one shot per gear set)
+    const ids = stateRef.current.ownedEquipmentIds ?? [];
+    const prefetchKey = ids.join('|');
+    if (prefetchKey && shelfPrefetchKeyRef.current !== prefetchKey) {
+      void prefetchEquipmentTextures(ids).then(() => {
+        if (shelfPrefetchKeyRef.current === prefetchKey) return;
+        shelfPrefetchKeyRef.current = prefetchKey;
+        rebuild();
+      });
+    }
   };
 
   useEffect(() => {
@@ -1539,8 +1639,24 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             sc.root.position.set(sc.basePosition.x, sc.basePosition.y);
           }
         };
+        const skipDoorTransit = () => {
+          if (!isClientTransitAnimating(clientTransitRef.current)) return;
+          clientTransitRef.current = skipClientTransit(
+            clientTransitRef.current,
+            Boolean(stateRef.current.hasActiveProject),
+          );
+        };
+        const onKeyDown = (event: KeyboardEvent) => {
+          if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') {
+            if (isClientTransitAnimating(clientTransitRef.current)) {
+              event.preventDefault();
+              skipDoorTransit();
+            }
+          }
+        };
         const onPointerDown = (event: PointerEvent) => {
           markCanvasInput();
+          skipDoorTransit();
           if (gestureRef.current.size === 0) suppressTapRef.current = false;
           gestureRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
           touchDrag = event.pointerType !== 'mouse' && gestureRef.current.size === 1
@@ -1668,6 +1784,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         app.canvas.addEventListener('gesturechange', onGestureChange, { passive: false });
         app.canvas.addEventListener('gestureend', onGestureEnd, { passive: false });
         app.canvas.addEventListener('dblclick', onDblClick);
+        window.addEventListener('keydown', onKeyDown);
 
         detachInteractions = () => {
           app.canvas.removeEventListener('pointerdown', onPointerDown);
@@ -1679,6 +1796,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           app.canvas.removeEventListener('gesturechange', onGestureChange);
           app.canvas.removeEventListener('gestureend', onGestureEnd);
           app.canvas.removeEventListener('dblclick', onDblClick);
+          window.removeEventListener('keydown', onKeyDown);
         };
 
         // Animation loop: VU meters, TV equalizer, phone ring, clock, staff, day tint
@@ -1837,20 +1955,36 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             f.fig.scale.y = 1 + Math.sin(t * 3 + i) * 0.02;
           });
 
-          // Booked artist: steps up to the mic for the session, swaying harder as the work ramps up
+          // Booked artist: diegetic door enter/exit, then mic sway during the session
           if (refs.artist) {
             const a = refs.artist;
-            a.fig.visible = s.hasActiveProject;
+            const door = refs.doorFloor ?? { x: a.baseX, y: a.baseY };
+            const stand = refs.artistStand ?? { x: a.baseX, y: a.baseY };
+            clientTransitRef.current = advanceClientTransit(clientTransitRef.current, {
+              sessionActive: s.hasActiveProject,
+              dtMs: ticker.deltaMS,
+              reduceMotion,
+            });
+            const pose = clientTransitPose(clientTransitRef.current, door, stand);
+            a.fig.visible = pose.visible;
+            a.fig.alpha = pose.alpha;
+            a.fig.x = pose.x;
             const name = s.artistName ?? '';
             if (a.shown !== name) { a.tag.text = name; a.shown = name; }
-            if (s.hasActiveProject) {
+            const atMic = clientTransitRef.current.phase === 'present';
+            if (atMic && s.hasActiveProject) {
               const sway = reduceMotion ? 0 : 1;
               const tk = lastTake();
               const nod = tk && !reduceMotion ? nodOffset(performance.now() - tk.at, tk.grade) : 0;
-              a.fig.y = a.baseY + Math.sin(t * 5) * 1.5 * s.activity * sway + nod;
+              a.fig.y = pose.y + Math.sin(t * 5) * 1.5 * s.activity * sway + nod;
               a.fig.rotation = Math.sin(t * 2.3) * 0.05 * s.activity * sway;
               a.fig.scale.y = 1 + Math.abs(Math.sin(t * 4)) * 0.03 * s.activity * sway;
+            } else {
+              a.fig.y = pose.y;
+              a.fig.rotation = 0;
+              a.fig.scale.y = 1;
             }
+            a.fig.zIndex = Z.depth + pose.y;
           }
 
           // Phone ring pulse (faster when the studio is waiting for a gig)

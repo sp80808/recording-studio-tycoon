@@ -183,6 +183,10 @@ echo "=== studio ux presentation (HUD + love-room) ==="
 ./node_modules/.bin/esbuild tests/studio-ux-presentation.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-ux-presentation.cjs --alias:@=./src >/dev/null
 node /tmp/rst-studio-ux-presentation.cjs
 
+echo "=== door enter/exit + equipment shelf sprites (P2 visual) ==="
+./node_modules/.bin/esbuild tests/door-shelf-presentation.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-door-shelf-presentation.cjs --alias:@=./src >/dev/null
+node /tmp/rst-door-shelf-presentation.cjs
+
 echo "=== progression motion: studio-tier upgrades and era transitions (#77) ==="
 ./node_modules/.bin/esbuild tests/progression-motion.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-progression-motion.cjs --alias:@=./src >/dev/null
 node /tmp/rst-progression-motion.cjs

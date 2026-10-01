@@ -27,6 +27,8 @@ assert.match(decor, /Header beam/, 'Booth has a header beam');
 assert.match(webgl, /buildLiveBooth\(\)/, 'Scene builds the enclosed live booth');
 assert.match(webgl, /pixi-studio-canvas/, 'Studio canvas tagged for WebGL exclusivity');
 assert.match(webgl, /Studio door/, 'Room has a studio door');
+assert.match(webgl, /layoutShelfSlots|equipmentShelfSprites/, 'Shelf sprites driven by owned gear ids');
+assert.match(webgl, /advanceClientTransit|clientDoorTransit/, 'Client enter/exit uses door transit');
 // Clock is drawn in the wall plane (real face + hands), not a skewed billboard ellipse
 assert.match(webgl, /buildWallClock\(/, 'Clock is a wall-plane face');
 assert.match(decor, /leftFace\(/, 'Clock geometry is projected onto the left wall plane');
