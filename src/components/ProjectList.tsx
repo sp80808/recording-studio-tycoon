@@ -14,6 +14,8 @@ import {
 import ChainComposer from '@/components/ChainComposer';
 import { saveTemplate, validateChain, type SignalChain } from '@/rpg/signalChain';
 import BriefPanel from '@/components/BriefPanel';
+import ForecastPanel from '@/components/ForecastPanel';
+import { defaultAssignment, type SessionAssignment } from '@/rpg/sessionForecast';
 import { getApproach, getProjectBrief, type ProductionApproach } from '@/rpg/projectBrief';
 import { gameAudio } from '@/utils/audioSystem';
 import { getOriginEffects, gigRefreshCostFor } from '@/narrative/originPerks';
@@ -118,6 +120,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [decliningId, setDecliningId] = useState<string | null>(null);
   const [approaches, setApproaches] = useState<Record<string, ProductionApproach['id'] | undefined>>({});
+  const [assignments, setAssignments] = useState<Record<string, SessionAssignment | undefined>>({});
   const [chains, setChains] = useState<Record<string, SignalChain | undefined>>({});
   const [stakes, setStakes] = useState<Record<string, ContractStake>>({});
   const cooldownLeft = gigRefreshCooldownRemaining(gameState);
@@ -158,13 +161,26 @@ export const ProjectList: React.FC<ProjectListProps> = ({
       const approach = getApproach(approaches[project.id]);
       const chain = chains[project.id];
       const chainOk = chain && validateChain(chain, gameState, project.id).broken.length === 0;
+      const plan = assignments[project.id];
       startProject({
         ...project,
         stake,
+        // The room and crew the player forecast with are the ones that get booked (#55).
+        ...(plan?.roomId ? { bookingRoomId: plan.roomId } : {}),
         ...(chainOk ? { signalChain: chain } : {}),
         brief: getProjectBrief(project),
         ...(approach ? { approachId: approach.id, focusAllocation: approach.focus } : {}),
       });
+      if (plan && plan.staffIds.length > 0) {
+        setGameState(prev => prev.activeProject?.id !== project.id ? prev : {
+          ...prev,
+          hiredStaff: prev.hiredStaff.map(s =>
+            plan.staffIds.includes(s.id) && !s.assignedProjectId && s.status === 'Idle' && s.energy >= 20
+              ? { ...s, status: 'Working', assignedProjectId: project.id }
+              : s
+          ),
+        });
+      }
       setBookingId(null);
     }, 180);
   };
@@ -363,6 +379,13 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                     void gameAudio.playUISound('buttonClick');
                     setApproaches((prev) => ({ ...prev, [project.id]: prev[project.id] === id ? undefined : id }));
                   }}
+                />
+
+                <ForecastPanel
+                  project={project}
+                  state={gameState}
+                  assignment={{ ...(assignments[project.id] ?? defaultAssignment(gameState, project)), approachId: approaches[project.id] }}
+                  onChange={(next) => setAssignments((prev) => ({ ...prev, [project.id]: next }))}
                 />
 
                 {['vocal-production', 'tracking'].includes(getProjectBrief(project).serviceType) && (
