@@ -364,6 +364,8 @@ export interface GameState {
   studioExpertise?: import('@/rpg/houseStyle').StudioExpertise;
   /** Studio premises tier (#70): 0 borrowed room, 1 project studio. Absent on legacy saves = 0. */
   premisesTier?: 0 | 1;
+  /** Home city picked at career start (currency display, regional taste, local names and events). Absent on legacy saves = neutral. */
+  cityId?: import('@/rpg/cities').CityId;
   chainTemplates?: import('@/rpg/signalChain').SignalChain[]; // Saved chain templates (#86)
   discoveredBriefCombos?: string[]; // Named brief/recipe combos discovered (#48)
   discoveredSynergies?: string[]; // IDs of discovered studio synergies (Kairosoft recipe codex)

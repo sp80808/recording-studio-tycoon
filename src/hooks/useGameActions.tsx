@@ -314,6 +314,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
           day: newDay,
           era: prev.selectedEra || prev.currentEra,
           year: prev.currentYear,
+          cityId: prev.cityId,
           batchKey: `day-roll:${newDay}`,
         })
       }));
@@ -359,6 +360,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
         day: prev.currentDay,
         era: prev.selectedEra || prev.currentEra,
         year: prev.currentYear,
+        cityId: prev.cityId,
         batchKey: `refresh:${prev.currentDay}:${prev.availableCandidates.map(c => c.id).join(',')}`,
       })
     }));
@@ -405,7 +407,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       lastGigRefreshDay: prev.currentDay,
       availableProjects: [
         ...prev.availableProjects,
-        ...generateNewProjects(1, prev.playerData.level, prev.currentEra, [], 1.1, prev.reputation),
+        ...generateNewProjects(1, prev.playerData.level, prev.currentEra, [], 1.1, prev.reputation, prev.cityId),
       ],
     }));
 

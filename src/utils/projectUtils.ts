@@ -4,6 +4,7 @@ import { ERA_DEFINITIONS, getGenreMarketMultiplier } from '@/utils/eraProgressio
 import { calculateStudioSkillBonus, getEquipmentBonuses as getBaseEquipmentBonuses } from './gameUtils'; // Import from gameUtils and rename
 import { availableMods } from '@/data/equipmentMods'; // Import available mods
 import { bumpMatchRatingForReturn } from '@/game-mechanics/relationship-management'; // Issue #10: repeat-client match bump
+import { regionalEnquiryWeight } from '@/rpg/cities';
 import { deriveBrief } from '@/rpg/projectBrief';
 import { followUpCandidate, followUpKind, requestedServiceFor } from '@/rpg/artistCareer';
 import { deriveRider } from '@/rpg/studioRider';
@@ -23,6 +24,7 @@ export const generateNewProjects = (
   knownClients: ClientRelationship[] = [],
   repeatClientPremium: number = 1.1,
   reputation: number = 0,
+  cityId?: string,
 ): Project[] => {
   const projects: Project[] = [];
   const usedTitles = new Set<string>();
@@ -36,8 +38,14 @@ export const generateNewProjects = (
 
   // Choose appropriate template pool based on player level and era
   const isEarlyGame = playerLevel < 5;
-  const templatePool: WeightedGig[] = isEarlyGame ? starterPool : [...starterPool, ...advancedPool];
-  const weightedPool: WeightedGig[] = isEarlyGame ? starterPool : advancedPool;
+  const rawTemplatePool: WeightedGig[] = isEarlyGame ? starterPool : [...starterPool, ...advancedPool];
+  const regional = (pool: WeightedGig[]): WeightedGig[] => cityId
+    ? pool.map((g) => ({ ...g, weight: g.weight * regionalEnquiryWeight(g.template.genre, cityId) }))
+    : pool;
+  const templatePool = regional(rawTemplatePool);
+  const basePool: WeightedGig[] = isEarlyGame ? starterPool : advancedPool;
+  // Regional taste: a hot local genre turns up more often. No city (legacy/dev) leaves weights alone.
+  const weightedPool: WeightedGig[] = regional(basePool);
 
   for (let i = 0; i < count; i++) {
     let attempts = 0;
@@ -86,7 +94,7 @@ export const generateNewProjects = (
       // multiplier). See sd3.4.
       const marketMultiplier = 0.8 + Math.random() * 0.4; // 0.8 to 1.2
       const difficultyMultiplier = 1 + (finalDifficulty - 1) * 0.15; // Scales with difficulty
-      const eraPopularityMultiplier = getGenreMarketMultiplier(template.genre, currentEra);
+      const eraPopularityMultiplier = getGenreMarketMultiplier(template.genre, currentEra, cityId);
       
       // Issue #10: repeat clients pay a loyalty premium (10% by default; some origins negotiate more).
       const repeatClientMultiplier = returningClient ? Math.max(1, Math.min(1.5, repeatClientPremium)) : 1;
