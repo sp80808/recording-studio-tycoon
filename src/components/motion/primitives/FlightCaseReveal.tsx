@@ -53,6 +53,7 @@ import {
   ConnectorActionRouting,
   type PatchSocket,
 } from '@/features/boxDrops/connectors';
+import { formatNumber } from '@/i18n/formatLocale';
 
 export interface PremiumDisplayItem {
   ref: string;
@@ -932,7 +933,7 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
                       Appraised Market Value:
                     </span>
                     <span className="text-emerald-400 font-bold text-sm">
-                      ${currentItem.baseValue.toLocaleString()}
+                      ${formatNumber(currentItem.baseValue)}
                     </span>
                   </div>
                 </div>

@@ -223,5 +223,19 @@
   "staff_modal_unassign_button": "Remover atribuição",
   "staff_modal_stop_resting_button": "Parar de descansar",
   "staff_modal_rest_button": "Descansar",
-  "staff_modal_send_training_button": "Enviar para treinamento"
+  "staff_modal_send_training_button": "Enviar para treinamento",
+  "active_studio_ready": "Estúdio pronto",
+  "active_choose_enquiry": "Escolha uma consulta de artista e leve a sessão dele para a sala.",
+  "active_next_move": "Seu próximo passo:",
+  "active_step_browse": "Veja o quadro de consultas de artistas",
+  "active_step_book": "Reserve uma sessão que caiba na sua sala e na sua equipe",
+  "active_step_return": "Volte aqui para conduzir a sessão de gravação",
+  "active_intervene": "Intervir",
+  "active_delegate": "Delegar",
+  "active_skip": "Pular",
+  "active_optional_intervention": "Intervenção opcional no estúdio",
+  "active_stage_complete": "Etapa concluída!",
+  "active_optimized": "Otimizado",
+  "active_efficient": "Eficiente",
+  "active_overall_progress": "Progresso total da faixa"
 }

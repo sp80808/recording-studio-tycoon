@@ -12,6 +12,7 @@ import {
   yearOfSeason,
   type StudioFocus,
 } from '@/rpg/studioSeasons';
+import { formatNumber } from '@/i18n/formatLocale';
 
 interface SeasonPanelProps {
   gameState: GameState;
@@ -107,7 +108,7 @@ export function SeasonPanel({ gameState, onChooseFocus }: SeasonPanelProps) {
                 {[...seasons.history].reverse().map(r => (
                   <li key={r.seasonId} className="text-[11px] text-stone-300">
                     {r.seasonId} · {r.chosenFocus === 'none' ? 'No focus' : FOCUS_INFO[r.chosenFocus].name} · {r.completedObjectives.length} objective
-                    {r.completedObjectives.length === 1 ? '' : 's'} · ${r.endingCash.toLocaleString()}
+                    {r.completedObjectives.length === 1 ? '' : 's'} · ${formatNumber(r.endingCash)}
                     {r.awards.length ? ` · ${r.awards.length} award${r.awards.length === 1 ? '' : 's'}` : ''}
                   </li>
                 ))}

@@ -12,6 +12,7 @@ import { GameBonusesDisplay } from './equipment/GameBonusesDisplay'; // Import t
 import { FrequencyResponseChart } from './equipment/FrequencyResponseChart'; // Import the new component
 import { DynamicResponseChart } from './equipment/DynamicResponseChart'; // Import the new component
 import { HarmonicDistortionChart } from './equipment/HarmonicDistortionChart'; // Import the new component
+import { formatNumber } from '@/i18n/formatLocale';
 
 interface EquipmentDetailModalProps {
   equipment: EraAvailableEquipment | null;
@@ -195,11 +196,11 @@ export const EquipmentDetailModal: React.FC<EquipmentDetailModalProps> = ({
           <div className="flex items-center gap-4">
             <div className="text-right">
               <div className={`font-bold text-lg ${canAfford ? 'text-green-400' : 'text-red-400'}`}>
-                ${adjustedPrice.toLocaleString()}
+                ${formatNumber(adjustedPrice)}
               </div>
               {equipment.historicalPrice && equipment.isVintage && (
                 <div className="text-xs text-yellow-400">
-                  Originally ${equipment.historicalPrice.toLocaleString()}
+                  Originally ${formatNumber(equipment.historicalPrice)}
                 </div>
               )}
             </div>

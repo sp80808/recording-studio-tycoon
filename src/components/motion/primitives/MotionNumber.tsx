@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motionSpring } from '@/lib/motion/tokens';
 import { useMotionCapabilities } from '@/lib/motion/capabilities';
+import { formatNumber } from '@/i18n/formatLocale';
 
 export interface MotionNumberProps extends React.HTMLAttributes<HTMLSpanElement> {
   /** Target numeric value */
@@ -121,7 +122,7 @@ export const MotionNumber: React.FC<MotionNumberProps> = ({
 
   const formatted = format
     ? format(displayValue)
-    : `${prefix}${displayValue.toLocaleString()}${suffix}`;
+    : `${prefix}${formatNumber(displayValue)}${suffix}`;
 
   return (
     <span

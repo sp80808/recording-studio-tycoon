@@ -3,6 +3,7 @@ import { Building2 } from 'lucide-react';
 import type { GameState } from '@/types/game';
 import { bookEntry } from '@/economy/ledger';
 import { applyPremisesMove, getPremisesDef, getPremisesOffer } from '@/rpg/premises';
+import { formatNumber } from '@/i18n/formatLocale';
 
 interface PremisesPanelProps {
   gameState: GameState;
@@ -23,7 +24,7 @@ export function PremisesPanel({ gameState, setGameState }: PremisesPanelProps) {
       {!offer && <p className="mt-1 text-stone-400">You're in the biggest premises on offer. Rent is the price of the space, so keep the rooms booked.</p>}
       {offer && (
         <>
-          <p className="mt-1 text-stone-300">Move to a {offer.name.toLowerCase()}? Deposit ${offer.deposit.toLocaleString()}, rent ${offer.dailyRent}/day.</p>
+          <p className="mt-1 text-stone-300">Move to a {offer.name.toLowerCase()}? Deposit ${formatNumber(offer.deposit)}, rent ${offer.dailyRent}/day.</p>
           <p className="text-stone-400">{offer.capacity}. Unlocks: {offer.unlocks.join(', ')}. Moving takes today's studio time (downtime: 1 day). Staff, gear, clients and Know-How come with you.</p>
           <ul className="mt-1.5 space-y-0.5">
             {offer.conditions.map(c => (

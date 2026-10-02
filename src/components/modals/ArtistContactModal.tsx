@@ -13,6 +13,7 @@ import { ChartEntry } from '@/types/charts';
 import { GameState } from '@/types/game';
 import { calculateContactCost, calculateContactSuccess } from '@/data/chartsData';
 import { toast } from '@/hooks/use-toast';
+import { formatNumber } from '@/i18n/formatLocale';
 
 interface ArtistContactModalProps {
   isOpen: boolean;
@@ -148,7 +149,7 @@ export const ArtistContactModal: React.FC<ArtistContactModalProps> = ({
                   onClick={() => setQuickOffer(0.8)}
                   className="text-xs"
                 >
-                  Low (${Math.floor(suggestedCost * 0.8).toLocaleString()})
+                  Low (${formatNumber(Math.floor(suggestedCost * 0.8))})
                 </Button>
                 <Button
                   type="button"
@@ -157,7 +158,7 @@ export const ArtistContactModal: React.FC<ArtistContactModalProps> = ({
                   onClick={() => setQuickOffer(1.0)}
                   className="text-xs"
                 >
-                  Fair (${suggestedCost.toLocaleString()})
+                  Fair (${formatNumber(suggestedCost)})
                 </Button>
                 <Button
                   type="button"
@@ -166,7 +167,7 @@ export const ArtistContactModal: React.FC<ArtistContactModalProps> = ({
                   onClick={() => setQuickOffer(1.3)}
                   className="text-xs"
                 >
-                  High (${Math.floor(suggestedCost * 1.3).toLocaleString()})
+                  High (${formatNumber(Math.floor(suggestedCost * 1.3))})
                 </Button>
               </div>
             </div>
@@ -207,7 +208,7 @@ export const ArtistContactModal: React.FC<ArtistContactModalProps> = ({
           {/* Budget Check */}
           {offerAmount > gameState.money && (
             <div className="p-2 bg-red-900/50 border border-red-600 rounded text-red-300 text-sm">
-              ⚠️ Insufficient funds! You have ${gameState.money.toLocaleString()}
+              ⚠️ Insufficient funds! You have ${formatNumber(gameState.money)}
             </div>
           )}
 
