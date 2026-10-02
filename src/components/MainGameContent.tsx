@@ -164,6 +164,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
 
   const { settings } = useSettings();
   const [showRadialWheel, setShowRadialWheel] = useState(false);
+  const [radialHoldMode, setRadialHoldMode] = useState(false);
   const gamepad = useGamepad({
     preferredLayout: settings?.controllerLayout,
     hapticsEnabled: settings?.gamepadHaptics,
@@ -240,10 +241,19 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
     }
   }, []);
 
-  // Quick radial wheel toggle on R3 or Left Trigger held when on floor
+  // LT opens a hold-to-select radial wheel; R3 keeps a toggle/confirm fallback.
   useEffect(() => {
     if (!gamepad.isConnected) return;
-    if (gamepad.justPressed.rs || (gamepad.justPressed.lt && !panel)) {
+
+    if (gamepad.justPressed.lt && !panel) {
+      setRadialHoldMode(true);
+      setShowRadialWheel(true);
+      gamepad.triggerHaptic(0.2, 0.3, 50);
+      return;
+    }
+
+    if (gamepad.justPressed.rs && !panel) {
+      setRadialHoldMode(false);
       setShowRadialWheel((prev) => !prev);
       gamepad.triggerHaptic(0.2, 0.3, 50);
     }
@@ -624,7 +634,11 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
       <RadialActionWheel
         isOpen={showRadialWheel}
         onSelect={handleRadialSelect}
-        onClose={() => setShowRadialWheel(false)}
+        selectOnLeftTriggerRelease={radialHoldMode}
+        onClose={() => {
+          setShowRadialWheel(false);
+          setRadialHoldMode(false);
+        }}
       />
       <GamepadHUD hasOpenModal={panel !== null} />
     </div>
