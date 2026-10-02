@@ -454,7 +454,11 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
                     <h3 className="text-2xl font-bold text-center text-yellow-300 mb-1">
                       Overall Quality: <AnimatedNumber targetValue={report.overallQualityScore} duration={1000} className="text-3xl" /> / 100
                     </h3>
-                    <Progress value={animatedOverallQualityValue} className="h-5 bg-stone-700 [&>*]:bg-green-500 transition-all duration-300" />
+                    <Progress
+                        value={animatedOverallQualityValue}
+                        aria-label={`Overall quality ${report.overallQualityScore} out of 100`}
+                        className="h-5 bg-stone-700 [&>*]:bg-green-500 transition-all duration-300"
+                      />
                   </div>
                 )}
 

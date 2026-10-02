@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Disc3, Music2, Sparkles, Flame, Radio, Zap, Volume2, Award } from 'lucide-react';
 
 interface AlbumCoverArtProps {
@@ -33,6 +33,11 @@ export const AlbumCoverArt: React.FC<AlbumCoverArtProps> = ({
   showVinylPeek = true,
 }) => {
   const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [imageUrl]);
+
   const isImageValid = imageUrl && !imageError && imageUrl !== '/placeholder.svg' && !imageUrl.includes('placeholder.svg');
 
   // Genre specific aesthetic mapping
