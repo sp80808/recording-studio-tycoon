@@ -235,3 +235,11 @@ In-house original, CC0, no external source. Inline SVG drawn in code; no image f
 | Asset | Source | Used by |
 |---|---|---|
 | Vocal Suite (booth, mic and pop filter, foam, sofa), Live Room (drum kit, amp stack, foam), Mix Suite (desk, faders, monitors, diffusers) | SVG shapes in code | `StudioRoom.tsx` room switcher |
+
+## 19. City scene cards (`CityScene.tsx`)
+
+In-house original, CC0, no external source. Inline SVG drawn in code (layered skyline silhouettes reused from `CitySkyline.tsx`, mood sky gradients, fixed star field, lit windows, studio sign); no image files.
+
+| Asset | Source | Used by |
+|---|---|---|
+| Six city scenes in four moods (dusk, night, dawn, day) | SVG shapes in code | `DirectorEventModal` (saga beats and city events) via `StoryDecisionModal` illustration slot |

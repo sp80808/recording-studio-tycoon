@@ -26,6 +26,7 @@ import {
 } from './eventDirector';
 import { NARRATIVE_EVENTS } from './narrativeEventPool';
 import { CITY_EVENTS, MORE_CITY_EVENTS } from './cityEvents';
+import { CITY_SAGA_EVENTS } from './citySagas';
 
 const HEALTHY = ['Friendly', 'Regular', 'Loyal', 'Advocate'];
 const ESTABLISHED = ['Regular', 'Loyal', 'Advocate'];
@@ -46,6 +47,7 @@ export const DIRECTOR_EVENTS: readonly StudioEventDefinition[] = [
   ...NARRATIVE_EVENTS,
   ...CITY_EVENTS,
   ...MORE_CITY_EVENTS,
+  ...CITY_SAGA_EVENTS,
   // ───────── Recurring-client chain ─────────
   {
     id: 'client_rush_request',
