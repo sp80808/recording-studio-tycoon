@@ -29,6 +29,9 @@ export interface GameSettings {
   screenShake: boolean;         // Celebration/milestone screenshake
   reducedMotion: boolean;       // Honors OS prefers-reduced-motion or manual toggle
   pocketMeterAssistance: 'strict' | 'normal' | 'generous'; // +/- tolerance
+  textScale: 'small' | 'normal' | 'large' | 'xl'; // Root font-size multiplier (rem-based UI scales with it)
+  hapticsEnabled: boolean;      // Phone vibration ticks (Android/Chromium)
+  toastLevel: 'all' | 'important' | 'off'; // Which pop-up notifications are shown
 
   // Customization & Localization
   theme: 'default' | 'sunrise-studio' | 'neon-nights' | 'retro-arcade';
