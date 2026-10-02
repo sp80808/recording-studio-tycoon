@@ -8,7 +8,7 @@ import { getEnergyColor, getStaffStatusColor } from '@/utils/staffUtils';
 import { StaffPortrait } from '@/components/crew/StaffPortrait';
 import { getHiringLimits, hiringBlockMessage, type HiringLimits } from '@/rpg/hiringLimits';
 import { gameAudio } from '@/utils/audioSystem';
-import { DISCIPLINE_LABEL, getPromotionOffer, getStaffCareer, experienceIn } from '@/rpg/staffCareer';
+import { DISCIPLINE_LABEL, getPromotionOffer, getStaffCareer, experienceIn, crossTrainOptions, canMentor, type StaffDiscipline } from '@/rpg/staffCareer';
 
 interface CrewRecruitmentPortalProps {
   gameState: GameState;
@@ -20,6 +20,8 @@ interface CrewRecruitmentPortalProps {
   openTrainingModal: (staff: StaffMember) => boolean;
   /** Deliberate promotion (#67). Applies exactly the previewed salary. */
   promoteStaff?: (staffId: string) => void;
+  crossTrainStaff?: (staffId: string, discipline: StaffDiscipline) => void;
+  setMentor?: (juniorId: string, mentorId: string | null) => void;
 }
 
 type PortalView = 'board' | 'roster';
@@ -35,6 +37,8 @@ export const CrewRecruitmentPortal: React.FC<CrewRecruitmentPortalProps> = ({
   toggleStaffRest,
   openTrainingModal,
   promoteStaff,
+  crossTrainStaff,
+  setMentor,
 }) => {
   const [view, setView] = useState<PortalView>('board');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -194,6 +198,8 @@ export const CrewRecruitmentPortal: React.FC<CrewRecruitmentPortalProps> = ({
               onToggleRest={toggleStaffRest}
               onTrain={openTrainingModal}
               onPromote={promoteStaff}
+              onCrossTrain={crossTrainStaff}
+              onSetMentor={setMentor}
             />
           )}
         </aside>
@@ -216,6 +222,8 @@ const CrewCvPanel: React.FC<{
   onToggleRest: (id: string) => void;
   onTrain: (staff: StaffMember) => boolean;
   onPromote?: (id: string) => void;
+  onCrossTrain?: (id: string, d: StaffDiscipline) => void;
+  onSetMentor?: (juniorId: string, mentorId: string | null) => void;
 }> = ({
   member,
   gameState,
@@ -230,6 +238,8 @@ const CrewCvPanel: React.FC<{
   onToggleRest,
   onTrain,
   onPromote,
+  onCrossTrain,
+  onSetMentor,
 }) => {
   const fee = signingFeeFor(member);
   const cv = member.cv;
@@ -278,7 +288,7 @@ const CrewCvPanel: React.FC<{
         </div>
       )}
 
-      {!isCandidate && <CareerBlock member={member} money={gameState.money} onPromote={onPromote} />}
+      {!isCandidate && <CareerBlock member={member} cash={gameState.money} staff={gameState.hiredStaff} onPromote={onPromote} onCrossTrain={onCrossTrain} onSetMentor={onSetMentor} />}
 
       {cv && (
         <>
@@ -360,7 +370,12 @@ const CvBlock: React.FC<{ title: string; items: string[] }> = ({ title, items })
 const SENIORITY_LABEL = { junior: 'Junior', regular: 'Regular', senior: 'Senior', lead: 'Lead' } as const;
 
 /** Career summary and the deliberate promotion preview (#67): requirements and the exact salary change. */
-const CareerBlock: React.FC<{ member: StaffMember; money: number; onPromote?: (id: string) => void }> = ({ member, onPromote }) => {
+const CareerBlock: React.FC<{
+  member: StaffMember; cash: number; staff: StaffMember[];
+  onPromote?: (id: string) => void;
+  onCrossTrain?: (id: string, d: StaffDiscipline) => void;
+  onSetMentor?: (juniorId: string, mentorId: string | null) => void;
+}> = ({ member, cash, staff, onPromote, onCrossTrain, onSetMentor }) => {
   const career = getStaffCareer(member);
   const offer = getPromotionOffer(member);
   const active = experienceIn(career, career.activeDiscipline);
@@ -392,6 +407,48 @@ const CareerBlock: React.FC<{ member: StaffMember; money: number; onPromote?: (i
           )}
         </div>
       )}
+      {onCrossTrain && (
+        <div className="mt-2 space-y-1" data-testid="staff-cross-train">
+          <p className="text-[11px] text-stone-400">
+            Cross-train{career.secondaryDiscipline ? ` (now also ${DISCIPLINE_LABEL[career.secondaryDiscipline].toLowerCase()})` : ''}: off the floor for days, experience is kept.
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {crossTrainOptions(member).map(o => (
+              <KenneyButton
+                key={o.discipline}
+                onClick={() => { void gameAudio.playGearSwitch(0.35); onCrossTrain(member.id, o.discipline); }}
+                variant="grey"
+                size="sm"
+                disabled={member.status !== 'Idle' || cash < o.cost}
+              >
+                {DISCIPLINE_LABEL[o.discipline]} · {o.days}d · {money(o.cost)}
+              </KenneyButton>
+            ))}
+          </div>
+        </div>
+      )}
+      {onSetMentor && <MentorRow member={member} career={career} staff={staff} onSetMentor={onSetMentor} />}
+    </div>
+  );
+};
+
+const MentorRow: React.FC<{ member: StaffMember; career: ReturnType<typeof getStaffCareer>; staff: StaffMember[]; onSetMentor: (j: string, m: string | null) => void }> = ({ member, career, staff, onSetMentor }) => {
+  const mentor = career.mentorId ? staff.find(s => s.id === career.mentorId) : undefined;
+  if (mentor) {
+    return (
+      <div className="mt-2 text-[11px] text-stone-300" data-testid="staff-mentor">
+        Mentored by {mentor.name}: +30% discipline XP while they are working (their own XP −15%).{' '}
+        <button className="underline" onClick={() => onSetMentor(member.id, null)}>End</button>
+      </div>
+    );
+  }
+  const mentors = staff.filter(s => canMentor(s, member) && !staff.some(o => getStaffCareer(o).mentorId === s.id));
+  if (mentors.length === 0) return null;
+  return (
+    <div className="mt-2 text-[11px] text-stone-300" data-testid="staff-mentor">
+      Mentor: {mentors.map(m => (
+        <button key={m.id} className="underline mr-2" onClick={() => onSetMentor(member.id, m.id)}>{m.name}</button>
+      ))}
     </div>
   );
 };
