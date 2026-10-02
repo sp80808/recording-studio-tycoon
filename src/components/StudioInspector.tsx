@@ -26,6 +26,7 @@ import {
   Check,
   DoorOpen,
   Megaphone,
+  User,
   Users,
   Zap,
 } from 'lucide-react';
@@ -66,6 +67,7 @@ const INSPECTOR_META = {
   door: { label: 'Go Out', icon: DoorOpen },
   promotion: { label: 'Phone & Ring Light', icon: Megaphone },
   cases: { label: 'Flight Cases', icon: Guitar },
+  producer: { label: 'Producer', icon: User },
 } as const satisfies Record<StudioHotspotId, { label: string; icon: typeof Phone }>;
 
 const ActionIcon: React.FC<{ icon: typeof Phone }> = ({ icon: Icon }) => (
@@ -334,6 +336,55 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   }
 
   /* -------------------------------- clock ------------------------------- */
+  if (hotspot === 'producer') {
+    const player = gameState.playerData;
+    const energy = player.dailyWorkCapacity ?? 0;
+    const task = project ? project.title : null;
+    const mood =
+      energy <= 0 ? "Running on fumes. A rest day would do you good."
+      : project ? 'Headphones on, eyes on the meters.'
+      : 'Between sessions. The phone is where the next job comes from.';
+    return (
+      <Shell hotspot={hotspot} onClose={onClose}>
+        <div className="flex items-baseline justify-between">
+          <span className="text-base font-black text-amber-100">{player.name || 'The Producer'}</span>
+          <span className="text-xs font-bold text-amber-300">Level {player.level}</span>
+        </div>
+        <div>
+          <StatRow label="XP" value={`${Math.floor(player.xp)} / ${player.xpToNextLevel}`} />
+          <div className="mt-1"><MiniBar value={player.xpToNextLevel > 0 ? (player.xp / player.xpToNextLevel) * 100 : 0} className="bg-amber-400" /></div>
+        </div>
+        <StatRow label="Energy today" value={<><MotionNumber value={energy} suffix="⚡" /></>} valueClass={energy <= 0 ? 'text-red-400' : 'text-amber-300'} />
+        <StatRow label="Reputation" value={player.reputation} />
+        <StatRow label="Right now" value={task ?? 'Free'} valueClass={task ? 'text-emerald-300' : 'text-stone-300'} />
+        <div className="text-[11px] italic text-stone-400">{mood}</div>
+        <div className="grid grid-cols-2 gap-2">
+          <MotionButton
+            className="h-8 bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-amber-100 text-xs font-bold"
+            onClick={() => {
+              void gameAudio.playTactileClick();
+              onClose();
+              if (project) onConsoleFocus?.();
+              else onBookings?.();
+            }}
+          >
+            {project ? 'Open session' : 'Book a gig'}
+          </MotionButton>
+          <MotionButton
+            className="h-8 bg-purple-400/[0.14] ring-1 ring-inset ring-purple-400/45 hover:bg-purple-400/[0.24] text-purple-100 text-xs font-bold"
+            onClick={() => {
+              void gameAudio.playTactileClick();
+              onClose();
+              onOpenDashboardTab('skills');
+            }}
+          >
+            Skills
+          </MotionButton>
+        </div>
+      </Shell>
+    );
+  }
+
   if (hotspot === 'clock') {
     const salaries = gameState.hiredStaff.reduce((sum, s) => sum + s.salary, 0);
     const upkeep = calculateEquipmentUpkeep(gameState.ownedEquipment, getOriginEffects(gameState));

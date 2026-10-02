@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Building2, Check, Dices, Globe2, Landmark, MapPin, Radio, Swords, Waves } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { AVAILABLE_ERAS } from '@/data/eras';
 import type { Era } from '@/types/game';
 import type { ProducerBackgroundId } from '@/types/character';
@@ -29,7 +30,7 @@ import {
 import { HAIR_HEX, CLOTHING_PALETTES } from '@/features/sprites/npcAppearanceData';
 import { CitySkyline } from '@/components/CitySkyline';
 import { useContentLocale } from '@/i18n/content';
-import { CITIES, DEFAULT_CITY_ID, cityText, describeCity, formatMoney, getCityById, localName, type CityId } from '@/rpg/cities';
+import { CITIES, DEFAULT_CITY_ID, cityText, currencyFor, describeCity, formatMoney, getCityById, localName, type CityId } from '@/rpg/cities';
 import { EraEmblem, type EraEmblemId } from './EraEmblems';
 import './splash.css';
 
@@ -58,7 +59,7 @@ const ERA_CHALLENGE: Record<string, string> = {
   modern: 'Everyone has a home studio. Win on taste and relationships.',
 };
 
-const STEPS = ['Location', 'Era', 'Character', 'Role'] as const;
+const STEP_KEYS = ['location', 'era', 'character', 'role'] as const;
 
 const CITY_ICONS = { 'los-angeles': Radio, nashville: Waves, london: Landmark, berlin: Building2, tokyo: Globe2, rio: MapPin } as const;
 
@@ -73,15 +74,18 @@ function CreatorArrowRow({
   value,
   onPrev,
   onNext,
+  swatch,
 }: {
   label: string;
   value: string;
+  /** Optional colour chip shown beside the value (colour rows). */
+  swatch?: string;
   onPrev: () => void;
   onNext: () => void;
 }) {
   return (
     <div className="flex items-center gap-1.5" role="group" aria-label={`${label}: ${value}`}>
-      <span className="w-20 shrink-0 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--rst-brass-200)]">
+      <span className="w-[5.25rem] shrink-0 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--rst-brass-200)]">
         {label}
       </span>
       <button
@@ -92,7 +96,10 @@ function CreatorArrowRow({
       >
         <ArrowLeft size={15} aria-hidden="true" />
       </button>
-      <span className="rst-title min-w-0 flex-1 truncate text-center text-[15px] capitalize leading-tight">{value}</span>
+      <span className="flex min-w-0 flex-1 items-center justify-center gap-2">
+        {swatch && <span aria-hidden="true" className="size-4 shrink-0 rounded-full border border-white/25" style={{ background: swatch }} />}
+        <span className="rst-title min-w-0 truncate text-center text-[15px] capitalize leading-tight">{value}</span>
+      </span>
       <button
         type="button"
         className="rst-btn rst-btn-ghost creator-tap !px-0"
@@ -110,6 +117,7 @@ const cycleOption = <T extends string>(list: readonly T[], current: T, delta: nu
   list[(list.indexOf(current) + delta + list.length) % list.length];
 
 export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
+  const { t } = useTranslation();
   useContentLocale();
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [eraId, setEraId] = useState<string | null>(null);
@@ -200,14 +208,14 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
     <main className="career-start-page" aria-label="Start a new career">
             <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col px-4 pb-28 pt-6 sm:px-8">
         {/* Header + stepper */}
-        <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-          <button type="button" onClick={goBack} className="rst-btn rst-btn-ghost justify-self-start !min-h-9 !px-3 !text-xs">
+        <header className="flex items-center justify-between gap-3 sm:grid sm:grid-cols-[1fr_auto_1fr]">
+          <button type="button" onClick={goBack} className="rst-btn rst-btn-ghost shrink-0 justify-self-start whitespace-nowrap !min-h-9 !px-3 !text-xs">
             <ArrowLeft size={14} aria-hidden="true" />
-            {step === 0 ? 'Back' : 'Change era'}
+            {step === 0 ? t('career_back') : t(`career_back_to_${STEP_KEYS[step - 1]}`)}
           </button>
-          <ol className="flex items-center gap-4" aria-label="Career setup progress">
-            {STEPS.map((label, i) => (
-              <li key={label} className={stepClass(i === step, i < step)} aria-current={i === step ? 'step' : undefined}>
+          <ol className="flex min-w-0 items-center gap-3 sm:gap-4" aria-label="Career setup progress">
+            {STEP_KEYS.map((key, i) => (
+              <li key={key} className={stepClass(i === step, i < step)} aria-current={i === step ? 'step' : undefined}>
                 <span
                   className={`inline-flex size-5 shrink-0 items-center justify-center rounded-full border text-center text-[10px] leading-none tabular-nums ${
                     i < step ? 'border-[var(--rst-brass-400)] bg-[var(--rst-brass-400)] text-stone-950' : 'border-current'
@@ -215,7 +223,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                 >
                   {i < step ? <Check size={11} aria-hidden="true" /> : i + 1}
                 </span>
-                {label}
+                <span className={i === step ? '' : 'hidden sm:inline'}>{t(`career_step_${key}`)}</span>
               </li>
             ))}
           </ol>
@@ -291,6 +299,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                   <span className="block text-[11px] italic leading-snug text-stone-400">“{e.funnyDescription}”</span>
                   <span className="mt-auto w-full space-y-2 border-t border-[var(--rst-line)] pt-3 text-left text-[11px]">
                     <span className="flex items-center justify-between gap-4"><span className="rst-muted">Starting cash</span><b className="min-w-[7.5rem] text-right tabular-nums leading-none text-[var(--rst-money)]">{formatMoney(e.startingMoney, cityId, e.id)}</b></span>
+                    <span className="flex items-center justify-between gap-4 tabular-nums"><span className="rst-muted">Currency</span><b data-testid="era-currency">{currencyFor(cityId, e.id).symbol} {currencyFor(cityId, e.id).code}</b></span>
                     <span className="flex items-center justify-between gap-4"><span className="rst-muted">Gear prices</span><b className="min-w-[7.5rem] text-right tabular-nums leading-none">{Math.round(e.equipmentMultiplier * 100)}% of modern</b></span>
                     <span className="block text-stone-300">{ERA_CHALLENGE[e.id] ?? ''}</span>
                   </span>
@@ -359,7 +368,14 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                 onPrev={() => patchLook({ hair: cycleOption(PRODUCER_HAIR_SHAPES, look.hair, -1) })}
                 onNext={() => patchLook({ hair: cycleOption(PRODUCER_HAIR_SHAPES, look.hair, 1) })}
               />
-              <div className="flex flex-wrap gap-2 pl-[92px]" role="radiogroup" aria-label="Hair colour">
+              <CreatorArrowRow
+                label="Hair tone"
+                value={look.hairColour.replace(/_/g, ' ')}
+                swatch={HAIR_HEX[look.hairColour]}
+                onPrev={() => patchLook({ hairColour: cycleOption(PRODUCER_HAIR_COLOURS, look.hairColour, -1) })}
+                onNext={() => patchLook({ hairColour: cycleOption(PRODUCER_HAIR_COLOURS, look.hairColour, 1) })}
+              />
+              <div className="flex flex-wrap gap-2 pl-[90px]" role="radiogroup" aria-label="Hair colour swatches">
                 {PRODUCER_HAIR_COLOURS.map((colour) => (
                   <button key={colour} type="button" role="radio" aria-checked={look.hairColour === colour} aria-label={colour.replace(/_/g, ' ')} title={colour.replace(/_/g, ' ')}
                     onClick={() => patchLook({ hairColour: colour })}
@@ -368,17 +384,21 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                 ))}
               </div>
 
-              <fieldset>
-                <legend className="mb-1.5 text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">Clothes colour</legend>
-                <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Clothes colour">
-                  {PRODUCER_CLOTHES_COLOURS.map((c) => (
-                    <button key={c.id} type="button" role="radio" aria-checked={look.clothesColour === c.id} aria-label={c.label} title={c.label}
-                      onClick={() => patchLook({ clothesColour: (c.id as ProducerClothesColourId) })}
-                      className={`creator-swatch h-7 w-7 rounded-md border-2 ${look.clothesColour === c.id ? 'border-[var(--rst-brass-300)] ring-2 ring-[var(--rst-brass-300)]/40' : 'border-white/15'}`}
-                      style={{ background: `linear-gradient(135deg, ${CLOTHING_PALETTES[c.palette].primary} 60%, ${CLOTHING_PALETTES[c.palette].secondary} 60%)` }} />
-                  ))}
-                </div>
-              </fieldset>
+              <CreatorArrowRow
+                label="Clothes"
+                value={PRODUCER_CLOTHES_COLOURS.find((c) => c.id === look.clothesColour)?.label ?? ''}
+                swatch={(() => { const c = PRODUCER_CLOTHES_COLOURS.find((x) => x.id === look.clothesColour) ?? PRODUCER_CLOTHES_COLOURS[0]; return CLOTHING_PALETTES[c.palette].primary; })()}
+                onPrev={() => patchLook({ clothesColour: cycleOption(PRODUCER_CLOTHES_COLOURS.map((c) => c.id), look.clothesColour as string, -1) as ProducerClothesColourId })}
+                onNext={() => patchLook({ clothesColour: cycleOption(PRODUCER_CLOTHES_COLOURS.map((c) => c.id), look.clothesColour as string, 1) as ProducerClothesColourId })}
+              />
+              <div className="flex flex-wrap gap-2 pl-[90px]" role="radiogroup" aria-label="Clothes colour swatches">
+                {PRODUCER_CLOTHES_COLOURS.map((c) => (
+                  <button key={c.id} type="button" role="radio" aria-checked={look.clothesColour === c.id} aria-label={c.label} title={c.label}
+                    onClick={() => patchLook({ clothesColour: (c.id as ProducerClothesColourId) })}
+                    className={`creator-swatch h-6 w-6 rounded-md border-2 ${look.clothesColour === c.id ? 'border-[var(--rst-brass-300)] ring-2 ring-[var(--rst-brass-300)]/40' : 'border-white/15'}`}
+                    style={{ background: `linear-gradient(135deg, ${CLOTHING_PALETTES[c.palette].primary} 60%, ${CLOTHING_PALETTES[c.palette].secondary} 60%)` }} />
+                ))}
+              </div>
 
               <CreatorArrowRow
                 label="Accessory"
@@ -481,7 +501,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
       {/* Sticky footer: the summary + the one primary action */}
       <footer className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--rst-line-strong)] bg-[rgba(14,12,10,0.92)] backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3 sm:px-8">
-          <p className="min-w-0 flex-1 text-xs text-stone-300" aria-live="polite">
+          <p className="min-w-0 basis-full text-xs text-stone-300 sm:flex-1 sm:basis-0" aria-live="polite">
             {era ? <b className="text-[var(--rst-brass-200)]">{era.displayName}</b> : <span className="text-stone-500">No era chosen</span>}
             <span className="mx-2 text-stone-600">·</span>
             <b className="text-[var(--rst-brass-200)]">{moniker || 'Unnamed producer'}</b>
@@ -498,7 +518,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
             disabled={step === 0 ? !cityId : step === 1 ? !era : step === 2 ? !moniker.trim() : !(era && origin)}
             onClick={goNext}
           >
-            {step === 0 ? 'Choose an era' : step === 1 ? 'Create your producer' : step === 2 ? 'Choose a role' : 'Open the studio'}
+            {[t('career_next_era'), t('career_next_character'), t('career_next_role'), t('career_open_studio')][step]}
             <ArrowRight size={15} aria-hidden="true" />
           </button>
         </div>

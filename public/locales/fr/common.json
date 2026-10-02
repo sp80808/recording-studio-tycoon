@@ -262,5 +262,17 @@
   "active_cost_patchbay": "1 avec patchbay",
   "event_studio_event": "Événement du studio",
   "event_prompt": "Que faites-vous ?",
-  "event_commit": "Confirmer ce choix"
+  "event_commit": "Confirmer ce choix",
+  "career_step_character": "Personnage",
+  "career_step_location": "Lieu",
+  "career_step_era": "Époque",
+  "career_step_role": "Rôle",
+  "career_back": "Retour",
+  "career_back_to_character": "Retour au personnage",
+  "career_back_to_location": "Retour au lieu",
+  "career_back_to_era": "Retour à l'époque",
+  "career_next_era": "Choisir l'époque",
+  "career_next_role": "Choisir le rôle",
+  "career_open_studio": "Ouvrir le studio",
+  "career_next_character": "Crée ton producteur"
 }
