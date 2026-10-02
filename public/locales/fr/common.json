@@ -237,5 +237,15 @@
   "active_stage_complete": "Étape terminée !",
   "active_optimized": "Optimisé",
   "active_efficient": "Efficace",
-  "active_overall_progress": "Progression totale du morceau"
+  "active_overall_progress": "Progression totale du morceau",
+  "active_target_range": "Cible : {{min}}–{{max}} %",
+  "active_optimal": "Optimal",
+  "active_adjust": "Ajuster",
+  "active_arm_take": "Armer la prise ({{cost}}⚡ · {{left}} restantes)",
+  "active_project_ready": "Projet prêt pour la relecture !",
+  "active_out_of_capacity": "Plus de capacité de travail — passez au jour suivant",
+  "active_duties": "Corvées",
+  "active_duties_title": "Ouvrir les tâches d'entretien du studio",
+  "active_work_on_project": "Travailler sur le projet",
+  "active_overall_progress_aria": "Progression totale du projet"
 }

@@ -237,5 +237,15 @@
   "active_stage_complete": "阶段完成！",
   "active_optimized": "已优化",
   "active_efficient": "高效",
-  "active_overall_progress": "曲目总进度"
+  "active_overall_progress": "曲目总进度",
+  "active_target_range": "目标：{{min}}–{{max}}%",
+  "active_optimal": "最佳",
+  "active_adjust": "调整",
+  "active_arm_take": "准备录音（{{cost}}⚡ · 剩余 {{left}}）",
+  "active_project_ready": "项目已可审核！",
+  "active_out_of_capacity": "工作能量耗尽 — 进入下一天",
+  "active_duties": "杂务",
+  "active_duties_title": "打开录音棚维护杂务",
+  "active_work_on_project": "处理项目",
+  "active_overall_progress_aria": "项目总进度"
 }

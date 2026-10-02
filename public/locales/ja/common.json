@@ -237,5 +237,15 @@
   "active_stage_complete": "ステージ完了！",
   "active_optimized": "最適化",
   "active_efficient": "効率的",
-  "active_overall_progress": "トラック全体の進捗"
+  "active_overall_progress": "トラック全体の進捗",
+  "active_target_range": "目標：{{min}}–{{max}}%",
+  "active_optimal": "最適",
+  "active_adjust": "調整",
+  "active_arm_take": "テイクを構える（{{cost}}⚡・残り{{left}}）",
+  "active_project_ready": "プロジェクトはレビュー待ちです！",
+  "active_out_of_capacity": "作業キャパシティ切れ — 日を進めましょう",
+  "active_duties": "雑務",
+  "active_duties_title": "スタジオ整備の雑務を開く",
+  "active_work_on_project": "プロジェクトに取り組む",
+  "active_overall_progress_aria": "プロジェクト全体の進捗"
 }

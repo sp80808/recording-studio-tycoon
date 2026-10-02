@@ -698,9 +698,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
               <ChoreHotspotButton
                 kind="duties"
                 icon={ClipboardList}
-                label="Duties"
+                label={t('active_duties')}
                 meta={`${Object.values(gameState.choreState?.chores || {}).filter(c => c.completed).length}/5`}
-                title="Open Studio Maintenance Duties"
+                title={t('active_duties_title')}
                 onClick={() => setShowDutiesClipboard(true)}
               />
               <div className="flex items-center gap-2 bg-stone-900/90 px-2 py-1 rounded border border-stone-700/70">
@@ -877,7 +877,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             <Progress 
               value={overallProgress} 
               className="h-1.5 bg-stone-800 progress-bar transition-all duration-300"
-              aria-label="Overall project progress"
+              aria-label={t('active_overall_progress_aria')}
             />
           </div>
 
@@ -949,9 +949,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   }`}
                 />
                 <div className="flex justify-between items-center text-[10px] text-stone-400 mt-1">
-                  <span>Target: {Math.max(0, optimalFocus.performance - 10)}–{Math.min(100, optimalFocus.performance + 10)}%</span>
+                  <span>{t('active_target_range', { min: Math.max(0, optimalFocus.performance - 10), max: Math.min(100, optimalFocus.performance + 10) })}</span>
                   <span className={Math.abs(projectFocus.performance - optimalFocus.performance) <= 10 ? 'text-emerald-400 font-semibold' : 'text-stone-500'}>
-                    {Math.abs(projectFocus.performance - optimalFocus.performance) <= 10 ? <><StatIcon name="check" /> Optimal</> : 'Adjust'}
+                    {Math.abs(projectFocus.performance - optimalFocus.performance) <= 10 ? <><StatIcon name="check" /> {t('active_optimal')}</> : t('active_adjust')}
                   </span>
                 </div>
               </div>
@@ -986,9 +986,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   }`}
                 />
                 <div className="flex justify-between items-center text-[10px] text-stone-400 mt-1">
-                  <span>Target: {Math.max(0, optimalFocus.soundCapture - 10)}–{Math.min(100, optimalFocus.soundCapture + 10)}%</span>
+                  <span>{t('active_target_range', { min: Math.max(0, optimalFocus.soundCapture - 10), max: Math.min(100, optimalFocus.soundCapture + 10) })}</span>
                   <span className={Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 10 ? 'text-emerald-400 font-semibold' : 'text-stone-500'}>
-                    {Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 10 ? <><StatIcon name="check" /> Optimal</> : 'Adjust'}
+                    {Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 10 ? <><StatIcon name="check" /> {t('active_optimal')}</> : t('active_adjust')}
                   </span>
                 </div>
               </div>
@@ -1023,9 +1023,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   }`}
                 />
                 <div className="flex justify-between items-center text-[10px] text-stone-400 mt-1">
-                  <span>Target: {Math.max(0, optimalFocus.layering - 10)}–{Math.min(100, optimalFocus.layering + 10)}%</span>
+                  <span>{t('active_target_range', { min: Math.max(0, optimalFocus.layering - 10), max: Math.min(100, optimalFocus.layering + 10) })}</span>
                   <span className={Math.abs(projectFocus.layering - optimalFocus.layering) <= 10 ? 'text-emerald-400 font-semibold' : 'text-stone-500'}>
-                    {Math.abs(projectFocus.layering - optimalFocus.layering) <= 10 ? <><StatIcon name="check" /> Optimal</> : 'Adjust'}
+                    {Math.abs(projectFocus.layering - optimalFocus.layering) <= 10 ? <><StatIcon name="check" /> {t('active_optimal')}</> : t('active_adjust')}
                   </span>
                 </div>
               </div>
@@ -1120,7 +1120,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
               <button
                 onClick={handleArmTake}
                 disabled={availableEnergy <= 0 || isProjectComplete}
-                aria-label="Work on Project"
+                aria-label={t('active_work_on_project')}
                 className={`w-full py-3.5 text-sm font-black uppercase tracking-wider rounded-[2px] border transition-all flex items-center justify-center gap-2 shadow-lg ${
                   isProjectComplete
                     ? 'bg-emerald-400/[0.16] border-emerald-400/55 text-emerald-100'
@@ -1130,17 +1130,17 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 }`}
               >
                 {isProjectComplete ? (
-                  <><StatIcon name="party" /> PROJECT READY FOR REVIEW!</>
+                  <><StatIcon name="party" /> {t('active_project_ready')}</>
                 ) : availableEnergy > 0 ? (
                   <>
                     {gamepad.isConnected && gamepad.lastInputType === 'gamepad' && (
                       <GamepadGlyph button="south" size="xs" />
                     )}
                     <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping mr-1" />
-                    <span>ARM TAKE ({energyCost}<StatIcon name="energy" /> · {availableEnergy} LEFT)</span>
+                    <span>{t('active_arm_take', { cost: energyCost, left: availableEnergy })}</span>
                   </>
                 ) : (
-                  <><StatIcon name="energy" /> OUT OF WORK CAPACITY — ADVANCE DAY</>
+                  <><StatIcon name="energy" /> {t('active_out_of_capacity')}</>
                 )}
               </button>
             </div>

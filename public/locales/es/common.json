@@ -237,5 +237,15 @@
   "active_stage_complete": "¡Fase completada!",
   "active_optimized": "Optimizado",
   "active_efficient": "Eficiente",
-  "active_overall_progress": "Progreso total de la pista"
+  "active_overall_progress": "Progreso total de la pista",
+  "active_target_range": "Objetivo: {{min}}–{{max}}%",
+  "active_optimal": "Óptimo",
+  "active_adjust": "Ajustar",
+  "active_arm_take": "Preparar toma ({{cost}}⚡ · {{left}} restantes)",
+  "active_project_ready": "¡Proyecto listo para revisión!",
+  "active_out_of_capacity": "Sin capacidad de trabajo — avanza el día",
+  "active_duties": "Tareas",
+  "active_duties_title": "Abrir tareas de mantenimiento del estudio",
+  "active_work_on_project": "Trabajar en el proyecto",
+  "active_overall_progress_aria": "Progreso total del proyecto"
 }

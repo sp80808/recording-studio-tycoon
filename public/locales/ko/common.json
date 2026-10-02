@@ -237,5 +237,15 @@
   "active_stage_complete": "단계 완료!",
   "active_optimized": "최적화됨",
   "active_efficient": "효율적",
-  "active_overall_progress": "트랙 전체 진행도"
+  "active_overall_progress": "트랙 전체 진행도",
+  "active_target_range": "목표: {{min}}–{{max}}%",
+  "active_optimal": "최적",
+  "active_adjust": "조정",
+  "active_arm_take": "테이크 준비 ({{cost}}⚡ · {{left}} 남음)",
+  "active_project_ready": "프로젝트 검토 준비 완료!",
+  "active_out_of_capacity": "작업 여력 소진 — 하루를 넘기세요",
+  "active_duties": "잡무",
+  "active_duties_title": "스튜디오 정비 잡무 열기",
+  "active_work_on_project": "프로젝트 작업하기",
+  "active_overall_progress_aria": "프로젝트 전체 진행도"
 }

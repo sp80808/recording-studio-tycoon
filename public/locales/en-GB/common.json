@@ -237,5 +237,15 @@
   "active_stage_complete": "Stage Complete!",
   "active_optimized": "Optimized",
   "active_efficient": "Efficient",
-  "active_overall_progress": "Overall Track Progress"
+  "active_overall_progress": "Overall Track Progress",
+  "active_target_range": "Target: {{min}}–{{max}}%",
+  "active_optimal": "Optimal",
+  "active_adjust": "Adjust",
+  "active_arm_take": "Arm take ({{cost}}⚡ · {{left}} left)",
+  "active_project_ready": "Project ready for review!",
+  "active_out_of_capacity": "Out of work capacity — advance day",
+  "active_duties": "Duties",
+  "active_duties_title": "Open Studio Maintenance Duties",
+  "active_work_on_project": "Work on Project",
+  "active_overall_progress_aria": "Overall project progress"
 }
