@@ -47,9 +47,16 @@ export interface RadialActionWheelProps {
   isOpen: boolean;
   onSelect: (sliceId: string) => void;
   onClose: () => void;
+  /** LT-opened wheels commit the highlighted slice when the trigger is released. */
+  selectOnLeftTriggerRelease?: boolean;
 }
 
-export const RadialActionWheel: React.FC<RadialActionWheelProps> = ({ isOpen, onSelect, onClose }) => {
+export const RadialActionWheel: React.FC<RadialActionWheelProps> = ({
+  isOpen,
+  onSelect,
+  onClose,
+  selectOnLeftTriggerRelease = false,
+}) => {
   const { settings } = useSettings();
   const gamepad = useGamepad({
     preferredLayout: settings?.controllerLayout,
@@ -69,9 +76,16 @@ export const RadialActionWheel: React.FC<RadialActionWheelProps> = ({ isOpen, on
     }
   }, [isOpen, activeSlice, gamepad]);
 
-  // Handle selection on button press or release
+  // LT hold mode behaves like a console radial menu: flick, then release to commit.
+  // R3/toggle mode still supports explicit South/A confirm.
   useEffect(() => {
     if (!isOpen) return;
+
+    if (selectOnLeftTriggerRelease && gamepad.justReleased.lt) {
+      if (activeSlice) onSelect(activeSlice.id);
+      onClose();
+      return;
+    }
 
     if (gamepad.justPressed.south && activeSlice) {
       onSelect(activeSlice.id);
@@ -79,7 +93,16 @@ export const RadialActionWheel: React.FC<RadialActionWheelProps> = ({ isOpen, on
     } else if (gamepad.justPressed.east) {
       onClose();
     }
-  }, [isOpen, gamepad.justPressed.south, gamepad.justPressed.east, activeSlice, onSelect, onClose]);
+  }, [
+    isOpen,
+    selectOnLeftTriggerRelease,
+    gamepad.justReleased.lt,
+    gamepad.justPressed.south,
+    gamepad.justPressed.east,
+    activeSlice,
+    onSelect,
+    onClose,
+  ]);
 
   if (!isOpen) return null;
 
@@ -144,8 +167,17 @@ export const RadialActionWheel: React.FC<RadialActionWheelProps> = ({ isOpen, on
 
         {/* Bottom Help Prompt */}
         <div className="absolute -bottom-10 flex items-center gap-2 text-xs text-stone-300 bg-stone-900/90 px-3 py-1 rounded-full border border-stone-800">
-          <GamepadGlyph button="south" size="xs" />
-          <span>Confirm</span>
+          {selectOnLeftTriggerRelease ? (
+            <>
+              <GamepadGlyph button="lt" size="xs" />
+              <span>Release to Select</span>
+            </>
+          ) : (
+            <>
+              <GamepadGlyph button="south" size="xs" />
+              <span>Confirm</span>
+            </>
+          )}
           <span className="text-stone-600">|</span>
           <GamepadGlyph button="east" size="xs" />
           <span>Cancel</span>
