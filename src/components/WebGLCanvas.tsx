@@ -268,7 +268,7 @@ export interface StudioSceneState {
   cityId?: string;
   /** Studio tier 1-5 from ProgressionSystem — drives visible room upgrades (bead ifx.3) */
   roomTier?: number;
-  /** Premises tier (#70): 1 adds the client bench + storage rack, 2 adds reception, water cooler and a second rack. */
+  /** Premises tier (#70): 3 adds a premium sofa and third rack; 1 adds the client bench + storage rack, 2 adds reception, water cooler and a second rack. */
   premisesTier?: number;
   /** Tier ids of earned, unopened flight cases (drives the floor stack). */
   pendingCases?: string[];

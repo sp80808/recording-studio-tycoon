@@ -211,6 +211,7 @@ In-house original, CC0, no external source. Drawn procedurally in Pixi Graphics;
 |---|---|---|
 | Client waiting bench, storage rack (Project Studio) | Pixi Graphics, drawn in code | `WebGLCanvas.tsx` (`buildScene`) |
 | Reception counter with accent sign, water cooler, second rack (Commercial Studio) | Pixi Graphics, drawn in code | `WebGLCanvas.tsx` (`buildScene`) |
+| Premium client sofa and third rack bay (Multi-room Facility) | Pixi Graphics, drawn in code, CC0 | `WebGLCanvas.tsx` (`buildScene`) |
 
 ## 16. Window view (`studioWindowView.ts`)
 

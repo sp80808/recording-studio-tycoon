@@ -1,7 +1,7 @@
 /** Premises milestones (#70): eligibility, optional move, preservation, capacity, rent, migration. */
 import {
   getPremisesOffer, applyPremisesMove, premisesStaffCap, premisesDailyRent,
-  premisesCandidateCount, premisesRoomAllowanceBonus, PROJECT_STUDIO_DEPOSIT, COMMERCIAL_STUDIO_DEPOSIT,
+  premisesCandidateCount, premisesRoomAllowanceBonus, PROJECT_STUDIO_DEPOSIT, COMMERCIAL_STUDIO_DEPOSIT, FACILITY_DEPOSIT,
 } from '../src/rpg/premises';
 import { createDefaultStudioRooms } from '../src/utils/studioRoomUtils';
 
@@ -59,8 +59,34 @@ assert(moved2.hiredStaff === ready.hiredStaff && moved2.ownedEquipment === ready
 assert(moved2.playerData.dailyWorkCapacity === 0, 'Tier 2 move also costs the day');
 assert(moved2.studioRooms.find((r: any) => r.id === 'live-room').unlocked && moved2.studioRooms.find((r: any) => r.id === 'vocal-suite').unlocked, 'Live Room unlocked, Vocal Suite kept');
 assert(premisesStaffCap(moved2) === 10 && premisesRoomAllowanceBonus(moved2) === 2 && premisesCandidateCount(moved2) === 7, 'Tier 2 capacity and recruiting');
-assert(getPremisesOffer(moved2) === null && applyPremisesMove(moved2) === moved2, 'no move beyond Tier 2');
+assert(getPremisesOffer(moved2)!.tier === 3 && applyPremisesMove(moved2) === moved2, 'Tier 3 is offered but an ineligible studio cannot move');
 const reloaded2 = JSON.parse(JSON.stringify(moved2));
 assert(applyPremisesMove(reloaded2) === reloaded2 && reloaded2.money === moved2.money, 'Tier 2 reload cannot double-charge');
+
+// ---- Tier 3: Multi-room Facility ----
+const senior = (id: string) => ({ id, role: 'Engineer', levelInRole: 4, skills: {}, career: { activeDiscipline: 'mixing', experience: [], seniority: 'senior', credited: [] } });
+const ready3: any = {
+  ...moved2,
+  money: FACILITY_DEPOSIT + 10000,
+  reputation: 250,
+  financials: { reports: new Array(60).fill({}) },
+  clientRelationships: { c1: { sessionsCompleted: 5 } },
+  hiredStaff: [senior('a'), senior('b')],
+};
+const offer3 = getPremisesOffer(ready3)!;
+assert(offer3.tier === 3 && offer3.eligible && offer3.deposit === FACILITY_DEPOSIT && offer3.dailyRent > premisesDailyRent(moved2), 'Tier 3 offer is eligible with sessions, rep, two seniors, anchor client and cash');
+assert(!getPremisesOffer({ ...ready3, money: FACILITY_DEPOSIT })!.eligible, 'Tier 3 keeps a month of rent in reserve');
+assert(!getPremisesOffer({ ...ready3, hiredStaff: [senior('a'), { ...senior('b'), career: { ...senior('b').career, seniority: 'regular' } }] })!.eligible, 'Tier 3 needs two senior staff');
+assert(!getPremisesOffer({ ...ready3, clientRelationships: { c1: { sessionsCompleted: 4 } } })!.eligible, 'Tier 3 needs an anchor client');
+assert(!getPremisesOffer({ ...ready3, reputation: 249 })!.eligible && !getPremisesOffer({ ...ready3, financials: { reports: new Array(59).fill({}) } })!.eligible, 'Tier 3 reputation and session gates');
+assert(getPremisesOffer({ ...ready3, premisesTier: 1 })!.tier === 2, 'cannot skip Tier 2');
+const moved3: any = applyPremisesMove(ready3);
+assert(moved3.premisesTier === 3 && moved3.money === 10000 && moved3.playerData.dailyWorkCapacity === 0, 'Tier 3 deposit charged, reserve left, costs the day');
+assert(moved3.hiredStaff === ready3.hiredStaff && moved3.ownedEquipment === ready3.ownedEquipment && moved3.clientRelationships === ready3.clientRelationships, 'Tier 3 move preserves staff, gear, clients');
+assert(moved3.studioRooms.find((r: any) => r.id === 'mix-suite').unlocked && moved3.studioRooms.find((r: any) => r.id === 'live-room').unlocked, 'Mix Suite unlocked, earlier rooms kept');
+assert(premisesStaffCap(moved3) === 14 && premisesRoomAllowanceBonus(moved3) === 3 && premisesCandidateCount(moved3) === 9, 'Tier 3 capacity and recruiting');
+assert(getPremisesOffer(moved3) === null && applyPremisesMove(moved3) === moved3, 'no move beyond Tier 3');
+const reloaded3 = JSON.parse(JSON.stringify(moved3));
+assert(applyPremisesMove(reloaded3) === reloaded3 && reloaded3.money === moved3.money, 'Tier 3 reload cannot double-charge');
 
 console.log('studio-premises.check passed');
