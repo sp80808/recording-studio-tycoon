@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, Swords } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Dices, Swords } from 'lucide-react';
 import { AVAILABLE_ERAS } from '@/data/eras';
 import type { Era } from '@/types/game';
 import type { ProducerBackgroundId } from '@/types/character';
@@ -27,6 +27,7 @@ import {
   type ProducerClothesColourId,
 } from '@/features/sprites/producerAppearance';
 import { HAIR_HEX, CLOTHING_PALETTES } from '@/features/sprites/npcAppearanceData';
+import { CITIES, DEFAULT_CITY_ID, describeCity, formatMoney, getCityById, localName, type CityId } from '@/rpg/cities';
 import { EraEmblem, type EraEmblemId } from './EraEmblems';
 import './splash.css';
 
@@ -34,6 +35,8 @@ import './splash.css';
 export interface ProducerSetup {
   name: string;
   appearance: ProducerAppearance;
+  /** Home city: currency display, regional taste, local names and events. */
+  cityId?: CityId;
 }
 
 interface CareerStartScreenProps {
@@ -107,10 +110,27 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
   const [eraId, setEraId] = useState<string | null>(null);
   const [originId, setOriginId] = useState<ProducerBackgroundId | null>(null);
   const [moniker, setMoniker] = useState('The Architect');
+  const [cityId, setCityId] = useState<CityId>(DEFAULT_CITY_ID);
   const [look, setLook] = useState<ProducerAppearance>(() => ({
     ...DEFAULT_PRODUCER_APPEARANCE,
     seed: Math.floor(Math.random() * 100000), // UI-only roll of the body; persisted once chosen
   }));
+  /** "Surprise me": a local name and a fresh look. UI-only rolls; the chosen result is what persists. */
+  const randomise = () => {
+    click();
+    const pick = <T,>(list: readonly T[]): T => list[Math.floor(Math.random() * list.length)];
+    const local = localName(cityId, Math.random(), Math.random());
+    if (local) setMoniker(local.slice(0, 24));
+    setLook((current) => ({
+      ...current,
+      build: pick(PRODUCER_BUILDS),
+      hair: pick(PRODUCER_HAIR_SHAPES),
+      hairColour: pick(PRODUCER_HAIR_COLOURS),
+      clothesColour: pick(PRODUCER_CLOTHES_COLOURS).id as ProducerClothesColourId,
+      accessory: pick(PRODUCER_ACCESSORIES),
+      seed: Math.floor(Math.random() * 100000),
+    }));
+  };
   const patchLook = (patch: Partial<ProducerAppearance>) => {
     click();
     setLook((current) => ({ ...current, ...patch }));
@@ -133,9 +153,9 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
       setStep(2);
     } else if (step === 2 && era && origin) {
       click();
-      onBegin(era, origin.id, { name: moniker.trim(), appearance: look });
+      onBegin(era, origin.id, { name: moniker.trim(), appearance: look, cityId });
     }
-  }, [step, era, origin, moniker, look, onBegin]);
+  }, [step, era, origin, moniker, look, cityId, onBegin]);
 
   const goBack = useCallback(() => {
     click();
@@ -202,7 +222,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
             {step === 0
               ? 'Each era changes your gear, your genres, your budget and the industry breathing down your neck.'
               : step === 1
-                ? 'Give your producer a name, a haircut, a favourite shirt and one signature accessory.'
+                ? 'Give your producer a name, a look and a home city. The city sets your currency, local taste, the people you meet and the surprises that walk in.'
                 : 'Your producer origin gives you a real edge — and a rival who will not let you forget it.'}
           </p>
         </div>
@@ -334,6 +354,44 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                 onPrev={() => patchLook({ accessory: cycleOption(PRODUCER_ACCESSORIES, look.accessory, -1) })}
                 onNext={() => patchLook({ accessory: cycleOption(PRODUCER_ACCESSORIES, look.accessory, 1) })}
               />
+
+              <button type="button" className="rst-btn rst-btn-ghost w-full !min-h-9 !text-xs" onClick={randomise} data-testid="producer-randomise">
+                <Dices size={14} aria-hidden="true" />
+                Surprise me
+              </button>
+
+              <fieldset className="border-t border-[var(--rst-line)] pt-3" data-testid="city-picker">
+                <legend className="mb-1.5 text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">Home city</legend>
+                <div
+                  className="grid grid-cols-2 gap-2"
+                  role="radiogroup"
+                  aria-label="Home city"
+                  onKeyDown={arrowSelect<CityId>(CITIES.map((c) => c.id), cityId, setCityId)}
+                >
+                  {CITIES.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={c.id === cityId}
+                      tabIndex={c.id === cityId ? 0 : -1}
+                      onClick={() => { click(); setCityId(c.id); }}
+                      className={`rst-option !p-2.5 text-left ${c.id === cityId ? 'ring-2 ring-[var(--rst-brass-300)]/60' : ''}`}
+                    >
+                      <span className="rst-title block text-sm leading-tight">{c.name}</span>
+                      <span className="block text-[10px] text-stone-400">{c.country} · {c.currency.symbol} {c.currency.code}</span>
+                    </button>
+                  ))}
+                </div>
+                {getCityById(cityId) && (
+                  <div className="mt-2 space-y-1 rounded-lg border border-[var(--rst-line)] bg-black/25 p-2.5 text-[11px] leading-snug text-stone-300" aria-live="polite">
+                    <p className="italic text-stone-400">{getCityById(cityId)!.tagline}</p>
+                    {describeCity(getCityById(cityId)!).map((line) => (
+                      <p key={line} className="flex gap-1.5"><Check size={11} className="mt-0.5 shrink-0 text-[var(--rst-money)]" aria-hidden="true" />{line}</p>
+                    ))}
+                  </div>
+                )}
+              </fieldset>
             </div>
           </section>
         )}
@@ -428,8 +486,10 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
             <span className="mx-2 text-stone-600">·</span>
             <b className="text-[var(--rst-brass-200)]">{moniker || 'Unnamed producer'}</b>
             <span className="mx-2 text-stone-600">·</span>
+            <b className="text-[var(--rst-brass-200)]">{getCityById(cityId)?.name}</b>
+            <span className="mx-2 text-stone-600">·</span>
             {origin ? <b className="text-[var(--rst-brass-200)]">{origin.name}</b> : <span className="text-stone-500">No role chosen</span>}
-            {era && <span className="ml-2 text-stone-500">${era.startingMoney.toLocaleString()} to start</span>}
+            {era && <span className="ml-2 text-stone-500">{formatMoney(era.startingMoney, cityId)} to start</span>}
             {rival && <span className="ml-2 hidden text-stone-500 sm:inline">· facing {rival.headProducer}</span>}
           </p>
           <button

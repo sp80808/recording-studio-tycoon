@@ -1,5 +1,6 @@
 // Era progression system for Recording Studio Tycoon
 import { GameState } from '@/types/game';
+import { regionalPopularityDelta } from '@/rpg/cities';
 import { gameEvents } from '@/engine/gameEventBus';
 
 export interface EraDefinition {
@@ -312,8 +313,8 @@ const MARKET_NEUTRAL_POPULARITY = 75;
  * 75 popularity (typical across the era tables) -> 1.0
  * 95 popularity -> 1.20   60 popularity -> 0.85   50 popularity -> 0.75
  */
-export const getGenreMarketMultiplier = (genre: string, era: string): number => {
-  const popularity = getGenrePopularity(genre, era);
+export const getGenreMarketMultiplier = (genre: string, era: string, cityId?: string | null): number => {
+  const popularity = getGenrePopularity(genre, era) + regionalPopularityDelta(genre, cityId);
   const multiplier = 1 + (popularity - MARKET_NEUTRAL_POPULARITY) / 100;
   return Math.max(0.7, Math.min(1.3, multiplier));
 };

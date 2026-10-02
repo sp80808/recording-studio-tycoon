@@ -1,3 +1,4 @@
+import { isCityId } from '@/rpg/cities';
 import { asEquipmentInstance, refreshGearForDay } from '@/features/usedGear/economy';
 import { GameState, Project, FocusAllocation } from '@/types/game';
 import { createDefaultStudioRooms } from '@/utils/studioRoomUtils';
@@ -152,6 +153,9 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
 
   // Premises tier (#70): legacy saves start in the borrowed room.
   processedState.premisesTier = processedState.premisesTier === 1 ? 1 : 0;
+
+  // Home city: keep only a known id; legacy saves stay neutral.
+  if (!isCityId(processedState.cityId)) delete processedState.cityId;
 
   // Studio Know-How (#66): legacy saves start empty; corrupt blobs are repaired.
   processedState.studioKnowHow = migrateKnowHow(processedState.studioKnowHow);

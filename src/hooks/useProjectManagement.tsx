@@ -121,6 +121,7 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
         Object.values(updatedClientRelationships),
         getOriginEffects(prev).repeatClientPremium,
         settled.reputation,
+        prev.cityId,
       );
 
       const prevRelationship = completedProject?.clientId

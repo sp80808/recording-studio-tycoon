@@ -237,6 +237,7 @@ const MusicStudioTycoon = () => {
       originId,
       producerName: producer?.name,
       producerAppearance: producer?.appearance,
+      cityId: producer?.cityId,
       startingMoney: era.startingMoney,
       selectedEra: era.id,
       eraStartYear: era.startYear,

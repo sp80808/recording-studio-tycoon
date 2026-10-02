@@ -16,6 +16,7 @@ import { validateChain, type SignalChain } from '@/rpg/signalChain';
 import BriefPanel from '@/components/BriefPanel';
 import RiderPanel from '@/components/RiderPanel';
 import ForecastPanel from '@/components/ForecastPanel';
+import { currencySymbol, toLocalAmount } from '@/rpg/cities';
 import { BookingCalendar, BookingCostLine } from '@/components/BookingCalendar';
 import { defaultAssignment, type SessionAssignment } from '@/rpg/sessionForecast';
 import { getApproach, getProjectBrief, type ProductionApproach } from '@/rpg/projectBrief';
@@ -147,6 +148,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
           Object.values(prev.clientRelationships || {}),
           1.1,
           prev.reputation,
+          prev.cityId,
         )
       ]
     }));
@@ -349,7 +351,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                   <div className="rounded-lg border border-[var(--rst-line)] bg-black/25 p-2">
                     <div className="rst-kicker !text-[10px]">Fee</div>
                     <div className="text-sm font-bold text-[var(--rst-money)]">
-                      <MotionNumber value={project.payoutBase} prefix="$" />
+                      <MotionNumber value={toLocalAmount(project.payoutBase, gameState.cityId)} prefix={currencySymbol(gameState.cityId)} />
                     </div>
                   </div>
                   <div className="rounded-lg border border-[var(--rst-line)] bg-black/25 p-2">

@@ -1,6 +1,7 @@
 /**
  * Deterministic staff recruitment: portraits, era-aware names, traits, and CVs.
  */
+import { localName } from '@/rpg/cities';
 import type { StaffCurriculumVitae, StaffMember } from '@/types/game';
 import { createSeededRandom, pickWithRandom, randomInt } from '@/simulation/seededRandom';
 import { initializeSkillsStaff } from '@/utils/skillUtils';
@@ -31,6 +32,8 @@ export interface CandidateGenerationContext {
   day?: number;
   era?: string;
   year?: number;
+  /** Home city: part of the names come from its local pool. Absent = era pools only. */
+  cityId?: string;
   /** Distinguishes start / day-roll / paid refresh batches. */
   batchKey?: string;
 }
@@ -85,11 +88,15 @@ const generateOneCandidate = (
   era: NpcEra,
   index: number,
   batchKey: string,
+  cityId?: string,
 ): StaffMember => {
   const rng = createSeededRandom(`staff-candidate:${seed}:${batchKey}:${index}`);
   const role = pickWithRandom(rng, ROLES);
   const names = ERA_NAME_POOLS[era];
-  const name = `${pickWithRandom(rng, names.first)} ${pickWithRandom(rng, names.last)}`;
+  const eraName = `${pickWithRandom(rng, names.first)} ${pickWithRandom(rng, names.last)}`;
+  // Local flavour: with a city set, about half the people are locals. The extra roll only exists then,
+  // so a neutral save keeps its exact seeded names.
+  const name = cityId && rng() < 0.5 ? (localName(cityId, rng(), rng()) ?? eraName) : eraName;
 
   const archetypeChance = rng();
   let primaryStats: StaffMember['primaryStats'];
@@ -184,7 +191,7 @@ export const generateCandidates = (countOrCtx: number | CandidateGenerationConte
 
   for (let i = 0; i < count; i++) {
     const seed = staffPortraitSeed(saveSeed, day, batchKey, i);
-    candidates.push(generateOneCandidate(seed, era, i, batchKey));
+    candidates.push(generateOneCandidate(seed, era, i, batchKey, ctx.cityId));
   }
   return candidates;
 };

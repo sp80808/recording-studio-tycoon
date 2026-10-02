@@ -1,8 +1,9 @@
 import React from 'react';
 import type { GameState, Project } from '@/types/game';
+import { formatMoney } from '@/rpg/cities';
 import { buildBookingCalendar, previewBooking, SLOT_NAMES, SLOTS_PER_DAY } from '@/rpg/bookingCalendar';
 
-type CalState = Pick<GameState, 'currentDay' | 'studioRooms' | 'activeProject' | 'activeProjects'>;
+type CalState = Pick<GameState, 'currentDay' | 'studioRooms' | 'activeProject' | 'activeProjects' | 'cityId'>;
 
 export const BookingCalendar: React.FC<{ state: CalState }> = ({ state }) => {
   const cal = buildBookingCalendar(state);
@@ -43,7 +44,7 @@ export const BookingCostLine: React.FC<{ state: CalState; project: Project }> = 
     <div data-testid="booking-cost-line" className="mb-3 rounded-lg border border-[var(--rst-line)] bg-black/20 p-2 text-xs text-stone-300">
       Takes {p.sessions} session{p.sessions === 1 ? '' : 's'}
       {p.firstSlot ? <> · starts {SLOT_NAMES[p.firstSlot.slot].toLowerCase()} day {p.firstSlot.day}{p.roomName ? ` in ${p.roomName}` : ''}</> : ' · no free slot this week'}
-      {' '}· ${p.payoutPerSlot.toLocaleString()} per slot (${p.payout.toLocaleString()} total)
+      {' '}· {formatMoney(p.payoutPerSlot, state.cityId)} per slot ({formatMoney(p.payout, state.cityId)} total)
     </div>
   );
 };
