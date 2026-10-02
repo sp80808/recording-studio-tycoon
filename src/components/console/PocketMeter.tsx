@@ -13,11 +13,11 @@ interface PocketMeterProps {
 }
 
 export const POCKET_METER_TIMING = {
-  // Quick console-check pacing: faster than the 1.6s / 3.3s pass, but still
-  // slower than the original twitchy ~1.1s swing so Gold locks stay fair.
-  // autoLock matches the interactive-console design (2.5s fallback).
-  cycleSeconds: 1.35,
-  autoLockSeconds: 2.5,
+  // Keep the gold crossing readable without turning the session into a wait:
+  // at the centre of the sweep the 15% pocket is crossed in roughly 100ms.
+  cycleSeconds: 1.8,
+  // Give the player a little over one full pass before the safe fallback.
+  autoLockSeconds: 3.2,
 } as const;
 
 export const PocketMeter: React.FC<PocketMeterProps> = ({

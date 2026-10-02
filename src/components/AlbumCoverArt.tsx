@@ -7,6 +7,7 @@ interface AlbumCoverArtProps {
   artist?: string;
   score?: number;
   imageUrl?: string | null;
+  isGenerating?: boolean;
   className?: string;
   showVinylPeek?: boolean;
 }
@@ -27,6 +28,7 @@ export const AlbumCoverArt: React.FC<AlbumCoverArtProps> = ({
   artist = 'Studio Tycoon Session',
   score,
   imageUrl,
+  isGenerating = false,
   className = '',
   showVinylPeek = true,
 }) => {
@@ -202,6 +204,14 @@ export const AlbumCoverArt: React.FC<AlbumCoverArtProps> = ({
                   <Disc3 className="w-16 h-16 text-white/40" />
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {isGenerating && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-stone-950/45 backdrop-blur-[2px]" role="status" aria-label="Generating album artwork">
+            <div className="rounded-full border border-amber-300/50 bg-black/55 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-amber-200 shadow-lg animate-pulse">
+              Generating art
             </div>
           </div>
         )}

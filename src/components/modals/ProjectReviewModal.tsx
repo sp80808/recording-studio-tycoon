@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Progress } from '@/components/ui/progress'; // Assuming Progress component for XP bars
 import { gameAudio } from '@/utils/audioSystem'; // For sound effects
 import { X } from 'lucide-react'; // For skip button icon
-import { generateReview } from '@/services/pollinations';
+import { generateAlbumArt, generateReview } from '@/services/pollinations';
 import { AlbumCoverArt } from '@/components/AlbumCoverArt';
 import { triggerMilestoneCelebration } from '@/utils/confettiJuice';
 import { gradeQuality, type RankResult } from '@/rpg/rankChase';
@@ -143,7 +143,7 @@ const SkillDisplay: React.FC<SkillDisplayProps> = ({ skillDetail, onAnimationCom
   const calculateXpToNextLevel = (level: number): number => Math.floor(100 * Math.pow(level, 1.5));
 
   return (
-    <li className="text-sm p-2 bg-stone-750 rounded shadow">
+    <li className="group rounded-xl border border-stone-700/70 bg-stone-900/80 p-3 shadow-[0_10px_28px_rgba(0,0,0,.18)] transition-colors hover:border-amber-400/35">
       <div className="flex justify-between items-center mb-1">
         <span className={`font-semibold capitalize ${levelUpFlash ? 'text-yellow-300 animate-pulse-strong' : 'text-white'}`}>
           {skillDetail.skillName}: Lvl {currentLevel}
@@ -188,6 +188,8 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
   const [isGenerating, setIsGenerating] = useState(false);
   const [rankStamp, setRankStamp] = useState<RankResult | null>(null);
   const [skipped, setSkipped] = useState(false);
+  const [albumArtUrl, setAlbumArtUrl] = useState<string | null>(null);
+  const [isGeneratingArt, setIsGeneratingArt] = useState(false);
 
   const totalAnimationStages = (report?.skillBreakdown.length || 0) + 3; 
 
@@ -238,6 +240,13 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
 
   useEffect(() => {
     if (isOpen && report) {
+      setAlbumArtUrl(null);
+      setIsGeneratingArt(true);
+      generateAlbumArt(`editorial album cover for ${report.projectTitle}, ${report.genre} music, tactile studio photography, bold geometric composition, no text, square artwork`)
+        .then(url => setAlbumArtUrl(url === '/placeholder.svg' ? null : url))
+        .catch(() => setAlbumArtUrl(null))
+        .finally(() => setIsGeneratingArt(false));
+
       let settled = false;
       setIsGenerating(true);
       setReviewText(null);
@@ -384,6 +393,8 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
                   genre={report.genre}
                   artist={report.assignedPerson?.name || 'Studio Tycoon'}
                   score={report.overallQualityScore}
+                  imageUrl={albumArtUrl}
+                  isGenerating={isGeneratingArt}
                   showVinylPeek={true}
                 />
 
