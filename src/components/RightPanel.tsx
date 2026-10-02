@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { GamePanel } from '@/components/ui/GamePanel';
 import { KenneyButton } from '@/components/ui/KenneyButton';
+import { promoteStaffInState } from '@/rpg/staffCareer';
 import { GameState, PlayerAttributes, StaffMember } from '@/types/game';
 import { SkillsModal } from '@/components/modals/SkillsModal';
 import { AttributesModal } from '@/components/modals/AttributesModal';
@@ -337,6 +338,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             unassignStaffFromProject={unassignStaffFromProject}
             toggleStaffRest={toggleStaffRest}
             openTrainingModal={openTrainingModal}
+            promoteStaff={(staffId) => { void gameAudio.playGearSwitch(); setGameState(prev => promoteStaffInState(prev, staffId)); }}
           />
           {gameState.hiredStaff.some(s => s.role === 'Engineer' && s.status === 'Idle') && (
             <KenneyButton

@@ -1,6 +1,7 @@
 import { applyKnowHowEvents } from '../rpg/studioKnowHow';
 import { awardExpertise } from '../rpg/houseStyle';
 import { recordRelease } from '../rpg/artistCareer';
+import { creditSession } from '../rpg/staffCareer';
 import { getProjectBrief } from '../rpg/projectBrief';
 import { awardProjectCrate, recordGearUse } from '@/features/usedGear/session';
 import { GameState, Project, ProjectReport, StaffMember } from '../types/game';
@@ -292,8 +293,10 @@ export function applyReportToState(state: GameState, report: ProjectReport): Gam
     } else {
         hiredStaff = state.hiredStaff.map(staff => {
             if (staff.id !== report.assignedPerson.id) return staff;
+            // Staff career (#67): the settled project credits the disciplines it exercised.
+            const sessionStages = (findProjectForReport(state, report.projectId)?.stages ?? []).map(st => st.stageName);
             return {
-                ...applySkillBreakdown(staff),
+                ...creditSession(applySkillBreakdown(staff), report.projectId, sessionStages, report.overallQualityScore),
                 xpInRole: staff.xpInRole + 20 + Math.floor(report.overallQualityScore / 2),
                 status: 'Idle' as const,
                 assignedProjectId: null,

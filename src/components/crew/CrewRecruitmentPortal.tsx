@@ -7,6 +7,7 @@ import { getEnergyColor, getStaffStatusColor } from '@/utils/staffUtils';
 import { StaffPortrait } from '@/components/crew/StaffPortrait';
 import { getHiringLimits, hiringBlockMessage, type HiringLimits } from '@/rpg/hiringLimits';
 import { gameAudio } from '@/utils/audioSystem';
+import { DISCIPLINE_LABEL, getPromotionOffer, getStaffCareer, experienceIn } from '@/rpg/staffCareer';
 
 interface CrewRecruitmentPortalProps {
   gameState: GameState;
@@ -16,6 +17,8 @@ interface CrewRecruitmentPortalProps {
   unassignStaffFromProject: (staffId: string) => void;
   toggleStaffRest: (staffId: string) => void;
   openTrainingModal: (staff: StaffMember) => boolean;
+  /** Deliberate promotion (#67). Applies exactly the previewed salary. */
+  promoteStaff?: (staffId: string) => void;
 }
 
 type PortalView = 'board' | 'roster';
@@ -30,6 +33,7 @@ export const CrewRecruitmentPortal: React.FC<CrewRecruitmentPortalProps> = ({
   unassignStaffFromProject,
   toggleStaffRest,
   openTrainingModal,
+  promoteStaff,
 }) => {
   const [view, setView] = useState<PortalView>('board');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -188,6 +192,7 @@ export const CrewRecruitmentPortal: React.FC<CrewRecruitmentPortalProps> = ({
               onUnassign={unassignStaffFromProject}
               onToggleRest={toggleStaffRest}
               onTrain={openTrainingModal}
+              onPromote={promoteStaff}
             />
           )}
         </aside>
@@ -209,6 +214,7 @@ const CrewCvPanel: React.FC<{
   onUnassign: (id: string) => void;
   onToggleRest: (id: string) => void;
   onTrain: (staff: StaffMember) => boolean;
+  onPromote?: (id: string) => void;
 }> = ({
   member,
   gameState,
@@ -222,6 +228,7 @@ const CrewCvPanel: React.FC<{
   onUnassign,
   onToggleRest,
   onTrain,
+  onPromote,
 }) => {
   const fee = signingFeeFor(member);
   const cv = member.cv;
@@ -269,6 +276,8 @@ const CrewCvPanel: React.FC<{
           Current session fit {fit.score}/100 · {fit.reasons.slice(0, 2).join(' · ')}
         </div>
       )}
+
+      {!isCandidate && <CareerBlock member={member} money={gameState.money} onPromote={onPromote} />}
 
       {cv && (
         <>
@@ -346,3 +355,42 @@ const CvBlock: React.FC<{ title: string; items: string[] }> = ({ title, items })
     </ul>
   </div>
 );
+
+const SENIORITY_LABEL = { junior: 'Junior', regular: 'Regular', senior: 'Senior', lead: 'Lead' } as const;
+
+/** Career summary and the deliberate promotion preview (#67): requirements and the exact salary change. */
+const CareerBlock: React.FC<{ member: StaffMember; money: number; onPromote?: (id: string) => void }> = ({ member, onPromote }) => {
+  const career = getStaffCareer(member);
+  const offer = getPromotionOffer(member);
+  const active = experienceIn(career, career.activeDiscipline);
+  return (
+    <div className="crew-cv__block" data-testid="staff-career">
+      <h4>Career</h4>
+      <p>
+        {SENIORITY_LABEL[career.seniority]} {DISCIPLINE_LABEL[career.activeDiscipline].toLowerCase()} · level {active.level} · {active.creditedSessions} credited session{active.creditedSessions === 1 ? '' : 's'}
+      </p>
+      {offer && (
+        <div className="mt-1.5 space-y-1">
+          <p className="text-amber-200">Promotion: {offer.title}</p>
+          <ul className="text-[11px]">
+            {offer.requirements.map(r => (
+              <li key={r.label} className={r.met ? 'text-emerald-300' : 'text-stone-500'}>{r.met ? '✓' : '○'} {r.label}</li>
+            ))}
+          </ul>
+          <p className="text-[11px] text-stone-300">Salary ${offer.salaryBefore}/day → ${offer.salaryAfter}/day</p>
+          {onPromote && (
+            <KenneyButton
+              onClick={() => { void gameAudio.playGearSwitch(0.35); onPromote(member.id); }}
+              variant={offer.eligible ? 'green' : 'grey'}
+              size="sm"
+              className="w-full"
+              disabled={!offer.eligible}
+            >
+              {offer.eligible ? `Promote to ${offer.title}` : 'Requirements not met'}
+            </KenneyButton>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};

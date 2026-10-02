@@ -200,6 +200,8 @@ export interface StaffMember {
   gearFamiliarity?: Record<string, number>; // Sessions using each piece of gear in a chain (#86, capped)
   equipmentFamiliarity?: Record<string, number>; // 0-5, grows through actual gear use
   clientFamiliarity?: Record<string, number>; // Completed sessions with recurring clients
+  /** Discipline experience and seniority (#67). Absent on legacy saves; derived on read. */
+  career?: import('@/rpg/staffCareer').StaffCareerState;
   energy: number;
   mood: number; // 0-100, affects work effectiveness
   salary: number;
