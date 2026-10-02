@@ -5,7 +5,40 @@ import { PRODUCER_ORIGINS, getProducerOrigin, PLAYSTYLE_CONFIGS } from '@/narrat
 import { THEME_VISUAL_CONFIGS, getRecommendedThemeForPlaystyle } from '@/narrative/playstyleTheme';
 import { ProducerBackgroundId, PlaystyleFocus, VisualThemeId, ProducerCustomization } from '@/types/character';
 import { gameAudio } from '@/utils/audioSystem';
-import { Disc3, Sliders, Sparkles, User, Palette, CheckCircle2 } from 'lucide-react';
+import {
+  ACCESSORY_LABELS,
+  BUILD_LABELS,
+  DEFAULT_PRODUCER_APPEARANCE,
+  PRODUCER_ACCESSORIES,
+  PRODUCER_BUILDS,
+  PRODUCER_CLOTHES_COLOURS,
+  PRODUCER_HAIR_COLOURS,
+  PRODUCER_HAIR_SHAPES,
+  type ProducerAccessory,
+  type ProducerAppearance,
+  type ProducerClothesColourId,
+} from '@/features/sprites/producerAppearance';
+import { ArrowLeft, ArrowRight, Disc3, Sliders, Sparkles, User, Palette, CheckCircle2 } from 'lucide-react';
+
+const cycle = <T,>(values: readonly T[], current: T, delta: number): T => {
+  const index = values.indexOf(current);
+  return values[(index < 0 ? 0 : index + delta + values.length) % values.length];
+};
+
+function AppearanceArrowRow({ label, value, onPrev, onNext }: { label: string; value: string; onPrev: () => void; onNext: () => void }) {
+  return (
+    <div className="flex items-center gap-1.5 rounded-md border border-stone-800 bg-stone-950/60 px-2 py-1.5" role="group" aria-label={`${label}: ${value}`}>
+      <span className="w-20 shrink-0 text-[10px] font-bold uppercase tracking-wider text-amber-200">{label}</span>
+      <button type="button" onClick={onPrev} className="grid size-7 place-items-center rounded border border-stone-700 text-stone-300 hover:border-amber-400 hover:text-amber-200" aria-label={`Previous ${label}`}>
+        <ArrowLeft size={14} aria-hidden="true" />
+      </button>
+      <span className="min-w-0 flex-1 truncate text-center text-xs font-bold capitalize text-white">{value}</span>
+      <button type="button" onClick={onNext} className="grid size-7 place-items-center rounded border border-stone-700 text-stone-300 hover:border-amber-400 hover:text-amber-200" aria-label={`Next ${label}`}>
+        <ArrowRight size={14} aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
 
 interface CharacterCustomizationModalProps {
   isOpen: boolean;
@@ -31,6 +64,10 @@ export const CharacterCustomizationModal: React.FC<CharacterCustomizationModalPr
   const [selectedTheme, setSelectedTheme] = useState<VisualThemeId>(
     initialCustomization?.visualTheme || 'warm-analog'
   );
+  const [appearance, setAppearance] = useState<ProducerAppearance>({
+    ...DEFAULT_PRODUCER_APPEARANCE,
+    ...(initialCustomization?.appearance ?? {}),
+  });
 
   const [activeTab, setActiveTab] = useState<'origin' | 'playstyle' | 'visuals'>('origin');
 
@@ -63,6 +100,7 @@ export const CharacterCustomizationModal: React.FC<CharacterCustomizationModalPr
       visualTheme: selectedTheme,
       signatureMotto: motto,
       avatarIcon: '🎛️',
+      appearance,
       unlockedThemes: ['warm-analog', 'neon-digital', 'velvet-lounge', 'modular-rack'],
       storyFlags: {},
     });
@@ -282,6 +320,19 @@ export const CharacterCustomizationModal: React.FC<CharacterCustomizationModalPr
               <p className="text-xs text-stone-400">
                 Select your control room aesthetic and hardware meter styling.
               </p>
+              <div className="rounded-lg border border-amber-500/30 bg-stone-950/50 p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-amber-200">Character look</h3>
+                  <span className="text-[10px] uppercase tracking-wider text-stone-500">Use arrows to change</span>
+                </div>
+                <div className="grid gap-1.5 sm:grid-cols-2">
+                  <AppearanceArrowRow label="Build" value={BUILD_LABELS[appearance.build ?? 'average']} onPrev={() => setAppearance((a) => ({ ...a, build: cycle(PRODUCER_BUILDS, a.build ?? 'average', -1) }))} onNext={() => setAppearance((a) => ({ ...a, build: cycle(PRODUCER_BUILDS, a.build ?? 'average', 1) }))} />
+                  <AppearanceArrowRow label="Hair" value={appearance.hair.replace(/_/g, ' ')} onPrev={() => setAppearance((a) => ({ ...a, hair: cycle(PRODUCER_HAIR_SHAPES, a.hair, -1) }))} onNext={() => setAppearance((a) => ({ ...a, hair: cycle(PRODUCER_HAIR_SHAPES, a.hair, 1) }))} />
+                  <AppearanceArrowRow label="Hair tone" value={appearance.hairColour.replace(/_/g, ' ')} onPrev={() => setAppearance((a) => ({ ...a, hairColour: cycle(PRODUCER_HAIR_COLOURS, a.hairColour, -1) }))} onNext={() => setAppearance((a) => ({ ...a, hairColour: cycle(PRODUCER_HAIR_COLOURS, a.hairColour, 1) }))} />
+                  <AppearanceArrowRow label="Clothes" value={PRODUCER_CLOTHES_COLOURS.find((c) => c.id === appearance.clothesColour)?.label ?? appearance.clothesColour} onPrev={() => setAppearance((a) => ({ ...a, clothesColour: cycle(PRODUCER_CLOTHES_COLOURS.map((c) => c.id), a.clothesColour, -1) as ProducerClothesColourId }))} onNext={() => setAppearance((a) => ({ ...a, clothesColour: cycle(PRODUCER_CLOTHES_COLOURS.map((c) => c.id), a.clothesColour, 1) as ProducerClothesColourId }))} />
+                  <AppearanceArrowRow label="Accessory" value={ACCESSORY_LABELS[appearance.accessory as ProducerAccessory]} onPrev={() => setAppearance((a) => ({ ...a, accessory: cycle(PRODUCER_ACCESSORIES, a.accessory, -1) }))} onNext={() => setAppearance((a) => ({ ...a, accessory: cycle(PRODUCER_ACCESSORIES, a.accessory, 1) }))} />
+                </div>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {(Object.entries(THEME_VISUAL_CONFIGS) as [VisualThemeId, typeof currentThemeConfig][]).map(
                   ([themeKey, theme]) => {
