@@ -349,13 +349,33 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
           <section className="rst-surface mx-auto mt-6 w-full max-w-4xl p-5 sm:p-6" aria-label="Producer customisation" data-testid="producer-creator">
             <div className="grid items-start gap-6 md:grid-cols-[minmax(250px,0.75fr)_minmax(360px,1.25fr)]">
             <div className="mx-auto flex w-full flex-col items-center gap-2 md:sticky md:top-6">
-              <div
-                className="grid place-items-center rounded-lg border border-[var(--rst-brass-400)]/50 px-6 pb-2 pt-3"
-                style={{ background: 'radial-gradient(circle at 50% 30%, rgba(217,160,70,0.22), rgba(0,0,0,0.55) 72%)' }}
-                data-testid="producer-preview"
-              >
-                <ModularSpriteRenderer npc={previewNpc} animationState="idle" scale={3} showBadge={false} />
-              </div>
+  <div className="flex w-full items-center justify-center gap-2">
+  <button
+  type="button"
+  className="rst-btn rst-btn-ghost creator-tap !size-9 !min-h-9 !px-0"
+  onClick={() => patchLook({ hair: cycleOption(PRODUCER_HAIR_SHAPES, look.hair, -1) })}
+  aria-label="Previous hair style"
+  title="Previous hair style"
+  >
+  <ArrowLeft size={16} aria-hidden="true" />
+  </button>
+  <div
+  className="grid min-w-0 flex-1 place-items-center rounded-lg border border-[var(--rst-brass-400)]/50 px-6 pb-2 pt-3"
+  style={{ background: 'radial-gradient(circle at 50% 30%, rgba(217,160,70,0.22), rgba(0,0,0,0.55) 72%)' }}
+  data-testid="producer-preview"
+  >
+  <ModularSpriteRenderer npc={previewNpc} animationState="idle" scale={3} showBadge={false} />
+  </div>
+  <button
+  type="button"
+  className="rst-btn rst-btn-ghost creator-tap !size-9 !min-h-9 !px-0"
+  onClick={() => patchLook({ hair: cycleOption(PRODUCER_HAIR_SHAPES, look.hair, 1) })}
+  aria-label="Next hair style"
+  title="Next hair style"
+  >
+  <ArrowRight size={16} aria-hidden="true" />
+  </button>
+  </div>
               <p className="rst-kicker">Live character preview</p>
             </div>
 

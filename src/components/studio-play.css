@@ -37,7 +37,7 @@
 .studio-panel-heading p { font-size:9px; letter-spacing:.2em; color:#b9a67f; }
 .studio-panel-body { flex:1; min-height:0; min-width:0; display:flex; flex-direction:column; position:relative; overflow:hidden; padding:8px; }
 .studio-panel-hint { flex:none; padding:6px 12px; text-align:center; font-size:10px; color:#a3998c; border-top:1px solid #ffffff0b; }
-.studio-hud { position:absolute; inset:0 0 auto; z-index:30; pointer-events:none; display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:8px; padding:max(6px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 4px max(10px,env(safe-area-inset-left)); color:#e9e6e2; }
+.studio-hud { position:absolute; inset:0 0 auto; z-index:30; pointer-events:none; display:grid; grid-template-columns:auto minmax(180px,1fr) auto; align-items:center; gap:8px; padding:max(6px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 4px max(10px,env(safe-area-inset-left)); color:#e9e6e2; }
 .studio-hud-stats, .studio-hud-controls, .studio-hud-title { pointer-events:auto; background:rgba(22,19,16,.78); border:1px solid var(--rst-line-strong); border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,.3); min-height:34px; backdrop-filter:blur(12px); }
 .studio-hud-stats { display:flex; align-items:center; gap:6px; min-width:0; max-width:100%; padding:3px 10px; overflow-x:auto; scrollbar-width:none; }
 .studio-hud-stats::-webkit-scrollbar { display:none; }
