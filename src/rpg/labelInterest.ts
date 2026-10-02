@@ -9,18 +9,21 @@
 import type { GameNotification } from '@/types/game';
 import type { ReleaseOutcomeBand } from '@/rpg/artistCareer';
 
+export type LabelTier = 'indie' | 'regional' | 'national' | 'global';
+
 export interface LabelAccount {
   id: string;
   name: string;
+  tier: LabelTier;
   /** Lower-case fragments matched against a release's genre. */
   genres: string[];
 }
 
 export const LABEL_ACCOUNTS: readonly LabelAccount[] = [
-  { id: 'major_label_001', name: 'Stellar Records', genres: ['pop', 'rock', 'hip-hop', 'tiktok', 'soul', 'motown'] },
-  { id: 'indie_label_001', name: 'Underground Sounds', genres: ['indie', 'punk', 'emo', 'folk', 'lo-fi', 'blues'] },
-  { id: 'electronic_label_001', name: 'Digital Waves Music', genres: ['electronic', 'edm', 'disco', 'new wave', 'digital'] },
-  { id: 'hiphop_label_001', name: 'Street Crown Entertainment', genres: ['hip-hop', 'trap', 'drill'] },
+  { id: 'major_label_001', name: 'Stellar Records', tier: 'global', genres: ['pop', 'rock', 'hip-hop', 'tiktok', 'soul', 'motown'] },
+  { id: 'indie_label_001', name: 'Underground Sounds', tier: 'indie', genres: ['indie', 'punk', 'emo', 'folk', 'lo-fi', 'blues'] },
+  { id: 'electronic_label_001', name: 'Digital Waves Music', tier: 'regional', genres: ['electronic', 'edm', 'disco', 'new wave', 'digital'] },
+  { id: 'hiphop_label_001', name: 'Street Crown Entertainment', tier: 'national', genres: ['hip-hop', 'trap', 'drill'] },
 ];
 
 export const INTEREST_CAP = 100;

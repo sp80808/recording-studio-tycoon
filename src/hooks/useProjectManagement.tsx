@@ -1,3 +1,4 @@
+import { applyLabelOutcome } from '@/rpg/labelAccounts';
 import { useCallback } from 'react';
 import { GameState, Project, ProjectReport } from '@/types/game';
 import { generateNewProjects } from '@/utils/projectUtils';
@@ -47,6 +48,7 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
         currentStageIndex: 0,
         completedStages: [],
         bookingRoomId: room.id,
+        bookedDay: prev.currentDay,
         stages: project.stages.map(s => ({
           ...s,
           workUnitsCompleted: 0
@@ -149,9 +151,12 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
         },
       );
 
+      // Label contracts (#50): late or short delivery trims the fee and a little interest; a clean one earns a bonus.
+      const withLabelOutcome = applyLabelOutcome(withSeasonLedger, completedProject, projectReport.overallQualityScore, projectReport.moneyGained);
+
       return advanceStory(
         withDailyTracking({
-          ...withSeasonLedger,
+          ...withLabelOutcome,
           activeProject: null,
           activeProjects: (settled.activeProjects || []).filter(p => p.id !== projectId),
           availableProjects: [...settled.availableProjects, ...nextEnquiries],

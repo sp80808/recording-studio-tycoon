@@ -21,6 +21,8 @@ import { currencySymbol, toLocalAmount } from '@/rpg/cities';
 import { BookingCostLine } from '@/components/BookingCalendar';
 import { fillerJobsFor, isFillerJob } from '@/rpg/fillerJobs';
 import { isSignatureJob, signatureJobFor } from '@/rpg/signatureBrief';
+import { labelOffersFor, withChoices, NO_CHOICES, type LabelChoices } from '@/rpg/labelAccounts';
+import { LabelTermsPanel } from '@/components/LabelTermsPanel';
 import { enquiryStyleNote } from '@/rpg/houseStyle';
 import { defaultAssignment, type SessionAssignment } from '@/rpg/sessionForecast';
 import { getApproach, getProjectBrief, type ProductionApproach } from '@/rpg/projectBrief';
@@ -118,6 +120,8 @@ const StakePicker: React.FC<{
   </div>
 );
 
+const isDerivedOffer = (p: { id: string }): boolean => isFillerJob(p) || isSignatureJob(p) || p.id.startsWith('label-');
+
 export const ProjectList: React.FC<ProjectListProps> = ({
   gameState,
   setGameState,
@@ -127,6 +131,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [decliningId, setDecliningId] = useState<string | null>(null);
   const [passedFillers, setPassedFillers] = useState<string[]>([]);
+  const [labelChoices, setLabelChoices] = useState<Record<string, LabelChoices>>({});
   const [approaches, setApproaches] = useState<Record<string, ProductionApproach['id'] | undefined>>({});
   const [chains, setChains] = useState<Record<string, SignalChain | undefined>>({});
   const [stakes, setStakes] = useState<Record<string, ContractStake>>({});
@@ -182,7 +187,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
         brief: getProjectBrief(project),
         ...(approach ? { approachId: approach.id, focusAllocation: approach.focus } : {}),
       });
-      if (isFillerJob(project) || isSignatureJob(project)) {
+      if (isDerivedOffer(project)) {
         setGameState(prev => ({ ...prev, claimedOffers: [...(prev.claimedOffers ?? []), project.id].slice(-40) }));
       }
       if (plan && plan.staffIds.length > 0) {
@@ -206,7 +211,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
 
     // Tactile pass feedback communicated within short beat (~180ms)
     window.setTimeout(() => {
-      if (isFillerJob({ id: projectId }) || isSignatureJob({ id: projectId })) setPassedFillers((prev) => [...prev, projectId]);
+      if (isDerivedOffer({ id: projectId })) setPassedFillers((prev) => [...prev, projectId]);
       else setGameState(prev => ({
         ...prev,
         availableProjects: prev.availableProjects.filter(p => p.id !== projectId),
@@ -217,7 +222,8 @@ export const ProjectList: React.FC<ProjectListProps> = ({
 
   // Story contracts are pinned to the top; everything else keeps its arrival order.
   const signature = signatureJobFor(gameState);
-  const derivedOffers = [...(signature && !passedFillers.includes(signature.id) ? [signature] : []), ...fillerJobsFor(gameState).filter((f) => !passedFillers.includes(f.id))];
+  const derivedOffers = [...labelOffersFor(gameState).filter((l) => !passedFillers.includes(l.id)), ...(signature && !passedFillers.includes(signature.id) ? [signature] : []), ...fillerJobsFor(gameState).filter((f) => !passedFillers.includes(f.id))]
+    .map((p) => (p.labelTerms ? withChoices(p, labelChoices[p.id] ?? NO_CHOICES) : p));
   const board = [...gameState.availableProjects, ...derivedOffers].sort(
     (a, b) => Number(Boolean(b.isStoryContract)) - Number(Boolean(a.isStoryContract)),
   );
@@ -400,6 +406,12 @@ export const ProjectList: React.FC<ProjectListProps> = ({
 
                 <RiderPanel project={project} state={gameState} mode="booking" />
 
+                {project.labelTerms && (
+                  <LabelTermsPanel
+                    terms={project.labelTerms}
+                    onChange={(choices) => setLabelChoices((prev) => ({ ...prev, [project.id]: choices }))}
+                  />
+                )}
                 <BookingCostLine state={gameState} project={project} />
                 <p data-testid="enquiry-style-note" className="mb-3 text-xs text-stone-400">{enquiryStyleNote(gameState.studioExpertise, project.genre, project.brief?.serviceType)}</p>
 
