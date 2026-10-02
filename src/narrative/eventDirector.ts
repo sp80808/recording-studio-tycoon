@@ -11,6 +11,7 @@
  *
  * Pure functions over `GameState`; everything persists in `storylineState.director` (absent on old saves = empty).
  */
+import { isMaintainable } from '@/features/usedGear/condition';
 import { hashSeed, createSeededRandom } from '@/simulation/seededRandom';
 import type { ClientRelationship, GameState } from '@/types/game';
 import type { ChronicleEntry, StorylineState } from './branchingStorylineEngine';
@@ -87,7 +88,7 @@ export interface StudioEventFacts {
   equipmentCount: number;
   clients: readonly ClientRelationship[];
   staff: ReadonlyArray<{ id: string; name: string }>;
-  gear: ReadonlyArray<{ id: string; name: string }>;
+  gear: ReadonlyArray<{ id: string; name: string; condition?: number; faulted?: boolean; maintainable?: boolean }>;
   /** Bands on the studio's books (`GameState.bands`), for band-lifecycle events. */
   bands: readonly StudioBandFacts[];
   /** Does the ledger hold `key` for the scope/entity? Expired memories never match. */
@@ -223,7 +224,13 @@ export const buildFacts = (state: GameState): StudioEventFacts => ({
   equipmentCount: state.ownedEquipment?.length ?? 0,
   clients: Object.values(state.clientRelationships ?? {}).sort((a, b) => a.clientId.localeCompare(b.clientId)),
   staff: (state.hiredStaff ?? []).map((m) => ({ id: m.id, name: m.name })),
-  gear: (state.ownedEquipment ?? []).map((e) => ({ id: e.id, name: e.name })),
+  gear: (state.ownedEquipment ?? []).map((e) => ({
+    id: e.id,
+    name: e.name,
+    condition: e.condition,
+    faulted: Boolean(e.fault && state.currentDay < e.fault.readyDay),
+    maintainable: isMaintainable(e),
+  })),
   bands: (state.bands ?? []).map((b) => ({
     id: b.id,
     name: b.bandName,
@@ -421,15 +428,18 @@ export const applyDomainEffects = (state: GameState, effects: readonly DomainEff
           hiredStaff: (next.hiredStaff ?? []).map((m) => ({ ...m, xpInRole: Math.max(0, (m.xpInRole ?? 0) + e.amount) })),
         };
         break;
-      case 'gearCondition':
+      case 'gearCondition': {
+        // A gear subject (maintenance events) targets that one piece; otherwise the effect is studio-wide.
+        const targeted = subjectId !== undefined && (next.ownedEquipment ?? []).some((eq) => eq.id === subjectId);
         next = {
           ...next,
-          ownedEquipment: (next.ownedEquipment ?? []).map((eq) => ({
+          ownedEquipment: (next.ownedEquipment ?? []).map((eq) => targeted && eq.id !== subjectId ? eq : ({
             ...eq,
             condition: Math.max(0, Math.min(100, (eq.condition ?? 100) + e.amount)),
           })),
         };
         break;
+      }
       case 'clientXp':
       case 'referral': {
         const rel = subjectId ? next.clientRelationships?.[subjectId] : undefined;
