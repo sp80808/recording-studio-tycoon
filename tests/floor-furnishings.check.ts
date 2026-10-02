@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { CAT_COATS, CAT_SPOTS, FURNISHINGS, getFurnishings, pickCatCoat } from '../src/components/studio/studioFloorFurnishings';
+import { getPremisesProps } from '../src/components/studio/studioPremisesDecor';
 import { ROOM_D, ROOM_W } from '../src/components/studio/isoMath';
 
 // Tier gating: each tier shows a superset of the previous one, and tier 5 shows everything.
@@ -26,5 +27,12 @@ for (const [phase, s] of Object.entries(CAT_SPOTS)) {
 assert.equal(pickCatCoat('seed-a').id, pickCatCoat('seed-a').id);
 const coats = new Set(Array.from({ length: 40 }, (_, i) => pickCatCoat(`run-${i}`).id));
 assert.ok(coats.size >= 3 && coats.size <= CAT_COATS.length, 'several coats come up across seeds');
+
+// Premises props: none in the borrowed room, more at each move, all inside the room.
+assert.equal(getPremisesProps(0).length, 0);
+assert.ok(getPremisesProps(1).length >= 2);
+assert.ok(getPremisesProps(2).length > getPremisesProps(1).length);
+assert.ok(getPremisesProps(2).some((p) => p.id === 'reception'));
+for (const p of getPremisesProps(2)) assert.ok(p.x > 0 && p.x < ROOM_W && p.y > 0 && p.y < ROOM_D, `${p.id} inside the room`);
 
 console.log('floor furnishings check passed');

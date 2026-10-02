@@ -202,3 +202,12 @@ In-house original, CC0, no external source. SVG rects and paths drawn in code on
 | Bucket hat, bandana, headband | SVG shapes in code, tinted from the clothes palette | `ModularSpriteRenderer.tsx` |
 | Distinct eyewear: round wire specs, horn-rims, cyber visor (wayfarers and aviators unchanged) | SVG shapes in code | `ModularSpriteRenderer.tsx` |
 | Silver hoops, choker, tape pendant | SVG shapes in code | `ModularSpriteRenderer.tsx` |
+
+## 15. Premises furniture (`studioPremisesDecor.ts`, issue #70)
+
+In-house original, CC0, no external source. Drawn procedurally in Pixi Graphics; no image files.
+
+| Asset | Source | Used by |
+|---|---|---|
+| Client waiting bench, storage rack (Project Studio) | Pixi Graphics, drawn in code | `WebGLCanvas.tsx` (`buildScene`) |
+| Reception counter with accent sign, water cooler, second rack (Commercial Studio) | Pixi Graphics, drawn in code | `WebGLCanvas.tsx` (`buildScene`) |

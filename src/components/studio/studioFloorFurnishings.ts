@@ -160,12 +160,12 @@ const buildRoadCase = (p: FurnishingPalette): Container => {
  */
 export const FURNISHINGS: FurnishingDef[] = [
   { id: 'cableRun', label: 'Snake cable run', x: 2.3, y: 5.4, minTier: 1, build: buildCableRun },
-  { id: 'guitarStand', label: 'Guitar stand', x: 0.7, y: 5.1, minTier: 1, build: buildGuitarStand },
+  { id: 'guitarStand', label: 'Guitar stand', x: 0.6, y: 2.4, minTier: 1, build: buildGuitarStand },
   { id: 'vinylCrate', label: 'Vinyl crate', x: 7.2, y: 4.45, minTier: 2, build: buildVinylCrate },
   { id: 'amp', label: 'Combo amp', x: 5.4, y: 6.6, minTier: 2, build: buildAmp },
-  { id: 'beanBag', label: 'Bean bag', x: 3.2, y: 6.8, minTier: 3, build: buildBeanBag },
+  { id: 'beanBag', label: 'Bean bag', x: 4.05, y: 6.85, minTier: 3, build: buildBeanBag },
   { id: 'roadCase', label: 'Road case', x: 0.55, y: 2.9, minTier: 4, build: buildRoadCase },
-  { id: 'keyboardStand', label: 'Keyboard stand', x: 4.4, y: 6.5, minTier: 5, build: buildKeyboardStand },
+  { id: 'keyboardStand', label: 'Keyboard stand', x: 4.9, y: 6.25, minTier: 5, build: buildKeyboardStand },
 ];
 
 export const getFurnishings = (tier: number): FurnishingDef[] => FURNISHINGS.filter((f) => f.minTier <= tier);
@@ -198,7 +198,7 @@ export type CatMood = 'stretch' | 'nap' | 'watch' | 'curl';
 export const CAT_SPOTS: Record<DayPhase, { x: number; y: number; mood: CatMood }> = {
   morning: { x: 6.3, y: 2.7, mood: 'stretch' }, // under the window shaft
   day: { x: 5.8, y: 1.9, mood: 'nap' }, // sun patch on the rug
-  evening: { x: 2.4, y: 6.05, mood: 'watch' }, // by the lounge, watching the session
+  evening: { x: 3.9, y: 6.2, mood: 'watch' }, // by the lounge, watching the session
   night: { x: 4.0, y: 5.95, mood: 'curl' }, // curled in the warm console glow
 };
 

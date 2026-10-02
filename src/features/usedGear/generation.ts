@@ -36,7 +36,8 @@ export const resolveEconomyProgression = (state: Pick<GameState, 'premisesTier' 
   listingBonus: number;
   workhorseCeiling: number;
 } => {
-  const premises: 0 | 1 = state.premisesTier === 1 ? 1 : 0;
+  // Tier 2 (commercial) keeps the Tier 1 stock bonus; it must not fall back to the borrowed room's.
+  const premises: 0 | 1 = (state.premisesTier ?? 0) >= 1 ? 1 : 0;
   const raw = Math.floor(state.studioLevel ?? state.studioTier ?? 1);
   const studio = (Math.max(1, Math.min(5, Number.isFinite(raw) ? raw : 1))) as 1 | 2 | 3 | 4 | 5;
   const listingBonus = (premises >= 1 ? 1 : 0) + (studio >= 3 ? 1 : 0);

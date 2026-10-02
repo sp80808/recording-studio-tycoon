@@ -46,6 +46,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { resolveRendererOrder } from '@/lib/render/rendererChoice';
 import { claimPixiApplication, STUDIO_FLOOR_OWNER } from '@/lib/motion/pixiGuard';
 import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from '@/components/studio/isoMath';
+import { buildPremisesDecor } from '@/components/studio/studioPremisesDecor';
 import { buildFurnishingLayer, type StudioCat } from '@/components/studio/studioFloorFurnishings';
 import {
   buildDecorLights,
@@ -261,6 +262,8 @@ export interface StudioSceneState {
   eraId?: string;
   /** Studio tier 1-5 from ProgressionSystem — drives visible room upgrades (bead ifx.3) */
   roomTier?: number;
+  /** Premises tier (#70): 1 adds the client bench + storage rack, 2 adds reception, water cooler and a second rack. */
+  premisesTier?: number;
   /** Completed-project album covers hung above the booth (from financials.reports). */
   trophies?: TrophyInput;
   /** Stable per-run seed so plank layout / motes are identical across rebuilds. */
@@ -898,6 +901,10 @@ const buildScene = (
   /* ---- Live room booth: enclosed (walls, roof, header, foam, glass front) ---- */
   const liveWrap = buildLiveBooth();
   if (kitTextures) addStudioProps(root, kitTextures, tier, visualEraId(state.eraId ?? 'analog60s'));
+  for (const prop of buildPremisesDecor(state.premisesTier ?? 0, grade.accent)) {
+    prop.container.zIndex = Z.depth + prop.y;
+    root.addChild(prop.container);
+  }
   {
     // Tier-gated floor furnishings + the studio cat (procedural, y-sorted with the other floor pieces).
     const furnishings = buildFurnishingLayer(tier, { accent: grade.accent, glow: decorSpec.glow }, decorSeed);
@@ -1811,7 +1818,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   const producerLookKey = state?.producerNpc
     ? [state.producerNpc.hair.shape, state.producerNpc.hair.colour, state.producerNpc.body.build, state.producerNpc.clothes.topPrimaryHex].join(':')
     : '';
-  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${producerLookKey}|${floorKey}|${state?.staffOnFloor ?? 1}|${gearKey}|${gearConditionKey(state?.gearConditions)}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${trophyKey(state?.trophies ?? { covers: [] })}|${state?.decorSeed ?? 'studio'}`;
+  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${producerLookKey}|${floorKey}|${state?.staffOnFloor ?? 1}|${gearKey}|${gearConditionKey(state?.gearConditions)}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${state?.premisesTier ?? 0}|${trophyKey(state?.trophies ?? { covers: [] })}|${state?.decorSeed ?? 'studio'}`;
 
   // Rebuild the room (new window size or layout change)
   const rebuild = () => {
