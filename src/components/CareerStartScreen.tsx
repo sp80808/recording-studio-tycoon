@@ -200,12 +200,12 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
     <main className="career-start-page" aria-label="Start a new career">
             <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col px-4 pb-28 pt-6 sm:px-8">
         {/* Header + stepper */}
-        <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-          <button type="button" onClick={goBack} className="rst-btn rst-btn-ghost justify-self-start !min-h-9 !px-3 !text-xs">
+        <header className="flex items-center justify-between gap-3 sm:grid sm:grid-cols-[1fr_auto_1fr]">
+          <button type="button" onClick={goBack} className="rst-btn rst-btn-ghost shrink-0 justify-self-start whitespace-nowrap !min-h-9 !px-3 !text-xs">
             <ArrowLeft size={14} aria-hidden="true" />
             {step === 0 ? t('career_back') : t(`career_back_to_${STEP_KEYS[step - 1]}`)}
           </button>
-          <ol className="flex items-center gap-4" aria-label="Career setup progress">
+          <ol className="flex min-w-0 items-center gap-3 sm:gap-4" aria-label="Career setup progress">
             {STEP_KEYS.map((key, i) => (
               <li key={key} className={stepClass(i === step, i < step)} aria-current={i === step ? 'step' : undefined}>
                 <span
@@ -215,7 +215,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                 >
                   {i < step ? <Check size={11} aria-hidden="true" /> : i + 1}
                 </span>
-                {t(`career_step_${key}`)}
+                <span className={i === step ? '' : 'hidden sm:inline'}>{t(`career_step_${key}`)}</span>
               </li>
             ))}
           </ol>
@@ -291,7 +291,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                   <span className="block text-[11px] italic leading-snug text-stone-400">“{e.funnyDescription}”</span>
                   <span className="mt-auto w-full space-y-2 border-t border-[var(--rst-line)] pt-3 text-left text-[11px]">
                     <span className="flex items-center justify-between gap-4"><span className="rst-muted">Starting cash</span><b className="min-w-[7.5rem] text-right tabular-nums leading-none text-[var(--rst-money)]">{formatMoney(e.startingMoney, cityId, e.id)}</b></span>
-                    <span className="flex items-baseline justify-between gap-4"><span className="rst-muted">Currency</span><b data-testid="era-currency">{currencyFor(cityId, e.id).symbol} {currencyFor(cityId, e.id).code}</b></span>
+                    <span className="flex items-center justify-between gap-4 tabular-nums"><span className="rst-muted">Currency</span><b data-testid="era-currency">{currencyFor(cityId, e.id).symbol} {currencyFor(cityId, e.id).code}</b></span>
                     <span className="flex items-center justify-between gap-4"><span className="rst-muted">Gear prices</span><b className="min-w-[7.5rem] text-right tabular-nums leading-none">{Math.round(e.equipmentMultiplier * 100)}% of modern</b></span>
                     <span className="block text-stone-300">{ERA_CHALLENGE[e.id] ?? ''}</span>
                   </span>
@@ -482,7 +482,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
       {/* Sticky footer: the summary + the one primary action */}
       <footer className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--rst-line-strong)] bg-[rgba(14,12,10,0.92)] backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3 sm:px-8">
-          <p className="min-w-0 flex-1 text-xs text-stone-300" aria-live="polite">
+          <p className="min-w-0 basis-full text-xs text-stone-300 sm:flex-1 sm:basis-0" aria-live="polite">
             {era ? <b className="text-[var(--rst-brass-200)]">{era.displayName}</b> : <span className="text-stone-500">No era chosen</span>}
             <span className="mx-2 text-stone-600">·</span>
             <b className="text-[var(--rst-brass-200)]">{moniker || 'Unnamed producer'}</b>
