@@ -47,6 +47,10 @@ for check in gamepad-service gamepad-glyph gamepad-navigation radial-wheel beat-
   node "/tmp/rst-$check.cjs"
 done
 
+echo "=== gain staging minigame ==="
+./node_modules/.bin/esbuild tests/gain-staging.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-gain-staging.cjs --alias:@=./src >/dev/null
+node /tmp/rst-gain-staging.cjs
+
 echo "=== recurring client saga ==="
 ./node_modules/.bin/esbuild tests/recurring-client.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-recurring-client.cjs --alias:@=./src >/dev/null
 node /tmp/rst-recurring-client.cjs
