@@ -346,8 +346,9 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
         )}
 
         {step === 2 && (
-          <section className="rst-surface mx-auto mt-6 grid w-full max-w-xl gap-4 p-5 sm:p-6" aria-label="Producer customisation" data-testid="producer-creator">
-            <div className="mx-auto flex flex-col items-center gap-2">
+          <section className="rst-surface mx-auto mt-6 w-full max-w-4xl p-5 sm:p-6" aria-label="Producer customisation" data-testid="producer-creator">
+            <div className="grid items-start gap-6 md:grid-cols-[minmax(250px,0.75fr)_minmax(360px,1.25fr)]">
+            <div className="mx-auto flex w-full flex-col items-center gap-2 md:sticky md:top-6">
               <div
                 className="grid place-items-center rounded-lg border border-[var(--rst-brass-400)]/50 px-6 pb-2 pt-3"
                 style={{ background: 'radial-gradient(circle at 50% 30%, rgba(217,160,70,0.22), rgba(0,0,0,0.55) 72%)' }}
@@ -445,6 +446,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                 Surprise me
               </button>
 
+            </div>
             </div>
           </section>
         )}

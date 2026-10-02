@@ -31,6 +31,8 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
     preferredLayout: settings?.controllerLayout,
     hapticsEnabled: settings?.gamepadHaptics,
   });
+  const gamepadRef = useRef(gamepad);
+  gamepadRef.current = gamepad;
 
   const expansion = 0.15 * Math.max(0, timingBonus);
   const goldMin = Math.max(0, 0.70 - expansion);
@@ -86,7 +88,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
       // Tactile groove haptics: pulse gently when entering the Pocket zone
       const inPocketNow = currentPosRef.current >= goldMin && currentPosRef.current <= goldMax;
       if (inPocketNow && !wasInPocketRef.current) {
-        gamepad.triggerHaptic(0.2, 0.4, 40);
+        gamepadRef.current.triggerHaptic(0.2, 0.4, 40);
       }
       wasInPocketRef.current = inPocketNow;
 
@@ -98,7 +100,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
     };
-  }, [isArmed, onLock, gamepad, goldMin, goldMax]);
+  }, [isArmed, onLock, goldMin, goldMax]);
 
   const isInPocket = needlePos >= goldMin && needlePos <= goldMax;
   const meterFeedback = isInPocket
