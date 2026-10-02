@@ -35,8 +35,8 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
   gamepadRef.current = gamepad;
 
   const expansion = 0.15 * Math.max(0, timingBonus);
-  const goldMin = Math.max(0, 0.70 - expansion);
-  const goldMax = Math.min(1, 0.85 + expansion);
+  const goldMin = Math.max(0, 0.66 - expansion);
+  const goldMax = Math.min(1, 0.88 + expansion);
 
   const [needlePos, setNeedlePos] = useState(0.2); // 0.0 to 1.0
   const animRef = useRef<number | null>(null);
@@ -198,10 +198,10 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
         {/* Needle Marker Indicator */}
         <div className="relative w-full h-6 flex items-center">
           <div
-            className="absolute top-0 bottom-0 w-1 bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,1)] transition-all duration-75"
+            className="absolute top-0 bottom-0 w-1.5 bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,1)]"
             style={{ left: `${needlePos * 100}%`, transform: 'translateX(-50%)' }}
           >
-            <div className="w-2.5 h-2.5 -top-1 -left-0.75 absolute bg-red-500 rounded-full shadow-[0_0_6px_rgba(239,68,68,0.9)]" />
+            <div className="w-3 h-3 -top-1.5 -left-0.75 absolute bg-red-500 rounded-full shadow-[0_0_7px_rgba(239,68,68,0.95)]" />
           </div>
         </div>
 

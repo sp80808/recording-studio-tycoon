@@ -14,8 +14,6 @@ import { getEraGrade } from '@/components/WebGLCanvas';
 import { gameAudio } from '@/utils/audioSystem';
 import { ModularSpriteRenderer } from '@/features/sprites/ModularSpriteRenderer';
 import {
-  ACCESSORY_LABELS,
-  BUILD_LABELS,
   DEFAULT_PRODUCER_APPEARANCE,
   PRODUCER_ACCESSORIES,
   PRODUCER_BUILDS,
@@ -23,12 +21,10 @@ import {
   PRODUCER_SHIRTS,
   PRODUCER_PANTS,
   PRODUCER_SHOES,
-  APPEARANCE_LABELS,
   PRODUCER_CLOTHES_COLOURS,
   PRODUCER_HAIR_COLOURS,
   PRODUCER_HAIR_SHAPES,
   buildProducerNpc,
-  type ProducerAccessory,
   type ProducerAppearance,
   type ProducerClothesColourId,
 } from '@/features/sprites/producerAppearance';
@@ -72,50 +68,6 @@ const stepClass = (active: boolean, done: boolean) =>
   `flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] ${
     active ? 'text-[var(--rst-brass-300)]' : done ? 'text-stone-300' : 'text-stone-500'
   }`;
-
-/** Compact arrow stepper for one creator element (build, accessory, …). */
-function CreatorArrowRow({
-  label,
-  value,
-  onPrev,
-  onNext,
-  swatch,
-}: {
-  label: string;
-  value: string;
-  /** Optional colour chip shown beside the value (colour rows). */
-  swatch?: string;
-  onPrev: () => void;
-  onNext: () => void;
-}) {
-  return (
-    <div className="flex items-center gap-1.5" role="group" aria-label={`${label}: ${value}`}>
-      <span className="w-[5.25rem] shrink-0 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--rst-brass-200)]">
-        {label}
-      </span>
-      <button
-        type="button"
-        className="rst-btn rst-btn-ghost creator-tap !px-0"
-        aria-label={`Previous ${label}`}
-        onClick={onPrev}
-      >
-        <ArrowLeft size={15} aria-hidden="true" />
-      </button>
-      <span className="flex min-w-0 flex-1 items-center justify-center gap-2">
-        {swatch && <span aria-hidden="true" className="size-4 shrink-0 rounded-full border border-white/25" style={{ background: swatch }} />}
-        <span className="rst-title min-w-0 truncate text-center text-[15px] capitalize leading-tight">{value}</span>
-      </span>
-      <button
-        type="button"
-        className="rst-btn rst-btn-ghost creator-tap !px-0"
-        aria-label={`Next ${label}`}
-        onClick={onNext}
-      >
-        <ArrowRight size={15} aria-hidden="true" />
-      </button>
-    </div>
-  );
-}
 
 /** Cycle one step through a fixed option list, wrapping around. */
 const cycleOption = <T extends string>(list: readonly T[], current: T, delta: number): T =>
@@ -389,50 +341,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                 <input value={moniker} onChange={(e) => setMoniker(e.target.value.slice(0, 24))} maxLength={24} enterKeyHint="done" autoComplete="off" autoCapitalize="words" spellCheck={false} className="rst-input mt-2 w-full" placeholder="The Architect" />
               </label>
 
-              <CreatorArrowRow
-                label="Build"
-                value={BUILD_LABELS[look.build ?? 'average']}
-                onPrev={() => patchLook({ build: cycleOption(PRODUCER_BUILDS, look.build ?? 'average', -1) })}
-                onNext={() => patchLook({ build: cycleOption(PRODUCER_BUILDS, look.build ?? 'average', 1) })}
-              />
 
-              <CreatorArrowRow
-                label="Skin colour"
-                value={APPEARANCE_LABELS[look.skinTone ?? 'tan']}
-                onPrev={() => patchLook({ skinTone: cycleOption(PRODUCER_SKIN_TONES, look.skinTone ?? 'tan', -1) })}
-                onNext={() => patchLook({ skinTone: cycleOption(PRODUCER_SKIN_TONES, look.skinTone ?? 'tan', 1) })}
-              />
-              <CreatorArrowRow
-                label="Shirt"
-                value={APPEARANCE_LABELS[look.shirt ?? 'band_tee']}
-                onPrev={() => patchLook({ shirt: cycleOption(PRODUCER_SHIRTS, look.shirt ?? 'band_tee', -1) })}
-                onNext={() => patchLook({ shirt: cycleOption(PRODUCER_SHIRTS, look.shirt ?? 'band_tee', 1) })}
-              />
-              <CreatorArrowRow
-                label="Pants"
-                value={APPEARANCE_LABELS[look.pants ?? 'denim_jeans']}
-                onPrev={() => patchLook({ pants: cycleOption(PRODUCER_PANTS, look.pants ?? 'denim_jeans', -1) })}
-                onNext={() => patchLook({ pants: cycleOption(PRODUCER_PANTS, look.pants ?? 'denim_jeans', 1) })}
-              />
-              <CreatorArrowRow
-                label="Shoes"
-                value={APPEARANCE_LABELS[look.shoes ?? 'vintage_sneakers']}
-                onPrev={() => patchLook({ shoes: cycleOption(PRODUCER_SHOES, look.shoes ?? 'vintage_sneakers', -1) })}
-                onNext={() => patchLook({ shoes: cycleOption(PRODUCER_SHOES, look.shoes ?? 'vintage_sneakers', 1) })}
-              />
-              <CreatorArrowRow
-                label="Hair"
-                value={look.hair.replace(/_/g, ' ')}
-                onPrev={() => patchLook({ hair: cycleOption(PRODUCER_HAIR_SHAPES, look.hair, -1) })}
-                onNext={() => patchLook({ hair: cycleOption(PRODUCER_HAIR_SHAPES, look.hair, 1) })}
-              />
-              <CreatorArrowRow
-                label="Hair tone"
-                value={look.hairColour.replace(/_/g, ' ')}
-                swatch={HAIR_HEX[look.hairColour]}
-                onPrev={() => patchLook({ hairColour: cycleOption(PRODUCER_HAIR_COLOURS, look.hairColour, -1) })}
-                onNext={() => patchLook({ hairColour: cycleOption(PRODUCER_HAIR_COLOURS, look.hairColour, 1) })}
-              />
               <div className="flex flex-wrap gap-2 pl-[90px]" role="radiogroup" aria-label="Hair colour swatches">
                 {PRODUCER_HAIR_COLOURS.map((colour) => (
                   <button key={colour} type="button" role="radio" aria-checked={look.hairColour === colour} aria-label={colour.replace(/_/g, ' ')} title={colour.replace(/_/g, ' ')}
@@ -442,13 +351,6 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                 ))}
               </div>
 
-              <CreatorArrowRow
-                label="Clothes"
-                value={PRODUCER_CLOTHES_COLOURS.find((c) => c.id === look.clothesColour)?.label ?? ''}
-                swatch={(() => { const c = PRODUCER_CLOTHES_COLOURS.find((x) => x.id === look.clothesColour) ?? PRODUCER_CLOTHES_COLOURS[0]; return CLOTHING_PALETTES[c.palette].primary; })()}
-                onPrev={() => patchLook({ clothesColour: cycleOption(PRODUCER_CLOTHES_COLOURS.map((c) => c.id), look.clothesColour as string, -1) as ProducerClothesColourId })}
-                onNext={() => patchLook({ clothesColour: cycleOption(PRODUCER_CLOTHES_COLOURS.map((c) => c.id), look.clothesColour as string, 1) as ProducerClothesColourId })}
-              />
               <div className="flex flex-wrap gap-2 pl-[90px]" role="radiogroup" aria-label="Clothes colour swatches">
                 {PRODUCER_CLOTHES_COLOURS.map((c) => (
                   <button key={c.id} type="button" role="radio" aria-checked={look.clothesColour === c.id} aria-label={c.label} title={c.label}
@@ -457,13 +359,6 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                     style={{ background: `linear-gradient(135deg, ${CLOTHING_PALETTES[c.palette].primary} 60%, ${CLOTHING_PALETTES[c.palette].secondary} 60%)` }} />
                 ))}
               </div>
-
-              <CreatorArrowRow
-                label="Accessory"
-                value={ACCESSORY_LABELS[look.accessory as ProducerAccessory]}
-                onPrev={() => patchLook({ accessory: cycleOption(PRODUCER_ACCESSORIES, look.accessory, -1) })}
-                onNext={() => patchLook({ accessory: cycleOption(PRODUCER_ACCESSORIES, look.accessory, 1) })}
-              />
 
               <button type="button" className="rst-btn rst-btn-ghost w-full !min-h-9 !text-xs" onClick={randomise} data-testid="producer-randomise">
                 <Dices size={14} aria-hidden="true" />
