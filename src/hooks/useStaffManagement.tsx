@@ -1,3 +1,4 @@
+import { money } from '@/utils/displayMoney';
 import { getHiringLimits, hiringBlockMessage } from '@/rpg/hiringLimits';
 
 import { meetsKnowHowGate, spendKnowHow, createInitialKnowHow } from '@/rpg/studioKnowHow';
@@ -34,7 +35,7 @@ export const useStaffManagement = (
     if (gameState.money < signingFee) {
       toast({
         title: "💰 Insufficient Funds",
-        description: `Need $${signingFee} to hire ${candidate.name} (3x daily salary signing fee)`,
+        description: `Need ${money(signingFee)} to hire ${candidate.name} (3x daily salary signing fee)`,
         className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive"
       });
@@ -151,7 +152,7 @@ export const useStaffManagement = (
     if (gameState.money < bonusAmount) {
       toast({
         title: "💰 Insufficient Funds",
-        description: `Need $${bonusAmount} to give ${staff.name} a bonus.`,
+        description: `Need ${money(bonusAmount)} to give ${staff.name} a bonus.`,
         className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive"
       });
@@ -169,7 +170,7 @@ export const useStaffManagement = (
 
     toast({
       title: "💰 Bonus Given!",
-      description: `${staff.name} received a $${bonusAmount} bonus and mood boost!`,
+      description: `${staff.name} received a ${money(bonusAmount)} bonus and mood boost!`,
       className: "bg-stone-800 border-stone-600 text-white",
     });
   }, [gameState.hiredStaff, gameState.money, setGameState]);
@@ -299,7 +300,7 @@ export const useStaffManagement = (
       return false;
     }
     if (gameState.money < modToResearch.researchRequirements.cost) {
-      toast({ title: "💰 Insufficient Funds", description: `Need $${modToResearch.researchRequirements.cost} to start research for ${modToResearch.name}.`, className: "bg-stone-800 border-stone-600 text-white", variant: "destructive" });
+      toast({ title: "💰 Insufficient Funds", description: `Need ${money(modToResearch.researchRequirements.cost)} to start research for ${modToResearch.name}.`, className: "bg-stone-800 border-stone-600 text-white", variant: "destructive" });
       return false;
     }
 

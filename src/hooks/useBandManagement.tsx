@@ -1,4 +1,5 @@
 
+import { money } from '@/utils/displayMoney';
 import { useCallback } from 'react';
 import { GameState } from '@/types/game';
 import { earn } from '@/economy/ledger';
@@ -139,7 +140,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
 
     toast({
       title: "🚌 Tour Started!",
-      description: `${band.bandName} is on tour, earning $${dailyIncome} per day!`,
+      description: `${band.bandName} is on tour, earning ${money(dailyIncome)} per day!`,
       className: "bg-stone-800 border-stone-600 text-white",
       duration: 3000
     });
@@ -196,7 +197,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
     }[result.verdict];
     toast({
       title: verdictTitle,
-      description: `${band.bandName} drew ${result.attendance} fans. Net ${result.net >= 0 ? '+' : '-'}$${Math.abs(result.net)}, +${result.fameGain} fame, +${result.xpGain} XP.${result.mishap ? ' A technical mishap hurt the night.' : ''}`,
+      description: `${band.bandName} drew ${result.attendance} fans. Net ${result.net >= 0 ? '+' : '-'}${money(Math.abs(result.net))}, +${result.fameGain} fame, +${result.xpGain} XP.${result.mishap ? ' A technical mishap hurt the night.' : ''}`,
       className: "bg-stone-800 border-stone-600 text-white",
       duration: 4000
     });
@@ -294,7 +295,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
     if (totalIncome > 0) {
       toast({
         title: "🎤 Tour Income",
-        description: `Earned $${totalIncome} from touring bands!`,
+        description: `Earned ${money(totalIncome)} from touring bands!`,
         duration: 2000
       });
     }

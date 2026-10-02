@@ -1,3 +1,4 @@
+import { money } from '@/utils/displayMoney';
 import { useMemo, useState } from 'react';
 import {
   Award, BadgeCheck, Banknote, Building2, ChevronDown, Crown, Disc3, DoorOpen, Ear, Feather, Handshake,
@@ -80,9 +81,9 @@ function Tile({ def, earnedDay, state }: { def: AchievementDef; earnedDay?: numb
                 <span className="block h-full rounded-full bg-[var(--rst-brass-400)]" style={{ width: `${(progress.current / progress.target) * 100}%` }} />
               </span>
               <span className="text-[11px] tabular-nums text-stone-400">
-                {progress.target >= 1000 ? `$${progress.current.toLocaleString()}` : progress.current}
+                {progress.target >= 1000 ? money(progress.current) : progress.current}
                 {' / '}
-                {progress.target >= 1000 ? `$${progress.target.toLocaleString()}` : progress.target}
+                {progress.target >= 1000 ? money(progress.target) : progress.target}
               </span>
             </div>
           )

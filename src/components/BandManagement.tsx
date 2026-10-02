@@ -1,4 +1,5 @@
 
+import { money } from '@/utils/displayMoney';
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -147,7 +148,7 @@ export const BandManagement: React.FC<BandManagementProps> = ({
                       <div className="flex items-center gap-2">
                         <span>{getReviewEmoji(release.reviewScore)}</span>
                         <span className="text-stone-400">{release.reviewScore}/10</span>
-                        <span className="text-green-400">${release.totalSales}</span>
+                        <span className="text-green-400">{money(release.totalSales)}</span>
                       </div>
                     </div>
                   ))}
