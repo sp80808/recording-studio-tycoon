@@ -26,7 +26,9 @@ export const VocalRecordingGame: React.FC<VocalRecordingGameProps> = ({ onComple
   const [hitCount, setHitCount] = useState(0);
   const [totalBlocks] = useState(7);
   const intervalRef = useRef<NodeJS.Timeout>();
+  const completionTimerRef = useRef<NodeJS.Timeout>();
   const gameContainerRef = useRef<HTMLDivElement>(null);
+  const hitCountRef = useRef(0);
 
   const initializeGame = () => {
     const blocks: PitchBlock[] = [];
@@ -40,6 +42,7 @@ export const VocalRecordingGame: React.FC<VocalRecordingGameProps> = ({ onComple
     }
     setPitchBlocks(blocks);
     setCursorPosition(0);
+    hitCountRef.current = 0;
     setHitCount(0);
     setScore(0);
   };
@@ -61,7 +64,7 @@ export const VocalRecordingGame: React.FC<VocalRecordingGameProps> = ({ onComple
           }
           
           // Calculate final score
-          const accuracy = (hitCount / totalBlocks) * 100;
+          const accuracy = (hitCountRef.current / totalBlocks) * 100;
           let finalScore = 0;
           
           if (accuracy >= 90) {
@@ -74,7 +77,10 @@ export const VocalRecordingGame: React.FC<VocalRecordingGameProps> = ({ onComple
             finalScore = 20;
           }
           
-          setTimeout(() => onComplete(finalScore), 1000);
+          completionTimerRef.current = setTimeout(() => {
+            onComplete(finalScore);
+            completionTimerRef.current = undefined;
+          }, 1000);
           return 100;
         }
         return newPos;
@@ -94,6 +100,7 @@ export const VocalRecordingGame: React.FC<VocalRecordingGameProps> = ({ onComple
           const distance = Math.abs(block.position - cursorPosition);
           if (distance <= tolerance) {
             newHitCount++;
+            hitCountRef.current = newHitCount;
             setHitCount(newHitCount);
             setScore(s => s + 20);
             return { ...block, hit: true };
@@ -135,9 +142,8 @@ export const VocalRecordingGame: React.FC<VocalRecordingGameProps> = ({ onComple
 
   useEffect(() => {
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (completionTimerRef.current) clearTimeout(completionTimerRef.current);
     };
   }, []);
 

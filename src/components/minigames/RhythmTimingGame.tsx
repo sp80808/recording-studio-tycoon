@@ -31,6 +31,9 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
   const gameAreaRef = useRef<HTMLDivElement>(null);
   const beatIntervalRef = useRef<NodeJS.Timeout>();
   const gameTimerRef = useRef<NodeJS.Timeout>();
+  const completionTimerRef = useRef<NodeJS.Timeout>();
+  const scoreRef = useRef(0);
+  const endingRef = useRef(false);
 
   const difficultySettings = {
     easy: { beatInterval: 1200, speed: 2, targetZone: 80 },
@@ -42,6 +45,8 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
 
   const startGame = useCallback(() => {
     setGameActive(true);
+    endingRef.current = false;
+    scoreRef.current = 0;
     setScore(0);
     setCombo(0);
     setTimeLeft(30);
@@ -77,6 +82,8 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
   }, [settings.beatInterval]);
 
   const endGame = useCallback(() => {
+    if (endingRef.current) return;
+    endingRef.current = true;
     setGameActive(false);
     if (beatIntervalRef.current) clearInterval(beatIntervalRef.current);
     if (gameTimerRef.current) clearInterval(gameTimerRef.current);
@@ -84,8 +91,9 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
     // Play completion sound
     gameAudio.playCompleteProject();
     
-    setTimeout(() => {
-      onComplete(score);
+    completionTimerRef.current = setTimeout(() => {
+      onComplete(scoreRef.current);
+      completionTimerRef.current = undefined;
     }, 1000);
   }, [score, onComplete]);
 
@@ -126,7 +134,9 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
         const isPerfect = distance < perfectRange;
         const points = isPerfect ? 100 : distance < 30 ? 50 : 25;
 
-        setScore(s => s + points + (combo * 10));
+        const nextScore = scoreRef.current + points + (combo * 10);
+        scoreRef.current = nextScore;
+        setScore(nextScore);
         setCombo(c => c + 1);
 
         // Play appropriate hit sound
@@ -151,6 +161,12 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
       }
     });
   }, [gameActive, combo, settings.targetZone]);
+
+  useEffect(() => () => {
+    if (beatIntervalRef.current) clearInterval(beatIntervalRef.current);
+    if (gameTimerRef.current) clearInterval(gameTimerRef.current);
+    if (completionTimerRef.current) clearTimeout(completionTimerRef.current);
+  }, []);
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
