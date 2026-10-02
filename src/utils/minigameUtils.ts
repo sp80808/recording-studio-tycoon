@@ -297,6 +297,15 @@ export const getTriggeredMinigames = (
     });
   }
 
+  // PHASE CHECK - fix inverted-polarity mics when tracking or mixing drums
+  if (stageName.includes('record') || stageName.includes('tracking') || stageName.includes('mix')) {
+    triggers.push({
+      minigameType: 'phase-check',
+      triggerReason: 'The drums sound thin - check the mic polarity!',
+      priority: 6
+    });
+  }
+
   // BUS & STEM MERGE - route the session into stems and a mix
   if (stageName.includes('mix') || stageName.includes('stem') || stageName.includes('bounce') ||
       stageName.includes('routing')) {

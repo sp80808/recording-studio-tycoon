@@ -28,6 +28,7 @@ import { ChainRecallGame } from './ChainRecallGame';
 import { SessionScrambleGame } from './SessionScrambleGame';
 import { FlightCasePackingGame } from './FlightCasePackingGame';
 import { BusMergeGame } from './BusMergeGame';
+import { PhaseCheckGame } from './PhaseCheckGame';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { toast } from '@/hooks/use-toast';
 import { useCutsceneQueue } from '@/hooks/useCutsceneQueue';
@@ -62,7 +63,8 @@ export type MinigameType =
   | 'chain-recall'
   | 'session-scramble'
   | 'flight-case'
-  | 'bus-merge';
+  | 'bus-merge'
+  | 'phase-check';
 
 interface MinigameManagerProps {
   isOpen: boolean;
@@ -217,6 +219,10 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         creativityBonus = Math.floor(score / 16);
         technicalBonus = Math.floor(score / 8);
         break;
+      case 'phase-check':
+        creativityBonus = Math.floor(score / 18);
+        technicalBonus = Math.floor(score / 7);
+        break;
       case 'bus-merge':
         creativityBonus = Math.floor(score / 14);
         technicalBonus = Math.floor(score / 8);
@@ -342,6 +348,8 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         return <SessionScrambleGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'flight-case':
         return <FlightCasePackingGame {...commonGameProps} onComplete={standardOnComplete} />;
+      case 'phase-check':
+        return <PhaseCheckGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'bus-merge':
         return <BusMergeGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'maintenance':
