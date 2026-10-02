@@ -183,3 +183,12 @@ In-house original, CC0, no external source. Drawn procedurally in Pixi (`WebGLCa
 |---|---|---|
 | Outboard tape-deck plate, valve glow lamps, status LEDs (tiers 2-5) | Pixi Graphics, drawn in code | `WebGLCanvas.tsx` (`buildScene`) |
 | Tier-tinted reel frames (silver, blue-steel, gold) | Same 8-frame procedural reel as tier 1, tinted per tier | `consoleTierGear.ts` |
+
+## 13. Floor furnishings and the studio cat (`studioFloorFurnishings.ts`)
+
+In-house original, CC0, no external source. Drawn procedurally in Pixi Graphics; no new image files.
+
+| Asset | Source | Used by |
+|---|---|---|
+| Guitar stand, keyboard stand, combo amp, vinyl crate, bean bag, snake cable run, road case (tier-gated 1-5) | Pixi Graphics, drawn in code | `WebGLCanvas.tsx` (`buildScene`) |
+| Studio cat (5 coats: ginger, tabby, black, tuxedo, calico) with stretch, nap, watch and curl poses that follow the studio clock | Pixi Graphics, drawn in code | `WebGLCanvas.tsx` ticker |
