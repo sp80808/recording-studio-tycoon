@@ -5,6 +5,7 @@ import { calculateStudioSkillBonus, getEquipmentBonuses as getBaseEquipmentBonus
 import { availableMods } from '@/data/equipmentMods'; // Import available mods
 import { bumpMatchRatingForReturn } from '@/game-mechanics/relationship-management'; // Issue #10: repeat-client match bump
 import { deriveBrief } from '@/rpg/projectBrief';
+import { followUpCandidate, followUpKind, requestedServiceFor } from '@/rpg/artistCareer';
 import { deriveRider } from '@/rpg/studioRider';
 import { getEraGigPool, pickWeightedGig, type WeightedGig } from '@/data/gigTemplates';
 export { generateCandidates } from '@/utils/staffRecruitment';
@@ -25,6 +26,7 @@ export const generateNewProjects = (
 ): Project[] => {
   const projects: Project[] = [];
   const usedTitles = new Set<string>();
+  const followUpsOffered = new Set<string>();
   
   // Era-authentic repertoire: native era genres at full weight, timeless staples at a reduced weight.
   const currentEraDefinition = ERA_DEFINITIONS.find(era => era.id === currentEra);
@@ -142,6 +144,18 @@ export const generateNewProjects = (
     } while (usedTitles.has(project.title) && attempts < 50); // Prevent infinite loops
     
     project.brief = deriveBrief(project);
+    // Artist career (#49): a returning client asks for work that fits their career tier, and a
+    // strong earlier release can seed a follow-up. No quality bonus comes with either.
+    const careerClient = knownClients.find(c => c.clientName === project.clientName);
+    if (careerClient) {
+      project.brief = { ...project.brief, serviceType: requestedServiceFor(careerClient, project.id) };
+      const seedRelease = followUpCandidate(careerClient);
+      if (seedRelease && !followUpsOffered.has(seedRelease.id)) {
+        followUpsOffered.add(seedRelease.id);
+        project.followUpOf = seedRelease.id;
+        project.title = `Follow-up: ${followUpKind(project.id)} for ${seedRelease.title}`;
+      }
+    }
     const rider = deriveRider(project, {
       reputation,
       playerLevel,

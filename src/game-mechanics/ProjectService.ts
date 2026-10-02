@@ -1,5 +1,6 @@
 import { applyKnowHowEvents } from '../rpg/studioKnowHow';
 import { awardExpertise } from '../rpg/houseStyle';
+import { recordRelease } from '../rpg/artistCareer';
 import { getProjectBrief } from '../rpg/projectBrief';
 import { awardProjectCrate, recordGearUse } from '@/features/usedGear/session';
 import { GameState, Project, ProjectReport, StaffMember } from '../types/game';
@@ -345,6 +346,22 @@ export function applyReportToState(state: GameState, report: ProjectReport): Gam
             xpMultiplier: getOriginEffects(state).relationshipXpMultiplier,
         });
         clientRelationships = applied.relationships;
+        // Artist career (#49): one release record per settled client project; the
+        // delayed outcome later pays reputation/referrals only, never the fee again.
+        if (deliveryProject?.id && deliveryProject.title) {
+            const dp = deliveryProject as { id: string; title: string; genre?: string; followUpOf?: string };
+            clientRelationships = {
+                ...clientRelationships,
+                [deliveryClient.clientKey]: recordRelease(applied.record, {
+                    projectId: dp.id,
+                    title: dp.title.replace(/^(Return|Follow-up): /, ''),
+                    genre: dp.genre ?? deliveryClient.primaryGenre,
+                    qualityScore: report.overallQualityScore,
+                    day: state.currentDay,
+                    followUpOf: dp.followUpOf,
+                }),
+            };
+        }
         const snippetLine = buildRelationshipSnippet(
             deliveryClient.clientName,
             applied.previousTier,
