@@ -267,6 +267,17 @@ export const getTriggeredMinigames = (
     });
   }
 
+  // FLIGHT CASE PACKING - occasional, before a location-style session (roughly one project in three)
+  const projectHash = [...String(project.id)].reduce((n, ch) => (n * 31 + ch.charCodeAt(0)) >>> 0, 7);
+  if (projectHash % 3 === 0 && (stageName.includes('setup') || stageName.includes('preparation') ||
+      (project.currentStageIndex === 0 && stageName.includes('track')))) {
+    triggers.push({
+      minigameType: 'flight-case',
+      triggerReason: 'Mobile session ahead - pack the rig into the flight case!',
+      priority: 6
+    });
+  }
+
   // CHAIN RECALL - patch the signal path from memory in processing stages
   if (stageName.includes('production') || stageName.includes('effects') || stageName.includes('processing') ||
       stageName.includes('mix')) {
