@@ -107,7 +107,13 @@ export const RadialActionWheel: React.FC<RadialActionWheelProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-sm animate-in fade-in duration-150">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Studio action wheel"
+      data-gamepad-exclusive="true"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-sm animate-in fade-in duration-150"
+    >
       <div className="relative w-80 h-80 rounded-full border-2 border-stone-700/80 bg-stone-950/95 shadow-[0_0_50px_rgba(0,0,0,0.8)] flex items-center justify-center select-none">
         {/* Subtle radial division lines */}
         <div className="absolute inset-0 rounded-full pointer-events-none border border-amber-500/20" />
