@@ -570,7 +570,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                 })}
               />
               <CityLorePanel cityId={gameState.cityId} eraId={gameState.currentEra} />
-              <ClientCareerPanel relationships={gameState.clientRelationships} />
+              <ClientCareerPanel relationships={gameState.clientRelationships} labelInterest={gameState.labelInterest} />
               <HouseStylePanel expertise={gameState.studioExpertise} />
               <div className="grid gap-2.5 p-1 pt-3 sm:grid-cols-2">
                 <button className="rst-btn" onClick={() => handleOpenDashboardTab('bands')}>
