@@ -211,3 +211,11 @@ In-house original, CC0, no external source. Drawn procedurally in Pixi Graphics;
 |---|---|---|
 | Client waiting bench, storage rack (Project Studio) | Pixi Graphics, drawn in code | `WebGLCanvas.tsx` (`buildScene`) |
 | Reception counter with accent sign, water cooler, second rack (Commercial Studio) | Pixi Graphics, drawn in code | `WebGLCanvas.tsx` (`buildScene`) |
+
+## 16. Window view (`studioWindowView.ts`)
+
+In-house original, CC0, no external source. Pixi Graphics drawn in code; no image files.
+
+| Asset | Source | Used by |
+|---|---|---|
+| Sun, moon, twinkling stars, two-layer city skyline with windows that light up at dusk | Pixi Graphics, drawn in code | `WebGLCanvas.tsx` (window, ticker) |
