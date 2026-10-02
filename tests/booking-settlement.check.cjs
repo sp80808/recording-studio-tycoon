@@ -34,12 +34,12 @@ async (page) => {
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Mobile studio overflows horizontally');
   await page.setViewportSize({ width: 1440, height: 900 });
 
-  await activities.getByRole('button', { name: 'Bookings' }).click();
+  await activities.getByRole('button', { name: 'Artist' }).click();
   await page.getByText('Artist Enquiries').waitFor();
   await page.keyboard.press('Escape');
   await page.getByText('Artist Enquiries').first().waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
   assert(!(await page.getByText('Artist Enquiries').first().isVisible()), 'Escape did not close bookings');
-  await activities.getByRole('button', { name: 'Bookings' }).click();
+  await activities.getByRole('button', { name: 'Artist' }).click();
   const book = page.getByRole('button', { name: 'Book Session' }).first();
   await book.waitFor();
   await book.click();
@@ -76,7 +76,7 @@ async (page) => {
   await settle.click();
   await review.waitFor({ state: 'hidden', timeout: 20000 });
   await activities.waitFor({ state: 'visible', timeout: 10000 });
-  await activities.getByRole('button', { name: 'Bookings' }).click();
+  await activities.getByRole('button', { name: 'Artist' }).click();
   assert(await page.getByRole('button', { name: 'Book Session' }).first().isEnabled(), 'Cannot book after settlement');
   const moneyAfter = await page.locator('[data-reward-target="money"]').innerText();
   assert(moneyAfter !== moneyBefore, 'Money HUD did not update after settlement');

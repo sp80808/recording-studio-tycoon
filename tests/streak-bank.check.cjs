@@ -29,7 +29,7 @@ async (page) => {
   await page.locator('canvas').waitFor({ state: 'visible' });
 
   // Book a session → at the console
-  await activities.getByRole('button', { name: 'Bookings' }).click();
+  await activities.getByRole('button', { name: 'Artist' }).click();
   await page.getByText('Artist Enquiries').waitFor();
   const book = page.getByRole('button', { name: 'Book Session' }).first();
   await book.waitFor();

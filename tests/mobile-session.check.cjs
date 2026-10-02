@@ -37,7 +37,7 @@ async (page) => {
   await activities.waitFor();
 
   // Book Session entry
-  await activities.getByRole('button', { name: 'Bookings' }).click();
+  await activities.getByRole('button', { name: 'Artist' }).click();
   const book = page.getByRole('button', { name: 'Book Session' }).first();
   await book.waitFor();
   await book.click();

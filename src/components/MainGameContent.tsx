@@ -21,7 +21,7 @@ import { FeatureBoundary } from './FeatureBoundary';
 import { checkForNewEvents, applyEventEffects, HistoricalEvent } from '@/utils/historicalEvents';
 import { useBandManagement } from '@/hooks/useBandManagement';
 import { MinigameType } from './minigames/MinigameManager';
-import { GamepadNavProvider, DockTabId, DOCK_TABS } from '@/contexts/GamepadNavContext';
+import { GamepadNavProvider, DockTabId } from '@/contexts/GamepadNavContext';
 import { useStudioHotkeys, type HotkeyBinding } from '@/hooks/useStudioHotkeys';
 import { ShortcutsOverlay } from './ShortcutsOverlay';
 import { GamepadHUD } from '@/components/ui/GamepadHUD';
@@ -75,10 +75,13 @@ interface MainGameContentProps {
 
 type Panel = 'bookings' | 'session' | 'studio' | 'career' | 'cases';
 
+/** Floor footer order (issue #151): Gear lives inside Room; Artists and Charts open from Career. */
+const FOOTER_TABS: DockTabId[] = ['bookings', 'session', 'crew', 'gear', 'career'];
+
 const DOCK_LABELS: Record<DockTabId, string> = {
-  bookings: 'Bookings',
+  bookings: 'Artist',
   session: 'Session',
-  gear: 'Gear',
+  gear: 'Room',
   crew: 'Crew',
   bands: 'Artists',
   charts: 'Charts',
@@ -191,7 +194,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   const [showShortcuts, setShowShortcuts] = useState(false);
   const hotkeyBindings = useMemo<HotkeyBinding[]>(
     () => [
-      ...DOCK_TABS.map((id, index) => ({
+      ...FOOTER_TABS.map((id, index) => ({
         key: String(index + 1),
         label: DOCK_LABELS[id],
         description: `Open ${DOCK_LABELS[id]}`,
@@ -441,12 +444,10 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           </button>
         <nav aria-label="Studio activities" className="studio-command-dock">
           {([
-            ['bookings', Phone, 'Bookings', () => openPanel('bookings')],
+            ['bookings', Phone, 'Artist', () => openPanel('bookings')],
             ['session', Headphones, 'Session', () => openPanel('session')],
-            ['gear', SlidersHorizontal, 'Gear', () => handleOpenDashboardTab('studio')],
             ['crew', Users, 'Crew', () => handleOpenDashboardTab('staff')],
-            ['bands', Disc3, 'Artists', () => handleOpenDashboardTab('bands')],
-            ['charts', Trophy, 'Charts', () => handleOpenDashboardTab('charts')],
+            ['gear', SlidersHorizontal, 'Room', () => handleOpenDashboardTab('studio')],
             ['career', Sparkles, 'Career', () => openPanel('career')],
           ] as const).map(([id, Icon, label, action], dockIndex) => (
             <button key={id} onClick={action} className="studio-dock-button" title={`${label} (${dockIndex + 1})`} aria-label={label} aria-keyshortcuts={String(dockIndex + 1)}>
@@ -562,6 +563,12 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                 })}
               />
               <div className="grid gap-2.5 p-1 pt-3 sm:grid-cols-2">
+                <button className="rst-btn" onClick={() => handleOpenDashboardTab('bands')}>
+                  <Disc3 size={17} />Artist roster
+                </button>
+                <button className="rst-btn" onClick={() => handleOpenDashboardTab('charts')}>
+                  <Trophy size={17} />Charts
+                </button>
                 <button className="rst-btn" onClick={() => handleOpenDashboardTab('skills')}>
                   <Sparkles size={17} />Skills & research
                 </button>
