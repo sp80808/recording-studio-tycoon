@@ -3,6 +3,7 @@
 Single log for where every sprite / variant / sticker / emblem comes from,
 what is bundled vs procedural, and what is deferred to the later roadmap.
 Policy: **CC0 only** for anything bundled. No GPL / NC / ND assets in the repo.
+Enforcement: `pnpm assets:verify` (part of `pnpm test`) fails on any file under `public/assets/` that is not declared in `assets/provenance.json`. Add the manifest entry or `originalTrees` directory in the same change as the log line. Process in `assets/README.md`.
 
 ## 1. Flight cases (`src/data/flightCases.ts`)
 
