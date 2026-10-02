@@ -79,15 +79,21 @@ const baseKeys = Object.keys(byLocale.en).sort();
 assert.ok(baseKeys.length >= 80, `expected expanded en coverage, got ${baseKeys.length} keys`);
 
 const placeholders = (value: string) => (value.match(/\{\{\s*\w+\s*\}\}/g) ?? []).map((m) => m.replace(/\s/g, '')).sort();
+// i18next plural forms differ per language (ja has only _other, ru adds _few/_many): compare the plural family, not each suffix.
+const PLURAL = /_(zero|one|two|few|many|other)$/;
+const family = (key: string) => key.replace(PLURAL, '');
+const familySet = (keys: string[]) => [...new Set(keys.map(family))].sort();
+const enFamilies = familySet(baseKeys);
 
 for (const code of SUPPORTED_LOCALE_CODES) {
   const keys = Object.keys(byLocale[code]).sort();
-  assert.deepEqual(keys, baseKeys, `${code} keys must match en key set (parity)`);
-  for (const key of baseKeys) {
+  assert.deepEqual(familySet(keys), enFamilies, `${code} keys must match en key set (parity)`);
+  for (const key of keys) {
     assert.ok(byLocale[code][key].trim().length > 0, `${code}.${key} must be non-empty`);
+    const reference = byLocale.en[key] ?? byLocale.en[`${family(key)}_other`];
     assert.deepEqual(
       placeholders(byLocale[code][key]),
-      placeholders(byLocale.en[key]),
+      placeholders(reference),
       `${code}.${key} must keep the same {{placeholders}} as en`
     );
   }

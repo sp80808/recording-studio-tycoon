@@ -1,5 +1,6 @@
 import { useArtistContracts } from '@/hooks/useArtistContracts';
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ContextDrawer, type ContextDrawerTab } from './ContextDrawer';
 import { MotionNumber, MotionButton } from '@/components/motion/primitives';
 import { Headphones, Phone, SlidersHorizontal, Sparkles, Users, Disc3, Trophy, Minimize2, Moon, Package } from 'lucide-react';
@@ -123,6 +124,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   setCompactStudioMode,
   desktopStripEnabled
 }) => {
+  const { t } = useTranslation();
 
   const [panel, setPanel] = useState<Panel | null>(null);
   // Studio floor + GUI reveal together: hold a lightweight loading veil until
@@ -322,7 +324,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   }
 
   const project = gameState.activeProject;
-  const sessionLabel = project?.awaitingReview ? 'Collect release' : project ? 'Continue session' : 'Book your first session';
+  const sessionLabel = project?.awaitingReview ? t('session_collect_release') : project ? t('session_continue') : t('session_book_first');
   const completeFloorChore = (hotspot: string) => {
     if (activeChoreId) return true;
     const choreState = gameState.choreState || createInitialChoreState();
@@ -402,22 +404,22 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
 
   const drawerTitle =
     panel === 'bookings'
-      ? 'Bookings'
+      ? t('drawer_bookings')
       : panel === 'session'
-        ? 'At the console'
+        ? t('drawer_session')
         : panel === 'career'
-          ? 'Your producer story'
+          ? t('drawer_career')
           : panel === 'cases'
-            ? 'Flight cases'
+            ? t('drawer_cases')
             : dashboardTab === 'staff'
-              ? 'Studio crew'
+              ? t('drawer_crew')
               : dashboardTab === 'bands'
-                ? 'Artists'
+                ? t('drawer_artists')
                 : dashboardTab === 'charts'
-                  ? 'Charts'
+                  ? t('drawer_charts')
                   : dashboardTab === 'skills'
-                    ? 'Skills & research'
-                    : 'Gear locker';
+                    ? t('drawer_skills')
+                    : t('drawer_gear');
 
   return (
     <GamepadNavProvider onTabChange={handleDockTabChange}>
@@ -431,7 +433,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           {!studioReady && (
             <div className="studio-room-loading" role="status" aria-live="polite" aria-busy="true">
               <span className="studio-boot-gate-mark">RST</span>
-              <p className="studio-boot-gate-title">Setting up the room…</p>
+              <p className="studio-boot-gate-title">{t('room_setting_up')}</p>
               <div className="studio-boot-progress" aria-hidden="true"><i /></div>
             </div>
           )}
@@ -449,11 +451,11 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           </button>
         <nav aria-label="Studio activities" className="studio-command-dock">
           {([
-            ['bookings', Phone, 'Artist', () => openPanel('bookings')],
-            ['session', Headphones, 'Session', () => openPanel('session')],
-            ['crew', Users, 'Crew', () => handleOpenDashboardTab('staff')],
-            ['gear', SlidersHorizontal, 'Room', () => handleOpenDashboardTab('studio')],
-            ['career', Sparkles, 'Career', () => openPanel('career')],
+            ['bookings', Phone, t('nav_artist'), () => openPanel('bookings')],
+            ['session', Headphones, t('nav_session'), () => openPanel('session')],
+            ['crew', Users, t('nav_crew'), () => handleOpenDashboardTab('staff')],
+            ['gear', SlidersHorizontal, t('nav_room'), () => handleOpenDashboardTab('studio')],
+            ['career', Sparkles, t('nav_career'), () => openPanel('career')],
           ] as const).map(([id, Icon, label, action], dockIndex) => (
             <button key={id} onClick={action} className="studio-dock-button" title={`${label} (${dockIndex + 1})`} aria-label={label} aria-keyshortcuts={String(dockIndex + 1)}>
               <Icon size={21} aria-hidden="true" /><span>{label}</span>
@@ -486,7 +488,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
               onClick={advanceDay}
             >
               <Moon size={14} />
-              <span>Rest & advance day</span>
+              <span>{t('rest_advance_day')}</span>
             </MotionButton>
           ) : null
         }
