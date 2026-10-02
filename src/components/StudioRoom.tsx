@@ -41,6 +41,7 @@ const HOTSPOT_NAMES: Record<StudioHotspotId, string> = {
   door: 'Studio Door',
   promotion: 'Phone & Ring Light',
   cases: 'Flight Cases',
+  producer: 'You',
 };
 
 interface StudioRoomProps {
@@ -246,6 +247,11 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     return all.find((p) => p?.bookingRoomId === roomId)?.title ?? null;
   };
   const handleHotspot = (id: StudioHotspotId | string) => {
+    if (id === 'producer') {
+      if (settings.sfxEnabled) void gameAudio.playTactileClick();
+      setActiveInspector('producer');
+      return;
+    }
     if (id === 'cases') {
       if (settings.sfxEnabled) void gameAudio.playLatch();
       onOpenCases?.();

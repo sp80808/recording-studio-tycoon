@@ -210,7 +210,7 @@ export const calculateTapeSaturationWarmth = (
 /**
  * Studio hotspots the player can click in the isometric room scene.
  */
-export type StudioHotspotId = 'console' | 'liveRoom' | 'phone' | 'clock' | 'tv' | 'shelf' | 'door' | 'promotion' | 'cases';
+export type StudioHotspotId = 'console' | 'liveRoom' | 'phone' | 'clock' | 'tv' | 'shelf' | 'door' | 'promotion' | 'cases' | 'producer';
 
 /**
  * Draw-order bands inside the room. Floor, walls and big fixed furniture keep add order at `world`;
@@ -517,6 +517,9 @@ interface SceneRefs {
   /** Earned flight cases waiting on the floor; tapping opens the depot. */
   caseStack: CaseStack | null;
   lightShaft: LightShaft | null;
+  /** performance.now() of the last tap on the player character (drives the hop + emote). */
+  producerTapAt: number;
+  producerEmote: Text | null;
   setWindowSky: ((color: number) => void) | null;
   hoverGlows: Record<string, Graphics>;
   hoverGlowTargets: Record<string, number>;
@@ -553,6 +556,54 @@ interface BuiltScene {
   baseScale: number;
 }
 
+/** Hover colours per hotspot (match the legacy rings). */
+const HOVER_COLORS: Partial<Record<StudioHotspotId, number>> = {
+  tv: 0x5aa9e6, console: 0x7bd389, phone: 0xffd166, liveRoom: 0xff9c6e, shelf: 0xe6b866, cases: 0xffd166,
+};
+
+/**
+ * Redraw a hotspot's hover highlight so it hugs the item's real sprite bounds (corner brackets plus a
+ * faint wash) instead of the looser click polygon. Falls back to the legacy ring when the visual is
+ * empty or unreasonably large (e.g. a whole wall).
+ */
+const fitHoverGlow = (glow: Graphics, visual: Container | null, hitArea: Graphics, parent: Container, color: number) => {
+  if (!visual) return;
+  const vb = visual.getBounds();
+  const hb = hitArea.getBounds();
+  // The click shape is the rough footprint; the sprite can poke past it (a console's front edge, a shelf's
+  // top) but its bounds also include soft shadows and glow pools. Grow the click shape toward the sprite
+  // by at most `reach` px per side so the highlight covers the real edges without swallowing the shadows.
+  const reach = 26;
+  const b = {
+    minX: Math.max(vb.minX, hb.minX - reach), minY: Math.max(vb.minY, hb.minY - reach),
+    maxX: Math.min(vb.maxX, hb.maxX + reach), maxY: Math.min(vb.maxY, hb.maxY + reach),
+  };
+  // Never smaller than the item's overlap with the click shape.
+  b.minX = Math.min(b.minX, Math.max(vb.minX, hb.minX)); b.minY = Math.min(b.minY, Math.max(vb.minY, hb.minY));
+  b.maxX = Math.max(b.maxX, Math.min(vb.maxX, hb.maxX)); b.maxY = Math.max(b.maxY, Math.min(vb.maxY, hb.maxY));
+  if (!(b.maxX > b.minX + 8) || !(b.maxY > b.minY + 8)) { b.minX = hb.minX; b.minY = hb.minY; b.maxX = hb.maxX; b.maxY = hb.maxY; }
+  if (!(b.maxX > b.minX) || !(b.maxY > b.minY)) return;
+  const tl = parent.toLocal({ x: b.minX, y: b.minY });
+  const br = parent.toLocal({ x: b.maxX, y: b.maxY });
+  const pad = 3;
+  const x0 = tl.x - pad, y0 = tl.y - pad, x1 = br.x + pad, y1 = br.y + pad;
+  const w = x1 - x0, h = y1 - y0;
+  if (w < 8 || h < 8 || w > 460 || h > 380) return;
+  const len = Math.max(6, Math.min(14, Math.min(w, h) * 0.28));
+  glow.clear();
+  glow.roundRect(x0, y0, w, h, 4).fill({ color, alpha: 0.07 });
+  const brackets = (g: Graphics) => {
+    g.moveTo(x0, y0 + len).lineTo(x0, y0).lineTo(x0 + len, y0)
+      .moveTo(x1 - len, y0).lineTo(x1, y0).lineTo(x1, y0 + len)
+      .moveTo(x1, y1 - len).lineTo(x1, y1).lineTo(x1 - len, y1)
+      .moveTo(x0 + len, y1).lineTo(x0, y1).lineTo(x0, y1 - len);
+  };
+  brackets(glow);
+  glow.stroke({ width: 5, color: 0x0b0906, alpha: 0.5, cap: 'round', join: 'round' });
+  brackets(glow);
+  glow.stroke({ width: 2.5, color, alpha: 0.95, cap: 'round', join: 'round' });
+};
+
 /** Attach an interactive hit area + hover glow around a visual group. */
 const addHotspot = (
   parent: Container,
@@ -581,7 +632,10 @@ const addHotspot = (
   hit.alpha = 0; // invisible for rendering, still receives pointer events
   if (zIndex !== undefined) hit.zIndex = zIndex;
   refs.hotspotHits[id] = hit;
-  hit.on('pointerover', () => { refs.hoverGlowTargets[id] = 1; });
+  hit.on('pointerover', () => {
+    fitHoverGlow(glow, visual, hitArea, parent, HOVER_COLORS[id] ?? 0xffe3a3);
+    refs.hoverGlowTargets[id] = 1;
+  });
   hit.on('pointerout', () => { refs.hoverGlowTargets[id] = 0; });
   // The canvas gesture guard suppresses selection after a two-finger pan.
   hit.on('pointertap', () => { onSelect?.(id); });
@@ -618,6 +672,8 @@ const buildScene = (
     windowView: null,
     caseStack: null,
     lightShaft: null,
+    producerTapAt: -1e9,
+    producerEmote: null,
     setWindowSky: null,
     hoverGlows: {},
     hoverGlowTargets: {},
@@ -1552,6 +1608,39 @@ const buildScene = (
       animState: figure.animState ?? (state.hasActiveProject ? 'working' : 'idle'),
       destroy: visual.destroy,
     });
+    if (i === 0) {
+      // Tapping the player's own character opens the producer card (name, energy, task, quick actions).
+      const d = visual.display;
+      d.eventMode = 'static';
+      d.cursor = 'pointer';
+      d.hitArea = new Rectangle(-24, -70, 48, 78);
+      const ring = new Graphics();
+      ring.ellipse(0, 0, 22, 10).stroke({ width: 3, color: 0x0b0906, alpha: 0.5 });
+      ring.ellipse(0, 0, 22, 10).stroke({ width: 1.8, color: 0xffe3a3, alpha: 0.95 });
+      ring.position.set(spot.x, spot.y + 2);
+      ring.zIndex = Z.depth + spot.y - 1;
+      ring.alpha = 0;
+      ring.eventMode = 'none';
+      refs.hoverGlows.producer = ring;
+      refs.hoverGlowTargets.producer = 0;
+      root.addChild(ring);
+      const emote = new Text({
+        text: '♪',
+        style: { fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: 16, fontWeight: '800', fill: 0xffe3a3, stroke: { color: 0x0b0906, width: 3 } },
+      });
+      emote.anchor.set(0.5, 1);
+      emote.position.set(0, -76);
+      emote.alpha = 0;
+      emote.eventMode = 'none';
+      d.addChild(emote);
+      refs.producerEmote = emote;
+      d.on('pointerover', () => { refs.hoverGlowTargets.producer = 1; });
+      d.on('pointerout', () => { refs.hoverGlowTargets.producer = 0; });
+      d.on('pointertap', () => {
+        refs.producerTapAt = performance.now();
+        onSelect?.('producer');
+      });
+    }
     root.addChild(visual.display);
   }
 
@@ -2548,6 +2637,21 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
               f.animState = 'idle';
             }
             applyFloorNpcMotion(f, t, i * 1.4, reduceMotion);
+            if (i === 0 && refs.producerEmote) {
+              // Tap reaction: a quick hop with a squash, and a note that floats up and fades.
+              const since = (performance.now() - refs.producerTapAt) / 1000;
+              if (since >= 0 && since < 0.9) {
+                if (!reduceMotion && since < 0.45) {
+                  const k = since / 0.45;
+                  f.fig.y -= Math.sin(k * Math.PI) * 9;
+                  f.fig.scale.y *= 1 + Math.sin(k * Math.PI) * 0.04;
+                }
+                refs.producerEmote.alpha = Math.min(1, (0.9 - since) * 3);
+                refs.producerEmote.y = -76 - (reduceMotion ? 0 : since * 16);
+              } else if (refs.producerEmote.alpha !== 0) {
+                refs.producerEmote.alpha = 0;
+              }
+            }
           });
 
           // Booked artist: diegetic door enter/exit, then mic motion during the session
