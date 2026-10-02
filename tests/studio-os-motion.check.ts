@@ -86,9 +86,14 @@ test('Studio OS V2 Motion (#75) - Enquiry Arrival & Peripheral Indication', () =
   assert.match(mainGameContentCode, /id === 'bookings' && gameState\.availableProjects\.length > 0[\s\S]*?<MotionNumber value=\{gameState\.availableProjects\.length\} \/>/, 'Command dock has peripheral unread badge on bookings button');
 
   // Floor primary CTA stays for onboarding / session continue / collect release (floating Enquiry pill alone was removed)
-  assert.match(mainGameContentCode, /Book your first session/, 'Floor keeps Book-first-session primary CTA');
-  assert.match(mainGameContentCode, /Continue session/, 'Floor primary CTA covers Continue session');
-  assert.match(mainGameContentCode, /Collect release/, 'Floor primary CTA covers Collect release');
+  // Labels now come from the locale files (session_* keys), English text lives in en/common.json.
+  const enStrings = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'public/locales/en/common.json'), 'utf8')) as Record<string, string>;
+  assert.match(mainGameContentCode, /t\('session_book_first'\)/, 'Floor keeps Book-first-session primary CTA');
+  assert.equal(enStrings.session_book_first, 'Book your first session');
+  assert.match(mainGameContentCode, /t\('session_continue'\)/, 'Floor primary CTA covers Continue session');
+  assert.equal(enStrings.session_continue, 'Continue session');
+  assert.match(mainGameContentCode, /t\('session_collect_release'\)/, 'Floor primary CTA covers Collect release');
+  assert.equal(enStrings.session_collect_release, 'Collect release');
   assert.match(mainGameContentCode, /studio-play-actions[\s\S]*?studio-primary-action[\s\S]*?studio-command-dock/, 'Floor primary CTA sits above the command dock');
   assert.match(mainGameContentCode, /studio-command-dock/, 'Command dock remains as secondary launcher');
 

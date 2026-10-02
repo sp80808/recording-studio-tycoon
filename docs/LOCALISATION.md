@@ -17,5 +17,6 @@ Native-speaker review wanted, especially for ja, ko, zh-CN, ru, pl. Keys added i
 
 ## Coverage
 Translated: splash, header, drawer, settings, staff/studio/recruitment modals, project card, and the active-session dock (empty state, intervention, stage chips, focus channels, Arm Take button, duties).
-Also translated: the phone session console (focus mixer, auto-align, overdrive) and city lore. Checked at 390px in de, ru, fr, ja, pt-BR: no horizontal overflow.
-Still hard-coded English (follow-ups): minigames, other story modals (storyline branches, narrative choices), stage focus channel labels, toasts, season/ledger explanations, gear names, many `$` literals that bypass `money()`.
+Also translated: the phone home screen (enquiry rail with plurals, primary action, dock nav, drawer titles) and the shared story decision chips/buttons; the phone session console (focus mixer, auto-align, overdrive) and city lore. Checked at 390px in de, ru, fr, ja, pt-BR: no horizontal overflow.
+Plural keys use i18next suffixes (`_one`/`_few`/`_many`/`_other`); the parity check compares plural families, so ja/ko/zh-CN carry only `_other` and ru/pl add `_few`/`_many`.
+Still hard-coded English (follow-ups): floor chore chips (Tune Acoustics...), minigames, other story modals (storyline branches, narrative choices), stage focus channel labels, toasts, season/ledger explanations, gear names, many `$` literals that bypass `money()`.

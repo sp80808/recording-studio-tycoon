@@ -1,5 +1,6 @@
 import { money, signedMoney } from '@/utils/displayMoney';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowRight, Check, Coins, Lock, Sparkles, Star } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { gameAudio } from '@/utils/audioSystem';
@@ -56,6 +57,7 @@ interface StoryDecisionModalProps {
 }
 
 export const ConsequenceChips: React.FC<{ option: Pick<DecisionOption, 'moneyDelta' | 'repDelta' | 'xpDelta'> }> = ({ option }) => {
+  const { t } = useTranslation();
   const { moneyDelta, repDelta, xpDelta } = option;
   return (
     <div className="flex flex-wrap items-center gap-1.5">
@@ -77,7 +79,7 @@ export const ConsequenceChips: React.FC<{ option: Pick<DecisionOption, 'moneyDel
           +{xpDelta} XP
         </span>
       )}
-      {moneyDelta === 0 && repDelta === 0 && !xpDelta && <span className="rst-chip">No immediate cost</span>}
+      {moneyDelta === 0 && repDelta === 0 && !xpDelta && <span className="rst-chip">{t('story_no_cost')}</span>}
     </div>
   );
 };
@@ -90,12 +92,15 @@ export const ConsequenceChips: React.FC<{ option: Pick<DecisionOption, 'moneyDel
 export const StoryDecisionModal: React.FC<StoryDecisionModalProps> = ({
   content,
   open,
-  commitLabel = 'Commit to this choice',
-  continueLabel = 'Continue',
+  commitLabel,
+  continueLabel,
   onCommit,
   onDeferred,
   onDone,
 }) => {
+  const { t } = useTranslation();
+  const commitText = commitLabel ?? t('event_commit');
+  const continueText = continueLabel ?? t('story_continue');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [resolved, setResolved] = useState<{ content: DecisionContent; option: DecisionOption } | null>(null);
   const contentKey = content?.key;
@@ -202,7 +207,7 @@ export const StoryDecisionModal: React.FC<StoryDecisionModalProps> = ({
             </div>
             <div className="flex justify-end">
               <button type="button" className="rst-btn rst-btn-primary" onClick={finish} autoFocus>
-                {continueLabel} <ArrowRight size={14} aria-hidden="true" />
+                {continueText} <ArrowRight size={14} aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -248,7 +253,7 @@ export const StoryDecisionModal: React.FC<StoryDecisionModalProps> = ({
             </div>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <button type="button" className="rst-btn rst-btn-ghost" onClick={onDeferred}>
-                Decide later
+                {t('story_decide_later')}
               </button>
               <button
                 ref={commitRef}
@@ -257,7 +262,7 @@ export const StoryDecisionModal: React.FC<StoryDecisionModalProps> = ({
                 disabled={!selectedId}
                 onClick={commit}
               >
-                {commitLabel} <ArrowRight size={14} aria-hidden="true" />
+                {commitText} <ArrowRight size={14} aria-hidden="true" />
               </button>
             </div>
           </>
