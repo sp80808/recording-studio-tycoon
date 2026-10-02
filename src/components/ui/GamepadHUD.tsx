@@ -87,7 +87,19 @@ export const GamepadHUD: React.FC<GamepadHUDProps> = ({ className = '', hasOpenM
           <div className="h-3 w-px bg-stone-700/60" />
           <div className="flex items-center gap-1">
             <GamepadGlyph button="west" size="xs" />
-            <span>Work</span>
+            <span>Quick Work</span>
+          </div>
+
+          <div className="h-3 w-px bg-stone-700/60" />
+          <div className="flex items-center gap-1">
+            <GamepadGlyph button="lt" size="xs" />
+            <span>Wheel</span>
+          </div>
+
+          <div className="h-3 w-px bg-stone-700/60" />
+          <div className="flex items-center gap-1">
+            <GamepadGlyph button="rs" size="xs" />
+            <span>Camera</span>
           </div>
 
           <div className="h-3 w-px bg-stone-700/60" />
