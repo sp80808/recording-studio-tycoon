@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-// import { gameAudio } from '@/utils/audioSystem'; // gameAudio is not directly used by BGM HTMLAudioElement
 import { useSettings } from '@/contexts/SettingsContext';
+import { musicPlayer } from '../utils/musicPlayer';
 import { userHasInteracted } from '../utils/userInteraction'; // Import user interaction utility
 
 interface BackgroundMusicManager {
@@ -15,7 +15,8 @@ interface BackgroundMusicManager {
 }
 
 // Global singleton state for background music
-let globalAudioRef: HTMLAudioElement | null = null;
+let globalPlayerReady = false;
+let globalCurrentSrc = '';
 let globalFadeIntervalRef: NodeJS.Timeout | null = null;
 let globalCurrentTrack = 1;
 let globalIsPlaying = false;
@@ -56,14 +57,13 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
 
   useEffect(() => {
     // Initialize audio element only once globally
-    if (!globalAudioRef) {
-      globalAudioRef = new Audio();
-      globalAudioRef.loop = false;
-      globalAudioRef.volume = settings.musicVolume;
+    if (!globalPlayerReady) {
+      globalPlayerReady = true;
+      musicPlayer.setVolume(settings.musicEnabled ? settings.musicVolume : 0);
       globalOriginalVolume = settings.musicVolume;
 
       // Auto-advance to next track when current one ends
-      globalAudioRef.addEventListener('ended', () => {
+      musicPlayer.onEnded(() => {
         nextTrack();
       });
     }
@@ -76,21 +76,21 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
 
   // Update volume when settings change
   useEffect(() => {
-    if (globalAudioRef) {
+    if (globalPlayerReady) {
       const newVolume = settings.musicEnabled ? settings.musicVolume : 0;
-      globalAudioRef.volume = newVolume;
+      musicPlayer.setVolume(newVolume);
       globalOriginalVolume = settings.musicVolume; // Store the original volume
     }
   }, [settings.musicVolume, settings.musicEnabled]);
 
   const fadeVolume = async (targetVolume: number, duration: number = 1000): Promise<void> => {
     return new Promise((resolve) => {
-      if (!globalAudioRef || !settings.musicEnabled) {
+      if (!globalPlayerReady || !settings.musicEnabled) {
         resolve();
         return;
       }
 
-      const startVolume = globalAudioRef.volume;
+      const startVolume = musicPlayer.getVolume();
       const volumeDiff = targetVolume - startVolume;
       const steps = 50; // Number of fade steps
       const stepDuration = duration / steps;
@@ -103,7 +103,7 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
       }
 
       globalFadeIntervalRef = setInterval(() => {
-        if (!globalAudioRef) {
+        if (!globalPlayerReady) {
           resolve();
           return;
         }
@@ -112,14 +112,14 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
         const newVolume = startVolume + (volumeStep * currentStep);
         
         if (currentStep >= steps) {
-          globalAudioRef.volume = targetVolume;
+          musicPlayer.setVolume(targetVolume);
           if (globalFadeIntervalRef) {
             clearInterval(globalFadeIntervalRef);
             globalFadeIntervalRef = null;
           }
           resolve();
         } else {
-          globalAudioRef.volume = Math.max(0, Math.min(1, newVolume));
+          musicPlayer.setVolume(newVolume);
         }
       }, stepDuration);
     });
@@ -131,7 +131,7 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
   };
 
   const playTrack = async (trackNumber: number) => {
-    if (!globalAudioRef || !settings.musicEnabled) {
+    if (!globalPlayerReady || !settings.musicEnabled) {
       // globalPendingPlayDueToNoInteraction = settings.musicEnabled; // Remember intent if disabled only by no interaction
       return;
     }
@@ -144,21 +144,19 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
     // globalPendingPlayDueToNoInteraction = false; // Clear flag if we proceed
 
     try {
-      const currentSrcBase = globalAudioRef.src.substring(globalAudioRef.src.lastIndexOf('/') + 1);
-      const newSrcBase = `tycoon-bgm${trackNumber}.m4a`;
+      const newSrc = `/audio/music/tycoon-bgm${trackNumber}.m4a`;
 
       // Only reload and play if the track is different or if it's not playing
-      if (currentSrcBase !== newSrcBase || globalAudioRef.paused) {
+      if (globalCurrentSrc !== newSrc || !musicPlayer.isRunning()) {
         console.log(`BGM: Loading and playing track ${trackNumber}`);
-        globalAudioRef.src = `/audio/music/tycoon-bgm${trackNumber}.m4a`;
-        globalAudioRef.currentTime = 0; // Reset time for new track or replay
-        await globalAudioRef.play();
+        globalCurrentSrc = newSrc;
         globalCurrentTrack = trackNumber;
+        await musicPlayer.play(newSrc);
         globalIsPlaying = true;
         setCurrentTrack(trackNumber);
         setIsPlaying(true);
         console.log(`Playing BGM track ${trackNumber}`);
-      } else if (!globalAudioRef.paused && currentSrcBase === newSrcBase) {
+      } else {
         console.log(`BGM: Track ${trackNumber} is already playing.`);
       }
     } catch (error) {
@@ -174,22 +172,22 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
   };
 
   const pauseMusic = () => {
-    if (globalAudioRef && globalIsPlaying) {
-      globalAudioRef.pause();
+    if (globalPlayerReady && globalIsPlaying) {
+      void musicPlayer.pause();
       globalIsPlaying = false;
       setIsPlaying(false);
     }
   };
 
   const resumeMusic = () => {
-    if (globalAudioRef && !globalIsPlaying && settings.musicEnabled) {
+    if (globalPlayerReady && !globalIsPlaying && settings.musicEnabled) {
       if (!hasInteractedState) {
         console.log('BGM: Resume deferred, user has not interacted.');
         // globalPendingPlayDueToNoInteraction = true;
         return; // Don't try to play if no interaction
       }
       // globalPendingPlayDueToNoInteraction = false;
-      globalAudioRef.play().then(() => {
+      musicPlayer.resume().then(() => {
         globalIsPlaying = true;
         setIsPlaying(true);
         console.log('BGM: Music resumed.');
@@ -202,14 +200,14 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
   // Main effect to handle playing/pausing music based on settings and interaction state
   useEffect(() => {
     if (settings.musicEnabled && hasInteractedState) {
-      if (!globalIsPlaying && globalAudioRef) {
+      if (!globalIsPlaying && globalPlayerReady) {
         console.log('BGM: Main Play/Pause Effect - Attempting to play track.', { track: globalCurrentTrack, musicEnabled: settings.musicEnabled, hasInteracted: hasInteractedState, isPlaying: globalIsPlaying });
         playTrack(globalCurrentTrack);
       } else {
         console.log('BGM: Main Play/Pause Effect - Conditions not met for playing or already playing.', { musicEnabled: settings.musicEnabled, hasInteracted: hasInteractedState, isPlaying: globalIsPlaying });
       }
     } else { // Music is disabled OR user hasn't interacted
-      if (globalIsPlaying && globalAudioRef) {
+      if (globalIsPlaying && globalPlayerReady) {
         console.log('BGM: Main Play/Pause Effect - Attempting to pause music.', { musicEnabled: settings.musicEnabled, hasInteracted: hasInteractedState, isPlaying: globalIsPlaying });
         pauseMusic();
       } else {
