@@ -223,5 +223,19 @@
   "staff_modal_unassign_button": "Retirer l'affectation",
   "staff_modal_stop_resting_button": "Arrêter le repos",
   "staff_modal_rest_button": "Se reposer",
-  "staff_modal_send_training_button": "Envoyer en formation"
+  "staff_modal_send_training_button": "Envoyer en formation",
+  "active_studio_ready": "Studio prêt",
+  "active_choose_enquiry": "Choisissez une demande d'artiste, puis amenez sa session en studio.",
+  "active_next_move": "Votre prochaine étape :",
+  "active_step_browse": "Parcourez le tableau des demandes d'artistes",
+  "active_step_book": "Réservez une session adaptée à votre salle et à votre équipe",
+  "active_step_return": "Revenez ici pour lancer la session d'enregistrement",
+  "active_intervene": "Intervenir",
+  "active_delegate": "Déléguer",
+  "active_skip": "Passer",
+  "active_optional_intervention": "Intervention facultative en studio",
+  "active_stage_complete": "Étape terminée !",
+  "active_optimized": "Optimisé",
+  "active_efficient": "Efficace",
+  "active_overall_progress": "Progression totale du morceau"
 }

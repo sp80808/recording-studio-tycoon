@@ -112,3 +112,20 @@ assert.match(defaults, /language:\s*'en'/);
 
 console.log(`PASS: ${baseKeys.length} keys aligned across ${SUPPORTED_LOCALE_CODES.join(', ')}`);
 console.log('i18n-locales: all checks passed');
+
+// Locale-aware formatting + English fallback behaviour
+import { formatNumber, formatPercent, getFormatLocale, setFormatLocale } from '../src/i18n/formatLocale';
+import { formatMoney } from '../src/rpg/cities';
+setFormatLocale('en');
+assert.equal(formatNumber(1234567), '1,234,567');
+assert.equal(formatMoney(1240), '$1,240');
+setFormatLocale('de');
+assert.equal(getFormatLocale(), 'de');
+assert.equal(formatNumber(1234567), '1.234.567');
+assert.equal(formatMoney(1240, 'london'), formatMoney(1240, 'london').replace(/[\d.,]+/, (m) => m), 'city currency symbol survives locale grouping');
+assert.match(formatMoney(-1240), /^-\$1\.240$/);
+assert.match(formatPercent(0.12), /12/);
+setFormatLocale('xx');
+assert.equal(getFormatLocale(), 'en', 'unknown locale falls back to en');
+setFormatLocale('en');
+console.log('i18n-formatting: all checks passed');

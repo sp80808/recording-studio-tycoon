@@ -223,5 +223,19 @@
   "staff_modal_unassign_button": "Снять с проекта",
   "staff_modal_stop_resting_button": "Прекратить отдых",
   "staff_modal_rest_button": "Отдыхать",
-  "staff_modal_send_training_button": "Отправить на обучение"
+  "staff_modal_send_training_button": "Отправить на обучение",
+  "active_studio_ready": "Студия готова",
+  "active_choose_enquiry": "Выберите запрос артиста и проведите его сессию в студии.",
+  "active_next_move": "Ваш следующий шаг:",
+  "active_step_browse": "Просмотрите доску запросов артистов",
+  "active_step_book": "Забронируйте сессию, подходящую вашей комнате и команде",
+  "active_step_return": "Вернитесь сюда, чтобы провести запись",
+  "active_intervene": "Вмешаться",
+  "active_delegate": "Поручить",
+  "active_skip": "Пропустить",
+  "active_optional_intervention": "Необязательное вмешательство в студии",
+  "active_stage_complete": "Этап завершён!",
+  "active_optimized": "Оптимизировано",
+  "active_efficient": "Эффективно",
+  "active_overall_progress": "Общий прогресс трека"
 }

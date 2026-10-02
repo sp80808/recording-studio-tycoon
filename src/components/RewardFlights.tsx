@@ -9,6 +9,7 @@ import {
   REWARD_POP_EVENT, formatGain, isLevelUp, lootArc, lootDelay, lootDuration, rewardCoinCount,
   rewardPopScale, rewardTier, type Point, type RewardKind, type RewardPopDetail, type RewardTier,
 } from '@/utils/rewardFx';
+import { formatNumber } from '@/i18n/formatLocale';
 
 type Flight = {
   id: number; type: RewardKind; amount: number; tier: RewardTier; count: number;
@@ -131,7 +132,7 @@ export function RewardFlights({ gameState }: { gameState: GameState }) {
     }
     if (batch.length) {
       setFlights(current => [...current, ...batch].slice(-6));
-      setAnnouncement(batch.map(f => `+${f.amount.toLocaleString()} ${f.type === 'xp' ? 'XP' : 'cash'}`).join(', ')
+      setAnnouncement(batch.map(f => `+${formatNumber(f.amount)} ${f.type === 'xp' ? 'XP' : 'cash'}`).join(', ')
         + (isLevelUp(before.level, next.level) ? `, level ${next.level}` : ''));
     }
     return () => timers.forEach(window.clearTimeout);

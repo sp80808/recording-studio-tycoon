@@ -11,6 +11,7 @@
  * A save with no `cityId` is neutral: no delta, no boost, dollars, era names. Pure and deterministic.
  */
 import type { GameState } from '@/types/game';
+import { formatNumber } from '@/i18n/formatLocale';
 
 export type CityId = 'los-angeles' | 'nashville' | 'london' | 'berlin' | 'tokyo' | 'rio';
 
@@ -225,7 +226,7 @@ export const currencySymbol = (cityId?: string | null, eraId?: string | null): s
 /** "£1,240" style display of studio dollars. Negative amounts keep their sign in front. */
 export const formatMoney = (dollars: number, cityId?: string | null, eraId?: string | null): string => {
   const local = toLocalAmount(dollars, cityId, eraId);
-  return `${local < 0 ? '-' : ''}${currencySymbol(cityId, eraId)}${Math.abs(local).toLocaleString()}`;
+  return `${local < 0 ? '-' : ''}${currencySymbol(cityId, eraId)}${formatNumber(Math.abs(local))}`;
 };
 
 /**

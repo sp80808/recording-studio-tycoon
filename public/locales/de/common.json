@@ -223,5 +223,19 @@
   "staff_modal_unassign_button": "Zuweisung aufheben",
   "staff_modal_stop_resting_button": "Erholung beenden",
   "staff_modal_rest_button": "Ausruhen",
-  "staff_modal_send_training_button": "Zur Ausbildung schicken"
+  "staff_modal_send_training_button": "Zur Ausbildung schicken",
+  "active_studio_ready": "Studio bereit",
+  "active_choose_enquiry": "Wähle eine Künstleranfrage und hol die Session in den Raum.",
+  "active_next_move": "Dein nächster Schritt:",
+  "active_step_browse": "Durchstöbere die Künstleranfragen",
+  "active_step_book": "Buche eine Session, die zu Raum und Crew passt",
+  "active_step_return": "Komm hierher zurück, um die Aufnahme zu leiten",
+  "active_intervene": "Eingreifen",
+  "active_delegate": "Delegieren",
+  "active_skip": "Überspringen",
+  "active_optional_intervention": "Optionaler Studioeingriff",
+  "active_stage_complete": "Phase abgeschlossen!",
+  "active_optimized": "Optimiert",
+  "active_efficient": "Effizient",
+  "active_overall_progress": "Gesamtfortschritt des Tracks"
 }

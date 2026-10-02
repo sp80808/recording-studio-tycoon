@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AVAILABLE_ERAS } from '@/data/eras';
 import { Era } from '@/types/game';
+import { formatNumber } from '@/i18n/formatLocale';
 
 // Re-export so consumers can import the Era type from this module as well
 export type { Era } from '@/types/game';
@@ -71,7 +72,7 @@ export const EraSelectionModal: React.FC<EraSelectionModalProps> = ({
                   <div className="space-y-2 text-xs">
                     <div className="flex items-center gap-2">
                       <span className="text-green-400">💰</span>
-                      <span className="text-stone-300">Starting Budget: ${era.startingMoney.toLocaleString()}</span>
+                      <span className="text-stone-300">Starting Budget: ${formatNumber(era.startingMoney)}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-purple-400">🎛️</span>

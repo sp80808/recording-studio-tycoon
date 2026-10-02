@@ -223,5 +223,19 @@
   "staff_modal_unassign_button": "割り当て解除",
   "staff_modal_stop_resting_button": "休憩を終了",
   "staff_modal_rest_button": "休憩する",
-  "staff_modal_send_training_button": "研修に送る"
+  "staff_modal_send_training_button": "研修に送る",
+  "active_studio_ready": "スタジオ準備完了",
+  "active_choose_enquiry": "アーティストの依頼を選び、セッションをスタジオに迎えましょう。",
+  "active_next_move": "次の一手：",
+  "active_step_browse": "アーティスト依頼ボードを見る",
+  "active_step_book": "部屋とクルーに合うセッションを予約する",
+  "active_step_return": "ここに戻ってレコーディングセッションを進める",
+  "active_intervene": "介入する",
+  "active_delegate": "任せる",
+  "active_skip": "スキップ",
+  "active_optional_intervention": "任意のスタジオ介入",
+  "active_stage_complete": "ステージ完了！",
+  "active_optimized": "最適化",
+  "active_efficient": "効率的",
+  "active_overall_progress": "トラック全体の進捗"
 }

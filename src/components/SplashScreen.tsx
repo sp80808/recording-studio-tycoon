@@ -22,6 +22,7 @@ import { gameAudio } from '@/utils/audioSystem';
 import { inspectSaveGame, SaveInspectionResult } from '@/utils/savePreview';
 import { INDUSTRY_TIPS } from '@/data/flavour';
 import './splash.css';
+import { formatNumber } from '@/i18n/formatLocale';
 
 interface SplashScreenProps {
   onStartGame: (era: Era, originId: ProducerBackgroundId, producer?: ProducerSetup) => void;
@@ -196,7 +197,7 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
                   {t('splash_save_preview', {
                     day: saveInfo.preview!.day,
                     level: saveInfo.preview!.level,
-                    money: saveInfo.preview!.money.toLocaleString(),
+                    money: formatNumber(saveInfo.preview!.money),
                     era: saveInfo.preview!.era,
                   })}
                 </small>
@@ -231,7 +232,7 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
                   day: saveInfo.preview.day,
                   era: saveInfo.preview.era,
                   level: saveInfo.preview.level,
-                  money: saveInfo.preview.money.toLocaleString(),
+                  money: formatNumber(saveInfo.preview.money),
                 })}
               </span>
             ) : (

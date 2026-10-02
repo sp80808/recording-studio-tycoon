@@ -223,5 +223,19 @@
   "staff_modal_unassign_button": "取消分配",
   "staff_modal_stop_resting_button": "停止休息",
   "staff_modal_rest_button": "休息",
-  "staff_modal_send_training_button": "送去培训"
+  "staff_modal_send_training_button": "送去培训",
+  "active_studio_ready": "录音棚就绪",
+  "active_choose_enquiry": "选择一个艺人委托，然后把他们的录音带进录音室。",
+  "active_next_move": "下一步：",
+  "active_step_browse": "浏览艺人委托公告板",
+  "active_step_book": "预订适合你的房间和团队的录音",
+  "active_step_return": "回到这里主持录音",
+  "active_intervene": "介入",
+  "active_delegate": "委派",
+  "active_skip": "跳过",
+  "active_optional_intervention": "可选的录音棚介入",
+  "active_stage_complete": "阶段完成！",
+  "active_optimized": "已优化",
+  "active_efficient": "高效",
+  "active_overall_progress": "曲目总进度"
 }

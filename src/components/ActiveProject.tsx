@@ -3,6 +3,7 @@ import { emitTakeFeedback } from '@/utils/takeFeedback';
 import { ProducerSprite } from '@/components/ProducerSprite';
 import { MotionButton, MotionReveal, MotionNumber } from '@/components/motion/primitives';
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { KenneyButton } from '@/components/ui/KenneyButton';
@@ -83,6 +84,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   autoTriggeredMinigame,
   clearAutoTriggeredMinigame
 }) => {
+  const { t } = useTranslation();
   const [showMinigame, setShowMinigame] = useState(false);
   const [selectedMinigame, setSelectedMinigame] = useState<MinigameType>('rhythm');
   const [lastGains, setLastGains] = useState<{ creativity: number; technical: number }>({ creativity: 0, technical: 0 });
@@ -246,13 +248,13 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
         <GamePanel className="flex-1 p-6 backdrop-blur-sm">
           <div className="text-center text-stone-400 animate-fade-in">
             <div className="text-6xl mb-4 animate-pulse">🎵</div>
-            <h3 className="text-xl font-bold mb-2 text-white">Studio Ready</h3>
-            <p className="mb-4 text-stone-300">Choose an artist enquiry, then bring their session into the room.</p>
+            <h3 className="text-xl font-bold mb-2 text-white">{t('active_studio_ready')}</h3>
+            <p className="mb-4 text-stone-300">{t('active_choose_enquiry')}</p>
             <div className="bg-stone-950/60 border border-stone-700/80 rounded-lg p-4 text-sm text-amber-200 shadow-inner">
-              <p className="font-semibold mb-2">📱 Your next move:</p>
-              <p>1. Browse the Artist Enquiries board</p>
-              <p>2. Book a session that fits your room and crew</p>
-              <p>3. Return here to run the recording session</p>
+              <p className="font-semibold mb-2">📱 {t('active_next_move')}</p>
+              <p>1. {t('active_step_browse')}</p>
+              <p>2. {t('active_step_book')}</p>
+              <p>3. {t('active_step_return')}</p>
             </div>
           </div>
         </GamePanel>
@@ -623,9 +625,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             {autoTriggeredMinigame && takeState !== 'tracking' && (
               <div className="shrink-0 flex items-center gap-1.5 px-2 py-1 bg-purple-500/[0.12] border border-purple-500/70 rounded">
                 <span className="min-w-0 flex-1 truncate text-[11px] text-yellow-300" title={autoTriggeredMinigame.reason}>🎯 {autoTriggeredMinigame.reason}</span>
-                <MotionButton onClick={handleStartIntervention} className="h-6 px-2 text-[11px] bg-purple-400/[0.14] ring-1 ring-inset ring-purple-400/45 text-purple-100 font-bold rounded">Intervene</MotionButton>
-                <MotionButton onClick={handleDelegateIntervention} disabled={!bestDelegate} className="h-6 px-2 text-[11px] border border-amber-500/50 text-stone-200 rounded">Delegate</MotionButton>
-                <MotionButton onClick={handleSkipIntervention} className="h-6 px-2 text-[11px] text-stone-300 rounded">Skip</MotionButton>
+                <MotionButton onClick={handleStartIntervention} className="h-6 px-2 text-[11px] bg-purple-400/[0.14] ring-1 ring-inset ring-purple-400/45 text-purple-100 font-bold rounded">{t('active_intervene')}</MotionButton>
+                <MotionButton onClick={handleDelegateIntervention} disabled={!bestDelegate} className="h-6 px-2 text-[11px] border border-amber-500/50 text-stone-200 rounded">{t('active_delegate')}</MotionButton>
+                <MotionButton onClick={handleSkipIntervention} className="h-6 px-2 text-[11px] text-stone-300 rounded">{t('active_skip')}</MotionButton>
               </div>
             )}
 
@@ -790,7 +792,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             <div className="p-3 bg-purple-500/[0.12] border border-purple-500/70 rounded-lg animate-scale-in">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h4 className="text-yellow-300 font-semibold text-xs mb-0.5">🎯 Optional Studio Intervention</h4>
+                  <h4 className="text-yellow-300 font-semibold text-xs mb-0.5">🎯 {t('active_optional_intervention')}</h4>
                   <p className="text-stone-300 text-xs">{autoTriggeredMinigame.reason}</p>
                 </div>
                 <div className="text-xl">🎮</div>
@@ -824,7 +826,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           {isCurrentStageComplete && !isProjectComplete && (
             <div className="p-3 bg-emerald-500/[0.10] border border-green-500/70 rounded-lg animate-scale-in flex items-center justify-between">
               <div>
-                <h4 className="text-green-400 font-semibold text-xs">✅ Stage Complete!</h4>
+                <h4 className="text-green-400 font-semibold text-xs">✅ {t('active_stage_complete')}</h4>
                 <p className="text-stone-300 text-xs">
                   {currentStage.stageName} finished. Work next session to advance.
                 </p>
@@ -851,13 +853,13 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 <span className="text-stone-400">Stage {project.currentStageIndex + 1}/{project.stages.length}:</span>
                 <span className="text-amber-200 font-bold">{currentStage?.stageName}</span>
                 {focusEffectiveness.effectiveness > 0.8 && (
-                  <StudioStampChip tone="live">Optimized</StudioStampChip>
+                  <StudioStampChip tone="live">{t('active_optimized')}</StudioStampChip>
                 )}
               </span>
               <span className="text-stone-400 text-xs tabular-nums flex items-center gap-1.5">
                 <span>{Math.round(currentStage?.workUnitsCompleted || 0)} / {currentStage?.workUnitsBase || 0} units</span>
                 {focusEffectiveness.effectiveness > 0.7 && (
-                  <StudioStampChip tone="brass">Efficient</StudioStampChip>
+                  <StudioStampChip tone="brass">{t('active_efficient')}</StudioStampChip>
                 )}
               </span>
             </div>
@@ -868,7 +870,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             />
 
             <div className="flex justify-between items-center text-[11px] text-stone-400 mt-1">
-              <span>Overall Track Progress</span>
+              <span>{t('active_overall_progress')}</span>
               <span className="font-bold text-stone-300 tabular-nums">{Math.round(overallProgress)}%</span>
             </div>
             <Progress 
