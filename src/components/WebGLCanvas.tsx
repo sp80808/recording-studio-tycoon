@@ -46,6 +46,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { resolveRendererOrder } from '@/lib/render/rendererChoice';
 import { claimPixiApplication, STUDIO_FLOOR_OWNER } from '@/lib/motion/pixiGuard';
 import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from '@/components/studio/isoMath';
+import { buildWindowView, type WindowView } from '@/components/studio/studioWindowView';
 import { buildPremisesDecor } from '@/components/studio/studioPremisesDecor';
 import { buildFurnishingLayer, type StudioCat } from '@/components/studio/studioFloorFurnishings';
 import {
@@ -504,6 +505,8 @@ interface SceneRefs {
   /** Right-wall window pane fill — sky colour driven by the studio clock. */
   windowPane: Graphics | null;
   windowPanePoly: number[] | null;
+  /** Sun, moon, stars and city lights seen through the window. */
+  windowView: WindowView | null;
   setWindowSky: ((color: number) => void) | null;
   hoverGlows: Record<string, Graphics>;
   hoverGlowTargets: Record<string, number>;
@@ -602,6 +605,7 @@ const buildScene = (
     nightTintLayer: null,
     windowPane: null,
     windowPanePoly: null,
+    windowView: null,
     setWindowSky: null,
     hoverGlows: {},
     hoverGlowTargets: {},
@@ -687,6 +691,13 @@ const buildScene = (
   const initialSky = getWindowSkyColor(getWallClockTime(state.day, 0).minutesOfDay);
   windowPane.poly(winPoly).fill(initialSky);
   windowWrap.addChild(windowPane);
+  {
+    const view = buildWindowView(winA, winB, 34, 96, hashSeed(decorSeed));
+    const initial = getWallClockTime(state.day, 0).minutesOfDay;
+    view.update(initial, getDaynessFromClockMinutes(initial), 0, false);
+    windowWrap.addChild(view.container);
+    refs.windowView = view;
+  }
   const windowFrame = new Graphics();
   // Closed pane outline — keep the mullion inside the glass so no orphan black stub hangs below the sill
   windowFrame.poly(winPoly).stroke({ width: 3.5, color: COLORS.wallTrim });
@@ -2625,6 +2636,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
               windowSkyRef.current = sky;
               refs.setWindowSky?.(sky);
             }
+
+            refs.windowView?.update(minutesOfDay, dayness, t, reduceMotion);
 
             if (refs.nightTintLayer) {
               refs.nightTintLayer.alpha = getNightTintAlpha(dayness);
