@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, Dices, Swords } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Building2, Check, Dices, Globe2, Landmark, MapPin, Radio, Swords, Waves } from 'lucide-react';
 import { AVAILABLE_ERAS } from '@/data/eras';
 import type { Era } from '@/types/game';
 import type { ProducerBackgroundId } from '@/types/character';
@@ -57,7 +57,9 @@ const ERA_CHALLENGE: Record<string, string> = {
   modern: 'Everyone has a home studio. Win on taste and relationships.',
 };
 
-const STEPS = ['Era', 'Character', 'Role', 'Begin'] as const;
+const STEPS = ['Era', 'Location', 'Character', 'Role'] as const;
+
+const CITY_ICONS = { 'los-angeles': Radio, nashville: Waves, london: Landmark, berlin: Building2, tokyo: Globe2, rio: MapPin } as const;
 
 const stepClass = (active: boolean, done: boolean) =>
   `flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] ${
@@ -107,7 +109,7 @@ const cycleOption = <T extends string>(list: readonly T[], current: T, delta: nu
   list[(list.indexOf(current) + delta + list.length) % list.length];
 
 export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
-  const [step, setStep] = useState<0 | 1 | 2>(0);
+  const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [eraId, setEraId] = useState<string | null>(null);
   const [originId, setOriginId] = useState<ProducerBackgroundId | null>(null);
   const [moniker, setMoniker] = useState('The Architect');
@@ -149,10 +151,13 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
     if (step === 0 && era) {
       click();
       setStep(1);
-    } else if (step === 1 && moniker.trim()) {
+    } else if (step === 1 && cityId) {
       click();
       setStep(2);
-    } else if (step === 2 && era && origin) {
+    } else if (step === 2 && moniker.trim()) {
+      click();
+      setStep(3);
+    } else if (step === 3 && era && origin) {
       click();
       onBegin(era, origin.id, { name: moniker.trim(), appearance: look, cityId });
     }
@@ -160,7 +165,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
 
   const goBack = useCallback(() => {
     click();
-    if (step > 0) setStep((current) => (current - 1) as 0 | 1 | 2);
+    if (step > 0) setStep((current) => (current - 1) as 0 | 1 | 2 | 3);
     else onBack();
   }, [step, onBack]);
 
@@ -215,16 +220,18 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
         </header>
 
         <div className="mt-8 text-center animate-rst-rise" key={step}>
-          <p className="rst-kicker">{step === 0 ? 'Chapter one' : step === 1 ? 'Chapter two' : 'Chapter three'}</p>
+          <p className="rst-kicker">{step === 0 ? 'Chapter one' : step === 1 ? 'Chapter two' : step === 2 ? 'Chapter three' : 'Chapter four'}</p>
           <h1 ref={headingRef} tabIndex={-1} className="rst-title mt-2 text-3xl outline-none sm:text-5xl">
-            {step === 0 ? 'When does your studio open?' : step === 1 ? 'Make the face behind the faders' : 'Who is behind the console?'}
+            {step === 0 ? 'When does your studio open?' : step === 1 ? 'Where does your studio open?' : step === 2 ? 'Make the face behind the faders' : 'Who is behind the console?'}
           </h1>
           <p className="rst-body mx-auto mt-3 max-w-2xl text-sm sm:text-base">
             {step === 0
               ? 'Each era changes your gear, your genres, your budget and the industry breathing down your neck.'
               : step === 1
-                ? 'Give your producer a name, a look and a home city. The city sets your currency, local taste, the people you meet and the surprises that walk in.'
-                : 'Your producer origin gives you a real edge — and a rival who will not let you forget it.'}
+                ? 'Choose your home scene. Location sets the era-accurate currency display, local taste, people and surprises.'
+                : step === 2
+                  ? 'Give your producer a name and a look. You can change every visual detail with the arrows.'
+                  : 'Your producer origin gives you a real edge — and a rival who will not let you forget it.'}
           </p>
         </div>
 
@@ -281,8 +288,8 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                   <span className="rst-body block text-xs leading-relaxed">{e.description}</span>
                   <span className="block text-[11px] italic leading-snug text-stone-400">“{e.funnyDescription}”</span>
                   <span className="mt-auto w-full space-y-2 border-t border-[var(--rst-line)] pt-3 text-left text-[11px]">
-                    <span className="flex items-baseline justify-between"><span className="rst-muted">Starting cash</span><b className="text-[var(--rst-money)]">{formatMoney(e.startingMoney, cityId, e.id)}</b></span>
-                    <span className="flex items-baseline justify-between"><span className="rst-muted">Gear prices</span><b>{Math.round(e.equipmentMultiplier * 100)}% of modern</b></span>
+                    <span className="flex items-baseline justify-between gap-4"><span className="rst-muted">Starting cash</span><b className="min-w-[7.5rem] text-right tabular-nums text-[var(--rst-money)]">{formatMoney(e.startingMoney, cityId, e.id)}</b></span>
+                    <span className="flex items-baseline justify-between gap-4"><span className="rst-muted">Gear prices</span><b className="min-w-[7.5rem] text-right tabular-nums">{Math.round(e.equipmentMultiplier * 100)}% of modern</b></span>
                     <span className="block text-stone-300">{ERA_CHALLENGE[e.id] ?? ''}</span>
                   </span>
                   {selected && (
@@ -297,6 +304,28 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
         )}
 
         {step === 1 && (
+          <section className="mx-auto mt-6 grid w-full max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Choose a home location" data-testid="location-picker">
+            {CITIES.map((c, index) => {
+              const Icon = CITY_ICONS[c.id];
+              const selected = c.id === cityId;
+              return (
+                <button key={c.id} type="button" role="radio" aria-checked={selected} tabIndex={selected || (!cityId && index === 0) ? 0 : -1}
+                  onClick={() => { click(); setCityId(c.id); }}
+                  className={`rst-option group relative flex flex-col gap-3 !p-5 text-left animate-rst-rise ${selected ? 'ring-2 ring-[var(--rst-brass-300)]/70' : ''}`}>
+                  <span className="flex items-center gap-3">
+                    <span className="grid size-12 shrink-0 place-items-center rounded-xl border border-[var(--rst-line-strong)] bg-black/25" style={{ color: c.accent }}><Icon aria-hidden="true" /></span>
+                    <span className="min-w-0"><span className="rst-title block text-lg">{c.name}</span><span className="block text-xs text-stone-400">{c.country} · {c.currency.symbol} {c.currency.code}</span></span>
+                  </span>
+                  <span className="rst-body text-xs leading-relaxed">{c.tagline}</span>
+                  <span className="mt-auto border-t border-[var(--rst-line)] pt-3 text-[11px] leading-relaxed text-stone-300">{describeCity(c, eraId).map((line) => <span key={line} className="block">{line}</span>)}</span>
+                  {selected && <span className="absolute -top-2 right-4 rounded-full bg-[var(--rst-brass-300)] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-stone-950">Selected</span>}
+                </button>
+              );
+            })}
+          </section>
+        )}
+
+        {step === 2 && (
           <section className="rst-surface mx-auto mt-6 grid w-full max-w-xl gap-4 p-5 sm:p-6" aria-label="Producer customisation" data-testid="producer-creator">
             <div className="mx-auto flex flex-col items-center gap-2">
               <div
@@ -361,44 +390,11 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                 Surprise me
               </button>
 
-              <fieldset className="border-t border-[var(--rst-line)] pt-3" data-testid="city-picker">
-                <legend className="mb-1.5 text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">Home city</legend>
-                <div
-                  className="grid grid-cols-2 gap-2"
-                  role="radiogroup"
-                  aria-label="Home city"
-                  onKeyDown={arrowSelect<CityId>(CITIES.map((c) => c.id), cityId, setCityId)}
-                >
-                  {CITIES.map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={c.id === cityId}
-                      tabIndex={c.id === cityId ? 0 : -1}
-                      onClick={() => { click(); setCityId(c.id); }}
-                      className={`rst-option !p-2.5 text-left ${c.id === cityId ? 'ring-2 ring-[var(--rst-brass-300)]/60' : ''}`}
-                    >
-                      <span className="rst-title block text-sm leading-tight">{c.name}</span>
-                      <span className="block text-[10px] text-stone-400">{c.country} · {c.currency.symbol} {c.currency.code}</span>
-                    </button>
-                  ))}
-                </div>
-                {getCityById(cityId) && (
-                  <div className="mt-2 space-y-1 rounded-lg border border-[var(--rst-line)] bg-black/25 p-2.5 text-[11px] leading-snug text-stone-300" aria-live="polite">
-                    <CitySkyline cityId={cityId} className="h-10 w-full opacity-60" />
-                    <p className="italic text-stone-400">{getCityById(cityId)!.tagline}</p>
-                    {describeCity(getCityById(cityId)!, eraId).map((line) => (
-                      <p key={line} className="flex gap-1.5"><Check size={11} className="mt-0.5 shrink-0 text-[var(--rst-money)]" aria-hidden="true" />{line}</p>
-                    ))}
-                  </div>
-                )}
-              </fieldset>
             </div>
           </section>
         )}
 
-        {step === 2 && (
+        {step === 3 && (
           <div
             role="radiogroup"
             aria-label="Choose a producer origin"
@@ -497,10 +493,10 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
           <button
             type="button"
             className="rst-btn rst-btn-primary min-w-44"
-            disabled={step === 0 ? !era : step === 1 ? !moniker.trim() : !(era && origin)}
+            disabled={step === 0 ? !era : step === 1 ? !cityId : step === 2 ? !moniker.trim() : !(era && origin)}
             onClick={goNext}
           >
-            {step === 0 ? 'Create your producer' : step === 1 ? 'Choose a role' : 'Open the studio'}
+            {step === 0 ? 'Choose a location' : step === 1 ? 'Create your producer' : step === 2 ? 'Choose a role' : 'Open the studio'}
             <ArrowRight size={15} aria-hidden="true" />
           </button>
         </div>
