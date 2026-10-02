@@ -19,6 +19,7 @@ import RiderPanel from '@/components/RiderPanel';
 import ForecastPanel from '@/components/ForecastPanel';
 import { currencySymbol, toLocalAmount } from '@/rpg/cities';
 import { BookingCalendar, BookingCostLine } from '@/components/BookingCalendar';
+import { enquiryStyleNote } from '@/rpg/houseStyle';
 import { defaultAssignment, type SessionAssignment } from '@/rpg/sessionForecast';
 import { getApproach, getProjectBrief, type ProductionApproach } from '@/rpg/projectBrief';
 import { gameAudio } from '@/utils/audioSystem';
@@ -393,6 +394,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                 <RiderPanel project={project} state={gameState} mode="booking" />
 
                 <BookingCostLine state={gameState} project={project} />
+                <p data-testid="enquiry-style-note" className="mb-3 text-xs text-stone-400">{enquiryStyleNote(gameState.studioExpertise, project.genre, project.brief?.serviceType)}</p>
 
                 <ForecastPanel
                   project={project}
