@@ -25,6 +25,7 @@ import { TapeSplicingGame } from './TapeSplicingGame';
 import { SamplingSequencingGame } from './SamplingSequencingGame';
 import { FaultHuntGame } from './FaultHuntGame';
 import { ChainRecallGame } from './ChainRecallGame';
+import { FlightCasePackingGame } from './FlightCasePackingGame';
 import { BusMergeGame } from './BusMergeGame';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { toast } from '@/hooks/use-toast';
@@ -58,6 +59,7 @@ export type MinigameType =
   | 'sampling'
   | 'fault-hunt'
   | 'chain-recall'
+  | 'flight-case'
   | 'bus-merge';
 
 interface MinigameManagerProps {
@@ -208,6 +210,10 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         creativityBonus = Math.floor(score / 12);
         technicalBonus = Math.floor(score / 9);
         break;
+      case 'flight-case':
+        creativityBonus = Math.floor(score / 16);
+        technicalBonus = Math.floor(score / 8);
+        break;
       case 'bus-merge':
         creativityBonus = Math.floor(score / 14);
         technicalBonus = Math.floor(score / 8);
@@ -329,6 +335,8 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         return <FaultHuntGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'chain-recall':
         return <ChainRecallGame {...commonGameProps} onComplete={standardOnComplete} />;
+      case 'flight-case':
+        return <FlightCasePackingGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'bus-merge':
         return <BusMergeGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'maintenance':
