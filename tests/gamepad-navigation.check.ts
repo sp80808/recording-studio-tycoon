@@ -52,7 +52,7 @@ ok(getNextFocusableIndex(0, 'prev', 5) === 4, 'prev wraps from 0 to end');
 ok(getNextFocusableIndex(-1, 'next', 5) === 0, 'unfocused targets first element');
 
 // 5. Analog direction + studio-floor spatial navigation
-ok(getStickDirection(0.8, 0.1) === 'right', 'right stick intent is stable');
+ok(getStickDirection(0.8, 0.1) === 'right', 'rightward stick intent is stable');
 ok(getStickDirection(-0.1, -0.9) === 'up', 'up stick intent is stable');
 ok(getStickDirection(0.2, 0.2) === null, 'small stick drift stays neutral');
 
