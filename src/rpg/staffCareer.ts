@@ -48,7 +48,7 @@ const SENIOR_TITLE: Record<StaffDiscipline, string> = {
   recording: 'Senior Recording Engineer', mixing: 'Senior Mix Engineer', production: 'Lead Producer', technical: 'Studio Technical Lead',
 };
 
-const levelFor = (xp: number): CareerExperience['level'] => {
+export const levelFor = (xp: number): CareerExperience['level'] => {
   let level = 0;
   for (let i = 1; i < CAREER_LEVEL_XP.length; i++) if (xp >= CAREER_LEVEL_XP[i]) level = i;
   return level as CareerExperience['level'];
