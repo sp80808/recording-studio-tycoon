@@ -241,7 +241,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
     }
   }, []);
 
-  // LT opens a hold-to-select radial wheel; R3 keeps a toggle/confirm fallback.
+  // LT opens a hold-to-select radial wheel; Select/View keeps a toggle fallback.
+  // R3 is reserved for the studio-floor camera recenter action.
   useEffect(() => {
     if (!gamepad.isConnected) return;
 
@@ -252,12 +253,12 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
       return;
     }
 
-    if (gamepad.justPressed.rs && !panel) {
+    if (gamepad.justPressed.select && !panel) {
       setRadialHoldMode(false);
       setShowRadialWheel((prev) => !prev);
       gamepad.triggerHaptic(0.2, 0.3, 50);
     }
-  }, [gamepad.isConnected, gamepad.justPressed.rs, gamepad.justPressed.lt, panel]);
+  }, [gamepad.isConnected, gamepad.justPressed.select, gamepad.justPressed.lt, panel]);
 
   // Controller B button closes active panel
   useEffect(() => {
@@ -437,7 +438,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           <StudioRoom gameState={gameState} onAdvanceDay={advanceDay} onRefreshProjects={refreshProjects}
             onStartProject={bookProject} onAssignStaff={assignStaffToProject} onUnassignStaff={unassignStaffFromProject}
             onOpenDashboardTab={handleOpenDashboardTab} onOpenCases={() => openPanel('cases')} onConsoleFocus={() => openPanel('session')} onCompleteChore={completeFloorChore} activeChoreId={activeChoreId}
-            onBookings={() => openPanel('bookings')} onStudioReady={handleStudioReady} floorFocused={panel === null} className="studio-play-room" />
+            onBookings={() => openPanel('bookings')} onStudioReady={handleStudioReady} floorFocused={panel === null && !showRadialWheel} className="studio-play-room" />
           {!studioReady && (
             <div className="studio-room-loading" role="status" aria-live="polite" aria-busy="true">
               <span className="studio-boot-gate-mark">RST</span>
