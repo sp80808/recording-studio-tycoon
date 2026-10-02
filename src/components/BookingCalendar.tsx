@@ -45,6 +45,12 @@ export const BookingCostLine: React.FC<{ state: CalState; project: Project }> = 
       Takes {p.sessions} session{p.sessions === 1 ? '' : 's'}
       {p.firstSlot ? <> · starts {SLOT_NAMES[p.firstSlot.slot].toLowerCase()} day {p.firstSlot.day}{p.roomName ? ` in ${p.roomName}` : ''}</> : ' · no free slot this week'}
       {' '}· {money(p.payoutPerSlot)} per slot ({money(p.payout)} total)
+      <span data-testid="booking-opportunity" className="mt-1 block text-stone-400">
+        Studio {Math.round(p.utilizationAfter * 100)}% booked after this
+        {p.nextFreeAfter
+          ? <> · next free slot {SLOT_NAMES[p.nextFreeAfter.slot].toLowerCase()} day {p.nextFreeAfter.day}</>
+          : ' · takes the last free slot this week'}
+      </span>
     </div>
   );
 };

@@ -40,6 +40,10 @@ export interface BookingPreview {
   endDay: number;
   payout: number;
   payoutPerSlot: number;
+  /** Opportunity cost (#61): window utilization (0-1) if this booking is taken. */
+  utilizationAfter: number;
+  /** Next free slot once this booking holds its slots; undefined when it takes the last one. */
+  nextFreeAfter?: CalendarSlot;
 }
 
 /** Days of work still ahead for a project: unfinished stages, at least one, at most the window. */
@@ -103,7 +107,21 @@ export const previewBooking = (
   const room = rooms.find((r) => r.id === firstSlot?.roomId);
   const startOffset = firstDay ? firstDay.day - state.currentDay : 0;
   const payout = Math.round(project.payoutBase ?? 0);
+
+  // Reserve the first free slot on each of the booking's working days, then see what is left.
+  const reserved = new Set<CalendarSlot>();
+  let held = 0;
+  for (let i = 0; i < sessions; i++) {
+    const day = cal.days[startOffset + i];
+    const slot = day?.slots.find((x) => !x.projectId);
+    if (slot) { reserved.add(slot); held++; }
+  }
+  const capacity = cal.days.reduce((n, d) => n + d.capacity, 0);
+  const booked = cal.days.reduce((n, d) => n + d.booked, 0);
+  const nextFreeAfter = cal.days.flatMap((d) => d.slots).find((x) => !x.projectId && !reserved.has(x));
   return {
+    utilizationAfter: capacity ? (booked + held) / capacity : 0,
+    nextFreeAfter,
     sessions,
     roomName: room?.name,
     firstSlot,
