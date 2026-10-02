@@ -47,6 +47,10 @@ for check in gamepad-service gamepad-glyph gamepad-navigation radial-wheel beat-
   node "/tmp/rst-$check.cjs"
 done
 
+echo "=== recurring client saga ==="
+./node_modules/.bin/esbuild tests/recurring-client.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-recurring-client.cjs --alias:@=./src >/dev/null
+node /tmp/rst-recurring-client.cjs
+
 echo "=== lore, character origins & narrative arcs ==="
 ./node_modules/.bin/esbuild tests/narrative-lore-arcs.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-narrative-lore-arcs.cjs --alias:@=./src >/dev/null
 node /tmp/rst-narrative-lore-arcs.cjs
