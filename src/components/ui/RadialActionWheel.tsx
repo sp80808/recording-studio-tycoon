@@ -77,7 +77,7 @@ export const RadialActionWheel: React.FC<RadialActionWheelProps> = ({
   }, [isOpen, activeSlice, gamepad]);
 
   // LT hold mode behaves like a console radial menu: flick, then release to commit.
-  // R3/toggle mode still supports explicit South/A confirm.
+  // Select/View toggle mode still supports explicit South/A confirm.
   useEffect(() => {
     if (!isOpen) return;
 
