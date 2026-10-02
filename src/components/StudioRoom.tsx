@@ -5,6 +5,7 @@ import { RoomVignette } from '@/components/studio/RoomVignette';
 import { StudioRoomTabs } from '@/components/studio/StudioRoomTabs';
 import { getOccupiedRoomIds, getOperationalStudioRooms } from '@/utils/studioRoomUtils';
 import { normalizeHotspotId } from '@/utils/studioHotspots';
+import { getDirectionalTargetIndex, getStickDirection, type ControllerNavDirection } from '@/utils/controllerNavigation';
 import { StudioInspector } from '@/components/StudioInspector';
 import { GameState, Project } from '@/types/game';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -294,6 +295,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
   });
 
   const [focusedHotspotIndex, setFocusedHotspotIndex] = useState(0);
+  const previousFloorStickDirectionRef = useRef<ControllerNavDirection | null>(null);
 
   // Close inspector on B button
   useEffect(() => {
@@ -304,32 +306,76 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     }
   }, [gamepad.isConnected, activeInspector, gamepad.justPressed.east]);
 
-  // Navigate hotspots via D-Pad or Left Stick when on studio floor
+  // Navigate floor hotspots in screen-space: D-pad or left stick moves toward
+  // what the player can actually see, rather than cycling a hidden linear list.
   useEffect(() => {
-    if (!gamepad.isConnected || activeInspector) return;
+    if (!gamepad.isConnected || activeInspector || !floorFocused || studioHotspots.length === 0) return;
 
-    if (gamepad.justPressed.dpadRight || gamepad.justPressed.dpadDown) {
-      setFocusedHotspotIndex((prev) => (prev + 1) % studioHotspots.length);
+    const stickDirection = getStickDirection(gamepad.leftStick.x, gamepad.leftStick.y);
+    const stickJustMoved = stickDirection && stickDirection !== previousFloorStickDirectionRef.current;
+    previousFloorStickDirectionRef.current = stickDirection;
+
+    const direction: ControllerNavDirection | null =
+      gamepad.justPressed.dpadRight ? 'right' :
+      gamepad.justPressed.dpadLeft ? 'left' :
+      gamepad.justPressed.dpadDown ? 'down' :
+      gamepad.justPressed.dpadUp ? 'up' :
+      stickJustMoved ? stickDirection :
+      null;
+
+    if (direction) {
+      setFocusedHotspotIndex((prev) =>
+        getDirectionalTargetIndex(studioHotspots, anchors, prev, direction)
+      );
       gamepad.triggerHaptic(0.1, 0.15, 30);
-    } else if (gamepad.justPressed.dpadLeft || gamepad.justPressed.dpadUp) {
-      setFocusedHotspotIndex((prev) => (prev - 1 + studioHotspots.length) % studioHotspots.length);
-      gamepad.triggerHaptic(0.1, 0.15, 30);
-    } else if (gamepad.justPressed.south) {
+      return;
+    }
+
+    if (gamepad.justPressed.south) {
       const selected = studioHotspots[focusedHotspotIndex % studioHotspots.length];
       handleHotspot(selected);
       gamepad.triggerHaptic(0.2, 0.3, 50);
+      return;
+    }
+
+    // X / Square is a real contextual quick-work button on the floor.
+    if (gamepad.justPressed.west) {
+      if (gameState.activeProject) {
+        onConsoleFocus();
+      } else if (gameState.availableProjects.length > 0 && onBookings) {
+        onBookings();
+      } else {
+        handleHotspot('console');
+      }
+      gamepad.triggerHaptic(0.2, 0.3, 55);
     }
   }, [
     gamepad.isConnected,
-    activeInspector,
     gamepad.justPressed.dpadRight,
     gamepad.justPressed.dpadDown,
     gamepad.justPressed.dpadLeft,
     gamepad.justPressed.dpadUp,
     gamepad.justPressed.south,
+    gamepad.justPressed.west,
+    gamepad.leftStick.x,
+    gamepad.leftStick.y,
+    activeInspector,
+    floorFocused,
     focusedHotspotIndex,
-    studioHotspots.length,
+    studioHotspots,
+    anchors,
+    gameState.activeProject,
+    gameState.availableProjects.length,
+    onBookings,
+    onConsoleFocus,
   ]);
+
+  // R3 recentres the isometric floor camera from anywhere on the unobstructed floor.
+  useEffect(() => {
+    if (!gamepad.isConnected || activeInspector || !floorFocused || !gamepad.justPressed.rs) return;
+    setCameraReset((value) => value + 1);
+    gamepad.triggerHaptic(0.14, 0.28, 45);
+  }, [gamepad.isConnected, gamepad.justPressed.rs, activeInspector, floorFocused]);
 
   return (
     <div 
