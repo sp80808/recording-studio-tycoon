@@ -2,7 +2,7 @@ import React from 'react';
 import { getCityById } from '@/rpg/cities';
 
 /** Hand-drawn skyline silhouettes (original, simple shapes) keyed by city. Width 240, height 60. */
-const SKYLINES: Record<string, string> = {
+export const SKYLINES: Record<string, string> = {
   'los-angeles': 'M0 60V44h14V30h8v14h10V38h6V20h4v18h8V46h12V34h10v12h8V40h14V26h6v14h12V48h14V36h10v12h14V42h12V50h18V44h10v16Z M178 18v22 M180 14v26',
   nashville: 'M0 60V46h16V34h10v12h12V28h8v18h14V38h12V48h18V30h6V20h4v10h6v18h16V40h12V50h20V44h14v16Z',
   london: 'M0 60V46h12V36h8v10h10V30h10v16h8V24h4V14h4v10h4v22h10V38h12V50h14V34h6v-6h4v6h6v16h14V44h14v16Z',

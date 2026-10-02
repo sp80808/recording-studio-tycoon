@@ -35,6 +35,8 @@ export interface DecisionContent {
   context: string;
   prompt: string;
   speaker?: DecisionSpeaker;
+  /** Optional scene drawn under the title (cutscene card). */
+  illustration?: React.ReactNode;
   options: DecisionOption[];
 }
 
@@ -169,6 +171,8 @@ export const StoryDecisionModal: React.FC<StoryDecisionModalProps> = ({
         </div>
 
         <DialogTitle className="text-2xl">{shown.title}</DialogTitle>
+
+        {shown.illustration}
 
         {shown.speaker && !resolved && (
           <figure className="flex items-start gap-3 rounded-xl border border-[var(--rst-line)] bg-[var(--rst-fill-1)] p-3">
