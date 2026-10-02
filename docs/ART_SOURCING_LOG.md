@@ -192,3 +192,13 @@ In-house original, CC0, no external source. Drawn procedurally in Pixi Graphics;
 |---|---|---|
 | Guitar stand, keyboard stand, combo amp, vinyl crate, bean bag, snake cable run, road case (tier-gated 1-5) | Pixi Graphics, drawn in code | `WebGLCanvas.tsx` (`buildScene`) |
 | Studio cat (5 coats: ginger, tabby, black, tuxedo, calico) with stretch, nap, watch and curl poses that follow the studio clock | Pixi Graphics, drawn in code | `WebGLCanvas.tsx` ticker |
+
+## 14. Producer accessories: headwear, eyewear, jewellery (`ModularSpriteRenderer.tsx`)
+
+In-house original, CC0, no external source. SVG rects and paths drawn in code on the 32px NPC grid; no image files.
+
+| Asset | Source | Used by |
+|---|---|---|
+| Bucket hat, bandana, headband | SVG shapes in code, tinted from the clothes palette | `ModularSpriteRenderer.tsx` |
+| Distinct eyewear: round wire specs, horn-rims, cyber visor (wayfarers and aviators unchanged) | SVG shapes in code | `ModularSpriteRenderer.tsx` |
+| Silver hoops, choker, tape pendant | SVG shapes in code | `ModularSpriteRenderer.tsx` |

@@ -112,4 +112,23 @@ describe('producer customization (#126)', () => {
     assert.equal(npc.details.headphones, undefined);
     assert.ok(buildNpcLayerStack(npc).some((l) => l.slot === 'headphones'));
   });
+
+  it('every accessory maps to exactly one visible detail, and the new ones are wired', () => {
+    const detail = (accessory: ProducerAppearance['accessory']) => {
+      const d = buildProducerNpc({ ...look, accessory }, 'P', 'golden_age').details;
+      return { headwear: d.headwear, glasses: d.glasses, jewellery: d.jewellery, headphones: d.headphones };
+    };
+    assert.equal(detail('bucket_hat').headwear, 'bucket_hat');
+    assert.equal(detail('bandana').headwear, 'bandana');
+    assert.equal(detail('headband').headwear, 'headband');
+    assert.equal(detail('aviators').glasses, 'tinted_aviator');
+    assert.equal(detail('horn_rims').glasses, 'horn_rim');
+    assert.equal(detail('visor').glasses, 'cyber_visor');
+    assert.equal(detail('hoops').jewellery, 'silver_hoops');
+    assert.equal(detail('choker').jewellery, 'choker');
+    assert.equal(detail('cassette_pendant').jewellery, 'cassette_pendant');
+    assert.ok(PRODUCER_ACCESSORIES.length >= 16, 'accessory catalogue grew');
+    // The original accessories keep their order at the front so saved picks and cycling are stable.
+    assert.deepEqual(PRODUCER_ACCESSORIES.slice(0, 7), ['none', 'headphones', 'round_glasses', 'wayfarers', 'flat_cap', 'beanie', 'gold_chain']);
+  });
 });
