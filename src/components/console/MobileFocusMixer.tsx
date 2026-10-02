@@ -1,4 +1,5 @@
 import { StatIcon } from '@/components/icons/GameIcons';
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Info } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
@@ -38,17 +39,18 @@ const tone = (diff: number) =>
 export const MobileFocusMixer: React.FC<MobileFocusMixerProps> = ({
   focus, optimal, labels, matchPct, guidanceTitle, guidance, canAutoAlign, onChange, onAutoAlign,
 }) => {
+  const { t: tr } = useTranslation();
   const [showGuide, setShowGuide] = useState(false);
   return (
     <div className="rst-mobile-mixer relative bg-stone-900/90 border border-stone-800 rounded-[2px] p-1.5" data-testid="mobile-focus-mixer">
       <div className="flex items-center gap-1.5 mb-1">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-stone-300"><StatIcon name="technical" /> Focus</span>
-        <span className="text-[10px] font-bold px-1.5 rounded-full border bg-stone-950 text-amber-300 border-amber-500/40 tabular-nums">{matchPct}% match</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-stone-300"><StatIcon name="technical" /> {tr('active_focus')}</span>
+        <span className="text-[10px] font-bold px-1.5 rounded-full border bg-stone-950 text-amber-300 border-amber-500/40 tabular-nums">{tr('active_match', { pct: matchPct })}</span>
         <button
           type="button"
           onClick={() => setShowGuide(v => !v)}
           aria-expanded={showGuide}
-          aria-label="Stage guidance"
+          aria-label={tr('active_stage_guidance')}
           className="grid place-items-center h-6 w-6 rounded border border-stone-700 text-stone-300"
         >
           <Info size={12} aria-hidden="true" />
@@ -57,14 +59,14 @@ export const MobileFocusMixer: React.FC<MobileFocusMixerProps> = ({
           type="button"
           onClick={onAutoAlign}
           disabled={!canAutoAlign}
-          title={canAutoAlign ? 'Auto-align to stage target' : 'Requires Level 5+ or Management Level 3+'}
+          title={canAutoAlign ? tr('active_auto_align_title') : tr('active_auto_align_locked')}
           className={`ml-auto h-6 px-2 text-[10px] rounded border ${
             canAutoAlign
               ? 'bg-violet-900/40 border-violet-500/50 text-violet-200'
               : 'bg-stone-800/40 border-stone-700 text-stone-500 cursor-not-allowed'
           }`}
         >
-          <StatIcon name="goal" /> Auto-Align
+          <StatIcon name="goal" /> {tr('active_auto_align')}
         </button>
       </div>
       {showGuide && (
@@ -84,10 +86,10 @@ export const MobileFocusMixer: React.FC<MobileFocusMixerProps> = ({
                 onValueChange={(v) => onChange(key, v[0])}
                 max={100}
                 step={5}
-                aria-label={`${stripLead(labels[key].label)} focus`}
+                aria-label={tr('active_focus_aria', { name: stripLead(labels[key].label) })}
                 className={`flex-1 ${t.slider}`}
               />
-              <span className={`w-[50px] shrink-0 text-center text-[10px] font-mono font-bold rounded border ${t.chip}`} title={`Target ${Math.max(0, optimal[key] - 10)}-${Math.min(100, optimal[key] + 10)}%`}>
+              <span className={`w-[50px] shrink-0 text-center text-[10px] font-mono font-bold rounded border ${t.chip}`} title={tr('active_target_title', { min: Math.max(0, optimal[key] - 10), max: Math.min(100, optimal[key] + 10) })}>
                 {focus[key]}%{diff <= 10 ? <StatIcon name="check" size="0.9em" /> : null}
               </span>
             </div>

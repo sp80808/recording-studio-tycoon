@@ -911,9 +911,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                     ? 'bg-violet-900/40 border-violet-500/50 text-violet-200 hover:bg-violet-800/60'
                     : 'bg-stone-800/40 border-stone-700 text-stone-500 cursor-not-allowed'
                 }`}
-                title={canUseOptimalFocusButton ? 'Auto-align to stage target' : 'Requires Level 5+ or Management Level 3+'}
+                title={canUseOptimalFocusButton ? t('active_auto_align_title') : t('active_auto_align_locked')}
               >
-                <StatIcon name="goal" /> Auto-Align
+                <StatIcon name="goal" /> {t('active_auto_align')}
               </Button>
             </div>
 
@@ -1111,8 +1111,8 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   )}
                   <span>
                     {overdriveArmed
-                      ? <><StatIcon name="flame" /> OVERDRIVE ENGAGED ({energyCost}<StatIcon name="energy" /> · {energySaver ? '-1 Saver' : '+75%'})</>
-                      : <><StatIcon name="flame" /> ARM OVERDRIVE ({energySaver ? '1 with Patchbay' : '2'}<StatIcon name="energy" /> · +75%)</>}
+                      ? <><StatIcon name="flame" /> {t('active_overdrive_engaged', { cost: energyCost, bonus: energySaver ? t('active_saver_bonus') : '+75%' })}</>
+                      : <><StatIcon name="flame" /> {t('active_arm_overdrive', { cost: energySaver ? t('active_cost_patchbay') : '2' })}</>}
                   </span>
                 </Button>
               </div>

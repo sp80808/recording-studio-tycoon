@@ -12,6 +12,7 @@
  */
 import type { GameState } from '@/types/game';
 import { formatNumber } from '@/i18n/formatLocale';
+import { tc } from '@/i18n/content';
 
 export type CityId = 'los-angeles' | 'nashville' | 'london' | 'berlin' | 'tokyo' | 'rio';
 
@@ -251,22 +252,39 @@ export const localName = (cityId: string | null | undefined, roll1: number, roll
   return `${pick(city.names.first, roll1)} ${pick(city.names.last, roll2)}`;
 };
 
+/** City text in the active language (English fallback). Ids are stable keys in `content.json`. */
+export const cityText = (city: City) => ({
+  tagline: tc(`city.${city.id}.tagline`, city.tagline),
+  scene: tc(`city.${city.id}.scene`, city.scene),
+  edgeLabel: tc(`city.${city.id}.edge_label`, city.edge.label),
+  edgeWhy: tc(`city.${city.id}.edge_why`, city.edge.why),
+  blurb: tc(`city.${city.id}.blurb`, city.lore.blurb),
+  legend: tc(`city.${city.id}.legend`, city.lore.legend),
+  landmarks: city.lore.landmarks.map((l, i) => tc(`city.${city.id}.landmark_${i}`, l)),
+});
+
 /** One-line summary of what a city changes, for the picker and the studio strip. */
 export const describeCity = (city: City, eraId?: string | null): string[] => {
   const cur = currencyFor(city.id, eraId);
+  const text = cityText(city);
+  const genres = (list: readonly string[]) => list.join(', ');
   return [
-    `Currency: ${cur.symbol} ${cur.code}${cur.perDollar === 1 ? '' : ` (display only; 1 studio $ = ${cur.symbol}${cur.perDollar})`}`,
-    `In demand: ${city.hotGenres.slice(0, 3).join(', ')}`,
-    `Slower here: ${city.coolGenres.join(', ')}`,
-    `Local edge: +1 ${city.edge.label}. ${city.edge.why}`,
-    `Scene: ${city.scene}`,
+    cur.perDollar === 1
+      ? tc('city_ui.currency', 'Currency: {{symbol}} {{code}}', { symbol: cur.symbol, code: cur.code })
+      : tc('city_ui.currency_rate', 'Currency: {{symbol}} {{code}} (display only; 1 studio $ = {{symbol}}{{rate}})', { symbol: cur.symbol, code: cur.code, rate: cur.perDollar }),
+    tc('city_ui.demand', 'In demand: {{genres}}', { genres: genres(city.hotGenres.slice(0, 3)) }),
+    tc('city_ui.slower', 'Slower here: {{genres}}', { genres: genres(city.coolGenres) }),
+    tc('city_ui.edge', 'Local edge: +1 {{label}}. {{why}}', { label: text.edgeLabel, why: text.edgeWhy }),
+    tc('city_ui.scene', 'Scene: {{scene}}', { scene: text.scene }),
   ];
 };
 
 /** The local scene in the player's era, for the lore panel. */
 export const cityEraLore = (cityId: string | null | undefined, eraId: string | null | undefined): string | undefined => {
   const city = getCityById(cityId);
-  return city ? city.lore.eras[cityEraOf(eraId) ?? 'streaming2020s'] : undefined;
+  if (!city) return undefined;
+  const era = cityEraOf(eraId) ?? 'streaming2020s';
+  return tc(`city.${city.id}.era_${era}`, city.lore.eras[era]);
 };
 
 /** A new run's producer gets the city's edge: +1 to one attribute. Idempotent per call site (new games only). */
