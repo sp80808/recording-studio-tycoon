@@ -41,8 +41,26 @@ describe('recurring client saga', () => {
     assert.equal(getDirector(after).pending, undefined);
   });
 
+  it('lets a career that starts in a later era join the chain, moving only forward', () => {
+    let s = state('digital80s');
+    s = takeDirectorOpportunity(s, RECURRING_CLIENT_EVENTS);
+    assert.ok(['wren_1', 'wren_2'].includes(getDirector(s).pending!.eventId), 'an 80s start can enter');
+    s = resolveDirectorChoice(s, getDirector(s).pending!.options?.[0]?.id ?? RECURRING_CLIENT_EVENTS[1].options[0].id);
+    for (const era of ['internet2000s', 'streaming2020s']) {
+      s = { ...s, currentEra: era, selectedEra: era, currentDay: s.currentDay + 400 };
+      s = takeDirectorOpportunity(s, RECURRING_CLIENT_EVENTS);
+      const id = getDirector(s).pending?.eventId;
+      assert.ok(id, `${era} offers a beat`);
+      const def = RECURRING_CLIENT_EVENTS.find((e) => e.id === id)!;
+      s = resolveDirectorChoice(s, def.options[0].id);
+    }
+    const seen = getDirector(s).history.map((h) => h.eventId);
+    const order = seen.map((x) => Number(x.split('_')[1]));
+    assert.deepEqual([...order].sort((a, b) => a - b), order, 'beats never run backwards');
+  });
+
   it('waits for its era and for the earlier beats', () => {
-    assert.equal(getDirector(takeDirectorOpportunity(state('digital80s'), RECURRING_CLIENT_EVENTS)).pending, undefined, 'beat 2 needs beat 1');
+    assert.equal(getDirector(takeDirectorOpportunity(state('analog60s', { reputation: 3 }), RECURRING_CLIENT_EVENTS)).pending, undefined);
     assert.equal(getDirector(takeDirectorOpportunity(state('analog60s', { reputation: 3 }), RECURRING_CLIENT_EVENTS)).pending, undefined, 'beat 1 needs reputation');
     assert.equal(getDirector(takeDirectorOpportunity(state('analog60s'), RECURRING_CLIENT_EVENTS)).pending?.eventId, 'wren_1');
   });

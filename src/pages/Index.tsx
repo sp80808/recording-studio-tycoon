@@ -47,7 +47,8 @@ import { getDayCloseBeat } from '@/narrative/dayClose';
 import { getPendingDirectorEvent, resolveDirectorChoice } from '@/narrative/directorEvents';
 import { CinematicStoryCutscene } from '@/components/cutscenes/CinematicStoryCutscene';
 import { getCampaignEnding } from '@/narrative/endings';
-import { buildActIntroCutscene, buildEndingCutscene } from '@/narrative/actCinematics';
+import { buildActIntroCutscene, buildEndingCutscene, buildMoveInCutscene } from '@/narrative/actCinematics';
+import { clearPremisesMoveBeat, getPremisesMoveBeat } from '@/rpg/premises';
 import {
   advanceSimulation,
   DEFAULT_MAX_OFFLINE_MS,
@@ -204,8 +205,11 @@ const MusicStudioTycoon = () => {
   const activeCampaignNode = gameState.storylineState ? getActiveCampaignNode(gameState) : null;
   const actIntroFlag = activeCampaignNode ? `intro_seen_${activeCampaignNode.id}` : null;
   const showEpilogue = Boolean(campaignEnding) && !gameState.endingSeen && storyStageClear;
+  const moveBeat = getPremisesMoveBeat(gameState);
+  const showMoveIn = moveBeat !== null && !showEpilogue && storyStageClear;
   const showActIntro =
     !showEpilogue &&
+    !showMoveIn &&
     storyStageClear &&
     Boolean(activeCampaignNode && activeCampaignNode.act >= 2 && actIntroFlag) &&
     !gameState.storylineState?.campaignCompleted &&
@@ -834,6 +838,13 @@ const MusicStudioTycoon = () => {
         <CinematicStoryCutscene
           payload={buildEndingCutscene(campaignEnding)}
           onComplete={() => setGameState((prev) => ({ ...prev, endingSeen: true }))}
+        />
+      )}
+
+      {showMoveIn && moveBeat && (
+        <CinematicStoryCutscene
+          payload={buildMoveInCutscene(moveBeat)}
+          onComplete={() => setGameState((prev) => clearPremisesMoveBeat(prev))}
         />
       )}
 

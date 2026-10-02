@@ -1,7 +1,7 @@
 /** Premises milestones (#70): eligibility, optional move, preservation, capacity, rent, migration. */
 import {
   getPremisesOffer, applyPremisesMove, premisesStaffCap, premisesDailyRent,
-  premisesCandidateCount, premisesRoomAllowanceBonus, PROJECT_STUDIO_DEPOSIT, COMMERCIAL_STUDIO_DEPOSIT, FACILITY_DEPOSIT,
+  premisesCandidateCount, premisesRoomAllowanceBonus, clearPremisesMoveBeat, getPremisesMoveBeat, PROJECT_STUDIO_DEPOSIT, COMMERCIAL_STUDIO_DEPOSIT, FACILITY_DEPOSIT,
 } from '../src/rpg/premises';
 import { createDefaultStudioRooms } from '../src/utils/studioRoomUtils';
 
@@ -88,5 +88,17 @@ assert(premisesStaffCap(moved3) === 14 && premisesRoomAllowanceBonus(moved3) ===
 assert(getPremisesOffer(moved3) === null && applyPremisesMove(moved3) === moved3, 'no move beyond Tier 3');
 const reloaded3 = JSON.parse(JSON.stringify(moved3));
 assert(applyPremisesMove(reloaded3) === reloaded3 && reloaded3.money === moved3.money, 'Tier 3 reload cannot double-charge');
+
+// ---- Move-day cinematic ----
+import { buildMoveInCutscene } from '../src/narrative/actCinematics';
+assert(moved.premisesMoveBeat === 1 && moved2.premisesMoveBeat === 2 && moved3.premisesMoveBeat === 3, 'a move queues its move-day beat');
+assert(getPremisesMoveBeat(JSON.parse(JSON.stringify(moved3))) === 3, 'the beat survives save and reload');
+assert(getPremisesMoveBeat(clearPremisesMoveBeat(moved3)) === null && clearPremisesMoveBeat(moved3).premisesTier === 3, 'seeing the beat clears it and keeps the tier');
+assert(getPremisesMoveBeat({}) === null && getPremisesMoveBeat({ premisesMoveBeat: 9 }) === null, 'legacy and corrupt saves show nothing');
+for (const t of [1, 2, 3] as const) {
+  const c = buildMoveInCutscene(t);
+  assert(c.lines.length === 3 && c.stats!.length === 3 && c.finalLabel === 'Walk in' && c.title.length > 0, `tier ${t} cinematic has lines, stats and a button`);
+}
+assert(buildMoveInCutscene(3).stats![0].value === '14' && buildMoveInCutscene(2).stats![1].value === '$140/day', 'the cinematic quotes the real capacity and rent');
 
 console.log('studio-premises.check passed');
