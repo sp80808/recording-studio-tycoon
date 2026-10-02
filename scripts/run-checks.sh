@@ -258,4 +258,8 @@ node /tmp/rst-feel-mode.cjs
 ./node_modules/.bin/esbuild tests/take-feedback.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-take-feedback.cjs --alias:@=./src >/dev/null
 node /tmp/rst-take-feedback.cjs
 
+echo "=== game icon set ==="
+./node_modules/.bin/esbuild tests/game-icons.check.tsx --bundle --platform=node --format=cjs --outfile=/tmp/rst-game-icons.cjs --alias:@=./src >/dev/null
+node /tmp/rst-game-icons.cjs
+
 echo "All automated checks passed."

@@ -1,3 +1,4 @@
+import { GenreIcon, StatIcon } from '@/components/icons/GameIcons';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'; // Assuming Select component is available
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
@@ -30,28 +31,8 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
   const [currentSourceNode, setCurrentSourceNode] = useState<AudioBufferSourceNode | null>(null);
 
 
-  // Genre emoji mapping for visual appeal
-  const getGenreEmoji = (genre: string) => {
-    const emojiMap: { [key: string]: string } = {
-      'pop': '🎵',
-      'rock': '🎸',
-      'hip-hop': '🎤',
-      'electronic': '🎛️',
-      'jazz': '🎺',
-      'classical': '🎼',
-      'country': '🤠',
-      'r&b': '🎶',
-      'reggae': '🌴',
-      'folk': '🪕',
-      'blues': '🎷',
-      'punk': '⚡',
-      'metal': '🔥',
-      'indie': '🎭',
-      'alternative': '🌟',
-      'funk': '🕺'
-    };
-    return emojiMap[genre.toLowerCase()] || '🎵';
-  };
+  // Genre icon (in-house SVG set)
+  const getGenreEmoji = (genre: string): React.ReactNode => <GenreIcon genre={genre} />;
 
   // Audio clip mapping with extensive cross-genre mixing for maximum variety
   const getAudioClip = (entry: ChartEntry): string | null => {
@@ -307,7 +288,7 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold text-white">📈 Industry Charts</h3>
+        <h3 className="text-lg font-bold text-white"><StatIcon name="chartUp" className="inline mr-1" /> Industry Charts</h3>
         <Badge variant="outline" className="text-amber-300 border-amber-400">
           Level {gameState.playerData.level}
         </Badge>
@@ -360,7 +341,7 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
       {gameState.playerData.level < 10 && (
         <Card className="bg-stone-900/20 border-amber-600/50 p-3">
           <div className="text-sm text-amber-200">
-            <div className="font-semibold mb-1">🔓 Unlock More Charts</div>
+            <div className="font-semibold mb-1"><StatIcon name="unlock" className="inline mr-1" /> Unlock More Charts</div>
             <div className="text-xs space-y-1">
               {gameState.playerData.level < 3 && <div>• Rock Charts at Level 3</div>}
               {gameState.playerData.level < 4 && <div>• Pop Charts at Level 4</div>}

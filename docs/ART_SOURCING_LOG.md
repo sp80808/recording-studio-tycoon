@@ -246,3 +246,10 @@ In-house original, CC0, no external source. Inline SVG drawn in code (layered sk
 
 ## 19. Window light shaft and dust motes (floor)
 In-house, Pixi Graphics only (`studioLightShaft.ts`). Warm translucent patch and 14 drifting motes; slides with the sun, off at night. CC0.
+
+## 21. UI icon set (`components/icons/GameIcons.tsx`)
+In-house original, CC0, no external source. Inline SVG stroke icons drawn in code, tinted by `currentColor`; no image files.
+
+| Asset | Source | Used by |
+|---|---|---|
+| 16 genre icons, plus energy, combo, bank, mood, goal, chart, unlock and check icons | SVG paths in code | `ChartsPanel`, `StreakBankControl`, `StudioInspector` (replacing emoji glyphs) |

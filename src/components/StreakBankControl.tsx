@@ -1,3 +1,4 @@
+import { StatIcon } from '@/components/icons/GameIcons';
 import { money, moneySymbol, moneyValue } from '@/utils/displayMoney';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
@@ -279,7 +280,7 @@ export const StreakBankControl: React.FC<StreakBankControlProps> = ({
               gold ? 'text-amber-200' : result.zone === 'filled' ? 'text-emerald-200' : 'text-rose-200'
             }`}
           >
-            🏦 {result.label}
+            <StatIcon name="bank" /> {result.label}
           </div>
           <div className="text-[10px] text-stone-400 truncate">{result.sublabel}</div>
         </div>
@@ -289,7 +290,7 @@ export const StreakBankControl: React.FC<StreakBankControlProps> = ({
           </span>
           <span className="text-[10px] font-bold text-amber-200">+{result.xp} XP</span>
           <span className="text-[10px] font-black text-amber-300">
-            {result.keepsCombo ? `⚡×${combo} KEPT` : '⚡ SPENT'}
+            {result.keepsCombo ? `×${combo} KEPT` : 'SPENT'}
           </span>
         </div>
       </div>
@@ -305,7 +306,7 @@ export const StreakBankControl: React.FC<StreakBankControlProps> = ({
         aria-label={`Charging streak bank, ${Math.round(progress * 100)} percent`}
       >
         <div className="flex items-center justify-between text-[10px] font-mono font-bold tracking-wider">
-          <span className="text-amber-300">🏦 STREAK BANK · ⚡×{combo}</span>
+          <span className="text-amber-300"><StatIcon name="bank" /> STREAK BANK · <StatIcon name="energy" />×{combo}</span>
           <span className={inGold ? 'text-amber-200 font-black' : 'text-stone-300'}>
             {inGold ? '★ RELEASE NOW! ★' : `SWEEP ${Math.round(progress * 100)}%`}
           </span>
@@ -351,8 +352,8 @@ export const StreakBankControl: React.FC<StreakBankControlProps> = ({
         className={`flex items-center justify-between px-2.5 py-1.5 rounded-[2px] border border-stone-800 bg-stone-900/50 text-[10px] font-mono text-stone-500 ${className}`}
         aria-label={`Streak Bank unlocks at combo 3 (currently ${combo})`}
       >
-        <span>🏦 STREAK BANK LOCKED</span>
-        <span>unlocks at ⚡×{MIN_BANK_COMBO}</span>
+        <span><StatIcon name="bank" /> STREAK BANK LOCKED</span>
+        <span>unlocks at ×{MIN_BANK_COMBO}</span>
       </div>
     );
   }
@@ -375,10 +376,10 @@ export const StreakBankControl: React.FC<StreakBankControlProps> = ({
     >
       <span className="flex items-center justify-between px-2.5 pt-2 gap-2">
         <span className="flex items-center gap-2 min-w-0">
-          <span aria-hidden className="text-base">🏦</span>
+          <span aria-hidden className="text-base"><StatIcon name="bank" size={18} /></span>
           <span className="text-xs font-black tracking-wider text-amber-200">STREAK BANK</span>
           <span className="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded-[2px] bg-amber-900/60 border border-amber-500/40 text-amber-100">
-            ⚡×{combo}
+            <StatIcon name="energy" />×{combo}
           </span>
           {gamepad.isConnected && gamepad.lastInputType === 'gamepad' && (
             <GamepadGlyph button="select" size="xs" />
