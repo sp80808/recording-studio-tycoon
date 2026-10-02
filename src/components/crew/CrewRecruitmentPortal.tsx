@@ -133,6 +133,11 @@ export const CrewRecruitmentPortal: React.FC<CrewRecruitmentPortalProps> = ({
                       <p className="text-[11px] text-stone-400 mt-1 line-clamp-2">
                         {candidate.cv?.headline ?? 'Studio professional seeking a room that listens.'}
                       </p>
+                      {candidate.career && (
+                        <p className="text-[10px] text-amber-200/80 mt-1" data-testid="candidate-career">
+                          {SENIORITY_LABEL[candidate.career.seniority]} {DISCIPLINE_LABEL[candidate.career.activeDiscipline].toLowerCase()}
+                        </p>
+                      )}
                       {candidate.source && (
                         <p className="text-[10px] text-sky-300 mt-1" data-testid="candidate-source">
                           {candidate.apprentice ? 'Apprentice · ' : ''}{candidate.source.why}

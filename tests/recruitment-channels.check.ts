@@ -46,4 +46,16 @@ let grown = app;
 for (let i = 0; i < 30; i++) grown = creditSession(grown, `p${i}`, ['Basic Tracking', 'Final Mix', 'Vocal Tracking', 'Gear Setup'], 90);
 ok(experienceIn(grown.career, grown.career.activeDiscipline).level >= 3 && mentorshipScale(grown, [grown]) === 1, 'the apprentice bonus fades at level 3');
 ok(mentorshipScale({ ...app, apprentice: false }, [app]) === 1, 'ordinary hires get no bonus');
+// Specialist network and headhunter: unlocked by premises, narrower and costlier.
+const t2: any = { ...base, premisesTier: 2, money: 9000 };
+const t3: any = { ...base, premisesTier: 3, money: 9000 };
+ok(!isChannelOpen(base, 'specialist') && isChannelOpen(t2, 'specialist') && !isChannelOpen(t2, 'headhunter') && isChannelOpen(t3, 'headhunter'), 'specialist opens with the commercial studio, headhunter with the facility');
+const pool2 = (st: any, id: any) => resolveRecruitmentSearchInState(startRecruitmentSearchInState(st, id), 30).availableCandidates;
+const spec = pool2(t2, 'specialist'), hh = pool2(t3, 'headhunter'), brd = pool2(t3, 'board');
+ok(spec.length === 3 && spec.every((c: any) => c.role === 'Engineer' && c.career.activeDiscipline === 'technical' && c.career.seniority === 'regular' && c.source.channelId === 'specialist'), 'specialists are mid-career technical engineers');
+ok(hh.length === 2 && hh.every((c: any) => c.career.seniority === 'senior' && c.levelInRole >= 4), 'headhunted candidates are seniors');
+const avgSal = (xs: any[]) => xs.reduce((t, c) => t + c.salary, 0) / xs.length;
+ok(avgSal(hh) > avgSal(brd) * 1.5, 'headhunters cost meaningfully more than the board');
+ok(t3.money - startRecruitmentSearchInState(t3, 'headhunter').money === RECRUITMENT_CHANNELS.headhunter.cost, 'the headhunter fee is charged up front');
+ok(JSON.stringify(pool2(t3, 'headhunter')) === JSON.stringify(hh), 'headhunter shortlists are deterministic');
 console.log(`recruitment-channels: all ${n} checks passed`);
