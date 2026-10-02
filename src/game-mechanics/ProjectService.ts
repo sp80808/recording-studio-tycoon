@@ -1,4 +1,6 @@
 import { applyKnowHowEvents } from '../rpg/studioKnowHow';
+import { awardExpertise } from '../rpg/houseStyle';
+import { getProjectBrief } from '../rpg/projectBrief';
 import { awardProjectCrate, recordGearUse } from '@/features/usedGear/session';
 import { GameState, Project, ProjectReport, StaffMember } from '../types/game';
 import { generateProjectReview } from '../utils/projectReviewUtils';
@@ -388,6 +390,17 @@ export function applyReportToState(state: GameState, report: ProjectReport): Gam
         playerData,
         hiredStaff: releasedStaff,
         clientRelationships,
+        // House style (#71): finished work builds studio expertise, idempotent per project.
+        studioExpertise: project
+            ? awardExpertise(state.studioExpertise, {
+                projectId: report.projectId,
+                genre: project.genre,
+                serviceType: getProjectBrief(project).serviceType,
+                approachId: project.approachId,
+                quality: report.overallQualityScore,
+                difficulty: project.difficulty,
+            })
+            : state.studioExpertise,
         // Polishing feeds the same Know-How pool as everything else (#66).
         studioKnowHow: applyKnowHowEvents(state, report.knowHowGained
             ? [{ kind: 'polish', eventId: `polish:${report.projectId}`, amount: report.knowHowGained }]

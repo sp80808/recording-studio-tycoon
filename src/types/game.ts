@@ -352,6 +352,8 @@ export interface GameState {
   studioRooms: StudioRoom[]; // Physical bookable studio suites; drives concurrent capacity
   /** Studio Know-How progression (#66). Absent on legacy saves; migrated to an empty state. */
   studioKnowHow?: import('@/rpg/studioKnowHow').StudioKnowHow;
+  /** Studio house style / expertise (#71). Absent on legacy saves; migrated to empty. */
+  studioExpertise?: import('@/rpg/houseStyle').StudioExpertise;
   /** Studio premises tier (#70): 0 borrowed room, 1 project studio. Absent on legacy saves = 0. */
   premisesTier?: 0 | 1;
   chainTemplates?: import('@/rpg/signalChain').SignalChain[]; // Saved chain templates (#86)

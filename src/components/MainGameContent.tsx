@@ -7,6 +7,7 @@ import { GameState, StaffMember, PlayerAttributes, Project } from '@/types/game'
 import { ProjectList } from './ProjectList';
 import { ProgressiveProjectInterface } from './ProgressiveProjectInterface';
 import { CareerHub } from './CareerHub';
+import HouseStylePanel from '@/components/HouseStylePanel';
 import { KnowHowPanel } from './KnowHowPanel';
 import { createInitialKnowHow, unlockCapability } from '@/rpg/studioKnowHow';
 import { chooseFocus } from '@/rpg/studioSeasons';
@@ -562,6 +563,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                   return next ? { ...prev, studioKnowHow: next } : prev;
                 })}
               />
+              <HouseStylePanel expertise={gameState.studioExpertise} />
               <div className="grid gap-2.5 p-1 pt-3 sm:grid-cols-2">
                 <button className="rst-btn" onClick={() => handleOpenDashboardTab('bands')}>
                   <Disc3 size={17} />Artist roster

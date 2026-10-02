@@ -8,6 +8,7 @@ import {
 import { initializeStorylineState } from '@/narrative/branchingStorylineEngine';
 import { migrateProducerCustomization } from '@/utils/producerCustomization';
 import { migrateKnowHow } from '@/rpg/studioKnowHow';
+import { migrateExpertise } from '@/rpg/houseStyle';
 
 const DEFAULT_FOCUS_ALLOCATION: FocusAllocation = {
   performance: 33,
@@ -154,6 +155,8 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
 
   // Studio Know-How (#66): legacy saves start empty; corrupt blobs are repaired.
   processedState.studioKnowHow = migrateKnowHow(processedState.studioKnowHow);
+  // House style (#71): legacy saves start with no expertise.
+  processedState.studioExpertise = migrateExpertise(processedState.studioExpertise);
   if (!Array.isArray(processedState.chainTemplates)) {
     processedState.chainTemplates = [];
   }
