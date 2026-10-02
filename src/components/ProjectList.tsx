@@ -20,6 +20,7 @@ import ForecastPanel from '@/components/ForecastPanel';
 import { currencySymbol, toLocalAmount } from '@/rpg/cities';
 import { BookingCostLine } from '@/components/BookingCalendar';
 import { fillerJobsFor, isFillerJob } from '@/rpg/fillerJobs';
+import { isSignatureJob, signatureJobFor } from '@/rpg/signatureBrief';
 import { enquiryStyleNote } from '@/rpg/houseStyle';
 import { defaultAssignment, type SessionAssignment } from '@/rpg/sessionForecast';
 import { getApproach, getProjectBrief, type ProductionApproach } from '@/rpg/projectBrief';
@@ -168,7 +169,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
 
     // Tactile action feedback communicated within short beat (~180ms)
     window.setTimeout(() => {
-      const approach = getApproach(approaches[project.id]);
+      const approach = getApproach(approaches[project.id], project.genre);
       const chain = chains[project.id];
       const chainOk = chain && validateChain(chain, gameState, project.id).broken.length === 0;
       const plan = assignments[project.id];
@@ -181,6 +182,9 @@ export const ProjectList: React.FC<ProjectListProps> = ({
         brief: getProjectBrief(project),
         ...(approach ? { approachId: approach.id, focusAllocation: approach.focus } : {}),
       });
+      if (isFillerJob(project) || isSignatureJob(project)) {
+        setGameState(prev => ({ ...prev, claimedOffers: [...(prev.claimedOffers ?? []), project.id].slice(-40) }));
+      }
       if (plan && plan.staffIds.length > 0) {
         setGameState(prev => prev.activeProject?.id !== project.id ? prev : {
           ...prev,
@@ -202,7 +206,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
 
     // Tactile pass feedback communicated within short beat (~180ms)
     window.setTimeout(() => {
-      if (isFillerJob({ id: projectId })) setPassedFillers((prev) => [...prev, projectId]);
+      if (isFillerJob({ id: projectId }) || isSignatureJob({ id: projectId })) setPassedFillers((prev) => [...prev, projectId]);
       else setGameState(prev => ({
         ...prev,
         availableProjects: prev.availableProjects.filter(p => p.id !== projectId),
@@ -212,7 +216,9 @@ export const ProjectList: React.FC<ProjectListProps> = ({
   };
 
   // Story contracts are pinned to the top; everything else keeps its arrival order.
-  const board = [...gameState.availableProjects, ...fillerJobsFor(gameState).filter((f) => !passedFillers.includes(f.id))].sort(
+  const signature = signatureJobFor(gameState);
+  const derivedOffers = [...(signature && !passedFillers.includes(signature.id) ? [signature] : []), ...fillerJobsFor(gameState).filter((f) => !passedFillers.includes(f.id))];
+  const board = [...gameState.availableProjects, ...derivedOffers].sort(
     (a, b) => Number(Boolean(b.isStoryContract)) - Number(Boolean(a.isStoryContract)),
   );
 

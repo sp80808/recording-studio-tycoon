@@ -420,6 +420,8 @@ export interface GameState {
   recordLabels?: RecordLabel[];
   /** Label interest 0-100 per label id, raised by strong client releases (#49). */
   labelInterest?: Record<string, number>;
+  /** Ids of derived offers (fillers, signature briefs) already taken, so they do not reappear (#61, #71). */
+  claimedOffers?: string[];
   
   // Automation system
   automation?: {

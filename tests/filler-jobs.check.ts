@@ -32,6 +32,8 @@ const rooms = (base.studioRooms ?? []).filter((r) => r.unlocked);
 const busy = rooms.flatMap((r) => [0, 1, 2].map((i) => ({ ...stub(`b-${r.id}-${i}`), bookingRoomId: r.id, stages: Array.from({ length: 7 }, () => ({}) as never), completedStages: [] }) as Project));
 ok(fillerJobsFor({ ...base, activeProjects: busy }).length === 0, 'a busy week gets no fillers');
 
+ok(fillerJobsFor({ ...base, claimedOffers: [a[0].id] }).every((p) => p.id !== a[0].id), 'a claimed filler does not come back');
+
 const frozen = JSON.stringify(base);
 const proj = a[0];
 const r0 = reschedulePreview(base, proj, 0);
