@@ -235,3 +235,6 @@ In-house original, CC0, no external source. Inline SVG drawn in code; no image f
 | Asset | Source | Used by |
 |---|---|---|
 | Vocal Suite (booth, mic and pop filter, foam, sofa), Live Room (drum kit, amp stack, foam), Mix Suite (desk, faders, monitors, diffusers) | SVG shapes in code | `StudioRoom.tsx` room switcher |
+
+## 19. Window light shaft and dust motes (floor)
+In-house, Pixi Graphics only (`studioLightShaft.ts`). Warm translucent patch and 14 drifting motes; slides with the sun, off at night. CC0.
