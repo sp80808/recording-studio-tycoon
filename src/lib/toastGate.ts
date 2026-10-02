@@ -6,6 +6,9 @@
 
 export type ToastPriority = 'critical' | 'important' | 'routine' | 'quiet';
 
+/** Player preference: 'important' hides routine toasts, 'off' hides everything but critical failures. */
+export type ToastLevel = 'all' | 'important' | 'off';
+
 export type ToastAdmission = {
   allow: boolean;
   /** Stable id for Sonner coalesce updates when a duplicate is folded. */
@@ -75,6 +78,7 @@ export class ToastGate {
   private recent: RecentEntry[] = [];
   private admittedAt: number[] = [];
   private seq = 0;
+  level: ToastLevel = 'all';
 
   constructor(private config: ToastGateConfig = DEFAULT_TOAST_GATE_CONFIG) {}
 
@@ -90,6 +94,9 @@ export class ToastGate {
     const priority = resolveToastPriority(input.variant, input.priority);
 
     if (priority === 'quiet') {
+      return { allow: false };
+    }
+    if (priority !== 'critical' && (this.level === 'off' || (this.level === 'important' && priority === 'routine'))) {
       return { allow: false };
     }
 
