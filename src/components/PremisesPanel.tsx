@@ -20,10 +20,10 @@ export function PremisesPanel({ gameState, setGameState }: PremisesPanelProps) {
         <Building2 size={15} aria-hidden="true" />{def.name}
         {def.dailyRent > 0 && <span className="ml-auto text-stone-400">Rent ${def.dailyRent}/day</span>}
       </h3>
-      {!offer && <p className="mt-1 text-stone-400">Your studio has room to grow. Bigger premises are coming.</p>}
+      {!offer && <p className="mt-1 text-stone-400">You're in the biggest premises on offer. Rent is the price of the space, so keep the rooms booked.</p>}
       {offer && (
         <>
-          <p className="mt-1 text-stone-300">Move to a project studio? Deposit ${offer.deposit.toLocaleString()}, rent ${offer.dailyRent}/day.</p>
+          <p className="mt-1 text-stone-300">Move to a {offer.name.toLowerCase()}? Deposit ${offer.deposit.toLocaleString()}, rent ${offer.dailyRent}/day.</p>
           <p className="text-stone-400">{offer.capacity}. Unlocks: {offer.unlocks.join(', ')}. Moving takes today's studio time (downtime: 1 day). Staff, gear, clients and Know-How come with you.</p>
           <ul className="mt-1.5 space-y-0.5">
             {offer.conditions.map(c => (
@@ -44,7 +44,7 @@ export function PremisesPanel({ gameState, setGameState }: PremisesPanelProps) {
               });
             }}
           >
-            {confirming ? 'Confirm move' : 'Move to a project studio'}
+            {confirming ? 'Confirm move' : `Move to a ${offer.name.toLowerCase()}`}
           </button>
           {confirming && <button className="rst-btn ml-2" onClick={() => setConfirming(false)}>Stay lean</button>}
         </>
