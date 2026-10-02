@@ -20,7 +20,7 @@ export const FILLER_PAY_FACTOR = 0.7;
 /** Fillers only appear while the studio has this much of the week still free. */
 export const FILLER_MAX_UTILIZATION = 0.5;
 
-type FillerState = Pick<GameState, 'currentDay' | 'currentEra' | 'saveSeed' | 'studioRooms' | 'activeProject' | 'activeProjects' | 'availableProjects'>;
+type FillerState = Pick<GameState, 'currentDay' | 'currentEra' | 'saveSeed' | 'studioRooms' | 'activeProject' | 'activeProjects' | 'availableProjects' | 'claimedOffers'>;
 
 export const isFillerJob = (project: Pick<Project, 'id'>): boolean => project.id.startsWith('filler-');
 
@@ -62,7 +62,7 @@ export const fillerJobsFor = (state: FillerState): Project[] => {
       focusAllocation: { performance: 33, soundCapture: 33, layering: 34 },
     };
     project.brief = deriveBrief(project);
-    out.push(project);
+    if (!state.claimedOffers?.includes(project.id)) out.push(project);
   }
   return out;
 };
