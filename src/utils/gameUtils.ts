@@ -1,3 +1,4 @@
+import { isGearAvailable } from '@/features/usedGear/condition';
 
 import { GameState, StudioSkill, Equipment, PlayerAttributes } from '@/types/game';
 import { upgradePlayerAttribute } from './playerUtils';
@@ -28,7 +29,10 @@ export const getEquipmentBonuses = (ownedEquipment: Equipment[], genre?: string)
   let totalSpeedBonus = 0;
   let genreBonus = 0;
 
+  let characterQuality = 0;
   ownedEquipment.forEach(equipment => {
+    characterQuality += (equipment.traits ?? []).reduce((sum, trait) => sum + Math.max(0, Math.min(2, trait.qualityBonus || 0)), 0);
+    characterQuality += (equipment.quirks ?? []).reduce((sum, quirk) => sum + Math.max(-2, Math.min(0, quirk.qualityPenalty || 0)), 0);
     totalQualityBonus += equipment.bonuses.qualityBonus || 0;
     totalCreativityBonus += equipment.bonuses.creativityBonus || 0;
     totalTechnicalBonus += equipment.bonuses.technicalBonus || 0;
@@ -40,7 +44,7 @@ export const getEquipmentBonuses = (ownedEquipment: Equipment[], genre?: string)
   });
 
   return {
-    quality: totalQualityBonus,
+    quality: totalQualityBonus + Math.max(-3, Math.min(3, characterQuality)),
     creativity: totalCreativityBonus,
     technical: totalTechnicalBonus,
     speed: totalSpeedBonus,
@@ -212,10 +216,10 @@ export const getRoomEquipment = (
  * - At least one room seat exists → only gear seated in `roomId` counts
  */
 export const resolveSessionEquipment = (
-  gameState: Pick<GameState, 'ownedEquipment' | 'equipmentPlacements'>,
+  gameState: Pick<GameState, 'ownedEquipment' | 'equipmentPlacements'> & Partial<Pick<GameState, 'currentDay'>>,
   roomId?: string | null
 ): Equipment[] => {
-  const owned = gameState.ownedEquipment || [];
+  const owned = (gameState.ownedEquipment || []).filter(item => isGearAvailable(item, gameState.currentDay));
   const placements = gameState.equipmentPlacements;
 
   if (!placements || placements.length === 0) {
@@ -229,5 +233,5 @@ export const resolveSessionEquipment = (
 
   const resolvedRoomId = roomId || 'studio-a';
   const roomSlots = generateDefaultRoomSlots(resolvedRoomId);
-  return getRoomEquipment(gameState, resolvedRoomId, roomSlots);
+  return getRoomEquipment({ ...gameState, ownedEquipment: owned }, resolvedRoomId, roomSlots);
 };

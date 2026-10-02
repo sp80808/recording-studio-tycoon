@@ -44,9 +44,20 @@ test('Studio OS V2 Motion (#75) - PixiJS Canvas Mount Invariant', () => {
   // ContextDrawer must use MotionPanel with direction support (right or scale)
   assert.match(contextDrawerCode, /<MotionPanel[\s\S]*?direction=\{activeTab === 'session' \? 'scale' : 'right'\}/, 'ContextDrawer uses MotionPanel with direction right or scale');
 
-  // ContextDrawer must support quick-switching tabs without closing/reopening the drawer
-  assert.match(contextDrawerCode, /role="tablist"/, 'ContextDrawer has tablist for direct switcher');
-  assert.match(contextDrawerCode, /activeTab === tab\.id/, 'ContextDrawer checks active tab without dismounting');
+  // Floor dock / hotspots open single-purpose drawers — no in-drawer tab strip
+  assert.doesNotMatch(contextDrawerCode, /role="tablist"/, 'ContextDrawer has no in-drawer tablist');
+  assert.doesNotMatch(contextDrawerCode, /studio-drawer-tabs/, 'ContextDrawer has no drawer-tabs chrome');
+  assert.match(contextDrawerCode, /key=\{panelKey\}/, 'ContextDrawer remounts MotionPanel per destination for open motion');
+  assert.match(mainGameContentCode, /studio-command-dock/, 'Command dock remains the floor activity launcher');
+});
+
+test('Studio floor route consolidation - secondary panel tabs only', () => {
+  const rightPanel = read('src/components/RightPanel.tsx');
+  assert.match(rightPanel, /SECONDARY_TABS/, 'RightPanel keeps Skills/Recipes secondary tabs');
+  assert.match(rightPanel, /aria-label="Skills and recipes"/, 'RightPanel secondary nav is labelled for Skills/Recipes');
+  assert.doesNotMatch(rightPanel, /grid-cols-6/, 'RightPanel no longer mirrors the full dock as a 6-tab strip');
+  assert.doesNotMatch(rightPanel, /Advance Day ❯/, 'Gear panel does not restate Advance Day (HUD + clock own it)');
+  assert.doesNotMatch(rightPanel, /advanceDay/, 'RightPanel no longer takes advanceDay');
 });
 
 test('Studio OS V2 Motion (#75) - Enquiry Arrival & Peripheral Indication', () => {
@@ -54,11 +65,32 @@ test('Studio OS V2 Motion (#75) - Enquiry Arrival & Peripheral Indication', () =
   const projectListCode = read('src/components/ProjectList.tsx');
   const mainGameContentCode = read('src/components/MainGameContent.tsx');
 
-  // StudioRoom must have peripheral unread enquiry indicator using MotionReveal and MotionNumber
-  assert.match(studioRoomCode, /availableCount > 0[\s\S]*?<MotionReveal[\s\S]*?<MotionNumber value=\{availableCount\} \/>/, 'StudioRoom renders peripheral enquiry indicator with MotionReveal and MotionNumber');
+  // Floating Enquiry/Go out/Promotion pills removed — diegetic door/phone/promo hotspots + dock remain
+  assert.doesNotMatch(studioRoomCode, /Go out/, 'StudioRoom has no floating Go out pill');
+  assert.doesNotMatch(studioRoomCode, />Enquiry</, 'StudioRoom has no floating Enquiry pill');
+  assert.doesNotMatch(studioRoomCode, />Promotion</, 'StudioRoom has no floating Promotion pill');
+  assert.match(studioRoomCode, /canonical === 'phone' && onBookings/, 'Phone hotspot still opens bookings');
+  assert.match(studioRoomCode, /canonical === 'console' \|\| canonical === 'liveRoom'/, 'Console and live room share the session work route');
+  assert.match(studioRoomCode, /onConsoleFocus\(\)/, 'Live room / console open session via onConsoleFocus');
+  assert.match(studioRoomCode, /setActiveInspector\(canonical\)/, 'Door/promotion hotspots still open StudioInspector');
+  assert.doesNotMatch(
+    studioRoomCode,
+    /if \(id === 'console'\) \{ onConsoleFocus\(\); return; \}\s*if \(id === 'phone'/,
+    'Live room is no longer routed past console-only session focus into the crew inspector',
+  );
 
-  // Command dock in MainGameContent must have unread count badge on bookings
+  const webglCode = read('src/components/WebGLCanvas.tsx');
+  assert.match(webglCode, /onSelect\?\.\('liveRoom'\)/, 'Band character click fires liveRoom → session');
+
+  // Command dock in MainGameContent must have unread count badge on bookings (peripheral indication)
   assert.match(mainGameContentCode, /id === 'bookings' && gameState\.availableProjects\.length > 0[\s\S]*?<MotionNumber value=\{gameState\.availableProjects\.length\} \/>/, 'Command dock has peripheral unread badge on bookings button');
+
+  // Floor primary CTA stays for onboarding / session continue / collect release (floating Enquiry pill alone was removed)
+  assert.match(mainGameContentCode, /Book your first session/, 'Floor keeps Book-first-session primary CTA');
+  assert.match(mainGameContentCode, /Continue session/, 'Floor primary CTA covers Continue session');
+  assert.match(mainGameContentCode, /Collect release/, 'Floor primary CTA covers Collect release');
+  assert.match(mainGameContentCode, /studio-play-actions[\s\S]*?studio-primary-action[\s\S]*?studio-command-dock/, 'Floor primary CTA sits above the command dock');
+  assert.match(mainGameContentCode, /studio-command-dock/, 'Command dock remains as secondary launcher');
 
   // ProjectList must use MotionReveal with stagger on enquiry cards
   assert.match(projectListCode, /<MotionReveal[\s\S]*?staggerIndex=\{index\}/, 'ProjectList animates enquiry cards with staggered MotionReveal');
@@ -110,8 +142,8 @@ test('Studio OS V2 Motion (#75) - Settlement & Milestone Gating', () => {
   const reviewModalCode = read('src/components/modals/ProjectReviewModal.tsx');
   const celebrationCode = read('src/components/ProjectCompletionCelebration.tsx');
 
-  // ActiveProject milestone check: reserves full-screen celebration for Gold, Platinum, or score >= 80
-  assert.match(activeProjectCode, /const isMilestone = verdict\.grade === 'Gold' \|\| verdict\.grade === 'Platinum' \|\| \(result\.finalProjectData\.overallQualityScore \?\? 0\) >= 80;/, 'Milestone check gates celebration on high quality/grade');
+  // ActiveProject milestone check: reserves full-screen celebration for Gold takes (Project carries no quality score; the old Platinum/score branches were dead)
+  assert.match(activeProjectCode, /const isMilestone = verdict\.grade === 'Gold';/, 'Milestone check gates celebration on a Gold take');
   assert.match(activeProjectCode, /if \(isMilestone\) \{[\s\S]*?setShowCelebration\(true\);[\s\S]*?\} else \{[\s\S]*?onProjectComplete\?\.([\s\S]*?)\}/, 'Routine projects bypass full-screen celebration directly to review');
 
   // Review modal uses MotionNumber for compact deltas

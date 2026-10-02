@@ -15,7 +15,7 @@ interface ProgressiveProjectInterfaceProps {
   setGameState: (state: GameState | ((prev: GameState) => GameState)) => void;
   // focusAllocation?: FocusAllocation; // REMOVED
   // setFocusAllocation?: (allocation: FocusAllocation) => void; // REMOVED
-  performDailyWork?: () => { isComplete: boolean; finalProjectData?: Project } | undefined;
+  performDailyWork?: (options?: import('@/hooks/useStageWork').PerformDailyWorkOptions) => { isComplete: boolean; finalProjectData?: Project } | undefined;
   onMinigameReward?: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => void;
   onProjectComplete?: (completedProject: Project) => void;
   onProjectSelect?: (project: Project) => void;

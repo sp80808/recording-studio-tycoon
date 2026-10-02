@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Building2 } from 'lucide-react';
 import type { GameState } from '@/types/game';
+import { bookEntry } from '@/economy/ledger';
 import { applyPremisesMove, getPremisesDef, getPremisesOffer } from '@/rpg/premises';
 
 interface PremisesPanelProps {
@@ -23,7 +24,7 @@ export function PremisesPanel({ gameState, setGameState }: PremisesPanelProps) {
       {offer && (
         <>
           <p className="mt-1 text-stone-300">Move to a project studio? Deposit ${offer.deposit.toLocaleString()}, rent ${offer.dailyRent}/day.</p>
-          <p className="text-stone-400">{offer.capacity}. Unlocks: {offer.unlocks.join(', ')}. Staff, gear, clients and Know-How come with you.</p>
+          <p className="text-stone-400">{offer.capacity}. Unlocks: {offer.unlocks.join(', ')}. Moving takes today's studio time (downtime: 1 day). Staff, gear, clients and Know-How come with you.</p>
           <ul className="mt-1.5 space-y-0.5">
             {offer.conditions.map(c => (
               <li key={c.label} className={c.met ? 'text-emerald-300' : 'text-stone-400'}>{c.met ? '✓' : '○'} {c.label}</li>
@@ -35,7 +36,12 @@ export function PremisesPanel({ gameState, setGameState }: PremisesPanelProps) {
             onClick={() => {
               if (!confirming) return setConfirming(true);
               setConfirming(false);
-              setGameState(prev => applyPremisesMove(prev));
+              setGameState(prev => {
+                const moved = applyPremisesMove(prev);
+                return moved === prev
+                  ? prev
+                  : bookEntry(moved, { category: 'premises-rent', amount: moved.money - prev.money, sourceId: 'premises-deposit', memo: 'Studio deposit' });
+              });
             }}
           >
             {confirming ? 'Confirm move' : 'Move to a project studio'}

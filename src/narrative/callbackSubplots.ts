@@ -74,6 +74,27 @@ export const CALLBACK_SUBPLOTS: readonly EmergentSubplot[] = [
           },
         ],
       },
+      {
+        stageNumber: 3,
+        title: 'Ten Years On',
+        context: 'A young horn player you once hired at scale wants to start a session-players’ co-op, and asks whether the studio will be its first home.',
+        options: [
+          {
+            id: 'coop_host',
+            label: 'Host the co-op’s first sessions',
+            flavorText: 'Give the next generation a room.',
+            storyFlag: 'hosted_players_coop',
+            consequences: { moneyDelta: -350, repDelta: 10, narrativeOutcome: 'The co-op’s first record is recorded in your live room, and its name is on the label.' },
+          },
+          {
+            id: 'coop_advice',
+            label: 'Offer advice and a reference, nothing more',
+            flavorText: 'Wish them well from a distance.',
+            storyFlag: 'advised_players_coop',
+            consequences: { moneyDelta: 0, repDelta: 4, narrativeOutcome: 'A warm letter, a small thank-you, and a co-op that finds its own feet elsewhere.' },
+          },
+        ],
+      },
     ],
   },
   {
@@ -135,6 +156,27 @@ export const CALLBACK_SUBPLOTS: readonly EmergentSubplot[] = [
           },
         ],
       },
+      {
+        stageNumber: 3,
+        title: 'The Reunion Dinner',
+        context: 'A former crew member turns up, now running a studio of their own, and asks whether the two rooms could share a project.',
+        options: [
+          {
+            id: 'reunion_joint_project',
+            label: 'Take on the joint project',
+            flavorText: 'Two rooms, one record.',
+            storyFlag: 'took_joint_project',
+            consequences: { moneyDelta: -400, repDelta: 11, narrativeOutcome: 'The shared record sounds like both studios and neither, which is the point.' },
+          },
+          {
+            id: 'reunion_friendly_rivals',
+            label: 'Stay friendly rivals',
+            flavorText: 'Better to compete than to merge.',
+            storyFlag: 'stayed_friendly_rivals',
+            consequences: { moneyDelta: 200, repDelta: 4, narrativeOutcome: 'Drinks, handshakes, and a fierce rivalry that helps both diaries.' },
+          },
+        ],
+      },
     ],
   },
 
@@ -159,12 +201,36 @@ export const CALLBACK_SUBPLOTS: readonly EmergentSubplot[] = [
         title: 'A Client Notices Your Signature Sound',
         context:
           'A producer you have never met says your records sound like nobody else’s — and wants to know whether that was a choice or an accident.',
+        contextByFlag: {
+          went_stereo:
+            'A producer you have never met says your stereo records have a signature width — and asks whether the panning was philosophy or panic.',
+          defended_mono:
+            'A producer you have never met says your mono records still hit harder than most stereo charts — and asks if you will ever “upgrade”.',
+          went_big_eighties:
+            'A producer you have never met says your gated, glossy records are unmistakable — and wants to know if that sound is for sale.',
+          kept_it_raw:
+            'A producer you have never met says your raw takes sound like a live room with the safety rails off — and asks if you will polish anything.',
+        },
         options: [
           {
             id: 'format_own_it',
             label: 'Own it: “That is the room.”',
             flavorText: 'Sell the signature, not the gear list.',
             storyFlag: 'owned_signature_sound',
+            whenFlag: {
+              defended_mono: {
+                label: 'Own it: “One speaker, one truth.”',
+                flavorText: 'Sell the mono punch as the house philosophy.',
+              },
+              went_big_eighties: {
+                label: 'Own it: “That is the spectacle.”',
+                flavorText: 'Sell the gloss as intentional theatre.',
+              },
+              kept_it_raw: {
+                label: 'Own it: “We leave the edges on.”',
+                flavorText: 'Sell the grit as the point.',
+              },
+            },
             consequences: { moneyDelta: 0, repDelta: 10, narrativeOutcome: 'A reputation for a sound is worth more than a reputation for a price.' },
           },
           {
@@ -446,6 +512,27 @@ export const CALLBACK_SUBPLOTS: readonly EmergentSubplot[] = [
           },
         ],
       },
+      {
+        stageNumber: 3,
+        title: 'The Audit',
+        context: 'An old deal has finally been dragged into the light by a tidy accountant. You can pay the bill openly or find a way around it.',
+        options: [
+          {
+            id: 'audit_pay_openly',
+            label: 'Pay it openly and publish the accounts',
+            flavorText: 'Let the whole story be told.',
+            storyFlag: 'paid_the_audit_openly',
+            consequences: { moneyDelta: -700, repDelta: 10, narrativeOutcome: 'The accounts are published. Nobody finds anything new, and everybody notices the gesture.' },
+          },
+          {
+            id: 'audit_find_loophole',
+            label: 'Find a clever loophole',
+            flavorText: 'Lawyers exist for a reason.',
+            storyFlag: 'used_audit_loophole',
+            consequences: { moneyDelta: 400, repDelta: -6, narrativeOutcome: 'The bill shrinks. So does the trust of anyone who reads the footnotes.' },
+          },
+        ],
+      },
     ],
   },
 
@@ -509,6 +596,27 @@ export const CALLBACK_SUBPLOTS: readonly EmergentSubplot[] = [
           },
         ],
       },
+      {
+        stageNumber: 3,
+        title: 'The Wall of Plaques',
+        context: 'Years later the star comes back one last time and offers the studio a quiet honour: a permanent place in their official story.',
+        options: [
+          {
+            id: 'legacy_accept_place',
+            label: 'Accept a place in their official story',
+            flavorText: 'Become part of the legend.',
+            storyFlag: 'accepted_legacy_place',
+            consequences: { moneyDelta: 0, repDelta: 12, narrativeOutcome: 'The studio appears in the star’s biography, in a paragraph you were allowed to edit.' },
+          },
+          {
+            id: 'legacy_decline_place',
+            label: 'Decline and let the work speak',
+            flavorText: 'The records are the credit.',
+            storyFlag: 'declined_legacy_place',
+            consequences: { moneyDelta: 300, repDelta: 6, narrativeOutcome: 'You decline gracefully. The star sends a bottle and does not argue.' },
+          },
+        ],
+      },
     ],
   },
 
@@ -566,6 +674,163 @@ export const CALLBACK_SUBPLOTS: readonly EmergentSubplot[] = [
             flavorText: 'A good record is a good record.',
             storyFlag: 'coasted_on_title',
             consequences: { moneyDelta: 500, repDelta: 2, narrativeOutcome: 'Paid, pleased, and quietly unimpressed.' },
+          },
+        ],
+      },
+    ],
+  },
+
+  // ───────────── Creed & campaign branch callbacks ─────────────
+  {
+    id: 'subplot_creed_tested',
+    title: 'The Creed Gets Tested',
+    kicker: 'CREED // A FAMILIAR VISITOR',
+    minDay: 22,
+    daysBetweenStages: 4,
+    triggerCondition: (state) =>
+      hasFlag('creed_protect_the_take', 'creed_master_the_moment')(state) && state.reputation >= 20,
+    becauseOf: {
+      creed_protect_the_take: 'swore to protect the honest take',
+      creed_master_the_moment: 'swore to master every limitation',
+    },
+    stages: [
+      {
+        stageNumber: 1,
+        title: 'Silas Leaves Another Reel',
+        context:
+          'Silas Vance is back with a second hand-labelled reel and a question: will the creed you set still hold when a label offers to rewrite the arrangement overnight?',
+        contextByFlag: {
+          creed_protect_the_take:
+            'Silas Vance leaves a reel marked SAFE PLACE and asks whether the red light is still a sanctuary when a label wants twenty punch-ins before lunch.',
+          creed_master_the_moment:
+            'Silas Vance leaves a reel marked LIMITATION IS ARRANGEMENT and asks whether you still turn constraints into features when the budget forbids another take.',
+        },
+        options: [
+          {
+            id: 'creed_hold',
+            label: 'Hold the creed in front of the client',
+            flavorText: 'Say it out loud where the band can hear.',
+            storyFlag: 'held_the_creed',
+            whenFlag: {
+              creed_protect_the_take: {
+                label: 'Protect the take — refuse the rewrite rush',
+                flavorText: 'One honest performance beats twenty nervous fixes.',
+                narrativeOutcome: 'The band exhales. Silas almost smiles.',
+              },
+              creed_master_the_moment: {
+                label: 'Turn the limitation into the arrangement',
+                flavorText: 'Make the constraint the hook.',
+                narrativeOutcome: 'The take becomes stranger and better. Silas nods once.',
+              },
+            },
+            consequences: { moneyDelta: -150, repDelta: 10, narrativeOutcome: 'The creed holds. Word travels.' },
+          },
+          {
+            id: 'creed_bend',
+            label: 'Bend for the booking',
+            flavorText: 'Principles are expensive this week.',
+            storyFlag: 'bent_the_creed',
+            consequences: { moneyDelta: 700, repDelta: -3, narrativeOutcome: 'The session ships. The creed feels a little thinner.' },
+          },
+        ],
+      },
+      {
+        stageNumber: 2,
+        title: 'The Band Remembers',
+        context: 'Months later, the same band is choosing rooms for a follow-up. They remember how you answered Silas.',
+        contextByFlag: {
+          held_the_creed: 'The band asks to book you again — specifically because of what you said when Silas was in the room.',
+          bent_the_creed: 'The band books you again, but they bring their own producer “just in case the creed flexes”.',
+        },
+        options: [
+          {
+            id: 'creed_double_down',
+            label: 'Write the creed on the studio door',
+            flavorText: 'Make it public, make it stick.',
+            storyFlag: 'published_studio_creed',
+            consequences: { moneyDelta: 0, repDelta: 11, narrativeOutcome: 'Artists photograph the door. Interns recite it.' },
+          },
+          {
+            id: 'creed_quiet',
+            label: 'Keep it as a private rule',
+            flavorText: 'Actions, not posters.',
+            storyFlag: 'kept_creed_private',
+            consequences: { moneyDelta: 250, repDelta: 4, narrativeOutcome: 'No plaque, no fuss — just a reputation that sticks anyway.' },
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'subplot_heritage_dividend',
+    title: 'The Heritage Dividend',
+    kicker: 'CAMPAIGN // PATH REMEMBERED',
+    eras: ['analog60s', 'digital80s'],
+    minDay: 36,
+    daysBetweenStages: 5,
+    triggerCondition: (state) =>
+      hasFlag('chose_acoustic_heritage', 'chose_commercial_scale')(state) && state.reputation >= 30,
+    becauseOf: {
+      chose_acoustic_heritage: 'chose the acoustic heritage path',
+      chose_commercial_scale: 'chose the commercial scale path',
+    },
+    stages: [
+      {
+        stageNumber: 1,
+        title: 'A Festival Asks What You Are',
+        context:
+          'A festival programmer wants to bill your studio as either a craft temple or a hit factory. Your Act I choice is about to become public language.',
+        contextByFlag: {
+          chose_acoustic_heritage:
+            'A festival wants to bill you as a craft temple. They have heard you refused the commercial fork after Act I.',
+          chose_commercial_scale:
+            'A festival wants to bill you as a hit factory. They have heard you scaled the diary after Act I.',
+        },
+        options: [
+          {
+            id: 'heritage_accept_label',
+            label: 'Accept the billing and lean into it',
+            flavorText: 'Let the path name the room.',
+            storyFlag: 'accepted_path_billing',
+            whenFlag: {
+              chose_acoustic_heritage: {
+                label: 'Accept “craft temple” billing',
+                flavorText: 'Hang the heritage flag where the queue can see it.',
+              },
+              chose_commercial_scale: {
+                label: 'Accept “hit factory” billing',
+                flavorText: 'Own the throughput reputation.',
+              },
+            },
+            consequences: { moneyDelta: 400, repDelta: 6, narrativeOutcome: 'The festival programme prints your path in bold.' },
+          },
+          {
+            id: 'heritage_refuse_box',
+            label: 'Refuse the box: “We are a studio, not a slogan”',
+            flavorText: 'Keep the option to surprise people.',
+            storyFlag: 'refused_path_billing',
+            consequences: { moneyDelta: 0, repDelta: 8, narrativeOutcome: 'They bill you simply as the room that shows up. Artists notice.' },
+          },
+        ],
+      },
+      {
+        stageNumber: 2,
+        title: 'The Follow-Up Booking',
+        context: 'After the festival, a band books you specifically because of how you were billed — or because you refused the billing.',
+        options: [
+          {
+            id: 'heritage_deliver_promise',
+            label: 'Deliver exactly what the story promised',
+            flavorText: 'Consistency is a kind of honesty.',
+            storyFlag: 'delivered_path_promise',
+            consequences: { moneyDelta: -200, repDelta: 10, narrativeOutcome: 'The band leaves saying the room matched the rumour.' },
+          },
+          {
+            id: 'heritage_surprise',
+            label: 'Surprise them with the other side of the craft',
+            flavorText: 'Show the path they did not expect.',
+            storyFlag: 'surprised_with_other_path',
+            consequences: { moneyDelta: 300, repDelta: 5, narrativeOutcome: 'A few fans are confused. The smart ones book return sessions.' },
           },
         ],
       },

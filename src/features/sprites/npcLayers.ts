@@ -10,7 +10,7 @@ import type { ModularNpcDefinition } from './spriteTypes';
 
 export type NpcLayerSlot =
   | 'shadow' | 'lower' | 'shoes' | 'body' | 'top' | 'outerwear' | 'face'
-  | 'facialHair' | 'hair' | 'glasses' | 'jewellery' | 'headphones' | 'rolePropBack' | 'rolePropFront';
+  | 'facialHair' | 'hair' | 'headwear' | 'glasses' | 'jewellery' | 'headphones' | 'rolePropBack' | 'rolePropFront';
 
 export interface NpcLayer {
   slot: NpcLayerSlot;
@@ -36,9 +36,10 @@ export const buildNpcLayerStack = (npc: ModularNpcDefinition): NpcLayer[] => {
   layers.push({ slot: 'face', variant: `face/${body.face}`, optional: false });
   if (hair.facialHair !== 'none') layers.push({ slot: 'facialHair', variant: `facial/${hair.facialHair}`, tint: hair.hairHex, optional: true });
   if (hair.shape !== 'bald') layers.push({ slot: 'hair', variant: `hair/${hair.shape}`, tint: hair.hairHex, optional: false });
+  if (details.headwear && details.headwear !== 'none') layers.push({ slot: 'headwear', variant: `headwear/${details.headwear}`, tint: clothes.topSecondaryHex, optional: true });
   if (details.glasses !== 'none') layers.push({ slot: 'glasses', variant: `glasses/${details.glasses}`, optional: true });
   if (details.jewellery !== 'none') layers.push({ slot: 'jewellery', variant: `jewellery/${details.jewellery}`, optional: true });
-  if (roleProps.renderProp === 'headphones') layers.push({ slot: 'headphones', variant: 'prop/headphones', tint: details.headphoneColor, optional: true });
+  if (roleProps.renderProp === 'headphones' ? details.headphones !== false : details.headphones === true) layers.push({ slot: 'headphones', variant: 'prop/headphones', tint: details.headphoneColor, optional: true });
   layers.push({ slot: 'rolePropFront', variant: `prop/${roleProps.renderProp}`, tint: roleProps.accentColor, optional: true });
   return layers;
 };

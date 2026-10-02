@@ -22,14 +22,21 @@ import {
   Tv,
   X,
   Check,
+  DoorOpen,
+  Megaphone,
+  Users,
+  Zap,
 } from 'lucide-react';
-import { getOriginEffects } from '@/narrative/originPerks';
+import { getOriginEffects, gigRefreshCostFor } from '@/narrative/originPerks';
+import { getEraDecor } from '@/components/studio/studioDecorConfig';
 import { gameAudio } from '@/utils/audioSystem';
 import {
   MotionPanel,
   MotionButton,
   MotionNumber,
 } from '@/components/motion/primitives';
+import { findPendingChoreForHotspot } from '@/simulation/choreEngine';
+import { ChoreHotspotButton } from '@/components/chores/ChoreHotspotButton';
 
 export interface StudioInspectorProps {
   hotspot: StudioHotspotId;
@@ -43,16 +50,9 @@ export interface StudioInspectorProps {
   /** Ask the DOM dashboard to reveal a tab (charts/studio/staff/...). */
   onOpenDashboardTab: (tab: 'studio' | 'skills' | 'bands' | 'charts' | 'staff') => void;
   onConsoleFocus?: () => void;
+  onCompleteChore?: (hotspot: StudioHotspotId) => boolean;
+  onBookings?: () => void;
 }
-
-const ANCHORS: Record<StudioHotspotId, string> = {
-  phone: 'top-10 left-3',
-  clock: 'top-10 left-1/2 -translate-x-1/2',
-  tv: 'top-10 right-3',
-  shelf: 'top-1/2 right-3 -translate-y-1/2',
-  console: 'bottom-9 left-3',
-  liveRoom: 'bottom-9 right-3',
-};
 
 const INSPECTOR_META = {
   phone: { label: 'Booking Line', icon: Phone },
@@ -61,6 +61,8 @@ const INSPECTOR_META = {
   shelf: { label: 'Gear Locker', icon: Guitar },
   console: { label: 'Mixing Console', icon: SlidersHorizontal },
   liveRoom: { label: 'Live Room', icon: Mic2 },
+  door: { label: 'Go Out', icon: DoorOpen },
+  promotion: { label: 'Phone & Ring Light', icon: Megaphone },
 } as const satisfies Record<StudioHotspotId, { label: string; icon: typeof Phone }>;
 
 const ActionIcon: React.FC<{ icon: typeof Phone }> = ({ icon: Icon }) => (
@@ -83,17 +85,17 @@ const Shell: React.FC<{
   children: React.ReactNode;
 }> = ({ hotspot, onClose, children }) => (
   <div
-    className="absolute inset-0 z-20"
+    className="studio-inspector-layer absolute z-30"
     onClick={(e) => {
       if (e.target === e.currentTarget) onClose();
     }}
   >
-    <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]" />
+    <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]" onClick={onClose} aria-hidden="true" />
     <MotionPanel
       direction="scale"
       role="dialog"
       aria-label={INSPECTOR_META[hotspot].label}
-      className={`absolute ${ANCHORS[hotspot]} w-72 max-w-[80vw] max-h-[78%] overflow-y-auto rounded-lg border border-amber-400/30 bg-[#1b1813]/95 backdrop-blur-md shadow-2xl shadow-black/60`}
+      className="studio-inspector rst-modal absolute overflow-y-auto"
       onClick={(e: React.MouseEvent) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-black/40 sticky top-0 z-10">
@@ -104,7 +106,7 @@ const Shell: React.FC<{
             onClose();
           }}
           aria-label="Close inspector"
-          className="rounded p-1 text-stone-400 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-md text-stone-400 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
         >
           <X aria-hidden="true" className="h-4 w-4" />
         </MotionButton>
@@ -129,6 +131,47 @@ const MiniBar: React.FC<{ value: number; className?: string }> = ({ value, class
   </div>
 );
 
+/** Shared chore interaction surface — same language as floor ChoreHotspotButton. */
+const HotspotChorePanel: React.FC<{
+  hotspot: StudioHotspotId;
+  gameState: GameState;
+  onCompleteChore?: (hotspot: StudioHotspotId) => boolean;
+  onClose: () => void;
+}> = ({ hotspot, gameState, onCompleteChore, onClose }) => {
+  if (hotspot !== 'console' && hotspot !== 'liveRoom' && hotspot !== 'shelf') return null;
+  const chore = findPendingChoreForHotspot(gameState.choreState, hotspot);
+  if (!chore || !onCompleteChore) return null;
+  const shortLabel =
+    chore.id === 'tune_acoustics'
+      ? 'Tune Acoustics'
+      : chore.id === 'brew_espresso'
+        ? 'Brew Espresso'
+        : chore.title;
+  return (
+    <div className="rounded border border-[var(--rst-brass-line)] bg-[rgba(24,20,16,0.72)] p-2.5 space-y-2">
+      <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--rst-brass-300)]">
+        Floor duty
+      </div>
+      <p className="text-xs text-stone-400 leading-snug">{chore.description}</p>
+      <div className="flex items-center justify-between gap-2">
+        <ChoreHotspotButton
+          kind={chore.category}
+          label={shortLabel}
+          meta={chore.energyCost > 0 ? `${chore.energyCost}⚡` : 'Free'}
+          attention
+          onClick={() => {
+            if (onCompleteChore(hotspot)) onClose();
+          }}
+        />
+        <span className="text-[10px] text-stone-500 flex items-center gap-0.5 shrink-0">
+          <Zap size={10} aria-hidden="true" />
+          {gameState.playerData.dailyWorkCapacity} left
+        </span>
+      </div>
+    </div>
+  );
+};
+
 export const StudioInspector: React.FC<StudioInspectorProps> = ({
   hotspot,
   gameState,
@@ -140,6 +183,8 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   onUnassignStaff,
   onOpenDashboardTab,
   onConsoleFocus,
+  onCompleteChore,
+  onBookings,
 }) => {
   const [actingGigId, setActingGigId] = useState<string | null>(null);
   const [actingStaffId, setActingStaffId] = useState<string | null>(null);
@@ -158,6 +203,56 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   }, [hotspot, onClose]);
 
   const project = gameState.activeProject;
+
+  const openDashboard = (tab: Parameters<StudioInspectorProps['onOpenDashboardTab']>[0]) => {
+    void gameAudio.playTactileClick();
+    onClose();
+    onOpenDashboardTab(tab);
+  };
+
+  if (hotspot === 'door') {
+    return (
+      <Shell hotspot={hotspot} onClose={onClose}>
+        <p className="text-xs text-stone-400">Step outside. Where are you heading?</p>
+        <MotionButton autoFocus className="rst-btn rst-btn-ghost w-full min-h-11" onClick={() => openDashboard('studio')}>
+          <ActionIcon icon={ShoppingCart} /> Buy equipment
+        </MotionButton>
+        <MotionButton className="rst-btn rst-btn-ghost w-full min-h-11" onClick={() => openDashboard('bands')}>
+          <ActionIcon icon={Guitar} /> Meet artists & book shows
+        </MotionButton>
+        <MotionButton className="rst-btn rst-btn-ghost w-full min-h-11" onClick={() => openDashboard('staff')}>
+          <ActionIcon icon={Users} /> Scout studio crew
+        </MotionButton>
+      </Shell>
+    );
+  }
+
+  if (hotspot === 'promotion') {
+    if (getEraDecor(gameState.currentEra, gameState.currentYear).prop !== 'led-strip') return null;
+    const cooldown = gigRefreshCooldownRemaining(gameState);
+    const cost = gigRefreshCostFor(GIG_REFRESH_COST, getOriginEffects(gameState));
+    return (
+      <Shell hotspot={hotspot} onClose={onClose}>
+        <p className="text-xs text-stone-400">Create studio marketing content to bring in a fresh enquiry, contact artists, or plan a promoted show.</p>
+        <MotionButton
+          className="rst-btn rst-btn-primary w-full min-h-11"
+          disabled={!onRefreshProjects || cooldown > 0 || gameState.money < cost}
+          onClick={() => { if (onRefreshProjects?.()) { onClose(); onBookings?.(); } }}
+        >
+          <ActionIcon icon={Megaphone} /> Create marketing content — ${cost}
+        </MotionButton>
+        <p className="text-[11px] text-stone-400" role="status">
+          {cooldown > 0 ? `Outreach ready in ${cooldown} day${cooldown === 1 ? '' : 's'}.` : gameState.money < cost ? `You need $${cost} for outreach.` : 'One new booking lead. Shares the gig-outreach cooldown.'}
+        </p>
+        <MotionButton autoFocus className="rst-btn rst-btn-ghost w-full min-h-11" onClick={() => openDashboard('charts')}>
+          <ActionIcon icon={PhoneCall} /> Contact artists
+        </MotionButton>
+        <MotionButton className="rst-btn rst-btn-ghost w-full min-h-11" onClick={() => openDashboard('bands')}>
+          <ActionIcon icon={Guitar} /> Plan shows & promotions
+        </MotionButton>
+      </Shell>
+    );
+  }
 
   const handleTakeGig = (gig: Project) => {
     if (project || actingGigId) return;
@@ -203,7 +298,6 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
             <StatRow label="Payout" value={`$${gig.payoutBase}`} valueClass="text-green-400" />
             <StatRow label="Rep" value={`+${gig.repGainBase}`} valueClass="text-amber-300" />
             <MotionButton
-              size="sm"
               className="w-full h-7 mt-1 bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] text-emerald-100 text-xs font-bold"
               disabled={!!project || !!actingGigId}
               onClick={() => handleTakeGig(gig)}
@@ -220,8 +314,6 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
         ))}
         <div className="pt-1 border-t border-white/10">
           <MotionButton
-            size="sm"
-            variant="outline"
             className={`w-full h-7 text-xs border-white/20 ${ready ? 'text-amber-200 hover:bg-amber-500/10' : 'text-stone-500'}`}
             onClick={() => {
               void gameAudio.playTactileClick();
@@ -264,7 +356,6 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           )}
         </div>
         <MotionButton
-          size="sm"
           className="w-full h-8 bg-purple-400/[0.14] ring-1 ring-inset ring-purple-400/45 hover:bg-purple-400/[0.24] text-purple-100 text-xs font-bold"
           onClick={() => {
             void gameAudio.playTactileClick();
@@ -318,8 +409,6 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           </div>
         ))}
         <MotionButton
-          size="sm"
-          variant="outline"
           className="w-full h-7 text-xs border-white/20 text-stone-200 hover:bg-white/10"
           onClick={() => {
             void gameAudio.playTactileClick();
@@ -339,6 +428,12 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
     const gear = gameState.ownedEquipment;
     return (
       <Shell hotspot={hotspot} onClose={onClose}>
+        <HotspotChorePanel
+          hotspot={hotspot}
+          gameState={gameState}
+          onCompleteChore={onCompleteChore}
+          onClose={onClose}
+        />
         <StatRow label="Owned gear" value={<MotionNumber value={gear.length} />} />
         <StatRow label="Daily upkeep" value={`-$${calculateEquipmentUpkeep(gear, getOriginEffects(gameState))}`} valueClass="text-red-400" />
         <div className="space-y-2">
@@ -359,8 +454,6 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           {gear.length === 0 && <div className="text-xs text-stone-400">Bare shelves — buy gear from the Equipment Shop.</div>}
         </div>
         <MotionButton
-          size="sm"
-          variant="outline"
           className="w-full h-7 text-xs border-white/20 text-stone-200 hover:bg-white/10"
           onClick={() => {
             void gameAudio.playTactileClick();
@@ -380,11 +473,16 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
     if (!project) {
       return (
         <Shell hotspot={hotspot} onClose={onClose}>
+          <HotspotChorePanel
+            hotspot={hotspot}
+            gameState={gameState}
+            onCompleteChore={onCompleteChore}
+            onClose={onClose}
+          />
           <div className="text-xs text-stone-400">
             The console is dark. Take a gig from the phone to start tracking.
           </div>
           <MotionButton
-            size="sm"
             className="w-full h-7 text-xs bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-amber-100 font-bold"
             onClick={() => onConsoleFocus?.()}
           >
@@ -400,6 +498,12 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
     const progress = project.stages.length ? ((done + frac) / project.stages.length) * 100 : 0;
     return (
       <Shell hotspot={hotspot} onClose={onClose}>
+        <HotspotChorePanel
+          hotspot={hotspot}
+          gameState={gameState}
+          onCompleteChore={onCompleteChore}
+          onClose={onClose}
+        />
         <div className="text-xs font-semibold text-white truncate">{project.title}</div>
         <StatRow label="Stage" value={`${project.currentStageIndex + 1}/${project.stages.length} · ${current?.stageName ?? ''}`} />
         <div><MiniBar value={progress} className="bg-emerald-400" /></div>
@@ -409,7 +513,6 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           <StatRow label="Combo" value={`⚡ x${project.comboCount}`} valueClass="text-amber-300" />
         )}
         <MotionButton
-          size="sm"
           className="w-full h-7 text-xs bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-amber-100 font-bold"
           onClick={() => {
             void gameAudio.playTactileClick();
@@ -425,10 +528,45 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
   }
 
   /* ------------------------------ liveRoom ------------------------------ */
+  // Secondary surface if opened programmatically; floor click prefers chore → session.
   const crew = gameState.hiredStaff;
   return (
     <Shell hotspot={hotspot} onClose={onClose}>
-      {!project && <div className="text-xs text-stone-400">{EMPTY_STATES.sessionRoom.title} {EMPTY_STATES.sessionRoom.hint}</div>}
+      <HotspotChorePanel
+        hotspot={hotspot}
+        gameState={gameState}
+        onCompleteChore={onCompleteChore}
+        onClose={onClose}
+      />
+      {!project && (
+        <div className="text-xs text-stone-400">
+          {EMPTY_STATES.sessionRoom.title} {EMPTY_STATES.sessionRoom.hint}
+        </div>
+      )}
+      {project && (
+        <>
+          <div className="text-xs font-semibold text-white truncate">{project.title}</div>
+          <StatRow label="Client" value={project.clientName ?? '—'} />
+        </>
+      )}
+      <MotionButton
+        className="w-full h-7 text-xs bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-amber-100 font-bold"
+        onClick={() => {
+          void gameAudio.playTactileClick();
+          onConsoleFocus?.();
+          onClose();
+        }}
+      >
+        <ActionIcon icon={SlidersHorizontal} />
+        {project ? 'Go to Work Panel' : 'Jump to Work Panel'}
+      </MotionButton>
+      <MotionButton
+        className="w-full h-7 text-xs border-white/20 text-stone-200 hover:bg-white/10"
+        onClick={() => openDashboard('staff')}
+      >
+        <ActionIcon icon={Users} />
+        Open Crew
+      </MotionButton>
       {crew.length === 0 && (
         <div className="text-xs text-stone-400">
           {EMPTY_STATES.crew.title} {EMPTY_STATES.crew.hint}
@@ -450,7 +588,6 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
             </div>
             {project && (
               <MotionButton
-                size="sm"
                 className={`w-full h-6 text-[10px] font-bold ${
                   assignedHere ? 'bg-white/[0.07] ring-1 ring-inset ring-white/15 hover:bg-white/[0.13]' : 'bg-emerald-400/[0.14] hover:bg-emerald-400/[0.24]'
                 } text-white`}

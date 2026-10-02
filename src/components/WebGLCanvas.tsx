@@ -1,8 +1,45 @@
+import type { NpcVisualIdentity } from '@/features/sprites/npcAppearance';
+import type { ModularNpcDefinition } from '@/features/sprites/spriteTypes';
+import { lastTake, nodOffset } from '@/utils/takeFeedback';
 import React, { useEffect, useRef } from 'react';
-import { AnimatedSprite, Application, Container, Graphics, Matrix, Sprite, Text, type Renderer } from 'pixi.js';
+import { AnimatedSprite, Application, Container, Graphics, Matrix, Rectangle, Sprite, Text, type Renderer } from 'pixi.js';
 import { applyReelState, buildReelTextures, createReelSprite } from '@/features/gearStudio/gearSpriteAnimation';
-import { toSpriteVisualState } from '@/features/gearStudio/gearVisualState';
+import { dimTint, gearConditionKey, shelfConditionStyle, toSpriteVisualState } from '@/features/gearStudio/gearVisualState';
 import { getPropTexture, loadPropSprites } from '@/components/studio/propSprites';
+import {
+  layoutShelfSlots,
+  resolveShelfCapacity,
+  shelfStructuralKey,
+} from '@/components/studio/equipmentShelfSprites';
+import {
+  ensureEquipmentTexture,
+  getEquipmentTexture,
+  prefetchEquipmentTextures,
+} from '@/components/studio/equipmentTextures';
+import {
+  advanceClientTransit,
+  clientTransitPose,
+  createClientTransitState,
+  isClientTransitAnimating,
+  skipClientTransit,
+  type ClientTransitState,
+} from '@/components/studio/clientDoorTransit';
+import {
+  IDLE_CAMERA_LERP,
+  IDLE_CAMERA_RESTORE_LERP,
+  IDLE_CAMERA_ZOOM,
+  IDLE_HINT_DELAY_MS,
+  DOOR_HINT_DELAY_MS,
+  cameraPoseForFocus,
+  cameraPoseNear,
+  getIdleHintTarget,
+  lerpCameraPose,
+  pickIdleDirectionTarget,
+  shouldShowDoorHint,
+  type CameraPose,
+  type IdleDirectionHotspot,
+  type PendingChoreHotspot,
+} from '@/components/studio/idleFloorDirection';
 import { visualEraId } from '@/utils/eraProgression';
 import { useSettings } from '@/contexts/SettingsContext';
 import { resolveRendererOrder } from '@/lib/render/rendererChoice';
@@ -11,6 +48,10 @@ import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from
 import {
   buildDecorLights,
   buildDeskProps,
+  buildCandleTable,
+  buildCandleDrink,
+  buildCandleBeers,
+  CANDLE_DRINK_SETTLE_SEC,
   buildLiveBooth,
   buildPlankFloor,
   buildWallClock,
@@ -21,8 +62,35 @@ import {
   buildWallDressing,
   type DecorLights,
 } from '@/components/studio/studioDecor';
-import { getEraDecor, trophyKey, type TrophyInput } from '@/components/studio/studioDecorConfig';
+import {
+  getDaynessFromClockMinutes,
+  getDayPhase,
+  getEraDecor,
+  getEraLightingKit,
+  getNightTintAlpha,
+  getWallClockTime,
+  getWindowSkyColor,
+  REDUCED_MOTION_DAYNESS,
+  trophyKey,
+  type TrophyInput,
+} from '@/components/studio/studioDecorConfig';
 import { loadOptionalTexture, resolveEquipmentSpritePath } from '@/components/studio/studioAssets';
+import {
+  shelfIdleMotion,
+  statusLedPulse,
+  vuNeedleAngle,
+  vuNeedleNorm,
+} from '@/components/studio/studioFloorLife';
+import { addStudioProps, loadStudioKit, type StudioKitTextures } from '@/features/sprites/studioKit';
+import type { FloorNpcFigure, FloorNpcHandle } from '@/features/sprites/floorNpcs';
+import {
+  applyFloorNpcMotion,
+  createFloorNpcVisual,
+  hashSeed,
+  loadNpcPartsAtlas,
+  resolveFloorNpcDefinition,
+} from '@/features/sprites/floorNpcs';
+import type { LoadedAtlas } from '@/features/sprites/pipeline/pixiAtlasLoader';
 
 export const calculateEffectiveResolution = (dpr: number, scale?: number) => {
   const clampedDpr = Math.max(1.0, Math.min(2.0, dpr || 1.0));
@@ -136,7 +204,7 @@ export const calculateTapeSaturationWarmth = (
 /**
  * Studio hotspots the player can click in the isometric room scene.
  */
-export type StudioHotspotId = 'console' | 'liveRoom' | 'phone' | 'clock' | 'tv' | 'shelf';
+export type StudioHotspotId = 'console' | 'liveRoom' | 'phone' | 'clock' | 'tv' | 'shelf' | 'door' | 'promotion';
 
 /**
  * Draw-order bands inside the room. Floor, walls and big fixed furniture keep add order at `world`;
@@ -156,28 +224,66 @@ export interface StudioSceneState {
   activity: number;
   /** Whether a project is currently in production */
   hasActiveProject: boolean;
+  /** Who is in the booth (client / band name) for the active session */
+  artistName?: string;
   /** Number of staff physically on the studio floor */
   staffOnFloor: number;
-  /** Player's equipment count (fills the gear shelf) */
-  ownedEquipment: number;
+  /**
+   * Optional per-figure looks + anim states (creator / recruitment identities).
+   * When shorter than `staffOnFloor`, remaining slots use deterministic seeds.
+   */
+  floorFigures?: FloorNpcFigure[];
+  /** Producer look when the first floor slot has no figure identity (sibling creator merge). */
+  producerAppearance?: NpcVisualIdentity;
+  /**
+   * Fully resolved producer definition from career-start customisation (#126/k5v).
+   * When present, floor slot 0 renders it directly instead of seed-deriving a face,
+   * so the on-floor producer matches the creator preview exactly.
+   */
+  producerNpc?: ModularNpcDefinition;
   /**
    * Owned equipment ids, in acquisition order — optional sprite dressing layer
-   * (pixi-presentation-audit §4 / issue #58 asset pipeline). When an id resolves
-   * to a real, loadable sprite it upgrades that shelf slot from a procedural bar
-   * to a sprite; missing ids or missing files silently keep the procedural bar.
-   * Never required: omit it and the shelf renders exactly as before.
+   * (pixi-presentation-audit §4 / issue #58 asset pipeline). Falls back to coloured
+   * bars when PNG art is missing. `ownedEquipment` count is derived when ids are
+   * omitted (legacy / tests).
    */
   ownedEquipmentIds?: string[];
+  /**
+   * Authoritative gear condition (0..100) by equipment ID — drives restrained
+   * shelf wear (dimmed faces, failing-item warning LED). Absent = no wear.
+   */
+  gearConditions?: Record<string, number>;
+  /** @deprecated Prefer ownedEquipmentIds — count still accepted for structural fallbacks. */
+  ownedEquipment?: number;
   /** In-game day counter (drives the wall clock) */
   day: number;
   /** Current era id — drives the room's colour grade + signage (bead goj.3) */
   eraId?: string;
   /** Studio tier 1-5 from ProgressionSystem — drives visible room upgrades (bead ifx.3) */
   roomTier?: number;
-  /** Records + achievements hung on the trophy wall (derived from the settlement ledger). */
+  /** Completed-project album covers hung above the booth (from financials.reports). */
   trophies?: TrophyInput;
   /** Stable per-run seed so plank layout / motes are identical across rebuilds. */
   decorSeed?: string | number;
+  /** True when artist enquiries wait on the phone — strengthens the ring pulse. */
+  enquiryWaiting?: boolean;
+  /** First incomplete floor chore hotspot (console / liveRoom / shelf), if any. */
+  pendingChoreHotspot?: PendingChoreHotspot | null;
+  /**
+   * True when the floor owns attention (no ContextDrawer / inspector).
+   * Idle auto-zoom + hints stay quiet while drawers are open.
+   */
+  floorFocused?: boolean;
+  /**
+   * True after today's `brew_espresso` chore completes — candle-table mug + steam.
+   * Derived from `choreState.chores.brew_espresso.completed` (clears on daily refresh).
+   */
+  coffeeSteaming?: boolean;
+  /**
+   * True when the active session's rider asks for beers — bottles on the candle table.
+   * Coffee stays brew-gated (`coffeeSteaming`); beers are rider-driven.
+   */
+  riderBeers?: boolean;
 }
 
 interface WebGLCanvasProps {
@@ -186,6 +292,8 @@ interface WebGLCanvasProps {
   resetCameraKey?: number;
   /** Top-centre of each hotspot in canvas CSS pixels; follows pan/zoom so DOM badges stay attached. */
   onHotspotAnchors?: (anchors: HotspotAnchors) => void;
+  /** Fired once after the first rendered frame so the shell can reveal GUI + 3D together. */
+  onFirstFrame?: () => void;
   className?: string;
 }
 
@@ -193,20 +301,19 @@ const DEFAULT_STATE: StudioSceneState = {
   activity: 0.2,
   hasActiveProject: false,
   staffOnFloor: 1,
+  ownedEquipmentIds: ['basic_mic', 'basic_monitors', 'audio_interface'],
   ownedEquipment: 3,
   day: 1,
   eraId: 'analog60s',
   roomTier: 1,
 };
 
-export const IDLE_HINT_DELAY_MS = 8_000;
-
-export const getIdleHintTarget = (
-  hasActiveProject: boolean,
-  idleMs: number,
-): 'phone' | 'console' | null => {
-  if (idleMs < IDLE_HINT_DELAY_MS) return null;
-  return hasActiveProject ? 'console' : 'phone';
+export {
+  IDLE_HINT_DELAY_MS,
+  DOOR_HINT_DELAY_MS,
+  getIdleHintTarget,
+  pickIdleDirectionTarget,
+  shouldShowDoorHint,
 };
 
 /* ---------------------------------------------------------------------------
@@ -351,21 +458,56 @@ interface AnimBar {
   range?: number;
   /** When set, the bar is drawn as a quad on the left-wall plane (tile y span + base lift). */
   plane?: { y0: number; y1: number; lift: number };
+  /** Vintage analog needle mode (tier-1 meter bridge). */
+  needle?: boolean;
+  /** Top of the dial slot (needle pivots near `y`, tips toward `needleTopY`). */
+  needleTopY?: number;
+}
+
+/** Status LED jewel animated by the ticker (console / outboard). */
+interface StatusLed {
+  g: Graphics;
+  x: number;
+  y: number;
+  color: number;
+  radius: number;
+}
+
+/** Shelf gear sprite kept for idle micro-motion (hit target stays on the shelf wrap). */
+interface ShelfAnimItem {
+  display: Container;
+  baseY: number;
+  baseRot: number;
+  phase: number;
 }
 
 /** Per-build dynamic refs the ticker animates */
 interface SceneRefs {
   vuBars: AnimBar[];
   tvBars: AnimBar[];
+  statusLeds: StatusLed[];
+  shelfItems: ShelfAnimItem[];
   phoneRing: Graphics | null;
   clockHand: Graphics | null;
   setClockTime: ((hour: number, minute: number) => void) | null;
-  staffFigures: { fig: Container; baseY: number }[];
+  staffFigures: FloorNpcHandle[];
+  /** The booked artist, standing at the live-room mic while a session is in progress. */
+  artist: (FloorNpcHandle & { tag: Text; shown: string; baseX: number }) | null;
+  /** Floor anchor just inside the door threshold (client enter/exit). */
+  doorFloor: { x: number; y: number } | null;
+  /** Live-room mic stand pose for the booked artist. */
+  artistStand: { x: number; y: number } | null;
   nightTintLayer: Container | null;
+  /** Right-wall window pane fill — sky colour driven by the studio clock. */
+  windowPane: Graphics | null;
+  windowPanePoly: number[] | null;
+  setWindowSky: ((color: number) => void) | null;
   hoverGlows: Record<string, Graphics>;
   hoverGlowTargets: Record<string, number>;
   hotspotHits: Partial<Record<StudioHotspotId, Container>>;
-  idleHints: Partial<Record<'phone' | 'console', Graphics>>;
+  idleHints: Partial<Record<IdleDirectionHotspot, Graphics>>;
+  /** Local-space centres used by idle auto-zoom. */
+  idleFocusPoints: Partial<Record<IdleDirectionHotspot, { x: number; y: number }>>;
   crtLayer: Container | null;
   bloomLayer: Container | null;
   vignetteLayer: Container | null;
@@ -378,6 +520,12 @@ interface SceneRefs {
    * after the scene it belongs to has already been destroyed.
    */
   disposed: boolean;
+  /** Brew mug on the candle table — visible only after `brew_espresso`. */
+  candleDrink: Container | null;
+  /** Local y rest pose for the candle drink settle animation. */
+  candleDrinkBaseY: number;
+  /** Rider beers on the candle table — visible during sessions with a beer ask. */
+  candleBeers: Container | null;
   /** Tier-1 tape machine reels (Pixi AnimatedSprite, #81); empty on other tiers. */
   reels: AnimatedSprite[];
 }
@@ -433,27 +581,41 @@ const buildScene = (
   height: number,
   state: StudioSceneState,
   onSelect?: (id: StudioHotspotId) => void,
-  renderer?: Renderer
+  renderer?: Renderer,
+  kitTextures?: StudioKitTextures | null,
+  npcAtlas?: LoadedAtlas | null,
 ): BuiltScene => {
   const root = new Container();
   const refs: SceneRefs = {
     vuBars: [],
     tvBars: [],
+    statusLeds: [],
+    shelfItems: [],
     phoneRing: null,
     clockHand: null,
     setClockTime: null,
     staffFigures: [],
+    artist: null,
+    doorFloor: null,
+    artistStand: null,
     nightTintLayer: null,
+    windowPane: null,
+    windowPanePoly: null,
+    setWindowSky: null,
     hoverGlows: {},
     hoverGlowTargets: {},
     hotspotHits: {},
     idleHints: {},
+    idleFocusPoints: {},
     crtLayer: null,
     bloomLayer: null,
     vignetteLayer: null,
     dynamicBloomG: null,
     decor: null,
     disposed: false,
+    candleDrink: null,
+    candleDrinkBaseY: 0,
+    candleBeers: null,
     reels: [],
   };
 
@@ -477,7 +639,7 @@ const buildScene = (
 
   const decorSpec = getEraDecor(state.eraId);
   const decorSeed = state.decorSeed ?? 'studio';
-  const trophyInput: TrophyInput = state.trophies ?? { platinum: 0, gold: 0, awards: 0 };
+  const trophyInput: TrophyInput = state.trophies ?? { covers: [] };
 
   // Room slab + ground shadow sit under everything else.
   root.addChild(buildRoomShell());
@@ -513,17 +675,37 @@ const buildScene = (
   const dressing = buildWallDressing(decorSpec, trophyInput, tier);
   root.addChild(dressing.container);
 
-  /* ---- Window (right wall) -------------------------------------------- */
-  const windowGfx = new Graphics();
+  /* ---- Window (right wall) — pane sky tracks the studio clock ------------ */
+  const windowWrap = new Container();
   const winA = iso(5.1, 0);
   const winB = iso(6.9, 0);
   const winPoly = [winA.x, winA.y - 96, winB.x, winB.y - 96, winB.x, winB.y - 34, winA.x, winA.y - 34];
-  windowGfx.poly(winPoly).fill(0x8fbfe6);
-  windowGfx.poly(winPoly).stroke({ width: 4, color: COLORS.wallTrim });
+  const windowPane = new Graphics();
+  const initialSky = getWindowSkyColor(getWallClockTime(state.day, 0).minutesOfDay);
+  windowPane.poly(winPoly).fill(initialSky);
+  windowWrap.addChild(windowPane);
+  const windowFrame = new Graphics();
+  // Closed pane outline — keep the mullion inside the glass so no orphan black stub hangs below the sill
+  windowFrame.poly(winPoly).stroke({ width: 3.5, color: COLORS.wallTrim });
   const winMidX = (winA.x + winB.x) / 2;
   const winMidY = (winA.y + winB.y) / 2;
-  windowGfx.rect(winMidX - 2, winMidY - 78, 4, 64).fill(COLORS.wallTrim);
-  root.addChild(windowGfx);
+  const paneTop = winMidY - 96;
+  const paneBot = winMidY - 34;
+  const mullionInset = 4;
+  windowFrame
+    .rect(winMidX - 1.5, paneTop + mullionInset, 3, paneBot - paneTop - mullionInset * 2)
+    .fill(COLORS.wallTrim);
+  windowWrap.addChild(windowFrame);
+  root.addChild(windowWrap);
+  refs.windowPane = windowPane;
+  refs.windowPanePoly = winPoly;
+  let lastSky = initialSky;
+  refs.setWindowSky = (color: number) => {
+    if (color === lastSky || !refs.windowPane || !refs.windowPanePoly) return;
+    lastSky = color;
+    refs.windowPane.clear();
+    refs.windowPane.poly(refs.windowPanePoly).fill(color);
+  };
 
   /* ---- Charts TV (left wall) ------------------------------------------ */
   const tvWrap = new Container();
@@ -572,6 +754,15 @@ const buildScene = (
   root.addChild(buildRug());
   root.addChild(dressing.props); // free-standing era props sit on top of the floor
 
+  // Streaming-era phone/ring-light: same era gate as the visible led-strip prop.
+  if (decorSpec.prop === 'led-strip') {
+    const s = iso(7.3, 1.6);
+    const promoHit = new Graphics().roundRect(s.x - 24, s.y - 92, 48, 98, 6).fill(0xffffff);
+    addHotspot(root, 'promotion', promoHit, dressing.props, refs, onSelect);
+    refs.hoverGlows.promotion?.roundRect(s.x - 24, s.y - 92, 48, 98, 6)
+      .stroke({ width: 2, color: decorSpec.glow });
+  }
+
   // Window spill and contact shadow place furniture on the floor plane.
   const lightAndShadow = new Graphics();
   const deskFoot = iso(4.5, 4.25);
@@ -585,7 +776,7 @@ const buildScene = (
 
   /* ---- Studio door (left wall, between clock & TV) ----------------------
    * Drawn after the floor so the threshold sits on the tile plane.
-   * Reserved as the client enter/exit anchor for future walk-in anims. */
+   * Door floor anchor drives diegetic client enter/exit walks. */
   {
     const doorA = iso(0, 3.15);
     const doorB = iso(0, 4.35);
@@ -665,10 +856,48 @@ const buildScene = (
       .fill(COLORS.wallTrim);
     doorWrap.addChild(lintel);
     root.addChild(doorWrap);
+    const doorHit = new Graphics()
+      .poly([
+        doorA.x, doorA.y,
+        doorB.x, doorB.y,
+        doorB.x, doorB.y - doorH,
+        doorA.x, doorA.y - doorH,
+      ])
+      .fill(0xffffff);
+    addHotspot(root, 'door', doorHit, doorWrap, refs, onSelect);
+    refs.hoverGlows.door
+      ?.poly([
+        doorA.x, doorA.y,
+        doorB.x, doorB.y,
+        doorB.x, doorB.y - doorH,
+        doorA.x, doorA.y - doorH,
+      ])
+      .stroke({ width: 2, color: 0xd9a441 });
+    const doorHintPoly = [
+      doorA.x, doorA.y,
+      doorB.x, doorB.y,
+      doorB.x, doorB.y - doorH,
+      doorA.x, doorA.y - doorH,
+    ];
+    const doorHint = new Graphics();
+    doorHint.poly(doorHintPoly).stroke({ width: 6, color: 0x0b0906, alpha: 0.5 });
+    doorHint.poly(doorHintPoly).stroke({ width: 2.5, color: 0xd9a441, alpha: 0.9 });
+    doorHint.alpha = 0;
+    doorHint.eventMode = 'none';
+    doorHint.zIndex = Z.fx;
+    refs.idleHints.door = doorHint;
+    refs.idleFocusPoints.door = {
+      x: (doorA.x + doorB.x) / 2,
+      y: (doorA.y + doorB.y) / 2 - doorH * 0.45,
+    };
+    root.addChild(doorHint);
+    // Just inside the threshold — start/end of client walk paths
+    refs.doorFloor = iso(0.45, 3.75);
   }
 
   /* ---- Live room booth: enclosed (walls, roof, header, foam, glass front) ---- */
   const liveWrap = buildLiveBooth();
+  if (kitTextures) addStudioProps(root, kitTextures, tier, visualEraId(state.eraId ?? 'analog60s'));
   const boothX0 = 1.0;
   const boothX1 = 3.5;
   const boothGlassY = 1.0;
@@ -676,11 +905,29 @@ const buildScene = (
   const gB = iso(boothX1, boothGlassY);
 
   const liveHit = new Graphics();
+  // Cover the glass front and the mic stand floor so booth + band taps share one hotspot.
+  const stand = iso(2.3, 1.55);
   liveHit.poly([gA.x, gA.y, gB.x, gB.y, gB.x, gB.y - 90, gA.x, gA.y - 90]).fill(0xffffff);
+  liveHit.poly([stand.x - 36, stand.y + 10, stand.x + 36, stand.y + 10, stand.x + 36, stand.y - 80, stand.x - 36, stand.y - 80]).fill(0xffffff);
   addHotspot(root, 'liveRoom', liveHit, liveWrap, refs, onSelect);
   refs.hoverGlows['liveRoom']
     ?.poly([gA.x, gA.y - 90, gB.x, gB.y - 90, gB.x, gB.y, gA.x, gA.y])
     .stroke({ width: 3, color: COLORS.glass });
+  {
+    const liveHintPoly = [gA.x, gA.y - 90, gB.x, gB.y - 90, gB.x, gB.y, gA.x, gA.y];
+    const liveHint = new Graphics();
+    liveHint.poly(liveHintPoly).stroke({ width: 7, color: 0x0b0906, alpha: 0.5 });
+    liveHint.poly(liveHintPoly).stroke({ width: 2.5, color: 0xd9a441, alpha: 0.88 });
+    liveHint.alpha = 0;
+    liveHint.eventMode = 'none';
+    liveHint.zIndex = Z.fx;
+    refs.idleHints.liveRoom = liveHint;
+    refs.idleFocusPoints.liveRoom = {
+      x: (gA.x + gB.x) / 2,
+      y: (gA.y + gB.y) / 2 - 45,
+    };
+    root.addChild(liveHint);
+  }
 
   /* ---- Gear shelf (left side) — half-tile grid snap -------------------- */
   const shelfWrap = new Container();
@@ -699,50 +946,89 @@ const buildScene = (
   shelf.poly([q4.x, q4.y - shelfH, q3.x, q3.y - shelfH, q3.x, q3.y, q4.x, q4.y]).fill(COLORS.shelfSide);
   shelf.poly([q2.x, q2.y - shelfH, q3.x, q3.y - shelfH, q3.x, q3.y, q2.x, q2.y]).fill(COLORS.shelfSide);
   shelfWrap.addChild(shelf);
-  // Gear items — count scales with owned equipment; shelf capacity grows with tier
-  const gearCapacity = 6 + Math.round(shelfExtension * 4);
-  const gearCount = Math.max(1, Math.min(gearCapacity, Math.ceil(state.ownedEquipment / 2)));
-  const shelfSpanPx = Math.abs(q2.x - q1.x);
-  const gearW = Math.max(6, Math.min(16, Math.floor(shelfSpanPx / gearCapacity) - 1));
-  const ownedIds = state.ownedEquipmentIds ?? [];
-  for (let i = 0; i < gearCount; i++) {
-    const t = (i + 0.5) / gearCapacity;
-    const gx = q1.x + (q2.x - q1.x) * t;
-    const gy = q1.y + (q2.y - q1.y) * t - shelfH;
-    const item = new Graphics();
-    // Silhouette variety (pixi-presentation-audit §E.2): height AND width both
-    // step across a small deterministic cycle so the shelf doesn't read as one
-    // uniform row of identical bars — a cheap readability win with zero assets.
-    const itemH = 12 + (i % 4) * 4;
-    const itemW = gearW - (i % 3 === 1 ? 2 : 0);
-    const color = COLORS.gear[i % COLORS.gear.length];
-    item.rect(gx - itemW / 2, gy - itemH, itemW, itemH).fill(color);
-    // Thin lighter cap suggests a distinct control/label without a real sprite.
-    item.rect(gx - itemW / 2, gy - itemH, itemW, 2).fill({ color: 0xffffff, alpha: 0.25 });
-    shelfWrap.addChild(item);
-
-    // Optional sprite dressing layer (issue #58 asset pipeline): if this slot's
-    // owned equipment resolves to a real, loadable sprite, swap the bar for it.
-    // Missing id / missing file / scene torn down before load finishes -> the
-    // procedural bar above stays exactly as drawn. Simulation state never
-    // depends on this resolving.
-    const equipmentId = ownedIds[i];
-    const spritePath = equipmentId ? resolveEquipmentSpritePath(equipmentId) : null;
-    if (spritePath) {
-      const slotX = gx;
-      const slotY = gy;
-      const slotZ = item.zIndex;
-      loadOptionalTexture(spritePath).then((texture) => {
-        if (!texture || refs.disposed) return;
-        const sprite = new Sprite(texture);
-        sprite.anchor.set(0.5, 1);
-        sprite.position.set(slotX, slotY);
-        const scale = Math.min(itemW / texture.width, itemH / texture.height, 1);
-        sprite.scale.set(scale || 1);
-        sprite.zIndex = slotZ;
-        shelfWrap.addChild(sprite);
-        item.visible = false;
+  // Gear items — owned IDs drive sprites (equipmentArt / equipmentSpriteMap); missing art → tinted bars
+  const gearCapacity = resolveShelfCapacity(tier);
+  const ownedIds = state.ownedEquipmentIds?.length
+    ? state.ownedEquipmentIds
+    : Array.from(
+        {
+          length: Math.max(
+            0,
+            Math.min(gearCapacity, Math.ceil((state.ownedEquipment ?? 0) / 2)),
+          ),
+        },
+        (_, i) => `legacy_slot_${i}`,
+      );
+  const shelfSlots = layoutShelfSlots({
+    ownedIds,
+    capacity: gearCapacity,
+    q1,
+    q2,
+    shelfH,
+    palette: COLORS.gear,
+  });
+  // Always show at least one placeholder bar when the shelf is empty so the rack reads as furniture
+  const slotsToDraw = shelfSlots.length > 0
+    ? shelfSlots
+    : [{
+        equipmentId: '_empty',
+        x: q1.x + (q2.x - q1.x) * 0.5,
+        y: q1.y + (q2.y - q1.y) * 0.5 - shelfH,
+        width: 10,
+        height: 14,
+        tint: COLORS.gear[0],
+        spritePath: '',
+        spriteFile: null,
+      }];
+  for (const slot of slotsToDraw) {
+    // Restrained wear from authoritative condition; unknown ids show no wear.
+    const rawCond = slot.equipmentId !== '_empty' ? state.gearConditions?.[slot.equipmentId] : undefined;
+    const wear = typeof rawCond === 'number' ? shelfConditionStyle(rawCond) : null;
+    const faceTint = wear ? dimTint(slot.tint, wear.dim) : slot.tint;
+    if (wear?.warn) {
+      // Failing-item warning LED rides the existing status-LED ticker (pulse + reduced-motion free).
+      const warnLed = new Graphics();
+      shelfWrap.addChild(warnLed);
+      refs.statusLeds.push({
+        g: warnLed,
+        x: slot.x + slot.width / 2 + 2,
+        y: slot.y - slot.height - 4,
+        color: 0xef4444,
+        radius: 1.4,
       });
+    }
+    const tex = slot.equipmentId !== '_empty' ? getEquipmentTexture(slot.equipmentId) : null;
+    if (tex) {
+      const sprite = new Sprite(tex);
+      const maxW = Math.max(10, slot.width * 1.6);
+      const maxH = Math.max(14, slot.height + 6);
+      const scale = Math.min(maxW / Math.max(1, tex.width), maxH / Math.max(1, tex.height));
+      sprite.scale.set(scale);
+      sprite.anchor.set(0.5, 1);
+      sprite.position.set(slot.x, slot.y);
+      sprite.tint = faceTint;
+      shelfWrap.addChild(sprite);
+      refs.shelfItems.push({
+        display: sprite,
+        baseY: slot.y,
+        baseRot: 0,
+        phase: refs.shelfItems.length * 0.9,
+      });
+      // Warm the cache for ids that haven't resolved yet (async; next rebuild paints sprites)
+      void ensureEquipmentTexture(slot.equipmentId);
+    } else {
+      const item = new Graphics();
+      item.rect(slot.x - slot.width / 2, slot.y - slot.height, slot.width, slot.height).fill(faceTint);
+      shelfWrap.addChild(item);
+      if (slot.equipmentId !== '_empty') {
+        refs.shelfItems.push({
+          display: item,
+          baseY: slot.y,
+          baseRot: 0,
+          phase: refs.shelfItems.length * 0.9,
+        });
+        void ensureEquipmentTexture(slot.equipmentId);
+      }
     }
   }
   const shelfHit = new Graphics();
@@ -751,6 +1037,21 @@ const buildScene = (
   refs.hoverGlows['shelf']
     ?.poly([q1.x, q1.y - 60, q2.x, q2.y - 60, q3.x, q3.y, q4.x, q4.y])
     .stroke({ width: 3, color: 0xc77dff });
+  {
+    const shelfHintPoly = [q1.x, q1.y - 60, q2.x, q2.y - 60, q3.x, q3.y, q4.x, q4.y];
+    const shelfHint = new Graphics();
+    shelfHint.poly(shelfHintPoly).stroke({ width: 7, color: 0x0b0906, alpha: 0.5 });
+    shelfHint.poly(shelfHintPoly).stroke({ width: 2.5, color: 0xd9a441, alpha: 0.88 });
+    shelfHint.alpha = 0;
+    shelfHint.eventMode = 'none';
+    shelfHint.zIndex = Z.fx;
+    refs.idleHints.shelf = shelfHint;
+    refs.idleFocusPoints.shelf = {
+      x: (q1.x + q3.x) / 2,
+      y: (q1.y + q3.y) / 2 - 30,
+    };
+    root.addChild(shelfHint);
+  }
 
   /* ---- Mixing console (center) ---------------------------------------- */
   const deskWrap = new Container();
@@ -827,11 +1128,9 @@ const buildScene = (
     const mTopPt = dPt(mgx, 3.64, deskH + bridgeH - 1);
     const slotW = 3.5;
     if (tier === 1) {
-      // Vintage amber backlit dial
+      // Vintage amber backlit dial (needle drawn live by the ticker)
       bridgeG.rect(mBase.x - slotW / 2, mTopPt.y, slotW, mBase.y - mTopPt.y).fill(0xffeaa7);
       bridgeG.rect(mBase.x - slotW / 2, mTopPt.y, slotW, mBase.y - mTopPt.y).stroke({ width: 0.5, color: 0x3d3122 });
-      // Needle tick
-      bridgeG.rect(mBase.x - 0.5, mTopPt.y + 2, 1, mBase.y - mTopPt.y - 3).fill(0x8a2323);
     } else {
       // Dark LED ladder slot
       bridgeG.rect(mBase.x - slotW / 2, mTopPt.y, slotW, mBase.y - mTopPt.y).fill(0x0c0f14);
@@ -842,9 +1141,11 @@ const buildScene = (
       g: bar,
       x: mBase.x,
       y: mBase.y,
-      color: tier === 1 ? 0xcc3333 : COLORS.gear[i % COLORS.gear.length],
+      color: tier === 1 ? 0x8a2323 : COLORS.gear[i % COLORS.gear.length],
       width: slotW,
       range: 9,
+      needle: tier === 1,
+      needleTopY: mTopPt.y,
     });
   }
 
@@ -925,11 +1226,20 @@ const buildScene = (
     const panPt = dPt(cgx, 4.32);
     channelG.circle(panPt.x, panPt.y, 1.5).fill(0xd1d5db);
 
-    // Solo/Mute indicator dots
+    // Solo/Mute indicator dots — animate a subset so high channel counts stay cheap
     const soloPt = dPt(cgx - 0.02, 4.40);
-    channelG.circle(soloPt.x, soloPt.y, 0.9).fill(0x22c55e);
     const mutePt = dPt(cgx + 0.02, 4.40);
-    channelG.circle(mutePt.x, mutePt.y, 0.9).fill(0xef4444);
+    if (i % 2 === 0 && refs.statusLeds.length < 16) {
+      const soloLed = new Graphics();
+      const muteLed = new Graphics();
+      deskWrap.addChild(soloLed);
+      deskWrap.addChild(muteLed);
+      refs.statusLeds.push({ g: soloLed, x: soloPt.x, y: soloPt.y, color: 0x22c55e, radius: 0.9 });
+      refs.statusLeds.push({ g: muteLed, x: mutePt.x, y: mutePt.y, color: 0xef4444, radius: 0.9 });
+    } else {
+      channelG.circle(soloPt.x, soloPt.y, 0.9).fill({ color: 0x22c55e, alpha: 0.45 });
+      channelG.circle(mutePt.x, mutePt.y, 0.9).fill({ color: 0xef4444, alpha: 0.35 });
+    }
 
     // Fader groove line along isometric depth
     const fStart = dPt(cgx, 4.46);
@@ -993,9 +1303,17 @@ const buildScene = (
       const r4 = dPt(5.54, uGy2);
       channelG.poly([r1.x, r1.y, r2.x, r2.y, r3.x, r3.y, r4.x, r4.y]).fill(0x1e2430);
       channelG.poly([r1.x, r1.y, r2.x, r2.y, r3.x, r3.y, r4.x, r4.y]).stroke({ width: 0.8, color: 0x475569 });
-      // Status LEDs on rack unit
+      // Status LEDs on rack unit (animated by the ticker)
       const ledPt = dPt(5.58, (uGy1 + uGy2) / 2);
-      channelG.circle(ledPt.x, ledPt.y, 1.2).fill(u % 2 === 0 ? 0x22c55e : 0xf59e0b);
+      const led = new Graphics();
+      deskWrap.addChild(led);
+      refs.statusLeds.push({
+        g: led,
+        x: ledPt.x,
+        y: ledPt.y,
+        color: u % 2 === 0 ? 0x22c55e : 0xf59e0b,
+        radius: 1.2,
+      });
       const meterPt = dPt(5.66, (uGy1 + uGy2) / 2);
       channelG.rect(meterPt.x, meterPt.y - 1, 6, 2).fill(0x38bdf8);
     }
@@ -1022,10 +1340,41 @@ const buildScene = (
   consoleHint.eventMode = 'none';
   refs.idleHints.console = consoleHint;
   consoleHint.zIndex = Z.fx;
+  refs.idleFocusPoints.console = {
+    x: (p1.x + p3.x) / 2,
+    y: (p1.y + p3.y) / 2 - bridgeH * 0.35,
+  };
   root.addChild(consoleHint);
   const deskProps = buildDeskProps(deskH);
   deskProps.zIndex = deskZ;
   root.addChild(deskProps);
+
+  // Listening candle table — presentation only (no hotspot; glow lives in decor lights)
+  {
+    const candleTable = buildCandleTable();
+    candleTable.zIndex = Z.depth + iso(6.55, 5.35).y;
+    root.addChild(candleTable);
+    // Drink/mug only after brew_espresso — settle anim driven by the ticker
+    const drink = buildCandleDrink();
+    drink.zIndex = candleTable.zIndex + 1;
+    refs.candleDrink = drink;
+    refs.candleDrinkBaseY = drink.y;
+    // If brew already complete on this rebuild, show settled (no re-drop)
+    if (state.coffeeSteaming) {
+      drink.visible = true;
+      drink.alpha = 1;
+    }
+    root.addChild(drink);
+    // Rider beers — opposite side of the candle from the brew mug
+    const beers = buildCandleBeers();
+    beers.zIndex = candleTable.zIndex + 1;
+    refs.candleBeers = beers;
+    if (state.riderBeers) {
+      beers.visible = true;
+      beers.alpha = 1;
+    }
+    root.addChild(beers);
+  }
 
   /* ---- Studio phone (on the desk corner) ------------------------------ */
   const phoneWrap = new Container();
@@ -1062,6 +1411,7 @@ const buildScene = (
   phoneHint.eventMode = 'none';
   refs.idleHints.phone = phoneHint;
   phoneHint.zIndex = Z.fx;
+  refs.idleFocusPoints.phone = { x: pPos.x, y: pPos.y - 3 };
   root.addChild(phoneHint);
 
   /* ---- Staff / artist figures on the floor ---------------------------- */
@@ -1073,29 +1423,79 @@ const buildScene = (
     iso(1.8, 3.2),
   ];
   const figureCount = Math.max(1, Math.min(spots.length, state.staffOnFloor));
+  const seedBase = hashSeed(state.decorSeed ?? 'studio');
   for (let i = 0; i < figureCount; i++) {
     const spot = spots[i];
-    const fig = new Container();
-    fig.position.set(spot.x, spot.y);
-    const body = new Graphics();
-    const color = COLORS.staff[i % COLORS.staff.length];
-    body.ellipse(0, 1, 15, 7).fill({ color: 0x000000, alpha: .35 });
-    body.roundRect(-8, -13, 7, 14, 2).fill(0x253047);
-    body.roundRect(1, -13, 7, 14, 2).fill(0x253047);
-    body.roundRect(-15, -34, 5, 18, 2).fill(0xe9bd96);
-    body.roundRect(10, -34, 5, 18, 2).fill(0xe9bd96);
-    body.roundRect(-11, -36, 22, 27, 5).fill(color);
-    body.roundRect(-11, -36, 22, 27, 5).stroke({ width: 2, color: 0x243044, alpha: .55 });
-    body.circle(0, -45, 11).fill(0xf2c9a0);
-    body.ellipse(0, -52, 11, 5).fill(0x2e3040);
-    body.circle(-4, -44, 1).fill(0x273040);
-    body.circle(4, -44, 1).fill(0x273040);
-    body.circle(-11, -43, 3).fill(grade.accent);
-    body.circle(11, -43, 3).fill(grade.accent);
-    fig.addChild(body);
-    fig.zIndex = Z.depth + spot.y;
-    refs.staffFigures.push({ fig, baseY: spot.y });
-    root.addChild(fig);
+    const provided = state.floorFigures?.[i];
+    const figure: FloorNpcFigure = provided ?? {
+      identity: i === 0 ? state.producerAppearance : undefined,
+      seed: seedBase + i * 97,
+      role: i === 0 ? 'producer' : 'engineer',
+      animState: state.hasActiveProject ? (i === 0 ? 'mixing' : 'working') : 'idle',
+    };
+    // Slot 0 is the player: prefer the career-start customisation over a seed fill-in.
+    const npc = i === 0 && state.producerNpc ? state.producerNpc : resolveFloorNpcDefinition(figure, state.eraId, seedBase + i * 97);
+    const visual = createFloorNpcVisual(npc, {
+      renderer,
+      atlas: npcAtlas,
+      accent: grade.accent,
+    });
+    visual.display.position.set(spot.x, spot.y);
+    visual.display.zIndex = Z.depth + spot.y;
+    refs.staffFigures.push({
+      fig: visual.display,
+      baseY: spot.y,
+      animState: figure.animState ?? (state.hasActiveProject ? 'working' : 'idle'),
+      destroy: visual.destroy,
+    });
+    root.addChild(visual.display);
+  }
+
+  /* ---- Booked artist: enters via the door, stands at the live-room mic ---- */
+  {
+    const spot = iso(2.3, 1.55);
+    refs.artistStand = spot;
+    const artistNpc = resolveFloorNpcDefinition(
+      {
+        seed: seedBase + 777,
+        role: 'artist',
+        name: state.artistName,
+        animState: 'recording',
+      },
+      state.eraId,
+      seedBase + 777,
+    );
+    const visual = createFloorNpcVisual(artistNpc, {
+      renderer,
+      atlas: npcAtlas,
+      accent: 0xc2414b,
+    });
+    visual.display.position.set(spot.x, spot.y);
+    const tag = new Text({
+      text: '',
+      style: { fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: 11, fontWeight: '700', fill: 0xffe3a3, stroke: { color: 0x0b0906, width: 3 } },
+    });
+    tag.anchor.set(0.5, 1);
+    tag.position.set(0, -66);
+    tag.eventMode = 'none';
+    visual.display.addChild(tag);
+    // Band character shares the live-room → session work route (StudioRoom.handleHotspot).
+    visual.display.eventMode = 'static';
+    visual.display.cursor = 'pointer';
+    visual.display.hitArea = new Rectangle(-28, -72, 56, 80);
+    visual.display.on('pointertap', () => { onSelect?.('liveRoom'); });
+    visual.display.visible = false;
+    visual.display.zIndex = Z.depth + spot.y;
+    refs.artist = {
+      fig: visual.display,
+      baseY: spot.y,
+      baseX: spot.x,
+      animState: 'recording',
+      tag,
+      shown: '',
+      destroy: visual.destroy,
+    };
+    root.addChild(visual.display);
   }
 
   root.sortableChildren = true;
@@ -1106,12 +1506,20 @@ const buildScene = (
     const upgrades = new Graphics();
     // Potted plant in the back-left corner
     const plantBase = iso(0.55, 1.5);
-    upgrades.ellipse(plantBase.x, plantBase.y, 12, 6).fill(0x1c2433);
-    upgrades.rect(plantBase.x - 8, plantBase.y - 16, 16, 16).fill(0x7a4a2b);
-    upgrades.circle(plantBase.x, plantBase.y - 30, 16).fill(0x3f7d4f);
-    upgrades.circle(plantBase.x - 10, plantBase.y - 24, 10).fill(0x4f9a5f);
-    upgrades.circle(plantBase.x + 10, plantBase.y - 26, 11).fill(0x357044);
+    if (!kitTextures) {
+      upgrades.ellipse(plantBase.x, plantBase.y, 12, 6).fill(0x1c2433);
+      upgrades.rect(plantBase.x - 8, plantBase.y - 16, 16, 16).fill(0x7a4a2b);
+      upgrades.circle(plantBase.x, plantBase.y - 30, 16).fill(0x3f7d4f);
+      upgrades.circle(plantBase.x - 10, plantBase.y - 24, 10).fill(0x4f9a5f);
+      upgrades.circle(plantBase.x + 10, plantBase.y - 26, 11).fill(0x357044);
+    }
     upgrades.zIndex = Z.depth + plantBase.y;
+    // First gold record frame on the right wall
+    const frameA = iso(6.6, 0);
+    const rec = { x: frameA.x, y: frameA.y - 88 };
+    upgrades.rect(rec.x - 12, rec.y - 12, 24, 24).fill(0x2a1f0d);
+    upgrades.rect(rec.x - 12, rec.y - 12, 24, 24).stroke({ width: 3, color: grade.accent });
+    upgrades.circle(rec.x, rec.y, 8).fill(0xd9a441);
     root.addChild(upgrades);
   }
 
@@ -1119,10 +1527,12 @@ const buildScene = (
     const lounge = new Graphics();
     // Green-room sofa along the front-right corner
     const sofa = iso(6.0, 5.6);
-    lounge.roundRect(sofa.x - 26, sofa.y - 26, 52, 24, 6).fill(0x5b3f6e);
-    lounge.roundRect(sofa.x - 26, sofa.y - 34, 52, 12, 5).fill(0x6d4c85);
-    lounge.rect(sofa.x - 22, sofa.y - 2, 6, 6).fill(0x2a1f33);
-    lounge.rect(sofa.x + 16, sofa.y - 2, 6, 6).fill(0x2a1f33);
+    if (!kitTextures) {
+      lounge.roundRect(sofa.x - 26, sofa.y - 26, 52, 24, 6).fill(0x5b3f6e);
+      lounge.roundRect(sofa.x - 26, sofa.y - 34, 52, 12, 5).fill(0x6d4c85);
+      lounge.rect(sofa.x - 22, sofa.y - 2, 6, 6).fill(0x2a1f33);
+      lounge.rect(sofa.x + 16, sofa.y - 2, 6, 6).fill(0x2a1f33);
+    }
     lounge.zIndex = Z.depth + sofa.y;
     root.addChild(lounge);
     // Road case next to the console (its own node so it sorts by its own depth)
@@ -1139,9 +1549,11 @@ const buildScene = (
     const pro = new Graphics();
     // Second workstation rig
     const rig = iso(7.0, 3.2);
-    pro.rect(rig.x - 16, rig.y - 34, 32, 34).fill(0x2a221c);
-    pro.rect(rig.x - 12, rig.y - 29, 24, 16).fill(grade.accent);
-    pro.rect(rig.x - 16, rig.y - 34, 32, 34).stroke({ width: 2, color: 0x120d09 });
+    if (!kitTextures) {
+      pro.rect(rig.x - 16, rig.y - 34, 32, 34).fill(0x2a221c);
+      pro.rect(rig.x - 12, rig.y - 29, 24, 16).fill(grade.accent);
+      pro.rect(rig.x - 16, rig.y - 34, 32, 34).stroke({ width: 2, color: 0x120d09 });
+    }
     pro.zIndex = Z.depth + rig.y;
     root.addChild(pro);
   }
@@ -1159,17 +1571,12 @@ const buildScene = (
       empire.rect(f.x - 10, ry - 10, 20, 20).stroke({ width: 2, color: 0xffd166 });
       empire.circle(f.x, ry, 6).fill(0xffd166);
     });
-    // Neon strip behind the live room glass
-    const neonA = iso(1.0, 0.7);
-    const neonB = iso(3.6, 0.7);
-    empire
-      .poly([neonA.x, neonA.y - 82, neonB.x, neonB.y - 82, neonB.x, neonB.y - 76, neonA.x, neonA.y - 76])
-      .fill(grade.accent);
+    // Neon strip lives in buildDecorLights (era lighting kit) once tier unlocks it.
     root.addChild(empire);
   }
 
   /* ---- Additive lighting: window shaft, motes, lamp pools, era glow ------- */
-  const lights = buildDecorLights({ spec: decorSpec });
+  const lights = buildDecorLights({ spec: decorSpec, kit: getEraLightingKit(state.eraId), tier });
   refs.decor = lights;
   lights.container.zIndex = Z.fx;
   root.addChild(lights.container);
@@ -1244,16 +1651,30 @@ const buildScene = (
 /* ---------------------------------------------------------------------------
  * Component
  * ------------------------------------------------------------------------- */
-const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, className, resetCameraKey, onHotspotAnchors }) => {
+const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, className, resetCameraKey, onHotspotAnchors, onFirstFrame }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const sceneRef = useRef<BuiltScene | null>(null);
+  const kitTexturesRef = useRef<StudioKitTextures | null>(null);
+  const npcAtlasRef = useRef<LoadedAtlas | null>(null);
   const stateRef = useRef<StudioSceneState>({ ...DEFAULT_STATE, ...state });
   const selectRef = useRef(onHotspotSelect);
   const anchorsCbRef = useRef(onHotspotAnchors);
+  const firstFrameRef = useRef(onFirstFrame);
+  const firstFrameFiredRef = useRef(false);
+  const fireFirstFrame = () => {
+    if (firstFrameFiredRef.current) return;
+    firstFrameFiredRef.current = true;
+    firstFrameRef.current?.();
+  };
   const lastAnchorsRef = useRef<HotspotAnchors>({});
   const timeRef = useRef(0);
   const cameraRef = useRef({ x: 0, y: 0, zoom: 1.0 });
+  const idleCameraRef = useRef({
+    mode: 'idle' as 'idle' | 'focusing' | 'restoring',
+    saved: { x: 0, y: 0, zoom: 1.0 } as CameraPose,
+    targetId: null as IdleDirectionHotspot | null,
+  });
   const gestureRef = useRef(new Map<number, { x: number; y: number }>());
   const suppressTapRef = useRef(false);
   const gestureMidpointRef = useRef<{ x: number; y: number } | null>(null);
@@ -1261,6 +1682,14 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   const lastFrameTimeRef = useRef(0);
   const reelKeyRef = useRef('');
   const clockMinuteRef = useRef(-1);
+  const windowSkyRef = useRef(-1);
+  /** Seconds into candle-drink settle; -1 = hidden / idle settled. */
+  const drinkSettleRef = useRef(-1);
+  const coffeeWasSteamingRef = useRef(false);
+  const clientTransitRef = useRef<ClientTransitState>(
+    createClientTransitState(Boolean(state?.hasActiveProject)),
+  );
+  const shelfPrefetchKeyRef = useRef('');
 
   const { settings } = useSettings();
   const settingsRef = useRef(settings);
@@ -1300,6 +1729,15 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   }, [onHotspotAnchors]);
 
   useEffect(() => {
+    firstFrameRef.current = onFirstFrame;
+  }, [onFirstFrame]);
+
+  useEffect(() => {
+    idleCameraRef.current = {
+      mode: 'idle',
+      saved: { x: 0, y: 0, zoom: 1.0 },
+      targetId: null,
+    };
     cameraRef.current = { x: 0, y: 0, zoom: 1.0 };
     const sc = sceneRef.current;
     if (sc) {
@@ -1309,7 +1747,14 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   }, [resetCameraKey]);
 
   // Structural key: only layout-affecting state triggers a scene rebuild
-  const structuralKey = `${state?.staffOnFloor ?? 1}|${state?.ownedEquipment ?? 3}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${trophyKey(state?.trophies ?? { platinum: 0, gold: 0, awards: 0 })}|${state?.decorSeed ?? 'studio'}`;
+  const gearKey = shelfStructuralKey(state?.ownedEquipmentIds, state?.ownedEquipment ?? 0);
+  const floorKey = (state?.floorFigures ?? [])
+    .map((f) => `${f.identity?.seed ?? f.seed ?? ''}:${f.animState ?? ''}:${f.role ?? ''}`)
+    .join(',');
+  const producerLookKey = state?.producerNpc
+    ? [state.producerNpc.hair.shape, state.producerNpc.hair.colour, state.producerNpc.body.build, state.producerNpc.clothes.topPrimaryHex].join(':')
+    : '';
+  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${producerLookKey}|${floorKey}|${state?.staffOnFloor ?? 1}|${gearKey}|${gearConditionKey(state?.gearConditions)}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${trophyKey(state?.trophies ?? { covers: [] })}|${state?.decorSeed ?? 'studio'}`;
 
   // Rebuild the room (new window size or layout change)
   const rebuild = () => {
@@ -1317,6 +1762,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     if (!app) return;
     if (sceneRef.current) {
       sceneRef.current.refs.disposed = true;
+      sceneRef.current.refs.staffFigures.forEach((f) => f.destroy());
+      sceneRef.current.refs.artist?.destroy();
       app.stage.removeChild(sceneRef.current.underlayRoot);
       sceneRef.current.underlayRoot.destroy({ children: true });
       app.stage.removeChild(sceneRef.current.root);
@@ -1330,8 +1777,19 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
       app.screen.width,
       app.screen.height,
       stateRef.current,
-      (id) => { if (!suppressTapRef.current) selectRef.current?.(id); },
-      app.renderer
+      (id) => {
+        // Skip in-flight door walk so selection never feels blocked
+        if (isClientTransitAnimating(clientTransitRef.current)) {
+          clientTransitRef.current = skipClientTransit(
+            clientTransitRef.current,
+            Boolean(stateRef.current.hasActiveProject),
+          );
+        }
+        if (!suppressTapRef.current) selectRef.current?.(id);
+      },
+      app.renderer,
+      kitTexturesRef.current,
+      npcAtlasRef.current,
     );
     reelKeyRef.current = '';
     const zoom = cameraRef.current.zoom ?? 1.0;
@@ -1351,6 +1809,21 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
       app.stage.addChild(scene.overlayRoot);
     }
     sceneRef.current = scene;
+    app.canvas.dataset.studioArt = kitTexturesRef.current ? 'cc0-v1' : 'built-in';
+    // Keep brew-drink settle in sync across rebuilds (no re-drop if already brewed today)
+    coffeeWasSteamingRef.current = Boolean(stateRef.current.coffeeSteaming);
+    drinkSettleRef.current = stateRef.current.coffeeSteaming ? CANDLE_DRINK_SETTLE_SEC : -1;
+
+    // Soft-upgrade coloured bars → sprites once PNG art resolves (one shot per gear set)
+    const ids = stateRef.current.ownedEquipmentIds ?? [];
+    const prefetchKey = ids.join('|');
+    if (prefetchKey && shelfPrefetchKeyRef.current !== prefetchKey) {
+      void prefetchEquipmentTextures(ids).then(() => {
+        if (shelfPrefetchKeyRef.current === prefetchKey) return;
+        shelfPrefetchKeyRef.current = prefetchKey;
+        rebuild();
+      });
+    }
   };
 
   useEffect(() => {
@@ -1364,15 +1837,50 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     let detachInteractions: (() => void) | undefined;
     let gestureDistance: number | null = null;
     let lastGestureScale = 1;
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const MIN_ZOOM = 0.75;
     const MAX_ZOOM = 2.6;
+    const osReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const readReduceMotion = () =>
+      osReduceMotion || Boolean(settingsRef.current?.reducedMotion);
+
+    const applyCameraPose = (pose: CameraPose) => {
+      const app = appRef.current;
+      const scene = sceneRef.current;
+      if (!app || !scene) return;
+      const clamped = {
+        ...pose,
+        zoom: Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, pose.zoom)),
+      };
+      const limitX = Math.max(app.screen.width * 0.35, app.screen.width * clamped.zoom * 0.5);
+      const limitY = Math.max(app.screen.height * 0.35, app.screen.height * clamped.zoom * 0.5);
+      clamped.x = Math.max(-limitX, Math.min(limitX, clamped.x));
+      clamped.y = Math.max(-limitY, Math.min(limitY, clamped.y));
+      cameraRef.current = clamped;
+      scene.root.scale.set(scene.baseScale * clamped.zoom);
+      scene.root.position.set(
+        scene.basePosition.x + clamped.x,
+        scene.basePosition.y + clamped.y,
+      );
+    };
+
+    const beginIdleCameraRestore = () => {
+      if (idleCameraRef.current.mode !== 'focusing') return;
+      idleCameraRef.current.mode = 'restoring';
+      idleCameraRef.current.targetId = null;
+    };
+
+    const cancelIdleCamera = () => {
+      idleCameraRef.current.mode = 'idle';
+      idleCameraRef.current.targetId = null;
+    };
 
     const zoomAt = (clientX: number, clientY: number, factor: number) => {
       const app = appRef.current;
       const scene = sceneRef.current;
       if (!app || !scene || !Number.isFinite(factor) || factor <= 0) return;
+      cancelIdleCamera();
 
       const currentZoom = cameraRef.current.zoom ?? 1.0;
       const nextZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, currentZoom * factor));
@@ -1409,6 +1917,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
       const app = appRef.current;
       const scene = sceneRef.current;
       if (!app || !scene) return;
+      cancelIdleCamera();
       const zoom = cameraRef.current.zoom ?? 1.0;
       const limitX = Math.max(app.screen.width * 0.35, app.screen.width * zoom * 0.5);
       const limitY = Math.max(app.screen.height * 0.35, app.screen.height * zoom * 0.5);
@@ -1458,12 +1967,35 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         lastW = app.screen.width;
         lastH = app.screen.height;
         rebuild();
+        // Reveal GUI + 3D together: notify once the first frame is on screen.
+        try {
+          app.ticker.addOnce(() => {
+            if (!disposed) fireFirstFrame();
+          });
+        } catch {
+          if (!disposed) fireFirstFrame();
+        }
+        void loadStudioKit().then(textures => {
+          if (disposed || !textures) return;
+          kitTexturesRef.current = textures;
+          rebuild();
+        });
+        void loadNpcPartsAtlas().then(atlas => {
+          if (disposed || !atlas) return;
+          npcAtlasRef.current = atlas;
+          rebuild();
+        });
 
         const markCanvasInput = () => {
           lastCanvasInputRef.current = performance.now();
           const hints = sceneRef.current?.refs.idleHints;
-          if (hints?.phone) hints.phone.alpha = 0;
-          if (hints?.console) hints.console.alpha = 0;
+          if (hints) {
+            (Object.keys(hints) as IdleDirectionHotspot[]).forEach((id) => {
+              const hint = hints[id];
+              if (hint) hint.alpha = 0;
+            });
+          }
+          beginIdleCameraRestore();
         };
         markCanvasInput();
 
@@ -1475,15 +2007,28 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         let touchDrag: { id: number; x: number; y: number; moved: boolean } | null = null;
         let lastTap = { t: 0, x: 0, y: 0 };
         const resetCamera = () => {
-          cameraRef.current = { x: 0, y: 0, zoom: 1.0 };
-          const sc = sceneRef.current;
-          if (sc) {
-            sc.root.scale.set(sc.baseScale);
-            sc.root.position.set(sc.basePosition.x, sc.basePosition.y);
+          cancelIdleCamera();
+          idleCameraRef.current.saved = { x: 0, y: 0, zoom: 1.0 };
+          applyCameraPose({ x: 0, y: 0, zoom: 1.0 });
+        };
+        const skipDoorTransit = () => {
+          if (!isClientTransitAnimating(clientTransitRef.current)) return;
+          clientTransitRef.current = skipClientTransit(
+            clientTransitRef.current,
+            Boolean(stateRef.current.hasActiveProject),
+          );
+        };
+        const onKeyDown = (event: KeyboardEvent) => {
+          if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') {
+            if (isClientTransitAnimating(clientTransitRef.current)) {
+              event.preventDefault();
+              skipDoorTransit();
+            }
           }
         };
         const onPointerDown = (event: PointerEvent) => {
           markCanvasInput();
+          skipDoorTransit();
           if (gestureRef.current.size === 0) suppressTapRef.current = false;
           gestureRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
           touchDrag = event.pointerType !== 'mouse' && gestureRef.current.size === 1
@@ -1594,12 +2139,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         const onDblClick = (e: MouseEvent) => {
           markCanvasInput();
           e.preventDefault();
-          cameraRef.current = { x: 0, y: 0, zoom: 1.0 };
-          const sc = sceneRef.current;
-          if (sc) {
-            sc.root.scale.set(sc.baseScale);
-            sc.root.position.set(sc.basePosition.x, sc.basePosition.y);
-          }
+          resetCamera();
         };
 
         app.canvas.addEventListener('pointerdown', onPointerDown, { passive: true });
@@ -1611,6 +2151,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         app.canvas.addEventListener('gesturechange', onGestureChange, { passive: false });
         app.canvas.addEventListener('gestureend', onGestureEnd, { passive: false });
         app.canvas.addEventListener('dblclick', onDblClick);
+        window.addEventListener('keydown', onKeyDown);
 
         detachInteractions = () => {
           app.canvas.removeEventListener('pointerdown', onPointerDown);
@@ -1622,6 +2163,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           app.canvas.removeEventListener('gesturechange', onGestureChange);
           app.canvas.removeEventListener('gestureend', onGestureEnd);
           app.canvas.removeEventListener('dblclick', onDblClick);
+          window.removeEventListener('keydown', onKeyDown);
         };
 
         // Animation loop: VU meters, TV equalizer, phone ring, clock, staff, day tint
@@ -1642,18 +2184,88 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           if (!scene) return;
           const refs = scene.refs;
 
+          const reduceMotion = readReduceMotion();
+          const floorFocused = s.floorFocused !== false;
+          // Don't bank idle time while drawers/inspectors own attention.
+          if (!floorFocused) {
+            lastCanvasInputRef.current = performance.now();
+            (['phone', 'console', 'liveRoom', 'shelf', 'door'] as const).forEach((id) => {
+              const hint = refs.idleHints[id];
+              if (hint) hint.alpha = 0;
+            });
+            if (idleCameraRef.current.mode === 'focusing') beginIdleCameraRestore();
+            else if (idleCameraRef.current.mode === 'restoring') {
+              const saved = idleCameraRef.current.saved;
+              const next = lerpCameraPose(cameraRef.current, saved, IDLE_CAMERA_RESTORE_LERP);
+              applyCameraPose(next);
+              if (cameraPoseNear(next, saved)) {
+                applyCameraPose(saved);
+                cancelIdleCamera();
+              }
+            }
+          } else {
           const idleMs = performance.now() - lastCanvasInputRef.current;
-          const hintedHotspot = getIdleHintTarget(s.hasActiveProject, idleMs);
-          (['phone', 'console'] as const).forEach((id) => {
+          const hintedHotspot = pickIdleDirectionTarget({
+            idleMs,
+            floorFocused: true,
+            enquiryWaiting: Boolean(s.enquiryWaiting),
+            hasActiveProject: s.hasActiveProject,
+            pendingChoreHotspot: s.pendingChoreHotspot ?? null,
+          });
+          (['phone', 'console', 'liveRoom', 'shelf', 'door'] as const).forEach((id) => {
             const hint = refs.idleHints[id];
             if (!hint) return;
             if (id !== hintedHotspot) {
               hint.alpha = 0;
               return;
             }
-            const pulse = reduceMotion ? 0.72 : 0.42 + (Math.sin(t * 3.2) + 1) * 0.24;
+            const pulse = reduceMotion
+              ? id === 'door'
+                ? 0.55
+                : 0.72
+              : id === 'door'
+                ? 0.28 + (Math.sin(t * 2.1) + 1) * 0.2
+                : 0.42 + (Math.sin(t * 3.2) + 1) * 0.24;
             hint.alpha = pulse;
           });
+
+          // Subtle auto-zoom / pan toward the idle target; restore on cancel.
+          if (!reduceMotion && hintedHotspot) {
+            const focus = refs.idleFocusPoints[hintedHotspot];
+            if (focus) {
+              const cam = idleCameraRef.current;
+              if (cam.mode === 'idle' || cam.targetId !== hintedHotspot) {
+                if (cam.mode === 'idle') {
+                  cam.saved = { ...cameraRef.current };
+                }
+                cam.mode = 'focusing';
+                cam.targetId = hintedHotspot;
+              }
+              const desired = cameraPoseForFocus({
+                focusLocal: focus,
+                basePosition: scene.basePosition,
+                baseScale: scene.baseScale,
+                screen: { width: app.screen.width, height: app.screen.height },
+                targetZoom: Math.max(cameraRef.current.zoom, IDLE_CAMERA_ZOOM),
+                minZoom: MIN_ZOOM,
+                maxZoom: MAX_ZOOM,
+              });
+              // Keep the nudge mild — blend toward a soft pull, not a hard lock.
+              const softTarget = lerpCameraPose(cam.saved, desired, 0.55);
+              applyCameraPose(lerpCameraPose(cameraRef.current, softTarget, IDLE_CAMERA_LERP));
+            }
+          } else if (idleCameraRef.current.mode === 'restoring') {
+            const saved = idleCameraRef.current.saved;
+            const next = lerpCameraPose(cameraRef.current, saved, IDLE_CAMERA_RESTORE_LERP);
+            applyCameraPose(next);
+            if (cameraPoseNear(next, saved)) {
+              applyCameraPose(saved);
+              cancelIdleCamera();
+            }
+          } else if (idleCameraRef.current.mode === 'focusing' && !hintedHotspot) {
+            beginIdleCameraRestore();
+          }
+          }
 
           // Smoothly interpolate hotspot hover glow alphas for tactile feedback
           Object.keys(refs.hoverGlows).forEach((key) => {
@@ -1682,22 +2294,65 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             }
           }
 
-          // Console VU meters — amplitude follows live activity
+          // Console VU meters — needles (tier 1) or LED ladders (later tiers)
           const vuPeaks: { x: number; y: number; width: number }[] = [];
           refs.vuBars.forEach((bar, i) => {
-            const wobble = 0.5 + 0.5 * Math.sin(t * (3 + i * 0.7) + i * 1.3);
-            const maxRange = bar.range ?? 9;
-            const h = Math.min(maxRange, 1.5 + wobble * (1.5 + s.activity * (maxRange - 3)));
-            const width = bar.width ?? 3.5;
             bar.g.clear();
-            bar.g.rect(bar.x - width / 2, bar.y - h, width, h).fill(bar.color);
-            vuPeaks.push({ x: bar.x, y: bar.y - h, width });
+            if (bar.needle) {
+              const norm = vuNeedleNorm(s.activity, t, i, reduceMotion);
+              const ang = vuNeedleAngle(norm);
+              const len = Math.max(4, (bar.y - (bar.needleTopY ?? bar.y - 9)) * 0.85);
+              const tipX = bar.x + Math.sin(ang) * len;
+              const tipY = bar.y - Math.cos(ang) * len;
+              bar.g.moveTo(bar.x, bar.y - 1).lineTo(tipX, tipY).stroke({
+                width: 1.1,
+                color: bar.color,
+                cap: 'round',
+              });
+              bar.g.circle(bar.x, bar.y - 1, 0.9).fill(0x2b2118);
+              vuPeaks.push({ x: tipX, y: tipY, width: bar.width ?? 3.5 });
+            } else {
+              const wobble = reduceMotion
+                ? 0.55
+                : 0.5 + 0.5 * Math.sin(t * (3 + i * 0.7) + i * 1.3);
+              const maxRange = bar.range ?? 9;
+              const h = Math.min(maxRange, 1.5 + wobble * (1.5 + s.activity * (maxRange - 3)));
+              const width = bar.width ?? 3.5;
+              // Peak LED blink on the ladder tip when the session is live
+              const tipBoost = statusLedPulse(s.activity, t, i, s.hasActiveProject, reduceMotion);
+              bar.g.rect(bar.x - width / 2, bar.y - h, width, h).fill(bar.color);
+              bar.g.rect(bar.x - width / 2, bar.y - h - 1.2, width, 1.4).fill({
+                color: 0xfff1c2,
+                alpha: 0.25 + tipBoost * 0.55,
+              });
+              vuPeaks.push({ x: bar.x, y: bar.y - h, width });
+            }
+          });
+
+          // Console / outboard status LED jewels
+          refs.statusLeds.forEach((led, i) => {
+            const pulse = statusLedPulse(s.activity, t, i, s.hasActiveProject, reduceMotion);
+            led.g.clear();
+            led.g.circle(led.x, led.y, led.radius * (0.92 + pulse * 0.12)).fill({
+              color: led.color,
+              alpha: pulse,
+            });
+          });
+
+          // Shelf gear micro-sway (does not move hotspot hit geometry)
+          refs.shelfItems.forEach((item, i) => {
+            const m = shelfIdleMotion(t, i + item.phase, s.hasActiveProject, reduceMotion);
+            item.display.y = item.baseY + m.dy;
+            item.display.rotation = item.baseRot + m.rot;
+            item.display.alpha = m.alpha;
           });
 
           // Charts TV equalizer — bars are quads on the left-wall plane so they stay inside the bezel
           const tvPeaks: { x: number; y: number }[] = [];
           refs.tvBars.forEach((bar, i) => {
-            const h = 4 + (0.5 + 0.5 * Math.sin(t * 4 + i * 1.1)) * (4 + s.activity * 22);
+            const h = reduceMotion
+              ? 4 + (0.5 + 0.5 * Math.sin(i * 1.1)) * (4 + s.activity * 22)
+              : 4 + (0.5 + 0.5 * Math.sin(t * 4 + i * 1.1)) * (4 + s.activity * 22);
             bar.g.clear();
             if (bar.plane) {
               const a0 = leftWallPt(bar.plane.y0, bar.plane.lift);
@@ -1746,16 +2401,16 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
                 .fill({ color: bloomParams.lampColor, alpha: bloomParams.lampAlpha * lampPulse });
             }
 
-            // 3. TV equalizer display bloom (soft cyan / era accent)
+            // 3. TV equalizer display bloom (era lighting kit accent)
+            const tvBloom = getEraLightingKit(s.eraId).bloomAccent;
             for (let i = 0; i < tvPeaks.length; i++) {
               const peak = tvPeaks[i];
               bg.circle(peak.x, peak.y, 5 * bloomParams.radiusMultiplier)
-                .fill({ color: 0x5aa9e6, alpha: bloomParams.meterAlpha * 0.35 });
+                .fill({ color: tvBloom, alpha: bloomParams.meterAlpha * 0.35 });
             }
           }
 
-          // Decor lighting: window shaft + motes, ON AIR lamp, era glow, steam
-          refs.decor?.update(t, reduceMotion, s.hasActiveProject);
+          // Decor lighting (shaft/motes/practicals) updates with the clock sample below.
 
           // Tape reels (#81): only touch the sprites when transport state changes
           if (refs.reels.length > 0) {
@@ -1774,34 +2429,142 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             refs.reels.forEach((r) => { if (r.playing) r.update(ticker); });
           }
 
-          // Staff idle bobbing
+          // Staff / artist motion from npcAnimation states (presentation only)
           refs.staffFigures.forEach((f, i) => {
-            f.fig.y = f.baseY + Math.sin(t * 2 + i * 1.4) * 2;
-            f.fig.scale.y = 1 + Math.sin(t * 3 + i) * 0.02;
+            const live = stateRef.current.floorFigures?.[i]?.animState;
+            if (live) f.animState = live;
+            else if (s.hasActiveProject && f.animState === 'idle') f.animState = 'working';
+            else if (!s.hasActiveProject && (f.animState === 'working' || f.animState === 'mixing' || f.animState === 'recording')) {
+              f.animState = 'idle';
+            }
+            applyFloorNpcMotion(f, t, i * 1.4, reduceMotion);
           });
 
-          // Phone ring pulse (faster when the studio is waiting for a gig)
-          if (refs.phoneRing) {
-            const speed = s.hasActiveProject ? 1.2 : 3;
-            const pulse = (Math.sin(t * speed) + 1) / 2;
-            refs.phoneRing.alpha = 0.15 + pulse * 0.85;
-            refs.phoneRing.scale.set(1 + pulse * 0.25);
-          }
-
-          // Wall clock: real hands on the wall plane. One in-game hour passes every ~15s of play,
-          // offset per day so the clock never reads the same on consecutive mornings.
-          if (refs.setClockTime) {
-            const mins = Math.floor(s.day * 137 + t * 4) % 720;
-            if (mins !== clockMinuteRef.current) {
-              clockMinuteRef.current = mins;
-              refs.setClockTime(Math.floor(mins / 60), mins % 60);
+          // Booked artist: diegetic door enter/exit, then mic motion during the session
+          if (refs.artist) {
+            const a = refs.artist;
+            const door = refs.doorFloor ?? { x: a.baseX, y: a.baseY };
+            const stand = refs.artistStand ?? { x: a.baseX, y: a.baseY };
+            clientTransitRef.current = advanceClientTransit(clientTransitRef.current, {
+              sessionActive: s.hasActiveProject,
+              dtMs: ticker.deltaMS,
+              reduceMotion,
+            });
+            const pose = clientTransitPose(clientTransitRef.current, door, stand);
+            a.fig.visible = pose.visible;
+            a.fig.alpha = pose.alpha;
+            a.fig.x = pose.x;
+            const name = s.artistName ?? '';
+            if (a.shown !== name) { a.tag.text = name; a.shown = name; }
+            const atMic = clientTransitRef.current.phase === 'present';
+            if (atMic && s.hasActiveProject) {
+              a.animState = 'recording';
+              a.baseY = pose.y;
+              applyFloorNpcMotion(a, t, 0.7, reduceMotion);
+              const tk = lastTake();
+              const nod = tk && !reduceMotion ? nodOffset(performance.now() - tk.at, tk.grade) : 0;
+              a.fig.y += nod;
+            } else {
+              a.fig.y = pose.y;
+              a.fig.rotation = 0;
+              a.fig.scale.y = 1;
             }
+            a.fig.zIndex = Z.depth + pose.y;
           }
 
-          // Ambient day/night tint — slow 90s cycle keeps the room alive
-          if (refs.nightTintLayer) {
-            const cycle = (Math.sin((t * Math.PI * 2) / 90) + 1) / 2;
-            refs.nightTintLayer.alpha = 0.03 + cycle * 0.2;
+          // Phone ring pulse — stronger when enquiries are waiting
+          if (refs.phoneRing) {
+            const waiting = Boolean(s.enquiryWaiting) && !s.hasActiveProject;
+            const speed = waiting ? 4.2 : s.hasActiveProject ? 1.2 : 2.4;
+            const pulse = (Math.sin(t * speed) + 1) / 2;
+            refs.phoneRing.alpha = waiting
+              ? 0.35 + pulse * 0.65
+              : 0.15 + pulse * 0.85;
+            refs.phoneRing.scale.set(1 + pulse * (waiting ? 0.35 : 0.25));
+          }
+
+          // Candle-table drink: spawn after brew_espresso; clear when daily chores reset
+          {
+            const want = Boolean(s.coffeeSteaming);
+            const drink = refs.candleDrink;
+            if (drink) {
+              const baseY = refs.candleDrinkBaseY;
+              if (want && !coffeeWasSteamingRef.current) {
+                drink.visible = true;
+                drinkSettleRef.current = 0;
+                if (reduceMotion) {
+                  drink.alpha = 1;
+                  drink.y = baseY;
+                  drinkSettleRef.current = CANDLE_DRINK_SETTLE_SEC;
+                } else {
+                  drink.alpha = 0;
+                  drink.y = baseY - 7;
+                }
+              } else if (!want) {
+                drink.visible = false;
+                drink.alpha = 0;
+                drink.y = baseY;
+                drinkSettleRef.current = -1;
+              }
+              coffeeWasSteamingRef.current = want;
+
+              if (want && drinkSettleRef.current >= 0 && drinkSettleRef.current < CANDLE_DRINK_SETTLE_SEC) {
+                drinkSettleRef.current = Math.min(
+                  CANDLE_DRINK_SETTLE_SEC,
+                  drinkSettleRef.current + ticker.deltaMS / 1000,
+                );
+                const u = drinkSettleRef.current / CANDLE_DRINK_SETTLE_SEC;
+                // Soft ease-out settle with a tiny overshoot
+                const ease = 1 - Math.pow(1 - u, 3);
+                const bounce = Math.sin(u * Math.PI) * 1.2 * (1 - u);
+                drink.alpha = Math.min(1, ease * 1.15);
+                drink.y = baseY - 7 * (1 - ease) + bounce;
+              } else if (want && drinkSettleRef.current >= CANDLE_DRINK_SETTLE_SEC) {
+                drink.alpha = 1;
+                drink.y = baseY;
+              }
+            }
+            // Rider beers: show while session + beer ask; hide otherwise
+            if (refs.candleBeers) {
+              const showBeers = Boolean(s.riderBeers);
+              refs.candleBeers.visible = showBeers;
+              refs.candleBeers.alpha = showBeers ? 1 : 0;
+            }
+            const steamReady =
+              want &&
+              (reduceMotion || drinkSettleRef.current < 0 || drinkSettleRef.current >= CANDLE_DRINK_SETTLE_SEC * 0.35);
+
+            // Wall clock + day/night ambience share one minute stream (studioDecorConfig).
+            // Hands: 12h face. Lighting/window: 24h day so morning ≠ evening exterior.
+            const { hour, minute, minutesOfDay } = getWallClockTime(s.day, t);
+            const faceMins = hour * 60 + minute;
+            if (faceMins !== clockMinuteRef.current) {
+              clockMinuteRef.current = faceMins;
+              refs.setClockTime?.(hour, minute);
+            }
+
+            const dayness = reduceMotion
+              ? REDUCED_MOTION_DAYNESS
+              : getDaynessFromClockMinutes(minutesOfDay);
+            const dayPhase = reduceMotion ? 'day' : getDayPhase(minutesOfDay);
+            const sky = reduceMotion
+              ? getWindowSkyColor(720) // noon keyframe — stable day sky
+              : getWindowSkyColor(minutesOfDay);
+
+            if (sky !== windowSkyRef.current) {
+              windowSkyRef.current = sky;
+              refs.setWindowSky?.(sky);
+            }
+
+            if (refs.nightTintLayer) {
+              refs.nightTintLayer.alpha = getNightTintAlpha(dayness);
+            }
+
+            refs.decor?.update(t, reduceMotion, s.hasActiveProject, {
+              dayness,
+              dayPhase,
+              coffeeSteaming: steamReady,
+            });
           }
 
           // Dynamic analog tape saturation warmth (deepens subtly during active session takes)
@@ -1848,12 +2611,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
               // R3 click (button 11) recenters camera
               if (pad.buttons[11]?.pressed) {
                 markCanvasInput();
-                cameraRef.current = { x: 0, y: 0, zoom: 1.0 };
-                const sc = sceneRef.current;
-                if (sc) {
-                  sc.root.scale.set(sc.baseScale);
-                  sc.root.position.set(sc.basePosition.x, sc.basePosition.y);
-                }
+                resetCamera();
               }
             }
           }
@@ -1875,6 +2633,11 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         lastW = w;
         lastH = h;
         app.renderer.resize(w, h);
+        idleCameraRef.current = {
+          mode: 'idle',
+          saved: { x: 0, y: 0, zoom: 1 },
+          targetId: null,
+        };
         cameraRef.current = { x: 0, y: 0, zoom: 1 };
         if (!disposed) rebuild();
       }

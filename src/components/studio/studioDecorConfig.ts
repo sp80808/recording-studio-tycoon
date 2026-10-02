@@ -1,25 +1,35 @@
 /**
  * Studio decor configuration — pure functions, no Pixi.
  *
- * Everything the decor renderer needs to decide (which trophies hang on the wall,
- * which era prop appears, where planks and dust motes sit) is computed here so it
- * is deterministic and unit-testable. The renderer (studioDecor.ts) only draws.
+ * Everything the decor renderer needs to decide (which album covers hang above
+ * the booth, which era prop appears, where planks and dust motes sit) is
+ * computed here so it is deterministic and unit-testable. The renderer
+ * (studioDecor.ts) only draws.
  */
 import { createSeededRandom } from '@/simulation/seededRandom';
 import type { GameState } from '@/types/game';
-import { visualEraId } from '@/utils/eraProgression';
+import { ERA_DEFINITIONS, visualEraId } from '@/utils/eraProgression';
 
-/* ------------------------------------------------------------ trophy wall */
+/* -------------------------------------------------------- album cover wall */
 
-export type TrophyKind = 'platinum' | 'gold' | 'award' | 'empty';
+/** One completed release hung above the booth. */
+export interface AlbumCoverEntry {
+  projectId: string;
+  title: string;
+  genre?: string;
+  score: number;
+  artist?: string;
+}
 
+export type TrophyKind = 'cover' | 'empty';
+
+/**
+ * Album covers for the wall above the vocal booth.
+ * Sourced from `financials.reports` (settlement ledger). Reports do not store
+ * `bookingRoomId`, so the wall shows all studio completions — not room-scoped.
+ */
 export interface TrophyInput {
-  /** Releases that scored 90+ (S-rank): hung as platinum discs. */
-  platinum: number;
-  /** Releases that scored 80-89 (A-rank): hung as gold discs. */
-  gold: number;
-  /** Earned achievements: hung as small star plaques. */
-  awards: number;
+  covers: AlbumCoverEntry[];
 }
 
 export interface TrophySlot {
@@ -27,44 +37,50 @@ export interface TrophySlot {
   kind: TrophyKind;
   /** Tile-x centre on the right wall. */
   x: number;
+  /** Present when kind === 'cover'. */
+  cover?: AlbumCoverEntry;
 }
 
 export const TROPHY_SLOTS = 6;
 /** Tile-x centres along the right wall: clear of the booth glass (x 1-3.5, low) and the window (x 5.1+). */
 const TROPHY_X = [0.75, 1.5, 2.25, 3.0, 3.75, 4.5] as const;
 
-/** Derive trophy counts from the settlement ledger + unlocked achievements. Safe on sparse saves. */
+/** Derive album-cover wall entries from the settlement ledger. Safe on sparse saves. */
 export const getTrophyInput = (
-  state: Pick<GameState, 'financials' | 'unlockedAchievements'>,
+  state: Pick<GameState, 'financials'>,
 ): TrophyInput => {
   const reports = state.financials?.reports ?? [];
-  let platinum = 0;
-  let gold = 0;
+  const covers: AlbumCoverEntry[] = [];
   for (const r of reports) {
-    const q = r?.overallQualityScore ?? 0;
-    if (q >= 90) platinum++;
-    else if (q >= 80) gold++;
+    if (!r?.projectId) continue;
+    covers.push({
+      projectId: r.projectId,
+      title: r.projectTitle || 'Untitled Session',
+      genre: r.genre,
+      score: r.overallQualityScore ?? 0,
+      artist: r.assignedPerson?.name,
+    });
   }
-  return { platinum, gold, awards: Object.keys(state.unlockedAchievements ?? {}).length };
+  return { covers };
 };
 
 /**
- * Fill the wall best-first (platinum, gold, awards) and leave the rest as empty hangers,
- * so the wall is a visible "room to grow" cue rather than a blank stretch.
+ * Fill slots with the most recent completions first; leftover hangers stay empty
+ * (subtle frames — never stars) so the wall reads as "room to grow".
  */
 export const getTrophyWall = (input: TrophyInput): TrophySlot[] => {
-  const kinds: TrophyKind[] = [];
-  for (let i = 0; i < Math.max(0, input.platinum); i++) kinds.push('platinum');
-  for (let i = 0; i < Math.max(0, input.gold); i++) kinds.push('gold');
-  // Awards are cheaper to earn, so they may never crowd out real records.
-  const awardSlots = Math.max(0, Math.min(2, Math.ceil(input.awards / 4)));
-  for (let i = 0; i < awardSlots; i++) kinds.push('award');
-  return TROPHY_X.map((x, index) => ({ index, x, kind: kinds[index] ?? 'empty' }));
+  const recent = [...(input.covers ?? [])].slice(-TROPHY_SLOTS).reverse();
+  return TROPHY_X.map((x, index) => {
+    const cover = recent[index];
+    return cover
+      ? { index, x, kind: 'cover' as const, cover }
+      : { index, x, kind: 'empty' as const };
+  });
 };
 
 export const trophyKey = (input: TrophyInput): string => {
   const slots = getTrophyWall(input);
-  return slots.map((s) => s.kind[0]).join('');
+  return slots.map((s) => (s.cover ? s.cover.projectId : '_')).join('|');
 };
 
 /* -------------------------------------------------------------- era props */
@@ -93,22 +109,235 @@ const ERA_DECOR: Record<string, Omit<EraDecorSpec, 'eraId'>> = {
   streaming2020s: { prop: 'led-strip', glow: 0x7bf0c8, glow2: 0xa78bfa, daylight: 0xeaf7ff, wainscot: 0x1f2b27, planks: [0x5a4a3e, 0x52443a, 0x4a3d33] },
 };
 
-export const getEraDecor = (eraId?: string): EraDecorSpec => {
-  const id = visualEraId(eraId ?? 'analog60s');
+export const getEraDecor = (eraId?: string, currentYear?: number): EraDecorSpec => {
+  // The displayed year also covers older saves whose era id disagrees with their date.
+  const id = ERA_DEFINITIONS.find(era => currentYear !== undefined && currentYear >= era.startYear && currentYear <= era.endYear)?.id
+    ?? visualEraId(eraId ?? 'analog60s');
   const spec = ERA_DECOR[id] ?? ERA_DECOR.analog60s;
   return { eraId: ERA_DECOR[id] ? id : 'analog60s', ...spec };
 };
 
+/* -------------------------------------------------------- era lighting kits */
+
+/**
+ * Data-driven practicals / glow overlays (ux-visual P2).
+ * Values feed `buildDecorLights` — keep one continuous WebGL living studio.
+ */
+export interface EraLightingKit {
+  eraId: string;
+  /** Airborne window-shaft fill alpha (before dayness). */
+  shaftAirAlpha: number;
+  /** Floor spill fill alpha under the shaft. */
+  shaftFloorAlpha: number;
+  moteCount: number;
+  moteBaseAlpha: number;
+  rugPool: { color: number; alpha: number; rx: number; ry: number };
+  deskPool: { color: number; alpha: number; rx: number; ry: number };
+  /** Multiplier on era signature prop glows (lamp / neon / lava / LED). */
+  propGlowScale: number;
+  /** Tier at which the booth-header neon practical lights up (typically 5). */
+  neonFromTier: number;
+  neonPrimary: number;
+  neonSecondary: number;
+  neonPulseHz: number;
+  /** Soft bloom tint for dynamic console/TV cores when bloom is enabled. */
+  bloomAccent: number;
+}
+
+const ERA_LIGHTING: Record<string, Omit<EraLightingKit, 'eraId'>> = {
+  analog60s: {
+    shaftAirAlpha: 0.042,
+    shaftFloorAlpha: 0.052,
+    moteCount: 28,
+    moteBaseAlpha: 0.58,
+    rugPool: { color: 0xffb45a, alpha: 0.12, rx: 126, ry: 48 },
+    deskPool: { color: 0xffd58a, alpha: 0.075, rx: 76, ry: 28 },
+    propGlowScale: 1.08,
+    neonFromTier: 5,
+    neonPrimary: 0xffc266,
+    neonSecondary: 0xff9a4d,
+    neonPulseHz: 1.15,
+    bloomAccent: 0xffaa33,
+  },
+  digital80s: {
+    shaftAirAlpha: 0.034,
+    shaftFloorAlpha: 0.04,
+    moteCount: 22,
+    moteBaseAlpha: 0.5,
+    rugPool: { color: 0xc77dff, alpha: 0.1, rx: 118, ry: 44 },
+    deskPool: { color: 0x5aa9e6, alpha: 0.08, rx: 70, ry: 26 },
+    propGlowScale: 1.18,
+    neonFromTier: 5,
+    neonPrimary: 0xff4fd8,
+    neonSecondary: 0x4fd8ff,
+    neonPulseHz: 2.4,
+    bloomAccent: 0xc77dff,
+  },
+  internet2000s: {
+    shaftAirAlpha: 0.036,
+    shaftFloorAlpha: 0.044,
+    moteCount: 24,
+    moteBaseAlpha: 0.52,
+    rugPool: { color: 0xff7a45, alpha: 0.1, rx: 120, ry: 46 },
+    deskPool: { color: 0x7ad9ff, alpha: 0.07, rx: 72, ry: 26 },
+    propGlowScale: 1.12,
+    neonFromTier: 5,
+    neonPrimary: 0xff7a45,
+    neonSecondary: 0x7ad9ff,
+    neonPulseHz: 1.8,
+    bloomAccent: 0x5aa9e6,
+  },
+  streaming2020s: {
+    shaftAirAlpha: 0.03,
+    shaftFloorAlpha: 0.038,
+    moteCount: 18,
+    moteBaseAlpha: 0.48,
+    rugPool: { color: 0x7bf0c8, alpha: 0.09, rx: 114, ry: 42 },
+    deskPool: { color: 0xa78bfa, alpha: 0.08, rx: 68, ry: 24 },
+    propGlowScale: 1.22,
+    neonFromTier: 4,
+    neonPrimary: 0x7bf0c8,
+    neonSecondary: 0xa78bfa,
+    neonPulseHz: 2.8,
+    bloomAccent: 0x7bd389,
+  },
+};
+
+export const getEraLightingKit = (eraId?: string): EraLightingKit => {
+  const id = visualEraId(eraId ?? 'analog60s');
+  const kit = ERA_LIGHTING[id] ?? ERA_LIGHTING.analog60s;
+  return { eraId: ERA_LIGHTING[id] ? id : 'analog60s', ...kit };
+};
+
 /* -------------------------------------------------------- daylight cycle */
 
-/** Length of the ambient day/night cycle in seconds (must match the ticker's tint cycle). */
-export const DAY_CYCLE_SECONDS = 90;
+/**
+ * Studio clock ↔ lighting contract (shared by wall clock, window sky, shaft, night tint).
+ *
+ * Wall hands and lighting share one minute stream:
+ *   minutes = floor(currentDay * CLOCK_DAY_OFFSET + tSeconds * CLOCK_MINUTES_PER_REAL_SECOND)
+ * Wall face is 12h (`% 720`); lighting uses a full 24h day (`% 1440`) so morning vs evening
+ * disagree on exterior light even when the analog face shows the same numbers.
+ *
+ * Phase map (24h clock minutes):
+ *   morning  05:00–10:00  (300–600)   warm sky, rising shaft
+ *   day      10:00–17:00  (600–1020)  clear sky, full shaft
+ *   evening  17:00–21:00  (1020–1260) amber/violet sky, falling shaft
+ *   night    21:00–05:00  (1260–1440 ∪ 0–300) deep sky, dim shaft, stronger room tint
+ *
+ * Dayness is a smooth cosine peaked at noon (not a hard step), so transitions feel intentional.
+ * Reduced-motion callers should freeze dayness / sky (see `REDUCED_MOTION_DAYNESS`) while the
+ * clock may still tick.
+ */
 
-/** 0 = deepest night, 1 = full daylight. Mirrors the ticker's `nightTintLayer` sine so both agree. */
-export const getDayness = (tSeconds: number): number => {
-  const cycle = (Math.sin((tSeconds * Math.PI * 2) / DAY_CYCLE_SECONDS) + 1) / 2;
-  return 1 - cycle;
+/** In-game minutes advanced per real second — matches WebGLCanvas wall-clock ticker. */
+export const CLOCK_MINUTES_PER_REAL_SECOND = 4;
+/** Per-`currentDay` offset so consecutive mornings never start on the same face reading. */
+export const CLOCK_DAY_OFFSET = 137;
+/** Full lighting day in clock-minutes. */
+export const STUDIO_DAY_MINUTES = 1440;
+/** Analog face wrap (12-hour). */
+export const WALL_CLOCK_MINUTES = 720;
+
+export type DayPhase = 'morning' | 'day' | 'evening' | 'night';
+
+/** Stable midday look when `prefers-reduced-motion` / settings reduceMotion is on. */
+export const REDUCED_MOTION_DAYNESS = 0.88;
+export const REDUCED_MOTION_PHASE: DayPhase = 'day';
+
+/** Absolute clock minutes since an arbitrary epoch (not wrapped). */
+export const getStudioClockMinutesRaw = (day: number, tSeconds: number): number =>
+  Math.floor(Math.max(0, day) * CLOCK_DAY_OFFSET + Math.max(0, tSeconds) * CLOCK_MINUTES_PER_REAL_SECOND);
+
+/** Minutes within the 24h lighting day (0..1439). */
+export const getStudioClockMinutes = (day: number, tSeconds: number): number =>
+  ((getStudioClockMinutesRaw(day, tSeconds) % STUDIO_DAY_MINUTES) + STUDIO_DAY_MINUTES) % STUDIO_DAY_MINUTES;
+
+/** Hour (0..11) + minute (0..59) for the wall face. */
+export const getWallClockTime = (
+  day: number,
+  tSeconds: number,
+): { hour: number; minute: number; minutesOfDay: number } => {
+  const minutesOfDay = getStudioClockMinutes(day, tSeconds);
+  const face = minutesOfDay % WALL_CLOCK_MINUTES;
+  return { hour: Math.floor(face / 60) % 12, minute: face % 60, minutesOfDay };
 };
+
+export const getDayPhase = (minutesOfDay: number): DayPhase => {
+  const m = ((Math.floor(minutesOfDay) % STUDIO_DAY_MINUTES) + STUDIO_DAY_MINUTES) % STUDIO_DAY_MINUTES;
+  if (m >= 300 && m < 600) return 'morning';
+  if (m >= 600 && m < 1020) return 'day';
+  if (m >= 1020 && m < 1260) return 'evening';
+  return 'night';
+};
+
+/**
+ * 0 = deepest night, 1 = full daylight.
+ * Cosine peaked at noon (minute 720) so control-room + live-room ambience ease through the day.
+ */
+export const getDaynessFromClockMinutes = (minutesOfDay: number): number => {
+  const m = ((minutesOfDay % STUDIO_DAY_MINUTES) + STUDIO_DAY_MINUTES) % STUDIO_DAY_MINUTES;
+  const noonCentered = (m - 720) * ((Math.PI * 2) / STUDIO_DAY_MINUTES);
+  return 0.5 + 0.5 * Math.cos(noonCentered);
+};
+
+/** Screen-space night tint strength from dayness (era tint colour stays on the grade). */
+export const getNightTintAlpha = (dayness: number): number => {
+  const d = Math.max(0, Math.min(1, dayness));
+  return 0.03 + (1 - d) * 0.22;
+};
+
+/** Practical / pool boost at night so lamps read when the window goes dark. */
+export const getInteriorLightBoost = (dayness: number): number => {
+  const d = Math.max(0, Math.min(1, dayness));
+  return 1 + (1 - d) * 0.38;
+};
+
+const lerpByte = (a: number, b: number, t: number) => Math.round(a + (b - a) * t);
+export const lerpHex = (a: number, b: number, t: number): number => {
+  const u = Math.max(0, Math.min(1, t));
+  const ar = (a >> 16) & 255;
+  const ag = (a >> 8) & 255;
+  const ab = a & 255;
+  const br = (b >> 16) & 255;
+  const bg = (b >> 8) & 255;
+  const bb = b & 255;
+  return (lerpByte(ar, br, u) << 16) | (lerpByte(ag, bg, u) << 8) | lerpByte(ab, bb, u);
+};
+
+/** Exterior sky seen through the right-wall window glass. */
+const SKY_KEYS: Array<{ at: number; color: number }> = [
+  { at: 0, color: 0x0c1428 }, // midnight
+  { at: 300, color: 0x3a4a78 }, // pre-dawn
+  { at: 360, color: 0xffb07a }, // sunrise
+  { at: 480, color: 0x9ec8f0 }, // morning
+  { at: 720, color: 0x8fbfe6 }, // noon (legacy static pane)
+  { at: 1020, color: 0xf0a060 }, // golden hour
+  { at: 1140, color: 0xc06a9a }, // dusk violet
+  { at: 1260, color: 0x1a2748 }, // early night
+  { at: 1440, color: 0x0c1428 }, // wrap
+];
+
+export const getWindowSkyColor = (minutesOfDay: number): number => {
+  const m = ((minutesOfDay % STUDIO_DAY_MINUTES) + STUDIO_DAY_MINUTES) % STUDIO_DAY_MINUTES;
+  for (let i = 0; i < SKY_KEYS.length - 1; i++) {
+    const a = SKY_KEYS[i];
+    const b = SKY_KEYS[i + 1];
+    if (m >= a.at && m <= b.at) {
+      const span = b.at - a.at || 1;
+      return lerpHex(a.color, b.color, (m - a.at) / span);
+    }
+  }
+  return SKY_KEYS[0].color;
+};
+
+/**
+ * @deprecated Prefer `getDaynessFromClockMinutes` + `getStudioClockMinutes`.
+ * Legacy 90s sine removed — now samples the clock stream at day 0 so old call sites stay coherent.
+ */
+export const DAY_CYCLE_SECONDS = 90;
+export const getDayness = (tSeconds: number): number =>
+  getDaynessFromClockMinutes(getStudioClockMinutes(0, tSeconds));
 
 /* ---------------------------------------------------------- floor planks */
 

@@ -15,6 +15,15 @@ export type StudioChoreId =
 
 export type ChoreCategory = 'maintenance' | 'acoustics' | 'hospitality';
 
+/** Real-time duration keeps chores readable while rewarding better rooms and eras. */
+export function getChoreDurationMs(chore: StudioChore, eraId: string, ownedEquipmentCount: number): number {
+  const eraBonus = eraId === '1960s' || eraId === '1960' ? 0.92 : eraId === '1970s' || eraId === '1970' ? 0.96 : 1;
+  const equipmentBonus = Math.min(0.22, Math.max(0, ownedEquipmentCount) * 0.025);
+  const base = chore.category === 'hospitality' ? 900 : chore.category === 'acoustics' ? 1500 : 1800;
+  return Math.round(base * eraBonus * (1 - equipmentBonus));
+}
+
+
 export interface StudioChore {
   id: StudioChoreId;
   title: string;
@@ -119,6 +128,27 @@ export const AUTHORED_CHORES: Record<StudioChoreId, Omit<StudioChore, 'completed
     buffMagnitude: 0.10, // +10% client vibe & mood
   },
 };
+
+/** Canonical hotspot for a chore — prefers authored mapping so older saves still resolve. */
+export function getChoreCanonicalHotspot(chore: Pick<StudioChore, 'id' | 'hotspotId'>): StudioChore['hotspotId'] {
+  return AUTHORED_CHORES[chore.id]?.hotspotId ?? chore.hotspotId;
+}
+
+/** First incomplete chore pinned to a floor hotspot (console / liveRoom / shelf / …). */
+export function findPendingChoreForHotspot(
+  state: StudioChoreState | null | undefined,
+  hotspotId: StudioChore['hotspotId'] | string
+): StudioChore | null {
+  if (!state?.chores) return null;
+  const key = hotspotId.trim().toLowerCase().replace(/[\s_]+/g, '');
+  const target = key === 'liveroom' ? 'liveRoom' : key === 'crt' ? 'tv' : hotspotId;
+  const canonical = target === 'liveroom' ? 'liveRoom' : target;
+  return (
+    Object.values(state.chores).find(
+      (chore) => !chore.completed && getChoreCanonicalHotspot(chore) === canonical
+    ) ?? null
+  );
+}
 
 /**
  * Initializes a clean chore state.

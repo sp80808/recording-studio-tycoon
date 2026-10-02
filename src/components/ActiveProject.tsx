@@ -1,3 +1,5 @@
+import { emitTakeFeedback } from '@/utils/takeFeedback';
+import { ProducerSprite } from '@/components/ProducerSprite';
 import { MotionButton, MotionReveal, MotionNumber } from '@/components/motion/primitives';
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
@@ -21,7 +23,18 @@ import { StreakBankControl } from './StreakBankControl';
 import type { BankResult } from '@/rpg/streakBank';
 import { hasActiveChoreBuff, getActiveBuffMagnitude } from '@/simulation/choreEngine';
 import { PocketMeter } from '@/components/console/PocketMeter';
+
+/** Inter-take dock pacing — keep calibration a quick console check, not a chapter. */
+export const TAKE_SESSION_PACING = {
+  /** Brief beat after a lock so grade juice lands before the next needle arm. */
+  postTakeRearmMs: 320,
+  /** Take result toast — short so it does not outlast the next arm. */
+  takeToastMs: 1400,
+} as const;
 import { StudioDutiesClipboard } from './chores/StudioDutiesClipboard';
+import { StudioStampChip, type StudioStampTone } from './StudioStampChip';
+import { ChoreHotspotButton } from './chores/ChoreHotspotButton';
+import RiderPanel from '@/components/RiderPanel';
 import { ClipboardList } from 'lucide-react';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useSettings } from '@/contexts/settings-context-types';
@@ -34,6 +47,7 @@ import {
   getStageFocusRecommendations 
 } from '@/utils/stageUtils';
 
+import { earn } from '@/economy/ledger';
 import { GameState, FocusAllocation, Project, PlayerData } from '@/types/game';
 import { useFeatureFlag } from '@/stores/featureFlagStore';
 import ProductionQueuePanel from '@/components/ProductionQueue/ProductionQueuePanel';
@@ -41,13 +55,16 @@ import { rankStaffForProject } from '@/utils/staffFitUtils';
 import { evaluateProjectSynergies } from '@/utils/synergyUtils';
 import { SynergyBadgeList } from '@/components/synergy/SynergyBadgeList';
 import { hapticTick } from '@/utils/mobilePlatform';
+import { usePhoneSession } from '@/hooks/usePhoneSession';
+import { MobileSessionStatusStrip } from '@/components/console/MobileSessionStatusStrip';
+import { MobileFocusMixer } from '@/components/console/MobileFocusMixer';
 
 interface ActiveProjectProps {
   gameState: GameState;
   setGameState: (state: GameState | ((prev: GameState) => GameState)) => void; // Made non-optional as it's crucial for updating project focus
   // focusAllocation prop is removed, as it will be derived from gameState.activeProject.focusAllocation
   // setFocusAllocation prop is removed, will be handled by a new specific updater function if manual adjustment is kept, or via setGameState
-  performDailyWork?: () => { isComplete: boolean; finalProjectData?: Project } | undefined;
+  performDailyWork?: (options?: import('@/hooks/useStageWork').PerformDailyWorkOptions) => { isComplete: boolean; finalProjectData?: Project } | undefined;
   onMinigameReward?: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string, rawScore?: number) => void;
   onProjectComplete?: (completedProject: Project) => void;
   onProjectSelect?: (project: Project) => void;
@@ -122,8 +139,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const handleStreakBank = (result: BankResult) => {
     if (!gameState.activeProject) return;
     setGameState(prev => ({
-      ...prev,
-      money: prev.money + result.cash,
+      ...earn(prev, result.cash, { category: 'reward-income', projectId: prev.activeProject?.id, memo: 'Streak bank' }),
       playerData: {
         ...prev.playerData,
         xp: prev.playerData.xp + result.xp,
@@ -164,6 +180,8 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
   // Hoisted above the early return: hooks must run unconditionally (Rules of Hooks).
   const showAdvancedQueue = useFeatureFlag('advanced-production-queue');
+  // #141: phones get a zero-scroll single-viewport composition; desktop is unchanged.
+  const isPhone = usePhoneSession();
   const activeSynergies = React.useMemo(
     () => gameState.activeProject ? evaluateProjectSynergies(gameState.activeProject, gameState) : [],
     [gameState]
@@ -175,6 +193,16 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const setTakeCalibrationFocused = useUiChromeStore((s) => s.setTakeCalibrationFocused);
   const availableEnergy = gameState.playerData.dailyWorkCapacity;
   const isProjectComplete = !!gameState.activeProject && gameState.activeProject.stages.every(stage => stage.completed);
+  const rearmTimerRef = useRef<number | null>(null);
+
+  const clearTakeRearm = () => {
+    if (rearmTimerRef.current !== null) {
+      window.clearTimeout(rearmTimerRef.current);
+      rearmTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => () => clearTakeRearm(), []);
 
   // Shared chrome host: hide First Session coach while Take Calibration owns the dock.
   useEffect(() => {
@@ -213,18 +241,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
   if (!gameState.activeProject) {
     return (
-      <div className="flex-1 space-y-4">
-        {/* Studio Header */}
-        <div className="bg-purple-500/[0.08] border border-purple-500/30 rounded-lg p-3">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🎵</span>
-            <div>
-              <h2 className="text-lg font-bold text-white">Studio Workspace</h2>
-              <p className="text-sm text-stone-300">Work on your projects here</p>
-            </div>
-          </div>
-        </div>
-        
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-4">
         <GamePanel className="flex-1 p-6 backdrop-blur-sm">
           <div className="text-center text-stone-400 animate-fade-in">
             <div className="text-6xl mb-4 animate-pulse">🎵</div>
@@ -310,6 +327,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       'beatmaking',
       'vocal',
       'vocal-comp',
+      'album-sequence',
       'layering'
     ]).has(autoTriggeredMinigame.type);
 
@@ -395,15 +413,23 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
   const handleArmTake = () => {
     if (availableEnergy <= 0 || isProjectComplete) return;
+    clearTakeRearm();
     hapticTick(14);
     playSound('ui-click', 0.5);
     if ((gameAudio as any).playGearSwitch) (gameAudio as any).playGearSwitch();
     setTakeState('tracking');
   };
 
+  const handleStandDown = () => {
+    clearTakeRearm();
+    setTakeState('idle');
+    playSound('ui-click', 0.35);
+  };
+
   const handleLockTake = (needlePosition: number) => {
     const timingBonus = getActiveBuffMagnitude(gameState.choreState, 'timing_bonus');
     const verdict = evaluateTakeAccuracy(needlePosition, timingBonus);
+    clearTakeRearm();
     setTakeState('idle');
 
     // Trigger Tone.js chord synthesis + SFX
@@ -426,6 +452,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     setLastGains({ creativity: creativityGain, technical: technicalGain });
     setShowBlobAnimation(true);
 
+    const energyBefore = availableEnergy;
     // Execute work in useStageWork with take bonuses
     const result = performDailyWork?.({
       energyCost,
@@ -436,7 +463,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
     if (result?.isComplete && result.finalProjectData) {
       playSound('project-complete', 0.8);
-      const isMilestone = verdict.grade === 'Gold' || verdict.grade === 'Platinum' || (result.finalProjectData.overallQualityScore ?? 0) >= 80;
+      const isMilestone = verdict.grade === 'Gold';
       if (isMilestone) {
         setCelebrationDisplayData({ title: result.finalProjectData.title, genre: result.finalProjectData.genre });
         setProjectDataForCompletionCall(result.finalProjectData);
@@ -458,6 +485,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       setGoldStreak(0);
     }
 
+    if (verdict.grade === 'Gold' || verdict.grade === 'Silver' || verdict.grade === 'Solid') emitTakeFeedback(verdict.grade);
     setLastTakeGrade({
       grade: verdict.grade,
       text: `${verdict.label}! +${verdict.qualityBonus} Quality (${Math.round((verdict.multiplier - 1) * 100)}% Boost)`
@@ -467,8 +495,19 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       title: verdict.grade === 'Gold' ? '🔥 IN THE POCKET! (Gold Take)' : verdict.grade === 'Silver' ? '✨ TIGHT TAKE! (Silver Take)' : '🎵 SOLID TAKE',
       description: `${verdict.label}: Advanced stage with ${energyCost} energy spent.`,
       className: verdict.grade === 'Gold' ? 'bg-amber-950 border-amber-500 text-amber-200' : 'bg-stone-800 border-stone-600 text-white',
-      duration: 3000
+      duration: TAKE_SESSION_PACING.takeToastMs
     });
+
+    // Chain the next console check immediately when energy remains — no dead
+    // ARM TAKE wait between takes in the same energy burst.
+    const energyAfter = energyBefore - energyCost;
+    if (result && !result.isComplete && energyAfter > 0) {
+      rearmTimerRef.current = window.setTimeout(() => {
+        rearmTimerRef.current = null;
+        setTakeState('tracking');
+        if ((gameAudio as any).playGearSwitch) (gameAudio as any).playGearSwitch();
+      }, TAKE_SESSION_PACING.postTakeRearmMs);
+    }
   };
 
   const handleProjectCelebrationComplete = () => {
@@ -499,6 +538,22 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
         p.id === project.id ? { ...p, focusAllocation: newFocus } : p
       ),
     }));
+  };
+
+  const handleAutoAlign = () => {
+    const newFocus = {
+      performance: optimalFocus.performance,
+      soundCapture: optimalFocus.soundCapture,
+      layering: optimalFocus.layering,
+    };
+    setGameState(prev => ({
+      ...prev,
+      activeProject: prev.activeProject ? { ...prev.activeProject, focusAllocation: newFocus } : null,
+      activeProjects: prev.activeProjects.map(p =>
+        p.id === project.id ? { ...p, focusAllocation: newFocus } : p
+      ),
+    }));
+    playSound('notification.wav', 0.4);
   };
 
   return (
@@ -533,16 +588,87 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       {/* Studio Workspace Card: Scaled DAW / Console Layout */}
       <div 
         ref={containerRef} 
-        className="flex-1 min-h-0 flex flex-col w-full overflow-hidden bg-stone-950 border border-stone-700/80 rounded-[2px] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_12px_40px_rgba(0,0,0,0.85)] relative"
+        data-session-layout={isPhone ? 'phone' : 'desktop'}
+        className={`flex-1 min-h-0 flex flex-col w-full overflow-hidden bg-stone-950 border border-stone-700/80 rounded-[2px] ${isPhone ? 'p-1.5' : 'p-3'} shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_12px_40px_rgba(0,0,0,0.85)] relative`}
       >
         <div className="absolute top-1 left-1 w-2 h-2 rounded-full bg-stone-700 border border-stone-600 flex items-center justify-center text-[8px] text-stone-400 font-mono shadow-inner">+</div>
         <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-stone-700 border border-stone-600 flex items-center justify-center text-[8px] text-stone-400 font-mono shadow-inner">+</div>
         <div className="absolute bottom-1 left-1 w-2 h-2 rounded-full bg-stone-700 border border-stone-600 flex items-center justify-center text-[8px] text-stone-400 font-mono shadow-inner">+</div>
         <div className="absolute bottom-1 right-1 w-2 h-2 rounded-full bg-stone-700 border border-stone-600 flex items-center justify-center text-[8px] text-stone-400 font-mono shadow-inner">+</div>
 
+        {isPhone ? (
+          /* #141 phone composition: status strip / centre workspace (mixer <-> PocketMeter) / transport dock. */
+          <div className="flex-1 min-h-0 flex flex-col gap-1.5 overflow-hidden" data-testid="mobile-session-body">
+            <MobileSessionStatusStrip
+              title={project.title}
+              subtitle={String(project.clientName || project.clientType || project.genre)}
+              payout={project.payoutBase}
+              difficulty={project.difficulty}
+              stageLabel={`${project.currentStageIndex + 1}/${project.stages.length} ${currentStage?.stageName ?? ''}`}
+              stageProgress={currentStageProgress}
+              overallProgress={overallProgress}
+              energy={availableEnergy}
+              dutiesDone={Object.values(gameState.choreState?.chores || {}).filter(c => c.completed).length}
+              dutiesTotal={5}
+              creativityPoints={project.accumulatedCPoints || 0}
+              technicalPoints={project.accumulatedTPoints || 0}
+              durationDays={project.durationDaysTotal}
+              sessions={project.workSessionCount || 0}
+              activeBuffs={(gameState.choreState?.activeBuffs || []).map(b => `${b.buffType.replace('_', ' ')} (${b.remainingSessions}s)`)}
+              synergyCount={activeSynergies.length}
+              onOpenDuties={() => setShowDutiesClipboard(true)}
+            />
+
+            {autoTriggeredMinigame && takeState !== 'tracking' && (
+              <div className="shrink-0 flex items-center gap-1.5 px-2 py-1 bg-purple-500/[0.12] border border-purple-500/70 rounded">
+                <span className="min-w-0 flex-1 truncate text-[11px] text-yellow-300" title={autoTriggeredMinigame.reason}>🎯 {autoTriggeredMinigame.reason}</span>
+                <MotionButton onClick={handleStartIntervention} className="h-6 px-2 text-[11px] bg-purple-400/[0.14] ring-1 ring-inset ring-purple-400/45 text-purple-100 font-bold rounded">Intervene</MotionButton>
+                <MotionButton onClick={handleDelegateIntervention} disabled={!bestDelegate} className="h-6 px-2 text-[11px] border border-amber-500/50 text-stone-200 rounded">Delegate</MotionButton>
+                <MotionButton onClick={handleSkipIntervention} className="h-6 px-2 text-[11px] text-stone-300 rounded">Skip</MotionButton>
+              </div>
+            )}
+
+            {isCurrentStageComplete && !isProjectComplete && takeState !== 'tracking' && (
+              <div className="shrink-0 px-2 py-1 bg-emerald-500/[0.10] border border-green-500/70 rounded text-[11px] text-green-300 truncate">
+                ✅ {currentStage.stageName} complete. Work next session to advance.
+              </div>
+            )}
+
+            <div className="flex-1 min-h-0 min-w-0 flex flex-col justify-center overflow-hidden" data-testid="mobile-session-workspace">
+              {takeState === 'tracking' ? (
+                <PocketMeter
+                  isArmed={true}
+                  onLock={handleLockTake}
+                  timingBonus={getActiveBuffMagnitude(gameState.choreState, 'timing_bonus')}
+                />
+              ) : (
+                <MobileFocusMixer
+                  focus={projectFocus}
+                  optimal={optimalFocus}
+                  labels={stageFocusLabels}
+                  matchPct={Math.round(focusEffectiveness.effectiveness * 100)}
+                  guidanceTitle={currentStage.stageName}
+                  guidance={optimalFocus.reasoning}
+                  canAutoAlign={canUseOptimalFocusButton}
+                  onChange={handleFocusChange}
+                  onAutoAlign={handleAutoAlign}
+                />
+              )}
+            </div>
+          </div>
+        ) : (
+        <>
         {/* Pinned Top Bar: Project Meta & LED telemetry */}
         <div className="shrink-0 mb-2.5 bg-stone-950/80 border border-stone-800/90 rounded-[2px] p-2.5 shadow-inner relative z-10">
           <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-3">
+            <ProducerSprite
+              className="hidden shrink-0 rounded border border-stone-800 bg-black/40 px-1 sm:block"
+              producerCustomization={gameState.producerCustomization}
+              selectedEra={gameState.selectedEra}
+              animationState={takeState === 'tracking' ? 'working' : 'idle'}
+              scale={1.25}
+            />
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse">
@@ -558,23 +684,21 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 <span className="text-amber-300">⭐ Diff {project.difficulty}</span>
               </div>
             </div>
+            </div>
 
             <div className="flex items-center gap-3 text-xs tabular-nums">
               <div className="text-right">
                 <div className="text-[11px] text-amber-300 font-semibold">{project.durationDaysTotal}d duration</div>
                 <div className="text-[10px] text-stone-400">{Math.round(project.workSessionCount || 0)} sessions</div>
               </div>
-              <button
-                onClick={() => setShowDutiesClipboard(true)}
-                className="flex items-center gap-1.5 px-2 py-1 bg-amber-950/70 hover:bg-amber-900 border border-amber-500/40 rounded text-xs text-amber-200 transition-colors shadow-sm"
+              <ChoreHotspotButton
+                kind="duties"
+                icon={ClipboardList}
+                label="Duties"
+                meta={`${Object.values(gameState.choreState?.chores || {}).filter(c => c.completed).length}/5`}
                 title="Open Studio Maintenance Duties"
-              >
-                <ClipboardList size={13} className="text-amber-400" />
-                <span>Duties</span>
-                <span className="text-[10px] text-amber-400 font-bold bg-amber-900/60 px-1 rounded">
-                  {Object.values(gameState.choreState?.chores || {}).filter(c => c.completed).length}/5
-                </span>
-              </button>
+                onClick={() => setShowDutiesClipboard(true)}
+              />
               <div className="flex items-center gap-2 bg-stone-900/90 px-2 py-1 rounded border border-stone-700/70">
                 <div id="creativity-points" data-creativity-target className="text-amber-300 font-bold flex items-center gap-1 text-xs">
                   <span>🎨</span> {Math.round(project.accumulatedCPoints || 0)}
@@ -590,36 +714,64 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
         {/* Active Session Hardware & Maintenance Buff Chips */}
         {gameState.choreState?.activeBuffs && gameState.choreState.activeBuffs.length > 0 && (
-          <div className="shrink-0 mb-2 px-2.5 py-1.5 bg-stone-900/90 border border-stone-700/60 rounded-[2px] flex items-center gap-2 overflow-x-auto select-none shadow-inner">
-            <div className="text-[10px] font-mono text-stone-400 uppercase tracking-widest flex items-center gap-1 shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>ACTIVE BUFFS:</span>
-            </div>
+          <div className="shrink-0 mb-2 px-2.5 py-1.5 bg-[rgba(20,18,16,0.92)] border border-[var(--rst-line-strong)] rounded-[3px] flex items-center gap-2 overflow-x-auto select-none">
+            <span className="rst-kicker shrink-0 text-[9px] tracking-[0.18em] text-[var(--rst-stone)]">
+              Session buffs
+            </span>
             <div className="flex items-center gap-1.5 flex-nowrap">
               {gameState.choreState.activeBuffs.map(buff => {
-                const config = {
-                  timing_bonus: { icon: '🧲', label: `+${Math.round(buff.magnitude * 100)}% Pocket Sweet Spot`, bg: 'bg-amber-950/70 border-amber-500/50 text-amber-300' },
-                  tech_bonus: { icon: '🎛️', label: `+${Math.round(buff.magnitude * 100)}% Technical Gain`, bg: 'bg-emerald-950/70 border-emerald-500/50 text-emerald-300' },
-                  creativity_bonus: { icon: '✨', label: `+${Math.round(buff.magnitude * 100)}% Creativity Gain`, bg: 'bg-purple-950/70 border-purple-500/50 text-purple-300' },
-                  energy_saver: { icon: '⚡', label: `Overdrive -${buff.magnitude}⚡ Cost`, bg: 'bg-stone-950/70 border-amber-500/50 text-amber-200' },
-                  vibe_boost: { icon: '☕', label: `+${Math.round(buff.magnitude * 100)}% Client Vibe`, bg: 'bg-rose-950/70 border-rose-500/50 text-rose-300' },
-                }[buff.buffType] || { icon: '🔧', label: buff.buffType, bg: 'bg-stone-800 border-stone-600 text-stone-300' };
+                const pct = Math.round(buff.magnitude * 100);
+                const config: { label: string; tone: StudioStampTone; detail: string } = {
+                  timing_bonus: {
+                    label: `Pocket +${pct}%`,
+                    tone: 'brass' as const,
+                    detail: `+${pct}% pocket sweet-spot tolerance`,
+                  },
+                  tech_bonus: {
+                    label: `Tech +${pct}%`,
+                    tone: 'money' as const,
+                    detail: `+${pct}% technical gain`,
+                  },
+                  creativity_bonus: {
+                    label: `Creative +${pct}%`,
+                    tone: 'brass' as const,
+                    detail: `+${pct}% creativity gain`,
+                  },
+                  energy_saver: {
+                    label: `Overdrive −${buff.magnitude}`,
+                    tone: 'steel' as const,
+                    detail: `Overdrive energy cost −${buff.magnitude}`,
+                  },
+                  vibe_boost: {
+                    label: `Vibe +${pct}%`,
+                    tone: 'warn' as const,
+                    detail: `+${pct}% client vibe`,
+                  },
+                }[buff.buffType] || {
+                  label: buff.buffType.replace(/_/g, ' '),
+                  tone: 'steel' as const,
+                  detail: buff.buffType,
+                };
 
                 return (
-                  <span
+                  <StudioStampChip
                     key={buff.id}
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono border shadow-sm shrink-0 ${config.bg}`}
-                    title={`${config.label} (${buff.remainingSessions} session remaining)`}
+                    tone={config.tone}
+                    className="shrink-0"
+                    meta={`${buff.remainingSessions}s`}
+                    title={`${config.detail} · ${buff.remainingSessions} session${buff.remainingSessions === 1 ? '' : 's'} remaining`}
                   >
-                    <span>{config.icon}</span>
-                    <span className="font-semibold">{config.label}</span>
-                    <span className="opacity-70 text-[9px] bg-black/40 px-1 rounded font-sans">
-                      {buff.remainingSessions}s
-                    </span>
-                  </span>
+                    {config.label}
+                  </StudioStampChip>
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {project.rider && (
+          <div className="shrink-0 px-0.5">
+            <RiderPanel project={project} state={gameState} mode="session" />
           </div>
         )}
 
@@ -698,15 +850,13 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 <span className="text-stone-400">Stage {project.currentStageIndex + 1}/{project.stages.length}:</span>
                 <span className="text-amber-200 font-bold">{currentStage?.stageName}</span>
                 {focusEffectiveness.effectiveness > 0.8 && (
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                    🚀 Optimized
-                  </span>
+                  <StudioStampChip tone="live">Optimized</StudioStampChip>
                 )}
               </span>
               <span className="text-stone-400 text-xs tabular-nums flex items-center gap-1.5">
                 <span>{Math.round(currentStage?.workUnitsCompleted || 0)} / {currentStage?.workUnitsBase || 0} units</span>
                 {focusEffectiveness.effectiveness > 0.7 && (
-                  <span className="text-[10px] px-1 rounded bg-amber-500/20 text-amber-200">⚡ Efficient</span>
+                  <StudioStampChip tone="brass">Efficient</StudioStampChip>
                 )}
               </span>
             </div>
@@ -734,31 +884,21 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 <span className="text-xs font-bold uppercase tracking-wider text-stone-300">
                   🎛️ Session Focus Allocation
                 </span>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                  focusEffectiveness.effectiveness > 0.8 ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/40' :
-                  focusEffectiveness.effectiveness > 0.6 ? 'bg-amber-950 text-amber-300 border border-amber-500/40' :
-                  'bg-rose-950 text-rose-300 border border-rose-500/40'
-                }`}>
+                <StudioStampChip
+                  tone={
+                    focusEffectiveness.effectiveness > 0.8
+                      ? 'live'
+                      : focusEffectiveness.effectiveness > 0.6
+                        ? 'brass'
+                        : 'warn'
+                  }
+                >
                   {Math.round(focusEffectiveness.effectiveness * 100)}% Match
-                </span>
+                </StudioStampChip>
               </div>
               
               <Button
-                onClick={() => {
-                  const newFocus = {
-                    performance: optimalFocus.performance,
-                    soundCapture: optimalFocus.soundCapture,
-                    layering: optimalFocus.layering,
-                  };
-                  setGameState(prev => ({
-                    ...prev,
-                    activeProject: prev.activeProject ? { ...prev.activeProject, focusAllocation: newFocus } : null,
-                    activeProjects: prev.activeProjects.map(p => 
-                      p.id === project.id ? { ...p, focusAllocation: newFocus } : p
-                    ),
-                  }));
-                  playSound('notification.wav', 0.4);
-                }}
+                onClick={handleAutoAlign}
                 disabled={!canUseOptimalFocusButton}
                 size="sm"
                 variant="outline"
@@ -896,18 +1036,32 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           </div>
         </div>
 
+        </>
+        )}
+
         {/* Industrial Console Transport Dock */}
-        <div className="shrink-0 pt-2.5 mt-2 border-t border-stone-800 bg-stone-950/95 relative z-10">
-          {takeState === 'tracking' ? (
+        <div className="rst-transport-dock shrink-0 pt-2.5 mt-2 border-t border-stone-800 bg-stone-950/95 relative z-10">
+          {takeState === 'tracking' && isPhone ? (
+            <div className="rst-take-armed py-2.5 text-center text-xs font-mono font-bold tracking-wider text-red-200 bg-red-400/[0.14] border border-red-400/60 rounded-[2px]" role="status">
+              <span className="inline-block w-2 h-2 mr-2 rounded-full bg-red-400 animate-ping" />TAKE ARMED - LOCK IT ABOVE
+            </div>
+          ) : takeState === 'tracking' ? (
             <div className="space-y-2">
               <PocketMeter
                 isArmed={true}
                 onLock={handleLockTake}
                 timingBonus={getActiveBuffMagnitude(gameState.choreState, 'timing_bonus')}
               />
+              <button
+                type="button"
+                onClick={handleStandDown}
+                className="w-full py-2 text-[11px] font-mono font-bold uppercase tracking-wider rounded-[2px] border border-stone-700 bg-stone-900 text-stone-300 hover:border-stone-500 hover:text-stone-100 transition-colors"
+              >
+                Stand down — stop take burst
+              </button>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="rst-transport-stack space-y-2">
               <div className="flex items-center justify-between gap-2">
                 {lastTakeGrade && (
                   <div className="px-2 py-1 flex-1 text-center text-xs font-mono font-bold tracking-wide text-amber-300 bg-amber-950/60 border border-amber-500/40 rounded-[2px]">

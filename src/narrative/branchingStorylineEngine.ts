@@ -5,9 +5,24 @@ import { getEraGigPool } from '@/data/gigTemplates';
 import { ERA_DEFINITIONS } from '@/utils/eraProgression';
 import { PRODUCER_ORIGINS } from '@/narrative/characterOrigins';
 import { getRivalForNode, getRivalLines, toGameEraId } from '@/narrative/rivalCast';
+import {
+  getAct1DilemmaCopy,
+  getAct2CommercialDilemmaCopy,
+  getAct2PuristDilemmaCopy,
+} from '@/narrative/eraBranchCopy';
 import { ERA_SUBPLOTS } from '@/narrative/subplotCatalog';
 import { CALLBACK_SUBPLOTS } from '@/narrative/callbackSubplots';
 import { INDUSTRY_SUBPLOTS } from '@/narrative/industrySubplots';
+import { resolveSubplotStagePresentation } from '@/narrative/subplotPresentation';
+import {
+  addMemory,
+  applyFamilyAntiRepeat,
+  DIRECTOR_GAP_DAYS,
+  getDirector,
+  pickWeighted,
+  recordSelection,
+  type DirectorState,
+} from '@/narrative/eventDirector';
 
 export interface RunSeedContext {
   saveSeed: number | string;
@@ -76,12 +91,13 @@ export interface StorylineBranchRecord {
 
 export interface ActiveSubplotState {
   subplotId: string;
-  currentStage: 1 | 2;
+  currentStage: 1 | 2 | 3;
   startedDay: number;
   stage1ChoiceId?: string;
+  stage2ChoiceId?: string;
 }
 
-export type ChronicleKind = 'campaign' | 'subplot' | 'ending';
+export type ChronicleKind = 'campaign' | 'subplot' | 'ending' | 'event';
 
 /** One line of the studio's story so far — shown in CareerHub's chronicle. */
 export interface ChronicleEntry {
@@ -103,6 +119,8 @@ export interface StorylineState {
   chronicle?: ChronicleEntry[];
   /** Day the last subplot ended — drives the spawn cooldown. */
   lastSubplotEndDay?: number;
+  /** Studio Event Director ledger (memories, history, pending event). Absent on older saves = empty. */
+  director?: DirectorState;
 }
 
 export interface CampaignTree {
@@ -110,23 +128,42 @@ export interface CampaignTree {
   nodes: StorylineNode[];
 }
 
+export interface SubplotStageOption {
+  id: string;
+  label: string;
+  flavorText: string;
+  storyFlag: string;
+  consequences: {
+    moneyDelta: number;
+    repDelta: number;
+    creativeCapitalDelta?: number;
+    xpDelta?: number;
+    narrativeOutcome: string;
+  };
+  /**
+   * When set, this option's label/flavor/outcome can swap based on an earlier story flag
+   * (first matching flag wins). Presentation-only — ids and storyFlags stay stable.
+   */
+  whenFlag?: Readonly<
+    Record<
+      string,
+      Partial<Pick<SubplotStageOption, 'label' | 'flavorText'>> & {
+        narrativeOutcome?: string;
+      }
+    >
+  >;
+}
+
 export interface SubplotStage {
-  stageNumber: 1 | 2;
+  stageNumber: 1 | 2 | 3;
   title: string;
   context: string;
-  options: Array<{
-    id: string;
-    label: string;
-    flavorText: string;
-    storyFlag: string;
-    consequences: {
-      moneyDelta: number;
-      repDelta: number;
-      creativeCapitalDelta?: number;
-      xpDelta?: number;
-      narrativeOutcome: string;
-    };
-  }>;
+  /**
+   * Alternate stage framing keyed by prior story flags (first match wins).
+   * Lets stage 2/3 read differently after the player's earlier choice.
+   */
+  contextByFlag?: Readonly<Record<string, string>>;
+  options: SubplotStageOption[];
 }
 
 export interface EmergentSubplot {
@@ -139,7 +176,8 @@ export interface EmergentSubplot {
   minDay: number;
   triggerCondition: (state: GameState) => boolean;
   daysBetweenStages: number;
-  stages: [SubplotStage, SubplotStage];
+  /** Two beats, or three for a long callback (the third is the epilogue beat). */
+  stages: [SubplotStage, SubplotStage] | [SubplotStage, SubplotStage, SubplotStage];
   /** Callback subplots: earlier story flag → phrase shown in the chronicle ("Because you …"). */
   becauseOf?: Readonly<Record<string, string>>;
 }
@@ -262,6 +300,10 @@ export const generateCampaignTree = (ctx: {
 }): CampaignTree => {
   const { runSeed, originId, playstyle } = ctx;
   const genreFocus = getAct1GenreFocus(originId, ctx.selectedEra);
+  const eraId = toGameEraId(ctx.selectedEra);
+  const act1Copy = getAct1DilemmaCopy(eraId);
+  const act2PuristCopy = getAct2PuristDilemmaCopy(eraId);
+  const act2CommercialCopy = getAct2CommercialDilemmaCopy(eraId);
 
   const rivalFor = (nodeId: string) => getRivalForNode(nodeId, playstyle);
   const nodeRival = (nodeId: string) => {
@@ -294,35 +336,26 @@ export const generateCampaignTree = (ctx: {
     },
     branchDilemma: {
       id: 'dilemma_act1',
-      kicker: 'CAMPAIGN CROSSROAD // STRATEGIC DIRECTION',
-      context:
-        'Your initial sessions attract underground acclaim and commercial label attention. Choose your studio trajectory:',
+      kicker: act1Copy.kicker,
+      context: act1Copy.context,
       options: [
         {
           id: 'opt_path_purist',
-          label: 'Double Down on Acoustic Craft & Heritage',
-          flavorText: 'Refuse corporate shortcuts. Rebuild your acoustics for pristine live tone.',
+          label: act1Copy.options.pathA.label,
+          flavorText: act1Copy.options.pathA.flavorText,
           targetNodeId: 'act2_purist',
           playstyleTag: 'purist',
           storyFlag: 'chose_acoustic_heritage',
-          consequences: {
-            moneyDelta: 0,
-            repDelta: 10,
-            narrativeOutcome: 'Artists praise your uncompromising sonic integrity.',
-          },
+          consequences: act1Copy.options.pathA.consequences,
         },
         {
           id: 'opt_path_commercial',
-          label: 'Scale Up Commercial Throughput & Hits',
-          flavorText: 'Expand staff, pump out chart earworms, and monetize streaming trends.',
+          label: act1Copy.options.pathB.label,
+          flavorText: act1Copy.options.pathB.flavorText,
           targetNodeId: 'act2_commercial',
           playstyleTag: 'hit-maker',
           storyFlag: 'chose_commercial_scale',
-          consequences: {
-            moneyDelta: 2500,
-            repDelta: 2,
-            narrativeOutcome: 'Streaming revenue flows into studio accounts.',
-          },
+          consequences: act1Copy.options.pathB.consequences,
         },
       ],
     },
@@ -352,34 +385,26 @@ export const generateCampaignTree = (ctx: {
     },
     branchDilemma: {
       id: 'dilemma_act2_purist',
-      kicker: 'HERITAGE SPLIT // THE MASTERING DUEL',
-      context: 'A historic vintage master tape requires a definitive production philosophy:',
+      kicker: act2PuristCopy.kicker,
+      context: act2PuristCopy.context,
       options: [
         {
           id: 'opt_purist_legend',
-          label: 'The Golden Reel Legend: Pure Analog Master',
-          flavorText: 'Perform live lacquer disc cut without digital compression.',
+          label: act2PuristCopy.options.pathA.label,
+          flavorText: act2PuristCopy.options.pathA.flavorText,
           targetNodeId: 'act3_golden_legend',
           playstyleTag: 'purist',
           storyFlag: 'golden_reel_purity',
-          consequences: {
-            moneyDelta: 500,
-            repDelta: 15,
-            narrativeOutcome: 'Audiophiles hail the release as a benchmark of fidelity.',
-          },
+          consequences: act2PuristCopy.options.pathA.consequences,
         },
         {
           id: 'opt_purist_alchemy',
-          label: 'The Sonic Alchemist: Hybrid Acoustic Innovation',
-          flavorText: 'Fuse vacuum tubes with modular DSP acoustic enhancement.',
+          label: act2PuristCopy.options.pathB.label,
+          flavorText: act2PuristCopy.options.pathB.flavorText,
           targetNodeId: 'act3_sonic_alchemy',
           playstyleTag: 'sound-lab',
           storyFlag: 'hybrid_acoustic_patent',
-          consequences: {
-            moneyDelta: 1200,
-            repDelta: 12,
-            narrativeOutcome: 'Engineering journals feature your custom acoustic circuit.',
-          },
+          consequences: act2PuristCopy.options.pathB.consequences,
         },
       ],
     },
@@ -406,34 +431,28 @@ export const generateCampaignTree = (ctx: {
     },
     branchDilemma: {
       id: 'dilemma_act2_commercial',
-      kicker: 'INDUSTRY FORK // GLOBAL DISTRIBUTION',
-      context: 'Major distribution bids land on your desk:',
+      kicker: act2CommercialCopy.kicker,
+      context: act2CommercialCopy.context,
       options: [
         {
           id: 'opt_commercial_monopoly',
-          label: 'The Billboard Monopoly: Sign Conglomerate Buy-In',
-          flavorText: 'Dominate playlist algorithms and take global royalty shares.',
+          label: act2CommercialCopy.options.pathA.label,
+          flavorText: act2CommercialCopy.options.pathA.flavorText,
           targetNodeId: 'act3_billboard_monopoly',
           playstyleTag: 'hit-maker',
           storyFlag: 'major_label_syndicate',
           consequences: {
-            moneyDelta: 5000,
-            repDelta: -5,
-            narrativeOutcome: 'Unprecedented commercial reach at the cost of purist credibility.',
+            ...act2CommercialCopy.options.pathA.consequences,
           },
         },
         {
           id: 'opt_commercial_rebel',
-          label: 'The Rogue Hit Factory: Open-Stem Grassroots Wave',
-          flavorText: 'Publish open stems for remixers while keeping full publishing.',
+          label: act2CommercialCopy.options.pathB.label,
+          flavorText: act2CommercialCopy.options.pathB.flavorText,
           targetNodeId: 'act3_rogue_factory',
           playstyleTag: 'underground',
           storyFlag: 'open_stem_revolution',
-          consequences: {
-            moneyDelta: 2000,
-            repDelta: 20,
-            narrativeOutcome: 'Viral TikTok and streaming remix movements crown your room.',
-          },
+          consequences: act2CommercialCopy.options.pathB.consequences,
         },
       ],
     },
@@ -769,6 +788,9 @@ const LEGACY_SUBPLOTS: readonly EmergentSubplot[] = [
 /** Every emergent subplot: the original three plus the era-aware catalog. */
 export const EMERGENT_SUBPLOTS: readonly EmergentSubplot[] = [...LEGACY_SUBPLOTS, ...ERA_SUBPLOTS, ...INDUSTRY_SUBPLOTS, ...CALLBACK_SUBPLOTS];
 
+/** Director family for a subplot: its kicker category ("LABOUR // …" → "LABOUR"), else its own id. */
+const subplotFamily = (s: EmergentSubplot): string => (s.kicker ? s.kicker.split('//')[0].trim() : s.id);
+
 /** Era the player is living in right now (progression era id). */
 const currentGameEra = (state: GameState): string => toGameEraId(state.currentEra || state.selectedEra);
 
@@ -789,14 +811,13 @@ export const advanceSubplotStage = (
   active: ActiveSubplotState,
   choiceId: string,
   currentDay: number,
+  stageCount = 2,
 ): ActiveSubplotState | { resolved: true; choiceId: string } => {
   if (active.currentStage === 1) {
-    return {
-      ...active,
-      currentStage: 2,
-      stage1ChoiceId: choiceId,
-      startedDay: currentDay,
-    };
+    return { ...active, currentStage: 2, stage1ChoiceId: choiceId, startedDay: currentDay };
+  }
+  if (active.currentStage === 2 && stageCount >= 3) {
+    return { ...active, currentStage: 3, stage2ChoiceId: choiceId, startedDay: currentDay };
   }
   return { resolved: true, choiceId };
 };
@@ -849,12 +870,13 @@ const becausePrefix = (subplot: EmergentSubplot, flags: StorylineState['storyFla
 export const resolveSubplotChoice = (state: GameState, optionId: string): GameState => {
   const pending = getPendingSubplotEvent(state);
   if (!pending || !state.storylineState) return state;
-  const option = pending.stage.options.find((o) => o.id === optionId);
+  const presented = resolveSubplotStagePresentation(pending.stage, state);
+  const option = presented.options.find((o) => o.id === optionId);
   if (!option || !canAffordSubplotOption(state, option)) return state;
 
   const story = state.storylineState;
   const { consequences } = option;
-  const advanced = advanceSubplotStage(pending.active, option.id, state.currentDay);
+  const advanced = advanceSubplotStage(pending.active, option.id, state.currentDay, pending.subplot.stages.length);
   const resolved = 'resolved' in advanced;
 
   let nextStory: StorylineState = {
@@ -864,7 +886,13 @@ export const resolveSubplotChoice = (state: GameState, optionId: string): GameSt
     resolvedSubplotIds: resolved ? [...story.resolvedSubplotIds, pending.subplot.id] : story.resolvedSubplotIds,
     lastSubplotEndDay: resolved ? state.currentDay : story.lastSubplotEndDay,
   };
-  nextStory = withChronicle(nextStory, {
+  // Every subplot choice is also a studio memory, so director events can remember it.
+  const remembered = addMemory({ ...state, storylineState: nextStory }, {
+    scope: 'studio',
+    key: option.storyFlag,
+    sourceEventId: pending.subplot.id,
+  });
+  nextStory = withChronicle(remembered.storylineState ?? nextStory, {
     day: state.currentDay,
     kind: 'subplot',
     title: `${pending.subplot.title}${resolved ? '' : ' — part 1'}`,
@@ -1035,19 +1063,30 @@ export const evaluateStorylineTick = (state: GameState): GameState => {
   // and the last story beat has had time to breathe. The pick is seeded from the run seed and the
   // number of resolved subplots, so the same save always tells the same story.
   const branchWaiting = typeof story.storyFlags[PENDING_BRANCH_FLAG] === 'string';
-  const cooledDown = next.currentDay - (story.lastSubplotEndDay ?? -SUBPLOT_COOLDOWN_DAYS) >= SUBPLOT_COOLDOWN_DAYS;
-  if (story.activeSubplots.length === 0 && !branchWaiting && cooledDown) {
+  const director = getDirector(next);
+  const cooledDown =
+    next.currentDay - (story.lastSubplotEndDay ?? -SUBPLOT_COOLDOWN_DAYS) >= SUBPLOT_COOLDOWN_DAYS &&
+    next.currentDay - (director.lastEventDay ?? -DIRECTOR_GAP_DAYS) >= DIRECTOR_GAP_DAYS;
+  if (story.activeSubplots.length === 0 && !branchWaiting && !director.pending && cooledDown) {
     const eligible = getEligibleSubplots(next, story.resolvedSubplotIds);
-    if (eligible.length > 0) {
-      const rng = createNodeRng(story.runSeed, 'subplot-spawn', story.resolvedSubplotIds.length);
-      const pick = pickWithRandom(rng, eligible);
-      next = {
-        ...next,
-        storylineState: {
-          ...story,
-          activeSubplots: [{ subplotId: pick.id, currentStage: 1, startedDay: next.currentDay }],
+    // One selection path: the Event Director applies its same-family anti-repeat, then a seeded weighted pick.
+    const candidates = applyFamilyAntiRepeat(
+      next,
+      eligible.map((sp) => ({ sp, id: sp.id, family: subplotFamily(sp), weight: 1 })),
+    );
+    const chosen = pickWeighted(next, candidates, `subplot:${story.resolvedSubplotIds.length}`);
+    if (chosen) {
+      const pick = chosen.sp;
+      next = recordSelection(
+        {
+          ...next,
+          storylineState: {
+            ...story,
+            activeSubplots: [{ subplotId: pick.id, currentStage: 1, startedDay: next.currentDay }],
+          },
         },
-      };
+        { eventId: pick.id, family: subplotFamily(pick) },
+      );
     }
   }
 

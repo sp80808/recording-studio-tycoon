@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PlayerData, PlayerAttributes } from '@/types/game';
 import { calculateAttributeBonus } from '@/utils/playerUtils';
-import { ArrowUp } from 'lucide-react';
 
 interface AttributesModalProps {
   isOpen: boolean;
@@ -51,16 +50,18 @@ export const AttributesModal: React.FC<AttributesModalProps> = ({
       <DialogContent className="bg-stone-900 border-stone-600 text-white max-w-2xl max-h-[85dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-white flex items-center gap-2">
-            <ArrowUp className="w-5 h-5" />
             Producer talents
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="text-center mb-4">
+          <div className="text-center mb-2">
             <div className="text-yellow-400 font-bold text-lg">
               Talent points available: {playerData.perkPoints}
             </div>
+            <p className="text-xs text-stone-400 mt-1">
+              Craft skills (mixing, tracking, …) level via Practice drills on the Skills tab — not here.
+            </p>
           </div>
 
           {attributes.map((attr) => (
@@ -78,10 +79,10 @@ export const AttributesModal: React.FC<AttributesModalProps> = ({
               <Button
                 onClick={() => spendPerkPoint(attr.key)}
                 disabled={playerData.perkPoints <= 0 || playerData.attributes[attr.key] >= 10}
-                aria-label={`Upgrade ${attr.name}`}
-                className="bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] disabled:bg-stone-600"
+                aria-label={`Spend talent point on ${attr.name}`}
+                className="bg-stone-700/80 ring-1 ring-inset ring-stone-500/50 hover:bg-stone-600 disabled:bg-stone-800 text-stone-100"
               >
-                {playerData.attributes[attr.key] >= 10 ? 'Mastered' : '+1 rank · 1 point'}
+                {playerData.attributes[attr.key] >= 10 ? 'Mastered' : 'Spend 1 talent point'}
               </Button>
             </div>
           ))}

@@ -1,5 +1,7 @@
+import { TAKE_FEEDBACK_EVENT, takeQuip, type TakeFeedbackDetail } from '@/utils/takeFeedback';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import WebGLCanvas, { StudioHotspotId, HotspotAnchors } from '@/components/WebGLCanvas';
+import { normalizeHotspotId } from '@/utils/studioHotspots';
 import { StudioInspector } from '@/components/StudioInspector';
 import { GameState, Project } from '@/types/game';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -7,19 +9,25 @@ import { gameAudio } from '@/utils/audioSystem';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
 import { TierUpgradeAnimation } from './TierUpgradeAnimation';
 import { toast } from '@/hooks/use-toast';
-import { LocateFixed, Phone } from 'lucide-react';
-import { getTrophyInput } from '@/components/studio/studioDecorConfig';
+import { Coffee, LocateFixed, Waves, Wrench } from 'lucide-react';
+import { getEraDecor, getTrophyInput } from '@/components/studio/studioDecorConfig';
 import { triggerScreenShake } from '@/utils/screenShake';
-import { AUTHORED_CHORES } from '@/simulation/choreEngine';
+import { findPendingChoreForHotspot, getChoreCanonicalHotspot } from '@/simulation/choreEngine';
+import { ProducerSprite } from '@/components/ProducerSprite';
 import { useGamepad } from '@/hooks/useGamepad';
 import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
+import { MotionReveal } from '@/components/motion/primitives';
+import { ChoreHotspotButton } from '@/components/chores/ChoreHotspotButton';
+import { parseNpcVisualIdentity, type NpcVisualIdentity } from '@/features/sprites/npcAppearance';
+import { buildProducerNpc } from '@/features/sprites/producerAppearance';
 import {
-  MotionReveal,
-  MotionNumber,
-  MotionButton,
-} from '@/components/motion/primitives';
+  animStateForStaffStatus,
+  hashSeed,
+  staffRoleToStudioRole,
+  type FloorNpcFigure,
+} from '@/features/sprites/floorNpcs';
 
-const STUDIO_HOTSPOTS: StudioHotspotId[] = ['console', 'phone', 'liveRoom', 'shelf', 'tv', 'clock'];
+const STUDIO_HOTSPOTS: StudioHotspotId[] = ['console', 'phone', 'liveRoom', 'shelf', 'tv', 'clock', 'door'];
 const HOTSPOT_NAMES: Record<StudioHotspotId, string> = {
   console: 'Console Desk',
   phone: 'Studio Phone',
@@ -27,6 +35,8 @@ const HOTSPOT_NAMES: Record<StudioHotspotId, string> = {
   shelf: 'Vinyl Shelf',
   tv: 'Charts & TV',
   clock: 'Studio Clock',
+  door: 'Studio Door',
+  promotion: 'Phone & Ring Light',
 };
 
 interface StudioRoomProps {
@@ -38,7 +48,13 @@ interface StudioRoomProps {
   onUnassignStaff?: (staffId: string) => void;
   onOpenDashboardTab?: (tab: 'studio' | 'skills' | 'bands' | 'charts' | 'staff') => void;
   onConsoleFocus: () => void;
+  onCompleteChore?: (hotspot: StudioHotspotId) => boolean;
+  activeChoreId?: string | null;
   onBookings?: () => void;
+  /** Fired once the Pixi floor paints its first frame (shell reveals GUI + 3D together). */
+  onStudioReady?: () => void;
+  /** False while a ContextDrawer owns attention — suppresses idle auto-zoom. */
+  floorFocused?: boolean;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -57,7 +73,11 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
   onUnassignStaff,
   onOpenDashboardTab,
   onConsoleFocus,
+  onCompleteChore,
+  activeChoreId,
   onBookings,
+  onStudioReady,
+  floorFocused = true,
   className = '',
   style,
 }) => {
@@ -68,6 +88,8 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
   const [tierFlash, setTierFlash] = useState(false);
   const [pendingTierUpgrade, setPendingTierUpgrade] = useState<{ oldTier: number; newTier: number } | null>(null);
   const playClick = () => { if (settings.sfxEnabled) gameAudio.playUISound('buttonClick'); };
+  const eraDecor = getEraDecor(gameState.currentEra, gameState.currentYear);
+  const studioHotspots = eraDecor.prop === 'led-strip' ? [...STUDIO_HOTSPOTS, 'promotion' as const] : STUDIO_HOTSPOTS;
 
   // Studio tier (1-5) from the progression milestones — drives visible
   // room upgrades in the Pixi scene (bead ifx.3).
@@ -97,6 +119,18 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     prevTierRef.current = roomTier;
   }, [roomTier]);
 
+  const [takeFx, setTakeFx] = useState<TakeFeedbackDetail | null>(null);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const onTake = (e: Event) => {
+      setTakeFx((e as CustomEvent<TakeFeedbackDetail>).detail);
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => setTakeFx(null), 1600);
+    };
+    window.addEventListener(TAKE_FEEDBACK_EVENT, onTake);
+    return () => { window.removeEventListener(TAKE_FEEDBACK_EVENT, onTake); if (timer) clearTimeout(timer); };
+  }, []);
+
   const sceneState = useMemo(() => {
     const project = gameState.activeProject;
     let progress = 0;
@@ -109,41 +143,116 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       progress = project.stages.length > 0 ? (done + currentFrac) / project.stages.length : 0;
     }
     const workingStaff = gameState.hiredStaff.filter((s) => s.status === 'Working').length;
-    const presentStaff = gameState.hiredStaff.filter((s) => s.status !== 'Resting').length;
+    const presentStaff = gameState.hiredStaff.filter((s) => s.status !== 'Resting');
     const activity = Math.min(
       1,
       0.08 + (project ? 0.3 + progress * 0.45 : 0) + workingStaff * 0.08
     );
+    // Optional appearance fields land with creator/crew siblings — duck-type until merge.
+    const playerAppearance = parseNpcVisualIdentity(
+      (gameState.playerData as { appearance?: unknown } | undefined)?.appearance,
+    );
+    // Career-start customisation (#126/k5v): resolve the exact creator look so the
+    // on-floor producer matches the preview. Falls back to the seed figure when absent.
+    const customization = gameState.producerCustomization;
+    const producerNpc = customization
+      ? buildProducerNpc(
+          customization.appearance,
+          customization.moniker ?? (gameState.playerData as { name?: string } | undefined)?.name ?? 'Producer',
+          gameState.selectedEra ?? gameState.currentEra,
+        )
+      : undefined;
+    const floorFigures: FloorNpcFigure[] = [
+      {
+        identity: playerAppearance ?? undefined,
+        seed: hashSeed(`producer:${gameState.saveSeed ?? 'studio'}`),
+        role: 'producer',
+        name: (gameState.playerData as { name?: string } | undefined)?.name,
+        animState: project ? 'mixing' : 'idle',
+      },
+      ...presentStaff.slice(0, 4).map((member, index): FloorNpcFigure => {
+        const withLook = member as typeof member & {
+          appearance?: NpcVisualIdentity;
+          portraitSeed?: number;
+        };
+        return {
+          identity: parseNpcVisualIdentity(withLook.appearance) ?? undefined,
+          seed: withLook.portraitSeed ?? hashSeed(member.id || `staff:${index}`),
+          role: staffRoleToStudioRole(member.role),
+          name: member.name,
+          animState: animStateForStaffStatus(member.status, !!project),
+        };
+      }),
+    ];
+    const pendingChoreHotspot = (() => {
+      const choreState = gameState.choreState;
+      if (!choreState) return null;
+      for (const id of ['console', 'liveRoom', 'shelf'] as const) {
+        if (findPendingChoreForHotspot(choreState, id)) return id;
+      }
+      return null;
+    })();
     return {
       activity,
       hasActiveProject: !!project,
-      staffOnFloor: Math.min(5, 1 + presentStaff),
-      ownedEquipment: gameState.ownedEquipment.length,
+      artistName: project ? (project.clientName ?? project.title) : undefined,
+      staffOnFloor: Math.min(5, Math.max(1, floorFigures.length)),
+      floorFigures,
+      producerAppearance: playerAppearance ?? undefined,
+      producerNpc,
       ownedEquipmentIds: gameState.ownedEquipment.map((e) => e.id),
+      gearConditions: Object.fromEntries(
+        gameState.ownedEquipment
+          .filter((e) => typeof e.condition === 'number')
+          .map((e) => [e.id, e.condition] as const),
+      ),
+      ownedEquipment: gameState.ownedEquipment.length,
       day: gameState.currentDay,
-      eraId: gameState.currentEra,
+      eraId: eraDecor.eraId,
       roomTier,
+      premisesTier: gameState.premisesTier ?? 0,
       trophies: getTrophyInput(gameState),
       decorSeed: String(gameState.saveSeed ?? 'studio'),
+      enquiryWaiting: gameState.availableProjects.length > 0,
+      pendingChoreHotspot,
+      floorFocused: floorFocused && !activeInspector,
+      coffeeSteaming: Boolean(gameState.choreState?.chores?.brew_espresso?.completed),
+      riderBeers: Boolean(
+        project &&
+          project.rider?.items.some((item) => item.kind === 'beer'),
+      ),
     };
-  }, [gameState.activeProject, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, roomTier]);
+  }, [gameState.activeProject, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, eraDecor.eraId, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, gameState.playerData, gameState.availableProjects.length, gameState.choreState, gameState.premisesTier, roomTier, floorFocused, activeInspector]);
 
-  /** Every hotspot now opens its contextual inspector (bead goj.2). */
-  const handleHotspot = (id: StudioHotspotId) => {
+  /**
+   * Diegetic floor routes: pending chores always run the chore flow first.
+   * Console + live room open the session work panel only when no duty remains.
+   */
+  const handleHotspot = (id: StudioHotspotId | string) => {
+    const canonical = (normalizeHotspotId(id) ?? id) as StudioHotspotId;
+    if (canonical === 'promotion' && eraDecor.prop !== 'led-strip') return;
     if (settings.sfxEnabled) {
-      if (id === 'console') {
+      if (canonical === 'console') {
         void gameAudio.playLatch();
-      } else if (id === 'shelf') {
+      } else if (canonical === 'shelf') {
         void gameAudio.playRackSelect();
-      } else if (id === 'phone') {
+      } else if (canonical === 'phone') {
         void gameAudio.playEnquiryTone();
       } else {
         void gameAudio.playTactileClick();
       }
     }
-    if (id === 'console') { onConsoleFocus(); return; }
-    if (id === 'phone' && onBookings) { onBookings(); return; }
-    setActiveInspector(id);
+    if (canonical === 'console' || canonical === 'liveRoom' || canonical === 'shelf') {
+      const pending = findPendingChoreForHotspot(gameState.choreState, canonical);
+      if (pending) {
+        onCompleteChore?.(canonical);
+        return;
+      }
+    }
+    // Console desk and live booth share the session work screen when idle.
+    if (canonical === 'console' || canonical === 'liveRoom') { onConsoleFocus(); return; }
+    if (canonical === 'phone' && onBookings) { onBookings(); return; }
+    setActiveInspector(canonical);
   };
 
   const closeInspector = () => {
@@ -172,13 +281,13 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     if (!gamepad.isConnected || activeInspector) return;
 
     if (gamepad.justPressed.dpadRight || gamepad.justPressed.dpadDown) {
-      setFocusedHotspotIndex((prev) => (prev + 1) % STUDIO_HOTSPOTS.length);
+      setFocusedHotspotIndex((prev) => (prev + 1) % studioHotspots.length);
       gamepad.triggerHaptic(0.1, 0.15, 30);
     } else if (gamepad.justPressed.dpadLeft || gamepad.justPressed.dpadUp) {
-      setFocusedHotspotIndex((prev) => (prev - 1 + STUDIO_HOTSPOTS.length) % STUDIO_HOTSPOTS.length);
+      setFocusedHotspotIndex((prev) => (prev - 1 + studioHotspots.length) % studioHotspots.length);
       gamepad.triggerHaptic(0.1, 0.15, 30);
     } else if (gamepad.justPressed.south) {
-      const selected = STUDIO_HOTSPOTS[focusedHotspotIndex];
+      const selected = studioHotspots[focusedHotspotIndex % studioHotspots.length];
       handleHotspot(selected);
       gamepad.triggerHaptic(0.2, 0.3, 50);
     }
@@ -191,17 +300,35 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     gamepad.justPressed.dpadUp,
     gamepad.justPressed.south,
     focusedHotspotIndex,
+    studioHotspots.length,
   ]);
-
-  const availableCount = gameState.availableProjects.length;
 
   return (
     <div 
       className={`relative overflow-hidden rounded-lg border border-stone-700/70 bg-[#1b1815] transition-all duration-300 ${className}`} 
       style={style}
     >
-      <WebGLCanvas state={sceneState} onHotspotSelect={handleHotspot} resetCameraKey={cameraReset} onHotspotAnchors={setAnchors} />
+      <WebGLCanvas state={sceneState} onHotspotSelect={handleHotspot} resetCameraKey={cameraReset} onHotspotAnchors={setAnchors} onFirstFrame={onStudioReady} />
+      {/* The producer at the desk: same modular sprite as play mode, from saved career-start choices (#126). */}
+      <div className="pointer-events-none absolute bottom-3 left-3 z-[5] hidden select-none flex-col items-center rounded border border-[var(--rst-line-strong)] bg-black/40 px-2 pb-1.5 pt-1 backdrop-blur-[2px] sm:flex">
+        <ProducerSprite
+          producerCustomization={gameState.producerCustomization}
+          selectedEra={gameState.selectedEra}
+          animationState={gameState.activeProject ? 'working' : 'idle'}
+          scale={2}
+        />
+        <span className="mt-0.5 max-w-[96px] truncate text-[9px] font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-300)]">
+          {gameState.producerCustomization?.moniker ?? 'Producer'}
+        </span>
+      </div>
       {tierFlash && <div className="tier-flash-overlay" />}
+      {takeFx && (
+        <div key={takeFx.seq} className={`take-fx take-fx-${takeFx.grade.toLowerCase()}`} aria-hidden="true">
+          <div className="take-fx-vu">{Array.from({ length: 8 }, (_, i) => <i key={i} style={{ animationDelay: `${i * 18}ms` }} />)}</div>
+          <div className="take-fx-grade">{takeFx.grade === 'Gold' ? 'GOLD' : takeFx.grade === 'Silver' ? 'TIGHT' : 'SOLID'}</div>
+          <div className="take-fx-bubble">{takeQuip(takeFx.grade, takeFx.seq)}</div>
+        </div>
+      )}
       {activeInspector && (
         <StudioInspector
           hotspot={activeInspector}
@@ -214,46 +341,29 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           onUnassignStaff={onUnassignStaff ?? (() => {})}
           onOpenDashboardTab={onOpenDashboardTab ?? (() => {})}
           onConsoleFocus={onConsoleFocus}
+          onCompleteChore={onCompleteChore}
+          onBookings={onBookings}
         />
       )}
-      {/* Top-left overlay stack: sits below the HUD (see .studio-room-overlay-tl) and flows
-          vertically so the label, enquiry pill and any future chips can never overlap. */}
-      <div className="studio-room-overlay-tl select-none">
-        <div className="studio-room-label flex items-center gap-2 pointer-events-none">
-          <span className="px-2 py-1 text-[10px] font-black tracking-[0.2em] text-stone-100 bg-black/50 border border-white/10 rounded">
-            🎛 STUDIO FLOOR
-          </span>
-          <span className="px-2 py-1 text-[10px] font-bold tracking-wider text-[var(--rst-brass-300)] bg-black/50 border border-white/10 rounded">
-            {gameState.currentYear}
-          </span>
+      {/* Quiet era mark — no boxed title fighting the HUD / session strip. */}
+      <div className="studio-room-overlay-tl select-none" aria-hidden="true">
+        <div className="studio-room-label">
+          <span className="studio-room-label__mark">Floor</span>
+          <span className="studio-room-label__year">{gameState.currentYear}</span>
         </div>
-        {/* Peripheral Unread Enquiry Indicator (Issue #75: short spatial/opacity motion, NO infinite bounce/pulse, NO modal takeover) */}
-        {availableCount > 0 && (
-          <MotionReveal direction="down" distance={8}>
-            <button
-              onClick={() => handleHotspot('phone')}
-              className="studio-room-chip rst-duty-chip"
-              title={`${availableCount} Artist ${availableCount === 1 ? 'Enquiry' : 'Enquiries'} Waiting`}
-              aria-label={`${availableCount} Artist Enquiries Waiting`}
-            >
-              <Phone size={12} className="text-amber-200" aria-hidden="true" />
-              <span className="text-[10px] font-medium tracking-wide">Enquiry</span>
-              <span className="px-1.5 py-0.2 text-[9px] font-black rounded-full bg-amber-400 text-stone-950">
-                <MotionNumber value={availableCount} />
-              </span>
-            </button>
-          </MotionReveal>
-        )}
       </div>
 
-      {/* Floating Chore Hotspot Attention Badges (Settled one-shot reveal, NO infinite bounce/pulse) */}
+      {/* Anchored hybrid chore hotspots (stamp language + old duty depth). */}
       {(() => {
         const choreState = gameState.choreState;
         if (!choreState) return null;
-        const pendingConsoleChores = Object.values(choreState.chores).filter(c => c.hotspotId === 'console' && !c.completed);
-        const pendingLiveRoomChores = Object.values(choreState.chores).filter(c => AUTHORED_CHORES[c.id]?.hotspotId === 'liveRoom' && !c.completed);
+        const pendingConsoleChores = Object.values(choreState.chores).filter(
+          (c) => getChoreCanonicalHotspot(c) === 'console' && !c.completed
+        );
+        const pendingLiveRoomChores = Object.values(choreState.chores).filter(
+          (c) => getChoreCanonicalHotspot(c) === 'liveRoom' && !c.completed
+        );
 
-        // Badges ride on their hotspot so pan/zoom never strands them; fixed corners are the pre-first-frame fallback.
         const anchorStyle = (id: StudioHotspotId): React.CSSProperties | undefined => {
           const a = anchors[id];
           if (!a) return undefined;
@@ -267,80 +377,96 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
         };
         const consoleStyle = anchorStyle('console');
         const liveStyle = anchorStyle('liveRoom');
+        const busy = Boolean(activeChoreId);
+        const consoleChore = pendingConsoleChores[0];
+        const liveChore = pendingLiveRoomChores[0];
 
         return (
           <>
-            {pendingConsoleChores.length > 0 && (
+            {consoleChore && (
               <div style={consoleStyle}>
                 <MotionReveal direction="up" distance={6}>
-                  <button
+                  <ChoreHotspotButton
+                    kind="maintenance"
+                    icon={Wrench}
+                    label={consoleChore.title}
+                    meta={pendingConsoleChores.length > 1 ? `${pendingConsoleChores.length}` : `${consoleChore.energyCost}⚡`}
+                    attention
+                    working={activeChoreId === consoleChore.id}
+                    disabled={busy && activeChoreId !== consoleChore.id}
+                    className={`studio-room-chip ${consoleStyle ? '' : 'studio-duty-console absolute bottom-14 left-6 z-20'} ${busy && activeChoreId !== consoleChore.id ? 'pointer-events-none opacity-70' : ''}`}
+                    title={`${pendingConsoleChores.length} console maintenance duty pending`}
                     onClick={() => handleHotspot('console')}
-                    className={`rst-duty-chip ${consoleStyle ? '' : 'studio-duty-console absolute bottom-14 left-6 z-20'}`}
-                    title={`${pendingConsoleChores.length} Console Maintenance Duty Pending`}
-                  >
-                    <span>🔧</span>
-                    <span>{pendingConsoleChores[0].title}</span>
-                  </button>
+                  />
                 </MotionReveal>
               </div>
             )}
-            {pendingLiveRoomChores.length > 0 && (
+            {liveChore && (
               <div style={liveStyle}>
                 <MotionReveal direction="up" distance={6}>
-                  <button
-                    onClick={() => handleHotspot('liveRoom')}
-                    className={`rst-duty-chip ${liveStyle ? '' : 'studio-duty-live absolute bottom-16 right-6 z-20'}`}
+                  <ChoreHotspotButton
+                    kind="acoustics"
+                    icon={Waves}
+                    label="Tune Acoustics"
+                    meta={`${liveChore.energyCost}⚡`}
+                    attention
+                    working={activeChoreId === liveChore.id}
+                    disabled={busy && activeChoreId !== liveChore.id}
+                    className={`studio-room-chip ${liveStyle ? '' : 'studio-duty-live absolute bottom-16 right-6 z-20'} ${busy && activeChoreId !== liveChore.id ? 'pointer-events-none opacity-70' : ''}`}
                     title="Live Room: Tune Acoustics"
-                  >
-                    <span>✨</span>
-                    <span>Tune Acoustics</span>
-                  </button>
+                    onClick={() => handleHotspot('liveRoom')}
+                  />
                 </MotionReveal>
               </div>
             )}
           </>
         );
       })()}
-      {/* Top-right overlay stack: camera recentre, then the lounge chore chip beneath it. */}
-      <div className="studio-room-overlay-tr">
-        <button className="studio-camera-center studio-dock-button bg-stone-950/70 border border-white/10 flex items-center gap-1.5"
-          onClick={() => setCameraReset(value => value + 1)} aria-label="Center studio camera" title="Center studio camera">
+      {/* Camera recentre + lounge duty — right stack clears the session status strip. */}
+      {roomTier > 1 && <div className="studio-room-overlay-tr">
+        <button className="studio-camera-center studio-dock-button"
+          onClick={() => {
+            setCameraReset(value => value + 1);
+            playClick();
+            toast({ title: 'Studio view centered', description: 'The room camera is back at its default position.' });
+          }} aria-label="Center studio camera" title="Center studio camera">
           {gamepad.isConnected && gamepad.lastInputType === 'gamepad' && (
             <GamepadGlyph button="rs" size="xs" />
           )}
-          <LocateFixed size={18} />
+          <LocateFixed size={16} />
         </button>
         {(() => {
-          const shelfChores = Object.values(gameState.choreState?.chores ?? {}).filter(c => c.hotspotId === 'shelf' && !c.completed);
-          if (shelfChores.length === 0) return null;
+          const shelfChore = findPendingChoreForHotspot(gameState.choreState, 'shelf');
+          if (!shelfChore) return null;
+          const busy = Boolean(activeChoreId);
           return (
             <MotionReveal direction="down" distance={6}>
-              <button
-                onClick={() => handleHotspot('shelf')}
-                className="studio-room-chip rst-duty-chip"
+              <ChoreHotspotButton
+                kind="hospitality"
+                icon={Coffee}
+                label="Brew Espresso"
+                meta={shelfChore.energyCost > 0 ? `${shelfChore.energyCost}⚡` : 'Free'}
+                attention
+                working={activeChoreId === shelfChore.id}
+                disabled={busy && activeChoreId !== shelfChore.id}
+                className="studio-room-chip"
                 title="Lounge: Brew Espresso"
-              >
-                <span>☕</span>
-                <span>Brew Espresso</span>
-              </button>
+                onClick={() => handleHotspot('shelf')}
+              />
             </MotionReveal>
           );
         })()}
-      </div>
+      </div>}
       {gamepad.isConnected && gamepad.lastInputType === 'gamepad' ? (
-        <div className="absolute bottom-2 left-3 flex items-center gap-2 bg-stone-950/85 px-2.5 py-1.5 rounded-full border border-stone-700/60 shadow-lg text-[11px] text-stone-300 pointer-events-none select-none animate-in fade-in">
+        <div className="studio-room-gamepad-hint pointer-events-none select-none">
           <GamepadGlyph button="dpadLeft" size="xs" />
           <GamepadGlyph button="dpadRight" size="xs" />
-          <span>Target: <b className="text-amber-300">{HOTSPOT_NAMES[STUDIO_HOTSPOTS[focusedHotspotIndex]]}</b></span>
+          <span>Target: <b className="text-amber-300">{HOTSPOT_NAMES[studioHotspots[focusedHotspotIndex % studioHotspots.length]]}</b></span>
           <span className="text-stone-600">|</span>
           <GamepadGlyph button="south" size="xs" />
           <span>Inspect</span>
         </div>
-      ) : (
-        <p className="studio-room-hint absolute bottom-2 left-3 text-[10px] text-stone-400 pointer-events-none">
-          Tap objects · pinch to zoom · two-finger pan<span className="hidden [@media(pointer:fine)]:inline"> · press ? for shortcuts</span>
-        </p>
-      )}
+      ) : null}
       {pendingTierUpgrade && (
         <TierUpgradeAnimation
           isVisible={!!pendingTierUpgrade}

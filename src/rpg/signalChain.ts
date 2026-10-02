@@ -161,6 +161,15 @@ export function chainMultiplier(ev: ChainEvaluation): number {
   return Math.max(0.97, Math.min(1.06, Number((raw - riskPenalty).toFixed(3))));
 }
 
+/** Quiet one-line rack readout — not a form dump of reasons. */
+export function formatChainStatusLine(ev: ChainEvaluation, broken: SignalSlot[] = []): string {
+  if (broken.length > 0) {
+    return `Unavailable: ${broken.map((s) => SLOT_LABELS[s]).join(', ')}`;
+  }
+  const character = ev.traits.length > 0 ? ev.traits.join(' · ') : 'neutral';
+  return `${character} · Setup ${ev.setupTime} min · Reliability ${ev.reliabilityRisk}`;
+}
+
 /** Slots filled on a project's chain, if the chain is currently valid. Used by synergies. */
 export function activeChainSlots(project: Project, state: Pick<GameState, 'ownedEquipment' | 'activeProject' | 'activeProjects'>): SignalSlot[] | null {
   if (!project.signalChain) return null;

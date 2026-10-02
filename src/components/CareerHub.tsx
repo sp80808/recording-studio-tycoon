@@ -12,6 +12,7 @@ import { getProducerOrigin } from '@/narrative/characterOrigins';
 import { getRivalAccent, getRivalForNode, initialsOf } from '@/narrative/rivalCast';
 import type { ProducerBackgroundId } from '@/types/character';
 import { AchievementsPanel } from './AchievementsPanel';
+import { LedgerPanel } from './LedgerPanel';
 import { SeasonPanel } from './SeasonPanel';
 import type { StudioFocus } from '@/rpg/studioSeasons';
 import {
@@ -37,7 +38,7 @@ interface CareerHubProps {
   onChooseSeasonFocus?: (focus: StudioFocus) => void;
 }
 
-const CHRONICLE_ICON: Record<ChronicleKind, typeof Scroll> = { campaign: Flag, subplot: Feather, ending: Scroll };
+const CHRONICLE_ICON: Record<ChronicleKind, typeof Scroll> = { campaign: Flag, subplot: Feather, ending: Scroll, event: Sparkles };
 
 const careerTitle = (level: number): string =>
   level >= 12
@@ -366,6 +367,8 @@ export function CareerHub({
           </div>
         )}
       </div>
+
+      <LedgerPanel gameState={gameState} />
     </section>
   );
 }

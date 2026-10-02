@@ -1,3 +1,4 @@
+import { asEquipmentInstance, refreshGearForDay } from '@/features/usedGear/economy';
 import { GameState, Project, FocusAllocation } from '@/types/game';
 import { createDefaultStudioRooms } from '@/utils/studioRoomUtils';
 import {
@@ -5,6 +6,7 @@ import {
   buildDefaultPlacements,
 } from '@/types/equipmentSlots';
 import { initializeStorylineState } from '@/narrative/branchingStorylineEngine';
+import { migrateProducerCustomization } from '@/utils/producerCustomization';
 import { migrateKnowHow } from '@/rpg/studioKnowHow';
 
 const DEFAULT_FOCUS_ALLOCATION: FocusAllocation = {
@@ -21,7 +23,7 @@ const DEFAULT_FOCUS_ALLOCATION: FocusAllocation = {
  * @returns The processed game state.
  */
 export const migrateAndInitializeGameState = (loadedGameState: GameState): GameState => {
-  const processedState = { ...loadedGameState };
+  const processedState = { ...loadedGameState, ownedEquipment: (loadedGameState.ownedEquipment ?? []).map(asEquipmentInstance) };
 
   // Ensure activeProjects have focusAllocation
   if (processedState.activeProjects) {
@@ -144,6 +146,9 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
     processedState.discoveredSynergies = [];
   }
 
+  // Producer look (#126): legacy saves get a derived customization; corrupt blobs are repaired.
+  processedState.producerCustomization = migrateProducerCustomization(processedState);
+
   // Premises tier (#70): legacy saves start in the borrowed room.
   processedState.premisesTier = processedState.premisesTier === 1 ? 1 : 0;
 
@@ -175,5 +180,5 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
 
   // Branching storylines (bead 283.3): legacy saves without storylineState
   // receive a deterministic campaign seed without mutating other fields.
-  return initializeStorylineState(processedState);
+  return refreshGearForDay(initializeStorylineState(processedState));
 };

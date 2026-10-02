@@ -1,0 +1,11 @@
+<!doctype html><body style="margin:0;background:#2b3b36;color:#eee;font:12px sans-serif"><div id=o style="display:flex;flex-wrap:wrap;gap:8px;padding:8px"></div>
+<script type="module">
+const data=await (await fetch('/public/assets/studio/console.json')).json();
+for(const t of [1,2,3,4,5]){
+ const im=new Image(); im.src=`/public/assets/studio/console_t${t}.png`; await im.decode();
+ const c=document.createElement('canvas'); c.width=360; c.height=420; const x=c.getContext('2d'); x.drawImage(im,0,0);
+ const a=data.anchor, S=2, d=data.tiers[t];
+ x.fillStyle='#fff'; for(const f of d.faders){x.fillRect(a[0]+f.x*S-5,a[1]+(f.y0+f.y1)/2*S-3,10,6); x.strokeStyle='#0f0'; x.beginPath(); x.moveTo(a[0]+f.x*S,a[1]+f.y0*S); x.lineTo(a[0]+f.x*S,a[1]+f.y1*S); x.stroke();}
+ x.fillStyle='#f33'; for(const m of d.meters){x.fillRect(a[0]+m.x*S-m.w,a[1]+m.yTop*S,m.w*2,(m.yBottom-m.yTop)*S);}
+ document.getElementById('o').append(c);}
+</script>

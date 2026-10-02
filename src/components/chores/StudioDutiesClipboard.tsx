@@ -32,6 +32,7 @@ import {
   MotionReveal,
   MotionNumber
 } from '@/components/motion/primitives';
+import { ChoreHotspotButton } from '@/components/chores/ChoreHotspotButton';
 import './studio-duties.css';
 
 interface StudioDutiesClipboardProps {
@@ -292,14 +293,13 @@ export const StudioDutiesClipboard: React.FC<StudioDutiesClipboardProps> = ({
                           <Zap size={11} /> {chore.energyCost > 0 ? `${chore.energyCost}⚡` : 'Free'}
                         </span>
                         {!isDone ? (
-                          <MotionButton
-                            magnetic
+                          <ChoreHotspotButton
+                            kind={chore.category}
+                            label="Do Duty"
+                            meta={chore.energyCost > 0 ? `${chore.energyCost}⚡` : 'Free'}
                             onClick={() => handlePerformDuty(chore.id)}
-                            className="px-2.5 py-1 bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] active:bg-amber-400/[0.30] text-amber-100 font-bold rounded text-xs transition-colors flex items-center gap-1"
-                          >
-                            <GamepadGlyph input="south" size="sm" />
-                            Do Duty
-                          </MotionButton>
+                            title={`Perform ${chore.title}`}
+                          />
                         ) : (
                           <span className="text-[11px] text-emerald-400 font-medium">
                             Active Buff
@@ -316,9 +316,9 @@ export const StudioDutiesClipboard: React.FC<StudioDutiesClipboardProps> = ({
           {/* Footer Navigation */}
           <div className="mt-4 pt-3 border-t border-stone-800/80 flex items-center justify-between text-xs text-stone-400">
             <span className="flex items-center gap-1.5">
-              <GamepadGlyph input="dpad" size="sm" /> Navigate
+              <GamepadGlyph button="dpadUp" size="sm" /> Navigate
               <span className="mx-1.5">•</span>
-              <GamepadGlyph input="south" size="sm" /> Execute
+              <GamepadGlyph button="south" size="sm" /> Execute
             </span>
             <MotionButton
               onClick={onClose}

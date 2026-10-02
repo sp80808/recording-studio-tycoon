@@ -17,6 +17,7 @@ import {
   resolveCrateTier,
   type Currency,
 } from '@/economy/flightCaseEconomy';
+import { applyGearAction } from '@/features/usedGear/economy';
 
 interface Props {
   gameState: GameState;
@@ -37,11 +38,10 @@ export function FlightCaseDepot({ gameState, setGameState }: Props) {
     if (!items.length) return;
     setGameState((prev) => openFlightCase(prev, crateId).state);
     showItems(items, (item, action) =>
-      setGameState((prev) =>
-        action === 'sell'
-          ? { ...prev, money: prev.money + item.baseValue }
-          : { ...prev, caseFinds: [...(prev.caseFinds ?? []), { ...item }] },
-      ),
+      setGameState((prev) => {
+        const disposition = action === 'sell' ? 'sell' : action === 'stash' ? 'stash' : 'keep';
+        return applyGearAction(prev, { type: 'acquireFind', find: item, disposition }).state;
+      }),
     );
   };
 

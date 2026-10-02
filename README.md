@@ -14,6 +14,27 @@
 
 ---
 
+## 📸 Current Build (October 2026)
+
+Screenshots captured from the current `main` build (1980s Golden Age start).
+
+| Splash | Era Selection |
+| :---: | :---: |
+| ![Splash](./screenshots/current-splash.png) | ![Era Select](./screenshots/current-era-select.png) |
+| *Isometric studio vignette, vinyl-groove backdrop and one-tap new career.* | *Pick an era, then build your producer and choose a role.* |
+
+| Living Studio Floor | Booking Sessions |
+| :---: | :---: |
+| ![Studio Floor](./screenshots/current-studio.png) | ![Bookings](./screenshots/current-bookings.png) |
+| *Isometric PixiJS studio with era decor, hotspots, first-session guide and bottom dock.* | *Artist enquiries with fit, risk (Safe / Ambitious / Moonshot) and payout shown before you commit.* |
+
+| At the Console | Industry Charts |
+| :---: | :---: |
+| ![Take Meter](./screenshots/current-take-meter.png) | ![Charts](./screenshots/current-charts.png) |
+| *Focus allocation, stage progress and the analog take-calibration meter.* | *Hot 100 and market trends in the management drawer.* |
+
+---
+
 ## 📸 Evolution & Visual Progression (Before & After)
 
 Rather than erasing earlier versions, Recording Studio Tycoon showcases its visual and mechanical evolution from early prototypes to the current tactile living studio.

@@ -14,6 +14,7 @@ const base: any = {
   hiredStaff: [{ id: 'a' }],
   ownedEquipment: [{ id: 'g' }],
   studioKnowHow: { available: 7 },
+  playerData: { dailyWorkCapacity: 5, level: 3 },
 };
 
 assert(getPremisesOffer(base)!.eligible, 'eligible with sessions, repeat client, cash');
@@ -27,6 +28,7 @@ assert(applyPremisesMove({ ...base, money: 100 }).premisesTier === undefined, 'i
 
 const moved: any = applyPremisesMove(base);
 assert(moved.premisesTier === 1 && moved.money === 10000 - PROJECT_STUDIO_DEPOSIT, 'deposit charged');
+assert(moved.playerData.dailyWorkCapacity === 0 && moved.playerData.level === 3, 'move costs the day (1-day downtime) but keeps the rest of player data');
 assert(moved.hiredStaff === base.hiredStaff && moved.ownedEquipment === base.ownedEquipment && moved.studioKnowHow === base.studioKnowHow && moved.clientRelationships === base.clientRelationships, 'staff, gear, know-how, clients preserved');
 assert(moved.studioRooms.find((r: any) => r.id === 'vocal-suite').unlocked, 'real room unlocked');
 assert(premisesStaffCap(moved) === 6 && premisesRoomAllowanceBonus(moved) === 1 && premisesDailyRent(moved) > 0 && premisesCandidateCount(moved) === 5, 'capacity, rent, recruiting');

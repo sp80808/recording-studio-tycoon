@@ -1,3 +1,4 @@
+import { refreshGearForDay } from '@/features/usedGear/economy';
 
 import { useCallback } from 'react';
 import { GameNotification, GameState } from '@/types/game';
@@ -25,23 +26,15 @@ import {
   autoAssignAvailableChores
 } from '@/simulation/choreEngine';
 import { advanceStory } from '@/narrative/storyProgression';
+import { withDayCloseBeat } from '@/narrative/dayClose';
 import {
-  NEUTRAL_ORIGIN_EFFECTS,
-  applyUpkeepDiscount,
   getOriginEffects,
   gigRefreshCostFor,
-  type OriginEffects,
 } from '@/narrative/originPerks';
+import { calculateEquipmentUpkeep } from '@/economy/upkeep';
+import { bookEntry, spend } from '@/economy/ledger';
 
-/** Daily equipment upkeep: 0.1% of item price per day, minimum $2/item */
-export const calculateEquipmentUpkeep = (
-  equipment: GameState['ownedEquipment'],
-  effects: OriginEffects = NEUTRAL_ORIGIN_EFFECTS,
-): number => {
-  if (!equipment || equipment.length === 0) return 0;
-  const base = equipment.reduce((sum, item) => sum + Math.max(2, Math.round(item.price * 0.001)), 0);
-  return applyUpkeepDiscount(base, effects);
-};
+export { calculateEquipmentUpkeep };
 
 /** Cost + cooldown for chasing new gig offers (bead goj.3). */
 export const GIG_REFRESH_COST = 50;
@@ -137,6 +130,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     );
     
     setGameState(prev => {
+      if (prev.currentDay >= newDay) return prev;
       // Refresh studio daily chores and evaluate streak crates
       const initialChore = prev.choreState || createInitialChoreState();
       const { nextChoreState: refreshedChores, crateAwarded } = refreshDailyChores(initialChore, newDay);
@@ -162,7 +156,8 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       const updatedPendingCrates = prev.pendingCrates ? [...prev.pendingCrates] : [];
       if (crateAwarded) {
         updatedPendingCrates.push({
-          id: `crate-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          id: `crate:chore:${prev.saveSeed ?? 4242}:${newDay}`,
+          generatedDay: newDay, generatedYear: newYear, generatedPriceMultiplier: updatedEquipmentMultiplier,
           era: prev.selectedEra || '1970s',
           source: 'chore_streak',
           tier: 'vintage_flight_case'
@@ -170,8 +165,20 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       }
 
       const newExpenses = prev.financials.expenses + totalDailyExpenses;
-      const baseUpdatedState: GameState = {
+      const ledgerDay = { currentDay: newDay };
+      const paidPayroll = bookEntry({ ...prev, ...ledgerDay }, {
+        category: 'staff-payroll', amount: -totalSalaries, sourceId: `payroll-d${newDay}`,
+        memo: `${prev.hiredStaff.length} crew`,
+      });
+      const booked = bookEntry(paidPayroll, {
+        category: 'equipment-upkeep', amount: -equipmentUpkeep, sourceId: `upkeep-d${newDay}`,
+      });
+      const rentBooked = bookEntry(booked, {
+        category: 'premises-rent', amount: -premisesDailyRent(prev), sourceId: `rent-d${newDay}`,
+      });
+      const baseUpdatedState: GameState = refreshGearForDay({
         ...prev, 
+        ledger: rentBooked.ledger,
         currentDay: newDay,
         currentYear: newYear,
         lastSalaryDay: newDay,
@@ -204,10 +211,10 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
         },
         choreState: autoProcessedChores,
         pendingCrates: updatedPendingCrates
-      };
+      });
 
       if (triggeredEvents.length === 0) {
-        return advanceStory(baseUpdatedState);
+        return withDayCloseBeat(prev, advanceStory(baseUpdatedState));
       }
 
       const { state: postEventsState, results } = applyEventsToState(baseUpdatedState, triggeredEvents);
@@ -230,10 +237,10 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
         });
       });
 
-      return advanceStory({
+      return withDayCloseBeat(prev, advanceStory({
         ...postEventsState,
         notifications: [...postEventsState.notifications, ...newNotifications]
-      });
+      }));
     });
     
     // Show era transition notification if available
@@ -288,7 +295,14 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     if (newDay % 3 === 0) {
       setGameState(prev => ({
         ...prev,
-        availableCandidates: generateCandidates(premisesCandidateCount(prev))
+        availableCandidates: generateCandidates({
+          count: premisesCandidateCount(prev),
+          saveSeed: prev.saveSeed ?? 4242,
+          day: newDay,
+          era: prev.selectedEra || prev.currentEra,
+          year: prev.currentYear,
+          batchKey: `day-roll:${newDay}`,
+        })
       }));
     }
 
@@ -325,9 +339,15 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     }
 
     setGameState(prev => ({
-      ...prev,
-      money: prev.money - cost,
-      availableCandidates: generateCandidates(premisesCandidateCount(prev))
+      ...spend(prev, cost, { category: 'marketing', memo: 'Candidate search' }),
+      availableCandidates: generateCandidates({
+        count: premisesCandidateCount(prev),
+        saveSeed: prev.saveSeed ?? 4242,
+        day: prev.currentDay,
+        era: prev.selectedEra || prev.currentEra,
+        year: prev.currentYear,
+        batchKey: `refresh:${prev.currentDay}:${prev.availableCandidates.map(c => c.id).join(',')}`,
+      })
     }));
 
     gameAudio.playUISound('notice');
@@ -368,12 +388,11 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     }
 
     setGameState(prev => ({
-      ...prev,
-      money: prev.money - refreshCost,
+      ...spend(prev, refreshCost, { category: 'marketing', memo: 'Chase new gigs' }),
       lastGigRefreshDay: prev.currentDay,
       availableProjects: [
         ...prev.availableProjects,
-        ...generateNewProjects(1, prev.playerData.level, prev.currentEra),
+        ...generateNewProjects(1, prev.playerData.level, prev.currentEra, [], 1.1, prev.reputation),
       ],
     }));
 

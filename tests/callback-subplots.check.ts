@@ -17,12 +17,12 @@ const makeState = (flags: Record<string, boolean>, era = 'analog60s', day = 60):
 });
 
 describe('callback subplots', () => {
-  it('are registered with unique ids and two stages each', () => {
+  it('are registered with unique ids and two or three stages each', () => {
     const ids = EMERGENT_SUBPLOTS.map((s) => s.id);
     assert.equal(new Set(ids).size, ids.length);
     for (const s of CALLBACK_SUBPLOTS) {
       assert.ok(ids.includes(s.id), s.id);
-      assert.equal(s.stages.length, 2);
+      assert.ok(s.stages.length === 2 || s.stages.length === 3);
       for (const st of s.stages) assert.ok(st.options.length >= 2);
     }
   });
@@ -56,6 +56,15 @@ describe('callback subplots', () => {
     const cb = new Set(CALLBACK_SUBPLOTS.map((s) => s.id));
     // Campaign node titles are written to storyFlags on completion.
     for (const t of ['Studio Trailblazer', 'Tone Connoisseur', 'Commercial Machine']) prior.add(t);
+    // Campaign branch + Rising Studio creed flags (not subplot options, but authored priors).
+    for (const f of [
+      'chose_acoustic_heritage',
+      'chose_commercial_scale',
+      'creed_protect_the_take',
+      'creed_master_the_moment',
+    ]) {
+      prior.add(f);
+    }
     for (const s of EMERGENT_SUBPLOTS) if (!cb.has(s.id)) for (const st of s.stages) for (const o of st.options) prior.add(o.storyFlag);
     for (const s of CALLBACK_SUBPLOTS) {
       const reachable = (s.eras ?? ['analog60s', 'digital80s', 'internet2000s', 'streaming2020s']).some((era) =>

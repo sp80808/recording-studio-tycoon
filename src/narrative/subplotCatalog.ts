@@ -102,12 +102,30 @@ export const ERA_SUBPLOTS: readonly EmergentSubplot[] = [
         stageNumber: 2,
         title: 'What the Radio Said',
         context: 'The first release goes out. Program directors weigh in.',
+        contextByFlag: {
+          went_stereo:
+            'The stereo LP is on the radio with hard-panned drums. Program directors argue about whether two speakers are a gimmick or the future.',
+          defended_mono:
+            'Your mono mix is still punching through AM radios. A few stereo converts write angry letters; the rest just dance.',
+        },
         options: [
           {
             id: 'stereo_press_release',
             label: 'Boast about the mix in the trades',
             flavorText: 'Sell the story of your room’s sound.',
             storyFlag: 'boasted_mix',
+            whenFlag: {
+              went_stereo: {
+                label: 'Sell the stereo story to the trades',
+                flavorText: 'Tell them you rewired the room for the future.',
+                narrativeOutcome: 'The trades run a photo of your new monitors; bookings rise.',
+              },
+              defended_mono: {
+                label: 'Sell the mono punch to the trades',
+                flavorText: 'Remind them radio is still one speaker.',
+                narrativeOutcome: 'A charmingly stubborn profile runs. Purists book you for months.',
+              },
+            },
             consequences: { moneyDelta: 500, repDelta: 6, narrativeOutcome: 'The trades pick up the story; bookings rise.' },
           },
           {
@@ -115,6 +133,14 @@ export const ERA_SUBPLOTS: readonly EmergentSubplot[] = [
             label: 'Let the record speak for itself',
             flavorText: 'No press. Just great records.',
             storyFlag: 'stayed_humble',
+            whenFlag: {
+              went_stereo: {
+                flavorText: 'Let the hard-panned drums do the talking.',
+              },
+              defended_mono: {
+                flavorText: 'One speaker, one truth — no press release needed.',
+              },
+            },
             consequences: { moneyDelta: 0, repDelta: 10, narrativeOutcome: 'Musicians whisper that yours is the room that “just sounds right”.' },
           },
         ],
@@ -265,12 +291,28 @@ export const ERA_SUBPLOTS: readonly EmergentSubplot[] = [
         stageNumber: 2,
         title: 'Who Held the Hard Drive?',
         context: 'Your security is in question. So is your trust in the interns.',
+        contextByFlag: {
+          chased_the_leak:
+            'The takedown notices worked — mostly. Now the question is whether the studio becomes a fortress or stays a workplace.',
+          embraced_the_leak:
+            'The free week worked: the tour is sold out. Fans still want access, and labels still want locks.',
+        },
         options: [
           {
             id: 'leak_lock_down',
             label: 'Lock down the studio: badges, logs, NDAs',
             flavorText: 'Professional. A little paranoid.',
             storyFlag: 'locked_down_studio',
+            whenFlag: {
+              chased_the_leak: {
+                label: 'Finish the lockdown you started',
+                flavorText: 'Badges, logs, NDAs — make the paperwork permanent.',
+              },
+              embraced_the_leak: {
+                label: 'Lock the vaults even if the album was free',
+                flavorText: 'Attention is one thing; the next unreleased master is another.',
+              },
+            },
             consequences: { moneyDelta: -350, repDelta: 7, narrativeOutcome: 'Labels notice your tight ship.' },
           },
           {
@@ -278,6 +320,13 @@ export const ERA_SUBPLOTS: readonly EmergentSubplot[] = [
             label: 'Keep it human: trust the crew',
             flavorText: 'Nobody here would do this on purpose.',
             storyFlag: 'trusted_the_crew',
+            whenFlag: {
+              embraced_the_leak: {
+                label: 'Keep the open-door culture that made the free week work',
+                flavorText: 'Trust made the tour sell out; keep trusting.',
+                narrativeOutcome: 'Morale climbs; the scene calls your room a sanctuary again.',
+              },
+            },
             consequences: { moneyDelta: 200, repDelta: 3, narrativeOutcome: 'Morale climbs; the culprit quietly apologises.' },
           },
         ],

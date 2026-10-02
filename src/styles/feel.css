@@ -24,7 +24,10 @@
 .feel-pop { animation: feel-pop .5s var(--feel-spring) both; }
 
 /* 4. Attention ring for things that want a click; slow and quiet */
-.feel-attention { animation: feel-ring 2.2s ease-out infinite; }
+.feel-attention { animation: feel-ring 2.2s ease-out 3; }  /* three pulses then rest: no endless bounce (issue #75) */
+
+/* Tab underline grows from centre when a tab becomes active */
+.feel-underline { animation: feel-underline .28s var(--feel-out) both; transform-origin: center; }
 
 /* 5. Land ring: one brass ring when a HUD value rises (toggled by SettleTicker) */
 .feel-land { animation: feel-ring-once .7s ease-out 1; border-radius: 10px; }
@@ -41,21 +44,41 @@ html[data-graphics='ultra'] .feel-sheen:hover::after { transform: translateX(120
 
 @keyframes feel-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes feel-pop { 0% { transform: scale(.85); opacity: 0; } 60% { transform: scale(1.06); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes feel-underline { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes feel-ring { 0% { box-shadow: 0 0 0 0 rgba(230, 184, 102, .45); } 100% { box-shadow: 0 0 0 12px rgba(230, 184, 102, 0); } }
 @keyframes feel-ring-once { 0% { box-shadow: 0 0 0 0 rgba(230, 184, 102, .6); } 100% { box-shadow: 0 0 0 14px rgba(230, 184, 102, 0); } }
 
+/* 7. Take feedback over the booth (StudioRoom): VU flash, floating grade, artist bubble */
+.take-fx { position: absolute; left: 62%; top: 34%; transform: translateX(-50%); z-index: 25; pointer-events: none; display: grid; justify-items: center; gap: 4px; }
+.take-fx-grade { font-weight: 900; letter-spacing: .18em; font-size: 20px; color: var(--rst-brass-200); text-shadow: 0 2px 10px rgba(0,0,0,.6); animation: feel-float 1.5s var(--feel-out) both; }
+.take-fx-gold .take-fx-grade { color: #ffd166; font-size: 26px; text-shadow: 0 0 14px rgba(255, 196, 90, .7); }
+.take-fx-solid .take-fx-grade { color: var(--rst-ivory-soft); font-size: 16px; }
+.take-fx-bubble { padding: 3px 9px; border-radius: 10px; background: rgba(243, 236, 221, .94); color: #2a231b; font-size: 11px; font-weight: 600; animation: feel-bubble 1.5s var(--feel-out) both; }
+.take-fx-vu { display: flex; gap: 2px; align-items: flex-end; height: 18px; }
+.take-fx-vu i { width: 4px; height: 100%; border-radius: 1px; background: var(--rst-money); transform-origin: bottom; animation: feel-vu .5s ease-out both; }
+.take-fx-gold .take-fx-vu i { background: #ffd166; }
+.take-fx-solid .take-fx-vu i { animation-name: feel-vu-low; }
+@keyframes feel-float { 0% { opacity: 0; transform: translateY(6px) scale(.8); } 20% { opacity: 1; transform: translateY(-4px) scale(1.08); } 100% { opacity: 0; transform: translateY(-28px) scale(1); } }
+@keyframes feel-bubble { 0% { opacity: 0; transform: scale(.8); } 15%, 75% { opacity: 1; transform: scale(1); } 100% { opacity: 0; } }
+@keyframes feel-vu { 0% { transform: scaleY(.1); } 35% { transform: scaleY(1); } 100% { transform: scaleY(.15); } }
+@keyframes feel-vu-low { 0% { transform: scaleY(.1); } 35% { transform: scaleY(.5); } 100% { transform: scaleY(.1); } }
+
 /* Budgets */
+html[data-graphics='low'] .take-fx-vu { display: none; }
 html[data-graphics='low'] .feel-attention,
 html[data-graphics='low'] .feel-sheen::after { animation: none; display: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  .feel-stagger > *, .feel-pop, .feel-attention, .feel-land { animation: none !important; }
+  .feel-stagger > *, .feel-pop, .feel-attention, .feel-land, .feel-underline, .take-fx-grade, .take-fx-vu i { animation: none !important; }
   .feel-press, .feel-press:hover, .feel-press:active { transition: none; transform: none; }
   .feel-sheen::after { display: none; }
 }
 html[data-reduced-motion='true'] .feel-stagger > *,
 html[data-reduced-motion='true'] .feel-pop,
 html[data-reduced-motion='true'] .feel-attention,
+html[data-reduced-motion='true'] .feel-underline,
+html[data-reduced-motion='true'] .take-fx-grade,
+html[data-reduced-motion='true'] .take-fx-vu i,
 html[data-reduced-motion='true'] .feel-land { animation: none !important; }
 html[data-reduced-motion='true'] .feel-press,
 html[data-reduced-motion='true'] .feel-press:hover,

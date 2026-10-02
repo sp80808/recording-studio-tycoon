@@ -1,10 +1,11 @@
 import {
-  availableForSlot, validateChain, evaluateChain, chainMultiplier, saveTemplate, resolveTemplates, growFamiliarity, activeChainSlots, busyGearIds,
+  availableForSlot, validateChain, evaluateChain, chainMultiplier, saveTemplate, resolveTemplates, growFamiliarity, activeChainSlots, busyGearIds, formatChainStatusLine,
   type SignalChain,
 } from '../src/rpg/signalChain';
 import { evaluateProjectSynergies } from '../src/utils/synergyUtils';
 import { STUDIO_SYNERGIES } from '../src/data/synergies';
 import type { Equipment, GameState, Project, StaffMember } from '../src/types/game';
+import { readFileSync } from 'node:fs';
 
 let passed = 0;
 const ok = (c: boolean, m: string) => { if (!c) throw new Error(`FAIL: ${m}`); passed++; console.log(`PASS: ${m}`); };
@@ -58,4 +59,17 @@ ok(evaluateProjectSynergies(proj(), synState, afe).length === 1, 'without a chai
 ok(evaluateProjectSynergies(proj(chain), synState, afe).length === 1, 'a valid chain activates analog_front_end');
 ok(evaluateProjectSynergies(proj({ ...chain, slots: { microphone: 'ribbon_vintage_mic' } }), synState, afe).length === 0, 'an incomplete chain does not, even though the gear is owned');
 ok(activeChainSlots(proj(), synState) === null, 'no chain means no chain slots');
+
+const line = formatChainStatusLine(a);
+ok(line.includes('warm') && line.includes('Setup') && line.includes('Reliability') && !line.includes('Crew familiarity'), 'status line is a quiet character/setup/reliability readout');
+ok(formatChainStatusLine(a, ['dynamics']).includes('Unavailable'), 'broken slots surface in the status line');
+
+const composer = readFileSync('src/components/ChainComposer.tsx', 'utf8');
+const list = readFileSync('src/components/ProjectList.tsx', 'utf8');
+const css = readFileSync('src/components/chain-composer.css', 'utf8');
+ok(!/onSaveTemplate|Template name|Load template|resolveTemplates/.test(composer), 'composer has no template save/load chrome');
+ok(!/saveTemplate|onSaveTemplate/.test(list), 'booking list no longer wires template save');
+ok(/chain-rack|chain-jack|is-seating|is-unseating/.test(composer) && /chain-seat|chain-unseat/.test(css), 'composer is a tappable rack with seat/unseat motion');
+ok(/vocal-production|tracking/.test(list) && /ChainComposer/.test(list), 'vocal chain stays on booking cards');
+
 console.log(`\n${passed} checks passed`);

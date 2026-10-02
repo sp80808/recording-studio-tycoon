@@ -27,10 +27,17 @@ assert.match(decor, /Header beam/, 'Booth has a header beam');
 assert.match(webgl, /buildLiveBooth\(\)/, 'Scene builds the enclosed live booth');
 assert.match(webgl, /pixi-studio-canvas/, 'Studio canvas tagged for WebGL exclusivity');
 assert.match(webgl, /Studio door/, 'Room has a studio door');
+assert.match(webgl, /layoutShelfSlots|equipmentShelfSprites/, 'Shelf sprites driven by owned gear ids');
+assert.match(webgl, /advanceClientTransit|clientDoorTransit/, 'Client enter/exit uses door transit');
+assert.match(webgl, /createFloorNpcVisual|loadNpcPartsAtlas/, 'Floor staff use sprite-factory NPCs');
+assert.match(webgl, /getEraLightingKit/, 'Era lighting kits drive bloom/practicals');
 // Clock is drawn in the wall plane (real face + hands), not a skewed billboard ellipse
 assert.match(webgl, /buildWallClock\(/, 'Clock is a wall-plane face');
 assert.match(decor, /leftFace\(/, 'Clock geometry is projected onto the left wall plane');
-assert.match(webgl, /half-tile/, 'Props use half-tile grid snap');
+assert.match(webgl, /pickIdleDirectionTarget|idleFloorDirection/, 'Idle floor direction drives auto-zoom hints');
+assert.match(webgl, /idleFocusPoints/, 'Idle auto-zoom has hotspot focus points');
+assert.match(webgl, /IDLE_CAMERA_ZOOM|idleCameraRef/, 'Idle camera ease is wired');
+assert.match(decor, /getEraLightingKit|neonFromTier|kit\.moteCount/, 'Decor lighting is kit-driven');
 
 // HUD / splash
 assert.match(playCss, /--studio-dock-clearance/, 'Dock clearance CSS variable');
@@ -42,6 +49,6 @@ assert.match(indexPage, /Warming up the studio/, 'Boot gate friendly copy');
 assert.match(guideCss, /max-width: 768px/, 'Coach has narrow breakpoint');
 assert.match(guideCss, /take-calibration/, 'Coach hides during take calibration');
 assert.match(drawer, /data-studio-drawer/, 'Session drawer marks chrome host');
-assert.match(drawer, /1400px/, 'Session drawer uses wide viewport width');
+assert.match(drawer, /min\(40vw,680px\)/, 'Session drawer docks beside the studio at a capped width');
 
 console.log('✓ studio-ux-presentation checks passed');

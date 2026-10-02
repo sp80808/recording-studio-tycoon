@@ -1,9 +1,11 @@
 import { applySessionEvent, phaseForStage, rollPhaseEvent, type SessionEvent } from '@/rpg/sessionIssues';
 import { chainMultiplier, evaluateChain, validateChain } from '@/rpg/signalChain';
 import { getProjectBrief, evaluateProjectBriefFit, BRIEF_FIT_MULTIPLIER, recordBriefDiscoveries } from '@/rpg/projectBrief';
+import { evaluateProjectRider } from '@/rpg/studioRider';
+import { recordGearUse } from '@/features/usedGear/session';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { GameState, FocusAllocation, Project } from '@/types/game';
-import { TakeGrade, evaluateTakeAccuracy, calculateTakeEnergyCost } from '@/rpg/takeEvaluation';
+import { TakeGrade, evaluateTakeAccuracy, calculateTakeEnergyCost, calculateTakeBaseUnits } from '@/rpg/takeEvaluation';
 // calculateStudioSkillBonus and getEquipmentBonuses are now used within projectUtils
 import { getCreativityMultiplier, getTechnicalMultiplier, getFocusEffectiveness, getMoodEffectiveness } from '@/utils/playerUtils'; // Added getMoodEffectiveness
 import {
@@ -29,8 +31,17 @@ import { applyKnowHowEvents, domainForStage, sessionTemplateBonus, type KnowHowE
 import { gradeStage, focusMatchFraction } from '@/rpg/stageGrades';
 import {
   getActiveBuffMagnitude,
-  consumeChoreBuffSession
+  consumeChoreBuffSession,
+  hasActiveChoreBuff,
 } from '@/simulation/choreEngine';
+
+/** Take-driven overrides for a work session (cost, grade and quality bonus from the lock-take dock). */
+export interface PerformDailyWorkOptions {
+  energyCost?: number;
+  takeGrade?: TakeGrade;
+  takeMultiplier?: number;
+  qualityBonus?: number;
+}
 
 interface UseStageWorkProps {
   gameState: GameState;
@@ -204,12 +215,7 @@ export const useStageWork = ({
 
   // getMoodEffectiveness is now imported from playerUtils
 
-  const performDailyWork = useCallback((options?: {
-    energyCost?: number;
-    takeGrade?: TakeGrade;
-    takeMultiplier?: number;
-    qualityBonus?: number;
-  }): { finalProjectData?: Project; isComplete: boolean } | undefined => {
+  const performDailyWork = useCallback((options?: PerformDailyWorkOptions): { finalProjectData?: Project; isComplete: boolean } | undefined => {
     console.log('🚀 === PERFORMING DAILY WORK ===');
     
     if (!gameState.activeProject) {
@@ -364,12 +370,22 @@ export const useStageWork = ({
     const briefMultiplier = BRIEF_FIT_MULTIPLIER[briefFit.grade] * chainFactor;
     const briefDiscoveries = recordBriefDiscoveries(gameState.discoveredBriefCombos, briefFit);
 
+    const brewReady =
+      gameState.choreState?.chores.brew_espresso?.completed === true ||
+      hasActiveChoreBuff(gameState.choreState, 'vibe_boost');
+    const riderEval = evaluateProjectRider(
+      project,
+      resolveSessionEquipment(gameState, project.bookingRoomId),
+      { brewReady, sessionLive: true },
+    );
+    const riderMultiplier = riderEval.workMultiplier;
+
     // ⚡ Streak + 🔥 Overdrive + ✨ Synergy + 🔧 Chore multipliers applied to the final gains
     const overdriveMultiplier = overdrive ? 1.75 : 1;
     const choreCreativityMultiplier = 1 + getActiveBuffMagnitude(gameState.choreState, 'creativity_bonus');
     const choreTechnicalMultiplier = 1 + getActiveBuffMagnitude(gameState.choreState, 'tech_bonus');
-    const creativityGain = Math.max(1, Math.round(workPoints.creativity * comboMultiplier * overdriveMultiplier * synergyBonuses.creativityMultiplier * briefMultiplier * flow.multiplier * choreCreativityMultiplier));
-    const technicalGain = Math.max(1, Math.round(workPoints.technical * comboMultiplier * overdriveMultiplier * synergyBonuses.technicalMultiplier * briefMultiplier * flow.multiplier * choreTechnicalMultiplier));
+    const creativityGain = Math.max(1, Math.round(workPoints.creativity * comboMultiplier * overdriveMultiplier * synergyBonuses.creativityMultiplier * briefMultiplier * riderMultiplier * flow.multiplier * choreCreativityMultiplier));
+    const technicalGain = Math.max(1, Math.round(workPoints.technical * comboMultiplier * overdriveMultiplier * synergyBonuses.technicalMultiplier * briefMultiplier * riderMultiplier * flow.multiplier * choreTechnicalMultiplier));
 
     // Create orb animations
     createOrb('creativity', creativityGain);
@@ -389,7 +405,7 @@ export const useStageWork = ({
     // - Base conversion: points to work units (divide by 3 for faster progression)
     // - Minimum progress: Always make at least 1 work unit of progress if points > 0
     // - Stage difficulty scaling: Harder stages (more work units) get bonus efficiency
-    const baseTakeUnits = Math.max(1, Math.floor(energyCost * 2));
+    const baseTakeUnits = calculateTakeBaseUnits(energyCost);
     const minProgress = totalPointsGenerated > 0 ? 1 : 0;
     const stageEfficiencyBonus = Math.floor(currentStage.workUnitsBase / 10); // Bonus for longer stages
     
@@ -457,6 +473,7 @@ export const useStageWork = ({
 
     // FIXED: Immutable state update for React re-rendering
     setGameState(prev => {
+      if (prev.activeProject?.id !== project.id || prev.activeProject.workSessionCount !== project.workSessionCount) return prev;
       console.log('🔄 Updating game state with immutable update...');
       
       // Deep copy the active project to avoid mutation
@@ -492,7 +509,14 @@ export const useStageWork = ({
           ? [...(prev.activeProject!.stageGrades ?? []), completedGrade.grade]
           : prev.activeProject!.stageGrades,
         // A fresh stage means a fresh take slate (skipped take caps at A).
-        stageTake: newCurrentStageIndex !== currentStageIndex ? null : prev.activeProject!.stageTake ?? null
+        stageTake: newCurrentStageIndex !== currentStageIndex ? null : prev.activeProject!.stageTake ?? null,
+        gearNotes: (() => {
+          const prior = prev.activeProject!.gearNotes ?? [];
+          if (!project.rider || riderEval.notes.length === 0) return prior;
+          const stamp = riderEval.met ? 'Rider met' : 'Rider short';
+          if (prior.some((n) => n.startsWith(stamp) || n.startsWith('Rider '))) return prior;
+          return [...prior, ...riderEval.notes.slice(0, 2)].slice(-6);
+        })(),
       };
 
       console.log(`📋 Project C points: ${prev.activeProject!.accumulatedCPoints} -> ${updatedProject.accumulatedCPoints}`);
@@ -503,7 +527,8 @@ export const useStageWork = ({
         ? consumeChoreBuffSession(prev.choreState)
         : prev.choreState;
 
-      const nextPendingCrates = prev.pendingCrates ? [...prev.pendingCrates] : [];
+      const gearUse = recordGearUse(prev, updatedProject, 1, overdrive ? 2 : 1);
+      const nextPendingCrates = [...(prev.pendingCrates ?? [])];
       if (stageCompleted && completedGrade?.grade === 'Gold' && Math.random() < 0.15) {
         nextPendingCrates.push({
           id: `crate-sgrade-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -537,17 +562,18 @@ export const useStageWork = ({
 
       return withDailyTracking({
         ...withKnowHow,
+        ...gearUse.state,
         gems: (prev.gems ?? 0) + gemGain,
-        activeProject: updatedProject,
+        activeProject: gearUse.project,
+        pendingCrates: nextPendingCrates,
         discoveredSynergies: updatedDiscovered,
         discoveredBriefCombos: briefDiscoveries.list,
         choreState: nextChoreState,
-        pendingCrates: nextPendingCrates,
         playerData: {
           ...prev.playerData,
           dailyWorkCapacity: Math.max(0, prev.playerData.dailyWorkCapacity - energyCost)
         },
-        hiredStaff: prev.hiredStaff.map(s => {
+        hiredStaff: gearUse.state.hiredStaff.map(s => {
           if (s.assignedProjectId === project.id && s.status === 'Working') {
             // Decrease mood slightly after work, decrease energy
             return { 
@@ -574,7 +600,7 @@ export const useStageWork = ({
 
     // 🔥 Overdrive: big payoff, small risk — the session can burn out the crew
     if (overdrive) {
-      if (Math.random() < 0.25) {
+      if (createSeededRandom(`${gameState.saveSeed ?? 4242}:${project.id}:overdrive:${newWorkSessionCount}`)() < 0.25) {
         setGameState(prev => ({
           ...prev,
           hiredStaff: prev.hiredStaff.map(s =>
@@ -632,7 +658,7 @@ export const useStageWork = ({
       };
       // DO NOT CALL completeProject here.
       // Return the project details so the UI can display celebration BEFORE state is wiped.
-      return { finalProjectData, isComplete: true };
+      return { finalProjectData: recordGearUse(gameState, finalProjectData, 1, overdrive ? 2 : 1).project, isComplete: true };
     }
 
     // Show stage completion notification

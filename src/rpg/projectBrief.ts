@@ -27,6 +27,8 @@ export interface BriefFit {
   score: number;
   /** Every applied reason, strongest first. Use `topReasons` for UI. */
   reasons: string[];
+  /** Signed score effect of each applied reason, strongest first (feeds the outcome forecast, #55). */
+  effects?: { reason: string; delta: number }[];
   /** Named combos that fired on a strong/excellent result. */
   discoveries: { id: string; name: string }[];
 }
@@ -326,6 +328,7 @@ export function evaluateBriefFit(
     grade,
     score,
     reasons: applied.map((a) => a.reason),
+    effects: applied.map((a) => ({ reason: a.reason, delta: a.delta })),
     discoveries: strong ? applied.filter((a) => a.rule.discovery && a.delta > 0).map((a) => ({ id: a.rule.id, name: a.rule.discovery! })) : [],
   };
 }
@@ -335,7 +338,7 @@ export function topReasons(fit: BriefFit, limit = 2): string[] {
   return fit.reasons.slice(0, limit);
 }
 
-const pickRoom = (rooms: StudioRoom[], type: StudioRoomType, preferred?: string): StudioRoom => {
+export const pickBookingRoom = (rooms: StudioRoom[], type: StudioRoomType, preferred?: string): StudioRoom => {
   const unlocked = rooms.filter((r) => r.unlocked);
   return (
     unlocked.find((r) => r.id === preferred) ??
@@ -355,7 +358,7 @@ export function evaluateProjectBriefFit(project: Project, state: FitState, appro
   const brief = getProjectBrief(project);
   const booked = Boolean(project.bookingRoomId);
   const staff = booked ? state.hiredStaff.filter((s) => s.assignedProjectId === project.id) : state.hiredStaff;
-  const room = pickRoom(state.studioRooms ?? [], SERVICE_ROOM[brief.serviceType], project.bookingRoomId);
+  const room = pickBookingRoom(state.studioRooms ?? [], SERVICE_ROOM[brief.serviceType], project.bookingRoomId);
   return evaluateBriefFit(brief, {
     room,
     staff,

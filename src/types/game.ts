@@ -1,3 +1,6 @@
+import type { NpcVisualIdentity } from '@/features/sprites/npcAppearance';
+import type { GearInstanceFields, DailyClassifiedListing } from '@/features/usedGear/types';
+import type { CreatorPieceIds } from '@/features/sprites/staffPortrait';
 // Game type definitions
 import { Chart, ArtistContact, MarketTrend } from './charts';
 import { Client, RecordLabel } from '../game-mechanics/relationship-management';
@@ -38,6 +41,8 @@ export interface PlayerAttributes {
 }
 
 export interface PlayerData {
+  name?: string;
+  appearance?: NpcVisualIdentity;
   xp: number;
   level: number;
   xpToNextLevel: number;
@@ -124,6 +129,7 @@ export interface Project {
   overdriveArmed?: boolean; // 🔥 next session burns extra energy for bonus output
   awaitingReview?: boolean; // Work is complete but rewards have not yet been settled
   resolvedInterventionStageKeys?: string[]; // Persist one resolved/ignored intervention opportunity per stage
+  gearNotes?: string[]; // Bounded, factual session gear ledger for review
   bookingRoomId?: string; // Physical studio suite reserved for this session
   associatedBandId?: string;
   /** Booking gamble: safe default; ambitious/moonshot need rank bars (sd3.2). */
@@ -140,6 +146,8 @@ export interface Project {
   focusAllocation: FocusAllocation; // ADDED: Stores current focus settings for the project
   /** Creative brief (#48). Optional: old saves derive one on read via getProjectBrief. */
   brief?: import('@/rpg/projectBrief').ProjectBrief;
+  /** Mid/late-game studio rider (hospitality + gear asks). Absent on early or ungated bookings. */
+  rider?: import('@/rpg/studioRider').StudioRider;
   /** Vocal signal chain chosen at booking (#86). */
   signalChain?: import('@/rpg/signalChain').SignalChain;
   /** Open quality issues left by phase events (#87). Cleared by great takes or by polishing before delivery. */
@@ -159,6 +167,18 @@ export interface Project {
   stakeLocked?: boolean;
 }
 
+/** In-world CV shown in the Crew recruitment portal. Deterministic per candidate seed. */
+export interface StaffCurriculumVitae {
+  headline: string;
+  summary: string;
+  traits: string[];
+  previousStudios: string[];
+  notableCredits: string[];
+  yearsExperience: number;
+  education: string;
+  lookingFor: string;
+}
+
 export interface StaffMember {
   id: string;
   name: string;
@@ -172,16 +192,24 @@ export interface StaffMember {
   levelInRole: number;
   genreAffinity: { genre: string; bonus: number } | null;
   gearFamiliarity?: Record<string, number>; // Sessions using each piece of gear in a chain (#86, capped)
+  equipmentFamiliarity?: Record<string, number>; // 0-5, grows through actual gear use
   clientFamiliarity?: Record<string, number>; // Completed sessions with recurring clients
   energy: number;
   mood: number; // 0-100, affects work effectiveness
   salary: number;
-  status: 'Idle' | 'Working' | 'Resting' | 'Training' | 'Researching';
+  status: 'Idle' | 'Working' | 'Resting' | 'Training' | 'Researching' | 'On Tour';
   assignedProjectId: string | null;
   trainingEndDay?: number;
   trainingCourse?: string;
   researchingModId?: string | null;
   researchEndDay?: number;
+  /** Deterministic modular portrait identity (create-a-character / npc-parts). */
+  appearance?: NpcVisualIdentity;
+  portraitSeed?: number;
+  /** Optional creator piece IDs; see staffPortrait.ts integration notes. */
+  pieceIds?: CreatorPieceIds;
+  /** Clickable CV for the recruitment portal. */
+  cv?: StaffCurriculumVitae;
   skills: { // UPDATED as per core_loop_plan.md
     songwriting: Skill;
     rhythm: Skill;
@@ -197,7 +225,7 @@ export interface StaffMember {
 
 export type EquipmentCategory = 'microphone' | 'monitor' | 'interface' | 'outboard' | 'instrument' | 'software' | 'recorder' | 'mixer';
 
-export interface Equipment {
+export interface Equipment extends GearInstanceFields {
   id: string;
   name: string;
   category: EquipmentCategory;
@@ -303,14 +331,19 @@ export interface GameState {
   saveSeed?: number | string;
   /** Branching campaign + subplot tracker (bead 283.3). Absent on legacy saves. */
   storylineState?: import('@/narrative/branchingStorylineEngine').StorylineState;
+  /** Producer name + sprite look chosen at career start (#126). Migrated onto legacy saves. */
+  producerCustomization?: import('@/types/character').ProducerCustomization;
   playerData: PlayerData;
   studioSkills: Record<string, StudioSkill>;
   ownedUpgrades: string[];
   ownedEquipment: Equipment[];
+  dailyClassifieds?: { day: number; listings: DailyClassifiedListing[] };
   /** Slot-based equipment placements (bead 8om). Absent on legacy saves. */
   equipmentPlacements?: EquipmentPlacement[];
   availableProjects: Project[];
   financials: Financials;
+  /** Append-only money journal (issue #83). Absent on legacy saves; starts on first booking. */
+  ledger?: import('@/economy/ledger').LedgerState;
   /** Optional: absent on old saves, treated as a fresh day. */
   dailyTracking?: DailyTracking;
   clientRelationships?: Record<string, ClientRelationship>;
@@ -386,11 +419,23 @@ export interface GameState {
     source: 'chore_streak' | 's_grade_take' | 'yard_sale' | 'shop_money' | 'shop_gems' | 'reward';
     /** Legacy 2-tier ids stay valid; the economy resolves them via legacyTierToFlightCase. */
     tier: 'standard' | 'vintage_flight_case' | 'cardboard_box' | 'road_case' | 'tour_trunk' | 'holy_grail_vault';
+    generatedDay?: number;
+    generatedYear?: number;
+    generatedPriceMultiplier?: number;
   }>;
   /** Premium-feel soft currency (bead: flight cases + gems). Absent on legacy saves = 0. */
   gems?: number;
-  /** Holding area for flight case finds the player stashed/equipped; the gear economy can claim from here. */
-  caseFinds?: Array<{ id: string; name: string; era: string; rarity: string; condition: number; baseValue: number }>;
+  /** Holding area for flight case finds the player stashed; claim via used-gear economy into ownedEquipment. */
+  caseFinds?: Array<{
+    id: string;
+    name: string;
+    era: string;
+    rarity: string;
+    condition: number;
+    baseValue: number;
+    /** Present when the find was already materialized upstream (box-drop path). */
+    equipment?: import('@/features/usedGear/types').EquipmentInstance;
+  }>;
   /** Unlocked achievements: id -> game day it was earned. Absent on legacy saves. */
   unlockedAchievements?: Record<string, number>;
   /** Set once the campaign epilogue has been shown, so it never replays. */
@@ -438,6 +483,7 @@ export interface ProjectAnimationState {
   workIntensity: number; // 0-1, affects animation speed/intensity
   staffCount: number; // Number of staff working on this project
   progressPulse: boolean; // Whether to show progress bar pulse
+  automationPulse?: boolean; // Whether the automation system is acting on this project
   lastUpdate: number; // Timestamp of last animation update
 }
 

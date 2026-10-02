@@ -11,11 +11,33 @@ import { THEME_VISUAL_CONFIGS } from '@/narrative/playstyleTheme';
 import { visualEraId } from '@/utils/eraProgression';
 import { getEraGrade } from '@/components/WebGLCanvas';
 import { gameAudio } from '@/utils/audioSystem';
+import { ModularSpriteRenderer } from '@/features/sprites/ModularSpriteRenderer';
+import {
+  ACCESSORY_LABELS,
+  BUILD_LABELS,
+  DEFAULT_PRODUCER_APPEARANCE,
+  PRODUCER_ACCESSORIES,
+  PRODUCER_BUILDS,
+  PRODUCER_CLOTHES_COLOURS,
+  PRODUCER_HAIR_COLOURS,
+  PRODUCER_HAIR_SHAPES,
+  buildProducerNpc,
+  type ProducerAccessory,
+  type ProducerAppearance,
+  type ProducerClothesColourId,
+} from '@/features/sprites/producerAppearance';
+import { HAIR_HEX, CLOTHING_PALETTES } from '@/features/sprites/npcAppearanceData';
 import { EraEmblem, type EraEmblemId } from './EraEmblems';
 import './splash.css';
 
+/** The producer the player made on this screen: name + sprite look (persisted as ProducerCustomization). */
+export interface ProducerSetup {
+  name: string;
+  appearance: ProducerAppearance;
+}
+
 interface CareerStartScreenProps {
-  onBegin: (era: Era, originId: ProducerBackgroundId) => void;
+  onBegin: (era: Era, originId: ProducerBackgroundId, producer: ProducerSetup) => void;
   onBack: () => void;
 }
 
@@ -31,20 +53,73 @@ const ERA_CHALLENGE: Record<string, string> = {
   modern: 'Everyone has a home studio. Win on taste and relationships.',
 };
 
-const STEPS = ['Era', 'Producer', 'Begin'] as const;
+const STEPS = ['Era', 'Character', 'Role', 'Begin'] as const;
 
 const stepClass = (active: boolean, done: boolean) =>
   `flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] ${
     active ? 'text-[var(--rst-brass-300)]' : done ? 'text-stone-300' : 'text-stone-500'
   }`;
 
+/** Compact arrow stepper for one creator element (build, accessory, …). */
+function CreatorArrowRow({
+  label,
+  value,
+  onPrev,
+  onNext,
+}: {
+  label: string;
+  value: string;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-1.5" role="group" aria-label={`${label}: ${value}`}>
+      <span className="w-20 shrink-0 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--rst-brass-200)]">
+        {label}
+      </span>
+      <button
+        type="button"
+        className="rst-btn rst-btn-ghost !min-h-9 !min-w-9 !px-0"
+        aria-label={`Previous ${label}`}
+        onClick={onPrev}
+      >
+        <ArrowLeft size={15} aria-hidden="true" />
+      </button>
+      <span className="rst-title min-w-0 flex-1 truncate text-center text-[15px] leading-tight">{value}</span>
+      <button
+        type="button"
+        className="rst-btn rst-btn-ghost !min-h-9 !min-w-9 !px-0"
+        aria-label={`Next ${label}`}
+        onClick={onNext}
+      >
+        <ArrowRight size={15} aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
+/** Cycle one step through a fixed option list, wrapping around. */
+const cycleOption = <T extends string>(list: readonly T[], current: T, delta: number): T =>
+  list[(list.indexOf(current) + delta + list.length) % list.length];
+
 export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
-  const [step, setStep] = useState<0 | 1>(0);
+  const [step, setStep] = useState<0 | 1 | 2>(0);
   const [eraId, setEraId] = useState<string | null>(null);
   const [originId, setOriginId] = useState<ProducerBackgroundId | null>(null);
+  const [moniker, setMoniker] = useState('The Architect');
+  const [look, setLook] = useState<ProducerAppearance>(() => ({
+    ...DEFAULT_PRODUCER_APPEARANCE,
+    seed: Math.floor(Math.random() * 100000), // UI-only roll of the body; persisted once chosen
+  }));
+  const patchLook = (patch: Partial<ProducerAppearance>) => {
+    click();
+    setLook((current) => ({ ...current, ...patch }));
+  };
+
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   const era = useMemo(() => AVAILABLE_ERAS.find((e) => e.id === eraId) ?? null, [eraId]);
+  const previewNpc = useMemo(() => buildProducerNpc(look, moniker, eraId ?? undefined), [look, moniker, eraId]);
   const origin = useMemo(() => PRODUCER_ORIGINS.find((o) => o.id === originId) ?? null, [originId]);
 
   const click = () => void gameAudio.playClick().catch(() => {});
@@ -53,15 +128,18 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
     if (step === 0 && era) {
       click();
       setStep(1);
-    } else if (step === 1 && era && origin) {
+    } else if (step === 1 && moniker.trim()) {
       click();
-      onBegin(era, origin.id);
+      setStep(2);
+    } else if (step === 2 && era && origin) {
+      click();
+      onBegin(era, origin.id, { name: moniker.trim(), appearance: look });
     }
-  }, [step, era, origin, onBegin]);
+  }, [step, era, origin, moniker, look, onBegin]);
 
   const goBack = useCallback(() => {
     click();
-    if (step === 1) setStep(0);
+    if (step > 0) setStep((current) => (current - 1) as 0 | 1 | 2);
     else onBack();
   }, [step, onBack]);
 
@@ -116,14 +194,16 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
         </header>
 
         <div className="mt-8 text-center animate-rst-rise" key={step}>
-          <p className="rst-kicker">{step === 0 ? 'Chapter one' : 'Chapter two'}</p>
+          <p className="rst-kicker">{step === 0 ? 'Chapter one' : step === 1 ? 'Chapter two' : 'Chapter three'}</p>
           <h1 ref={headingRef} tabIndex={-1} className="rst-title mt-2 text-3xl outline-none sm:text-5xl">
-            {step === 0 ? 'When does your studio open?' : 'Who is behind the console?'}
+            {step === 0 ? 'When does your studio open?' : step === 1 ? 'Make the face behind the faders' : 'Who is behind the console?'}
           </h1>
           <p className="rst-body mx-auto mt-3 max-w-2xl text-sm sm:text-base">
             {step === 0
               ? 'Each era changes your gear, your genres, your budget and the industry breathing down your neck.'
-              : 'Your producer origin gives you a real edge — and a rival who will not let you forget it.'}
+              : step === 1
+                ? 'Give your producer a name, a haircut, a favourite shirt and one signature accessory.'
+                : 'Your producer origin gives you a real edge — and a rival who will not let you forget it.'}
           </p>
         </div>
 
@@ -196,6 +276,84 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
         )}
 
         {step === 1 && (
+          <section className="rst-option mx-auto mt-6 grid w-full max-w-xl gap-4 !p-5 sm:!p-6" aria-label="Producer customisation">
+            <div className="mx-auto flex flex-col items-center gap-2">
+              <div
+                className="grid place-items-center rounded-lg border border-[var(--rst-brass-400)]/50 px-6 pb-2 pt-3"
+                style={{ background: 'radial-gradient(circle at 50% 30%, rgba(217,160,70,0.22), rgba(0,0,0,0.55) 72%)' }}
+                data-testid="producer-preview"
+              >
+                <ModularSpriteRenderer npc={previewNpc} animationState="idle" scale={3} showBadge={false} />
+              </div>
+              <p className="rst-kicker">Live character preview</p>
+            </div>
+
+            <div className="space-y-2.5 text-left">
+              <label className="block text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">
+                Producer name
+                <input value={moniker} onChange={(e) => setMoniker(e.target.value.slice(0, 24))} maxLength={24} autoFocus className="rst-input mt-2 w-full" placeholder="The Architect" />
+              </label>
+
+              <CreatorArrowRow
+                label="Build"
+                value={BUILD_LABELS[look.build ?? 'average']}
+                onPrev={() => patchLook({ build: cycleOption(PRODUCER_BUILDS, look.build ?? 'average', -1) })}
+                onNext={() => patchLook({ build: cycleOption(PRODUCER_BUILDS, look.build ?? 'average', 1) })}
+              />
+
+              <div className="flex items-center gap-1.5" role="group" aria-label="Hair style picker">
+                <label
+                  htmlFor="creator-hair"
+                  className="w-20 shrink-0 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--rst-brass-200)]"
+                >
+                  Hair
+                </label>
+                <select
+                  id="creator-hair"
+                  value={look.hair}
+                  onChange={(e) => patchLook({ hair: e.target.value as ProducerAppearance['hair'] })}
+                  className="rst-input min-w-0 flex-1 !min-h-9 !py-1.5 text-sm capitalize"
+                  aria-label={`Hair style: ${look.hair.replace(/_/g, ' ')}`}
+                >
+                  {PRODUCER_HAIR_SHAPES.map((shape) => (
+                    <option key={shape} value={shape}>
+                      {shape.replace(/_/g, ' ')}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-wrap gap-2 pl-[92px]" role="radiogroup" aria-label="Hair colour">
+                {PRODUCER_HAIR_COLOURS.map((colour) => (
+                  <button key={colour} type="button" role="radio" aria-checked={look.hairColour === colour} aria-label={colour.replace(/_/g, ' ')} title={colour.replace(/_/g, ' ')}
+                    onClick={() => patchLook({ hairColour: colour })}
+                    className={`h-6 w-6 rounded-full border-2 ${look.hairColour === colour ? 'border-[var(--rst-brass-300)] ring-2 ring-[var(--rst-brass-300)]/40' : 'border-white/15'}`}
+                    style={{ background: HAIR_HEX[colour] }} />
+                ))}
+              </div>
+
+              <fieldset>
+                <legend className="mb-1.5 text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">Clothes colour</legend>
+                <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Clothes colour">
+                  {PRODUCER_CLOTHES_COLOURS.map((c) => (
+                    <button key={c.id} type="button" role="radio" aria-checked={look.clothesColour === c.id} aria-label={c.label} title={c.label}
+                      onClick={() => patchLook({ clothesColour: (c.id as ProducerClothesColourId) })}
+                      className={`h-7 w-7 rounded-md border-2 ${look.clothesColour === c.id ? 'border-[var(--rst-brass-300)] ring-2 ring-[var(--rst-brass-300)]/40' : 'border-white/15'}`}
+                      style={{ background: `linear-gradient(135deg, ${CLOTHING_PALETTES[c.palette].primary} 60%, ${CLOTHING_PALETTES[c.palette].secondary} 60%)` }} />
+                  ))}
+                </div>
+              </fieldset>
+
+              <CreatorArrowRow
+                label="Accessory"
+                value={ACCESSORY_LABELS[look.accessory as ProducerAccessory]}
+                onPrev={() => patchLook({ accessory: cycleOption(PRODUCER_ACCESSORIES, look.accessory, -1) })}
+                onNext={() => patchLook({ accessory: cycleOption(PRODUCER_ACCESSORIES, look.accessory, 1) })}
+              />
+            </div>
+          </section>
+        )}
+
+        {step === 2 && (
           <div
             role="radiogroup"
             aria-label="Choose a producer origin"
@@ -283,17 +441,19 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
           <p className="min-w-0 flex-1 text-xs text-stone-300" aria-live="polite">
             {era ? <b className="text-[var(--rst-brass-200)]">{era.displayName}</b> : <span className="text-stone-500">No era chosen</span>}
             <span className="mx-2 text-stone-600">·</span>
-            {origin ? <b className="text-[var(--rst-brass-200)]">{origin.name}</b> : <span className="text-stone-500">No origin chosen</span>}
+            <b className="text-[var(--rst-brass-200)]">{moniker || 'Unnamed producer'}</b>
+            <span className="mx-2 text-stone-600">·</span>
+            {origin ? <b className="text-[var(--rst-brass-200)]">{origin.name}</b> : <span className="text-stone-500">No role chosen</span>}
             {era && <span className="ml-2 text-stone-500">${era.startingMoney.toLocaleString()} to start</span>}
             {rival && <span className="ml-2 hidden text-stone-500 sm:inline">· facing {rival.headProducer}</span>}
           </p>
           <button
             type="button"
             className="rst-btn rst-btn-primary min-w-44"
-            disabled={step === 0 ? !era : !(era && origin)}
+            disabled={step === 0 ? !era : step === 1 ? !moniker.trim() : !(era && origin)}
             onClick={goNext}
           >
-            {step === 0 ? 'Choose your producer' : 'Open the studio'}
+            {step === 0 ? 'Create your producer' : step === 1 ? 'Choose a role' : 'Open the studio'}
             <ArrowRight size={15} aria-hidden="true" />
           </button>
         </div>

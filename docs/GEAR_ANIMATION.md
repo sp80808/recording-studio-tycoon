@@ -42,4 +42,28 @@ Driven with Playwright against the real game (new 1960s studio -> Open the studi
 | this branch (AnimatedSprite reels, idle/parked) | 332, 369, 379 ms |
 Software GL runs the whole scene at about 2.7 fps, so absolute numbers mean nothing, but the two builds are within run-to-run noise: parked sprite reels add no measurable per-frame cost. Screenshot: `docs/img/gear-reels-living-studio.png`.
 
-Not measured: playing-state reel cost (needs a booked session), React commit counts for the inspector, and real-GPU numbers. These remain follow-ups on #81.
+### Playing state (session booked via the real UI), same setup, mean frame time over three 6 s runs
+| State | Mean frame time per run |
+|---|---|
+| idle (reels parked) | 402, 391, 371 ms |
+| session active (reels playing) | 400, 417, 384 ms |
+| session active, reduced motion (reels parked) | 364, 364, 368 ms |
+Playing is about 3% above idle on average, inside the run-to-run spread. Reduced motion is faster mainly because it disables other scene effects too, so it is not a clean control.
+
+### Inspector React commits (`tests/gear-rack.html` + React Profiler, headless Chromium)
+| Condition | Commits |
+|---|---|
+| powered, normal motion | 40 per 10 s (4/s, the 250 ms meter step; the old loop was 8.3/s of random state) |
+| powered, reduced motion | 0 |
+| tab hidden | 0 per 3 s |
+| powered off | 0 per 3 s |
+
+### Real-GPU gap
+All browser numbers above are software WebGL (SwiftShader) in a cloud container. No real-GPU frame cost has been measured; that comes from the engine/WebGPU audit thread. Tiers 2-5 reels wait on the Blender desk bodies (#117); only tier 1 has a tape machine today.
+
+## Console tiers 2-5 (follow-up to #81)
+`consoleTierGear.ts` holds the per-tier plan: every tier 2-5 gets an outboard tape deck with a reel pair (reuses the tier-1 AnimatedSprite frames, tinted per tier), valve glow lamps on the valve-era tiers 2-3, and status LEDs (2 to 5, growing with tier). Tier 1 keeps its baked machine.
+- State-driven: `toSpriteVisualState` -> `tubeGlowLevel` / `statusLedColor` (green ok, amber worn/failing, red overload) and `reelAnimationSpeed`. Lamps are restyled only when `gearVisualKey` changes, never per frame; nothing writes equipment condition (the console reports condition 100 until a console-condition source exists).
+- Budget (#46/#74): `gearAttention` allows at most one continuous effect (reels spinning while a session runs). Focus (`settings.reducedMotion`), OS reduced motion and a hidden tab park the reels on frame 0 and leave lamps as static levels.
+- Procedural fallback: no renderer gives static ellipse reels; no Blender body still shows the deck because it is drawn on top of the body.
+- Not measured: real-GPU cost (still pending), so #81 stays open.

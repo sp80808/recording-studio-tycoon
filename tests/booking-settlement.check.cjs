@@ -14,7 +14,8 @@ async (page) => {
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.getByRole('button', { name: /New studio/ }).click();
   await page.getByText('Modern Era', { exact: true }).click();
-  await page.getByRole('button', { name: /Choose your producer/ }).click();
+  await page.getByRole('button', { name: /Create your producer/ }).click();
+  await page.getByRole('button', { name: /Choose a role/ }).click();
   await page.getByText('The Bedroom Beatmaker').first().click();
   await page.getByRole('button', { name: /Open the studio/ }).click();
 
@@ -47,6 +48,8 @@ async (page) => {
   const reviewTitle = page.getByText(/Project Complete:/);
   for (let i = 0; i < 30; i++) {
     if (await reviewTitle.isVisible()) break;
+    const deliver = page.getByRole('button', { name: /Deliver now/ });
+    if (await deliver.isVisible()) { await deliver.click(); continue; }
     const release = page.getByRole('button', { name: 'View session review' });
     if (await release.isVisible()) { await release.click(); continue; }
     const skip = page.getByRole('button', { name: /Skip intervention|Skip/ }).first();
@@ -62,11 +65,12 @@ async (page) => {
   }
   await reviewTitle.waitFor({ state: 'visible', timeout: 30000 });
   const review = page.getByRole('dialog').filter({ hasText: /Project Complete:/ });
+  await review.getByRole('button', { name: /Skip/ }).waitFor({ timeout: 30000 });
+  await page.keyboard.press('Space'); // fast-forward the review reveal
   await review.getByText(/Overall Quality:/).waitFor({ timeout: 30000 });
   await review.getByText('Rewards', { exact: true }).waitFor({ timeout: 15000 });
   assert(await review.getByText(/Money:/).isVisible(), 'Money reward missing');
   const moneyBefore = await page.locator('[data-reward-target="money"]').innerText();
-  await page.keyboard.press('Space'); // fast-forward the review reveal
   const settle = review.getByRole('button', { name: /Awesome!/ });
   await settle.waitFor({ timeout: 30000 });
   await settle.click();
@@ -76,6 +80,9 @@ async (page) => {
   assert(await page.getByRole('button', { name: 'Book Session' }).first().isEnabled(), 'Cannot book after settlement');
   const moneyAfter = await page.locator('[data-reward-target="money"]').innerText();
   assert(moneyAfter !== moneyBefore, 'Money HUD did not update after settlement');
+  // Leaving (reload/pagehide) must persist progress: the splash offers Continue with the settled money.
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.getByRole('button', { name: /Continue studio/ }).waitFor({ timeout: 15000 });
   assert(errors.length === 0, errors.slice(0, 5).join('\n'));
-  return 'PASS: splash, mobile layout, floor menu, booking, work, release, review and settlement';
+  return 'PASS: splash, mobile layout, floor menu, booking, work, release, review, settlement and save on leave';
 }

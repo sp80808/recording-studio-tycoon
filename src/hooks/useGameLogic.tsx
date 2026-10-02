@@ -1,13 +1,16 @@
 import { meetsKnowHowGate, spendKnowHow, createInitialKnowHow } from '@/rpg/studioKnowHow';
 import { useArtistContracts } from '@/hooks/useArtistContracts';
+import type { PerformDailyWorkOptions } from '@/hooks/useStageWork';
 import { gameEvents } from '@/engine/gameEventBus';
 import { useState, useCallback, useMemo } from 'react'; // Added useMemo
+import { spend } from '@/economy/ledger';
 import { GameState, StaffMember, PlayerAttributes, ProjectReport, Project } from '@/types/game';
 import { toast } from '@/hooks/use-toast';
 import { availableTrainingCourses } from '@/data/training';
 import { canPurchaseEquipment, addNotification, applyEquipmentEffects } from '@/utils/gameUtils';
 import { playSound } from '@/utils/soundUtils';
-import { getAvailableEquipmentForYear } from '@/data/eraEquipment';
+import { getAvailableEquipmentForYear, getEraAdjustedPrice } from '@/data/eraEquipment';
+import { applyGearAction } from '@/features/usedGear/economy';
 import { withDailyTracking } from '@/utils/dailyChallenges';
 import { bestTake, takeFromRawScore } from '@/rpg/stageGrades';
 import { useStaffManagement } from '@/hooks/useStaffManagement';
@@ -109,9 +112,9 @@ export const useGameLogic = (
     }
   };
 
-  const handlePerformDailyWork = () => {
+  const handlePerformDailyWork = (options?: PerformDailyWorkOptions) => {
     console.log('=== HANDLE PERFORM DAILY WORK ===');
-    const result = performDailyWork(); // Now returns { isComplete: boolean, finalProjectData?: Project }
+    const result = performDailyWork(options); // Now returns { isComplete: boolean, finalProjectData?: Project }
     
     if (result?.isComplete && result.finalProjectData) {
       console.log('Project work units complete. Passing up final project data for celebration:', result.finalProjectData.title);
@@ -127,15 +130,26 @@ export const useGameLogic = (
 
   const purchaseEquipment = (equipmentId: string) => {
     console.log(`=== PURCHASING EQUIPMENT: ${equipmentId} ===`);
-    
-    const availableEquipment = getAvailableEquipmentForYear(gameState.currentYear || 2024);
-    const equipment = availableEquipment.find(e => e.id === equipmentId);
+
+    const available = getAvailableEquipmentForYear(gameState.currentYear || 2024);
+    const equipment = available.find(e => e.id === equipmentId);
     if (!equipment) {
       console.log('Equipment not found');
       return false;
     }
 
-    const purchaseCheck = canPurchaseEquipment(equipment, gameState);
+    const priced = {
+      ...equipment,
+      price: getEraAdjustedPrice(equipment, gameState.currentYear || 2024, gameState.equipmentMultiplier || 1),
+    };
+    const purchaseCheck = canPurchaseEquipment(priced, {
+      ...gameState,
+      // Template ownership: retail shop still sells one of each catalogue id.
+      ownedEquipment: gameState.ownedEquipment.map(item => ({
+        ...item,
+        id: item.templateId ?? item.id,
+      })),
+    });
     if (!purchaseCheck.canPurchase) {
       console.log(`Purchase blocked: ${purchaseCheck.reason}`);
       playSound('error.wav', 0.5);
@@ -148,20 +162,21 @@ export const useGameLogic = (
       return false;
     }
 
-    // Play purchase sound
     playSound('ui sfx/purchase-complete.m4a', 0.6);
 
-    // Apply equipment effects and update state
-    let updatedGameState = applyEquipmentEffects(equipment, gameState);
-    
-    // Deduct money and add equipment
-    updatedGameState = {
-      ...updatedGameState,
-      money: updatedGameState.money - equipment.price,
-      ownedEquipment: [...updatedGameState.ownedEquipment, { ...equipment, condition: 100 }]
-    };
+    const purchased = applyGearAction(gameState, { type: 'buyRetail', templateId: equipment.id });
+    if (!purchased.ok) {
+      toast({
+        title: "❌ Cannot Purchase",
+        description: purchased.message,
+        className: "bg-stone-800 border-stone-600 text-white",
+        variant: "destructive"
+      });
+      return false;
+    }
 
-    setGameState(updatedGameState);
+    const withEffects = applyEquipmentEffects(equipment, purchased.state);
+    setGameState(withEffects);
 
     toast({
       title: "💰 Equipment Purchased!",
@@ -190,8 +205,9 @@ export const useGameLogic = (
     );
 
     setGameState(prev => ({
-      ...updatedGameState,
-      money: prev.money - course.cost,
+      ...spend({ ...updatedGameState, money: prev.money, ledger: prev.ledger }, course.cost, {
+        category: 'training', staffId, memo: course.name,
+      }),
       studioKnowHow: course.knowHow
         ? (spendKnowHow(prev.studioKnowHow ?? createInitialKnowHow(), course.knowHow.cost) ?? prev.studioKnowHow)
         : prev.studioKnowHow,
@@ -313,8 +329,7 @@ export const useGameLogic = (
 
     // Deduct money and update game state
     setGameState(prev => ({
-      ...prev,
-      money: prev.money - offer,
+      ...spend(prev, offer, { category: 'marketing', memo: 'Artist outreach offer' }),
       chartsData: {
         ...prev.chartsData,
         contactedArtists: [...(prev.chartsData?.contactedArtists || []), contact]
