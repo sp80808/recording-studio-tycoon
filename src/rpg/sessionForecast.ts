@@ -17,6 +17,7 @@ import { calculateStudioSkillBonus, getEquipmentBonuses, resolveSessionEquipment
 import { getFocusEffectiveness, getMoodEffectiveness } from '@/utils/playerUtils';
 import { getSettlementBonuses } from '@/utils/settlementBonuses';
 import { calculateBaseWorkPoints, calculateStaffWorkContribution } from '@/utils/projectUtils';
+import { gearReliabilityFacts } from '@/rpg/gearReliability';
 import { setupTimeReduction, trackLevel, LEVEL_NAMES } from '@/rpg/houseStyle';
 import { calculateStaffProjectFit, rankStaffForProject } from '@/utils/staffFitUtils';
 
@@ -263,6 +264,7 @@ export function calculateSessionForecast(state: GameState, project: Project, ass
   } else if (equipBonusExtra >= 5) {
     add({ key: 'gear-bonus', label: 'The gear chain is a real asset here', impact: impactFor(equipBonusExtra), points: equipBonusExtra });
   }
+  for (const fact of gearReliabilityFacts(vstate, equipment)) add({ key: fact.key, label: fact.label, impact: fact.impact, points: fact.points, ...(fact.hint ? { hint: fact.hint } : {}) });
   if (equipment.length === 0) add({ key: 'gear-none', label: 'No gear seated for this room', impact: 'medium', points: -4, hint: 'Seat gear in the booked room.' });
 
   if (setupCut > 0) {
