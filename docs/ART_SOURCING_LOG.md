@@ -253,3 +253,6 @@ In-house original, CC0, no external source. Inline SVG stroke icons drawn in cod
 | Asset | Source | Used by |
 |---|---|---|
 | 16 genre icons, plus energy, combo, bank, mood, goal, chart, unlock and check icons | SVG paths in code | `ChartsPanel`, `StreakBankControl`, `StudioInspector`, `ActiveProject` console (replacing emoji glyphs); also cash, creativity, technical, flame, bulb, sparkle, phone, note, pad, party, users |
+
+## 21. Fitted hover brackets and producer tap emote
+In-house, Pixi Graphics and Text only (`fitHoverGlow` in `WebGLCanvas.tsx`). Corner brackets sized from sprite and click-shape bounds; floating note emote on tapping the producer. CC0.
