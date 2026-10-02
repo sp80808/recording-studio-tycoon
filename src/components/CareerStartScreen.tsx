@@ -19,6 +19,11 @@ import {
   DEFAULT_PRODUCER_APPEARANCE,
   PRODUCER_ACCESSORIES,
   PRODUCER_BUILDS,
+  PRODUCER_SKIN_TONES,
+  PRODUCER_SHIRTS,
+  PRODUCER_PANTS,
+  PRODUCER_SHOES,
+  APPEARANCE_LABELS,
   PRODUCER_CLOTHES_COLOURS,
   PRODUCER_HAIR_COLOURS,
   PRODUCER_HAIR_SHAPES,
@@ -137,6 +142,10 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
     setLook((current) => ({
       ...current,
       build: pick(PRODUCER_BUILDS),
+      skinTone: pick(PRODUCER_SKIN_TONES),
+      shirt: pick(PRODUCER_SHIRTS),
+      pants: pick(PRODUCER_PANTS),
+      shoes: pick(PRODUCER_SHOES),
       hair: pick(PRODUCER_HAIR_SHAPES),
       hairColour: pick(PRODUCER_HAIR_COLOURS),
       clothesColour: pick(PRODUCER_CLOTHES_COLOURS).id as ProducerClothesColourId,
@@ -362,6 +371,30 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                 onNext={() => patchLook({ build: cycleOption(PRODUCER_BUILDS, look.build ?? 'average', 1) })}
               />
 
+              <CreatorArrowRow
+                label="Skin colour"
+                value={APPEARANCE_LABELS[look.skinTone ?? 'tan']}
+                onPrev={() => patchLook({ skinTone: cycleOption(PRODUCER_SKIN_TONES, look.skinTone ?? 'tan', -1) })}
+                onNext={() => patchLook({ skinTone: cycleOption(PRODUCER_SKIN_TONES, look.skinTone ?? 'tan', 1) })}
+              />
+              <CreatorArrowRow
+                label="Shirt"
+                value={APPEARANCE_LABELS[look.shirt ?? 'band_tee']}
+                onPrev={() => patchLook({ shirt: cycleOption(PRODUCER_SHIRTS, look.shirt ?? 'band_tee', -1) })}
+                onNext={() => patchLook({ shirt: cycleOption(PRODUCER_SHIRTS, look.shirt ?? 'band_tee', 1) })}
+              />
+              <CreatorArrowRow
+                label="Pants"
+                value={APPEARANCE_LABELS[look.pants ?? 'denim_jeans']}
+                onPrev={() => patchLook({ pants: cycleOption(PRODUCER_PANTS, look.pants ?? 'denim_jeans', -1) })}
+                onNext={() => patchLook({ pants: cycleOption(PRODUCER_PANTS, look.pants ?? 'denim_jeans', 1) })}
+              />
+              <CreatorArrowRow
+                label="Shoes"
+                value={APPEARANCE_LABELS[look.shoes ?? 'vintage_sneakers']}
+                onPrev={() => patchLook({ shoes: cycleOption(PRODUCER_SHOES, look.shoes ?? 'vintage_sneakers', -1) })}
+                onNext={() => patchLook({ shoes: cycleOption(PRODUCER_SHOES, look.shoes ?? 'vintage_sneakers', 1) })}
+              />
               <CreatorArrowRow
                 label="Hair"
                 value={look.hair.replace(/_/g, ' ')}

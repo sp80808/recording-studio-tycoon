@@ -11,6 +11,11 @@ import {
   DEFAULT_PRODUCER_APPEARANCE,
   PRODUCER_ACCESSORIES,
   PRODUCER_BUILDS,
+  PRODUCER_SKIN_TONES,
+  PRODUCER_SHIRTS,
+  PRODUCER_PANTS,
+  PRODUCER_SHOES,
+  APPEARANCE_LABELS,
   PRODUCER_CLOTHES_COLOURS,
   PRODUCER_HAIR_COLOURS,
   PRODUCER_HAIR_SHAPES,
@@ -327,6 +332,10 @@ export const CharacterCustomizationModal: React.FC<CharacterCustomizationModalPr
                 </div>
                 <div className="grid gap-1.5 sm:grid-cols-2">
                   <AppearanceArrowRow label="Build" value={BUILD_LABELS[appearance.build ?? 'average']} onPrev={() => setAppearance((a) => ({ ...a, build: cycle(PRODUCER_BUILDS, a.build ?? 'average', -1) }))} onNext={() => setAppearance((a) => ({ ...a, build: cycle(PRODUCER_BUILDS, a.build ?? 'average', 1) }))} />
+                  <AppearanceArrowRow label="Skin colour" value={APPEARANCE_LABELS[appearance.skinTone ?? 'tan']} onPrev={() => setAppearance((a) => ({ ...a, skinTone: cycle(PRODUCER_SKIN_TONES, a.skinTone ?? 'tan', -1) }))} onNext={() => setAppearance((a) => ({ ...a, skinTone: cycle(PRODUCER_SKIN_TONES, a.skinTone ?? 'tan', 1) }))} />
+                  <AppearanceArrowRow label="Shirt" value={APPEARANCE_LABELS[appearance.shirt ?? 'band_tee']} onPrev={() => setAppearance((a) => ({ ...a, shirt: cycle(PRODUCER_SHIRTS, a.shirt ?? 'band_tee', -1) }))} onNext={() => setAppearance((a) => ({ ...a, shirt: cycle(PRODUCER_SHIRTS, a.shirt ?? 'band_tee', 1) }))} />
+                  <AppearanceArrowRow label="Pants" value={APPEARANCE_LABELS[appearance.pants ?? 'denim_jeans']} onPrev={() => setAppearance((a) => ({ ...a, pants: cycle(PRODUCER_PANTS, a.pants ?? 'denim_jeans', -1) }))} onNext={() => setAppearance((a) => ({ ...a, pants: cycle(PRODUCER_PANTS, a.pants ?? 'denim_jeans', 1) }))} />
+                  <AppearanceArrowRow label="Shoes" value={APPEARANCE_LABELS[appearance.shoes ?? 'vintage_sneakers']} onPrev={() => setAppearance((a) => ({ ...a, shoes: cycle(PRODUCER_SHOES, a.shoes ?? 'vintage_sneakers', -1) }))} onNext={() => setAppearance((a) => ({ ...a, shoes: cycle(PRODUCER_SHOES, a.shoes ?? 'vintage_sneakers', 1) }))} />
                   <AppearanceArrowRow label="Hair" value={appearance.hair.replace(/_/g, ' ')} onPrev={() => setAppearance((a) => ({ ...a, hair: cycle(PRODUCER_HAIR_SHAPES, a.hair, -1) }))} onNext={() => setAppearance((a) => ({ ...a, hair: cycle(PRODUCER_HAIR_SHAPES, a.hair, 1) }))} />
                   <AppearanceArrowRow label="Hair tone" value={appearance.hairColour.replace(/_/g, ' ')} onPrev={() => setAppearance((a) => ({ ...a, hairColour: cycle(PRODUCER_HAIR_COLOURS, a.hairColour, -1) }))} onNext={() => setAppearance((a) => ({ ...a, hairColour: cycle(PRODUCER_HAIR_COLOURS, a.hairColour, 1) }))} />
                   <AppearanceArrowRow label="Clothes" value={PRODUCER_CLOTHES_COLOURS.find((c) => c.id === appearance.clothesColour)?.label ?? appearance.clothesColour} onPrev={() => setAppearance((a) => ({ ...a, clothesColour: cycle(PRODUCER_CLOTHES_COLOURS.map((c) => c.id), a.clothesColour, -1) as ProducerClothesColourId }))} onNext={() => setAppearance((a) => ({ ...a, clothesColour: cycle(PRODUCER_CLOTHES_COLOURS.map((c) => c.id), a.clothesColour, 1) as ProducerClothesColourId }))} />
