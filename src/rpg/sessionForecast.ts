@@ -17,6 +17,7 @@ import { calculateStudioSkillBonus, getEquipmentBonuses, resolveSessionEquipment
 import { getFocusEffectiveness, getMoodEffectiveness } from '@/utils/playerUtils';
 import { getSettlementBonuses } from '@/utils/settlementBonuses';
 import { calculateBaseWorkPoints, calculateStaffWorkContribution } from '@/utils/projectUtils';
+import { setupTimeReduction, trackLevel, LEVEL_NAMES } from '@/rpg/houseStyle';
 import { calculateStaffProjectFit, rankStaffForProject } from '@/utils/staffFitUtils';
 
 export type ForecastLevel = 'low' | 'medium' | 'high';
@@ -201,7 +202,11 @@ export function calculateSessionForecast(state: GameState, project: Project, ass
     getMoodEffectiveness,
   );
   const unitsPerSession = Math.max(1, Math.floor((Math.max(1, Math.round(sessionPoints.creativity)) + Math.max(1, Math.round(sessionPoints.technical))) / 4));
-  const sessionsNeeded = Math.ceil(remaining / unitsPerSession);
+  // House style (#71): a familiar setup shaves the work estimate. Time only, never quality.
+  const houseBrief = getProjectBrief(staged);
+  const setupCut = setupTimeReduction(state.studioExpertise, project.genre, houseBrief.serviceType);
+  const remainingWork = Math.ceil(remaining * (1 - setupCut));
+  const sessionsNeeded = Math.ceil(remainingWork / unitsPerSession);
   const pressure = sessionsNeeded / Math.max(1, project.durationDaysTotal);
   const lateRisk: ForecastLevel = pressure <= 0.6 ? 'low' : pressure <= 0.9 ? 'medium' : 'high';
 
@@ -260,6 +265,10 @@ export function calculateSessionForecast(state: GameState, project: Project, ass
   }
   if (equipment.length === 0) add({ key: 'gear-none', label: 'No gear seated for this room', impact: 'medium', points: -4, hint: 'Seat gear in the booked room.' });
 
+  if (setupCut > 0) {
+    const lvl = Math.max(trackLevel(state.studioExpertise, 'genres', project.genre), trackLevel(state.studioExpertise, 'services', houseBrief.serviceType));
+    add({ key: 'house-style', label: `${LEVEL_NAMES[lvl]} at this kind of work: setup runs quicker`, impact: 'small', points: setupCut * 20 });
+  }
   if (studioBonus >= 3) add({ key: 'studio-skill', label: `Your studio's ${project.genre} experience helps`, impact: impactFor(studioBonus), points: studioBonus });
   if (synergyBonus >= 3) add({ key: 'synergy', label: 'Studio synergies are active for this setup', impact: impactFor(synergyBonus), points: synergyBonus });
   if (originBonus >= 3) add({ key: 'origin', label: `Your background suits ${project.genre}`, impact: impactFor(originBonus), points: originBonus });
@@ -276,7 +285,7 @@ export function calculateSessionForecast(state: GameState, project: Project, ass
 
   return {
     quality: { likelyMin: Math.min(likelyMin, likelyMax), likelyMax, confidence },
-    time: { estimatedWorkUnits: remaining, lateRisk },
+    time: { estimatedWorkUnits: remainingWork, lateRisk },
     economics: { expectedMargin, marginBand },
     fatigueRisk,
     positives,
