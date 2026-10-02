@@ -1,7 +1,7 @@
 import { applyKnowHowEvents } from '../rpg/studioKnowHow';
 import { awardExpertise } from '../rpg/houseStyle';
 import { recordRelease } from '../rpg/artistCareer';
-import { creditSession } from '../rpg/staffCareer';
+import { creditSession, mentorshipScale } from '../rpg/staffCareer';
 import { getProjectBrief } from '../rpg/projectBrief';
 import { awardProjectCrate, recordGearUse } from '@/features/usedGear/session';
 import { GameState, Project, ProjectReport, StaffMember } from '../types/game';
@@ -296,7 +296,7 @@ export function applyReportToState(state: GameState, report: ProjectReport): Gam
             // Staff career (#67): the settled project credits the disciplines it exercised.
             const sessionStages = (findProjectForReport(state, report.projectId)?.stages ?? []).map(st => st.stageName);
             return {
-                ...creditSession(applySkillBreakdown(staff), report.projectId, sessionStages, report.overallQualityScore),
+                ...creditSession(applySkillBreakdown(staff), report.projectId, sessionStages, report.overallQualityScore, mentorshipScale(staff, state.hiredStaff)),
                 xpInRole: staff.xpInRole + 20 + Math.floor(report.overallQualityScore / 2),
                 status: 'Idle' as const,
                 assignedProjectId: null,
