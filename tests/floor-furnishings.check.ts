@@ -36,3 +36,14 @@ assert.ok(getPremisesProps(2).some((p) => p.id === 'reception'));
 for (const p of getPremisesProps(2)) assert.ok(p.x > 0 && p.x < ROOM_W && p.y > 0 && p.y < ROOM_D, `${p.id} inside the room`);
 
 console.log('floor furnishings check passed');
+
+// Flight case floor stack: tiers map to looks and the stack caps what it draws.
+import { buildCaseStack, caseLookForTier, MAX_VISIBLE_CASES } from '../src/components/studio/studioCaseStack';
+assert.equal(caseLookForTier('standard'), 'road');
+assert.equal(caseLookForTier('cardboard_box'), 'cardboard');
+assert.equal(caseLookForTier('holy_grail_vault'), 'vault');
+assert.equal(caseLookForTier('vintage_flight_case'), 'vintage');
+assert.equal(buildCaseStack([], 0xffffff), null, 'no pending cases, no stack');
+assert.ok(buildCaseStack(['road_case'], 0xffffff)!.hit.length >= 6);
+assert.ok(MAX_VISIBLE_CASES >= 2);
+console.log('case stack check passed');

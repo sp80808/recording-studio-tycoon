@@ -37,6 +37,7 @@ const HOTSPOT_NAMES: Record<StudioHotspotId, string> = {
   clock: 'Studio Clock',
   door: 'Studio Door',
   promotion: 'Phone & Ring Light',
+  cases: 'Flight Cases',
 };
 
 interface StudioRoomProps {
@@ -46,6 +47,8 @@ interface StudioRoomProps {
   onStartProject?: (project: Project) => void;
   onAssignStaff?: (staffId: string) => void;
   onUnassignStaff?: (staffId: string) => void;
+  /** Opens the Flight Case Depot (diegetic: tap the case stack on the floor). */
+  onOpenCases?: () => void;
   onOpenDashboardTab?: (tab: 'studio' | 'skills' | 'bands' | 'charts' | 'staff') => void;
   onConsoleFocus: () => void;
   onCompleteChore?: (hotspot: StudioHotspotId) => boolean;
@@ -72,6 +75,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
   onAssignStaff,
   onUnassignStaff,
   onOpenDashboardTab,
+  onOpenCases,
   onConsoleFocus,
   onCompleteChore,
   activeChoreId,
@@ -211,6 +215,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       eraId: eraDecor.eraId,
       roomTier,
       premisesTier: gameState.premisesTier ?? 0,
+      pendingCases: (gameState.pendingCrates ?? []).map((c) => c.tier),
       trophies: getTrophyInput(gameState),
       decorSeed: String(gameState.saveSeed ?? 'studio'),
       enquiryWaiting: gameState.availableProjects.length > 0,
@@ -222,13 +227,18 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           project.rider?.items.some((item) => item.kind === 'beer'),
       ),
     };
-  }, [gameState.activeProject, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, eraDecor.eraId, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, gameState.playerData, gameState.availableProjects.length, gameState.choreState, gameState.premisesTier, roomTier, floorFocused, activeInspector]);
+  }, [gameState.activeProject, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, eraDecor.eraId, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, gameState.playerData, gameState.availableProjects.length, gameState.choreState, gameState.premisesTier, gameState.pendingCrates, roomTier, floorFocused, activeInspector]);
 
   /**
    * Diegetic floor routes: pending chores always run the chore flow first.
    * Console + live room open the session work panel only when no duty remains.
    */
   const handleHotspot = (id: StudioHotspotId | string) => {
+    if (id === 'cases') {
+      if (settings.sfxEnabled) void gameAudio.playLatch();
+      onOpenCases?.();
+      return;
+    }
     const canonical = (normalizeHotspotId(id) ?? id) as StudioHotspotId;
     if (canonical === 'promotion' && eraDecor.prop !== 'led-strip') return;
     if (settings.sfxEnabled) {

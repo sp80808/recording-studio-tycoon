@@ -46,6 +46,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { resolveRendererOrder } from '@/lib/render/rendererChoice';
 import { claimPixiApplication, STUDIO_FLOOR_OWNER } from '@/lib/motion/pixiGuard';
 import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from '@/components/studio/isoMath';
+import { buildCaseStack, CASE_STACK_TILE, type CaseStack } from '@/components/studio/studioCaseStack';
 import { buildWindowView, type WindowView } from '@/components/studio/studioWindowView';
 import { buildPremisesDecor } from '@/components/studio/studioPremisesDecor';
 import { buildFurnishingLayer, type StudioCat } from '@/components/studio/studioFloorFurnishings';
@@ -207,7 +208,7 @@ export const calculateTapeSaturationWarmth = (
 /**
  * Studio hotspots the player can click in the isometric room scene.
  */
-export type StudioHotspotId = 'console' | 'liveRoom' | 'phone' | 'clock' | 'tv' | 'shelf' | 'door' | 'promotion';
+export type StudioHotspotId = 'console' | 'liveRoom' | 'phone' | 'clock' | 'tv' | 'shelf' | 'door' | 'promotion' | 'cases';
 
 /**
  * Draw-order bands inside the room. Floor, walls and big fixed furniture keep add order at `world`;
@@ -265,6 +266,8 @@ export interface StudioSceneState {
   roomTier?: number;
   /** Premises tier (#70): 1 adds the client bench + storage rack, 2 adds reception, water cooler and a second rack. */
   premisesTier?: number;
+  /** Tier ids of earned, unopened flight cases (drives the floor stack). */
+  pendingCases?: string[];
   /** Completed-project album covers hung above the booth (from financials.reports). */
   trophies?: TrophyInput;
   /** Stable per-run seed so plank layout / motes are identical across rebuilds. */
@@ -507,6 +510,8 @@ interface SceneRefs {
   windowPanePoly: number[] | null;
   /** Sun, moon, stars and city lights seen through the window. */
   windowView: WindowView | null;
+  /** Earned flight cases waiting on the floor; tapping opens the depot. */
+  caseStack: CaseStack | null;
   setWindowSky: ((color: number) => void) | null;
   hoverGlows: Record<string, Graphics>;
   hoverGlowTargets: Record<string, number>;
@@ -606,6 +611,7 @@ const buildScene = (
     windowPane: null,
     windowPanePoly: null,
     windowView: null,
+    caseStack: null,
     setWindowSky: null,
     hoverGlows: {},
     hoverGlowTargets: {},
@@ -912,6 +918,15 @@ const buildScene = (
   /* ---- Live room booth: enclosed (walls, roof, header, foam, glass front) ---- */
   const liveWrap = buildLiveBooth();
   if (kitTextures) addStudioProps(root, kitTextures, tier, visualEraId(state.eraId ?? 'analog60s'));
+  {
+    const stack = buildCaseStack(state.pendingCases ?? [], grade.accent);
+    if (stack) {
+      const o = iso(CASE_STACK_TILE.x, CASE_STACK_TILE.y);
+      const hit = new Graphics().poly(stack.hit.map((v, i) => v + (i % 2 === 0 ? o.x : o.y))).fill(0xffffff);
+      addHotspot(root, 'cases', hit, stack.container, refs, onSelect, Z.depth + o.y + 2);
+      refs.caseStack = stack;
+    }
+  }
   for (const prop of buildPremisesDecor(state.premisesTier ?? 0, grade.accent)) {
     prop.container.zIndex = Z.depth + prop.y;
     root.addChild(prop.container);
@@ -1829,7 +1844,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   const producerLookKey = state?.producerNpc
     ? [state.producerNpc.hair.shape, state.producerNpc.hair.colour, state.producerNpc.body.build, state.producerNpc.clothes.topPrimaryHex].join(':')
     : '';
-  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${producerLookKey}|${floorKey}|${state?.staffOnFloor ?? 1}|${gearKey}|${gearConditionKey(state?.gearConditions)}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${state?.premisesTier ?? 0}|${trophyKey(state?.trophies ?? { covers: [] })}|${state?.decorSeed ?? 'studio'}`;
+  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${producerLookKey}|${floorKey}|${state?.staffOnFloor ?? 1}|${gearKey}|${gearConditionKey(state?.gearConditions)}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${state?.premisesTier ?? 0}|${(state?.pendingCases ?? []).join(',')}|${trophyKey(state?.trophies ?? { covers: [] })}|${state?.decorSeed ?? 'studio'}`;
 
   // Rebuild the room (new window size or layout change)
   const rebuild = () => {
@@ -2638,6 +2653,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             }
 
             refs.windowView?.update(minutesOfDay, dayness, t, reduceMotion);
+            refs.caseStack?.update(t, reduceMotion);
 
             if (refs.nightTintLayer) {
               refs.nightTintLayer.alpha = getNightTintAlpha(dayness);
