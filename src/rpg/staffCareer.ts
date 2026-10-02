@@ -252,6 +252,7 @@ export function completeCrossTraining<S extends Parameters<typeof getStaffCareer
 
 // ---- Mentorship (#67): pays only while the mentor is actually working or training ----
 
+export const APPRENTICE_XP_SCALE = 1.25;
 export const MENTOR_JUNIOR_SCALE = 1.3;
 export const MENTOR_COST_SCALE = 0.85;
 
@@ -284,11 +285,13 @@ export function stopMentoringInState<G extends { hiredStaff: StaffMember[] }>(st
 /** XP scale for a staff member being credited right now. Nobody working = no bonus, so no passive XP. */
 export function mentorshipScale(staff: StaffMember, all: StaffMember[]): number {
   const career = getStaffCareer(staff);
+  // Apprentices (College Placement) learn faster while the active discipline is still below level 3.
+  const apprentice = staff.apprentice && experienceIn(career, career.activeDiscipline).level < 3 ? APPRENTICE_XP_SCALE : 1;
   if (career.mentorId) {
     const mentor = all.find((s) => s.id === career.mentorId);
-    if (mentorActive(mentor)) return MENTOR_JUNIOR_SCALE;
+    if (mentorActive(mentor)) return MENTOR_JUNIOR_SCALE * apprentice;
   }
   // A mentor with a mentee pays a small price on their own sessions.
   if (all.some((s) => s.id !== staff.id && getStaffCareer(s).mentorId === staff.id)) return MENTOR_COST_SCALE;
-  return 1;
+  return apprentice;
 }
