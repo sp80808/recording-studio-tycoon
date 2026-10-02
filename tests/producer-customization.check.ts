@@ -17,7 +17,7 @@ import { generateModularNpc } from '../src/features/sprites/npcGenerator';
 import { AVAILABLE_ERAS } from '../src/data/eras';
 
 const era = AVAILABLE_ERAS.find((e) => e.id === 'golden_age')!;
-const look: ProducerAppearance = { seed: 42, build: 'average', hair: 'long_wavy', hairColour: 'auburn', clothesColour: 'teal', accessory: 'flat_cap' };
+const look: ProducerAppearance = { seed: 42, build: 'average', hair: 'long_wavy', hairColour: 'auburn', clothesColour: 'teal', accessory: 'flat_cap', skinTone: 'tan', shirt: 'band_tee', pants: 'denim_jeans', shoes: 'vintage_sneakers' };
 const start = (extra: Record<string, unknown> = {}) =>
   createNewGameState({
     startingMoney: era.startingMoney, selectedEra: era.id, eraStartYear: era.startYear,
