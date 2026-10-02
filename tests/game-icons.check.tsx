@@ -10,7 +10,7 @@ for (const g of genres) {
 }
 if (genreKey('Hip Hop') !== 'hip-hop') throw new Error('genreKey normalisation');
 if (genreKey('unknown-genre') !== 'pop') throw new Error('genreKey fallback');
-for (const n of ['energy','combo','bank','mood','goal','chartUp','unlock','check'] as const) {
-  if (!renderToStaticMarkup(<StatIcon name={n} />).includes('<path') && n !== 'mood' && n !== 'goal') throw new Error(`stat icon ${n}`);
+for (const n of ['energy','combo','bank','mood','goal','chartUp','unlock','check','cash','creativity','technical','flame','bulb','sparkle','phone','note','pad','party','users'] as const) {
+  if (!renderToStaticMarkup(<StatIcon name={n} />).includes('<path') && n !== 'mood' && n !== 'goal' && n !== 'bulb' && n !== 'cash') throw new Error(`stat icon ${n}`);
 }
 console.log('game-icons check passed');

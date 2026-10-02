@@ -83,7 +83,7 @@ export const GenreIcon: React.FC<IconProps & { genre: string; tint?: boolean }> 
   );
 };
 
-export type StatIconName = 'energy' | 'combo' | 'bank' | 'mood' | 'goal' | 'chartUp' | 'unlock' | 'check';
+export type StatIconName = 'energy' | 'combo' | 'bank' | 'mood' | 'goal' | 'chartUp' | 'unlock' | 'check' | 'cash' | 'creativity' | 'technical' | 'flame' | 'bulb' | 'sparkle' | 'phone' | 'note' | 'pad' | 'party' | 'users';
 
 const STAT_PATHS: Record<StatIconName, React.ReactNode> = {
   energy: <path d="M13 2L4 14h7l-1 8 9-12h-7z" fill="currentColor" />,
@@ -94,6 +94,17 @@ const STAT_PATHS: Record<StatIconName, React.ReactNode> = {
   chartUp: (<><path d="M3 17l6-6 4 4 8-9" /><path d="M15 6h6v6" /></>),
   unlock: (<><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 017.5-2" /></>),
   check: <path d="M5 12.500l4.500 4.500L19 7.500" />,
+  cash: (<><rect x="2.500" y="6" width="19" height="12" rx="2" /><circle cx="12" cy="12" r="2.800" /><path d="M6 9.500v.01M18 14.500v.01" /></>),
+  creativity: (<><path d="M12 3a9 9 0 100 18c1.500 0 2-1 1.500-2s0-2 1.500-2h2A3.500 3.500 0 0021 10.500C21 6.400 17 3 12 3z" /><path d="M7.500 11v.01M10 7.500v.01M14.500 7.500v.01" /></>),
+  technical: (<><circle cx="12" cy="12" r="3" /><path d="M12 2.500v3M12 18.500v3M2.500 12h3M18.500 12h3M5.300 5.300l2.100 2.100M16.600 16.600l2.100 2.100M18.700 5.300l-2.100 2.100M7.400 16.600l-2.100 2.100" /></>),
+  flame: <path d="M12 22c4 0 7-2.800 7-7 0-3-2-5-3.500-7-.4 2-1.500 3-3 3 .5-3-1-6-3.500-8-.5 3-4 5.500-4 11 0 4.200 3 8 7 8z" />,
+  bulb: (<><path d="M9 18h6M10 21h4" /><path d="M12 3a6 6 0 00-3.500 10.900c.6.5 1 1.200 1 2.100h5c0-.9.4-1.600 1-2.100A6 6 0 0012 3z" /></>),
+  sparkle: <path d="M12 3l1.800 5.200L19 10l-5.200 1.800L12 17l-1.800-5.200L5 10l5.200-1.800z" />,
+  phone: (<><rect x="7" y="2.500" width="10" height="19" rx="2" /><path d="M11 18.500h2" /></>),
+  note: (<><path d="M9 18V5l10-2v13" /><circle cx="6.500" cy="18" r="2.500" /><circle cx="16.500" cy="16" r="2.500" /></>),
+  pad: (<><rect x="3" y="8" width="18" height="9" rx="4" /><path d="M8 11v3M6.500 12.500h3M15.500 11.500v.01M17.500 13.500v.01" /></>),
+  party: (<><path d="M4 21l4-12 8 8z" /><path d="M14 4v2M19 9h2M17 6l1.500-1.500M10 3v.01" /></>),
+  users: (<><circle cx="9" cy="8" r="3.500" /><path d="M2.500 20a6.500 6.500 0 0113 0" /><path d="M16 5a3.500 3.500 0 010 7M18 20a6.500 6.500 0 00-2-4.700" /></>),
 };
 
 export const StatIcon: React.FC<IconProps & { name: StatIconName }> = ({ name, ...p }) => (
