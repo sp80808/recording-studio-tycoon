@@ -198,7 +198,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   return (
     <>
       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <Card className="w-full max-w-3xl bg-stone-950 border-stone-700/80 shadow-2xl p-6 max-h-[90vh] flex flex-col overflow-hidden text-stone-100">
+        <Card className="w-full max-w-3xl bg-stone-950 border-stone-700/80 shadow-2xl p-4 sm:p-6 max-h-[92dvh] flex flex-col overflow-hidden text-stone-100">
           {/* Header */}
           <div className="flex justify-between items-center pb-4 border-b border-stone-800">
             <div>
@@ -217,10 +217,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex gap-1.5 pt-3 pb-3 border-b border-stone-800/80 overflow-x-auto select-none">
+          <div className="grid grid-cols-3 sm:flex gap-1.5 pt-3 pb-3 border-b border-stone-800/80 sm:overflow-x-auto select-none">
             <button
               onClick={() => setActiveTab('audio')}
-              className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+              className={`px-2 sm:px-3.5 py-1.5 min-h-11 sm:min-h-0 justify-center sm:justify-start rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'audio'
                   ? 'bg-amber-400/[0.16] ring-1 ring-inset ring-amber-400/50 text-amber-100'
                   : 'bg-stone-900/80 text-stone-400 hover:text-white hover:bg-stone-800'
@@ -230,7 +230,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('graphics')}
-              className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+              className={`px-2 sm:px-3.5 py-1.5 min-h-11 sm:min-h-0 justify-center sm:justify-start rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'graphics'
                   ? 'bg-amber-400/[0.16] ring-1 ring-inset ring-amber-400/50 text-amber-100'
                   : 'bg-stone-900/80 text-stone-400 hover:text-white hover:bg-stone-800'
@@ -240,7 +240,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('gameplay')}
-              className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+              className={`px-2 sm:px-3.5 py-1.5 min-h-11 sm:min-h-0 justify-center sm:justify-start rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'gameplay'
                   ? 'bg-amber-400/[0.16] ring-1 ring-inset ring-amber-400/50 text-amber-100'
                   : 'bg-stone-900/80 text-stone-400 hover:text-white hover:bg-stone-800'
@@ -250,7 +250,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('accessibility')}
-              className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+              className={`px-2 sm:px-3.5 py-1.5 min-h-11 sm:min-h-0 justify-center sm:justify-start rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'accessibility'
                   ? 'bg-amber-400/[0.16] ring-1 ring-inset ring-amber-400/50 text-amber-100'
                   : 'bg-stone-900/80 text-stone-400 hover:text-white hover:bg-stone-800'
@@ -260,7 +260,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('system')}
-              className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
+              className={`px-2 sm:px-3.5 py-1.5 min-h-11 sm:min-h-0 justify-center sm:justify-start rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'system'
                   ? 'bg-amber-400/[0.16] ring-1 ring-inset ring-amber-400/50 text-amber-100'
                   : 'bg-stone-900/80 text-stone-400 hover:text-white hover:bg-stone-800'
@@ -574,6 +574,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       </button>
                     ))}
                   </div>
+                </div>
+
+                <div className="flex justify-between items-center bg-stone-900/50 p-4 rounded-lg border border-stone-800">
+                  <div>
+                    <label className="text-white font-medium text-sm">{t('settings_high_contrast', { defaultValue: 'High Contrast' })}</label>
+                    <p className="text-xs text-stone-400">{t('settings_high_contrast_hint', { defaultValue: 'Brighter secondary text and stronger borders on panels and menus' })}</p>
+                  </div>
+                  <Switch
+                    checked={settings.highContrast === true}
+                    onCheckedChange={(checked) => updateSettings({ highContrast: checked })}
+                  />
                 </div>
 
                 <div className="flex justify-between items-center bg-stone-900/50 p-4 rounded-lg border border-stone-800">

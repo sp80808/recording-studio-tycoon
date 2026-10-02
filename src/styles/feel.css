@@ -84,3 +84,12 @@ html[data-reduced-motion='true'] .feel-press,
 html[data-reduced-motion='true'] .feel-press:hover,
 html[data-reduced-motion='true'] .feel-press:active { transition: none; transform: none; }
 html[data-reduced-motion='true'] .feel-sheen::after { display: none; }
+
+/* High contrast (Settings > Accessibility): lift muted text and panel borders */
+html[data-high-contrast='true'] .text-stone-400,
+html[data-high-contrast='true'] .text-stone-500,
+html[data-high-contrast='true'] .text-stone-600 { color: #e7e5e4 !important; }
+html[data-high-contrast='true'] .text-stone-300 { color: #fafaf9 !important; }
+html[data-high-contrast='true'] .border-stone-800,
+html[data-high-contrast='true'] .border-stone-700,
+html[data-high-contrast='true'] .border-stone-700\/80 { border-color: #a8a29e !important; }

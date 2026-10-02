@@ -223,5 +223,19 @@
   "staff_modal_unassign_button": "Unassign",
   "staff_modal_stop_resting_button": "Stop Resting",
   "staff_modal_rest_button": "Rest",
-  "staff_modal_send_training_button": "Send to Training"
+  "staff_modal_send_training_button": "Send to Training",
+  "active_studio_ready": "Studio Ready",
+  "active_choose_enquiry": "Choose an artist enquiry, then bring their session into the room.",
+  "active_next_move": "Your next move:",
+  "active_step_browse": "Browse the Artist Enquiries board",
+  "active_step_book": "Book a session that fits your room and crew",
+  "active_step_return": "Return here to run the recording session",
+  "active_intervene": "Intervene",
+  "active_delegate": "Delegate",
+  "active_skip": "Skip",
+  "active_optional_intervention": "Optional Studio Intervention",
+  "active_stage_complete": "Stage Complete!",
+  "active_optimized": "Optimized",
+  "active_efficient": "Efficient",
+  "active_overall_progress": "Overall Track Progress"
 }

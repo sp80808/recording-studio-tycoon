@@ -13,6 +13,7 @@ import { AlertCircle, Users, Zap, Settings, Play, Pause, Plus, X } from 'lucide-
 import { GameState, Project, AutomationMode, AutomationSettings } from '@/types/game';
 import { useMultiProjectManagement } from '@/hooks/useMultiProjectManagement';
 import { calculateStaffProjectFit } from '@/utils/staffFitUtils';
+import { formatNumber } from '@/i18n/formatLocale';
 
 interface MultiProjectDashboardProps {
   gameState: GameState;
@@ -212,7 +213,7 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
                       <div>
                         <div className="font-medium">{project.title}</div>
                         <div className="text-sm text-stone-600">
-                          {project.genre} • ${project.payoutBase.toLocaleString()}
+                          {project.genre} • ${formatNumber(project.payoutBase)}
                         </div>
                       </div>
                       <Button

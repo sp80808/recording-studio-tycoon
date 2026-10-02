@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { GameState } from '@/types/game';
 import { getAvailableEquipmentForYear, getEraAdjustedPrice, EraAvailableEquipment } from '@/data/eraEquipment';
+import { formatNumber } from '@/i18n/formatLocale';
 
 interface EquipmentListProps {
   purchaseEquipment: (equipmentId: string) => void;
@@ -101,7 +102,7 @@ export const EquipmentList: React.FC<EquipmentListProps> = ({
                   </div>
                   <div className="text-right">
                     <div className={`font-bold text-sm ${canAfford ? 'text-green-400' : 'text-red-400'}`}>
-                      ${adjustedPrice.toLocaleString()}
+                      ${formatNumber(adjustedPrice)}
                     </div>
                     <Button
                       size="sm"

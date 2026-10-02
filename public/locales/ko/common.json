@@ -223,5 +223,19 @@
   "staff_modal_unassign_button": "배정 해제",
   "staff_modal_stop_resting_button": "휴식 중단",
   "staff_modal_rest_button": "휴식",
-  "staff_modal_send_training_button": "교육 보내기"
+  "staff_modal_send_training_button": "교육 보내기",
+  "active_studio_ready": "스튜디오 준비 완료",
+  "active_choose_enquiry": "아티스트 의뢰를 고른 뒤 세션을 스튜디오로 가져오세요.",
+  "active_next_move": "다음 할 일:",
+  "active_step_browse": "아티스트 의뢰 게시판 둘러보기",
+  "active_step_book": "방과 크루에 맞는 세션 예약하기",
+  "active_step_return": "여기로 돌아와 녹음 세션 진행하기",
+  "active_intervene": "개입",
+  "active_delegate": "위임",
+  "active_skip": "건너뛰기",
+  "active_optional_intervention": "선택적 스튜디오 개입",
+  "active_stage_complete": "단계 완료!",
+  "active_optimized": "최적화됨",
+  "active_efficient": "효율적",
+  "active_overall_progress": "트랙 전체 진행도"
 }

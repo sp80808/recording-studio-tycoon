@@ -223,5 +223,19 @@
   "staff_modal_unassign_button": "Quitar asignación",
   "staff_modal_stop_resting_button": "Dejar de descansar",
   "staff_modal_rest_button": "Descansar",
-  "staff_modal_send_training_button": "Enviar a formación"
+  "staff_modal_send_training_button": "Enviar a formación",
+  "active_studio_ready": "Estudio listo",
+  "active_choose_enquiry": "Elige una consulta de artista y lleva su sesión a la sala.",
+  "active_next_move": "Tu siguiente paso:",
+  "active_step_browse": "Consulta el tablón de artistas",
+  "active_step_book": "Reserva una sesión que encaje con tu sala y tu equipo",
+  "active_step_return": "Vuelve aquí para dirigir la sesión de grabación",
+  "active_intervene": "Intervenir",
+  "active_delegate": "Delegar",
+  "active_skip": "Omitir",
+  "active_optional_intervention": "Intervención opcional del estudio",
+  "active_stage_complete": "¡Fase completada!",
+  "active_optimized": "Optimizado",
+  "active_efficient": "Eficiente",
+  "active_overall_progress": "Progreso total de la pista"
 }

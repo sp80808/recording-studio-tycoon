@@ -59,6 +59,7 @@ export const defaultSettings: GameSettings = {
   reducedMotion: false,
   pocketMeterAssistance: 'normal',
   textScale: 'normal',
+  highContrast: false,
   hapticsEnabled: true,
   toastLevel: 'all',
   theme: 'default',

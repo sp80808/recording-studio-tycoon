@@ -46,6 +46,18 @@ ok(prev.sessions === 4 && prev.endDay === base.currentDay + 3, 'preview spans th
 ok(prev.payoutPerSlot === 225 && prev.payout === 900, 'preview shows total and per-slot payout');
 ok(prev.roomName === rooms[0].name, 'preview names the room');
 
+// Opportunity cost: utilization after booking and what is left.
+const emptyState = { ...base, activeProject: null, activeProjects: [] };
+const cost = previewBooking(emptyState, mk('c', r0, 3));
+const cap = rooms.length * SLOTS_PER_DAY * WINDOW_DAYS;
+ok(Math.abs(cost.utilizationAfter - 3 / cap) < 1e-9, 'utilization after booking adds one slot per working day');
+ok(cost.utilizationAfter > empty.utilization, 'booking raises utilization');
+ok(!!cost.nextFreeAfter && !(cost.nextFreeAfter.day === cost.firstSlot?.day && cost.nextFreeAfter.slot === cost.firstSlot?.slot && cost.nextFreeAfter.roomId === cost.firstSlot?.roomId), 'next free slot after booking skips the reserved one');
+const packed = Array.from({ length: SLOTS_PER_DAY * 3 }, (_, i) => mk(`f${i}`, r0, WINDOW_DAYS));
+const crowded = previewBooking({ ...base, activeProject: null, activeProjects: packed }, mk('z', r0, 2));
+ok(crowded.utilizationAfter <= 1 && (rooms.length > 1 || crowded.nextFreeAfter === undefined), 'a full room leaves no next free slot and utilization stays capped');
+ok(previewBooking(emptyState, mk('c', r0, 3)).utilizationAfter === cost.utilizationAfter, 'opportunity preview is deterministic');
+
 const frozen = JSON.stringify(base);
 buildBookingCalendar(base); previewBooking(base, a);
 ok(JSON.stringify(base) === frozen, 'calendar and preview never mutate state');
