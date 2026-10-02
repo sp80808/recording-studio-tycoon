@@ -216,6 +216,10 @@ export interface StaffMember {
   portraitSeed?: number;
   /** Optional creator piece IDs; see staffPortrait.ts integration notes. */
   pieceIds?: CreatorPieceIds;
+  /** Recruitment channel this candidate came from, with a plain-language reason (#68). */
+  source?: { channelId: string; label: string; why: string };
+  /** Hired through College Placement: develops faster at low levels (#68). */
+  apprentice?: boolean;
   /** Clickable CV for the recruitment portal. */
   cv?: StaffCurriculumVitae;
   skills: { // UPDATED as per core_loop_plan.md
@@ -377,6 +381,8 @@ export interface GameState {
   
   hiredStaff: StaffMember[];
   availableCandidates: StaffMember[];
+  /** Running recruitment search (#68). Absent on legacy saves = none. */
+  recruitmentSearch?: import('@/rpg/recruitment').RecruitmentSearch | null;
   lastSalaryDay: number;
   /** Day the gig list was last refreshed from the phone (bead goj.3 cooldown). */
   lastGigRefreshDay?: number;

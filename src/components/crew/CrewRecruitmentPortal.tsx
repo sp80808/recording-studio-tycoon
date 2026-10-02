@@ -1,19 +1,20 @@
 import { money } from '@/utils/displayMoney';
 import React, { useMemo, useState } from 'react';
-import { Briefcase, MapPin, Sparkles, Users, FileText, RefreshCw, Battery } from 'lucide-react';
+import { Briefcase, MapPin, Sparkles, Users, FileText, Battery } from 'lucide-react';
 import type { GameState, StaffMember } from '@/types/game';
 import { KenneyButton } from '@/components/ui/KenneyButton';
 import { calculateStaffProjectFit } from '@/utils/staffFitUtils';
 import { getEnergyColor, getStaffStatusColor } from '@/utils/staffUtils';
 import { StaffPortrait } from '@/components/crew/StaffPortrait';
 import { getHiringLimits, hiringBlockMessage, type HiringLimits } from '@/rpg/hiringLimits';
+import { RECRUITMENT_CHANNELS, CHANNEL_ORDER, searchBlocker, getRecruitmentSearch, channelCandidateCount, type RecruitmentChannelId } from '@/rpg/recruitment';
 import { gameAudio } from '@/utils/audioSystem';
 import { DISCIPLINE_LABEL, getPromotionOffer, getStaffCareer, experienceIn, crossTrainOptions, canMentor, type StaffDiscipline } from '@/rpg/staffCareer';
 
 interface CrewRecruitmentPortalProps {
   gameState: GameState;
   hireStaff: (candidateIndex: number) => boolean;
-  refreshCandidates: () => void;
+  refreshCandidates: (channelId?: import('@/rpg/recruitment').RecruitmentChannelId) => void;
   assignStaffToProject: (staffId: string) => void;
   unassignStaffFromProject: (staffId: string) => void;
   toggleStaffRest: (staffId: string) => void;
@@ -99,18 +100,7 @@ export const CrewRecruitmentPortal: React.FC<CrewRecruitmentPortalProps> = ({
         </div>
       )}
 
-      {view === 'board' && (
-        <KenneyButton
-          onClick={() => { void gameAudio.playGearSwitch(0.25); refreshCandidates(); }}
-          variant={gameState.money >= 50 ? 'green' : 'grey'}
-          size="md"
-          className="w-full"
-          disabled={gameState.money < 50}
-        >
-          <RefreshCw size={14} className="inline mr-2" />
-          {gameState.money >= 50 ? 'Post a fresh search · $50' : 'Need $50 to refresh listings'}
-        </KenneyButton>
-      )}
+      {view === 'board' && <SearchChannels gameState={gameState} onSearch={refreshCandidates} />}
 
       <div className="crew-portal__layout">
         <section className="crew-portal__list" aria-label={view === 'board' ? 'Open candidates' : 'Hired crew'}>
@@ -118,7 +108,7 @@ export const CrewRecruitmentPortal: React.FC<CrewRecruitmentPortalProps> = ({
             gameState.availableCandidates.length === 0 ? (
               <div className="crew-portal__empty">
                 <Users className="mx-auto mb-2 opacity-40" />
-                No applicants on the board. Refresh the search to pull era-matched talent.
+                No applicants on the board. Choose a search above to bring in talent.
               </div>
             ) : (
               gameState.availableCandidates.map((candidate, index) => {
@@ -143,6 +133,11 @@ export const CrewRecruitmentPortal: React.FC<CrewRecruitmentPortalProps> = ({
                       <p className="text-[11px] text-stone-400 mt-1 line-clamp-2">
                         {candidate.cv?.headline ?? 'Studio professional seeking a room that listens.'}
                       </p>
+                      {candidate.source && (
+                        <p className="text-[10px] text-sky-300 mt-1" data-testid="candidate-source">
+                          {candidate.apprentice ? 'Apprentice · ' : ''}{candidate.source.why}
+                        </p>
+                      )}
                       <div className="mt-2 flex items-center gap-2 text-[10px] text-stone-500">
                         <FileText size={11} /> View CV
                         <span className="ml-auto text-stone-400">Sign ${fee}</span>
@@ -366,6 +361,38 @@ const CvBlock: React.FC<{ title: string; items: string[] }> = ({ title, items })
     </ul>
   </div>
 );
+
+const SearchChannels: React.FC<{ gameState: GameState; onSearch: (id: RecruitmentChannelId) => void }> = ({ gameState, onSearch }) => {
+  const running = getRecruitmentSearch(gameState);
+  return (
+    <div className="space-y-1" data-testid="recruitment-channels" aria-label="Choose a search">
+      <h4 className="text-xs font-semibold text-stone-300">Choose a search</h4>
+      {running && (
+        <p className="text-[11px] text-amber-200" role="status">
+          {RECRUITMENT_CHANNELS[running.channelId].name} reports back on day {running.resolvesDay}.
+        </p>
+      )}
+      {CHANNEL_ORDER.map(id => {
+        const ch = RECRUITMENT_CHANNELS[id];
+        const blocker = searchBlocker(gameState, id);
+        return (
+          <KenneyButton
+            key={id}
+            onClick={() => { void gameAudio.playGearSwitch(0.25); onSearch(id); }}
+            variant={blocker ? 'grey' : 'green'}
+            size="sm"
+            className="w-full text-left"
+            disabled={!!blocker}
+            title={ch.blurb}
+          >
+            {ch.name} · {money(ch.cost)} · {channelCandidateCount(gameState, id)} candidates · {ch.days} day{ch.days === 1 ? '' : 's'}
+            {blocker ? ` — ${blocker}` : ''}
+          </KenneyButton>
+        );
+      })}
+    </div>
+  );
+};
 
 const SENIORITY_LABEL = { junior: 'Junior', regular: 'Regular', senior: 'Senior', lead: 'Lead' } as const;
 

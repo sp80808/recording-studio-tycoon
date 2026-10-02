@@ -3,6 +3,7 @@ import { refreshGearForDay } from '@/features/usedGear/economy';
 
 import { useCallback } from 'react';
 import { GameNotification, GameState } from '@/types/game';
+import { resolveRecruitmentSearchInState, searchBlocker, startRecruitmentSearchInState, RECRUITMENT_CHANNELS, type RecruitmentChannelId } from '@/rpg/recruitment';
 import { generateCandidates, generateNewProjects } from '@/utils/projectUtils';
 import { toast } from '@/hooks/use-toast';
 import { 
@@ -324,6 +325,9 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       }));
     }
 
+    // Recruitment search (#68): a due search resolves into the shortlist, after the free day-roll batch.
+    setGameState(prev => resolveRecruitmentSearchInState(prev, newDay));
+
     completedTraining.forEach(message => {
       gameAudio.playUISound('trainingComplete');
       toast({
@@ -343,39 +347,27 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     });
   }, [gameState, setGameState]);
 
-  const refreshCandidates = useCallback(() => {
-    const cost = 50;
-    if (gameState.money < cost) {
+  /** Start a recruitment search on a channel (#68). The shortlist arrives when the search resolves. */
+  const refreshCandidates = useCallback((channelId: RecruitmentChannelId = 'referral') => {
+    const blocker = searchBlocker(gameState, channelId);
+    if (blocker) {
       gameAudio.playUISound('unavailable');
       toast({
-        title: "💰 Insufficient Funds",
-        description: `Need ${money(cost)} to refresh candidate list.`,
+        title: "🔎 Search Unavailable",
+        description: `${RECRUITMENT_CHANNELS[channelId].name}: ${blocker}.`,
         className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive"
       });
       return;
     }
-
-    setGameState(prev => ({
-      ...spend(prev, cost, { category: 'marketing', memo: 'Candidate search' }),
-      availableCandidates: generateCandidates({
-        count: premisesCandidateCount(prev),
-        saveSeed: prev.saveSeed ?? 4242,
-        day: prev.currentDay,
-        era: prev.selectedEra || prev.currentEra,
-        year: prev.currentYear,
-        cityId: prev.cityId,
-        batchKey: `refresh:${prev.currentDay}:${prev.availableCandidates.map(c => c.id).join(',')}`,
-      })
-    }));
-
-    gameAudio.playUISound('notice');
+    setGameState(prev => startRecruitmentSearchInState(prev, channelId));
+    const ch = RECRUITMENT_CHANNELS[channelId];
     toast({
-      title: "👥 New Candidates Found",
-      description: "Fresh talent is now available for hire!",
+      title: "🔎 Search Started",
+      description: `${ch.name} reports back in ${ch.days} day${ch.days === 1 ? '' : 's'}.`,
       className: "bg-stone-800 border-stone-600 text-white",
     });
-  }, [gameState.money, setGameState]);
+  }, [gameState, setGameState]);
 
   /**
    * Chase fresh gig offers (bead goj.3): costs $50 and has a 3-day cooldown so
