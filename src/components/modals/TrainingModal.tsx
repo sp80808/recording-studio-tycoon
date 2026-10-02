@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { StaffMember, GameState } from '@/types/game';
 import { availableTrainingCourses } from '@/data/training';
+import { courseTeacherBlocker } from '@/rpg/staffCareer';
 import { createInitialKnowHow, describeKnowHowGate, meetsKnowHowGate } from '@/rpg/studioKnowHow';
 
 interface TrainingModalProps {
@@ -74,12 +75,18 @@ export const TrainingModal: React.FC<TrainingModalProps> = ({
                 )}
               </div>
               
+              {course.careerXp && course.careerDiscipline && (
+                <div className="text-xs text-sky-300 mb-2">Career: +{course.careerXp} {course.careerDiscipline} experience</div>
+              )}
+              {courseTeacherBlocker(course, gameState.hiredStaff, staff.id) && (
+                <div className="text-xs text-amber-300 mb-2">{courseTeacherBlocker(course, gameState.hiredStaff, staff.id)}</div>
+              )}
               <Button 
                 onClick={() => {
                   sendStaffToTraining(staff.id, course.id);
                   onClose();
                 }}
-                disabled={gameState.money < course.cost || staff.status !== 'Idle' || (!!course.knowHow && !meetsKnowHowGate(knowHow, course.knowHow))}
+                disabled={!!courseTeacherBlocker(course, gameState.hiredStaff, staff.id) || gameState.money < course.cost || staff.status !== 'Idle' || (!!course.knowHow && !meetsKnowHowGate(knowHow, course.knowHow))}
                 className="w-full bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] disabled:bg-stone-600"
               >
                 {course.knowHow && !meetsKnowHowGate(knowHow, course.knowHow) ? describeKnowHowGate(knowHow, course.knowHow) :

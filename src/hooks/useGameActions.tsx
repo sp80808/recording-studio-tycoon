@@ -22,7 +22,7 @@ import { RandomEvent } from '@/game-mechanics/random-events';
 import { freshDailyTracking } from '@/utils/dailyChallenges';
 import { gameAudio } from '@/utils/audioSystem';
 import { triggerScreenShake } from '@/utils/screenShake';
-import { parseCrossTrainCourse, completeCrossTraining } from '@/rpg/staffCareer';
+import { parseCrossTrainCourse, completeCrossTraining, applyCourseCareerXp } from '@/rpg/staffCareer';
 import {
   createInitialChoreState,
   refreshDailyChores,
@@ -91,6 +91,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
         };
         const crossDiscipline = parseCrossTrainCourse(staff.trainingCourse);
         if (crossDiscipline) updatedStaffMember = completeCrossTraining(updatedStaffMember, crossDiscipline);
+        else updatedStaffMember = applyCourseCareerXp(updatedStaffMember, availableTrainingCourses.find(c => c.id === staff.trainingCourse) ?? {});
       }
       if (staff.status === 'Researching' && staff.researchEndDay && staff.researchingModId && newDay >= staff.researchEndDay) {
         const mod = availableMods.find(m => m.id === staff.researchingModId);

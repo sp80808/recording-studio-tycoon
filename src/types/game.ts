@@ -324,6 +324,11 @@ export interface TrainingCourse {
   knowHow?: import('@/rpg/studioKnowHow').KnowHowGate;
   /** Domain that completing this course teaches. */
   domain?: import('@/rpg/studioKnowHow').KnowHowDomain;
+  /** Discipline XP this course adds to the trainee's career on completion (#67). */
+  careerDiscipline?: import('@/rpg/staffCareer').StaffDiscipline;
+  careerXp?: number;
+  /** Staff-driven unlock (#67): needs a senior in this discipline on staff to teach it. */
+  taughtBySenior?: import('@/rpg/staffCareer').StaffDiscipline;
 }
 
 import { Band, SessionMusician, OriginalTrackProject } from './bands';

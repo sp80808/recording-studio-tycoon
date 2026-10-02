@@ -48,7 +48,7 @@ const SENIOR_TITLE: Record<StaffDiscipline, string> = {
   recording: 'Senior Recording Engineer', mixing: 'Senior Mix Engineer', production: 'Lead Producer', technical: 'Studio Technical Lead',
 };
 
-const levelFor = (xp: number): CareerExperience['level'] => {
+export const levelFor = (xp: number): CareerExperience['level'] => {
   let level = 0;
   for (let i = 1; i < CAREER_LEVEL_XP.length; i++) if (xp >= CAREER_LEVEL_XP[i]) level = i;
   return level as CareerExperience['level'];
@@ -294,4 +294,30 @@ export function mentorshipScale(staff: StaffMember, all: StaffMember[]): number 
   // A mentor with a mentee pays a small price on their own sessions.
   if (all.some((s) => s.id !== staff.id && getStaffCareer(s).mentorId === staff.id)) return MENTOR_COST_SCALE;
   return apprentice;
+}
+
+// ---- Courses feed careers; some courses need a senior to teach them (#67) ----
+
+type CourseLike = { careerDiscipline?: StaffDiscipline; careerXp?: number; taughtBySenior?: StaffDiscipline };
+
+/** Why a course can't run right now for lack of a teacher, or null. A senior can't teach themselves. */
+export function courseTeacherBlocker(course: CourseLike, staff: StaffMember[], studentId: string): string | null {
+  const d = course.taughtBySenior;
+  if (!d) return null;
+  const teacher = staff.some((s) => s.id !== studentId
+    && SENIORITY_ORDER.indexOf(getStaffCareer(s).seniority) >= 2
+    && getStaffCareer(s).activeDiscipline === d);
+  return teacher ? null : `Needs a senior ${DISCIPLINE_LABEL[d].toLowerCase()} specialist on staff to teach it`;
+}
+
+/** Add the course's discipline XP to the trainee. Experience only grows. */
+export function applyCourseCareerXp<S extends Parameters<typeof getStaffCareer>[0]>(staff: S, course: CourseLike): S {
+  if (!course.careerDiscipline || !course.careerXp) return staff;
+  const career = getStaffCareer(staff);
+  const experience = career.experience.map((e) => {
+    if (e.discipline !== course.careerDiscipline) return e;
+    const xp = e.xp + course.careerXp!;
+    return { ...e, xp, level: levelFor(xp) };
+  });
+  return { ...staff, career: { ...career, experience } };
 }
