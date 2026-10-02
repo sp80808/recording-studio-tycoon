@@ -53,7 +53,7 @@ interface MainGameContentProps {
   advanceDay: () => void;
   purchaseEquipment: (equipmentId: string) => void;
   hireStaff: (candidateIndex: number) => boolean;
-  refreshCandidates: () => void;
+  refreshCandidates: (channelId?: import('@/rpg/recruitment').RecruitmentChannelId) => void;
   assignStaffToProject: (staffId: string) => void;
   unassignStaffFromProject: (staffId: string) => void;
   toggleStaffRest: (staffId: string) => void;
