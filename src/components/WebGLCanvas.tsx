@@ -48,6 +48,7 @@ import { claimPixiApplication, STUDIO_FLOOR_OWNER } from '@/lib/motion/pixiGuard
 import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from '@/components/studio/isoMath';
 import { buildCaseStack, CASE_STACK_TILE, type CaseStack } from '@/components/studio/studioCaseStack';
 import { buildWindowView, type WindowView } from '@/components/studio/studioWindowView';
+import { buildLightShaft, type LightShaft } from '@/components/studio/studioLightShaft';
 import { buildPremisesDecor } from '@/components/studio/studioPremisesDecor';
 import { buildFurnishingLayer, type StudioCat } from '@/components/studio/studioFloorFurnishings';
 import {
@@ -512,6 +513,7 @@ interface SceneRefs {
   windowView: WindowView | null;
   /** Earned flight cases waiting on the floor; tapping opens the depot. */
   caseStack: CaseStack | null;
+  lightShaft: LightShaft | null;
   setWindowSky: ((color: number) => void) | null;
   hoverGlows: Record<string, Graphics>;
   hoverGlowTargets: Record<string, number>;
@@ -612,6 +614,7 @@ const buildScene = (
     windowPanePoly: null,
     windowView: null,
     caseStack: null,
+    lightShaft: null,
     setWindowSky: null,
     hoverGlows: {},
     hoverGlowTargets: {},
@@ -926,6 +929,13 @@ const buildScene = (
       addHotspot(root, 'cases', hit, stack.container, refs, onSelect, Z.depth + o.y + 2);
       refs.caseStack = stack;
     }
+  }
+  {
+    const shaft = buildLightShaft(hashSeed(decorSeed));
+    shaft.container.zIndex = Z.world + 2;
+    shaft.update(getWallClockTime(state.day, 0).minutesOfDay, 0, false);
+    root.addChild(shaft.container);
+    refs.lightShaft = shaft;
   }
   for (const prop of buildPremisesDecor(state.premisesTier ?? 0, grade.accent)) {
     prop.container.zIndex = Z.depth + prop.y;
@@ -2654,6 +2664,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
 
             refs.windowView?.update(minutesOfDay, dayness, t, reduceMotion);
             refs.caseStack?.update(t, reduceMotion);
+            refs.lightShaft?.update(minutesOfDay, t, reduceMotion);
 
             if (refs.nightTintLayer) {
               refs.nightTintLayer.alpha = getNightTintAlpha(dayness);
