@@ -4,6 +4,7 @@ import { lastTake, nodOffset } from '@/utils/takeFeedback';
 import React, { useEffect, useRef } from 'react';
 import { AnimatedSprite, Application, Container, Graphics, Matrix, Rectangle, Sprite, Text, type Renderer } from 'pixi.js';
 import { applyReelState, buildReelTextures, createReelSprite } from '@/features/gearStudio/gearSpriteAnimation';
+import { STATUS_LED_HEX, gearAttention, gearVisualKey, getConsoleTierGear, statusLedColor, tubeGlowLevel } from '@/features/gearStudio/consoleTierGear';
 import { dimTint, gearConditionKey, shelfConditionStyle, toSpriteVisualState } from '@/features/gearStudio/gearVisualState';
 import { getPropTexture, loadPropSprites } from '@/components/studio/propSprites';
 import {
@@ -517,8 +518,11 @@ interface SceneRefs {
   candleDrinkBaseY: number;
   /** Rider beers on the candle table — visible during sessions with a beer ask. */
   candleBeers: Container | null;
-  /** Tier-1 tape machine reels (Pixi AnimatedSprite, #81); empty on other tiers. */
+  /** Tape machine reels (Pixi AnimatedSprite, #81): tier 1 baked machine, tiers 2-5 outboard deck. */
   reels: AnimatedSprite[];
+  /** Tier 2-5 outboard deck: valve glow lamps and status LEDs, restyled only when state changes (#81). */
+  gearTubes: Graphics[];
+  gearLeds: Graphics[];
 }
 
 interface BuiltScene {
@@ -607,6 +611,8 @@ const buildScene = (
     candleDrinkBaseY: 0,
     candleBeers: null,
     reels: [],
+    gearTubes: [],
+    gearLeds: [],
   };
 
   // Era colour grade + studio tier drive the room's look (beads goj.3 / ifx.3)
@@ -1309,6 +1315,53 @@ const buildScene = (
     }
   }
   deskWrap.addChild(channelG);
+
+  // Tiers 2-5 outboard deck (#81): tape machine reels, valve glow and status LEDs. Drawn on top of
+  // the baked body so it shows with or without the Blender sprite; reels fall back to static
+  // ellipses when there is no renderer. All of it is parked/static unless gearAttention allows spin.
+  if (tier >= 2) {
+    const gear = getConsoleTierGear(tier);
+    const gearG = new Graphics();
+    // No panel of its own: the reels, tubes and LEDs sit on the outboard rack modules drawn above.
+    const deckReels = [dPt(5.64, 4.20), dPt(5.70, 4.42)];
+    if (renderer) {
+      const textures = buildReelTextures(renderer, 10);
+      deckReels.forEach((pt) => {
+        const reel = createReelSprite(textures);
+        reel.position.set(pt.x, pt.y);
+        reel.scale.set(gear.reelScale, gear.reelScale * 0.55);
+        reel.tint = gear.reelTint;
+        reel.gotoAndStop(0);
+        gearG.addChild(reel);
+        refs.reels.push(reel);
+      });
+    } else {
+      deckReels.forEach((pt) => {
+        gearG.ellipse(pt.x, pt.y, 4.5, 2.5).fill(0x718096);
+        gearG.ellipse(pt.x, pt.y, 1.8, 1.0).fill(0x1a202c);
+      });
+    }
+    for (let i = 0; i < gear.tubes; i++) {
+      const tp = dPt(5.58 + i * 0.07, 4.09);
+      const tube = new Graphics();
+      tube.circle(0, 0, 2.6).fill({ color: 0xff9a3c, alpha: 0.35 });
+      tube.circle(0, 0, 1.2).fill(0xffd08a);
+      tube.position.set(tp.x, tp.y);
+      tube.alpha = 0.35;
+      gearG.addChild(tube);
+      refs.gearTubes.push(tube);
+    }
+    for (let i = 0; i < gear.statusLeds; i++) {
+      const lp = dPt(5.58 + i * (0.2 / Math.max(1, gear.statusLeds - 1 || 1)), 4.56);
+      const led = new Graphics();
+      led.circle(0, 0, 1.1).fill(0xffffff);
+      led.tint = STATUS_LED_HEX.green;
+      led.position.set(lp.x, lp.y);
+      gearG.addChild(led);
+      refs.gearLeds.push(led);
+    }
+    deskWrap.addChild(gearG);
+  }
 
   // Desk interaction hit area and hover glow
   const deskHit = new Graphics();
@@ -2401,21 +2454,28 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
 
           // Decor lighting (shaft/motes/practicals) updates with the clock sample below.
 
-          // Tape reels (#81): only touch the sprites when transport state changes
-          if (refs.reels.length > 0) {
-            const reelKey = `${s.hasActiveProject}:${reduceMotion}`;
+          // Tape reels, valve glow and deck LEDs (#81): restyle only when a visible value changes.
+          // Budget (#46/#74): reels are the single continuous effect, parked in calm/Focus modes.
+          if (refs.reels.length > 0 || refs.gearTubes.length > 0 || refs.gearLeds.length > 0) {
+            const calm = reduceMotion || Boolean(settingsRef.current?.reducedMotion);
+            const attention = gearAttention({ hasActiveProject: s.hasActiveProject, reducedMotion: reduceMotion, focusMode: Boolean(settingsRef.current?.reducedMotion) });
+            const reelState = toSpriteVisualState('studio-tape', 'tape-machine', {
+              powered: true,
+              activity: s.activity,
+              condition: 100,
+              transport: s.hasActiveProject ? 'play' : 'stopped',
+            });
+            const reelKey = gearVisualKey(reelState, attention);
             if (reelKeyRef.current !== reelKey) {
               reelKeyRef.current = reelKey;
-              const reelState = toSpriteVisualState('studio-tape', 'tape-machine', {
-                powered: true,
-                activity: s.activity,
-                condition: 100,
-                transport: s.hasActiveProject ? 'play' : 'stopped',
-              });
-              refs.reels.forEach((r) => applyReelState(r, reelState, reduceMotion));
+              refs.reels.forEach((r) => applyReelState(r, reelState, calm));
+              const glow = tubeGlowLevel(reelState);
+              refs.gearTubes.forEach((g) => { g.alpha = glow; });
+              const ledHex = STATUS_LED_HEX[statusLedColor(reelState)];
+              refs.gearLeds.forEach((g) => { g.tint = ledHex; });
             }
             // Manual update: honours the frame-rate cap and hidden-tab early return above
-            refs.reels.forEach((r) => { if (r.playing) r.update(ticker); });
+            if (attention.reelsSpin) refs.reels.forEach((r) => { if (r.playing) r.update(ticker); });
           }
 
           // Staff / artist motion from npcAnimation states (presentation only)
