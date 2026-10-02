@@ -72,6 +72,10 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   }, [settings.textScale]);
 
   useEffect(() => {
+    document.documentElement.setAttribute('data-high-contrast', settings.highContrast ? 'true' : 'false');
+  }, [settings.highContrast]);
+
+  useEffect(() => {
     setHapticsEnabled(settings.hapticsEnabled !== false);
   }, [settings.hapticsEnabled]);
 
