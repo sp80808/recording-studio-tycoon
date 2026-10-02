@@ -16,6 +16,7 @@ import { chooseFocus } from '@/rpg/studioSeasons';
 import { AttributesModal } from './modals/AttributesModal';
 import { RightPanel } from './RightPanel';
 import { StudioRoom } from './StudioRoom';
+import { SessionBeatBanner } from './studio/SessionBeatBanner';
 import { SessionRail } from './SessionRail';
 import { StudioStrip } from './StudioStrip';
 import { EraTransitionAnimation } from './EraTransitionAnimation';
@@ -422,6 +423,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
     <GamepadNavProvider onTabChange={handleDockTabChange}>
       <div className="studio-play">
         <div className="studio-play-world" data-reward-source="floor">
+          {project && <SessionBeatBanner project={project} />}
           <StudioRoom gameState={gameState} onAdvanceDay={advanceDay} onRefreshProjects={refreshProjects}
             onStartProject={bookProject} onAssignStaff={assignStaffToProject} onUnassignStaff={unassignStaffFromProject}
             onOpenDashboardTab={handleOpenDashboardTab} onOpenCases={() => openPanel('cases')} onConsoleFocus={() => openPanel('session')} onCompleteChore={completeFloorChore} activeChoreId={activeChoreId}
