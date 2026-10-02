@@ -21,6 +21,7 @@
     "clean:appledouble": "python3 scripts/clean-appledouble.py",
     "lint": "eslint .",
     "test": "bash scripts/run-checks.sh",
+    "assets:verify": "node scripts/verify-assets.mjs",
     "typecheck": "tsc -p tsconfig.app.json --noEmit",
     "assets:build": "node scripts/assets.cjs build",
     "assets:validate": "node scripts/assets.cjs validate",

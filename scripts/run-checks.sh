@@ -181,6 +181,9 @@ echo "=== studio ux presentation (HUD + love-room) ==="
 ./node_modules/.bin/esbuild tests/studio-ux-presentation.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-ux-presentation.cjs --alias:@=./src >/dev/null
 node /tmp/rst-studio-ux-presentation.cjs
 
+echo "=== asset provenance manifest ==="
+node scripts/verify-assets.mjs
+
 echo "=== progression motion: studio-tier upgrades and era transitions (#77) ==="
 ./node_modules/.bin/esbuild tests/progression-motion.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-progression-motion.cjs --alias:@=./src >/dev/null
 node /tmp/rst-progression-motion.cjs

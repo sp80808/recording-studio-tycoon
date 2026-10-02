@@ -78,9 +78,9 @@ export const StudioDutiesClipboard: React.FC<StudioDutiesClipboardProps> = ({
     const result = executeStudioChore(choreState, choreId, availableEnergy);
     if (!result) return;
 
-    // Play tactile mechanical audio
-    if ((gameAudio as any).playGearSwitch) {
-      (gameAudio as any).playGearSwitch();
+    // Distinct completion cue rather than the generic gear-browsing switch.
+    if ((gameAudio as any).playMaintenanceComplete) {
+      (gameAudio as any).playMaintenanceComplete();
     } else {
       playSound('ui-click', 0.5);
     }

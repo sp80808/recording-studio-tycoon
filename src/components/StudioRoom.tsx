@@ -232,8 +232,12 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     const canonical = (normalizeHotspotId(id) ?? id) as StudioHotspotId;
     if (canonical === 'promotion' && eraDecor.prop !== 'led-strip') return;
     if (settings.sfxEnabled) {
-      if (canonical === 'console' || canonical === 'shelf') {
-        void gameAudio.playGearSwitch();
+      if (canonical === 'console') {
+        void gameAudio.playLatch();
+      } else if (canonical === 'shelf') {
+        void gameAudio.playRackSelect();
+      } else if (canonical === 'phone') {
+        void gameAudio.playEnquiryTone();
       } else {
         void gameAudio.playTactileClick();
       }

@@ -124,6 +124,9 @@ class GameAudioSystem {
       { name: 'ui-tactile-click-alt', path: '/audio/ui-sfx/kenney/click2.wav' },
       { name: 'ui-gear-switch', path: '/audio/ui-sfx/kenney/switch1.wav' },
       { name: 'ui-gear-switch-alt', path: '/audio/ui-sfx/kenney/switch2.wav' },
+      { name: 'ui-rack-select', path: '/audio/ui-sfx/kenney/click3.wav' },
+      { name: 'ui-enquiry-tone', path: '/audio/ui-sfx/kenney/click4.wav' },
+      { name: 'ui-latch', path: '/audio/ui-sfx/kenney/switch3.wav' },
       // Music is streamed by useBackgroundMusic via an <audio> element. It is deliberately NOT preloaded
       // here: decoding the 8 tracks (~39MB of mp3) into AudioBuffers cost hundreds of MB of RAM and blocked startup on mobile.
     ];
@@ -607,6 +610,26 @@ class GameAudioSystem {
 
   async playGearSwitch(volume: number = 0.7) {
     return this.playSound('ui-gear-switch', 'sfx', volume);
+  }
+
+  /** Rack/equipment select — lighter cue for shelf/rack browsing. */
+  async playRackSelect(volume: number = 0.6) {
+    return this.playSound('ui-rack-select', 'sfx', volume);
+  }
+
+  /** Mechanical latch — distinct console-focus cue. */
+  async playLatch(volume: number = 0.7) {
+    return this.playSound('ui-latch', 'sfx', volume);
+  }
+
+  /** Phone/enquiry cue, separate from generic tactile clicks. */
+  async playEnquiryTone(volume: number = 0.6) {
+    return this.playSound('ui-enquiry-tone', 'sfx', volume);
+  }
+
+  /** Completion cue for studio maintenance/duties. */
+  async playMaintenanceComplete(volume: number = 0.7) {
+    return this.playSound('ui-gear-switch-alt', 'sfx', volume);
   }
 
   async playZoneEnter() {
