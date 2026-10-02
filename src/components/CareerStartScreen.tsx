@@ -28,7 +28,8 @@ import {
 } from '@/features/sprites/producerAppearance';
 import { HAIR_HEX, CLOTHING_PALETTES } from '@/features/sprites/npcAppearanceData';
 import { CitySkyline } from '@/components/CitySkyline';
-import { CITIES, DEFAULT_CITY_ID, describeCity, formatMoney, getCityById, localName, type CityId } from '@/rpg/cities';
+import { useContentLocale } from '@/i18n/content';
+import { CITIES, DEFAULT_CITY_ID, cityText, describeCity, formatMoney, getCityById, localName, type CityId } from '@/rpg/cities';
 import { EraEmblem, type EraEmblemId } from './EraEmblems';
 import './splash.css';
 
@@ -109,6 +110,7 @@ const cycleOption = <T extends string>(list: readonly T[], current: T, delta: nu
   list[(list.indexOf(current) + delta + list.length) % list.length];
 
 export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
+  useContentLocale();
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [eraId, setEraId] = useState<string | null>(null);
   const [originId, setOriginId] = useState<ProducerBackgroundId | null>(null);
@@ -316,7 +318,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                     <span className="grid size-12 shrink-0 place-items-center rounded-xl border border-[var(--rst-line-strong)] bg-black/25" style={{ color: c.accent }}><Icon aria-hidden="true" /></span>
                     <span className="min-w-0"><span className="rst-title block text-lg">{c.name}</span><span className="block text-xs text-stone-400">{c.country} · {c.currency.symbol} {c.currency.code}</span></span>
                   </span>
-                  <span className="rst-body text-xs leading-relaxed">{c.tagline}</span>
+                  <span className="rst-body text-xs leading-relaxed">{cityText(c).tagline}</span>
                   <span className="mt-auto border-t border-[var(--rst-line)] pt-3 text-[11px] leading-relaxed text-stone-300">{describeCity(c, eraId).map((line) => <span key={line} className="block">{line}</span>)}</span>
                   {selected && <span className="absolute -top-2 right-4 rounded-full bg-[var(--rst-brass-300)] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-stone-950">Selected</span>}
                 </button>

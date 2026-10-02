@@ -247,5 +247,17 @@
   "active_duties": "Obowiązki",
   "active_duties_title": "Otwórz obowiązki konserwacyjne studia",
   "active_work_on_project": "Pracuj nad projektem",
-  "active_overall_progress_aria": "Całkowity postęp projektu"
+  "active_overall_progress_aria": "Całkowity postęp projektu",
+  "active_focus": "Fokus",
+  "active_match": "{{pct}}% zgodności",
+  "active_stage_guidance": "Wskazówka etapu",
+  "active_auto_align": "Autodopasuj",
+  "active_auto_align_title": "Dopasuj automatycznie do celu etapu",
+  "active_auto_align_locked": "Wymaga poziomu 5+ lub zarządzania na poziomie 3+",
+  "active_target_title": "Cel {{min}}-{{max}}%",
+  "active_focus_aria": "Fokus: {{name}}",
+  "active_arm_overdrive": "Uzbrój overdrive ({{cost}}⚡ · +75%)",
+  "active_overdrive_engaged": "Overdrive włączony ({{cost}}⚡ · {{bonus}})",
+  "active_saver_bonus": "-1 oszczędność",
+  "active_cost_patchbay": "1 z patchbayem"
 }
