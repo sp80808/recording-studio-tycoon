@@ -46,6 +46,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const isDevBuild = import.meta.env.DEV;
 
   const [activeTab, setActiveTab] = useState<SettingsTabId>('audio');
+  const [pendingImport, setPendingImport] = useState<string | null>(null);
+  const [showSettingsResetConfirm, setShowSettingsResetConfirm] = useState(false);
   const [exportedSaveString, setExportedSaveString] = useState<string | null>(null);
   const [importSaveString, setImportSaveString] = useState<string>('');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -100,6 +102,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   const handleResetSettings = () => {
+    setShowSettingsResetConfirm(false);
     resetSettings();
     gameAudio.playClick();
     toast.success(t('toast_settings_reset'));
@@ -141,7 +144,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       toast.error(t('toast_import_empty'));
       return;
     }
-    const loadedState = loadGameFromString(importSaveString);
+    // Importing replaces the current game, so ask first when a game is running
+    if (context === 'ingame') setPendingImport(importSaveString);
+    else runImport(importSaveString);
+  };
+
+  const runImport = (raw: string) => {
+    setPendingImport(null);
+    const loadedState = loadGameFromString(raw);
     if (loadedState) {
       if (onLoadGameStateFromString) {
         onLoadGameStateFromString(loadedState);
@@ -151,6 +161,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         toast.error(t('toast_import_no_reload'));
       }
     } else {
+      toast.error(t('toast_import_failed'));
+    }
+  };
+
+  const handleDownloadSave = () => {
+    if (!exportedSaveString) return;
+    const blob = new Blob([exportedSaveString], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `recording-studio-tycoon-save-${new Date().toISOString().slice(0, 10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      setImportSaveString((await file.text()).trim());
+    } catch {
       toast.error(t('toast_import_failed'));
     }
   };
@@ -527,6 +559,53 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 <div className="space-y-2 bg-stone-900/50 p-4 rounded-lg border border-stone-800">
+                  <label className="text-white font-medium text-sm">{t('settings_text_size', { defaultValue: 'Text Size' })}</label>
+                  <p className="text-xs text-stone-400">{t('settings_text_size_hint', { defaultValue: 'Scales menus and HUD text. Handy on small phone screens.' })}</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {(['small', 'normal', 'large', 'xl'] as const).map((size) => (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => { updateSettings({ textScale: size }); gameAudio.playClick(); }}
+                        aria-pressed={settings.textScale === size}
+                        className={`min-h-11 rounded-md border text-xs font-semibold ${settings.textScale === size ? 'border-amber-400/70 bg-amber-400/15 text-amber-100' : 'border-stone-700 bg-stone-900 text-stone-300'}`}
+                      >
+                        {t(`settings_text_size_${size}`, { defaultValue: { small: 'Small', normal: 'Normal', large: 'Large', xl: 'Extra' }[size] })}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center bg-stone-900/50 p-4 rounded-lg border border-stone-800">
+                  <div>
+                    <label className="text-white font-medium text-sm">{t('settings_haptics', { defaultValue: 'Vibration (Haptics)' })}</label>
+                    <p className="text-xs text-stone-400">{t('settings_haptics_hint', { defaultValue: 'Short buzzes on taps and takes. Supported on Android phones; iPhone Safari has no vibration API.' })}</p>
+                  </div>
+                  <Switch
+                    checked={settings.hapticsEnabled !== false}
+                    onCheckedChange={(checked) => updateSettings({ hapticsEnabled: checked })}
+                  />
+                </div>
+
+                <div className="space-y-2 bg-stone-900/50 p-4 rounded-lg border border-stone-800">
+                  <label className="text-white font-medium text-sm">{t('settings_notifications', { defaultValue: 'Pop-up Notifications' })}</label>
+                  <p className="text-xs text-stone-400">{t('settings_notifications_hint', { defaultValue: 'Errors always show. Choose how many other toasts appear.' })}</p>
+                  <Select
+                    value={settings.toastLevel}
+                    onValueChange={(val: 'all' | 'important' | 'off') => updateSettings({ toastLevel: val })}
+                  >
+                    <SelectTrigger className="w-full bg-stone-900 border-stone-700 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-stone-900 border-stone-700 text-white">
+                      <SelectItem value="all">{t('settings_notifications_all', { defaultValue: 'All' })}</SelectItem>
+                      <SelectItem value="important">{t('settings_notifications_important', { defaultValue: 'Important only' })}</SelectItem>
+                      <SelectItem value="off">{t('settings_notifications_off', { defaultValue: 'Errors only' })}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2 bg-stone-900/50 p-4 rounded-lg border border-stone-800">
                   <label className="text-white font-medium text-sm">{t('settings_pocket_meter_assist')}</label>
                   <p className="text-xs text-stone-400">{t('settings_pocket_meter_assist_hint')}</p>
                   <Select
@@ -601,6 +680,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       placeholder={t('settings_import_placeholder')}
                       className="bg-stone-900 border-stone-700 text-xs font-mono min-h-[60px]"
                     />
+                    <label className="block w-full cursor-pointer rounded-md border border-stone-700 bg-stone-900 py-2 text-center text-xs text-stone-300 min-h-11 leading-7">
+                      {t('settings_import_file', { defaultValue: 'Choose save file…' })}
+                      <input type="file" accept=".txt,text/plain" className="sr-only" onChange={handleImportFile} />
+                    </label>
                     <Button onClick={handleImportGameData} className="w-full bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] text-xs py-1.5 h-auto">
                       {t('settings_import_button')}
                     </Button>
@@ -618,6 +701,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             readOnly
                             className="bg-stone-900 border-stone-700 text-xs font-mono min-h-[60px]"
                           />
+                          <Button onClick={handleDownloadSave} className="w-full bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-xs py-1.5 h-auto">
+                            {t('settings_download_save', { defaultValue: 'Download save file' })}
+                          </Button>
                           <Button onClick={handleCopyToClipboard} className="w-full bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-xs py-1.5 h-auto">
                             {t('settings_copy_clipboard')}
                           </Button>
@@ -682,7 +768,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 {/* Danger Zone */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
                   <Button
-                    onClick={handleResetSettings}
+                    onClick={() => setShowSettingsResetConfirm(true)}
                     variant="outline"
                     className="w-full bg-stone-900 hover:bg-stone-800 text-stone-300 border-stone-700 text-xs"
                   >
@@ -723,6 +809,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         variant="danger"
         onConfirm={confirmResetGame}
         onCancel={() => setShowResetConfirm(false)}
+      />
+      <GameConfirmDialog
+        isOpen={pendingImport !== null}
+        title="Replace Current Game?"
+        message="Importing this save replaces your current game progress. Export first if you want a backup."
+        confirmLabel="Import Save"
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={() => pendingImport && runImport(pendingImport)}
+        onCancel={() => setPendingImport(null)}
+      />
+      <GameConfirmDialog
+        isOpen={showSettingsResetConfirm}
+        title="Reset Settings?"
+        message="This restores audio, graphics and accessibility options to their defaults. Your game progress is not affected."
+        confirmLabel="Reset Settings"
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={handleResetSettings}
+        onCancel={() => setShowSettingsResetConfirm(false)}
       />
     </>
   );

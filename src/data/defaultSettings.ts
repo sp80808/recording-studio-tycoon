@@ -58,6 +58,9 @@ export const defaultSettings: GameSettings = {
   screenShake: true,
   reducedMotion: false,
   pocketMeterAssistance: 'normal',
+  textScale: 'normal',
+  hapticsEnabled: true,
+  toastLevel: 'all',
   theme: 'default',
   language: 'en', // Default language
   // Floating DEV chrome — always off until explicitly enabled in Settings

@@ -4,7 +4,7 @@ import { MarketTrend } from '@/types/charts';
 
 interface MarketTrendsDisplayProps {
   marketTrends: MarketTrend[];
-  getGenreEmoji: (genre: string) => string;
+  getGenreEmoji: (genre: string) => React.ReactNode;
 }
 
 export const MarketTrendsDisplay: React.FC<MarketTrendsDisplayProps> = ({

@@ -17,7 +17,7 @@ interface ChartDisplayProps {
   playAudioClip: (entry: ChartEntry) => void;
   getAudioClip: (entry: ChartEntry) => string | null;
   getPlaybackSegment: (entry: ChartEntry) => { startTime: number, endTime: number, segmentNumber: number, displayTime: string };
-  getGenreEmoji: (genre: string) => string;
+  getGenreEmoji: (genre: string) => React.ReactNode;
 }
 
 export const ChartDisplay: React.FC<ChartDisplayProps> = ({

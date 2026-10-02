@@ -1,3 +1,4 @@
+import { StatIcon } from '@/components/icons/GameIcons';
 import { money } from '@/utils/displayMoney';
 import React, { useEffect, useState } from 'react';
 import { EMPTY_STATES } from '@/data/flavour';
@@ -159,7 +160,7 @@ const HotspotChorePanel: React.FC<{
         <ChoreHotspotButton
           kind={chore.category}
           label={shortLabel}
-          meta={chore.energyCost > 0 ? `${chore.energyCost}⚡` : 'Free'}
+          meta={chore.energyCost > 0 ? `${chore.energyCost}` : 'Free'}
           attention
           onClick={() => {
             if (onCompleteChore(hotspot)) onClose();
@@ -374,9 +375,9 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
             <div className="pt-2 border-t border-white/10 space-y-1">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-amber-200">
-                  🎯 {challenge.def.title}
+                  <StatIcon name="goal" /> {challenge.def.title}
                 </span>
-                {challenge.done && <span className="text-xs text-green-400">✓ Done</span>}
+                {challenge.done && <span className="text-xs text-green-400"><StatIcon name="check" /> Done</span>}
               </div>
               <div className="text-[10px] text-stone-400">{challenge.def.description}</div>
               <MiniBar value={(challenge.progress / challenge.def.target) * 100} className="bg-amber-400" />
@@ -512,7 +513,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
         <StatRow label="Progress" value={`${Math.round(progress)}%`} />
         <StatRow label="C / T points" value={`${Math.round(project.accumulatedCPoints)} / ${Math.round(project.accumulatedTPoints)}`} />
         {!!project.comboCount && project.comboCount > 1 && (
-          <StatRow label="Combo" value={`⚡ x${project.comboCount}`} valueClass="text-amber-300" />
+          <StatRow label="Combo" value={`x${project.comboCount}`} valueClass="text-amber-300" />
         )}
         <MotionButton
           className="w-full h-7 text-xs bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-amber-100 font-bold"
@@ -584,8 +585,8 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
               <span className="text-[10px] text-stone-400">{member.role}</span>
             </div>
             <div className="flex items-center gap-2 text-[10px]">
-              <span className="text-pink-300">♪ {Math.round(member.mood)}</span>
-              <span className="text-yellow-300">⚡ {Math.round(member.energy)}</span>
+              <span className="text-pink-300"><StatIcon name="mood" /> {Math.round(member.mood)}</span>
+              <span className="text-yellow-300"><StatIcon name="energy" /> {Math.round(member.energy)}</span>
               <span className="ml-auto text-stone-400">{member.status}</span>
             </div>
             {project && (
