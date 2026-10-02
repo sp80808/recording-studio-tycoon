@@ -126,3 +126,15 @@ ok(MORE_CITY_EVENTS.every((e) => !e.eligible(factsFor(undefined)) && ids.include
 ok(MORE_CITY_EVENTS.every((e) => e.options.every((o) => validateEffects(o.effects).length === o.effects.length) && e.options.some((o) => o.id === e.defaultOptionId)), 'extra events are valid with real defaults');
 ok(new Set([...CITY_EVENTS, ...MORE_CITY_EVENTS].map((e) => e.narrativeKey)).size === 18, 'eighteen distinct local events');
 console.log(`city-selection: ${n} checks passed`);
+
+// Wall tint: subtle, per-city, neutral for legacy saves.
+import { cityWallColors, mixColor } from '../src/components/studio/cityWallTint';
+{
+  const l = 0x2a3345, r = 0x323d52;
+  ok(cityWallColors(l, r).wallLeft === l && cityWallColors(l, r, 'nope').wallRight === r, 'wall tint leaves legacy saves untouched');
+  ok(mixColor(0x000000, 0xffffff, 0) === 0 && mixColor(0x000000, 0xffffff, 1) === 0xffffff, 'mixColor endpoints');
+  const tinted = new Set(CITIES.map((c) => cityWallColors(l, r, c.id).wallLeft));
+  ok(tinted.size === CITIES.length && !tinted.has(l), 'every city tints the walls differently');
+  const shift = (a: number, b: number) => Math.max(...[16, 8, 0].map((s) => Math.abs(((a >> s) & 255) - ((b >> s) & 255))));
+  ok(CITIES.every((c) => shift(cityWallColors(l, r, c.id).wallLeft, l) <= 40), 'tint stays subtle');
+}
