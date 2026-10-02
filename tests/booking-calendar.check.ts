@@ -58,6 +58,17 @@ const crowded = previewBooking({ ...base, activeProject: null, activeProjects: p
 ok(crowded.utilizationAfter <= 1 && (rooms.length > 1 || crowded.nextFreeAfter === undefined), 'a full room leaves no next free slot and utilization stays capped');
 ok(previewBooking(emptyState, mk('c', r0, 3)).utilizationAfter === cost.utilizationAfter, 'opportunity preview is deterministic');
 
+// Terms: derived, deterministic, mixed across projects.
+import { termsFor } from '../src/rpg/bookingCalendar';
+ok(JSON.stringify(termsFor({ id: 'x1' })) === JSON.stringify(termsFor({ id: 'x1' })), 'terms are deterministic per project');
+const flexes = new Set(Array.from({ length: 60 }, (_, i) => termsFor({ id: `t${i}` }).flexibility));
+ok(flexes.size === 3, 'fixed, narrow and flexible clients all occur');
+ok(termsFor({ id: 'a' }).startWindowDays === { fixed: 0, narrow: 2, flexible: 5 }[termsFor({ id: 'a' }).flexibility], 'start window matches flexibility');
+const tight = previewBooking({ ...base, activeProject: null, activeProjects: [] }, mk('t0', r0, 2));
+ok(tight.startBufferDays === tight.terms.startWindowDays, 'an empty studio starts today so slack is the whole window');
+const none = previewBooking({ ...base, activeProject: null, activeProjects: Array.from({ length: SLOTS_PER_DAY * 3 }, (_, i) => mk(`g${i}`, r0, 2)) }, mk('t0', r0, 2));
+ok(none.startBufferDays <= tight.startBufferDays, 'a busy studio never gains slack');
+
 const frozen = JSON.stringify(base);
 buildBookingCalendar(base); previewBooking(base, a);
 ok(JSON.stringify(base) === frozen, 'calendar and preview never mutate state');
