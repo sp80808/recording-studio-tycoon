@@ -6,6 +6,7 @@ import {
   getNextFocusableIndex,
   calculateSliderStep,
 } from '@/contexts/GamepadNavContext';
+import { getDirectionalTargetIndex, getStickDirection } from '@/utils/controllerNavigation';
 
 let passed = 0;
 const ok = (cond: boolean, msg: string) => {
@@ -49,5 +50,21 @@ ok(getNextFocusableIndex(0, 'next', 5) === 1, 'next advances index');
 ok(getNextFocusableIndex(4, 'next', 5) === 0, 'next wraps from end to 0');
 ok(getNextFocusableIndex(0, 'prev', 5) === 4, 'prev wraps from 0 to end');
 ok(getNextFocusableIndex(-1, 'next', 5) === 0, 'unfocused targets first element');
+
+// 5. Analog direction + studio-floor spatial navigation
+ok(getStickDirection(0.8, 0.1) === 'right', 'right stick intent is stable');
+ok(getStickDirection(-0.1, -0.9) === 'up', 'up stick intent is stable');
+ok(getStickDirection(0.2, 0.2) === null, 'small stick drift stays neutral');
+
+const floorIds = ['console', 'phone', 'liveRoom', 'shelf'] as const;
+const floorAnchors = {
+  console: { x: 100, y: 100 },
+  phone: { x: 260, y: 95 },
+  liveRoom: { x: 110, y: 260 },
+  shelf: { x: 280, y: 250 },
+};
+ok(getDirectionalTargetIndex(floorIds, floorAnchors, 0, 'right') === 1, 'floor right follows visible neighbour');
+ok(getDirectionalTargetIndex(floorIds, floorAnchors, 0, 'down') === 2, 'floor down follows visible neighbour');
+ok(getDirectionalTargetIndex(floorIds, {}, 0, 'left') === 3, 'missing anchors fall back safely');
 
 console.log(`gamepad-navigation: all ${passed} checks passed`);
