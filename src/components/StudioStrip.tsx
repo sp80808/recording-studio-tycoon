@@ -1,3 +1,4 @@
+import { money } from '@/utils/displayMoney';
 import React from 'react';
 import { IDLE_CHATTER, pickFlavour } from '@/data/flavour';
 import { GameState } from '@/types/game';
@@ -96,7 +97,7 @@ export const StudioStrip: React.FC<StudioStripProps> = ({
           <div className="flex gap-4 text-right shrink-0">
             <div>
               <div className="text-[10px] uppercase text-stone-500">Cash</div>
-              <div className="text-green-400 font-semibold">${gameState.money.toLocaleString()}</div>
+              <div className="text-green-400 font-semibold">{money(gameState.money)}</div>
             </div>
             <div>
               <div className="text-[10px] uppercase text-stone-500">Rep</div>

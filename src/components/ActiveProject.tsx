@@ -1,3 +1,4 @@
+import { money } from '@/utils/displayMoney';
 import { emitTakeFeedback } from '@/utils/takeFeedback';
 import { ProducerSprite } from '@/components/ProducerSprite';
 import { MotionButton, MotionReveal, MotionNumber } from '@/components/motion/primitives';
@@ -153,7 +154,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     }));
     toast({
       title: `🏦 ${result.label}`,
-      description: `+$${result.cash} cash · +${result.xp} XP${result.keepsCombo ? ' · ⚡ streak kept!' : ''}`,
+      description: `+${money(result.cash)} cash · +${result.xp} XP${result.keepsCombo ? ' · ⚡ streak kept!' : ''}`,
       className: 'bg-stone-800 border-stone-600 text-white',
       duration: 2600,
     });

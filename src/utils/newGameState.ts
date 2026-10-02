@@ -13,7 +13,7 @@ import { resolvePlayerLevelUps } from '@/utils/playerUtils';
 import { initializeSkillsPlayer } from '@/utils/skillUtils';
 import { createInitialKnowHow } from '@/rpg/studioKnowHow';
 import { createInitialExpertise } from '@/rpg/houseStyle';
-import { DEFAULT_CITY_ID, isCityId, type CityId } from '@/rpg/cities';
+import { DEFAULT_CITY_ID, applyCityEdge, isCityId, type CityId } from '@/rpg/cities';
 import { createDefaultStudioRooms } from '@/utils/studioRoomUtils';
 import { visualEraId } from '@/utils/eraProgression';
 import { createInitialChoreState } from '@/simulation/choreEngine';
@@ -193,6 +193,8 @@ export const createNewGameState = (options?: Partial<EraInitOptions>): GameState
   let newGameState = createDefaultGameState(options);
   const currentEra = newGameState.currentEra;
   const cityId = newGameState.cityId;
+  // The edge is a career-start choice: only an explicitly picked city grants it.
+  newGameState = applyCityEdge(newGameState, isCityId(options?.cityId) ? options!.cityId : undefined);
   const initialProjects = generateNewProjects(3, 1, currentEra, [], 1.1, 0, cityId);
   const initialCandidates = generateCandidates({ count: 3, cityId });
   const initialSessionMusicians = generateSessionMusicians(5, cityId);

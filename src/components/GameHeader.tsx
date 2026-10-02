@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { GameState } from '@/types/game';
-import { currencySymbol, toLocalAmount } from '@/rpg/cities';
+import { currencySymbol, getCityById, toLocalAmount } from '@/rpg/cities';
 import { AnimatedCounter } from './AnimatedCounter';
 import { Maximize, Minimize, Settings, CalendarDays, Coins, Star, Sunrise } from 'lucide-react';
 import { useFullscreen } from '@/hooks/useFullscreen';
@@ -25,12 +25,12 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSetting
   const { isFullscreen, toggleFullscreen } = useFullscreen('root');
   const { t } = useTranslation();
   const player = gameState.playerData;
-  const signage = getStudioSignage(gameState.currentEra, Object.keys(gameState.unlockedAchievements ?? {}).length);
+  const signage = getStudioSignage(gameState.currentEra, Object.keys(gameState.unlockedAchievements ?? {}).length, getCityById(gameState.cityId)?.name);
   return <>
     <header className={`studio-hud ${className}`} aria-label={t('studio_status_aria')}>
       <div className="studio-hud-stats">
         <div className="studio-hud-stat text-[var(--rst-ivory)]" data-reward-target="money" title={t('money')}>
-          <Coins size={15} className="text-[var(--rst-money)]" aria-hidden="true" /><SettleTicker value={gameState.money}><AnimatedCounter value={toLocalAmount(gameState.money, gameState.cityId)} prefix={currencySymbol(gameState.cityId)} /></SettleTicker>
+          <Coins size={15} className="text-[var(--rst-money)]" aria-hidden="true" /><SettleTicker value={gameState.money}><AnimatedCounter value={toLocalAmount(gameState.money, gameState.cityId, gameState.currentEra)} prefix={currencySymbol(gameState.cityId, gameState.currentEra)} /></SettleTicker>
         </div>
         <span className="studio-hud-dot" aria-hidden="true">·</span>
         <div className="studio-hud-stat text-[var(--rst-ivory)]" title={t('reputation')}>

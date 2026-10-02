@@ -1,4 +1,5 @@
 
+import { money } from '@/utils/displayMoney';
 import { EMPTY_STATES } from '@/data/flavour';
 import React from 'react';
 import { Button } from '@/components/ui/button';
@@ -120,7 +121,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                             {staff.energy}%
                           </span>
                         </div>
-                        <div className="text-xs text-stone-400">${staff.salary}/day</div>
+                        <div className="text-xs text-stone-400">{money(staff.salary)}/day</div>
                       </div>
                     </div>
                     

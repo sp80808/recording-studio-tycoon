@@ -1,3 +1,4 @@
+import { money } from '@/utils/displayMoney';
 import { useMemo, useState } from 'react';
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
 import { ChevronDown, Landmark } from 'lucide-react';
@@ -10,7 +11,7 @@ import {
   getCategorySpend, getLedger, getProjectPnl, getRunway, type RunwayBand,
 } from '@/economy/ledger';
 
-const fmt = (n: number) => `${n < 0 ? '-' : ''}$${Math.abs(Math.round(n)).toLocaleString()}`;
+const fmt = (n: number) => `${n < 0 ? '-' : ''}${money(Math.abs(Math.round(n)))}`;
 
 const BAND_STYLE: Record<RunwayBand, { label: string; cls: string }> = {
   comfortable: { label: 'Comfortable', cls: 'text-[var(--rst-money)]' },

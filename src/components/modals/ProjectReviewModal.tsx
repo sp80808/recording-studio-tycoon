@@ -1,3 +1,4 @@
+import { moneySymbol, moneyValue } from '@/utils/displayMoney';
 import React, { useState, useEffect, useCallback } from 'react';
 import { ProjectReport, ProjectReportSkillEntry } from '@/types/game';
 import { Button } from '@/components/ui/button';
@@ -419,7 +420,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
                     <h4 className="text-xl font-semibold text-yellow-200">Rewards</h4>
                     <p className="text-lg text-white flex items-center justify-center gap-1.5">
                       <span>💰 Money:</span>
-                      <span className="text-emerald-400 font-bold"><MotionNumber value={report.moneyGained} prefix="$" /></span>
+                      <span className="text-emerald-400 font-bold"><MotionNumber value={moneyValue(report.moneyGained)} prefix={moneySymbol()} /></span>
                     </p>
                     <p className="text-lg text-white flex items-center justify-center gap-1.5">
                       <span>🌟 Reputation:</span>

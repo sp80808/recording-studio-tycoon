@@ -8,7 +8,9 @@ import { createNewGameState } from '../src/utils/newGameState';
 import { generateCandidates } from '../src/utils/staffRecruitment';
 import { generateSessionMusicians } from '../src/utils/bandUtils';
 import { generateNewProjects } from '../src/utils/projectUtils';
-import { CITY_EVENTS } from '../src/narrative/cityEvents';
+import { CITY_EVENTS, MORE_CITY_EVENTS } from '../src/narrative/cityEvents';
+import { applyCityEdge, cityEraLore, currencyFor, CITY_ERAS } from '../src/rpg/cities';
+import { money, moneyValue, setDisplayCurrency, signedMoney } from '../src/utils/displayMoney';
 import { DIRECTOR_EVENTS } from '../src/narrative/directorEvents';
 import { EFFECT_LIMITS, buildFacts, validateEffects } from '../src/narrative/eventDirector';
 
@@ -20,7 +22,7 @@ ok(CITIES.length === 6 && new Set(CITIES.map((c) => c.id)).size === 6, 'six dist
 ok(CITIES.every((c) => c.hotGenres.length >= 3 && c.coolGenres.length >= 1 && c.names.first.length >= 8 && c.names.last.length >= 8), 'every city has taste and name pools');
 ok(CITIES.every((c) => c.hotGenres.every((g) => !c.coolGenres.includes(g))), 'no genre is both hot and cool in a city');
 ok(isCityId('london') && !isCityId('atlantis') && !isCityId(undefined), 'city id guard');
-ok(CITIES.every((c) => describeCity(c).length === 4), 'every city describes four changes');
+ok(CITIES.every((c) => describeCity(c).length === 5), 'every city describes five changes');
 
 // Currency is display only.
 ok(formatMoney(1000) === '$1,000' && formatMoney(1000, 'nashville') === '$1,000', 'dollars stay dollars');
@@ -89,4 +91,38 @@ for (const c of CITIES) {
   ok(mine.length === 1 && mine[0].id.startsWith(({ 'los-angeles': 'la', nashville: 'nashville', london: 'london', berlin: 'berlin', tokyo: 'tokyo', rio: 'rio' } as Record<string, string>)[c.id]), `${c.name}: only its own local event is eligible`);
 }
 ok(CITY_EVENTS.every((e) => !e.eligible(factsFor(undefined))), 'legacy saves never see local events');
+// Era-aware currency (display only).
+ok(currencyFor('london', 'analog60s').perDollar === 0.36 && currencyFor('london', 'streaming2020s').perDollar === 0.8, 'sterling has era-indexed rates');
+ok(currencyFor('berlin', 'digital80s').symbol === 'DM' && currencyFor('berlin', 'internet2000s').symbol === '€', 'Berlin pays in marks, then euros');
+ok(formatMoney(1000, 'tokyo', 'analog60s') === '¥360,000' && formatMoney(1000, 'tokyo', 'internet2000s') === '¥115,000', 'yen follows the era');
+ok(formatMoney(1000, 'nashville', 'analog60s') === '$1,000' && formatMoney(1000, undefined, 'analog60s') === '$1,000', 'dollar cities and legacy saves stay in dollars');
+ok(CITIES.every((c) => CITY_ERAS.every((e) => currencyFor(c.id, e).perDollar > 0)), 'every city has a positive rate in every era');
+setDisplayCurrency('london', 'analog60s');
+ok(money(1000) === '£360' && signedMoney(-100) === '-£36' && signedMoney(50) === '+£18' && moneyValue(1000) === 360, 'display helpers follow city and era');
+setDisplayCurrency(undefined, undefined);
+ok(money(1234) === '$1,234' && signedMoney(5) === '+$5', 'display helpers default to dollars');
+
+// Lore.
+ok(CITIES.every((c) => c.lore.landmarks.length === 3 && c.lore.legend.length > 20 && CITY_ERAS.every((e) => c.lore.eras[e].length > 20)), 'every city has landmarks, a legend and four era notes');
+ok(cityEraLore('rio', 'digital80s') === CITIES.find((c) => c.id === 'rio')!.lore.eras.digital80s && cityEraLore(undefined, 'digital80s') === undefined, 'era lore resolves; legacy saves have none');
+ok(new Set(CITIES.map((c) => c.accent)).size === CITIES.length, 'every city has its own accent colour');
+
+// Character edge.
+const baseAttrs = createNewGameState({ cityId: 'nashville' }).playerData.attributes;
+const noEdge = applyCityEdge({ playerData: { attributes: { ...baseAttrs } } }, undefined);
+ok(JSON.stringify(noEdge.playerData.attributes) === JSON.stringify(baseAttrs), 'no city: no edge');
+const ldnAttrs = createNewGameState({ cityId: 'london', originId: undefined }).playerData.attributes;
+const rioAttrs = createNewGameState({ cityId: 'rio' }).playerData.attributes;
+ok(ldnAttrs.focusMastery === 2 && rioAttrs.creativeIntuition === 2 && ldnAttrs.creativeIntuition === 1, 'a new game gets exactly one +1 from its city');
+ok(CITIES.every((c) => ['focusMastery', 'creativeIntuition', 'technicalAptitude', 'businessAcumen'].includes(c.edge.attribute)), 'edges target real attributes');
+
+// More local events.
+ok(MORE_CITY_EVENTS.length === CITIES.length * 2, 'two more local events per city');
+for (const c of CITIES) {
+  const all = [...CITY_EVENTS, ...MORE_CITY_EVENTS].filter((e) => e.eligible(factsFor(c.id)));
+  ok(all.length === 3, `${c.name}: three local events in the pool`);
+}
+ok(MORE_CITY_EVENTS.every((e) => !e.eligible(factsFor(undefined)) && ids.includes(e.id)), 'extra local events are gated and registered');
+ok(MORE_CITY_EVENTS.every((e) => e.options.every((o) => validateEffects(o.effects).length === o.effects.length) && e.options.some((o) => o.id === e.defaultOptionId)), 'extra events are valid with real defaults');
+ok(new Set([...CITY_EVENTS, ...MORE_CITY_EVENTS].map((e) => e.narrativeKey)).size === 18, 'eighteen distinct local events');
 console.log(`city-selection: ${n} checks passed`);

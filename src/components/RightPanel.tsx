@@ -1,3 +1,4 @@
+import { money } from '@/utils/displayMoney';
 import { ArtistRoster } from '@/components/ArtistRoster';
 import type { ArtistProspect, ContractTerms, NegotiationOutcome } from '@/simulation/artistContracts';
 import { ShowPlan } from '@/simulation/liveShows';
@@ -242,7 +243,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                               ? `Lvl ${room.requiredPlayerLevel}`
                               : expansionLocked
                                 ? 'Milestone'
-                                : `Buy $${room.purchaseCost.toLocaleString()}`}
+                                : `Buy ${money(room.purchaseCost)}`}
                           </KenneyButton>
                         )}
                       </div>

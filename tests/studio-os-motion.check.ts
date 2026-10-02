@@ -96,7 +96,7 @@ test('Studio OS V2 Motion (#75) - Enquiry Arrival & Peripheral Indication', () =
   assert.match(projectListCode, /<MotionReveal[\s\S]*?staggerIndex=\{index\}/, 'ProjectList animates enquiry cards with staggered MotionReveal');
 
   // Enquiry cards must use MotionNumber for fee, rep, duration
-  assert.match(projectListCode, /<MotionNumber value=\{toLocalAmount\(project\.payoutBase, gameState\.cityId\)\} prefix=\{currencySymbol\(gameState\.cityId\)\} \/>/, 'ProjectList uses MotionNumber for fee');
+  assert.match(projectListCode, /<MotionNumber value=\{toLocalAmount\(project\.payoutBase, gameState\.cityId, gameState\.currentEra\)\} prefix=\{currencySymbol\(gameState\.cityId, gameState\.currentEra\)\} \/>/, 'ProjectList uses MotionNumber for fee');
   assert.match(projectListCode, /<MotionNumber value=\{project\.repGainBase\} prefix="\+" \/>/, 'ProjectList uses MotionNumber for rep');
   assert.match(projectListCode, /<MotionNumber value=\{project\.durationDaysTotal\} suffix="d" \/>/, 'ProjectList uses MotionNumber for duration');
 });
@@ -147,7 +147,7 @@ test('Studio OS V2 Motion (#75) - Settlement & Milestone Gating', () => {
   assert.match(activeProjectCode, /if \(isMilestone\) \{[\s\S]*?setShowCelebration\(true\);[\s\S]*?\} else \{[\s\S]*?onProjectComplete\?\.([\s\S]*?)\}/, 'Routine projects bypass full-screen celebration directly to review');
 
   // Review modal uses MotionNumber for compact deltas
-  assert.match(reviewModalCode, /<MotionNumber value=\{report\.moneyGained\} prefix="\$" \/>/, 'ProjectReviewModal uses MotionNumber for money');
+  assert.match(reviewModalCode, /<MotionNumber value=\{moneyValue\(report\.moneyGained\)\} prefix=\{moneySymbol\(\)\} \/>/, 'ProjectReviewModal uses MotionNumber for money');
   assert.match(reviewModalCode, /<MotionNumber value=\{report\.reputationGained\} prefix="\+" \/>/, 'ProjectReviewModal uses MotionNumber for rep');
 
   // ProjectCompletionCelebration uses MotionPanel and MotionButton
