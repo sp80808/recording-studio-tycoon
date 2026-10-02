@@ -349,12 +349,36 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
           <section className="rst-surface mx-auto mt-6 w-full max-w-4xl p-5 sm:p-6" aria-label="Producer customisation" data-testid="producer-creator">
             <div className="grid items-start gap-6 md:grid-cols-[minmax(250px,0.75fr)_minmax(360px,1.25fr)]">
             <div className="mx-auto flex w-full flex-col items-center gap-2 md:sticky md:top-6">
+  <div className="flex w-full items-center justify-center gap-2">
+    <div className="flex flex-col gap-1" aria-label="Previous character element" role="group">
+      <button type="button" className="creator-preview-arrow" onClick={() => patchLook({ build: cycleOption(PRODUCER_BUILDS, look.build ?? 'average', -1) })} aria-label="Previous build" title="Previous build"><ArrowLeft size={14} aria-hidden="true" /></button>
+      <button type="button" className="creator-preview-arrow" onClick={() => patchLook({ skinTone: cycleOption(PRODUCER_SKIN_TONES, look.skinTone ?? 'tan', -1) })} aria-label="Previous skin colour" title="Previous skin colour"><ArrowLeft size={14} aria-hidden="true" /></button>
+      <button type="button" className="creator-preview-arrow" onClick={() => patchLook({ shirt: cycleOption(PRODUCER_SHIRTS, look.shirt ?? 'band_tee', -1) })} aria-label="Previous shirt" title="Previous shirt"><ArrowLeft size={14} aria-hidden="true" /></button>
+      <button type="button" className="creator-preview-arrow" onClick={() => patchLook({ pants: cycleOption(PRODUCER_PANTS, look.pants ?? 'denim_jeans', -1) })} aria-label="Previous pants" title="Previous pants"><ArrowLeft size={14} aria-hidden="true" /></button>
+      <button type="button" className="creator-preview-arrow" onClick={() => patchLook({ shoes: cycleOption(PRODUCER_SHOES, look.shoes ?? 'vintage_sneakers', -1) })} aria-label="Previous shoes" title="Previous shoes"><ArrowLeft size={14} aria-hidden="true" /></button>
+      <button type="button" className="creator-preview-arrow" onClick={() => patchLook({ hair: cycleOption(PRODUCER_HAIR_SHAPES, look.hair, -1) })} aria-label="Previous hair" title="Previous hair"><ArrowLeft size={14} aria-hidden="true" /></button>
+      <button type="button" className="creator-preview-arrow" onClick={() => patchLook({ hairColour: cycleOption(PRODUCER_HAIR_COLOURS, look.hairColour, -1) })} aria-label="Previous hair tone" title="Previous hair tone"><ArrowLeft size={14} aria-hidden="true" /></button>
+      <button type="button" className="creator-preview-arrow" onClick={() => patchLook({ clothesColour: cycleOption(PRODUCER_CLOTHES_COLOURS.map((c) => c.id), look.clothesColour as string, -1) as ProducerClothesColourId })} aria-label="Previous clothes colour" title="Previous clothes colour"><ArrowLeft size={14} aria-hidden="true" /></button>
+      <button type="button" className="creator-preview-arrow" onClick={() => patchLook({ accessory: cycleOption(PRODUCER_ACCESSORIES, look.accessory, -1) })} aria-label="Previous accessory" title="Previous accessory"><ArrowLeft size={14} aria-hidden="true" /></button>
+    </div>
   <div
   className="grid place-items-center rounded-lg border border-[var(--rst-brass-400)]/50 px-6 pb-2 pt-3"
   style={{ background: 'radial-gradient(circle at 50% 30%, rgba(217,160,70,0.22), rgba(0,0,0,0.55) 72%)' }}
   data-testid="producer-preview"
   >
   <ModularSpriteRenderer npc={previewNpc} animationState="idle" scale={3} showBadge={false} />
+  </div>
+    <div className="flex flex-col gap-1" aria-label="Next character element" role="group">
+      <button type="button" className="creator-preview-arrow" onClick={() => patchLook({ build: cycleOption(PRODUCER_BUILDS, look.build ?? 'average', 1) })} aria-label="Next build" title="Next build"><ArrowRight size={14} aria-hidden="true" /></button>
+      <button type="button" className="creator-preview-arrow" onClick={() => patchLook({ skinTone: cycleOption(PRODUCER_SKIN_TONES, look.skinTone ?? 'tan', 1) })} aria-label="Next skin colour" title="Next skin colour"><ArrowRight size={14} aria-hidden="true" /></button>
+      <button type="button" className="creator-preview-arrow" onClick={() => patchLook({ shirt: cycleOption(PRODUCER_SHIRTS, look.shirt ?? 'band_tee', 1) })} aria-label="Next shirt" title="Next shirt"><ArrowRight size={14} aria-hidden="true" /></button>
+      <button type="button" className="creator-preview-arrow" onClick={() => patchLook({ pants: cycleOption(PRODUCER_PANTS, look.pants ?? 'denim_jeans', 1) })} aria-label="Next pants" title="Next pants"><ArrowRight size={14} aria-hidden="true" /></button>
+      <button type="button" className="creator-preview-arrow" onClick={() => patchLook({ shoes: cycleOption(PRODUCER_SHOES, look.shoes ?? 'vintage_sneakers', 1) })} aria-label="Next shoes" title="Next shoes"><ArrowRight size={14} aria-hidden="true" /></button>
+      <button type="button" className="creator-preview-arrow" onClick={() => patchLook({ hair: cycleOption(PRODUCER_HAIR_SHAPES, look.hair, 1) })} aria-label="Next hair" title="Next hair"><ArrowRight size={14} aria-hidden="true" /></button>
+      <button type="button" className="creator-preview-arrow" onClick={() => patchLook({ hairColour: cycleOption(PRODUCER_HAIR_COLOURS, look.hairColour, 1) })} aria-label="Next hair tone" title="Next hair tone"><ArrowRight size={14} aria-hidden="true" /></button>
+      <button type="button" className="creator-preview-arrow" onClick={() => patchLook({ clothesColour: cycleOption(PRODUCER_CLOTHES_COLOURS.map((c) => c.id), look.clothesColour as string, 1) as ProducerClothesColourId })} aria-label="Next clothes colour" title="Next clothes colour"><ArrowRight size={14} aria-hidden="true" /></button>
+      <button type="button" className="creator-preview-arrow" onClick={() => patchLook({ accessory: cycleOption(PRODUCER_ACCESSORIES, look.accessory, 1) })} aria-label="Next accessory" title="Next accessory"><ArrowRight size={14} aria-hidden="true" /></button>
+    </div>
   </div>
               <p className="rst-kicker">Live character preview</p>
             </div>

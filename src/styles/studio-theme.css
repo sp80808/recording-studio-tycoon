@@ -438,5 +438,8 @@ button.rst-chore-btn:focus-visible {
 }
 .rst-input:focus { outline: none; border-color: var(--rst-brass-300); box-shadow: 0 0 0 2px rgba(230, 184, 102, 0.25); }
 .creator-tap { min-height: 44px; min-width: 44px; }
-.creator-swatch { position: relative; touch-action: manipulation; }
+ .creator-preview-arrow { display:flex; align-items:center; justify-content:center; width:28px; height:28px; min-height:28px; padding:0; border:1px solid rgba(230,184,102,.3); border-radius:6px; color:var(--rst-brass-200); background:rgba(20,17,14,.72); touch-action:manipulation; transition:background .15s,border-color .15s,color .15s; }
+ .creator-preview-arrow:hover { border-color:var(--rst-brass-300); background:rgba(230,184,102,.14); color:#fff3d2; }
+ .creator-preview-arrow:focus-visible { outline:2px solid var(--rst-brass-300); outline-offset:2px; }
+ .creator-swatch { position: relative; touch-action: manipulation; }
 .creator-swatch::after { content: ''; position: absolute; inset: -4px; } /* ~32-36px hit area; chips stay 8px apart */
