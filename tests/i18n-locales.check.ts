@@ -139,14 +139,22 @@ for (const city of CITIES) {
     assert.ok(contentEn[`city.${city.id}.${key}`], `content.json missing city.${city.id}.${key}`);
   }
 }
-for (const code of SUPPORTED_LOCALE_CODES) {
-  const file = path.join(localesRoot, code, 'content.json');
-  if (!fs.existsSync(file)) continue; // missing file => English fallback
-  const dict = JSON.parse(fs.readFileSync(file, 'utf8')) as Record<string, string>;
-  assert.deepEqual(Object.keys(dict).sort(), Object.keys(contentEn).sort(), `${code} content.json keys must match en`);
-  for (const key of Object.keys(contentEn)) {
-    assert.ok(dict[key].trim().length > 0, `${code} content ${key} empty`);
-    assert.deepEqual(placeholders(dict[key]), placeholders(contentEn[key]), `${code} content ${key} placeholders`);
+import { DIRECTOR_EVENTS } from '../src/narrative/directorEvents';
+const eventsEn = JSON.parse(fs.readFileSync(path.join(localesRoot, 'en', 'events.json'), 'utf8')) as Record<string, string>;
+for (const e of DIRECTOR_EVENTS) {
+  assert.ok(eventsEn[`event.${e.id}.title`], `events.json missing title for ${e.id} (re-dump en/events.json)`);
+  for (const op of e.options) assert.ok(eventsEn[`event.${e.id}.opt.${op.id}.label`], `events.json missing option ${e.id}/${op.id}`);
+}
+for (const [file, en] of [['content', contentEn], ['events', eventsEn]] as const) {
+  for (const code of SUPPORTED_LOCALE_CODES) {
+    const f = path.join(localesRoot, code, `${file}.json`);
+    if (!fs.existsSync(f)) continue; // missing file => English fallback
+    const dict = JSON.parse(fs.readFileSync(f, 'utf8')) as Record<string, string>;
+    assert.deepEqual(Object.keys(dict).sort(), Object.keys(en).sort(), `${code} ${file}.json keys must match en`);
+    for (const key of Object.keys(en)) {
+      assert.ok(dict[key].trim().length > 0, `${code} ${file} ${key} empty`);
+      assert.deepEqual(placeholders(dict[key]), placeholders(en[key]), `${code} ${file} ${key} placeholders`);
+    }
   }
 }
 const london = CITIES.find((c) => c.id === 'london')!;
