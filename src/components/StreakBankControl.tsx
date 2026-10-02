@@ -1,4 +1,4 @@
-import { moneySymbol, moneyValue } from '@/utils/displayMoney';
+import { money, moneySymbol, moneyValue } from '@/utils/displayMoney';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { AnimatedCounter } from './AnimatedCounter';
@@ -385,9 +385,9 @@ export const StreakBankControl: React.FC<StreakBankControlProps> = ({
           )}
         </span>
         <span className="font-mono text-sm font-black text-emerald-300 shrink-0">
-          ${quote.cash}
+          {money(quote.cash)}
           {maxCash > quote.cash && (
-            <span className="text-[10px] font-bold text-amber-400/90"> → up to ${maxCash}</span>
+            <span className="text-[10px] font-bold text-amber-400/90"> → up to {money(maxCash)}</span>
           )}
         </span>
       </span>

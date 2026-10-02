@@ -1,3 +1,4 @@
+import { money } from '@/utils/displayMoney';
 import { useCallback } from 'react';
 import { GameState } from '@/types/game';
 import { toast } from '@/hooks/use-toast';
@@ -27,7 +28,7 @@ export const useArtistContracts = (
     }));
     toast({
       title: "🖊️ Artist Signed",
-      description: `${prospect.name} signed for ${terms.durationDays} days. Advance paid: $${terms.advance}.`,
+      description: `${prospect.name} signed for ${terms.durationDays} days. Advance paid: ${money(terms.advance)}.`,
       className: toastStyle,
       duration: 4000,
     });
@@ -69,7 +70,7 @@ export const useArtistContracts = (
     result.expired.forEach(artist => {
       toast({
         title: "📄 Contract Ended",
-        description: `${artist.name}'s deal is up after earning you $${artist.totalEarned}.`,
+        description: `${artist.name}'s deal is up after earning you ${money(artist.totalEarned)}.`,
         className: toastStyle,
         duration: 4000,
       });

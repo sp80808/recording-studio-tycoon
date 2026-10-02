@@ -281,7 +281,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                   <span className="rst-body block text-xs leading-relaxed">{e.description}</span>
                   <span className="block text-[11px] italic leading-snug text-stone-400">“{e.funnyDescription}”</span>
                   <span className="mt-auto w-full space-y-2 border-t border-[var(--rst-line)] pt-3 text-left text-[11px]">
-                    <span className="flex items-baseline justify-between"><span className="rst-muted">Starting cash</span><b className="text-[var(--rst-money)]">${e.startingMoney.toLocaleString()}</b></span>
+                    <span className="flex items-baseline justify-between"><span className="rst-muted">Starting cash</span><b className="text-[var(--rst-money)]">{formatMoney(e.startingMoney, cityId, e.id)}</b></span>
                     <span className="flex items-baseline justify-between"><span className="rst-muted">Gear prices</span><b>{Math.round(e.equipmentMultiplier * 100)}% of modern</b></span>
                     <span className="block text-stone-300">{ERA_CHALLENGE[e.id] ?? ''}</span>
                   </span>

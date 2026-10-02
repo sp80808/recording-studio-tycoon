@@ -1,3 +1,4 @@
+import { money } from '@/utils/displayMoney';
 import { refreshGearForDay } from '@/features/usedGear/economy';
 
 import { useCallback } from 'react';
@@ -285,7 +286,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
         triggerScreenShake('light');
         toast({
           title: "❌ Cannot Pay Salaries!",
-          description: `Need $${totalSalaries} for daily salaries. Staff morale has dropped!`,
+          description: `Need ${money(totalSalaries)} for daily salaries. Staff morale has dropped!`,
           className: "bg-stone-800 border-stone-600 text-white",
           variant: "destructive"
         });
@@ -345,7 +346,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       gameAudio.playUISound('unavailable');
       toast({
         title: "💰 Insufficient Funds",
-        description: `Need $${cost} to refresh candidate list.`,
+        description: `Need ${money(cost)} to refresh candidate list.`,
         className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive"
       });
@@ -395,7 +396,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       gameAudio.playUISound('unavailable');
       toast({
         title: "💰 Insufficient Funds",
-        description: `Need $${refreshCost} to chase new gigs.`,
+        description: `Need ${money(refreshCost)} to chase new gigs.`,
         className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive",
       });
@@ -414,7 +415,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     gameAudio.playUISound('notice');
     toast({
       title: "📞 New Leads",
-      description: refreshCost > 0 ? `Paid $${refreshCost} — a fresh gig landed on your desk.` : 'A fresh gig landed on your desk — no fee for you.',
+      description: refreshCost > 0 ? `Paid ${money(refreshCost)} — a fresh gig landed on your desk.` : 'A fresh gig landed on your desk — no fee for you.',
       className: "bg-stone-800 border-stone-600 text-white",
     });
     return true;
