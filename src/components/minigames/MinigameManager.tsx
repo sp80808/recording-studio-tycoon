@@ -26,6 +26,7 @@ import { SamplingSequencingGame } from './SamplingSequencingGame';
 import { FaultHuntGame } from './FaultHuntGame';
 import { ChainRecallGame } from './ChainRecallGame';
 import { SessionScrambleGame } from './SessionScrambleGame';
+import { FlightCasePackingGame } from './FlightCasePackingGame';
 import { BusMergeGame } from './BusMergeGame';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { toast } from '@/hooks/use-toast';
@@ -60,6 +61,7 @@ export type MinigameType =
   | 'fault-hunt'
   | 'chain-recall'
   | 'session-scramble'
+  | 'flight-case'
   | 'bus-merge';
 
 interface MinigameManagerProps {
@@ -211,6 +213,7 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         technicalBonus = Math.floor(score / 9);
         break;
       case 'session-scramble':
+      case 'flight-case':
         creativityBonus = Math.floor(score / 16);
         technicalBonus = Math.floor(score / 8);
         break;
@@ -337,6 +340,8 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
         return <ChainRecallGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'session-scramble':
         return <SessionScrambleGame {...commonGameProps} onComplete={standardOnComplete} />;
+      case 'flight-case':
+        return <FlightCasePackingGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'bus-merge':
         return <BusMergeGame {...commonGameProps} onComplete={standardOnComplete} />;
       case 'maintenance':
