@@ -73,15 +73,18 @@ function CreatorArrowRow({
   value,
   onPrev,
   onNext,
+  swatch,
 }: {
   label: string;
   value: string;
+  /** Optional colour chip shown beside the value (colour rows). */
+  swatch?: string;
   onPrev: () => void;
   onNext: () => void;
 }) {
   return (
     <div className="flex items-center gap-1.5" role="group" aria-label={`${label}: ${value}`}>
-      <span className="w-20 shrink-0 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--rst-brass-200)]">
+      <span className="w-[5.25rem] shrink-0 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--rst-brass-200)]">
         {label}
       </span>
       <button
@@ -92,7 +95,10 @@ function CreatorArrowRow({
       >
         <ArrowLeft size={15} aria-hidden="true" />
       </button>
-      <span className="rst-title min-w-0 flex-1 truncate text-center text-[15px] capitalize leading-tight">{value}</span>
+      <span className="flex min-w-0 flex-1 items-center justify-center gap-2">
+        {swatch && <span aria-hidden="true" className="size-4 shrink-0 rounded-full border border-white/25" style={{ background: swatch }} />}
+        <span className="rst-title min-w-0 truncate text-center text-[15px] capitalize leading-tight">{value}</span>
+      </span>
       <button
         type="button"
         className="rst-btn rst-btn-ghost creator-tap !px-0"
@@ -360,7 +366,14 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                 onPrev={() => patchLook({ hair: cycleOption(PRODUCER_HAIR_SHAPES, look.hair, -1) })}
                 onNext={() => patchLook({ hair: cycleOption(PRODUCER_HAIR_SHAPES, look.hair, 1) })}
               />
-              <div className="flex flex-wrap gap-2 pl-[92px]" role="radiogroup" aria-label="Hair colour">
+              <CreatorArrowRow
+                label="Hair tone"
+                value={look.hairColour.replace(/_/g, ' ')}
+                swatch={HAIR_HEX[look.hairColour]}
+                onPrev={() => patchLook({ hairColour: cycleOption(PRODUCER_HAIR_COLOURS, look.hairColour, -1) })}
+                onNext={() => patchLook({ hairColour: cycleOption(PRODUCER_HAIR_COLOURS, look.hairColour, 1) })}
+              />
+              <div className="flex flex-wrap gap-2 pl-[90px]" role="radiogroup" aria-label="Hair colour swatches">
                 {PRODUCER_HAIR_COLOURS.map((colour) => (
                   <button key={colour} type="button" role="radio" aria-checked={look.hairColour === colour} aria-label={colour.replace(/_/g, ' ')} title={colour.replace(/_/g, ' ')}
                     onClick={() => patchLook({ hairColour: colour })}
@@ -369,17 +382,21 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                 ))}
               </div>
 
-              <fieldset>
-                <legend className="mb-1.5 text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">Clothes colour</legend>
-                <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Clothes colour">
-                  {PRODUCER_CLOTHES_COLOURS.map((c) => (
-                    <button key={c.id} type="button" role="radio" aria-checked={look.clothesColour === c.id} aria-label={c.label} title={c.label}
-                      onClick={() => patchLook({ clothesColour: (c.id as ProducerClothesColourId) })}
-                      className={`creator-swatch h-7 w-7 rounded-md border-2 ${look.clothesColour === c.id ? 'border-[var(--rst-brass-300)] ring-2 ring-[var(--rst-brass-300)]/40' : 'border-white/15'}`}
-                      style={{ background: `linear-gradient(135deg, ${CLOTHING_PALETTES[c.palette].primary} 60%, ${CLOTHING_PALETTES[c.palette].secondary} 60%)` }} />
-                  ))}
-                </div>
-              </fieldset>
+              <CreatorArrowRow
+                label="Clothes"
+                value={PRODUCER_CLOTHES_COLOURS.find((c) => c.id === look.clothesColour)?.label ?? ''}
+                swatch={(() => { const c = PRODUCER_CLOTHES_COLOURS.find((x) => x.id === look.clothesColour) ?? PRODUCER_CLOTHES_COLOURS[0]; return CLOTHING_PALETTES[c.palette].primary; })()}
+                onPrev={() => patchLook({ clothesColour: cycleOption(PRODUCER_CLOTHES_COLOURS.map((c) => c.id), look.clothesColour as string, -1) as ProducerClothesColourId })}
+                onNext={() => patchLook({ clothesColour: cycleOption(PRODUCER_CLOTHES_COLOURS.map((c) => c.id), look.clothesColour as string, 1) as ProducerClothesColourId })}
+              />
+              <div className="flex flex-wrap gap-2 pl-[90px]" role="radiogroup" aria-label="Clothes colour swatches">
+                {PRODUCER_CLOTHES_COLOURS.map((c) => (
+                  <button key={c.id} type="button" role="radio" aria-checked={look.clothesColour === c.id} aria-label={c.label} title={c.label}
+                    onClick={() => patchLook({ clothesColour: (c.id as ProducerClothesColourId) })}
+                    className={`creator-swatch h-6 w-6 rounded-md border-2 ${look.clothesColour === c.id ? 'border-[var(--rst-brass-300)] ring-2 ring-[var(--rst-brass-300)]/40' : 'border-white/15'}`}
+                    style={{ background: `linear-gradient(135deg, ${CLOTHING_PALETTES[c.palette].primary} 60%, ${CLOTHING_PALETTES[c.palette].secondary} 60%)` }} />
+                ))}
+              </div>
 
               <CreatorArrowRow
                 label="Accessory"
