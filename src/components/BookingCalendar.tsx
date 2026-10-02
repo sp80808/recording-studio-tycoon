@@ -1,7 +1,7 @@
 import React from 'react';
 import type { GameState, Project } from '@/types/game';
 import { money } from '@/utils/displayMoney';
-import { buildBookingCalendar, previewBooking, SLOT_NAMES, SLOTS_PER_DAY } from '@/rpg/bookingCalendar';
+import { buildBookingCalendar, previewBooking, reschedulePreview, SLOT_NAMES, SLOTS_PER_DAY } from '@/rpg/bookingCalendar';
 
 type CalState = Pick<GameState, 'currentDay' | 'studioRooms' | 'activeProject' | 'activeProjects' | 'cityId'>;
 
@@ -46,6 +46,7 @@ const TERMS_LABEL = {
 
 export const BookingCostLine: React.FC<{ state: CalState; project: Project }> = ({ state, project }) => {
   const p = previewBooking(state, project);
+  const later = reschedulePreview(state, project, (p.firstSlot ? p.firstSlot.day - state.currentDay : 0) + 1);
   return (
     <div data-testid="booking-cost-line" className="mb-3 rounded-lg border border-[var(--rst-line)] bg-black/20 p-2 text-xs text-stone-300">
       Takes {p.sessions} session{p.sessions === 1 ? '' : 's'}
@@ -62,6 +63,11 @@ export const BookingCostLine: React.FC<{ state: CalState; project: Project }> = 
         {p.nextFreeAfter
           ? <> · next free slot {SLOT_NAMES[p.nextFreeAfter.slot].toLowerCase()} day {p.nextFreeAfter.day}</>
           : ' · takes the last free slot this week'}
+      </span>
+      <span data-testid="booking-reschedule" className="mt-1 block text-stone-400">
+        {later.slot
+          ? <>Start a day later ({SLOT_NAMES[later.slot.slot].toLowerCase()} day {later.slot.day}{later.roomName ? `, ${later.roomName}` : ''}): {later.clientAccepts ? 'within the client\'s terms' : 'outside the client\'s terms'} · studio {Math.round(later.utilizationAfter * 100)}% booked</>
+          : 'Starting a day later leaves no free slot this week'}
       </span>
     </div>
   );
