@@ -19,3 +19,10 @@ assert.equal(getCityLightLevel(0), 1);
 assert.equal(getStarLevel(1), 0);
 assert.equal(getStarLevel(0), 1);
 console.log('window view check passed');
+
+// Floor light shaft follows the sun and is off at night.
+import { getShaftStrength, getShaftShift } from '../src/components/studio/studioLightShaft';
+assert.equal(getShaftStrength(0), 0);
+assert.equal(getShaftStrength(1200), 0);
+assert.ok(getShaftStrength(720) > getShaftStrength(375), 'beam strongest at noon');
+assert.ok(getShaftShift(400) < 0 && getShaftShift(1040) > 0 && Math.abs(getShaftShift(720)) < 0.2, 'beam slides across the floor');
