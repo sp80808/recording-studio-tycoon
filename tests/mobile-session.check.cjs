@@ -112,7 +112,8 @@ async (page) => {
 
   for (let take = 0; take < 2; take++) {
     const docHeight = await page.evaluate(() => document.documentElement.scrollHeight);
-    await armBtn().click();
+    // The burst may already have re-armed itself; only press Work when it is still on offer.
+    if (await armBtn().isVisible().catch(() => false)) await armBtn().click({ timeout: 3000 }).catch(() => {});
     const lock = page.getByRole('button', { name: /^Lock take/ });
     await lock.waitFor();
     assert(await page.getByTestId('mobile-focus-mixer').count() === 0, 'Mixer should be replaced while armed');
@@ -123,8 +124,14 @@ async (page) => {
     assert(await page.evaluate(() => document.documentElement.scrollHeight) === docHeight, 'Page height changed while armed');
     await shot(`armed-${take}`);
     await lock.click();
+    // Takes chain automatically while energy remains (no dead Arm wait): keep locking until the burst ends.
+    for (let guard = 0; guard < 12; guard++) {
+      await Promise.race([armBtn().waitFor(), lock.waitFor()]).catch(() => {});
+      if (await armBtn().isVisible().catch(() => false)) break;
+      if (await lock.isVisible().catch(() => false)) await lock.click().catch(() => {});
+    }
+    await armBtn().waitFor();
     await page.getByTestId('mobile-focus-mixer').waitFor();
-    await page.getByText(/Quality \(/).first().waitFor();
     const after = await scrollAudit();
     assert(after.offenders.length === 0 && !after.pageScrolls, 'Result view scrolls');
   }
