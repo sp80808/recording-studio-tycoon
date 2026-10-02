@@ -198,8 +198,8 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
     <main className="career-start-page" aria-label="Start a new career">
             <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col px-4 pb-28 pt-6 sm:px-8">
         {/* Header + stepper */}
-        <header className="flex flex-wrap items-center justify-between gap-3">
-          <button type="button" onClick={goBack} className="rst-btn rst-btn-ghost !min-h-9 !px-3 !text-xs">
+        <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          <button type="button" onClick={goBack} className="rst-btn rst-btn-ghost justify-self-start !min-h-9 !px-3 !text-xs">
             <ArrowLeft size={14} aria-hidden="true" />
             {step === 0 ? 'Back' : 'Change era'}
           </button>
@@ -207,7 +207,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
             {STEPS.map((label, i) => (
               <li key={label} className={stepClass(i === step, i < step)} aria-current={i === step ? 'step' : undefined}>
                 <span
-                  className={`grid size-5 place-items-center leading-none rounded-full border text-[10px] ${
+                  className={`grid size-5 place-items-center text-center tabular-nums leading-5 rounded-full border text-[10px] ${
                     i < step ? 'border-[var(--rst-brass-400)] bg-[var(--rst-brass-400)] text-stone-950' : 'border-current'
                   }`}
                 >
