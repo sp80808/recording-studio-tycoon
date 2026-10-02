@@ -211,10 +211,21 @@ export const regionalEnquiryWeight = (genre: string, cityId?: string | null): nu
 const DOLLARS: CityCurrency = { code: 'USD', symbol: '$', perDollar: 1 };
 
 /** The currency a city's players read in a given era (era-accurate indexed rates). Neutral = dollars. */
+/** Career-start era ids (the ones saves and the era select use) → the city era keys. */
+const CITY_ERA_OF: Record<string, CityEraId> = {
+  classic_rock: 'analog60s',
+  golden_age: 'digital80s',
+  digital_age: 'internet2000s',
+  modern: 'streaming2020s',
+};
+export const cityEraOf = (eraId?: string | null): CityEraId | undefined =>
+  eraId ? CITY_ERA_OF[eraId] ?? (CITY_ERAS.includes(eraId as CityEraId) ? (eraId as CityEraId) : undefined) : undefined;
+
 export const currencyFor = (cityId?: string | null, eraId?: string | null): CityCurrency => {
   const city = getCityById(cityId);
   if (!city) return DOLLARS;
-  return city.eraCurrency?.[eraId as CityEraId] ?? city.currency;
+  const key = cityEraOf(eraId);
+  return (key && city.eraCurrency?.[key]) || city.currency;
 };
 
 /** Studio dollars → display amount in the city's currency for that era (whole units). */
@@ -255,7 +266,7 @@ export const describeCity = (city: City, eraId?: string | null): string[] => {
 /** The local scene in the player's era, for the lore panel. */
 export const cityEraLore = (cityId: string | null | undefined, eraId: string | null | undefined): string | undefined => {
   const city = getCityById(cityId);
-  return city ? city.lore.eras[(eraId as CityEraId) in city.lore.eras ? (eraId as CityEraId) : 'streaming2020s'] : undefined;
+  return city ? city.lore.eras[cityEraOf(eraId) ?? 'streaming2020s'] : undefined;
 };
 
 /** A new run's producer gets the city's edge: +1 to one attribute. Idempotent per call site (new games only). */

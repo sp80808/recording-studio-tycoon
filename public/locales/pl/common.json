@@ -247,5 +247,17 @@
   "active_duties": "Obowiązki",
   "active_duties_title": "Otwórz obowiązki konserwacyjne studia",
   "active_work_on_project": "Pracuj nad projektem",
-  "active_overall_progress_aria": "Całkowity postęp projektu"
+  "active_overall_progress_aria": "Całkowity postęp projektu",
+  "career_step_character": "Postać",
+  "career_step_location": "Miejsce",
+  "career_step_era": "Epoka",
+  "career_step_role": "Rola",
+  "career_back": "Wstecz",
+  "career_back_to_character": "Wróć do postaci",
+  "career_back_to_location": "Wróć do miejsca",
+  "career_back_to_era": "Wróć do epoki",
+  "career_next_era": "Wybierz epokę",
+  "career_next_role": "Wybierz rolę",
+  "career_open_studio": "Otwórz studio",
+  "career_next_character": "Stwórz producenta"
 }

@@ -247,5 +247,17 @@
   "active_duties": "Faccende",
   "active_duties_title": "Apri le faccende di manutenzione dello studio",
   "active_work_on_project": "Lavora al progetto",
-  "active_overall_progress_aria": "Avanzamento totale del progetto"
+  "active_overall_progress_aria": "Avanzamento totale del progetto",
+  "career_step_character": "Personaggio",
+  "career_step_location": "Luogo",
+  "career_step_era": "Epoca",
+  "career_step_role": "Ruolo",
+  "career_back": "Indietro",
+  "career_back_to_character": "Torna al personaggio",
+  "career_back_to_location": "Torna al luogo",
+  "career_back_to_era": "Torna all'epoca",
+  "career_next_era": "Scegli l'epoca",
+  "career_next_role": "Scegli il ruolo",
+  "career_open_studio": "Apri lo studio",
+  "career_next_character": "Crea il tuo produttore"
 }

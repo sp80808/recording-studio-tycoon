@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Building2, Check, Dices, Globe2, Landmark, MapPin, Radio, Swords, Waves } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { AVAILABLE_ERAS } from '@/data/eras';
 import type { Era } from '@/types/game';
 import type { ProducerBackgroundId } from '@/types/character';
@@ -28,7 +29,7 @@ import {
 } from '@/features/sprites/producerAppearance';
 import { HAIR_HEX, CLOTHING_PALETTES } from '@/features/sprites/npcAppearanceData';
 import { CitySkyline } from '@/components/CitySkyline';
-import { CITIES, DEFAULT_CITY_ID, describeCity, formatMoney, getCityById, localName, type CityId } from '@/rpg/cities';
+import { CITIES, DEFAULT_CITY_ID, currencyFor, describeCity, formatMoney, getCityById, localName, type CityId } from '@/rpg/cities';
 import { EraEmblem, type EraEmblemId } from './EraEmblems';
 import './splash.css';
 
@@ -57,7 +58,7 @@ const ERA_CHALLENGE: Record<string, string> = {
   modern: 'Everyone has a home studio. Win on taste and relationships.',
 };
 
-const STEPS = ['Location', 'Era', 'Character', 'Role'] as const;
+const STEP_KEYS = ['location', 'era', 'character', 'role'] as const;
 
 const CITY_ICONS = { 'los-angeles': Radio, nashville: Waves, london: Landmark, berlin: Building2, tokyo: Globe2, rio: MapPin } as const;
 
@@ -109,6 +110,7 @@ const cycleOption = <T extends string>(list: readonly T[], current: T, delta: nu
   list[(list.indexOf(current) + delta + list.length) % list.length];
 
 export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
+  const { t } = useTranslation();
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [eraId, setEraId] = useState<string | null>(null);
   const [originId, setOriginId] = useState<ProducerBackgroundId | null>(null);
@@ -201,11 +203,11 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
         <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <button type="button" onClick={goBack} className="rst-btn rst-btn-ghost justify-self-start !min-h-9 !px-3 !text-xs">
             <ArrowLeft size={14} aria-hidden="true" />
-            {step === 0 ? 'Back' : 'Change era'}
+            {step === 0 ? t('career_back') : t(`career_back_to_${STEP_KEYS[step - 1]}`)}
           </button>
           <ol className="flex items-center gap-4" aria-label="Career setup progress">
-            {STEPS.map((label, i) => (
-              <li key={label} className={stepClass(i === step, i < step)} aria-current={i === step ? 'step' : undefined}>
+            {STEP_KEYS.map((key, i) => (
+              <li key={key} className={stepClass(i === step, i < step)} aria-current={i === step ? 'step' : undefined}>
                 <span
                   className={`inline-flex size-5 shrink-0 items-center justify-center rounded-full border text-center text-[10px] leading-none tabular-nums ${
                     i < step ? 'border-[var(--rst-brass-400)] bg-[var(--rst-brass-400)] text-stone-950' : 'border-current'
@@ -213,7 +215,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                 >
                   {i < step ? <Check size={11} aria-hidden="true" /> : i + 1}
                 </span>
-                {label}
+                {t(`career_step_${key}`)}
               </li>
             ))}
           </ol>
@@ -289,6 +291,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                   <span className="block text-[11px] italic leading-snug text-stone-400">“{e.funnyDescription}”</span>
                   <span className="mt-auto w-full space-y-2 border-t border-[var(--rst-line)] pt-3 text-left text-[11px]">
                     <span className="flex items-center justify-between gap-4"><span className="rst-muted">Starting cash</span><b className="min-w-[7.5rem] text-right tabular-nums leading-none text-[var(--rst-money)]">{formatMoney(e.startingMoney, cityId, e.id)}</b></span>
+                    <span className="flex items-baseline justify-between gap-4"><span className="rst-muted">Currency</span><b data-testid="era-currency">{currencyFor(cityId, e.id).symbol} {currencyFor(cityId, e.id).code}</b></span>
                     <span className="flex items-center justify-between gap-4"><span className="rst-muted">Gear prices</span><b className="min-w-[7.5rem] text-right tabular-nums leading-none">{Math.round(e.equipmentMultiplier * 100)}% of modern</b></span>
                     <span className="block text-stone-300">{ERA_CHALLENGE[e.id] ?? ''}</span>
                   </span>
@@ -496,7 +499,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
             disabled={step === 0 ? !cityId : step === 1 ? !era : step === 2 ? !moniker.trim() : !(era && origin)}
             onClick={goNext}
           >
-            {step === 0 ? 'Choose an era' : step === 1 ? 'Create your producer' : step === 2 ? 'Choose a role' : 'Open the studio'}
+            {[t('career_next_era'), t('career_next_character'), t('career_next_role'), t('career_open_studio')][step]}
             <ArrowRight size={15} aria-hidden="true" />
           </button>
         </div>

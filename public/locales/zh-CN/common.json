@@ -247,5 +247,17 @@
   "active_duties": "杂务",
   "active_duties_title": "打开录音棚维护杂务",
   "active_work_on_project": "处理项目",
-  "active_overall_progress_aria": "项目总进度"
+  "active_overall_progress_aria": "项目总进度",
+  "career_step_character": "角色",
+  "career_step_location": "地点",
+  "career_step_era": "时代",
+  "career_step_role": "身份",
+  "career_back": "返回",
+  "career_back_to_character": "返回角色",
+  "career_back_to_location": "返回地点",
+  "career_back_to_era": "返回时代",
+  "career_next_era": "选择时代",
+  "career_next_role": "选择身份",
+  "career_open_studio": "开启工作室",
+  "career_next_character": "创建制作人"
 }

@@ -247,5 +247,17 @@
   "active_duties": "잡무",
   "active_duties_title": "스튜디오 정비 잡무 열기",
   "active_work_on_project": "프로젝트 작업하기",
-  "active_overall_progress_aria": "프로젝트 전체 진행도"
+  "active_overall_progress_aria": "프로젝트 전체 진행도",
+  "career_step_character": "캐릭터",
+  "career_step_location": "장소",
+  "career_step_era": "시대",
+  "career_step_role": "역할",
+  "career_back": "뒤로",
+  "career_back_to_character": "캐릭터로 돌아가기",
+  "career_back_to_location": "장소로 돌아가기",
+  "career_back_to_era": "시대로 돌아가기",
+  "career_next_era": "시대 선택",
+  "career_next_role": "역할 선택",
+  "career_open_studio": "스튜디오 열기",
+  "career_next_character": "프로듀서 만들기"
 }

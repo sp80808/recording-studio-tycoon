@@ -247,5 +247,17 @@
   "active_duties": "Duties",
   "active_duties_title": "Open Studio Maintenance Duties",
   "active_work_on_project": "Work on Project",
-  "active_overall_progress_aria": "Overall project progress"
+  "active_overall_progress_aria": "Overall project progress",
+  "career_step_character": "Character",
+  "career_step_location": "Location",
+  "career_step_era": "Era",
+  "career_step_role": "Role",
+  "career_back": "Back",
+  "career_back_to_character": "Back to character",
+  "career_back_to_location": "Back to location",
+  "career_back_to_era": "Back to era",
+  "career_next_era": "Choose an era",
+  "career_next_role": "Choose a role",
+  "career_open_studio": "Open the studio",
+  "career_next_character": "Create your producer"
 }

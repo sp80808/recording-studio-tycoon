@@ -247,5 +247,17 @@
   "active_duties": "Дела",
   "active_duties_title": "Открыть задачи по обслуживанию студии",
   "active_work_on_project": "Работать над проектом",
-  "active_overall_progress_aria": "Общий прогресс проекта"
+  "active_overall_progress_aria": "Общий прогресс проекта",
+  "career_step_character": "Персонаж",
+  "career_step_location": "Город",
+  "career_step_era": "Эпоха",
+  "career_step_role": "Роль",
+  "career_back": "Назад",
+  "career_back_to_character": "Назад к персонажу",
+  "career_back_to_location": "Назад к городу",
+  "career_back_to_era": "Назад к эпохе",
+  "career_next_era": "Выбрать эпоху",
+  "career_next_role": "Выбрать роль",
+  "career_open_studio": "Открыть студию",
+  "career_next_character": "Создать продюсера"
 }

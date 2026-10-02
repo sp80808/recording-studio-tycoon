@@ -247,5 +247,17 @@
   "active_duties": "Aufgaben",
   "active_duties_title": "Studio-Wartungsaufgaben öffnen",
   "active_work_on_project": "Am Projekt arbeiten",
-  "active_overall_progress_aria": "Gesamtfortschritt des Projekts"
+  "active_overall_progress_aria": "Gesamtfortschritt des Projekts",
+  "career_step_character": "Figur",
+  "career_step_location": "Ort",
+  "career_step_era": "Ära",
+  "career_step_role": "Rolle",
+  "career_back": "Zurück",
+  "career_back_to_character": "Zurück zur Figur",
+  "career_back_to_location": "Zurück zum Ort",
+  "career_back_to_era": "Zurück zur Ära",
+  "career_next_era": "Ära wählen",
+  "career_next_role": "Rolle wählen",
+  "career_open_studio": "Studio eröffnen",
+  "career_next_character": "Produzenten erstellen"
 }

@@ -247,5 +247,17 @@
   "active_duties": "Tarefas",
   "active_duties_title": "Abrir tarefas de manutenção do estúdio",
   "active_work_on_project": "Trabalhar no projeto",
-  "active_overall_progress_aria": "Progresso total do projeto"
+  "active_overall_progress_aria": "Progresso total do projeto",
+  "career_step_character": "Personagem",
+  "career_step_location": "Local",
+  "career_step_era": "Era",
+  "career_step_role": "Papel",
+  "career_back": "Voltar",
+  "career_back_to_character": "Voltar ao personagem",
+  "career_back_to_location": "Voltar ao local",
+  "career_back_to_era": "Voltar à era",
+  "career_next_era": "Escolher era",
+  "career_next_role": "Escolher papel",
+  "career_open_studio": "Abrir o estúdio",
+  "career_next_character": "Crie seu produtor"
 }
