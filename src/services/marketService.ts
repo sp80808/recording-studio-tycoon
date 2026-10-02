@@ -1,6 +1,7 @@
 import { GameState } from '@/types/game';
 import { MarketTrend, SubGenre, MusicGenre, TrendDirection, TrendEvent } from '@/types/charts';
 import { Project } from '@/types/game';
+import { createSeededRandom, randomInt, type RandomSource } from '@/simulation/seededRandom';
 import { subGenres as importedSubGenres, getSubGenreById as getImportedSubGenreById } from '@/data/subGenreData';
 
 // In-memory store for market trends
@@ -9,7 +10,7 @@ let currentMarketTrends: MarketTrend[] = [];
 const allSubGenres: ReadonlyArray<SubGenre> = [...importedSubGenres];
 
 // Helper to initialize some basic trends if needed for development
-const initializeMockData = () => {
+const initializeMockData = (roll: RandomSource = createSeededRandom('market:initial')) => {
   // allSubGenres is already initialized from the import.
   // We only need to initialize currentMarketTrends if empty.
   if (currentMarketTrends.length === 0) {
@@ -21,14 +22,14 @@ const initializeMockData = () => {
       const relevantSubGenre = allSubGenres.find(sg => sg.parentGenre === genre);
 
       currentMarketTrends.push({
-        id: `trend-${genre}-${Date.now()}-${index}`,
+        id: `trend-${genre}-${index}`,
         genreId: genre,
         subGenreId: relevantSubGenre ? relevantSubGenre.id : undefined,
-        popularity: Math.floor(Math.random() * 70) + 30, 
-        trendDirection: directions[Math.floor(Math.random() * directions.length)],
-        growthRate: Math.random() * 10 - 5, 
-        lastUpdated: Date.now(),
-        growth: Math.random() * 100 - 50,
+        popularity: randomInt(roll, 30, 99),
+        trendDirection: directions[randomInt(roll, 0, directions.length - 1)],
+        growthRate: roll() * 10 - 5,
+        lastUpdated: 0,
+        growth: roll() * 100 - 50,
         events: [],
         duration: 30, 
         startDay: 1, 
@@ -39,27 +40,32 @@ const initializeMockData = () => {
 
 initializeMockData(); 
 
+/** Reset the store to the seeded starting trends (new game / tests). */
+export const resetMarketTrends = (seed: string | number = 'initial'): void => {
+  currentMarketTrends = [];
+  initializeMockData(createSeededRandom(`market:${seed}`));
+};
+
 export const marketService = {
   updateAllMarketTrends: (
     gameState: GameState,
     playerProjectsCompletedSinceLastUpdate: (Project & { qualityScore?: number })[] = [],
     globalEventsHappenedSinceLastUpdate: TrendEvent[] = []
   ): MarketTrend[] => {
-    console.log('MarketService: Updating all market trends...');
-    
+    // Deterministic: the swing comes from the save seed and the in-game day, never from the wall clock.
+    const roll = createSeededRandom(`${gameState.saveSeed ?? 'market'}:market:${gameState.currentDay}`);
     currentMarketTrends = currentMarketTrends.map(trend => {
       let newPopularity = trend.popularity;
       let newGrowthRate = trend.growthRate;
       let newTrendDirection = trend.trendDirection;
 
-      newPopularity += trend.growthRate * (Math.random() * 0.5 + 0.75); 
-      newGrowthRate += (Math.random() * 2 - 1) * 0.5; 
+      newPopularity += trend.growthRate * (roll() * 0.5 + 0.75); 
+      newGrowthRate += (roll() * 2 - 1) * 0.5; 
 
       playerProjectsCompletedSinceLastUpdate.forEach(project => {
         if (project.genre === trend.genreId && project.qualityScore && project.qualityScore > 70) {
           newPopularity += project.qualityScore / 20; 
           newGrowthRate += project.qualityScore / 100;  
-          console.log(`Player project '${project.title}' boosted ${trend.genreId}`);
         }
       });
 
@@ -67,7 +73,6 @@ export const marketService = {
         if (event.affectedGenres.includes(trend.genreId)) {
           newPopularity += event.impact / 2; 
           newGrowthRate += event.impact / 10;
-          console.log(`Global event '${event.name}' impacted ${trend.genreId}`);
         }
       });
       
@@ -86,12 +91,11 @@ export const marketService = {
         popularity: Math.round(newPopularity),
         growthRate: parseFloat(newGrowthRate.toFixed(2)),
         trendDirection: newTrendDirection,
-        lastUpdated: Date.now(),
+        lastUpdated: gameState.currentDay,
         growth: Math.round(newGrowthRate * 10), 
       };
     });
     
-    console.log('MarketService: Market trends updated.', currentMarketTrends);
     return [...currentMarketTrends];
   },
 
