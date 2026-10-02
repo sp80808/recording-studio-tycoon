@@ -129,3 +129,34 @@ setFormatLocale('xx');
 assert.equal(getFormatLocale(), 'en', 'unknown locale falls back to en');
 setFormatLocale('en');
 console.log('i18n-formatting: all checks passed');
+
+// Content overlay (city lore etc.): key/placeholder parity with en, and English fallback.
+import { registerContent, setContentLocale, tc } from '../src/i18n/content';
+import { CITIES, describeCity } from '../src/rpg/cities';
+const contentEn = JSON.parse(fs.readFileSync(path.join(localesRoot, 'en', 'content.json'), 'utf8')) as Record<string, string>;
+for (const city of CITIES) {
+  for (const key of ['tagline', 'scene', 'blurb', 'legend', 'edge_label', 'edge_why']) {
+    assert.ok(contentEn[`city.${city.id}.${key}`], `content.json missing city.${city.id}.${key}`);
+  }
+}
+for (const code of SUPPORTED_LOCALE_CODES) {
+  const file = path.join(localesRoot, code, 'content.json');
+  if (!fs.existsSync(file)) continue; // missing file => English fallback
+  const dict = JSON.parse(fs.readFileSync(file, 'utf8')) as Record<string, string>;
+  assert.deepEqual(Object.keys(dict).sort(), Object.keys(contentEn).sort(), `${code} content.json keys must match en`);
+  for (const key of Object.keys(contentEn)) {
+    assert.ok(dict[key].trim().length > 0, `${code} content ${key} empty`);
+    assert.deepEqual(placeholders(dict[key]), placeholders(contentEn[key]), `${code} content ${key} placeholders`);
+  }
+}
+const london = CITIES.find((c) => c.id === 'london')!;
+setContentLocale('en');
+const englishLines = describeCity(london, 'streaming2020s');
+registerContent('de', { 'city_ui.demand': 'Gefragt: {{genres}}' });
+setContentLocale('de');
+const germanLines = describeCity(london, 'streaming2020s');
+assert.match(germanLines[1], /^Gefragt: /);
+assert.equal(germanLines[2], englishLines[2], 'ids missing from the dictionary fall back to English');
+setContentLocale('en');
+assert.equal(tc('nope', 'Hello {{n}}', { n: 3 }), 'Hello 3');
+console.log('i18n-content: all checks passed');

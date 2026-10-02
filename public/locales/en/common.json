@@ -247,5 +247,17 @@
   "active_duties": "Duties",
   "active_duties_title": "Open Studio Maintenance Duties",
   "active_work_on_project": "Work on Project",
-  "active_overall_progress_aria": "Overall project progress"
+  "active_overall_progress_aria": "Overall project progress",
+  "active_focus": "Focus",
+  "active_match": "{{pct}}% match",
+  "active_stage_guidance": "Stage guidance",
+  "active_auto_align": "Auto-Align",
+  "active_auto_align_title": "Auto-align to stage target",
+  "active_auto_align_locked": "Requires Level 5+ or Management Level 3+",
+  "active_target_title": "Target {{min}}-{{max}}%",
+  "active_focus_aria": "{{name}} focus",
+  "active_arm_overdrive": "Arm overdrive ({{cost}}⚡ · +75%)",
+  "active_overdrive_engaged": "Overdrive engaged ({{cost}}⚡ · {{bonus}})",
+  "active_saver_bonus": "-1 Saver",
+  "active_cost_patchbay": "1 with Patchbay"
 }

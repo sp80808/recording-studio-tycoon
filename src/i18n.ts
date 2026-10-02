@@ -4,6 +4,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import HttpApi from 'i18next-http-backend';
 import { DEFAULT_LOCALE, SUPPORTED_LOCALE_CODES } from './i18n/supportedLocales';
 import { setFormatLocale } from './i18n/formatLocale';
+import { setContentLocale } from './i18n/content';
 
 i18n
   .use(HttpApi)
@@ -37,6 +38,7 @@ i18n
 // Keep <html lang> aligned with the active locale for screen readers and browser font selection
 i18n.on('languageChanged', (lng) => {
   setFormatLocale(lng);
+  setContentLocale(lng);
   if (typeof document !== 'undefined') document.documentElement.lang = lng;
 });
 

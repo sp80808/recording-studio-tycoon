@@ -12,6 +12,10 @@ Missing keys fall back to English (`fallbackLng`). The `i18n-locales` check enfo
 All non-English strings are **machine-written (Claude) and unreviewed by native speakers**. en-GB differs from en by spelling only.
 Native-speaker review wanted, especially for ja, ko, zh-CN, ru, pl. Keys added in the 2026-10-02 slice (`active_*`) are in the same state.
 
+## Content overlay (authored game text)
+`src/i18n/content.ts`: `tc(id, english, vars)` returns the translation from `public/locales/<lng>/content.json`, else the in-source English. Dependency-free, so pure game modules use it; React views call `useContentLocale()` to re-render when a dictionary loads. Currently covers city taglines, scenes, lore, landmarks, era text and the city picker lines (`cityText`, `describeCity`). New authored text should add ids here instead of new `common.json` keys.
+
 ## Coverage
 Translated: splash, header, drawer, settings, staff/studio/recruitment modals, project card, and the active-session dock (empty state, intervention, stage chips, focus channels, Arm Take button, duties).
-Still hard-coded English (follow-ups): event director text, minigames, city lore/describeCity, season/ledger explanations, gear names, many `$` literals that bypass `money()`.
+Also translated: the phone session console (focus mixer, auto-align, overdrive) and city lore. Checked at 390px in de, ru, fr, ja, pt-BR: no horizontal overflow.
+Still hard-coded English (follow-ups): event director text, minigames, stage focus channel labels, toasts, season/ledger explanations, gear names, many `$` literals that bypass `money()`.
