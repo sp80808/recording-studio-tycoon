@@ -154,3 +154,38 @@ export const previewBooking = (
     payoutPerSlot: Math.round(payout / sessions),
   };
 };
+
+export interface ReschedulePreview {
+  delayDays: number;
+  /** First free slot on or after the delayed start, if the week still has one. */
+  slot?: CalendarSlot;
+  roomName?: string;
+  /** Whether the client's terms still allow this start. */
+  clientAccepts: boolean;
+  /** Whole-week utilization if booked at the delayed start. */
+  utilizationAfter: number;
+}
+
+/** What waiting `delayDays` before starting would mean: the slot you would get and whether the client still takes it. */
+export const reschedulePreview = (
+  state: Pick<GameState, 'currentDay' | 'studioRooms' | 'activeProject' | 'activeProjects'>,
+  project: Project,
+  delayDays: number,
+): ReschedulePreview => {
+  const cal = buildBookingCalendar(state);
+  const sessions = remainingWorkDays(project);
+  const startIndex = cal.days.findIndex((d, i) => i >= delayDays && d.slots.some((s) => !s.projectId));
+  const slot = startIndex >= 0 ? cal.days[startIndex].slots.find((s) => !s.projectId) : undefined;
+  const room = operationalRooms(state).find((r) => r.id === slot?.roomId);
+  const capacity = cal.days.reduce((n, d) => n + d.capacity, 0);
+  const booked = cal.days.reduce((n, d) => n + d.booked, 0);
+  const held = startIndex >= 0 ? Math.min(sessions, cal.days.length - startIndex) : 0;
+  const offset = startIndex >= 0 ? startIndex : delayDays;
+  return {
+    delayDays,
+    slot,
+    roomName: room?.name,
+    clientAccepts: slot !== undefined && offset <= termsFor(project).startWindowDays,
+    utilizationAfter: capacity ? (booked + held) / capacity : 0,
+  };
+};
