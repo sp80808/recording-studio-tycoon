@@ -1,4 +1,4 @@
-import { marketService, resetMarketTrends } from '@/services/marketService';
+import { marketService, marketTrendsAt, resetMarketTrends } from '@/services/marketService';
 let n = 0;
 const ok = (c: boolean, m: string) => { if (!c) throw new Error(`FAIL: ${m}`); n++; console.log(`PASS: ${m}`); };
 const state = (day: number, seed = 7): any => ({ saveSeed: seed, currentDay: day });
@@ -12,4 +12,11 @@ let t = marketService.getAllTrends();
 for (let d = 1; d <= 200; d++) t = marketService.updateAllMarketTrends(state(d));
 ok(t.every((x) => x.popularity >= 5 && x.popularity <= 100 && Math.abs(x.growthRate) <= 10), 'trend effects stay bounded over 200 days');
 ok(t.every((x) => x.lastUpdated === 200 && !x.id.includes('NaN')), 'trends are stamped with the game day, not the wall clock');
+resetMarketTrends(11);
+const before = JSON.stringify(marketService.getAllTrends());
+const d40 = JSON.stringify(marketTrendsAt(5, 40));
+ok(JSON.stringify(marketService.getAllTrends()) === before, 'deriving a market leaves the shared store untouched');
+ok(d40 === JSON.stringify(marketTrendsAt(5, 40)), 'the market on a given save and day is repeatable');
+ok(d40 !== JSON.stringify(marketTrendsAt(5, 41)) && d40 !== JSON.stringify(marketTrendsAt(6, 40)), 'a different day or save gives a different market');
+ok(JSON.stringify(marketTrendsAt(5, 0)) === (resetMarketTrends(5), JSON.stringify(marketService.getAllTrends())), 'day zero is the seeded start');
 console.log(`market-determinism: ${n} checks passed`);
