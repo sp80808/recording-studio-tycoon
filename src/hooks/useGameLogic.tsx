@@ -7,6 +7,7 @@ import { spend } from '@/economy/ledger';
 import { GameState, StaffMember, PlayerAttributes, ProjectReport, Project } from '@/types/game';
 import { toast } from '@/hooks/use-toast';
 import { availableTrainingCourses } from '@/data/training';
+import { courseTeacherBlocker } from '@/rpg/staffCareer';
 import { canPurchaseEquipment, addNotification, applyEquipmentEffects } from '@/utils/gameUtils';
 import { playSound } from '@/utils/soundUtils';
 import { getAvailableEquipmentForYear, getEraAdjustedPrice } from '@/data/eraEquipment';
@@ -194,6 +195,9 @@ export const useGameLogic = (
       return;
     }
     if (course.knowHow && !meetsKnowHowGate(gameState.studioKnowHow ?? createInitialKnowHow(), course.knowHow)) {
+      return;
+    }
+    if (courseTeacherBlocker(course, gameState.hiredStaff, staffId)) {
       return;
     }
 

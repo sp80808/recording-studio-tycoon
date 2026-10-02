@@ -15,7 +15,9 @@ export const availableTrainingCourses: TrainingCourse[] = [
         creativity: 2
       }
     },
-    domain: 'tracking'
+    domain: 'tracking',
+    careerDiscipline: 'recording',
+    careerXp: 30
   },
   {
     id: 'train02',
@@ -33,7 +35,9 @@ export const availableTrainingCourses: TrainingCourse[] = [
         skill: 'Pop',
         amount: 200
       }
-    }
+    },
+    careerDiscipline: 'production',
+    careerXp: 30
   },
   {
     id: 'train03',
@@ -50,7 +54,9 @@ export const availableTrainingCourses: TrainingCourse[] = [
       specialEffects: ['Mixing Master']
     },
     domain: 'mixing',
-    knowHow: { cost: 6, domain: 'mixing', minDomain: 15 }
+    knowHow: { cost: 6, domain: 'mixing', minDomain: 15 },
+    careerDiscipline: 'mixing',
+    careerXp: 40
   },
   {
     id: 'train04',
@@ -103,6 +109,9 @@ export const availableTrainingCourses: TrainingCourse[] = [
       specialEffects: ['Golden Ears']
     },
     domain: 'mastering',
-    knowHow: { cost: 5, domain: 'mastering', minDomain: 10 }
+    knowHow: { cost: 5, domain: 'mastering', minDomain: 10 },
+    careerDiscipline: 'mixing',
+    careerXp: 25,
+    taughtBySenior: 'mixing'
   }
 ];

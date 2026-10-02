@@ -7,6 +7,7 @@ import { spend } from '@/economy/ledger';
 import { GameState, StaffMember, EquipmentMod, FocusAllocation } from '@/types/game'; // Added FocusAllocation
 import { toast } from '@/hooks/use-toast';
 import { availableTrainingCourses } from '@/data/training';
+import { courseTeacherBlocker } from '@/rpg/staffCareer';
 import { getStageOptimalFocus } from '@/utils/stageUtils'; // Added for optimal focus calculation
 import { availableMods } from '@/data/equipmentMods';
 import { getMoodEffectiveness } from '@/utils/playerUtils'; // Import from playerUtils
@@ -183,6 +184,9 @@ export const useStaffManagement = (
       return;
     }
     if (course.knowHow && !meetsKnowHowGate(gameState.studioKnowHow ?? createInitialKnowHow(), course.knowHow)) {
+      return;
+    }
+    if (courseTeacherBlocker(course, gameState.hiredStaff, staffId)) {
       return;
     }
 

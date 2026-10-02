@@ -3,6 +3,7 @@ import {
   getStaffCareer, creditSession, setActiveDiscipline, getPromotionOffer, promoteStaffInState, careerFitBonus,
   defaultDiscipline, disciplineForStage, experienceIn, CAREER_LEVEL_XP,
   crossTrainOptions, startCrossTrainingInState, completeCrossTraining, parseCrossTrainCourse,
+  courseTeacherBlocker, applyCourseCareerXp,
   startMentoringInState, stopMentoringInState, mentorshipScale, canMentor, MENTOR_JUNIOR_SCALE, MENTOR_COST_SCALE,
 } from '../src/rpg/staffCareer';
 import { calculateStaffProjectFit } from '../src/utils/staffFitUtils';
@@ -111,5 +112,16 @@ ok(mentorshipScale(j1, idleMentor) === 1, 'no bonus when the mentor is idle (no 
 ok(mentorshipScale(linked.hiredStaff[0], linked.hiredStaff) === MENTOR_COST_SCALE, 'the mentor pays a small cost on their own sessions');
 ok(experienceIn(creditSession(j1, 'k', ['Basic Tracking'], 80, MENTOR_JUNIOR_SCALE).career, 'recording').xp > experienceIn(creditSession(j1, 'k', ['Basic Tracking'], 80).career, 'recording').xp, 'mentored junior earns more xp');
 ok(mentorshipScale(stopMentoringInState(linked, 'j1').hiredStaff[1], idleMentor) === 1, 'ending mentorship removes the link');
+
+// Courses feed careers; a senior-taught course needs a teacher.
+const course = { careerDiscipline: 'mixing' as const, careerXp: 40, taughtBySenior: 'mixing' as const };
+const learner = staff({ id: 'l1' });
+ok(experienceIn(applyCourseCareerXp(learner, course).career!, 'mixing').xp === 40 && experienceIn(applyCourseCareerXp(learner, course).career!, 'recording').xp === 0, 'a course adds xp to its discipline only');
+ok(applyCourseCareerXp(learner, {}) === learner, 'a course without career effects changes nothing');
+ok(courseTeacherBlocker(course, [learner], 'l1') !== null, 'no senior teacher blocks the course');
+const mixSenior = { ...senior, id: 'ms', career: { ...senior.career!, activeDiscipline: 'mixing' as const } };
+ok(courseTeacherBlocker(course, [learner, mixSenior], 'l1') === null, 'a senior in the discipline unlocks the course');
+ok(courseTeacherBlocker(course, [mixSenior], 'ms') !== null, 'a senior cannot teach themselves');
+ok(courseTeacherBlocker({ careerXp: 5 }, [learner], 'l1') === null, 'open courses are never blocked');
 
 console.log(`staff-career: all ${n} checks passed`);
