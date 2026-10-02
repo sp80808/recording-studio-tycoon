@@ -1,3 +1,4 @@
+import { StatIcon } from '@/components/icons/GameIcons';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { useGamepad } from '@/hooks/useGamepad';
@@ -229,7 +230,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
         {gamepad.isConnected && gamepad.lastInputType === 'gamepad' && (
           <GamepadGlyph button="south" size="xs" />
         )}
-        <span>{isInPocket ? '🔥' : '🎯'}</span>
+        <span><StatIcon name={isInPocket ? 'flame' : 'goal'} /></span>
         <span>{isInPocket ? 'LOCK GOLD TAKE!' : needlePos < goldMin ? 'LOW — AIM FOR GOLD' : 'HOT — AIM FOR GOLD'}</span>
       </button>
     </div>

@@ -1,3 +1,4 @@
+import { StatIcon } from '@/components/icons/GameIcons';
 import { money } from '@/utils/displayMoney';
 import React, { useState } from 'react';
 import { ClipboardList, Info } from 'lucide-react';
@@ -38,7 +39,7 @@ export const MobileSessionStatusStrip: React.FC<MobileSessionStatusStripProps> =
         </span>
         <span className="shrink-0 text-[11px] font-semibold text-emerald-400 tabular-nums">{money(Math.round(p.payout))}</span>
         <span className="shrink-0 text-[11px] text-amber-300 tabular-nums">★{p.difficulty}</span>
-        <span className="shrink-0 text-[11px] font-bold text-amber-200 tabular-nums" aria-label={`${p.energy} energy left`}>⚡{p.energy}</span>
+        <span className="shrink-0 text-[11px] font-bold text-amber-200 tabular-nums" aria-label={`${p.energy} energy left`}><StatIcon name="energy" />{p.energy}</span>
         <button
           type="button"
           onClick={() => setOpen(v => !v)}
@@ -62,8 +63,8 @@ export const MobileSessionStatusStrip: React.FC<MobileSessionStatusStripProps> =
           <div className="absolute inset-y-0 left-0 bg-amber-400 transition-all duration-300" style={{ width: `${Math.min(100, p.stageProgress)}%` }} />
         </div>
         {/* Always mounted: reward orbs / stat blobs (useStageWork, AnimatedStatBlobs) fly to these ids. */}
-        <span id="creativity-points" data-creativity-target className="shrink-0 text-amber-300 font-bold tabular-nums" aria-label="Creativity points">🎨{Math.round(p.creativityPoints)}</span>
-        <span id="technical-points" data-technical-target className="shrink-0 text-emerald-400 font-bold tabular-nums" aria-label="Technical points">⚙️{Math.round(p.technicalPoints)}</span>
+        <span id="creativity-points" data-creativity-target className="shrink-0 text-amber-300 font-bold tabular-nums" aria-label="Creativity points"><StatIcon name="creativity" />{Math.round(p.creativityPoints)}</span>
+        <span id="technical-points" data-technical-target className="shrink-0 text-emerald-400 font-bold tabular-nums" aria-label="Technical points"><StatIcon name="technical" />{Math.round(p.technicalPoints)}</span>
         <span className="shrink-0 tabular-nums" aria-label={`Overall progress ${Math.round(p.overallProgress)} percent`}>{Math.round(p.overallProgress)}%</span>
       </div>
       {open && (
@@ -73,7 +74,7 @@ export const MobileSessionStatusStrip: React.FC<MobileSessionStatusStripProps> =
             <span>{Math.round(p.sessions)} sessions</span>
           </div>
           {p.activeBuffs.length > 0 && <div className="text-emerald-300">Buffs: {p.activeBuffs.join(' · ')}</div>}
-          {p.synergyCount > 0 && <div className="text-amber-300">✨ {p.synergyCount} active combo{p.synergyCount === 1 ? '' : 's'}</div>}
+          {p.synergyCount > 0 && <div className="text-amber-300"><StatIcon name="sparkle" /> {p.synergyCount} active combo{p.synergyCount === 1 ? '' : 's'}</div>}
           <button
             type="button"
             onClick={() => { setOpen(false); p.onOpenDuties(); }}
