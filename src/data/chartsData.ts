@@ -271,32 +271,6 @@ export const generateCharts = (playerLevel: number, currentEra: string): Chart[]
 
   return charts;
 };
-// Generate market trends
-export const generateMarketTrends = (): MarketTrend[] => {
-  return genres.map(genre => {
-    const popularity = Math.floor(Math.random() * 100) + 1;
-    const growth = Math.floor(Math.random() * 100) - 50; // -50 to +50
-    
-    const growthRate = growth / 10; // -5 to +5
-    return {
-      id: `trend-${genre}`,
-      genreId: genre,
-      trendDirection: growth > 10 ? 'rising' : growth < -10 ? 'falling' : 'stable',
-      growthRate,
-      lastUpdated: Date.now(),
-      duration: 30,
-      startDay: 1,
-      popularity,
-      growth,
-      seasonality: Array.from({ length: 12 }, () => Math.random() * 0.4 + 0.8), // 0.8 to 1.2 multiplier
-      events: [],
-      peakMonths: [
-        Math.floor(Math.random() * 12),
-        Math.floor(Math.random() * 12)
-      ]
-    };
-  });
-};
 
 // Calculate contact cost for an artist based on chart position and player reputation
 export const calculateContactCost = (chartPosition: number, artistPopularity: number, playerReputation: number): number => {

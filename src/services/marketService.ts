@@ -46,6 +46,26 @@ export const resetMarketTrends = (seed: string | number = 'initial'): void => {
   initializeMockData(createSeededRandom(`market:${seed}`));
 };
 
+const MAX_REPLAY_DAYS = 3650;
+
+/**
+ * The market on a given day of a given save, derived (never stored): replay the seeded updates from the
+ * seeded start. Same seed and day always give the same trends, and the shared store is left untouched.
+ */
+export const marketTrendsAt = (seed: string | number, day: number): MarketTrend[] => {
+  const saved = currentMarketTrends;
+  try {
+    resetMarketTrends(seed);
+    let trends = [...currentMarketTrends];
+    for (let d = 1; d <= Math.min(MAX_REPLAY_DAYS, Math.max(0, Math.floor(day))); d++) {
+      trends = marketService.updateAllMarketTrends({ saveSeed: seed, currentDay: d } as GameState);
+    }
+    return trends;
+  } finally {
+    currentMarketTrends = saved;
+  }
+};
+
 export const marketService = {
   updateAllMarketTrends: (
     gameState: GameState,

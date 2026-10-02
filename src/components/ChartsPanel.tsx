@@ -6,13 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Chart, ChartEntry, MarketTrend } from '@/types/charts';
 import { GameState } from '@/types/game';
-import { generateCharts, generateMarketTrends, calculateContactCost, isArtistContactable } from '@/data/chartsData';
+import { generateCharts, calculateContactCost, isArtistContactable } from '@/data/chartsData';
 import { ArtistContactModal } from './modals/ArtistContactModal';
 import { Play, Pause, TrendingUp, Clock, Star, ArrowUp, ArrowDown, Minus } from 'lucide-react';
 import { ChartDisplay } from './charts/ChartDisplay';
 import { MarketTrendsDisplay } from './charts/MarketTrendsDisplay';
 import { MusicIndustryReport } from './charts/MusicIndustryReport';
 import { gameAudio } from '@/utils/audioSystem'; // Import gameAudio
+import { marketTrendsAt } from '@/services/marketService';
 
 interface ChartsPanelProps {
   gameState: GameState;
@@ -228,10 +229,11 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
     }
   }, [gameState.playerData.level, gameState.currentEra, selectedChart]);
 
-  // Generate market trends
+  // Market trends are derived from the save seed and day, so they repeat across reloads.
+  const marketSeed = gameState.saveSeed ?? 'market';
   useEffect(() => {
-    setMarketTrends(generateMarketTrends());
-  }, []);
+    setMarketTrends(marketTrendsAt(marketSeed, gameState.currentDay));
+  }, [marketSeed, gameState.currentDay]);
 
   // Cleanup audio on unmount
   useEffect(() => {
@@ -333,7 +335,7 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
       {/* Music Industry Report - Available at level 5+ */}
       {gameState.playerData.level >= 5 && (
         <div className="mt-4">
-          <MusicIndustryReport />
+          <MusicIndustryReport seed={marketSeed} day={gameState.currentDay} />
         </div>
       )}
 
