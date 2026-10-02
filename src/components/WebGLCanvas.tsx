@@ -45,6 +45,7 @@ import { visualEraId } from '@/utils/eraProgression';
 import { useSettings } from '@/contexts/SettingsContext';
 import { resolveRendererOrder } from '@/lib/render/rendererChoice';
 import { claimPixiApplication, STUDIO_FLOOR_OWNER } from '@/lib/motion/pixiGuard';
+import { cityWallColors } from '@/components/studio/cityWallTint';
 import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from '@/components/studio/isoMath';
 import { buildCaseStack, CASE_STACK_TILE, type CaseStack } from '@/components/studio/studioCaseStack';
 import { buildWindowView, type WindowView } from '@/components/studio/studioWindowView';
@@ -263,6 +264,8 @@ export interface StudioSceneState {
   day: number;
   /** Current era id — drives the room's colour grade + signage (bead goj.3) */
   eraId?: string;
+  /** Home city id: nudges the wall colours toward the city accent. */
+  cityId?: string;
   /** Studio tier 1-5 from ProgressionSystem — drives visible room upgrades (bead ifx.3) */
   roomTier?: number;
   /** Premises tier (#70): 1 adds the client bench + storage rack, 2 adds reception, water cooler and a second rack. */
@@ -636,7 +639,8 @@ const buildScene = (
   };
 
   // Era colour grade + studio tier drive the room's look (beads goj.3 / ifx.3)
-  const grade = getEraGrade(state.eraId);
+  const eraGrade = getEraGrade(state.eraId);
+  const grade = { ...eraGrade, ...cityWallColors(eraGrade.wallLeft, eraGrade.wallRight, state.cityId) };
   const tier = clampTier(state.roomTier);
 
   // Fit the whole room into the viewport so walls/floor never clip
