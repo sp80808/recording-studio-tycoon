@@ -88,4 +88,12 @@ const f1 = calculateSessionForecast(trained, project, defaultAssignment(trained,
 ok(JSON.stringify(f0.quality) === JSON.stringify(f1.quality), 'expertise never moves the forecast quality range');
 ok(f1.time.estimatedWorkUnits <= f0.time.estimatedWorkUnits, 'expertise only shortens the setup/work estimate');
 void brief;
+import { enquiryStyleNote, awardExpertise as _aw, createInitialExpertise as _init, levelForXp as _lv } from '../src/rpg/houseStyle';
+{
+  const fresh = _init();
+  ok(/New ground/.test(enquiryStyleNote(fresh, 'Soul')) && /New ground/.test(enquiryStyleNote(undefined, 'Soul')), 'enquiry note calls unfamiliar genres new ground');
+  const seasoned: any = { ...fresh, genres: { Soul: { xp: 300, level: _lv(300), notableProjectIds: [] } } };
+  ok(/House style: Soul \(Signature\), setup about 12% shorter/.test(enquiryStyleNote(seasoned, 'Soul')), 'enquiry note names the level and the setup saving');
+  ok(enquiryStyleNote(seasoned, 'Soul') === enquiryStyleNote(seasoned, 'Soul'), 'enquiry note is deterministic');
+}
 console.log(`house-style: all ${n} checks passed`);
