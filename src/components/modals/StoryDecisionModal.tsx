@@ -1,3 +1,4 @@
+import { money, signedMoney } from '@/utils/displayMoney';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowRight, Check, Coins, Lock, Sparkles, Star } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -59,7 +60,7 @@ export const ConsequenceChips: React.FC<{ option: Pick<DecisionOption, 'moneyDel
       {moneyDelta !== 0 && (
         <span className={`rst-chip ${moneyDelta > 0 ? 'rst-chip-money' : 'rst-chip-danger'}`}>
           <Coins size={12} aria-hidden="true" />
-          {moneyDelta > 0 ? `+$${moneyDelta.toLocaleString()}` : `−$${Math.abs(moneyDelta).toLocaleString()}`}
+          {signedMoney(moneyDelta)}
         </span>
       )}
       {repDelta !== 0 && (

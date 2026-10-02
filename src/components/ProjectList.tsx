@@ -1,3 +1,4 @@
+import { money } from '@/utils/displayMoney';
 import React, { useState } from 'react';
 import { GameState, Project } from '@/types/game';
 import { generateNewProjects } from '@/utils/projectUtils';
@@ -228,7 +229,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
           {refreshReady ? (
             <>
               <PhoneCall size={14} aria-hidden="true" />
-              <span>{refreshCost > 0 ? `Refresh $${refreshCost}` : 'Refresh · free'}</span>
+              <span>{refreshCost > 0 ? `Refresh ${money(refreshCost)}` : 'Refresh · free'}</span>
             </>
           ) : (
             <>
@@ -351,7 +352,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                   <div className="rounded-lg border border-[var(--rst-line)] bg-black/25 p-2">
                     <div className="rst-kicker !text-[10px]">Fee</div>
                     <div className="text-sm font-bold text-[var(--rst-money)]">
-                      <MotionNumber value={toLocalAmount(project.payoutBase, gameState.cityId)} prefix={currencySymbol(gameState.cityId)} />
+                      <MotionNumber value={toLocalAmount(project.payoutBase, gameState.cityId, gameState.currentEra)} prefix={currencySymbol(gameState.cityId, gameState.currentEra)} />
                     </div>
                   </div>
                   <div className="rounded-lg border border-[var(--rst-line)] bg-black/25 p-2">

@@ -65,12 +65,15 @@ import {
 } from '@/narrative/branchingStorylineEngine';
 import { isTauriShell } from '@/utils/platform';
 import type { ProducerBackgroundId } from '@/types/character';
+import { setDisplayCurrency } from '@/utils/displayMoney';
 import type { ProducerSetup } from '@/components/CareerStartScreen';
 import { useFeatureFlag } from '@/stores/featureFlagStore';
 
 const MusicStudioTycoon = () => {
   const { gameState, setGameState, initializeGameState } = useGameState(); // REMOVED focusAllocation, setFocusAllocation
   const { settings } = useSettings();
+  // Display currency for every money label (home city + era). Set before children render.
+  setDisplayCurrency(gameState.cityId, gameState.currentEra);
   const { saveGame, loadGameSnapshot, hasSavedGame, resetGame } = useSaveSystem();
   
   const [showSplashScreen, setShowSplashScreen] = useState(true);
@@ -641,7 +644,7 @@ const MusicStudioTycoon = () => {
   }
 
   return (
-    <GameLayout eraId={gameState.currentEra}>
+    <GameLayout eraId={gameState.currentEra} cityId={gameState.cityId}>
       {!effectiveCompactStudioMode && <RewardFlights gameState={gameState} />}
       <ChartRevealScene playerLevel={gameState.playerData.level} />
       <SeasonAwardsCeremony />

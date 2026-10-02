@@ -1,3 +1,4 @@
+import { money } from '@/utils/displayMoney';
 import React, { useState } from 'react';
 import { Gem, Package } from 'lucide-react';
 import type { GameState } from '@/types/game';
@@ -108,7 +109,7 @@ export function FlightCaseDepot({ gameState, setGameState }: Props) {
                 <div className="mt-2 flex gap-2">
                   {price.money != null && (
                     <button className="rst-btn" disabled={!unlocked || gameState.money < price.money} onClick={() => buy(tier, 'money')}>
-                      <Package size={15} aria-hidden="true" />${price.money.toLocaleString()}
+                      <Package size={15} aria-hidden="true" />{money(price.money)}
                     </button>
                   )}
                   {price.gems != null && (

@@ -1,3 +1,4 @@
+import { money } from '@/utils/displayMoney';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -21,7 +22,7 @@ const ProjectCardComponent: React.FC<ProjectCardProps> = ({ project, onStartProj
       <div className="text-sm space-y-1 text-stone-200">
         <div>{t('project_card_genre_label')} <span className="text-white">{project.genre}</span></div>
         <div>{t('project_card_difficulty_label')} <span className="text-orange-400">{project.difficulty}</span></div>
-        <div className="text-green-400 font-semibold">${project.payoutBase}</div>
+        <div className="text-green-400 font-semibold">{money(project.payoutBase)}</div>
         <div className="text-amber-300 font-semibold">{t('project_card_rep_gain', { value: project.repGainBase })}</div>
         <div className="text-yellow-400 font-semibold">{t('project_card_days_suffix', { days: project.durationDaysTotal })}</div>
       </div>

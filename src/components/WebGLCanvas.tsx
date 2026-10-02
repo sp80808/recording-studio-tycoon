@@ -367,10 +367,10 @@ export const getStudioTierName = (tier: number): string => {
   return 'HOME STUDIO';
 };
 
-export const getStudioSignage = (eraId?: string, milestonesCount = 0): string => {
+export const getStudioSignage = (eraId?: string, milestonesCount = 0, cityName?: string): string => {
   const grade = getEraGrade(eraId);
   const tier = clampTier(Math.floor(milestonesCount / 2) + 1);
-  return `${grade.label} · ${getStudioTierName(tier)}`;
+  return `${cityName ? `${cityName.toUpperCase()} · ` : ''}${grade.label} · ${getStudioTierName(tier)}`;
 };
 
 export interface ConsoleProfile {

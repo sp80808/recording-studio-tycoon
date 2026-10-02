@@ -1,3 +1,4 @@
+import { money } from '@/utils/displayMoney';
 import React, { useState } from 'react';
 import { ClipboardList, Info } from 'lucide-react';
 
@@ -35,7 +36,7 @@ export const MobileSessionStatusStrip: React.FC<MobileSessionStatusStripProps> =
         <span className="min-w-0 flex-1 truncate text-[13px] font-bold text-white">
           {p.title}<span className="font-normal text-stone-400"> · {p.subtitle}</span>
         </span>
-        <span className="shrink-0 text-[11px] font-semibold text-emerald-400 tabular-nums">${Math.round(p.payout)}</span>
+        <span className="shrink-0 text-[11px] font-semibold text-emerald-400 tabular-nums">{money(Math.round(p.payout))}</span>
         <span className="shrink-0 text-[11px] text-amber-300 tabular-nums">★{p.difficulty}</span>
         <span className="shrink-0 text-[11px] font-bold text-amber-200 tabular-nums" aria-label={`${p.energy} energy left`}>⚡{p.energy}</span>
         <button

@@ -1,4 +1,5 @@
 
+import { money } from '@/utils/displayMoney';
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -44,7 +45,7 @@ export const TrainingModal: React.FC<TrainingModalProps> = ({
                   <p className="text-stone-300 text-sm mt-1">{course.description}</p>
                 </div>
                 <div className="text-right">
-                  <div className="text-red-400 font-bold">${course.cost}</div>
+                  <div className="text-red-400 font-bold">{money(course.cost)}</div>
                   <div className="text-sm text-stone-400">{course.duration} days</div>
                   {course.knowHow && (
                     <div className="text-xs text-cyan-300">{course.knowHow.cost} Know-How</div>

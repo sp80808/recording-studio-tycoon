@@ -1,3 +1,4 @@
+import { money, signedMoney } from '@/utils/displayMoney';
 import React, { useState } from 'react';
 import { GamePanel } from '@/components/ui/GamePanel';
 import { KenneyButton } from '@/components/ui/KenneyButton';
@@ -128,7 +129,7 @@ export const NarrativeChoiceModal: React.FC<NarrativeChoiceModalProps> = ({
                         moneyDelta > 0 ? 'text-emerald-400' : 'text-red-400'
                       }`}>
                         <Coins size={12} />
-                        {moneyDelta > 0 ? `+$${moneyDelta.toLocaleString()}` : `-$${Math.abs(moneyDelta).toLocaleString()}`}
+                        {signedMoney(moneyDelta)}
                       </span>
                     )}
                     {repDelta !== 0 && (

@@ -1,3 +1,4 @@
+import { money } from '@/utils/displayMoney';
 import { useMemo, useState } from 'react';
 import { EMPTY_STATES } from '@/data/flavour';
 import { ArrowRight, BookOpen, Check, ChevronDown, Circle, Feather, Flag, Scroll, Sparkles, Swords, Target, Zap } from 'lucide-react';
@@ -117,7 +118,7 @@ export function CareerHub({
   const rival = activeNode ? getRivalForNode(activeNode.id, player.playstyle) : null;
   const rivalAccent = rival ? getRivalAccent(rival.id) : '#e6b866';
 
-  const resolved = resolveCareerNextAction(gameState, ` · $${expenses} daily costs`);
+  const resolved = resolveCareerNextAction(gameState, ` · ${money(expenses)} daily costs`);
   const nextAction = {
     ...resolved,
     action: resolved.type === 'rest' ? onRest : resolved.type === 'book' ? onBookings : onWork,
@@ -329,7 +330,7 @@ export function CareerHub({
             />
           </div>
           <span className={`shrink-0 tabular-nums font-medium ${claimed ? 'text-[var(--rst-money)]' : 'text-[var(--rst-brass-300)]'}`}>
-            {claimed ? 'Earned ✓' : `${challenge.progress}/${challenge.def.target} · +$${challenge.def.reward.money}`}
+            {claimed ? 'Earned ✓' : `${challenge.progress}/${challenge.def.target} · +${money(challenge.def.reward.money)}`}
           </span>
           <ChevronDown
             size={14}

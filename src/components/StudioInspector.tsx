@@ -1,3 +1,4 @@
+import { money } from '@/utils/displayMoney';
 import React, { useEffect, useState } from 'react';
 import { EMPTY_STATES } from '@/data/flavour';
 import { GameState, Project } from '@/types/game';
@@ -242,7 +243,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           <ActionIcon icon={Megaphone} /> Create marketing content — ${cost}
         </MotionButton>
         <p className="text-[11px] text-stone-400" role="status">
-          {cooldown > 0 ? `Outreach ready in ${cooldown} day${cooldown === 1 ? '' : 's'}.` : gameState.money < cost ? `You need $${cost} for outreach.` : 'One new booking lead. Shares the gig-outreach cooldown.'}
+          {cooldown > 0 ? `Outreach ready in ${cooldown} day${cooldown === 1 ? '' : 's'}.` : gameState.money < cost ? `You need ${money(cost)} for outreach.` : 'One new booking lead. Shares the gig-outreach cooldown.'}
         </p>
         <MotionButton autoFocus className="rst-btn rst-btn-ghost w-full min-h-11" onClick={() => openDashboard('charts')}>
           <ActionIcon icon={PhoneCall} /> Contact artists
@@ -295,7 +296,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
               <span className="text-[10px] px-1 py-0.5 rounded bg-red-600/80 text-white whitespace-nowrap">{gig.clientType}</span>
             </div>
             <StatRow label="Genre" value={gig.genre} />
-            <StatRow label="Payout" value={`$${gig.payoutBase}`} valueClass="text-green-400" />
+            <StatRow label="Payout" value={money(gig.payoutBase)} valueClass="text-green-400" />
             <StatRow label="Rep" value={`+${gig.repGainBase}`} valueClass="text-amber-300" />
             <MotionButton
               className="w-full h-7 mt-1 bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] text-emerald-100 text-xs font-bold"
@@ -322,7 +323,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           >
             <ActionIcon icon={ready ? PhoneCall : PhoneOff} />
             {ready
-              ? `Chase New Gigs — $${GIG_REFRESH_COST}`
+              ? `Chase New Gigs — ${money(GIG_REFRESH_COST)}`
               : `No leads — ${cooldown}/${GIG_REFRESH_COOLDOWN_DAYS} days`}
           </MotionButton>
         </div>
@@ -340,9 +341,9 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
       <Shell hotspot={hotspot} onClose={onClose}>
         <StatRow label="Day" value={<MotionNumber value={gameState.currentDay} />} />
         <StatRow label="Year" value={gameState.currentYear} />
-        <StatRow label="Daily salaries" value={`-$${salaries}`} valueClass="text-red-400" />
-        <StatRow label="Equipment upkeep" value={`-$${upkeep}`} valueClass="text-red-400" />
-        <StatRow label="Net burn" value={`-$${salaries + upkeep}/day`} valueClass="text-orange-300" />
+        <StatRow label="Daily salaries" value={`-${money(salaries)}`} valueClass="text-red-400" />
+        <StatRow label="Equipment upkeep" value={`-${money(upkeep)}`} valueClass="text-red-400" />
+        <StatRow label="Net burn" value={`-${money(salaries + upkeep)}/day`} valueClass="text-orange-300" />
         <div className="pt-1 border-t border-white/10">
           <StatRow
             label="Studio tier"
@@ -435,7 +436,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           onClose={onClose}
         />
         <StatRow label="Owned gear" value={<MotionNumber value={gear.length} />} />
-        <StatRow label="Daily upkeep" value={`-$${calculateEquipmentUpkeep(gear, getOriginEffects(gameState))}`} valueClass="text-red-400" />
+        <StatRow label="Daily upkeep" value={`-${money(calculateEquipmentUpkeep(gear, getOriginEffects(gameState)))}`} valueClass="text-red-400" />
         <div className="space-y-2">
           {gear.slice(0, 6).map((item) => (
             <div key={item.id} className="space-y-1">

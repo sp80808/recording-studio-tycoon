@@ -1,3 +1,4 @@
+import { money } from '@/utils/displayMoney';
 import React, { useMemo, useState } from 'react';
 import { Briefcase, MapPin, Sparkles, Users, FileText, RefreshCw, Battery } from 'lucide-react';
 import type { GameState, StaffMember } from '@/types/game';
@@ -133,7 +134,7 @@ export const CrewRecruitmentPortal: React.FC<CrewRecruitmentPortalProps> = ({
                           <div className="text-white font-semibold truncate">{candidate.name}</div>
                           <div className="text-amber-200/90 text-xs">{candidate.role} · Lv {candidate.levelInRole}</div>
                         </div>
-                        <div className="text-emerald-400 text-xs font-bold whitespace-nowrap">${candidate.salary}/day</div>
+                        <div className="text-emerald-400 text-xs font-bold whitespace-nowrap">{money(candidate.salary)}/day</div>
                       </div>
                       <p className="text-[11px] text-stone-400 mt-1 line-clamp-2">
                         {candidate.cv?.headline ?? 'Studio professional seeking a room that listens.'}
@@ -238,8 +239,8 @@ const CrewCvPanel: React.FC<{
   const hireLabel = !limits.canHire
     ? hiringBlockMessage(limits)
     : !canAfford
-      ? `Need $${fee} to hire`
-      : `Hire · signing fee $${fee}`;
+      ? `Need ${money(fee)} to hire`
+      : `Hire · signing fee ${money(fee)}`;
 
   return (
     <div className="crew-cv">
@@ -315,7 +316,7 @@ const CrewCvPanel: React.FC<{
             <div className="flex items-center gap-2 text-xs text-stone-400 mb-2">
               <Battery className={`w-3.5 h-3.5 ${getEnergyColor(member.energy)}`} />
               <span className={getEnergyColor(member.energy)}>{member.energy}% energy</span>
-              <span className="ml-auto">${member.salary}/day</span>
+              <span className="ml-auto">{money(member.salary)}/day</span>
             </div>
             <div className="flex gap-2 flex-wrap">
               {member.status === 'Idle' && gameState.activeProject && (

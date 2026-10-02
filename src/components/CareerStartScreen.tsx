@@ -27,6 +27,7 @@ import {
   type ProducerClothesColourId,
 } from '@/features/sprites/producerAppearance';
 import { HAIR_HEX, CLOTHING_PALETTES } from '@/features/sprites/npcAppearanceData';
+import { CitySkyline } from '@/components/CitySkyline';
 import { CITIES, DEFAULT_CITY_ID, describeCity, formatMoney, getCityById, localName, type CityId } from '@/rpg/cities';
 import { EraEmblem, type EraEmblemId } from './EraEmblems';
 import './splash.css';
@@ -385,8 +386,9 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                 </div>
                 {getCityById(cityId) && (
                   <div className="mt-2 space-y-1 rounded-lg border border-[var(--rst-line)] bg-black/25 p-2.5 text-[11px] leading-snug text-stone-300" aria-live="polite">
+                    <CitySkyline cityId={cityId} className="h-10 w-full opacity-60" />
                     <p className="italic text-stone-400">{getCityById(cityId)!.tagline}</p>
-                    {describeCity(getCityById(cityId)!).map((line) => (
+                    {describeCity(getCityById(cityId)!, eraId).map((line) => (
                       <p key={line} className="flex gap-1.5"><Check size={11} className="mt-0.5 shrink-0 text-[var(--rst-money)]" aria-hidden="true" />{line}</p>
                     ))}
                   </div>
@@ -489,7 +491,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
             <b className="text-[var(--rst-brass-200)]">{getCityById(cityId)?.name}</b>
             <span className="mx-2 text-stone-600">·</span>
             {origin ? <b className="text-[var(--rst-brass-200)]">{origin.name}</b> : <span className="text-stone-500">No role chosen</span>}
-            {era && <span className="ml-2 text-stone-500">{formatMoney(era.startingMoney, cityId)} to start</span>}
+            {era && <span className="ml-2 text-stone-500">{formatMoney(era.startingMoney, cityId, era.id)} to start</span>}
             {rival && <span className="ml-2 hidden text-stone-500 sm:inline">· facing {rival.headProducer}</span>}
           </p>
           <button

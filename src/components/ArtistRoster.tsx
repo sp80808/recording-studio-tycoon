@@ -1,3 +1,4 @@
+import { money } from '@/utils/displayMoney';
 import React, { useMemo, useState } from 'react';
 import { X, UserRound, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -16,7 +17,7 @@ interface ArtistRosterProps {
 }
 
 const termsLine = (t: ContractTerms) =>
-  `$${t.advance} advance · artist keeps ${Math.round(t.artistSplit * 100)}% · ${t.durationDays} days${t.exclusive ? ' · exclusive' : ''}`;
+  `${money(t.advance)} advance · artist keeps ${Math.round(t.artistSplit * 100)}% · ${t.durationDays} days${t.exclusive ? ' · exclusive' : ''}`;
 
 export const ArtistRoster: React.FC<ArtistRosterProps> = ({ gameState, onMakeOffer, onSignContract, onPass }) => {
   const [openId, setOpenId] = useState<string | null>(null);
