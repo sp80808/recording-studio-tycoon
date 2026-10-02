@@ -27,6 +27,12 @@ const ALLOWED_LICENSES = new Set(['CC0-1.0', 'CC0', 'MIT', 'Apache-2.0', 'origin
 // for this slice (see module docblock).
 const TRACKED_DIRS = ['public/assets/kenney-ui/PNG', 'public/audio/ui-sfx/kenney'];
 
+// In-house work is declared per directory in manifest.originalTrees; every file under one is covered.
+// A top-level file under public/assets that is in neither list is also a failure (see below).
+
+// Files loose in public/assets that are not in a tree need an assets[] entry. Nothing is allowlisted.
+const UNREVIEWED_ALLOWLIST = [];
+
 let failed = false;
 const fail = (msg) => {
   console.error(`FAIL: ${msg}`);
@@ -99,6 +105,30 @@ const walk = (dir) => {
   return out;
 };
 
+const originalTrees = Array.isArray(manifest.originalTrees) ? manifest.originalTrees : [];
+const treeRoots = [];
+for (const tree of originalTrees) {
+  const label = tree.id ?? tree.path ?? '<unnamed tree>';
+  if (!tree.id) fail(`${label}: originalTrees entry missing "id"`);
+  if (!tree.path) { fail(`${label}: originalTrees entry missing "path"`); continue; }
+  if (tree.license !== 'original') fail(`${label}: originalTrees entries must have license "original"`);
+  if (!tree.author) fail(`${label}: missing author`);
+  if (!tree.sourceLog) fail(`${label}: missing "sourceLog" (where this work is documented)`);
+  if (!existsSync(join(ROOT, tree.path)) || walk(join(ROOT, tree.path)).length === 0) fail(`${label}: path "${tree.path}" is missing or empty`);
+  treeRoots.push(tree.path.replace(/\\/g, '/').replace(/\/$/, ''));
+}
+const inOriginalTree = (rel) => treeRoots.some((root) => rel === root || rel.startsWith(`${root}/`));
+
+// Anything else sitting loose in public/assets (or in a new subdirectory) must be declared one way or the other.
+const assetsRoot = join(ROOT, 'public', 'assets');
+for (const absFile of walk(assetsRoot)) {
+  const rel = relative(ROOT, absFile).replace(/\\/g, '/');
+  if (seenLocalPaths.has(rel) || inOriginalTree(rel)) continue;
+  if (TRACKED_DIRS.some((d) => rel.startsWith(`${d}/`))) continue; // reported below with a clearer message
+  if (UNREVIEWED_ALLOWLIST.includes(rel)) continue;
+  fail(`${rel}: under public/assets but not in assets[] or an originalTrees directory. Add a manifest entry (and a line in docs/ART_SOURCING_LOG.md).`);
+}
+
 for (const trackedDir of TRACKED_DIRS) {
   const absDir = join(ROOT, trackedDir);
   for (const absFile of walk(absDir)) {
@@ -114,4 +144,4 @@ if (failed) {
   process.exit(1);
 }
 
-console.log(`PASS: assets:verify — ${assets.length} manifest entries, all licensed and present; tracked directories fully covered.`);
+console.log(`PASS: assets:verify — ${assets.length} third-party entries and ${originalTrees.length} in-house trees; public/assets fully accounted for.`);
