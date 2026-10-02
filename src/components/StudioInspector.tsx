@@ -64,6 +64,7 @@ const INSPECTOR_META = {
   liveRoom: { label: 'Live Room', icon: Mic2 },
   door: { label: 'Go Out', icon: DoorOpen },
   promotion: { label: 'Phone & Ring Light', icon: Megaphone },
+  cases: { label: 'Flight Cases', icon: Guitar },
 } as const satisfies Record<StudioHotspotId, { label: string; icon: typeof Phone }>;
 
 const ActionIcon: React.FC<{ icon: typeof Phone }> = ({ icon: Icon }) => (

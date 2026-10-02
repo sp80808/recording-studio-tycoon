@@ -219,3 +219,11 @@ In-house original, CC0, no external source. Pixi Graphics drawn in code; no imag
 | Asset | Source | Used by |
 |---|---|---|
 | Sun, moon, twinkling stars, two-layer city skyline with windows that light up at dusk | Pixi Graphics, drawn in code | `WebGLCanvas.tsx` (window, ticker) |
+
+## 17. Flight case floor stack (`studioCaseStack.ts`)
+
+In-house original, CC0, no external source. Pixi Graphics drawn in code; no image files.
+
+| Asset | Source | Used by |
+|---|---|---|
+| Stacked iso cases per tier (cardboard, road case, tour trunk, vintage flight case, holy grail vault) with a pulsing accent ring | Pixi Graphics, drawn in code | `WebGLCanvas.tsx` (`buildScene`, ticker) |

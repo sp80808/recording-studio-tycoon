@@ -424,7 +424,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         <div className="studio-play-world" data-reward-source="floor">
           <StudioRoom gameState={gameState} onAdvanceDay={advanceDay} onRefreshProjects={refreshProjects}
             onStartProject={bookProject} onAssignStaff={assignStaffToProject} onUnassignStaff={unassignStaffFromProject}
-            onOpenDashboardTab={handleOpenDashboardTab} onConsoleFocus={() => openPanel('session')} onCompleteChore={completeFloorChore} activeChoreId={activeChoreId}
+            onOpenDashboardTab={handleOpenDashboardTab} onOpenCases={() => openPanel('cases')} onConsoleFocus={() => openPanel('session')} onCompleteChore={completeFloorChore} activeChoreId={activeChoreId}
             onBookings={() => openPanel('bookings')} onStudioReady={handleStudioReady} floorFocused={panel === null} className="studio-play-room" />
           {!studioReady && (
             <div className="studio-room-loading" role="status" aria-live="polite" aria-busy="true">
