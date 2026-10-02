@@ -259,5 +259,8 @@
   "active_arm_overdrive": "Armer l'overdrive ({{cost}}⚡ · +75 %)",
   "active_overdrive_engaged": "Overdrive actif ({{cost}}⚡ · {{bonus}})",
   "active_saver_bonus": "-1 économie",
-  "active_cost_patchbay": "1 avec patchbay"
+  "active_cost_patchbay": "1 avec patchbay",
+  "event_studio_event": "Événement du studio",
+  "event_prompt": "Que faites-vous ?",
+  "event_commit": "Confirmer ce choix"
 }

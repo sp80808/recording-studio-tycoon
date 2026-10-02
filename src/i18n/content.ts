@@ -9,6 +9,9 @@ import { DEFAULT_LOCALE, resolveSupportedLocale, type SupportedLocaleCode } from
 
 type Dict = Readonly<Record<string, string>>;
 
+/** Dictionaries per locale; each is merged into one lookup. Add a file here to add a content domain. */
+export const CONTENT_FILES = ['content', 'events'] as const;
+
 const cache = new Map<SupportedLocaleCode, Dict>();
 const pending = new Set<SupportedLocaleCode>();
 const listeners = new Set<() => void>();
@@ -26,10 +29,14 @@ export const setContentLocale = (code: unknown): SupportedLocaleCode => {
   if (active !== DEFAULT_LOCALE && !cache.has(active) && !pending.has(active) && typeof fetch === 'function' && typeof window !== 'undefined') {
     const lng = active;
     pending.add(lng);
-    fetch(`/locales/${lng}/content.json`)
-      .then((r) => (r.ok ? r.json() : {}))
-      .then((d: Dict) => cache.set(lng, d))
-      .catch(() => cache.set(lng, {}))
+    Promise.all(
+      CONTENT_FILES.map((f) =>
+        fetch(`/locales/${lng}/${f}.json`)
+          .then((r) => (r.ok ? (r.json() as Promise<Dict>) : {}))
+          .catch(() => ({}) as Dict),
+      ),
+    )
+      .then((parts) => cache.set(lng, Object.assign({}, ...parts)))
       .finally(() => {
         pending.delete(lng);
         bump();
@@ -51,6 +58,12 @@ const interpolate = (text: string, vars?: Record<string, string | number>): stri
 /** Translate authored content: `id` is the stable key, `english` the in-source fallback. */
 export const tc = (id: string, english: string, vars?: Record<string, string | number>): string =>
   interpolate(cache.get(active)?.[id] ?? english, vars);
+
+/** Like `tc` but returns undefined when there is no translation (for dynamic text built elsewhere). */
+export const tcOpt = (id: string, vars?: Record<string, string | number>): string | undefined => {
+  const hit = cache.get(active)?.[id];
+  return hit === undefined ? undefined : interpolate(hit, vars);
+};
 
 export const useContentLocale = (): number =>
   useSyncExternalStore(

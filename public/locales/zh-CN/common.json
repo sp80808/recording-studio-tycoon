@@ -259,5 +259,8 @@
   "active_arm_overdrive": "预备过载（{{cost}}⚡ · +75%）",
   "active_overdrive_engaged": "过载已启动（{{cost}}⚡ · {{bonus}}）",
   "active_saver_bonus": "-1 节省",
-  "active_cost_patchbay": "接线盘下为 1"
+  "active_cost_patchbay": "接线盘下为 1",
+  "event_studio_event": "录音棚事件",
+  "event_prompt": "你要怎么做？",
+  "event_commit": "确认这个选择"
 }

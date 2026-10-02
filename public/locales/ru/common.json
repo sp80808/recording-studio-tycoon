@@ -259,5 +259,8 @@
   "active_arm_overdrive": "Включить овердрайв ({{cost}}⚡ · +75%)",
   "active_overdrive_engaged": "Овердрайв включён ({{cost}}⚡ · {{bonus}})",
   "active_saver_bonus": "-1 экономия",
-  "active_cost_patchbay": "1 с патчбеем"
+  "active_cost_patchbay": "1 с патчбеем",
+  "event_studio_event": "Событие в студии",
+  "event_prompt": "Что вы сделаете?",
+  "event_commit": "Подтвердить этот выбор"
 }
