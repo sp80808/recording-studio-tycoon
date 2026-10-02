@@ -19,6 +19,7 @@ import RiderPanel from '@/components/RiderPanel';
 import ForecastPanel from '@/components/ForecastPanel';
 import { currencySymbol, toLocalAmount } from '@/rpg/cities';
 import { BookingCostLine } from '@/components/BookingCalendar';
+import { fillerJobsFor, isFillerJob } from '@/rpg/fillerJobs';
 import { enquiryStyleNote } from '@/rpg/houseStyle';
 import { defaultAssignment, type SessionAssignment } from '@/rpg/sessionForecast';
 import { getApproach, getProjectBrief, type ProductionApproach } from '@/rpg/projectBrief';
@@ -124,6 +125,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
 }) => {
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [decliningId, setDecliningId] = useState<string | null>(null);
+  const [passedFillers, setPassedFillers] = useState<string[]>([]);
   const [approaches, setApproaches] = useState<Record<string, ProductionApproach['id'] | undefined>>({});
   const [chains, setChains] = useState<Record<string, SignalChain | undefined>>({});
   const [stakes, setStakes] = useState<Record<string, ContractStake>>({});
@@ -200,7 +202,8 @@ export const ProjectList: React.FC<ProjectListProps> = ({
 
     // Tactile pass feedback communicated within short beat (~180ms)
     window.setTimeout(() => {
-      setGameState(prev => ({
+      if (isFillerJob({ id: projectId })) setPassedFillers((prev) => [...prev, projectId]);
+      else setGameState(prev => ({
         ...prev,
         availableProjects: prev.availableProjects.filter(p => p.id !== projectId),
       }));
@@ -209,7 +212,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
   };
 
   // Story contracts are pinned to the top; everything else keeps its arrival order.
-  const board = [...gameState.availableProjects].sort(
+  const board = [...gameState.availableProjects, ...fillerJobsFor(gameState).filter((f) => !passedFillers.includes(f.id))].sort(
     (a, b) => Number(Boolean(b.isStoryContract)) - Number(Boolean(a.isStoryContract)),
   );
 
