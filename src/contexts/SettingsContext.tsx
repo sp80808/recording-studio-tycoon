@@ -3,14 +3,22 @@ import React, { useState, useEffect, ReactNode } from 'react';
 import { gameAudio } from '../utils/audioSystem';
 import { SettingsContext, GameSettings, useSettings } from './settings-context-types';
 import { defaultSettings, GRAPHICS_PRESETS } from '../data/defaultSettings';
-import { isCoarsePointer } from '../utils/mobilePlatform';
+import { isCoarsePointer, setHapticsEnabled } from '../utils/mobilePlatform';
 import { gameEvents } from '../engine/gameEventBus';
+import { toastGate } from '../lib/toastGate';
 import i18n from '../i18n';
 import { resolveSupportedLocale } from '../i18n/supportedLocales';
 
 export { useSettings };
 
 const SETTINGS_STORAGE_KEY = 'rst_game_settings';
+
+const TEXT_SCALE_PERCENT: Record<GameSettings['textScale'], number> = {
+  small: 90,
+  normal: 100,
+  large: 115,
+  xl: 130,
+};
 
 function resolveLanguage(raw: unknown): string {
   return resolveSupportedLocale(raw);
@@ -56,6 +64,20 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   useEffect(() => {
     applyFeelAttributes(document.documentElement, settings);
   }, [settings.reducedMotion, settings.graphicsPreset]);
+
+  // Text size: scale the root font-size so rem-based UI follows; also toggle haptics + toast filtering
+  useEffect(() => {
+    const scale = TEXT_SCALE_PERCENT[settings.textScale] ?? 100;
+    document.documentElement.style.fontSize = scale === 100 ? '' : `${scale}%`;
+  }, [settings.textScale]);
+
+  useEffect(() => {
+    setHapticsEnabled(settings.hapticsEnabled !== false);
+  }, [settings.hapticsEnabled]);
+
+  useEffect(() => {
+    toastGate.level = settings.toastLevel ?? 'all';
+  }, [settings.toastLevel]);
 
   const updateSettings = (newSettings: Partial<GameSettings>) => {
     const normalised: Partial<GameSettings> = { ...newSettings };

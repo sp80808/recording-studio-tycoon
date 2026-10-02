@@ -6,9 +6,15 @@ export const isCoarsePointer = (): boolean =>
   typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
 
 /** Short haptic tick. Android/Chromium only (iOS Safari exposes no vibration API); silently no-ops elsewhere. */
+/** Mirrors the Settings haptics toggle; SettingsProvider keeps it in sync. */
+let hapticsEnabled = true;
+export const setHapticsEnabled = (on: boolean): void => {
+  hapticsEnabled = on;
+};
+
 export const hapticTick = (ms: number | number[] = 12): void => {
   try {
-    if (isCoarsePointer() && typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') navigator.vibrate(ms);
+    if (hapticsEnabled && isCoarsePointer() && typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') navigator.vibrate(ms);
   } catch {
     /* ignore */
   }
