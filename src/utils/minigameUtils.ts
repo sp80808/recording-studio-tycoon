@@ -288,6 +288,15 @@ export const getTriggeredMinigames = (
     });
   }
 
+  // SESSION SETUP SCRAMBLE - get the room ready before the artists walk in (occasional, modest priority)
+  if (stageName.includes('setup') || stageName.includes('preparation') || stageName.includes('prep')) {
+    triggers.push({
+      minigameType: 'session-scramble',
+      triggerReason: 'Artists arrive in 45 seconds - get the room ready!',
+      priority: 5
+    });
+  }
+
   // BUS & STEM MERGE - route the session into stems and a mix
   if (stageName.includes('mix') || stageName.includes('stem') || stageName.includes('bounce') ||
       stageName.includes('routing')) {
