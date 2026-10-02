@@ -172,7 +172,7 @@ node /tmp/rst-studio-os-motion.cjs
 node /tmp/rst-studio-art.cjs
 
 echo "=== gear bench & reward FX policy (#81, #80) ==="
-for check in gear-bench gear-reliability reward-fx-policy; do
+for check in gear-bench gear-reliability gear-upkeep reward-fx-policy; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
   node "/tmp/rst-$check.cjs"
 done
