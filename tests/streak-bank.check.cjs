@@ -17,7 +17,10 @@ async (page) => {
   // Splash → era → tutorial → studio floor
   await page.getByRole('button', { name: /New studio/ }).click();
   await page.getByText('Modern Era', { exact: true }).click();
-  await page.getByRole('button', { name: /Start in/ }).click();
+  await page.getByRole('button', { name: /Create your producer/ }).click();
+  await page.getByRole('button', { name: /Choose a role/ }).click();
+  await page.getByText('The Bedroom Beatmaker').first().click();
+  await page.getByRole('button', { name: /Open the studio/ }).click();
   for (let i = 0; i < 12; i++) {
     const start = page.getByRole('button', { name: /Start Playing/ });
     if (await start.isVisible()) { await start.click(); break; }

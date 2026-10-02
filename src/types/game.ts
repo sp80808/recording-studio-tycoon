@@ -102,6 +102,10 @@ export interface ClientRelationship {
   lastSessionDay: number;
   bestQualityScore: number;
   referralCount: number;
+  /** Release history made here (#49). Absent on legacy saves. Career points only ever grow. */
+  releases?: import('@/rpg/artistCareer').StudioRelease[];
+  careerPoints?: number;
+  careerTier?: import('@/rpg/artistCareer').ArtistCareerTier;
 }
 
 export interface Project {
@@ -132,6 +136,8 @@ export interface Project {
   gearNotes?: string[]; // Bounded, factual session gear ledger for review
   bookingRoomId?: string; // Physical studio suite reserved for this session
   associatedBandId?: string;
+  /** Release id this enquiry follows up (#49). */
+  followUpOf?: string;
   /** Booking gamble: safe default; ambitious/moonshot need rank bars (sd3.2). */
   stake?: import('@/rpg/contractStakes').ContractStake;
   /** Per-stage verdicts in stage order (sd3.2 work-loop wiring). */

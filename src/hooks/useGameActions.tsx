@@ -13,6 +13,7 @@ import {
 import { availableMods } from '@/data/equipmentMods';
 import { premisesDailyRent, premisesCandidateCount } from '@/rpg/premises';
 import { availableTrainingCourses } from '@/data/training';
+import { resolveDueReleases } from '@/rpg/artistCareer';
 import { applyKnowHowEvents, type KnowHowEvent } from '@/rpg/studioKnowHow';
 import { applyEventsToState, rollDailyEvents } from '@/game-mechanics/eventIntegration';
 import { RandomEvent } from '@/game-mechanics/random-events';
@@ -176,7 +177,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       const rentBooked = bookEntry(booked, {
         category: 'premises-rent', amount: -premisesDailyRent(prev), sourceId: `rent-d${newDay}`,
       });
-      const baseUpdatedState: GameState = refreshGearForDay({
+      const baseBeforeReleases: GameState = refreshGearForDay({
         ...prev, 
         ledger: rentBooked.ledger,
         currentDay: newDay,
@@ -212,6 +213,18 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
         choreState: autoProcessedChores,
         pendingCrates: updatedPendingCrates
       });
+      // Artist career (#49): releases whose day has come resolve into reputation/referrals (never cash).
+      const releaseTail = resolveDueReleases(baseBeforeReleases.clientRelationships, newDay);
+      const baseUpdatedState: GameState = releaseTail.notifications.length || releaseTail.reputation
+        ? {
+            ...baseBeforeReleases,
+            clientRelationships: releaseTail.relationships,
+            reputation: baseBeforeReleases.reputation + releaseTail.reputation,
+            notifications: [...baseBeforeReleases.notifications, ...releaseTail.notifications.map(n => ({ ...n, timestamp: Date.now() }))],
+          }
+        : releaseTail.relationships === baseBeforeReleases.clientRelationships
+          ? baseBeforeReleases
+          : { ...baseBeforeReleases, clientRelationships: releaseTail.relationships };
 
       if (triggeredEvents.length === 0) {
         return withDayCloseBeat(prev, advanceStory(baseUpdatedState));

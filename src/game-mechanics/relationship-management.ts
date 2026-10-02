@@ -278,7 +278,7 @@ export function resolveDeliveryClient(
 export function findProjectForReport(
   state: GameState,
   projectId: string | undefined
-): { clientName?: string; clientType?: string; genre?: string; matchRating?: string } | null {
+): { id?: string; title?: string; followUpOf?: string; clientName?: string; clientType?: string; genre?: string; matchRating?: string } | null {
   if (!state || !projectId) return null;
   const activeSingle = state.activeProject;
   if (activeSingle && activeSingle.id === projectId) return activeSingle;
