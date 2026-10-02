@@ -28,7 +28,8 @@ import {
 } from '@/features/sprites/producerAppearance';
 import { HAIR_HEX, CLOTHING_PALETTES } from '@/features/sprites/npcAppearanceData';
 import { CitySkyline } from '@/components/CitySkyline';
-import { CITIES, DEFAULT_CITY_ID, describeCity, formatMoney, getCityById, localName, type CityId } from '@/rpg/cities';
+import { useContentLocale } from '@/i18n/content';
+import { CITIES, DEFAULT_CITY_ID, cityText, describeCity, formatMoney, getCityById, localName, type CityId } from '@/rpg/cities';
 import { EraEmblem, type EraEmblemId } from './EraEmblems';
 import './splash.css';
 
@@ -107,6 +108,7 @@ const cycleOption = <T extends string>(list: readonly T[], current: T, delta: nu
   list[(list.indexOf(current) + delta + list.length) % list.length];
 
 export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
+  useContentLocale();
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [eraId, setEraId] = useState<string | null>(null);
   const [originId, setOriginId] = useState<ProducerBackgroundId | null>(null);
@@ -387,7 +389,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                 {getCityById(cityId) && (
                   <div className="mt-2 space-y-1 rounded-lg border border-[var(--rst-line)] bg-black/25 p-2.5 text-[11px] leading-snug text-stone-300" aria-live="polite">
                     <CitySkyline cityId={cityId} className="h-10 w-full opacity-60" />
-                    <p className="italic text-stone-400">{getCityById(cityId)!.tagline}</p>
+                    <p className="italic text-stone-400">{cityText(getCityById(cityId)!).tagline}</p>
                     {describeCity(getCityById(cityId)!, eraId).map((line) => (
                       <p key={line} className="flex gap-1.5"><Check size={11} className="mt-0.5 shrink-0 text-[var(--rst-money)]" aria-hidden="true" />{line}</p>
                     ))}
