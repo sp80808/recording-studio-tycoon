@@ -12,6 +12,8 @@ type Opt = [string, string, Row, string, string];
 
 const fx = (rows: Row): Effects => rows.map(([kind, amount]) => ({ kind, amount }) as Effects[number]);
 const TTL = 5000;
+const ERA_ORDER = ['analog60s', 'digital80s', 'internet2000s', 'streaming2020s'];
+const eraIdx = (era: string) => Math.max(0, ERA_ORDER.indexOf(era));
 
 const BEATS: { era: string; title: string; context: string; a: Opt; b: Opt; minRep: number }[] = [
   { era: 'analog60s', minRep: 15, title: 'The Girl with the Borrowed Guitar',
@@ -19,7 +21,7 @@ const BEATS: { era: string; title: string; context: string; a: Opt; b: Opt; minR
     a: ['Give her a free afternoon', 'Tape rolling, no invoice.', [['xp', 35], ['reputation', 2]], 'Two songs in four takes. She leaves with an acetate and writes your address on her hand.', 'wren.generous'],
     b: ['Book her at the cheap rate', 'Fair is fair.', [['money', 60], ['xp', 15]], 'She pays in coins and thanks you twice.', 'wren.fair'] },
   { era: 'digital80s', minRep: 0, title: 'Wren Calloway, Now With Synthesisers',
-    context: 'Years on and a different city on the postmark, Wren walks in with a drum machine under one arm. She remembers the acetate. She wants to record something that sounds nothing like it.',
+    context: 'Years on and a different city on the postmark, Wren walks in with a drum machine under one arm. She says she has been recording in rooms all over, and wants to make something that sounds nothing like where she started.',
     a: ['Let her take over the room for a week', 'She wants to experiment, so let her.', [['xp', 40], ['reputation', 3], ['gearCondition', -3]], 'Seven days, one record, a lot of fingerprints on the desk. It sounds like the future.', 'wren.experiment'],
     b: ['Keep it to a tight three-day session', 'Focused and billable.', [['money', 200], ['reputation', 2]], 'Three days, four songs, a neat invoice and a happy artist.', 'wren.focused'] },
   { era: 'internet2000s', minRep: 0, title: 'Wren Puts the Record Online',
@@ -49,8 +51,11 @@ export const RECURRING_CLIENT_EVENTS: readonly StudioEventDefinition[] = BEATS.m
     baseWeight: 14,
     cooldownDays: 30,
     maxOccurrences: 1,
-    eligible: (f) => f.era === beat.era && f.reputation >= beat.minRep,
-    requiredMemories: n > 1 ? [`studio/wren.${n - 1}`] : undefined,
+    // Entry from any era: a beat opens in its own era or later, once the earlier beat is done or its era has passed.
+    // A later beat's memory blocks the earlier ones, so the order only ever moves forward.
+    eligible: (f) => eraIdx(f.era) >= eraIdx(beat.era) && f.reputation >= beat.minRep
+      && (n === 1 || f.has('studio', `wren.${n - 1}`) || eraIdx(f.era) > eraIdx(BEATS[i - 1].era)),
+    blockedMemories: BEATS.slice(i + 1).map((_, j) => `studio/wren.${n + 1 + j}`),
     narrativeKey: `client.wren.${n}`,
     kicker: `WREN CALLOWAY // THE CLIENT WHO FOLLOWED (${n}/4)`,
     title: beat.title,
