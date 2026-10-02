@@ -91,7 +91,7 @@ async (page) => {
     assert(!(await page.getByText('RECORDING STUDIO OS').isVisible()), `${w}x${h}: kicker still visible`);
     const headingBox = await page.getByRole('heading', { name: 'At the console' }).boundingBox();
     assert(!headingBox || headingBox.width <= 1, `${w}x${h}: "At the console" heading still visible`);
-    assert(await page.getByRole('tab', { name: /./ }).count() >= 5, `${w}x${h}: tab rail missing`);
+    assert(await page.locator('[data-studio-drawer="session"]').getByRole('tab').count() === 0, `${w}x${h}: duplicate drawer tab rail still present`);
     const mixer = await page.getByTestId('mobile-focus-mixer').boundingBox();
     assert(mixer.height <= (h < 500 ? 150 : 220), `${w}x${h}: mixer too tall (${Math.round(mixer.height)}px)`);
     await shot(`session-${w}x${h}`);

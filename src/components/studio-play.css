@@ -326,9 +326,9 @@ body:has(.studio-inspector-layer) .first-session-guide { display:none; }
 
 /* ---- #141 Mobile session console: zero-scroll single viewport --------------------------------
    Phones (<=540px wide) and landscape phones / short windows (<=500px tall) only. Desktop and
-   tablet keep the standard drawer. One identity: the "Session" tab is the context, so the kicker
-   and the "At the console" heading collapse (heading stays in the DOM, visually hidden, for the
-   dialog's accessible name) and the six quick-switch tabs become one icon rail beside Close. */
+   tablet keep the standard drawer. The project/status strip carries session identity; the drawer
+   title remains in the DOM only as the dialog's accessible name. Activity navigation lives solely
+   on the Studio floor command dock, so the drawer does not duplicate a second tab rail. */
 @media (max-width:540px), (max-height:500px) {
   [data-studio-drawer='session'] .studio-drawer-shell {
     inset:0 !important;
@@ -339,19 +339,16 @@ body:has(.studio-inspector-layer) .first-session-guide { display:none; }
   }
   [data-studio-drawer='session'] .studio-drawer-shell > * { border-radius:0 !important; min-height:0; }
   [data-studio-drawer='session'] .studio-drawer-head {
-    display:flex; align-items:center; gap:6px; padding:4px 6px !important;
+    display:flex; align-items:center; justify-content:flex-end; min-height:40px; padding:4px 6px !important;
   }
-  [data-studio-drawer='session'] .studio-drawer-head > div:first-child { order:2; flex:0 0 auto; }
-  [data-studio-drawer='session'] .studio-drawer-head > div:first-child > div:first-child { /* title block */
+  [data-studio-drawer='session'] .studio-drawer-head > div:first-child {
+    width:100%; justify-content:flex-end;
+  }
+  [data-studio-drawer='session'] .studio-drawer-titleblock {
     position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap;
   }
-  [data-studio-drawer='session'] .studio-drawer-head > div:first-child > .studio-drawer-actions { gap:4px; }
+  [data-studio-drawer='session'] .studio-drawer-actions { margin-left:auto; gap:4px; }
   [data-studio-drawer='session'] .studio-drawer-head .rst-kicker { display:none; }
-  [data-studio-drawer='session'] .studio-drawer-tabs { order:1; flex:1; min-width:0; margin-top:0 !important; padding:2px !important; }
-  [data-studio-drawer='session'] .studio-drawer-tabs button {
-    flex-direction:row !important; justify-content:center; min-height:32px; padding:4px 0 !important;
-  }
-  [data-studio-drawer='session'] .studio-drawer-tab-label { display:none; }
   [data-studio-drawer='session'] .studio-drawer-body {
     overflow:hidden !important; padding:4px !important; gap:4px !important;
   }

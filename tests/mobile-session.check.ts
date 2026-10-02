@@ -31,11 +31,15 @@ const phoneCss = css.slice(css.indexOf('#141'));
 assert(phoneCss.includes('100dvh'), 'session shell uses dynamic viewport units');
 assert(/safe-area-inset-bottom[^;]*\)\s*!important/.test(phoneCss), 'dock respects the bottom safe area');
 assert(/studio-drawer-body \{\s*overflow:hidden !important/.test(phoneCss), 'phone session body never scrolls');
-assert(phoneCss.includes('.studio-drawer-tab-label { display:none; }'), 'quick-switch tabs collapse to an icon rail');
+assert(!phoneCss.includes('.studio-drawer-tabs'), 'phone session CSS does not maintain a duplicate drawer tab rail');
 
 const drawer = read('src/components/ContextDrawer.tsx');
+const mainGame = read('src/components/MainGameContent.tsx');
 assert(drawer.includes('studio-drawer-titleblock') && drawer.includes('studio-drawer-body'), 'drawer exposes phone hooks');
 assert(drawer.includes('aria-labelledby="context-drawer-title"'), 'dialog keeps its accessible name');
+assert(!drawer.includes('role="tablist"') && !drawer.includes('studio-drawer-tabs'), 'drawer does not duplicate the Studio activity navigation');
+assert(mainGame.includes('aria-label="Studio activities"') && mainGame.includes('studio-command-dock'), 'Studio floor command dock is the navigation owner');
+assert(!mainGame.includes('onTabChange={(tab:'), 'MainGameContent does not wire duplicate drawer tab switching');
 
 // Reward targets must be mounted outside the closed-by-default details popover (P2 review).
 const strip = read('src/components/console/MobileSessionStatusStrip.tsx');
