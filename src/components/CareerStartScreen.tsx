@@ -207,7 +207,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
             {STEPS.map((label, i) => (
               <li key={label} className={stepClass(i === step, i < step)} aria-current={i === step ? 'step' : undefined}>
                 <span
-                  className={`grid size-5 place-items-center text-center tabular-nums leading-5 rounded-full border text-[10px] ${
+                  className={`inline-flex size-5 shrink-0 items-center justify-center rounded-full border text-center text-[10px] leading-none tabular-nums ${
                     i < step ? 'border-[var(--rst-brass-400)] bg-[var(--rst-brass-400)] text-stone-950' : 'border-current'
                   }`}
                 >
