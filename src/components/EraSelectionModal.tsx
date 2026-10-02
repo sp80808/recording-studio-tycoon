@@ -65,7 +65,7 @@ export const EraSelectionModal: React.FC<EraSelectionModalProps> = ({
                       {era.difficulty}
                     </Badge>
                   </div>
-                  <p className="text-stone-300 text-sm mb-2">{era.startYear}s</p>
+                  <p className="text-stone-300 text-sm mb-2">{Math.floor(era.startYear / 10) * 10}s</p>
                   <p className="text-stone-400 text-sm mb-3">{era.description}</p>
                   <p className="text-yellow-400 text-xs italic mb-3">"{era.funnyDescription}"</p>
                   

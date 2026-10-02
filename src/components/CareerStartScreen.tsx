@@ -287,7 +287,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                   </span>
                   <EraEmblem era={visual} size={92} className="transition-transform duration-300 group-hover:scale-105" />
                   <span>
-                    <span className="block text-[11px] font-bold uppercase tracking-[0.22em]" style={{ color: glow }}>{e.startYear}s</span>
+                    <span className="block text-[11px] font-bold uppercase tracking-[0.22em]" style={{ color: glow }}>{Math.floor(e.startYear / 10) * 10}s</span>
                     <span className="rst-title mt-0.5 block text-xl">{e.displayName}</span>
                   </span>
                   <span className="flex gap-1" aria-hidden="true" title="Room palette">

@@ -23,6 +23,7 @@ import {
   hasPendingStorylineBranch,
   type ChronicleKind,
 } from '@/narrative/branchingStorylineEngine';
+import { getArchiveProgress, getReplayRoutes, getUnlockedLegacyArchive } from '@/narrative/legacyArchive';
 
 interface CareerHubProps {
   gameState: GameState;
@@ -117,6 +118,9 @@ export function CareerHub({
   const chronicle = [...(story?.chronicle ?? [])].reverse();
   const rival = activeNode ? getRivalForNode(activeNode.id, player.playstyle) : null;
   const rivalAccent = rival ? getRivalAccent(rival.id) : '#e6b866';
+  const archive = getUnlockedLegacyArchive(gameState);
+  const archiveProgress = getArchiveProgress(gameState);
+  const replayRoutes = getReplayRoutes(gameState);
 
   const resolved = resolveCareerNextAction(gameState, ` · ${money(expenses)} daily costs`);
   const nextAction = {
@@ -301,6 +305,44 @@ export function CareerHub({
             </div>
           )}
         </div>
+      )}
+
+      {campaignDone && (
+        <section className="rst-surface overflow-hidden text-xs" aria-labelledby="legacy-archive-title">
+          <div className="flex items-start gap-3 border-b border-[var(--rst-line)] bg-black/20 p-4">
+            <Scroll size={17} className="mt-0.5 shrink-0 text-[var(--rst-brass-300)]" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <div>
+                  <p className="rst-kicker">Post-campaign progression</p>
+                  <h2 id="legacy-archive-title" className="rst-title mt-1 text-lg">The Legacy Archive</h2>
+                </div>
+                <span className="tabular-nums text-[var(--rst-brass-200)]">{archiveProgress.unlocked}/{archiveProgress.total} recovered</span>
+              </div>
+              <p className="mt-2 leading-relaxed text-stone-400">The ending is a door, not a credits roll. Replay another route to uncover the studio&apos;s missing history.</p>
+            </div>
+          </div>
+          <div className="grid gap-3 p-4 sm:grid-cols-2">
+            {archive.map((entry) => (
+              <article key={entry.id} className="rounded-lg border border-[var(--rst-line)] bg-black/20 p-3">
+                <p className="rst-kicker !text-[var(--rst-brass-300)]">{entry.era}</p>
+                <h3 className="mt-1 font-semibold text-stone-100">{entry.title}</h3>
+                <p className="mt-1.5 leading-relaxed text-stone-400">{entry.text}</p>
+              </article>
+            ))}
+          </div>
+          <div className="border-t border-[var(--rst-line)] p-4">
+            <p className="rst-kicker mb-2">Routes not yet recorded</p>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {replayRoutes.map((route) => (
+                <div key={route.label} className={`rounded-lg border p-3 ${route.chosen ? 'border-[var(--rst-brass-400)]/40 bg-[var(--rst-brass-400)]/10' : 'border-[var(--rst-line)] bg-black/15'}`}>
+                  <p className="font-semibold text-stone-200">{route.label} {route.chosen ? '· recorded' : ''}</p>
+                  <p className="mt-1 leading-relaxed text-stone-500">{route.detail}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
       )}
 
       <AchievementsPanel gameState={gameState} />
