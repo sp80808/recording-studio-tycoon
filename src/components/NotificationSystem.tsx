@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { GameNotification } from '@/types/game';
 import './chip-fidelity.css';
 
@@ -15,13 +15,37 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
   notifications,
   removeNotification
 }) => {
-  // Every toast leaves on its own (9s by default) so a burst of story beats or trophies can never pile up over the UI.
+  const timersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+
+  // Schedule each notification once. Re-rendering after a burst must not reset
+  // older timers and keep stale cards on screen indefinitely.
   useEffect(() => {
-    const timers = notifications.map((notification) =>
-      setTimeout(() => removeNotification(notification.id), notification.duration ?? DEFAULT_TOAST_MS),
-    );
-    return () => timers.forEach(clearTimeout);
+    const activeIds = new Set(notifications.map((notification) => notification.id));
+    for (const [id, timer] of timersRef.current) {
+      if (!activeIds.has(id)) {
+        clearTimeout(timer);
+        timersRef.current.delete(id);
+      }
+    }
+
+    for (const notification of notifications) {
+      if (timersRef.current.has(notification.id)) continue;
+      const timer = setTimeout(() => {
+        timersRef.current.delete(notification.id);
+        removeNotification(notification.id);
+      }, notification.duration ?? DEFAULT_TOAST_MS);
+      timersRef.current.set(notification.id, timer);
+    }
+
+    return () => {
+      // Timers remain owned by their notification ids across normal updates.
+    };
   }, [notifications, removeNotification]);
+
+  useEffect(() => () => {
+    for (const timer of timersRef.current.values()) clearTimeout(timer);
+    timersRef.current.clear();
+  }, []);
 
   const getNotificationColor = (type: string) => {
     switch (type) {
@@ -34,7 +58,12 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
   };
 
   return (
-    <div className="fixed bottom-4 right-4 md:right-auto md:left-4 z-50 space-y-2 max-w-sm">
+    <div
+      className="fixed bottom-4 left-4 z-50 flex max-h-[min(48vh,22rem)] w-[min(calc(100vw-2rem),24rem)] flex-col-reverse gap-2 overflow-hidden"
+      role="region"
+      aria-label="Game notifications"
+      aria-live="polite"
+    >
       {notifications.slice(-MAX_VISIBLE_TOASTS).map(notification => (
         <div
           key={notification.id}
