@@ -418,6 +418,8 @@ export interface GameState {
   researchedMods: string[]; // Array of researched mod IDs
   clients?: Client[];
   recordLabels?: RecordLabel[];
+  /** Label interest 0-100 per label id, raised by strong client releases (#49). */
+  labelInterest?: Record<string, number>;
   
   // Automation system
   automation?: {
