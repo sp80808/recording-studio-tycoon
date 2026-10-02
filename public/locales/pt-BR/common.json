@@ -237,5 +237,15 @@
   "active_stage_complete": "Etapa concluída!",
   "active_optimized": "Otimizado",
   "active_efficient": "Eficiente",
-  "active_overall_progress": "Progresso total da faixa"
+  "active_overall_progress": "Progresso total da faixa",
+  "active_target_range": "Meta: {{min}}–{{max}}%",
+  "active_optimal": "Ideal",
+  "active_adjust": "Ajustar",
+  "active_arm_take": "Preparar take ({{cost}}⚡ · {{left}} restantes)",
+  "active_project_ready": "Projeto pronto para revisão!",
+  "active_out_of_capacity": "Sem capacidade de trabalho — avance o dia",
+  "active_duties": "Tarefas",
+  "active_duties_title": "Abrir tarefas de manutenção do estúdio",
+  "active_work_on_project": "Trabalhar no projeto",
+  "active_overall_progress_aria": "Progresso total do projeto"
 }

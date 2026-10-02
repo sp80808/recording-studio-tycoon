@@ -237,5 +237,15 @@
   "active_stage_complete": "Этап завершён!",
   "active_optimized": "Оптимизировано",
   "active_efficient": "Эффективно",
-  "active_overall_progress": "Общий прогресс трека"
+  "active_overall_progress": "Общий прогресс трека",
+  "active_target_range": "Цель: {{min}}–{{max}}%",
+  "active_optimal": "Оптимально",
+  "active_adjust": "Подправить",
+  "active_arm_take": "Подготовить дубль ({{cost}}⚡ · осталось {{left}})",
+  "active_project_ready": "Проект готов к проверке!",
+  "active_out_of_capacity": "Рабочая энергия закончилась — завершите день",
+  "active_duties": "Дела",
+  "active_duties_title": "Открыть задачи по обслуживанию студии",
+  "active_work_on_project": "Работать над проектом",
+  "active_overall_progress_aria": "Общий прогресс проекта"
 }

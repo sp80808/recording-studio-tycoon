@@ -237,5 +237,15 @@
   "active_stage_complete": "Etap ukończony!",
   "active_optimized": "Zoptymalizowano",
   "active_efficient": "Wydajnie",
-  "active_overall_progress": "Całkowity postęp utworu"
+  "active_overall_progress": "Całkowity postęp utworu",
+  "active_target_range": "Cel: {{min}}–{{max}}%",
+  "active_optimal": "Optymalnie",
+  "active_adjust": "Dostosuj",
+  "active_arm_take": "Uzbrój podejście ({{cost}}⚡ · zostało {{left}})",
+  "active_project_ready": "Projekt gotowy do przeglądu!",
+  "active_out_of_capacity": "Brak mocy przerobowych — zakończ dzień",
+  "active_duties": "Obowiązki",
+  "active_duties_title": "Otwórz obowiązki konserwacyjne studia",
+  "active_work_on_project": "Pracuj nad projektem",
+  "active_overall_progress_aria": "Całkowity postęp projektu"
 }

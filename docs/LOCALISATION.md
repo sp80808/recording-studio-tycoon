@@ -13,5 +13,5 @@ All non-English strings are **machine-written (Claude) and unreviewed by native 
 Native-speaker review wanted, especially for ja, ko, zh-CN, ru, pl. Keys added in the 2026-10-02 slice (`active_*`) are in the same state.
 
 ## Coverage
-Translated: splash, header, drawer, settings, staff/studio/recruitment modals, project card, and the active-session dock (empty state, intervention, stage chips).
+Translated: splash, header, drawer, settings, staff/studio/recruitment modals, project card, and the active-session dock (empty state, intervention, stage chips, focus channels, Arm Take button, duties).
 Still hard-coded English (follow-ups): event director text, minigames, city lore/describeCity, season/ledger explanations, gear names, many `$` literals that bypass `money()`.

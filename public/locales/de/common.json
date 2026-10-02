@@ -237,5 +237,15 @@
   "active_stage_complete": "Phase abgeschlossen!",
   "active_optimized": "Optimiert",
   "active_efficient": "Effizient",
-  "active_overall_progress": "Gesamtfortschritt des Tracks"
+  "active_overall_progress": "Gesamtfortschritt des Tracks",
+  "active_target_range": "Ziel: {{min}}–{{max}} %",
+  "active_optimal": "Optimal",
+  "active_adjust": "Anpassen",
+  "active_arm_take": "Take scharfstellen ({{cost}}⚡ · {{left}} übrig)",
+  "active_project_ready": "Projekt bereit zur Abnahme!",
+  "active_out_of_capacity": "Keine Arbeitskapazität mehr — Tag beenden",
+  "active_duties": "Aufgaben",
+  "active_duties_title": "Studio-Wartungsaufgaben öffnen",
+  "active_work_on_project": "Am Projekt arbeiten",
+  "active_overall_progress_aria": "Gesamtfortschritt des Projekts"
 }

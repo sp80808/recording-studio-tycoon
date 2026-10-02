@@ -237,5 +237,15 @@
   "active_stage_complete": "Fase completata!",
   "active_optimized": "Ottimizzato",
   "active_efficient": "Efficiente",
-  "active_overall_progress": "Avanzamento totale del brano"
+  "active_overall_progress": "Avanzamento totale del brano",
+  "active_target_range": "Obiettivo: {{min}}–{{max}}%",
+  "active_optimal": "Ottimale",
+  "active_adjust": "Regola",
+  "active_arm_take": "Prepara la take ({{cost}}⚡ · {{left}} rimaste)",
+  "active_project_ready": "Progetto pronto per la revisione!",
+  "active_out_of_capacity": "Capacità di lavoro esaurita — passa al giorno dopo",
+  "active_duties": "Faccende",
+  "active_duties_title": "Apri le faccende di manutenzione dello studio",
+  "active_work_on_project": "Lavora al progetto",
+  "active_overall_progress_aria": "Avanzamento totale del progetto"
 }
