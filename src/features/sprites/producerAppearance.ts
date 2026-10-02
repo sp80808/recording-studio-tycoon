@@ -7,7 +7,7 @@
  * draw, so the player sprite is always derived data and never a second source of truth.
  */
 import { hashSeed } from '@/simulation/seededRandom';
-import type { BodyBuild, HairColour, HairShape, Headwear, ModularNpcDefinition, NpcEra } from './spriteTypes';
+import type { BodyBuild, GlassesStyle, HairColour, HairShape, Headwear, Jewellery, ModularNpcDefinition, NpcEra } from './spriteTypes';
 import { resolveNpcAppearance } from './npcAppearance';
 import { CLOTHING_PALETTES, HAIR_HEX } from './npcAppearanceData';
 
@@ -31,7 +31,10 @@ export const PRODUCER_CLOTHES_COLOURS = [
 ] as const;
 export type ProducerClothesColourId = (typeof PRODUCER_CLOTHES_COLOURS)[number]['id'];
 
-export const PRODUCER_ACCESSORIES = ['none', 'headphones', 'round_glasses', 'wayfarers', 'flat_cap', 'beanie', 'gold_chain'] as const;
+export const PRODUCER_ACCESSORIES = [
+  'none', 'headphones', 'round_glasses', 'wayfarers', 'flat_cap', 'beanie', 'gold_chain',
+  'aviators', 'horn_rims', 'visor', 'bucket_hat', 'bandana', 'headband', 'hoops', 'choker', 'cassette_pendant',
+] as const;
 export type ProducerAccessory = (typeof PRODUCER_ACCESSORIES)[number];
 
 /** Explicit physique picker (slim / average / stocky). Seed still drives skin and face. */
@@ -46,6 +49,25 @@ export const ACCESSORY_LABELS: Record<ProducerAccessory, string> = {
   flat_cap: 'Flat cap',
   beanie: 'Beanie',
   gold_chain: 'Gold chain',
+  aviators: 'Aviators',
+  horn_rims: 'Horn-rims',
+  visor: 'Cyber visor',
+  bucket_hat: 'Bucket hat',
+  bandana: 'Bandana',
+  headband: 'Headband',
+  hoops: 'Silver hoops',
+  choker: 'Choker',
+  cassette_pendant: 'Tape pendant',
+};
+
+const ACCESSORY_HEADWEAR: Partial<Record<ProducerAccessory, Headwear>> = {
+  flat_cap: 'flat_cap', beanie: 'beanie', bucket_hat: 'bucket_hat', bandana: 'bandana', headband: 'headband',
+};
+const ACCESSORY_GLASSES: Partial<Record<ProducerAccessory, GlassesStyle>> = {
+  round_glasses: 'wire_round', wayfarers: 'wayfarer', aviators: 'tinted_aviator', horn_rims: 'horn_rim', visor: 'cyber_visor',
+};
+const ACCESSORY_JEWELLERY: Partial<Record<ProducerAccessory, Jewellery>> = {
+  gold_chain: 'gold_chain', hoops: 'silver_hoops', choker: 'choker', cassette_pendant: 'cassette_pendant',
 };
 
 export interface ProducerAppearance {
@@ -107,7 +129,7 @@ export const buildProducerNpc = (
     name.trim() || 'Producer',
   );
   const palette = CLOTHING_PALETTES[PRODUCER_CLOTHES_COLOURS.find((c) => c.id === a.clothesColour)!.palette];
-  const headwear: Headwear = a.accessory === 'flat_cap' || a.accessory === 'beanie' ? a.accessory : 'none';
+  const headwear: Headwear = ACCESSORY_HEADWEAR[a.accessory] ?? 'none';
   const { outerwearHex: _outerwearHex, ...clothesRest } = base.clothes;
   return {
     ...base,
@@ -123,8 +145,8 @@ export const buildProducerNpc = (
       ...base.details,
       headwear,
       headphones: a.accessory === 'headphones',
-      glasses: a.accessory === 'round_glasses' ? 'wire_round' : a.accessory === 'wayfarers' ? 'wayfarer' : 'none',
-      jewellery: a.accessory === 'gold_chain' ? 'gold_chain' : 'none',
+      glasses: ACCESSORY_GLASSES[a.accessory] ?? 'none',
+      jewellery: ACCESSORY_JEWELLERY[a.accessory] ?? 'none',
     },
     // The player's face shows (shades only come from an explicit glasses pick).
     // Physique is an explicit picker; the seed keeps driving skin and face.

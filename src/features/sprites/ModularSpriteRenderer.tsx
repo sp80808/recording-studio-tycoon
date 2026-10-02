@@ -163,23 +163,51 @@ export const ModularSpriteRenderer: React.FC<ModularSpriteRendererProps> = ({
             {/* Face Details */}
             {/* Eyes */}
             {body.face === 'vintage_shades' || details.glasses !== 'none' ? (
-              // Eyewear / Sunglasses
+              // Eyewear: each style reads differently at 32px
               <g transform="translate(12, 11)">
-                <rect
-                  x="0"
-                  y="0"
-                  width="4"
-                  height="2.5"
-                  fill={details.glasses === 'tinted_aviator' ? '#78350f' : '#09090b'}
-                />
-                <rect
-                  x="5"
-                  y="0"
-                  width="4"
-                  height="2.5"
-                  fill={details.glasses === 'tinted_aviator' ? '#78350f' : '#09090b'}
-                />
-                <rect x="4" y="0.5" width="1" height="0.5" fill="#d4d4d8" />
+                {details.glasses === 'wire_round' && (
+                  <g fill="none" stroke="#e5e7eb" strokeWidth="0.6">
+                    <circle cx="2" cy="1.5" r="2" />
+                    <circle cx="7" cy="1.5" r="2" />
+                    <rect x="4" y="1" width="1" height="0.5" fill="#e5e7eb" stroke="none" />
+                    <circle cx="2" cy="1.5" r="0.5" fill="#09090b" stroke="none" />
+                    <circle cx="7" cy="1.5" r="0.5" fill="#09090b" stroke="none" />
+                  </g>
+                )}
+                {details.glasses === 'horn_rim' && (
+                  <g>
+                    <rect x="-0.5" y="-0.5" width="5" height="3.6" fill="none" stroke="#78350f" strokeWidth="0.9" />
+                    <rect x="4.5" y="-0.5" width="5" height="3.6" fill="none" stroke="#78350f" strokeWidth="0.9" />
+                    <rect x="4" y="0.3" width="1" height="0.6" fill="#78350f" />
+                    <rect x="1" y="0.5" width="2" height="2" fill="#09090b" />
+                    <rect x="6" y="0.5" width="2" height="2" fill="#09090b" />
+                  </g>
+                )}
+                {details.glasses === 'cyber_visor' && (
+                  <g>
+                    <rect x="-1" y="-0.5" width="11" height="3" fill="#22d3ee" fillOpacity="0.85" />
+                    <rect x="-1" y="-0.5" width="11" height="0.8" fill="#ffffff" fillOpacity="0.45" />
+                  </g>
+                )}
+                {(details.glasses === 'wayfarer' || details.glasses === 'tinted_aviator' || details.glasses === 'none') && (
+                  <>
+                    <rect
+                      x="0"
+                      y="0"
+                      width="4"
+                      height="2.5"
+                      fill={details.glasses === 'tinted_aviator' ? '#78350f' : '#09090b'}
+                    />
+                    <rect
+                      x="5"
+                      y="0"
+                      width="4"
+                      height="2.5"
+                      fill={details.glasses === 'tinted_aviator' ? '#78350f' : '#09090b'}
+                    />
+                    <rect x="4" y="0.5" width="1" height="0.5" fill="#d4d4d8" />
+                  </>
+                )}
               </g>
             ) : (
               // Expressive Pixel Eyes
@@ -293,6 +321,26 @@ export const ModularSpriteRenderer: React.FC<ModularSpriteRendererProps> = ({
               </g>
             )}
 
+            {details.headwear === 'bucket_hat' && (
+              <g fill={clothes.topSecondaryHex}>
+                <rect x="11" y="3.5" width="10" height="5" />
+                <rect x="8" y="7.5" width="16" height="1.6" />
+                <rect x="11" y="6.5" width="10" height="1.2" fill={clothes.topPrimaryHex} />
+              </g>
+            )}
+            {details.headwear === 'bandana' && (
+              <g fill={clothes.topPrimaryHex}>
+                <rect x="10.5" y="6.5" width="11" height="2.2" />
+                <rect x="21" y="7" width="3" height="3" />
+                <rect x="12" y="7" width="1" height="1" fill={clothes.topSecondaryHex} />
+                <rect x="15" y="7" width="1" height="1" fill={clothes.topSecondaryHex} />
+                <rect x="18" y="7" width="1" height="1" fill={clothes.topSecondaryHex} />
+              </g>
+            )}
+            {details.headwear === 'headband' && (
+              <rect x="10.5" y="7" width="11" height="1.2" fill={clothes.topPrimaryHex} />
+            )}
+
             {/* Layer 7: Studio Reference Headphones (Over-Ear or Around-Neck) */}
             {details.headphones !== false && (<g transform="translate(0, 0)">
               {/* Headband */}
@@ -322,6 +370,23 @@ export const ModularSpriteRenderer: React.FC<ModularSpriteRendererProps> = ({
                 transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
               />
             </g>)}
+
+            {details.jewellery === 'silver_hoops' && (
+              <g fill="none" stroke="#cbd5e1" strokeWidth="0.6">
+                <circle cx="10.5" cy="14" r="1.1" />
+                <circle cx="21.5" cy="14" r="1.1" />
+              </g>
+            )}
+            {details.jewellery === 'choker' && (
+              <rect x="13" y="16.6" width="6" height="1" fill="#18181b" />
+            )}
+            {details.jewellery === 'cassette_pendant' && (
+              <g>
+                <path d="M 13 18 Q 16 21 19 18" fill="none" stroke="#a8a29e" strokeWidth="0.6" />
+                <rect x="15" y="20" width="2.4" height="1.6" fill="#f59e0b" />
+                <rect x="15.6" y="20.5" width="1.2" height="0.5" fill="#18181b" />
+              </g>
+            )}
 
             {/* Jewellery (Gold Chains) */}
             {details.jewellery === 'gold_chain' && (

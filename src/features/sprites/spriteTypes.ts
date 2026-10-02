@@ -76,7 +76,7 @@ export type GlassesStyle = 'none' | 'wire_round' | 'horn_rim' | 'wayfarer' | 'ti
 
 export type Jewellery = 'none' | 'gold_chain' | 'silver_hoops' | 'cassette_pendant' | 'choker';
 
-export type Headwear = 'none' | 'flat_cap' | 'beanie';
+export type Headwear = 'none' | 'flat_cap' | 'beanie' | 'bucket_hat' | 'bandana' | 'headband';
 
 export interface PersonalityDetails {
   /** Optional so generated NPCs and old saves are unchanged; the player producer sets it. */
