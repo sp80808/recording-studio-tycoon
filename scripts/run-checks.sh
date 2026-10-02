@@ -42,10 +42,14 @@ for check in tools-assets audio-system confetti-juice minigames-audio user-inter
 done
 
 echo "=== gamepad service & controller suites ==="
-for check in gamepad-service gamepad-glyph gamepad-navigation radial-wheel beat-pad-game tape-jog-game console-ride-game vocal-comp album-sequence fault-hunt chain-recall flight-case-packing session-scramble phase-check booking-calendar filler-jobs city-selection onboarding-steps city-sagas recurring-client market-determinism house-style artist-career staff-career recruitment-channels bus-merge gamepad-suite; do
+for check in gamepad-service gamepad-glyph gamepad-navigation radial-wheel beat-pad-game tape-jog-game console-ride-game vocal-comp album-sequence fault-hunt chain-recall flight-case-packing session-scramble phase-check booking-calendar filler-jobs city-selection onboarding-steps city-sagas market-determinism house-style artist-career label-interest staff-career recruitment-channels bus-merge gamepad-suite; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
   node "/tmp/rst-$check.cjs"
 done
+
+echo "=== recurring client saga ==="
+./node_modules/.bin/esbuild tests/recurring-client.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-recurring-client.cjs --alias:@=./src >/dev/null
+node /tmp/rst-recurring-client.cjs
 
 echo "=== lore, character origins & narrative arcs ==="
 ./node_modules/.bin/esbuild tests/narrative-lore-arcs.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-narrative-lore-arcs.cjs --alias:@=./src >/dev/null

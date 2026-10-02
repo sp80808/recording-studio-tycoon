@@ -16,6 +16,7 @@ import { availableMods } from '@/data/equipmentMods';
 import { premisesDailyRent, premisesCandidateCount } from '@/rpg/premises';
 import { availableTrainingCourses } from '@/data/training';
 import { resolveDueReleases } from '@/rpg/artistCareer';
+import { applyLabelSignals } from '@/rpg/labelInterest';
 import { applyKnowHowEvents, type KnowHowEvent } from '@/rpg/studioKnowHow';
 import { applyEventsToState, rollDailyEvents } from '@/game-mechanics/eventIntegration';
 import { RandomEvent } from '@/game-mechanics/random-events';
@@ -221,12 +222,15 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       });
       // Artist career (#49): releases whose day has come resolve into reputation/referrals (never cash).
       const releaseTail = resolveDueReleases(baseBeforeReleases.clientRelationships, newDay);
-      const baseUpdatedState: GameState = releaseTail.notifications.length || releaseTail.reputation
+      const labelTail = applyLabelSignals(baseBeforeReleases.labelInterest, releaseTail.labelSignals);
+      const releaseNotes = [...releaseTail.notifications, ...labelTail.notifications];
+      const baseUpdatedState: GameState = releaseNotes.length || releaseTail.reputation
         ? {
             ...baseBeforeReleases,
             clientRelationships: releaseTail.relationships,
+            ...(labelTail.interest !== baseBeforeReleases.labelInterest ? { labelInterest: labelTail.interest } : {}),
             reputation: baseBeforeReleases.reputation + releaseTail.reputation,
-            notifications: [...baseBeforeReleases.notifications, ...releaseTail.notifications.map(n => ({ ...n, timestamp: Date.now() }))],
+            notifications: [...baseBeforeReleases.notifications, ...releaseNotes.map(n => ({ ...n, timestamp: Date.now() }))],
           }
         : releaseTail.relationships === baseBeforeReleases.clientRelationships
           ? baseBeforeReleases

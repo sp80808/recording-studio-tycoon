@@ -42,7 +42,7 @@ ok(early.relationships === rels && early.reputation === 0, 'nothing resolves bef
 const due = resolveDueReleases(rels, rel.resolveDay);
 ok(due.relationships!['maya|independent'].releases![0].resolved, 'the release resolves on its day');
 ok(due.reputation === BAND_REPUTATION[rel.outcomeBand], 'resolution pays the bounded reputation for its band');
-ok(Object.keys(due).sort().join() === 'notifications,relationships,reputation', 'resolution has no cash channel (the session fee is never repaid)');
+ok(Object.keys(due).sort().join() === 'labelSignals,notifications,relationships,reputation', 'resolution has no cash channel (the session fee is never repaid)');
 const again = resolveDueReleases(due.relationships, rel.resolveDay + 3);
 ok(again.reputation === 0 && again.notifications.length === 0, 'resolving again is a no-op (reload safe)');
 const gain = due.relationships!['maya|independent'];

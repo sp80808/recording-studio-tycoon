@@ -95,6 +95,8 @@ export function recordRelease(rel: ClientRelationship, input: ReleaseInput): Cli
 export interface ReleaseResolution {
   reputation: number;
   notifications: GameNotification[];
+  /** Resolved releases that a record label could notice (#49 label interest). */
+  labelSignals: Array<{ genre: string; band: ReleaseOutcomeBand; title: string; clientName: string }>;
 }
 
 /**
@@ -106,9 +108,10 @@ export function resolveDueReleases(
   relationships: Record<string, ClientRelationship> | undefined,
   day: number,
 ): { relationships: Record<string, ClientRelationship> | undefined } & ReleaseResolution {
-  if (!relationships) return { relationships, reputation: 0, notifications: [] };
+  if (!relationships) return { relationships, reputation: 0, notifications: [], labelSignals: [] };
   let reputation = 0;
   const notifications: GameNotification[] = [];
+  const labelSignals: ReleaseResolution['labelSignals'] = [];
   let changed = false;
   const next: Record<string, ClientRelationship> = {};
   for (const [key, rel] of Object.entries(relationships)) {
@@ -122,6 +125,7 @@ export function resolveDueReleases(
       points += BAND_POINTS[r.outcomeBand];
       reputation += BAND_REPUTATION[r.outcomeBand];
       if (r.outcomeBand === 'breakthrough' || r.outcomeBand === 'prestige') referrals += 1;
+      labelSignals.push({ genre: r.genre, band: r.outcomeBand, title: r.title, clientName: rel.clientName });
       if (r.outcomeBand !== 'quiet') {
         notifications.push({
           id: `release-${r.id}`,
@@ -142,7 +146,7 @@ export function resolveDueReleases(
     }
     next[key] = nextRel;
   }
-  return changed ? { relationships: next, reputation, notifications } : { relationships, reputation: 0, notifications: [] };
+  return changed ? { relationships: next, reputation, notifications, labelSignals } : { relationships, reputation: 0, notifications: [], labelSignals: [] };
 }
 
 /** What kind of work this client asks for at their career tier (deterministic per project id). */
