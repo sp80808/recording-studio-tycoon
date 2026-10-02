@@ -4,6 +4,7 @@
  */
 import type { StorylineNode } from './branchingStorylineEngine';
 import type { CampaignEnding } from './endings';
+import { PREMISES_TIERS, type PremisesTier } from '@/rpg/premises';
 import { getRivalAccent, getRivalForNode, initialsOf } from './rivalCast';
 
 export interface CinematicPayload {
@@ -51,3 +52,41 @@ export const buildEndingCutscene = (ending: CampaignEnding): CinematicPayload =>
   stats: ending.stats,
   finalLabel: 'Keep the studio open',
 });
+
+const MOVE_BEATS: Record<1 | 2 | 3, { chapter: string; kicker: string; speaker: string; speakerTitle: string; lines: string[] }> = {
+  1: {
+    chapter: 'Move day · Project Studio', kicker: 'Moving day', speaker: 'Dee Marlowe', speakerTitle: 'Landlord',
+    lines: ['The borrowed corner goes into boxes: the desk, the tape machine, the mic stand with the cracked clip. Nothing gets left behind.', 'The new room has a proper door, a window that does not rattle, and space for a second chair. A vocal booth waits at the back.', 'Dee hands over the keys. "Keep it loud, but not before nine."'],
+  },
+  2: {
+    chapter: 'Move day · Commercial Studio', kicker: 'Moving day', speaker: 'Priya Anand', speakerTitle: 'Letting agent',
+    lines: ['A reception desk, a lounge for waiting clients and a live room with a ceiling high enough to hear itself think.', 'The crew carries the familiar gear in first, so the new place sounds like you before the paint is dry.', 'The agent smiles at the rent schedule. "A busy room pays for itself. An empty one does not."'],
+  },
+  3: {
+    chapter: 'Move day · Multi-room Facility', kicker: 'Moving day', speaker: 'Marcus Webb', speakerTitle: 'Facility manager',
+    lines: ['Two floors, a mix suite with proper monitoring and a lounge that looks like it already has a gold record on the wall.', 'Your seniors walk the corridors, claiming rooms. Somebody has already hung a sign on the door of the mix suite.', '"This is a lot of room," says Marcus. "Fill it with good work."'],
+  },
+};
+
+export const buildMoveInCutscene = (tier: 1 | 2 | 3, studioName?: string): CinematicPayload => {
+  const beat = MOVE_BEATS[tier];
+  const def = PREMISES_TIERS[tier as PremisesTier];
+  const unlocks = def.grantsRoomId ? def.grantsRoomId.replace(/-/g, ' ') : 'new rooms';
+  return {
+    title: def.name,
+    chapter: beat.chapter,
+    kicker: beat.kicker,
+    location: studioName,
+    speaker: beat.speaker,
+    speakerTitle: beat.speakerTitle,
+    speakerInitials: initialsOf(beat.speaker),
+    accent: tier === 3 ? '#f4b942' : tier === 2 ? '#5db0ff' : '#7bd88f',
+    lines: beat.lines,
+    stats: [
+      { label: 'Crew cap', value: String(def.staffCap) },
+      { label: 'Rent', value: `$${def.dailyRent}/day` },
+      { label: 'New room', value: unlocks },
+    ],
+    finalLabel: 'Walk in',
+  };
+};

@@ -154,6 +154,7 @@ export const applyPremisesMove = <S extends PremisesState>(s: S): S => {
   return {
     ...s,
     premisesTier: offer.tier,
+    premisesMoveBeat: offer.tier,
     money: s.money - offer.deposit,
     // One day of downtime: moving day uses up today's work capacity (refills on the next day).
     ...(s.playerData ? { playerData: { ...s.playerData, dailyWorkCapacity: 0 } } : {}),
@@ -165,3 +166,14 @@ export const premisesDailyRent = (s: { premisesTier?: number }): number => getPr
 export const premisesRoomAllowanceBonus = (s: { premisesTier?: number }): number => getPremisesDef(s).roomAllowanceBonus;
 export const premisesStaffCap = (s: { premisesTier?: number }): number => getPremisesDef(s).staffCap;
 export const premisesCandidateCount = (s: { premisesTier?: number }, base = 3): number => base + getPremisesDef(s).extraCandidates;
+
+/** Mark the move-day cinematic as seen. */
+export const clearPremisesMoveBeat = <S extends { premisesMoveBeat?: number }>(s: S): S => {
+  if (s.premisesMoveBeat === undefined) return s;
+  const { premisesMoveBeat: _seen, ...rest } = s;
+  void _seen;
+  return rest as S;
+};
+
+export const getPremisesMoveBeat = (s: { premisesMoveBeat?: number }): 1 | 2 | 3 | null =>
+  s.premisesMoveBeat === 1 || s.premisesMoveBeat === 2 || s.premisesMoveBeat === 3 ? s.premisesMoveBeat : null;
