@@ -7,6 +7,7 @@
  * nothing is persisted and the booking flow itself is unchanged.
  */
 import type { GameState, Project, StudioRoom } from '@/types/game';
+import { createSeededRandom } from '@/simulation/seededRandom';
 
 export const SLOTS_PER_DAY = 3;
 export const WINDOW_DAYS = 7;
@@ -33,6 +34,23 @@ export interface BookingCalendar {
   nextFree?: CalendarSlot;
 }
 
+export type BookingFlexibility = 'fixed' | 'narrow' | 'flexible';
+
+/** Scheduling terms (#61): how long this client will wait for a start. Derived from the project id, never stored. */
+export interface BookingTerms {
+  flexibility: BookingFlexibility;
+  /** Days from the day the enquiry is seen that the client will still accept a start. */
+  startWindowDays: number;
+}
+
+const WINDOW_BY_FLEX: Record<BookingFlexibility, number> = { fixed: 0, narrow: 2, flexible: 5 };
+
+export const termsFor = (project: Pick<Project, 'id'>): BookingTerms => {
+  const roll = createSeededRandom(`booking-terms:${project.id}`)();
+  const flexibility: BookingFlexibility = roll < 0.25 ? 'fixed' : roll < 0.65 ? 'narrow' : 'flexible';
+  return { flexibility, startWindowDays: WINDOW_BY_FLEX[flexibility] };
+};
+
 export interface BookingPreview {
   sessions: number;
   roomName?: string;
@@ -44,6 +62,9 @@ export interface BookingPreview {
   utilizationAfter: number;
   /** Next free slot once this booking holds its slots; undefined when it takes the last one. */
   nextFreeAfter?: CalendarSlot;
+  terms: BookingTerms;
+  /** Days of slack between the first free start and the client's latest acceptable start; negative means too late. */
+  startBufferDays: number;
 }
 
 /** Days of work still ahead for a project: unfinished stages, at least one, at most the window. */
@@ -119,7 +140,10 @@ export const previewBooking = (
   const capacity = cal.days.reduce((n, d) => n + d.capacity, 0);
   const booked = cal.days.reduce((n, d) => n + d.booked, 0);
   const nextFreeAfter = cal.days.flatMap((d) => d.slots).find((x) => !x.projectId && !reserved.has(x));
+  const terms = termsFor(project);
   return {
+    terms,
+    startBufferDays: terms.startWindowDays - startOffset,
     utilizationAfter: capacity ? (booked + held) / capacity : 0,
     nextFreeAfter,
     sessions,
