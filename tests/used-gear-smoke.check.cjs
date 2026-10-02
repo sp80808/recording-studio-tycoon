@@ -12,7 +12,7 @@ async (page) => {
     return page.evaluate(() => JSON.parse(localStorage.getItem('recordingStudioTycoonSave')).gameState);
   };
   const openGear = async () => {
-    await activities().getByRole('button', { name: 'Gear', exact: true }).click();
+    await activities().getByRole('button', { name: 'Room', exact: true }).click();
     await recycler().waitFor();
   };
   await page.setViewportSize({ width: 1440, height: 1000 });
@@ -66,7 +66,7 @@ async (page) => {
   assert(ready.dailyClassifieds.day === ready.currentDay && ready.currentDay === purchased.currentDay + 1, 'Classified day transition failed');
   const conditionBeforeSession = ready.ownedEquipment.find(item => item.id === listing.equipment.id).condition;
   await page.keyboard.press('Escape');
-  await activities().getByRole('button', { name: 'Bookings', exact: true }).click();
+  await activities().getByRole('button', { name: 'Artist', exact: true }).click();
   await page.getByRole('button', { name: 'Book Session' }).first().click();
   await page.getByRole('heading', { name: 'At the console' }).waitFor();
   const reviewTitle = page.getByText(/Project Complete:/);

@@ -23,9 +23,12 @@ describe('studio hotkeys', () => {
     assert.equal(matchHotkey({ key: '2', altKey: true }, bindings), undefined);
   });
 
-  it('binds one number per dock tab, in dock order, and never in the minigame tab', () => {
+  it('binds one number per footer item, in footer order, and never in the minigame tab', () => {
     const src = fs.readFileSync('src/components/MainGameContent.tsx', 'utf8');
-    assert.match(src, /DOCK_TABS\.map\(\(id, index\)/);
+    assert.match(src, /FOOTER_TABS\.map\(\(id, index\)/);
+    assert.match(src, /FOOTER_TABS: DockTabId\[\] = \['bookings', 'session', 'crew', 'gear', 'career'\]/);
+    const dock = src.slice(src.indexOf('aria-label="Studio activities"'), src.indexOf('] as const).map'));
+    assert.deepEqual([...dock.matchAll(/, '([A-Za-z]+)', \(\) =>/g)].map(m => m[1]), ['Artist', 'Session', 'Crew', 'Room', 'Career']);
     assert.match(src, /key: String\(index \+ 1\)/);
     assert.match(src, /useStudioHotkeys\(hotkeyBindings, panel !== 'session'/);
     assert.equal(DOCK_TABS.length, 7);
