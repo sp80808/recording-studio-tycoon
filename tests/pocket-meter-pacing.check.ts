@@ -7,8 +7,8 @@ const takeEval = fs.readFileSync('src/rpg/takeEvaluation.ts', 'utf8');
 const stageWork = fs.readFileSync('src/hooks/useStageWork.tsx', 'utf8');
 
 // Needle: quick console check — snappier than 1.6/3.3, still slower than twitchy ~1.1.
-assert.match(meter, /cycleSeconds:\s*1\.35/, 'needle sweep should feel like a quick console check');
-assert.match(meter, /autoLockSeconds:\s*2\.5/, 'auto-lock should match the 2.5s design fallback');
+assert.match(meter, /cycleSeconds:\s*1\.8/, 'needle sweep should feel like a quick console check');
+assert.match(meter, /autoLockSeconds:\s*3\.2/, 'auto-lock should match the 3.2s design fallback');
 assert.match(meter, /prefers-reduced-motion: reduce/, 'reduced motion must use the static accessible path');
 assert.match(meter, /role="meter"/, 'meter must expose its live value to assistive technology');
 
