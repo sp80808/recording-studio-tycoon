@@ -1,6 +1,9 @@
 import { TAKE_FEEDBACK_EVENT, takeQuip, type TakeFeedbackDetail } from '@/utils/takeFeedback';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import WebGLCanvas, { StudioHotspotId, HotspotAnchors } from '@/components/WebGLCanvas';
+import { RoomVignette } from '@/components/studio/RoomVignette';
+import { StudioRoomTabs } from '@/components/studio/StudioRoomTabs';
+import { getOccupiedRoomIds, getOperationalStudioRooms } from '@/utils/studioRoomUtils';
 import { normalizeHotspotId } from '@/utils/studioHotspots';
 import { StudioInspector } from '@/components/StudioInspector';
 import { GameState, Project } from '@/types/game';
@@ -233,6 +236,14 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
    * Diegetic floor routes: pending chores always run the chore flow first.
    * Console + live room open the session work panel only when no duty remains.
    */
+  const [viewRoomId, setViewRoomId] = useState('studio-a');
+  const operationalRooms = useMemo(() => getOperationalStudioRooms(gameState), [gameState.studioRooms]);
+  const occupiedRooms = useMemo(() => getOccupiedRoomIds(gameState), [gameState.activeProject, gameState.activeProjects]);
+  const viewRoom = operationalRooms.find((r) => r.id === viewRoomId && r.id !== 'studio-a');
+  const roomProjectTitle = (roomId: string): string | null => {
+    const all = [gameState.activeProject, ...(gameState.activeProjects ?? [])];
+    return all.find((p) => p?.bookingRoomId === roomId)?.title ?? null;
+  };
   const handleHotspot = (id: StudioHotspotId | string) => {
     if (id === 'cases') {
       if (settings.sfxEnabled) void gameAudio.playLatch();
@@ -331,6 +342,8 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           {gameState.producerCustomization?.moniker ?? 'Producer'}
         </span>
       </div>
+      {viewRoom && <RoomVignette room={viewRoom} occupiedBy={roomProjectTitle(viewRoom.id)} />}
+      <StudioRoomTabs rooms={operationalRooms} activeId={viewRoom ? viewRoom.id : 'studio-a'} occupied={occupiedRooms} onSelect={(id) => { if (settings.sfxEnabled) void gameAudio.playTactileClick(); setViewRoomId(id); }} />
       {tierFlash && <div className="tier-flash-overlay" />}
       {takeFx && (
         <div key={takeFx.seq} className={`take-fx take-fx-${takeFx.grade.toLowerCase()}`} aria-hidden="true">
@@ -366,7 +379,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       {/* Anchored hybrid chore hotspots (stamp language + old duty depth). */}
       {(() => {
         const choreState = gameState.choreState;
-        if (!choreState) return null;
+        if (!choreState || viewRoom) return null;
         const pendingConsoleChores = Object.values(choreState.chores).filter(
           (c) => getChoreCanonicalHotspot(c) === 'console' && !c.completed
         );
