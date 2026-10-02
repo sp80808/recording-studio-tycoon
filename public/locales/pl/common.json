@@ -259,5 +259,17 @@
   "active_arm_overdrive": "Uzbrój overdrive ({{cost}}⚡ · +75%)",
   "active_overdrive_engaged": "Overdrive włączony ({{cost}}⚡ · {{bonus}})",
   "active_saver_bonus": "-1 oszczędność",
-  "active_cost_patchbay": "1 z patchbayem"
+  "active_cost_patchbay": "1 z patchbayem",
+  "career_step_character": "Postać",
+  "career_step_location": "Miejsce",
+  "career_step_era": "Epoka",
+  "career_step_role": "Rola",
+  "career_back": "Wstecz",
+  "career_back_to_character": "Wróć do postaci",
+  "career_back_to_location": "Wróć do miejsca",
+  "career_back_to_era": "Wróć do epoki",
+  "career_next_era": "Wybierz epokę",
+  "career_next_role": "Wybierz rolę",
+  "career_open_studio": "Otwórz studio",
+  "career_next_character": "Stwórz producenta"
 }

@@ -259,5 +259,17 @@
   "active_arm_overdrive": "Overdrive scharf ({{cost}}⚡ · +75 %)",
   "active_overdrive_engaged": "Overdrive aktiv ({{cost}}⚡ · {{bonus}})",
   "active_saver_bonus": "-1 Spar",
-  "active_cost_patchbay": "1 mit Patchbay"
+  "active_cost_patchbay": "1 mit Patchbay",
+  "career_step_character": "Figur",
+  "career_step_location": "Ort",
+  "career_step_era": "Ära",
+  "career_step_role": "Rolle",
+  "career_back": "Zurück",
+  "career_back_to_character": "Zurück zur Figur",
+  "career_back_to_location": "Zurück zum Ort",
+  "career_back_to_era": "Zurück zur Ära",
+  "career_next_era": "Ära wählen",
+  "career_next_role": "Rolle wählen",
+  "career_open_studio": "Studio eröffnen",
+  "career_next_character": "Produzenten erstellen"
 }

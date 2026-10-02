@@ -259,5 +259,17 @@
   "active_arm_overdrive": "Включить овердрайв ({{cost}}⚡ · +75%)",
   "active_overdrive_engaged": "Овердрайв включён ({{cost}}⚡ · {{bonus}})",
   "active_saver_bonus": "-1 экономия",
-  "active_cost_patchbay": "1 с патчбеем"
+  "active_cost_patchbay": "1 с патчбеем",
+  "career_step_character": "Персонаж",
+  "career_step_location": "Город",
+  "career_step_era": "Эпоха",
+  "career_step_role": "Роль",
+  "career_back": "Назад",
+  "career_back_to_character": "Назад к персонажу",
+  "career_back_to_location": "Назад к городу",
+  "career_back_to_era": "Назад к эпохе",
+  "career_next_era": "Выбрать эпоху",
+  "career_next_role": "Выбрать роль",
+  "career_open_studio": "Открыть студию",
+  "career_next_character": "Создать продюсера"
 }

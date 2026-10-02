@@ -259,5 +259,17 @@
   "active_arm_overdrive": "オーバードライブを構える（{{cost}}⚡・+75%）",
   "active_overdrive_engaged": "オーバードライブ作動中（{{cost}}⚡・{{bonus}}）",
   "active_saver_bonus": "-1 節約",
-  "active_cost_patchbay": "パッチベイで1"
+  "active_cost_patchbay": "パッチベイで1",
+  "career_step_character": "キャラクター",
+  "career_step_location": "場所",
+  "career_step_era": "時代",
+  "career_step_role": "役割",
+  "career_back": "戻る",
+  "career_back_to_character": "キャラクターに戻る",
+  "career_back_to_location": "場所に戻る",
+  "career_back_to_era": "時代に戻る",
+  "career_next_era": "時代を選ぶ",
+  "career_next_role": "役割を選ぶ",
+  "career_open_studio": "スタジオを開く",
+  "career_next_character": "プロデューサーを作る"
 }

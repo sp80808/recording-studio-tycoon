@@ -13,6 +13,7 @@ async (page) => {
   await page.evaluate(() => localStorage.clear());
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.getByRole('button', { name: /New studio/ }).click();
+  await page.getByRole('button', { name: /Choose an era/ }).click();
   await page.getByText('Modern Era', { exact: true }).click();
   await page.getByRole('button', { name: /Create your producer/ }).click();
   await page.getByRole('button', { name: /Choose a role/ }).click();

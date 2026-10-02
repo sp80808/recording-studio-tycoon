@@ -259,5 +259,17 @@
   "active_arm_overdrive": "오버드라이브 준비 ({{cost}}⚡ · +75%)",
   "active_overdrive_engaged": "오버드라이브 작동 중 ({{cost}}⚡ · {{bonus}})",
   "active_saver_bonus": "-1 절약",
-  "active_cost_patchbay": "패치베이로 1"
+  "active_cost_patchbay": "패치베이로 1",
+  "career_step_character": "캐릭터",
+  "career_step_location": "장소",
+  "career_step_era": "시대",
+  "career_step_role": "역할",
+  "career_back": "뒤로",
+  "career_back_to_character": "캐릭터로 돌아가기",
+  "career_back_to_location": "장소로 돌아가기",
+  "career_back_to_era": "시대로 돌아가기",
+  "career_next_era": "시대 선택",
+  "career_next_role": "역할 선택",
+  "career_open_studio": "스튜디오 열기",
+  "career_next_character": "프로듀서 만들기"
 }
