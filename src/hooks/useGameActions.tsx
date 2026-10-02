@@ -21,6 +21,7 @@ import { RandomEvent } from '@/game-mechanics/random-events';
 import { freshDailyTracking } from '@/utils/dailyChallenges';
 import { gameAudio } from '@/utils/audioSystem';
 import { triggerScreenShake } from '@/utils/screenShake';
+import { parseCrossTrainCourse, completeCrossTraining } from '@/rpg/staffCareer';
 import {
   createInitialChoreState,
   refreshDailyChores,
@@ -78,7 +79,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     const updatedStaff = gameState.hiredStaff.map(staff => {
       let updatedStaffMember = { ...staff };
       if (staff.status === 'Training' && staff.trainingEndDay && newDay >= staff.trainingEndDay) {
-        if (staff.trainingCourse) completedCourseIds.push(staff.trainingCourse);
+        if (staff.trainingCourse && !parseCrossTrainCourse(staff.trainingCourse)) completedCourseIds.push(staff.trainingCourse);
         completedTraining.push(`${staff.name} completed training for ${staff.trainingCourse}!`); // Assuming trainingCourse stores the name or ID
         updatedStaffMember = {
           ...updatedStaffMember,
@@ -87,6 +88,8 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
           trainingCourse: undefined,
           energy: 100 // Restore energy after training
         };
+        const crossDiscipline = parseCrossTrainCourse(staff.trainingCourse);
+        if (crossDiscipline) updatedStaffMember = completeCrossTraining(updatedStaffMember, crossDiscipline);
       }
       if (staff.status === 'Researching' && staff.researchEndDay && staff.researchingModId && newDay >= staff.researchEndDay) {
         const mod = availableMods.find(m => m.id === staff.researchingModId);

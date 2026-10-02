@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { GamePanel } from '@/components/ui/GamePanel';
 import { KenneyButton } from '@/components/ui/KenneyButton';
-import { promoteStaffInState } from '@/rpg/staffCareer';
+import { promoteStaffInState, startCrossTrainingInState, startMentoringInState, stopMentoringInState } from '@/rpg/staffCareer';
+import { spend } from '@/economy/ledger';
 import { GameState, PlayerAttributes, StaffMember } from '@/types/game';
 import { SkillsModal } from '@/components/modals/SkillsModal';
 import { AttributesModal } from '@/components/modals/AttributesModal';
@@ -340,6 +341,8 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             toggleStaffRest={toggleStaffRest}
             openTrainingModal={openTrainingModal}
             promoteStaff={(staffId) => { void gameAudio.playGearSwitch(); setGameState(prev => promoteStaffInState(prev, staffId)); }}
+            crossTrainStaff={(staffId, d) => setGameState(prev => startCrossTrainingInState(prev, staffId, d, (g, cost, id, memo) => spend(g, cost, { category: 'training', staffId: id, memo })))}
+            setMentor={(juniorId, mentorId) => setGameState(prev => mentorId ? startMentoringInState(prev, mentorId, juniorId) : stopMentoringInState(prev, juniorId))}
           />
           {gameState.hiredStaff.some(s => s.role === 'Engineer' && s.status === 'Idle') && (
             <KenneyButton
