@@ -1,3 +1,4 @@
+import { StatIcon } from '@/components/icons/GameIcons';
 import { money } from '@/utils/displayMoney';
 import { emitTakeFeedback } from '@/utils/takeFeedback';
 import { ProducerSprite } from '@/components/ProducerSprite';
@@ -245,11 +246,11 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       <div className="flex-1 min-h-0 overflow-y-auto space-y-4">
         <GamePanel className="flex-1 p-6 backdrop-blur-sm">
           <div className="text-center text-stone-400 animate-fade-in">
-            <div className="text-6xl mb-4 animate-pulse">🎵</div>
+            <div className="text-6xl mb-4 animate-pulse"><StatIcon name="note" size="1em" /></div>
             <h3 className="text-xl font-bold mb-2 text-white">Studio Ready</h3>
             <p className="mb-4 text-stone-300">Choose an artist enquiry, then bring their session into the room.</p>
             <div className="bg-stone-950/60 border border-stone-700/80 rounded-lg p-4 text-sm text-amber-200 shadow-inner">
-              <p className="font-semibold mb-2">📱 Your next move:</p>
+              <p className="font-semibold mb-2"><StatIcon name="phone" /> Your next move:</p>
               <p>1. Browse the Artist Enquiries board</p>
               <p>2. Book a session that fits your room and crew</p>
               <p>3. Return here to run the recording session</p>
@@ -622,7 +623,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
             {autoTriggeredMinigame && takeState !== 'tracking' && (
               <div className="shrink-0 flex items-center gap-1.5 px-2 py-1 bg-purple-500/[0.12] border border-purple-500/70 rounded">
-                <span className="min-w-0 flex-1 truncate text-[11px] text-yellow-300" title={autoTriggeredMinigame.reason}>🎯 {autoTriggeredMinigame.reason}</span>
+                <span className="min-w-0 flex-1 truncate text-[11px] text-yellow-300" title={autoTriggeredMinigame.reason}><StatIcon name="goal" /> {autoTriggeredMinigame.reason}</span>
                 <MotionButton onClick={handleStartIntervention} className="h-6 px-2 text-[11px] bg-purple-400/[0.14] ring-1 ring-inset ring-purple-400/45 text-purple-100 font-bold rounded">Intervene</MotionButton>
                 <MotionButton onClick={handleDelegateIntervention} disabled={!bestDelegate} className="h-6 px-2 text-[11px] border border-amber-500/50 text-stone-200 rounded">Delegate</MotionButton>
                 <MotionButton onClick={handleSkipIntervention} className="h-6 px-2 text-[11px] text-stone-300 rounded">Skip</MotionButton>
@@ -631,7 +632,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
             {isCurrentStageComplete && !isProjectComplete && takeState !== 'tracking' && (
               <div className="shrink-0 px-2 py-1 bg-emerald-500/[0.10] border border-green-500/70 rounded text-[11px] text-green-300 truncate">
-                ✅ {currentStage.stageName} complete. Work next session to advance.
+                <StatIcon name="check" /> {currentStage.stageName} complete. Work next session to advance.
               </div>
             )}
 
@@ -681,7 +682,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
               </div>
               <div className="text-xs text-stone-400 flex flex-wrap items-center gap-2 mt-0.5">
                 <span>{project.genre} · {project.clientName || project.clientType}</span>
-                <span className="text-emerald-400 font-semibold">💰 ${Math.round(project.payoutBase)}</span>
+                <span className="text-emerald-400 font-semibold"><StatIcon name="cash" /> ${Math.round(project.payoutBase)}</span>
                 <span className="text-amber-300">⭐ Diff {project.difficulty}</span>
               </div>
             </div>
@@ -702,11 +703,11 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
               />
               <div className="flex items-center gap-2 bg-stone-900/90 px-2 py-1 rounded border border-stone-700/70">
                 <div id="creativity-points" data-creativity-target className="text-amber-300 font-bold flex items-center gap-1 text-xs">
-                  <span>🎨</span> {Math.round(project.accumulatedCPoints || 0)}
+                  <span><StatIcon name="creativity" /></span> {Math.round(project.accumulatedCPoints || 0)}
                 </div>
                 <div className="w-px h-3 bg-stone-700" />
                 <div id="technical-points" data-technical-target className="text-emerald-400 font-bold flex items-center gap-1 text-xs">
-                  <span>⚙️</span> {Math.round(project.accumulatedTPoints || 0)}
+                  <span><StatIcon name="technical" /></span> {Math.round(project.accumulatedTPoints || 0)}
                 </div>
               </div>
             </div>
@@ -790,10 +791,10 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             <div className="p-3 bg-purple-500/[0.12] border border-purple-500/70 rounded-lg animate-scale-in">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h4 className="text-yellow-300 font-semibold text-xs mb-0.5">🎯 Optional Studio Intervention</h4>
+                  <h4 className="text-yellow-300 font-semibold text-xs mb-0.5"><StatIcon name="goal" /> Optional Studio Intervention</h4>
                   <p className="text-stone-300 text-xs">{autoTriggeredMinigame.reason}</p>
                 </div>
-                <div className="text-xl">🎮</div>
+                <div className="text-xl"><StatIcon name="pad" /></div>
               </div>
               <div className="grid grid-cols-3 gap-2 mt-2">
                 <MotionButton
@@ -824,12 +825,12 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           {isCurrentStageComplete && !isProjectComplete && (
             <div className="p-3 bg-emerald-500/[0.10] border border-green-500/70 rounded-lg animate-scale-in flex items-center justify-between">
               <div>
-                <h4 className="text-green-400 font-semibold text-xs">✅ Stage Complete!</h4>
+                <h4 className="text-green-400 font-semibold text-xs"><StatIcon name="check" /> Stage Complete!</h4>
                 <p className="text-stone-300 text-xs">
                   {currentStage.stageName} finished. Work next session to advance.
                 </p>
               </div>
-              <div className="text-xl">🎉</div>
+              <div className="text-xl"><StatIcon name="party" /></div>
             </div>
           )}
 
@@ -837,7 +838,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           {activeSynergies.length > 0 && (
             <div className="flex flex-wrap items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-500/[0.08] border border-amber-500/30">
               <span className="text-[10px] uppercase font-bold tracking-wider text-amber-300 flex items-center gap-1 shrink-0">
-                <span>✨</span>
+                <span><StatIcon name="sparkle" /></span>
                 <span>Active Combos ({activeSynergies.length}):</span>
               </span>
               <SynergyBadgeList synergies={activeSynergies} size="sm" />
@@ -883,7 +884,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-stone-300">
-                  🎛️ Session Focus Allocation
+                  <StatIcon name="technical" /> Session Focus Allocation
                 </span>
                 <StudioStampChip
                   tone={
@@ -910,7 +911,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 }`}
                 title={canUseOptimalFocusButton ? 'Auto-align to stage target' : 'Requires Level 5+ or Management Level 3+'}
               >
-                🎯 Auto-Align
+                <StatIcon name="goal" /> Auto-Align
               </Button>
             </div>
 
@@ -948,7 +949,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 <div className="flex justify-between items-center text-[10px] text-stone-400 mt-1">
                   <span>Target: {Math.max(0, optimalFocus.performance - 10)}–{Math.min(100, optimalFocus.performance + 10)}%</span>
                   <span className={Math.abs(projectFocus.performance - optimalFocus.performance) <= 10 ? 'text-emerald-400 font-semibold' : 'text-stone-500'}>
-                    {Math.abs(projectFocus.performance - optimalFocus.performance) <= 10 ? '✓ Optimal' : 'Adjust'}
+                    {Math.abs(projectFocus.performance - optimalFocus.performance) <= 10 ? <><StatIcon name="check" /> Optimal</> : 'Adjust'}
                   </span>
                 </div>
               </div>
@@ -985,7 +986,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 <div className="flex justify-between items-center text-[10px] text-stone-400 mt-1">
                   <span>Target: {Math.max(0, optimalFocus.soundCapture - 10)}–{Math.min(100, optimalFocus.soundCapture + 10)}%</span>
                   <span className={Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 10 ? 'text-emerald-400 font-semibold' : 'text-stone-500'}>
-                    {Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 10 ? '✓ Optimal' : 'Adjust'}
+                    {Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 10 ? <><StatIcon name="check" /> Optimal</> : 'Adjust'}
                   </span>
                 </div>
               </div>
@@ -1022,7 +1023,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 <div className="flex justify-between items-center text-[10px] text-stone-400 mt-1">
                   <span>Target: {Math.max(0, optimalFocus.layering - 10)}–{Math.min(100, optimalFocus.layering + 10)}%</span>
                   <span className={Math.abs(projectFocus.layering - optimalFocus.layering) <= 10 ? 'text-emerald-400 font-semibold' : 'text-stone-500'}>
-                    {Math.abs(projectFocus.layering - optimalFocus.layering) <= 10 ? '✓ Optimal' : 'Adjust'}
+                    {Math.abs(projectFocus.layering - optimalFocus.layering) <= 10 ? <><StatIcon name="check" /> Optimal</> : 'Adjust'}
                   </span>
                 </div>
               </div>
@@ -1030,7 +1031,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
             {/* Stage Guidance Note */}
             <div className="text-[11px] text-stone-400 bg-stone-900/60 px-2.5 py-1.5 rounded border border-stone-800 flex items-center gap-1.5">
-              <span className="text-amber-300">💡</span>
+              <span className="text-amber-300"><StatIcon name="bulb" /></span>
               <span className="text-stone-300 font-medium">{currentStage.stageName}:</span>
               <span className="truncate">{optimalFocus.reasoning}</span>
             </div>
@@ -1072,7 +1073,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 {goldStreak > 1 && (
                   <MotionReveal direction="up" distance={6}>
                     <div className="px-2.5 py-1 text-xs font-black tracking-wider text-stone-950 bg-amber-300 border border-amber-200 rounded-[2px] shadow-[0_0_12px_rgba(251,191,36,0.8)] flex items-center gap-1 shrink-0">
-                      <span>🔥</span>
+                      <span><StatIcon name="flame" /></span>
                       <span>{goldStreak}X GOLD STREAK!</span>
                     </div>
                   </MotionReveal>
@@ -1108,8 +1109,8 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   )}
                   <span>
                     {overdriveArmed
-                      ? `🔥 OVERDRIVE ENGAGED (${energyCost}⚡ · ${energySaver ? '⚡-1 Saver' : '+75%'})`
-                      : `🔥 ARM OVERDRIVE (${energySaver ? '1⚡ with Patchbay' : '2⚡'} · +75%)`}
+                      ? <><StatIcon name="flame" /> OVERDRIVE ENGAGED ({energyCost}<StatIcon name="energy" /> · {energySaver ? '-1 Saver' : '+75%'})</>
+                      : <><StatIcon name="flame" /> ARM OVERDRIVE ({energySaver ? '1 with Patchbay' : '2'}<StatIcon name="energy" /> · +75%)</>}
                   </span>
                 </Button>
               </div>
@@ -1127,17 +1128,17 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 }`}
               >
                 {isProjectComplete ? (
-                  '🎉 PROJECT READY FOR REVIEW!'
+                  <><StatIcon name="party" /> PROJECT READY FOR REVIEW!</>
                 ) : availableEnergy > 0 ? (
                   <>
                     {gamepad.isConnected && gamepad.lastInputType === 'gamepad' && (
                       <GamepadGlyph button="south" size="xs" />
                     )}
                     <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping mr-1" />
-                    <span>ARM TAKE ({energyCost}⚡ · {availableEnergy} LEFT)</span>
+                    <span>ARM TAKE ({energyCost}<StatIcon name="energy" /> · {availableEnergy} LEFT)</span>
                   </>
                 ) : (
-                  '⚡ OUT OF WORK CAPACITY — ADVANCE DAY'
+                  <><StatIcon name="energy" /> OUT OF WORK CAPACITY — ADVANCE DAY</>
                 )}
               </button>
             </div>
