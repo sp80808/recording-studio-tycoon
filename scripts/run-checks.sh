@@ -182,6 +182,8 @@ echo "=== DEV overlays opt-in (hidden by default) ==="
 node /tmp/rst-dev-overlays-opt-in.cjs
 
 echo "=== studio ux presentation (HUD + love-room) ==="
+./node_modules/.bin/esbuild tests/floor-furnishings.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-floor-furnishings.cjs --alias:@=./src >/dev/null
+node /tmp/rst-floor-furnishings.cjs
 ./node_modules/.bin/esbuild tests/studio-ux-presentation.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-studio-ux-presentation.cjs --alias:@=./src >/dev/null
 node /tmp/rst-studio-ux-presentation.cjs
 

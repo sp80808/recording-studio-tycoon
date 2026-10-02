@@ -46,6 +46,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { resolveRendererOrder } from '@/lib/render/rendererChoice';
 import { claimPixiApplication, STUDIO_FLOOR_OWNER } from '@/lib/motion/pixiGuard';
 import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from '@/components/studio/isoMath';
+import { buildFurnishingLayer, type StudioCat } from '@/components/studio/studioFloorFurnishings';
 import {
   buildDecorLights,
   buildDeskProps,
@@ -523,6 +524,8 @@ interface SceneRefs {
   /** Tier 2-5 outboard deck: valve glow lamps and status LEDs, restyled only when state changes (#81). */
   gearTubes: Graphics[];
   gearLeds: Graphics[];
+  /** Studio cat: follows the studio clock (see studioFloorFurnishings). */
+  floorCat: StudioCat | null;
 }
 
 interface BuiltScene {
@@ -613,6 +616,7 @@ const buildScene = (
     reels: [],
     gearTubes: [],
     gearLeds: [],
+    floorCat: null,
   };
 
   // Era colour grade + studio tier drive the room's look (beads goj.3 / ifx.3)
@@ -894,6 +898,16 @@ const buildScene = (
   /* ---- Live room booth: enclosed (walls, roof, header, foam, glass front) ---- */
   const liveWrap = buildLiveBooth();
   if (kitTextures) addStudioProps(root, kitTextures, tier, visualEraId(state.eraId ?? 'analog60s'));
+  {
+    // Tier-gated floor furnishings + the studio cat (procedural, y-sorted with the other floor pieces).
+    const furnishings = buildFurnishingLayer(tier, { accent: grade.accent, glow: decorSpec.glow }, decorSeed);
+    for (const { def, container } of furnishings.items) {
+      container.zIndex = Z.depth + iso(def.x, def.y).y;
+      root.addChild(container);
+    }
+    root.addChild(furnishings.cat.container);
+    refs.floorCat = furnishings.cat;
+  }
   const boothX0 = 1.0;
   const boothX1 = 3.5;
   const boothGlassY = 1.0;
@@ -2614,6 +2628,11 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
               dayPhase,
               coffeeSteaming: steamReady,
             });
+            if (refs.floorCat) {
+              refs.floorCat.update(ticker.deltaMS / 1000, t, dayPhase, reduceMotion);
+              const cp = refs.floorCat.tile();
+              refs.floorCat.container.zIndex = Z.depth + iso(cp.x, cp.y).y;
+            }
           }
 
           // Dynamic analog tape saturation warmth (deepens subtly during active session takes)
