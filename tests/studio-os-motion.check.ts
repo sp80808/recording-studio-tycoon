@@ -96,7 +96,7 @@ test('Studio OS V2 Motion (#75) - Enquiry Arrival & Peripheral Indication', () =
   assert.match(projectListCode, /<MotionReveal[\s\S]*?staggerIndex=\{index\}/, 'ProjectList animates enquiry cards with staggered MotionReveal');
 
   // Enquiry cards must use MotionNumber for fee, rep, duration
-  assert.match(projectListCode, /<MotionNumber value=\{project\.payoutBase\} prefix="\$" \/>/, 'ProjectList uses MotionNumber for fee');
+  assert.match(projectListCode, /<MotionNumber value=\{toLocalAmount\(project\.payoutBase, gameState\.cityId\)\} prefix=\{currencySymbol\(gameState\.cityId\)\} \/>/, 'ProjectList uses MotionNumber for fee');
   assert.match(projectListCode, /<MotionNumber value=\{project\.repGainBase\} prefix="\+" \/>/, 'ProjectList uses MotionNumber for rep');
   assert.match(projectListCode, /<MotionNumber value=\{project\.durationDaysTotal\} suffix="d" \/>/, 'ProjectList uses MotionNumber for duration');
 });

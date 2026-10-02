@@ -1,3 +1,4 @@
+import { localName } from '@/rpg/cities';
 
 import { Band, SessionMusician } from '@/types/bands';
 
@@ -42,7 +43,7 @@ export const generateAIBand = (genre: string): Band => {
   };
 };
 
-export const generateSessionMusicians = (count: number): SessionMusician[] => {
+export const generateSessionMusicians = (count: number, cityId?: string): SessionMusician[] => {
   const roles: SessionMusician['role'][] = [
     'Session Guitarist', 'Session Drummer', 'Session Bassist', 'Session Keyboardist', 'Session Vocalist'
   ];
@@ -52,7 +53,8 @@ export const generateSessionMusicians = (count: number): SessionMusician[] => {
   for (let i = 0; i < count; i++) {
     musicians.push({
       id: `session_${Date.now()}_${i}`,
-      name: sessionMusicianNames[Math.floor(Math.random() * sessionMusicianNames.length)],
+      name: (cityId && Math.random() < 0.6 ? localName(cityId, Math.random(), Math.random()) : undefined)
+        ?? sessionMusicianNames[Math.floor(Math.random() * sessionMusicianNames.length)],
       role: roles[Math.floor(Math.random() * roles.length)],
       creativity: 20 + Math.floor(Math.random() * 30), // 20-50
       technical: 20 + Math.floor(Math.random() * 30), // 20-50

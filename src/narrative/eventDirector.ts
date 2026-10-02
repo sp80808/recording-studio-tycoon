@@ -79,6 +79,8 @@ export interface DirectorSubject {
 export interface StudioEventFacts {
   day: number;
   era: string;
+  /** Home city picked at career start; undefined on legacy saves. */
+  cityId?: string;
   money: number;
   reputation: number;
   staffCount: number;
@@ -214,6 +216,7 @@ export const addMemory = (
 export const buildFacts = (state: GameState): StudioEventFacts => ({
   day: state.currentDay,
   era: state.currentEra || state.selectedEra || '',
+  cityId: state.cityId,
   money: state.money ?? 0,
   reputation: state.reputation ?? 0,
   staffCount: state.hiredStaff?.length ?? 0,

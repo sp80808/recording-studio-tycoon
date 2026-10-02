@@ -180,14 +180,14 @@ export class ProjectService {
                 staffContribution: computeStaffContribution(assignedStaff, project.genre),
                 studioQualityBonus: computeStudioQualityBonus(this.gameState, project.genre),
                 equipmentQualityBonus: computeEquipmentQualityBonus(this.gameState, project.genre, project.bookingRoomId),
-                marketMultiplier: getGenreMarketMultiplier(project.genre, this.gameState.currentEra),
+                marketMultiplier: getGenreMarketMultiplier(project.genre, this.gameState.currentEra, this.gameState.cityId),
                 sessionEquipment: resolveSessionEquipment(this.gameState, project.bookingRoomId),
                 brewReady:
                     this.gameState.choreState?.chores.brew_espresso?.completed === true,
                 ...getSettlementBonuses(
                     this.gameState,
                     project,
-                    getGenreMarketMultiplier(project.genre, this.gameState.currentEra),
+                    getGenreMarketMultiplier(project.genre, this.gameState.currentEra, this.gameState.cityId),
                 ),
             }
         );

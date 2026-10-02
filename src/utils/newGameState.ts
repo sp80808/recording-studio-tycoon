@@ -13,6 +13,7 @@ import { resolvePlayerLevelUps } from '@/utils/playerUtils';
 import { initializeSkillsPlayer } from '@/utils/skillUtils';
 import { createInitialKnowHow } from '@/rpg/studioKnowHow';
 import { createInitialExpertise } from '@/rpg/houseStyle';
+import { DEFAULT_CITY_ID, isCityId, type CityId } from '@/rpg/cities';
 import { createDefaultStudioRooms } from '@/utils/studioRoomUtils';
 import { visualEraId } from '@/utils/eraProgression';
 import { createInitialChoreState } from '@/simulation/choreEngine';
@@ -38,6 +39,8 @@ export interface EraInitOptions {
    * older callers and saves keep working; explicit producerName/Appearance win.
    */
   producer?: { name?: string; appearance?: unknown };
+  /** Home city picked at career start. Defaults to Los Angeles for new runs. */
+  cityId?: CityId;
   /** Fixed run seed (tests / replays). Defaults to Date.now() for a fresh run. */
   saveSeed?: number | string;
 }
@@ -118,6 +121,7 @@ export const createDefaultGameState = (options?: Partial<EraInitOptions>): GameS
     studioKnowHow: createInitialKnowHow(),
     studioExpertise: createInitialExpertise(),
     premisesTier: 0,
+    cityId: isCityId(options?.cityId) ? options!.cityId : DEFAULT_CITY_ID,
     activeProject: null, // Keep for backward compatibility
     // Multi-project system
     activeProjects: [], // New multi-project array
@@ -188,9 +192,10 @@ export const createDefaultGameState = (options?: Partial<EraInitOptions>): GameS
 export const createNewGameState = (options?: Partial<EraInitOptions>): GameState => {
   let newGameState = createDefaultGameState(options);
   const currentEra = newGameState.currentEra;
-  const initialProjects = generateNewProjects(3, 1, currentEra);
-  const initialCandidates = generateCandidates(3);
-  const initialSessionMusicians = generateSessionMusicians(5);
+  const cityId = newGameState.cityId;
+  const initialProjects = generateNewProjects(3, 1, currentEra, [], 1.1, 0, cityId);
+  const initialCandidates = generateCandidates({ count: 3, cityId });
+  const initialSessionMusicians = generateSessionMusicians(5, cityId);
 
   // Set initial progression-based values
   newGameState = resolvePlayerLevelUps(newGameState);
