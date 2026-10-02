@@ -1,7 +1,11 @@
+import { StatIcon } from '@/components/icons/GameIcons';
 import React, { useState } from 'react';
 import { Info } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import type { FocusAllocation } from '@/types/game';
+
+// Labels carry a leading emoji for other surfaces; drop it here so the row fits.
+const stripLead = (l: string) => l.replace(/^[^\p{L}\p{N}]+/u, '');
 
 /**
  * Phone-only focus mixer (#141): three labelled channels in one compact panel,
@@ -38,7 +42,7 @@ export const MobileFocusMixer: React.FC<MobileFocusMixerProps> = ({
   return (
     <div className="rst-mobile-mixer relative bg-stone-900/90 border border-stone-800 rounded-[2px] p-1.5" data-testid="mobile-focus-mixer">
       <div className="flex items-center gap-1.5 mb-1">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-stone-300">🎛️ Focus</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-stone-300"><StatIcon name="technical" /> Focus</span>
         <span className="text-[10px] font-bold px-1.5 rounded-full border bg-stone-950 text-amber-300 border-amber-500/40 tabular-nums">{matchPct}% match</span>
         <button
           type="button"
@@ -60,12 +64,12 @@ export const MobileFocusMixer: React.FC<MobileFocusMixerProps> = ({
               : 'bg-stone-800/40 border-stone-700 text-stone-500 cursor-not-allowed'
           }`}
         >
-          🎯 Auto-Align
+          <StatIcon name="goal" /> Auto-Align
         </button>
       </div>
       {showGuide && (
         <div className="absolute left-1 right-1 top-8 z-30 rounded-[2px] border border-stone-600 bg-stone-950 p-2 text-[11px] text-stone-300 shadow-2xl" role="note">
-          <span className="text-amber-300">💡 </span><span className="font-medium">{guidanceTitle}:</span> {guidance}
+          <span className="text-amber-300"><StatIcon name="bulb" /> </span><span className="font-medium">{guidanceTitle}:</span> {guidance}
         </div>
       )}
       <div className="space-y-1">
@@ -74,17 +78,17 @@ export const MobileFocusMixer: React.FC<MobileFocusMixerProps> = ({
           const t = tone(diff);
           return (
             <div key={key} className="flex items-center gap-2" data-focus-channel={key}>
-              <span className="w-[88px] shrink-0 truncate text-[11px] font-semibold text-stone-200" title={labels[key].label}>{labels[key].label}</span>
+              <span className="w-[88px] shrink-0 truncate text-[11px] font-semibold text-stone-200" title={stripLead(labels[key].label)}>{stripLead(labels[key].label)}</span>
               <Slider
                 value={[focus[key]]}
                 onValueChange={(v) => onChange(key, v[0])}
                 max={100}
                 step={5}
-                aria-label={`${labels[key].label} focus`}
+                aria-label={`${stripLead(labels[key].label)} focus`}
                 className={`flex-1 ${t.slider}`}
               />
               <span className={`w-[50px] shrink-0 text-center text-[10px] font-mono font-bold rounded border ${t.chip}`} title={`Target ${Math.max(0, optimal[key] - 10)}-${Math.min(100, optimal[key] + 10)}%`}>
-                {focus[key]}%{diff <= 10 ? '✓' : ''}
+                {focus[key]}%{diff <= 10 ? <StatIcon name="check" size="0.9em" /> : null}
               </span>
             </div>
           );
