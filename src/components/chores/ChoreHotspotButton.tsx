@@ -22,6 +22,15 @@ const KIND_ICON: Record<ChoreHotspotKind, LucideIcon> = {
   duties: ClipboardList,
 };
 
+/**
+ * lucide icons are forwardRef objects (`{ $$typeof, render }`), not functions, so a
+ * `typeof === 'function'` check lets them through as a React child and unmounts the
+ * whole app. Anything that is not already an element/primitive/array is a component.
+ */
+const isComponentType = (value: unknown): value is LucideIcon =>
+  typeof value === 'function' ||
+  (typeof value === 'object' && value !== null && !React.isValidElement(value) && !Array.isArray(value) && '$$typeof' in value);
+
 export interface ChoreHotspotButtonProps {
   label: string;
   /** Short engraved meta — energy cost, count, or status */
@@ -64,7 +73,7 @@ export function ChoreHotspotButton({
   const iconNode =
     icon == null ? (
       <DefaultIcon size={12} aria-hidden="true" strokeWidth={2.25} />
-    ) : typeof icon === 'function' ? (
+    ) : isComponentType(icon) ? (
       React.createElement(icon as LucideIcon, { size: 12, 'aria-hidden': true, strokeWidth: 2.25 })
     ) : (
       icon

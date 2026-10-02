@@ -3,6 +3,7 @@ import { LOADING_LINES, pickFlavour } from '@/data/flavour';
 import { createRoot } from 'react-dom/client';
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import App from './App.tsx';
+import { AppErrorBoundary } from './components/AppErrorBoundary';
 import SpeightsoftIdent from './components/branding/SpeightsoftIdent';
 import './index.css';
 import './styles/studio-theme.css';
@@ -31,7 +32,9 @@ const RootComponent = () => {
 
   return (
     <>
-      <App />
+      <AppErrorBoundary>
+        <App />
+      </AppErrorBoundary>
       <SpeightsoftIdent />
     </>
   );

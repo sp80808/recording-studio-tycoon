@@ -79,16 +79,16 @@ function CreatorArrowRow({
       </span>
       <button
         type="button"
-        className="rst-btn rst-btn-ghost !min-h-9 !min-w-9 !px-0"
+        className="rst-btn rst-btn-ghost creator-tap !px-0"
         aria-label={`Previous ${label}`}
         onClick={onPrev}
       >
         <ArrowLeft size={15} aria-hidden="true" />
       </button>
-      <span className="rst-title min-w-0 flex-1 truncate text-center text-[15px] leading-tight">{value}</span>
+      <span className="rst-title min-w-0 flex-1 truncate text-center text-[15px] capitalize leading-tight">{value}</span>
       <button
         type="button"
-        className="rst-btn rst-btn-ghost !min-h-9 !min-w-9 !px-0"
+        className="rst-btn rst-btn-ghost creator-tap !px-0"
         aria-label={`Next ${label}`}
         onClick={onNext}
       >
@@ -170,7 +170,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
 
   return (
     <main className="career-start-page" aria-label="Start a new career">
-            <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 pb-28 pt-6 sm:px-8">
+            <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col px-4 pb-28 pt-6 sm:px-8">
         {/* Header + stepper */}
         <header className="flex flex-wrap items-center justify-between gap-3">
           <button type="button" onClick={goBack} className="rst-btn rst-btn-ghost !min-h-9 !px-3 !text-xs">
@@ -276,7 +276,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
         )}
 
         {step === 1 && (
-          <section className="rst-option mx-auto mt-6 grid w-full max-w-xl gap-4 !p-5 sm:!p-6" aria-label="Producer customisation">
+          <section className="rst-surface mx-auto mt-6 grid w-full max-w-xl gap-4 p-5 sm:p-6" aria-label="Producer customisation" data-testid="producer-creator">
             <div className="mx-auto flex flex-col items-center gap-2">
               <div
                 className="grid place-items-center rounded-lg border border-[var(--rst-brass-400)]/50 px-6 pb-2 pt-3"
@@ -291,7 +291,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
             <div className="space-y-2.5 text-left">
               <label className="block text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">
                 Producer name
-                <input value={moniker} onChange={(e) => setMoniker(e.target.value.slice(0, 24))} maxLength={24} autoFocus className="rst-input mt-2 w-full" placeholder="The Architect" />
+                <input value={moniker} onChange={(e) => setMoniker(e.target.value.slice(0, 24))} maxLength={24} enterKeyHint="done" autoComplete="off" autoCapitalize="words" spellCheck={false} className="rst-input mt-2 w-full" placeholder="The Architect" />
               </label>
 
               <CreatorArrowRow
@@ -301,32 +301,17 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                 onNext={() => patchLook({ build: cycleOption(PRODUCER_BUILDS, look.build ?? 'average', 1) })}
               />
 
-              <div className="flex items-center gap-1.5" role="group" aria-label="Hair style picker">
-                <label
-                  htmlFor="creator-hair"
-                  className="w-20 shrink-0 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--rst-brass-200)]"
-                >
-                  Hair
-                </label>
-                <select
-                  id="creator-hair"
-                  value={look.hair}
-                  onChange={(e) => patchLook({ hair: e.target.value as ProducerAppearance['hair'] })}
-                  className="rst-input min-w-0 flex-1 !min-h-9 !py-1.5 text-sm capitalize"
-                  aria-label={`Hair style: ${look.hair.replace(/_/g, ' ')}`}
-                >
-                  {PRODUCER_HAIR_SHAPES.map((shape) => (
-                    <option key={shape} value={shape}>
-                      {shape.replace(/_/g, ' ')}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <CreatorArrowRow
+                label="Hair"
+                value={look.hair.replace(/_/g, ' ')}
+                onPrev={() => patchLook({ hair: cycleOption(PRODUCER_HAIR_SHAPES, look.hair, -1) })}
+                onNext={() => patchLook({ hair: cycleOption(PRODUCER_HAIR_SHAPES, look.hair, 1) })}
+              />
               <div className="flex flex-wrap gap-2 pl-[92px]" role="radiogroup" aria-label="Hair colour">
                 {PRODUCER_HAIR_COLOURS.map((colour) => (
                   <button key={colour} type="button" role="radio" aria-checked={look.hairColour === colour} aria-label={colour.replace(/_/g, ' ')} title={colour.replace(/_/g, ' ')}
                     onClick={() => patchLook({ hairColour: colour })}
-                    className={`h-6 w-6 rounded-full border-2 ${look.hairColour === colour ? 'border-[var(--rst-brass-300)] ring-2 ring-[var(--rst-brass-300)]/40' : 'border-white/15'}`}
+                    className={`creator-swatch h-6 w-6 rounded-full border-2 ${look.hairColour === colour ? 'border-[var(--rst-brass-300)] ring-2 ring-[var(--rst-brass-300)]/40' : 'border-white/15'}`}
                     style={{ background: HAIR_HEX[colour] }} />
                 ))}
               </div>
@@ -337,7 +322,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
                   {PRODUCER_CLOTHES_COLOURS.map((c) => (
                     <button key={c.id} type="button" role="radio" aria-checked={look.clothesColour === c.id} aria-label={c.label} title={c.label}
                       onClick={() => patchLook({ clothesColour: (c.id as ProducerClothesColourId) })}
-                      className={`h-7 w-7 rounded-md border-2 ${look.clothesColour === c.id ? 'border-[var(--rst-brass-300)] ring-2 ring-[var(--rst-brass-300)]/40' : 'border-white/15'}`}
+                      className={`creator-swatch h-7 w-7 rounded-md border-2 ${look.clothesColour === c.id ? 'border-[var(--rst-brass-300)] ring-2 ring-[var(--rst-brass-300)]/40' : 'border-white/15'}`}
                       style={{ background: `linear-gradient(135deg, ${CLOTHING_PALETTES[c.palette].primary} 60%, ${CLOTHING_PALETTES[c.palette].secondary} 60%)` }} />
                   ))}
                 </div>

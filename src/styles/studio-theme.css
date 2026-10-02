@@ -414,3 +414,29 @@ button.rst-chore-btn:focus-visible {
   background-size: 38px 38px;
   mask-image: radial-gradient(ellipse at center, #000 30%, transparent 78%);
 }
+
+/* ------------------------------------------------- text input + creator touch targets */
+/* 16px minimum: iOS Safari zooms the whole page on focus of anything smaller, which left the
+   character creator panned/zoomed with controls apparently dead. */
+.rst-input {
+  display: block;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--rst-line-strong);
+  background: var(--rst-fill-1);
+  color: var(--rst-ivory);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.rst-input:focus { outline: none; border-color: var(--rst-brass-300); box-shadow: 0 0 0 2px rgba(230, 184, 102, 0.25); }
+.creator-tap { min-height: 44px; min-width: 44px; }
+.creator-swatch { position: relative; touch-action: manipulation; }
+.creator-swatch::after { content: ''; position: absolute; inset: -4px; } /* ~32-36px hit area; chips stay 8px apart */
