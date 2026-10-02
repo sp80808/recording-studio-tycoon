@@ -227,3 +227,11 @@ In-house original, CC0, no external source. Pixi Graphics drawn in code; no imag
 | Asset | Source | Used by |
 |---|---|---|
 | Stacked iso cases per tier (cardboard, road case, tour trunk, vintage flight case, holy grail vault) with a pulsing accent ring | Pixi Graphics, drawn in code | `WebGLCanvas.tsx` (`buildScene`, ticker) |
+
+## 18. Extra room views (`RoomVignette.tsx`)
+
+In-house original, CC0, no external source. Inline SVG drawn in code; no image files.
+
+| Asset | Source | Used by |
+|---|---|---|
+| Vocal Suite (booth, mic and pop filter, foam, sofa), Live Room (drum kit, amp stack, foam), Mix Suite (desk, faders, monitors, diffusers) | SVG shapes in code | `StudioRoom.tsx` room switcher |
