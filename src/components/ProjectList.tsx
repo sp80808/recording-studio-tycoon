@@ -16,6 +16,7 @@ import { validateChain, type SignalChain } from '@/rpg/signalChain';
 import BriefPanel from '@/components/BriefPanel';
 import RiderPanel from '@/components/RiderPanel';
 import ForecastPanel from '@/components/ForecastPanel';
+import { BookingCalendar, BookingCostLine } from '@/components/BookingCalendar';
 import { defaultAssignment, type SessionAssignment } from '@/rpg/sessionForecast';
 import { getApproach, getProjectBrief, type ProductionApproach } from '@/rpg/projectBrief';
 import { gameAudio } from '@/utils/audioSystem';
@@ -284,6 +285,8 @@ export const ProjectList: React.FC<ProjectListProps> = ({
           </div>
         )}
 
+        {board.length > 0 && <BookingCalendar state={gameState} />}
+
         {board.map((project, index) => {
           const isBookingThis = bookingId === project.id;
           const isDecliningThis = decliningId === project.id;
@@ -385,6 +388,8 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                 />
 
                 <RiderPanel project={project} state={gameState} mode="booking" />
+
+                <BookingCostLine state={gameState} project={project} />
 
                 <ForecastPanel
                   project={project}
