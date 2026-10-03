@@ -27,6 +27,7 @@ for (const p of offers) {
   ok(q.roomHours > 0 && q.staffHours > 0 && q.staffHours <= q.roomHours, `${p.title}: staff hours never exceed room hours`);
   ok(q.fee === Math.round(p.payoutBase) && q.margin === q.fee - q.directCosts, `${p.title}: margin is fee less direct costs`);
 }
+for (let lvl = 1; lvl <= 13; lvl += 4) for (const p of generateNewProjects(6, lvl, 'modern', [], 1, 5)) services.add(quoteFor(base, p).service);
 ok(services.size >= 2, 'enquiries map onto more than one service archetype');
 ok(marginBandFor(100, 90) === 'thin' && marginBandFor(100, 60) === 'fair' && marginBandFor(100, 30) === 'strong' && marginBandFor(100, 10) === 'premium', 'margin bands run thin, fair, strong, premium');
 ok(marginBandFor(0, 10) === 'thin', 'a zero fee is thin, not a crash');
@@ -115,5 +116,22 @@ ok(sum.topServices[0].service === 'mix' && sum.weekUtilization === 0 && sum.idle
 ok(serviceSummary({ ...base, serviceLog: undefined, activeProject: null, activeProjects: [] }).sessions === 0, 'legacy saves with no log are safe');
 const settledLog = applyReportToState({ ...base, activeProject: { ...newClient, id: 'lg-1' } as Project, activeProjects: [] }, report('lg-1', 1000));
 ok(settledLog.serviceLog?.length === 1 && settledLog.serviceLog[0].revenue === 1000 && settledLog.serviceLog[0].day === base.currentDay, 'settlement logs the session once');
+
+
+// Seeded sweep (#51 balance question): the scarce resource is the session slot, so compare margin per slot by service.
+const perSlot: Record<string, { n: number; margin: number }> = {};
+for (const era of ['modern', '90s', '70s', '80s'] as const) for (let lvl = 1; lvl <= 15; lvl += 2) for (let r = 0; r < 4; r++) {
+  for (const p of generateNewProjects(6, lvl, era as never, [], 1, 5 + r)) {
+    const q = quoteFor(base, p);
+    const a = (perSlot[q.service] ??= { n: 0, margin: 0 });
+    a.n++; a.margin += q.margin / Math.max(1, p.stages.length);
+  }
+}
+const means = Object.entries(perSlot).map(([k, a]) => [k, a.margin / a.n] as const).sort((x, y) => y[1] - x[1]);
+ok(means.length === 5, 'the sweep sees all five service archetypes');
+ok(means.every(([, m]) => m > 0), 'no service loses money per slot on average');
+ok(means[0][1] / means[means.length - 1][1] < 2.5, `no service dominates: best/worst margin per slot is ${(means[0][1] / means[means.length - 1][1]).toFixed(2)}x (limit 2.5x)`);
+ok(means[0][0] !== 'full-production', 'full production is not always the optimal service');
+ok((perSlot.master.margin / perSlot.master.n) < 2 * (perSlot.tracking.margin / perSlot.tracking.n), 'mastering is not free money compared with tracking');
 
 console.log(`service-quote: all ${n} checks passed`);
