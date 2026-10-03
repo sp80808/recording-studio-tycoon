@@ -104,7 +104,7 @@ const SERVICE_ROOM: Record<BriefServiceType, StudioRoomType> = {
   'full-production': 'project-studio',
 };
 
-const SERVICE_ROLE: Record<BriefServiceType, StaffMember['role']> = {
+export const SERVICE_ROLE: Record<BriefServiceType, StaffMember['role']> = {
   tracking: 'Engineer',
   'vocal-production': 'Producer',
   mix: 'Engineer',

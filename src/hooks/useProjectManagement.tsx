@@ -1,4 +1,6 @@
 import { applyLabelOutcome } from '@/rpg/labelAccounts';
+import { depositFor } from '@/rpg/serviceQuote';
+import { earn } from '@/economy/ledger';
 import { useCallback } from 'react';
 import { GameState, Project, ProjectReport } from '@/types/game';
 import { generateNewProjects } from '@/utils/projectUtils';
@@ -41,10 +43,17 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
       return false;
     }
 
-    setGameState(prev => ({
-      ...prev,
+    setGameState(prev => {
+      // Deposit (#51): cash timing only. It is banked now and taken off the payout at settlement.
+      const deposit = depositFor(prev, project).amount;
+      const banked = deposit > 0
+        ? earn(prev, deposit, { category: 'deposit-income', projectId: project.id, sourceId: `deposit-${project.id}`, memo: project.title })
+        : prev;
+      return {
+      ...banked,
       activeProject: {
         ...project,
+        depositPaid: banked === prev ? undefined : deposit,
         currentStageIndex: 0,
         completedStages: [],
         bookingRoomId: room.id,
@@ -55,11 +64,12 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
         }))
       },
       availableProjects: prev.availableProjects.filter(p => p.id !== project.id)
-    }));
+      };
+    });
 
     toast({
       title: "🚀 Session Booked!",
-      description: `Booked "${project.title}" into ${room.name}.`,
+      description: `Booked "${project.title}" into ${room.name}.${depositFor(gameState, project).amount > 0 ? ` Deposit of $${depositFor(gameState, project).amount} banked.` : ""}`,
       className: "bg-stone-800 border-stone-600 text-white",
     });
     return true;
