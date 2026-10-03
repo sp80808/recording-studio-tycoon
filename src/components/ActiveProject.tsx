@@ -800,6 +800,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
               </div>
               <div className="grid grid-cols-3 gap-2 mt-2">
                 <MotionButton
+                  data-rst-surface="contextual" data-rst-action-id="issue:intervene" data-rst-world-target="console"
                   onClick={handleStartIntervention}
                   className="h-7 text-xs bg-purple-400/[0.14] ring-1 ring-inset ring-purple-400/45 hover:bg-purple-400/[0.24] text-purple-100 font-bold rounded"
                 >
@@ -1118,6 +1119,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
               </div>
 
               <button
+                data-rst-surface="contextual" data-rst-action-id="console:record" data-rst-world-target="console"
                 onClick={handleArmTake}
                 disabled={availableEnergy <= 0 || isProjectComplete}
                 aria-label={t('active_work_on_project')}

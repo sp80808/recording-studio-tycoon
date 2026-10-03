@@ -444,7 +444,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           onOpenBookings={() => openPanel('bookings')}
         />
         <div className="studio-play-actions">
-          <button className="studio-primary-action" onClick={() => openPanel(project ? 'session' : 'bookings')}>
+          <button className="studio-primary-action" data-rst-surface="contextual" data-rst-action-id={project ? 'dock:open-session' : 'dock:open-bookings'} onClick={() => openPanel(project ? 'session' : 'bookings')}>
             {gamepad.lastInputType === 'gamepad' && <GamepadGlyph button="south" size="xs" className="mr-1 inline-block" />}
             {project ? <Headphones size={20} /> : <Phone size={20} />}
             <span>{sessionLabel}</span><span aria-hidden="true">→</span>
@@ -457,7 +457,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             ['gear', SlidersHorizontal, t('nav_room'), () => handleOpenDashboardTab('studio')],
             ['career', Sparkles, t('nav_career'), () => openPanel('career')],
           ] as const).map(([id, Icon, label, action], dockIndex) => (
-            <button key={id} onClick={action} className="studio-dock-button" title={`${label} (${dockIndex + 1})`} aria-label={label} aria-keyshortcuts={String(dockIndex + 1)}>
+            <button key={id} data-rst-surface="contextual" data-rst-action-id={`dock:open-${id}`} onClick={action} className="studio-dock-button" title={`${label} (${dockIndex + 1})`} aria-label={label} aria-keyshortcuts={String(dockIndex + 1)}>
               <Icon size={21} aria-hidden="true" /><span>{label}</span>
               {id === 'bookings' && gameState.availableProjects.length > 0 && (
                 <i className="studio-dock-badge"><MotionNumber value={gameState.availableProjects.length} /></i>

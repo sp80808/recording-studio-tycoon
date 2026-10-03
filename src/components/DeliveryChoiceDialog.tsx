@@ -30,11 +30,11 @@ export const DeliveryChoiceDialog: React.FC<DeliveryChoiceDialogProps> = ({ issu
           ))}
         </ul>
         <div className="grid grid-cols-2 gap-3 text-xs">
-          <button type="button" onClick={() => onChoose('deliver')} className="rst-btn flex-col !items-start text-left">
+          <button type="button" data-rst-surface="contextual" data-rst-action-id="wrap:deliver" onClick={() => onChoose('deliver')} className="rst-btn flex-col !items-start text-left">
             <span className="font-semibold">Deliver now</span>
             <span className="text-stone-400">Up to -{f.deliver.qualityPenalty} quality, {f.deliver.revisionChance}% revision risk. Frees the room today.</span>
           </button>
-          <button type="button" onClick={() => onChoose('polish')} className="rst-btn rst-btn-primary flex-col !items-start text-left">
+          <button type="button" data-rst-surface="contextual" data-rst-action-id="wrap:polish" onClick={() => onChoose('polish')} className="rst-btn rst-btn-primary flex-col !items-start text-left">
             <span className="font-semibold">Polish first</span>
             <span className="text-stone-200">-${f.polish.cost} studio time, issues cleared, +{f.polish.knowHow} Know-How.</span>
           </button>

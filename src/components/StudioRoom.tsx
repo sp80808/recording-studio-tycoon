@@ -333,6 +333,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
 
   return (
     <div 
+      data-rst-studio="mounted"
       className={`relative overflow-hidden rounded-lg border border-stone-700/70 bg-[#1b1815] transition-all duration-300 ${className}`} 
       style={style}
     >

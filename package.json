@@ -26,7 +26,8 @@
     "assets:build": "node scripts/assets.cjs build",
     "assets:validate": "node scripts/assets.cjs validate",
     "assets:inspect": "node scripts/assets.cjs inspect",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "evidence:first-session": "node scripts/first-session-evidence.cjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

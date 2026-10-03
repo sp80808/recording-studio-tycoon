@@ -218,6 +218,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
       {/* Dynamic 60fps Lock Button */}
       <button
         type="button"
+        data-rst-surface="contextual" data-rst-action-id="console:lock-take" data-rst-world-target="console"
         onClick={(e) => {
           e.stopPropagation();
           handleMeterClick();
