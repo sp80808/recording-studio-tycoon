@@ -1,6 +1,7 @@
 import { applyKnowHowEvents } from '../rpg/studioKnowHow';
 import { awardExpertise } from '../rpg/houseStyle';
 import { recordRelease } from '../rpg/artistCareer';
+import { releaseDemandPoints } from '../rpg/marketDemand';
 import { creditSession, mentorshipScale } from '../rpg/staffCareer';
 import { getProjectBrief } from '../rpg/projectBrief';
 import { awardProjectCrate, recordGearUse } from '@/features/usedGear/session';
@@ -363,6 +364,7 @@ export function applyReportToState(state: GameState, report: ProjectReport): Gam
                     qualityScore: report.overallQualityScore,
                     day: state.currentDay,
                     followUpOf: dp.followUpOf,
+                    demandPoints: releaseDemandPoints(state.saveSeed, state.currentDay, dp.genre ?? deliveryClient.primaryGenre),
                 }),
             };
         }
