@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { DialogFooter } from '@/components/ui/dialog';
 import { MinigameChrome, KenneyButton } from './MinigameChrome';
+import { tc } from '@/i18n/content';
 
 // Define a basic props interface for minigame components
 export interface MinigameComponentProps {
@@ -47,7 +48,7 @@ export const LiveRecordingGame: React.FC<MinigameComponentProps> = ({ minigameId
       if (Math.random() < 0.15 && !eventMessage) { // 15% chance of an event if no current event
         const randomMusicianIndex = Math.floor(Math.random() * musicians.length);
         setMusicians(prev => prev.map((m, i) => i === randomMusicianIndex ? { ...m, isPerformingWell: false } : m));
-        setEventMessage(`${musicians[randomMusicianIndex].instrument} is struggling! Click to coach.`);
+        setEventMessage(tc('mg.LiveRecordingGame.struggling', '{{instrument}} is struggling! Click to coach.', { instrument: tc(`mg.LiveRecordingGame.instrument_${musicians[randomMusicianIndex].id}`, musicians[randomMusicianIndex].instrument) }));
         setTimeout(() => setEventMessage(null), 4000); // Event message disappears
       }
     }, 1000);
@@ -94,14 +95,14 @@ export const LiveRecordingGame: React.FC<MinigameComponentProps> = ({ minigameId
   return (
     <Card className="w-full max-w-3xl mx-auto bg-stone-800 text-white border-stone-700">
       <MinigameChrome
-        title="🎙️ Live Recording Coordination"
+        title={tc('mg.LiveRecordingGame.title', '🎙️ Live Recording Coordination')}
         score={score}
         timeLeft={gameOver ? undefined : timeLeft}
         accent="red"
       >
         <CardContent>
           <div className="mb-2 text-sm text-stone-300">
-            Manage the band's performance. Click struggling musicians to coach them and maintain studio groove!
+            {tc('mg.LiveRecordingGame.instructions', "Manage the band's performance. Click struggling musicians to coach them and maintain studio groove!")}
           </div>
 
           {eventMessage && (
@@ -129,11 +130,11 @@ export const LiveRecordingGame: React.FC<MinigameComponentProps> = ({ minigameId
               >
                 <div className="text-center select-none">
                   <div className="text-3xl mb-1">{musician.instrument.split(' ')[1] || '🎵'}</div>
-                  <div className="text-xs font-bold text-white">{musician.instrument.split(' ')[0]}</div>
+                  <div className="text-xs font-bold text-white">{tc(`mg.LiveRecordingGame.instrument_${musician.id}`, musician.instrument).split(' ')[0]}</div>
                   <div className={`text-[10px] uppercase font-bold mt-1 px-1.5 py-0.5 rounded ${
                     musician.isPerformingWell ? 'bg-emerald-800 text-emerald-200' : 'bg-red-900 text-red-200'
                   }`}>
-                    {musician.isPerformingWell ? 'In Pocket' : 'Needs Coach!'}
+                    {musician.isPerformingWell ? tc('mg.LiveRecordingGame.in_pocket', 'In Pocket') : tc('mg.LiveRecordingGame.needs_coach', 'Needs Coach!')}
                   </div>
                 </div>
               </div>
@@ -143,7 +144,7 @@ export const LiveRecordingGame: React.FC<MinigameComponentProps> = ({ minigameId
           {gameOver && (
             <div className="mt-4 text-center">
               <div className={`text-2xl font-bold text-green-400 ${score >= 200 ? 'mg-perfect-pop' : 'mg-miss-shake'}`}>
-                Session Ended! Final Score: {score}
+                {tc('mg.LiveRecordingGame.session_ended', 'Session Ended! Final Score: {{score}}', { score })}
               </div>
             </div>
           )}
@@ -151,10 +152,10 @@ export const LiveRecordingGame: React.FC<MinigameComponentProps> = ({ minigameId
       </MinigameChrome>
       <DialogFooter className="p-4">
         <KenneyButton variant="red" onClick={onClose}>
-          Close
+          {tc('mg.LiveRecordingGame.close', 'Close')}
         </KenneyButton>
         <KenneyButton variant="green" onClick={handleFinalize} disabled={gameOver}>
-          Finalize & Get Score
+          {tc('mg.LiveRecordingGame.finalize', 'Finalize & Get Score')}
         </KenneyButton>
       </DialogFooter>
     </Card>

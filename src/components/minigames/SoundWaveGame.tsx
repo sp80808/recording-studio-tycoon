@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { MinigameChrome, KenneyButton } from './MinigameChrome';
 import { gameAudio } from '@/utils/audioSystem';
+import { tc } from '@/i18n/content';
 
 interface WavePoint {
   x: number;
@@ -258,29 +259,29 @@ export const SoundWaveGame: React.FC<SoundWaveGameProps> = ({
 
   return (
     <Card className="w-full max-w-2xl mx-auto bg-stone-800 text-white border-stone-700">
-      <MinigameChrome title="🌊 Sound Wave Matching" score={score} timeLeft={gameActive ? timeLeft : undefined} streak={currentLevel >= 2 ? currentLevel : undefined} accent="green">
+      <MinigameChrome title={tc('mg.SoundWaveGame.title', '🌊 Sound Wave Matching')} score={score} timeLeft={gameActive ? timeLeft : undefined} streak={currentLevel >= 2 ? currentLevel : undefined} accent="green">
       <CardContent>
-        <div className="mb-3 text-center text-sm text-stone-300">Level {currentLevel} — draw the orange wave to match the green target!</div>
+        <div className="mb-3 text-center text-sm text-stone-300">{tc('mg.SoundWaveGame.level_hint', 'Level {{level}} — draw the orange wave to match the green target!', { level: currentLevel })}</div>
 
       {!gameActive && timeLeft === 30 ? (
         <div className="text-center space-y-4 py-4">
-          <p className="text-stone-300">Draw the orange wave to match the green target wave!</p>
+          <p className="text-stone-300">{tc('mg.SoundWaveGame.intro', 'Draw the orange wave to match the green target wave!')}</p>
           <KenneyButton variant="green" onClick={startGame}>
-            Start Wave Challenge
+            {tc('mg.SoundWaveGame.start', 'Start Wave Challenge')}
           </KenneyButton>
         </div>
       ) : !gameActive && timeLeft === 0 ? (
         <div key={score} className="space-y-2 py-4 text-center">
-          <div className={`text-lg font-bold text-yellow-400 ${score > 0 ? 'mg-perfect-pop' : ''}`}>Challenge Complete!</div>
-          <div className="text-sm text-stone-300">Final Score: {score}</div>
+          <div className={`text-lg font-bold text-yellow-400 ${score > 0 ? 'mg-perfect-pop' : ''}`}>{tc('mg.SoundWaveGame.complete', 'Challenge Complete!')}</div>
+          <div className="text-sm text-stone-300">{tc('mg.SoundWaveGame.final_score', 'Final Score: {{score}}', { score })}</div>
           <KenneyButton variant="green" onClick={onClose}>
-            Collect Rewards
+            {tc('mg.SoundWaveGame.collect', 'Collect Rewards')}
           </KenneyButton>
         </div>
       ) : (
         <div className="space-y-4">
           <div className="text-center text-sm text-stone-300">
-            Click and drag to draw the wave. Match the green line as closely as possible!
+            {tc('mg.SoundWaveGame.instructions', 'Click and drag to draw the wave. Match the green line as closely as possible!')}
           </div>
           
           <div className="border-2 border-stone-600 rounded-lg overflow-hidden">
@@ -297,11 +298,11 @@ export const SoundWaveGame: React.FC<SoundWaveGameProps> = ({
           <div className="flex justify-center space-x-4">
             <div className="flex items-center">
               <div className="w-4 h-1 bg-green-500 mr-2"></div>
-              <span className="text-sm">Target Wave</span>
+              <span className="text-sm">{tc('mg.SoundWaveGame.target_wave', 'Target Wave')}</span>
             </div>
             <div className="flex items-center">
               <div className="w-4 h-1 bg-yellow-500 mr-2"></div>
-              <span className="text-sm">Your Wave</span>
+              <span className="text-sm">{tc('mg.SoundWaveGame.your_wave', 'Your Wave')}</span>
             </div>
           </div>
         </div>

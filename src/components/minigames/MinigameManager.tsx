@@ -33,6 +33,7 @@ import { GainStagingGame } from './GainStagingGame';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { toast } from '@/hooks/use-toast';
 import { useCutsceneQueue } from '@/hooks/useCutsceneQueue';
+import { tc } from '@/i18n/content';
 // import { playSound } from '@/utils/soundUtils'; // playSound seems unused here, consider removing if not needed directly in manager
 
 // MinigameType will also serve as minigameId for tutorial tracking
@@ -244,12 +245,12 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
 
     if (rewardMode === 'practice') {
       toast({
-        title: '🎧 Practice take in',
+        title: tc('mg.MinigameManager.practice_take_in', '🎧 Practice take in'),
         description: score >= 700
-          ? 'Strong run — reviewing the tape for craft XP.'
+          ? tc('mg.MinigameManager.practice_strong', 'Strong run — reviewing the tape for craft XP.')
           : score >= 400
-            ? 'Serviceable take. Room to tighten the next pass.'
-            : 'Rough pass. Little craft XP this time.',
+            ? tc('mg.MinigameManager.practice_ok', 'Serviceable take. Room to tighten the next pass.')
+            : tc('mg.MinigameManager.practice_rough', 'Rough pass. Little craft XP this time.'),
         className: 'bg-stone-800 border-stone-600 text-white',
         variant: success === false ? 'destructive' : 'default',
       });
@@ -265,8 +266,8 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
       });
     } else {
       toast({
-        title: "🎮 Minigame Complete!",
-        description: `Rewards: +${creativityBonus} C, +${technicalBonus} T, +${xpBonus} XP`,
+        title: tc('mg.MinigameManager.complete_title', '🎮 Minigame Complete!'),
+        description: tc('mg.MinigameManager.rewards', 'Rewards: +{{c}} C, +{{t}} T, +{{xp}} XP', { c: creativityBonus, t: technicalBonus, xp: xpBonus }),
         className: "bg-stone-800 border-stone-600 text-white",
         variant: success === false ? "destructive" : "default", // Indicate if it wasn't fully successful
       });
@@ -363,12 +364,12 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
       case 'maintenance':
         if (!equipmentContext) {
           console.error('Equipment context is required for maintenance minigame.');
-          return <div>Error: Equipment context missing.</div>;
+          return <div>{tc('mg.MinigameManager.error_equipment', 'Error: Equipment context missing.')}</div>;
         }
         return <GearMaintenanceGame {...commonGameProps} onComplete={maintenanceOnComplete} equipment={equipmentContext} />;
       default:
         console.error(`Unknown game type: ${gameType}`);
-        return <div>Error: Unknown minigame type.</div>; // Fallback UI
+        return <div>{tc('mg.MinigameManager.error_unknown', 'Error: Unknown minigame type.')}</div>; // Fallback UI
     }
   };
 

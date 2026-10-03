@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Play, Pause, Square, RotateCcw, Volume2 } from 'lucide-react';
 import { MinigameChrome, KenneyButton } from './MinigameChrome';
+import { tc } from '@/i18n/content';
 
 interface SamplingSequencingGameProps {
   onComplete: (score: number, success?: boolean) => void;
@@ -200,7 +201,7 @@ export const SamplingSequencingGame: React.FC<SamplingSequencingGameProps> = ({
   return (
     <Card className="w-full max-w-6xl mx-auto bg-stone-800 text-white border-stone-700">
       <MinigameChrome
-        title="🥁 Sampling & Sequencing"
+        title={tc('mg.SamplingSequencingGame.title', '🥁 Sampling & Sequencing')}
         score={score}
         timeLeft={timeLeft}
         accent="purple"
@@ -211,10 +212,10 @@ export const SamplingSequencingGame: React.FC<SamplingSequencingGameProps> = ({
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-purple-300">
-              Pattern {currentPatternIndex + 1}/3 • Track {currentTrackIndex + 1}/2
+              {tc('mg.SamplingSequencingGame.progress', 'Pattern {{pattern}}/3 • Track {{track}}/2', { pattern: currentPatternIndex + 1, track: currentTrackIndex + 1 })}
             </span>
             <span className="text-[var(--rst-brass-300)]">
-              {Math.floor((timeLeft / 90) * 100)}% Complete
+              {tc('mg.SamplingSequencingGame.percent_complete', '{{pct}}% Complete', { pct: Math.floor((timeLeft / 90) * 100) })}
             </span>
           </div>
           <Progress value={(timeLeft / 90) * 100} className="h-2 bg-stone-800" />
@@ -222,7 +223,7 @@ export const SamplingSequencingGame: React.FC<SamplingSequencingGameProps> = ({
 
         {/* Sample Bank */}
         <div className="bg-black/30 rounded-lg p-4">
-          <h3 className="text-lg font-semibold mb-3 text-[var(--rst-brass-300)]">Sample Bank</h3>
+          <h3 className="text-lg font-semibold mb-3 text-[var(--rst-brass-300)]">{tc('mg.SamplingSequencingGame.sample_bank', 'Sample Bank')}</h3>
           <div className="grid grid-cols-6 gap-2">
             {SAMPLES.map((sample) => (
               <Button
@@ -240,7 +241,7 @@ export const SamplingSequencingGame: React.FC<SamplingSequencingGameProps> = ({
               >
                 <div className="text-center">
                   <div className="text-2xl">{sample.sound}</div>
-                  <div className="text-xs">{sample.name}</div>
+                  <div className="text-xs">{tc(`mg.SamplingSequencingGame.sample_${sample.id}`, sample.name)}</div>
                 </div>
               </Button>
             ))}
@@ -250,7 +251,7 @@ export const SamplingSequencingGame: React.FC<SamplingSequencingGameProps> = ({
         {/* Sequencer */}
         <div className="bg-black/30 rounded-lg p-4">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-[var(--rst-brass-300)]">Sequencer</h3>
+            <h3 className="text-lg font-semibold text-[var(--rst-brass-300)]">{tc('mg.SamplingSequencingGame.sequencer', 'Sequencer')}</h3>
             <div className="flex gap-2">
               <Button
                 onClick={() => setIsPlaying(!isPlaying)}
@@ -288,7 +289,7 @@ export const SamplingSequencingGame: React.FC<SamplingSequencingGameProps> = ({
           {/* Track 1 */}
           <div className="mb-4">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-16 text-sm font-semibold text-purple-300">Track 1</div>
+              <div className="w-16 text-sm font-semibold text-purple-300">{tc('mg.SamplingSequencingGame.track_1', 'Track 1')}</div>
               <Volume2 className="w-4 h-4 text-stone-400" />
             </div>
             <div className="grid grid-cols-8 gap-1">
@@ -324,7 +325,7 @@ export const SamplingSequencingGame: React.FC<SamplingSequencingGameProps> = ({
           {/* Track 2 */}
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-16 text-sm font-semibold text-purple-300">Track 2</div>
+              <div className="w-16 text-sm font-semibold text-purple-300">{tc('mg.SamplingSequencingGame.track_2', 'Track 2')}</div>
               <Volume2 className="w-4 h-4 text-stone-400" />
             </div>
             <div className="grid grid-cols-8 gap-1">
@@ -362,10 +363,10 @@ export const SamplingSequencingGame: React.FC<SamplingSequencingGameProps> = ({
       </MinigameChrome>
       <DialogFooter className="p-4">
         <KenneyButton variant="yellow" onClick={onClose}>
-          Exit
+          {tc('mg.SamplingSequencingGame.exit', 'Exit')}
         </KenneyButton>
         <KenneyButton variant="green" onClick={checkPattern}>
-          Check Pattern
+          {tc('mg.SamplingSequencingGame.check_pattern', 'Check Pattern')}
         </KenneyButton>
       </DialogFooter>
     </Card>

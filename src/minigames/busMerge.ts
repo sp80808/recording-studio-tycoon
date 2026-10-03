@@ -8,6 +8,7 @@
  * pre-drawn from the seeded RNG, so every move is a pure function of state.
  */
 import { createSeededRandom, randomInt, type RandomSource } from '@/simulation/seededRandom';
+import { tc } from '@/i18n/content';
 
 export type TrackKind =
   | 'kick' | 'snare' | 'overhead' | 'gtr-l' | 'gtr-r' | 'bass' | 'keys' | 'vox-lead' | 'vox-dbl' | 'sample'
@@ -270,10 +271,10 @@ export function scoreBusMerge(state: BusMergeState): BusMergeScore {
   }
   total = Math.round(Math.max(0, Math.min(1000, total)));
 
-  if (clipped) tips.push('The master bus clipped. Every merge eats headroom, so avoid layering duplicates.');
-  else if (!mixed) tips.push('No final mix yet: DRUM + MUSIC make the pre-mix, then add VOX.');
-  if (excessDepth > 0) tips.push('Layering duplicate tracks made the routing deeper than it needs to be.');
-  if (mixed && !clipped && !state.printed) tips.push('The Hero Sample never made it into the mix. Merge it with the finished MIX.');
-  if (state.outcome === 'stuck') tips.push('The board locked up. Keep stray tracks out of the way of the buses.');
+  if (clipped) tips.push(tc('mg.busMerge.tip_clipped', 'The master bus clipped. Every merge eats headroom, so avoid layering duplicates.'));
+  else if (!mixed) tips.push(tc('mg.busMerge.tip_no_mix', 'No final mix yet: DRUM + MUSIC make the pre-mix, then add VOX.'));
+  if (excessDepth > 0) tips.push(tc('mg.busMerge.tip_depth', 'Layering duplicate tracks made the routing deeper than it needs to be.'));
+  if (mixed && !clipped && !state.printed) tips.push(tc('mg.busMerge.tip_sample', 'The Hero Sample never made it into the mix. Merge it with the finished MIX.'));
+  if (state.outcome === 'stuck') tips.push(tc('mg.busMerge.tip_stuck', 'The board locked up. Keep stray tracks out of the way of the buses.'));
   return { total, milestones, mixed, excessDepth, printed: state.printed, clipped, tips };
 }

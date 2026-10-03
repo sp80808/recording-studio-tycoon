@@ -6,6 +6,7 @@
  * energy curve should have one clear peak rather than a zig-zag.
  */
 import { createSeededRandom, pickWithRandom, randomInt } from '@/simulation/seededRandom';
+import { tc } from '@/i18n/content';
 
 export const ALBUM_TRACKS = 7;
 
@@ -72,18 +73,18 @@ export function scoreAlbum(order: AlbumTrack[]): AlbumScore {
   const turns = direction.slice(1).filter((d, i) => d !== 0 && direction[i] !== 0 && d !== direction[i]).length;
   const zigzag = Math.max(0, turns - 3) * 0.8;
   const flow = Math.round(450 * clamp(1 - (jumpCost + zigzag) / 12, 0, 1));
-  if (flow < 300) tips.push('The energy lurches around. Try building to one peak.');
+  if (flow < 300) tips.push(tc('mg.albumSequence.tip_flow', 'The energy lurches around. Try building to one peak.'));
 
   const opener = Math.round(150 * clamp((order[0].energy - 3) / 5, 0, 1));
-  if (opener < 100) tips.push('Open with something that grabs people.');
+  if (opener < 100) tips.push(tc('mg.albumSequence.tip_opener', 'Open with something that grabs people.'));
 
   const singleIdx = order.findIndex((t) => t.single);
   const single = singleIdx === 1 || singleIdx === 2 ? 250 : singleIdx === 0 || singleIdx === 3 ? 140 : 40;
-  if (single < 250) tips.push('The single belongs in slot 2 or 3, after the opener has won them over.');
+  if (single < 250) tips.push(tc('mg.albumSequence.tip_single', 'The single belongs in slot 2 or 3, after the opener has won them over.'));
 
   const last = order[n - 1];
   const closer = last.single ? 60 : Math.round(150 * clamp(1 - Math.abs(last.energy - 3) / 6, 0.2, 1));
-  if (closer < 100) tips.push('End on a slow burn, not a shrug.');
+  if (closer < 100) tips.push(tc('mg.albumSequence.tip_closer', 'End on a slow burn, not a shrug.'));
 
   const total = clamp(flow + opener + single + closer, 0, 1000);
   return { total, flow, opener, single, closer, tips };

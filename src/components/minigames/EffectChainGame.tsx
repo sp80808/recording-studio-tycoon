@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { gameAudio } from '@/utils/audioSystem';
 import { KenneyButton, MinigameChrome } from './MinigameChrome';
+import { tc } from '@/i18n/content';
 
 interface Effect {
   id: string;
@@ -225,12 +226,19 @@ export const EffectChainGame: React.FC<EffectChainGameProps> = ({
     gameAudio.playClick();
   };
 
+  const feedbackText = (f: string) => {
+    if (f === '⚠️ Effect chain too long!') return tc('mg.EffectChainGame.fb_too_long', '⚠️ Effect chain too long!');
+    if (f === '⚠️ Effect type already in chain!') return tc('mg.EffectChainGame.fb_duplicate', '⚠️ Effect type already in chain!');
+    if (f === '✅ Good choice!') return tc('mg.EffectChainGame.fb_good', '✅ Good choice!');
+    return f;
+  };
+
   const getGenreHint = () => {
     const hints: { [key: string]: string } = {
-      rock: 'Rock needs: EQ → Compression → Distortion → Reverb',
-      pop: 'Pop needs: EQ → Compression → Delay → Reverb',
-      electronic: 'Electronic needs: Filter → Compression → Delay → Distortion',
-      'hip-hop': 'Hip-Hop needs: EQ → Compression → Filter'
+      rock: tc('mg.EffectChainGame.hint_rock', 'Rock needs: EQ → Compression → Distortion → Reverb'),
+      pop: tc('mg.EffectChainGame.hint_pop', 'Pop needs: EQ → Compression → Delay → Reverb'),
+      electronic: tc('mg.EffectChainGame.hint_electronic', 'Electronic needs: Filter → Compression → Delay → Distortion'),
+      'hip-hop': tc('mg.EffectChainGame.hint_hip_hop', 'Hip-Hop needs: EQ → Compression → Filter')
     };
     return hints[genre.toLowerCase()] || hints.rock;
   };
@@ -238,17 +246,16 @@ export const EffectChainGame: React.FC<EffectChainGameProps> = ({
   if (!gameStarted) {
     return (
       <Card className="w-full max-w-4xl mx-auto bg-stone-800 text-white border-stone-700">
-        <MinigameChrome title="🔗 Effect Chain Builder" score={score} accent="blue">
+        <MinigameChrome title={tc('mg.EffectChainGame.title', '🔗 Effect Chain Builder')} score={score} accent="blue">
         <div className="p-6 text-center space-y-4">
           <p className="text-stone-300">
-            Build the perfect effect chain for {genre} music!
-            Order matters - effects process in sequence.
+            {tc('mg.EffectChainGame.intro', 'Build the perfect effect chain for {{genre}} music! Order matters - effects process in sequence.', { genre })}
           </p>
           <div className="text-sm text-[var(--rst-live)] bg-white/[0.04] border border-[var(--rst-line)] p-3 rounded">
-            💡 Hint: {getGenreHint()}
+            {tc('mg.EffectChainGame.hint', '💡 Hint: {{hint}}', { hint: getGenreHint() })}
           </div>
           <KenneyButton variant="yellow" onClick={startGame}>
-            Start Building
+            {tc('mg.EffectChainGame.start_building', 'Start Building')}
           </KenneyButton>
         </div>
         </MinigameChrome>
@@ -259,23 +266,23 @@ export const EffectChainGame: React.FC<EffectChainGameProps> = ({
   if (gameCompleted) {
     return (
       <Card className="w-full max-w-4xl mx-auto bg-stone-800 text-white border-stone-700">
-        <MinigameChrome title="🔗 Effect Chain Builder" score={score} accent="blue">
+        <MinigameChrome title={tc('mg.EffectChainGame.title', '🔗 Effect Chain Builder')} score={score} accent="blue">
         <div className="p-6 text-center space-y-4">
-          <h2 className={`text-2xl font-bold text-yellow-400 ${score >= 80 ? 'mg-perfect-pop' : ''}`}>Effect Chain Complete!</h2>
+          <h2 className={`text-2xl font-bold text-yellow-400 ${score >= 80 ? 'mg-perfect-pop' : ''}`}>{tc('mg.EffectChainGame.complete', 'Effect Chain Complete!')}</h2>
           <div className="space-y-2">
-            <div className="text-lg text-white">Score: {score}</div>
+            <div className="text-lg text-white">{tc('mg.EffectChainGame.score', 'Score: {{score}}', { score })}</div>
             <div className="text-sm text-stone-400">
-              Effects Used: {effectChain.length} | Target: {targetChain.length}
+              {tc('mg.EffectChainGame.effects_used', 'Effects Used: {{used}} | Target: {{target}}', { used: effectChain.length, target: targetChain.length })}
             </div>
             {score >= 80 && (
-              <div className="text-green-400 font-bold text-xl mg-perfect-pop">🎉 Professional Chain!</div>
+              <div className="text-green-400 font-bold text-xl mg-perfect-pop">{tc('mg.EffectChainGame.professional', '🎉 Professional Chain!')}</div>
             )}
             {score >= 60 && score < 80 && (
-              <div className="text-[var(--rst-live)] font-bold">👍 Good Mix!</div>
+              <div className="text-[var(--rst-live)] font-bold">{tc('mg.EffectChainGame.good_mix', '👍 Good Mix!')}</div>
             )}
           </div>
           <KenneyButton variant="green" onClick={onClose}>
-            Collect Rewards
+            {tc('mg.EffectChainGame.collect', 'Collect Rewards')}
           </KenneyButton>
         </div>
         </MinigameChrome>
@@ -285,14 +292,14 @@ export const EffectChainGame: React.FC<EffectChainGameProps> = ({
 
   return (
     <Card className="w-full max-w-6xl mx-auto bg-stone-800 text-white border-stone-700">
-      <MinigameChrome title="🔗 Effect Chain Builder" score={score} timeLeft={timeLeft} accent="blue">
+      <MinigameChrome title={tc('mg.EffectChainGame.title', '🔗 Effect Chain Builder')} score={score} timeLeft={timeLeft} accent="blue">
       <div className="p-6">
       <div className="text-center mb-6">
-        <p className="text-stone-300">Genre: {genre.charAt(0).toUpperCase() + genre.slice(1)}</p>
+        <p className="text-stone-300">{tc('mg.EffectChainGame.genre', 'Genre: {{genre}}', { genre: genre.charAt(0).toUpperCase() + genre.slice(1) })}</p>
 
         {feedback && (
           <div key={feedback} className={`mt-2 text-center text-lg font-bold ${feedback.startsWith('✅') ? 'text-green-400 mg-perfect-pop' : 'text-yellow-300 mg-miss-shake'}`}>
-            {feedback}
+            {feedbackText(feedback)}
           </div>
         )}
       </div>
@@ -300,7 +307,7 @@ export const EffectChainGame: React.FC<EffectChainGameProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Available Effects */}
         <div>
-          <h3 className="text-xl font-bold text-white mb-4">🎛️ Available Effects</h3>
+          <h3 className="text-xl font-bold text-white mb-4">{tc('mg.EffectChainGame.available', '🎛️ Available Effects')}</h3>
           <div className="grid grid-cols-2 gap-3">
             {availableEffects.map(effect => (
               <Button
@@ -310,7 +317,7 @@ export const EffectChainGame: React.FC<EffectChainGameProps> = ({
                 disabled={effectChain.some(e => e.type === effect.type)}
               >
                 <span className="text-2xl">{effect.icon}</span>
-                <span className="text-sm font-semibold">{effect.name}</span>
+                <span className="text-sm font-semibold">{tc(`mg.EffectChainGame.effect_${effect.type}`, effect.name)}</span>
               </Button>
             ))}
           </div>
@@ -318,11 +325,11 @@ export const EffectChainGame: React.FC<EffectChainGameProps> = ({
 
         {/* Effect Chain */}
         <div>
-          <h3 className="text-xl font-bold text-white mb-4">🔗 Your Effect Chain</h3>
+          <h3 className="text-xl font-bold text-white mb-4">{tc('mg.EffectChainGame.your_chain', '🔗 Your Effect Chain')}</h3>
           <div className="space-y-3 min-h-[300px]">
             {effectChain.length === 0 ? (
               <div className="text-stone-500 text-center p-8 border-2 border-dashed border-stone-600 rounded">
-                Drag effects here to build your chain
+                {tc('mg.EffectChainGame.drag_hint', 'Drag effects here to build your chain')}
               </div>
             ) : (
               effectChain.map((effect, index) => (
@@ -333,8 +340,8 @@ export const EffectChainGame: React.FC<EffectChainGameProps> = ({
                   <div className="flex items-center gap-3">
                     <span className="text-xl">{effect.icon}</span>
                     <div>
-                      <div className="font-semibold">{effect.name}</div>
-                      <div className="text-xs opacity-75">Position {index + 1}</div>
+                      <div className="font-semibold">{tc(`mg.EffectChainGame.effect_${effect.type}`, effect.name)}</div>
+                      <div className="text-xs opacity-75">{tc('mg.EffectChainGame.position', 'Position {{n}}', { n: index + 1 })}</div>
                     </div>
                   </div>
                   
@@ -371,7 +378,7 @@ export const EffectChainGame: React.FC<EffectChainGameProps> = ({
           {/* Target Chain Hint */}
           <div className="mt-4 p-3 bg-white/[0.04] border border-[var(--rst-line)] rounded border border-[var(--rst-live)]/50">
             <div className="text-sm text-[var(--rst-live)]">
-              <div className="font-semibold mb-1">💡 Optimal {genre} Chain:</div>
+              <div className="font-semibold mb-1">{tc('mg.EffectChainGame.optimal', '💡 Optimal {{genre}} Chain:', { genre })}</div>
               <div className="flex gap-2 flex-wrap">
                 {targetChain.map((effect, index) => (
                   <Badge 
@@ -379,7 +386,7 @@ export const EffectChainGame: React.FC<EffectChainGameProps> = ({
                     variant="outline" 
                     className="text-[var(--rst-live)] border-[var(--rst-live)]"
                   >
-                    {index + 1}. {effect.name}
+                    {index + 1}. {tc(`mg.EffectChainGame.effect_${effect.type}`, effect.name)}
                   </Badge>
                 ))}
               </div>
@@ -390,10 +397,10 @@ export const EffectChainGame: React.FC<EffectChainGameProps> = ({
 
       <div className="flex justify-center gap-4 mt-6">
         <KenneyButton variant="green" onClick={endGame} disabled={effectChain.length === 0}>
-          🎵 Test Chain
+          {tc('mg.EffectChainGame.test_chain', '🎵 Test Chain')}
         </KenneyButton>
         <KenneyButton variant="grey" onClick={onClose}>
-          Cancel
+          {tc('mg.EffectChainGame.cancel', 'Cancel')}
         </KenneyButton>
       </div>
       </div>

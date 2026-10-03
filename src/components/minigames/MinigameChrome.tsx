@@ -2,6 +2,7 @@ import './minigame-juice.css';
 
 import type { ReactNode } from 'react';
 import { Flame, Timer } from 'lucide-react';
+import { tc } from '@/i18n/content';
 
 /** Kept for call-site compatibility: cyan/purple fold into the closest palette accent. */
 type MinigameAccent = 'blue' | 'green' | 'red' | 'yellow' | 'cyan' | 'purple';
@@ -60,11 +61,11 @@ export function MinigameChrome({
         <div className="flex flex-1 items-center justify-center gap-2 text-sm font-semibold text-[var(--rst-ivory)]">
           {score !== undefined && (
             <span>
-              Score: <span className="tabular-nums">{score}</span>
+              {tc('mg.MinigameChrome.score', 'Score:')} <span className="tabular-nums">{score}</span>
             </span>
           )}
           {streak !== undefined && streak >= 2 && (
-            <span className="mg-combo-pulse inline-flex items-center gap-1 text-[var(--rst-brass-300)]" aria-label={`${streak} streak`}>
+            <span className="mg-combo-pulse inline-flex items-center gap-1 text-[var(--rst-brass-300)]" aria-label={tc('mg.MinigameChrome.streak_aria', '{{streak}} streak', { streak })}>
               <Flame size={14} aria-hidden="true" />x{streak}
             </span>
           )}
@@ -85,7 +86,7 @@ export function MinigameChrome({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close minigame"
+            aria-label={tc('mg.MinigameChrome.close_minigame', 'Close minigame')}
             className="ml-2 rounded px-2 py-0.5 text-sm font-bold text-[var(--rst-ivory)] hover:bg-white/10"
           >
             ✕

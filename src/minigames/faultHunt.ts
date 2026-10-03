@@ -6,6 +6,7 @@
  * No DOM, no Math.random: every roll comes from the injected seeded RNG.
  */
 import { createSeededRandom, randomInt, type RandomSource } from '@/simulation/seededRandom';
+import { tc } from '@/i18n/content';
 
 export type FaultKind = 'bad-cable' | 'noisy-psu' | 'dead-preamp' | 'ground-loop' | 'phase-flip';
 
@@ -181,8 +182,8 @@ export function scoreFaultHunt(state: FaultHuntState, maxProbes: number): FaultH
   const efficiency = flaggedRight > 0 ? (state.probesLeft / Math.max(1, maxProbes)) * 200 : 0;
   const total = Math.round(clamp(locate + coverage + efficiency - wrongFlags * 60 - tripped * 40, 0, 1000));
 
-  if (wrongFlags > 0) tips.push('A flag went on a healthy jack. Check the numbers around it before committing.');
-  if (tripped > 0) tips.push('Probing a faulty jack trips it. Probe jacks whose neighbours all add up first.');
-  if (found < state.faultCount) tips.push('Some faults were left in the rack. A number equal to the unprobed neighbours means they are all faults.');
+  if (wrongFlags > 0) tips.push(tc('mg.faultHunt.tip_wrong_flag', 'A flag went on a healthy jack. Check the numbers around it before committing.'));
+  if (tripped > 0) tips.push(tc('mg.faultHunt.tip_tripped', 'Probing a faulty jack trips it. Probe jacks whose neighbours all add up first.'));
+  if (found < state.faultCount) tips.push(tc('mg.faultHunt.tip_missed', 'Some faults were left in the rack. A number equal to the unprobed neighbours means they are all faults.'));
   return { total, found, wrongFlags, trips: tripped, tips };
 }

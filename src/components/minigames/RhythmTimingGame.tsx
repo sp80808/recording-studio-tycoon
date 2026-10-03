@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { DialogFooter } from '@/components/ui/dialog';
 import { MinigameChrome, KenneyButton } from './MinigameChrome';
 import { gameAudio } from '@/utils/audioSystem';
+import { tc } from '@/i18n/content';
 
 interface RhythmTimingGameProps {
   onComplete: (score: number) => void;
@@ -184,7 +185,7 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
 
   return (
     <Card className="w-full max-w-2xl mx-auto bg-stone-800 text-white border-stone-700">
-      <MinigameChrome title="🎵 Rhythm Timing Challenge" score={score} timeLeft={gameActive ? timeLeft : undefined} streak={combo} accent="blue">
+      <MinigameChrome title={tc('mg.RhythmTimingGame.title', '🎵 Rhythm Timing Challenge')} score={score} timeLeft={gameActive ? timeLeft : undefined} streak={combo} accent="blue">
       <CardContent>
 
       <div 
@@ -193,7 +194,7 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
       >
         {/* Target zone with perfect timing indicator */}
         <div className="absolute left-72 top-0 w-12 h-full bg-green-500/30 border-2 border-green-400 flex items-center justify-center">
-          <div className="text-green-400 font-bold text-xs">HIT</div>
+          <div className="text-green-400 font-bold text-xs">{tc('mg.RhythmTimingGame.hit_zone', 'HIT')}</div>
         </div>
 
         {/* Perfect timing line - shows exactly where to hit for perfect score */}
@@ -223,7 +224,7 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
           >
             {beat.hit && (
               <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-bold">
-                {beat.perfect ? 'PERFECT!' : 'HIT!'}
+                {beat.perfect ? tc('mg.RhythmTimingGame.perfect', 'PERFECT!') : tc('mg.RhythmTimingGame.hit', 'HIT!')}
               </div>
             )}
           </div>
@@ -236,23 +237,23 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
       <div className="text-center space-y-3">
         {!gameActive && timeLeft === 30 ? (
           <KenneyButton variant="yellow" onClick={startGame}>
-            Start Rhythm Challenge
+            {tc('mg.RhythmTimingGame.start', 'Start Rhythm Challenge')}
           </KenneyButton>
         ) : finished ? (
           <div key={score} className="space-y-2">
-            <div className={`text-lg font-bold text-yellow-400 ${score > 0 ? 'mg-perfect-pop' : ''}`}>Game Complete!</div>
-            <div className="text-sm text-stone-300">Final Score: {score}</div>
+            <div className={`text-lg font-bold text-yellow-400 ${score > 0 ? 'mg-perfect-pop' : ''}`}>{tc('mg.RhythmTimingGame.complete', 'Game Complete!')}</div>
+            <div className="text-sm text-stone-300">{tc('mg.RhythmTimingGame.final_score', 'Final Score: {{score}}', { score })}</div>
             <KenneyButton variant="green" onClick={onClose}>
-              Collect Rewards
+              {tc('mg.RhythmTimingGame.collect', 'Collect Rewards')}
             </KenneyButton>
           </div>
         ) : (
           <div className="space-y-2">
             <div className="text-sm text-stone-300">
-              Press SPACE when beats hit the <span className="text-yellow-400 font-bold">yellow line</span> for PERFECT timing!
+              {tc('mg.RhythmTimingGame.instr_pre', 'Press SPACE when beats hit the')} <span className="text-yellow-400 font-bold">{tc('mg.RhythmTimingGame.instr_line', 'yellow line')}</span> {tc('mg.RhythmTimingGame.instr_post', 'for PERFECT timing!')}
             </div>
             <KenneyButton variant="yellow" onClick={hitBeat} className="w-full mg-hit-flash active:scale-95">
-              HIT (SPACE)
+              {tc('mg.RhythmTimingGame.hit_button', 'HIT (SPACE)')}
             </KenneyButton>
           </div>
         )}
@@ -262,7 +263,7 @@ export const RhythmTimingGame: React.FC<RhythmTimingGameProps> = ({
       {!finished && (
         <DialogFooter className="p-4">
           <KenneyButton variant="grey" onClick={onClose}>
-            Close
+            {tc('mg.RhythmTimingGame.close', 'Close')}
           </KenneyButton>
         </DialogFooter>
       )}

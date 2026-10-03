@@ -16,6 +16,7 @@ import {
   sessionRisk,
   type FlightCaseState,
 } from '@/minigames/flightCasePacking';
+import { tc } from '@/i18n/content';
 
 interface Props {
   minigameId: string;
@@ -61,13 +62,12 @@ export const FlightCasePackingGame: React.FC<Props> = ({ onComplete, difficulty 
   const flagged = (id: string) => audit.unprotected.includes(id) || audit.crushed.includes(id);
 
   return (
-    <MinigameChrome title="Flight Case Packing" subtitle={state.caseName} score={state.closed ? result.total : undefined} accent="yellow">
+    <MinigameChrome title={tc('mg.FlightCasePackingGame.title', 'Flight Case Packing')} subtitle={tc(`mg.FlightCasePackingGame.case_${state.caseName.toLowerCase().replace(/[^a-z0-9]+/g, "_")}`, state.caseName)} score={state.closed ? result.total : undefined} accent="yellow">
       <Card className="border-0 bg-transparent">
         <CardContent className="space-y-3 p-4">
           <p className="text-xs text-stone-300">
-            Pick a piece, then tap a square to drop it in (tap packed gear to pick it up again). Fragile gear needs a
-            cable bag or foam touching it; heavy gear must not sit directly above anything expensive.
-            Session risk: <b className={risk > 40 ? 'text-red-300' : 'text-emerald-300'}>{risk}</b>
+            {tc('mg.FlightCasePackingGame.instructions', 'Pick a piece, then tap a square to drop it in (tap packed gear to pick it up again). Fragile gear needs a cable bag or foam touching it; heavy gear must not sit directly above anything expensive.')}
+            {' '}{tc('mg.FlightCasePackingGame.session_risk', 'Session risk:')} <b className={risk > 40 ? 'text-red-300' : 'text-emerald-300'}>{risk}</b>
           </p>
           <div
             className="mx-auto grid w-full max-w-[320px] gap-[2px] rounded-lg border-2 border-stone-600 bg-stone-950/80 p-2"
@@ -84,7 +84,7 @@ export const FlightCasePackingGame: React.FC<Props> = ({ onComplete, difficulty 
                 <button
                   key={key}
                   type="button"
-                  aria-label={item ? `${item.label} at ${x + 1},${y + 1}` : `Empty slot ${x + 1},${y + 1}`}
+                  aria-label={item ? tc('mg.FlightCasePackingGame.item_at', '{{label}} at {{x}},{{y}}', { label: tc(`mg.FlightCasePackingGame.item_${item.id}`, item.label), x: x + 1, y: y + 1 }) : tc('mg.FlightCasePackingGame.empty_slot', 'Empty slot {{x}},{{y}}', { x: x + 1, y: y + 1 })}
                   onClick={() => tapCell(x, y)}
                   onMouseEnter={() => setHover([x, y])}
                   className={`flex aspect-square items-center justify-center rounded-sm border text-base transition-colors ${
@@ -103,8 +103,8 @@ export const FlightCasePackingGame: React.FC<Props> = ({ onComplete, difficulty 
             })}
           </div>
           {!state.closed && (
-            <div className="flex flex-wrap justify-center gap-2" aria-label="Gear on the floor">
-              {trayIds.length === 0 && <span className="text-xs text-emerald-300">Everything is in the case.</span>}
+            <div className="flex flex-wrap justify-center gap-2" aria-label={tc('mg.FlightCasePackingGame.gear_on_floor', 'Gear on the floor')}>
+              {trayIds.length === 0 && <span className="text-xs text-emerald-300">{tc('mg.FlightCasePackingGame.all_packed', 'Everything is in the case.')}</span>}
               {trayIds.map((id) => {
                 const item = itemById(state, id);
                 return (
@@ -116,8 +116,8 @@ export const FlightCasePackingGame: React.FC<Props> = ({ onComplete, difficulty 
                       held === id ? 'border-amber-300 bg-amber-400 text-stone-900' : 'border-stone-600 bg-stone-800 text-stone-200'
                     }`}
                   >
-                    {item.glyph} {item.label} <span className="opacity-70">{item.w}×{item.h}</span>
-                    {item.traits.includes('fragile') ? ' ·fragile' : ''}{item.traits.includes('heavy') ? ' ·heavy' : ''}
+                    {item.glyph} {tc(`mg.FlightCasePackingGame.item_${item.id}`, item.label)} <span className="opacity-70">{item.w}×{item.h}</span>
+                    {item.traits.includes('fragile') ? ` ·${tc('mg.FlightCasePackingGame.fragile', 'fragile')}` : ''}{item.traits.includes('heavy') ? ` ·${tc('mg.FlightCasePackingGame.heavy', 'heavy')}` : ''}
                   </button>
                 );
               })}
@@ -126,9 +126,9 @@ export const FlightCasePackingGame: React.FC<Props> = ({ onComplete, difficulty 
           {state.closed && (
             <div className="rounded-lg border border-stone-600 bg-stone-900/70 p-3 text-center text-xs text-stone-200">
               <h4 className={`mb-1 font-bold ${risk <= 20 ? 'text-emerald-300' : 'text-amber-300'}`}>
-                {risk <= 20 ? 'Case latched, rig is road-ready' : 'Case latched, but the session carries risk'}
+                {risk <= 20 ? tc('mg.FlightCasePackingGame.latched_ready', 'Case latched, rig is road-ready') : tc('mg.FlightCasePackingGame.latched_risky', 'Case latched, but the session carries risk')}
               </h4>
-              {result.tips.join(' ') || 'Everything protected and nothing left behind.'}
+              {result.tips.join(' ') || tc('mg.FlightCasePackingGame.all_protected', 'Everything protected and nothing left behind.')}
             </div>
           )}
         </CardContent>
@@ -136,11 +136,11 @@ export const FlightCasePackingGame: React.FC<Props> = ({ onComplete, difficulty 
       <DialogFooter className="gap-2 p-4 pt-0">
         {!state.closed ? (
           <>
-            <KenneyButton onClick={() => setRotated((r) => !r)} variant="blue">Rotate</KenneyButton>
-            <KenneyButton onClick={() => { setHeld(null); setState(closeCase); }} variant="green">Latch case</KenneyButton>
+            <KenneyButton onClick={() => setRotated((r) => !r)} variant="blue">{tc('mg.FlightCasePackingGame.rotate', 'Rotate')}</KenneyButton>
+            <KenneyButton onClick={() => { setHeld(null); setState(closeCase); }} variant="green">{tc('mg.FlightCasePackingGame.latch_case', 'Latch case')}</KenneyButton>
           </>
         ) : (
-          <KenneyButton onClick={() => onComplete(result.total, risk <= 40)} variant="green">Done</KenneyButton>
+          <KenneyButton onClick={() => onComplete(result.total, risk <= 40)} variant="green">{tc('mg.FlightCasePackingGame.done', 'Done')}</KenneyButton>
         )}
       </DialogFooter>
     </MinigameChrome>
