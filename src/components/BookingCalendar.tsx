@@ -55,7 +55,7 @@ export const BookingCostLine: React.FC<{ state: CalState; project: Project }> = 
       {p.firstSlot ? <> · starts {SLOT_NAMES[p.firstSlot.slot].toLowerCase()} day {p.firstSlot.day}{p.roomName ? ` in ${p.roomName}` : ''}</> : ' · no free slot this week'}
       {' '}· {money(p.payoutPerSlot)} per slot ({money(p.payout)} total)
       <span data-testid="booking-quote" className="mt-1 block text-stone-400">
-        {q.serviceLabel}: about {q.roomHours} room hours, {q.staffHours} staff hours · margin <strong className="text-stone-200">{MARGIN_LABEL[q.marginBand]}</strong>
+        {q.serviceLabel}: about {q.roomHours} room hours, {q.staffHours} staff hours{q.setupSavedHours > 0 ? ` (setup reused: ${q.setupSavedHours}h saved)` : ''} · {q.revisionAllowance > 0 ? `${q.revisionAllowance} revision round${q.revisionAllowance === 1 ? '' : 's'} included · ` : ''}margin <strong className="text-stone-200">{MARGIN_LABEL[q.marginBand]}</strong>
         <span data-testid="booking-deposit" className="block">{q.deposit.reason}{q.deposit.required ? ` (${money(q.deposit.amount)} now, ${money(Math.max(0, q.fee - q.deposit.amount))} on delivery)` : ''}</span>
       </span>
       <span data-testid="booking-terms" className={`mt-1 block ${p.startBufferDays < 0 ? 'text-amber-300' : 'text-stone-400'}`}>

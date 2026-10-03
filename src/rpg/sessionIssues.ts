@@ -110,6 +110,9 @@ export function applySessionEvent(project: Project, event: SessionEvent, stageIn
   return { ...project, unresolvedIssues: issues };
 }
 
+/** A revision round the booking already covers costs studio time, as a share of the fee, but not client trust (#51). */
+export const REVISION_ROUND_FEE = 0.05;
+
 export type DeliveryDecision = 'deliver' | 'polish';
 
 export interface DeliveryForecast {
@@ -136,7 +139,7 @@ export function forecastDelivery(issues: UnresolvedIssue[], payout: number): Del
  * quality, fee and reputation; polish pays studio time, clears every open issue
  * and teaches the studio something.
  */
-export function applyDeliveryDecision(report: ProjectReport, issues: UnresolvedIssue[], decision: DeliveryDecision, seed: string): ProjectReport {
+export function applyDeliveryDecision(report: ProjectReport, issues: UnresolvedIssue[], decision: DeliveryDecision, seed: string, revisionAllowance = 0): ProjectReport {
   if (issues.length === 0) return report;
   const f = forecastDelivery(issues, report.moneyGained);
   const top = [...issues].sort((a, b) => b.severity - a.severity)[0];
@@ -156,12 +159,13 @@ export function applyDeliveryDecision(report: ProjectReport, issues: UnresolvedI
   const revision = rng() * 100 < f.deliver.revisionChance;
   const quality = Math.max(0, report.overallQualityScore - f.deliver.qualityPenalty);
   const factor = report.overallQualityScore > 0 ? quality / report.overallQualityScore : 1;
-  const repPenalty = revision ? Math.min(report.reputationGained, Math.ceil(totalSeverity(issues) / 2)) : 0;
+  const covered = revision && revisionAllowance > 0;
+  const repPenalty = revision && !covered ? Math.min(report.reputationGained, Math.ceil(totalSeverity(issues) / 2)) : 0;
   return {
     ...report,
     overallQualityScore: quality,
-    moneyGained: Math.round(report.moneyGained * (0.5 + 0.5 * factor)),
+    moneyGained: Math.round(report.moneyGained * (0.5 + 0.5 * factor) * (covered ? 1 - REVISION_ROUND_FEE : 1)),
     reputationGained: Math.max(0, report.reputationGained - repPenalty),
-    reviewSnippet: `${report.reviewSnippet} Delivered early with ${issues.length} open issue${issues.length === 1 ? '' : 's'}; main cause: ${top.label.toLowerCase()} (${top.cause.toLowerCase()})${revision ? ' The client asked for a revision and trust took a small hit.' : ''}`,
+    reviewSnippet: `${report.reviewSnippet} Delivered early with ${issues.length} open issue${issues.length === 1 ? '' : 's'}; main cause: ${top.label.toLowerCase()} (${top.cause.toLowerCase()})${covered ? ' The client asked for a revision; the booking included a round, so it cost studio time, not trust.' : revision ? ' The client asked for a revision and trust took a small hit.' : ''}`,
   };
 }

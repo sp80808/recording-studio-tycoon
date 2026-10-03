@@ -4,6 +4,7 @@ import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
 import { ChevronDown, Landmark } from 'lucide-react';
 import type { GameState } from '@/types/game';
 import { calculateEquipmentUpkeep } from '@/economy/upkeep';
+import { serviceSummary } from '@/rpg/serviceQuote';
 import { premisesDailyRent } from '@/rpg/premises';
 import { getOriginEffects } from '@/narrative/originPerks';
 import {
@@ -89,6 +90,21 @@ export function LedgerPanel({ gameState }: { gameState: GameState }) {
               </BarChart>
             </ResponsiveContainer>
           </div>
+          {(() => {
+            const use = serviceSummary(gameState);
+            return (
+              <div data-testid="studio-use">
+                <p className="rst-kicker">Studio use</p>
+                <p className="text-stone-300 tabular-nums">
+                  {Math.round(use.weekUtilization * 100)}% of this week's slots booked · {use.idleDays} idle day{use.idleDays === 1 ? '' : 's'}
+                  {use.sessions > 0 && <> · {fmt(use.revenuePerHour)} per booked hour over {use.sessions} session{use.sessions === 1 ? '' : 's'} ({use.bookedHours}h)</>}
+                </p>
+                {use.topServices.length > 0 && (
+                  <p className="text-stone-400">Mostly {use.topServices.map(s => `${s.label.toLowerCase()} (${s.count})`).join(', ')}. Packing every slot is not the aim: crew and gear need rest.</p>
+                )}
+              </div>
+            );
+          })()}
           {view.costs.length > 0 && (
             <div>
               <p className="rst-kicker">Biggest costs (30 days)</p>

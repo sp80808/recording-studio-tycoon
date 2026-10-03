@@ -24,6 +24,7 @@ import { announceAwards, applySeasonTick } from '@/economy/seasonRewards';
 import { seasonReviewNote } from '@/rpg/studioSeasons';
 import { GameState, Project, ProjectReport, StaffMember } from '@/types/game'; // Import GameState, Project, ProjectReport, StaffMember
 import DeliveryChoiceDialog from '@/components/DeliveryChoiceDialog';
+import { quoteFor } from '@/rpg/serviceQuote';
 import { applyDeliveryDecision, type UnresolvedIssue } from '@/rpg/sessionIssues';
 import { generateProjectReview } from '@/utils/projectReviewUtils'; // Import generateProjectReview
 import { getFocusEffectiveness, getMoodEffectiveness } from '@/utils/playerUtils';
@@ -121,6 +122,10 @@ const MusicStudioTycoon = () => {
   const desktopStripEnabled = desktopStripFlag && isTauriShell();
   const effectiveCompactStudioMode = compactStudioMode && desktopStripEnabled;
   const [activeProjectReport, setActiveProjectReport] = useState<ProjectReport | null>(null);
+  const deliveryAllowance = (projectId: string): number => {
+    const p = [gameState.activeProject, ...(gameState.activeProjects ?? [])].find(x => x?.id === projectId);
+    return p ? quoteFor(gameState, p).revisionAllowance : 0;
+  };
   const [pendingDelivery, setPendingDelivery] = useState<{ report: ProjectReport; issues: UnresolvedIssue[]; projectId: string } | null>(null);
   const [offlineSummary, setOfflineSummary] = useState<SimulationSummary | null>(null);
   const simulationLastTickRef = useRef(Date.now());
@@ -742,8 +747,9 @@ const MusicStudioTycoon = () => {
         <DeliveryChoiceDialog
           issues={pendingDelivery.issues}
           payout={pendingDelivery.report.moneyGained}
+          revisionAllowance={deliveryAllowance(pendingDelivery.projectId)}
           onChoose={(decision) => {
-            const adjusted = applyDeliveryDecision(pendingDelivery.report, pendingDelivery.issues, decision, pendingDelivery.projectId);
+            const adjusted = applyDeliveryDecision(pendingDelivery.report, pendingDelivery.issues, decision, pendingDelivery.projectId, deliveryAllowance(pendingDelivery.projectId));
             setPendingDelivery(null);
             setActiveProjectReport(adjusted);
             setShowReviewModal(true);
