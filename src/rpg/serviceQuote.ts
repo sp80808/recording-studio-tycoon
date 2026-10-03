@@ -10,7 +10,25 @@
  */
 import type { GameState, Project } from '@/types/game';
 import { getProjectBrief, SERVICE_LABELS, SERVICE_ROLE, type BriefServiceType } from '@/rpg/projectBrief';
-import { remainingWorkDays } from '@/rpg/bookingCalendar';
+import { buildBookingCalendar, remainingWorkDays } from '@/rpg/bookingCalendar';
+export { REVISION_ROUND_FEE } from '@/rpg/sessionIssues';
+
+/** Revision rounds a booking includes (#51). Mixing, mastering and full production are sold with them. */
+export const REVISION_ALLOWANCE: Record<BriefServiceType, number> = {
+  tracking: 0, 'vocal-production': 0, mix: 2, master: 1, 'full-production': 2,
+};
+/** Back-to-back sessions of the same service within this many days reuse the room's setup. */
+export const SYNERGY_DAYS = 2;
+export const SERVICE_LOG_CAP = 30;
+
+/** One settled session, kept for the studio-use summary. Persisted on the save, capped. */
+export interface ServiceRecord {
+  projectId: string;
+  service: BriefServiceType;
+  roomHours: number;
+  revenue: number;
+  day: number;
+}
 
 export type MarginBand = 'thin' | 'fair' | 'strong' | 'premium';
 export const MARGIN_LABEL: Record<MarginBand, string> = { thin: 'Thin', fair: 'Fair', strong: 'Strong', premium: 'Premium' };
@@ -51,6 +69,9 @@ export interface ServiceQuote {
   margin: number;
   marginBand: MarginBand;
   deposit: DepositTerms;
+  revisionAllowance: number;
+  /** Setup hours saved because the last session was the same kind of work (0 when not applicable). */
+  setupSavedHours: number;
 }
 
 export const marginBandFor = (fee: number, costs: number): MarginBand => {
@@ -67,14 +88,25 @@ export const depositFor = (state: Pick<GameState, 'clientRelationships'>, projec
   return { required: amount > 0, amount, reason: `New client: ${Math.round(DEPOSIT_RATE * 100)}% deposit at booking` };
 };
 
+/** Hours of setup saved when the previous settled session was the same service, recently. */
+export const setupSynergyHours = (
+  state: Pick<GameState, 'serviceLog' | 'currentDay'>,
+  service: BriefServiceType,
+): number => {
+  const last = state.serviceLog?.[state.serviceLog.length - 1];
+  if (!last || last.service !== service || state.currentDay - last.day > SYNERGY_DAYS) return 0;
+  return Math.max(1, Math.round(HOURS[service].setup * 0.5));
+};
+
 export const quoteFor = (
-  state: Pick<GameState, 'clientRelationships' | 'hiredStaff'>,
+  state: Pick<GameState, 'clientRelationships' | 'hiredStaff'> & Partial<Pick<GameState, 'serviceLog' | 'currentDay'>>,
   project: Project,
 ): ServiceQuote => {
   const service = getProjectBrief(project).serviceType;
   const h = HOURS[service];
   const sessions = remainingWorkDays(project);
-  const roomHours = h.setup + sessions * h.session;
+  const setupSavedHours = setupSynergyHours({ serviceLog: state.serviceLog, currentDay: state.currentDay ?? 0 }, service);
+  const roomHours = h.setup - setupSavedHours + sessions * h.session;
   const staffHours = Math.round(roomHours * h.staff);
   const role = SERVICE_ROLE[service];
   const salaries = (state.hiredStaff ?? []).filter((s) => s.role === role).map((s) => s.salary);
@@ -92,9 +124,54 @@ export const quoteFor = (
     margin: fee - directCosts,
     marginBand: marginBandFor(fee, directCosts),
     deposit: depositFor(state, project),
+    revisionAllowance: REVISION_ALLOWANCE[service],
+    setupSavedHours,
   };
 };
 
 /** Cash still owed at settlement once the deposit has been taken at booking. */
 export const settlementAfterDeposit = (moneyGained: number, depositPaid: number | undefined): number =>
   Math.max(0, Math.round(moneyGained) - Math.max(0, depositPaid ?? 0));
+
+/** Append one settled session to the log, once per project, oldest rolling off. */
+export const recordService = (log: ServiceRecord[] | undefined, rec: ServiceRecord): ServiceRecord[] => {
+  const cur = log ?? [];
+  if (cur.some((r) => r.projectId === rec.projectId)) return cur;
+  return [...cur, rec].slice(-SERVICE_LOG_CAP);
+};
+
+export interface ServiceSummary {
+  /** Share of this week's commercially available slots that are booked (0-1). */
+  weekUtilization: number;
+  /** Days this week with no booking at all. */
+  idleDays: number;
+  sessions: number;
+  bookedHours: number;
+  revenuePerHour: number;
+  topServices: Array<{ service: BriefServiceType; label: string; count: number }>;
+}
+
+export const SUMMARY_DAYS = 14;
+
+/** Studio use over the last two weeks, for the books panel. Full utilization is not the goal, so no target is shown. */
+export const serviceSummary = (
+  state: Pick<GameState, 'serviceLog' | 'currentDay' | 'studioRooms' | 'activeProject' | 'activeProjects'>,
+): ServiceSummary => {
+  const recent = (state.serviceLog ?? []).filter((r) => state.currentDay - r.day < SUMMARY_DAYS);
+  const bookedHours = recent.reduce((t, r) => t + r.roomHours, 0);
+  const revenue = recent.reduce((t, r) => t + r.revenue, 0);
+  const counts = new Map<BriefServiceType, number>();
+  for (const r of recent) counts.set(r.service, (counts.get(r.service) ?? 0) + 1);
+  const cal = buildBookingCalendar(state);
+  return {
+    weekUtilization: cal.utilization,
+    idleDays: cal.days.filter((d) => d.booked === 0).length,
+    sessions: recent.length,
+    bookedHours,
+    revenuePerHour: bookedHours > 0 ? Math.round(revenue / bookedHours) : 0,
+    topServices: [...counts.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, 3)
+      .map(([service, count]) => ({ service, label: SERVICE_LABELS[service], count })),
+  };
+};

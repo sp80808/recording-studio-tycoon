@@ -1,12 +1,13 @@
 /** Service quote and deposits (#51 first slice): readable quote, cash-timing-only deposit. */
 import {
-  quoteFor, depositFor, settlementAfterDeposit, marginBandFor, DEPOSIT_RATE, TRUSTED_AFTER_SESSIONS,
+  REVISION_ALLOWANCE, REVISION_ROUND_FEE, SYNERGY_DAYS, SERVICE_LOG_CAP, recordService, serviceSummary, setupSynergyHours, quoteFor, depositFor, settlementAfterDeposit, marginBandFor, DEPOSIT_RATE, TRUSTED_AFTER_SESSIONS,
 } from '../src/rpg/serviceQuote';
 import { applyReportToState } from '../src/game-mechanics/ProjectService';
 import { getProjectPnl, getTotalIncome, earn } from '../src/economy/ledger';
 import { generateNewProjects } from '../src/utils/projectUtils';
 import { createNewGameState } from '../src/utils/newGameState';
 import { fillerJobsFor } from '../src/rpg/fillerJobs';
+import { applyDeliveryDecision, type UnresolvedIssue } from '../src/rpg/sessionIssues';
 import type { ClientRelationship, Project, ProjectReport } from '../src/types/game';
 
 let n = 0;
@@ -74,4 +75,45 @@ ok(getTotalIncome(settled) === 1000 && getProjectPnl(settled, 'dep-1').revenue =
 ok(applyReportToState(settled, report('dep-1', 1000)) === settled, 'settling the same project again changes nothing (reload safe)');
 const plain = applyReportToState({ ...base, activeProject: { ...newClient, id: 'plain-1' } as Project, activeProjects: [] }, report('plain-1', 1000));
 ok(plain.money === base.money + 1000, 'a project with no deposit still pays the full fee at settlement');
+
+// Revision allowance: sold with mix/master/full production, none for tracking and vocals.
+ok(REVISION_ALLOWANCE.mix === 2 && REVISION_ALLOWANCE.master === 1 && REVISION_ALLOWANCE.tracking === 0, 'revision rounds are bounded and service-specific');
+ok(offers.every((p) => quoteFor(base, p).revisionAllowance === REVISION_ALLOWANCE[quoteFor(base, p).service]), 'the quote carries the service allowance');
+const issues = [{ id: 'i1', label: 'Hum on the vocal chain', cause: 'ground loop', phase: 'recording', severity: 3 }] as unknown as UnresolvedIssue[];
+const rep = { ...report('rv', 1000), reputationGained: 10 } as ProjectReport;
+let sawRevision = false;
+for (let i = 0; i < 40 && !sawRevision; i++) {
+  const plainOut = applyDeliveryDecision(rep, issues, 'deliver', `seed${i}`, 0);
+  if (!plainOut.reviewSnippet.includes('revision and trust took a small hit')) continue;
+  sawRevision = true;
+  const coveredOut = applyDeliveryDecision(rep, issues, 'deliver', `seed${i}`, 1);
+  ok(plainOut.reputationGained < rep.reputationGained, 'an uncovered revision still costs reputation');
+  ok(coveredOut.reputationGained === rep.reputationGained, 'a covered revision costs no reputation');
+  ok(coveredOut.moneyGained === Math.round(plainOut.moneyGained * (1 - REVISION_ROUND_FEE)), 'a covered revision costs the round fee instead');
+}
+ok(sawRevision, 'a revision occurs for some seed with a serious open issue');
+ok(JSON.stringify(applyDeliveryDecision(rep, issues, 'deliver', 's', 2)) === JSON.stringify(applyDeliveryDecision(rep, issues, 'deliver', 's', 2)), 'the covered outcome is deterministic');
+
+// Setup synergy: same service within a couple of days saves setup hours; otherwise nothing.
+const svc = quoteFor(base, offers[0]).service;
+const logged = (service: string, day: number) => ({ ...base, currentDay: day, serviceLog: [{ projectId: 'x', service, roomHours: 10, revenue: 500, day: 4 }] }) as never;
+ok(setupSynergyHours(logged(svc, 4 + SYNERGY_DAYS), svc) >= 1, 'a repeat of the same service within the window saves setup hours');
+ok(setupSynergyHours(logged(svc, 4 + SYNERGY_DAYS + 1), svc) === 0, 'the saving expires after the window');
+ok(setupSynergyHours(logged(svc === 'mix' ? 'master' : 'mix', 5), svc) === 0, 'a different service gets no saving');
+const withSynergy = quoteFor(logged(svc, 5), offers[0]);
+ok(withSynergy.roomHours === quoteFor(base, offers[0]).roomHours - withSynergy.setupSavedHours && withSynergy.setupSavedHours > 0, 'the quote shows the saved hours');
+
+// Utilization log: once per project, capped, summarised.
+const rec = (i: number) => ({ projectId: `p${i}`, service: 'mix' as const, roomHours: 10, revenue: 500, day: 4 });
+let log = recordService(undefined, rec(0));
+ok(recordService(log, rec(0)) === log, 'a project is logged once');
+for (let i = 1; i < SERVICE_LOG_CAP + 5; i++) log = recordService(log, rec(i));
+ok(log.length === SERVICE_LOG_CAP && log[log.length - 1].projectId === `p${SERVICE_LOG_CAP + 4}`, 'the log is capped, oldest rolling off');
+const sum = serviceSummary({ ...base, serviceLog: log.slice(-3), activeProject: null, activeProjects: [] });
+ok(sum.sessions === 3 && sum.bookedHours === 30 && sum.revenuePerHour === 50, 'the summary reports sessions, hours and revenue per booked hour');
+ok(sum.topServices[0].service === 'mix' && sum.weekUtilization === 0 && sum.idleDays === 7, 'an empty week reads as idle days, top service named');
+ok(serviceSummary({ ...base, serviceLog: undefined, activeProject: null, activeProjects: [] }).sessions === 0, 'legacy saves with no log are safe');
+const settledLog = applyReportToState({ ...base, activeProject: { ...newClient, id: 'lg-1' } as Project, activeProjects: [] }, report('lg-1', 1000));
+ok(settledLog.serviceLog?.length === 1 && settledLog.serviceLog[0].revenue === 1000 && settledLog.serviceLog[0].day === base.currentDay, 'settlement logs the session once');
+
 console.log(`service-quote: all ${n} checks passed`);

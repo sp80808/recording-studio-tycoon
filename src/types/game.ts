@@ -430,6 +430,8 @@ export interface GameState {
   labelInterest?: Record<string, number>;
   /** Ids of derived offers (fillers, signature briefs) already taken, so they do not reappear (#61, #71). */
   claimedOffers?: string[];
+  /** Settled sessions for the studio-use summary (#51), newest last, capped. */
+  serviceLog?: import('@/rpg/serviceQuote').ServiceRecord[];
   
   // Automation system
   automation?: {

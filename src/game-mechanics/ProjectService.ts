@@ -27,7 +27,7 @@ import { getOriginEffects } from '../narrative/originPerks';
 import { addAllocations, earn } from '../economy/ledger';
 import { calculateEquipmentUpkeep } from '../economy/upkeep';
 import { growFamiliarity } from '@/rpg/signalChain';
-import { settlementAfterDeposit } from '@/rpg/serviceQuote';
+import { settlementAfterDeposit, recordService, quoteFor } from '@/rpg/serviceQuote';
 import {
   findProjectForReport,
   resolveDeliveryClient,
@@ -406,6 +406,15 @@ export function applyReportToState(state: GameState, report: ProjectReport): Gam
 
     return awardProjectCrate({
         ...booked,
+        serviceLog: project
+            ? recordService(state.serviceLog, {
+                projectId: report.projectId,
+                service: getProjectBrief(project).serviceType,
+                roomHours: quoteFor(state, project).roomHours,
+                revenue: report.moneyGained,
+                day: state.currentDay,
+            })
+            : state.serviceLog,
         reputation: state.reputation + report.reputationGained,
         influence: state.influence + influenceGained,
         playerData,
