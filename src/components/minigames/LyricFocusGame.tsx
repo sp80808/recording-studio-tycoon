@@ -10,6 +10,7 @@ import { MusicGenre } from '@/types/charts';
 import { getLyricFocusThemeForProject } from '@/data/lyricFocusData';
 import { gameAudio } from '@/utils/audioSystem';
 import { cn } from "@/lib/utils";
+import { tc } from '@/i18n/content';
 
 interface LyricFocusGameProps {
   onComplete: (score: number, lyricalQualityBonus: number) => void;
@@ -59,7 +60,7 @@ export const LyricFocusGame: React.FC<LyricFocusGameProps> = ({
     });
     setTimeLeft(timeLimit);
     setScore(0);
-    setFeedbackMessage(`Focus on: ${theme.name} (${theme.mood})`);
+    setFeedbackMessage(tc('mg.LyricFocusGame.focus_on', 'Focus on: {{name}} ({{mood}})', { name: theme.name, mood: theme.mood }));
     gameAudio.playClick();
   }, [genre, mood, difficulty]);
 
@@ -101,7 +102,7 @@ export const LyricFocusGame: React.FC<LyricFocusGameProps> = ({
           newSelectedKeywords.push(keyword);
           gameAudio.playClick();
         } else {
-          setFeedbackMessage(`Max ${MAX_SELECTIONS} keywords allowed!`);
+          setFeedbackMessage(tc('mg.LyricFocusGame.max_keywords', 'Max {{max}} keywords allowed!', { max: MAX_SELECTIONS }));
           setTimeout(() => setFeedbackMessage(''), 2000);
           gameAudio.playError();
           return prev; // No change if max selections reached
@@ -145,11 +146,11 @@ export const LyricFocusGame: React.FC<LyricFocusGameProps> = ({
     const lyricalQualityBonus = Math.floor(finalScore / 10); // e.g., 0-10 bonus points
     onComplete(finalScore, lyricalQualityBonus);
     gameAudio.playSuccess();
-    setFeedbackMessage(`Minigame Over! Score: ${finalScore}. Lyrical Quality Bonus: +${lyricalQualityBonus}`);
+    setFeedbackMessage(tc('mg.LyricFocusGame.game_over', 'Minigame Over! Score: {{score}}. Lyrical Quality Bonus: +{{bonus}}', { score: finalScore, bonus: lyricalQualityBonus }));
   }, [gameState, calculateFinalScore, onComplete]);
 
   if (!gameState) {
-    return <div className="p-4 text-center">Loading Lyric Focus Minigame...</div>;
+    return <div className="p-4 text-center">{tc('mg.LyricFocusGame.loading', 'Loading Lyric Focus Minigame...')}</div>;
   }
 
   const progressPercent = ((BASE_TIME_LIMIT - timeLeft) / BASE_TIME_LIMIT) * 100;
@@ -157,14 +158,14 @@ export const LyricFocusGame: React.FC<LyricFocusGameProps> = ({
   return (
     <Card className="w-full max-w-2xl mx-auto bg-stone-800 text-white border-stone-700">
       <MinigameChrome
-        title="✍️ Lyric Focus Challenge"
+        title={tc('mg.LyricFocusGame.title', '✍️ Lyric Focus Challenge')}
         score={score}
         timeLeft={timeLeft}
         accent="purple"
       >
         <CardContent className="pt-4">
           <div className="text-center mb-3">
-            <span className="text-xs text-purple-300">Theme: </span>
+            <span className="text-xs text-purple-300">{tc('mg.LyricFocusGame.theme_label', 'Theme:')} </span>
             <strong className="text-purple-200 text-sm">{gameState.targetTheme.name}</strong>
             <span className="text-xs text-purple-400"> ({gameState.targetTheme.mood})</span>
           </div>
@@ -172,7 +173,7 @@ export const LyricFocusGame: React.FC<LyricFocusGameProps> = ({
           {feedbackMessage && <p className="text-center text-yellow-400 text-sm mb-3 mg-combo-pulse">{feedbackMessage}</p>}
           
           <div className="mb-4">
-            <h4 className="font-semibold mb-2 text-sm text-stone-300">Available Keywords:</h4>
+            <h4 className="font-semibold mb-2 text-sm text-stone-300">{tc('mg.LyricFocusGame.available_keywords', 'Available Keywords:')}</h4>
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
               {gameState.availableKeywords.map(kw => (
                 <Button
@@ -194,7 +195,7 @@ export const LyricFocusGame: React.FC<LyricFocusGameProps> = ({
           </div>
 
           <div className="mb-2">
-            <h4 className="font-semibold mb-2 text-sm text-stone-300">Selected Ideas ({gameState.selectedKeywords.length}/{MAX_SELECTIONS}):</h4>
+            <h4 className="font-semibold mb-2 text-sm text-stone-300">{tc('mg.LyricFocusGame.selected_ideas', 'Selected Ideas ({{n}}/{{max}}):', { n: gameState.selectedKeywords.length, max: MAX_SELECTIONS })}</h4>
             {gameState.selectedKeywords.length > 0 ? (
               <div className="flex flex-wrap gap-2 p-2 border border-stone-700 rounded-md bg-stone-900 min-h-[40px]">
                 {gameState.selectedKeywords.map(kw => (
@@ -204,21 +205,21 @@ export const LyricFocusGame: React.FC<LyricFocusGameProps> = ({
                 ))}
               </div>
             ) : (
-              <p className="text-stone-500 text-xs italic">Select up to {MAX_SELECTIONS} keywords...</p>
+              <p className="text-stone-500 text-xs italic">{tc('mg.LyricFocusGame.select_up_to', 'Select up to {{max}} keywords...', { max: MAX_SELECTIONS })}</p>
             )}
           </div>
         </CardContent>
       </MinigameChrome>
       <DialogFooter className="p-4">
         <KenneyButton variant="yellow" onClick={onClose}>
-          Close
+          {tc('mg.LyricFocusGame.close', 'Close')}
         </KenneyButton>
         <KenneyButton
           variant="green"
           onClick={endGame}
           disabled={!gameState.isActive || gameState.selectedKeywords.length === 0}
         >
-          Finalize Lyrical Focus
+          {tc('mg.LyricFocusGame.finalize', 'Finalize Lyrical Focus')}
         </KenneyButton>
       </DialogFooter>
     </Card>

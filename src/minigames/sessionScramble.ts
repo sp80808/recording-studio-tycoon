@@ -7,6 +7,7 @@
  * Simulation is a deterministic tick(state, dtMs); no timers, no Math.random.
  */
 import { createSeededRandom, randomInt, type RandomSource } from '@/simulation/seededRandom';
+import { tc } from '@/i18n/content';
 
 export const SESSION_MS = 45000;
 /** Internal simulation step. Splitting a tick into multiples of this gives identical results. */
@@ -283,10 +284,10 @@ export function scoreSessionScramble(state: ScrambleState): ScrambleScore {
     total += Math.min(1, spare / 15000) * 250;
     total += (1 - Math.min(1, state.blockedMs / 15000)) * 100;
   } else {
-    tips.push('Start the long jobs first and give each one to the person whose stat fits.');
+    tips.push(tc('mg.sessionScramble.tip_long_jobs', 'Start the long jobs first and give each one to the person whose stat fits.'));
   }
-  if (state.earlyMs > 0) tips.push('The artist can show up early: keep a spare pair of hands on the lobby and booth.');
-  if (state.blockedMs > 4000) tips.push('Staff queued in the mic store or waited on the booth. Send someone else meanwhile.');
-  if (!cableFixed(state)) tips.push('Repair the cable first: it halves walking speed to the live room and booth.');
+  if (state.earlyMs > 0) tips.push(tc('mg.sessionScramble.tip_early', 'The artist can show up early: keep a spare pair of hands on the lobby and booth.'));
+  if (state.blockedMs > 4000) tips.push(tc('mg.sessionScramble.tip_queued', 'Staff queued in the mic store or waited on the booth. Send someone else meanwhile.'));
+  if (!cableFixed(state)) tips.push(tc('mg.sessionScramble.tip_cable', 'Repair the cable first: it halves walking speed to the live room and booth.'));
   return { total: Math.round(Math.max(0, Math.min(1000, total))), tips };
 }

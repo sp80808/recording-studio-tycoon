@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { DialogFooter } from '@/components/ui/dialog';
 import { MinigameChrome, KenneyButton } from './MinigameChrome';
+import { tc } from '@/i18n/content';
 
 // Define a basic props interface for minigame components
 export interface MinigameComponentProps {
@@ -110,15 +111,15 @@ export const PunchInGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
 
   return (
     <Card className="w-full max-w-2xl mx-auto bg-stone-800 text-white border-stone-700">
-      <MinigameChrome title="⏺️ Punch-In Challenge" score={total} timeLeft={TOTAL_TAKES - currentTake} timeUnit=" takes" streak={streak} accent="red">
+      <MinigameChrome title={tc('mg.PunchInGame.title', '⏺️ Punch-In Challenge')} score={total} timeLeft={TOTAL_TAKES - currentTake} timeUnit={tc('mg.PunchInGame.takes_unit', ' takes')} streak={streak} accent="red">
       <CardContent>
         <div className="mb-4 flex justify-between items-center">
           <span className="text-xl font-bold text-yellow-400">
-            Take: {Math.min(currentTake + 1, TOTAL_TAKES)}/{TOTAL_TAKES}
+            {tc('mg.PunchInGame.take_n', 'Take: {{n}}/{{total}}', { n: Math.min(currentTake + 1, TOTAL_TAKES), total: TOTAL_TAKES })}
           </span>
           {streak >= 2 && (
             <span className="text-sm font-bold text-orange-300 mg-combo-pulse">
-              🔥 {streak}-take heater!
+              🔥 {tc('mg.PunchInGame.heater', '{{n}}-take heater!', { n: streak })}
             </span>
           )}
         </div>
@@ -138,7 +139,7 @@ export const PunchInGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
             />
           </div>
           <div className="mt-2 flex items-center justify-between">
-            <span className="text-sm font-mono text-stone-200">Playhead: {pos}</span>
+            <span className="text-sm font-mono text-stone-200">{tc('mg.PunchInGame.playhead', 'Playhead: {{pos}}', { pos })}</span>
             <Button
               onClick={handleRec}
               disabled={gameOver}
@@ -151,21 +152,21 @@ export const PunchInGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
 
         {/* Per-take results */}
         <div className="bg-stone-700 rounded p-4">
-          <div className="text-sm font-bold text-stone-300 mb-2">Takes</div>
+          <div className="text-sm font-bold text-stone-300 mb-2">{tc('mg.PunchInGame.takes_heading', 'Takes')}</div>
           <ul className="space-y-1">
             {takes.map((t, i) => (
               <li key={i} className="flex justify-between text-sm font-mono">
                 <span className="text-stone-300">
-                  Take {i + 1}
+                  {tc('mg.PunchInGame.take_row', 'Take {{n}}', { n: i + 1 })}
                   {i === currentTake && !gameOver && (
-                    <span className="ml-2 text-yellow-400">◀ live</span>
+                    <span className="ml-2 text-yellow-400">{tc('mg.PunchInGame.live_marker', '◀ live')}</span>
                   )}
                 </span>
                 <span
                   key={`${t.result}-${t.hitPos}`}
                   className={`font-bold ${resultColor(t.result)} ${t.result === 'Perfect' ? 'mg-perfect-pop' : ''} ${t.result === 'Miss' ? 'mg-miss-shake' : ''}`}
                 >
-                  {t.result ? `${t.result} (+${t.points}) @${t.hitPos}` : '—'}
+                  {t.result ? tc('mg.PunchInGame.take_result', '{{result}} (+{{points}}) @{{pos}}', { result: tc(`mg.PunchInGame.result_${t.result}`, t.result), points: t.points ?? 0, pos: t.hitPos ?? 0 }) : '—'}
                 </span>
               </li>
             ))}
@@ -174,17 +175,17 @@ export const PunchInGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
 
         {gameOver && (
           <div key={total} className={`mt-4 text-center text-2xl font-bold text-green-400 ${total >= 600 ? 'mg-perfect-pop' : 'mg-miss-shake'}`}>
-            Session Complete! Final Score: {total}
+            {tc('mg.PunchInGame.session_complete', 'Session Complete! Final Score: {{total}}', { total })}
           </div>
         )}
       </CardContent>
       </MinigameChrome>
       <DialogFooter className="p-4">
         <KenneyButton variant="red" onClick={onClose}>
-          Close
+          {tc('mg.PunchInGame.close', 'Close')}
         </KenneyButton>
         <KenneyButton variant="red" onClick={handleFinalize}>
-          Finalize &amp; Get Score
+          {tc('mg.PunchInGame.finalize', 'Finalize & Get Score')}
         </KenneyButton>
       </DialogFooter>
     </Card>

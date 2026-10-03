@@ -6,6 +6,7 @@
  * Three kits per session. Fewer flips and unused listens score higher.
  */
 import { createSeededRandom, randomInt, type RandomSource } from '@/simulation/seededRandom';
+import { tc } from '@/i18n/content';
 
 export const ROUNDS = 3;
 export const LISTENS_PER_KIT = 2;
@@ -145,7 +146,7 @@ export const scorePhaseCheck = (state: PhaseState): { total: number; inPhaseKits
   const total = done.length ? Math.round(done.reduce((n, k) => n + (k.score ?? 0), 0) / ROUNDS) : 0;
   const inPhaseKits = done.filter((k) => fullness(k) >= IN_PHASE).length;
   const tips: string[] = [];
-  if (done.some((k) => fullness(k) < IN_PHASE)) tips.push('A kit went out thin. Flip one mic at a time and watch the meter climb.');
-  if (done.some((k) => k.flips > minFlips(k) + 2)) tips.push('Spent flips cost points: use a listen to see which mics disagree with the first channel.');
+  if (done.some((k) => fullness(k) < IN_PHASE)) tips.push(tc('mg.phaseCheck.tip_thin', 'A kit went out thin. Flip one mic at a time and watch the meter climb.'));
+  if (done.some((k) => k.flips > minFlips(k) + 2)) tips.push(tc('mg.phaseCheck.tip_flips', 'Spent flips cost points: use a listen to see which mics disagree with the first channel.'));
   return { total, inPhaseKits, tips };
 };

@@ -7,6 +7,7 @@
  * Three takes per session, three plays per take. Fewer moves and unused plays score higher.
  */
 import { createSeededRandom, randomInt, type RandomSource } from '@/simulation/seededRandom';
+import { tc } from '@/i18n/content';
 
 export const ROUNDS = 3;
 export const PLAYS_PER_TAKE = 3;
@@ -121,7 +122,7 @@ export const scoreGainStaging = (s: GainState): { total: number; cleanTakes: num
   const total = done.length ? Math.round(done.reduce((n, t) => n + (t.score ?? 0), 0) / ROUNDS) : 0;
   const cleanTakes = done.filter((t) => { const c = checkTake(t); return !c.clipped && !c.noisy && c.inWindow; }).length;
   const tips: string[] = [];
-  if (done.some((t) => checkTake(t).clipped)) tips.push('A stage clipped: pull it back before the next one adds more.');
-  if (done.some((t) => checkTake(t).noisy)) tips.push('Keep the preamp healthy so the fader does not have to lift the noise floor.');
+  if (done.some((t) => checkTake(t).clipped)) tips.push(tc('mg.gainStaging.tip_clipped', 'A stage clipped: pull it back before the next one adds more.'));
+  if (done.some((t) => checkTake(t).noisy)) tips.push(tc('mg.gainStaging.tip_noisy', 'Keep the preamp healthy so the fader does not have to lift the noise floor.'));
   return { total, cleanTakes, tips };
 };

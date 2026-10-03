@@ -6,6 +6,7 @@ import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useSettings } from '@/contexts/settings-context-types';
 import { Disc } from 'lucide-react';
+import { tc } from '@/i18n/content';
 
 export interface MinigameComponentProps {
   minigameId: string;
@@ -252,8 +253,8 @@ export const TapeJogGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
 
   return (
     <MinigameChrome
-      title="Reel-to-Reel Tape Jog & Splice"
-      subtitle="Scrub the tape using analog thumbsticks, mark punch In/Out points, and slice"
+      title={tc('mg.TapeJogGame.title', 'Reel-to-Reel Tape Jog & Splice')}
+      subtitle={tc('mg.TapeJogGame.subtitle', 'Scrub the tape using analog thumbsticks, mark punch In/Out points, and slice')}
       onClose={onClose}
     >
       <div className="space-y-4 max-w-lg mx-auto select-none">
@@ -268,13 +269,13 @@ export const TapeJogGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
               >
                 <Disc size={64} className="text-stone-400" />
               </div>
-              <span className="text-[10px] text-stone-400 font-mono mt-1">SUPPLY REEL</span>
+              <span className="text-[10px] text-stone-400 font-mono mt-1">{tc('mg.TapeJogGame.supply_reel', 'SUPPLY REEL')}</span>
             </div>
 
             {/* Magnetic Playhead Center Block */}
             <div className="flex flex-col items-center">
               <div className="w-10 h-14 bg-gradient-to-b from-amber-600 to-amber-800 rounded border border-amber-400 flex items-center justify-center shadow-md">
-                <span className="text-[8px] font-bold text-amber-100 uppercase tracking-tighter">HEAD</span>
+                <span className="text-[8px] font-bold text-amber-100 uppercase tracking-tighter">{tc('mg.TapeJogGame.head', 'HEAD')}</span>
               </div>
               <div className="w-1 h-3 bg-red-500 rounded-full mt-1 animate-pulse" />
             </div>
@@ -286,7 +287,7 @@ export const TapeJogGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
               >
                 <Disc size={64} className="text-stone-400" />
               </div>
-              <span className="text-[10px] text-stone-400 font-mono mt-1">TAKE-UP REEL</span>
+              <span className="text-[10px] text-stone-400 font-mono mt-1">{tc('mg.TapeJogGame.take_up_reel', 'TAKE-UP REEL')}</span>
             </div>
           </div>
 
@@ -300,7 +301,7 @@ export const TapeJogGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
               }}
               className="absolute top-0 bottom-0 bg-red-500/25 border-x-2 border-red-500/80 flex items-center justify-center z-0"
             >
-              <span className="text-[9px] font-bold text-red-300 uppercase tracking-widest">GLITCH TAKE</span>
+              <span className="text-[9px] font-bold text-red-300 uppercase tracking-widest">{tc('mg.TapeJogGame.glitch_take', 'GLITCH TAKE')}</span>
             </div>
 
             {/* Marked In Point */}
@@ -309,7 +310,7 @@ export const TapeJogGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
                 style={{ left: `${markedIn}%` }}
                 className="absolute top-0 bottom-0 w-0.5 bg-emerald-400 shadow-[0_0_8px_#34d399] z-20"
               >
-                <span className="absolute -top-3 -left-2 text-[9px] font-bold text-emerald-400 font-mono">IN</span>
+                <span className="absolute -top-3 -left-2 text-[9px] font-bold text-emerald-400 font-mono">{tc('mg.TapeJogGame.in', 'IN')}</span>
               </div>
             )}
 
@@ -319,7 +320,7 @@ export const TapeJogGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
                 style={{ left: `${markedOut}%` }}
                 className="absolute top-0 bottom-0 w-0.5 bg-sky-400 shadow-[0_0_8px_#38bdf8] z-20"
               >
-                <span className="absolute -top-3 -left-2 text-[9px] font-bold text-[var(--rst-live)] font-mono">OUT</span>
+                <span className="absolute -top-3 -left-2 text-[9px] font-bold text-[var(--rst-live)] font-mono">{tc('mg.TapeJogGame.out', 'OUT')}</span>
               </div>
             )}
 
@@ -335,13 +336,13 @@ export const TapeJogGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
           {/* Cut Progress & Info */}
           <div className="w-full flex items-center justify-between text-xs text-stone-300 mt-3 px-1">
             <div>
-              Splice <span className="font-bold text-amber-400">{currentCut + 1}</span> of {TOTAL_CUTS}
+              {tc('mg.TapeJogGame.splice', 'Splice')} <span className="font-bold text-amber-400">{currentCut + 1}</span> {tc('mg.TapeJogGame.of_total', 'of {{total}}', { total: TOTAL_CUTS })}
             </div>
             <div>
-              Tape Head: <span className="font-mono text-amber-300">{tapePos.toFixed(1)}%</span>
+              {tc('mg.TapeJogGame.tape_head', 'Tape Head:')} <span className="font-mono text-amber-300">{tapePos.toFixed(1)}%</span>
             </div>
             <div>
-              Score: <span className="font-mono text-emerald-400 font-bold">{totalScore}</span> / 1000
+              {tc('mg.TapeJogGame.score', 'Score:')} <span className="font-mono text-emerald-400 font-bold">{totalScore}</span> / 1000
             </div>
           </div>
         </div>
@@ -354,7 +355,7 @@ export const TapeJogGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
             className="flex items-center justify-center gap-1.5 py-2.5 text-xs"
           >
             <GamepadGlyph button="lt" size="xs" />
-            <span>Mark In</span>
+            <span>{tc('mg.TapeJogGame.mark_in', 'Mark In')}</span>
           </KenneyButton>
 
           <KenneyButton
@@ -364,7 +365,7 @@ export const TapeJogGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
             className="flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold"
           >
             <GamepadGlyph button="south" size="xs" />
-            <span>Razor Slice</span>
+            <span>{tc('mg.TapeJogGame.razor_slice', 'Razor Slice')}</span>
           </KenneyButton>
 
           <KenneyButton
@@ -373,18 +374,18 @@ export const TapeJogGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
             className="flex items-center justify-center gap-1.5 py-2.5 text-xs"
           >
             <GamepadGlyph button="rt" size="xs" />
-            <span>Mark Out</span>
+            <span>{tc('mg.TapeJogGame.mark_out', 'Mark Out')}</span>
           </KenneyButton>
         </div>
 
         {gameOver && (
           <div className="p-3 bg-emerald-950/60 border border-emerald-500/50 rounded-lg text-center animate-in zoom-in-95">
-            <h4 className="font-bold text-emerald-300 mb-1">Master Tape Spliced!</h4>
+            <h4 className="font-bold text-emerald-300 mb-1">{tc('mg.TapeJogGame.master_spliced', 'Master Tape Spliced!')}</h4>
             <p className="text-xs text-stone-300 mb-3">
-              Total Score: <span className="font-mono text-amber-300 font-bold">{totalScore}</span> / 1000
+              {tc('mg.TapeJogGame.total_score', 'Total Score:')} <span className="font-mono text-amber-300 font-bold">{totalScore}</span> / 1000
             </p>
             <KenneyButton onClick={handleFinalize} variant="green" className="w-full">
-              Finalize Master Take
+              {tc('mg.TapeJogGame.finalize', 'Finalize Master Take')}
             </KenneyButton>
           </div>
         )}
@@ -393,7 +394,7 @@ export const TapeJogGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
       <DialogFooter className="mt-4">
         {!gameOver && (
           <KenneyButton onClick={() => onComplete(totalScore, totalScore >= 600)} variant="blue">
-            Skip to Finish
+            {tc('mg.TapeJogGame.skip', 'Skip to Finish')}
           </KenneyButton>
         )}
       </DialogFooter>

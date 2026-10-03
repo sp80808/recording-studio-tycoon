@@ -19,6 +19,7 @@ import { Scissors, Play, Pause, RotateCcw, Clock } from 'lucide-react';
 import { gameAudio } from '@/utils/audioSystem';
 import { triggerProjectCompleteJuice } from '@/utils/confettiJuice';
 import { MinigameChrome, KenneyButton } from './MinigameChrome';
+import { tc } from '@/i18n/content';
 
 interface TapeSplicingGameProps {
   onComplete: (score: number, success?: boolean) => void;
@@ -211,9 +212,9 @@ export const TapeSplicingGame: React.FC<TapeSplicingGameProps> = ({ onComplete, 
     if (accuracy > 0) {
       void gameAudio.playGoodHit();
       setScore(prev => prev + accuracy);
-      setFeedback(`Perfect cut! +${accuracy} points`);
+      setFeedback(tc('mg.TapeSplicingGame.cut_perfect', 'Perfect cut! +{{points}} points', { points: accuracy }));
     } else {
-      setFeedback('Cut missed the target area');
+      setFeedback(tc('mg.TapeSplicingGame.cut_missed', 'Cut missed the target area'));
     }
 
     setTimeout(() => setFeedback(''), 2000);
@@ -259,7 +260,7 @@ export const TapeSplicingGame: React.FC<TapeSplicingGameProps> = ({ onComplete, 
   return (
     <Card className="w-full max-w-4xl mx-auto bg-stone-800 text-white border-stone-700">
       <MinigameChrome
-        title="🎞️ Tape Splicing Studio"
+        title={tc('mg.TapeSplicingGame.title', '🎞️ Tape Splicing Studio')}
         score={score}
         timeLeft={timeLeft}
         accent="yellow"
@@ -267,11 +268,11 @@ export const TapeSplicingGame: React.FC<TapeSplicingGameProps> = ({ onComplete, 
         <CardContent>
           <div className="flex justify-between items-center mb-3">
             <p className="text-amber-200 text-sm">
-              Cut and remove the red highlighted problem sections from the analog tape.
+              {tc('mg.TapeSplicingGame.instructions', 'Cut and remove the red highlighted problem sections from the analog tape.')}
             </p>
             <div className="flex items-center gap-2 text-xs font-mono text-amber-300 bg-amber-950/60 px-2 py-1 rounded border border-amber-800">
               <Clock className="w-3.5 h-3.5" />
-              <span>Cuts remaining: {cutsRemaining}</span>
+              <span>{tc('mg.TapeSplicingGame.cuts_remaining', 'Cuts remaining: {{n}}', { n: cutsRemaining })}</span>
             </div>
           </div>
 
@@ -296,7 +297,7 @@ export const TapeSplicingGame: React.FC<TapeSplicingGameProps> = ({ onComplete, 
                 className="border-amber-500 text-amber-200 hover:bg-amber-900/50"
               >
                 {isPlaying ? <Pause className="w-4 h-4 mr-1" /> : <Play className="w-4 h-4 mr-1" />}
-                {isPlaying ? 'Pause' : 'Play'}
+                {isPlaying ? tc('mg.TapeSplicingGame.pause', 'Pause') : tc('mg.TapeSplicingGame.play', 'Play')}
               </Button>
               
               <Button
@@ -306,7 +307,7 @@ export const TapeSplicingGame: React.FC<TapeSplicingGameProps> = ({ onComplete, 
                 className="border-amber-500 text-amber-200 hover:bg-amber-900/50"
               >
                 <RotateCcw className="w-4 h-4 mr-1" />
-                Reset
+                {tc('mg.TapeSplicingGame.reset', 'Reset')}
               </Button>
             </div>
 
@@ -318,7 +319,7 @@ export const TapeSplicingGame: React.FC<TapeSplicingGameProps> = ({ onComplete, 
                 className={selectedTool === 'cut' ? 'bg-amber-600 text-white font-bold' : 'border-amber-500 text-amber-200'}
               >
                 <Scissors className="w-4 h-4 mr-1" />
-                Razor Tool
+                {tc('mg.TapeSplicingGame.razor_tool', 'Razor Tool')}
               </Button>
             </div>
           </div>
@@ -326,7 +327,7 @@ export const TapeSplicingGame: React.FC<TapeSplicingGameProps> = ({ onComplete, 
           {/* Progress and Feedback */}
           <div className="space-y-2 mb-4">
             <div className="flex justify-between text-xs text-amber-300 font-mono">
-              <span>Splicing Progress</span>
+              <span>{tc('mg.TapeSplicingGame.splicing_progress', 'Splicing Progress')}</span>
               <span>{Math.round(((3 - cutsRemaining) / 3) * 100)}%</span>
             </div>
             <Progress 
@@ -344,10 +345,10 @@ export const TapeSplicingGame: React.FC<TapeSplicingGameProps> = ({ onComplete, 
       </MinigameChrome>
       <DialogFooter className="p-4">
         <KenneyButton variant="yellow" onClick={onClose}>
-          Close
+          {tc('mg.TapeSplicingGame.close', 'Close')}
         </KenneyButton>
         <KenneyButton variant="green" onClick={handleComplete}>
-          Complete Edit
+          {tc('mg.TapeSplicingGame.complete_edit', 'Complete Edit')}
         </KenneyButton>
       </DialogFooter>
     </Card>
