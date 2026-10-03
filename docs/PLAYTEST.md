@@ -103,3 +103,18 @@ The first-career arc in #153 is `bedroom studio -> first paid client -> gear/sta
 | Prestige or finale session | no | campaign endings exist (`src/narrative/endings.ts`); reaching one needs a long run |
 
 Players are not expected to reach the last three rows in a first sitting. Record what they say they would do next instead.
+
+## First-session evidence run (#198)
+Command (needs a built preview server and Playwright's Chromium):
+
+```bash
+pnpm run build && pnpm exec vite preview --port 4173 &
+RST_BASE_URL=http://127.0.0.1:4173 RST_RELOAD_CHECKPOINT=1 pnpm run evidence:first-session
+```
+
+It plays the real UI from a new career to settlement at 1440x900 and 390x844 and prints a plain summary plus one `FirstSessionEvidence` JSON line per viewport. Controls are read from `data-rst-surface` (`world`, `contextual`, `deep-panel`), `data-rst-action-id` (for example `console:record`) and `data-rst-world-target`, never from CSS classes; the studio root carries `data-rst-studio`.
+
+- `RST_ONLY=phone|desktop` runs one viewport. `RST_ENFORCE_GATES=1` fails on any gate violation; without it the run is a baseline and only reports them (they are expected to fail until #189/#196/#197 land).
+- `RST_RELOAD_CHECKPOINT=1` saves and reloads after the first take and fails if the project, energy, money, stages or day drift, or if settlement does not run exactly once.
+- `fullScreenRoutineTransitions` is `-1` (not instrumented yet). Times are recorded, never gated.
+- Record the printed JSON and your human playtest notes under the same run ID so trace vocabulary matches.

@@ -450,6 +450,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                 <div className="mt-3 flex items-center gap-2">
                   <MotionButton
                     magnetic
+                    data-rst-surface="deep-panel" data-rst-action-id="phone:accept-enquiry" data-rst-world-target="phone"
                     onClick={() => handleAcceptEnquiry(project)}
                     disabled={!!gameState.activeProject || !!bookingId || !!decliningId}
                     className={`rst-btn flex-1 ${gameState.activeProject ? '' : 'rst-btn-primary'} ${isBookingThis ? 'rst-btn-success' : ''}`}

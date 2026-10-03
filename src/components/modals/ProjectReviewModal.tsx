@@ -492,6 +492,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
           <CardFooter className="shrink-0 p-4 border-t border-stone-800/80 bg-stone-950/90">
             {showContinueButton ? (
               <MotionButton
+                data-rst-surface="deep-panel" data-rst-action-id="review:settle"
                 onClick={() => {
                   // Play sound before calling onClose, as onClose might unmount the component
                   gameAudio.playSound('button_click', 'sfx'); 
