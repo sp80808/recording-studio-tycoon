@@ -96,7 +96,7 @@ export const PRODUCTION_APPROACHES: ProductionApproach[] = [
   },
 ];
 
-const SERVICE_ROOM: Record<BriefServiceType, StudioRoomType> = {
+export const SERVICE_ROOM: Record<BriefServiceType, StudioRoomType> = {
   tracking: 'live-room',
   'vocal-production': 'vocal-suite',
   mix: 'mix-suite',
@@ -119,7 +119,7 @@ const ROOM_NAMES: Record<StudioRoomType, string> = {
   'mix-suite': 'Mix Suite',
 };
 
-const GENRE_DIRECTIONS: Record<string, BriefDirection[]> = {
+export const GENRE_DIRECTIONS: Record<string, BriefDirection[]> = {
   Rock: ['raw', 'live', 'heavy'],
   Pop: ['polished', 'intimate', 'experimental'],
   Electronic: ['polished', 'experimental', 'heavy'],
@@ -129,9 +129,9 @@ const GENRE_DIRECTIONS: Record<string, BriefDirection[]> = {
   Folk: ['intimate', 'raw', 'live'],
   Soul: ['intimate', 'polished', 'live'],
 };
-const DEFAULT_DIRECTIONS: BriefDirection[] = ['raw', 'polished', 'intimate'];
-const SERVICES: BriefServiceType[] = ['tracking', 'vocal-production', 'mix', 'master', 'full-production'];
-const PRIORITIES: BriefPriority[] = ['quality', 'speed', 'budget'];
+export const DEFAULT_DIRECTIONS: BriefDirection[] = ['raw', 'polished', 'intimate'];
+export const SERVICES: BriefServiceType[] = ['tracking', 'vocal-production', 'mix', 'master', 'full-production'];
+export const PRIORITIES: BriefPriority[] = ['quality', 'speed', 'budget'];
 
 const pick = <T,>(items: readonly T[], rng: () => number): T => items[Math.floor(rng() * items.length) % items.length];
 

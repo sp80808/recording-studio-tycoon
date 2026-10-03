@@ -17,6 +17,7 @@ import { MotionConfig } from "framer-motion";
 import './App.css';
 
 // Dev only (#57): the whole lab is behind a DEV-gated dynamic import, so production bundles never include it.
+const LazyWorkbench = import.meta.env.DEV ? React.lazy(() => import('./content/WorkbenchLauncher')) : () => null;
 const LazyBalanceLab = import.meta.env.DEV ? React.lazy(() => import('./dev/balance/BalanceLabLauncher')) : () => null;
 const queryClient = new QueryClient();
 
@@ -30,7 +31,7 @@ const App = () => {
               {/* Single Sonner host — avoid mounting a duplicate toaster. */}
               <Toaster />
               {process.env.NODE_ENV === 'development' && <DevMenu />}
-              {import.meta.env.DEV && <Suspense fallback={null}><LazyBalanceLab /></Suspense>}
+              {import.meta.env.DEV && <Suspense fallback={null}><LazyBalanceLab /><LazyWorkbench /></Suspense>}
               <BoxDropController />
               <DealerController />
               <PremiumRevealController />
