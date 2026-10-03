@@ -28,6 +28,7 @@ import { getOriginEffects } from '../narrative/originPerks';
 import { addAllocations, earn } from '../economy/ledger';
 import { calculateEquipmentUpkeep } from '../economy/upkeep';
 import { growFamiliarity } from '@/rpg/signalChain';
+import { internalShare, settleFreelancers } from '@/rpg/freelancers';
 import { settlementAfterDeposit, recordService, quoteFor } from '@/rpg/serviceQuote';
 import {
   findProjectForReport,
@@ -296,10 +297,14 @@ export function applyReportToState(state: GameState, report: ProjectReport): Gam
         hiredStaff = state.hiredStaff.map(staff => {
             if (staff.id !== report.assignedPerson.id) return staff;
             // Staff career (#67): the settled project credits the disciplines it exercised.
-            const sessionStages = (findProjectForReport(state, report.projectId)?.stages ?? []).map(st => st.stageName);
+            // Outside help (#69): stages a specialist took over do not train the crew, so internal work keeps its development edge.
+            const credited = [state.activeProject, ...(state.activeProjects ?? [])].find(p => p?.id === report.projectId) ?? undefined;
+            const outsideStageIdx = new Set((credited?.outsourcing ?? []).map(o => o.stageIndex));
+            const sessionStages = (credited?.stages ?? findProjectForReport(state, report.projectId)?.stages ?? []).filter((_, i) => !outsideStageIdx.has(i)).map(st => st.stageName);
+            const crewShare = credited ? internalShare(credited) : 1;
             return {
-                ...creditSession(applySkillBreakdown(staff), report.projectId, sessionStages, report.overallQualityScore, mentorshipScale(staff, state.hiredStaff)),
-                xpInRole: staff.xpInRole + 20 + Math.floor(report.overallQualityScore / 2),
+                ...creditSession(applySkillBreakdown(staff), report.projectId, sessionStages, report.overallQualityScore, mentorshipScale(staff, state.hiredStaff) * Math.max(0.25, crewShare)),
+                xpInRole: staff.xpInRole + Math.round((20 + Math.floor(report.overallQualityScore / 2)) * crewShare),
                 status: 'Idle' as const,
                 assignedProjectId: null,
             };
@@ -406,8 +411,14 @@ export function applyReportToState(state: GameState, report: ProjectReport): Gam
         ],
     );
 
+    // Freelancer network (#69): familiarity grows after a good delivery; a referral line joins the review.
+    const outsideSettled = settleFreelancers(booked, project, report.overallQualityScore);
+    if (outsideSettled.note && typeof report.reviewSnippet === 'string' && !report.reviewSnippet.includes('in your contacts')) {
+        report.reviewSnippet = `${report.reviewSnippet}${outsideSettled.note}`;
+    }
+
     return awardProjectCrate({
-        ...booked,
+        ...outsideSettled.state,
         serviceLog: project
             ? recordService(state.serviceLog, {
                 projectId: report.projectId,

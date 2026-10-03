@@ -116,6 +116,8 @@ export interface Project {
   bookedDay?: number;
   /** Deposit taken at booking (#51); already in the bank, so settlement pays only the rest. */
   depositPaid?: number;
+  /** Stages handed to outside specialists (#69). Absent = all in-house. */
+  outsourcing?: import('@/rpg/freelancers').OutsourcedStage[];
   title: string;
   genre: string;
   clientType: string;
@@ -396,6 +398,8 @@ export interface GameState {
   availableCandidates: StaffMember[];
   /** Running recruitment search (#68). Absent on legacy saves = none. */
   recruitmentSearch?: import('@/rpg/recruitment').RecruitmentSearch | null;
+  /** Specialist freelancer contacts, familiarity and recent bookings (#69). Absent on legacy saves. */
+  freelancers?: import('@/rpg/freelancers').FreelancerState;
   lastSalaryDay: number;
   /** Day the gig list was last refreshed from the phone (bead goj.3 cooldown). */
   lastGigRefreshDay?: number;

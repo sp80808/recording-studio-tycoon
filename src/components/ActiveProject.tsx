@@ -63,6 +63,8 @@ import { usePhoneSession } from '@/hooks/usePhoneSession';
 import { MobileSessionStatusStrip } from '@/components/console/MobileSessionStatusStrip';
 import { MobileFocusMixer } from '@/components/console/MobileFocusMixer';
 
+import { OutsideHelpCard } from '@/components/OutsideHelpCard';
+
 interface ActiveProjectProps {
   gameState: GameState;
   setGameState: (state: GameState | ((prev: GameState) => GameState)) => void; // Made non-optional as it's crucial for updating project focus
@@ -642,6 +644,8 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
               </div>
             )}
 
+            {takeState !== 'tracking' && <OutsideHelpCard compact gameState={gameState} setGameState={setGameState} />}
+
             <div className="flex-1 min-h-0 min-w-0 flex flex-col justify-center overflow-hidden" data-testid="mobile-session-workspace">
               {takeState === 'tracking' ? (
                 <PocketMeter
@@ -885,6 +889,8 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
               aria-label={t('active_overall_progress_aria')}
             />
           </div>
+
+          <OutsideHelpCard gameState={gameState} setGameState={setGameState} />
 
           {/* Focus Allocation Console Module */}
           <div className="bg-stone-900/90 border border-stone-800 rounded-[2px] p-2.5 space-y-2">
