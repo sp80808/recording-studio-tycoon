@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { gameAudio } from '@/utils/audioSystem';
 import { MinigameChrome, KenneyButton } from './MinigameChrome';
+import { tc } from '@/i18n/content';
 
 interface InstrumentTrack {
   id: string;
@@ -196,9 +197,9 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
     setTimeout(() => {
       const newScore = calculateScore();
       if (newScore > score) {
-        setFeedback('📈 Great layering!');
+        setFeedback(tc('mg.InstrumentLayeringGame.fb_great', '📈 Great layering!'));
       } else if (newScore < score) {
-        setFeedback('⚠️ Check your balance');
+        setFeedback(tc('mg.InstrumentLayeringGame.fb_check', '⚠️ Check your balance'));
       }
       setTimeout(() => setFeedback(''), 1500);
     }, 100);
@@ -211,6 +212,8 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
         : track
     ));
   };
+
+  const genreKey = ['rock', 'pop', 'electronic'].includes(genre.toLowerCase()) ? genre.toLowerCase() : 'rock';
 
   const getGenreHints = () => {
     const hints: { [key: string]: string[] } = {
@@ -233,20 +236,19 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
         '⚡ Layer synths carefully to avoid frequency buildup'
       ]
     };
-    return hints[genre.toLowerCase()] || hints.rock;
+    return (hints[genre.toLowerCase()] || hints.rock).map((h, i) => tc(`mg.InstrumentLayeringGame.hint_${genreKey}_${i + 1}`, h));
   };
 
   if (!gameStarted) {
     return (
       <Card className="w-full max-w-6xl bg-stone-900 border-stone-600 p-6">
         <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold text-white">🎼 Instrument Layering Challenge</h2>
+          <h2 className="text-2xl font-bold text-white">{tc('mg.InstrumentLayeringGame.title', '🎼 Instrument Layering Challenge')}</h2>
           <p className="text-stone-300">
-            Create the perfect {genre} arrangement! Layer instruments thoughtfully, 
-            balance frequencies, and achieve a professional mix.
+            {tc('mg.InstrumentLayeringGame.intro', 'Create the perfect {{genre}} arrangement! Layer instruments thoughtfully, balance frequencies, and achieve a professional mix.', { genre })}
           </p>
           <div className="text-sm text-[var(--rst-live)] bg-white/[0.04] border border-[var(--rst-line)] p-4 rounded">
-            <div className="font-semibold mb-2">💡 {genre.charAt(0).toUpperCase() + genre.slice(1)} Tips:</div>
+            <div className="font-semibold mb-2">{tc('mg.InstrumentLayeringGame.tips_heading', '💡 {{genre}} Tips:', { genre: genre.charAt(0).toUpperCase() + genre.slice(1) })}</div>
             <div className="space-y-1 text-left">
               {getGenreHints().map((hint, index) => (
                 <div key={index}>{hint}</div>
@@ -257,7 +259,7 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
             onClick={startGame} 
             className="rst-btn rst-btn-primary text-lg px-8 py-3"
           >
-            Start Arranging
+            {tc('mg.InstrumentLayeringGame.start', 'Start Arranging')}
           </Button>
         </div>
       </Card>
@@ -268,30 +270,30 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
     return (
       <Card className="w-full max-w-2xl mx-auto bg-stone-800 text-white border-stone-700">
         <MinigameChrome
-          title="🎼 Arrangement Complete!"
+          title={tc('mg.InstrumentLayeringGame.complete_title', '🎼 Arrangement Complete!')}
           score={score}
           accent="green"
         >
           <CardContent className="text-center space-y-4 py-6">
             <div className="space-y-2">
               <div className="text-sm text-stone-400">
-                Active Tracks: {tracks.filter(t => t.isActive).length} | Genre: {genre}
+                {tc('mg.InstrumentLayeringGame.result_line', 'Active Tracks: {{count}} | Genre: {{genre}}', { count: tracks.filter(t => t.isActive).length, genre })}
               </div>
               {score >= 120 && (
-                <div className="text-green-400 font-bold text-xl mg-perfect-pop">🎉 Studio-Quality Arrangement!</div>
+                <div className="text-green-400 font-bold text-xl mg-perfect-pop">{tc('mg.InstrumentLayeringGame.result_studio', '🎉 Studio-Quality Arrangement!')}</div>
               )}
               {score >= 80 && score < 120 && (
-                <div className="text-[var(--rst-live)] font-bold mg-meter-glow">👍 Professional Layering!</div>
+                <div className="text-[var(--rst-live)] font-bold mg-meter-glow">{tc('mg.InstrumentLayeringGame.result_pro', '👍 Professional Layering!')}</div>
               )}
               {score < 80 && (
-                <div className="text-yellow-400 font-bold">📈 Good Foundation!</div>
+                <div className="text-yellow-400 font-bold">{tc('mg.InstrumentLayeringGame.result_good', '📈 Good Foundation!')}</div>
               )}
             </div>
           </CardContent>
         </MinigameChrome>
         <DialogFooter className="p-4">
           <KenneyButton variant="green" onClick={onClose}>
-            Collect Rewards
+            {tc('mg.InstrumentLayeringGame.collect', 'Collect Rewards')}
           </KenneyButton>
         </DialogFooter>
       </Card>
@@ -301,7 +303,7 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
   return (
     <Card className="w-full max-w-7xl mx-auto bg-stone-800 text-white border-stone-700">
       <MinigameChrome
-        title="🎼 Instrument Layering Challenge"
+        title={tc('mg.InstrumentLayeringGame.title', '🎼 Instrument Layering Challenge')}
         score={calculateScore()}
         timeLeft={timeLeft}
         accent="green"
@@ -309,10 +311,10 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
         <CardContent>
           <div className="flex justify-between items-center mb-4">
             <span className="text-stone-300 text-sm">
-              Genre: <span className="text-white font-semibold">{genre.charAt(0).toUpperCase() + genre.slice(1)}</span>
+              {tc('mg.InstrumentLayeringGame.genre_label', 'Genre:')} <span className="text-white font-semibold">{genre.charAt(0).toUpperCase() + genre.slice(1)}</span>
             </span>
             <span className="text-emerald-400 font-mono text-sm font-bold bg-emerald-950/60 px-3 py-1 rounded border border-emerald-800">
-              Active: {tracks.filter(t => t.isActive).length}/{tracks.length}
+              {tc('mg.InstrumentLayeringGame.active_count', 'Active: {{n}}/{{total}}', { n: tracks.filter(t => t.isActive).length, total: tracks.length })}
             </span>
           </div>
 
@@ -325,7 +327,7 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Track Selection */}
         <div className="xl:col-span-2">
-          <h3 className="text-xl font-bold text-white mb-4">🎵 Available Tracks</h3>
+          <h3 className="text-xl font-bold text-white mb-4">{tc('mg.InstrumentLayeringGame.tracks_heading', '🎵 Available Tracks')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {tracks.map(track => (
               <Card
@@ -341,14 +343,14 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">{track.icon}</span>
                     <div>
-                      <div className="font-semibold text-white">{track.name}</div>
+                      <div className="font-semibold text-white">{tc(`mg.InstrumentLayeringGame.track_${genreKey}_${track.id}`, track.name)}</div>
                       <div className="text-xs opacity-75">
-                        {track.frequency}Hz | {track.type}
+                        {track.frequency}Hz | {tc(`mg.InstrumentLayeringGame.type_${track.type}`, track.type)}
                       </div>
                     </div>
                   </div>
                   <Badge variant={track.isActive ? 'default' : 'outline'}>
-                    {track.isActive ? 'ON' : 'OFF'}
+                    {track.isActive ? tc('mg.InstrumentLayeringGame.on', 'ON') : tc('mg.InstrumentLayeringGame.off', 'OFF')}
                   </Badge>
                 </div>
 
@@ -356,7 +358,7 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
                   <div className="space-y-3 mt-4" onClick={(e) => e.stopPropagation()}>
                     <div>
                       <div className="flex justify-between text-xs text-stone-300 mb-1">
-                        <span>Volume</span>
+                        <span>{tc('mg.InstrumentLayeringGame.volume', 'Volume')}</span>
                         <span>{track.volume}%</span>
                       </div>
                       <Slider
@@ -370,8 +372,8 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
                     
                     <div>
                       <div className="flex justify-between text-xs text-stone-300 mb-1">
-                        <span>Pan</span>
-                        <span>{track.pan > 0 ? 'R' : track.pan < 0 ? 'L' : 'C'}{Math.abs(track.pan)}</span>
+                        <span>{tc('mg.InstrumentLayeringGame.pan', 'Pan')}</span>
+                        <span>{track.pan > 0 ? tc('mg.InstrumentLayeringGame.pan_r', 'R') : track.pan < 0 ? tc('mg.InstrumentLayeringGame.pan_l', 'L') : tc('mg.InstrumentLayeringGame.pan_c', 'C')}{Math.abs(track.pan)}</span>
                       </div>
                       <Slider
                         value={[track.pan]}
@@ -385,7 +387,7 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
 
                     <div>
                       <div className="flex justify-between text-xs text-stone-300 mb-1">
-                        <span>Timing</span>
+                        <span>{tc('mg.InstrumentLayeringGame.timing', 'Timing')}</span>
                         <span>{track.timing > 0 ? '+' : ''}{track.timing}ms</span>
                       </div>
                       <Slider
@@ -406,11 +408,11 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
 
         {/* Mix Analysis */}
         <div className="space-y-4">
-          <h3 className="text-xl font-bold text-white">📊 Mix Analysis</h3>
+          <h3 className="text-xl font-bold text-white">{tc('mg.InstrumentLayeringGame.mix_heading', '📊 Mix Analysis')}</h3>
           
           {/* Frequency Distribution */}
           <Card className="p-4 bg-stone-800 border-stone-600">
-            <h4 className="font-semibold text-white mb-3">Frequency Balance</h4>
+            <h4 className="font-semibold text-white mb-3">{tc('mg.InstrumentLayeringGame.freq_balance', 'Frequency Balance')}</h4>
             <div className="space-y-2">
               {['60-200Hz', '200-800Hz', '800-3kHz', '3kHz+'].map((range, index) => {
                 const tracksInRange = tracks.filter(t => {
@@ -424,7 +426,7 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
                   <div key={range} className="flex justify-between text-sm">
                     <span className="text-stone-300">{range}</span>
                     <span className={tracksInRange.length > 2 ? 'text-red-400' : 'text-green-400'}>
-                      {tracksInRange.length} tracks
+                      {tracksInRange.length === 1 ? tc('mg.InstrumentLayeringGame.tracks_one', '{{count}} track', { count: tracksInRange.length }) : tc('mg.InstrumentLayeringGame.tracks_other', '{{count}} tracks', { count: tracksInRange.length })}
                     </span>
                   </div>
                 );
@@ -434,22 +436,22 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
 
           {/* Stereo Field */}
           <Card className="p-4 bg-stone-800 border-stone-600">
-            <h4 className="font-semibold text-white mb-3">Stereo Field</h4>
+            <h4 className="font-semibold text-white mb-3">{tc('mg.InstrumentLayeringGame.stereo', 'Stereo Field')}</h4>
             <div className="grid grid-cols-3 gap-2 text-xs">
               <div className="text-center">
-                <div className="text-stone-400">Left</div>
+                <div className="text-stone-400">{tc('mg.InstrumentLayeringGame.left', 'Left')}</div>
                 <div className="text-[var(--rst-live)]">
                   {tracks.filter(t => t.isActive && t.pan < -20).length}
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-stone-400">Center</div>
+                <div className="text-stone-400">{tc('mg.InstrumentLayeringGame.center', 'Center')}</div>
                 <div className="text-green-400">
                   {tracks.filter(t => t.isActive && t.pan >= -20 && t.pan <= 20).length}
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-stone-400">Right</div>
+                <div className="text-stone-400">{tc('mg.InstrumentLayeringGame.right', 'Right')}</div>
                 <div className="text-[var(--rst-live)]">
                   {tracks.filter(t => t.isActive && t.pan > 20).length}
                 </div>
@@ -459,7 +461,7 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
 
           {/* Genre Guidelines */}
           <Card className="p-4 bg-white/[0.04] border border-[var(--rst-line)] border-[var(--rst-live)]/50">
-            <h4 className="font-semibold text-[var(--rst-live)] mb-2">Genre Guidelines</h4>
+            <h4 className="font-semibold text-[var(--rst-live)] mb-2">{tc('mg.InstrumentLayeringGame.guidelines', 'Genre Guidelines')}</h4>
             <div className="space-y-1 text-xs text-[var(--rst-ivory-soft)]">
               {getGenreHints().slice(0, 2).map((hint, index) => (
                 <div key={index}>• {hint.replace(/[🎤🥁🎸🎹🎵📍🔊🌊🔄⚡]/gu, '')}</div>
@@ -472,14 +474,14 @@ export const InstrumentLayeringGame: React.FC<InstrumentLayeringGameProps> = ({
       </MinigameChrome>
       <DialogFooter className="p-4">
         <KenneyButton variant="red" onClick={onClose}>
-          Cancel
+          {tc('mg.InstrumentLayeringGame.cancel', 'Cancel')}
         </KenneyButton>
         <KenneyButton
           variant="green"
           onClick={endGame}
           disabled={tracks.filter(t => t.isActive).length === 0}
         >
-          Finish Arrangement
+          {tc('mg.InstrumentLayeringGame.finish', 'Finish Arrangement')}
         </KenneyButton>
       </DialogFooter>
     </Card>

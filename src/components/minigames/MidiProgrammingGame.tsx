@@ -17,6 +17,7 @@ import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
 import { Play, Pause, Square, RotateCcw, Music, Settings } from 'lucide-react';
 import { MinigameChrome, KenneyButton } from './MinigameChrome';
+import { tc } from '@/i18n/content';
 
 interface MidiProgrammingGameProps {
   onComplete: (score: number, success?: boolean) => void;
@@ -230,11 +231,12 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
   };
 
   const currentSequence = TARGET_SEQUENCES[currentSequenceIndex];
+  const seqName = tc(`mg.MidiProgrammingGame.seq_${currentSequenceIndex}`, currentSequence.name);
 
   return (
     <Card className="w-full max-w-7xl mx-auto bg-stone-800 text-white border-stone-700">
       <MinigameChrome
-        title="🎹 MIDI Programming"
+        title={tc('mg.MidiProgrammingGame.title', '🎹 MIDI Programming')}
         score={score}
         timeLeft={timeLeft}
         accent="cyan"
@@ -245,7 +247,7 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-[var(--rst-live)]">
-              Sequence: {currentSequence.name} (Difficulty: {currentSequence.difficulty}/3)
+              {tc('mg.MidiProgrammingGame.sequence', 'Sequence: {{name}} (Difficulty: {{difficulty}}/3)', { name: seqName, difficulty: currentSequence.difficulty })}
             </span>
             <span className="text-[var(--rst-brass-300)]">
               {currentSequenceIndex + 1}/{TARGET_SEQUENCES.length}
@@ -257,7 +259,7 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
         {/* MIDI Controls */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-black/30 rounded-lg p-4">
           <div>
-            <label className="block text-sm font-semibold mb-2 text-[var(--rst-brass-300)]">Note Selection</label>
+            <label className="block text-sm font-semibold mb-2 text-[var(--rst-brass-300)]">{tc('mg.MidiProgrammingGame.note_selection', 'Note Selection')}</label>
             <div className="grid grid-cols-4 gap-1">
               {OCTAVES.map(octave => 
                 NOTE_NAMES.map((noteName, noteIndex) => {
@@ -283,7 +285,7 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-semibold mb-2 text-[var(--rst-brass-300)]">
-                Velocity: {selectedVelocity[0]}
+                {tc('mg.MidiProgrammingGame.velocity', 'Velocity: {{velocity}}', { velocity: selectedVelocity[0] })}
               </label>
               <Slider
                 value={selectedVelocity}
@@ -295,7 +297,7 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-2 text-[var(--rst-brass-300)]">Note Length</label>
+              <label className="block text-sm font-semibold mb-2 text-[var(--rst-brass-300)]">{tc('mg.MidiProgrammingGame.note_length', 'Note Length')}</label>
               <div className="flex gap-1">
                 {[1, 2, 4].map(length => (
                   <Button
@@ -320,7 +322,7 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
                 {getNoteName(selectedNote)}
               </div>
               <div className="text-sm text-stone-400">
-                Vel: {selectedVelocity[0]} | Len: {selectedLength}
+                {tc('mg.MidiProgrammingGame.vel_len', 'Vel: {{velocity}} | Len: {{length}}', { velocity: selectedVelocity[0], length: selectedLength })}
               </div>
             </div>
           </div>
@@ -331,7 +333,7 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold text-[var(--rst-brass-300)] flex items-center gap-2">
               <Music className="w-5 h-5" />
-              MIDI Sequencer
+              {tc('mg.MidiProgrammingGame.sequencer', 'MIDI Sequencer')}
             </h3>
             <div className="flex gap-2">
               <Button
@@ -406,10 +408,9 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
 
         {/* Target Reference */}
         <div className="bg-black/20 rounded-lg p-3">
-          <h4 className="text-sm font-semibold text-[var(--rst-live)] mb-2">Target: {currentSequence.name}</h4>
+          <h4 className="text-sm font-semibold text-[var(--rst-live)] mb-2">{tc('mg.MidiProgrammingGame.target', 'Target: {{name}}', { name: seqName })}</h4>
           <div className="text-xs text-stone-400">
-            Program the MIDI sequence to match the target pattern. 
-            Use the correct notes, timing, and velocity for maximum score.
+            {tc('mg.MidiProgrammingGame.instructions', 'Program the MIDI sequence to match the target pattern. Use the correct notes, timing, and velocity for maximum score.')}
           </div>
         </div>
 
@@ -417,10 +418,10 @@ export const MidiProgrammingGame: React.FC<MidiProgrammingGameProps> = ({
       </MinigameChrome>
       <DialogFooter className="p-4">
         <KenneyButton variant="yellow" onClick={onClose}>
-          Exit
+          {tc('mg.MidiProgrammingGame.exit', 'Exit')}
         </KenneyButton>
         <KenneyButton variant="green" onClick={checkSequence}>
-          Check Sequence
+          {tc('mg.MidiProgrammingGame.check', 'Check Sequence')}
         </KenneyButton>
       </DialogFooter>
     </Card>

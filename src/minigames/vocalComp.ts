@@ -8,6 +8,7 @@
  * hopping between takes on every line makes the comp feel stitched together.
  */
 import { createSeededRandom, pickWithRandom, randomInt, type RandomSource } from '@/simulation/seededRandom';
+import { tc } from '@/i18n/content';
 
 export const COMP_LINES = 6;
 export const COMP_TAKES = 3;
@@ -160,18 +161,18 @@ export function traitChips(take: CompTake): CompChip[] {
   traits.sort((a, b) => Math.abs(b.value - 60) - Math.abs(a.value - 60));
 
   const words = {
-    pitch: { high: 'In tune', low: 'Pitchy' },
-    timing: { high: 'Tight', low: 'Rushing' },
-    feel: { high: 'Full of feeling', low: 'Flat delivery' },
+    pitch: { high: tc('mg.vocalComp.chip_in_tune', 'In tune'), low: tc('mg.vocalComp.chip_pitchy', 'Pitchy') },
+    timing: { high: tc('mg.vocalComp.chip_tight', 'Tight'), low: tc('mg.vocalComp.chip_rushing', 'Rushing') },
+    feel: { high: tc('mg.vocalComp.chip_full_of_feeling', 'Full of feeling'), low: tc('mg.vocalComp.chip_flat_delivery', 'Flat delivery') },
   };
 
   const chips: CompChip[] = traits.slice(0, 2).map(({ key, value }) => {
     if (value >= 70) return { label: words[key].high, tone: 'good' as const };
     if (value <= 50) return { label: words[key].low, tone: 'bad' as const };
-    return { label: key === 'feel' ? 'Decent feel' : key === 'pitch' ? 'Mostly in tune' : 'Mostly on the grid', tone: 'warn' as const };
+    return { label: key === 'feel' ? tc('mg.vocalComp.chip_decent_feel', 'Decent feel') : key === 'pitch' ? tc('mg.vocalComp.chip_mostly_in_tune', 'Mostly in tune') : tc('mg.vocalComp.chip_mostly_on_grid', 'Mostly on the grid'), tone: 'warn' as const };
   });
 
-  if (take.flaw) chips.push({ label: COMP_FLAWS[take.flaw].label, tone: 'bad' });
+  if (take.flaw) chips.push({ label: tc(`mg.vocalComp.flaw_${take.flaw}`, COMP_FLAWS[take.flaw].label), tone: 'bad' });
   return chips;
 }
 
@@ -220,7 +221,8 @@ export function scoreComp(session: CompSession, picks: number[]): CompScore {
   const pickScore = lineCount === 0 ? 0 : (ratioSum / lineCount) * 850;
   const continuityBonus = lineCount <= 1 ? 150 : Math.round(150 * (1 - switches / (lineCount - 1)));
   const total = clamp(Math.round(pickScore + continuityBonus), 0, 1000);
-  const verdict = (VERDICTS.find((v) => total >= v.min) ?? VERDICTS[VERDICTS.length - 1]).text;
+  const verdictEntry = VERDICTS.find((v) => total >= v.min) ?? VERDICTS[VERDICTS.length - 1];
+  const verdict = tc(`mg.vocalComp.verdict_${verdictEntry.min}`, verdictEntry.text);
 
   return { total, lineScores, bestLineScores, switches, continuityBonus, verdict };
 }

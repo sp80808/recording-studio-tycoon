@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { gameAudio } from '@/utils/audioSystem';
 import { KenneyButton, MinigameChrome } from './MinigameChrome';
+import { tc } from '@/i18n/content';
 
 interface AcousticTreatment {
   id: string;
@@ -197,7 +198,7 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
   const placeTreatment = (position: RoomPosition) => {
     if (!selectedTreatment || spentBudget + selectedTreatment.cost > budget) {
       if (spentBudget + (selectedTreatment?.cost || 0) > budget) {
-        setFeedback('💰 Not enough budget!');
+        setFeedback(tc('mg.AcousticTreatmentGame.fb_no_budget', '💰 Not enough budget!'));
         setTimeout(() => setFeedback(''), 2000);
       }
       return;
@@ -218,9 +219,9 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
       setAcousticScore(newScore);
       
       if (newScore > 80) {
-        setFeedback('🎯 Excellent acoustics!');
+        setFeedback(tc('mg.AcousticTreatmentGame.fb_excellent', '🎯 Excellent acoustics!'));
       } else if (newScore > 60) {
-        setFeedback('👍 Good improvement!');
+        setFeedback(tc('mg.AcousticTreatmentGame.fb_good', '👍 Good improvement!'));
       }
       setTimeout(() => setFeedback(''), 2000);
     }, 100);
@@ -245,10 +246,10 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
 
   const getRecordingTypeHint = () => {
     const hints: { [key: string]: string } = {
-      vocal: 'Vocal recording: Use reflection filters near microphone, absorbers on walls',
-      drum: 'Drum recording: Place diffusers for natural sound, bass traps in corners',
-      guitar: 'Guitar recording: Mix of absorbers and diffusers for controlled ambience',
-      'full-band': 'Full band: Balance absorption and diffusion, control bass buildup'
+      vocal: tc('mg.AcousticTreatmentGame.hint_vocal', 'Vocal recording: Use reflection filters near microphone, absorbers on walls'),
+      drum: tc('mg.AcousticTreatmentGame.hint_drum', 'Drum recording: Place diffusers for natural sound, bass traps in corners'),
+      guitar: tc('mg.AcousticTreatmentGame.hint_guitar', 'Guitar recording: Mix of absorbers and diffusers for controlled ambience'),
+      'full-band': tc('mg.AcousticTreatmentGame.hint_full_band', 'Full band: Balance absorption and diffusion, control bass buildup')
     };
     return hints[recordingType];
   };
@@ -262,20 +263,19 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
   if (!gameStarted) {
     return (
       <Card className="w-full max-w-6xl mx-auto bg-stone-800 text-white border-stone-700">
-        <MinigameChrome title="🏠 Acoustic Treatment Puzzle" score={score} accent="green">
+        <MinigameChrome title={tc('mg.AcousticTreatmentGame.title', '🏠 Acoustic Treatment Puzzle')} score={score} accent="green">
         <div className="p-6 text-center space-y-4">
           <p className="text-stone-300">
-            Optimize your studio acoustics for {recordingType} recording!
-            Use your budget wisely to create the perfect acoustic environment.
+            {tc('mg.AcousticTreatmentGame.intro', 'Optimize your studio acoustics for {{type}} recording! Use your budget wisely to create the perfect acoustic environment.', { type: recordingType })}
           </p>
           <div className="text-sm text-[var(--rst-live)] bg-white/[0.04] border border-[var(--rst-line)] p-3 rounded">
-            💡 Hint: {getRecordingTypeHint()}
+            {tc('mg.AcousticTreatmentGame.hint_prefix', '💡 Hint: {{hint}}', { hint: getRecordingTypeHint() })}
           </div>
           <div className="text-lg text-yellow-400">
-            Budget: ${budget}
+            {tc('mg.AcousticTreatmentGame.budget_start', 'Budget: ${{budget}}', { budget })}
           </div>
           <KenneyButton variant="green" onClick={startGame}>
-            Start Treatment
+            {tc('mg.AcousticTreatmentGame.start', 'Start Treatment')}
           </KenneyButton>
         </div>
         </MinigameChrome>
@@ -286,23 +286,23 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
   if (gameCompleted) {
     return (
       <Card className="w-full max-w-6xl mx-auto bg-stone-800 text-white border-stone-700">
-        <MinigameChrome title="🏠 Acoustic Treatment Puzzle" score={score} accent="green">
+        <MinigameChrome title={tc('mg.AcousticTreatmentGame.title', '🏠 Acoustic Treatment Puzzle')} score={score} accent="green">
         <div className="p-6 text-center space-y-4">
-          <h2 className={`text-2xl font-bold text-yellow-400 ${score >= 80 ? 'mg-perfect-pop' : ''}`}>Room Treatment Complete!</h2>
+          <h2 className={`text-2xl font-bold text-yellow-400 ${score >= 80 ? 'mg-perfect-pop' : ''}`}>{tc('mg.AcousticTreatmentGame.complete_title', 'Room Treatment Complete!')}</h2>
           <div className="space-y-2">
-            <div className="text-lg text-white">Final Score: {score}</div>
+            <div className="text-lg text-white">{tc('mg.AcousticTreatmentGame.final_score', 'Final Score: {{score}}', { score })}</div>
             <div className="text-sm text-stone-400">
-              Acoustic Quality: {acousticScore}% | Budget Used: ${spentBudget}/${budget}
+              {tc('mg.AcousticTreatmentGame.result_line', 'Acoustic Quality: {{quality}}% | Budget Used: ${{spent}}/${{budget}}', { quality: acousticScore, spent: spentBudget, budget })}
             </div>
             {score >= 80 && (
-              <div className="text-green-400 font-bold text-xl mg-perfect-pop">🎉 Professional Studio!</div>
+              <div className="text-green-400 font-bold text-xl mg-perfect-pop">{tc('mg.AcousticTreatmentGame.result_pro', '🎉 Professional Studio!')}</div>
             )}
             {score >= 60 && score < 80 && (
-              <div className="text-[var(--rst-live)] font-bold">👍 Well-Treated Room!</div>
+              <div className="text-[var(--rst-live)] font-bold">{tc('mg.AcousticTreatmentGame.result_well', '👍 Well-Treated Room!')}</div>
             )}
           </div>
           <KenneyButton variant="green" onClick={onClose}>
-            Collect Rewards
+            {tc('mg.AcousticTreatmentGame.collect', 'Collect Rewards')}
           </KenneyButton>
         </div>
         </MinigameChrome>
@@ -312,13 +312,13 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
 
   return (
     <Card className="w-full max-w-6xl mx-auto bg-stone-800 text-white border-stone-700">
-      <MinigameChrome title="🏠 Acoustic Treatment Puzzle" score={acousticScore} timeLeft={timeLeft} accent="green">
+      <MinigameChrome title={tc('mg.AcousticTreatmentGame.title', '🏠 Acoustic Treatment Puzzle')} score={acousticScore} timeLeft={timeLeft} accent="green">
       <div className="p-6">
       <div className="text-center mb-6">
-        <p className="text-stone-300">Recording Type: {recordingType.charAt(0).toUpperCase() + recordingType.slice(1)}</p>
+        <p className="text-stone-300">{tc('mg.AcousticTreatmentGame.recording_type', 'Recording Type: {{type}}', { type: recordingType.charAt(0).toUpperCase() + recordingType.slice(1) })}</p>
 
         <div className="mt-4 text-lg text-yellow-400 font-bold">
-          Budget: ${budget - spentBudget} / ${budget}
+          {tc('mg.AcousticTreatmentGame.budget_left', 'Budget: ${{left}} / ${{budget}}', { left: budget - spentBudget, budget })}
         </div>
 
         {feedback && (
@@ -331,7 +331,7 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Treatment Selection */}
         <div>
-          <h3 className="text-xl font-bold text-white mb-4">🎛️ Acoustic Treatments</h3>
+          <h3 className="text-xl font-bold text-white mb-4">{tc('mg.AcousticTreatmentGame.treatments_heading', '🎛️ Acoustic Treatments')}</h3>
           <div className="space-y-3">
             {treatments.map(treatment => (
               <Button
@@ -347,9 +347,9 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
                 <div className="flex items-center gap-3">
                   <span className="text-xl">{treatment.icon}</span>
                   <div className="text-left">
-                    <div className="font-semibold">{treatment.name}</div>
+                    <div className="font-semibold">{tc(`mg.AcousticTreatmentGame.treatment_${treatment.id}`, treatment.name)}</div>
                     <div className="text-xs opacity-75">
-                      ${treatment.cost} | {treatment.effectiveness}% effective
+                      {tc('mg.AcousticTreatmentGame.treatment_stats', '${{cost}} | {{eff}}% effective', { cost: treatment.cost, eff: treatment.effectiveness })}
                     </div>
                   </div>
                 </div>
@@ -362,12 +362,12 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
 
           <div className="mt-4 p-3 bg-white/[0.04] border border-[var(--rst-line)] rounded border border-[var(--rst-live)]/50">
             <div className="text-sm text-[var(--rst-live)]">
-              <div className="font-semibold mb-2">Treatment Tips:</div>
+              <div className="font-semibold mb-2">{tc('mg.AcousticTreatmentGame.tips_heading', 'Treatment Tips:')}</div>
               <ul className="text-xs space-y-1">
-                <li>🔺 Bass traps work best in corners</li>
-                <li>🧽 Absorbers reduce reflections</li>
-                <li>📐 Diffusers scatter sound naturally</li>
-                <li>🛡️ Reflection filters for close micing</li>
+                <li>{tc('mg.AcousticTreatmentGame.tip_bass', '🔺 Bass traps work best in corners')}</li>
+                <li>{tc('mg.AcousticTreatmentGame.tip_absorb', '🧽 Absorbers reduce reflections')}</li>
+                <li>{tc('mg.AcousticTreatmentGame.tip_diffuse', '📐 Diffusers scatter sound naturally')}</li>
+                <li>{tc('mg.AcousticTreatmentGame.tip_filter', '🛡️ Reflection filters for close micing')}</li>
               </ul>
             </div>
           </div>
@@ -375,7 +375,7 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
 
         {/* Room Grid */}
         <div className="lg:col-span-2">
-          <h3 className="text-xl font-bold text-white mb-4">🏠 Studio Room (8x6)</h3>
+          <h3 className="text-xl font-bold text-white mb-4">{tc('mg.AcousticTreatmentGame.room_heading', '🏠 Studio Room (8x6)')}</h3>
           <div 
             className="grid grid-cols-8 gap-1 bg-stone-800 p-4 rounded-lg border-2 border-stone-600"
             style={{ aspectRatio: '8/6' }}
@@ -402,10 +402,10 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
                 `}
                 title={
                   position.treatment 
-                    ? `${position.treatment.name} - Click to remove`
+                    ? tc('mg.AcousticTreatmentGame.tt_remove', '{{name}} - Click to remove', { name: tc(`mg.AcousticTreatmentGame.treatment_${position.treatment.id}`, position.treatment.name) })
                     : selectedTreatment 
-                      ? `Place ${selectedTreatment.name} here`
-                      : 'Empty space'
+                      ? tc('mg.AcousticTreatmentGame.tt_place', 'Place {{name}} here', { name: tc(`mg.AcousticTreatmentGame.treatment_${selectedTreatment.id}`, selectedTreatment.name) })
+                      : tc('mg.AcousticTreatmentGame.tt_empty', 'Empty space')
                 }
               >
                 {position.treatment && (
@@ -423,17 +423,17 @@ export const AcousticTreatmentGame: React.FC<AcousticTreatmentGameProps> = ({
           </div>
           
           <div className="mt-2 text-xs text-stone-400 text-center">
-            Click to place selected treatment | Click existing treatment to remove
+            {tc('mg.AcousticTreatmentGame.grid_help', 'Click to place selected treatment | Click existing treatment to remove')}
           </div>
         </div>
       </div>
 
       <div className="flex justify-center gap-4 mt-6">
         <KenneyButton variant="green" onClick={endGame}>
-          🎵 Test Acoustics
+          {tc('mg.AcousticTreatmentGame.test', '🎵 Test Acoustics')}
         </KenneyButton>
         <KenneyButton variant="grey" onClick={onClose}>
-          Cancel
+          {tc('mg.AcousticTreatmentGame.cancel', 'Cancel')}
         </KenneyButton>
       </div>
       </div>

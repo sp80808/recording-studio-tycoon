@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { DialogFooter } from '@/components/ui/dialog';
 import { MinigameChrome, KenneyButton } from './MinigameChrome';
+import { tc } from '@/i18n/content';
 
 // Define a basic props interface for minigame components
 export interface MinigameComponentProps {
@@ -63,13 +64,13 @@ export const EQMatchGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
 
   return (
     <Card className="w-full max-w-2xl mx-auto bg-stone-800 text-white border-stone-700">
-      <MinigameChrome title="🎚️ EQ Match Challenge" score={score} timeLeft={timeLeft} accent="blue">
+      <MinigameChrome title={tc('mg.EQMatchGame.title', '🎚️ EQ Match Challenge')} score={score} timeLeft={timeLeft} accent="blue">
       <CardContent>
 
         {/* Live match meter */}
         <div className="mb-6">
           <div className="flex justify-between text-sm text-stone-300 mb-1">
-            <span>Match Meter</span>
+            <span>{tc('mg.EQMatchGame.match_meter', 'Match Meter')}</span>
             <span className={`font-mono ${matchPercent >= 90 ? 'mg-combo-pulse text-[var(--rst-brass-300)]' : ''}`}>{matchPercent.toFixed(1)}%</span>
           </div>
           <div className="h-4 bg-stone-700 rounded overflow-hidden">
@@ -110,7 +111,7 @@ export const EQMatchGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
                   });
                 }}
                 className="flex-1 accent-green-500"
-                aria-label={`${band} gain`}
+                aria-label={tc('mg.EQMatchGame.band_gain', '{{band}} gain', { band })}
               />
               <Button
                 onClick={() => adjustBand(i, 1)}
@@ -133,11 +134,11 @@ export const EQMatchGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
               key={score}
               className={`text-2xl font-bold text-green-400 ${score >= 600 ? 'mg-perfect-pop' : 'mg-miss-shake'}`}
             >
-              Time&apos;s Up! Final Score: {score}
+              {tc('mg.EQMatchGame.times_up', "Time's Up! Final Score: {{score}}", { score })}
             </div>
             {targets.length === BANDS.length && (
               <div className="mt-2 text-sm text-stone-300">
-                Hidden targets were:{' '}
+                {tc('mg.EQMatchGame.hidden_targets', 'Hidden targets were:')}{' '}
                 {BANDS.map((b, i) => (
                   <span key={b} className="font-mono mx-1">
                     {b}: {targets[i] > 0 ? `+${targets[i]}` : targets[i]}dB
@@ -151,10 +152,10 @@ export const EQMatchGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
       </MinigameChrome>
       <DialogFooter className="p-4">
         <KenneyButton variant="yellow" onClick={onClose}>
-          Close
+          {tc('mg.EQMatchGame.close', 'Close')}
         </KenneyButton>
         <KenneyButton variant="yellow" onClick={handleFinalize}>
-          Finalize &amp; Get Score
+          {tc('mg.EQMatchGame.finalize', 'Finalize & Get Score')}
         </KenneyButton>
       </DialogFooter>
     </Card>

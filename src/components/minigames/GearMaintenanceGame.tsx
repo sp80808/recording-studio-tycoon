@@ -8,6 +8,7 @@ import { playSound } from '@/utils/soundUtils';
 import { useSettings } from '@/contexts/SettingsContext';
 import { MinigameTutorialPopup, minigameTutorials } from '@/components/minigames/index';
 import { MinigameChrome, KenneyButton } from './MinigameChrome';
+import { tc } from '@/i18n/content';
 
 interface GearMaintenanceGameProps {
   equipment: { name: string };
@@ -88,19 +89,19 @@ const GearMaintenanceGame: React.FC<GearMaintenanceGameProps> = ({ equipment, on
     }));
 
     if (currentSuccessfulAdjustments === minigameState.dials.length) {
-      setFeedbackMessage(`Calibration passed for ${equipment.name}.`);
+      setFeedbackMessage(tc('mg.GearMaintenanceGame.passed', 'Calibration passed for {{name}}.', { name: equipment.name }));
       qualityImpact = 20;
       completed.current = true;
       setMinigameState(prev => ({ ...prev, attemptsLeft: 0 }));
       onComplete(true, qualityImpact);
     } else if (newAttemptsLeft <= 0) {
-      setFeedbackMessage(`Out of attempts. ${equipment.name} did not pass calibration.`);
+      setFeedbackMessage(tc('mg.GearMaintenanceGame.failed', 'Out of attempts. {{name}} did not pass calibration.', { name: equipment.name }));
       qualityImpact = currentSuccessfulAdjustments * 5;
       completed.current = true;
       onComplete(false, qualityImpact);
     } else {
       setFeedbackMessage(
-        `${currentSuccessfulAdjustments}/${minigameState.dials.length} dials calibrated. ${newAttemptsLeft} attempts left.`
+        tc('mg.GearMaintenanceGame.progress', '{{done}}/{{total}} dials calibrated. {{left}} attempts left.', { done: currentSuccessfulAdjustments, total: minigameState.dials.length, left: newAttemptsLeft })
       );
     }
   };
@@ -128,14 +129,14 @@ const GearMaintenanceGame: React.FC<GearMaintenanceGameProps> = ({ equipment, on
   return (
     <Card className="w-full max-w-lg mx-auto bg-stone-800 text-white border-stone-700">
       <MinigameChrome
-        title={`🔧 Gear Maintenance: ${equipment.name}`}
+        title={tc('mg.GearMaintenanceGame.title', '🔧 Gear Maintenance: {{name}}', { name: equipment.name })}
         score={minigameState.successfulAdjustmentsLastAttempt * 25}
         accent="yellow"
       >
         <CardContent className="space-y-6">
           <div className="flex justify-between items-center text-xs text-amber-300 font-mono bg-amber-950/40 p-2 rounded border border-amber-800">
-            <span>Calibrate dials to green target zones</span>
-            <span>Attempts: {minigameState.attemptsLeft}</span>
+            <span>{tc('mg.GearMaintenanceGame.hint', 'Calibrate dials to green target zones')}</span>
+            <span>{tc('mg.GearMaintenanceGame.attempts', 'Attempts: {{n}}', { n: minigameState.attemptsLeft })}</span>
           </div>
 
           {feedbackMessage && (
@@ -147,15 +148,15 @@ const GearMaintenanceGame: React.FC<GearMaintenanceGameProps> = ({ equipment, on
           {minigameState.dials.map((dialValue, index) => (
             <div key={index} className="space-y-2 bg-stone-900/60 p-3 rounded-lg border border-stone-700">
               <div className="flex justify-between text-xs font-semibold text-stone-300">
-                <span>Dial {index + 1}</span>
-                <span className="font-mono">Current: {dialValue} / Target: ~{minigameState.targetValues[index]}</span>
+                <span>{tc('mg.GearMaintenanceGame.dial_n', 'Dial {{n}}', { n: index + 1 })}</span>
+                <span className="font-mono">{tc('mg.GearMaintenanceGame.current_target', 'Current: {{current}} / Target: ~{{target}}', { current: dialValue, target: minigameState.targetValues[index] })}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Button
                   size="sm"
                   variant="outline"
                   className="w-8 h-8 text-stone-200 border-stone-600 hover:bg-stone-700"
-                  aria-label={`Decrease dial ${index + 1}`}
+                  aria-label={tc('mg.GearMaintenanceGame.decrease_dial', 'Decrease dial {{n}}', { n: index + 1 })}
                   onClick={() => handleDialChange(index, 'down')}
                   disabled={minigameState.attemptsLeft <= 0}
                 >
@@ -175,14 +176,14 @@ const GearMaintenanceGame: React.FC<GearMaintenanceGameProps> = ({ equipment, on
                       left: `${minigameState.targetValues[index] - 5}%`, 
                       width: '10%' 
                     }}
-                    title={`Target: ${minigameState.targetValues[index]}`}
+                    title={tc('mg.GearMaintenanceGame.target_title', 'Target: {{target}}', { target: minigameState.targetValues[index] })}
                   />
                 </div>
                 <Button
                   size="sm"
                   variant="outline"
                   className="w-8 h-8 text-stone-200 border-stone-600 hover:bg-stone-700"
-                  aria-label={`Increase dial ${index + 1}`}
+                  aria-label={tc('mg.GearMaintenanceGame.increase_dial', 'Increase dial {{n}}', { n: index + 1 })}
                   onClick={() => handleDialChange(index, 'up')}
                   disabled={minigameState.attemptsLeft <= 0}
                 >
@@ -195,18 +196,18 @@ const GearMaintenanceGame: React.FC<GearMaintenanceGameProps> = ({ equipment, on
       </MinigameChrome>
       <DialogFooter className="p-4">
         <KenneyButton variant="yellow" onClick={onClose}>
-          Close
+          {tc('mg.GearMaintenanceGame.close', 'Close')}
         </KenneyButton>
         {minigameState.attemptsLeft > 0 ? (
           <KenneyButton variant="yellow" onClick={handleSubmitAttempt}>
-            Submit Calibration
+            {tc('mg.GearMaintenanceGame.submit', 'Submit Calibration')}
           </KenneyButton>
         ) : (
           <KenneyButton
             variant="green"
             onClick={onClose}
           >
-            Finish
+            {tc('mg.GearMaintenanceGame.finish', 'Finish')}
           </KenneyButton>
         )}
       </DialogFooter>

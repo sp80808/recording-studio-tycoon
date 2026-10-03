@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { gameAudio } from '@/utils/audioSystem';
 import { KenneyButton, MinigameChrome } from './MinigameChrome';
+import { tc } from '@/i18n/content';
 
 interface MasteringGameProps {
   onComplete: (score: number) => void;
@@ -64,11 +65,11 @@ export const MasteringGame: React.FC<MasteringGameProps> = ({ onComplete, onClos
     setScore(prev => prev + points);
     
     if (accuracy >= 80) {
-      setFeedback('🎯 Perfect Master! +' + points);
+      setFeedback(tc('mg.MasteringGame.fb_perfect', '🎯 Perfect Master! +{{points}}', { points }));
     } else if (accuracy >= 60) {
-      setFeedback('👍 Good work! +' + points);
+      setFeedback(tc('mg.MasteringGame.fb_good', '👍 Good work! +{{points}}', { points }));
     } else {
-      setFeedback('🔧 Needs adjustment +' + points);
+      setFeedback(tc('mg.MasteringGame.fb_needs', '🔧 Needs adjustment +{{points}}', { points }));
     }
 
     setTimeout(() => {
@@ -98,11 +99,11 @@ export const MasteringGame: React.FC<MasteringGameProps> = ({ onComplete, onClos
 
   return (
     <Card className="w-full max-w-4xl mx-auto bg-stone-800 text-white border-stone-700">
-      <MinigameChrome title="🎚️ Mastering Challenge" score={score} timeLeft={timeLeft} accent="yellow">
+      <MinigameChrome title={tc('mg.MasteringGame.title', '🎚️ Mastering Challenge')} score={score} timeLeft={timeLeft} accent="yellow">
       <div className="p-6">
       <div className="text-center mb-6">
-        <p className="text-stone-300">Master the track to match the target sound!</p>
-        <div className="mt-4 text-lg font-bold text-[var(--rst-live)]">Target: {target.name}</div>
+        <p className="text-stone-300">{tc('mg.MasteringGame.instructions', 'Master the track to match the target sound!')}</p>
+        <div className="mt-4 text-lg font-bold text-[var(--rst-live)]">{tc('mg.MasteringGame.target_name', 'Target: {{name}}', { name: tc(`mg.MasteringGame.preset_${currentTarget}`, target.name) })}</div>
       </div>
 
       {feedback && (
@@ -115,7 +116,7 @@ export const MasteringGame: React.FC<MasteringGameProps> = ({ onComplete, onClos
         <div className="space-y-6">
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label className="text-white font-semibold">🔊 Volume</label>
+              <label className="text-white font-semibold">{tc('mg.MasteringGame.volume', '🔊 Volume')}</label>
               <span className="text-stone-400">{parameters.volume[0]}%</span>
             </div>
             <Slider
@@ -125,12 +126,12 @@ export const MasteringGame: React.FC<MasteringGameProps> = ({ onComplete, onClos
               step={1}
               className="w-full"
             />
-            <div className="text-xs text-green-400 mt-1">Target: {target.volume}%</div>
+            <div className="text-xs text-green-400 mt-1">{tc('mg.MasteringGame.target_pct', 'Target: {{value}}%', { value: target.volume })}</div>
           </div>
 
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label className="text-white font-semibold">🗜️ Compression</label>
+              <label className="text-white font-semibold">{tc('mg.MasteringGame.compression', '🗜️ Compression')}</label>
               <span className="text-stone-400">{parameters.compression[0]}%</span>
             </div>
             <Slider
@@ -140,14 +141,14 @@ export const MasteringGame: React.FC<MasteringGameProps> = ({ onComplete, onClos
               step={1}
               className="w-full"
             />
-            <div className="text-xs text-green-400 mt-1">Target: {target.compression}%</div>
+            <div className="text-xs text-green-400 mt-1">{tc('mg.MasteringGame.target_pct', 'Target: {{value}}%', { value: target.compression })}</div>
           </div>
         </div>
 
         <div className="space-y-6">
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label className="text-white font-semibold">🎛️ EQ</label>
+              <label className="text-white font-semibold">{tc('mg.MasteringGame.eq', '🎛️ EQ')}</label>
               <span className="text-stone-400">{parameters.eq[0]}%</span>
             </div>
             <Slider
@@ -157,12 +158,12 @@ export const MasteringGame: React.FC<MasteringGameProps> = ({ onComplete, onClos
               step={1}
               className="w-full"
             />
-            <div className="text-xs text-green-400 mt-1">Target: {target.eq}%</div>
+            <div className="text-xs text-green-400 mt-1">{tc('mg.MasteringGame.target_pct', 'Target: {{value}}%', { value: target.eq })}</div>
           </div>
 
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label className="text-white font-semibold">📻 Stereo Width</label>
+              <label className="text-white font-semibold">{tc('mg.MasteringGame.stereo_width', '📻 Stereo Width')}</label>
               <span className="text-stone-400">{parameters.stereoWidth[0]}%</span>
             </div>
             <Slider
@@ -172,14 +173,14 @@ export const MasteringGame: React.FC<MasteringGameProps> = ({ onComplete, onClos
               step={1}
               className="w-full"
             />
-            <div className="text-xs text-green-400 mt-1">Target: {target.stereoWidth}%</div>
+            <div className="text-xs text-green-400 mt-1">{tc('mg.MasteringGame.target_pct', 'Target: {{value}}%', { value: target.stereoWidth })}</div>
           </div>
         </div>
       </div>
 
       <div className="text-center mb-6">
         <div className="text-lg font-bold text-white mb-2">
-          Accuracy: {accuracy}%
+          {tc('mg.MasteringGame.accuracy', 'Accuracy: {{n}}%', { n: accuracy })}
         </div>
         <div className="w-full bg-stone-700 rounded-full h-3 overflow-hidden">
           <div
@@ -191,13 +192,13 @@ export const MasteringGame: React.FC<MasteringGameProps> = ({ onComplete, onClos
 
       <div className="flex gap-4 justify-center">
         <KenneyButton variant="green" onClick={checkTarget}>
-          ✨ Check Master
+          {tc('mg.MasteringGame.check', '✨ Check Master')}
         </KenneyButton>
         <KenneyButton variant="yellow" onClick={handleComplete}>
-          Finish Early
+          {tc('mg.MasteringGame.finish_early', 'Finish Early')}
         </KenneyButton>
         <KenneyButton variant="grey" onClick={onClose}>
-          Cancel
+          {tc('mg.MasteringGame.cancel', 'Cancel')}
         </KenneyButton>
       </div>
 
@@ -217,7 +218,7 @@ export const MasteringGame: React.FC<MasteringGameProps> = ({ onComplete, onClos
       </div>
       {masteringDone && (
         <div className="mt-4 text-center text-2xl font-bold text-green-400 mg-perfect-pop">
-          Mastering Complete! Final Score: {score}
+          {tc('mg.MasteringGame.complete', 'Mastering Complete! Final Score: {{score}}', { score })}
         </div>
       )}
       </div>

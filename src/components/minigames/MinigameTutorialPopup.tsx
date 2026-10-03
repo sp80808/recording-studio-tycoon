@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
+import { tc } from '@/i18n/content';
 
 interface MinigameTutorialPopupProps {
   minigameId: string;
@@ -35,17 +36,17 @@ export const MinigameTutorialPopup: React.FC<MinigameTutorialPopupProps> = ({
             size="icon" 
             className="absolute top-3 right-3 text-stone-400 hover:text-white"
             onClick={onClose}
-            aria-label="Close tutorial"
+            aria-label={tc('mg.MinigameTutorialPopup.close_tutorial', 'Close tutorial')}
         >
             <X size={20} />
         </Button>
         <CardHeader className="pb-4">
           <CardTitle className="text-2xl font-bold text-purple-400 flex items-center">
-            <span role="img" aria-label="controller icon" className="mr-2 text-3xl">🎮</span> 
+            <span role="img" aria-label={tc('mg.MinigameTutorialPopup.controller_icon', 'controller icon')} className="mr-2 text-3xl">🎮</span> 
             {title}
           </CardTitle>
           <CardDescription className="text-stone-300">
-            Here's a quick guide before you start!
+            {tc('mg.MinigameTutorialPopup.quick_guide', 'Here\'s a quick guide before you start!')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -59,7 +60,7 @@ export const MinigameTutorialPopup: React.FC<MinigameTutorialPopupProps> = ({
             onClick={onClose} 
             className="w-full bg-purple-600 hover:bg-purple-700 mt-6"
           >
-            Got it, let's play!
+            {tc('mg.MinigameTutorialPopup.got_it', 'Got it, let\'s play!')}
           </Button>
         </CardContent>
       </Card>

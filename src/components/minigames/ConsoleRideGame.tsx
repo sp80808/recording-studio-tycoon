@@ -6,6 +6,7 @@ import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useSettings } from '@/contexts/settings-context-types';
 import { Sliders, Volume2, AlertTriangle } from 'lucide-react';
+import { tc } from '@/i18n/content';
 
 export interface MinigameComponentProps {
   minigameId: string;
@@ -229,8 +230,8 @@ export const ConsoleRideGame: React.FC<MinigameComponentProps> = ({ minigameId, 
 
   return (
     <MinigameChrome
-      title="Analog Console Fader Ride & Stereo Pan"
-      subtitle="Ride the channel fader with Left Stick, balance stereo width with Right Stick"
+      title={tc('mg.ConsoleRideGame.title', 'Analog Console Fader Ride & Stereo Pan')}
+      subtitle={tc('mg.ConsoleRideGame.subtitle', 'Ride the channel fader with Left Stick, balance stereo width with Right Stick')}
       onClose={onClose}
     >
       <div className="space-y-4 max-w-lg mx-auto select-none">
@@ -239,19 +240,19 @@ export const ConsoleRideGame: React.FC<MinigameComponentProps> = ({ minigameId, 
           {/* Top Status & VU Meter Section */}
           <div className="w-full flex items-center justify-between mb-4 px-2">
             <div>
-              <span className="text-[10px] text-stone-400 font-mono">CHANNEL BUS 01</span>
+              <span className="text-[10px] text-stone-400 font-mono">{tc('mg.ConsoleRideGame.channel_bus', 'CHANNEL BUS 01')}</span>
               <div className="text-xs font-bold text-amber-300">
-                Time: <span className="font-mono">{timeLeft}s</span>
+                {tc('mg.ConsoleRideGame.time', 'Time:')} <span className="font-mono">{tc('mg.ConsoleRideGame.seconds', '{{n}}s', { n: timeLeft })}</span>
               </div>
             </div>
 
             {/* Live VU Peak Needle Display */}
             <div className="flex flex-col items-center bg-stone-950 px-4 py-2 rounded-lg border border-stone-800 shadow-inner">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[9px] font-mono text-stone-400">OUTPUT RMS</span>
+                <span className="text-[9px] font-mono text-stone-400">{tc('mg.ConsoleRideGame.output_rms', 'OUTPUT RMS')}</span>
                 {isClipping && (
                   <span className="flex items-center gap-1 text-[9px] font-bold text-red-500 animate-pulse">
-                    <AlertTriangle size={11} /> CLIP!
+                    <AlertTriangle size={11} /> {tc('mg.ConsoleRideGame.clip', 'CLIP!')}
                   </span>
                 )}
               </div>
@@ -271,7 +272,7 @@ export const ConsoleRideGame: React.FC<MinigameComponentProps> = ({ minigameId, 
             </div>
 
             <div>
-              <span className="text-[10px] text-stone-400 font-mono">SCORE</span>
+              <span className="text-[10px] text-stone-400 font-mono">{tc('mg.ConsoleRideGame.score_caption', 'SCORE')}</span>
               <div className="text-sm font-bold font-mono text-emerald-400">{score}</div>
             </div>
           </div>
@@ -282,7 +283,7 @@ export const ConsoleRideGame: React.FC<MinigameComponentProps> = ({ minigameId, 
             <div className="flex flex-col items-center">
               <div className="flex items-center gap-1.5 mb-2">
                 <GamepadGlyph button="ls" size="xs" />
-                <span className="text-xs font-bold text-stone-200">FADER (L-Stick)</span>
+                <span className="text-xs font-bold text-stone-200">{tc('mg.ConsoleRideGame.fader_label', 'FADER (L-Stick)')}</span>
               </div>
 
               <div className="relative w-12 h-44 bg-stone-900 border border-stone-700 rounded-md flex justify-center py-2 shadow-inner">
@@ -303,14 +304,14 @@ export const ConsoleRideGame: React.FC<MinigameComponentProps> = ({ minigameId, 
                   <div className="w-6 h-0.5 bg-stone-900/60" />
                 </div>
               </div>
-              <span className="text-[10px] font-mono text-amber-300 mt-2">{fader.toFixed(0)}% GAIN</span>
+              <span className="text-[10px] font-mono text-amber-300 mt-2">{tc('mg.ConsoleRideGame.gain', '{{pct}}% GAIN', { pct: fader.toFixed(0) })}</span>
             </div>
 
             {/* Right Stick Stereo Pan Potentiometer */}
             <div className="flex flex-col items-center justify-center">
               <div className="flex items-center gap-1.5 mb-2">
                 <GamepadGlyph button="rs" size="xs" />
-                <span className="text-xs font-bold text-stone-200">STEREO PAN (R-Stick)</span>
+                <span className="text-xs font-bold text-stone-200">{tc('mg.ConsoleRideGame.pan_label', 'STEREO PAN (R-Stick)')}</span>
               </div>
 
               {/* Circular Pan Knob */}
@@ -334,14 +335,14 @@ export const ConsoleRideGame: React.FC<MinigameComponentProps> = ({ minigameId, 
                 </div>
 
                 <div className="absolute text-[10px] font-mono text-stone-400">
-                  {pan === 0 ? 'CENTER' : pan < 0 ? `L ${Math.abs(pan).toFixed(0)}` : `R ${pan.toFixed(0)}`}
+                  {pan === 0 ? tc('mg.ConsoleRideGame.center', 'CENTER') : pan < 0 ? tc('mg.ConsoleRideGame.pan_left', 'L {{v}}', { v: Math.abs(pan).toFixed(0) }) : tc('mg.ConsoleRideGame.pan_right', 'R {{v}}', { v: pan.toFixed(0) })}
                 </div>
               </div>
 
               <div className="flex items-center justify-between w-full px-4 text-[9px] text-stone-500 font-mono">
-                <span>HARD L</span>
-                <span>CENTER</span>
-                <span>HARD R</span>
+                <span>{tc('mg.ConsoleRideGame.hard_l', 'HARD L')}</span>
+                <span>{tc('mg.ConsoleRideGame.center', 'CENTER')}</span>
+                <span>{tc('mg.ConsoleRideGame.hard_r', 'HARD R')}</span>
               </div>
             </div>
           </div>
@@ -349,23 +350,23 @@ export const ConsoleRideGame: React.FC<MinigameComponentProps> = ({ minigameId, 
           {/* Real-time feedback bar */}
           <div className="w-full text-center mt-3 text-xs">
             {isClipping ? (
-              <span className="text-red-400 font-bold animate-pulse">PULL FADER DOWN! Digital Clipping Detected!</span>
+              <span className="text-red-400 font-bold animate-pulse">{tc('mg.ConsoleRideGame.fb_clip', 'PULL FADER DOWN! Digital Clipping Detected!')}</span>
             ) : inSweetSpot ? (
-              <span className="text-emerald-400 font-bold">✨ IN THE SWEET SPOT (+0dB RMS / Balanced Pan)</span>
+              <span className="text-emerald-400 font-bold">{tc('mg.ConsoleRideGame.fb_sweet', '✨ IN THE SWEET SPOT (+0dB RMS / Balanced Pan)')}</span>
             ) : (
-              <span className="text-stone-400">Adjust sticks to bring mix into the green zone</span>
+              <span className="text-stone-400">{tc('mg.ConsoleRideGame.fb_adjust', 'Adjust sticks to bring mix into the green zone')}</span>
             )}
           </div>
         </div>
 
         {gameOver && (
           <div className="p-3 bg-emerald-950/60 border border-emerald-500/50 rounded-lg text-center animate-in zoom-in-95">
-            <h4 className="font-bold text-emerald-300 mb-1">Session Take Mixed!</h4>
+            <h4 className="font-bold text-emerald-300 mb-1">{tc('mg.ConsoleRideGame.mixed', 'Session Take Mixed!')}</h4>
             <p className="text-xs text-stone-300 mb-3">
-              Total Score: <span className="font-mono text-amber-300 font-bold">{score}</span> / 1000
+              {tc('mg.ConsoleRideGame.total_score', 'Total Score:')} <span className="font-mono text-amber-300 font-bold">{score}</span> / 1000
             </p>
             <KenneyButton onClick={handleFinalize} variant="green" className="w-full">
-              Collect Mix Rewards
+              {tc('mg.ConsoleRideGame.collect_rewards', 'Collect Mix Rewards')}
             </KenneyButton>
           </div>
         )}
@@ -374,7 +375,7 @@ export const ConsoleRideGame: React.FC<MinigameComponentProps> = ({ minigameId, 
       <DialogFooter className="mt-4">
         {!gameOver && (
           <KenneyButton onClick={() => onComplete(score, score >= 500)} variant="blue">
-            Skip to Finish
+            {tc('mg.ConsoleRideGame.skip_to_finish', 'Skip to Finish')}
           </KenneyButton>
         )}
       </DialogFooter>

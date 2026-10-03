@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { DialogFooter } from '@/components/ui/dialog'; // Import DialogFooter
 import { MinigameChrome, KenneyButton } from './MinigameChrome';
+import { tc } from '@/i18n/content';
 
 // Define a basic props interface for minigame components
 export interface MinigameComponentProps {
@@ -87,7 +88,7 @@ export const VocalTuningGame: React.FC<MinigameComponentProps> = ({ minigameId, 
 
   return (
     <Card className="w-full max-w-2xl mx-auto bg-stone-800 text-white border-stone-700">
-      <MinigameChrome title="🎤 Vocal Tuning Challenge" score={score} timeLeft={gameOver ? undefined : timeLeft} streak={pitchNodes.filter((node) => node.isCorrected).length >= 2 ? pitchNodes.filter((node) => node.isCorrected).length : undefined} accent="red">
+      <MinigameChrome title={tc('mg.VocalTuningGame.title', '🎤 Vocal Tuning Challenge')} score={score} timeLeft={gameOver ? undefined : timeLeft} streak={pitchNodes.filter((node) => node.isCorrected).length >= 2 ? pitchNodes.filter((node) => node.isCorrected).length : undefined} accent="red">
       <CardContent>
 
         {/* Simplified visual representation of pitch nodes */}
@@ -124,17 +125,17 @@ export const VocalTuningGame: React.FC<MinigameComponentProps> = ({ minigameId, 
         
         {gameOver && (
           <div className="mt-4 text-center text-2xl font-bold text-green-400">
-            Time's Up! Final Score: {score}
+            {tc('mg.VocalTuningGame.times_up', "Time's Up! Final Score: {{score}}", { score })}
           </div>
         )}
       </CardContent>
       </MinigameChrome>
       <DialogFooter className="p-4">
         <KenneyButton variant="red" onClick={onClose}>
-          Close
+          {tc('mg.VocalTuningGame.close', 'Close')}
         </KenneyButton>
         <KenneyButton variant="red" onClick={handleFinalize} disabled={gameOver}>
-          Finalize & Get Score
+          {tc('mg.VocalTuningGame.finalize', 'Finalize & Get Score')}
         </KenneyButton>
       </DialogFooter>
     </Card>
