@@ -4,7 +4,7 @@ import { money } from '@/utils/displayMoney';
 import { buildBookingCalendar, previewBooking, reschedulePreview, SLOT_NAMES, SLOTS_PER_DAY } from '@/rpg/bookingCalendar';
 import { quoteFor, MARGIN_LABEL } from '@/rpg/serviceQuote';
 
-type CalState = Pick<GameState, 'currentDay' | 'studioRooms' | 'activeProject' | 'activeProjects' | 'cityId' | 'clientRelationships' | 'hiredStaff'>;
+type CalState = Pick<GameState, 'currentDay' | 'studioRooms' | 'activeProject' | 'activeProjects' | 'cityId' | 'clientRelationships' | 'hiredStaff'> & Partial<Pick<GameState, 'saveSeed' | 'money' | 'freelancers' | 'premisesTier' | 'serviceLog'>>;
 
 export const BookingCalendar: React.FC<{ state: CalState }> = ({ state }) => {
   const cal = buildBookingCalendar(state);
@@ -56,6 +56,8 @@ export const BookingCostLine: React.FC<{ state: CalState; project: Project }> = 
       {' '}· {money(p.payoutPerSlot)} per slot ({money(p.payout)} total)
       <span data-testid="booking-quote" className="mt-1 block text-stone-400">
         {q.serviceLabel}: about {q.roomHours} room hours, {q.staffHours} staff hours{q.setupSavedHours > 0 ? ` (setup reused: ${q.setupSavedHours}h saved)` : ''} · {q.revisionAllowance > 0 ? `${q.revisionAllowance} revision round${q.revisionAllowance === 1 ? '' : 's'} included · ` : ''}margin <strong className="text-stone-200">{MARGIN_LABEL[q.marginBand]}</strong>
+        {q.freelancerFees > 0 && <span className="block">Outside specialists already booked: {money(q.freelancerFees)} (in the margin)</span>}
+        {q.outsideHint && q.freelancerFees === 0 && <span data-testid="booking-outside-hint" className="block">Outside help is available for {q.outsideHint.stageName} from {money(q.outsideHint.from)}; it only counts against the margin if you book it.</span>}
         <span data-testid="booking-deposit" className="block">{q.deposit.reason}{q.deposit.required ? ` (${money(q.deposit.amount)} now, ${money(Math.max(0, q.fee - q.deposit.amount))} on delivery)` : ''}</span>
       </span>
       <span data-testid="booking-terms" className={`mt-1 block ${p.startBufferDays < 0 ? 'text-amber-300' : 'text-stone-400'}`}>

@@ -28,6 +28,7 @@ import { createSeededRandom } from '@/simulation/seededRandom';
 import { evaluateProjectSynergies, calculateSynergyBonuses, recordDiscoveredSynergies } from '@/utils/synergyUtils';
 import { advanceFlow } from '@/rpg/focusFlow';
 import { applyKnowHowEvents, domainForStage, sessionTemplateBonus, type KnowHowEvent } from '@/rpg/studioKnowHow';
+import { activeUplift } from '@/rpg/freelancers';
 import { gradeStage, focusMatchFraction } from '@/rpg/stageGrades';
 import {
   getActiveBuffMagnitude,
@@ -367,7 +368,9 @@ export const useStageWork = ({
     const chainFactor = chainOk
       ? chainMultiplier(evaluateChain(project.signalChain!, gameState, assignedStaff, getProjectBrief(project)))
       : 1;
-    const briefMultiplier = BRIEF_FIT_MULTIPLIER[briefFit.grade] * chainFactor;
+    // Outside specialist (#69): only this stage's gains, only once they have arrived.
+    const outsideMultiplier = 1 + activeUplift(project, currentStageIndex, gameState.currentDay);
+    const briefMultiplier = BRIEF_FIT_MULTIPLIER[briefFit.grade] * chainFactor * outsideMultiplier;
     const briefDiscoveries = recordBriefDiscoveries(gameState.discoveredBriefCombos, briefFit);
 
     const brewReady =

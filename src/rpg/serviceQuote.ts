@@ -10,6 +10,7 @@
  */
 import type { GameState, Project } from '@/types/game';
 import { getProjectBrief, SERVICE_LABELS, SERVICE_ROLE, type BriefServiceType } from '@/rpg/projectBrief';
+import { freelancerFees as freelancerFeesOf, offersFor } from '@/rpg/freelancers';
 import { buildBookingCalendar, remainingWorkDays } from '@/rpg/bookingCalendar';
 export { REVISION_ROUND_FEE } from '@/rpg/sessionIssues';
 
@@ -70,6 +71,10 @@ export interface ServiceQuote {
   marginBand: MarginBand;
   deposit: DepositTerms;
   revisionAllowance: number;
+  /** Fees already agreed with outside specialists (#69); part of direct costs. */
+  freelancerFees: number;
+  /** Cheapest outside-help option for a stage of this job, if any. Not in the margin until booked. */
+  outsideHint?: { stageName: string; from: number };
   /** Setup hours saved because the last session was the same kind of work (0 when not applicable). */
   setupSavedHours: number;
 }
@@ -98,8 +103,21 @@ export const setupSynergyHours = (
   return Math.max(1, Math.round(HOURS[service].setup * 0.5));
 };
 
+type QuoteState = Pick<GameState, 'clientRelationships' | 'hiredStaff'> & Partial<Pick<GameState, 'serviceLog' | 'currentDay' | 'saveSeed' | 'money' | 'freelancers' | 'premisesTier'>>;
+
+const outsideHintFor = (state: QuoteState, project: Project): ServiceQuote['outsideHint'] => {
+  if (!project.stages?.length) return undefined;
+  const net = { saveSeed: state.saveSeed, currentDay: state.currentDay ?? 0, money: state.money ?? 0, freelancers: state.freelancers, premisesTier: state.premisesTier, clientRelationships: state.clientRelationships, hiredStaff: state.hiredStaff };
+  let best: { stageName: string; from: number } | undefined;
+  for (let i = 0; i < project.stages.length; i++) {
+    const offers = offersFor(net, project, i);
+    if (offers[0] && (!best || offers[0].fee < best.from)) best = { stageName: project.stages[i].stageName, from: offers[0].fee };
+  }
+  return best;
+};
+
 export const quoteFor = (
-  state: Pick<GameState, 'clientRelationships' | 'hiredStaff'> & Partial<Pick<GameState, 'serviceLog' | 'currentDay'>>,
+  state: QuoteState,
   project: Project,
 ): ServiceQuote => {
   const service = getProjectBrief(project).serviceType;
@@ -111,7 +129,8 @@ export const quoteFor = (
   const role = SERVICE_ROLE[service];
   const salaries = (state.hiredStaff ?? []).filter((s) => s.role === role).map((s) => s.salary);
   const hourly = salaries.length ? Math.min(...salaries) / STAFF_DAY_HOURS : 0;
-  const directCosts = Math.round(roomHours * ROOM_HOUR_COST + staffHours * hourly);
+  const freelancerFees = freelancerFeesOf(project);
+  const directCosts = Math.round(roomHours * ROOM_HOUR_COST + staffHours * hourly) + freelancerFees;
   const fee = Math.round(project.payoutBase ?? 0);
   return {
     service,
@@ -125,6 +144,8 @@ export const quoteFor = (
     marginBand: marginBandFor(fee, directCosts),
     deposit: depositFor(state, project),
     revisionAllowance: REVISION_ALLOWANCE[service],
+    freelancerFees,
+    outsideHint: outsideHintFor(state, project),
     setupSavedHours,
   };
 };
