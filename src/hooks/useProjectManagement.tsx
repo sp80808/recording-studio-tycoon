@@ -1,4 +1,5 @@
 import { applyLabelOutcome } from '@/rpg/labelAccounts';
+import { enquiryDemandWeight } from '@/rpg/marketDemand';
 import { depositFor } from '@/rpg/serviceQuote';
 import { earn } from '@/economy/ledger';
 import { trackSessionBooked, trackSessionSettled } from '@/telemetry/instrument';
@@ -137,6 +138,7 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
         getOriginEffects(prev).repeatClientPremium,
         settled.reputation,
         prev.cityId,
+        enquiryDemandWeight(prev.saveSeed, prev.currentDay),
       );
 
       const prevRelationship = completedProject?.clientId

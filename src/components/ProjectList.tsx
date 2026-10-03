@@ -1,4 +1,5 @@
 import { money } from '@/utils/displayMoney';
+import { enquiryDemandWeight, industryPulse } from '@/rpg/marketDemand';
 import { trackEnquiry } from '@/telemetry/instrument';
 import React, { useState } from 'react';
 import { GameState, Project } from '@/types/game';
@@ -160,6 +161,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
           1.1,
           prev.reputation,
           prev.cityId,
+          enquiryDemandWeight(prev.saveSeed, prev.currentDay),
         )
       ]
     }));
@@ -227,6 +229,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
   const signature = signatureJobFor(gameState);
   const derivedOffers = [...labelOffersFor(gameState).filter((l) => !passedFillers.includes(l.id)), ...(signature && !passedFillers.includes(signature.id) ? [signature] : []), ...fillerJobsFor(gameState).filter((f) => !passedFillers.includes(f.id))]
     .map((p) => (p.labelTerms ? withChoices(p, labelChoices[p.id] ?? NO_CHOICES) : p));
+  const pulse = industryPulse(gameState.saveSeed, gameState.currentDay);
   const board = [...gameState.availableProjects, ...derivedOffers].sort(
     (a, b) => Number(Boolean(b.isStoryContract)) - Number(Boolean(a.isStoryContract)),
   );
@@ -239,6 +242,17 @@ export const ProjectList: React.FC<ProjectListProps> = ({
           <p className="rst-muted mt-1 text-xs">
             Choose the sessions that best fit your room, staff and current cashflow.
           </p>
+          {pulse.length > 0 && (
+            <details data-testid="industry-pulse" className="mt-1 text-xs text-stone-400">
+              <summary className="cursor-pointer select-none">
+                Industry pulse: {pulse.map((l) => `${l.genre} ${l.arrow} ${l.word}`).join(' · ')}
+              </summary>
+              <ul className="mt-1 space-y-0.5">
+                {pulse.map((l) => <li key={l.genre}>{l.genre}: {l.effect}.</li>)}
+              </ul>
+              <p className="mt-1">Demand shapes which work turns up and how releases land. It never changes how good your recording is.</p>
+            </details>
+          )}
         </div>
         <MotionButton
           onClick={handleRefresh}

@@ -25,6 +25,8 @@ export const generateNewProjects = (
   repeatClientPremium: number = 1.1,
   reputation: number = 0,
   cityId?: string,
+  /** Market demand multiplier by genre (#52), bounded 0.75-1.25. Omitted leaves weights alone. */
+  demandWeight?: (genre: string) => number,
 ): Project[] => {
   const projects: Project[] = [];
   const usedTitles = new Set<string>();
@@ -39,8 +41,11 @@ export const generateNewProjects = (
   // Choose appropriate template pool based on player level and era
   const isEarlyGame = playerLevel < 5;
   const rawTemplatePool: WeightedGig[] = isEarlyGame ? starterPool : [...starterPool, ...advancedPool];
-  const regional = (pool: WeightedGig[]): WeightedGig[] => cityId
-    ? pool.map((g) => ({ ...g, weight: g.weight * regionalEnquiryWeight(g.template.genre, cityId) }))
+  const regional = (pool: WeightedGig[]): WeightedGig[] => (cityId || demandWeight)
+    ? pool.map((g) => ({
+        ...g,
+        weight: g.weight * (cityId ? regionalEnquiryWeight(g.template.genre, cityId) : 1) * (demandWeight ? demandWeight(g.template.genre) : 1),
+      }))
     : pool;
   const templatePool = regional(rawTemplatePool);
   const basePool: WeightedGig[] = isEarlyGame ? starterPool : advancedPool;

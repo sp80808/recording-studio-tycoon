@@ -7,6 +7,7 @@
  * session fee. Career points only ever grow, so inactivity cannot demote a
  * client. Pure + deterministic: the outcome comes from the project seed.
  */
+import { RELEASE_DEMAND_POINTS } from '@/rpg/marketDemand';
 import type { ClientRelationship, GameNotification } from '@/types/game';
 import type { BriefServiceType } from '@/rpg/projectBrief';
 import { createSeededRandom, randomInt } from '@/simulation/seededRandom';
@@ -57,9 +58,10 @@ export const clientCareerTier = (rel: Pick<ClientRelationship, 'careerPoints'> |
   careerTierForPoints(rel?.careerPoints ?? 0);
 
 /** Deterministic outcome: quality dominates, a seeded swing keeps releases from being a pure lookup. */
-export const outcomeBandFor = (projectId: string, quality: number): ReleaseOutcomeBand => {
+export const outcomeBandFor = (projectId: string, quality: number, demandPoints = 0): ReleaseOutcomeBand => {
   const swing = randomInt(createSeededRandom(`release:${projectId}`), -8, 8);
-  const score = Math.max(0, Math.min(100, quality)) + swing;
+  // Demand (#52) nudges the commercial outcome by a few points at most; quality still dominates.
+  const score = Math.max(0, Math.min(100, quality)) + swing + Math.max(-RELEASE_DEMAND_POINTS, Math.min(RELEASE_DEMAND_POINTS, demandPoints));
   return score < 45 ? 'quiet' : score < 70 ? 'solid' : score < 88 ? 'breakthrough' : 'prestige';
 };
 
@@ -70,6 +72,8 @@ export interface ReleaseInput {
   qualityScore: number;
   day: number;
   followUpOf?: string;
+  /** Market demand points for this genre when it released (#52). */
+  demandPoints?: number;
 }
 
 /** Create the release record for a settled client project. Idempotent per project id. */
@@ -85,7 +89,7 @@ export function recordRelease(rel: ClientRelationship, input: ReleaseInput): Cli
     qualityScore: Math.max(0, Math.min(100, Math.round(input.qualityScore))),
     releaseDay: input.day,
     resolveDay: input.day + delay,
-    outcomeBand: outcomeBandFor(input.projectId, input.qualityScore),
+    outcomeBand: outcomeBandFor(input.projectId, input.qualityScore, input.demandPoints ?? 0),
     resolved: false,
     ...(input.followUpOf ? { followUpOf: input.followUpOf } : {}),
   };

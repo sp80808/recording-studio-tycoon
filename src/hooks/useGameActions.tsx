@@ -1,4 +1,5 @@
 import { money } from '@/utils/displayMoney';
+import { enquiryDemandWeight } from '@/rpg/marketDemand';
 import { refreshGearForDay } from '@/features/usedGear/economy';
 
 import { useCallback } from 'react';
@@ -408,7 +409,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       lastGigRefreshDay: prev.currentDay,
       availableProjects: [
         ...prev.availableProjects,
-        ...generateNewProjects(1, prev.playerData.level, prev.currentEra, [], 1.1, prev.reputation, prev.cityId),
+        ...generateNewProjects(1, prev.playerData.level, prev.currentEra, [], 1.1, prev.reputation, prev.cityId, enquiryDemandWeight(prev.saveSeed, prev.currentDay)),
       ],
     }));
 
