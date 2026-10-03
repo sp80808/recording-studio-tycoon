@@ -110,6 +110,10 @@ export interface ClientRelationship {
 
 export interface Project {
   id: string;
+  /** Label package terms (#50). Present only on label contracts. */
+  labelTerms?: import('@/rpg/labelAccounts').LabelTerms;
+  /** Game day the session was booked (set when it starts). */
+  bookedDay?: number;
   title: string;
   genre: string;
   clientType: string;

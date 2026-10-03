@@ -42,7 +42,7 @@ for check in tools-assets audio-system confetti-juice minigames-audio user-inter
 done
 
 echo "=== gamepad service & controller suites ==="
-for check in gamepad-service gamepad-glyph gamepad-navigation radial-wheel beat-pad-game tape-jog-game console-ride-game vocal-comp album-sequence fault-hunt chain-recall flight-case-packing session-scramble phase-check booking-calendar filler-jobs city-selection onboarding-steps city-sagas market-determinism house-style artist-career label-interest staff-career recruitment-channels bus-merge gamepad-suite; do
+for check in gamepad-service gamepad-glyph gamepad-navigation radial-wheel beat-pad-game tape-jog-game console-ride-game vocal-comp album-sequence fault-hunt chain-recall flight-case-packing session-scramble phase-check booking-calendar filler-jobs city-selection onboarding-steps city-sagas market-determinism house-style artist-career label-interest label-accounts staff-career recruitment-channels bus-merge gamepad-suite; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
   node "/tmp/rst-$check.cjs"
 done
@@ -172,7 +172,7 @@ node /tmp/rst-studio-os-motion.cjs
 node /tmp/rst-studio-art.cjs
 
 echo "=== gear bench & reward FX policy (#81, #80) ==="
-for check in gear-bench gear-reliability reward-fx-policy; do
+for check in gear-bench gear-reliability gear-upkeep reward-fx-policy; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
   node "/tmp/rst-$check.cjs"
 done
