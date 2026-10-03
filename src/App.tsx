@@ -1,3 +1,4 @@
+import React, { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -15,6 +16,8 @@ import { CutsceneDirector } from "./components/cutscenes/CutsceneDirector";
 import { MotionConfig } from "framer-motion";
 import './App.css';
 
+// Dev only (#57): the whole lab is behind a DEV-gated dynamic import, so production bundles never include it.
+const LazyBalanceLab = import.meta.env.DEV ? React.lazy(() => import('./dev/balance/BalanceLabLauncher')) : () => null;
 const queryClient = new QueryClient();
 
 const App = () => {
@@ -27,6 +30,7 @@ const App = () => {
               {/* Single Sonner host — avoid mounting a duplicate toaster. */}
               <Toaster />
               {process.env.NODE_ENV === 'development' && <DevMenu />}
+              {import.meta.env.DEV && <Suspense fallback={null}><LazyBalanceLab /></Suspense>}
               <BoxDropController />
               <DealerController />
               <PremiumRevealController />
