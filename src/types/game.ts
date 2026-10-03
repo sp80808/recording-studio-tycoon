@@ -114,6 +114,8 @@ export interface Project {
   labelTerms?: import('@/rpg/labelAccounts').LabelTerms;
   /** Game day the session was booked (set when it starts). */
   bookedDay?: number;
+  /** Deposit taken at booking (#51); already in the bank, so settlement pays only the rest. */
+  depositPaid?: number;
   title: string;
   genre: string;
   clientType: string;

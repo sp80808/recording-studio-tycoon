@@ -27,6 +27,7 @@ import { getOriginEffects } from '../narrative/originPerks';
 import { addAllocations, earn } from '../economy/ledger';
 import { calculateEquipmentUpkeep } from '../economy/upkeep';
 import { growFamiliarity } from '@/rpg/signalChain';
+import { settlementAfterDeposit } from '@/rpg/serviceQuote';
 import {
   findProjectForReport,
   resolveDeliveryClient,
@@ -391,7 +392,7 @@ export function applyReportToState(state: GameState, report: ProjectReport): Gam
     const staffShare = assigned.reduce((t, s) => t + s.salary, 0) * days;
     const overheadShare = Math.round(calculateEquipmentUpkeep(state.ownedEquipment, getOriginEffects(state)) * days);
     const booked = addAllocations(
-        earn(state, report.moneyGained, {
+        earn(state, settlementAfterDeposit(report.moneyGained, project?.depositPaid), {
             category: 'session-income',
             projectId: report.projectId,
             sourceId: `settle-${report.projectId}-${state.financials.reports.length}`,

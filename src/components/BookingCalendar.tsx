@@ -2,8 +2,9 @@ import React from 'react';
 import type { GameState, Project } from '@/types/game';
 import { money } from '@/utils/displayMoney';
 import { buildBookingCalendar, previewBooking, reschedulePreview, SLOT_NAMES, SLOTS_PER_DAY } from '@/rpg/bookingCalendar';
+import { quoteFor, MARGIN_LABEL } from '@/rpg/serviceQuote';
 
-type CalState = Pick<GameState, 'currentDay' | 'studioRooms' | 'activeProject' | 'activeProjects' | 'cityId'>;
+type CalState = Pick<GameState, 'currentDay' | 'studioRooms' | 'activeProject' | 'activeProjects' | 'cityId' | 'clientRelationships' | 'hiredStaff'>;
 
 export const BookingCalendar: React.FC<{ state: CalState }> = ({ state }) => {
   const cal = buildBookingCalendar(state);
@@ -46,12 +47,17 @@ const TERMS_LABEL = {
 
 export const BookingCostLine: React.FC<{ state: CalState; project: Project }> = ({ state, project }) => {
   const p = previewBooking(state, project);
+  const q = quoteFor(state, project);
   const later = reschedulePreview(state, project, (p.firstSlot ? p.firstSlot.day - state.currentDay : 0) + 1);
   return (
     <div data-testid="booking-cost-line" className="mb-3 rounded-lg border border-[var(--rst-line)] bg-black/20 p-2 text-xs text-stone-300">
       Takes {p.sessions} session{p.sessions === 1 ? '' : 's'}
       {p.firstSlot ? <> · starts {SLOT_NAMES[p.firstSlot.slot].toLowerCase()} day {p.firstSlot.day}{p.roomName ? ` in ${p.roomName}` : ''}</> : ' · no free slot this week'}
       {' '}· {money(p.payoutPerSlot)} per slot ({money(p.payout)} total)
+      <span data-testid="booking-quote" className="mt-1 block text-stone-400">
+        {q.serviceLabel}: about {q.roomHours} room hours, {q.staffHours} staff hours · margin <strong className="text-stone-200">{MARGIN_LABEL[q.marginBand]}</strong>
+        <span data-testid="booking-deposit" className="block">{q.deposit.reason}{q.deposit.required ? ` (${money(q.deposit.amount)} now, ${money(Math.max(0, q.fee - q.deposit.amount))} on delivery)` : ''}</span>
+      </span>
       <span data-testid="booking-terms" className={`mt-1 block ${p.startBufferDays < 0 ? 'text-amber-300' : 'text-stone-400'}`}>
         {TERMS_LABEL[p.terms.flexibility]}
         {!p.firstSlot ? '' : p.startBufferDays < 0
