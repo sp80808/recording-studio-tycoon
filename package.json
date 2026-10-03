@@ -16,7 +16,7 @@
     "dev": "vite",
     "predev": "python3 scripts/clean-appledouble.py --quiet",
     "build": "vite build",
-    "prebuild": "python3 scripts/clean-appledouble.py --quiet",
+    "prebuild": "python3 scripts/clean-appledouble.py --quiet && pnpm run content:validate",
     "build:dev": "vite build --mode development",
     "clean:appledouble": "python3 scripts/clean-appledouble.py",
     "lint": "eslint .",
@@ -27,6 +27,7 @@
     "assets:validate": "node scripts/assets.cjs validate",
     "assets:inspect": "node scripts/assets.cjs inspect",
     "preview": "vite preview",
+    "content:validate": "esbuild scripts/content-validate.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/content-validate.cjs --alias:@=./src --log-level=error && node node_modules/.cache/content-validate.cjs",
     "evidence:first-session": "node scripts/first-session-evidence.cjs"
   },
   "dependencies": {

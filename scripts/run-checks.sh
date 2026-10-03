@@ -42,7 +42,7 @@ for check in tools-assets audio-system confetti-juice minigames-audio user-inter
 done
 
 echo "=== gamepad service & controller suites ==="
-for check in gamepad-service gamepad-glyph gamepad-navigation radial-wheel beat-pad-game tape-jog-game console-ride-game vocal-comp album-sequence fault-hunt chain-recall flight-case-packing session-scramble phase-check booking-calendar filler-jobs city-selection onboarding-steps city-sagas market-determinism house-style artist-career label-interest label-accounts service-quote gameplay-telemetry market-demand balance-lab staff-career recruitment-channels bus-merge gamepad-suite; do
+for check in gamepad-service gamepad-glyph gamepad-navigation radial-wheel beat-pad-game tape-jog-game console-ride-game vocal-comp album-sequence fault-hunt chain-recall flight-case-packing session-scramble phase-check booking-calendar filler-jobs city-selection onboarding-steps city-sagas market-determinism house-style artist-career label-interest label-accounts service-quote gameplay-telemetry market-demand balance-lab content-workbench staff-career recruitment-channels bus-merge gamepad-suite; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="/tmp/rst-$check.cjs" --alias:@=./src >/dev/null
   node "/tmp/rst-$check.cjs"
 done
@@ -245,6 +245,10 @@ node /tmp/rst-mobile-session.cjs
 echo "=== pixi GPU exclusivity guard ==="
 ./node_modules/.bin/esbuild tests/pixi-exclusivity.check.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-pixi-exclusivity.cjs --alias:@=./src >/dev/null
 node /tmp/rst-pixi-exclusivity.cjs
+
+echo "=== content validation (schemas, ids, references, caps) ==="
+mkdir -p node_modules/.cache
+pnpm run content:validate || exit 1
 
 echo "=== balance harness invariants (10 days, seed 7) ==="
 ./node_modules/.bin/esbuild src/dev/balance/run.ts --bundle --platform=node --format=cjs --outfile=/tmp/rst-balance.cjs --alias:@=./src >/dev/null
