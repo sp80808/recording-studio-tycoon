@@ -1,4 +1,5 @@
 import { useArtistContracts } from '@/hooks/useArtistContracts';
+import { telemetry } from '@/telemetry/sink';
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ContextDrawer, type ContextDrawerTab } from './ContextDrawer';
@@ -154,6 +155,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   const openPanel = (next: Panel) => {
     if (!panel) returnFocusRef.current = document.activeElement as HTMLElement;
     setPanel(next);
+    if (next) telemetry.capture('management_panel_opened', gameState.currentDay, { destination: next });
   };
   const bookProject = (project: Project) => {
     startProject(project);

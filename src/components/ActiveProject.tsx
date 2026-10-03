@@ -1,4 +1,5 @@
 import { StatIcon } from '@/components/icons/GameIcons';
+import { trackIntervention } from '@/telemetry/instrument';
 import { money } from '@/utils/displayMoney';
 import { emitTakeFeedback } from '@/utils/takeFeedback';
 import { ProducerSprite } from '@/components/ProducerSprite';
@@ -314,6 +315,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
   const handleStartIntervention = () => {
     if (!autoTriggeredMinigame) return;
+    trackIntervention('intervened', gameState.currentDay, autoTriggeredMinigame.type);
     playSound('start_minigame', 0.55);
     window.setTimeout(() => {
       setSelectedMinigame(autoTriggeredMinigame.type);
@@ -323,6 +325,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
   const handleDelegateIntervention = () => {
     if (!autoTriggeredMinigame || !bestDelegate) return;
+    trackIntervention('delegated', gameState.currentDay, autoTriggeredMinigame.type);
 
     const { staff, fit } = bestDelegate;
     const baseBonus = Math.max(1, Math.min(8, Math.round(fit.score / 12)));
@@ -360,6 +363,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   };
 
   const handleSkipIntervention = () => {
+    if (autoTriggeredMinigame) trackIntervention('skipped', gameState.currentDay, autoTriggeredMinigame.type);
     playSound('ui-click', 0.4);
     window.setTimeout(() => {
       clearAutoTriggeredMinigame?.();

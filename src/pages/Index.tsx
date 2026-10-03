@@ -1,4 +1,6 @@
 import { applyKnowHowEvents } from '@/rpg/studioKnowHow';
+import { telemetry } from '@/telemetry/sink';
+import { installTelemetryDevHandle } from '@/telemetry/devHandle';
 import { REWARD_POP_EVENT, type RewardPopDetail } from '@/utils/rewardFx';
 import React, { useState, useEffect, useCallback, useRef } from 'react'; // Added useCallback
 import { GameLayout } from '@/components/GameLayout';
@@ -147,6 +149,11 @@ const MusicStudioTycoon = () => {
 
 
   useEffect(() => installFlightCaseRewards(setGameState), [setGameState]);
+  useEffect(() => {
+    telemetry.startRun(gameState.saveSeed);
+    installTelemetryDevHandle();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useAmbientIncome(gameInitialized && !showSplashScreen, setGameState);
 
   useEffect(() => {
