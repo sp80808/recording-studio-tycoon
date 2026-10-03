@@ -1,4 +1,5 @@
 import { money } from '@/utils/displayMoney';
+import { trackEnquiry } from '@/telemetry/instrument';
 import React, { useState } from 'react';
 import { GameState, Project } from '@/types/game';
 import { generateNewProjects } from '@/utils/projectUtils';
@@ -166,6 +167,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
 
   const handleAcceptEnquiry = (project: Project) => {
     if (gameState.activeProject || bookingId) return;
+    trackEnquiry('accepted', gameState, project);
     setBookingId(project.id);
     void gameAudio.playTactileClick();
 
@@ -206,6 +208,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
 
   const handleDeclineEnquiry = (projectId: string) => {
     if (decliningId) return;
+    trackEnquiry('declined', gameState, gameState.availableProjects.find(p => p.id === projectId) ?? derivedOffers.find(p => p.id === projectId));
     setDecliningId(projectId);
     void gameAudio.playUISound('buttonClick');
 

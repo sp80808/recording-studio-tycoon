@@ -1,3 +1,4 @@
+import { telemetry } from '@/telemetry/sink';
 import { money } from '@/utils/displayMoney';
 import { getHiringLimits, hiringBlockMessage } from '@/rpg/hiringLimits';
 
@@ -55,6 +56,7 @@ export const useStaffManagement = (
     setGameState(prev => {
       const nextLimits = getHiringLimits(prev);
       if (!nextLimits.canHire || prev.money < signingFee) return prev;
+      telemetry.capture('staff_hired', prev.currentDay, { role: newStaff.role }, newStaff.id);
       return {
         ...spend(prev, signingFee, { category: 'staff-hiring', staffId: newStaff.id, memo: candidate.name }),
         hiredStaff: [...prev.hiredStaff, newStaff],

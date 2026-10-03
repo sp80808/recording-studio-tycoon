@@ -1,6 +1,7 @@
 import { applyLabelOutcome } from '@/rpg/labelAccounts';
 import { depositFor } from '@/rpg/serviceQuote';
 import { earn } from '@/economy/ledger';
+import { trackSessionBooked, trackSessionSettled } from '@/telemetry/instrument';
 import { useCallback } from 'react';
 import { GameState, Project, ProjectReport } from '@/types/game';
 import { generateNewProjects } from '@/utils/projectUtils';
@@ -46,6 +47,7 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
     setGameState(prev => {
       // Deposit (#51): cash timing only. It is banked now and taken off the payout at settlement.
       const deposit = depositFor(prev, project).amount;
+      trackSessionBooked(prev, project, room.type);
       const banked = deposit > 0
         ? earn(prev, deposit, { category: 'deposit-income', projectId: project.id, sourceId: `deposit-${project.id}`, memo: project.title })
         : prev;
@@ -81,6 +83,7 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
     setGameState(prev => {
       const settled = applyReportToState(prev, projectReport);
       if (settled === prev) return prev;
+      trackSessionSettled(prev, prev.activeProject?.id === projectId ? prev.activeProject : prev.activeProjects?.find(x => x.id === projectId), projectReport);
 
       const involvedStaffIds = new Set(
         prev.hiredStaff
