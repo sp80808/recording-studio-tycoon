@@ -314,6 +314,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
   });
 
   const [focusedHotspotIndex, setFocusedHotspotIndex] = useState(0);
+  const [localCameraReset, setCameraReset] = useState(0);
   const previousFloorStickDirectionRef = useRef<ControllerNavDirection | null>(null);
 
   // Close inspector on B button
@@ -402,7 +403,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       className={`relative overflow-hidden rounded-lg border border-stone-700/70 bg-[#1b1815] transition-all duration-300 ${className}`} 
       style={style}
     >
-      <WebGLCanvas state={sceneState} onHotspotSelect={handleHotspot} resetCameraKey={cameraResetKey} onHotspotAnchors={setAnchors} onFirstFrame={onStudioReady} />
+      <WebGLCanvas state={sceneState} onHotspotSelect={handleHotspot} resetCameraKey={cameraResetKey + localCameraReset} onHotspotAnchors={setAnchors} onFirstFrame={onStudioReady} />
 
       {viewRoom && <RoomVignette room={viewRoom} occupiedBy={roomProjectTitle(viewRoom.id)} />}
       <StudioRoomTabs rooms={operationalRooms} activeId={viewRoom ? viewRoom.id : 'studio-a'} occupied={occupiedRooms} onSelect={(id) => { if (settings.sfxEnabled) void gameAudio.playTactileClick(); setViewRoomId(id); }} />
