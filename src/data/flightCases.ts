@@ -27,7 +27,7 @@ export type LegacyCrateTier = 'standard' | 'vintage_flight_case';
 export interface ArtSource {
   pack: string;
   url: string;
-  license: 'CC0' | 'CC-BY' | 'CC-BY-SA' | 'In-house (CC0)';
+  license: 'CC0' | 'CC-BY' | 'CC-BY-SA' | 'original';
   author: string;
   notes?: string;
 }
