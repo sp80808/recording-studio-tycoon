@@ -135,6 +135,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
 
   const [panel, setPanel] = useState<Panel | null>(null);
   const [consoleOpen, setConsoleOpen] = useState(false);
+  const [lockedHotspot, setLockedHotspot] = useState<import('@/components/WebGLCanvas').StudioHotspotId | null>(null);
   const [interventionFocused, setInterventionFocused] = useState(false);
   useEffect(() => { if (interventionFocused && !autoTriggeredMinigame) { setConsoleOpen(false); setInterventionFocused(false); } }, [interventionFocused, autoTriggeredMinigame]);
   const worldConsoleEnabled = useFeatureFlag('world-session-controls');
@@ -457,7 +458,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           <StudioRoom gameState={gameState} cameraResetKey={cameraResetKey} onAdvanceDay={advanceDay} onRefreshProjects={refreshProjects}
             onStartProject={bookProject} onAssignStaff={assignStaffToProject} onUnassignStaff={unassignStaffFromProject}
             onOpenDashboardTab={handleOpenDashboardTab} onOpenCases={() => openPanel('cases')} onConsoleFocus={() => openPanel('session')} onCompleteChore={completeFloorChore} activeChoreId={activeChoreId}
-            onBookings={() => openPanel('bookings')} onStudioReady={handleStudioReady} floorFocused={panel === null && !consoleOpen && !inputBlocked} worldControls={useWorldConsole} intervention={autoTriggeredMinigame} onInterventionFocus={() => { setPanel(null); setInterventionFocused(true); setConsoleOpen(true); }} className="studio-play-room" />
+            onBookings={() => openPanel('bookings')} onStudioReady={handleStudioReady} floorFocused={panel === null && !consoleOpen && !inputBlocked} lockedHotspot={lockedHotspot} worldControls={useWorldConsole} intervention={autoTriggeredMinigame} onInterventionFocus={() => { setPanel(null); setInterventionFocused(true); setConsoleOpen(true); }} className="studio-play-room" />
           {!studioReady && (
             <div className="studio-room-loading" role="status" aria-live="polite" aria-busy="true">
               <span className="studio-boot-gate-mark">RST</span>
@@ -466,7 +467,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
             </div>
           )}
         </div>
-        {project && useWorldConsole && <ActiveProject key={project.id} gameState={gameState} setGameState={setGameState} presentation="world" interventionOnly={interventionFocused} controlsEnabled={consoleOpen && panel === null && !inputBlocked && !showHistoricalNews && !showEraTransition && !showAttributesModal && !showShortcuts && !showRadialWheel} onCloseConsole={() => setConsoleOpen(false)} onRest={advanceDay} performDailyWork={performDailyWork} onMinigameReward={onMinigameReward} onProjectComplete={onProjectComplete} autoTriggeredMinigame={autoTriggeredMinigame} clearAutoTriggeredMinigame={clearAutoTriggeredMinigame} />}
+        {project && useWorldConsole && <ActiveProject key={project.id} gameState={gameState} setGameState={setGameState} presentation="world" interventionOnly={interventionFocused} controlsEnabled={consoleOpen && panel === null && !inputBlocked && !showHistoricalNews && !showEraTransition && !showAttributesModal && !showShortcuts && !showRadialWheel} onCloseConsole={() => setConsoleOpen(false)} onRest={advanceDay} performDailyWork={performDailyWork} onMinigameReward={onMinigameReward} onProjectComplete={onProjectComplete} autoTriggeredMinigame={autoTriggeredMinigame} clearAutoTriggeredMinigame={clearAutoTriggeredMinigame} onLockHotspot={setLockedHotspot} />}
         <SessionRail
           gameState={gameState}
           onOpenSession={() => openPanel('session')}

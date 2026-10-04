@@ -111,8 +111,8 @@ describe('Studio Lore & Console Laws', () => {
     });
   });
 
-  it('defines 6 rival studios covering all 4 core playstyles with Rising foils', () => {
-    assert.strictEqual(RIVAL_STUDIOS.length, 6, 'Expected exactly 6 rival studios');
+  it('defines rival studios covering all 4 core playstyles with Rising foils', () => {
+    assert.strictEqual(RIVAL_STUDIOS.length, 7, 'Expected 7 rival studios');
     const playstyles = new Set(RIVAL_STUDIOS.map((r) => r.primaryPlaystyle));
     assert.ok(playstyles.has('purist'));
     assert.ok(playstyles.has('hit-maker'));
@@ -124,8 +124,9 @@ describe('Studio Lore & Console Laws', () => {
     assert.strictEqual(silas?.headProducer, 'Silas Vance');
 
     const rivalsPurist = getRivalsByPlaystyle('purist');
-    assert.strictEqual(rivalsPurist.length, 1);
-    assert.strictEqual(rivalsPurist[0].id, 'black-wax-vault');
+    assert.strictEqual(rivalsPurist.length, 2);
+    assert.ok(rivalsPurist.some((r) => r.id === 'black-wax-vault'));
+    assert.ok(rivalsPurist.some((r) => r.id === 'lacquer-room'));
 
     const velvet = getRivalStudio('velvet-static-collective');
     assert.ok(velvet);

@@ -1927,7 +1927,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   const idleCameraRef = useRef({
     mode: 'idle' as 'idle' | 'focusing' | 'restoring',
     saved: { x: 0, y: 0, zoom: 1.0 } as CameraPose,
-    targetId: null as IdleDirectionHotspot | null,
+    targetId: null as StudioHotspotId | null,
   });
   const gestureRef = useRef(new Map<number, { x: number; y: number }>());
   const suppressTapRef = useRef(false);

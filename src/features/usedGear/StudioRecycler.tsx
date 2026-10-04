@@ -6,6 +6,7 @@ import GearMaintenanceGame from '@/components/minigames/GearMaintenanceGame';
 import CrateUnboxingModal from '@/features/boxDrops/CrateUnboxingModal';
 import { toBoxEquipmentItem, type Era } from '@/features/boxDrops/lootGenerator';
 import { applyGearAction, maintenanceQuote, type GearAction } from './economy';
+import { trackGear } from '@/telemetry/instrument';
 import { isFlightCaseSystemUnlocked } from '@/economy/flightCaseEconomy';
 import { FLIGHT_CASE_UNLOCK_LEVEL } from '@/data/flightCases';
 import { conditionBand, isMaintainable, reliabilityDescription } from './condition';
@@ -27,7 +28,18 @@ export function StudioRecycler({ gameState, setGameState }: StudioRecyclerProps)
   const crate = gameState.pendingCrates?.find(item => item.id === openCrateId);
   const reward = crate ? generateCrateGear(gameState, crate) : undefined;
   const act = (action: GearAction) => {
-    setMessage(applyGearAction(gameState, action).message);
+    const outcome = applyGearAction(gameState, action);
+    setMessage(outcome.message);
+    if (outcome.ok) {
+      if (action.type === 'buy') {
+        const listing = gameState.dailyClassifieds?.listings.find(l => l.id === action.listingId);
+        if (listing) trackGear('bought', gameState.currentDay, listing.askingPrice, 'used');
+      } else if (action.type === 'sell' && selected) {
+        trackGear('sold', gameState.currentDay, resaleValue(selected), 'recycle');
+      } else if (action.type === 'claim' && action.disposition === 'sell' && reward) {
+        trackGear('sold', gameState.currentDay, resaleValue(reward), 'crate');
+      }
+    }
     setGameState(prev => applyGearAction(prev, action).state);
   };
   const money = (value: number) => `$${value.toLocaleString()}`;

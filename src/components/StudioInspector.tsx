@@ -102,7 +102,7 @@ const Shell: React.FC<{
       if (e.target === e.currentTarget) onClose();
     }}
   >
-    <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]" onClick={onClose} aria-hidden="true" />
+    <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
     <MotionPanel
       direction="scale"
       role="dialog"

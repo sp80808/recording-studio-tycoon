@@ -7,10 +7,10 @@ Development and playtest infrastructure only. Nothing is sent anywhere: events g
 - `src/telemetry/sink.ts`: `GameplayEventSink`, the bounded `BufferedSink` (500 events) and the `telemetry` facade. Capturing never throws; a failing adapter is dropped and the local buffer keeps recording. `onceKey` makes a capture idempotent for the run.
 - `src/telemetry/instrument.ts`: call-site helpers that turn game objects into banded, allowlisted properties. Gameplay code imports these or the facade, never a vendor SDK.
 
-Events today: `enquiry_accepted`, `enquiry_declined`, `session_booked`, `session_settled`, `intervention_intervened|delegated|skipped`, `staff_hired`, `management_panel_opened`.
+Events today: `enquiry_generated`, `enquiry_viewed`, `enquiry_accepted`, `enquiry_declined`, `enquiry_expired`, `session_booked`, `session_started`, `intervention_offered`, `intervention_intervened|delegated|skipped`, `session_settled`, `staff_hired`, `room_purchased`, `gear_bought`, `gear_sold`, `repair_completed`, `relationship_tier_changed`, `management_panel_opened`.
 
 ## Privacy boundary
-Captured: service type, fee/duration/quality/margin bands, deposit flag, rooms free, room type, staff role, minigame kind, panel name, game day, run id (random, per tab), save seed, version strings.
+Captured: service type, fee/duration/quality/margin/price bands, deposit flag, rooms free, room type, staff role, minigame kind, panel name, game day, run id (random, per tab), save seed, version strings.
 Never captured: player-entered text, names (player, client, staff, project titles), emails, machine or location data, file paths, narrative text, pointer movement, screenshots. `sanitizeProperties` drops any key not on the event's allowlist and any string that is not a short enum-like token, so a prose value cannot slip through.
 
 ## Export and analysis
@@ -27,4 +27,5 @@ A reload starts a new run id (the buffer is not persisted). The buffer is bounde
 `replayGameplayTrace(initialState, trace)` replays the authoritative `actions` (settlements today) from a known starting state and compares a state hash after each one. On a mismatch it returns the first divergent action with the expected and actual hashes. `buildScenarioTrace` seals a scenario by running it once. `tests/fixtures/traces/duplicate-settlement.json` reproduces the duplicate-settlement bug class (settling the same report twice leaves the state unchanged); `UPDATE_FIXTURES=1 pnpm test` regenerates it after an intentional rules change. Live traces carry events only, because live state also changes through actions the trace does not record.
 
 ## Not built yet
-Persisted traces (IndexedDB), the optional PostHog adapter (would live behind `GameplayEventSink`, opt-in, no autocapture or session replay), the enquiry-generated/viewed/expired events, and the world-interaction events from the #189 addenda (those need the world-action registry).
+Persisted traces (IndexedDB), the optional PostHog adapter (would live behind `GameplayEventSink`, opt-in, no autocapture or session replay), and the world-interaction events from the #189 addenda (those need the world-action registry).
+

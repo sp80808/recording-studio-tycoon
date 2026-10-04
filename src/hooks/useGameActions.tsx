@@ -1,6 +1,7 @@
 import { money } from '@/utils/displayMoney';
 import { enquiryDemandWeight } from '@/rpg/marketDemand';
 import { refreshGearForDay } from '@/features/usedGear/economy';
+import { trackEnquiriesGenerated } from '@/telemetry/instrument';
 
 import { useCallback } from 'react';
 import { GameNotification, GameState } from '@/types/game';
@@ -404,12 +405,15 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       return false;
     }
 
+    const fresh = generateNewProjects(1, gameState.playerData.level, gameState.currentEra, [], 1.1, gameState.reputation, gameState.cityId, enquiryDemandWeight(gameState.saveSeed, gameState.currentDay));
+    trackEnquiriesGenerated(gameState.currentDay, fresh, 'chase');
+
     setGameState(prev => ({
       ...spend(prev, refreshCost, { category: 'marketing', memo: 'Chase new gigs' }),
       lastGigRefreshDay: prev.currentDay,
       availableProjects: [
         ...prev.availableProjects,
-        ...generateNewProjects(1, prev.playerData.level, prev.currentEra, [], 1.1, prev.reputation, prev.cityId, enquiryDemandWeight(prev.saveSeed, prev.currentDay)),
+        ...fresh,
       ],
     }));
 

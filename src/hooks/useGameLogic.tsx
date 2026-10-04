@@ -3,6 +3,7 @@ import { meetsKnowHowGate, spendKnowHow, createInitialKnowHow } from '@/rpg/stud
 import { useArtistContracts } from '@/hooks/useArtistContracts';
 import type { PerformDailyWorkOptions } from '@/hooks/useStageWork';
 import { gameEvents } from '@/engine/gameEventBus';
+import { trackGear } from '@/telemetry/instrument';
 import { useState, useCallback, useMemo } from 'react'; // Added useMemo
 import { spend } from '@/economy/ledger';
 import { GameState, StaffMember, PlayerAttributes, ProjectReport, Project } from '@/types/game';
@@ -193,6 +194,7 @@ export const useGameLogic = (
     }
 
     const withEffects = applyEquipmentEffects(equipment, purchased.state);
+    trackGear('bought', gameState.currentDay, priced.price, 'retail');
     setGameState(withEffects);
 
     toast({

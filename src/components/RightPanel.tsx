@@ -3,6 +3,7 @@ import { ArtistRoster } from '@/components/ArtistRoster';
 import type { ArtistProspect, ContractTerms, NegotiationOutcome } from '@/simulation/artistContracts';
 import { ShowPlan } from '@/simulation/liveShows';
 import { StudioRecycler } from '@/features/usedGear/StudioRecycler';
+import { trackRoomPurchased } from '@/telemetry/instrument';
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -124,7 +125,11 @@ export const RightPanel: React.FC<RightPanelProps> = ({
 
   const purchaseStudioRoom = (roomId: string) => {
     void gameAudio.playGearSwitch();
-    setGameState(prev => applyStudioRoomPurchase(prev, roomId, ProgressionSystem.getRoomExpansionLimit(prev)));
+    setGameState(prev => {
+      const next = applyStudioRoomPurchase(prev, roomId, ProgressionSystem.getRoomExpansionLimit(prev));
+      if (next !== prev) trackRoomPurchased(prev, roomId);
+      return next;
+    });
   };
   const applyModToEquipment = (equipmentId: string, modId: string | null) => {
     void gameAudio.playGearSwitch();

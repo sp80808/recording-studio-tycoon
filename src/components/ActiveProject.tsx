@@ -1,7 +1,6 @@
-import { worldTargetForIntervention } from '@/session/worldSessionActions';
 import { RECORDING_INTENTS, matchesRecordingIntent } from '@/session/recordingIntent';
 import { StatIcon } from '@/components/icons/GameIcons';
-import { trackIntervention } from '@/telemetry/instrument';
+import { trackIntervention, trackInterventionOffered } from '@/telemetry/instrument';
 import { money } from '@/utils/displayMoney';
 import { emitTakeFeedback } from '@/utils/takeFeedback';
 import { ProducerSprite } from '@/components/ProducerSprite';
@@ -113,6 +112,17 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const latestRewardOwnerRef = useRef({ controlsEnabled, projectId: gameState.activeProject?.id, stageIndex: gameState.activeProject?.currentStageIndex, opportunityId: autoTriggeredMinigame?.id });
   latestRewardOwnerRef.current = { controlsEnabled, projectId: gameState.activeProject?.id, stageIndex: gameState.activeProject?.currentStageIndex, opportunityId: autoTriggeredMinigame?.id };
   const [selectedMinigame, setSelectedMinigame] = useState<MinigameType>('rhythm');
+
+  useEffect(() => {
+    if (showMinigame && DIEGETIC_MINIGAMES.has(selectedMinigame)) {
+      onLockHotspot?.(worldTargetForIntervention(selectedMinigame));
+    } else {
+      onLockHotspot?.(null);
+    }
+    // Cleanup on unmount
+    return () => onLockHotspot?.(null);
+  }, [showMinigame, selectedMinigame, onLockHotspot]);
+
   const [lastGains, setLastGains] = useState<{ creativity: number; technical: number }>({ creativity: 0, technical: 0 });
   const [showBlobAnimation, setShowBlobAnimation] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
@@ -194,6 +204,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   // and never pauses ordinary session progress.
   useEffect(() => {
     if (gameState.activeProject && !isProjectComplete && !showMinigame && autoTriggeredMinigame) {
+      trackInterventionOffered(gameState.currentDay, autoTriggeredMinigame.type, autoTriggeredMinigame.id);
       setPulseAnimation(true);
       const pulseTimer = window.setTimeout(() => setPulseAnimation(false), 3000);
 
@@ -863,7 +874,11 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             </button>
           </div>
         )}
-        <MinigameManager isOpen={showMinigame && !isProjectComplete} gameType={selectedMinigame} onReward={handleMinigameReward} onClose={() => { setShowMinigame(false); clearAutoTriggeredMinigame?.(); }} />
+        {DIEGETIC_MINIGAMES.has(selectedMinigame) ? (
+          <WorldInteraction isOpen={showMinigame && !isProjectComplete} gameType={selectedMinigame} onReward={handleMinigameReward} onClose={() => { setShowMinigame(false); clearAutoTriggeredMinigame?.(); }} />
+        ) : (
+          <MinigameManager isOpen={showMinigame && !isProjectComplete} gameType={selectedMinigame} onReward={handleMinigameReward} onClose={() => { setShowMinigame(false); clearAutoTriggeredMinigame?.(); }} />
+        )}
       </section>
     );
   }
@@ -1521,19 +1536,35 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           )}
         </div>
 
-        <MinigameManager
-          isOpen={showMinigame && !isProjectComplete}
-          onClose={() => {
-            setShowMinigame(false);
-            if (clearAutoTriggeredMinigame) {
-              clearAutoTriggeredMinigame();
-            }
-            setPulseAnimation(false);
-            playSound('close_modal.wav', 0.4);
-          }}
-          gameType={selectedMinigame}
-          onReward={handleMinigameReward}
-        />
+        {DIEGETIC_MINIGAMES.has(selectedMinigame) ? (
+          <WorldInteraction
+            isOpen={showMinigame && !isProjectComplete}
+            onClose={() => {
+              setShowMinigame(false);
+              if (clearAutoTriggeredMinigame) {
+                clearAutoTriggeredMinigame();
+              }
+              setPulseAnimation(false);
+              playSound('close_modal.wav', 0.4);
+            }}
+            gameType={selectedMinigame}
+            onReward={handleMinigameReward}
+          />
+        ) : (
+          <MinigameManager
+            isOpen={showMinigame && !isProjectComplete}
+            onClose={() => {
+              setShowMinigame(false);
+              if (clearAutoTriggeredMinigame) {
+                clearAutoTriggeredMinigame();
+              }
+              setPulseAnimation(false);
+              playSound('close_modal.wav', 0.4);
+            }}
+            gameType={selectedMinigame}
+            onReward={handleMinigameReward}
+          />
+        )}
 
         <StudioDutiesClipboard
           gameState={gameState}

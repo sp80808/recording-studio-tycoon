@@ -1,6 +1,6 @@
 import { money } from '@/utils/displayMoney';
 import { enquiryDemandWeight, industryPulse } from '@/rpg/marketDemand';
-import { trackEnquiry } from '@/telemetry/instrument';
+import { trackEnquiry, trackEnquiryViewed } from '@/telemetry/instrument';
 import React, { useState } from 'react';
 import { GameState, Project } from '@/types/game';
 import { generateNewProjects } from '@/utils/projectUtils';
@@ -241,6 +241,12 @@ export const ProjectList: React.FC<ProjectListProps> = ({
     sort: sortBy,
   });
   const totalOffers = gameState.availableProjects.length + derivedOffers.length;
+
+  React.useEffect(() => {
+    for (const project of board) {
+      trackEnquiryViewed(gameState, project);
+    }
+  }, [board, gameState]);
 
   return (
     <section className="rst-surface flex min-h-0 w-full flex-1 flex-col p-4" aria-label="Artist enquiries">

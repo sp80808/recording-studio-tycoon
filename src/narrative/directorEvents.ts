@@ -25,7 +25,7 @@ import {
   type StudioEventFacts,
 } from './eventDirector';
 import { NARRATIVE_EVENTS } from './narrativeEventPool';
-import { CITY_EVENTS, MORE_CITY_EVENTS, RARE_CITY_EVENTS } from './cityEvents';
+import { CITY_EVENTS, MORE_CITY_EVENTS, RARE_CITY_EVENTS, BATCH_CITY_EVENTS } from './cityEvents';
 import { CITY_SAGA_EVENTS } from './citySagas';
 import { RECURRING_CLIENT_EVENTS } from './recurringClient';
 import { GEAR_UPKEEP_EVENTS } from './gearUpkeep';
@@ -49,6 +49,7 @@ export const DIRECTOR_EVENTS: readonly StudioEventDefinition[] = [
   ...NARRATIVE_EVENTS,
   ...CITY_EVENTS,
   ...MORE_CITY_EVENTS,
+  ...BATCH_CITY_EVENTS,
   ...RARE_CITY_EVENTS,
   ...CITY_SAGA_EVENTS,
   ...RECURRING_CLIENT_EVENTS,

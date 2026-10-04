@@ -2,7 +2,13 @@ import { applyLabelOutcome } from '@/rpg/labelAccounts';
 import { enquiryDemandWeight } from '@/rpg/marketDemand';
 import { depositFor } from '@/rpg/serviceQuote';
 import { earn } from '@/economy/ledger';
-import { trackSessionBooked, trackSessionSettled } from '@/telemetry/instrument';
+import {
+  trackSessionBooked,
+  trackSessionSettled,
+  trackSessionStarted,
+  trackRelationshipTier,
+  trackEnquiriesGenerated,
+} from '@/telemetry/instrument';
 import { useCallback } from 'react';
 import { GameState, Project, ProjectReport } from '@/types/game';
 import { generateNewProjects } from '@/utils/projectUtils';
@@ -49,6 +55,7 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
       // Deposit (#51): cash timing only. It is banked now and taken off the payout at settlement.
       const deposit = depositFor(prev, project).amount;
       trackSessionBooked(prev, project, room.type);
+      trackSessionStarted(prev, project, room.type);
       const banked = deposit > 0
         ? earn(prev, deposit, { category: 'deposit-income', projectId: project.id, sourceId: `deposit-${project.id}`, memo: project.title })
         : prev;
@@ -140,6 +147,7 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
         prev.cityId,
         enquiryDemandWeight(prev.saveSeed, prev.currentDay),
       );
+      trackEnquiriesGenerated(prev.currentDay, nextEnquiries, 'settlement');
 
       const prevRelationship = completedProject?.clientId
         ? prev.clientRelationships?.[completedProject.clientId]
@@ -147,6 +155,9 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
       const nextRelationship = completedProject?.clientId
         ? updatedClientRelationships[completedProject.clientId]
         : undefined;
+      if (completedProject?.clientId) {
+        trackRelationshipTier(prev.currentDay, prevRelationship?.tier, nextRelationship?.tier, completedProject.clientId);
+      }
       const withSeasonLedger = recordSeasonDelivery(
         { ...settled, clientRelationships: updatedClientRelationships },
         {

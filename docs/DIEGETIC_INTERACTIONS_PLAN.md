@@ -96,7 +96,7 @@ mobile haptic, glow/outline/filter response, optional particles.
 
 ## 8. Implementation order
 
-1. Create `WorldInteraction` alongside `MinigameManager` — keeps Pixi studio
+1. **[x]** Create `WorldInteraction` alongside `MinigameManager` — keeps Pixi studio
    mounted, locks only the relevant hotspot, returns the same score/outcome
    contract existing games use.
 2. Convert Gain Staging + Phase Check into console/preamp interactions.

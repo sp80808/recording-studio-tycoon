@@ -19,7 +19,6 @@ import { useStudioClock } from '@/contexts/StudioClockContext';
 import { triggerScreenShake } from '@/utils/screenShake';
 import { findPendingChoreForHotspot, getChoreCanonicalHotspot } from '@/simulation/choreEngine';
 import { isFlightCaseSystemUnlocked } from '@/economy/flightCaseEconomy';
-import { ProducerSprite } from '@/components/ProducerSprite';
 import { useGamepad } from '@/hooks/useGamepad';
 import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
 import { MotionReveal } from '@/components/motion/primitives';
@@ -65,6 +64,7 @@ interface StudioRoomProps {
   onStudioReady?: () => void;
   /** False while a ContextDrawer owns attention — suppresses idle auto-zoom. */
   floorFocused?: boolean;
+  lockedHotspot?: StudioHotspotId | null;
   worldControls?: boolean;
   intervention?: SessionIntervention | null;
   onInterventionFocus?: () => void;
@@ -93,6 +93,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
   onBookings,
   onStudioReady,
   floorFocused = true,
+  lockedHotspot = null,
   worldControls = false,
   intervention = null,
   onInterventionFocus,
@@ -239,6 +240,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       decorSeed: String(gameState.saveSeed ?? 'studio'),
       enquiryWaiting: gameState.availableProjects.length > 0,
       pendingChoreHotspot,
+      lockedHotspot,
       floorFocused: floorFocused && !activeInspector,
       coffeeSteaming: Boolean(gameState.choreState?.chores?.brew_espresso?.completed),
       riderBeers: Boolean(
@@ -246,7 +248,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           project.rider?.items.some((item) => item.kind === 'beer'),
       ),
     };
-  }, [gameState.activeProject, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, gameState.cityId, eraDecor.eraId, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, gameState.playerData, gameState.availableProjects.length, gameState.choreState, gameState.premisesTier, gameState.pendingCrates, roomTier, floorFocused, activeInspector, studioClock.minutesOfDay]);
+  }, [gameState.activeProject, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, gameState.cityId, eraDecor.eraId, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, gameState.playerData, gameState.availableProjects.length, gameState.choreState, gameState.premisesTier, gameState.pendingCrates, roomTier, floorFocused, activeInspector, studioClock.minutesOfDay, lockedHotspot]);
 
   /**
    * Diegetic floor routes: pending chores always run the chore flow first.
@@ -356,18 +358,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       style={style}
     >
       <WebGLCanvas state={sceneState} onHotspotSelect={handleHotspot} resetCameraKey={cameraResetKey} onHotspotAnchors={setAnchors} onFirstFrame={onStudioReady} />
-      {/* The producer at the desk: same modular sprite as play mode, from saved career-start choices (#126). */}
-      <div className="pointer-events-none absolute bottom-3 left-3 z-[5] hidden select-none flex-col items-center rounded border border-[var(--rst-line-strong)] bg-black/40 px-2 pb-1.5 pt-1 backdrop-blur-[2px] sm:flex">
-        <ProducerSprite
-          producerCustomization={gameState.producerCustomization}
-          selectedEra={gameState.selectedEra}
-          animationState={gameState.activeProject ? 'working' : 'idle'}
-          scale={2}
-        />
-        <span className="mt-0.5 max-w-[96px] truncate text-[9px] font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-300)]">
-          {gameState.producerCustomization?.moniker ?? 'Producer'}
-        </span>
-      </div>
+
       {viewRoom && <RoomVignette room={viewRoom} occupiedBy={roomProjectTitle(viewRoom.id)} />}
       <StudioRoomTabs rooms={operationalRooms} activeId={viewRoom ? viewRoom.id : 'studio-a'} occupied={occupiedRooms} onSelect={(id) => { if (settings.sfxEnabled) void gameAudio.playTactileClick(); setViewRoomId(id); }} />
       {tierFlash && <div className="tier-flash-overlay" />}

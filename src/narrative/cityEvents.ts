@@ -223,6 +223,9 @@ export const MORE_CITY_EVENTS: readonly StudioEventDefinition[] = [
     'A drive-time host wants a new theme before tonight’s show: memorable in five seconds, unmistakably local in ten.',
     { id: 'lag_rj_band', label: 'Bring in a live rhythm section', flavorText: 'Make five seconds feel enormous.', effects: [{ kind: 'money', amount: -80 }, { kind: 'reputation', amount: 5 }, { kind: 'xp', amount: 25 }], outcome: 'By the second broadcast, callers sing it before the host does.' },
     { id: 'lag_rj_keys', label: 'Build it quickly on keys', flavorText: 'Fast, bright, delivered.', effects: [{ kind: 'money', amount: 220 }], outcome: 'The station pays before airtime and asks for three more.' }, 'lag_rj_keys'),
+];
+
+export const BATCH_CITY_EVENTS: readonly StudioEventDefinition[] = [
   local('berlin_stranded_truck', 'berlin', 'berlin.truck', 'BERLIN // A TRUCK FULL OF CASES', 'A Tour Truck Breaks Down Outside',
     'A touring band’s truck dies two streets over with a trailer full of flight cases and a show across town in six hours.',
     { id: 'ber_st_store', label: 'Store the cases overnight', flavorText: 'Stack them tight, lock the door.', effects: [{ kind: 'money', amount: 150 }, { kind: 'reputation', amount: 2 }], outcome: 'The crew sleeps on your couch. The cases never leave your sight.' },
