@@ -1,6 +1,9 @@
 # Recording Studio Tycoon
 *A tactile music industry simulation game built with React, PixiJS, Tone.js, TypeScript, and modern web technologies.*
 
+> [!IMPORTANT]
+> **Proprietary source — not open source.** Recording Studio Tycoon and its original code, game design, text, artwork, audio, data, and documentation are all rights reserved. Public availability on GitHub does not grant permission to copy, redistribute, commercialise, or build another game from RST. Third-party components remain under their own licences. See [LICENSE](./LICENSE) and [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).
+
 ---
 
 ## 🎯 Project Overview
@@ -206,6 +209,14 @@ bd update <issue-id> --claim
 # Close a completed task
 bd close <issue-id> -r "Resolution summary"
 ```
+
+---
+
+## 🔒 Licence
+
+Recording Studio Tycoon is **proprietary source-available software, not open source**. No licence is granted to copy, redistribute, modify, commercialise, or create derivative games from RST original material except by explicit written permission or where applicable law independently permits it. GitHub's own limited public-repository rights still apply, and separately licensed third-party material remains under its upstream licence.
+
+See [LICENSE](./LICENSE), [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md), and [assets/provenance.json](./assets/provenance.json).
 
 ---
 
