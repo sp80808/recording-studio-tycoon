@@ -12,6 +12,7 @@
     }
   },
   "author": "Recording Studio Tycoon Development Team",
+  "license": "UNLICENSED",
   "scripts": {
     "dev": "vite",
     "predev": "python3 scripts/clean-appledouble.py --quiet",
