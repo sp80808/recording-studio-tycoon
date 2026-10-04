@@ -307,4 +307,8 @@ node "${CHECK_OUTPUT_DIR}/rst-session-wrap.cjs"
 ./node_modules/.bin/esbuild tests/session-beat.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-session-beat.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-session-beat.cjs"
 
+echo "=== project review recovery (#255) ==="
+./node_modules/.bin/esbuild tests/project-review-recovery.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-project-review-recovery.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-project-review-recovery.cjs"
+
 echo "All automated checks passed."

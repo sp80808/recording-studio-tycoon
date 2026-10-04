@@ -74,6 +74,7 @@ import type { ProducerBackgroundId } from '@/types/character';
 import { setDisplayCurrency } from '@/utils/displayMoney';
 import type { ProducerSetup } from '@/components/CareerStartScreen';
 import { useFeatureFlag } from '@/stores/featureFlagStore';
+import { canOpenProjectReview, traceReviewFlow } from '@/utils/projectReviewFlow';
 import { StudioClockProvider } from '@/contexts/StudioClockContext';
 
 const MusicStudioTycoon = () => {
@@ -349,7 +350,13 @@ const MusicStudioTycoon = () => {
     localStorage.setItem('recordingStudioTycoon_hasPlayed', 'true'); // Mark that game has been started once
   };
 
+  const finalizingReviewRef = useRef<string | null>(null);
   const handleShowProjectReview = useCallback((completedProjectData: Project) => {
+    if (!canOpenProjectReview({ reviewOpen: showReviewModal, hasReport: Boolean(activeProjectReport), hasPendingDelivery: Boolean(pendingDelivery) })) {
+      traceReviewFlow('show-review-skipped', `${completedProjectData.id} already open`);
+      return;
+    }
+    traceReviewFlow('show-review', completedProjectData.id);
     console.log('Index.tsx: Generating review for project:', completedProjectData.title);
     // Determine assigned person (this is a simplified assumption)
     // In a more complex setup, MainGameContent or ActiveProject would pass this.
@@ -418,21 +425,27 @@ const MusicStudioTycoon = () => {
     const openIssues = completedProjectData.unresolvedIssues ?? [];
     if (openIssues.length > 0) {
       // #87: the player chooses Deliver or Polish before the review is shown.
+      traceReviewFlow('delivery-prompt', completedProjectData.id);
       setPendingDelivery({ report, issues: openIssues, projectId: completedProjectData.id });
     } else {
       setActiveProjectReport(report);
       setShowReviewModal(true); // This will trigger the new ProjectReviewModal
+      traceReviewFlow('review-modal-open', completedProjectData.id);
     }
 
     if (settings.sfxEnabled) {
       audioSystem.playUISound('event'); // Sound for review screen appearing
     }
-  }, [gameState, settings.sfxEnabled, setGameState]);
+  }, [gameState, settings.sfxEnabled, setGameState, showReviewModal, activeProjectReport, pendingDelivery]);
 
 
   const handleFinalizeProjectCompletion = useCallback(() => {
-    if (!activeProjectReport) return;
-
+    if (!activeProjectReport || finalizingReviewRef.current === activeProjectReport.projectId) {
+      traceReviewFlow('finalize-skipped');
+      return;
+    }
+    finalizingReviewRef.current = activeProjectReport.projectId; // repeat clicks cannot settle twice
+    traceReviewFlow('finalize', activeProjectReport.projectId);
     console.log('Index.tsx: Finalizing project completion for:', activeProjectReport.projectTitle);
     completeProject(activeProjectReport); // Call the updated completeProject with the report
 
