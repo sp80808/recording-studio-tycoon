@@ -4,6 +4,7 @@ import {
   premisesCandidateCount, premisesRoomAllowanceBonus, clearPremisesMoveBeat, getPremisesMoveBeat, PROJECT_STUDIO_DEPOSIT, COMMERCIAL_STUDIO_DEPOSIT, FACILITY_DEPOSIT,
 } from '../src/rpg/premises';
 import { createDefaultStudioRooms } from '../src/utils/studioRoomUtils';
+import { deriveStudioPressure, generatePremisesOpportunities, getPremisesWorldCue } from '../src/rpg/premisesPressure';
 
 const assert = (c: boolean, m: string) => { if (!c) throw new Error(`FAIL: ${m}`); };
 const base: any = {
@@ -102,3 +103,56 @@ for (const t of [1, 2, 3] as const) {
 assert(buildMoveInCutscene(3).stats![0].value === '14' && buildMoveInCutscene(2).stats![1].value === '$140/day', 'the cinematic quotes the real capacity and rent');
 
 console.log('studio-premises.check passed');
+
+// ---- #250: studio pressure + property opportunities ----
+{
+
+  const rooms = createDefaultStudioRooms();
+  const enquiry = (i: number, over: any = {}) => ({ id: `q${i}`, title: 't', genre: 'Pop', clientType: 'Solo Artist', ...over });
+  const calm: any = { ...base, saveSeed: 'seed-a', currentDay: 10, studioRooms: rooms, activeProjects: [], availableProjects: [enquiry(1)], hiredStaff: [] };
+  assert(generatePremisesOpportunities(calm).length === 0, 'low-demand studio is not spammed with opportunities');
+  assert(getPremisesWorldCue(calm) === null, 'no world cue when coping');
+
+  const unlockedIds = rooms.filter((r: any) => r.unlocked).map((r: any) => r.id);
+  assert(unlockedIds.length >= 1, 'default rooms have an unlocked room');
+  const busy: any = {
+    ...base, saveSeed: 'seed-a', currentDay: 10, studioRooms: rooms,
+    activeProjects: unlockedIds.map((id: string, i: number) => ({ id: `p${i}`, bookingRoomId: id })),
+    availableProjects: [enquiry(1), enquiry(2), enquiry(3, { clientType: 'Rock Band' })],
+    hiredStaff: [{ id: 'a' }, { id: 'b' }, { id: 'c' }],
+  };
+  const pressure = deriveStudioPressure(busy);
+  const ids = pressure.reasons.map(r => r.id);
+  assert(ids.includes('rooms-full') && ids.includes('crew-crowded') && ids.includes('live-room-missing'), `three distinct pressure reasons emerge (${ids.join(',')})`);
+  const opps = generatePremisesOpportunities(busy);
+  assert(opps.length >= 1 && opps.length <= 2, 'busy studio gets 1-2 opportunities');
+  assert(JSON.stringify(opps) === JSON.stringify(generatePremisesOpportunities(JSON.parse(JSON.stringify(busy)))), 'same state and seed give identical opportunities');
+  assert(opps.every(o => o.internalTier === 1 && o.deposit === PROJECT_STUDIO_DEPOSIT && o.tradeoff.length > 0 && o.solves.length > 0 && o.cue.length > 0), 'opportunities carry real terms and a trade-off');
+  assert(new Set(opps.map(o => o.archetype)).size === opps.length, 'opportunities are materially different archetypes');
+  assert(getPremisesWorldCue(busy) === opps[0].cue, 'world cue comes from the first opportunity');
+  assert(generatePremisesOpportunities({ ...busy, currentDay: 13 })[0].id === opps[0].id, 'stable within the same game week');
+
+  // Different reasons favour different archetypes.
+  const crowdOnly: any = { ...busy, activeProjects: [], availableProjects: [], hiredStaff: [{ id: 'a' }, { id: 'b' }, { id: 'c' }] };
+  const roomsOnly: any = { ...busy, hiredStaff: [], availableProjects: [enquiry(1), enquiry(2), enquiry(3)] };
+  const seenCrowd = new Set<string>();
+  const seenRooms = new Set<string>();
+  for (let day = 0; day < 140; day += 7) {
+    generatePremisesOpportunities({ ...crowdOnly, currentDay: day }).forEach(o => seenCrowd.add(o.archetype));
+    generatePremisesOpportunities({ ...roomsOnly, currentDay: day }).forEach(o => seenRooms.add(o.archetype));
+  }
+  assert(seenCrowd.has('basement') && seenRooms.has('project-room'), 'pressure reasons steer archetypes');
+
+  // Declining is free: nothing is applied until applyPremisesMove, and ignoring never changes state.
+  const before = JSON.stringify(busy);
+  generatePremisesOpportunities(busy);
+  assert(JSON.stringify(busy) === before && applyPremisesMove({ ...busy, money: 100 }).premisesTier === undefined, 'ignoring an opportunity does not touch state');
+
+  // Legacy save (no seed, no optional fields) stays valid; maxed premises offer nothing.
+  const legacy: any = { money: 0, financials: { reports: [] }, studioRooms: rooms };
+  assert(Array.isArray(generatePremisesOpportunities(legacy)) && deriveStudioPressure(legacy).score === 0, 'legacy saves stay valid');
+  assert(generatePremisesOpportunities({ ...busy, premisesTier: 3 }).length === 0, 'no opportunities in the top premises');
+  // Moving still preserves gear/staff/relationships via the authoritative path.
+  const movedBusy: any = applyPremisesMove(busy);
+  assert(movedBusy.premisesTier === 1 && movedBusy.hiredStaff === busy.hiredStaff && movedBusy.ownedEquipment === busy.ownedEquipment, 'move via opportunity preserves staff and gear');
+}

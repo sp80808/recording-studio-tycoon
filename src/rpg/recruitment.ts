@@ -8,6 +8,7 @@ import type { GameState, StaffMember } from '@/types/game';
 import { spend } from '@/economy/ledger';
 import { generateCandidates } from '@/utils/staffRecruitment';
 import { premisesCandidateCount } from '@/rpg/premises';
+import { pickWorkStyle } from '@/rpg/workStyle';
 import { getStaffCareer, defaultDiscipline, levelFor, type StaffDiscipline } from '@/rpg/staffCareer';
 
 export type RecruitmentChannelId = 'referral' | 'college' | 'board' | 'specialist' | 'headhunter';
@@ -113,7 +114,8 @@ export function buildSearchCandidates(s: RecruitState, search: RecruitmentSearch
   });
   const ch = RECRUITMENT_CHANNELS[search.channelId];
   const crewRole = majorityRole(s.hiredStaff);
-  return base.map((c): StaffMember => {
+  return base.map((raw): StaffMember => {
+    const c: StaffMember = { ...raw, workStyle: pickWorkStyle(search.channelId, `${search.seed}:${raw.id}`) };
     if (search.channelId === 'college') {
       const p = c.primaryStats;
       return {
