@@ -152,11 +152,13 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
 
         {/* Render selected view */}
         {showMultiProjectInTransition ? (
-          <MultiProjectDashboard
-            gameState={gameState}
-            setGameState={setGameState}
-            onProjectSelect={onProjectSelect}
-          />
+          <div className="edge-fade-b min-h-0 flex-1 overflow-y-auto pr-1">
+            <MultiProjectDashboard
+              gameState={gameState}
+              setGameState={setGameState}
+              onProjectSelect={onProjectSelect}
+            />
+          </div>
         ) : (
           <ActiveProject
             gameState={gameState}
@@ -202,7 +204,7 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
           </button>
         </div>
         {showSessionWork ? (
-          <div className="edge-fade-b min-h-0 flex-1 overflow-y-auto pr-1">
+          <div className="min-h-0 flex-1 flex flex-col overflow-hidden">
             <ActiveProject
               gameState={gameState}
               setGameState={setGameState}

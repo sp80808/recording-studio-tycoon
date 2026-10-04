@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { GamepadSnapshot, ControllerType, ControllerLayoutPreference, StandardButton } from '@/types/gamepad';
+import { GamepadSnapshot, ControllerType, ControllerLayoutPreference, StandardButton, HapticPattern } from '@/types/gamepad';
 import {
   detectControllerType,
   processStickAxes,
   mapStandardGamepadButtons,
   createDefaultGamepadSnapshot,
   triggerGamepadHaptic,
+  triggerHapticPattern,
+  normalizeTriggerValue,
   STANDARD_BUTTONS,
 } from '@/services/gamepadService';
 
@@ -18,6 +20,7 @@ export interface UseGamepadOptions {
 export interface UseGamepadResult extends GamepadSnapshot {
   lastInputType: 'gamepad' | 'keyboard_mouse';
   triggerHaptic: (weak?: number, strong?: number, durationMs?: number) => void;
+  triggerHapticPattern: (pattern: HapticPattern) => void;
 }
 
 export const useGamepad = (options: UseGamepadOptions = {}): UseGamepadResult => {
@@ -97,13 +100,13 @@ export const useGamepad = (options: UseGamepadOptions = {}): UseGamepadResult =>
       const rightStick = processStickAxes(pad.axes[2] ?? 0, pad.axes[3] ?? 0, deadzone);
 
       // Read triggers (buttons 6 & 7 or axes)
-      const leftTrigger = pad.buttons[6]?.value ?? 0;
-      const rightTrigger = pad.buttons[7]?.value ?? 0;
+      const leftTrigger = normalizeTriggerValue(pad.buttons[6]?.value);
+      const rightTrigger = normalizeTriggerValue(pad.buttons[7]?.value);
 
       const stickMoved =
         Math.hypot(leftStick.x, leftStick.y) > 0 || Math.hypot(rightStick.x, rightStick.y) > 0;
 
-      if (anyButtonPressed || stickMoved) {
+      if (anyButtonPressed || stickMoved || leftTrigger > 0.1 || rightTrigger > 0.1) {
         setLastInputType('gamepad');
       }
 
@@ -140,9 +143,19 @@ export const useGamepad = (options: UseGamepadOptions = {}): UseGamepadResult =>
     [hapticsEnabled]
   );
 
+  const triggerPattern = useCallback(
+    (pattern: HapticPattern) => {
+      if (!hapticsEnabled) return;
+      triggerHapticPattern(activePadIndexRef.current, pattern);
+    },
+    [hapticsEnabled]
+  );
+
   return {
     ...snapshot,
     lastInputType,
     triggerHaptic,
+    triggerHapticPattern: triggerPattern,
   };
 };
+

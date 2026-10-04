@@ -428,41 +428,71 @@ export const buildDeskProps = (deskH = 40): Container => {
 /** Iso tile under the brass candle table (listening-side rug edge). */
 export const CANDLE_TABLE_TILE = { x: 6.55, y: 5.35 } as const;
 
+/** Height in px of the side-table top above the floorboards. */
+const CANDLE_TABLE_H = 14;
+
 /** World-space flame tip used by the additive candle glow (must match `buildCandleTable`). */
 export const CANDLE_FLAME_POS = (() => {
   const p = iso(CANDLE_TABLE_TILE.x, CANDLE_TABLE_TILE.y);
-  return { x: p.x, y: p.y - 28 };
+  // Candle sits at back-left of tabletop (p.x - 6.5, topY - 2.2), flame tip is 16.5px above candle base
+  return { x: p.x - 6.5, y: p.y - CANDLE_TABLE_H - 18.7 };
 })();
 
 /**
- * Mug rim on the candle table (beside the candlestick, toward camera).
- * Steam / settle animation must target this — never the desk or window sill.
+ * Mug rim on the candle table (front-right of tabletop, beside the candlestick).
+ * Steam / settle animation targets this — never the desk or window sill.
  */
 export const CANDLE_MUG_POS = (() => {
-  const p = iso(CANDLE_TABLE_TILE.x + 0.22, CANDLE_TABLE_TILE.y + 0.14);
-  return { x: p.x + 1, y: p.y - 12 };
+  const p = iso(CANDLE_TABLE_TILE.x, CANDLE_TABLE_TILE.y);
+  return { x: p.x + 6, y: p.y - CANDLE_TABLE_H - 3.5 };
 })();
 
 /**
- * Small brass side-table + candle near the front-right rug edge.
- * Presentation only — not a hotspot (hit targets stay on shelf / console / door).
+ * Small brass side-table / coffee stand with candle near the front-right rug edge.
+ * Features a complete pedestal base on the floorboards, central brass-accented column,
+ * wood tabletop with brass rim, and a cream candlestick at the back-left.
  */
 export const buildCandleTable = (): Container => {
   const c = new Container();
   c.eventMode = 'none';
   const g = new Graphics();
   const base = iso(CANDLE_TABLE_TILE.x, CANDLE_TABLE_TILE.y);
-  // Round table top (iso squash)
-  g.ellipse(base.x, base.y, 14, 6).fill({ color: 0x000000, alpha: 0.28 });
-  g.ellipse(base.x, base.y - 2, 13, 5.5).fill(0x3a2a1c);
-  g.ellipse(base.x, base.y - 2, 13, 5.5).stroke({ width: 1, color: BRASS, alpha: 0.55 });
-  g.rect(base.x - 1.4, base.y - 2, 2.8, 10).fill(0x2a1c12);
-  // Brass candlestick + cream candle
-  g.ellipse(base.x, base.y - 12, 3.2, 1.4).fill(0xc9974a);
-  g.rect(base.x - 1.1, base.y - 24, 2.2, 12).fill(0xf3ead6);
-  g.ellipse(base.x, base.y - 24, 1.1, 0.6).fill(0xe8dcc4);
+  const topY = base.y - CANDLE_TABLE_H;
+
+  // 1. Floor contact shadow
+  g.ellipse(base.x, base.y, 11, 5).fill({ color: 0x000000, alpha: 0.32 });
+
+  // 2. Pedestal base resting flat on the floor (bottom half)
+  g.ellipse(base.x, base.y, 7.5, 3.2).fill(0x1a120b); // cast bronze foot
+  g.ellipse(base.x, base.y - 1, 7, 2.9).fill(0x2a1c12); // bevelled top
+  g.ellipse(base.x, base.y - 1, 7, 2.9).stroke({ width: 0.8, color: BRASS, alpha: 0.75 }); // brass rim ring
+  g.ellipse(base.x, base.y - 2, 2.8, 1.2).fill(0xc9974a); // brass lower collar
+
+  // 3. Central column / stem connecting base to tabletop
+  const stemH = base.y - 2 - topY;
+  g.rect(base.x - 1.2, topY, 2.4, stemH).fill(0x24180f); // dark walnut column
+  g.rect(base.x - 0.4, topY, 0.8, stemH).fill(0xc9974a); // brass highlight pinstripe
+  g.ellipse(base.x, topY + 0.5, 3.2, 1.4).fill(0xc9974a); // upper mounting bracket
+
+  // 4. Round table top (wood surface + brass rim)
+  g.ellipse(base.x, topY + 1.2, 14.5, 6.2).fill(0x181009); // under-lip shadow/depth
+  g.ellipse(base.x, topY, 14.5, 6.2).fill(0x3a2a1c); // walnut tabletop
+  g.ellipse(base.x, topY, 14.5, 6.2).stroke({ width: 1.0, color: BRASS, alpha: 0.85 }); // gleaming brass rim
+  g.ellipse(base.x, topY, 11.5, 4.8).stroke({ width: 0.5, color: 0x4d3725, alpha: 0.5 }); // inlaid wood ring
+
+  // 5. Brass candlestick + cream candle (tucked neatly at the back-left so drinks do not collide)
+  const candleX = base.x - 6.5;
+  const candleY = topY - 2.2;
+  g.ellipse(candleX, candleY, 3.2, 1.4).fill(0xc9974a); // saucer base
+  g.ellipse(candleX, candleY, 3.2, 1.4).stroke({ width: 0.5, color: BRASS, alpha: 0.7 });
+  g.rect(candleX - 0.9, candleY - 2.5, 1.8, 2.5).fill(0x8a6328); // brass stem
+  g.ellipse(candleX, candleY - 2.5, 1.3, 0.6).fill(0xc9974a);
+  g.rect(candleX - 1.1, candleY - 14, 2.2, 11.5).fill(0xf3ead6); // cream candle wax
+  g.ellipse(candleX, candleY - 14, 1.1, 0.6).fill(0xe8dcc4); // candle top
+  g.rect(candleX - 0.3, candleY - 15.5, 0.6, 1.5).fill(0x2a1c12); // wick
   // Static wick tip (flame glow lives in the additive layer)
-  g.circle(base.x, base.y - 26.5, 1.1).fill(0xffc266);
+  g.circle(candleX, candleY - 16.5, 1.1).fill(0xffc266);
+
   c.addChild(g);
   c.zIndex = base.y;
   return c;
@@ -502,10 +532,10 @@ export const buildCandleDrink = (): Container => {
 /** Settle-in duration (seconds) when the brew mug first appears on the candle table. */
 export const CANDLE_DRINK_SETTLE_SEC = 0.45;
 
-/** World-space beer bottle feet on the candle table (opposite the brew mug). */
+/** World-space beer bottle feet on the candle table (left side, opposite the brew mug). */
 export const CANDLE_BEER_POS = (() => {
-  const p = iso(CANDLE_TABLE_TILE.x - 0.28, CANDLE_TABLE_TILE.y + 0.1);
-  return { x: p.x - 2, y: p.y - 6 };
+  const p = iso(CANDLE_TABLE_TILE.x, CANDLE_TABLE_TILE.y);
+  return { x: p.x - 9, y: p.y - CANDLE_TABLE_H + 0.8 };
 })();
 
 /**

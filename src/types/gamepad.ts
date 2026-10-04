@@ -35,3 +35,12 @@ export interface GamepadSnapshot {
   rightStick: GamepadStickState;
   triggers: { left: number; right: number };
 }
+
+export type HapticPattern =
+  | 'tick'
+  | 'detent'
+  | 'goldSuccess'
+  | 'solidSuccess'
+  | 'offTime'
+  | 'motorHum';
+

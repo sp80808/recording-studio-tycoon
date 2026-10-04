@@ -284,6 +284,11 @@
   .studio-panel-heading button, .studio-activity-panel button[aria-label] { min-width:44px; min-height:44px; }
 }
 
+/* Session Transport Dock — always pinned and visible across all form factors */
+.rst-transport-dock {
+  flex-shrink: 0 !important;
+}
+
 /* ---- Session console on short viewports (landscape phones, small Androids) -------------------
    The console sheet goes full-bleed, the drawer header collapses, and the transport dock becomes a
    compact two-column row (Overdrive | Take) so the Take button is always on screen. */

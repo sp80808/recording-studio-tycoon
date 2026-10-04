@@ -509,7 +509,13 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         destinationKey={panel ? `${panel}:${dashboardTab}` : undefined}
         title={drawerTitle}
         subtitle="RECORDING STUDIO OS"
-        width={panel === 'session' ? 'session' : 'default'}
+        width={
+          panel === 'session'
+            ? 'session'
+            : dashboardTab === 'charts'
+              ? 'charts'
+              : 'default'
+        }
         returnFocusRef={returnFocusRef}
         headerActions={
           panel === 'session' && gameState.playerData.dailyWorkCapacity <= 0 && !project?.awaitingReview ? (
