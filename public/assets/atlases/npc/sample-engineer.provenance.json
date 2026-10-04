@@ -3,7 +3,7 @@
   "assetId": "npc-sample-engineer",
   "sourceType": "aseprite",
   "author": "RST in-house",
-  "license": "In-house (CC0)",
+  "license": "original",
   "toolVersion": "Aseprite JSON export format 1.3 (sample drawn by scripts/assets/make-samples.ts)",
   "pipelineSteps": [
     "draw-in-house",
