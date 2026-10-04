@@ -1,6 +1,6 @@
 import { EquipmentMod } from '@/types/game';
 
-// All mods are in-house original designs (CC0) — no external art source needed.
+// All mods are in-house proprietary original designs — no external art source needed.
 // Art = CSS/SVG faceplate variant + iconOverride; physical sprite stays on the
 // base equipment entry in equipmentArt.ts. Research costs scale with tier.
 
