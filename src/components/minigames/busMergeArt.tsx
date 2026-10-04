@@ -2,7 +2,7 @@ import React from 'react';
 import { TRACK_FAMILY, type TrackKind } from '@/minigames/busMerge';
 
 /**
- * In-house CC0 vector glyphs for Bus & Stem Merge tiles (logged in docs/ART_SOURCING_LOG.md).
+ * In-house proprietary original vector glyphs for Bus & Stem Merge tiles (logged in docs/ART_SOURCING_LOG.md).
  * Drawn on a 32x32 grid in a single stroke colour so the family tint carries the meaning.
  */
 export const FAMILY_STYLE = {
