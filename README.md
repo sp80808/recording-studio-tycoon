@@ -26,7 +26,7 @@ The latest milestone expands the tactile studio loop into a broader campaign:
 - **Producer Origins:** Start each career with a distinct background and gameplay perk.
 - **Era-Authentic Gigs:** Choose contracts across the 1960s, 1980s, 2000s, and 2020s with risk/reward stakes.
 - **Warm Flat UI:** A unified visual language now spans the HUD, drawers, popups, toasts, and minigames.
-- **Keyboard Shortcuts:** Use `1–7` for dock tabs and `?` to open the shortcut overlay.
+- **Keyboard Shortcuts:** Use `1–5` for dock tabs and `?` to open the shortcut overlay.
 
 ## 📸 Current Build (October 2026)
 
