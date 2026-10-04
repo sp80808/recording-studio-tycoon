@@ -1,6 +1,6 @@
 /** Industry events and label commissions (#52): deterministic, bounded, expiring, and never about quality. */
 import {
-  INDUSTRY_EVENTS, EVENT_SHIFT_CAP, activeIndustryEvents, eventShift,
+  INDUSTRY_EVENTS, EVENT_SHIFT_CAP, activeIndustryEvents, eventShift, eventReason,
 } from '../src/rpg/industryEvents';
 import { genreDemand, industryPulse, MARKET_WEEK_DAYS } from '../src/rpg/marketDemand';
 import { LABEL_ACCOUNTS } from '../src/rpg/labelInterest';
@@ -71,5 +71,17 @@ ok(flagged, 'a commission is always the label\'s hot genre and is flagged on the
 const noSeed = labelOffersFor({ ...base, saveSeed: undefined, currentDay: 21 });
 ok(noSeed.every((o) => !o.labelTerms!.commissionedGenre), 'a save with no seed has no commissions');
 ok(commissionedGenre(LABEL_ACCOUNTS[0], 'streaming2020s', undefined, 5) === undefined, 'no market, no commission');
+
+{
+  let consistent = true;
+  for (const g of ['pop', 'rock', 'hiphop', 'electronic']) {
+    for (let w = 0; w < 600; w++) {
+      const shift = eventShift(0, w, g);
+      const reason = eventReason(0, w, g);
+      if ((Math.abs(shift) < 1e-9) !== (reason === undefined)) consistent = false;
+    }
+  }
+  ok(consistent, 'a reason is shown only when events have a net effect on the genre');
+}
 
 console.log(`industry-events: all ${n} checks passed`);

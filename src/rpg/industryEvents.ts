@@ -69,9 +69,11 @@ export const eventShift = (seed: string | number | undefined, week: number, mark
   return Math.max(-EVENT_SHIFT_CAP, Math.min(EVENT_SHIFT_CAP, total));
 };
 
-/** The strongest active event on a genre, for the Pulse reason. */
+/** The strongest active event pushing a genre in its net direction, for the Pulse reason (none when events cancel out). */
 export const eventReason = (seed: string | number | undefined, week: number, marketGenre: string): string | undefined => {
-  const hits = activeIndustryEvents(seed, week).filter((e) => e.def.genres.includes(marketGenre));
+  const net = eventShift(seed, week, marketGenre);
+  if (Math.abs(net) < 1e-9) return undefined;
+  const hits = activeIndustryEvents(seed, week).filter((e) => e.def.genres.includes(marketGenre) && Math.sign(e.def.shift) === Math.sign(net));
   if (!hits.length) return undefined;
   return hits.sort((a, b) => Math.abs(b.def.shift) - Math.abs(a.def.shift) || a.def.id.localeCompare(b.def.id))[0].def.reason;
 };
