@@ -1,3 +1,4 @@
+import { staffActivityCue, staffDestination, stepStaffPosition } from '@/components/studio/staffStaging';
 import type { NpcVisualIdentity } from '@/features/sprites/npcAppearance';
 import type { ModularNpcDefinition } from '@/features/sprites/spriteTypes';
 import { lastTake, nodOffset } from '@/utils/takeFeedback';
@@ -88,7 +89,7 @@ import {
   vuNeedleNorm,
 } from '@/components/studio/studioFloorLife';
 import { addStudioProps, loadStudioKit, type StudioKitTextures } from '@/features/sprites/studioKit';
-import type { FloorNpcFigure, FloorNpcHandle } from '@/features/sprites/floorNpcs';
+import type { FloorNpcFigure, FloorNpcHandle, StagedStaffHandle } from '@/features/sprites/floorNpcs';
 import {
   applyFloorNpcMotion,
   createFloorNpcVisual,
@@ -135,7 +136,7 @@ export const getEraPostFxTuning = (eraId?: string): EraPostFxTuning => {
       };
     case 'streaming2020s':
       return {
-        scanlineAlpha: 0.01,
+        scanlineAlpha: 0.0,
         scanlinePitch: 3,
         vignetteColor: 0x080f0c, // Ultra-subtle charcoal
         vignetteAlpha: 0.12,
@@ -143,7 +144,7 @@ export const getEraPostFxTuning = (eraId?: string): EraPostFxTuning => {
     case 'analog60s':
     default:
       return {
-        scanlineAlpha: 0.02,
+        scanlineAlpha: 0.0,
         scanlinePitch: 4,
         vignetteColor: 0x1d1107, // Warm tape amber-sepia
         vignetteAlpha: 0.20,
@@ -501,7 +502,7 @@ interface SceneRefs {
   phoneRing: Graphics | null;
   clockHand: Graphics | null;
   setClockTime: ((hour: number, minute: number) => void) | null;
-  staffFigures: FloorNpcHandle[];
+  staffFigures: StagedStaffHandle[];
   /** The booked artist, standing at the live-room mic while a session is in progress. */
   artist: (FloorNpcHandle & { tag: Text; shown: string; baseX: number }) | null;
   /** Floor anchor just inside the door threshold (client enter/exit). */
@@ -1602,9 +1603,20 @@ const buildScene = (
     });
     visual.display.position.set(spot.x, spot.y);
     visual.display.zIndex = Z.depth + spot.y;
+    const activityCue = new Text({ text: '', style: { fontFamily: 'Arial', fontSize: 18, fontWeight: 'bold', fill: 0xffffff, stroke: { color: 0x151b22, width: 3 } } });
+    activityCue.anchor.set(0.5, 1);
+    activityCue.position.set(0, -70);
+    activityCue.eventMode = 'none';
+    visual.display.addChild(activityCue);
+    // Short station paths remain in each figure's floor lane; no simulated tasks or needs.
+    const workSpots = [iso(3.0, 4.8), iso(5.7, 4.4), iso(3.5, 2.0), iso(6.1, 5.7), iso(2.3, 2.8)];
+    const restSpots = [spot, iso(4.4, 6.7), iso(5.6, 6.8), iso(7.2, 6.5), iso(1.7, 4.0)];
     refs.staffFigures.push({
       fig: visual.display,
+      baseX: spot.x,
       baseY: spot.y,
+      stations: { home: spot, work: workSpots[i], rest: restSpots[i] },
+      activityCue,
       animState: figure.animState ?? (state.hasActiveProject ? 'working' : 'idle'),
       destroy: visual.destroy,
     });
@@ -1818,12 +1830,14 @@ const buildScene = (
 
   const crtLayer = new Container();
   crtLayer.eventMode = 'none';
-  const crtG = new Graphics();
-  const pitch = postFxTuning.scanlinePitch;
-  for (let y = 0; y < height; y += pitch) {
-    crtG.rect(0, y, width, 1.0).fill({ color: 0x000000, alpha: postFxTuning.scanlineAlpha });
+  if (postFxTuning.scanlineAlpha > 0) {
+    const crtG = new Graphics();
+    const pitch = postFxTuning.scanlinePitch;
+    for (let y = 0; y < height; y += pitch) {
+      crtG.rect(0, y, width, 1.0).fill({ color: 0x000000, alpha: postFxTuning.scanlineAlpha });
+    }
+    crtLayer.addChild(crtG);
   }
-  crtLayer.addChild(crtG);
   refs.crtLayer = crtLayer;
   overlayRoot.addChild(crtLayer);
 
@@ -1942,7 +1956,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   // Structural key: only layout-affecting state triggers a scene rebuild
   const gearKey = shelfStructuralKey(state?.ownedEquipmentIds, state?.ownedEquipment ?? 0);
   const floorKey = (state?.floorFigures ?? [])
-    .map((f) => `${f.identity?.seed ?? f.seed ?? ''}:${f.animState ?? ''}:${f.role ?? ''}`)
+    .map((f) => `${f.identity?.seed ?? f.seed ?? ''}:${f.role ?? ''}`)
     .join(',');
   const producerLookKey = state?.producerNpc
     ? [state.producerNpc.hair.shape, state.producerNpc.hair.colour, state.producerNpc.body.build, state.producerNpc.clothes.topPrimaryHex].join(':')
@@ -2636,6 +2650,18 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             else if (!s.hasActiveProject && (f.animState === 'working' || f.animState === 'mixing' || f.animState === 'recording')) {
               f.animState = 'idle';
             }
+            const target = staffDestination(f.animState, f.stations);
+            const position = stepStaffPosition({ x: f.baseX, y: f.baseY }, target, ticker.deltaMS, reduceMotion);
+            f.baseX = position.x;
+            f.baseY = position.y;
+            f.fig.x = position.x;
+            f.fig.zIndex = Z.depth + position.y;
+            const walking = Math.hypot(target.x - position.x, target.y - position.y) > 0.5;
+            const cue = staffActivityCue(f.animState);
+            if (f.activityCue.text !== cue.text) f.activityCue.text = cue.text;
+            if (f.activityCue.style.fill !== cue.color) f.activityCue.style.fill = cue.color;
+            f.activityCue.visible = !walking && cue.text !== '';
+            applyFloorNpcMotion({ ...f, animState: walking ? 'walk' : f.animState }, t, i * 1.4, reduceMotion);
             applyFloorNpcMotion(f, t, i * 1.4, reduceMotion);
             if (i === 0 && refs.producerEmote) {
               // Tap reaction: a quick hop with a squash, and a note that floats up and fades.
