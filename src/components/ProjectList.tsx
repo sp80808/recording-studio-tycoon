@@ -20,7 +20,7 @@ import BriefPanel from '@/components/BriefPanel';
 import RiderPanel from '@/components/RiderPanel';
 import ForecastPanel from '@/components/ForecastPanel';
 import { currencySymbol, toLocalAmount } from '@/rpg/cities';
-import { BookingCostLine, BookingCalendar } from '@/components/BookingCalendar';
+import { BookingCostLine } from '@/components/BookingCalendar';
 import { filterAndSortBoard } from '@/utils/enquiryBoard';
 import { fillerJobsFor, isFillerJob } from '@/rpg/fillerJobs';
 import { isSignatureJob, signatureJobFor } from '@/rpg/signatureBrief';
@@ -279,10 +279,6 @@ export const ProjectList: React.FC<ProjectListProps> = ({
             </>
           )}
         </MotionButton>
-      </div>
-
-      <div className="mb-3 shrink-0">
-        <BookingCalendar state={gameState} />
       </div>
 
       <div className="mb-3 flex shrink-0 flex-wrap items-center gap-2" role="search" aria-label="Filter enquiries">

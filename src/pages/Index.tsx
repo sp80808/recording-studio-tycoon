@@ -72,6 +72,7 @@ import type { ProducerBackgroundId } from '@/types/character';
 import { setDisplayCurrency } from '@/utils/displayMoney';
 import type { ProducerSetup } from '@/components/CareerStartScreen';
 import { useFeatureFlag } from '@/stores/featureFlagStore';
+import { StudioClockProvider } from '@/contexts/StudioClockContext';
 
 const MusicStudioTycoon = () => {
   const { gameState, setGameState, initializeGameState } = useGameState(); // REMOVED focusAllocation, setFocusAllocation
@@ -82,6 +83,7 @@ const MusicStudioTycoon = () => {
   
   const [showSplashScreen, setShowSplashScreen] = useState(true);
   const [gameInitialized, setGameInitialized] = useState(false);
+  const [studioCameraReset, setStudioCameraReset] = useState(0);
   
   const {
     startProject,
@@ -686,6 +688,18 @@ const MusicStudioTycoon = () => {
 
   return (
     <GameLayout eraId={gameState.currentEra} cityId={gameState.cityId}>
+      <StudioClockProvider
+        currentDay={gameState.currentDay}
+        difficulty={settings.difficulty}
+        active={
+          gameInitialized &&
+          !showSplashScreen &&
+          !effectiveCompactStudioMode &&
+          settings.tutorialCompleted &&
+          !(storyPresenter || offlineSummary || pendingDelivery || showReviewModal || showTrainingModal || showSettingsModal || (showStorylineBranchModal && pendingStorylineBranch))
+        }
+        onDayComplete={handleAdvanceDayWithReview}
+      >
       {!effectiveCompactStudioMode && <RewardFlights gameState={gameState} />}
       <ChartRevealScene playerLevel={gameState.playerData.level} />
       <SeasonAwardsCeremony />
@@ -694,6 +708,10 @@ const MusicStudioTycoon = () => {
           <GameHeader 
             gameState={gameState} 
             onOpenSettings={handleOpenSettings}
+            onCenterCamera={() => {
+              setStudioCameraReset(value => value + 1);
+              if (settings.sfxEnabled) audioSystem.playUISound('buttonClick');
+            }}
             onAdvanceDay={handleAdvanceDayWithReview}
             triggerEraTransition={triggerEraTransition}
             className="grid-area-header"
@@ -706,6 +724,7 @@ const MusicStudioTycoon = () => {
         />
         <div className="flex-grow min-h-0">
           <MainGameContent
+            cameraResetKey={studioCameraReset}
             inputBlocked={Boolean(storyPresenter || offlineSummary || pendingDelivery || showReviewModal || showTrainingModal || showSettingsModal || (showStorylineBranchModal && pendingStorylineBranch) )}
             gameState={gameState}
             setGameState={setGameState}
@@ -906,6 +925,7 @@ const MusicStudioTycoon = () => {
           }
         />
       )}
+      </StudioClockProvider>
     </GameLayout>
   );
 };

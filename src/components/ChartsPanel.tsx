@@ -8,12 +8,12 @@ import { Chart, ChartEntry, MarketTrend } from '@/types/charts';
 import { GameState } from '@/types/game';
 import { generateCharts, calculateContactCost, isArtistContactable } from '@/data/chartsData';
 import { ArtistContactModal } from './modals/ArtistContactModal';
-import { Play, Pause, TrendingUp, Clock, Star, ArrowUp, ArrowDown, Minus } from 'lucide-react';
 import { ChartDisplay } from './charts/ChartDisplay';
 import { MarketTrendsDisplay } from './charts/MarketTrendsDisplay';
 import { MusicIndustryReport } from './charts/MusicIndustryReport';
 import { gameAudio } from '@/utils/audioSystem'; // Import gameAudio
 import { marketTrendsAt } from '@/services/marketService';
+import './charts/chartsPanel.css';
 
 interface ChartsPanelProps {
   gameState: GameState;
@@ -250,24 +250,6 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
 
   const currentChart = availableCharts.find(chart => chart.id === selectedChart);
 
-  const getMovementIcon = (movement: ChartEntry['movement']) => {
-    switch (movement) {
-      case 'up': return <ArrowUp className="h-3 w-3" />;
-      case 'down': return <ArrowDown className="h-3 w-3" />;
-      case 'new': return '🆕';
-      default: return <Minus className="h-3 w-3" />;
-    }
-  };
-
-  const getMovementColor = (movement: ChartEntry['movement']) => {
-    switch (movement) {
-      case 'up': return 'text-green-400';
-      case 'down': return 'text-red-400';
-      case 'new': return 'text-amber-300';
-      default: return 'text-stone-400';
-    }
-  };
-
   const handleContactArtist = (entry: ChartEntry) => {
     if (!isArtistContactable(entry, gameState.playerData.level, gameState.playerData.reputation)) {
       return;
@@ -288,18 +270,22 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold text-white"><StatIcon name="chartUp" className="inline mr-1" /> Industry Charts</h3>
+    <div className="charts-panel">
+      <div className="charts-panel__toolbar">
+        <div>
+          <span className="charts-panel__eyebrow">The week in music</span>
+          <h3 className="charts-panel__title"><StatIcon name="chartUp" /> Industry Charts</h3>
+        </div>
         <Badge variant="outline" className="text-amber-300 border-amber-400">
           Level {gameState.playerData.level}
         </Badge>
       </div>
 
       {/* Chart Selector */}
-      <div className="w-48"> {/* Adjust width as needed */}
+      <div className="charts-panel__selector">
+        <label htmlFor="industry-chart-select">Chart edition</label>
         <Select onValueChange={setSelectedChart} value={selectedChart}>
-          <SelectTrigger>
+          <SelectTrigger id="industry-chart-select">
             <SelectValue placeholder="Select a chart" />
           </SelectTrigger>
           <SelectContent>
@@ -329,19 +315,21 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gameState, onContactAr
 
       {/* Market Trends */}
       {marketTrends.length > 0 && (
-        <MarketTrendsDisplay marketTrends={marketTrends} getGenreEmoji={getGenreEmoji} />
+        <div className="charts-panel__support-card charts-panel__trends">
+          <MarketTrendsDisplay marketTrends={marketTrends} getGenreEmoji={getGenreEmoji} />
+        </div>
       )}
 
       {/* Music Industry Report - Available at level 5+ */}
       {gameState.playerData.level >= 5 && (
-        <div className="mt-4">
+        <div className="charts-panel__support-card charts-panel__report">
           <MusicIndustryReport seed={marketSeed} day={gameState.currentDay} />
         </div>
       )}
 
       {/* Unlock Information */}
       {gameState.playerData.level < 10 && (
-        <Card className="bg-stone-900/20 border-amber-600/50 p-3">
+        <Card className="charts-panel__unlock">
           <div className="text-sm text-amber-200">
             <div className="font-semibold mb-1"><StatIcon name="unlock" className="inline mr-1" /> Unlock More Charts</div>
             <div className="text-xs space-y-1">

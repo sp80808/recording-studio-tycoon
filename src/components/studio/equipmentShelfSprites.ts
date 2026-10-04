@@ -1,7 +1,7 @@
 /**
  * Equipment shelf layout for the living studio.
  * Driven by owned gear IDs + equipmentArt / equipmentSpriteMap.
- * Missing PNG art falls back to tinted procedural bars (never blank slots).
+ * Missing PNG art falls back to compact, diegetic rack faceplates (never blank slots).
  */
 
 import { getEquipmentArt, getEquipmentSprite } from '@/data/equipmentArt';
@@ -21,6 +21,96 @@ export interface ShelfSlotLayout {
   spritePath: string;
   /** Bare filename from equipmentSpriteMap when present. */
   spriteFile: string | null;
+  /** Procedural faceplate used while authored art is unavailable. */
+  faceplate: RackFaceplate;
+}
+
+export interface RackFaceplateDetail {
+  shape: 'rect' | 'circle';
+  /** Normalised coordinates within the faceplate, 0..1. */
+  x: number;
+  y: number;
+  width?: number;
+  height?: number;
+  radius?: number;
+  color: number;
+  alpha?: number;
+}
+
+export interface RackFaceplate {
+  chassis: number;
+  panel: number;
+  edge: number;
+  details: RackFaceplateDetail[];
+}
+
+function mixRgb(color: number, target: number, amount: number): number {
+  const mix = (shift: number) => {
+    const from = (color >> shift) & 0xff;
+    const to = (target >> shift) & 0xff;
+    return Math.round(from + (to - from) * amount);
+  };
+  return (mix(16) << 16) | (mix(8) << 8) | mix(0);
+}
+
+/**
+ * Build a restrained piece of rack hardware instead of exposing an item's tint
+ * as a full, floating block. The accent survives as a tiny label/LED while the
+ * chassis stays in the studio's warm charcoal and brass material language.
+ */
+export function resolveRackFaceplate(
+  equipmentId: string,
+  accent: number,
+): RackFaceplate {
+  const category = getEquipmentArt(equipmentId)?.category ?? 'unknown';
+  const chassis = 0x211c18;
+  const panel = 0x393029;
+  const edge = 0x6b5844;
+  const brass = 0xb89661;
+  const ink = 0x151210;
+  const softAccent = mixRgb(accent, 0xd7b982, 0.38);
+  const led = mixRgb(accent, 0xffd37a, 0.2);
+  const details: RackFaceplateDetail[] = [
+    { shape: 'circle', x: 0.1, y: 0.5, radius: 0.035, color: brass, alpha: 0.85 },
+    { shape: 'circle', x: 0.9, y: 0.5, radius: 0.035, color: brass, alpha: 0.85 },
+  ];
+
+  if (category === 'monitor') {
+    details.push(
+      { shape: 'circle', x: 0.5, y: 0.6, radius: 0.22, color: ink },
+      { shape: 'circle', x: 0.5, y: 0.6, radius: 0.11, color: softAccent },
+      { shape: 'circle', x: 0.5, y: 0.23, radius: 0.06, color: 0xc6b49a },
+    );
+  } else if (category === 'microphone') {
+    details.push(
+      { shape: 'rect', x: 0.38, y: 0.16, width: 0.24, height: 0.43, color: 0x877b6e },
+      { shape: 'rect', x: 0.45, y: 0.59, width: 0.1, height: 0.25, color: brass },
+      { shape: 'rect', x: 0.25, y: 0.78, width: 0.5, height: 0.06, color: ink },
+    );
+  } else if (category === 'instrument') {
+    details.push(
+      { shape: 'rect', x: 0.2, y: 0.3, width: 0.6, height: 0.16, color: softAccent, alpha: 0.72 },
+      { shape: 'rect', x: 0.2, y: 0.59, width: 0.6, height: 0.07, color: ink },
+      { shape: 'rect', x: 0.2, y: 0.72, width: 0.6, height: 0.07, color: ink },
+    );
+  } else if (category === 'software') {
+    details.push(
+      { shape: 'rect', x: 0.2, y: 0.2, width: 0.6, height: 0.48, color: ink },
+      { shape: 'rect', x: 0.26, y: 0.28, width: 0.48, height: 0.28, color: softAccent, alpha: 0.72 },
+      { shape: 'circle', x: 0.5, y: 0.82, radius: 0.045, color: brass },
+    );
+  } else {
+    // Interfaces, outboard and unknown legacy slots read as ordinary 1U rack gear.
+    details.push(
+      { shape: 'rect', x: 0.2, y: 0.29, width: 0.36, height: 0.18, color: ink },
+      { shape: 'rect', x: 0.23, y: 0.33, width: 0.3, height: 0.1, color: softAccent, alpha: 0.7 },
+      { shape: 'circle', x: 0.68, y: 0.49, radius: 0.11, color: 0xa99a86 },
+      { shape: 'circle', x: 0.82, y: 0.49, radius: 0.065, color: led },
+      { shape: 'rect', x: 0.2, y: 0.71, width: 0.62, height: 0.055, color: brass, alpha: 0.55 },
+    );
+  }
+
+  return { chassis, panel, edge, details };
 }
 
 /** Shelf capacity grows with studio tier (matches WebGLCanvas shelfExtension). */
@@ -98,15 +188,17 @@ export function layoutShelfSlots(input: ShelfLayoutInput): ShelfSlotLayout[] {
     const mapped = equipmentSpriteMap[equipmentId];
     const spritePath = getEquipmentSprite(equipmentId);
     const spriteFile = mapped?.sprite ?? spritePath.split('/').pop() ?? null;
+    const tint = resolveEquipmentTint(equipmentId, i, palette);
     return {
       equipmentId,
       x: gx,
       y: gy,
       width: gearW,
       height: itemH,
-      tint: resolveEquipmentTint(equipmentId, i, palette),
+      tint,
       spritePath,
       spriteFile,
+      faceplate: resolveRackFaceplate(equipmentId, tint),
     };
   });
 }

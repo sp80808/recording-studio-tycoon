@@ -1,4 +1,5 @@
 import assert from 'node:assert';
+import { readFileSync } from 'node:fs';
 import {
   calculateGodrayColor,
   createStudioGodrayFilter,
@@ -22,5 +23,17 @@ console.log('PASS: Time-of-day chromatic progression matches physical light phys
 const headlessResult = createStudioGodrayFilter();
 assert.strictEqual(headlessResult, null, 'Safely returns null in non-browser Node environments');
 console.log('PASS: Headless environment safely guarded without throwing');
+
+// 3. No hard quad edge (bead u0q): the ray contribution must fade near the
+// filter frame boundary so the container bounds never read as a rectangle.
+const shaderSrc = readFileSync('src/lib/render/shaders/godrayFilter.ts', 'utf8');
+assert.ok(shaderSrc.includes('edgeFade'), 'shader fades rays near the filter frame edge');
+assert.ok(shaderSrc.includes('vTextureCoord'), 'edge mask derives from frame UVs');
+assert.doesNotMatch(
+  shaderSrc,
+  /finalAlpha = max\(baseColor\.a, length\(rayColor\)/,
+  'raw ray alpha must not reach the output unmasked',
+);
+console.log('PASS: Ray glow fades at the frame edge — no visible square');
 
 console.log('shaders-godray: all checks passed');

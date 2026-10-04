@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs';
 import {
   layoutShelfSlots,
   parseCssHexTint,
+  resolveRackFaceplate,
   resolveShelfCapacity,
   selectShelfEquipmentIds,
   shelfStructuralKey,
@@ -51,6 +52,14 @@ assert.equal(slots.length, 3);
 assert.equal(slots[0].equipmentId, 'basic_mic');
 assert.match(slots[0].spritePath, /assets\/items\//);
 assert.ok(slots[0].tint > 0);
+assert.equal(slots[0].faceplate.chassis, 0x211c18);
+assert.ok(slots[0].faceplate.details.length >= 5);
+assert.ok(
+  slots[0].faceplate.details.every(detail => detail.x >= 0 && detail.x <= 1 && detail.y >= 0 && detail.y <= 1),
+);
+const monitorFaceplate = resolveRackFaceplate('basic_monitors', 0x38bdf8);
+assert.equal(monitorFaceplate.details.filter(detail => detail.shape === 'circle').length, 5);
+assert.notEqual(monitorFaceplate.panel, 0x38bdf8, 'Accent must not flood the fallback chassis');
 assert.notEqual(shelfStructuralKey(['a', 'b']), shelfStructuralKey(['a']));
 assert.equal(shelfStructuralKey(undefined, 4), 'count:4');
 
@@ -108,7 +117,8 @@ assert.equal(rm.phase, 'absent');
 // --- Source wiring ----------------------------------------------------------
 const webgl = readFileSync('src/components/WebGLCanvas.tsx', 'utf8');
 const room = readFileSync('src/components/StudioRoom.tsx', 'utf8');
-assert.match(webgl, /layoutShelfSlots/, 'Shelf uses equipment layout helper');
+assert.match(webgl, /layoutGearLocker/, 'Shelf uses projected gear-locker layout helper');
+assert.match(webgl, /lockerQuadPoints/, 'Locker face and modules use isometric quads');
 assert.match(webgl, /getEquipmentTexture|ensureEquipmentTexture/, 'Shelf tries equipment textures');
 assert.match(webgl, /advanceClientTransit/, 'Door transit driven in ticker');
 assert.match(webgl, /clientTransitPose/, 'Artist pose follows door path');

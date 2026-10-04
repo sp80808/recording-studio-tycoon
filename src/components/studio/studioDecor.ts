@@ -48,7 +48,9 @@ const BRASS = 0xe6b866;
 
 /* --------------------------------------------------------------- helpers */
 
-/** Soft radial glow faked with stacked ellipses (use in an additive layer). */
+/** Soft radial glow faked with stacked ellipses (use in an additive layer).
+ * Uses many thin steps with a smooth cosine falloff so no concentric ring edges read.
+ * Total integrated alpha stays ≈ `alpha`; outer steps fade to ~0 instead of a hard rim. */
 const radialGlow = (
   g: Graphics,
   x: number,
@@ -57,11 +59,22 @@ const radialGlow = (
   ry: number,
   color: number,
   alpha: number,
-  steps = 7,
+  steps = 16,
 ) => {
-  for (let i = 0; i < steps; i++) {
-    const k = 1 - i / steps;
-    g.ellipse(x, y, rx * k, ry * k).fill({ color, alpha: (alpha / steps) * (1 + i * 0.35) });
+  const n = Math.max(10, Math.floor(steps));
+  // Cosine weights sum-normalised so callers' alpha semantics are preserved.
+  let wSum = 0;
+  const weights: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const t = i / (n - 1); // 0 outer → 1 centre
+    const w = 0.5 - 0.5 * Math.cos(t * Math.PI);
+    weights.push(w);
+    wSum += w;
+  }
+  const scale = wSum > 0 ? alpha / wSum : 0;
+  for (let i = 0; i < n; i++) {
+    const k = 1 - i / n;
+    g.ellipse(x, y, Math.max(0.5, rx * k), Math.max(0.5, ry * k)).fill({ color, alpha: weights[i] * scale });
   }
 };
 
@@ -540,6 +553,8 @@ export interface DecorLightsAmbient {
 }
 
 export interface DecorLights {
+  /** Floor-clipped spill, inserted above the floor and below props/figures. */
+  floorContainer: Container;
   container: Container;
   kit: EraLightingKit;
   /**
@@ -557,10 +572,20 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
   const container = new Container();
   container.eventMode = 'none';
   container.blendMode = 'add';
+  const floorContainer = new Container();
+  floorContainer.eventMode = 'none';
+  floorContainer.blendMode = 'add';
+  const floorContent = new Container();
+  const floorMask = new Graphics();
+  isoQuad(floorMask, 0, 0, ROOM_W, ROOM_D);
+  floorMask.fill(0xffffff);
+  floorContent.mask = floorMask;
+  floorContainer.addChild(floorMask, floorContent);
 
-  /* Window light shaft: a soft parallelogram from the window down onto the floor. */
+  /* Window light: one coherent source from the glazing to a soft floor footprint. */
   const shaft = new Container();
   const shaftG = new Graphics();
+  const floorShaftG = new Graphics();
   const winA = rightWallPt(5.1, 96);
   const winB = rightWallPt(6.9, 96);
   const winC = rightWallPt(6.9, 34);
@@ -569,21 +594,29 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
   const f1 = iso(5.95, 3.9);
   const f2 = iso(6.9, 0.2);
   const f3 = iso(5.1, 0.2);
-  // Airborne beam — alphas from the era lighting kit
-  shaftG.poly([winA.x, winA.y, winB.x, winB.y, f1.x, f1.y, f0.x, f0.y]).fill({ color: spec.daylight, alpha: kit.shaftAirAlpha });
-  shaftG.poly([winD.x, winD.y, winC.x, winC.y, f1.x, f1.y, f0.x, f0.y]).fill({ color: spec.daylight, alpha: kit.shaftAirAlpha * 0.85 });
-  // Floor pool, layered for a soft edge
-  for (let i = 0; i < 5; i++) {
-    const k = i / 5;
-    const lerp = (a: { x: number; y: number }, b: { x: number; y: number }) => ({ x: a.x + (b.x - a.x) * k * 0.28, y: a.y + (b.y - a.y) * k * 0.28 });
-    const p0 = lerp(f0, f3);
-    const p1 = lerp(f1, f2);
-    const p2 = lerp(f2, f1);
-    const p3 = lerp(f3, f0);
-    shaftG.poly([p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y]).fill({ color: spec.daylight, alpha: kit.shaftFloorAlpha * (1 - k * 0.15) });
+  // A restrained airborne wash joins the lower window edge to the floor. Keeping
+  // this below the floor spill prevents a bright wall-to-floor banner.
+  shaftG
+    .poly([winA.x, winA.y, winB.x, winB.y, f1.x, f1.y, f0.x, f0.y])
+    .fill({ color: spec.daylight, alpha: kit.shaftAirAlpha });
+  // Nested isometric footprints distribute the configured alpha across a soft
+  // falloff instead of stacking five near-opaque copies with a hard outer rim.
+  const footprint = [f0, f1, f2, f3];
+  const center = footprint.reduce((p, q) => ({ x: p.x + q.x / 4, y: p.y + q.y / 4 }), { x: 0, y: 0 });
+  for (let i = 0; i < 7; i++) {
+    const inset = i / 18;
+    const layer = footprint.map((p) => ({
+      x: p.x + (center.x - p.x) * inset,
+      y: p.y + (center.y - p.y) * inset,
+    }));
+    floorShaftG.poly(layer.flatMap((p) => [p.x, p.y])).fill({
+      color: spec.daylight,
+      alpha: kit.shaftFloorAlpha * (0.035 + i * 0.012),
+    });
   }
   shaft.addChild(shaftG);
   container.addChild(shaft);
+  floorContent.addChild(floorShaftG);
 
   /* Dust motes drifting through the beam */
   const motes = getMoteSeeds(kit.moteCount, spec.eraId);
@@ -598,17 +631,21 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
     return { x: topX + (botX - topX) * u, y: topY + (botY - topY) * u };
   };
 
-  /* Lamp pools (warm glow on the floor around the console + rug) — kit colours */
+  /* Lamp pools (warm glow on the floor around the console + rug) — kit colours.
+   * Both pools sit on the floor plane (like the contact shadow at deskFoot.y + 3);
+   * a lifted centre would read as a detached halo floating above the boards. */
   const pools = new Graphics();
-  const rug = iso(4.5, 4.3);
-  radialGlow(pools, rug.x, rug.y + 4, kit.rugPool.rx, kit.rugPool.ry, kit.rugPool.color, kit.rugPool.alpha);
+  const rug = iso(4.5, 4.25);
+  radialGlow(pools, rug.x, rug.y + 3, kit.rugPool.rx, kit.rugPool.ry, kit.rugPool.color, kit.rugPool.alpha);
   const desk = iso(4.5, 4.05);
-  radialGlow(pools, desk.x, desk.y - 42, kit.deskPool.rx, kit.deskPool.ry, kit.deskPool.color, kit.deskPool.alpha);
-  container.addChild(pools);
+  radialGlow(pools, desk.x, desk.y + 3, kit.deskPool.rx, kit.deskPool.ry, kit.deskPool.color, kit.deskPool.alpha);
+  floorContent.addChild(pools);
 
   /* Era signature glows */
   const glowG = new Graphics();
   container.addChild(glowG);
+  const practicalFloorG = new Graphics();
+  floorContent.addChild(practicalFloorG);
 
   /* Tier neon strip behind the live-room glass (data-driven; was hard-coded in WebGLCanvas). */
   const tierNeon = new Graphics();
@@ -665,9 +702,11 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
         });
       }
     } else {
-      for (const m of motes) {
+      // Static motes retain depth without turning reduced-motion mode into a
+      // frozen field of bright particles.
+      for (const m of motes.slice(0, Math.ceil(motes.length / 3))) {
         const p = beamPoint(m.u, m.v);
-        moteG.circle(p.x, p.y, m.size).fill({ color: spec.daylight, alpha: kit.moteBaseAlpha * 0.4 });
+        moteG.circle(p.x, p.y, Math.min(1.1, m.size)).fill({ color: spec.daylight, alpha: kit.moteBaseAlpha * 0.22 });
       }
     }
 
@@ -679,12 +718,14 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
 
     // Era prop glows (scaled by kit; brighter after dark so the room still reads)
     glowG.clear();
+    practicalFloorG.clear();
     const nightGlow = glowScale * interiorBoost;
     if (spec.prop === 'brass-lamp') {
       const b = iso(7.55, 2.3);
       const f = (reduce ? 1 : 0.96 + 0.04 * Math.sin(t * 2.1)) * nightGlow;
-      radialGlow(glowG, b.x, b.y - 66, 34, 24, spec.glow, 0.32 * f, 6);
-      radialGlow(glowG, b.x, b.y - 2, 80, 30, spec.glow2, 0.11 * f, 6);
+      // Shade halo hugs the shade; floor pool sits at the prop base (b.y + 2), not floating.
+      radialGlow(glowG, b.x, b.y - 66, 22, 15, spec.glow, 0.20 * f);
+      radialGlow(practicalFloorG, b.x, b.y + 2, 52, 18, spec.glow2, 0.07 * f);
     } else if (spec.prop === 'neon-sign') {
       const flick = reduce ? 1 : Math.sin(t * 23) * Math.sin(t * 7) > 0.93 ? 0.35 : 1;
       const pts = bolt.flatMap(([u, v]) => {
@@ -702,8 +743,8 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
       radialGlow(glowG, wall.x, wall.y, 46, 34, spec.glow, 0.13 * a, 6);
     } else if (spec.prop === 'lava-lamp') {
       const t0 = iso(7.45, 1.1);
-      radialGlow(glowG, t0.x, t0.y - 34, 26, 30, spec.glow, 0.25 * nightGlow, 6);
-      radialGlow(glowG, t0.x, t0.y, 60, 22, spec.glow, 0.09 * nightGlow, 5);
+      radialGlow(glowG, t0.x, t0.y - 34, 18, 20, spec.glow, 0.16 * nightGlow);
+      radialGlow(practicalFloorG, t0.x, t0.y + 2, 40, 14, spec.glow, 0.06 * nightGlow);
       for (let i = 0; i < 3; i++) {
         const y = t0.y - 28 - (reduce ? i * 8 : (Math.sin(t * (0.5 + i * 0.23) + i * 2) * 0.5 + 0.5) * 20);
         glowG.circle(t0.x + (reduce ? 0 : Math.sin(t * 0.9 + i) * 1.4), y, 2.6 + i * 0.7).fill({ color: 0xffa070, alpha: 0.75 });
@@ -796,7 +837,7 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
   };
 
   update(0, true);
-  return { container, kit, update };
+  return { floorContainer, container, kit, update };
 };
 
 /** HSL → 0xRRGGBB (h,s,l in 0..1). */

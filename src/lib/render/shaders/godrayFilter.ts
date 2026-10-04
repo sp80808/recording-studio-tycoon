@@ -71,8 +71,15 @@ const GODRAY_FRAGMENT_SHADER = `
       illuminationDecay *= uDecay;
     }
 
-    vec3 finalRgb = baseColor.rgb + rayColor * uColor;
-    float finalAlpha = max(baseColor.a, length(rayColor) * uStrength);
+    // Smooth edge mask: the filter renders into a quad sized to the container
+    // bounds, so without this the ray glow stops dead at the quad boundary and
+    // reads as a hard rectangle around the window. Fade out near the edges.
+    vec2 edgeDist = min(vTextureCoord, 1.0 - vTextureCoord);
+    float edgeFade = smoothstep(0.0, 0.1, min(edgeDist.x, edgeDist.y));
+    vec3 maskedRay = rayColor * edgeFade;
+
+    vec3 finalRgb = baseColor.rgb + maskedRay * uColor;
+    float finalAlpha = max(baseColor.a, length(maskedRay) * uStrength);
 
     finalColor = vec4(finalRgb, clamp(finalAlpha, 0.0, 1.0));
   }

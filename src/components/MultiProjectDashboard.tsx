@@ -1,8 +1,6 @@
-// Multi-Project Dashboard Component
+// Multi-Project Dashboard Component (rst-styled to match the session views).
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
@@ -19,12 +17,15 @@ interface MultiProjectDashboardProps {
   gameState: GameState;
   setGameState: (state: GameState | ((prev: GameState) => GameState)) => void;
   onProjectSelect?: (project: Project) => void;
+  /** Jump to per-project session work (sliders) for this project. */
+  onWorkSession?: (project: Project) => void;
 }
 
 export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
   gameState,
   setGameState,
-  onProjectSelect
+  onProjectSelect,
+  onWorkSession
 }) => {
   const [selectedTab, setSelectedTab] = useState('overview');
   
@@ -81,73 +82,69 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
   };
 
   const getPriorityColor = (priority: number) => {
-    if (priority === 1) return 'bg-red-600 text-white';
-    if (priority === 2) return 'bg-orange-600 text-white';
-    if (priority === 3) return 'bg-yellow-600 text-white';
-    return 'bg-stone-600 text-white';
+    if (priority === 1) return 'rst-chip-danger';
+    if (priority === 2) return 'rst-chip-brass';
+    if (priority === 3) return 'rst-chip-brass';
+    return '';
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-4 space-y-6">
+    <div className="w-full space-y-3">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-3xl font-bold">Multi-Project Studio</h1>
-          <p className="text-stone-600">
+          <h1 className="rst-title text-lg">Multi-Project Studio</h1>
+          <p className="rst-muted text-xs">
             Managing {activeProjects.length} of {projectCapacity.maxProjects} projects
           </p>
         </div>
-        
-        <div className="flex items-center space-x-4">
-          <Badge variant={automationStatus?.enabled ? 'default' : 'secondary'}>
+
+        <div className="flex items-center gap-2">
+          <span className={`rst-chip whitespace-nowrap ${automationStatus?.enabled ? 'rst-chip-money' : ''}`}>
             {automationStatus?.enabled ? 'Automation ON' : 'Manual Mode'}
-          </Badge>
-          
-          <Button
+          </span>
+
+          <button
+            type="button"
             onClick={() => handleAutomationToggle(!automationStatus?.enabled)}
-            variant={automationStatus?.enabled ? 'destructive' : 'default'}
-            size="sm"
+            className={`rst-btn !min-h-9 !px-3 !text-xs ${automationStatus?.enabled ? '' : 'rst-btn-primary'}`}
           >
             {automationStatus?.enabled ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-            {automationStatus?.enabled ? 'Pause' : 'Start'} Automation
-          </Button>
+            {automationStatus?.enabled ? 'Pause' : 'Start'}
+          </button>
         </div>
       </div>
 
-      {/* Capacity Overview */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-amber-400">
-                {activeProjects.length}/{projectCapacity.maxProjects}
-              </div>
-              <div className="text-sm text-stone-600">Active Projects</div>
-            </div>
-            
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {Math.round(projectCapacity.efficiency * 100)}%
-              </div>
-              <div className="text-sm text-stone-600">Efficiency</div>
-            </div>
-            
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
-                {automationStatus?.workingStaff || 0}/{automationStatus?.totalStaff || 0}
-              </div>
-              <div className="text-sm text-stone-600">Staff Working</div>
-            </div>
-            
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">
-                {Math.round((automationStatus?.studioActivity || 0) * 100)}%
-              </div>
-              <div className="text-sm text-stone-600">Studio Activity</div>
-            </div>
+      {/* Capacity strip */}
+      <div className="flex items-center justify-between gap-2 rounded-lg border border-[var(--rst-line)] bg-black/20 px-3 py-2 text-center">
+        <div className="min-w-0">
+          <div className="text-sm font-bold text-[var(--rst-brass-300)]">
+            {activeProjects.length}/{projectCapacity.maxProjects}
           </div>
-        </CardContent>
-      </Card>
+          <div className="rst-muted text-[10px]">Projects</div>
+        </div>
+
+        <div className="min-w-0">
+          <div className="text-sm font-bold text-[var(--rst-money)]">
+            {Math.round(projectCapacity.efficiency * 100)}%
+          </div>
+          <div className="rst-muted text-[10px]">Efficiency</div>
+        </div>
+
+        <div className="min-w-0">
+          <div className="text-sm font-bold text-purple-300">
+            {automationStatus?.workingStaff || 0}/{automationStatus?.totalStaff || 0}
+          </div>
+          <div className="rst-muted text-[10px]">Staff on</div>
+        </div>
+
+        <div className="min-w-0">
+          <div className="text-sm font-bold text-orange-300">
+            {Math.round((automationStatus?.studioActivity || 0) * 100)}%
+          </div>
+          <div className="rst-muted text-[10px]">Activity</div>
+        </div>
+      </div>
 
       {/* Main Content Tabs */}
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
@@ -159,8 +156,8 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TabsContent value="overview" className="space-y-3">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             {/* Active Projects Summary */}
             <Card>
               <CardHeader>
@@ -171,22 +168,22 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
               </CardHeader>
               <CardContent className="space-y-4">
                 {projectProgress.length === 0 ? (
-                  <p className="text-stone-500 text-center py-8">No active projects</p>
+                  <p className="rst-muted text-center py-6">No active projects</p>
                 ) : (
                   projectProgress.map((progress, index) => (
                     <div key={progress.projectId} className="space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="font-medium">{progress.title}</span>
-                        <Badge className={getPriorityColor(index + 1)}>
+                        <span className={`rst-chip whitespace-nowrap ${getPriorityColor(index + 1)}`}>
                           Priority {index + 1}
-                        </Badge>
+                        </span>
                       </div>
                       <Progress 
                         value={progress.overallProgress * 100} 
                         className="h-2"
                         aria-label={`${progress.title} project progress`}
                       />
-                      <div className="flex justify-between text-sm text-stone-600">
+                      <div className="flex justify-between text-sm rst-muted">
                         <span>{progress.currentStage}</span>
                         <span>{progress.assignedStaffCount} staff</span>
                       </div>
@@ -206,23 +203,24 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
               </CardHeader>
               <CardContent className="space-y-4">
                 {gameState.availableProjects.length === 0 ? (
-                  <p className="text-stone-500 text-center py-8">No available projects</p>
+                  <p className="rst-muted text-center py-6">No available projects</p>
                 ) : (
                   gameState.availableProjects.slice(0, 3).map((project) => (
-                    <div key={project.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <div className="font-medium">{project.title}</div>
-                        <div className="text-sm text-stone-600">
+                    <div key={project.id} className="flex items-center justify-between gap-2 p-2.5 rounded-lg border border-[var(--rst-line)] bg-black/20">
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{project.title}</div>
+                        <div className="rst-muted text-xs">
                           {project.genre} • ${formatNumber(project.payoutBase)}
                         </div>
                       </div>
-                      <Button
+                      <button
+                        type="button"
                         onClick={() => handleAddProject(project)}
                         disabled={!canAddProject()}
-                        size="sm"
+                        className="rst-btn rst-btn-primary shrink-0 !min-h-9 !px-3 !text-xs"
                       >
                         Add
-                      </Button>
+                      </button>
                     </div>
                   ))
                 )}
@@ -232,8 +230,8 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
         </TabsContent>
 
         {/* Projects Tab */}
-        <TabsContent value="projects" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <TabsContent value="projects" className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {activeProjects.map((project) => {
               const progress = projectProgress.find(p => p.projectId === project.id);
               const assignedStaff = gameState.hiredStaff.filter(s => s.assignedProjectId === project.id);
@@ -242,26 +240,27 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
               return (
                 <Card key={project.id} className="relative">
                   <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{project.title}</CardTitle>
-                      <Button
+                    <div className="flex items-center justify-between gap-2">
+                      <CardTitle className="text-lg truncate">{project.title}</CardTitle>
+                      <button
+                        type="button"
                         onClick={() => handleRemoveProject(project.id)}
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-500 hover:text-red-700"
+                        aria-label={`Remove ${project.title}`}
+                        title="Remove project"
+                        className="grid h-10 w-10 shrink-0 place-items-center rounded-md text-stone-400 hover:bg-white/10 hover:text-rose-300"
                       >
                         <X className="w-4 h-4" />
-                      </Button>
+                      </button>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge variant="secondary">{project.genre}</Badge>
-                      <Badge className={getPriorityColor(priority)}>
+                    <div className="flex items-center gap-1.5">
+                      <span className="rst-chip whitespace-nowrap">{project.genre}</span>
+                      <span className={`rst-chip whitespace-nowrap ${getPriorityColor(priority)}`}>
                         P{priority}
-                      </Badge>
+                      </span>
                     </div>
                   </CardHeader>
                   
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-3">
                     <div>
                       <div className="flex justify-between text-sm mb-1">
                         <span>Overall Progress</span>
@@ -274,7 +273,7 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
                       />
                     </div>
                     
-                    <div className="text-sm text-stone-600">
+                    <div className="rst-muted text-xs space-y-0.5">
                       <div>Current: {progress?.currentStage}</div>
                       <div>
                         Room: {gameState.studioRooms.find(room => room.id === project.bookingRoomId)?.name || 'Unassigned'}
@@ -283,15 +282,21 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
                       <div>Est. Completion: {progress?.estimatedCompletion === Infinity ? 'N/A' : `${progress?.estimatedCompletion} days`}</div>
                     </div>
                     
-                    <div className="pt-2">
-                      <Button
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => onWorkSession?.(project)}
+                        className="rst-btn rst-btn-primary flex-1 !min-h-9 !text-xs"
+                      >
+                        Open session
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => onProjectSelect?.(project)}
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
+                        className="rst-btn flex-1 !min-h-9 !text-xs"
                       >
                         View Details
-                      </Button>
+                      </button>
                     </div>
                   </CardContent>
                 </Card>
@@ -301,11 +306,11 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
             {/* Add Project Card */}
             {canAddProject() && (
               <Card className="border-dashed border-2 border-stone-300 hover:border-stone-400 transition-colors">
-                <CardContent className="flex items-center justify-center h-64">
+                <CardContent className="flex items-center justify-center py-8">
                   <div className="text-center">
-                    <Plus className="w-12 h-12 text-stone-400 mx-auto mb-4" />
-                    <p className="text-stone-600 mb-4">Add a new project</p>
-                    <p className="text-sm text-stone-500">
+                    <Plus className="w-10 h-10 text-stone-400 mx-auto mb-3" />
+                    <p className="rst-muted mb-2 text-sm">Add a new project</p>
+                    <p className="rst-muted text-xs">
                       {projectCapacity.maxProjects - activeProjects.length} slots available
                     </p>
                   </div>
@@ -316,7 +321,7 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
         </TabsContent>
 
         {/* Staff Tab */}
-        <TabsContent value="staff" className="space-y-4">
+        <TabsContent value="staff" className="space-y-3">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -325,31 +330,31 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {gameState.hiredStaff.map((staff) => {
                   const workload = staffWorkload[staff.id] || [];
                   const assignedProject = workload[0] ? activeProjects.find(p => p.id === workload[0]) : null;
                   
                   return (
-                    <div key={staff.id} className="p-4 border rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium">{staff.name}</span>
-                        <Badge variant={staff.status === 'Working' ? 'default' : 'secondary'}>
+                    <div key={staff.id} className="p-3 rounded-lg border border-[var(--rst-line)] bg-black/20">
+                      <div className="flex items-center justify-between mb-2 gap-2">
+                        <span className="font-medium truncate">{staff.name}</span>
+                        <span className={`rst-chip whitespace-nowrap ${staff.status === 'Working' ? 'rst-chip-money' : ''}`}>
                           {staff.status}
-                        </Badge>
+                        </span>
                       </div>
                       
-                      <div className="text-sm text-stone-600 mb-2">
+                      <div className="rst-muted text-xs mb-2">
                         {staff.role} • Level {staff.levelInRole}
                       </div>
                       
                       <div className="space-y-1 text-sm">
                         <div className="flex justify-between">
-                          <span>Energy:</span>
+                          <span className="rst-muted">Energy:</span>
                           <span>{staff.energy}%</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>Mood:</span>
+                          <span className="rst-muted">Mood:</span>
                           <span>{staff.mood}%</span>
                         </div>
                       </div>
@@ -357,10 +362,10 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
                       {assignedProject && (() => {
                         const fit = calculateStaffProjectFit(staff, assignedProject);
                         return (
-                          <div className="mt-3 p-2 bg-amber-50 rounded text-sm">
+                          <div className="mt-2 p-2 rounded border border-[var(--rst-line)] bg-black/25 text-xs">
                             <div className="font-medium">Assigned to:</div>
-                            <div>{assignedProject.title}</div>
-                            <div className="text-xs text-amber-500 mt-1">
+                            <div className="truncate">{assignedProject.title}</div>
+                            <div className="text-[var(--rst-brass-300)] mt-1">
                               Fit {fit.score}/100 · {fit.reasons.slice(0, 3).join(' · ')}
                             </div>
                           </div>
@@ -375,7 +380,7 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
         </TabsContent>
 
         {/* Automation Tab */}
-        <TabsContent value="automation" className="space-y-4">
+        <TabsContent value="automation" className="space-y-3">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -383,12 +388,12 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
                 Automation Settings
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4">
               {/* Enable/Disable Automation */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <div>
                   <div className="font-medium">Enable Automation</div>
-                  <div className="text-sm text-stone-600">
+                  <div className="rst-muted text-xs">
                     Automatically assign staff and manage project work
                   </div>
                 </div>
@@ -441,7 +446,7 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
               </div>
 
               {/* Staff Allocation Limits */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div className="space-y-2">
                   <label className="font-medium">Min Staff per Project</label>
                   <Slider
@@ -454,7 +459,7 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
                     step={1}
                     className="w-full"
                   />
-                  <div className="text-sm text-stone-600">
+                  <div className="rst-muted text-xs">
                     {automationStatus?.settings.minStaffPerProject || 1} staff minimum
                   </div>
                 </div>
@@ -471,18 +476,18 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
                     step={1}
                     className="w-full"
                   />
-                  <div className="text-sm text-stone-600">
+                  <div className="rst-muted text-xs">
                     {automationStatus?.settings.maxStaffPerProject || 3} staff maximum
                   </div>
                 </div>
               </div>
 
               {/* Additional Settings */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
                   <div>
                     <div className="font-medium">Pause on Issues</div>
-                    <div className="text-sm text-stone-600">
+                    <div className="rst-muted text-xs">
                       Pause automation when problems occur
                     </div>
                   </div>
@@ -494,10 +499,10 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <div>
                     <div className="font-medium">Milestone Notifications</div>
-                    <div className="text-sm text-stone-600">
+                    <div className="rst-muted text-xs">
                       Notify when projects reach milestones
                     </div>
                   </div>
@@ -511,21 +516,22 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex space-x-2 pt-4">
-                <Button
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
                   onClick={applyOptimalStaffAssignments}
-                  variant="outline"
-                  className="flex-1"
+                  className="rst-btn flex-1 !min-h-9 !text-xs"
                 >
                   Apply Optimal Assignments
-                </Button>
-                <Button
+                </button>
+                <button
+                  type="button"
                   onClick={executeAutomatedWork}
                   disabled={!automationStatus?.enabled}
-                  className="flex-1"
+                  className="rst-btn rst-btn-primary flex-1 !min-h-9 !text-xs"
                 >
                   Execute Work Round
-                </Button>
+                </button>
               </div>
             </CardContent>
           </Card>

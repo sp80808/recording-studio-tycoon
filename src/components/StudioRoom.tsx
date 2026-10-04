@@ -13,8 +13,9 @@ import { gameAudio } from '@/utils/audioSystem';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
 import { TierUpgradeAnimation } from './TierUpgradeAnimation';
 import { toast } from '@/hooks/use-toast';
-import { Coffee, LocateFixed, Waves, Wrench } from 'lucide-react';
+import { Coffee, Waves, Wrench } from 'lucide-react';
 import { getEraDecor, getTrophyInput } from '@/components/studio/studioDecorConfig';
+import { useStudioClock } from '@/contexts/StudioClockContext';
 import { triggerScreenShake } from '@/utils/screenShake';
 import { findPendingChoreForHotspot, getChoreCanonicalHotspot } from '@/simulation/choreEngine';
 import { isFlightCaseSystemUnlocked } from '@/economy/flightCaseEconomy';
@@ -68,6 +69,7 @@ interface StudioRoomProps {
   intervention?: SessionIntervention | null;
   onInterventionFocus?: () => void;
   className?: string;
+  cameraResetKey?: number;
   style?: React.CSSProperties;
 }
 
@@ -95,11 +97,12 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
   intervention = null,
   onInterventionFocus,
   className = '',
+  cameraResetKey = 0,
   style,
 }) => {
   const { settings } = useSettings();
+  const studioClock = useStudioClock();
   const [activeInspector, setActiveInspector] = useState<StudioHotspotId | null>(null);
-  const [cameraReset, setCameraReset] = useState(0);
   const [anchors, setAnchors] = useState<HotspotAnchors>({});
   const [tierFlash, setTierFlash] = useState(false);
   const [pendingTierUpgrade, setPendingTierUpgrade] = useState<{ oldTier: number; newTier: number } | null>(null);
@@ -224,6 +227,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       ),
       ownedEquipment: gameState.ownedEquipment.length,
       day: gameState.currentDay,
+      clockMinutes: studioClock.minutesOfDay,
       eraId: eraDecor.eraId,
       cityId: gameState.cityId,
       roomTier,
@@ -242,7 +246,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           project.rider?.items.some((item) => item.kind === 'beer'),
       ),
     };
-  }, [gameState.activeProject, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, gameState.cityId, eraDecor.eraId, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, gameState.playerData, gameState.availableProjects.length, gameState.choreState, gameState.premisesTier, gameState.pendingCrates, roomTier, floorFocused, activeInspector]);
+  }, [gameState.activeProject, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, gameState.cityId, eraDecor.eraId, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, gameState.playerData, gameState.availableProjects.length, gameState.choreState, gameState.premisesTier, gameState.pendingCrates, roomTier, floorFocused, activeInspector, studioClock.minutesOfDay]);
 
   /**
    * Diegetic floor routes: pending chores always run the chore flow first.
@@ -351,7 +355,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       className={`relative overflow-hidden rounded-lg border border-stone-700/70 bg-[#1b1815] transition-all duration-300 ${className}`} 
       style={style}
     >
-      <WebGLCanvas state={sceneState} onHotspotSelect={handleHotspot} resetCameraKey={cameraReset} onHotspotAnchors={setAnchors} onFirstFrame={onStudioReady} />
+      <WebGLCanvas state={sceneState} onHotspotSelect={handleHotspot} resetCameraKey={cameraResetKey} onHotspotAnchors={setAnchors} onFirstFrame={onStudioReady} />
       {/* The producer at the desk: same modular sprite as play mode, from saved career-start choices (#126). */}
       <div className="pointer-events-none absolute bottom-3 left-3 z-[5] hidden select-none flex-col items-center rounded border border-[var(--rst-line-strong)] bg-black/40 px-2 pb-1.5 pt-1 backdrop-blur-[2px] sm:flex">
         <ProducerSprite
@@ -473,19 +477,8 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           </>
         );
       })()}
-      {/* Camera recentre + lounge duty — right stack clears the session status strip. */}
+      {/* Lounge duty sits below the shared view controls and session status. */}
       {roomTier > 1 && <div className="studio-room-overlay-tr">
-        <button className="studio-camera-center studio-dock-button"
-          onClick={() => {
-            setCameraReset(value => value + 1);
-            playClick();
-            toast({ title: 'Studio view centered', description: 'The room camera is back at its default position.' });
-          }} aria-label="Center studio camera" title="Center studio camera">
-          {gamepad.isConnected && gamepad.lastInputType === 'gamepad' && (
-            <GamepadGlyph button="rs" size="xs" />
-          )}
-          <LocateFixed size={16} />
-        </button>
         {(() => {
           if (!floorFocused || activeInspector || viewRoom) return null;
           const shelfChore = findPendingChoreForHotspot(gameState.choreState, 'shelf');

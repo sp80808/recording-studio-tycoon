@@ -376,7 +376,7 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogClose}>
       <DialogContent className="max-w-4xl bg-transparent border-0 p-0 overflow-hidden">
-        {renderGame()}
+        {isOpen ? renderGame() : null}
       </DialogContent>
     </Dialog>
   );

@@ -457,9 +457,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-stone-900 border-stone-700 text-white">
-                      <SelectItem value="easy">Easy - Relaxed commercial payouts & generous deadlines</SelectItem>
-                      <SelectItem value="medium">Medium - Balanced authentic studio challenge</SelectItem>
-                      <SelectItem value="hard">Hard - High client expectations & strict maintenance fees</SelectItem>
+                      <SelectItem value="easy">Easy - 8-minute studio days; room to plan</SelectItem>
+                      <SelectItem value="medium">Medium - 6-minute studio days; balanced pace</SelectItem>
+                      <SelectItem value="hard">Hard - 4-minute studio days; tighter pressure</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

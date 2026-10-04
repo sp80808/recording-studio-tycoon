@@ -204,6 +204,8 @@ echo "=== DEV overlays opt-in (hidden by default) ==="
 node "${CHECK_OUTPUT_DIR}/rst-dev-overlays-opt-in.cjs"
 
 echo "=== studio ux presentation (HUD + love-room) ==="
+./node_modules/.bin/esbuild tests/studio-clock-progression.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-studio-clock-progression.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-studio-clock-progression.cjs"
 ./node_modules/.bin/esbuild tests/room-switcher.check.tsx --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-room-switcher.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-room-switcher.cjs"
 ./node_modules/.bin/esbuild tests/window-view.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-window-view.cjs" --alias:@=./src >/dev/null

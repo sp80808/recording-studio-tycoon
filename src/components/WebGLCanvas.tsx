@@ -11,10 +11,15 @@ import { STATUS_LED_HEX, gearAttention, gearVisualKey, getConsoleTierGear, statu
 import { dimTint, gearConditionKey, shelfConditionStyle, toSpriteVisualState } from '@/features/gearStudio/gearVisualState';
 import { getPropTexture, loadPropSprites } from '@/components/studio/propSprites';
 import {
-  layoutShelfSlots,
+  resolveRackFaceplate,
   resolveShelfCapacity,
   shelfStructuralKey,
 } from '@/components/studio/equipmentShelfSprites';
+import {
+  layoutGearLocker,
+  lockerQuadPoints,
+  projectPointInLockerQuad,
+} from '@/components/studio/gearLocker';
 import {
   ensureEquipmentTexture,
   getEquipmentTexture,
@@ -52,7 +57,6 @@ import { cityWallColors } from '@/components/studio/cityWallTint';
 import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from '@/components/studio/isoMath';
 import { buildCaseStack, CASE_STACK_TILE, type CaseStack } from '@/components/studio/studioCaseStack';
 import { buildWindowView, type WindowView } from '@/components/studio/studioWindowView';
-import { buildLightShaft, type LightShaft } from '@/components/studio/studioLightShaft';
 import { buildPremisesDecor } from '@/components/studio/studioPremisesDecor';
 import { buildFurnishingLayer, type StudioCat } from '@/components/studio/studioFloorFurnishings';
 import {
@@ -79,6 +83,7 @@ import {
   getEraLightingKit,
   getNightTintAlpha,
   getWallClockTime,
+  getWallClockTimeFromMinutes,
   getWindowSkyColor,
   REDUCED_MOTION_DAYNESS,
   trophyKey,
@@ -252,7 +257,7 @@ export interface StudioSceneState {
   producerNpc?: ModularNpcDefinition;
   /**
    * Owned gear IDs for the equipment shelf sprites.
-   * Falls back to coloured bars when PNG art is missing.
+   * Falls back to horizontal rack faceplates when PNG art is missing.
    * `ownedEquipment` count is derived when ids are omitted (legacy / tests).
    */
   ownedEquipmentIds?: string[];
@@ -265,6 +270,8 @@ export interface StudioSceneState {
   ownedEquipment?: number;
   /** In-game day counter (drives the wall clock) */
   day: number;
+  /** Shared playable-day clock (0..1439). When present, wall, window and tint use it together. */
+  clockMinutes?: number;
   /** Current era id — drives the room's colour grade + signage (bead goj.3) */
   eraId?: string;
   /** Home city id: nudges the wall colours toward the city accent. */
@@ -493,6 +500,8 @@ interface ShelfAnimItem {
   baseY: number;
   baseRot: number;
   phase: number;
+  /** Rack-mounted items stay physically seated in the cabinet. */
+  seated?: boolean;
 }
 
 /** Per-build dynamic refs the ticker animates */
@@ -522,7 +531,6 @@ interface SceneRefs {
   windowView: WindowView | null;
   /** Earned flight cases waiting on the floor; tapping opens the depot. */
   caseStack: CaseStack | null;
-  lightShaft: LightShaft | null;
   /** performance.now() of the last tap on the player character (drives the hop + emote). */
   producerTapAt: number;
   producerEmote: Text | null;
@@ -680,7 +688,6 @@ const buildScene = (
     windowPanePoly: null,
     windowView: null,
     caseStack: null,
-    lightShaft: null,
     producerTapAt: -1e9,
     producerEmote: null,
     setWindowSky: null,
@@ -767,12 +774,13 @@ const buildScene = (
   const winB = iso(6.9, 0);
   const winPoly = [winA.x, winA.y - 96, winB.x, winB.y - 96, winB.x, winB.y - 34, winA.x, winA.y - 34];
   const windowPane = new Graphics();
-  const initialSky = getWindowSkyColor(getWallClockTime(state.day, 0).minutesOfDay);
+  const initialClockMinutes = state.clockMinutes ?? getWallClockTime(state.day, 0).minutesOfDay;
+  const initialSky = getWindowSkyColor(initialClockMinutes);
   windowPane.poly(winPoly).fill(initialSky);
   windowWrap.addChild(windowPane);
   {
     const view = buildWindowView(winA, winB, 34, 96, hashSeed(decorSeed));
-    const initial = getWallClockTime(state.day, 0).minutesOfDay;
+    const initial = initialClockMinutes;
     view.update(initial, getDaynessFromClockMinutes(initial), 0, false);
     windowWrap.addChild(view.container);
     refs.windowView = view;
@@ -858,6 +866,10 @@ const buildScene = (
   const floor = buildPlankFloor(decorSpec, decorSeed);
   root.addChild(floor);
   root.addChild(buildRug());
+  // Floor spill is clipped to the room diamond and must sit below every prop/figure.
+  const lights = buildDecorLights({ spec: decorSpec, kit: getEraLightingKit(state.eraId), tier });
+  refs.decor = lights;
+  root.addChild(lights.floorContainer);
   root.addChild(dressing.props); // free-standing era props sit on top of the floor
 
   // Streaming-era phone/ring-light: same era gate as the visible led-strip prop.
@@ -1013,13 +1025,6 @@ const buildScene = (
       refs.caseStack = stack;
     }
   }
-  {
-    const shaft = buildLightShaft(hashSeed(decorSeed));
-    shaft.container.zIndex = Z.world + 2;
-    shaft.update(getWallClockTime(state.day, 0).minutesOfDay, 0, false);
-    root.addChild(shaft.container);
-    refs.lightShaft = shaft;
-  }
   for (const prop of buildPremisesDecor(state.premisesTier ?? 0, grade.accent)) {
     prop.container.zIndex = Z.depth + prop.y;
     root.addChild(prop.container);
@@ -1079,10 +1084,9 @@ const buildScene = (
   shelf
     .poly([q1.x, q1.y - shelfH, q2.x, q2.y - shelfH, q3.x, q3.y - shelfH, q4.x, q4.y - shelfH])
     .fill(COLORS.shelf);
-  shelf.poly([q4.x, q4.y - shelfH, q3.x, q3.y - shelfH, q3.x, q3.y, q4.x, q4.y]).fill(COLORS.shelfSide);
   shelf.poly([q2.x, q2.y - shelfH, q3.x, q3.y - shelfH, q3.x, q3.y, q2.x, q2.y]).fill(COLORS.shelfSide);
   shelfWrap.addChild(shelf);
-  // Gear items — owned IDs drive sprites (equipmentArt / equipmentSpriteMap); missing art → tinted bars
+  // Owned gear sits inside the visible front face as horizontal rack modules.
   const gearCapacity = resolveShelfCapacity(tier);
   const ownedIds = state.ownedEquipmentIds?.length
     ? state.ownedEquipmentIds
@@ -1095,76 +1099,100 @@ const buildScene = (
         },
         (_, i) => `legacy_slot_${i}`,
       );
-  const shelfSlots = layoutShelfSlots({
+  const locker = layoutGearLocker({
     ownedIds,
     capacity: gearCapacity,
-    q1,
-    q2,
+    q4,
+    q3,
     shelfH,
     palette: COLORS.gear,
   });
-  // Always show at least one placeholder bar when the shelf is empty so the rack reads as furniture
-  const slotsToDraw = shelfSlots.length > 0
-    ? shelfSlots
-    : [{
-        equipmentId: '_empty',
-        x: q1.x + (q2.x - q1.x) * 0.5,
-        y: q1.y + (q2.y - q1.y) * 0.5 - shelfH,
-        width: 10,
-        height: 14,
-        tint: COLORS.gear[0],
-        spritePath: '',
-        spriteFile: null,
-      }];
-  for (const slot of slotsToDraw) {
+  const cabinet = new Graphics();
+  cabinet.poly(locker.shadow.flatMap(point => [point.x, point.y])).fill({ color: 0x090705, alpha: 0.42 });
+  cabinet.poly(lockerQuadPoints(locker.outer)).fill(0x33251b).stroke({ width: 1.4, color: 0x806549 });
+  cabinet.poly(lockerQuadPoints(locker.opening)).fill(0x100e0c).stroke({ width: 2, color: 0x594534 });
+  for (const rail of locker.rails) {
+    cabinet.moveTo(rail.from.x, rail.from.y).lineTo(rail.to.x, rail.to.y)
+      .stroke({ width: 2.2, color: 0x8a6c48, alpha: 0.82 });
+  }
+  for (const ledge of locker.shelves) {
+    cabinet.moveTo(ledge.from.x, ledge.from.y).lineTo(ledge.to.x, ledge.to.y)
+      .stroke({ width: 1, color: 0x6d5947, alpha: 0.62 });
+  }
+  for (const foot of locker.feet) {
+    cabinet.moveTo(foot.top.x, foot.top.y).lineTo(foot.bottom.x, foot.bottom.y)
+      .stroke({ width: 4, color: 0x1b1511 });
+  }
+  shelfWrap.addChild(cabinet);
+
+  for (const slot of locker.slots) {
     // Restrained wear from authoritative condition; unknown ids show no wear.
-    const rawCond = slot.equipmentId !== '_empty' ? state.gearConditions?.[slot.equipmentId] : undefined;
+    const rawCond = state.gearConditions?.[slot.equipmentId];
     const wear = typeof rawCond === 'number' ? shelfConditionStyle(rawCond) : null;
     const faceTint = wear ? dimTint(slot.tint, wear.dim) : slot.tint;
+    const fp = wear ? resolveRackFaceplate(slot.equipmentId, faceTint) : slot.faceplate;
     if (wear?.warn) {
-      // Failing-item warning LED rides the existing status-LED ticker (pulse + reduced-motion free).
       const warnLed = new Graphics();
       shelfWrap.addChild(warnLed);
       refs.statusLeds.push({
         g: warnLed,
-        x: slot.x + slot.width / 2 + 2,
-        y: slot.y - slot.height - 4,
+        x: slot.quad.topRight.x - 3,
+        y: slot.quad.topRight.y + 3,
         color: 0xef4444,
         radius: 1.4,
       });
     }
-    const tex = slot.equipmentId !== '_empty' ? getEquipmentTexture(slot.equipmentId) : null;
+    const item = new Graphics();
+    item.poly(lockerQuadPoints(slot.quad)).fill(fp.panel).stroke({ width: 1, color: fp.edge, alpha: 0.9 });
+    const moduleScale = Math.min(slot.spriteMaxWidth, slot.spriteMaxHeight);
+    for (const detail of fp.details) {
+      if (detail.shape === 'circle') {
+        const point = projectPointInLockerQuad(slot.quad, detail.x, detail.y);
+        item.circle(point.x, point.y, (detail.radius ?? 0.04) * moduleScale)
+          .fill({ color: detail.color, alpha: detail.alpha ?? 1 });
+      } else {
+        const u1 = detail.x + (detail.width ?? 0.1);
+        const v1 = detail.y + (detail.height ?? 0.1);
+        const detailQuad = {
+          topLeft: projectPointInLockerQuad(slot.quad, detail.x, detail.y),
+          topRight: projectPointInLockerQuad(slot.quad, u1, detail.y),
+          bottomRight: projectPointInLockerQuad(slot.quad, u1, v1),
+          bottomLeft: projectPointInLockerQuad(slot.quad, detail.x, v1),
+        };
+        item.poly(lockerQuadPoints(detailQuad)).fill({ color: detail.color, alpha: detail.alpha ?? 1 });
+      }
+    }
+    shelfWrap.addChild(item);
+
+    const tex = getEquipmentTexture(slot.equipmentId);
     if (tex) {
       const sprite = new Sprite(tex);
-      const maxW = Math.max(10, slot.width * 1.6);
-      const maxH = Math.max(14, slot.height + 6);
-      const scale = Math.min(maxW / Math.max(1, tex.width), maxH / Math.max(1, tex.height));
+      const scale = Math.min(
+        slot.spriteMaxWidth / Math.max(1, tex.width),
+        slot.spriteMaxHeight / Math.max(1, tex.height),
+      );
       sprite.scale.set(scale);
       sprite.anchor.set(0.5, 1);
-      sprite.position.set(slot.x, slot.y);
+      sprite.position.set(slot.spriteAnchor.x, slot.spriteAnchor.y);
       sprite.tint = faceTint;
       shelfWrap.addChild(sprite);
       refs.shelfItems.push({
         display: sprite,
-        baseY: slot.y,
+        baseY: slot.spriteAnchor.y,
         baseRot: 0,
         phase: refs.shelfItems.length * 0.9,
+        seated: true,
       });
-      // Warm the cache for ids that haven't resolved yet (async; next rebuild paints sprites)
       void ensureEquipmentTexture(slot.equipmentId);
     } else {
-      const item = new Graphics();
-      item.rect(slot.x - slot.width / 2, slot.y - slot.height, slot.width, slot.height).fill(faceTint);
-      shelfWrap.addChild(item);
-      if (slot.equipmentId !== '_empty') {
-        refs.shelfItems.push({
-          display: item,
-          baseY: slot.y,
-          baseRot: 0,
-          phase: refs.shelfItems.length * 0.9,
-        });
-        void ensureEquipmentTexture(slot.equipmentId);
-      }
+      refs.shelfItems.push({
+        display: item,
+        baseY: item.y,
+        baseRot: 0,
+        phase: refs.shelfItems.length * 0.9,
+        seated: true,
+      });
+      void ensureEquipmentTexture(slot.equipmentId);
     }
   }
   const shelfHit = new Graphics();
@@ -1741,12 +1769,6 @@ const buildScene = (
       upgrades.circle(plantBase.x + 10, plantBase.y - 26, 11).fill(0x357044);
     }
     upgrades.zIndex = Z.depth + plantBase.y;
-    // First gold record frame on the right wall
-    const frameA = iso(6.6, 0);
-    const rec = { x: frameA.x, y: frameA.y - 88 };
-    upgrades.rect(rec.x - 12, rec.y - 12, 24, 24).fill(0x2a1f0d);
-    upgrades.rect(rec.x - 12, rec.y - 12, 24, 24).stroke({ width: 3, color: grade.accent });
-    upgrades.circle(rec.x, rec.y, 8).fill(0xd9a441);
     root.addChild(upgrades);
   }
 
@@ -1803,8 +1825,6 @@ const buildScene = (
   }
 
   /* ---- Additive lighting: window shaft, motes, lamp pools, era glow ------- */
-  const lights = buildDecorLights({ spec: decorSpec, kit: getEraLightingKit(state.eraId), tier });
-  refs.decor = lights;
   lights.container.zIndex = Z.fx;
   root.addChild(lights.container);
 
@@ -2578,6 +2598,12 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
 
           // Shelf gear micro-sway (does not move hotspot hit geometry)
           refs.shelfItems.forEach((item, i) => {
+            if (item.seated) {
+              item.display.y = item.baseY;
+              item.display.rotation = item.baseRot;
+              item.display.alpha = 1;
+              return;
+            }
             const m = shelfIdleMotion(t, i + item.phase, s.hasActiveProject, reduceMotion);
             item.display.y = item.baseY + m.dy;
             item.display.rotation = item.baseRot + m.rot;
@@ -2814,7 +2840,9 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
 
             // Wall clock + day/night ambience share one minute stream (studioDecorConfig).
             // Hands: 12h face. Lighting/window: 24h day so morning ≠ evening exterior.
-            const { hour, minute, minutesOfDay } = getWallClockTime(s.day, t);
+            const { hour, minute, minutesOfDay } = getWallClockTimeFromMinutes(
+              s.clockMinutes ?? getWallClockTime(s.day, t).minutesOfDay,
+            );
             const faceMins = hour * 60 + minute;
             if (faceMins !== clockMinuteRef.current) {
               clockMinuteRef.current = faceMins;
@@ -2836,7 +2864,6 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
 
             refs.windowView?.update(minutesOfDay, dayness, t, reduceMotion);
             refs.caseStack?.update(t, reduceMotion);
-            refs.lightShaft?.update(minutesOfDay, t, reduceMotion);
 
             if (refs.nightTintLayer) {
               refs.nightTintLayer.alpha = getNightTintAlpha(dayness);

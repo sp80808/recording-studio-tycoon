@@ -46,6 +46,7 @@ import './studio-play.css';
 interface MainGameContentProps {
   gameState: GameState;
   inputBlocked?: boolean;
+  cameraResetKey?: number;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
   // focusAllocation: FocusAllocation; // REMOVED
   // setFocusAllocation: React.Dispatch<React.SetStateAction<FocusAllocation>>; // REMOVED
@@ -99,6 +100,7 @@ const DOCK_LABELS: Record<DockTabId, string> = {
 export const MainGameContent: React.FC<MainGameContentProps> = ({
   gameState,
   inputBlocked = false,
+  cameraResetKey = 0,
   setGameState,
   // focusAllocation, // REMOVED
   // setFocusAllocation, // REMOVED
@@ -452,7 +454,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
       <div className="studio-play" data-rst-studio="mounted" data-rst-input-blocked={inputBlocked} data-rst-world-controls={useWorldConsole}>
         <div className="studio-play-world" data-reward-source="floor">
           {project && <SessionBeatBanner project={project} intervention={autoTriggeredMinigame} />}
-          <StudioRoom gameState={gameState} onAdvanceDay={advanceDay} onRefreshProjects={refreshProjects}
+          <StudioRoom gameState={gameState} cameraResetKey={cameraResetKey} onAdvanceDay={advanceDay} onRefreshProjects={refreshProjects}
             onStartProject={bookProject} onAssignStaff={assignStaffToProject} onUnassignStaff={unassignStaffFromProject}
             onOpenDashboardTab={handleOpenDashboardTab} onOpenCases={() => openPanel('cases')} onConsoleFocus={() => openPanel('session')} onCompleteChore={completeFloorChore} activeChoreId={activeChoreId}
             onBookings={() => openPanel('bookings')} onStudioReady={handleStudioReady} floorFocused={panel === null && !consoleOpen && !inputBlocked} worldControls={useWorldConsole} intervention={autoTriggeredMinigame} onInterventionFocus={() => { setPanel(null); setInterventionFocused(true); setConsoleOpen(true); }} className="studio-play-room" />

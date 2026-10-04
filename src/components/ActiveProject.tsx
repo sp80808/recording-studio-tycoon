@@ -182,10 +182,12 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     });
   };
 
+  const isProjectComplete = !!gameState.activeProject && gameState.activeProject.stages.every(stage => stage.completed);
+
   // Present an intervention as an optional opportunity. It never opens itself
   // and never pauses ordinary session progress.
   useEffect(() => {
-    if (gameState.activeProject && !showMinigame && autoTriggeredMinigame) {
+    if (gameState.activeProject && !isProjectComplete && !showMinigame && autoTriggeredMinigame) {
       setPulseAnimation(true);
       const pulseTimer = window.setTimeout(() => setPulseAnimation(false), 3000);
 
@@ -199,7 +201,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       playSound('notification', 0.45);
       return () => window.clearTimeout(pulseTimer);
     }
-  }, [gameState.activeProject?.id, autoTriggeredMinigame, showMinigame]);
+  }, [gameState.activeProject?.id, autoTriggeredMinigame, showMinigame, isProjectComplete]);
 
   // Hoisted above the early return: hooks must run unconditionally (Rules of Hooks).
   const showAdvancedQueue = useFeatureFlag('advanced-production-queue');
@@ -215,7 +217,6 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const [lastTakeGrade, setLastTakeGrade] = useState<{ grade: string; text: string } | null>(null);
   const setTakeCalibrationFocused = useUiChromeStore((s) => s.setTakeCalibrationFocused);
   const availableEnergy = gameState.playerData.dailyWorkCapacity;
-  const isProjectComplete = !!gameState.activeProject && gameState.activeProject.stages.every(stage => stage.completed);
   const rearmTimerRef = useRef<number | null>(null);
 
   // Active slider channel for gamepad spatial control (Performance, Sound Capture, Layering)
@@ -241,6 +242,16 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       setShowMinigame(false);
     }
   }, [controlsEnabled]);
+
+  // A finished project has no live session left to operate. Stop both the
+  // console calibration loop and any open intervention before review appears.
+  useEffect(() => {
+    if (!isProjectComplete) return;
+    clearTakeRearm();
+    setTakeState('idle');
+    setShowMinigame(false);
+    clearAutoTriggeredMinigame?.();
+  }, [isProjectComplete, clearAutoTriggeredMinigame]);
 
   // Shared chrome host: hide First Session coach while Take Calibration owns the dock.
   useEffect(() => {
@@ -676,7 +687,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const stripLead = (l: string) => l.replace(/^[^\p{L}\p{N}]+/u, '');
   const FOCUS_CHANNELS: Array<'performance' | 'soundCapture' | 'layering'> = ['performance', 'soundCapture', 'layering'];
 
-  if (presentation === 'world' && interventionOnly && autoTriggeredMinigame) {
+  if (presentation === 'world' && interventionOnly && autoTriggeredMinigame && !isProjectComplete) {
     const target = worldTargetForIntervention(autoTriggeredMinigame.type);
     return <>
       <section className="world-console" hidden={!controlsEnabled || showMinigame} aria-label="Session opportunity" data-rst-surface="contextual" data-rst-world-target={target}>
@@ -688,7 +699,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           <button type="button" className="rst-btn rst-btn-ghost" data-rst-action-id="intervention:pass" onClick={handleSkipIntervention}>Pass</button>
         </div>
       </section>
-      <MinigameManager isOpen={controlsEnabled && showMinigame} gameType={selectedMinigame} onReward={handleMinigameReward} onClose={() => { setShowMinigame(false); clearAutoTriggeredMinigame?.(); }} />
+      <MinigameManager isOpen={controlsEnabled && showMinigame && !isProjectComplete} gameType={selectedMinigame} onReward={handleMinigameReward} onClose={() => { setShowMinigame(false); clearAutoTriggeredMinigame?.(); }} />
     </>;
   }
 
@@ -842,7 +853,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             </button>
           </div>
         )}
-        <MinigameManager isOpen={showMinigame} gameType={selectedMinigame} onReward={handleMinigameReward} onClose={() => { setShowMinigame(false); clearAutoTriggeredMinigame?.(); }} />
+        <MinigameManager isOpen={showMinigame && !isProjectComplete} gameType={selectedMinigame} onReward={handleMinigameReward} onClose={() => { setShowMinigame(false); clearAutoTriggeredMinigame?.(); }} />
       </section>
     );
   }
@@ -1017,7 +1028,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
         ) : (
         <>
         {/* Pinned Top Bar: Project Meta & LED telemetry */}
-        <div className="shrink-0 mb-2.5 bg-stone-950/80 border border-stone-800/90 rounded-[2px] p-2.5 shadow-inner relative z-10">
+        <div className="shrink-0 mb-2 bg-stone-950/80 border border-stone-800/90 rounded-[2px] p-2 shadow-inner relative z-10">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-3">
             <ProducerSprite
@@ -1133,7 +1144,160 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           </div>
         )}
 
-        {/* Scrollable Center Body: Meters, Sliders, Stage info */}
+        {/* Pinned Focus Console: sliders sit above the fold — no scroll to reach them */}
+        <div className="shrink-0 bg-stone-900/90 border border-stone-800 rounded-[2px] p-1.5 space-y-1">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-stone-300">
+                <StatIcon name="technical" /> Session Focus Allocation
+              </span>
+              <StudioStampChip
+                tone={
+                  focusEffectiveness.effectiveness > 0.8
+                    ? 'live'
+                    : focusEffectiveness.effectiveness > 0.6
+                      ? 'brass'
+                      : 'warn'
+                }
+              >
+                {Math.round(focusEffectiveness.effectiveness * 100)}% Match
+              </StudioStampChip>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                handleAutoAlign();
+              }}
+              disabled={!canUseOptimalFocusButton}
+              className={`rst-btn !min-h-7 !px-2.5 !text-[11px] ${
+                canUseOptimalFocusButton
+                  ? 'border-violet-500/50 text-violet-200 hover:bg-violet-800/60'
+                  : 'opacity-50 cursor-not-allowed'
+              }`}
+              title={canUseOptimalFocusButton ? t('active_auto_align_title') : t('active_auto_align_locked')}
+            >
+              {gamepad.isConnected && (
+                <GamepadGlyph button="north" controllerType={gamepad.controllerType} size="xs" />
+              )}
+              <StatIcon name="goal" /> {t('active_auto_align')}
+            </button>
+          </div>
+
+          {/* 3-Channel Mixing Strips with Dynamic Controller Glyphs */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+            {FOCUS_CHANNELS.map((ch, idx) => {
+              const isSelected = selectedSliderChannel === ch;
+              const labelObj = stageFocusLabels[ch];
+              const currentVal = projectFocus[ch];
+              const targetVal = optimalFocus[ch];
+              const diff = Math.abs(currentVal - targetVal);
+              const isOptimal = diff <= 10;
+              const isGood = diff <= 25;
+
+              return (
+                <div
+                  key={ch}
+                  data-focus-channel={ch}
+                  onClick={() => setSelectedSliderChannel(ch)}
+                  className={`p-1.5 rounded-md border transition-all cursor-pointer relative ${
+                    isSelected && gamepad.isConnected
+                      ? 'bg-stone-900 border-amber-400/80 shadow-[0_0_12px_rgba(251,191,36,0.25)] ring-1 ring-amber-400/40'
+                      : 'bg-stone-900/80 border-stone-800/90 hover:border-stone-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1 gap-1">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      {gamepad.isConnected && (
+                        <span className="shrink-0">
+                          {idx === 0 && <GamepadGlyph button="lb" controllerType={gamepad.controllerType} size="xs" />}
+                          {idx === 1 && (
+                            <span className="text-[9px] font-mono px-1 rounded bg-stone-800 text-stone-300 border border-stone-700">
+                              CH2
+                            </span>
+                          )}
+                          {idx === 2 && <GamepadGlyph button="rb" controllerType={gamepad.controllerType} size="xs" />}
+                        </span>
+                      )}
+                      <span className="text-xs font-semibold text-stone-200 truncate">
+                        {labelObj.label}
+                      </span>
+                    </div>
+                    <span className={`text-[11px] font-mono font-bold px-1.5 py-0.2 rounded shrink-0 ${
+                      isOptimal
+                        ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/40'
+                        : isGood
+                          ? 'bg-amber-950 text-amber-400 border border-amber-500/40'
+                          : 'bg-rose-950 text-rose-400 border border-rose-500/40'
+                    }`}>
+                      {currentVal}%
+                    </span>
+                  </div>
+
+                  <div className="relative">
+                    <Slider
+                      value={[currentVal]}
+                      onValueChange={(val) => {
+                        setSelectedSliderChannel(ch);
+                        handleFocusChange(ch, val[0]);
+                      }}
+                      max={100}
+                      step={5}
+                      aria-label={labelObj.label}
+                      className={`w-full ${
+                        isOptimal
+                          ? 'slider-optimal'
+                          : isGood
+                            ? 'slider-good'
+                            : 'slider-default'
+                      }`}
+                    />
+                  </div>
+
+                  {gamepad.isConnected && isSelected && (
+                    <div className="flex items-center justify-center gap-2 mt-1.5 py-0.5 px-1 bg-amber-400/[0.08] border border-amber-400/30 rounded text-[10px] text-amber-200 font-mono select-none">
+                      <GamepadGlyph button="dpadLeft" controllerType={gamepad.controllerType} size="xs" />
+                      <span>Adjust ±5%</span>
+                      <GamepadGlyph button="dpadRight" controllerType={gamepad.controllerType} size="xs" />
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-center text-[10px] text-stone-400 mt-1">
+                    <span>{t('active_target_range', { min: Math.max(0, targetVal - 10), max: Math.min(100, targetVal + 10) })}</span>
+                    <span className={isOptimal ? 'text-emerald-400 font-semibold flex items-center gap-0.5' : 'text-stone-500'}>
+                      {isOptimal ? <><StatIcon name="check" /> {t('active_optimal')}</> : t('active_adjust')}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {gamepad.isConnected && (
+            <div className="text-[10px] font-mono text-stone-400 bg-stone-900/80 px-2.5 py-1.5 rounded border border-stone-800 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <GamepadGlyph button="lb" controllerType={gamepad.controllerType} size="xs" />/
+                <GamepadGlyph button="rb" controllerType={gamepad.controllerType} size="xs" /> Channel ·
+                <GamepadGlyph button="dpadLeft" controllerType={gamepad.controllerType} size="xs" />
+                <GamepadGlyph button="dpadRight" controllerType={gamepad.controllerType} size="xs" /> Adjust ±5% ·
+                <GamepadGlyph button="north" controllerType={gamepad.controllerType} size="xs" /> Auto-Align
+              </span>
+              <span className="flex items-center gap-1 text-amber-300 font-bold">
+                <GamepadGlyph button="south" controllerType={gamepad.controllerType} size="xs" /> /
+                <GamepadGlyph button="rt" controllerType={gamepad.controllerType} size="xs" /> Lock Take
+              </span>
+            </div>
+          )}
+
+          {/* Stage Guidance Note */}
+          <div className="text-[11px] text-stone-400 bg-stone-900/60 px-2.5 py-1.5 rounded border border-stone-800 flex items-center gap-1.5">
+            <span className="text-amber-300"><StatIcon name="bulb" /></span>
+            <span className="text-stone-300 font-medium">{currentStage.stageName}:</span>
+            <span className="truncate">{optimalFocus.reasoning}</span>
+          </div>
+        </div>
+
+        {/* Scrollable Center Body: Meters, Stage info */}
         <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2.5">
           {/* Production Queue Panel (feature-flagged) */}
           {showAdvancedQueue && (
@@ -1144,7 +1308,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
           {/* Optional intervention opportunity */}
           {autoTriggeredMinigame && (
-            <div className="p-3 bg-purple-500/[0.12] border border-purple-500/70 rounded-lg animate-scale-in">
+            <div className="p-2 bg-purple-500/[0.12] border border-purple-500/70 rounded-lg animate-scale-in">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h4 className="text-yellow-300 font-semibold text-xs mb-0.5"><StatIcon name="goal" /> {t('active_optional_intervention')}</h4>
@@ -1152,7 +1316,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 </div>
                 <div className="text-xl"><StatIcon name="pad" /></div>
               </div>
-              <div className="grid grid-cols-3 gap-2 mt-2">
+              <div className="grid grid-cols-3 gap-2 mt-1.5">
                 <MotionButton
                   data-rst-surface="contextual" data-rst-action-id="issue:intervene" data-rst-world-target="console"
                   onClick={handleStartIntervention}
@@ -1180,7 +1344,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
           {/* Stage Completion Notification */}
           {isCurrentStageComplete && !isProjectComplete && (
-            <div className="p-3 bg-emerald-500/[0.10] border border-green-500/70 rounded-lg animate-scale-in flex items-center justify-between">
+            <div className="p-2 bg-emerald-500/[0.10] border border-green-500/70 rounded-lg animate-scale-in flex items-center justify-between">
               <div>
                 <h4 className="text-green-400 font-semibold text-xs"><StatIcon name="check" /> {t('active_stage_complete')}</h4>
                 <p className="text-stone-300 text-xs">
@@ -1193,7 +1357,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
           {/* Active Studio Synergies (Kairosoft Combos) */}
           {activeSynergies.length > 0 && (
-            <div className="flex flex-wrap items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-500/[0.08] border border-amber-500/30">
+            <div className="flex flex-wrap items-center justify-between gap-1.5 px-2 py-1 rounded-lg bg-amber-500/[0.08] border border-amber-500/30">
               <span className="text-[10px] uppercase font-bold tracking-wider text-amber-300 flex items-center gap-1 shrink-0">
                 <span><StatIcon name="sparkle" /></span>
                 <span>Active Combos ({activeSynergies.length}):</span>
@@ -1203,8 +1367,8 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           )}
 
           {/* Dual Progress Meters */}
-          <div className="bg-stone-900/90 border border-stone-800 rounded-[2px] p-2.5">
-            <div className="flex justify-between items-center text-xs mb-1.5">
+          <div className="bg-stone-900/90 border border-stone-800 rounded-[2px] p-2">
+            <div className="flex justify-between items-center text-xs mb-1">
               <span className="font-semibold text-white flex items-center gap-1.5">
                 <span className="text-stone-400">Stage {project.currentStageIndex + 1}/{project.stages.length}:</span>
                 <span className="text-amber-200 font-bold">{currentStage?.stageName}</span>
@@ -1221,7 +1385,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
             </div>
             <Progress 
               value={currentStageProgress} 
-              className="h-2.5 mb-2 transition-all duration-300"
+              className="h-2.5 mb-1.5 transition-all duration-300"
               aria-label={`${currentStage?.stageName || 'Current stage'} progress`}
             />
 
@@ -1237,160 +1401,6 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           </div>
 
           <OutsideHelpCard gameState={gameState} setGameState={setGameState} />
-
-          {/* Focus Allocation Console Module */}
-          <div className="bg-stone-900/90 border border-stone-800 rounded-[2px] p-2.5 space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-stone-300">
-                  <StatIcon name="technical" /> Session Focus Allocation
-                </span>
-                <StudioStampChip
-                  tone={
-                    focusEffectiveness.effectiveness > 0.8
-                      ? 'live'
-                      : focusEffectiveness.effectiveness > 0.6
-                        ? 'brass'
-                        : 'warn'
-                  }
-                >
-                  {Math.round(focusEffectiveness.effectiveness * 100)}% Match
-                </StudioStampChip>
-              </div>
-              
-              <Button
-                onClick={() => {
-                  handleAutoAlign();
-                }}
-                disabled={!canUseOptimalFocusButton}
-                size="sm"
-                variant="outline"
-                className={`text-[11px] h-7 px-2.5 border transition-colors flex items-center gap-1 ${
-                  canUseOptimalFocusButton
-                    ? 'bg-violet-900/40 border-violet-500/50 text-violet-200 hover:bg-violet-800/60'
-                    : 'bg-stone-800/40 border-stone-700 text-stone-500 cursor-not-allowed'
-                }`}
-                title={canUseOptimalFocusButton ? t('active_auto_align_title') : t('active_auto_align_locked')}
-              >
-                {gamepad.isConnected && (
-                  <GamepadGlyph button="north" controllerType={gamepad.controllerType} size="xs" />
-                )}
-                <StatIcon name="goal" /> {t('active_auto_align')}
-              </Button>
-            </div>
-
-            {/* 3-Channel Mixing Strips with Dynamic Controller Glyphs */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {FOCUS_CHANNELS.map((ch, idx) => {
-                const isSelected = selectedSliderChannel === ch;
-                const labelObj = stageFocusLabels[ch];
-                const currentVal = projectFocus[ch];
-                const targetVal = optimalFocus[ch];
-                const diff = Math.abs(currentVal - targetVal);
-                const isOptimal = diff <= 10;
-                const isGood = diff <= 25;
-
-                return (
-                  <div
-                    key={ch}
-                    data-focus-channel={ch}
-                    onClick={() => setSelectedSliderChannel(ch)}
-                    className={`p-2.5 rounded-md border transition-all cursor-pointer relative ${
-                      isSelected && gamepad.isConnected
-                        ? 'bg-stone-900 border-amber-400/80 shadow-[0_0_12px_rgba(251,191,36,0.25)] ring-1 ring-amber-400/40'
-                        : 'bg-stone-900/80 border-stone-800/90 hover:border-stone-700'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1.5 gap-1">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        {gamepad.isConnected && (
-                          <span className="shrink-0">
-                            {idx === 0 && <GamepadGlyph button="lb" controllerType={gamepad.controllerType} size="xs" />}
-                            {idx === 1 && (
-                              <span className="text-[9px] font-mono px-1 rounded bg-stone-800 text-stone-300 border border-stone-700">
-                                CH2
-                              </span>
-                            )}
-                            {idx === 2 && <GamepadGlyph button="rb" controllerType={gamepad.controllerType} size="xs" />}
-                          </span>
-                        )}
-                        <span className="text-xs font-semibold text-stone-200 truncate">
-                          {labelObj.label}
-                        </span>
-                      </div>
-                      <span className={`text-[11px] font-mono font-bold px-1.5 py-0.2 rounded shrink-0 ${
-                        isOptimal
-                          ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/40'
-                          : isGood
-                            ? 'bg-amber-950 text-amber-400 border border-amber-500/40'
-                            : 'bg-rose-950 text-rose-400 border border-rose-500/40'
-                      }`}>
-                        {currentVal}%
-                      </span>
-                    </div>
-
-                    <div className="relative">
-                      <Slider
-                        value={[currentVal]}
-                        onValueChange={(val) => {
-                          setSelectedSliderChannel(ch);
-                          handleFocusChange(ch, val[0]);
-                        }}
-                        max={100}
-                        step={5}
-                        aria-label={labelObj.label}
-                        className={`w-full ${
-                          isOptimal
-                            ? 'slider-optimal'
-                            : isGood
-                              ? 'slider-good'
-                              : 'slider-default'
-                        }`}
-                      />
-                    </div>
-
-                    {gamepad.isConnected && isSelected && (
-                      <div className="flex items-center justify-center gap-2 mt-1.5 py-0.5 px-1 bg-amber-400/[0.08] border border-amber-400/30 rounded text-[10px] text-amber-200 font-mono select-none">
-                        <GamepadGlyph button="dpadLeft" controllerType={gamepad.controllerType} size="xs" />
-                        <span>Adjust ±5%</span>
-                        <GamepadGlyph button="dpadRight" controllerType={gamepad.controllerType} size="xs" />
-                      </div>
-                    )}
-
-                    <div className="flex justify-between items-center text-[10px] text-stone-400 mt-1">
-                      <span>{t('active_target_range', { min: Math.max(0, targetVal - 10), max: Math.min(100, targetVal + 10) })}</span>
-                      <span className={isOptimal ? 'text-emerald-400 font-semibold flex items-center gap-0.5' : 'text-stone-500'}>
-                        {isOptimal ? <><StatIcon name="check" /> {t('active_optimal')}</> : t('active_adjust')}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {gamepad.isConnected && (
-              <div className="text-[10px] font-mono text-stone-400 bg-stone-900/80 px-2.5 py-1.5 rounded border border-stone-800 flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <GamepadGlyph button="lb" controllerType={gamepad.controllerType} size="xs" />/
-                  <GamepadGlyph button="rb" controllerType={gamepad.controllerType} size="xs" /> Channel · 
-                  <GamepadGlyph button="dpadLeft" controllerType={gamepad.controllerType} size="xs" />
-                  <GamepadGlyph button="dpadRight" controllerType={gamepad.controllerType} size="xs" /> Adjust ±5% · 
-                  <GamepadGlyph button="north" controllerType={gamepad.controllerType} size="xs" /> Auto-Align
-                </span>
-                <span className="flex items-center gap-1 text-amber-300 font-bold">
-                  <GamepadGlyph button="south" controllerType={gamepad.controllerType} size="xs" /> / 
-                  <GamepadGlyph button="rt" controllerType={gamepad.controllerType} size="xs" /> Lock Take
-                </span>
-              </div>
-            )}
-
-            {/* Stage Guidance Note */}
-            <div className="text-[11px] text-stone-400 bg-stone-900/60 px-2.5 py-1.5 rounded border border-stone-800 flex items-center gap-1.5">
-              <span className="text-amber-300"><StatIcon name="bulb" /></span>
-              <span className="text-stone-300 font-medium">{currentStage.stageName}:</span>
-              <span className="truncate">{optimalFocus.reasoning}</span>
-            </div>
-          </div>
         </div>
 
         </>
@@ -1502,7 +1512,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
         </div>
 
         <MinigameManager
-          isOpen={showMinigame}
+          isOpen={showMinigame && !isProjectComplete}
           onClose={() => {
             setShowMinigame(false);
             if (clearAutoTriggeredMinigame) {

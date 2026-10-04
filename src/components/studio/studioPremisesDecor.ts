@@ -1,6 +1,6 @@
 // Premises furniture (#70): what the Living Studio gains when you move up.
 //   Tier 1 Project Studio: client waiting bench + wall-side storage rack.
-//   Tier 2 Commercial Studio: reception counter with a sign, water cooler and a second rack.
+//   Tier 2 Commercial Studio: reception counter with a sign and a second rack.
 //   Tier 3 Multi-room Facility: premium client sofa and a third rack bay.
 // In-house CC0, drawn in Pixi Graphics (logged in docs/ART_SOURCING_LOG.md). Presentation only.
 
@@ -65,17 +65,6 @@ const buildReception = (accent: number): Container => {
   return wrap(g);
 };
 
-const buildCooler = (): Container => {
-  const g = new Graphics();
-  g.ellipse(0, 2, 11, 4).fill({ color: 0x000000, alpha: 0.28 });
-  g.roundRect(-7, -26, 14, 26, 2).fill(0xdfe5ee);
-  g.roundRect(-7, -26, 14, 26, 2).stroke({ width: 1, color: 0x9aa5b5 });
-  g.circle(0, -38, 7).fill({ color: 0x7fc8ff, alpha: 0.75 });
-  g.rect(-7, -40, 14, 3).fill({ color: 0xffffff, alpha: 0.2 });
-  g.rect(-2, -20, 4, 3).fill(0x4a90d9);
-  return wrap(g);
-};
-
 const buildSofa = (accent: number): Container => {
   const g = new Graphics();
   g.ellipse(0, 4, 40, 9).fill({ color: 0x000000, alpha: 0.28 });
@@ -91,7 +80,6 @@ export const PREMISES_PROPS: PremisesProp[] = [
   { id: 'clientBench', minTier: 1, x: 2.9, y: 6.7, build: buildBench },
   { id: 'storageRack', minTier: 1, x: 4.3, y: 0.6, build: buildRack },
   { id: 'reception', minTier: 2, x: 1.15, y: 5.9, build: buildReception },
-  { id: 'waterCooler', minTier: 2, x: 7.2, y: 6.45, build: buildCooler },
   { id: 'storageRack2', minTier: 2, x: 5.15, y: 0.6, build: buildRack },
   { id: 'premiumSofa', minTier: 3, x: 5.2, y: 6.9, build: buildSofa },
   { id: 'storageRack3', minTier: 3, x: 6.0, y: 0.6, build: buildRack },
