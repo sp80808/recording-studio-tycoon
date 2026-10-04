@@ -18,6 +18,9 @@ export function LabelTermsPanel({ terms, onChange }: { terms: LabelTerms; onChan
         <Disc3 size={13} aria-hidden="true" />
         {terms.labelName} · {terms.tier} label · 3-track package
       </div>
+      {terms.commissionedGenre && (
+        <p className="mb-1 text-amber-300" data-testid="label-commission">Commissioning {terms.commissionedGenre} this week: the genre is in demand.</p>
+      )}
       <p className="mb-2 text-stone-400" data-testid="label-terms-summary">
         {money(terms.fee)} · {terms.deadlineDays} days · quality target {terms.qualityTarget} · {terms.revisions} revision{terms.revisions === 1 ? '' : 's'} included
       </p>
