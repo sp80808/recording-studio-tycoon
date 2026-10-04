@@ -3,13 +3,13 @@
    Purpose: Central index for all project documentation with version tracking
    Version: 0.3.3
    Created: 2025-06-08
-   Last Modified: 2026-09-27
+   Last Modified: 2026-10-04
    Status: Active
 -->
 
 # Documentation Index & Version Tracking
 *Recording Studio Tycoon - Complete Documentation Overview*
-*Updated: September 27, 2026 - Current-codebase refresh*
+*Updated: October 4, 2026 — juice & diegetic-interactions planning*
 
 ## 📚 Quick Navigation
 - **[Main Documentation](./README.md)** - Start here for all documentation
@@ -54,6 +54,8 @@
 | [UX Visual Iterative Plan](./ux-visual-iterative-plan.md) | 1.0.0 | 2026-09-29 | **NEW** | P0–P2 polish plan for HUD, splash, iso room, expansions |
 | [Multi-Room Blueprints](./multi-room-blueprints.md) | 1.0.0 | 2026-09-29 | **NEW** | Iso ↔ top-down facility map, adjacency/doors, cosmetics-only monetisation |
 | [Studio Strip Audit & Remediation Plan](./STUDIO_STRIP_AUDIT.md) | 1.0.0 | 2026-09-28 | **NEW** | Audit of broken StudioStrip compact mode, dead-end loops, and viewport blackout |
+| [Game Juice & Visual Effects Plan](./JUICE_PLAN.md) | 1.0.0 | 2026-10-04 | **NEW** | Verified installed deps (pixi-filters 6.1.5 fits Pixi 8), DOM/canvas boundary, mobile perf gates, license table. Beads `recording-studio-tycoon-yt7` |
+| [Diegetic Studio Interactions Plan](./DIEGETIC_INTERACTIONS_PLAN.md) | 1.0.0 | 2026-10-04 | **NEW** | Two-family split: minigames vs diegetic interactions; 29-idea catalogue, migration-not-duplicate rule, wavesurfer/Matter/Meyda/JZZ tooling, `TactileFeedback` service. Beads `recording-studio-tycoon-1et` |
 | [Documentation Update Summary](./logs_and_reports/DOCUMENTATION_UPDATE_SUMMARY_2025-06-11.md) | 1.0.0 | 2025-06-11 | **NEW** | Summary of June 11 documentation changes |
 | [Work Progression Enhancement Log](./logs_and_reports/WORK_PROGRESSION_ENHANCEMENT_LOG.md) | 1.0.0 | 2025-06-11 | Updated | Work progression system implementation |
 

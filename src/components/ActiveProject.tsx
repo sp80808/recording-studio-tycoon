@@ -16,8 +16,12 @@ import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
 // GameState and FocusAllocation are imported below with Project
 import { MinigameManager, MinigameType } from './minigames/MinigameManager';
+import { WorldInteraction } from './minigames/WorldInteraction';
+import { worldTargetForIntervention } from '@/session/worldSessionActions';
 import { AnimatedStatBlobs } from './AnimatedStatBlobs';
 import { OrbAnimationStyles } from './OrbAnimationStyles';
+
+const DIEGETIC_MINIGAMES = new Set<string>(['gain-stage', 'phase-check']);
 import { ProjectCompletionCelebration } from './ProjectCompletionCelebration';
 import { EnhancedAnimationStyles } from './EnhancedAnimationStyles';
 import { toast } from '@/hooks/use-toast';
@@ -83,6 +87,7 @@ interface ActiveProjectProps {
   onProjectSelect?: (project: Project) => void;
   autoTriggeredMinigame?: SessionIntervention | null;
   clearAutoTriggeredMinigame?: () => void;
+  onLockHotspot?: (id: import('@/components/WebGLCanvas').StudioHotspotId | null) => void;
 }
 
 export const ActiveProject: React.FC<ActiveProjectProps> = ({
@@ -98,7 +103,8 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   onProjectComplete,
   onProjectSelect,
   autoTriggeredMinigame,
-  clearAutoTriggeredMinigame
+  clearAutoTriggeredMinigame,
+  onLockHotspot
 }) => {
   const { t } = useTranslation();
   const [showMinigame, setShowMinigame] = useState(false);
@@ -699,7 +705,11 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           <button type="button" className="rst-btn rst-btn-ghost" data-rst-action-id="intervention:pass" onClick={handleSkipIntervention}>Pass</button>
         </div>
       </section>
-      <MinigameManager isOpen={controlsEnabled && showMinigame && !isProjectComplete} gameType={selectedMinigame} onReward={handleMinigameReward} onClose={() => { setShowMinigame(false); clearAutoTriggeredMinigame?.(); }} />
+      {DIEGETIC_MINIGAMES.has(selectedMinigame) ? (
+        <WorldInteraction isOpen={controlsEnabled && showMinigame && !isProjectComplete} gameType={selectedMinigame} onReward={handleMinigameReward} onClose={() => { setShowMinigame(false); clearAutoTriggeredMinigame?.(); }} />
+      ) : (
+        <MinigameManager isOpen={controlsEnabled && showMinigame && !isProjectComplete} gameType={selectedMinigame} onReward={handleMinigameReward} onClose={() => { setShowMinigame(false); clearAutoTriggeredMinigame?.(); }} />
+      )}
     </>;
   }
 

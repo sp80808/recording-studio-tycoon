@@ -34,7 +34,7 @@ import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { toast } from '@/hooks/use-toast';
 import { useCutsceneQueue } from '@/hooks/useCutsceneQueue';
 import { tc } from '@/i18n/content';
-// import { playSound } from '@/utils/soundUtils'; // playSound seems unused here, consider removing if not needed directly in manager
+import { computeMinigameReward } from './minigameRewards';
 
 // MinigameType will also serve as minigameId for tutorial tracking
 export type MinigameType = 
@@ -101,145 +101,9 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({
   const handleGameComplete = (score: number, success?: boolean) => { // Added success parameter for maintenance game
     setShowGame(false);
     
-    let creativityBonus = 0;
-    let technicalBonus = 0;
-    const xpBonus = Math.floor(Math.max(1, score / 50));
-
-    // Score might be a direct value or a quality impact percentage (0-100 for maintenance)
-    // For maintenance, score is qualityImpact (0-20), success is boolean
-    // We need to normalize or handle this. For now, let's assume score is consistently 0-1000 range for others.
-    // If gameType is maintenance, score is already small (0-20), so direct use might be okay for bonuses.
-
-    switch (gameType) {
-      case 'rhythm':
-        creativityBonus = Math.floor(score / 8);
-        technicalBonus = Math.floor(score / 12);
-        break;
-      case 'mixing':
-        creativityBonus = Math.floor(score / 12);
-        technicalBonus = Math.floor(score / 8);
-        break;
-      case 'waveform': // Also known as SoundWaveGame
-        creativityBonus = Math.floor(score / 10);
-        technicalBonus = Math.floor(score / 10);
-        break;
-      case 'beatmaking':
-        creativityBonus = Math.floor(score / 6);
-        technicalBonus = Math.floor(score / 15);
-        break;
-      case 'vocal':
-        creativityBonus = Math.floor(score / 7);
-        technicalBonus = Math.floor(score / 11);
-        break;
-      case 'mastering':
-        creativityBonus = Math.floor(score / 15);
-        technicalBonus = Math.floor(score / 6);
-        break;
-      case 'effectchain':
-        creativityBonus = Math.floor(score / 8);
-        technicalBonus = Math.floor(score / 10);
-        break;
-      case 'acoustic':
-        creativityBonus = Math.floor(score / 12);
-        technicalBonus = Math.floor(score / 8);
-        break;
-      case 'layering': // InstrumentLayeringGame
-        creativityBonus = Math.floor(score / 9);
-        technicalBonus = Math.floor(score / 11);
-        break;
-      case 'vocal-tuning':
-        creativityBonus = Math.floor(score / 14);
-        technicalBonus = Math.floor(score / 7);
-        break;
-      case 'live-recording':
-        creativityBonus = Math.floor(score / 10);
-        technicalBonus = Math.floor(score / 9);
-        break;
-      case 'maintenance': // GearMaintenanceGame
-        // For maintenance, score is already the direct quality impact (0-20)
-        // And success is a boolean. We can use the score directly for small bonuses.
-        // Or adjust if `score` here means the `qualityImpact` from GearMaintenanceGame
-        // If `score` is the `qualityImpact` (0-20), then bonuses will be small.
-        // Let's assume `score` passed to handleGameComplete from GearMaintenanceGame is its `qualityImpact`.
-        creativityBonus = success ? Math.floor(score / 4) : 0; // e.g. max 5 if score is 20
-        technicalBonus = success ? Math.floor(score / 2) : 0; // e.g. max 10 if score is 20
-        // xpBonus is already calculated based on score, which is fine.
-        break;
-      case 'eq-match':
-        creativityBonus = Math.floor(score / 12);
-        technicalBonus = Math.floor(score / 8);
-        break;
-      case 'fader-ride':
-        creativityBonus = Math.floor(score / 15);
-        technicalBonus = Math.floor(score / 6);
-        break;
-      case 'punch-in':
-        creativityBonus = Math.floor(score / 8);
-        technicalBonus = Math.floor(score / 12);
-        break;
-      case 'beat-pad':
-        creativityBonus = Math.floor(score / 6);
-        technicalBonus = Math.floor(score / 12);
-        break;
-      case 'tape-jog':
-        creativityBonus = Math.floor(score / 15);
-        technicalBonus = Math.floor(score / 6);
-        break;
-      case 'console-ride':
-        creativityBonus = Math.floor(score / 10);
-        technicalBonus = Math.floor(score / 8);
-        break;
-      case 'album-sequence':
-        creativityBonus = Math.floor(score / 9);
-        technicalBonus = Math.floor(score / 12);
-        break;
-      case 'vocal-comp':
-        creativityBonus = Math.floor(score / 8);
-        technicalBonus = Math.floor(score / 10);
-        break;
-      case 'lyric-focus':
-        creativityBonus = Math.floor(score / 6);
-        technicalBonus = Math.floor(score / 14);
-        break;
-      case 'tape-splicing':
-        creativityBonus = Math.floor(score / 14);
-        technicalBonus = Math.floor(score / 7);
-        break;
-      case 'sampling':
-        creativityBonus = Math.floor(score / 7);
-        technicalBonus = Math.floor(score / 11);
-        break;
-      case 'fault-hunt':
-        creativityBonus = Math.floor(score / 16);
-        technicalBonus = Math.floor(score / 7);
-        break;
-      case 'chain-recall':
-        creativityBonus = Math.floor(score / 12);
-        technicalBonus = Math.floor(score / 9);
-        break;
-      case 'session-scramble':
-      case 'flight-case':
-        creativityBonus = Math.floor(score / 16);
-        technicalBonus = Math.floor(score / 8);
-        break;
-      case 'gain-stage':
-        creativityBonus = Math.floor(score / 20);
-        technicalBonus = Math.floor(score / 7);
-        break;
-      case 'phase-check':
-        creativityBonus = Math.floor(score / 18);
-        technicalBonus = Math.floor(score / 7);
-        break;
-      case 'bus-merge':
-        creativityBonus = Math.floor(score / 14);
-        technicalBonus = Math.floor(score / 8);
-        break;
-      // Add cases for other minigames if their reward calculation differs
-      default:
-        // Generic fallback or throw error
-        console.warn(`Unknown game type for reward calculation: ${gameType}`);
-        break;
-    }
+    // For maintenance, score is already the direct quality impact (0-20)
+    // And success is a boolean.
+    const { creativityBonus, technicalBonus, xpBonus } = computeMinigameReward(gameType, score, success);
 
     onReward(creativityBonus, technicalBonus, xpBonus, gameType, score);
 

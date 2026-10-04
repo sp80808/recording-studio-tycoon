@@ -40,3 +40,58 @@ export const trackSessionSettled = (state: GameState, project: Project | undefin
 
 export const trackIntervention = (outcome: 'intervened' | 'delegated' | 'skipped', day: number, kind: string): void =>
   telemetry.capture(`intervention_${outcome}`, day, { kind });
+
+export const trackEnquiriesGenerated = (day: number, projects: Project[], source: 'settlement' | 'chase'): void => {
+  for (const p of projects) {
+    telemetry.capture('enquiry_generated', day, {
+      service: getProjectBrief(p).serviceType,
+      feeBand: feeBand(p.payoutBase ?? 0),
+      durationBand: durationBand(p.durationDaysTotal),
+      source,
+    }, p.id);
+  }
+};
+
+export const trackSessionStarted = (state: GameState, project: Project, roomType?: string): void =>
+  telemetry.capture('session_started', state.currentDay, {
+    service: getProjectBrief(project).serviceType,
+    feeBand: feeBand(project.payoutBase ?? 0),
+    roomType,
+  }, `started-${project.id}`);
+
+export const trackInterventionOffered = (day: number, kind: string, offerId: string): void =>
+  telemetry.capture('intervention_offered', day, { kind }, `offered-${offerId}`);
+
+export const trackGear = (kind: 'bought' | 'sold', day: number, price: number, source?: string): void =>
+  telemetry.capture(kind === 'bought' ? 'gear_bought' : 'gear_sold', day, { source, priceBand: feeBand(price) });
+
+export const trackRoomPurchased = (state: GameState, roomId: string): void => {
+  const room = (state.studioRooms ?? []).find(r => r.id === roomId);
+  if (room) telemetry.capture('room_purchased', state.currentDay, { roomType: room.type }, `room-${roomId}`);
+};
+
+export const trackRelationshipTier = (day: number, from: string | undefined, to: string | undefined, clientKey: string): void => {
+  if (from && to && from !== to) telemetry.capture('relationship_tier_changed', day, { from, to }, `tier-${clientKey}-${to}`);
+};
+
+export const trackEnquiryViewed = (state: GameState, project: Project): void =>
+  telemetry.capture('enquiry_viewed', state.currentDay, {
+    service: getProjectBrief(project).serviceType,
+    feeBand: feeBand(project.payoutBase ?? 0),
+    durationBand: durationBand(project.durationDaysTotal),
+    roomsFree: (state.studioRooms ?? []).filter((r) => r.unlocked).length - [state.activeProject, ...(state.activeProjects ?? [])].filter((p) => p?.bookingRoomId).length,
+  }, `viewed-${project.id}`);
+
+export const trackEnquiryExpired = (day: number, project: Project): void =>
+  telemetry.capture('enquiry_expired', day, {
+    service: getProjectBrief(project).serviceType,
+    feeBand: feeBand(project.payoutBase ?? 0),
+    durationBand: durationBand(project.durationDaysTotal),
+  }, `expired-${project.id}`);
+
+export const trackRepairCompleted = (day: number, kind: string, condition: number, equipmentId: string): void =>
+  telemetry.capture('repair_completed', day, {
+    kind,
+    condition: Math.round(condition),
+  }, `repair-${equipmentId}-${day}`);
+

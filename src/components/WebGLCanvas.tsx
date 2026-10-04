@@ -290,6 +290,8 @@ export interface StudioSceneState {
   enquiryWaiting?: boolean;
   /** First incomplete floor chore hotspot (console / liveRoom / shelf), if any. */
   pendingChoreHotspot?: PendingChoreHotspot | null;
+  /** Explicitly focus the camera on one hotspot and ignore all others (diegetic interactions). */
+  lockedHotspot?: StudioHotspotId | null;
   /**
    * True when the floor owns attention (no ContextDrawer / inspector).
    * Idle auto-zoom + hints stay quiet while drawers are open.
@@ -2443,8 +2445,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
 
           const reduceMotion = readReduceMotion();
           const floorFocused = s.floorFocused !== false;
-          // Don't bank idle time while drawers/inspectors own attention.
-          if (!floorFocused) {
+          // Don't bank idle time while drawers/inspectors own attention, UNLESS we have a locked hotspot.
+          if (!floorFocused && !s.lockedHotspot) {
             lastCanvasInputRef.current = performance.now();
             (['phone', 'console', 'liveRoom', 'shelf', 'door'] as const).forEach((id) => {
               const hint = refs.idleHints[id];
@@ -2462,7 +2464,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             }
           } else {
           const idleMs = performance.now() - lastCanvasInputRef.current;
-          const hintedHotspot = pickIdleDirectionTarget({
+          // If locked, we immediately target it. Otherwise, use normal idle logic.
+          const hintedHotspot = s.lockedHotspot || pickIdleDirectionTarget({
             idleMs,
             floorFocused: true,
             enquiryWaiting: Boolean(s.enquiryWaiting),

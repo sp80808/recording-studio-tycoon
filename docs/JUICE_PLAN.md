@@ -94,7 +94,19 @@ This directly targets the recurring "website with a game behind it" pain in
 
 ---
 
-## 5. Licenses
+## 5. Companion plan: diegetic interactions
+
+A separate plan splits RST interaction into two families — **minigames**
+(occasional 30–90 s focused challenges, already 29 types in `MinigameManager`)
+and **diegetic micro-interactions** (2–20 s, performed directly on objects/NPCs
+while the world stays visible). Full catalogue, migration rules, new tooling
+(wavesurfer, Meyda, JZZ, Matter.js, Tweakpane, Pixi Devtools) and the reusable
+`TactileFeedback` service: see
+[`DIEGETIC_INTERACTIONS_PLAN.md`](./DIEGETIC_INTERACTIONS_PLAN.md).
+
+Tracked as Beads epic `recording-studio-tycoon-1et`.
+
+## 6. Licenses
 
 - pixi-filters: MIT
 - pixijs/layout, pixijs/ui: MIT

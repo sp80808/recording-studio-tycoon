@@ -44,8 +44,10 @@ not a full-PIXI UI. `src/pixi-ui/` panels exist but are not the main interface.
 - [x] Gamepad Task 2: `GamepadGlyph` vector badges + Settings controller layout/rumble (`49i.2`)
 - [x] Gamepad Tasks 3–8: spatial nav + HUD, radial action wheel, MPC beat-pad / tape-jog /
   console-ride minigames, tactile PocketMeter haptics, and isometric floor camera (`49i.3`…`49i.8`)
-- [ ] Workbench/telemetry tooling from the new GitHub backlog (#59 then #57-first sequence —
-  see `cline_docs/githubIssueTriage.md`)
+- [x] Telemetry + replay traces (#59): `src/telemetry/` sink, bounded trace export, replay,
+  analysis, `docs/TELEMETRY.md`; `tests/gameplay-telemetry.check.ts` 32/32 pass (2026-10-04)
+- [ ] Workbench tooling from the GitHub backlog (#57 Balance Lab onward — see
+  `cline_docs/githubIssueTriage.md`; `src/dev/balance` harness already exists)
 
 
 ## Completed Tasks

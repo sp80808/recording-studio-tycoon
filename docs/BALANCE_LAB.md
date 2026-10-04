@@ -25,3 +25,22 @@ Sweep: scenario `early`, 200 seeds, 60 days, all five bots.
 | 8 ticks/day | 0.12 | none |
 
 Other bots sit at 0.09 to 0.11, and `mid` is clean (0.04 to 0.08). Reading: a cheap-fee studio leans on ambient earnings more than the "quiet side income" intent. `ambientTicksPerDay` is an assumption about how long an attended player idles, not a game constant, so no game value was changed here. The real levers are `AMBIENT_DAILY_CAP_BASE` (25) and the per-release cap in `src/economy/ambientIncome.ts`. This report is the evidence for that decision, which is left to the project owner.
+
+## Tuning report: `first-hire` upkeep (2026-10-04)
+
+Question: does raising daily upkeep from 60 to 90 add early-game pressure?
+Run: `runScenarioSweep({ scenario: 'first-hire', seeds: 300, days: 60 })`, baseline vs `{ dailyCost: 90 }`.
+
+| Strategy | Median cash (60) | Median cash (90) | Bankrupt | Income/day |
+| --- | --- | --- | --- | --- |
+| cheapest | 19169 | 17369 | 0% / 0% | 301 |
+| balanced | 23479 | 21679 | 0% / 0% | 379 |
+| repeat-client-first | 27949 | 26149 | 0% / 0% | 451 |
+| reputation-first | 29140 | 27340 | 0% / 0% | 479 |
+| highest-fee | 29571 | 27771 | 0% / 0% | 484 |
+
+Finding: the +30/day moves median cash by exactly 1,800 (30 x 60 days) and nothing else. Income of
+300-484/day dwarfs upkeep of 60-90, so there are no bankruptcies and no change in strategy ranking.
+
+Decision: do not tune upkeep to add early pressure; it is not a lever at this income level. If
+early-game tension is wanted, test first-hire income or fee multipliers instead.

@@ -11,14 +11,24 @@ export const SIMULATION_VERSION = '2026.10.0';
 export const BALANCE_VERSION = '2026.10.0';
 
 export type GameplayEventName =
+  | 'enquiry_generated'
+  | 'enquiry_viewed'
   | 'enquiry_accepted'
   | 'enquiry_declined'
+  | 'enquiry_expired'
   | 'session_booked'
-  | 'session_settled'
+  | 'session_started'
+  | 'intervention_offered'
   | 'intervention_intervened'
   | 'intervention_delegated'
   | 'intervention_skipped'
+  | 'session_settled'
   | 'staff_hired'
+  | 'room_purchased'
+  | 'gear_bought'
+  | 'gear_sold'
+  | 'repair_completed'
+  | 'relationship_tier_changed'
   | 'management_panel_opened';
 
 export type TelemetryValue = string | number | boolean | null;
@@ -39,14 +49,24 @@ export interface GameplayEventSink {
 
 /** The only property keys each event may carry. Anything else is dropped before it reaches a sink. */
 export const ALLOWED_PROPERTIES: Record<GameplayEventName, readonly string[]> = {
+  enquiry_generated: ['service', 'feeBand', 'durationBand', 'source'],
+  enquiry_viewed: ['service', 'feeBand', 'durationBand', 'roomsFree'],
   enquiry_accepted: ['service', 'feeBand', 'durationBand', 'marginBand', 'deposit', 'roomsFree'],
   enquiry_declined: ['service', 'feeBand', 'durationBand', 'marginBand', 'deposit', 'roomsFree'],
+  enquiry_expired: ['service', 'feeBand', 'durationBand'],
   session_booked: ['service', 'feeBand', 'roomType'],
-  session_settled: ['service', 'qualityBand', 'quality', 'feeBand', 'deposit'],
+  session_started: ['service', 'feeBand', 'roomType'],
+  intervention_offered: ['kind'],
   intervention_intervened: ['kind'],
   intervention_delegated: ['kind'],
   intervention_skipped: ['kind'],
+  session_settled: ['service', 'qualityBand', 'quality', 'feeBand', 'deposit'],
   staff_hired: ['role'],
+  room_purchased: ['roomType'],
+  gear_bought: ['source', 'priceBand'],
+  gear_sold: ['priceBand'],
+  repair_completed: ['kind', 'condition'],
+  relationship_tier_changed: ['from', 'to'],
   management_panel_opened: ['destination'],
 };
 
