@@ -1,6 +1,6 @@
 // Sunlight falling through the window onto the studio floor, with dust motes drifting in the beam.
 // The patch slides across the floor as the sun crosses the sky (same clock as studioWindowView) and
-// fades out at night. In-house CC0, Pixi Graphics only, no image files.
+// fades out at night. In-house proprietary original, Pixi Graphics only, no image files.
 
 import { Container, Graphics } from 'pixi.js';
 import { iso } from './isoMath';
