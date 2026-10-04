@@ -18,6 +18,15 @@ proprietary grant/restrictions to the extent required by those licences.
 - Source-file headers and documentation may contain additional attribution or
   licence notices.
 
+## Code provenance audit
+
+`docs/CODE_CITATIONS_AUDIT.md` records the audit of the legacy assistant
+citation logs in `docs/old/` (issue #254). Conclusion: all cited snippets are
+stock shadcn/ui scaffolding (MIT upstream); the two RST files that matched
+(`tailwind.config.ts` accordion keyframes, `src/components/ui/slider.tsx`) were
+independently rewritten. UI scaffolding in `src/components/ui/` otherwise
+derives from MIT-licensed shadcn/ui and Radix UI.
+
 ## Important distinction
 
 An upstream CC0, MIT, Apache, or other permissively licensed component may be
