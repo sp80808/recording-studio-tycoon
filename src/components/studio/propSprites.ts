@@ -1,5 +1,5 @@
 // Sprite textures for the signature studio props (door, wall clock, mic stand, mug, notepad, stool, music stand, rug, era lamps).
-// Sources are in-house CC0 SVG/PNG under public/assets/props (see docs/ART_SOURCING_LOG.md).
+// Sources are in-house proprietary original SVG/PNG under public/assets/props (see docs/ART_SOURCING_LOG.md).
 // Scene builders call getPropTexture(); when a texture is missing they fall back
 // to the original procedural Graphics drawing, so nothing breaks if a load fails.
 

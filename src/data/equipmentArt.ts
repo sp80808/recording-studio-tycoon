@@ -14,7 +14,7 @@
 export interface ArtSourceRef {
   pack: string;
   url: string;
-  license: 'CC0' | 'CC-BY' | 'In-house (CC0)';
+  license: 'CC0' | 'CC-BY' | 'original';
   author: string;
   notes?: string;
   needsReplacement?: boolean;

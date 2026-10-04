@@ -2,7 +2,7 @@
 //   Tier 1 Project Studio: client waiting bench + wall-side storage rack.
 //   Tier 2 Commercial Studio: reception counter with a sign and a second rack.
 //   Tier 3 Multi-room Facility: premium client sofa and a third rack bay.
-// In-house CC0, drawn in Pixi Graphics (logged in docs/ART_SOURCING_LOG.md). Presentation only.
+// In-house proprietary original, drawn in Pixi Graphics (logged in docs/ART_SOURCING_LOG.md). Presentation only.
 
 import { Container, Graphics } from 'pixi.js';
 import { iso } from './isoMath';

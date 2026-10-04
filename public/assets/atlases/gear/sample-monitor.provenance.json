@@ -3,7 +3,7 @@
   "assetId": "gear-sample-monitor",
   "sourceType": "blender_render",
   "author": "RST in-house",
-  "license": "In-house (CC0)",
+  "license": "original",
   "toolVersion": "Blender-render intake format (frames named <tag>_<nnn>.png); sample drawn by scripts/assets/make-samples.ts",
   "pipelineSteps": [
     "draw-in-house",

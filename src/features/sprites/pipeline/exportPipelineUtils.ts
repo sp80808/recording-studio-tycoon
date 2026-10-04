@@ -174,7 +174,7 @@ export function validateProvenance(manifest: Partial<AssetProvenanceManifest> | 
     need(manifest.palette?.length, 'palette');
     need(manifest.frameTags?.length, 'frameTags');
     need(manifest.checksum, 'checksum');
-    const external = manifest.sourceType === 'generative_ai_cleaned' || (manifest.license && !/in-house|cc0|own/i.test(manifest.license));
+    const external = manifest.sourceType === 'generative_ai_cleaned' || (manifest.license && !/in-house|cc0|own|original/i.test(manifest.license));
     if (external) need(manifest.sourceUrl || manifest.sourceType === 'generative_ai_cleaned', 'sourceUrl', 'External art needs sourceUrl.');
     if (manifest.sourceType === 'generative_ai_cleaned') need(manifest.generationSteps?.length, 'generationSteps', 'Generated art must record generation/cleanup steps.');
   }

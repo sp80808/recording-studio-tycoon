@@ -3,7 +3,7 @@
   "assetId": "layer-npc-parts",
   "sourceType": "vector_authored",
   "author": "RST in-house",
-  "license": "In-house (CC0)",
+  "license": "original",
   "toolVersion": "scripts/assets/make-layer-parts.ts (procedural rectangles)",
   "pipelineSteps": [
     "draw-in-house",

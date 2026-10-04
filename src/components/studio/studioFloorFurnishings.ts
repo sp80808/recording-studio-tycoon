@@ -1,4 +1,4 @@
-// Extra floor furnishings for the Living Studio (in-house CC0, drawn in Pixi Graphics, no image files).
+// Extra floor furnishings for the Living Studio (in-house proprietary original, drawn in Pixi Graphics, no image files).
 // A small catalogue of free-standing props gated by studio tier, plus the studio cat: a seeded
 // animated resident that follows the studio clock (stretches in the morning, naps in the sun, watches
 // the room in the evening, curls up at night).
