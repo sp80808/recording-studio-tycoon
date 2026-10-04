@@ -77,7 +77,7 @@ const CC0_CYBER_LOOT: ArtSourceRef = {
 const IN_HOUSE: ArtSourceRef = {
   pack: 'In-house procedural (CSS/SVG)',
   url: '',
-  license: 'In-house (CC0)',
+  license: 'original',
   author: 'RST team',
   notes: 'Procedural gradients + stencil text. Zero-dependency fallback rendered today.',
 };
