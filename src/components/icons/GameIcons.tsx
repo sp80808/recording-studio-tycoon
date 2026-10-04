@@ -1,7 +1,7 @@
 import React from 'react';
 
 /**
- * In-house SVG icon set (CC0). Replaces emoji glyphs in the UI so icons render
+ * In-house proprietary SVG icon set. Replaces emoji glyphs in the UI so icons render
  * identically on every platform and inherit `currentColor`.
  */
 
