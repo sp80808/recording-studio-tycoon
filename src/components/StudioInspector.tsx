@@ -538,15 +538,15 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           {gear.length === 0 && <div className="text-xs text-stone-400">Bare shelves — buy gear from the Equipment Shop.</div>}
         </div>
         <MotionButton
-          className="w-full h-7 text-xs border-white/20 text-stone-200 hover:bg-white/10"
+          className="rst-btn w-full min-h-10 text-xs"
           onClick={() => {
             void gameAudio.playTactileClick();
             onOpenDashboardTab('studio');
             onClose();
           }}
         >
-          <ActionIcon icon={ShoppingCart} />
-          Equipment Shop
+          <ShoppingCart aria-hidden="true" className="h-4 w-4 shrink-0" />
+          <span>Equipment Shop</span>
         </MotionButton>
       </Shell>
     );
