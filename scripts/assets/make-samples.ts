@@ -1,5 +1,5 @@
 /**
- * Regenerates the two in-house CC0 sample sources under assets-src/ (run once; outputs are committed):
+ * Regenerates the two in-house proprietary original sample sources under assets-src/ (run once; outputs are committed):
  *  - npc/sample-engineer: a spritesheet in Aseprite's JSON export shape (idle/work/celebrate + pivot slice)
  *  - gear/sample-monitor: loose frames named like Blender renders (<tag>_<nnn>.png)
  * They are procedurally drawn rectangles so they carry no third-party licence.
@@ -61,7 +61,7 @@ write(path.join(dir1, 'sheet.json'), JSON.stringify({
   },
 }, null, 2) + '\n');
 write(path.join(dir1, 'asset.json'), JSON.stringify({
-  id: 'sample-engineer', kind: 'npc', sourceType: 'aseprite', author: 'RST in-house', license: 'In-house (CC0)',
+  id: 'sample-engineer', kind: 'npc', sourceType: 'aseprite', author: 'RST in-house', license: 'original',
   toolVersion: 'Aseprite JSON export format 1.3 (sample drawn by scripts/assets/make-samples.ts)',
   paletteId: 'rst-sample-engineer', palette: PALETTE, createdAt: '2026-09-30T00:00:00.000Z',
   pipelineSteps: ['draw-in-house', 'export-spritesheet-json'],
@@ -80,7 +80,7 @@ write(path.join(dir2, 'idle_000.png'), encodePng(drawMonitor(0)));
 write(path.join(dir2, 'powered_000.png'), encodePng(drawMonitor(1)));
 write(path.join(dir2, 'powered_001.png'), encodePng(drawMonitor(2)));
 write(path.join(root, 'gear', 'sample-monitor', 'asset.json'), JSON.stringify({
-  id: 'sample-monitor', kind: 'gear', sourceType: 'blender_render', author: 'RST in-house', license: 'In-house (CC0)',
+  id: 'sample-monitor', kind: 'gear', sourceType: 'blender_render', author: 'RST in-house', license: 'original',
   toolVersion: 'Blender-render intake format (frames named <tag>_<nnn>.png); sample drawn by scripts/assets/make-samples.ts',
   paletteId: 'rst-sample-monitor', palette: ['#111827', '#1f2937', '#0f766e', '#14b8a6', '#3a3f45', '#2f353c'], createdAt: '2026-09-30T00:00:00.000Z',
   pipelineSteps: ['draw-in-house', 'export-png-sequence'],
