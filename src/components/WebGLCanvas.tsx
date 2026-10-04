@@ -4,6 +4,7 @@ import type { ModularNpcDefinition } from '@/features/sprites/spriteTypes';
 import { lastTake, nodOffset } from '@/utils/takeFeedback';
 import React, { useEffect, useRef } from 'react';
 import { AnimatedSprite, Application, Container, Graphics, Matrix, Rectangle, Sprite, Text, type Renderer } from 'pixi.js';
+import { createDiegeticCrtFilter, type DiegeticCrtFilterHandle } from '@/lib/render/shaders/diegeticCrtFilter';
 import { applyReelState, buildReelTextures, createReelSprite } from '@/features/gearStudio/gearSpriteAnimation';
 import { STATUS_LED_HEX, gearAttention, gearVisualKey, getConsoleTierGear, statusLedColor, tubeGlowLevel } from '@/features/gearStudio/consoleTierGear';
 import { dimTint, gearConditionKey, shelfConditionStyle, toSpriteVisualState } from '@/features/gearStudio/gearVisualState';
@@ -497,6 +498,8 @@ interface ShelfAnimItem {
 interface SceneRefs {
   vuBars: AnimBar[];
   tvBars: AnimBar[];
+  tvWrap: Container | null;
+  tvCrtFilter: DiegeticCrtFilterHandle | null;
   statusLeds: StatusLed[];
   shelfItems: ShelfAnimItem[];
   phoneRing: Graphics | null;
@@ -658,6 +661,8 @@ const buildScene = (
   const refs: SceneRefs = {
     vuBars: [],
     tvBars: [],
+    tvWrap: null,
+    tvCrtFilter: null,
     statusLeds: [],
     shelfItems: [],
     phoneRing: null,
@@ -699,6 +704,7 @@ const buildScene = (
   const eraGrade = getEraGrade(state.eraId);
   const grade = { ...eraGrade, ...cityWallColors(eraGrade.wallLeft, eraGrade.wallRight, state.cityId) };
   const tier = clampTier(state.roomTier);
+  const postFxTuning = getEraPostFxTuning(state.eraId);
 
   // Fit the whole room into the viewport so walls/floor never clip
   const bounds = { minX: -196, maxX: 224, minY: -135, maxY: 215 };
@@ -808,6 +814,19 @@ const buildScene = (
     refs.tvBars.push({ g: bar, x: 0, y: 0, color: COLORS.gear[i % COLORS.gear.length], plane: { y0, y1: y0 + 0.22, lift: 60 } });
   }
   root.addChild(tvWrap);
+  refs.tvWrap = tvWrap;
+  const isCrtEra = state.eraId === 'digital80s' || state.eraId === 'internet2000s';
+  if (isCrtEra) {
+    const crt = createDiegeticCrtFilter({
+      pitch: postFxTuning.scanlinePitch,
+      scanlineAlpha: postFxTuning.scanlineAlpha,
+      curvature: 0.04,
+    });
+    if (crt) {
+      refs.tvCrtFilter = crt;
+      tvWrap.filters = [crt.filter];
+    }
+  }
   const tvHit = new Graphics();
   tvHit
     .poly([tvA.x, tvA.y - 110, tvB.x, tvB.y - 110, tvB.x, tvB.y - 50, tvA.x, tvA.y - 50])
@@ -1805,8 +1824,6 @@ const buildScene = (
   overlayRoot.addChild(tintLayer);
 
   /* ---- CRT scanlines & Vignette Post-FX layers (screen space) ------------ */
-  const postFxTuning = getEraPostFxTuning(state.eraId);
-
   const vignetteLayer = new Container();
   vignetteLayer.eventMode = 'none';
   {
@@ -1917,6 +1934,9 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     const sc = sceneRef.current;
     if (sc) {
       if (sc.refs.crtLayer) sc.refs.crtLayer.visible = Boolean(settings.crtScanlines);
+      if (sc.refs.tvWrap && sc.refs.tvCrtFilter) {
+        sc.refs.tvWrap.filters = settings.crtScanlines ? [sc.refs.tvCrtFilter.filter] : [];
+      }
       if (sc.refs.vignetteLayer) sc.refs.vignetteLayer.visible = Boolean(settings.analogTapeWarmth);
       if (sc.refs.bloomLayer) sc.refs.bloomLayer.visible = Boolean(settings.bloomAndGlow);
     }
@@ -2006,6 +2026,9 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     );
     if (settingsRef.current) {
       if (scene.refs.crtLayer) scene.refs.crtLayer.visible = Boolean(settingsRef.current.crtScanlines);
+      if (scene.refs.tvWrap && scene.refs.tvCrtFilter) {
+        scene.refs.tvWrap.filters = settingsRef.current.crtScanlines ? [scene.refs.tvCrtFilter.filter] : [];
+      }
       if (scene.refs.vignetteLayer) scene.refs.vignetteLayer.visible = Boolean(settingsRef.current.analogTapeWarmth);
       if (scene.refs.bloomLayer) scene.refs.bloomLayer.visible = Boolean(settingsRef.current.bloomAndGlow);
     }
@@ -2553,7 +2576,10 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             item.display.alpha = m.alpha;
           });
 
-          // Charts TV equalizer — bars are quads on the left-wall plane so they stay inside the bezel
+          // Charts TV equalizer & diegetic CRT filter time drift
+          if (refs.tvCrtFilter && !reduceMotion) {
+            refs.tvCrtFilter.updateTime(t);
+          }
           const tvPeaks: { x: number; y: number }[] = [];
           refs.tvBars.forEach((bar, i) => {
             const h = reduceMotion
