@@ -3,7 +3,8 @@ import { Dices, Undo2 } from 'lucide-react';
 import { ModularSpriteRenderer } from '@/features/sprites/ModularSpriteRenderer';
 import type { ModularNpcDefinition } from '@/features/sprites/spriteTypes';
 import { appearanceUi } from '@/features/sprites/appearanceFields';
-import type { ProducerAppearance, ResolvedProducerAppearance } from '@/features/sprites/producerAppearance';
+import { sanitizeProducerAppearance, type ProducerAppearance, type ResolvedProducerAppearance } from '@/features/sprites/producerAppearance';
+import useMediaQuery from '@/hooks/useMediaQuery';
 import { AppearanceEditor } from './AppearanceEditor';
 
 import './producer-creator.css';
@@ -20,6 +21,7 @@ interface ProducerCreatorProps {
 
 /** Large live preview beside the descriptor-driven editor. Name, Undo and Surprise me stay on top. */
 export function ProducerCreator({ moniker, onMoniker, look, npc, onLookChange, onRandomise }: ProducerCreatorProps) {
+  const roomy = useMediaQuery('(min-width: 768px) and (min-height: 760px)');
   const [previous, setPrevious] = useState<{ look: ProducerAppearance; name?: string } | null>(null);
   const change = (next: ResolvedProducerAppearance) => {
     setPrevious({ look: { ...look } });
@@ -28,9 +30,9 @@ export function ProducerCreator({ moniker, onMoniker, look, npc, onLookChange, o
 
   return (
     <section className="producer-creator" aria-label={appearanceUi('appearance.ui.editor')} data-testid="producer-creator">
-      <div className="producer-creator-preview" data-testid="producer-preview" role="img"
+      <div className="producer-creator-preview" data-testid="producer-preview" role="img" data-appearance={JSON.stringify(sanitizeProducerAppearance(look))}
         aria-label={appearanceUi('appearance.ui.preview', { name: moniker || appearanceUi('appearance.ui.preview_fallback') })}>
-        <ModularSpriteRenderer npc={npc} animationState="idle" scale={9} showBadge={false} />
+        <ModularSpriteRenderer npc={npc} animationState="idle" scale={roomy ? 10 : 8} showBadge={false} />
       </div>
       <div className="producer-creator-panel">
         <label className="producer-creator-name">

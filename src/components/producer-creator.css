@@ -1,6 +1,6 @@
 /* Producer creator: large preview beside the labelled editor (stacked on narrow screens). */
 .producer-creator { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 20px; align-items: start; width: 100%; max-width: 62rem; margin: 1.25rem auto 0; text-align: left; color: var(--rst-ink, #f3ecdd); }
-.producer-creator-preview { display: grid; place-items: center; min-height: 420px; border: 1px solid var(--rst-line-strong); border-radius: 18px; background: radial-gradient(ellipse at 50% 45%, #bd883c29, transparent 65%), #120f0b; overflow: hidden; }
+.producer-creator-preview { display: grid; place-items: center; min-height: 540px; border: 1px solid var(--rst-line-strong); border-radius: 18px; background: linear-gradient(180deg, #3a3835 0%, #2a2826 100%); overflow: hidden; }
 .producer-creator-preview svg { max-width: none; image-rendering: pixelated; }
 .producer-creator-panel { display: grid; gap: 10px; min-width: 0; }
 .producer-creator-name { display: grid; gap: .4rem; font-size: 10px; text-transform: uppercase; letter-spacing: .18em; font-weight: 700; color: var(--rst-brass-200); }
@@ -11,7 +11,7 @@
 .producer-creator button:focus-visible { outline: 2px solid #ffe0a8; outline-offset: 3px; }
 @media (max-width: 767px) {
   .producer-creator { grid-template-columns: minmax(0, 1fr); gap: 12px; margin-top: 12px; }
-  .producer-creator-preview { min-height: 280px; }
+  .producer-creator-preview { min-height: 380px; }
   .career-character-step .rst-kicker, .career-character-step .rst-body { display: none; }
   .career-character-step h1 { font-size: 28px; }
   .career-character-step footer p { display: none; }
