@@ -1,6 +1,6 @@
 // What you see through the studio window: a sun that crosses the sky by day, a moon and stars by
 // night, and a city skyline whose windows switch on at dusk. Driven by the same 24h clock minutes as
-// the sky colour, wall clock and room tint (see studioDecorConfig). In-house CC0, Pixi Graphics only.
+// the sky colour, wall clock and room tint (see studioDecorConfig). In-house proprietary original, Pixi Graphics only.
 
 import { Container, Graphics } from 'pixi.js';
 
