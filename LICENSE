@@ -1,0 +1,36 @@
+RECORDING STUDIO TYCOON — PROPRIETARY LICENSE
+
+Copyright (c) 2025-2026 sp80808. All rights reserved.
+
+Recording Studio Tycoon ("RST") is proprietary software and content. Except for
+third-party materials expressly identified as being governed by separate
+licenses, no permission is granted to use, copy, modify, adapt, merge, publish,
+distribute, sublicense, sell, rent, host, commercially exploit, or create
+derivative works from the source code, game systems, game design, text,
+documentation, artwork, audio, data, characters, interfaces, or other original
+materials contained in this repository.
+
+In particular, no permission is granted to:
+- redistribute this repository or substantial portions of it outside the
+  limited functionality and permissions required by GitHub's Terms of Service;
+- use RST original materials as a template, starter project, asset pack, or
+  basis for another game or commercial product;
+- remove or obscure copyright, provenance, or proprietary notices;
+- use RST original materials to train or fine-tune a machine-learning model,
+  except where such use is independently permitted by applicable law or by an
+  express written agreement from the copyright holder.
+
+This repository may contain third-party libraries, code, fonts, sound effects,
+artwork, or other materials. Those items remain subject to their respective
+licenses and are not relicensed by this file. See THIRD_PARTY_NOTICES.md,
+assets/provenance.json, adjacent licence files, package manifests, and source
+headers for applicable notices.
+
+The name "Recording Studio Tycoon", associated branding, logos, and trade dress
+are not licensed for use by this notice.
+
+Nothing in this licence restricts rights that cannot lawfully be restricted,
+including applicable statutory exceptions. The limited rights GitHub requires
+to host, display, and provide repository functionality are unaffected.
+
+Any permission not expressly granted in writing is reserved.
