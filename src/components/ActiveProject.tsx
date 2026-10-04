@@ -557,8 +557,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     if (!controlsEnabled || availableEnergy <= 0 || isProjectComplete) return;
     clearTakeRearm();
     hapticTick(14);
-    playSound('ui-click', 0.5);
-    void gameAudio.playGearSwitch();
+    void gameAudio.playGearSwitch(); // one press, one cue (#256)
     setTakeState('tracking');
   };
 
