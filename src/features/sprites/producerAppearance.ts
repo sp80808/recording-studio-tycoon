@@ -6,7 +6,7 @@
  * bridge that turns it into the same `ModularNpcDefinition` the studio/play-mode renderers
  * draw, so the player sprite is always derived data and never a second source of truth.
  */
-import { hashSeed } from '@/simulation/seededRandom';
+import { hashSeed, pickWithRandom, randomInt, type RandomSource } from '@/simulation/seededRandom';
 import type { BodyBuild, ClothesLower, ClothesTop, GlassesStyle, HairColour, HairShape, Headwear, Jewellery, ModularNpcDefinition, NpcEra, ShoesType, SkinTone } from './spriteTypes';
 import { resolveNpcAppearance } from './npcAppearance';
 import { CLOTHING_PALETTES, HAIR_HEX, LOWER_COLOURS, SKIN_PALETTES, SKIN_TONES, SHOE_COLOURS } from './npcAppearanceData';
@@ -96,7 +96,7 @@ export interface ProducerAppearance {
   accessory: ProducerAccessory;
 }
 
-export const DEFAULT_PRODUCER_APPEARANCE: ProducerAppearance = {
+export const DEFAULT_PRODUCER_APPEARANCE: ResolvedProducerAppearance = {
   seed: 1960,
   skinTone: 'tan',
   shirt: 'band_tee',
@@ -109,20 +109,23 @@ export const DEFAULT_PRODUCER_APPEARANCE: ProducerAppearance = {
   accessory: 'headphones',
 };
 
+/** A fully populated appearance: what `sanitizeProducerAppearance` always returns. */
+export type ResolvedProducerAppearance = Required<ProducerAppearance>;
+
 const oneOf = <T extends string>(list: readonly T[], value: unknown, fallback: T): T =>
   list.includes(value as T) ? (value as T) : fallback;
 
 /** Repair an untrusted (save-file) blob: every field falls back to the default individually. */
-export const sanitizeProducerAppearance = (value: unknown): ProducerAppearance => {
+export const sanitizeProducerAppearance = (value: unknown): ResolvedProducerAppearance => {
   const v = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
   const d = DEFAULT_PRODUCER_APPEARANCE;
   return {
     seed: typeof v.seed === 'number' && Number.isFinite(v.seed) ? Math.trunc(v.seed) : d.seed,
-    skinTone: oneOf(PRODUCER_SKIN_TONES, v.skinTone, d.skinTone!),
-    shirt: oneOf(PRODUCER_SHIRTS, v.shirt, d.shirt!),
-    pants: oneOf(PRODUCER_PANTS, v.pants, d.pants!),
-    shoes: oneOf(PRODUCER_SHOES, v.shoes, d.shoes!),
-    build: oneOf(PRODUCER_BUILDS, v.build, d.build!),
+    skinTone: oneOf(PRODUCER_SKIN_TONES, v.skinTone, d.skinTone),
+    shirt: oneOf(PRODUCER_SHIRTS, v.shirt, d.shirt),
+    pants: oneOf(PRODUCER_PANTS, v.pants, d.pants),
+    shoes: oneOf(PRODUCER_SHOES, v.shoes, d.shoes),
+    build: oneOf(PRODUCER_BUILDS, v.build, d.build),
     hair: oneOf(PRODUCER_HAIR_SHAPES, v.hair, d.hair),
     hairColour: oneOf(PRODUCER_HAIR_COLOURS, v.hairColour, d.hairColour),
     clothesColour: oneOf(PRODUCER_CLOTHES_COLOURS.map((c) => c.id), v.clothesColour, d.clothesColour),
@@ -137,8 +140,37 @@ export const npcEraForGameEra = (eraId: string | undefined): NpcEra =>
     internet2000s: '2000s', digital_age: '1990s', streaming2020s: 'modern', modern: 'modern',
   }) as Record<string, NpcEra>)[eraId ?? ''] ?? 'modern';
 
-export const sameProducerAppearance = (a: ProducerAppearance, b: ProducerAppearance): boolean =>
-  a.seed === b.seed && a.skinTone === b.skinTone && a.shirt === b.shirt && a.pants === b.pants && a.shoes === b.shoes && (a.build ?? 'average') === (b.build ?? 'average') && a.hair === b.hair && a.hairColour === b.hairColour && a.clothesColour === b.clothesColour && a.accessory === b.accessory;
+/**
+ * Every user-editable field (plus the face seed). Equality and randomisation are both driven from
+ * this list so a newly added field cannot be forgotten by either.
+ */
+export const PRODUCER_APPEARANCE_KEYS = [
+  'seed', 'build', 'skinTone', 'hair', 'hairColour', 'shirt', 'pants', 'shoes', 'clothesColour', 'accessory',
+] as const satisfies readonly (keyof ProducerAppearance)[];
+
+/** Semantic equality: both sides are sanitised first, so missing legacy fields never read as dirty. */
+export const sameProducerAppearance = (a: ProducerAppearance | undefined, b: ProducerAppearance | undefined): boolean => {
+  const x = sanitizeProducerAppearance(a);
+  const y = sanitizeProducerAppearance(b);
+  return PRODUCER_APPEARANCE_KEYS.every((key) => x[key] === y[key]);
+};
+
+/**
+ * "Surprise me": a complete, legal appearance drawn only from the allowed-value sets. Pure given
+ * the injected RNG, so tests (and replays) can seed it; UI code supplies the entropy.
+ */
+export const randomiseProducerAppearance = (rng: RandomSource): ResolvedProducerAppearance => ({
+  build: pickWithRandom(rng, PRODUCER_BUILDS),
+  skinTone: pickWithRandom(rng, PRODUCER_SKIN_TONES),
+  shirt: pickWithRandom(rng, PRODUCER_SHIRTS),
+  pants: pickWithRandom(rng, PRODUCER_PANTS),
+  shoes: pickWithRandom(rng, PRODUCER_SHOES),
+  hair: pickWithRandom(rng, PRODUCER_HAIR_SHAPES),
+  hairColour: pickWithRandom(rng, PRODUCER_HAIR_COLOURS),
+  clothesColour: pickWithRandom(rng, PRODUCER_CLOTHES_COLOURS).id,
+  accessory: pickWithRandom(rng, PRODUCER_ACCESSORIES),
+  seed: randomInt(rng, 0, 99999),
+});
 
 /** Pure: the full sprite definition for a producer. Same inputs always give the same NPC. */
 export const buildProducerNpc = (
@@ -160,13 +192,13 @@ export const buildProducerNpc = (
     hair: { ...base.hair, shape: a.hair, colour: a.hairColour, hairHex: HAIR_HEX[a.hairColour] },
     clothes: {
       ...clothesRest,
-      top: a.shirt!,
+      top: a.shirt,
       topPrimaryHex: palette.primary,
       topSecondaryHex: palette.secondary,
-      lower: a.pants!,
-      lowerHex: LOWER_COLOURS[PRODUCER_PANTS.indexOf(a.pants!) % LOWER_COLOURS.length],
-      shoes: a.shoes!,
-      shoesHex: SHOE_COLOURS[PRODUCER_SHOES.indexOf(a.shoes!) % SHOE_COLOURS.length],
+      lower: a.pants,
+      lowerHex: LOWER_COLOURS[PRODUCER_PANTS.indexOf(a.pants) % LOWER_COLOURS.length],
+      shoes: a.shoes,
+      shoesHex: SHOE_COLOURS[PRODUCER_SHOES.indexOf(a.shoes) % SHOE_COLOURS.length],
       outerwear: 'none',
     },
     details: {
@@ -178,6 +210,6 @@ export const buildProducerNpc = (
     },
     // The player's face shows (shades only come from an explicit glasses pick).
     // Physique is an explicit picker; the seed keeps driving skin and face.
-    body: { ...base.body, build: a.build ?? 'average', skinTone: a.skinTone!, skinHex: SKIN_PALETTES[a.skinTone!].base, shadowHex: SKIN_PALETTES[a.skinTone!].shadow, face: base.body.face === 'vintage_shades' ? 'focused' : base.body.face },
+    body: { ...base.body, build: a.build, skinTone: a.skinTone, skinHex: SKIN_PALETTES[a.skinTone].base, shadowHex: SKIN_PALETTES[a.skinTone].shadow, face: base.body.face === 'vintage_shades' ? 'focused' : base.body.face },
   };
 };

@@ -15,19 +15,11 @@ import { gameAudio } from '@/utils/audioSystem';
 import { ModularSpriteRenderer } from '@/features/sprites/ModularSpriteRenderer';
 import {
   DEFAULT_PRODUCER_APPEARANCE,
-  PRODUCER_ACCESSORIES,
-  PRODUCER_BUILDS,
-  PRODUCER_SKIN_TONES,
-  PRODUCER_SHIRTS,
-  PRODUCER_PANTS,
-  PRODUCER_SHOES,
-  PRODUCER_CLOTHES_COLOURS,
-  PRODUCER_HAIR_COLOURS,
-  PRODUCER_HAIR_SHAPES,
   buildProducerNpc,
+  randomiseProducerAppearance,
   type ProducerAppearance,
-  type ProducerClothesColourId,
 } from '@/features/sprites/producerAppearance';
+import { createSeededRandom } from '@/simulation/seededRandom';
 import { HAIR_HEX, CLOTHING_PALETTES } from '@/features/sprites/npcAppearanceData';
 import { CitySkyline } from '@/components/CitySkyline';
 import { useContentLocale } from '@/i18n/content';
@@ -89,22 +81,11 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
   /** "Surprise me": a local name and a fresh look. UI-only rolls; the chosen result is what persists. */
   const randomise = () => {
     click();
-    const pick = <T,>(list: readonly T[]): T => list[Math.floor(Math.random() * list.length)];
-    const local = localName(cityId, Math.random(), Math.random());
+    // UI supplies the entropy once; the roll itself is the pure, seedable model helper.
+    const rng = createSeededRandom(Math.floor(Math.random() * 0xffffffff));
+    const local = localName(cityId, rng(), rng());
     if (local) setMoniker(local.slice(0, 24));
-    setLook((current) => ({
-      ...current,
-      build: pick(PRODUCER_BUILDS),
-      skinTone: pick(PRODUCER_SKIN_TONES),
-      shirt: pick(PRODUCER_SHIRTS),
-      pants: pick(PRODUCER_PANTS),
-      shoes: pick(PRODUCER_SHOES),
-      hair: pick(PRODUCER_HAIR_SHAPES),
-      hairColour: pick(PRODUCER_HAIR_COLOURS),
-      clothesColour: pick(PRODUCER_CLOTHES_COLOURS).id as ProducerClothesColourId,
-      accessory: pick(PRODUCER_ACCESSORIES),
-      seed: Math.floor(Math.random() * 100000),
-    }));
+    setLook(randomiseProducerAppearance(rng));
   };
   const patchLook = (patch: Partial<ProducerAppearance>) => {
     click();
