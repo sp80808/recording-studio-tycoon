@@ -15,15 +15,22 @@ export const ONE_SHOT_COOLDOWN_MS = 80;
 export const resolveLoop = (channel: AudioChannel, requested: boolean): boolean => channel === 'music' && requested;
 
 export class OneShotGate {
-  private last = new Map<string, number>();
-  constructor(private readonly now: () => number = Date.now) {}
+  private last = new Map<string, { at: number; cooldownMs: number }>();
+  constructor(
+    private readonly now: () => number = typeof performance !== 'undefined' ? () => performance.now() : Date.now,
+  ) {}
 
   /** true = play, false = drop (same key fired inside the cooldown). */
   admit(key: string, cooldownMs: number = ONE_SHOT_COOLDOWN_MS): boolean {
     const t = this.now();
     const prev = this.last.get(key);
-    if (prev !== undefined && t - prev < cooldownMs) return false;
-    this.last.set(key, t);
+    // A clock that moved backwards (elapsed < 0) admits rather than muting until it catches up.
+    if (prev !== undefined && t >= prev.at && t - prev.at < prev.cooldownMs) return false;
+    // Evict expired entries so the map stays bounded by what fired inside its cooldown.
+    if (this.last.size > 64) {
+      for (const [k, v] of this.last) if (t < v.at || t - v.at >= v.cooldownMs) this.last.delete(k);
+    }
+    this.last.set(key, { at: t, cooldownMs });
     return true;
   }
 

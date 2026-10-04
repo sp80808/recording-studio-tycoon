@@ -45,3 +45,14 @@ const sb = read('src/components/StreakBankControl.tsx');
 const tick = sb.slice(sb.indexOf('if (idx > tickIdxRef.current)'), sb.indexOf('if (idx > tickIdxRef.current)') + 300);
 ok(!/playTactileClick/.test(tick) && /triggerHaptic/.test(tick), 'Streak Bank hold ticks haptics only, no click train');
 console.log(`oneshot-sfx: ${passed} checks passed`);
+
+{
+  // #256 review: bounded memory and a backwards clock must not mute sounds.
+  let t = 1000;
+  const g = new OneShotGate(() => t);
+  for (let i = 0; i < 500; i++) { g.admit(`k${i}`); t += 200; }
+  assert.ok((g as unknown as { last: Map<string, unknown> }).last.size <= 66, 'expired keys are evicted');
+  g.admit('x'); t -= 5000;
+  assert.equal(g.admit('x'), true, 'a backwards clock admits');
+  console.log('one-shot gate bounds check passed');
+}
