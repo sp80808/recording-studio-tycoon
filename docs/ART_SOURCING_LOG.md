@@ -84,7 +84,7 @@ beads issue `recording-studio-tycoon-art.X` (3D models + skins/sticker UI):
 - 3D gear models: Kenney Furniture Kit / City Kit CC0 .obj/.fbx/.glb for room dressing.
 - Animated variants (VU bounce, tube flicker) — artist pass or Higgsfield generation.
 - Skins equip UI, sticker slotting UI, shelf display scene (PixiJS).
-- AI-generated filler (Higgsfield `higgsfield-generate` skill) ONLY where no CC0 equivalent exists; must be logged here as in-house CC0.
+- AI-generated filler (Higgsfield `higgsfield-generate` skill) ONLY where no CC0 equivalent exists; must be logged here as in-house proprietary original.
 
 ## 6. Image-generation connectors available
 
@@ -95,7 +95,7 @@ beads issue `recording-studio-tycoon-art.X` (3D models + skins/sticker UI):
 ## 8. Signature studio props (door, wall clock, mic stand, mug, notepad, stool, music stand)
 
 Kenney.nl / OpenGameArt were unreachable from the build environment, so these
-these were drawn in-house. License: **In-house (CC0)**. Source SVGs live in
+these were drawn in-house. License: **original**. Source SVGs live in
 `public/assets/props/*.svg`; PNGs are 2x renders via
 `scripts/render-prop-sprites.cjs`. Loaded by `src/components/studio/propSprites.ts`;
 the scene falls back to the original procedural drawing if a texture is missing.
@@ -112,7 +112,7 @@ the scene falls back to the original procedural drawing if a texture is missing.
 
 Swap for Kenney/OGA CC0 art later by replacing the PNGs (same sizes).
 
-Second batch (same in-house CC0 pipeline, same folder):
+Second batch (same in-house proprietary original pipeline, same folder):
 
 | Sprite | File | Used in |
 | --- | --- | --- |
@@ -121,7 +121,7 @@ Second batch (same in-house CC0 pipeline, same folder):
 | Lava lamp (2000s) | `public/assets/props/lava-lamp.png` | `studioDecor.ts` era prop (animated blobs still drawn on top) |
 | Ring light (2020s) | `public/assets/props/ring-light.png` | `studioDecor.ts` era prop |
 
-Third batch (in-house CC0):
+Third batch (in-house proprietary original):
 
 - Trophy wall plaques (`trophy-gold|platinum|award.png`) replace the procedural plaques in `buildWallDressing`, sheared into the right-wall plane. Not yet screenshot-verified in-game (needs earned trophies).
 - Booking icons in `public/assets/icons/booking/` (`brief`, `fit-S|A|B|C`, `approach-safe`, `approach-moonshot`) are standalone SVGs, deliberately not wired in, so the booking enquiry card work in #101 can import them.
@@ -134,7 +134,7 @@ for this project (no external source, no AI generation) and are released CC0. Us
 
 ## 9. Asset factory sample sources (issues #78, #79)
 
-Procedurally drawn in-house (rectangles, no third-party art). License: **In-house (CC0)**.
+Procedurally drawn in-house (rectangles, no third-party art). License: **original**.
 
 | Asset | Source | Output |
 | --- | --- | --- |
