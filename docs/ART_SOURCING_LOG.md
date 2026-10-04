@@ -258,3 +258,6 @@ In-house proprietary original, no external source. Inline SVG stroke icons drawn
 
 ## 21. Fitted hover brackets and producer tap emote
 In-house proprietary original, Pixi Graphics and Text only (`fitHoverGlow` in `WebGLCanvas.tsx`). Corner brackets sized from sprite and click-shape bounds; floating note emote on tapping the producer.
+
+## 22. Premises seating and rack (#249)
+In-house proprietary original, Pixi Graphics only (`studioPremisesDecor.ts`). Client waiting bench, premium sofa and storage racks rebuilt from a small 2:1 isometric box kit (top, front-left and front-right faces, legs, arms, backrest, cushions); no external source. Visual smoke harness: `tests/studio-scene.html?premises=1` (before/after in `docs/img/premises-*.png`).

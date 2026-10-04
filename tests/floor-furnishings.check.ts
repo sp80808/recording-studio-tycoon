@@ -35,6 +35,22 @@ assert.ok(getPremisesProps(2).length > getPremisesProps(1).length);
 assert.ok(getPremisesProps(2).some((p) => p.id === 'reception'));
 for (const p of getPremisesProps(2)) assert.ok(p.x > 0 && p.x < ROOM_W && p.y > 0 && p.y < ROOM_D, `${p.id} inside the room`);
 
+// #249: the Tier 1 bench and seating must read as furniture (real height and a backrest), not a flat slab,
+// and stay clear of the producer's floor path and the dock edge.
+import { buildPremisesDecor } from '../src/components/studio/studioPremisesDecor';
+for (const tier of [1, 3]) {
+  for (const { id, container } of buildPremisesDecor(tier, 0xf0b84a)) {
+    const b = container.getLocalBounds();
+    const h = b.maxY - b.minY;
+    if (id === 'clientBench') assert.ok(h >= 34 && b.maxX - b.minX >= 60, `bench has volume (${h}px tall)`);
+    if (id === 'premiumSofa') assert.ok(h >= 40, `sofa has volume (${h}px tall)`);
+    if (id.startsWith('storageRack')) assert.ok(b.maxX - b.minX >= 24, 'rack shows both a front and a side face');
+  }
+}
+const bench = getPremisesProps(1).find((p) => p.id === 'clientBench')!;
+assert.ok(bench.y >= 6 && bench.x < 3, 'bench sits on the front edge, clear of the console and producer');
+assert.equal(getPremisesProps(0).some((p) => p.id === 'clientBench'), false, 'Tier 0 has no bench');
+
 console.log('floor furnishings check passed');
 
 // Flight case floor stack: tiers map to looks and the stack caps what it draws.
