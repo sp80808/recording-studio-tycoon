@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { GameState } from '@/types/game';
 import { currencySymbol, getCityById, toLocalAmount } from '@/rpg/cities';
 import { AnimatedCounter } from './AnimatedCounter';
-import { LocateFixed, Maximize, Minimize, Settings, CalendarDays, Coins, Star, SkipForward } from 'lucide-react';
+import { LocateFixed, Maximize, Minimize, Settings, CalendarDays, Coins, Star, SkipForward, Pause } from 'lucide-react';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import { EraProgressModal } from './modals/EraProgressModal';
 import { useTranslation } from 'react-i18next';
@@ -16,13 +16,14 @@ import { useStudioClock } from '@/contexts/StudioClockContext';
 interface GameHeaderProps {
   gameState: GameState;
   onOpenSettings?: () => void;
+  onPause?: () => void;
   onCenterCamera?: () => void;
   onAdvanceDay?: () => void;
   triggerEraTransition?: () => void;
   className?: string;
 }
 
-export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSettings, onCenterCamera, onAdvanceDay, triggerEraTransition, className = '' }) => {
+export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSettings, onPause, onCenterCamera, onAdvanceDay, triggerEraTransition, className = '' }) => {
   const [showEraProgress, setShowEraProgress] = useState(false);
   const { isFullscreen, toggleFullscreen } = useFullscreen('root');
   const { t } = useTranslation();
@@ -101,6 +102,17 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSetting
         >
           <PressRipple>{isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}</PressRipple>
         </button>
+        {onPause && (
+          <button
+            type="button"
+            className="studio-hud-icon"
+            onClick={onPause}
+            aria-label="Pause session (Esc)"
+            title="Pause session (Esc)"
+          >
+            <PressRipple><Pause size={16} /></PressRipple>
+          </button>
+        )}
         {onOpenSettings && (
           <button type="button" className="studio-hud-icon" onClick={onOpenSettings} aria-label={t('open_settings')} title={t('open_settings')}>
             <PressRipple><Settings size={16} /></PressRipple>

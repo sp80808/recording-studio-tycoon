@@ -408,8 +408,8 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           (c) => getChoreCanonicalHotspot(c) === 'liveRoom' && !c.completed
         );
 
-        const anchorStyle = (id: StudioHotspotId, dyPx: number): React.CSSProperties | undefined => {
-          const a = anchors[id];
+        const anchorStyle = (id: StudioHotspotId | 'coffee', dyPx: number): React.CSSProperties | undefined => {
+          const a = (anchors as any)[id];
           if (!a) return undefined;
           return {
             position: 'absolute',
@@ -419,13 +419,15 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
             zIndex: 20,
           };
         };
-        // Console sits left, live room right; vertical nudge keeps the two
-        // chips from colliding when their 3D anchors project close together.
+        // Console sits left, live room right, coffee sits at lounge candle table;
+        // vertical nudge keeps chips from colliding when 3D anchors project close.
         const consoleStyle = anchorStyle('console', 0);
         const liveStyle = anchorStyle('liveRoom', -26);
+        const coffeeStyle = anchorStyle('coffee', 0) || anchorStyle('shelf', 0);
         const busy = Boolean(activeChoreId);
         const consoleChore = pendingConsoleChores[0];
         const liveChore = pendingLiveRoomChores[0];
+        const shelfChore = findPendingChoreForHotspot(gameState.choreState, 'shelf');
 
         return (
           <>
@@ -465,34 +467,27 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
                 </MotionReveal>
               </div>
             )}
+            {shelfChore && (
+              <div style={coffeeStyle}>
+                <MotionReveal direction="up" distance={6}>
+                  <ChoreHotspotButton
+                    kind="hospitality"
+                    icon={Coffee}
+                    label="Brew Espresso"
+                    meta={shelfChore.energyCost > 0 ? `${shelfChore.energyCost}⚡` : 'Free'}
+                    attention
+                    working={activeChoreId === shelfChore.id}
+                    disabled={busy && activeChoreId !== shelfChore.id}
+                    className={`studio-room-chip ${coffeeStyle ? '' : 'studio-duty-coffee absolute bottom-16 right-16 z-20'} ${busy && activeChoreId !== shelfChore.id ? 'pointer-events-none opacity-70' : ''}`}
+                    title="Lounge: Brew Espresso — click here or tap the coffee table"
+                    onClick={() => handleHotspot('shelf')}
+                  />
+                </MotionReveal>
+              </div>
+            )}
           </>
         );
       })()}
-      {/* Lounge duty sits below the shared view controls and session status. */}
-      {roomTier > 1 && <div className="studio-room-overlay-tr">
-        {(() => {
-          if (!floorFocused || activeInspector || viewRoom) return null;
-          const shelfChore = findPendingChoreForHotspot(gameState.choreState, 'shelf');
-          if (!shelfChore) return null;
-          const busy = Boolean(activeChoreId);
-          return (
-            <MotionReveal direction="down" distance={6}>
-              <ChoreHotspotButton
-                kind="hospitality"
-                icon={Coffee}
-                label="Brew Espresso"
-                meta={shelfChore.energyCost > 0 ? `${shelfChore.energyCost}⚡` : 'Free'}
-                attention
-                working={activeChoreId === shelfChore.id}
-                disabled={busy && activeChoreId !== shelfChore.id}
-                className="studio-room-chip"
-                title="Lounge: Brew Espresso — same as clicking the vinyl shelf"
-                onClick={() => handleHotspot('shelf')}
-              />
-            </MotionReveal>
-          );
-        })()}
-      </div>}
       {gamepad.isConnected && gamepad.lastInputType === 'gamepad' ? (
         <div className="studio-room-gamepad-hint pointer-events-none select-none">
           <GamepadGlyph button="dpadLeft" size="xs" />

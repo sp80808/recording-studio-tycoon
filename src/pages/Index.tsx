@@ -43,6 +43,8 @@ import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { gameAudio as audioSystem } from '@/utils/audioSystem';
 import { WelcomeBackSummaryModal } from '@/components/modals/WelcomeBackSummaryModal';
 import { StorylineBranchModal } from '@/components/modals/StorylineBranchModal';
+import { PauseMenuModal } from '@/components/modals/PauseMenuModal';
+import { useGamepad } from '@/hooks/useGamepad';
 import { StoryEventModal } from '@/components/modals/StoryEventModal';
 import { DirectorEventModal } from '@/components/modals/DirectorEventModal';
 import { DayCloseBanner } from '@/components/DayCloseBanner';
@@ -119,6 +121,7 @@ const MusicStudioTycoon = () => {
   // const [showStaffModal, setShowStaffModal] = useState(false); // Assuming this was intended to be used elsewhere or can be removed if not
   // const [showRecruitmentModal, setShowRecruitmentModal] = useState(false); // Assuming this was intended to be used elsewhere or can be removed if not
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showPauseMenu, setShowPauseMenu] = useState(false);
   const [showStorylineBranchModal, setShowStorylineBranchModal] = useState(false);
   // Key of a subplot beat the player chose to decide later; cleared when the beat changes or they reopen it.
   const [deferredStoryEventKey, setDeferredStoryEventKey] = useState<string | null>(null);
@@ -154,7 +157,7 @@ const MusicStudioTycoon = () => {
     if (!import.meta.env.DEV) return;
     const target = window as Window & { render_game_to_text?: () => string };
     target.render_game_to_text = () => JSON.stringify({
-      inputOwners: { storyPresenter, offline: Boolean(offlineSummary), review: showReviewModal, training: showTrainingModal, settings: showSettingsModal, branch: showStorylineBranchModal, tutorialCompleted: settings.tutorialCompleted },
+      inputOwners: { storyPresenter, offline: Boolean(offlineSummary), review: showReviewModal, training: showTrainingModal, settings: showSettingsModal, pause: showPauseMenu, branch: showStorylineBranchModal, tutorialCompleted: settings.tutorialCompleted },
       coordinates: 'Screen pixels: origin top-left, x right, y down. Studio management uses menu controls.',
       mode: showSplashScreen ? 'career-start' : gameInitialized ? 'studio' : 'loading',
       city: gameState.cityId,
@@ -173,7 +176,7 @@ const MusicStudioTycoon = () => {
       controls: Array.from(document.querySelectorAll<HTMLButtonElement>('button')).filter(button => button.getClientRects().length && !button.disabled).map(button => button.getAttribute('aria-label') || button.textContent?.trim()).slice(0, 32),
     });
     return () => { delete target.render_game_to_text; };
-  }, [gameState, showSplashScreen, gameInitialized, storyPresenter, offlineSummary, showReviewModal, showTrainingModal, showSettingsModal, showStorylineBranchModal, settings.tutorialCompleted, autoTriggeredMinigame]);
+  }, [gameState, showSplashScreen, gameInitialized, storyPresenter, offlineSummary, showReviewModal, showTrainingModal, showSettingsModal, showPauseMenu, showStorylineBranchModal, settings.tutorialCompleted, autoTriggeredMinigame]);
 
   useEffect(() => installFlightCaseRewards(setGameState), [setGameState]);
   useEffect(() => {
@@ -181,7 +184,7 @@ const MusicStudioTycoon = () => {
     installTelemetryDevHandle();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  useAmbientIncome(gameInitialized && !showSplashScreen, setGameState);
+  useAmbientIncome(gameInitialized && !showSplashScreen && !showPauseMenu, setGameState);
 
   useEffect(() => {
     if (selectedStaffForTraining) {
@@ -215,8 +218,53 @@ const MusicStudioTycoon = () => {
     effectiveCompactStudioMode,
     offlineSummary,
     showReviewModal,
-    pendingBranchFlag,
   ]);
+
+  // Keyboard and gamepad pause menu handling
+  const gamepad = useGamepad();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (showSplashScreen || !gameInitialized) return;
+      if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
+        const target = e.target as HTMLElement | null;
+        if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
+        if (target?.isContentEditable) return;
+
+        // If settings or another modal is open, let that modal's escape handler handle it first
+        if (showSettingsModal || showReviewModal || showTrainingModal || showStorylineBranchModal || pendingDelivery) {
+          return;
+        }
+
+        e.preventDefault();
+        setShowPauseMenu((prev) => {
+          const next = !prev;
+          if (settings.sfxEnabled) {
+            void audioSystem.playUISound(next ? 'menuOpen' : 'menuClose');
+          }
+          return next;
+        });
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showSplashScreen, gameInitialized, showSettingsModal, showReviewModal, showTrainingModal, showStorylineBranchModal, pendingDelivery, settings.sfxEnabled]);
+
+  useEffect(() => {
+    if (!gamepad.isConnected || showSplashScreen || !gameInitialized) return;
+    if (gamepad.justPressed.start) {
+      if (showSettingsModal || showReviewModal || showTrainingModal || showStorylineBranchModal || pendingDelivery) {
+        return;
+      }
+      setShowPauseMenu((prev) => {
+        const next = !prev;
+        if (settings.sfxEnabled) {
+          void audioSystem.playUISound(next ? 'menuOpen' : 'menuClose');
+        }
+        return next;
+      });
+    }
+  }, [gamepad.isConnected, gamepad.justPressed.start, showSplashScreen, gameInitialized, showSettingsModal, showReviewModal, showTrainingModal, showStorylineBranchModal, pendingDelivery, settings.sfxEnabled]);
 
   const pendingStorylineBranch = getPendingStorylineBranch(gameState);
   const pendingStoryEvent = getPendingSubplotEvent(gameState);
@@ -696,6 +744,7 @@ const MusicStudioTycoon = () => {
           !showSplashScreen &&
           !effectiveCompactStudioMode &&
           settings.tutorialCompleted &&
+          !showPauseMenu &&
           !(storyPresenter || offlineSummary || pendingDelivery || showReviewModal || showTrainingModal || showSettingsModal || (showStorylineBranchModal && pendingStorylineBranch))
         }
         onDayComplete={handleAdvanceDayWithReview}
@@ -708,6 +757,10 @@ const MusicStudioTycoon = () => {
           <GameHeader 
             gameState={gameState} 
             onOpenSettings={handleOpenSettings}
+            onPause={() => {
+              setShowPauseMenu(true);
+              if (settings.sfxEnabled) void audioSystem.playUISound('menuOpen');
+            }}
             onCenterCamera={() => {
               setStudioCameraReset(value => value + 1);
               if (settings.sfxEnabled) audioSystem.playUISound('buttonClick');
@@ -725,7 +778,7 @@ const MusicStudioTycoon = () => {
         <div className="flex-grow min-h-0">
           <MainGameContent
             cameraResetKey={studioCameraReset}
-            inputBlocked={Boolean(storyPresenter || offlineSummary || pendingDelivery || showReviewModal || showTrainingModal || showSettingsModal || (showStorylineBranchModal && pendingStorylineBranch) )}
+            inputBlocked={Boolean(showPauseMenu || storyPresenter || offlineSummary || pendingDelivery || showReviewModal || showTrainingModal || showSettingsModal || (showStorylineBranchModal && pendingStorylineBranch) )}
             gameState={gameState}
             setGameState={setGameState}
             startProject={handleProjectStart}
@@ -779,6 +832,23 @@ const MusicStudioTycoon = () => {
         onResetGame={resetGame} // Pass resetGame from useSaveSystem
         context="ingame" // Explicitly set context for in-game settings
         onLoadGameStateFromString={handleLoadGameStateFromString} // Pass the new handler
+      />
+
+      <PauseMenuModal
+        isOpen={showPauseMenu && !effectiveCompactStudioMode}
+        gameState={gameState}
+        onClose={() => {
+          setShowPauseMenu(false);
+          if (settings.sfxEnabled) void audioSystem.playUISound('menuClose');
+        }}
+        onOpenSettings={() => {
+          setShowPauseMenu(false);
+          setShowSettingsModal(true);
+        }}
+        onQuitToTitle={() => {
+          setShowPauseMenu(false);
+          setShowSplashScreen(true);
+        }}
       />
 
 

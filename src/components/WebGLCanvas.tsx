@@ -226,7 +226,7 @@ export type StudioHotspotId = 'console' | 'liveRoom' | 'phone' | 'clock' | 'tv' 
  */
 const Z = { world: 0, depth: 100, fx: 3000 } as const;
 
-export type HotspotAnchors = Partial<Record<StudioHotspotId, { x: number; y: number }>>;
+export type HotspotAnchors = Partial<Record<StudioHotspotId | 'coffee', { x: number; y: number }>>;
 
 /**
  * Live state fed into the scene. Purely presentational — the scene reads the
@@ -548,6 +548,8 @@ interface SceneRefs {
   vignetteLayer: Container | null;
   dynamicBloomG: Graphics | null;
   decor: DecorLights | null;
+  /** Lounge candle table container for diegetic coffee anchor tracking. */
+  candleTable: Container | null;
   /** Brew mug on the candle table — visible only after `brew_espresso`. */
   candleDrink: Container | null;
   /** Local y rest pose for the candle drink settle animation. */
@@ -703,6 +705,7 @@ const buildScene = (
     vignetteLayer: null,
     dynamicBloomG: null,
     decor: null,
+    candleTable: null,
     candleDrink: null,
     candleDrinkBaseY: 0,
     candleBeers: null,
@@ -1562,11 +1565,17 @@ const buildScene = (
   deskProps.zIndex = deskZ;
   root.addChild(deskProps);
 
-  // Listening candle table — presentation only (no hotspot; glow lives in decor lights)
+  // Listening candle table — lounge coffee hotspot + presentation
   {
     const candleTable = buildCandleTable();
     candleTable.zIndex = Z.depth + iso(6.55, 5.35).y;
+    candleTable.eventMode = 'static';
+    candleTable.cursor = 'pointer';
+    candleTable.on('pointertap', () => {
+      onSelect?.('shelf');
+    });
     root.addChild(candleTable);
+    refs.candleTable = candleTable;
     // Drink/mug only after brew_espresso — settle anim driven by the ticker
     const drink = buildCandleDrink();
     drink.zIndex = candleTable.zIndex + 1;
@@ -2548,6 +2557,15 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
               const prev = lastAnchorsRef.current[id];
               if (!prev || prev.x !== pt.x || prev.y !== pt.y) changed = true;
             });
+            if (refs.candleTable) {
+              const cb = refs.candleTable.getBounds();
+              if (cb && cb.maxX > cb.minX) {
+                const pt = { x: Math.round((cb.minX + cb.maxX) / 2), y: Math.round(cb.minY) };
+                next.coffee = pt;
+                const prev = lastAnchorsRef.current.coffee;
+                if (!prev || prev.x !== pt.x || prev.y !== pt.y) changed = true;
+              }
+            }
             if (changed) {
               lastAnchorsRef.current = next;
               anchorsCbRef.current(next);

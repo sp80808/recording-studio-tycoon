@@ -44,12 +44,12 @@ export const WorldInteraction: React.FC<WorldInteractionProps> = ({
 
     if (rewardMode === 'practice') {
       toast({
-        title: tc('mg.WorldInteraction.practice_take_in', '🎧 Practice take in'),
+        title: tc('mg.MinigameManager.practice_take_in', '🎧 Practice take in'),
         description: score >= 700
-          ? tc('mg.WorldInteraction.practice_strong', 'Strong run — reviewing the tape for craft XP.')
+          ? tc('mg.MinigameManager.practice_strong', 'Strong run — reviewing the tape for craft XP.')
           : score >= 400
-            ? tc('mg.WorldInteraction.practice_ok', 'Serviceable take. Room to tighten the next pass.')
-            : tc('mg.WorldInteraction.practice_rough', 'Rough pass. Little craft XP this time.'),
+            ? tc('mg.MinigameManager.practice_ok', 'Serviceable take. Room to tighten the next pass.')
+            : tc('mg.MinigameManager.practice_rough', 'Rough pass. Little craft XP this time.'),
         className: 'bg-stone-800 border-stone-600 text-white',
         variant: success === false ? 'destructive' : 'default',
       });
@@ -64,8 +64,8 @@ export const WorldInteraction: React.FC<WorldInteractionProps> = ({
       });
     } else {
       toast({
-        title: tc('mg.WorldInteraction.complete_title', '🎮 Minigame Complete!'),
-        description: tc('mg.WorldInteraction.rewards', 'Rewards: +{{c}} C, +{{t}} T, +{{xp}} XP', { c: creativityBonus, t: technicalBonus, xp: xpBonus }),
+        title: tc('mg.MinigameManager.complete_title', '🎮 Minigame Complete!'),
+        description: tc('mg.MinigameManager.rewards', 'Rewards: +{{c}} C, +{{t}} T, +{{xp}} XP', { c: creativityBonus, t: technicalBonus, xp: xpBonus }),
         className: "bg-stone-800 border-stone-600 text-white",
         variant: success === false ? "destructive" : "default",
       });

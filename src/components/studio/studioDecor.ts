@@ -975,7 +975,8 @@ export const buildLiveBooth = (): Container => {
     return sprites;
   }
   const c = new Container();
-  const g = new Graphics();
+  const gBack = new Graphics();
+  const gFront = new Graphics();
   const x0 = 1.0;
   const x1 = 3.5;
   const y0 = 0;
@@ -989,8 +990,8 @@ export const buildLiveBooth = (): Container => {
   const quad = (a: ReturnType<typeof P>, b: ReturnType<typeof P>, c2: ReturnType<typeof P>, d: ReturnType<typeof P>) => [a.x, a.y, b.x, b.y, c2.x, c2.y, d.x, d.y];
 
   // Carpet
-  g.poly(quad(P(x0, y0), P(x1, y0), P(x1, y1), P(x0, y1))).fill(0x2e2521);
-  g.poly(quad(P(x0 + 0.08, y0 + 0.08), P(x1 - 0.08, y0 + 0.08), P(x1 - 0.08, y1 - 0.06), P(x0 + 0.08, y1 - 0.06))).stroke({ width: 0.8, color: BRASS, alpha: 0.25 });
+  gBack.poly(quad(P(x0, y0), P(x1, y0), P(x1, y1), P(x0, y1))).fill(0x2e2521);
+  gBack.poly(quad(P(x0 + 0.08, y0 + 0.08), P(x1 - 0.08, y0 + 0.08), P(x1 - 0.08, y1 - 0.06), P(x0 + 0.08, y1 - 0.06))).stroke({ width: 0.8, color: BRASS, alpha: 0.25 });
 
   // Foam on the back (right) wall: egg-crate checker
   const cols = 10;
@@ -1001,22 +1002,37 @@ export const buildLiveBooth = (): Container => {
       const xb = x0 + ((x1 - x0) * (i + 1)) / cols;
       const la = 4 + ((GH - 6) * j) / rows;
       const lb = 4 + ((GH - 6) * (j + 1)) / rows;
-      g.poly(rightWallQuad(xa, xb, la, lb)).fill((i + j) % 2 ? 0x241d19 : 0x191411);
+      gBack.poly(rightWallQuad(xa, xb, la, lb)).fill((i + j) % 2 ? 0x241d19 : 0x191411);
     }
   }
-  g.poly(rightWallQuad(x0, x1, 0, 4)).fill(0x120e0b);
+  gBack.poly(rightWallQuad(x0, x1, 0, 4)).fill(0x120e0b);
 
   // Inner face of the left side wall (x = x0), foam stripes
   for (let j = 0; j < 6; j++) {
     const la = 4 + ((GH - 4) * j) / 6;
     const lb = 4 + ((GH - 4) * (j + 1)) / 6;
-    g.poly(quad(P(x0, y0, la), P(x0, y1, la), P(x0, y1, lb), P(x0, y0, lb))).fill(j % 2 ? 0x241d19 : 0x1a1512);
+    gBack.poly(quad(P(x0, y0, la), P(x0, y1, la), P(x0, y1, lb), P(x0, y0, lb))).fill(j % 2 ? 0x241d19 : 0x1a1512);
   }
 
   // Mic stand + pop filter + stool + music stand, deep in the booth
+  const stool = P(1.75, 0.52);
+  let stoolSpriteRef: Sprite | null = null;
+  const stoolTex = getPropTexture('stool');
+  if (stoolTex) {
+    const sp = new Sprite(stoolTex);
+    sp.anchor.set(0.5, 72 / 80);
+    sp.scale.set(44 / stoolTex.height * 1.0);
+    sp.position.set(stool.x, stool.y);
+    stoolSpriteRef = sp;
+  } else {
+    gBack.ellipse(stool.x, stool.y, 9, 4.2).fill({ color: 0x000000, alpha: 0.3 });
+    gBack.rect(stool.x - 1, stool.y - 18, 2, 18).fill(0x4a4038);
+    gBack.ellipse(stool.x, stool.y - 20, 9, 4.2).fill(0x6b3a2a);
+    gBack.ellipse(stool.x, stool.y - 20, 9, 4.2).stroke({ width: 0.8, color: 0x2a1610 });
+  }
+
   const base = P(2.25, 0.55);
   let micSpriteRef: Sprite | null = null;
-  const boothSprites: Sprite[] = [];
   const micTex = getPropTexture('micStand');
   if (micTex) {
     const micSprite = new Sprite(micTex);
@@ -1025,81 +1041,72 @@ export const buildLiveBooth = (): Container => {
     micSprite.position.set(base.x, base.y + 2);
     micSpriteRef = micSprite;
   } else {
-    g.ellipse(base.x, base.y, 12, 6).fill(0x1b1613);
-    g.rect(base.x - 1.6, base.y - 46, 3.2, 46).fill(0x8f98ab);
-    g.moveTo(base.x, base.y - 46).lineTo(base.x + 10, base.y - 52).stroke({ width: 2, color: 0x8f98ab });
-    g.circle(base.x + 11, base.y - 53, 5.5).fill(BRASS);
-    g.circle(base.x + 11, base.y - 53, 5.5).stroke({ width: 1, color: 0x6b4a1c });
-    g.circle(base.x + 4, base.y - 50, 8).stroke({ width: 1, color: 0x000000, alpha: 0.7 });
+    gBack.ellipse(base.x, base.y, 12, 6).fill(0x1b1613);
+    gBack.rect(base.x - 1.6, base.y - 46, 3.2, 46).fill(0x8f98ab);
+    gBack.moveTo(base.x, base.y - 46).lineTo(base.x + 10, base.y - 52).stroke({ width: 2, color: 0x8f98ab });
+    gBack.circle(base.x + 11, base.y - 53, 5.5).fill(BRASS);
+    gBack.circle(base.x + 11, base.y - 53, 5.5).stroke({ width: 1, color: 0x6b4a1c });
+    gBack.circle(base.x + 4, base.y - 50, 8).stroke({ width: 1, color: 0x000000, alpha: 0.7 });
   }
-  const stool = P(1.75, 0.7);
-  const stoolTex = getPropTexture('stool');
-  if (stoolTex) {
-    const sp = new Sprite(stoolTex);
-    sp.anchor.set(0.5, 72 / 80);
-    sp.scale.set(44 / stoolTex.height * 1.0);
-    sp.position.set(stool.x, stool.y);
-    boothSprites.push(sp);
-  } else {
-    g.ellipse(stool.x, stool.y, 9, 4.2).fill({ color: 0x000000, alpha: 0.3 });
-    g.rect(stool.x - 1, stool.y - 18, 2, 18).fill(0x4a4038);
-    g.ellipse(stool.x, stool.y - 20, 9, 4.2).fill(0x6b3a2a);
-    g.ellipse(stool.x, stool.y - 20, 9, 4.2).stroke({ width: 0.8, color: 0x2a1610 });
-  }
+
   const stand = P(2.85, 0.6);
+  let standSpriteRef: Sprite | null = null;
   const standTex = getPropTexture('musicStand');
   if (standTex) {
     const sp = new Sprite(standTex);
     sp.anchor.set(0.5, 104 / 112);
     sp.scale.set(54 / standTex.height * 1.0);
     sp.position.set(stand.x, stand.y);
-    boothSprites.push(sp);
+    standSpriteRef = sp;
   } else {
-    g.rect(stand.x - 0.8, stand.y - 38, 1.6, 38).fill(0x3a3f45);
-    g.poly([stand.x - 9, stand.y - 42, stand.x + 9, stand.y - 48, stand.x + 9, stand.y - 36, stand.x - 9, stand.y - 30]).fill(0x2f353c);
+    gBack.rect(stand.x - 0.8, stand.y - 38, 1.6, 38).fill(0x3a3f45);
+    gBack.poly([stand.x - 9, stand.y - 42, stand.x + 9, stand.y - 48, stand.x + 9, stand.y - 36, stand.x - 9, stand.y - 30]).fill(0x2f353c);
   }
 
   // Glass front (y = y1)
   const gl = quad(P(x0, y1), P(x1, y1), P(x1, y1, GH), P(x0, y1, GH));
-  g.poly(gl).fill({ color: 0xa6d8e6, alpha: 0.13 });
+  gFront.poly(gl).fill({ color: 0xa6d8e6, alpha: 0.13 });
   // reflection streaks
-  g.poly(quad(P(1.35, y1), P(1.6, y1), P(2.05, y1, GH), P(1.8, y1, GH))).fill({ color: 0xffffff, alpha: 0.07 });
-  g.poly(quad(P(2.0, y1), P(2.12, y1), P(2.55, y1, GH), P(2.43, y1, GH))).fill({ color: 0xffffff, alpha: 0.05 });
-  g.poly(gl).stroke({ width: 1.4, color: 0x9fb1b5, alpha: 0.85 });
+  gFront.poly(quad(P(1.35, y1), P(1.6, y1), P(2.05, y1, GH), P(1.8, y1, GH))).fill({ color: 0xffffff, alpha: 0.07 });
+  gFront.poly(quad(P(2.0, y1), P(2.12, y1), P(2.55, y1, GH), P(2.43, y1, GH))).fill({ color: 0xffffff, alpha: 0.05 });
+  gFront.poly(gl).stroke({ width: 1.4, color: 0x9fb1b5, alpha: 0.85 });
   // Posts (left, mid, door jamb, right)
   for (const px of [x0, 1.9, 2.75, x1]) {
-    g.poly(quad(P(px - 0.035, y1), P(px + 0.035, y1), P(px + 0.035, y1, H), P(px - 0.035, y1, H))).fill(0x2a2521);
-    g.poly(quad(P(px - 0.035, y1), P(px + 0.035, y1), P(px + 0.035, y1, H), P(px - 0.035, y1, H))).stroke({ width: 0.6, color: BRASS, alpha: 0.6 });
+    gFront.poly(quad(P(px - 0.035, y1), P(px + 0.035, y1), P(px + 0.035, y1, H), P(px - 0.035, y1, H))).fill(0x2a2521);
+    gFront.poly(quad(P(px - 0.035, y1), P(px + 0.035, y1), P(px + 0.035, y1, H), P(px - 0.035, y1, H))).stroke({ width: 0.6, color: BRASS, alpha: 0.6 });
   }
   // Door outline + handle between the last two posts
-  g.poly(quad(P(2.79, y1, 2), P(x1 - 0.04, y1, 2), P(x1 - 0.04, y1, GH - 2), P(2.79, y1, GH - 2))).stroke({ width: 1, color: 0xcfe0e4, alpha: 0.55 });
+  gFront.poly(quad(P(2.79, y1, 2), P(x1 - 0.04, y1, 2), P(x1 - 0.04, y1, GH - 2), P(2.79, y1, GH - 2))).stroke({ width: 1, color: 0xcfe0e4, alpha: 0.55 });
   const hdl = P(2.88, y1, 36);
-  g.roundRect(hdl.x - 1, hdl.y - 6, 2, 12, 1).fill(BRASS);
+  gFront.roundRect(hdl.x - 1, hdl.y - 6, 2, 12, 1).fill(BRASS);
 
   // Header beam across the top of the glass
-  g.poly(quad(P(x0, y1, GH), P(x1, y1, GH), P(x1, y1, H), P(x0, y1, H))).fill(0x231b16);
-  g.poly(quad(P(x0, y1, GH), P(x1, y1, GH), P(x1, y1, GH + 1.6), P(x0, y1, GH + 1.6))).fill({ color: BRASS, alpha: 0.8 });
+  gFront.poly(quad(P(x0, y1, GH), P(x1, y1, GH), P(x1, y1, H), P(x0, y1, H))).fill(0x231b16);
+  gFront.poly(quad(P(x0, y1, GH), P(x1, y1, GH), P(x1, y1, GH + 1.6), P(x0, y1, GH + 1.6))).fill({ color: BRASS, alpha: 0.8 });
   // Nameplate + lamp housing on the header
-  g.poly(quad(P(1.35, y1, 76), P(1.95, y1, 76), P(1.95, y1, 83), P(1.35, y1, 83))).fill(0x3a2c1f);
-  g.poly(quad(P(1.35, y1, 76), P(1.95, y1, 76), P(1.95, y1, 83), P(1.35, y1, 83))).stroke({ width: 0.7, color: BRASS, alpha: 0.7 });
+  gFront.poly(quad(P(1.35, y1, 76), P(1.95, y1, 76), P(1.95, y1, 83), P(1.35, y1, 83))).fill(0x3a2c1f);
+  gFront.poly(quad(P(1.35, y1, 76), P(1.95, y1, 76), P(1.95, y1, 83), P(1.35, y1, 83))).stroke({ width: 0.7, color: BRASS, alpha: 0.7 });
   const lamp = BOOTH_HEADER_LAMP;
-  g.roundRect(lamp.x - 7, lamp.y - 4, 14, 8, 2).fill(0x120d0a);
-  g.circle(lamp.x, lamp.y, 2.6).fill(0x5a1a14);
+  gFront.roundRect(lamp.x - 7, lamp.y - 4, 14, 8, 2).fill(0x120d0a);
+  gFront.circle(lamp.x, lamp.y, 2.6).fill(0x5a1a14);
 
   // Outer face of the right side wall (x = x1), facing the room
-  g.poly(quad(P(x1, y0), P(x1, y1), P(x1, y1, H), P(x1, y0, H))).fill(0x3d302a);
-  g.poly(quad(P(x1, y0), P(x1, y1), P(x1, y1, 38), P(x1, y0, 38))).fill(0x2a201b);
-  g.poly(quad(P(x1, y0, 38), P(x1, y1, 38), P(x1, y1, 41), P(x1, y0, 41))).fill({ color: BRASS, alpha: 0.5 });
-  g.poly(quad(P(x1, y0), P(x1, y1), P(x1, y1, H), P(x1, y0, H))).stroke({ width: 1, color: 0x120d09, alpha: 0.8 });
+  gFront.poly(quad(P(x1, y0), P(x1, y1), P(x1, y1, H), P(x1, y0, H))).fill(0x3d302a);
+  gFront.poly(quad(P(x1, y0), P(x1, y1), P(x1, y1, 38), P(x1, y0, 38))).fill(0x2a201b);
+  gFront.poly(quad(P(x1, y0, 38), P(x1, y1, 38), P(x1, y1, 41), P(x1, y0, 41))).fill({ color: BRASS, alpha: 0.5 });
+  gFront.poly(quad(P(x1, y0), P(x1, y1), P(x1, y1, H), P(x1, y0, H))).stroke({ width: 1, color: 0x120d09, alpha: 0.8 });
 
   // Flat roof
-  g.poly(quad(P(x0, y0, H), P(x1, y0, H), P(x1, y1, H), P(x0, y1, H))).fill(0x4a3d34);
-  g.poly(quad(P(x0 + 0.1, y0 + 0.1, H), P(x1 - 0.1, y0 + 0.1, H), P(x1 - 0.1, y1 - 0.1, H), P(x0 + 0.1, y1 - 0.1, H))).fill(0x54463c);
-  g.poly(quad(P(x0, y0, H), P(x1, y0, H), P(x1, y1, H), P(x0, y1, H))).stroke({ width: 1.2, color: 0x120d09, alpha: 0.9 });
-  g.poly([P(x0, y1, H).x, P(x0, y1, H).y, P(x1, y1, H).x, P(x1, y1, H).y, P(x1, y1, H).x, P(x1, y1, H).y - 0.1]).stroke({ width: 1.2, color: BRASS, alpha: 0.7 });
-  c.addChild(g);
-  for (const sp of boothSprites) c.addChild(sp);
+  gFront.poly(quad(P(x0, y0, H), P(x1, y0, H), P(x1, y1, H), P(x0, y1, H))).fill(0x4a3d34);
+  gFront.poly(quad(P(x0 + 0.1, y0 + 0.1, H), P(x1 - 0.1, y0 + 0.1, H), P(x1 - 0.1, y1 - 0.1, H), P(x0 + 0.1, y1 - 0.1, H))).fill(0x54463c);
+  gFront.poly(quad(P(x0, y0, H), P(x1, y0, H), P(x1, y1, H), P(x0, y1, H))).stroke({ width: 1.2, color: 0x120d09, alpha: 0.9 });
+  gFront.poly([P(x0, y1, H).x, P(x0, y1, H).y, P(x1, y1, H).x, P(x1, y1, H).y, P(x1, y1, H).x, P(x1, y1, H).y - 0.1]).stroke({ width: 1.2, color: BRASS, alpha: 0.7 });
+
+  c.addChild(gBack);
+  if (stoolSpriteRef) c.addChild(stoolSpriteRef);
   if (micSpriteRef) c.addChild(micSpriteRef);
+  if (standSpriteRef) c.addChild(standSpriteRef);
+  c.addChild(gFront);
   return c;
 };
 
