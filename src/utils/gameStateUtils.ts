@@ -1,3 +1,4 @@
+import { mirrorInterventionState } from '@/session/interventionCheckpoint';
 import { isCityId } from '@/rpg/cities';
 import { asEquipmentInstance, refreshGearForDay } from '@/features/usedGear/economy';
 import { GameState, Project, FocusAllocation } from '@/types/game';
@@ -187,5 +188,9 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
 
   // Branching storylines (bead 283.3): legacy saves without storylineState
   // receive a deterministic campaign seed without mutating other fields.
+  if (processedState.activeProject) {
+    const primary = processedState.activeProject;
+    processedState.activeProjects = processedState.activeProjects.map(candidate => mirrorInterventionState(primary, candidate));
+  }
   return refreshGearForDay(initializeStorylineState(processedState));
 };

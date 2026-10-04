@@ -108,6 +108,17 @@ export interface ClientRelationship {
   careerTier?: import('@/rpg/artistCareer').ArtistCareerTier;
 }
 
+/** Saved optional session choice. Reward authority remains in existing work/minigame paths. */
+export interface SessionIntervention {
+  id: string;
+  projectId: string;
+  stageIndex: number;
+  type: import('@/components/minigames/MinigameManager').MinigameType;
+  reason: string;
+  priority: number;
+  expiresAt: number;
+}
+
 export interface Project {
   id: string;
   /** Label package terms (#50). Present only on label contracts. */
@@ -140,6 +151,7 @@ export interface Project {
   comboCount?: number; // ⚡ consecutive same-day work sessions (streak multiplier)
   overdriveArmed?: boolean; // 🔥 next session burns extra energy for bonus output
   awaitingReview?: boolean; // Work is complete but rewards have not yet been settled
+  interventionCheckpoint?: { stageIndex: number; workBucket: number; pending: SessionIntervention | null };
   resolvedInterventionStageKeys?: string[]; // Persist one resolved/ignored intervention opportunity per stage
   gearNotes?: string[]; // Bounded, factual session gear ledger for review
   bookingRoomId?: string; // Physical studio suite reserved for this session
@@ -457,13 +469,15 @@ export interface GameState {
   pendingCrates?: Array<{
     id: string;
     era: string;
-    source: 'chore_streak' | 's_grade_take' | 'yard_sale' | 'shop_money' | 'shop_gems' | 'reward';
+    source: 'chore_streak' | 's_grade_take' | 'yard_sale' | 'shop_money' | 'shop_gems' | 'reward' | 'level_reward';
     /** Legacy 2-tier ids stay valid; the economy resolves them via legacyTierToFlightCase. */
     tier: 'standard' | 'vintage_flight_case' | 'cardboard_box' | 'road_case' | 'tour_trunk' | 'holy_grail_vault';
     generatedDay?: number;
     generatedYear?: number;
     generatedPriceMultiplier?: number;
   }>;
+  /** Producer levels whose flight-case level-up reward was already granted (bead fec). Absent on legacy saves = none claimed. */
+  flightCaseLevelsClaimed?: number[];
   /** Premium-feel soft currency (bead: flight cases + gems). Absent on legacy saves = 0. */
   gems?: number;
   /** Holding area for flight case finds the player stashed; claim via used-gear economy into ownedEquipment. */
@@ -566,6 +580,8 @@ export interface ProjectReport {
   playerManagementXpGained: number; // If staff worked
   skillBreakdown: ProjectReportSkillEntry[];
   reviewSnippet: string; // e.g., "Groundbreaking sound design, but the rhythm section feels a little loose."
+  /** Existing settlement cause attribution, separate from the review prose. */
+  qualityFactors?: string[];
   assignedPerson: { // Details of who worked on it
     type: 'player' | 'staff';
     id: string;

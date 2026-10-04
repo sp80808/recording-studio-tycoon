@@ -258,7 +258,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             </div>
             
             {/* Equipment Shop Section */}
-            <div className="rounded-lg border border-stone-700 bg-stone-950/50 p-2.5 max-h-72 overflow-y-auto pr-1">
+            <div className="rounded-lg border border-stone-700 bg-stone-950/50 p-2.5">
               <EquipmentList purchaseEquipment={purchaseEquipment} gameState={gameState} />
             </div>
 

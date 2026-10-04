@@ -1,23 +1,24 @@
-/** City sagas: 18 chained director events, one 3-beat chain per city, gated on the home city and memories. */
+/** City sagas: chained director events, one 3-beat chain per city, gated on the home city and memories. */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import type { GameState } from '../src/types/game';
 import { CITIES } from '../src/rpg/cities';
 import { CITY_SAGA_EVENTS, SAGA_CITY_BY_EVENT } from '../src/narrative/citySagas';
 import { cityForEvent } from '../src/narrative/cityEventCity';
 import { DIRECTOR_EVENTS, resolveDirectorChoice } from '../src/narrative/directorEvents';
 import { EFFECT_LIMITS, getDirector, takeDirectorOpportunity, validateEffects } from '../src/narrative/eventDirector';
 
-const state = (cityId?: string, over: Record<string, unknown> = {}): any => ({
+const state = (cityId?: string, over: Record<string, unknown> = {}): GameState => ({
   currentDay: 40, currentEra: 'analog60s', selectedEra: 'analog60s', saveSeed: 7, money: 9000, reputation: 40, cityId,
   hiredStaff: [], ownedEquipment: [{ id: 'e', name: 'Desk', condition: 90 }], studioRooms: [], bands: [], playerBands: [],
   financials: { income: 0, expenses: 0, profit: 0, reports: [] }, playerData: { xp: 0, level: 3 }, clientRelationships: {},
   storylineState: { runSeed: 1, activeCampaignNodeId: 'a', campaignCompleted: false, branchHistory: [], storyFlags: {}, activeSubplots: [], resolvedSubplotIds: [] },
   ...over,
-});
+} as unknown as GameState);
 
 describe('city sagas', () => {
-  it('has 18 valid, registered, capped events (3 per city)', () => {
-    assert.equal(CITY_SAGA_EVENTS.length, 18);
+  it('has valid, registered, capped events (3 per city)', () => {
+    assert.equal(CITY_SAGA_EVENTS.length, CITIES.length * 3);
     const live = new Set(DIRECTOR_EVENTS.map((d) => d.id));
     for (const e of CITY_SAGA_EVENTS) {
       assert.ok(live.has(e.id));

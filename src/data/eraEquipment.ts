@@ -262,6 +262,36 @@ export const availableEquipment: EraAvailableEquipment[] = [
     isVintage: true,
     condition: 100
   },
+  {
+    id: 'rhodes_stage_piano',
+    name: 'Rhodes "Roads-Less-Travelled" Stage Piano',
+    category: 'instrument',
+    price: 1800,
+    historicalPrice: 650,
+    availableFrom: 1970,
+    availableUntil: 1985,
+    description: 'Bell-like electric piano tone with enough bark to cut through a live band.',
+    eraDescription: 'A studio staple for soul, jazz fusion and soft rock sessions.',
+    bonuses: { creativityBonus: 16, genreBonus: { 'Soul': 4, 'Jazz': 4, 'Pop': 2 } },
+    icon: '🎹',
+    skillRequirement: { skill: 'Jazz', level: 2 },
+    isVintage: true,
+    condition: 100
+  },
+  {
+    id: 'dbx_160_compressor',
+    name: 'DBX 160 "Thump Wrangler"',
+    category: 'outboard',
+    price: 950,
+    historicalPrice: 330,
+    availableFrom: 1976,
+    description: 'A fast VCA compressor that keeps bass and drums firmly in the pocket.',
+    eraDescription: 'Compact, practical dynamics control for the late-70s control room.',
+    bonuses: { qualityBonus: 14, technicalBonus: 12, genreBonus: { 'Rock': 2, 'Soul': 3 } },
+    icon: '⚙️',
+    isVintage: true,
+    condition: 100
+  },
 
   // === 1980s Era Equipment ===
   
@@ -292,6 +322,22 @@ export const availableEquipment: EraAvailableEquipment[] = [
     bonuses: { qualityBonus: 25, genreBonus: { 'Pop': 4, 'Rock': 3, 'New Wave': 5 }, creativityBonus: 15 },
     icon: '⚙️',
     skillRequirement: { skill: 'Pop', level: 2 },
+    isVintage: true,
+    condition: 100
+  },
+  {
+    id: 'dx7_synth',
+    name: 'Yamaha "Digital Native" DX7',
+    category: 'instrument',
+    price: 2100,
+    historicalPrice: 900,
+    availableFrom: 1983,
+    availableUntil: 1995,
+    description: 'Glassy FM keys, rubbery basses and a menu system that rewards patience.',
+    eraDescription: 'The defining affordable digital synthesizer of mid-80s pop.',
+    bonuses: { creativityBonus: 18, speedBonus: 8, genreBonus: { 'Pop': 4, 'Electronic': 4, 'R&B': 2 } },
+    icon: '🎹',
+    skillRequirement: { skill: 'Electronic', level: 2 },
     isVintage: true,
     condition: 100
   },
@@ -327,6 +373,21 @@ export const availableEquipment: EraAvailableEquipment[] = [
     skillRequirement: { skill: 'Pop', level: 3 },
     condition: 100
   },
+  {
+    id: 'adat_8track',
+    name: 'ADAT "Eight-Is-Enough" Recorder',
+    category: 'recorder',
+    price: 3200,
+    historicalPrice: 1600,
+    availableFrom: 1992,
+    availableUntil: 2008,
+    description: 'Eight tracks of digital tape that can be chained when eight is suddenly not enough.',
+    eraDescription: 'Made project-studio digital multitracking practical in the 1990s.',
+    bonuses: { qualityBonus: 16, technicalBonus: 14, speedBonus: 10 },
+    icon: '📼',
+    isVintage: true,
+    condition: 100
+  },
 
   // === 2000s Era Equipment ===
   
@@ -353,6 +414,19 @@ export const availableEquipment: EraAvailableEquipment[] = [
     eraDescription: 'MIDI controller for the digital music revolution',
     bonuses: { speedBonus: 15, genreBonus: { 'Electronic': 2, 'Pop': 2 } },
     icon: '🎹',
+    condition: 100
+  },
+  {
+    id: 'small_diaphragm_pair',
+    name: 'Matched "Tiny Giants" Condenser Pair',
+    category: 'microphone',
+    price: 900,
+    availableFrom: 2004,
+    description: 'A matched stereo pair for acoustic instruments, overheads and honest room detail.',
+    eraDescription: 'Project studios embrace affordable stereo recording without hiring a second mortgage.',
+    bonuses: { qualityBonus: 14, technicalBonus: 8, genreBonus: { 'Acoustic': 4, 'Jazz': 2 } },
+    icon: '🎤',
+    skillRequirement: { skill: 'Acoustic', level: 2 },
     condition: 100
   },
 

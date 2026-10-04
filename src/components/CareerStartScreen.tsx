@@ -63,7 +63,7 @@ const ERA_CHALLENGE: Record<string, string> = {
 
 const STEP_KEYS = ['location', 'era', 'character', 'role'] as const;
 
-const CITY_ICONS = { 'los-angeles': Radio, nashville: Waves, london: Landmark, berlin: Building2, tokyo: Globe2, rio: MapPin } as const;
+const CITY_ICONS: Record<CityId, typeof Radio> = { 'los-angeles': Radio, nashville: Waves, london: Landmark, berlin: Building2, tokyo: Globe2, rio: MapPin, detroit: Building2, lagos: Waves };
 
 const stepClass = (active: boolean, done: boolean) =>
   `flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] ${
@@ -167,7 +167,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
   const rival = origin ? getPrimaryRival(origin.primaryPlaystyle) : null;
 
   return (
-    <main className="career-start-page" aria-label="Start a new career">
+    <main className={`career-start-page${step === 2 ? ' career-character-step' : ''}`} aria-label="Start a new career">
             <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col px-4 pb-28 pt-6 sm:px-8">
         {/* Header + stepper */}
         <header className="flex items-center justify-between gap-3 sm:grid sm:grid-cols-[1fr_auto_1fr]">
@@ -194,7 +194,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
         <div className="mt-8 text-center animate-rst-rise" key={step}>
           <p className="rst-kicker">{step === 0 ? 'Chapter one' : step === 1 ? 'Chapter two' : step === 2 ? 'Chapter three' : 'Chapter four'}</p>
           <h1 ref={headingRef} tabIndex={-1} className="rst-title mt-2 text-3xl outline-none sm:text-5xl">
-            {step === 0 ? 'Where does your studio open?' : step === 1 ? 'When does your studio open?' : step === 2 ? 'Make the face behind the faders' : 'Who is behind the console?'}
+            {step === 0 ? 'Where does your studio open?' : step === 1 ? 'When does your studio open?' : step === 2 ? 'Make it yours' : 'Who is behind the console?'}
           </h1>
           <p className="rst-body mx-auto mt-3 max-w-2xl text-sm sm:text-base">
             {step === 0
@@ -202,7 +202,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
               : step === 1
                 ? 'Each era changes your gear, your genres, your budget and the industry breathing down your neck.'
                 : step === 2
-                  ? 'Give your producer a name and a look. You can change every visual detail with the arrows.'
+                  ? 'Give your producer a name, then try a few looks on.'
                   : 'Your producer origin gives you a real edge — and a rival who will not let you forget it.'}
           </p>
         </div>

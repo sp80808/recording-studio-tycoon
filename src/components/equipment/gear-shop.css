@@ -1,0 +1,14 @@
+.gear-shop__filters { display:flex; align-items:center; flex-wrap:wrap; gap:12px; padding:10px 0 14px; }
+.gear-shop__filters select, .gear-shop__filters input, .gear-shop__details summary { min-height:44px; }
+.gear-shop__filters input { width:18px; accent-color:var(--rst-brass-300, #e9be73); }
+.gear-shop__filters :focus-visible, .gear-shop__details summary:focus-visible { outline:2px solid var(--rst-brass-300, #e9be73); outline-offset:3px; }
+.gear-shop__card { transition:border-color .18s, background-color .18s; }
+.gear-shop__card:focus-within { border-color:var(--rst-brass-300, #e9be73); }
+.gear-shop__icon { display:grid; place-items:center; width:48px; height:48px; flex:none; font-size:26px; border:1px solid #e9be7338; border-radius:12px; background:radial-gradient(circle at 35% 25%, #b68d4940, #15120f); box-shadow:inset 0 1px 0 #fff1; }
+.gear-shop__details summary { display:flex; align-items:center; gap:8px; list-style:none; }
+.gear-shop__details summary::-webkit-details-marker { display:none; }
+.gear-shop__details summary::before { content:'+'; font:700 16px monospace; }
+.gear-shop__details[open] summary::before { content:'−'; }
+@media (hover:hover) { .gear-shop__card:hover { border-color:#e9be7370; background-color:#29231e; } }
+@media (prefers-reduced-motion:reduce) { .gear-shop__card { transition:none; } }
+html[data-reduced-motion='true'] .gear-shop__card { transition:none; }

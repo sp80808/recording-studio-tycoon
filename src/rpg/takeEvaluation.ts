@@ -8,23 +8,65 @@ export interface TakeEvaluationResult {
 }
 
 /**
+ * Single source of truth for "The Pocket" (Gold window) on the 0–1 needle
+ * scale. The PocketMeter faceplate, its lock feedback/confetti and the
+ * authoritative grading all derive from this, so the drawn pocket can never
+ * drift from the scored one.
+ */
+export const TAKE_POCKET_WINDOW = {
+  /** Sweet-spot centre on the needle scale. */
+  center: 0.775,
+  /**
+   * Total window width per PocketMeter assistance level
+   * (Settings → PocketMeter Timing Window Assist):
+   * strict 7% / normal 15% / generous 25% of the scale — total width, so
+   * 'normal' keeps the historic 0.70–0.85 pocket.
+   */
+  assistanceWidth: {
+    strict: 0.07,
+    normal: 0.15,
+    generous: 0.25,
+  },
+  /** Each full timing_bonus point widens the pocket by this much per edge. */
+  bonusExpansionPerPoint: 0.15,
+} as const;
+
+export type PocketMeterAssistance = keyof typeof TAKE_POCKET_WINDOW.assistanceWidth;
+
+export interface TakeGoldWindow {
+  min: number;
+  max: number;
+}
+
+/**
+ * Resolves the Gold window for the active chore buff + assistance setting.
+ * Chore timing_bonus widens both edges; assistance widens symmetrically.
+ */
+export function getTakeGoldWindow(
+  timingBonus: number = 0,
+  assistance: PocketMeterAssistance = 'normal'
+): TakeGoldWindow {
+  const halfWidth = TAKE_POCKET_WINDOW.assistanceWidth[assistance] / 2;
+  const expansion = TAKE_POCKET_WINDOW.bonusExpansionPerPoint * Math.max(0, timingBonus);
+  return {
+    min: Math.max(0, TAKE_POCKET_WINDOW.center - halfWidth - expansion),
+    max: Math.min(1, TAKE_POCKET_WINDOW.center + halfWidth + expansion),
+  };
+}
+
+/**
  * Evaluates needle position (0.0 to 1.0) against "The Pocket" target zone.
- * - Base Gold: 0.70 to 0.85
- * - timingBonus widens the Gold window tolerance (e.g. +10% width).
+ * - Gold: inside getTakeGoldWindow() — see there for the tolerance rules.
  * - Silver: Near miss adjacent to Gold zone.
  * - Otherwise: Solid Take.
  */
 export function evaluateTakeAccuracy(
   needlePosition: number,
-  timingBonus: number = 0
+  timingBonus: number = 0,
+  assistance: PocketMeterAssistance = 'normal'
 ): TakeEvaluationResult {
   const pos = Math.max(0, Math.min(1, needlePosition));
-
-  // Base gold window is [0.70, 0.85] (width 0.15).
-  // timingBonus expands lower and upper boundaries.
-  const expansion = 0.15 * Math.max(0, timingBonus);
-  const goldMin = Math.max(0, 0.70 - expansion);
-  const goldMax = Math.min(1, 0.85 + expansion);
+  const { min: goldMin, max: goldMax } = getTakeGoldWindow(timingBonus, assistance);
 
   if (pos >= goldMin && pos <= goldMax) {
     return {

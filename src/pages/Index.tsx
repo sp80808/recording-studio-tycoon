@@ -1,3 +1,4 @@
+import { useCutsceneQueue } from '@/hooks/useCutsceneQueue';
 import { applyKnowHowEvents } from '@/rpg/studioKnowHow';
 import { telemetry } from '@/telemetry/sink';
 import { installTelemetryDevHandle } from '@/telemetry/devHandle';
@@ -40,7 +41,6 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useSaveSystem } from '@/contexts/SaveSystemContext';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { gameAudio as audioSystem } from '@/utils/audioSystem';
-import { MinigameType } from '@/components/minigames/MinigameManager'; // Import MinigameType
 import { WelcomeBackSummaryModal } from '@/components/modals/WelcomeBackSummaryModal';
 import { StorylineBranchModal } from '@/components/modals/StorylineBranchModal';
 import { StoryEventModal } from '@/components/modals/StoryEventModal';
@@ -102,6 +102,8 @@ const MusicStudioTycoon = () => {
     setSelectedStaffForTraining,
     lastReview, // This might become obsolete or change with the new flow
     orbContainerRef,
+    autoTriggeredMinigame,
+    clearAutoTriggeredMinigame,
     contactArtist,
     triggerEraTransition,
     startResearchMod, // Destructure startResearchMod
@@ -109,6 +111,7 @@ const MusicStudioTycoon = () => {
     addStaffXP // Ensure this is destructured if not aliased
   } = useGameLogic(gameState, setGameState); // REMOVED focusAllocation, setFocusAllocation
 
+  const storyPresenter = useCutsceneQueue(state => state.presenter);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showTrainingModal, setShowTrainingModal] = useState(false);
   // const [showStaffModal, setShowStaffModal] = useState(false); // Assuming this was intended to be used elsewhere or can be removed if not
@@ -141,12 +144,34 @@ const MusicStudioTycoon = () => {
     // If called from splash settings, then setShowSplashScreen(false) and setGameInitialized(true) would be needed.
   };
 
-  // State for auto-triggered minigames
-  const [autoTriggeredMinigame, setAutoTriggeredMinigame] = useState<{ type: MinigameType; reason: string } | null>(null);
-  const clearAutoTriggeredMinigame = () => setAutoTriggeredMinigame(null);
-
   useBackgroundMusic();
 
+
+  // Read-only playtest state; no production debug controls or save mutations.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const target = window as Window & { render_game_to_text?: () => string };
+    target.render_game_to_text = () => JSON.stringify({
+      inputOwners: { storyPresenter, offline: Boolean(offlineSummary), review: showReviewModal, training: showTrainingModal, settings: showSettingsModal, branch: showStorylineBranchModal, tutorialCompleted: settings.tutorialCompleted },
+      coordinates: 'Screen pixels: origin top-left, x right, y down. Studio management uses menu controls.',
+      mode: showSplashScreen ? 'career-start' : gameInitialized ? 'studio' : 'loading',
+      city: gameState.cityId,
+      era: gameState.currentEra,
+      year: gameState.currentYear,
+      day: gameState.currentDay,
+      money: gameState.money,
+      energy: gameState.playerData.dailyWorkCapacity,
+      reputation: gameState.reputation,
+      intervention: autoTriggeredMinigame,
+      storyEvent: gameState.storylineState?.director?.pending?.eventId ?? null,
+      lastStoryChoice: gameState.storylineState?.director?.history.at(-1)?.optionId ?? null,
+      equipment: gameState.ownedEquipment.map(item => item.templateId ?? item.id),
+      crew: gameState.hiredStaff.map(member => ({ name: member.name, role: member.role, status: member.status, energy: member.energy })),
+      project: gameState.activeProject ? { id: gameState.activeProject.id, title: gameState.activeProject.title, progress: gameState.activeProject.progress, stage: gameState.activeProject.currentStageIndex, takes: gameState.activeProject.workSessionCount, awaitingReview: gameState.activeProject.awaitingReview, stages: gameState.activeProject.stages.map(stage => ({ completed: stage.completed, work: stage.workUnitsCompleted })), focus: gameState.activeProject.focusAllocation } : null,
+      controls: Array.from(document.querySelectorAll<HTMLButtonElement>('button')).filter(button => button.getClientRects().length && !button.disabled).map(button => button.getAttribute('aria-label') || button.textContent?.trim()).slice(0, 32),
+    });
+    return () => { delete target.render_game_to_text; };
+  }, [gameState, showSplashScreen, gameInitialized, storyPresenter, offlineSummary, showReviewModal, showTrainingModal, showSettingsModal, showStorylineBranchModal, settings.tutorialCompleted, autoTriggeredMinigame]);
 
   useEffect(() => installFlightCaseRewards(setGameState), [setGameState]);
   useEffect(() => {
@@ -339,7 +364,7 @@ const MusicStudioTycoon = () => {
       }
     );
     
-    setCompactStudioMode(false); // Reviews are full-studio moments; expand before presenting one.
+    setCompactStudioMode(false); // Reviews return to the full studio scene.
     const openIssues = completedProjectData.unresolvedIssues ?? [];
     if (openIssues.length > 0) {
       // #87: the player chooses Deliver or Polish before the review is shown.
@@ -681,6 +706,7 @@ const MusicStudioTycoon = () => {
         />
         <div className="flex-grow min-h-0">
           <MainGameContent
+            inputBlocked={Boolean(storyPresenter || offlineSummary || pendingDelivery || showReviewModal || showTrainingModal || showSettingsModal || (showStorylineBranchModal && pendingStorylineBranch) )}
             gameState={gameState}
             setGameState={setGameState}
             startProject={handleProjectStart}
@@ -769,6 +795,7 @@ const MusicStudioTycoon = () => {
           isOpen={showReviewModal}
           onClose={handleFinalizeProjectCompletion} // Finalizes completion when modal is closed
           report={activeProjectReport}
+          saveSeed={gameState.saveSeed}
           seasonNote={(() => {
             const p = [gameState.activeProject, ...(gameState.activeProjects ?? [])].find(x => x?.id === activeProjectReport.projectId);
             const rel = p?.clientId ? gameState.clientRelationships?.[p.clientId] : undefined;

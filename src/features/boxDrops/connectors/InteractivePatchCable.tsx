@@ -1,6 +1,5 @@
 import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { Cable, Zap } from 'lucide-react';
 import type { Rarity } from '../lootGenerator';
 import type { PatchSocket } from './HardwarePatchPanel';
 
@@ -9,15 +8,16 @@ interface InteractivePatchCableProps {
   onTogglePatch: (target?: PatchSocket) => void;
   rarity: Rarity;
   activeSocket?: PatchSocket;
-  disabled?: boolean;
 }
+
+/** Drag distance that counts as a deliberate patch attempt (vs an accidental nudge). */
+const PATCH_DRAG_THRESHOLD_PX = 40;
 
 export const InteractivePatchCable: React.FC<InteractivePatchCableProps> = ({
   isPatched,
   onTogglePatch,
   rarity,
   activeSocket = 'trs',
-  disabled = false,
 }) => {
   const reduceMotion = useReducedMotion();
 
@@ -99,7 +99,34 @@ export const InteractivePatchCable: React.FC<InteractivePatchCableProps> = ({
           )}
         </svg>
 
-        {/* Heavy-Duty Metallic Connector Plug (Interactive) */}
+        {/* Heavy-Duty Metallic Connector Plug — drag it toward a jack to patch.
+            Outer wrapper owns the drag (snap-back rubber band); the inner plug
+            keeps the idle/patched spring animation so the two never fight. */}
+        <motion.div
+          drag
+          dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+          dragElastic={0.22}
+          dragMomentum={false}
+          whileDrag={reduceMotion ? undefined : { scale: 1.14 }}
+          whileHover={reduceMotion ? undefined : { scale: 1.05 }}
+          onDragEnd={(_, info) => {
+            if (Math.hypot(info.offset.x, info.offset.y) > PATCH_DRAG_THRESHOLD_PX) {
+              onTogglePatch();
+            }
+          }}
+          onTap={() => onTogglePatch()}
+          role="switch"
+          aria-checked={isPatched}
+          aria-label={isPatched ? 'Patch cable connected. Activate to unplug.' : 'Patch cable unplugged. Drag toward a jack or activate to patch.'}
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onTogglePatch();
+            }
+          }}
+          className="absolute z-20 flex items-center cursor-grab active:cursor-grabbing touch-none focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 rounded-sm"
+        >
         <motion.div
           animate={
             reduceMotion
@@ -123,8 +150,7 @@ export const InteractivePatchCable: React.FC<InteractivePatchCableProps> = ({
                   scale: { repeat: Infinity, duration: 2.8, ease: 'easeInOut' },
                 }
           }
-          onClick={() => onTogglePatch()}
-          className="absolute z-20 flex items-center cursor-pointer group focus:outline-none"
+          className="flex items-center"
         >
           {/* Rubber Strain-Relief Spring Boot */}
           <div className="w-4 h-3 bg-gradient-to-r from-stone-900 to-stone-800 rounded-l-xs flex items-center justify-around px-0.5 border border-stone-700">
@@ -166,36 +192,18 @@ export const InteractivePatchCable: React.FC<InteractivePatchCableProps> = ({
             />
           )}
         </motion.div>
+        </motion.div>
       </div>
 
-      {/* Tactile Control & Connection Trigger Bar */}
-      <div className="w-full flex items-center justify-between gap-2 px-1">
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() => onTogglePatch()}
-          aria-label={isPatched ? 'Disconnect audio patch cable' : 'Connect audio patch cable to audition gear'}
-          className={`flex-1 py-1.5 px-3 rounded-sm border font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer ${
-            isPatched
-              ? 'bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-stone-950 border-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.4)]'
-              : 'bg-stone-900 hover:bg-stone-800 text-stone-200 border-stone-700 hover:border-amber-400'
-          }`}
-        >
-          {isPatched ? (
-            <>
-              <Zap size={14} className="fill-stone-950" />
-              <span>PATCHED ({isXlr ? 'XLR BALANCED' : '1/4" INSERT'}) • UNPLUG</span>
-            </>
-          ) : (
-            <>
-              <Cable size={14} className={cord.text} />
-              <span>CONNECT PATCH CABLE (AUDITION)</span>
-            </>
-          )}
-        </button>
-
-        <span className="text-[10px] font-mono text-stone-400 hidden sm:inline-block">
+      {/* Patch status line — the plug itself (plus the panel jacks) is the control now. */}
+      <div className="w-full flex items-center justify-between gap-2 px-1" aria-live="polite">
+        <span className="text-[10px] font-mono text-stone-400">
           {cord.label}
+        </span>
+        <span className={`text-[10px] font-mono uppercase tracking-wider ${isPatched ? 'text-emerald-400 font-bold' : 'text-stone-500'}`}>
+          {isPatched
+            ? `${isXlr ? 'XLR balanced' : '1/4" insert'} patched`
+            : 'Drag the plug to a jack — or click a jack'}
         </span>
       </div>
     </div>

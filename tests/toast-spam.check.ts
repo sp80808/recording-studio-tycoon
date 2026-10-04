@@ -48,7 +48,7 @@ ok(guideCss.includes('max-width: 1100px'), 'coach parks for mid viewports');
 
 const tutorial = read('src/components/TutorialModal.tsx');
 ok(tutorial.includes('takeCalibrationFocused'), 'TutorialModal reads chrome take-calibration signal');
-ok(tutorial.includes("takeCalibrationFocused) return null"), 'coach unmounts while calibration focused');
+ok(/if\s*\([^\n]*\|\|\s*takeCalibrationFocused\s*\|\|\s*consoleFocused\s*\)\s*return null/.test(tutorial), 'coach unmounts while calibration or console owns input');
 
 const active = read('src/components/ActiveProject.tsx');
 ok(active.includes('setTakeCalibrationFocused'), 'ActiveProject publishes take-calibration focus');

@@ -273,6 +273,13 @@ export const FLIGHT_CASE_TIER_ORDER: FlightCaseTier[] = [
   'holy_grail_vault',
 ];
 
+/**
+ * Producer level that unlocks the flight-case system (Depot, floor stack,
+ * dealer shop). Below this the system stays hidden; level-up case rewards
+ * start here (bead fec).
+ */
+export const FLIGHT_CASE_UNLOCK_LEVEL = 3;
+
 /** Map the legacy 2-tier crate system onto the 5-tier catalogue (back-compat). */
 export function legacyTierToFlightCase(tier: LegacyCrateTier): FlightCaseTier {
   return tier === 'vintage_flight_case' ? 'vintage_flight_case' : 'road_case';

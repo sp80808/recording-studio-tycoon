@@ -124,6 +124,13 @@ export const RIVAL_LINES: Record<string, RivalLines> = {
     defeated: 'Dr. Aris Thorne stares at the oscilloscope for a long time. “The math was wrong. The record is right.”',
     respect: 'Dr. Aris Thorne annotates your schematic in green ink. “Reproducible. Barely. I will allow it.”',
   },
+  'lacquer-room': {
+    taunt: '“Another room full of faders. Call me when you have cut something a needle can respect.”',
+    challenge: '“Bring your loudest master to my lathe. We will see what survives the groove.”',
+    showdown: '“One side, no edits. The cutter head does not forgive, and neither do I.”',
+    defeated: 'Odette Marlowe lifts the needle herself. “Quiet where it should be quiet. Keep the test pressing.”',
+    respect: 'Odette Marlowe slips you her cutting notes. “Your dynamics are honest. Do not waste them.”',
+  },
 };
 
 export const getRivalLines = (rivalId: string): RivalLines =>
@@ -145,6 +152,7 @@ export const RIVAL_ACCENT: Record<string, string> = {
   'apex-velocity': '#a855f7',
   'distortion-cellar': '#f43f5e',
   'silicon-harmonics': '#10b981',
+  'lacquer-room': '#38bdf8',
 };
 
 export const getRivalAccent = (rivalId: string): string => RIVAL_ACCENT[rivalId] ?? '#f59e0b';

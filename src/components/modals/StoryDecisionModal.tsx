@@ -1,8 +1,9 @@
 import { money, signedMoney } from '@/utils/displayMoney';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight, Check, Coins, Lock, Sparkles, Star } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { useCutsceneQueue } from '@/hooks/useCutsceneQueue';
 import { gameAudio } from '@/utils/audioSystem';
 
 export interface DecisionOption {
@@ -103,6 +104,8 @@ export const StoryDecisionModal: React.FC<StoryDecisionModalProps> = ({
   const continueText = continueLabel ?? t('story_continue');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [resolved, setResolved] = useState<{ content: DecisionContent; option: DecisionOption } | null>(null);
+  const presentationId = useId();
+  const { presenter, acquirePresentation, releasePresentation } = useCutsceneQueue();
   const contentKey = content?.key;
   const commitRef = useRef<HTMLButtonElement>(null);
 
@@ -111,7 +114,15 @@ export const StoryDecisionModal: React.FC<StoryDecisionModalProps> = ({
   }, [contentKey]);
 
   const shown = resolved?.content ?? content;
-  const isOpen = Boolean(resolved) || (open && Boolean(content));
+  const wantsOpen = Boolean(resolved) || (open && Boolean(content));
+  const isOpen = wantsOpen && presenter === presentationId;
+
+  useLayoutEffect(() => {
+    if (wantsOpen) acquirePresentation(presentationId);
+    else releasePresentation(presentationId);
+  }, [wantsOpen, presenter, presentationId, acquirePresentation, releasePresentation]);
+
+  useLayoutEffect(() => () => releasePresentation(presentationId), [presentationId, releasePresentation]);
 
   const select = useCallback(
     (option: DecisionOption) => {

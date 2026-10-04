@@ -3,7 +3,7 @@ import { SAGA_CITY_BY_EVENT } from './citySagas';
 
 /** City prefixes used by `cityEvents.ts` event ids. */
 const PREFIXES: Record<string, string> = {
-  la: 'los-angeles', nashville: 'nashville', london: 'london', berlin: 'berlin', tokyo: 'tokyo', tok: 'tokyo', rio: 'rio',
+  la: 'los-angeles', nashville: 'nashville', london: 'london', berlin: 'berlin', tokyo: 'tokyo', tok: 'tokyo', rio: 'rio', detroit: 'detroit', lagos: 'lagos',
 };
 
 /** Which city an event belongs to (for the scene card), or undefined for non-city events. */

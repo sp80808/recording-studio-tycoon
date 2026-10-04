@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { ArrowLeft, ArrowRight, Dices } from 'lucide-react';
+import React, { useState } from 'react';
+import { ChevronLeft, ChevronRight, Dices, Undo2, UserRound } from 'lucide-react';
 import { ModularSpriteRenderer } from '@/features/sprites/ModularSpriteRenderer';
 import type { ModularNpcDefinition } from '@/features/sprites/spriteTypes';
 import {
@@ -21,172 +21,116 @@ import {
 } from '@/features/sprites/producerAppearance';
 import { CLOTHING_PALETTES, HAIR_HEX, SKIN_PALETTES } from '@/features/sprites/npcAppearanceData';
 
-/** Cycle one step through a fixed option list, wrapping around. */
+import './producer-creator.css';
+
 const cycle = <T extends string>(list: readonly T[], current: T, delta: number): T =>
   list[(list.indexOf(current) + delta + list.length) % list.length];
-
 const pretty = (v: string) => APPEARANCE_LABELS[v] ?? v.replace(/_/g, ' ');
-
-/** One changeable element: label, prev/next arrows (44px targets), current value, optional colour chip. */
-function ArrowRow({ label, value, swatch, onPrev, onNext }: {
-  label: string;
-  value: string;
-  swatch?: string;
-  onPrev: () => void;
-  onNext: () => void;
-}) {
-  const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowLeft') { e.preventDefault(); onPrev(); }
-    else if (e.key === 'ArrowRight') { e.preventDefault(); onNext(); }
-  };
-  return (
-    <div className="creator-row" role="group" aria-label={`${label}: ${value}`} onKeyDown={onKey} data-testid={`creator-row-${label.toLowerCase().replace(/\s+/g, '-')}`}>
-      <span className="creator-row-label">{label}</span>
-      <button type="button" className="creator-arrow" aria-label={`Previous ${label}`} onClick={onPrev}>
-        <ArrowLeft size={16} aria-hidden="true" />
-      </button>
-      <span className="creator-row-value">
-        {swatch && <span aria-hidden="true" className="creator-row-chip" style={{ background: swatch }} />}
-        <span className="truncate capitalize">{value}</span>
-      </span>
-      <button type="button" className="creator-arrow" aria-label={`Next ${label}`} onClick={onNext}>
-        <ArrowRight size={16} aria-hidden="true" />
-      </button>
-    </div>
-  );
-}
-
-function Group({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <fieldset className="creator-group">
-      <legend className="creator-group-title">{title}</legend>
-      {children}
-    </fieldset>
-  );
-}
-
-const swatchRing = (on: boolean) =>
-  on ? 'border-[var(--rst-brass-300)] ring-2 ring-[var(--rst-brass-300)]/40' : 'border-white/15';
-
-/** Smaller sprite on phones so the preview can stay pinned above the controls. */
-function useSpriteScale(): number {
-  const query = '(min-width: 768px)';
-  const [wide, setWide] = useState(() => typeof window !== 'undefined' && !!window.matchMedia?.(query).matches);
-  useEffect(() => {
-    const mq = window.matchMedia?.(query);
-    if (!mq) return;
-    const on = () => setWide(mq.matches);
-    mq.addEventListener('change', on);
-    return () => mq.removeEventListener('change', on);
-  }, []);
-  return wide ? 4 : 2;
-}
+type Part = 'hair' | 'accessory' | 'shirt' | 'pants' | 'shoes' | 'body';
 
 interface ProducerCreatorProps {
   moniker: string;
   onMoniker: (name: string) => void;
   look: ProducerAppearance;
   npc: ModularNpcDefinition;
-  /** Applies a change (the parent plays the click sound). */
   onPatch: (patch: Partial<ProducerAppearance>) => void;
   onRandomise: () => void;
 }
 
-/** Name, live preview and an arrow row for every changeable element of the producer. */
+/** Part-aligned controls keep the producer at the centre of every edit. */
 export function ProducerCreator({ moniker, onMoniker, look, npc, onPatch, onRandomise }: ProducerCreatorProps) {
-  const scale = useSpriteScale();
-  const clothesIds = PRODUCER_CLOTHES_COLOURS.map((c) => c.id as string);
-  const clothes = PRODUCER_CLOTHES_COLOURS.find((c) => c.id === look.clothesColour) ?? PRODUCER_CLOTHES_COLOURS[0];
+  const [active, setActive] = useState<Part>('hair');
+  const [previous, setPrevious] = useState<{ look: ProducerAppearance; name?: string } | null>(null);
   const skin = look.skinTone ?? 'tan';
-  const shirt = look.shirt ?? 'band_tee';
-  const pants = look.pants ?? 'denim_jeans';
-  const shoes = look.shoes ?? 'vintage_sneakers';
   const build = look.build ?? 'average';
+  const clothes = PRODUCER_CLOTHES_COLOURS.find((c) => c.id === look.clothesColour) ?? PRODUCER_CLOTHES_COLOURS[0];
+  const parts = [
+    { id: 'hair' as const, label: 'Hair', value: look.hair, options: PRODUCER_HAIR_SHAPES },
+    { id: 'accessory' as const, label: 'Extras', value: look.accessory, options: PRODUCER_ACCESSORIES },
+    { id: 'shirt' as const, label: 'Top', value: look.shirt ?? 'band_tee', options: PRODUCER_SHIRTS },
+    { id: 'pants' as const, label: 'Trousers', value: look.pants ?? 'denim_jeans', options: PRODUCER_PANTS },
+    { id: 'shoes' as const, label: 'Shoes', value: look.shoes ?? 'vintage_sneakers', options: PRODUCER_SHOES },
+  ];
+  const selected = parts.find((part) => part.id === active);
+  const labelFor = (id: Part, value: string) => id === 'accessory' ? ACCESSORY_LABELS[value as ProducerAccessory] : pretty(value);
+  const patch = (change: Partial<ProducerAppearance>) => {
+    setPrevious({ look: { ...look } });
+    onPatch(change);
+  };
+  const changePart = (part: typeof parts[number], direction: number) => {
+    setActive(part.id);
+    patch({ [part.id]: cycle<string>(part.options, part.value, direction) });
+  };
+  const outfit = active === 'shirt';
 
   return (
-    <section className="creator-shell" aria-label="Producer customisation" data-testid="producer-creator">
-      <div className="creator-stage">
-        <div className="creator-preview" data-testid="producer-preview">
-          <ModularSpriteRenderer npc={npc} animationState="idle" scale={scale} showBadge={false} />
-        </div>
-        <div className="creator-identity">
-          <label className="block text-xs font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-200)]">
-            Producer name
-            <input
-              value={moniker}
-              onChange={(e) => onMoniker(e.target.value.slice(0, 24))}
-              maxLength={24}
-              enterKeyHint="done"
-              autoComplete="off"
-              autoCapitalize="words"
-              spellCheck={false}
-              className="rst-input mt-2 w-full"
-              placeholder="The Architect"
-            />
-          </label>
-          <button type="button" className="rst-btn rst-btn-ghost w-full !min-h-11 !text-xs" onClick={onRandomise} data-testid="producer-randomise">
-            <Dices size={14} aria-hidden="true" />
-            Surprise me
-          </button>
-        </div>
+    <section className="producer-dressing" aria-label="Producer customisation" data-testid="producer-creator">
+      <label className="dressing-name">
+        Producer name
+        <input value={moniker} onChange={(e) => onMoniker(e.target.value.slice(0, 24))}
+          maxLength={24} enterKeyHint="done" autoComplete="off" autoCapitalize="words" spellCheck={false}
+          className="rst-input" placeholder="The Architect" />
+      </label>
+      <div className="dressing-tools">
+        <button type="button" aria-pressed={active === 'body'} onClick={() => setActive('body')}><UserRound size={16} aria-hidden="true" /> Body & skin</button>
+        <button type="button" disabled={!previous} aria-label="Undo last appearance change" onClick={() => {
+          if (!previous) return;
+          onPatch(previous.look);
+          if (previous.name !== undefined) onMoniker(previous.name);
+          setPrevious(null);
+        }}><Undo2 size={16} aria-hidden="true" /><span>Undo</span></button>
+        <button type="button" data-testid="producer-randomise" onClick={() => {
+          setPrevious({ look: { ...look }, name: moniker }); onRandomise();
+        }}><Dices size={16} aria-hidden="true" /> Surprise me</button>
       </div>
-
-      <div className="creator-controls">
-        <Group title="Body">
-          <ArrowRow label="Build" value={BUILD_LABELS[build]}
-            onPrev={() => onPatch({ build: cycle(PRODUCER_BUILDS, build, -1) })}
-            onNext={() => onPatch({ build: cycle(PRODUCER_BUILDS, build, 1) })} />
-          <ArrowRow label="Skin" value={pretty(skin)} swatch={SKIN_PALETTES[skin].base}
-            onPrev={() => onPatch({ skinTone: cycle(PRODUCER_SKIN_TONES, skin, -1) })}
-            onNext={() => onPatch({ skinTone: cycle(PRODUCER_SKIN_TONES, skin, 1) })} />
-        </Group>
-
-        <Group title="Hair">
-          <ArrowRow label="Style" value={pretty(look.hair)}
-            onPrev={() => onPatch({ hair: cycle(PRODUCER_HAIR_SHAPES, look.hair, -1) })}
-            onNext={() => onPatch({ hair: cycle(PRODUCER_HAIR_SHAPES, look.hair, 1) })} />
-          <ArrowRow label="Hair tone" value={pretty(look.hairColour)} swatch={HAIR_HEX[look.hairColour]}
-            onPrev={() => onPatch({ hairColour: cycle(PRODUCER_HAIR_COLOURS, look.hairColour, -1) })}
-            onNext={() => onPatch({ hairColour: cycle(PRODUCER_HAIR_COLOURS, look.hairColour, 1) })} />
-          <div className="creator-swatches" role="radiogroup" aria-label="Hair tone swatches">
-            {PRODUCER_HAIR_COLOURS.map((colour) => (
-              <button key={colour} type="button" role="radio" aria-checked={look.hairColour === colour} aria-label={pretty(colour)} title={pretty(colour)}
-                onClick={() => onPatch({ hairColour: colour })}
-                className={`creator-swatch h-8 w-8 rounded-full border-2 ${swatchRing(look.hairColour === colour)}`}
-                style={{ background: HAIR_HEX[colour] }} />
+      <div className="dressing-stage" data-active-part={active}>
+        <div className="dressing-preview" data-testid="producer-preview" role="img" aria-label={`Preview of ${moniker || 'your producer'}`}>
+          <ModularSpriteRenderer npc={npc} animationState="idle" scale={7} showBadge={false} />
+        </div>
+        {parts.map((part) => (
+          <div key={part.id} className={`dressing-part dressing-part--${part.id}`} data-active={active === part.id}
+            role="group" aria-label={`${part.label}: ${labelFor(part.id, part.value)}`}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                e.preventDefault(); e.stopPropagation(); changePart(part, e.key === 'ArrowRight' ? 1 : -1);
+              }
+            }}>
+            <button type="button" className="dressing-arrow" aria-label={`Previous ${part.label}`} onClick={() => changePart(part, -1)}><ChevronLeft size={22} aria-hidden="true" /></button>
+            <button type="button" className="dressing-part-label" aria-pressed={active === part.id} onClick={() => setActive(part.id)}>{part.label}</button>
+            <span className="dressing-guide" aria-hidden="true" />
+            <button type="button" className="dressing-arrow" aria-label={`Next ${part.label}`} onClick={() => changePart(part, 1)}><ChevronRight size={22} aria-hidden="true" /></button>
+          </div>
+        ))}
+      </div>
+      <div className="dressing-detail" aria-label="Selected part details">
+        <div className="dressing-detail-heading" aria-live="polite" aria-atomic="true">
+          <span>{selected?.label ?? 'Body & skin'}</span>
+          <strong>{selected ? labelFor(selected.id, selected.value) : BUILD_LABELS[build]}</strong>
+          {selected && <small>{selected.options.findIndex((value) => value === selected.value) + 1} / {selected.options.length}</small>}
+        </div>
+        {active === 'body' && <div className="dressing-builds" role="group" aria-label="Build">
+          {PRODUCER_BUILDS.map((value) => <button key={value} type="button" aria-pressed={build === value} onClick={() => patch({ build: value })}>{BUILD_LABELS[value]}</button>)}
+        </div>}
+        {(active === 'hair' || active === 'body' || outfit) && <>
+          <p className="dressing-colour-label">{active === 'hair' ? `Hair colour · ${pretty(look.hairColour)}` : active === 'body' ? `Skin tone · ${pretty(skin)}` : `Top colour · ${clothes.label}`}</p>
+          <div className="dressing-swatches" role="group" aria-label={active === 'hair' ? 'Hair colour' : active === 'body' ? 'Skin tone' : 'Top colour'}>
+            {active === 'hair' ? PRODUCER_HAIR_COLOURS.map((value) => (
+              <button key={value} type="button" aria-pressed={look.hairColour === value} aria-label={pretty(value)} title={pretty(value)}
+                onClick={() => patch({ hairColour: value })} style={{ '--swatch': HAIR_HEX[value] } as React.CSSProperties} />
+            )) : active === 'body' ? PRODUCER_SKIN_TONES.map((value) => (
+              <button key={value} type="button" aria-pressed={skin === value} aria-label={pretty(value)} title={pretty(value)}
+                onClick={() => patch({ skinTone: value })} style={{ '--swatch': SKIN_PALETTES[value].base } as React.CSSProperties} />
+            )) : PRODUCER_CLOTHES_COLOURS.map((value) => (
+              <button key={value.id} type="button" aria-pressed={look.clothesColour === value.id} aria-label={value.label} title={value.label}
+                onClick={() => patch({ clothesColour: value.id as ProducerClothesColourId })}
+                style={{ '--swatch': `linear-gradient(135deg, ${CLOTHING_PALETTES[value.palette].primary} 60%, ${CLOTHING_PALETTES[value.palette].secondary} 60%)` } as React.CSSProperties} />
             ))}
           </div>
-        </Group>
-
-        <Group title="Outfit">
-          <ArrowRow label="Top" value={pretty(shirt)}
-            onPrev={() => onPatch({ shirt: cycle(PRODUCER_SHIRTS, shirt, -1) })}
-            onNext={() => onPatch({ shirt: cycle(PRODUCER_SHIRTS, shirt, 1) })} />
-          <ArrowRow label="Trousers" value={pretty(pants)}
-            onPrev={() => onPatch({ pants: cycle(PRODUCER_PANTS, pants, -1) })}
-            onNext={() => onPatch({ pants: cycle(PRODUCER_PANTS, pants, 1) })} />
-          <ArrowRow label="Shoes" value={pretty(shoes)}
-            onPrev={() => onPatch({ shoes: cycle(PRODUCER_SHOES, shoes, -1) })}
-            onNext={() => onPatch({ shoes: cycle(PRODUCER_SHOES, shoes, 1) })} />
-          <ArrowRow label="Colour" value={clothes.label} swatch={CLOTHING_PALETTES[clothes.palette].primary}
-            onPrev={() => onPatch({ clothesColour: cycle(clothesIds, clothes.id as string, -1) as ProducerClothesColourId })}
-            onNext={() => onPatch({ clothesColour: cycle(clothesIds, clothes.id as string, 1) as ProducerClothesColourId })} />
-          <div className="creator-swatches" role="radiogroup" aria-label="Clothes colour swatches">
-            {PRODUCER_CLOTHES_COLOURS.map((c) => (
-              <button key={c.id} type="button" role="radio" aria-checked={look.clothesColour === c.id} aria-label={c.label} title={c.label}
-                onClick={() => onPatch({ clothesColour: c.id as ProducerClothesColourId })}
-                className={`creator-swatch h-8 w-8 rounded-md border-2 ${swatchRing(look.clothesColour === c.id)}`}
-                style={{ background: `linear-gradient(135deg, ${CLOTHING_PALETTES[c.palette].primary} 60%, ${CLOTHING_PALETTES[c.palette].secondary} 60%)` }} />
-            ))}
-          </div>
-        </Group>
-
-        <Group title="Finishing touch">
-          <ArrowRow label="Accessory" value={ACCESSORY_LABELS[look.accessory as ProducerAccessory]}
-            onPrev={() => onPatch({ accessory: cycle(PRODUCER_ACCESSORIES, look.accessory, -1) })}
-            onNext={() => onPatch({ accessory: cycle(PRODUCER_ACCESSORIES, look.accessory, 1) })} />
-        </Group>
+        </>}
+        {(active === 'pants' || active === 'shoes') && <p className="dressing-hint">Use the arrows to find your fit. Each style has its own finish.</p>}
+        {active === 'accessory' && <p className="dressing-hint">A little signature. Use the arrows to try on hats, headphones and jewellery.</p>}
       </div>
+      <p className="dressing-help">Tap a part name to fine-tune. Use its arrows to try something new.</p>
     </section>
   );
 }

@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCutsceneQueue } from '@/hooks/useCutsceneQueue';
+import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { CareerCutsceneChoice } from './careerCutscenes';
 
@@ -24,6 +25,8 @@ interface Payload {
 
 interface Props {
   payload: Payload;
+  /** Director already owns the presentation; direct act/ending callers acquire it here. */
+  presentationOwner?: string;
   onComplete: (choice?: CareerCutsceneChoice) => void;
 }
 
@@ -40,7 +43,20 @@ const initialsFrom = (name?: string) =>
  * Full-screen story beat: act openings, rival encounters and the campaign epilogue.
  * Flat ink surface, hairline borders, one accent colour taken from the speaker — flat, no layered panels.
  */
-export function CinematicStoryCutscene({ payload, onComplete }: Props) {
+export function CinematicStoryCutscene(props: Props) {
+  const ownId = useId();
+  const owner = props.presentationOwner ?? ownId;
+  const { presenter, acquirePresentation, releasePresentation } = useCutsceneQueue();
+  useLayoutEffect(() => {
+    acquirePresentation(owner);
+  }, [owner, presenter, acquirePresentation]);
+  useLayoutEffect(() => () => {
+    if (!props.presentationOwner) releasePresentation(owner);
+  }, [owner, props.presentationOwner, releasePresentation]);
+  return presenter === owner ? <CinematicStoryContent {...props} /> : null;
+}
+
+function CinematicStoryContent({ payload, onComplete }: Props) {
   const reduceMotion = useReducedMotion();
   const [lineIndex, setLineIndex] = useState(0);
   const continueRef = useRef<HTMLButtonElement>(null);

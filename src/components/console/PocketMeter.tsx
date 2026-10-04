@@ -4,9 +4,11 @@ import confetti from 'canvas-confetti';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useSettings } from '@/contexts/settings-context-types';
 import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
+import { getTakeGoldWindow } from '@/rpg/takeEvaluation';
 
-interface PocketMeterProps {
+export interface PocketMeterProps {
   isArmed: boolean;
+  isPaused?: boolean;
   onLock: (needlePosition: number) => void;
   timingBonus?: number;
   className?: string;
@@ -16,54 +18,96 @@ export const POCKET_METER_TIMING = {
   // Keep the gold crossing readable without turning the session into a wait:
   // at the centre of the sweep the 15% pocket is crossed in roughly 100ms.
   cycleSeconds: 1.8,
+  // Needle starts low and swings up through the pocket — every arm opens with
+  // a visible approach beat before the first Gold chance (~0.57s).
+  startPhase: -Math.PI / 2,
   // Give the player a little over one full pass before the safe fallback.
   autoLockSeconds: 3.2,
 } as const;
 
+/** Sweep geometry, exported so pacing checks can re-derive the crossing time. */
+export const POCKET_METER_SWEEP = {
+  center: 0.53,
+  amplitude: 0.41,
+} as const;
+
 export const PocketMeter: React.FC<PocketMeterProps> = ({
   isArmed,
+  isPaused = false,
   onLock,
   timingBonus = 0,
-  className = ''
+  className = '',
 }) => {
   const { settings } = useSettings();
   const gamepad = useGamepad({
     preferredLayout: settings?.controllerLayout,
     hapticsEnabled: settings?.gamepadHaptics,
   });
-  const gamepadRef = useRef(gamepad);
-  gamepadRef.current = gamepad;
+  const { triggerHaptic, leftStick, isConnected } = gamepad;
+  const scrubRef = useRef(leftStick.x);
+  scrubRef.current = leftStick.x;
 
-  const expansion = 0.15 * Math.max(0, timingBonus);
-  const goldMin = Math.max(0, 0.66 - expansion);
-  const goldMax = Math.min(1, 0.88 + expansion);
+  // The drawn pocket and the graded pocket are the same shared window
+  // (Settings → PocketMeter Timing Window Assist + chore timing bonus).
+  const goldWindow = getTakeGoldWindow(timingBonus, settings.pocketMeterAssistance);
+  const { min: goldMin, max: goldMax } = goldWindow;
+
+  // Live values the rAF sweep must read through refs. `gamepad`, `onLock` and
+  // the window are fresh identities on every render, and this component
+  // re-renders each frame while the needle moves: subscribing the sweep effect
+  // to them reset its start clock every frame, parking the needle at the arc
+  // start and making Gold (and the auto-lock fallback) unreachable.
+  const pocketRef = useRef(goldWindow);
+  pocketRef.current = goldWindow;
+  const onLockRef = useRef(onLock);
+  onLockRef.current = onLock;
+  const hapticRef = useRef(triggerHaptic);
+  hapticRef.current = triggerHaptic;
+
+  const isPausedRef = useRef(isPaused);
+  isPausedRef.current = isPaused;
+  const pausedTimeAccumulatorRef = useRef(0);
+  const pauseStartRef = useRef<number | null>(null);
 
   const [needlePos, setNeedlePos] = useState(0.2); // 0.0 to 1.0
+  const [autoLockLeft, setAutoLockLeft] = useState(1); // 1 → 0 until the safe fallback
   const animRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
   const lockedRef = useRef(false);
   const currentPosRef = useRef(0.2);
   const wasInPocketRef = useRef(false);
 
+  const systemReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reducedMotionUi = settings.reducedMotion || systemReducedMotion;
+
   useEffect(() => {
     if (!isArmed) {
       setNeedlePos(0.2);
       currentPosRef.current = 0.2;
+      setAutoLockLeft(1);
       lockedRef.current = false;
+      wasInPocketRef.current = false;
+      pausedTimeAccumulatorRef.current = 0;
+      pauseStartRef.current = null;
       return;
     }
 
     lockedRef.current = false;
+    wasInPocketRef.current = false;
     startTimeRef.current = performance.now();
+    pausedTimeAccumulatorRef.current = 0;
+    pauseStartRef.current = null;
+    setAutoLockLeft(1);
 
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      const accessiblePosition = (goldMin + goldMax) / 2;
+    if (settings.reducedMotion || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const pocket = pocketRef.current;
+      const accessiblePosition = (pocket.min + pocket.max) / 2;
       setNeedlePos(accessiblePosition);
       currentPosRef.current = accessiblePosition;
       const timeout = window.setTimeout(() => {
-        if (!lockedRef.current) {
+        if (!lockedRef.current && !isPausedRef.current) {
           lockedRef.current = true;
-          onLock(accessiblePosition);
+          onLockRef.current(accessiblePosition);
         }
       }, POCKET_METER_TIMING.autoLockSeconds * 1000);
       return () => window.clearTimeout(timeout);
@@ -72,23 +116,41 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
     // Readable sweep with enough reaction time for Gold locks (not twitchy).
     const tick = (now: number) => {
       if (lockedRef.current) return;
-      const elapsed = (now - startTimeRef.current) / 1000;
 
-      if (elapsed >= POCKET_METER_TIMING.autoLockSeconds) {
-        lockedRef.current = true;
-        onLock(currentPosRef.current);
+      if (isPausedRef.current) {
+        if (pauseStartRef.current === null) {
+          pauseStartRef.current = now;
+        }
+        animRef.current = requestAnimationFrame(tick);
         return;
       }
 
-      // Smooth oscillation: center at 0.53, amplitude 0.41
-      const pos = 0.53 + 0.41 * Math.sin((elapsed * Math.PI * 2) / POCKET_METER_TIMING.cycleSeconds);
+      if (pauseStartRef.current !== null) {
+        pausedTimeAccumulatorRef.current += (now - pauseStartRef.current);
+        pauseStartRef.current = null;
+      }
+
+      const elapsed = (now - startTimeRef.current - pausedTimeAccumulatorRef.current) / 1000;
+
+      if (elapsed >= POCKET_METER_TIMING.autoLockSeconds) {
+        lockedRef.current = true;
+        setAutoLockLeft(0);
+        onLockRef.current(currentPosRef.current);
+        return;
+      }
+
+      // Smooth oscillation around the faceplate centre. startPhase opens each arm
+      // low so the first pocket visit is a visible approach, not an ambush.
+      const pos = POCKET_METER_SWEEP.center + POCKET_METER_SWEEP.amplitude * Math.sin((elapsed * Math.PI * 2) / POCKET_METER_TIMING.cycleSeconds + POCKET_METER_TIMING.startPhase);
       currentPosRef.current = Math.max(0.05, Math.min(0.98, pos));
       setNeedlePos(currentPosRef.current);
+      setAutoLockLeft(Math.max(0, 1 - elapsed / POCKET_METER_TIMING.autoLockSeconds));
 
       // Tactile groove haptics: pulse gently when entering the Pocket zone
-      const inPocketNow = currentPosRef.current >= goldMin && currentPosRef.current <= goldMax;
+      const pocket = pocketRef.current;
+      const inPocketNow = currentPosRef.current >= pocket.min && currentPosRef.current <= pocket.max;
       if (inPocketNow && !wasInPocketRef.current) {
-        gamepadRef.current.triggerHaptic(0.2, 0.4, 40);
+        hapticRef.current(0.2, 0.4, 40);
       }
       wasInPocketRef.current = inPocketNow;
 
@@ -100,22 +162,44 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
     };
-  }, [isArmed, onLock, goldMin, goldMax]);
+  }, [isArmed, settings.reducedMotion]);
 
-  const isInPocket = needlePos >= goldMin && needlePos <= goldMax;
-  const meterFeedback = isInPocket
-    ? (timingBonus > 0 ? 'IN THE POCKET (CALIBRATED)' : 'IN THE POCKET')
-    : needlePos < goldMin ? 'COMING UP' : 'TOO HOT';
+  const isInPocket = !isPaused && needlePos >= goldMin && needlePos <= goldMax;
+  const meterFeedback = isPaused
+    ? 'CALIBRATION PAUSED'
+    : isInPocket
+      ? (timingBonus > 0 ? 'IN THE POCKET (CALIBRATED)' : 'IN THE POCKET')
+      : needlePos < goldMin ? 'COMING UP' : 'TOO HOT';
+  const needleState: 'below' | 'pocket' | 'above' | 'paused' = isPaused
+    ? 'paused'
+    : isInPocket
+      ? 'pocket'
+      : needlePos < goldMin
+        ? 'below'
+        : 'above';
+  const needleBarClass =
+    needleState === 'pocket'
+      ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,1)]'
+      : needleState === 'below'
+        ? 'bg-teal-300 shadow-[0_0_7px_rgba(94,234,212,0.85)]'
+        : 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.95)]';
+  const needleTipClass =
+    needleState === 'pocket'
+      ? 'bg-amber-300 shadow-[0_0_7px_rgba(251,191,36,0.95)]'
+      : needleState === 'below'
+        ? 'bg-teal-200 shadow-[0_0_6px_rgba(94,234,212,0.9)]'
+        : 'bg-red-500 shadow-[0_0_7px_rgba(239,68,68,0.95)]';
 
   const handleMeterClick = useCallback(() => {
-    if (!isArmed || lockedRef.current) return;
+    if (!isArmed || lockedRef.current || isPausedRef.current) return;
     lockedRef.current = true;
-    
+
     const pos = currentPosRef.current;
-    
-    // Tactile lock rumble
-    if (pos >= goldMin && pos <= goldMax) {
-      gamepad.triggerHaptic(0.6, 0.9, 130);
+    const pocket = pocketRef.current;
+
+    // Tactile lock rumble + celebration only where grading will actually award Gold
+    if (pos >= pocket.min && pos <= pocket.max) {
+      hapticRef.current(0.6, 0.9, 130);
       confetti({
         particleCount: 28,
         spread: 62,
@@ -128,25 +212,42 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
         zIndex: 100
       });
     } else {
-      gamepad.triggerHaptic(0.2, 0.3, 60);
+      hapticRef.current(0.2, 0.3, 60);
     }
 
-    onLock(pos);
-  }, [isArmed, onLock, gamepad]);
+    onLockRef.current(pos);
+  }, [isArmed]);
+
+  // Keyboard parity with the gamepad lock: Space or Enter anywhere while armed.
+  useEffect(() => {
+    if (!isArmed) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.repeat || (event.key !== ' ' && event.key !== 'Enter')) return;
+      if (isPausedRef.current) return;
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      // Focused controls (Stand down, the Lock Take button) keep native key semantics.
+      if (target?.closest('button, input, select, textarea, [role="button"]')) return;
+      event.preventDefault();
+      handleMeterClick();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isArmed, handleMeterClick]);
 
   // Gamepad A button or Right Trigger locks the armed take
   useEffect(() => {
-    if (!isArmed || lockedRef.current || !gamepad.isConnected) return;
+    if (!isArmed || lockedRef.current || isPausedRef.current || !gamepad.isConnected) return;
     if (gamepad.justPressed.south || gamepad.justPressed.rt || gamepad.triggers.right > 0.6) {
       handleMeterClick();
     }
   }, [isArmed, gamepad.isConnected, gamepad.justPressed.south, gamepad.justPressed.rt, gamepad.triggers.right, handleMeterClick]);
 
+
   return (
     <div
       onClick={handleMeterClick}
       className={`relative bg-stone-950 border border-stone-700/80 p-2 rounded-[2px] shadow-[inset_0_2px_8px_rgba(0,0,0,0.8)] select-none cursor-pointer transition-all ${className}`}
-      title={isArmed ? 'Click to Lock Take in the Pocket!' : 'Analog Calibration Gauge'}
+      title={isPaused ? 'Take Calibration Paused' : isArmed ? 'Click to Lock Take in the Pocket!' : 'Analog Calibration Gauge'}
     >
       {/* Rackmount hardware corner hex bolts */}
       <div className="absolute top-1 left-1 w-1.5 h-1.5 rounded-full bg-stone-700 border border-stone-600 shadow-inner flex items-center justify-center text-[7px] text-stone-400 font-mono">
@@ -159,7 +260,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
       {/* Meter Header Label */}
       <div className="flex justify-between items-center px-3 mb-1 text-[9px] font-mono tracking-widest text-stone-400">
         <span>TAKE CALIBRATION</span>
-        <span aria-live="polite" className={isInPocket ? 'text-amber-400 font-bold' : needlePos > goldMax ? 'text-red-400 font-bold' : 'text-teal-300 font-bold'}>
+        <span aria-live="polite" className={isPaused ? 'text-amber-300 font-bold bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30 animate-pulse' : isInPocket ? 'text-amber-400 font-bold' : needlePos > goldMax ? 'text-red-400 font-bold' : 'text-teal-300 font-bold'}>
           {meterFeedback}
         </span>
         <span>+4 dBu</span>
@@ -174,6 +275,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
         aria-valuemax={100}
         aria-valuenow={Math.round(needlePos * 100)}
         aria-valuetext={`${meterFeedback}. Target is ${Math.round(goldMin * 100)} to ${Math.round(goldMax * 100)}.`}
+        data-needle-state={needleState}
       >
         {/* Arc Track / Pocket Highlight */}
         <div className="relative w-full h-4 bg-stone-800/80 rounded-[1px] overflow-hidden flex">
@@ -198,10 +300,10 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
         {/* Needle Marker Indicator */}
         <div className="relative w-full h-6 flex items-center">
           <div
-            className="absolute top-0 bottom-0 w-1.5 bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,1)]"
+            className={`absolute top-0 bottom-0 w-1.5 ${needleBarClass}`}
             style={{ left: `${needlePos * 100}%`, transform: 'translateX(-50%)' }}
           >
-            <div className="w-3 h-3 -top-1.5 -left-0.75 absolute bg-red-500 rounded-full shadow-[0_0_7px_rgba(239,68,68,0.95)]" />
+            <div className={`w-3 h-3 -top-1.5 -left-0.75 absolute rounded-full ${needleTipClass}`} />
           </div>
         </div>
 
@@ -214,6 +316,23 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
           <span className="text-red-400">+6dB</span>
         </div>
       </div>
+
+      {/* Auto-lock fallback drain: the console check always resolves itself. */}
+      {!reducedMotionUi && (
+        <div className="mt-1" data-testid="auto-lock-drain">
+          <div className="flex items-center justify-between text-[7px] font-mono tracking-widest text-stone-500">
+            <span>AUTO-LOCK</span>
+            {autoLockLeft <= 0.25 && <span className="text-red-400 font-bold animate-pulse">LOCKING…</span>}
+          </div>
+          <div className="h-0.5 w-full bg-stone-800/80 overflow-hidden">
+            <div
+              className={autoLockLeft <= 0.25 ? 'h-full bg-red-500/80' : 'h-full bg-teal-400/50'}
+              style={{ width: `${autoLockLeft * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+
 
       {/* Dynamic 60fps Lock Button */}
       <button
@@ -239,3 +358,4 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
     </div>
   );
 };
+

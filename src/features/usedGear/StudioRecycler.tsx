@@ -6,6 +6,8 @@ import GearMaintenanceGame from '@/components/minigames/GearMaintenanceGame';
 import CrateUnboxingModal from '@/features/boxDrops/CrateUnboxingModal';
 import { toBoxEquipmentItem, type Era } from '@/features/boxDrops/lootGenerator';
 import { applyGearAction, maintenanceQuote, type GearAction } from './economy';
+import { isFlightCaseSystemUnlocked } from '@/economy/flightCaseEconomy';
+import { FLIGHT_CASE_UNLOCK_LEVEL } from '@/data/flightCases';
 import { conditionBand, isMaintainable, reliabilityDescription } from './condition';
 import { eraYear, generateCrateGear, resaleValue } from './generation';
 
@@ -43,10 +45,13 @@ export function StudioRecycler({ gameState, setGameState }: StudioRecyclerProps)
         <Button className="min-h-11" size="sm" disabled={listing.purchased || gameState.money < listing.askingPrice} onClick={() => act({ type: 'buy', listingId: listing.id })}>{listing.purchased ? 'Purchased' : 'Buy used gear'}</Button>
       </article>)}
     </div>
-    {!!gameState.pendingCrates?.length && <div className="space-y-2">
+    {!!gameState.pendingCrates?.length && isFlightCaseSystemUnlocked(gameState) && <div className="space-y-2">
       <p className="font-medium">Earned finds</p>
       {gameState.pendingCrates.map(pending => <Button key={pending.id} variant="outline" className="min-h-11" onClick={() => setOpenCrateId(pending.id)}>Open earned case · {pending.source.replace(/_/g, ' ')}</Button>)}
     </div>}
+    {!!gameState.pendingCrates?.length && !isFlightCaseSystemUnlocked(gameState) && (
+      <p className="text-xs text-gray-400">{gameState.pendingCrates.length} sealed case{gameState.pendingCrates.length === 1 ? '' : 's'} waiting — flight cases unlock at producer level {FLIGHT_CASE_UNLOCK_LEVEL}.</p>
+    )}
     {!!gameState.caseFinds?.length && <div className="space-y-2" aria-label="Stashed case finds">
       <p className="font-medium">Stashed case finds</p>
       {gameState.caseFinds.map(find => <div key={find.id} className="rounded border border-gray-700 p-2 space-y-1">

@@ -4,11 +4,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, Zap } from 'lucide-react'; // Removed Users
-import { GameState, Project, GameNotification, FocusAllocation } from '@/types/game';
+import { GameState, Project, GameNotification, FocusAllocation, SessionIntervention } from '@/types/game';
 import { ProgressionSystem, ProgressionStatus } from '@/services/ProgressionSystem';
 import { MultiProjectDashboard } from '@/components/MultiProjectDashboard';
 import { ActiveProject } from '@/components/ActiveProject';
-import { MinigameType } from '@/components/minigames/MinigameManager';
 
 interface ProgressiveProjectInterfaceProps {
   gameState: GameState;
@@ -19,7 +18,7 @@ interface ProgressiveProjectInterfaceProps {
   onMinigameReward?: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => void;
   onProjectComplete?: (completedProject: Project) => void;
   onProjectSelect?: (project: Project) => void;
-  autoTriggeredMinigame?: { type: MinigameType; reason: string } | null;
+  autoTriggeredMinigame?: SessionIntervention | null;
   clearAutoTriggeredMinigame?: () => void;
 }
 

@@ -10,6 +10,7 @@ import { bookGems, earn, spend } from './ledger';
 import {
   FLIGHT_CASES,
   FLIGHT_CASE_TIER_ORDER,
+  FLIGHT_CASE_UNLOCK_LEVEL,
   legacyTierToFlightCase,
   type FlightCaseTier,
 } from '@/data/flightCases';
@@ -53,6 +54,31 @@ export const getGems = (state: GameState): number => state.gems ?? 0;
 
 export function isCaseUnlocked(state: GameState, tier: FlightCaseTier): boolean {
   return state.currentDay >= FLIGHT_CASES[tier].unlockDay;
+}
+
+/** Producer-level gate for the whole flight-case system (bead fec). */
+export function isFlightCaseSystemUnlocked(state: Pick<GameState, 'playerData'>): boolean {
+  return (state.playerData?.level ?? 1) >= FLIGHT_CASE_UNLOCK_LEVEL;
+}
+
+/**
+ * Level-up case reward. Milestone levels grant an escalating case plus a few
+ * gems; every other level grants nothing extra (perk points already cover it).
+ * Returns null when the level carries no case reward.
+ */
+export function rewardForProducerLevel(level: number): RewardBundle | null {
+  switch (level) {
+    case FLIGHT_CASE_UNLOCK_LEVEL:
+      return { gems: 5, cases: [{ tier: 'road_case', source: 'level_reward' }], memo: 'Flight cases unlocked' };
+    case 5:
+      return { gems: 8, cases: [{ tier: 'tour_trunk', source: 'level_reward' }], memo: 'Producer level 5 case' };
+    case 8:
+      return { gems: 12, cases: [{ tier: 'vintage_flight_case', source: 'level_reward' }], memo: 'Producer level 8 case' };
+    case 12:
+      return { gems: 20, cases: [{ tier: 'holy_grail_vault', source: 'level_reward' }], memo: 'Producer level 12 case' };
+    default:
+      return null;
+  }
 }
 
 export function resolveCrateTier(crate: PendingCrate): FlightCaseTier {

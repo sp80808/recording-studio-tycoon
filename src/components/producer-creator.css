@@ -1,0 +1,76 @@
+/* A dressing mirror: five spatial controls, one contextual detail tray. */
+.producer-dressing { width: 100%; max-width: 36rem; margin: 1.25rem auto 0; text-align: left; color: var(--rst-ink, #f3ecdd); }
+.dressing-name { display: grid; gap: .4rem; font-size: 10px; text-transform: uppercase; letter-spacing: .18em; font-weight: 700; color: var(--rst-brass-200); }
+.dressing-name input { width: 100%; font-size: 20px; min-height: 48px; }
+.dressing-tools { display: flex; justify-content: space-between; gap: 4px; margin: .6rem 0; }
+.dressing-tools button { display: flex; gap: 6px; align-items: center; justify-content: center; min-height: 44px; padding: 0 10px; font-size: 12px; border-radius: 8px; color: var(--rst-brass-200); }
+.dressing-tools button:disabled { opacity: .3; }
+.dressing-tools button[aria-pressed=true] { background: #e6b86620; }
+.dressing-stage { position: relative; height: 366px; border: 1px solid var(--rst-line-strong); border-radius: 18px 18px 0 0; background: radial-gradient(ellipse at 50% 42%, #bd883c29, transparent 65%), linear-gradient(90deg, #08070688, #201a1480, #08070688); overflow: hidden; }
+.dressing-stage::after { content: ''; position: absolute; bottom: 15px; left: 25%; right: 25%; height: 22px; border: 1px solid #e6b86624; border-radius: 50%; pointer-events: none; }
+.dressing-preview { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 1; }
+.dressing-preview svg { max-width: none; }
+.dressing-part { position: absolute; left: 16px; right: 16px; display: flex; align-items: center; justify-content: space-between; height: 44px; }
+.dressing-part--hair { top: 33px; }
+.dressing-part--accessory { top: 94px; }
+.dressing-part--shirt { top: 161px; }
+.dressing-part--pants { top: 237px; }
+.dressing-part--shoes { top: 303px; }
+.dressing-arrow { position: relative; display: grid; place-items: center; width: 44px; min-width: 44px; height: 44px; padding: 0; border: 1px solid #e6b86635; border-radius: 50%; background: #17130ee6; color: var(--rst-brass-200); z-index: 2; transition: background .15s, border-color .15s, transform .15s; }
+.dressing-part[data-active=true] .dressing-arrow { background: #e6b866; border-color: #e6b866; color: #231b0f; }
+.dressing-arrow:hover { border-color: #ffdc9d; background: #77552a; }
+.dressing-arrow:active { transform: scale(.9); }
+.dressing-part-label { position: absolute; left: 48px; z-index: 2; min-height: 44px; padding: 0 8px; font-size: 11px; color: #b7a895; }
+.dressing-part[data-active=true] .dressing-part-label { color: #ffe0a8; }
+.dressing-guide { position: absolute; left: 112px; right: 50px; height: 1px; background: linear-gradient(90deg, #e6b86644, transparent 28%, transparent 72%, #e6b86644); opacity: .35; }
+.dressing-part[data-active=true] .dressing-guide { opacity: 1; }
+.dressing-detail { min-height: 146px; border: 1px solid var(--rst-line-strong); border-top: 0; border-radius: 0 0 18px 18px; background: #17130fee; padding: 16px 20px; }
+.dressing-detail-heading { display: flex; align-items: baseline; gap: 12px; }
+.dressing-detail-heading > span { font-size: 10px; color: var(--rst-brass-300); text-transform: uppercase; letter-spacing: .14em; }
+.dressing-detail-heading strong { font-family: var(--rst-serif); font-size: 20px; font-weight: 500; text-transform: capitalize; }
+.dressing-detail-heading small { margin-left: auto; color: #b7a895; font-size: 11px; white-space: nowrap; }
+.dressing-colour-label { margin: 10px 0 2px; color: #b7a895; font-size: 11px; text-transform: capitalize; }
+.dressing-swatches { display: flex; flex-wrap: wrap; gap: 0; }
+.dressing-swatches button { width: 44px; height: 44px; position: relative; padding: 6px; flex: 0 0 44px; border-radius: 50%; }
+.dressing-swatches button::before { content: ''; display: block; width: 100%; height: 100%; background: var(--swatch); border-radius: 50%; border: 2px solid #ffffff40; }
+.dressing-swatches button[aria-pressed=true]::before { outline: 2px solid #f6d79c; outline-offset: 2px; }
+.dressing-swatches button[aria-pressed=true]::after { content: ''; position: absolute; width: 5px; height: 5px; background: #fff; border: 1px solid #17130f; border-radius: 50%; bottom: 3px; left: 19px; }
+.dressing-builds { display: flex; gap: 6px; margin-top: 8px; }
+.dressing-builds button { flex: 1; min-height: 44px; border-radius: 8px; border: 1px solid #e6b86630; font-size: 12px; }
+.dressing-builds button[aria-pressed=true] { background: #e6b86622; border-color: #e6b866; color: #ffe0a8; }
+.dressing-hint, .dressing-help { font-size: 12px; line-height: 1.5; color: #b7a895; }
+.dressing-hint { margin-top: 16px; max-width: 30ch; }
+.dressing-help { text-align: center; margin-top: 10px; }
+.producer-dressing button { touch-action: manipulation; }
+.producer-dressing button:focus-visible { outline: 2px solid #ffe0a8; outline-offset: 3px; }
+@media (max-width: 479px) {
+  .dressing-part { left: 8px; right: 8px; }
+  .dressing-part-label { left: 44px; padding: 0; min-height: 44px; width: 54px; font-size: 10px; }
+  .dressing-guide { left: 50px; }
+  .dressing-tools button { padding: 0 4px; font-size: 11px; }
+  .dressing-detail { padding: 12px 2px; min-height: 130px; }
+  .dressing-detail-heading, .dressing-colour-label, .dressing-builds, .dressing-hint { margin-left: 10px; margin-right: 10px; }
+  .dressing-swatches { flex-wrap: nowrap; overflow-x: auto; padding: 3px 0; }
+  .dressing-stage { height: 310px; }
+  .dressing-preview { top: 0; transform: translateX(-50%) scale(.85); transform-origin: top center; }
+  .dressing-part--hair { top: 22px; }
+  .dressing-part--accessory { top: 73px; }
+  .dressing-part--shirt { top: 128px; }
+  .dressing-part--pants { top: 193px; }
+  .dressing-part--shoes { top: 250px; }
+  .career-character-step > div > .animate-rst-rise { margin-top: 12px; }
+  .career-character-step .rst-kicker, .career-character-step .rst-body { display: none; }
+  .career-character-step h1 { font-size: 28px; }
+  .career-character-step footer p { display: none; }
+  .career-character-step footer button { width: 100%; min-height: 44px; }
+  .producer-dressing { margin-top: 14px; }
+  .dressing-name input { min-height: 44px; }
+  .dressing-tools { margin: 4px 0; }
+  .dressing-help { font-size: 11px; }
+  .dressing-swatches button { width: 44px; flex-basis: 44px; padding: 7px; }
+  .dressing-detail-heading { gap: 8px; }
+  .dressing-detail-heading strong { font-size: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dressing-arrow { transition: none; }
+}

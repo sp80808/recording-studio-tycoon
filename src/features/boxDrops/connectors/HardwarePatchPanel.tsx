@@ -324,7 +324,7 @@ export const HardwarePatchPanel: React.FC<HardwarePatchPanelProps> = ({
           <span>
             {isPatched
               ? `SIGNAL LOCKED: ${activeSocket === 'xlr' ? 'XLR BALANCED (+4dBu)' : '1/4" INSERT (TUBE DRIVE)'} • 600Ω • COND ${condition}%`
-              : 'CLICK ANY JACK OR CABLE TO AUDITION ANALOG SIGNAL'}
+              : 'DRAG THE PLUG OR CLICK A JACK TO AUDITION'}
           </span>
         </span>
         {isPatched && (

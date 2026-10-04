@@ -61,11 +61,12 @@ export interface GamepadNavContextValue {
 const GamepadNavContext = createContext<GamepadNavContextValue | undefined>(undefined);
 
 export interface GamepadNavProviderProps {
+  enabled?: boolean;
   children: ReactNode;
   onTabChange?: (tab: DockTabId) => void;
 }
 
-export const GamepadNavProvider: React.FC<GamepadNavProviderProps> = ({ children, onTabChange }) => {
+export const GamepadNavProvider: React.FC<GamepadNavProviderProps> = ({ children, onTabChange, enabled = true }) => {
   const { settings } = useSettings();
   const gamepad = useGamepad({
     preferredLayout: settings?.controllerLayout,
@@ -102,17 +103,17 @@ export const GamepadNavProvider: React.FC<GamepadNavProviderProps> = ({ children
 
   // Bumper tab cycling
   useEffect(() => {
-    if (!gamepad.isConnected) return;
+    if (!gamepad.isConnected || !enabled) return;
     if (gamepad.justPressed.lb) {
       cycleDockTab('prev');
     } else if (gamepad.justPressed.rb) {
       cycleDockTab('next');
     }
-  }, [gamepad.isConnected, gamepad.justPressed.lb, gamepad.justPressed.rb, cycleDockTab]);
+  }, [enabled, gamepad.isConnected, gamepad.justPressed.lb, gamepad.justPressed.rb, cycleDockTab]);
 
   // Global registered shortcuts or default menu activation (A, B, X, Y)
   useEffect(() => {
-    if (!gamepad.isConnected) return;
+    if (!gamepad.isConnected || !enabled) return;
 
     if (gamepad.justPressed.south) {
       if (shortcutsRef.current.has('south')) {
@@ -150,6 +151,7 @@ export const GamepadNavProvider: React.FC<GamepadNavProviderProps> = ({ children
       shortcutsRef.current.get('north')?.();
     }
   }, [
+    enabled,
     gamepad.isConnected,
     gamepad.justPressed.south,
     gamepad.justPressed.east,
@@ -160,7 +162,7 @@ export const GamepadNavProvider: React.FC<GamepadNavProviderProps> = ({ children
 
   // Trigger and Right Stick scrolling for menus/dialogs
   useEffect(() => {
-    if (!gamepad.isConnected) return;
+    if (!gamepad.isConnected || !enabled) return;
 
     const scrollDown = gamepad.triggers.right;
     const scrollUp = gamepad.triggers.left;
@@ -175,11 +177,11 @@ export const GamepadNavProvider: React.FC<GamepadNavProviderProps> = ({ children
         scrollable.scrollTop += scrollDelta;
       }
     }
-  }, [gamepad.isConnected, gamepad.triggers.left, gamepad.triggers.right, gamepad.rightStick.y]);
+  }, [enabled, gamepad.isConnected, gamepad.triggers.left, gamepad.triggers.right, gamepad.rightStick.y]);
 
   // Spatial navigation via D-pad and Left Stick, with specialized slider controls
   useEffect(() => {
-    if (!gamepad.isConnected) return;
+    if (!gamepad.isConnected || !enabled) return;
 
     const stickThreshold = 0.45;
     const prev = prevStickRef.current;
@@ -243,6 +245,7 @@ export const GamepadNavProvider: React.FC<GamepadNavProviderProps> = ({ children
       gamepad.triggerHaptic(0.1, 0.15, 30);
     }
   }, [
+    enabled,
     gamepad.isConnected,
     gamepad.justPressed.dpadUp,
     gamepad.justPressed.dpadDown,

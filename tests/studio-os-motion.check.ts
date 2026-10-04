@@ -135,11 +135,12 @@ test('Studio OS V2 Motion (#75) - Action Feedback Timing Bounds (~150-250ms)', (
   const staffDelay = parseInt(staffMatch[1], 10);
   assert.ok(staffDelay >= 150 && staffDelay <= 250, `Staff toggle delay (${staffDelay}ms) is within 150-250ms`);
 
-  // Intervention delegation in ActiveProject: ~180ms
-  const delegateMatch = activeProjectCode.match(/handleDelegateIntervention[\s\S]*?setTimeout\([\s\S]*?,\s*(\d+)\s*\);/);
-  assert.ok(delegateMatch, 'handleDelegateIntervention has timed tactile feedback');
-  const delegateDelay = parseInt(delegateMatch[1], 10);
-  assert.ok(delegateDelay >= 150 && delegateDelay <= 250, `Delegate delay (${delegateDelay}ms) is within 150-250ms`);
+  // Delegation commits immediately so closing the surface cannot leave a delayed reward.
+  const delegateBody = activeProjectCode.slice(activeProjectCode.indexOf('const handleDelegateIntervention ='), activeProjectCode.indexOf('const handleSkipIntervention ='));
+  assert.match(delegateBody, /claimVisibleOpportunity\(autoTriggeredMinigame\)/, 'Delegation claims the current visible opportunity');
+  assert.match(delegateBody, /onMinigameReward\?\.\(/, 'Delegation commits through the existing reward authority');
+  assert.doesNotMatch(delegateBody, /setTimeout/, 'Delegation never defers authoritative rewards');
+  assert.match(delegateBody, /playSound\('reward'/, 'Delegation retains immediate tactile feedback');
 });
 
 test('Studio OS V2 Motion (#75) - Settlement & Milestone Gating', () => {
@@ -148,7 +149,7 @@ test('Studio OS V2 Motion (#75) - Settlement & Milestone Gating', () => {
   const celebrationCode = read('src/components/ProjectCompletionCelebration.tsx');
 
   // ActiveProject milestone check: reserves full-screen celebration for Gold takes (Project carries no quality score; the old Platinum/score branches were dead)
-  assert.match(activeProjectCode, /const isMilestone = verdict\.grade === 'Gold';/, 'Milestone check gates celebration on a Gold take');
+  assert.match(activeProjectCode, /const isMilestone = presentation === 'panel' && verdict\.grade === 'Gold';/, 'Full-screen milestone celebration requires both deep panel presentation and a Gold take');
   assert.match(activeProjectCode, /if \(isMilestone\) \{[\s\S]*?setShowCelebration\(true\);[\s\S]*?\} else \{[\s\S]*?onProjectComplete\?\.([\s\S]*?)\}/, 'Routine projects bypass full-screen celebration directly to review');
 
   // Review modal uses MotionNumber for compact deltas

@@ -18,7 +18,7 @@ let n = 0;
 const ok = (c: boolean, m: string) => { if (!c) throw new Error(`FAIL: ${m}`); n++; console.log(`PASS: ${m}`); };
 
 // Data shape.
-ok(CITIES.length === 6 && new Set(CITIES.map((c) => c.id)).size === 6, 'six distinct cities');
+ok(CITIES.length === 8 && new Set(CITIES.map((c) => c.id)).size === CITIES.length, 'eight distinct cities');
 ok(CITIES.every((c) => c.hotGenres.length >= 3 && c.coolGenres.length >= 1 && c.names.first.length >= 8 && c.names.last.length >= 8), 'every city has taste and name pools');
 ok(CITIES.every((c) => c.hotGenres.every((g) => !c.coolGenres.includes(g))), 'no genre is both hot and cool in a city');
 ok(isCityId('london') && !isCityId('atlantis') && !isCityId(undefined), 'city id guard');
@@ -88,7 +88,7 @@ ok(CITY_EVENTS.every((e) => e.options.every((o) => o.effects.every((x) => !('amo
 const factsFor = (cityId?: string) => buildFacts({ ...ldn, cityId: cityId as never, reputation: 40 });
 for (const c of CITIES) {
   const mine = CITY_EVENTS.filter((e) => e.eligible(factsFor(c.id)));
-  ok(mine.length === 1 && mine[0].id.startsWith(({ 'los-angeles': 'la', nashville: 'nashville', london: 'london', berlin: 'berlin', tokyo: 'tokyo', rio: 'rio' } as Record<string, string>)[c.id]), `${c.name}: only its own local event is eligible`);
+  ok(mine.length === 1 && mine[0].id.startsWith(({ 'los-angeles': 'la', nashville: 'nashville', london: 'london', berlin: 'berlin', tokyo: 'tokyo', rio: 'rio', detroit: 'detroit', lagos: 'lagos' } as Record<string, string>)[c.id]), `${c.name}: only its own local event is eligible`);
 }
 ok(CITY_EVENTS.every((e) => !e.eligible(factsFor(undefined))), 'legacy saves never see local events');
 // Era-aware currency (display only).
@@ -124,7 +124,7 @@ for (const c of CITIES) {
 }
 ok(MORE_CITY_EVENTS.every((e) => !e.eligible(factsFor(undefined)) && ids.includes(e.id)), 'extra local events are gated and registered');
 ok(MORE_CITY_EVENTS.every((e) => e.options.every((o) => validateEffects(o.effects).length === o.effects.length) && e.options.some((o) => o.id === e.defaultOptionId)), 'extra events are valid with real defaults');
-ok(new Set([...CITY_EVENTS, ...MORE_CITY_EVENTS].map((e) => e.narrativeKey)).size === 18, 'eighteen distinct local events');
+ok(new Set([...CITY_EVENTS, ...MORE_CITY_EVENTS].map((e) => e.narrativeKey)).size === CITIES.length * 3, 'three distinct local events per city');
 console.log(`city-selection: ${n} checks passed`);
 
 // Wall tint: subtle, per-city, neutral for legacy saves.

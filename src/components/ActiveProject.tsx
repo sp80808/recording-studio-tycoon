@@ -1,3 +1,5 @@
+import { worldTargetForIntervention } from '@/session/worldSessionActions';
+import { RECORDING_INTENTS, matchesRecordingIntent } from '@/session/recordingIntent';
 import { StatIcon } from '@/components/icons/GameIcons';
 import { trackIntervention } from '@/telemetry/instrument';
 import { money } from '@/utils/displayMoney';
@@ -52,7 +54,7 @@ import {
 } from '@/utils/stageUtils';
 
 import { earn } from '@/economy/ledger';
-import { GameState, FocusAllocation, Project, PlayerData } from '@/types/game';
+import { GameState, FocusAllocation, Project, PlayerData, SessionIntervention } from '@/types/game';
 import { useFeatureFlag } from '@/stores/featureFlagStore';
 import ProductionQueuePanel from '@/components/ProductionQueue/ProductionQueuePanel';
 import { rankStaffForProject } from '@/utils/staffFitUtils';
@@ -67,19 +69,29 @@ import { OutsideHelpCard } from '@/components/OutsideHelpCard';
 
 interface ActiveProjectProps {
   gameState: GameState;
+  presentation?: 'panel' | 'world';
+  controlsEnabled?: boolean;
+  interventionOnly?: boolean;
+  onCloseConsole?: () => void;
+  onRest?: () => void;
   setGameState: (state: GameState | ((prev: GameState) => GameState)) => void; // Made non-optional as it's crucial for updating project focus
   // focusAllocation prop is removed, as it will be derived from gameState.activeProject.focusAllocation
   // setFocusAllocation prop is removed, will be handled by a new specific updater function if manual adjustment is kept, or via setGameState
   performDailyWork?: (options?: import('@/hooks/useStageWork').PerformDailyWorkOptions) => { isComplete: boolean; finalProjectData?: Project } | undefined;
-  onMinigameReward?: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string, rawScore?: number) => void;
+  onMinigameReward?: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string, rawScore?: number, opportunityId?: string) => void;
   onProjectComplete?: (completedProject: Project) => void;
   onProjectSelect?: (project: Project) => void;
-  autoTriggeredMinigame?: { type: MinigameType; reason: string } | null;
+  autoTriggeredMinigame?: SessionIntervention | null;
   clearAutoTriggeredMinigame?: () => void;
 }
 
 export const ActiveProject: React.FC<ActiveProjectProps> = ({
   gameState,
+  presentation = 'panel',
+  controlsEnabled = true,
+  interventionOnly = false,
+  onCloseConsole,
+  onRest,
   setGameState, // Now non-optional
   performDailyWork,
   onMinigameReward,
@@ -90,6 +102,10 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 }) => {
   const { t } = useTranslation();
   const [showMinigame, setShowMinigame] = useState(false);
+  const minigameOpportunityRef = useRef<SessionIntervention | null>(null);
+  const claimedOpportunityIdsRef = useRef(new Set<string>());
+  const latestRewardOwnerRef = useRef({ controlsEnabled, projectId: gameState.activeProject?.id, stageIndex: gameState.activeProject?.currentStageIndex, opportunityId: autoTriggeredMinigame?.id });
+  latestRewardOwnerRef.current = { controlsEnabled, projectId: gameState.activeProject?.id, stageIndex: gameState.activeProject?.currentStageIndex, opportunityId: autoTriggeredMinigame?.id };
   const [selectedMinigame, setSelectedMinigame] = useState<MinigameType>('rhythm');
   const [lastGains, setLastGains] = useState<{ creativity: number; technical: number }>({ creativity: 0, technical: 0 });
   const [showBlobAnimation, setShowBlobAnimation] = useState(false);
@@ -202,6 +218,13 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const isProjectComplete = !!gameState.activeProject && gameState.activeProject.stages.every(stage => stage.completed);
   const rearmTimerRef = useRef<number | null>(null);
 
+  // Active slider channel for gamepad spatial control (Performance, Sound Capture, Layering)
+  const [selectedSliderChannel, setSelectedSliderChannel] = useState<'performance' | 'soundCapture' | 'layering'>('performance');
+  const handleFocusChangeRef = useRef<(key: keyof FocusAllocation, value: number) => void>(() => {});
+  const handleAutoAlignRef = useRef<() => void>(() => {});
+  const currentFocusRef = useRef<FocusAllocation>({ performance: 33, soundCapture: 33, layering: 34 });
+  currentFocusRef.current = gameState.activeProject?.focusAllocation || { performance: 33, soundCapture: 33, layering: 34 };
+
   const clearTakeRearm = () => {
     if (rearmTimerRef.current !== null) {
       window.clearTimeout(rearmTimerRef.current);
@@ -211,39 +234,112 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
   useEffect(() => () => clearTakeRearm(), []);
 
+  useEffect(() => {
+    if (!controlsEnabled) {
+      clearTakeRearm();
+      setTakeState('idle');
+      setShowMinigame(false);
+    }
+  }, [controlsEnabled]);
+
   // Shared chrome host: hide First Session coach while Take Calibration owns the dock.
   useEffect(() => {
     setTakeCalibrationFocused(takeState === 'tracking');
     return () => setTakeCalibrationFocused(false);
   }, [takeState, setTakeCalibrationFocused]);
 
-  // Gamepad take shortcuts (hoisted so the hook order stays stable when a project
+  useEffect(() => {
+    useUiChromeStore.getState().setConsoleFocused(presentation === 'world' && controlsEnabled);
+    return () => useUiChromeStore.getState().setConsoleFocused(false);
+  }, [presentation, controlsEnabled]);
+
+  // Gamepad take shortcuts & slider tuning (hoisted so the hook order stays stable when a project
   // settles — Rules of Hooks, GH-65). Handlers are only reached with a live project.
   useEffect(() => {
-    if (!gameState.activeProject) return;
-    if (!gamepad.isConnected || takeState !== 'idle') return;
+    if (!gameState.activeProject || !controlsEnabled || !gamepad.isConnected) return;
 
-    if (gamepad.justPressed.south) {
-      if (availableEnergy > 0 && !isProjectComplete) {
-        handleArmTake();
-        gamepad.triggerHaptic(0.2, 0.4, 60);
+    // Channel switching: LB / RB or D-pad Up / Down
+    if (gamepad.justPressed.lb) {
+      setSelectedSliderChannel((prev) => (prev === 'layering' ? 'soundCapture' : prev === 'soundCapture' ? 'performance' : 'layering'));
+      gamepad.triggerHaptic(0.1, 0.2, 30);
+    } else if (gamepad.justPressed.rb) {
+      setSelectedSliderChannel((prev) => (prev === 'performance' ? 'soundCapture' : prev === 'soundCapture' ? 'layering' : 'performance'));
+      gamepad.triggerHaptic(0.1, 0.2, 30);
+    } else if (gamepad.justPressed.dpadUp) {
+      setSelectedSliderChannel((prev) => (prev === 'layering' ? 'soundCapture' : 'performance'));
+      gamepad.triggerHaptic(0.08, 0.15, 25);
+    } else if (gamepad.justPressed.dpadDown) {
+      setSelectedSliderChannel((prev) => (prev === 'performance' ? 'soundCapture' : 'layering'));
+      gamepad.triggerHaptic(0.08, 0.15, 25);
+    }
+
+    // Slider adjustment: D-pad Left / Right
+    if (gamepad.justPressed.dpadLeft) {
+      const cur = currentFocusRef.current[selectedSliderChannel] || 0;
+      handleFocusChangeRef.current(selectedSliderChannel, Math.max(0, cur - 5));
+      gamepad.triggerHaptic(0.08, 0.15, 25);
+    } else if (gamepad.justPressed.dpadRight) {
+      const cur = currentFocusRef.current[selectedSliderChannel] || 0;
+      handleFocusChangeRef.current(selectedSliderChannel, Math.min(100, cur + 5));
+      gamepad.triggerHaptic(0.08, 0.15, 25);
+    }
+
+    // Left Stick horizontal smooth adjustment
+    const stickThreshold = 0.5;
+    if (Math.abs(gamepad.leftStick.x) > stickThreshold) {
+      const now = performance.now();
+      if (now - lastSliderAudioRef.current > 100) {
+        lastSliderAudioRef.current = now;
+        const cur = currentFocusRef.current[selectedSliderChannel] || 0;
+        const delta = gamepad.leftStick.x > 0 ? 5 : -5;
+        handleFocusChangeRef.current(selectedSliderChannel, Math.max(0, Math.min(100, cur + delta)));
+        gamepad.triggerHaptic(0.05, 0.1, 20);
       }
-    } else if (gamepad.justPressed.north || gamepad.justPressed.west) {
+    }
+
+    // Auto-Align: North (Y on Xbox, △ on PS, X on Switch)
+    if (gamepad.justPressed.north) {
+      if (canUseOptimalFocusButton) {
+        handleAutoAlignRef.current();
+        gamepad.triggerHaptic(0.2, 0.4, 50);
+      }
+    }
+
+    // Overdrive: West (X on Xbox, □ on PS, Y on Switch)
+    if (gamepad.justPressed.west) {
       if ((availableEnergy >= 2 || overdriveArmed) && !isProjectComplete) {
         toggleOverdrive();
         gamepad.triggerHaptic(0.2, 0.3, 50);
       }
     }
+
+    // Arm take when idle: South (A / ✕)
+    if (takeState === 'idle' && gamepad.justPressed.south) {
+      if (availableEnergy > 0 && !isProjectComplete) {
+        handleArmTake();
+        gamepad.triggerHaptic(0.2, 0.4, 60);
+      }
+    }
   }, [
     gameState.activeProject,
+    controlsEnabled,
     gamepad.isConnected,
     gamepad.justPressed.south,
     gamepad.justPressed.north,
     gamepad.justPressed.west,
+    gamepad.justPressed.lb,
+    gamepad.justPressed.rb,
+    gamepad.justPressed.dpadUp,
+    gamepad.justPressed.dpadDown,
+    gamepad.justPressed.dpadLeft,
+    gamepad.justPressed.dpadRight,
+    gamepad.leftStick.x,
+    selectedSliderChannel,
     takeState,
     availableEnergy,
     overdriveArmed,
     isProjectComplete,
+    canUseOptimalFocusButton,
   ]);
 
   if (!gameState.activeProject) {
@@ -315,20 +411,27 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     aggregatedSkills.arrangement = staffWithArrangementSkills > 0 ? totalArrangementScore / staffWithArrangementSkills : 0;
   }
 
+  const claimVisibleOpportunity = (opportunity: SessionIntervention): boolean => {
+    const owner = latestRewardOwnerRef.current;
+    if (!owner.controlsEnabled || owner.projectId !== opportunity.projectId || owner.stageIndex !== opportunity.stageIndex || owner.opportunityId !== opportunity.id || claimedOpportunityIdsRef.current.has(opportunity.id)) return false;
+    claimedOpportunityIdsRef.current.add(opportunity.id);
+    return true;
+  };
+
   const handleStartIntervention = () => {
-    if (!autoTriggeredMinigame) return;
+    if (!controlsEnabled || !autoTriggeredMinigame) return;
     trackIntervention('intervened', gameState.currentDay, autoTriggeredMinigame.type);
+    minigameOpportunityRef.current = autoTriggeredMinigame;
     playSound('start_minigame', 0.55);
-    window.setTimeout(() => {
-      setSelectedMinigame(autoTriggeredMinigame.type);
-      setShowMinigame(true);
-    }, 150);
+    setSelectedMinigame(autoTriggeredMinigame.type);
+    setShowMinigame(true);
   };
 
   const handleDelegateIntervention = () => {
-    if (!autoTriggeredMinigame || !bestDelegate) return;
+    if (!controlsEnabled || !autoTriggeredMinigame || !bestDelegate) return;
     trackIntervention('delegated', gameState.currentDay, autoTriggeredMinigame.type);
 
+    if (!claimVisibleOpportunity(autoTriggeredMinigame)) return;
     const { staff, fit } = bestDelegate;
     const baseBonus = Math.max(1, Math.min(8, Math.round(fit.score / 12)));
     const creativityLeaning = new Set<MinigameType>([
@@ -345,31 +448,30 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     const xpBonus = Math.max(1, Math.min(3, Math.floor(baseBonus / 2)));
 
     playSound('reward', 0.5);
-    // Tactile action feedback communicated within short beat (~180ms)
-    window.setTimeout(() => {
-      onMinigameReward?.(
-        creativityBonus,
-        technicalBonus,
-        xpBonus,
-        autoTriggeredMinigame.type
-      );
-      clearAutoTriggeredMinigame?.();
+    // Commit the existing reward immediately; feedback must not defer authority.
+    onMinigameReward?.(
+      creativityBonus,
+      technicalBonus,
+      xpBonus,
+      autoTriggeredMinigame.type,
+      undefined,
+      autoTriggeredMinigame.id
+    );
+    clearAutoTriggeredMinigame?.();
 
-      toast({
-        title: "👥 Intervention Delegated",
-        description: `${staff.name} handled it · ${fit.reasons.slice(0, 3).join(' · ')} · +${creativityBonus} C / +${technicalBonus} T`,
-        className: "bg-stone-800 border-stone-600 text-white",
-        duration: 3500
-      });
-    }, 180);
+    toast({
+      title: "👥 Intervention Delegated",
+      description: `${staff.name} handled it · ${fit.reasons.slice(0, 3).join(' · ')} · +${creativityBonus} C / +${technicalBonus} T`,
+      className: "bg-stone-800 border-stone-600 text-white",
+      duration: 3500
+    });
   };
 
   const handleSkipIntervention = () => {
+    if (!controlsEnabled) return;
     if (autoTriggeredMinigame) trackIntervention('skipped', gameState.currentDay, autoTriggeredMinigame.type);
     playSound('ui-click', 0.4);
-    window.setTimeout(() => {
-      clearAutoTriggeredMinigame?.();
-    }, 150);
+    clearAutoTriggeredMinigame?.();
   };
   // Get stage-specific focus labels and guidance, now considering staff skills for optimalFocus
   const stageFocusLabels = getStageFocusLabels(currentStage);
@@ -389,6 +491,8 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     _minigameType?: MinigameType,
     rawScore?: number
   ) => {
+    const opportunity = minigameOpportunityRef.current;
+    if (!opportunity || !claimVisibleOpportunity(opportunity)) return;
     const cappedCreativity = Math.min(12, Math.max(0, creativityBonus));
     const cappedTechnical = Math.min(12, Math.max(0, technicalBonus));
     const cappedXp = Math.min(5, Math.max(0, xpBonus));
@@ -403,7 +507,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
     playSound('success', 0.7);
     if (onMinigameReward) {
-      onMinigameReward(cappedCreativity, cappedTechnical, cappedXp, selectedMinigame, rawScore);
+      onMinigameReward(cappedCreativity, cappedTechnical, cappedXp, selectedMinigame, rawScore, opportunity.id);
     }
 
     setShowMinigame(false);
@@ -422,11 +526,11 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const energyCost = calculateTakeEnergyCost(availableEnergy, overdriveArmed, energySaver);
 
   const handleArmTake = () => {
-    if (availableEnergy <= 0 || isProjectComplete) return;
+    if (!controlsEnabled || availableEnergy <= 0 || isProjectComplete) return;
     clearTakeRearm();
     hapticTick(14);
     playSound('ui-click', 0.5);
-    if ((gameAudio as any).playGearSwitch) (gameAudio as any).playGearSwitch();
+    void gameAudio.playGearSwitch();
     setTakeState('tracking');
   };
 
@@ -437,13 +541,14 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   };
 
   const handleLockTake = (needlePosition: number) => {
+    if (!controlsEnabled || availableEnergy <= 0 || isProjectComplete) return;
     const timingBonus = getActiveBuffMagnitude(gameState.choreState, 'timing_bonus');
-    const verdict = evaluateTakeAccuracy(needlePosition, timingBonus);
+    const verdict = evaluateTakeAccuracy(needlePosition, timingBonus, settings.pocketMeterAssistance);
     clearTakeRearm();
     setTakeState('idle');
 
     // Trigger Tone.js chord synthesis + SFX
-    if ((gameAudio as any).playTakeChord) (gameAudio as any).playTakeChord(project.genre, verdict.grade);
+    void gameAudio.playTakeChord(project.genre, verdict.grade);
     triggerScreenShake('light');
     window.dispatchEvent(new CustomEvent<RewardPopDetail>(REWARD_POP_EVENT, {
       detail: {
@@ -460,7 +565,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     const technicalGain = Math.floor((baseTechnical * (projectFocus.soundCapture / 100) * 0.8 + baseTechnical * (projectFocus.layering / 100) * 0.4) * verdict.multiplier);
 
     setLastGains({ creativity: creativityGain, technical: technicalGain });
-    setShowBlobAnimation(true);
+    if (presentation === 'panel') setShowBlobAnimation(true);
 
     const energyBefore = availableEnergy;
     // Execute work in useStageWork with take bonuses
@@ -473,7 +578,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
     if (result?.isComplete && result.finalProjectData) {
       playSound('project-complete', 0.8);
-      const isMilestone = verdict.grade === 'Gold';
+      const isMilestone = presentation === 'panel' && verdict.grade === 'Gold';
       if (isMilestone) {
         setCelebrationDisplayData({ title: result.finalProjectData.title, genre: result.finalProjectData.genre });
         setProjectDataForCompletionCall(result.finalProjectData);
@@ -515,7 +620,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       rearmTimerRef.current = window.setTimeout(() => {
         rearmTimerRef.current = null;
         setTakeState('tracking');
-        if ((gameAudio as any).playGearSwitch) (gameAudio as any).playGearSwitch();
+        void gameAudio.playGearSwitch();
       }, TAKE_SESSION_PACING.postTakeRearmMs);
     }
   };
@@ -549,6 +654,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       ),
     }));
   };
+  handleFocusChangeRef.current = handleFocusChange;
 
   const handleAutoAlign = () => {
     const newFocus = {
@@ -565,6 +671,181 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     }));
     playSound('notification.wav', 0.4);
   };
+  handleAutoAlignRef.current = handleAutoAlign;
+
+  const stripLead = (l: string) => l.replace(/^[^\p{L}\p{N}]+/u, '');
+  const FOCUS_CHANNELS: Array<'performance' | 'soundCapture' | 'layering'> = ['performance', 'soundCapture', 'layering'];
+
+  if (presentation === 'world' && interventionOnly && autoTriggeredMinigame) {
+    const target = worldTargetForIntervention(autoTriggeredMinigame.type);
+    return <>
+      <section className="world-console" hidden={!controlsEnabled || showMinigame} aria-label="Session opportunity" data-rst-surface="contextual" data-rst-world-target={target}>
+        <header className="world-console-header"><h2 className="text-sm font-semibold">Session opportunity</h2><button type="button" className="rst-btn rst-btn-ghost" aria-label="Close opportunity" onClick={onCloseConsole}>×</button></header>
+        <p className="mb-3 text-sm">{autoTriggeredMinigame.reason}</p>
+        <div className="world-console-intents">
+          <button type="button" className="rst-btn rst-btn-primary" data-rst-action-id="intervention:start" onClick={handleStartIntervention}>Intervene</button>
+          <button type="button" className="rst-btn" data-rst-action-id="intervention:delegate" disabled={!bestDelegate} onClick={handleDelegateIntervention}>Delegate</button>
+          <button type="button" className="rst-btn rst-btn-ghost" data-rst-action-id="intervention:pass" onClick={handleSkipIntervention}>Pass</button>
+        </div>
+      </section>
+      <MinigameManager isOpen={controlsEnabled && showMinigame} gameType={selectedMinigame} onReward={handleMinigameReward} onClose={() => { setShowMinigame(false); clearAutoTriggeredMinigame?.(); }} />
+    </>;
+  }
+
+  if (presentation === 'world') {
+    const chooseIntent = (focus: FocusAllocation) => {
+      if (!controlsEnabled) return;
+      setGameState(prev => ({ ...prev,
+        activeProject: prev.activeProject?.id === project.id ? { ...prev.activeProject, focusAllocation: focus } : prev.activeProject,
+        activeProjects: (prev.activeProjects ?? []).map(p => p.id === project.id ? { ...p, focusAllocation: focus } : p),
+      }));
+      hapticTick(12);
+    };
+    return (
+      <section className="world-console" hidden={!controlsEnabled} aria-label="Console controls" data-rst-surface="contextual" data-rst-world-target="console">
+        <header className="world-console-header">
+          <div className="min-w-0">
+            <p className="rst-kicker">{currentStage?.stageName ?? 'Final listen'} · {availableEnergy} energy</p>
+            <h2 className="truncate text-sm font-semibold">{project.title}</h2>
+          </div>
+          <button type="button" className="rst-btn rst-btn-ghost" onClick={() => { handleStandDown(); onCloseConsole?.(); }} aria-label="Close console">×</button>
+        </header>
+
+        {/* 3-Channel Stage Focus Sliders with Dynamic Controller Glyphs */}
+        <div className="space-y-1.5 my-2 p-2 bg-stone-900/90 border border-stone-800 rounded">
+          <div className="flex items-center justify-between text-xs font-bold text-stone-300">
+            <span className="flex items-center gap-1"><StatIcon name="technical" /> Focus Allocation</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-amber-300 text-[11px] font-mono tabular-nums">{Math.round(focusEffectiveness.effectiveness * 100)}% Match</span>
+              <Button
+                onClick={() => { handleAutoAlign(); }}
+                disabled={!canUseOptimalFocusButton}
+                size="sm"
+                variant="outline"
+                className="h-6 px-2 text-[10px] bg-violet-900/30 border-violet-500/40 text-violet-200 hover:bg-violet-800/50 flex items-center gap-1"
+                title={canUseOptimalFocusButton ? t('active_auto_align_title') : t('active_auto_align_locked')}
+              >
+                {gamepad.isConnected && <GamepadGlyph button="north" controllerType={gamepad.controllerType} size="xs" />}
+                <StatIcon name="goal" /> Auto
+              </Button>
+            </div>
+          </div>
+          {FOCUS_CHANNELS.map((ch, idx) => {
+            const isSelected = selectedSliderChannel === ch;
+            const diff = Math.abs(projectFocus[ch] - optimalFocus[ch]);
+            const isOptimal = diff <= 10;
+            return (
+              <div
+                key={ch}
+                onClick={() => setSelectedSliderChannel(ch)}
+                data-focus-channel={ch}
+                className={`flex items-center gap-1.5 p-1 rounded text-xs transition-colors cursor-pointer ${isSelected && gamepad.isConnected ? 'bg-amber-950/40 ring-1 ring-amber-400/50 border border-amber-400/40' : ''}`}
+              >
+                <span className="w-20 truncate font-semibold text-stone-200 text-[10px] flex items-center gap-1">
+                  {gamepad.isConnected && (
+                    <span className="shrink-0">
+                      {idx === 0 && <GamepadGlyph button="lb" controllerType={gamepad.controllerType} size="xs" />}
+                      {idx === 2 && <GamepadGlyph button="rb" controllerType={gamepad.controllerType} size="xs" />}
+                    </span>
+                  )}
+                  {stripLead(stageFocusLabels[ch].label)}
+                </span>
+                <div className="flex-1 flex items-center gap-1">
+                  {gamepad.isConnected && isSelected && (
+                    <GamepadGlyph button="dpadLeft" controllerType={gamepad.controllerType} size="xs" />
+                  )}
+                  <Slider
+                    value={[projectFocus[ch]]}
+                    onValueChange={(v) => { setSelectedSliderChannel(ch); handleFocusChange(ch, v[0]); }}
+                    max={100}
+                    step={5}
+                    aria-label={stripLead(stageFocusLabels[ch].label)}
+                    className="flex-1"
+                  />
+                  {gamepad.isConnected && isSelected && (
+                    <GamepadGlyph button="dpadRight" controllerType={gamepad.controllerType} size="xs" />
+                  )}
+                </div>
+                <span className={`w-9 text-right font-mono text-[10px] font-bold ${isOptimal ? 'text-emerald-400' : 'text-stone-300'}`}>
+                  {projectFocus[ch]}%
+                </span>
+              </div>
+            );
+          })}
+          {RECORDING_INTENTS.length > 0 && (
+            <div className="flex gap-1 pt-1 border-t border-stone-800" role="group" aria-label="Recording intent presets">
+              {RECORDING_INTENTS.map(preset => (
+                <button
+                  key={preset.label}
+                  type="button"
+                  className="rst-btn flex-1 py-0.5 text-[9px]"
+                  aria-pressed={matchesRecordingIntent(projectFocus, preset.focus)}
+                  onClick={() => { chooseIntent(preset.focus); }}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Take Calibration & Record Controls */}
+        {takeState === 'tracking' ? (
+          <div className="space-y-1.5">
+            <PocketMeter
+              isArmed
+              onLock={handleLockTake}
+              timingBonus={getActiveBuffMagnitude(gameState.choreState, 'timing_bonus')}
+            />
+            <button
+              type="button"
+              className="rst-btn rst-btn-ghost w-full text-xs"
+              data-rst-action-id="console:stand-down"
+              onClick={handleStandDown}
+            >
+              Stand down
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {lastTakeGrade && <p role="status" className="world-console-feedback text-center text-xs text-amber-300 font-bold">{lastTakeGrade.text}</p>}
+            <button
+              type="button"
+              className="rst-btn rst-btn-primary world-console-record w-full flex items-center justify-center gap-1.5"
+              data-rst-action-id="console:record"
+              data-rst-surface="contextual"
+              onClick={handleArmTake}
+              disabled={availableEnergy <= 0 || isProjectComplete}
+            >
+              {gamepad.isConnected && <GamepadGlyph button="south" controllerType={gamepad.controllerType} size="xs" />}
+              <span>●</span>
+              <span>{isProjectComplete ? 'Take ready for review' : availableEnergy <= 0 ? 'Rest to recharge' : `Record take · ${energyCost} energy`}</span>
+            </button>
+          </div>
+        )}
+
+        <footer className="world-console-footer mt-2 flex items-center justify-between text-xs">
+          <span className="text-[var(--rst-stone)]">{Math.min(100, Math.round(overallProgress))}% complete</span>
+          {availableEnergy <= 0 && !isProjectComplete ? (
+            <button type="button" className="rst-btn" data-rst-action-id="clock:rest" data-rst-surface="contextual" data-rst-world-target="clock" onClick={onRest}>
+              Rest & advance day
+            </button>
+          ) : (
+            <span className="text-[var(--rst-stone)]">Dial sliders, then lock take</span>
+          )}
+        </footer>
+        {autoTriggeredMinigame && takeState !== 'tracking' && (
+          <div className="world-console-opportunity mt-2">
+            <p className="text-xs">{autoTriggeredMinigame.reason}</p>
+            <button type="button" className="rst-btn mt-2 w-full text-xs" data-rst-action-id="console:look-up" onClick={() => { handleStandDown(); onCloseConsole?.(); }}>
+              See room opportunity
+            </button>
+          </div>
+        )}
+        <MinigameManager isOpen={showMinigame} gameType={selectedMinigame} onReward={handleMinigameReward} onClose={() => { setShowMinigame(false); clearAutoTriggeredMinigame?.(); }} />
+      </section>
+    );
+  }
 
   return (
     <>
@@ -648,11 +929,72 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
             <div className="flex-1 min-h-0 min-w-0 flex flex-col justify-center overflow-hidden" data-testid="mobile-session-workspace">
               {takeState === 'tracking' ? (
-                <PocketMeter
-                  isArmed={true}
-                  onLock={handleLockTake}
-                  timingBonus={getActiveBuffMagnitude(gameState.choreState, 'timing_bonus')}
-                />
+                <div className="flex-1 min-h-0 flex flex-col justify-between overflow-hidden gap-1.5" data-testid="mobile-tracking-workspace">
+                  <PocketMeter
+                    isArmed={true}
+                    onLock={handleLockTake}
+                    timingBonus={getActiveBuffMagnitude(gameState.choreState, 'timing_bonus')}
+                  />
+                  <div className="bg-stone-900/90 border border-stone-800 rounded-[2px] p-1.5 space-y-1" data-testid="mobile-tracking-sliders">
+                    <div className="flex items-center justify-between text-[10px] text-stone-300 font-bold mb-0.5">
+                      <span className="flex items-center gap-1"><StatIcon name="technical" /> <span>STAGE FOCUS</span></span>
+                      <span className="text-amber-300 tabular-nums">{Math.round(focusEffectiveness.effectiveness * 100)}% Match</span>
+                    </div>
+                    {FOCUS_CHANNELS.map((key, idx) => {
+                      const isSelected = selectedSliderChannel === key;
+                      const diff = Math.abs(projectFocus[key] - optimalFocus[key]);
+                      const t = diff <= 10
+                        ? { chip: 'bg-emerald-950 text-emerald-400 border-emerald-500/40', slider: 'slider-optimal' }
+                        : diff <= 25
+                        ? { chip: 'bg-amber-950 text-amber-400 border-amber-500/40', slider: 'slider-good' }
+                        : { chip: 'bg-rose-950 text-rose-400 border-rose-500/40', slider: 'slider-default' };
+                      return (
+                        <div
+                          key={key}
+                          onClick={() => setSelectedSliderChannel(key)}
+                          className={`flex items-center gap-2 p-0.5 rounded cursor-pointer ${
+                            isSelected && gamepad.isConnected
+                              ? 'bg-amber-950/40 ring-1 ring-amber-400/60 border border-amber-400/40'
+                              : ''
+                          }`}
+                          data-focus-channel={key}
+                        >
+                          <span className="w-[84px] shrink-0 truncate text-[10px] font-semibold text-stone-200 flex items-center gap-1">
+                            {gamepad.isConnected && (
+                              <span className="shrink-0">
+                                {idx === 0 && <GamepadGlyph button="lb" controllerType={gamepad.controllerType} size="xs" />}
+                                {idx === 2 && <GamepadGlyph button="rb" controllerType={gamepad.controllerType} size="xs" />}
+                              </span>
+                            )}
+                            <span className="truncate">{stripLead(stageFocusLabels[key].label)}</span>
+                          </span>
+                          <div className="flex-1 flex items-center gap-1">
+                            {gamepad.isConnected && isSelected && (
+                              <GamepadGlyph button="dpadLeft" controllerType={gamepad.controllerType} size="xs" />
+                            )}
+                            <Slider
+                              value={[projectFocus[key]]}
+                              onValueChange={(v) => {
+                                setSelectedSliderChannel(key);
+                                handleFocusChange(key, v[0]);
+                              }}
+                              max={100}
+                              step={5}
+                              aria-label={stripLead(stageFocusLabels[key].label)}
+                              className={`flex-1 ${t.slider}`}
+                            />
+                            {gamepad.isConnected && isSelected && (
+                              <GamepadGlyph button="dpadRight" controllerType={gamepad.controllerType} size="xs" />
+                            )}
+                          </div>
+                          <span className={`w-[44px] shrink-0 text-center text-[10px] font-mono font-bold rounded border ${t.chip}`}>
+                            {projectFocus[key]}%{diff <= 10 ? <StatIcon name="check" size="0.8em" /> : null}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               ) : (
                 <MobileFocusMixer
                   focus={projectFocus}
@@ -662,8 +1004,12 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   guidanceTitle={currentStage.stageName}
                   guidance={optimalFocus.reasoning}
                   canAutoAlign={canUseOptimalFocusButton}
-                  onChange={handleFocusChange}
-                  onAutoAlign={handleAutoAlign}
+                  onChange={(k, v) => { handleFocusChange(k, v); }}
+                  onAutoAlign={() => { handleAutoAlign(); }}
+                  selectedChannel={selectedSliderChannel}
+                  onSelectChannel={setSelectedSliderChannel}
+                  gamepadActive={gamepad.isConnected}
+                  controllerType={gamepad.controllerType}
                 />
               )}
             </div>
@@ -913,134 +1259,130 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
               </div>
               
               <Button
-                onClick={handleAutoAlign}
+                onClick={() => {
+                  handleAutoAlign();
+                }}
                 disabled={!canUseOptimalFocusButton}
                 size="sm"
                 variant="outline"
-                className={`text-[11px] h-7 px-2.5 border transition-colors ${
+                className={`text-[11px] h-7 px-2.5 border transition-colors flex items-center gap-1 ${
                   canUseOptimalFocusButton
                     ? 'bg-violet-900/40 border-violet-500/50 text-violet-200 hover:bg-violet-800/60'
                     : 'bg-stone-800/40 border-stone-700 text-stone-500 cursor-not-allowed'
                 }`}
                 title={canUseOptimalFocusButton ? t('active_auto_align_title') : t('active_auto_align_locked')}
               >
+                {gamepad.isConnected && (
+                  <GamepadGlyph button="north" controllerType={gamepad.controllerType} size="xs" />
+                )}
                 <StatIcon name="goal" /> {t('active_auto_align')}
               </Button>
             </div>
 
-            {/* 3-Channel Mixing Strips */}
+            {/* 3-Channel Mixing Strips with Dynamic Controller Glyphs */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {/* Channel 1: Performance */}
-              <div className="bg-stone-900/80 border border-stone-800/90 p-2 rounded-md">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-stone-200 truncate">
-                    {stageFocusLabels.performance.label}
-                  </span>
-                  <span className={`text-[11px] font-mono font-bold px-1.5 py-0.2 rounded ${
-                    Math.abs(projectFocus.performance - optimalFocus.performance) <= 10 
-                      ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/40' 
-                      : Math.abs(projectFocus.performance - optimalFocus.performance) <= 25
-                        ? 'bg-amber-950 text-amber-400 border border-amber-500/40'
-                        : 'bg-rose-950 text-rose-400 border border-rose-500/40'
-                  }`}>
-                    {projectFocus.performance}%
-                  </span>
-                </div>
-                <Slider
-                  value={[projectFocus.performance]}
-                  onValueChange={(value) => handleFocusChange('performance', value[0])}
-                  max={100}
-                  step={5}
-                  className={`w-full ${
-                    Math.abs(projectFocus.performance - optimalFocus.performance) <= 10 
-                      ? 'slider-optimal' 
-                      : Math.abs(projectFocus.performance - optimalFocus.performance) <= 25
-                        ? 'slider-good'
-                        : 'slider-default'
-                  }`}
-                />
-                <div className="flex justify-between items-center text-[10px] text-stone-400 mt-1">
-                  <span>{t('active_target_range', { min: Math.max(0, optimalFocus.performance - 10), max: Math.min(100, optimalFocus.performance + 10) })}</span>
-                  <span className={Math.abs(projectFocus.performance - optimalFocus.performance) <= 10 ? 'text-emerald-400 font-semibold' : 'text-stone-500'}>
-                    {Math.abs(projectFocus.performance - optimalFocus.performance) <= 10 ? <><StatIcon name="check" /> {t('active_optimal')}</> : t('active_adjust')}
-                  </span>
-                </div>
-              </div>
+              {FOCUS_CHANNELS.map((ch, idx) => {
+                const isSelected = selectedSliderChannel === ch;
+                const labelObj = stageFocusLabels[ch];
+                const currentVal = projectFocus[ch];
+                const targetVal = optimalFocus[ch];
+                const diff = Math.abs(currentVal - targetVal);
+                const isOptimal = diff <= 10;
+                const isGood = diff <= 25;
 
-              {/* Channel 2: Sound Capture */}
-              <div className="bg-stone-900/80 border border-stone-800/90 p-2 rounded-md">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-stone-200 truncate">
-                    {stageFocusLabels.soundCapture.label}
-                  </span>
-                  <span className={`text-[11px] font-mono font-bold px-1.5 py-0.2 rounded ${
-                    Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 10 
-                      ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/40' 
-                      : Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 25
-                        ? 'bg-amber-950 text-amber-400 border border-amber-500/40'
-                        : 'bg-rose-950 text-rose-400 border border-rose-500/40'
-                  }`}>
-                    {projectFocus.soundCapture}%
-                  </span>
-                </div>
-                <Slider
-                  value={[projectFocus.soundCapture]}
-                  onValueChange={(value) => handleFocusChange('soundCapture', value[0])}
-                  max={100}
-                  step={5}
-                  className={`w-full ${
-                    Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 10 
-                      ? 'slider-optimal' 
-                      : Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 25
-                        ? 'slider-good'
-                        : 'slider-default'
-                  }`}
-                />
-                <div className="flex justify-between items-center text-[10px] text-stone-400 mt-1">
-                  <span>{t('active_target_range', { min: Math.max(0, optimalFocus.soundCapture - 10), max: Math.min(100, optimalFocus.soundCapture + 10) })}</span>
-                  <span className={Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 10 ? 'text-emerald-400 font-semibold' : 'text-stone-500'}>
-                    {Math.abs(projectFocus.soundCapture - optimalFocus.soundCapture) <= 10 ? <><StatIcon name="check" /> {t('active_optimal')}</> : t('active_adjust')}
-                  </span>
-                </div>
-              </div>
+                return (
+                  <div
+                    key={ch}
+                    data-focus-channel={ch}
+                    onClick={() => setSelectedSliderChannel(ch)}
+                    className={`p-2.5 rounded-md border transition-all cursor-pointer relative ${
+                      isSelected && gamepad.isConnected
+                        ? 'bg-stone-900 border-amber-400/80 shadow-[0_0_12px_rgba(251,191,36,0.25)] ring-1 ring-amber-400/40'
+                        : 'bg-stone-900/80 border-stone-800/90 hover:border-stone-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1.5 gap-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {gamepad.isConnected && (
+                          <span className="shrink-0">
+                            {idx === 0 && <GamepadGlyph button="lb" controllerType={gamepad.controllerType} size="xs" />}
+                            {idx === 1 && (
+                              <span className="text-[9px] font-mono px-1 rounded bg-stone-800 text-stone-300 border border-stone-700">
+                                CH2
+                              </span>
+                            )}
+                            {idx === 2 && <GamepadGlyph button="rb" controllerType={gamepad.controllerType} size="xs" />}
+                          </span>
+                        )}
+                        <span className="text-xs font-semibold text-stone-200 truncate">
+                          {labelObj.label}
+                        </span>
+                      </div>
+                      <span className={`text-[11px] font-mono font-bold px-1.5 py-0.2 rounded shrink-0 ${
+                        isOptimal
+                          ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/40'
+                          : isGood
+                            ? 'bg-amber-950 text-amber-400 border border-amber-500/40'
+                            : 'bg-rose-950 text-rose-400 border border-rose-500/40'
+                      }`}>
+                        {currentVal}%
+                      </span>
+                    </div>
 
-              {/* Channel 3: Layering */}
-              <div className="bg-stone-900/80 border border-stone-800/90 p-2 rounded-md">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-stone-200 truncate">
-                    {stageFocusLabels.layering.label}
-                  </span>
-                  <span className={`text-[11px] font-mono font-bold px-1.5 py-0.2 rounded ${
-                    Math.abs(projectFocus.layering - optimalFocus.layering) <= 10 
-                      ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/40' 
-                      : Math.abs(projectFocus.layering - optimalFocus.layering) <= 25
-                        ? 'bg-amber-950 text-amber-400 border border-amber-500/40'
-                        : 'bg-rose-950 text-rose-400 border border-rose-500/40'
-                  }`}>
-                    {projectFocus.layering}%
-                  </span>
-                </div>
-                <Slider
-                  value={[projectFocus.layering]}
-                  onValueChange={(value) => handleFocusChange('layering', value[0])}
-                  max={100}
-                  step={5}
-                  className={`w-full ${
-                    Math.abs(projectFocus.layering - optimalFocus.layering) <= 10 
-                      ? 'slider-optimal' 
-                      : Math.abs(projectFocus.layering - optimalFocus.layering) <= 25
-                        ? 'slider-good'
-                        : 'slider-default'
-                  }`}
-                />
-                <div className="flex justify-between items-center text-[10px] text-stone-400 mt-1">
-                  <span>{t('active_target_range', { min: Math.max(0, optimalFocus.layering - 10), max: Math.min(100, optimalFocus.layering + 10) })}</span>
-                  <span className={Math.abs(projectFocus.layering - optimalFocus.layering) <= 10 ? 'text-emerald-400 font-semibold' : 'text-stone-500'}>
-                    {Math.abs(projectFocus.layering - optimalFocus.layering) <= 10 ? <><StatIcon name="check" /> {t('active_optimal')}</> : t('active_adjust')}
-                  </span>
-                </div>
-              </div>
+                    <div className="relative">
+                      <Slider
+                        value={[currentVal]}
+                        onValueChange={(val) => {
+                          setSelectedSliderChannel(ch);
+                          handleFocusChange(ch, val[0]);
+                        }}
+                        max={100}
+                        step={5}
+                        aria-label={labelObj.label}
+                        className={`w-full ${
+                          isOptimal
+                            ? 'slider-optimal'
+                            : isGood
+                              ? 'slider-good'
+                              : 'slider-default'
+                        }`}
+                      />
+                    </div>
+
+                    {gamepad.isConnected && isSelected && (
+                      <div className="flex items-center justify-center gap-2 mt-1.5 py-0.5 px-1 bg-amber-400/[0.08] border border-amber-400/30 rounded text-[10px] text-amber-200 font-mono select-none">
+                        <GamepadGlyph button="dpadLeft" controllerType={gamepad.controllerType} size="xs" />
+                        <span>Adjust ±5%</span>
+                        <GamepadGlyph button="dpadRight" controllerType={gamepad.controllerType} size="xs" />
+                      </div>
+                    )}
+
+                    <div className="flex justify-between items-center text-[10px] text-stone-400 mt-1">
+                      <span>{t('active_target_range', { min: Math.max(0, targetVal - 10), max: Math.min(100, targetVal + 10) })}</span>
+                      <span className={isOptimal ? 'text-emerald-400 font-semibold flex items-center gap-0.5' : 'text-stone-500'}>
+                        {isOptimal ? <><StatIcon name="check" /> {t('active_optimal')}</> : t('active_adjust')}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
+
+            {gamepad.isConnected && (
+              <div className="text-[10px] font-mono text-stone-400 bg-stone-900/80 px-2.5 py-1.5 rounded border border-stone-800 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <GamepadGlyph button="lb" controllerType={gamepad.controllerType} size="xs" />/
+                  <GamepadGlyph button="rb" controllerType={gamepad.controllerType} size="xs" /> Channel · 
+                  <GamepadGlyph button="dpadLeft" controllerType={gamepad.controllerType} size="xs" />
+                  <GamepadGlyph button="dpadRight" controllerType={gamepad.controllerType} size="xs" /> Adjust ±5% · 
+                  <GamepadGlyph button="north" controllerType={gamepad.controllerType} size="xs" /> Auto-Align
+                </span>
+                <span className="flex items-center gap-1 text-amber-300 font-bold">
+                  <GamepadGlyph button="south" controllerType={gamepad.controllerType} size="xs" /> / 
+                  <GamepadGlyph button="rt" controllerType={gamepad.controllerType} size="xs" /> Lock Take
+                </span>
+              </div>
+            )}
 
             {/* Stage Guidance Note */}
             <div className="text-[11px] text-stone-400 bg-stone-900/60 px-2.5 py-1.5 rounded border border-stone-800 flex items-center gap-1.5">

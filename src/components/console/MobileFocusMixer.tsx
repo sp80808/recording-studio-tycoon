@@ -5,6 +5,9 @@ import { Info } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import type { FocusAllocation } from '@/types/game';
 
+import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
+import type { ControllerType } from '@/types/gamepad';
+
 // Labels carry a leading emoji for other surfaces; drop it here so the row fits.
 const stripLead = (l: string) => l.replace(/^[^\p{L}\p{N}]+/u, '');
 
@@ -25,6 +28,10 @@ export interface MobileFocusMixerProps {
   canAutoAlign: boolean;
   onChange: (key: Channel, value: number) => void;
   onAutoAlign: () => void;
+  selectedChannel?: Channel;
+  onSelectChannel?: (key: Channel) => void;
+  gamepadActive?: boolean;
+  controllerType?: ControllerType;
 }
 
 const CHANNELS: Channel[] = ['performance', 'soundCapture', 'layering'];
@@ -38,6 +45,7 @@ const tone = (diff: number) =>
 
 export const MobileFocusMixer: React.FC<MobileFocusMixerProps> = ({
   focus, optimal, labels, matchPct, guidanceTitle, guidance, canAutoAlign, onChange, onAutoAlign,
+  selectedChannel = 'performance', onSelectChannel, gamepadActive = false, controllerType,
 }) => {
   const { t: tr } = useTranslation();
   const [showGuide, setShowGuide] = useState(false);
@@ -60,12 +68,13 @@ export const MobileFocusMixer: React.FC<MobileFocusMixerProps> = ({
           onClick={onAutoAlign}
           disabled={!canAutoAlign}
           title={canAutoAlign ? tr('active_auto_align_title') : tr('active_auto_align_locked')}
-          className={`ml-auto h-6 px-2 text-[10px] rounded border ${
+          className={`ml-auto h-6 px-2 text-[10px] rounded border flex items-center gap-1 ${
             canAutoAlign
               ? 'bg-violet-900/40 border-violet-500/50 text-violet-200'
               : 'bg-stone-800/40 border-stone-700 text-stone-500 cursor-not-allowed'
           }`}
         >
+          {gamepadActive && <GamepadGlyph button="north" controllerType={controllerType} size="xs" />}
           <StatIcon name="goal" /> {tr('active_auto_align')}
         </button>
       </div>
@@ -75,20 +84,46 @@ export const MobileFocusMixer: React.FC<MobileFocusMixerProps> = ({
         </div>
       )}
       <div className="space-y-1">
-        {CHANNELS.map(key => {
+        {CHANNELS.map((key, idx) => {
           const diff = Math.abs(focus[key] - optimal[key]);
           const t = tone(diff);
+          const isSelected = selectedChannel === key;
           return (
-            <div key={key} className="flex items-center gap-2" data-focus-channel={key}>
-              <span className="w-[88px] shrink-0 truncate text-[11px] font-semibold text-stone-200" title={stripLead(labels[key].label)}>{stripLead(labels[key].label)}</span>
-              <Slider
-                value={[focus[key]]}
-                onValueChange={(v) => onChange(key, v[0])}
-                max={100}
-                step={5}
-                aria-label={tr('active_focus_aria', { name: stripLead(labels[key].label) })}
-                className={`flex-1 ${t.slider}`}
-              />
+            <div
+              key={key}
+              onClick={() => onSelectChannel?.(key)}
+              className={`flex items-center gap-2 p-1 rounded transition-all cursor-pointer ${
+                isSelected && gamepadActive
+                  ? 'bg-amber-950/40 ring-1 ring-amber-400/60 border border-amber-400/40'
+                  : ''
+              }`}
+              data-focus-channel={key}
+            >
+              <span className="w-[88px] shrink-0 truncate text-[11px] font-semibold text-stone-200 flex items-center gap-1" title={stripLead(labels[key].label)}>
+                {gamepadActive && (
+                  <span className="shrink-0">
+                    {idx === 0 && <GamepadGlyph button="lb" controllerType={controllerType} size="xs" />}
+                    {idx === 2 && <GamepadGlyph button="rb" controllerType={controllerType} size="xs" />}
+                  </span>
+                )}
+                <span className="truncate">{stripLead(labels[key].label)}</span>
+              </span>
+              <div className="flex-1 flex items-center gap-1">
+                {gamepadActive && isSelected && (
+                  <GamepadGlyph button="dpadLeft" controllerType={controllerType} size="xs" />
+                )}
+                <Slider
+                  value={[focus[key]]}
+                  onValueChange={(v) => onChange(key, v[0])}
+                  max={100}
+                  step={5}
+                  aria-label={tr('active_focus_aria', { name: stripLead(labels[key].label) })}
+                  className={`flex-1 ${t.slider}`}
+                />
+                {gamepadActive && isSelected && (
+                  <GamepadGlyph button="dpadRight" controllerType={controllerType} size="xs" />
+                )}
+              </div>
               <span className={`w-[50px] shrink-0 text-center text-[10px] font-mono font-bold rounded border ${t.chip}`} title={tr('active_target_title', { min: Math.max(0, optimal[key] - 10), max: Math.min(100, optimal[key] + 10) })}>
                 {focus[key]}%{diff <= 10 ? <StatIcon name="check" size="0.9em" /> : null}
               </span>

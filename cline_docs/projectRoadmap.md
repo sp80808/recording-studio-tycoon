@@ -64,4 +64,11 @@ not a full-PIXI UI. `src/pixi-ui/` panels exist but are not the main interface.
   dock — tap banks the same-day streak for cash + XP; hold charges a 1.6s sweep
   with accelerating ticks/haptics where a gold-window release pays ×1.6 and keeps
   the streak. 48-check suite + browser smoke, zero console errors.
+- 2026-10-04 — **Take calibration repair** (PocketMeter): fixed the every-frame
+  sweep-clock reset (effect subscribed to the per-render `gamepad`/`onLock`
+  identities → needle parked at arc start, Gold + auto-lock unreachable), unified
+  the drawn + graded Gold window in `getTakeGoldWindow` (kills the 0.66–0.88 vs
+  0.70–0.85 regression), wired the previously-dead `pocketMeterAssistance`
+  setting (strict/normal/generous), added Space/Enter lock parity, a visible
+  auto-lock drain and needle state colours. New `tests/take-calibration.check.ts`.
 

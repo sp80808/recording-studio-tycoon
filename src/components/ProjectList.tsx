@@ -20,7 +20,8 @@ import BriefPanel from '@/components/BriefPanel';
 import RiderPanel from '@/components/RiderPanel';
 import ForecastPanel from '@/components/ForecastPanel';
 import { currencySymbol, toLocalAmount } from '@/rpg/cities';
-import { BookingCostLine } from '@/components/BookingCalendar';
+import { BookingCostLine, BookingCalendar } from '@/components/BookingCalendar';
+import { filterAndSortBoard } from '@/utils/enquiryBoard';
 import { fillerJobsFor, isFillerJob } from '@/rpg/fillerJobs';
 import { isSignatureJob, signatureJobFor } from '@/rpg/signatureBrief';
 import { labelOffersFor, withChoices, NO_CHOICES, type LabelChoices } from '@/rpg/labelAccounts';
@@ -138,6 +139,9 @@ export const ProjectList: React.FC<ProjectListProps> = ({
   const [chains, setChains] = useState<Record<string, SignalChain | undefined>>({});
   const [stakes, setStakes] = useState<Record<string, ContractStake>>({});
   const [assignments, setAssignments] = useState<Record<string, SessionAssignment>>({});
+  const [query, setQuery] = useState('');
+  const [fitFilter, setFitFilter] = useState<'all' | 'excellent' | 'good' | 'stretch'>('all');
+  const [sortBy, setSortBy] = useState<'recommended' | 'fee' | 'rep' | 'quick'>('recommended');
   const cooldownLeft = gigRefreshCooldownRemaining(gameState);
   const refreshReady = cooldownLeft === 0;
   const refreshCost = gigRefreshCostFor(GIG_REFRESH_COST, getOriginEffects(gameState));
@@ -230,9 +234,13 @@ export const ProjectList: React.FC<ProjectListProps> = ({
   const derivedOffers = [...labelOffersFor(gameState).filter((l) => !passedFillers.includes(l.id)), ...(signature && !passedFillers.includes(signature.id) ? [signature] : []), ...fillerJobsFor(gameState).filter((f) => !passedFillers.includes(f.id))]
     .map((p) => (p.labelTerms ? withChoices(p, labelChoices[p.id] ?? NO_CHOICES) : p));
   const pulse = industryPulse(gameState.saveSeed, gameState.currentDay);
-  const board = [...gameState.availableProjects, ...derivedOffers].sort(
-    (a, b) => Number(Boolean(b.isStoryContract)) - Number(Boolean(a.isStoryContract)),
-  );
+  // Story contracts pin to the top in every filter/sort mode (see enquiryBoard).
+  const board = filterAndSortBoard([...gameState.availableProjects, ...derivedOffers], {
+    query,
+    fit: fitFilter,
+    sort: sortBy,
+  });
+  const totalOffers = gameState.availableProjects.length + derivedOffers.length;
 
   return (
     <section className="rst-surface flex min-h-0 w-full flex-1 flex-col p-4" aria-label="Artist enquiries">
@@ -271,6 +279,51 @@ export const ProjectList: React.FC<ProjectListProps> = ({
             </>
           )}
         </MotionButton>
+      </div>
+
+      <div className="mb-3 shrink-0">
+        <BookingCalendar state={gameState} />
+      </div>
+
+      <div className="mb-3 flex shrink-0 flex-wrap items-center gap-2" role="search" aria-label="Filter enquiries">
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search title, genre, client…"
+          aria-label="Search enquiries"
+          className="rst-input min-h-9 flex-1 !text-xs"
+        />
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Fit filter">
+          {(['all', 'excellent', 'good', 'stretch'] as const).map((f) => (
+            <button
+              key={f}
+              type="button"
+              aria-pressed={fitFilter === f}
+              onClick={() => setFitFilter(f)}
+              className={`rst-chip cursor-pointer !text-[11px] ${fitFilter === f ? 'rst-chip-brass' : ''}`}
+            >
+              {f === 'all' ? 'All' : f === 'excellent' ? 'Excellent' : f === 'good' ? 'Good+' : 'Stretch'}
+            </button>
+          ))}
+        </div>
+        <label className="flex items-center gap-1.5 text-xs text-stone-400">
+          Sort
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+            aria-label="Sort enquiries"
+            className="rst-input min-h-9 !text-xs"
+          >
+            <option value="recommended">Recommended</option>
+            <option value="fee">Highest fee</option>
+            <option value="rep">Most rep</option>
+            <option value="quick">Quickest</option>
+          </select>
+        </label>
+        <span className="rst-muted text-[11px]" role="status">
+          {board.length} of {totalOffers} enquiry{totalOffers === 1 ? '' : 'ies'}
+        </span>
       </div>
 
       {gameState.activeProject && (
@@ -432,6 +485,11 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                 <BookingCostLine state={gameState} project={project} />
                 <p data-testid="enquiry-style-note" className="mb-3 text-xs text-stone-400">{enquiryStyleNote(gameState.studioExpertise, project.genre, project.brief?.serviceType)}</p>
 
+                <details className="mb-3 rounded-lg border border-[var(--rst-line)] bg-black/10 px-2.5 py-2" open={index === 0}>
+                  <summary className="cursor-pointer select-none text-xs font-semibold text-[var(--rst-ivory)]">
+                    Session details: forecast{['vocal-production', 'tracking'].includes(getProjectBrief(project).serviceType) ? ' & vocal chain' : ''}
+                  </summary>
+                  <div className="pt-2">
                 <ForecastPanel
                   project={project}
                   state={gameState}
@@ -453,6 +511,8 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                     onChange={(c) => setChains((prev) => ({ ...prev, [project.id]: c }))}
                   />
                 )}
+                  </div>
+                </details>
 
                 <StakePicker
                   value={chosenStake}

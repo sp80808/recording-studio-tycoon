@@ -5,7 +5,8 @@
  * Sprite via `bakeLayeredNpc`, and applies `npcAnimation` motion on the ticker.
  * Nothing here is gameplay-authoritative; missing art falls back to procedural blobs.
  */
-import { Container, Graphics, type Renderer } from 'pixi.js';
+import { Container, Graphics, type Renderer, type Text } from 'pixi.js';
+import type { StaffStations } from '@/components/studio/staffStaging';
 import { visualEraId } from '@/utils/eraProgression';
 import { createSeededRandom } from '@/simulation/seededRandom';
 import { bakeLayeredNpc, createLayeredNpc } from './pixiNpc';
@@ -43,6 +44,12 @@ export interface FloorNpcHandle {
   animState: NpcAnimationState;
   /** Release baked textures (call before the parent scene is destroyed). */
   destroy: () => void;
+}
+
+export interface StagedStaffHandle extends FloorNpcHandle {
+  baseX: number;
+  stations: StaffStations;
+  activityCue: Text;
 }
 
 let atlasPromise: Promise<LoadedAtlas | null> | undefined;

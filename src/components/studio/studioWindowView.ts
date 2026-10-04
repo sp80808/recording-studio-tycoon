@@ -44,6 +44,10 @@ export const getCityLightLevel = (dayness: number): number => 1 - smoothstep(0.2
 /** Star visibility: only once it is properly dark. */
 export const getStarLevel = (dayness: number): number => 1 - smoothstep(0.1, 0.35, dayness);
 
+/** Slow, bounded window-space drift. Reduced motion keeps the same pleasant composition. */
+export const getCloudU = (tSeconds: number, phase: number, reduceMotion: boolean): number =>
+  0.5 + Math.sin((reduceMotion ? 0 : tSeconds * 0.035) + phase) * 0.3;
+
 /**
  * `a`/`b` are the bottom-left and bottom-right corners of the glass on the wall plane and
  * `bottomLift`/`topLift` its vertical extent in pixels (same numbers `WebGLCanvas` used for the pane).
@@ -63,6 +67,17 @@ export const buildWindowView = (a: Pt, b: Pt, bottomLift: number, topLift: numbe
   const container = new Container();
   container.eventMode = 'none';
   const random = rng(seed);
+
+  // A restrained mid-distance cloud layer gives the exterior depth without competing with the room.
+  const clouds = new Graphics();
+  const cloudRandom = rng(seed ^ 0x434c4f55);
+  const cloudSpecs = Array.from({ length: 3 }, (_, i) => ({
+    v: 0.62 + cloudRandom() * 0.25,
+    phase: cloudRandom() * Math.PI * 2,
+    scale: 0.75 + cloudRandom() * 0.45,
+    shade: i === 0 ? 0xffffff : 0xdde8f4,
+  }));
+  container.addChild(clouds);
 
   // Stars
   const stars = new Graphics();
@@ -110,18 +125,33 @@ export const buildWindowView = (a: Pt, b: Pt, bottomLift: number, topLift: numbe
   container.addChild(lights);
   lights.alpha = 0;
 
-  let lastKey = '';
+  let lastStarKey = '';
+  let lastCloudKey = '';
 
   return {
     container,
     update: (minutesOfDay, dayness, t, reduceMotion) => {
       const city = reduceMotion ? 0 : getCityLightLevel(dayness);
       lights.alpha = city;
+      const cloudKey = `${Math.round(clamp01(dayness) * 12)}|${reduceMotion ? 'still' : Math.floor(t * 8)}`;
+      if (cloudKey !== lastCloudKey) {
+        lastCloudKey = cloudKey;
+        clouds.clear();
+        for (const cloud of cloudSpecs) {
+          const p = pt(getCloudU(t, cloud.phase, reduceMotion), cloud.v);
+          const alpha = 0.07 + clamp01(dayness) * 0.2;
+          const s = cloud.scale;
+          clouds.ellipse(p.x, p.y, 7 * s, 2.2 * s).fill({ color: cloud.shade, alpha });
+          clouds.circle(p.x - 3.2 * s, p.y - 1.2 * s, 2.6 * s).fill({ color: cloud.shade, alpha });
+          clouds.circle(p.x + 1.2 * s, p.y - 2 * s, 3.2 * s).fill({ color: cloud.shade, alpha });
+          clouds.circle(p.x + 4.1 * s, p.y - 0.8 * s, 2.1 * s).fill({ color: cloud.shade, alpha });
+        }
+      }
       const starLevel = reduceMotion ? 0 : getStarLevel(dayness);
       // Twinkle only changes alpha, so redraw stars at ~4Hz.
       const starKey = `${Math.round(starLevel * 20)}|${Math.floor(t * 4)}`;
-      if (starKey !== lastKey) {
-        lastKey = starKey;
+      if (starKey !== lastStarKey) {
+        lastStarKey = starKey;
         stars.clear();
         if (starLevel > 0.01) {
           for (const s of starPts) {

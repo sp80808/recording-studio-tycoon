@@ -1,3 +1,4 @@
+import { useUiChromeStore, selectConsoleFocused } from '@/stores/uiChromeStore';
 import * as React from "react"
 import { useTheme } from "next-themes"
 import { Toaster as Sonner } from "sonner"
@@ -7,6 +8,7 @@ type ToasterProps = React.ComponentProps<typeof Sonner>
 
 export const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme()
+  const consoleFocused = useUiChromeStore(selectConsoleFocused)
   // On desktop the activity drawer and session console live on the right edge; right-aligned
   // toasts sat on top of their primary buttons (ARM TAKE, Book Session). Keep toasts left there.
   const [desktop, setDesktop] = React.useState(
@@ -24,7 +26,8 @@ export const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
-      position={desktop ? "bottom-left" : "bottom-right"}
+      position={!desktop && consoleFocused ? "top-center" : desktop ? "bottom-left" : "bottom-right"}
+      offset={!desktop && consoleFocused ? 180 : undefined}
       visibleToasts={2}
       duration={3200}
       closeButton

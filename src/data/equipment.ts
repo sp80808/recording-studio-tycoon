@@ -392,6 +392,61 @@ export const availableEquipment: EraAvailableEquipment[] = [
     skillRequirement: { skill: 'mixing', level: 6 },
     availableFrom: 2012,
     condition: 100
+  },
+  {
+    id: 'tour_di_box',
+    name: 'Tour-Grade DI Box',
+    category: 'outboard',
+    price: 420,
+    description: 'Transformer-balanced DI that survives being kicked across a stage. Tightens bass and keys on loud sessions.',
+    bonuses: { genreBonus: { Rock: 1, 'Hip-hop': 1 }, technicalBonus: 12, qualityBonus: 8 },
+    icon: '🔌',
+    availableFrom: 1985,
+    condition: 100
+  },
+  {
+    id: 'spring_reverb_tank',
+    name: 'Spring Reverb Tank',
+    category: 'outboard',
+    price: 680,
+    description: 'Three springs in a steel tray. Boings beautifully when the truck hits a pothole; splashes guitars and vocals.',
+    bonuses: { genreBonus: { Electronic: 2, Rock: 1 }, creativityBonus: 14, qualityBonus: 10 },
+    icon: '〰️',
+    availableFrom: 1978,
+    condition: 100
+  },
+  {
+    id: 'cassette_portastudio',
+    name: 'Portable Cassette 4-Track',
+    category: 'recorder',
+    price: 350,
+    description: 'Four tracks of warbly inspiration. Demos cut on this thing have started actual careers.',
+    bonuses: { creativityBonus: 12, speedBonus: 8 },
+    icon: '📼',
+    availableFrom: 1982,
+    condition: 100
+  },
+  {
+    id: 'dub_siren',
+    name: 'Handbuilt Dub Siren',
+    category: 'instrument',
+    price: 520,
+    description: 'A trigger-happy oscillator in a biscuit tin. One button, endless phase-shifting wails for breakdowns.',
+    bonuses: { genreBonus: { Electronic: 3, 'Hip-hop': 2 }, creativityBonus: 15 },
+    icon: '🚨',
+    availableFrom: 1980,
+    condition: 100
+  },
+  {
+    id: 'ribbon_room_pair',
+    name: 'Matched Ribbon Room Pair',
+    category: 'microphone',
+    price: 1900,
+    description: 'Factory-matched ribbons for Blumlein room capture. Dark, honest, and allergic to phantom power accidents.',
+    bonuses: { genreBonus: { Jazz: 3, Acoustic: 2 }, qualityBonus: 18 },
+    icon: '🎤',
+    availableFrom: 1992,
+    condition: 100
   }
 ];
 

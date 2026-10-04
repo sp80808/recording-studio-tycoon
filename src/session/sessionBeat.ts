@@ -1,4 +1,5 @@
-import type { Project } from '@/types/game';
+import { worldTargetForIntervention } from './worldSessionActions';
+import type { Project, SessionIntervention } from '@/types/game';
 
 export type SessionBeat =
   | 'arrival'
@@ -33,30 +34,28 @@ export interface SessionBeatView {
   detail: string;
 }
 
-export function deriveSessionBeat(project: Project): SessionBeatView {
-  if (project.awaitingReview) {
+export function deriveSessionBeat(project: Project, intervention?: SessionIntervention | null): SessionBeatView {
+  if (project.awaitingReview || (project.stages.length > 0 && project.stages.every(stage => stage.completed))) {
     return {
       beat: 'wrap', projectId: project.id, primaryTarget: 'console', primaryAction: 'wrap',
       label: 'Wrap', detail: 'The take is ready for a final listen.', attentionReason: 'Review the take before settlement.',
     };
   }
 
+  if (intervention && intervention.projectId === project.id && intervention.stageIndex === project.currentStageIndex && !project.stages[project.currentStageIndex]?.completed) {
+    const target = worldTargetForIntervention(intervention.type);
+    return { beat: 'decision', projectId: project.id, primaryTarget: target === 'liveRoom' ? 'mic' : target === 'shelf' ? 'rack' : 'console', primaryAction: 'resolve', label: 'Opportunity', detail: intervention.reason };
+  }
+
   const stage = project.stages?.[project.currentStageIndex ?? 0];
   const stageName = stage?.stageName?.toLowerCase() ?? '';
   const progress = stage ? stage.workUnitsCompleted / Math.max(1, stage.workUnitsBase) : 0;
 
-  if (stageName.includes('master')) {
+  if (progress > 0 && stageName.includes('master')) {
     return { beat: 'playback', projectId: project.id, primaryTarget: 'console', primaryAction: 'playback', label: 'Playback', detail: 'Check the final balance before release.' };
   }
-  if (stageName.includes('mix')) {
-    const playback = progress > 0.7;
-    return {
-      beat: playback ? 'playback' : 'decision', projectId: project.id,
-      primaryTarget: 'console', primaryAction: playback ? 'playback' : 'resolve',
-      secondaryActions: playback ? ['lock'] : ['playback'],
-      label: playback ? 'Playback' : 'Decision',
-      detail: playback ? 'Listen for the room and lock the balance.' : 'A mix choice is waiting at the console.',
-    };
+  if (progress > 0 && stageName.includes('mix')) {
+    return { beat: 'playback', projectId: project.id, primaryTarget: 'console', primaryAction: 'playback', secondaryActions: ['lock'], label: 'Playback', detail: 'Listen for the room and lock the balance.' };
   }
   if (stageName.includes('record') || stageName.includes('track')) {
     const recording = progress > 0;
@@ -65,6 +64,15 @@ export function deriveSessionBeat(project: Project): SessionBeatView {
       primaryTarget: recording ? 'mic' : 'console', primaryAction: recording ? 'lock' : 'soundcheck',
       label: recording ? 'Recording' : 'Soundcheck',
       detail: recording ? 'The room is capturing takes.' : 'Set levels, then roll the room.',
+    };
+  }
+  if (progress > 0) {
+    const performerOwned = /vocal|performance|live|instrument/.test(stageName);
+    return {
+      beat: 'recording', projectId: project.id,
+      primaryTarget: performerOwned ? 'mic' : 'console', primaryAction: 'lock',
+      label: 'Recording',
+      detail: stage?.stageName ? `${stage.stageName} is under way. Listen, then lock the take.` : 'The session is under way. Listen, then lock the take.',
     };
   }
   return {

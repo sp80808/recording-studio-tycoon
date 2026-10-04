@@ -231,6 +231,19 @@ export const RIVAL_STUDIOS: readonly RivalStudio[] = [
     catchphrase: 'If the landlord can hear it, the mix is almost loud enough.',
     rivalryBonus: 'Surviving a Union challenge unlocks underground co-op tour referrals.',
   },
+  {
+    id: 'lacquer-room',
+    name: 'The Lacquer Room',
+    headProducer: 'Odette Marlowe',
+    epithet: 'The Groove Surgeon',
+    philosophy: 'A record is not finished until the cutting lathe says so. Mixes are opinions; grooves are verdicts.',
+    primaryPlaystyle: 'purist',
+    preferredEra: 'vintage-warmth',
+    signatureGenres: ['Jazz', 'Blues', 'Folk'],
+    threatLevel: 'Rising',
+    catchphrase: 'Bring me a master with dynamics, or do not bring me anything.',
+    rivalryBonus: 'Out-cutting the Lacquer Room unlocks audiophile vinyl-mastering briefs.',
+  },
 ] as const;
 
 export const HISTORIC_STUDIOS: readonly HistoricStudio[] = [

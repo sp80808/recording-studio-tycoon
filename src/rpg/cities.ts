@@ -14,7 +14,7 @@ import type { GameState } from '@/types/game';
 import { formatNumber } from '@/i18n/formatLocale';
 import { tc } from '@/i18n/content';
 
-export type CityId = 'los-angeles' | 'nashville' | 'london' | 'berlin' | 'tokyo' | 'rio';
+export type CityId = 'los-angeles' | 'nashville' | 'london' | 'berlin' | 'tokyo' | 'rio' | 'detroit' | 'lagos';
 
 export const DEFAULT_CITY_ID: CityId = 'los-angeles';
 
@@ -179,6 +179,43 @@ export const CITIES: readonly City[] = [
       eras: { analog60s: 'Bossa nova turns apartments into studios and exports a whole mood.', digital80s: 'Tropicalia\'s children meet synthesizers and a very loud pop scene.', internet2000s: 'Baile funk and electronic crossovers pour out of the hills.', streaming2020s: 'Streaming turns local funk into a global party playlist.' },
     },
     eraCurrency: { analog60s: { code: 'BRL', symbol: 'R$', perDollar: 0.5 }, digital80s: { code: 'BRL', symbol: 'R$', perDollar: 1.0 }, internet2000s: { code: 'BRL', symbol: 'R$', perDollar: 1.8 }, streaming2020s: { code: 'BRL', symbol: 'R$', perDollar: 5 } },
+  },
+  {
+    id: 'detroit', name: 'Detroit', country: 'USA', tagline: 'Assembly-line rhythm, basement techno and records built to move.',
+    currency: { code: 'USD', symbol: '$', perDollar: 1 },
+    hotGenres: ['Soul', 'R&B', 'Electronic', 'Hip-Hop'], coolGenres: ['Country', 'Folk'],
+    names: {
+      first: ['Marcus', 'Denise', 'Andre', 'Rochelle', 'Calvin', 'Aaliyah', 'Darnell', 'Simone', 'Malik', 'Janice'],
+      last: ['Williams', 'Jefferson', 'Banks', 'Robinson', 'Turner', 'Harris', 'Coleman', 'Brooks', 'Walker', 'Franklin'],
+    },
+    scene: 'West Grand Boulevard and basement machines',
+    accent: '#5aa7a7',
+    edge: { attribute: 'focusMastery', label: 'Pocket discipline', why: 'Detroit sessions teach every player to serve the groove.' },
+    lore: {
+      blurb: 'A factory town that treated the studio like an instrument: tight rhythm sections upstairs, futuristic machines below street level.',
+      landmarks: ['A converted house with a crowded attic echo chamber', 'A downtown ballroom where the floor adds its own backbeat', 'A basement room wired for drum machines after midnight'],
+      legend: 'Detroit engineers say a record is ready when the line moves, the bass holds and nobody wastes a note.',
+      eras: { analog60s: 'House bands, handclaps and an assembly-line studio turn soul records into a worldwide sound.', digital80s: 'Synths and drum machines carry the city pulse from basement parties to dance floors.', internet2000s: 'Hip-hop, garage rock and independent rooms rebuild around the city’s stubborn musical core.', streaming2020s: 'Producers connect soul history, techno precision and rap sessions across a renewed studio network.' },
+    },
+  },
+  {
+    id: 'lagos', name: 'Lagos', country: 'Nigeria', tagline: 'Highlife guitars, restless grooves and a city louder than the monitors.',
+    currency: { code: 'NGN', symbol: '₦', perDollar: 1500 },
+    hotGenres: ['Soul', 'Pop', 'Hip-Hop', 'Electronic'], coolGenres: ['Country', 'Hair Metal'],
+    names: {
+      first: ['Tunde', 'Adaeze', 'Femi', 'Ngozi', 'Kunle', 'Amara', 'Chidi', 'Bisi', 'Emeka', 'Yewande'],
+      last: ['Adeyemi', 'Okafor', 'Balogun', 'Eze', 'Afolayan', 'Nwosu', 'Ogunleye', 'Ibrahim', 'Obi', 'Akinola'],
+    },
+    scene: 'Surulere studios and all-night bandstands',
+    accent: '#d5a52f',
+    edge: { attribute: 'creativeIntuition', label: 'Live-wire instinct', why: 'Long band sets teach you when a groove is about to turn.' },
+    lore: {
+      blurb: 'A coastal megacity where highlife, Afrobeat, gospel and pop meet traffic, generators and audiences that expect the band to play on.',
+      landmarks: ['A Surulere room built around a broad live floor', 'A hotel bandstand where arrangements grow overnight', 'An island studio whose generator has perfect timing'],
+      legend: 'The city’s producers say the best take begins after the arrangement has outgrown the page.',
+      eras: { analog60s: 'Highlife bands fill hotel rooms and radio studios with guitars, horns and dance-floor arrangements.', digital80s: 'Afrobeat’s long forms meet boogie keyboards, cassette studios and a fast-moving pop circuit.', internet2000s: 'Home studios and music-video channels carry a new Nigerian pop sound across the continent.', streaming2020s: 'Afrobeats sessions travel worldwide while Lagos rooms keep the percussion and call-and-response close.' },
+    },
+    eraCurrency: { analog60s: { code: 'NGP', symbol: '£', perDollar: 0.36 }, digital80s: { code: 'NGN', symbol: '₦', perDollar: 0.8 }, internet2000s: { code: 'NGN', symbol: '₦', perDollar: 130 }, streaming2020s: { code: 'NGN', symbol: '₦', perDollar: 1500 } },
   },
 ];
 

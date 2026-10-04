@@ -100,6 +100,8 @@ const Shell: React.FC<{
       direction="scale"
       role="dialog"
       aria-label={INSPECTOR_META[hotspot].label}
+      data-rst-surface="contextual"
+      data-rst-world-target={hotspot}
       className="studio-inspector rst-modal absolute overflow-y-auto"
       onClick={(e: React.MouseEvent) => e.stopPropagation()}
     >
@@ -207,6 +209,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
     return () => window.removeEventListener('keydown', onKey);
   }, [hotspot, onClose]);
 
+  const [offerIndex, setOfferIndex] = useState(0);
   const project = gameState.activeProject;
 
   const openDashboard = (tab: Parameters<StudioInspectorProps['onOpenDashboardTab']>[0]) => {
@@ -293,7 +296,8 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
     return (
       <Shell hotspot={hotspot} onClose={onClose}>
         {gigs.length === 0 && <div className="text-xs text-stone-400">No offers on the desk. Chase fresh gigs below.</div>}
-        {gigs.map((gig) => (
+        {gigs.length > 1 && <div className="flex items-center justify-between gap-2"><button type="button" className="rst-btn" onClick={() => setOfferIndex(index => (index + gigs.length - 1) % gigs.length)} aria-label="Previous enquiry">←</button><span className="rst-kicker">Enquiry {Math.min(offerIndex, gigs.length - 1) + 1} / {gigs.length}</span><button type="button" className="rst-btn" onClick={() => setOfferIndex(index => (index + 1) % gigs.length)} aria-label="Next enquiry">→</button></div>}
+        {gigs.slice(Math.min(offerIndex, Math.max(0, gigs.length - 1)), Math.min(offerIndex, Math.max(0, gigs.length - 1)) + 1).map((gig) => (
           <div key={gig.id} className="rounded border border-white/10 bg-white/5 p-2 space-y-1">
             <div className="flex items-start justify-between gap-2">
               <span className="font-semibold text-white text-xs">{gig.title}</span>
@@ -305,6 +309,8 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
             <MotionButton
               className="w-full h-7 mt-1 bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] text-emerald-100 text-xs font-bold"
               disabled={!!project || !!actingGigId}
+              data-rst-action-id="phone:accept"
+              data-rst-world-target="phone"
               onClick={() => handleTakeGig(gig)}
             >
               {actingGigId === gig.id ? (

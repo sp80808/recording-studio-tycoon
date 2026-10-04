@@ -36,6 +36,7 @@ assert.equal(findPendingChoreForHotspot(legacyState, 'liveRoom')?.id, 'tune_acou
 const roomSrc = readFileSync('src/components/StudioRoom.tsx', 'utf8');
 assert.ok(roomSrc.includes('ChoreHotspotButton'), 'StudioRoom uses shared ChoreHotspotButton');
 assert.ok(roomSrc.includes('findPendingChoreForHotspot'), 'StudioRoom resolves chores via canonical helper');
+assert.ok(roomSrc.includes("findPendingChoreForHotspot(gameState.choreState, canonical)"), 'floor clicks route chores diegetically first');
 assert.doesNotMatch(roomSrc, /StudioStampChip/, 'floor chore badges are no longer raw stamp chips');
 
 const btnSrc = readFileSync('src/components/chores/ChoreHotspotButton.tsx', 'utf8');

@@ -1,3 +1,4 @@
+import { pickFloorStaff } from '@/components/studio/staffStaging';
 import { TAKE_FEEDBACK_EVENT, takeQuip, type TakeFeedbackDetail } from '@/utils/takeFeedback';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import WebGLCanvas, { StudioHotspotId, HotspotAnchors } from '@/components/WebGLCanvas';
@@ -6,7 +7,7 @@ import { StudioRoomTabs } from '@/components/studio/StudioRoomTabs';
 import { getOccupiedRoomIds, getOperationalStudioRooms } from '@/utils/studioRoomUtils';
 import { normalizeHotspotId } from '@/utils/studioHotspots';
 import { StudioInspector } from '@/components/StudioInspector';
-import { GameState, Project } from '@/types/game';
+import { GameState, Project, SessionIntervention } from '@/types/game';
 import { useSettings } from '@/contexts/SettingsContext';
 import { gameAudio } from '@/utils/audioSystem';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
@@ -16,6 +17,7 @@ import { Coffee, LocateFixed, Waves, Wrench } from 'lucide-react';
 import { getEraDecor, getTrophyInput } from '@/components/studio/studioDecorConfig';
 import { triggerScreenShake } from '@/utils/screenShake';
 import { findPendingChoreForHotspot, getChoreCanonicalHotspot } from '@/simulation/choreEngine';
+import { isFlightCaseSystemUnlocked } from '@/economy/flightCaseEconomy';
 import { ProducerSprite } from '@/components/ProducerSprite';
 import { useGamepad } from '@/hooks/useGamepad';
 import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
@@ -62,6 +64,9 @@ interface StudioRoomProps {
   onStudioReady?: () => void;
   /** False while a ContextDrawer owns attention — suppresses idle auto-zoom. */
   floorFocused?: boolean;
+  worldControls?: boolean;
+  intervention?: SessionIntervention | null;
+  onInterventionFocus?: () => void;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -86,6 +91,9 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
   onBookings,
   onStudioReady,
   floorFocused = true,
+  worldControls = false,
+  intervention = null,
+  onInterventionFocus,
   className = '',
   style,
 }) => {
@@ -151,7 +159,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       progress = project.stages.length > 0 ? (done + currentFrac) / project.stages.length : 0;
     }
     const workingStaff = gameState.hiredStaff.filter((s) => s.status === 'Working').length;
-    const presentStaff = gameState.hiredStaff.filter((s) => s.status !== 'Resting');
+    const presentStaff = pickFloorStaff(gameState.hiredStaff);
     const activity = Math.min(
       1,
       0.08 + (project ? 0.3 + progress * 0.45 : 0) + workingStaff * 0.08
@@ -220,7 +228,9 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       cityId: gameState.cityId,
       roomTier,
       premisesTier: gameState.premisesTier ?? 0,
-      pendingCases: (gameState.pendingCrates ?? []).map((c) => c.tier),
+      pendingCases: isFlightCaseSystemUnlocked(gameState)
+        ? (gameState.pendingCrates ?? []).map((c) => c.tier)
+        : [],
       trophies: getTrophyInput(gameState),
       decorSeed: String(gameState.saveSeed ?? 'studio'),
       enquiryWaiting: gameState.availableProjects.length > 0,
@@ -247,6 +257,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     return all.find((p) => p?.bookingRoomId === roomId)?.title ?? null;
   };
   const handleHotspot = (id: StudioHotspotId | string) => {
+    if (!floorFocused) return;
     if (id === 'producer') {
       if (settings.sfxEnabled) void gameAudio.playTactileClick();
       setActiveInspector('producer');
@@ -283,6 +294,8 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     setActiveInspector(canonical);
   };
 
+  useEffect(() => { if (!floorFocused) setActiveInspector(null); }, [floorFocused]);
+
   const closeInspector = () => {
     if (settings.sfxEnabled) gameAudio.playUISound('menuClose');
     setActiveInspector(null);
@@ -306,7 +319,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
 
   // Navigate hotspots via D-Pad or Left Stick when on studio floor
   useEffect(() => {
-    if (!gamepad.isConnected || activeInspector) return;
+    if (!gamepad.isConnected || activeInspector || !floorFocused) return;
 
     if (gamepad.justPressed.dpadRight || gamepad.justPressed.dpadDown) {
       setFocusedHotspotIndex((prev) => (prev + 1) % studioHotspots.length);
@@ -321,6 +334,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     }
   }, [
     gamepad.isConnected,
+    floorFocused,
     activeInspector,
     gamepad.justPressed.dpadRight,
     gamepad.justPressed.dpadDown,
@@ -384,10 +398,14 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
         </div>
       </div>
 
-      {/* Anchored hybrid chore hotspots (stamp language + old duty depth). */}
+      {/* Chore overlay buttons (kept): same shortcut as clicking the floor
+          object itself — handleHotspot runs the pending chore first. Anchors
+          are clamped and separated so the chips never overlap each other, the
+          camera button, or the session strip; they hide while an inspector,
+          drawer, or room vignette owns attention. */}
       {(() => {
         const choreState = gameState.choreState;
-        if (!choreState || viewRoom) return null;
+        if (!choreState || viewRoom || !floorFocused || activeInspector) return null;
         const pendingConsoleChores = Object.values(choreState.chores).filter(
           (c) => getChoreCanonicalHotspot(c) === 'console' && !c.completed
         );
@@ -395,19 +413,21 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           (c) => getChoreCanonicalHotspot(c) === 'liveRoom' && !c.completed
         );
 
-        const anchorStyle = (id: StudioHotspotId): React.CSSProperties | undefined => {
+        const anchorStyle = (id: StudioHotspotId, dyPx: number): React.CSSProperties | undefined => {
           const a = anchors[id];
           if (!a) return undefined;
           return {
             position: 'absolute',
-            left: `clamp(80px, ${a.x}px, calc(100% - 80px))`,
-            top: `max(${a.y}px, 40px)`,
-            transform: 'translate(-50%, calc(-100% - 8px))',
+            left: `clamp(88px, ${a.x}px, calc(100% - 88px))`,
+            top: `max(${a.y + dyPx}px, 96px)`,
+            transform: 'translate(-50%, calc(-100% - 10px))',
             zIndex: 20,
           };
         };
-        const consoleStyle = anchorStyle('console');
-        const liveStyle = anchorStyle('liveRoom');
+        // Console sits left, live room right; vertical nudge keeps the two
+        // chips from colliding when their 3D anchors project close together.
+        const consoleStyle = anchorStyle('console', 0);
+        const liveStyle = anchorStyle('liveRoom', -26);
         const busy = Boolean(activeChoreId);
         const consoleChore = pendingConsoleChores[0];
         const liveChore = pendingLiveRoomChores[0];
@@ -426,7 +446,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
                     working={activeChoreId === consoleChore.id}
                     disabled={busy && activeChoreId !== consoleChore.id}
                     className={`studio-room-chip ${consoleStyle ? '' : 'studio-duty-console absolute bottom-14 left-6 z-20'} ${busy && activeChoreId !== consoleChore.id ? 'pointer-events-none opacity-70' : ''}`}
-                    title={`${pendingConsoleChores.length} console maintenance duty pending`}
+                    title={`${pendingConsoleChores.length} console maintenance duty pending — same as clicking the console desk`}
                     onClick={() => handleHotspot('console')}
                   />
                 </MotionReveal>
@@ -444,7 +464,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
                     working={activeChoreId === liveChore.id}
                     disabled={busy && activeChoreId !== liveChore.id}
                     className={`studio-room-chip ${liveStyle ? '' : 'studio-duty-live absolute bottom-16 right-6 z-20'} ${busy && activeChoreId !== liveChore.id ? 'pointer-events-none opacity-70' : ''}`}
-                    title="Live Room: Tune Acoustics"
+                    title="Live Room: Tune Acoustics — same as clicking the live booth"
                     onClick={() => handleHotspot('liveRoom')}
                   />
                 </MotionReveal>
@@ -467,6 +487,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           <LocateFixed size={16} />
         </button>
         {(() => {
+          if (!floorFocused || activeInspector || viewRoom) return null;
           const shelfChore = findPendingChoreForHotspot(gameState.choreState, 'shelf');
           if (!shelfChore) return null;
           const busy = Boolean(activeChoreId);
@@ -481,7 +502,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
                 working={activeChoreId === shelfChore.id}
                 disabled={busy && activeChoreId !== shelfChore.id}
                 className="studio-room-chip"
-                title="Lounge: Brew Espresso"
+                title="Lounge: Brew Espresso — same as clicking the vinyl shelf"
                 onClick={() => handleHotspot('shelf')}
               />
             </MotionReveal>

@@ -386,6 +386,7 @@ export const generateProjectReview = (
     playerManagementXpGained,
     skillBreakdown,
     reviewSnippet,
+    qualityFactors: factorNotes.slice(0, 3),
     assignedPerson: assignedPersonDetails,
     genre: project.genre,
   };

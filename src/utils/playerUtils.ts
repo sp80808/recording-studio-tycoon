@@ -1,5 +1,7 @@
 
 import { GameState, PlayerAttributes } from '@/types/game';
+import { grantRewardBundle, rewardForProducerLevel } from '@/economy/flightCaseEconomy';
+import { FLIGHT_CASES } from '@/data/flightCases';
 
 export const calculateAttributeBonus = (attribute: keyof PlayerAttributes, level: number): number => {
   // Each attribute level provides a percentage bonus
@@ -51,20 +53,40 @@ export const resolvePlayerLevelUps = (state: GameState): GameState => {
   const player = state.playerData;
   if (!Number.isFinite(player.xp) || player.xp < xpForPlayerLevel(player.level)) return state;
   let { xp, level, perkPoints } = player;
+  const crossed: number[] = [];
   while (xp >= xpForPlayerLevel(level)) {
     xp -= xpForPlayerLevel(level);
     level++;
+    crossed.push(level);
     perkPoints += level <= 10 ? 2 : level <= 25 ? 1 : 0;
   }
+  // Flight-case level rewards (bead fec): grant once per milestone level.
+  // The claimed list keeps loaded/legacy saves from double-granting.
+  let next: GameState = state;
+  const claimed = new Set(state.flightCaseLevelsClaimed ?? []);
+  const grantedCaseNames: string[] = [];
+  for (const crossedLevel of crossed) {
+    const reward = rewardForProducerLevel(crossedLevel);
+    if (!reward || claimed.has(crossedLevel)) continue;
+    const applied = grantRewardBundle(next, reward);
+    next = applied.state;
+    claimed.add(crossedLevel);
+    for (const c of reward.cases ?? []) grantedCaseNames.push(FLIGHT_CASES[c.tier].name);
+  }
+  const caseNote =
+    grantedCaseNames.length > 0
+      ? ` A ${grantedCaseNames.join(' and ')} is waiting in the Flight Case Depot!`
+      : '';
   return {
-    ...state,
+    ...next,
     playerData: {
       ...player, xp, level, perkPoints, xpToNextLevel: xpForPlayerLevel(level),
       dailyWorkCapacity: player.dailyWorkCapacity + level - player.level,
     },
-    notifications: [...state.notifications, {
+    flightCaseLevelsClaimed: claimed.size > 0 ? [...claimed].sort((a, b) => a - b) : next.flightCaseLevelsClaimed,
+    notifications: [...next.notifications, {
       id: `producer-level-${level}`, type: 'success', timestamp: Date.now(), duration: 6000,
-      message: `Producer level ${level}! +${perkPoints - player.perkPoints} talent points and +${level - player.level} daily sessions.`,
+      message: `Producer level ${level}! +${perkPoints - player.perkPoints} talent points and +${level - player.level} daily sessions.${caseNote}`,
     }],
   };
 };
