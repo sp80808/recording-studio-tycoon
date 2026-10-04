@@ -87,9 +87,9 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
     if (local) setMoniker(local.slice(0, 24));
     setLook(randomiseProducerAppearance(rng));
   };
-  const patchLook = (patch: Partial<ProducerAppearance>) => {
+  const changeLook = (next: ProducerAppearance) => {
     click();
-    setLook((current) => ({ ...current, ...patch }));
+    setLook(next);
   };
 
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -280,7 +280,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
         )}
 
         {step === 2 && (
-          <ProducerCreator moniker={moniker} onMoniker={setMoniker} look={look} npc={previewNpc} onPatch={patchLook} onRandomise={randomise} />
+          <ProducerCreator moniker={moniker} onMoniker={setMoniker} look={look} npc={previewNpc} onLookChange={changeLook} onRandomise={randomise} />
         )}
 
         {step === 3 && (

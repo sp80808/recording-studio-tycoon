@@ -233,6 +233,8 @@ echo "=== producer customization -> modular sprite (#126) ==="
 node "${CHECK_OUTPUT_DIR}/rst-producer-customization.cjs"
 ./node_modules/.bin/esbuild tests/producer-appearance-model.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-producer-appearance-model.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-producer-appearance-model.cjs"
+./node_modules/.bin/esbuild tests/appearance-editor.check.tsx --bundle --platform=node --format=cjs --loader:.css=empty --outfile="${CHECK_OUTPUT_DIR}/rst-appearance-editor.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-appearance-editor.cjs"
 
 echo "=== era-authentic gigs, story contracts & economy floors ==="
 for check in project-era-starters project-brief session-issues signal-chain economy-income economy-ledger story-contracts achievements campaign-endings studio-hotkeys studio-know-how studio-premises; do
