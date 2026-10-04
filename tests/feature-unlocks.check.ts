@@ -31,11 +31,11 @@ describe('progressive technique unlocks (#260)', () => {
     assert.equal(isFeatureUnlocked(recordTechniqueProgress(s, { grade: 'Bronze' }), 'overdrive'), false);
   });
 
-  it('Combo unlocks deterministically at 4 sessions or level 3', () => {
+  it('Combo unlocks deterministically at 4 sessions (level alone never skips the prerequisite)', () => {
     const od = (s: GameState) => recordTechniqueProgress(s, { grade: 'Gold' });
     assert.equal(isFeatureUnlocked(od(withSessions(fresh(), 3)), 'combo'), false);
     assert.equal(isFeatureUnlocked(od(withSessions(fresh(), 4)), 'combo'), true);
-    assert.equal(isFeatureUnlocked(od(withSessions(fresh(), 2, 3)), 'combo'), true);
+    assert.equal(isFeatureUnlocked(od(withSessions(fresh(), 2, 3)), 'combo'), false);
   });
 
   it('Streak Bank cannot unlock before Combo and needs a x3 combo after it', () => {

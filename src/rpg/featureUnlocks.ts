@@ -72,17 +72,16 @@ const emptyProgress = (): FeatureProgress => ({ bestCombo: 0, goodTake: false, s
 
 const rules = (s: Unlockable, p: FeatureProgress): Record<ProducerFeature, boolean> => {
   const sessions = sessionsCompleted(s);
-  const level = s.playerData?.level ?? 1;
-  const overdrive = ((sessions >= 2 || level >= 2) && p.goodTake) || sessions >= 4;
-  const combo = overdrive && (sessions >= 4 || level >= 3);
+  const overdrive = (sessions >= 2 && p.goodTake) || sessions >= 4;
+  const combo = overdrive && sessions >= 4;
   const bank = combo && (p.bestCombo >= BANK_COMBO_GOAL || sessions >= 8);
   return { overdrive, combo, 'streak-bank': bank };
 };
 
 const REQUIREMENT: Record<ProducerFeature, string> = {
-  overdrive: 'Finish 2 sessions and land a Silver or Gold take.',
-  combo: 'Finish 4 sessions (or reach level 3).',
-  'streak-bank': `Reach a x${BANK_COMBO_GOAL} combo once Combo is unlocked.`,
+  overdrive: 'Finish 2 sessions and land a Silver or Gold take (or finish 4 sessions).',
+  combo: 'Finish 4 sessions.',
+  'streak-bank': `Reach a x${BANK_COMBO_GOAL} combo once Combo is unlocked (or finish 8 sessions).`,
 };
 
 export const resolveProducerFeatureUnlocks = (state: Unlockable): Record<ProducerFeature, FeatureUnlockState> => {

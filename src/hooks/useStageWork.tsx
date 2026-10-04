@@ -489,7 +489,7 @@ export const useStageWork = ({
 
       const gemGain = stageCompleted && completedGrade?.grade === 'Gold' ? 2 : stageCompleted && completedGrade?.grade === 'Silver' ? 1 : 0;
 
-      const techniqueProgress = recordTechniqueProgress(prev, { combo: newCombo, grade: stageCompleted ? completedGrade?.grade ?? null : null }).featureProgress;
+      const techniqueProgress = recordTechniqueProgress(prev, { combo: newCombo, grade: options?.takeGrade === 'Gold' || options?.takeGrade === 'Silver' ? options.takeGrade : null }).featureProgress;
       return { ...withDailyTracking({
         ...withKnowHow,
         ...gearUse.state,
