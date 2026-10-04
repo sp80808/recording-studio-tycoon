@@ -1,4 +1,6 @@
 import { money } from '@/utils/displayMoney';
+import { enquiryDemandWeight, industryPulse } from '@/rpg/marketDemand';
+import { trackEnquiry, trackEnquiryViewed } from '@/telemetry/instrument';
 import React, { useState } from 'react';
 import { GameState, Project } from '@/types/game';
 import { generateNewProjects } from '@/utils/projectUtils';
@@ -18,7 +20,13 @@ import BriefPanel from '@/components/BriefPanel';
 import RiderPanel from '@/components/RiderPanel';
 import ForecastPanel from '@/components/ForecastPanel';
 import { currencySymbol, toLocalAmount } from '@/rpg/cities';
-import { BookingCalendar, BookingCostLine } from '@/components/BookingCalendar';
+import { BookingCostLine } from '@/components/BookingCalendar';
+import { filterAndSortBoard } from '@/utils/enquiryBoard';
+import { fillerJobsFor, isFillerJob } from '@/rpg/fillerJobs';
+import { isSignatureJob, signatureJobFor } from '@/rpg/signatureBrief';
+import { labelOffersFor, withChoices, NO_CHOICES, type LabelChoices } from '@/rpg/labelAccounts';
+import { LabelTermsPanel } from '@/components/LabelTermsPanel';
+import { enquiryStyleNote } from '@/rpg/houseStyle';
 import { defaultAssignment, type SessionAssignment } from '@/rpg/sessionForecast';
 import { getApproach, getProjectBrief, type ProductionApproach } from '@/rpg/projectBrief';
 import { gameAudio } from '@/utils/audioSystem';
@@ -115,6 +123,8 @@ const StakePicker: React.FC<{
   </div>
 );
 
+const isDerivedOffer = (p: { id: string }): boolean => isFillerJob(p) || isSignatureJob(p) || p.id.startsWith('label-');
+
 export const ProjectList: React.FC<ProjectListProps> = ({
   gameState,
   setGameState,
@@ -123,10 +133,15 @@ export const ProjectList: React.FC<ProjectListProps> = ({
 }) => {
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [decliningId, setDecliningId] = useState<string | null>(null);
+  const [passedFillers, setPassedFillers] = useState<string[]>([]);
+  const [labelChoices, setLabelChoices] = useState<Record<string, LabelChoices>>({});
   const [approaches, setApproaches] = useState<Record<string, ProductionApproach['id'] | undefined>>({});
   const [chains, setChains] = useState<Record<string, SignalChain | undefined>>({});
   const [stakes, setStakes] = useState<Record<string, ContractStake>>({});
   const [assignments, setAssignments] = useState<Record<string, SessionAssignment>>({});
+  const [query, setQuery] = useState('');
+  const [fitFilter, setFitFilter] = useState<'all' | 'excellent' | 'good' | 'stretch'>('all');
+  const [sortBy, setSortBy] = useState<'recommended' | 'fee' | 'rep' | 'quick'>('recommended');
   const cooldownLeft = gigRefreshCooldownRemaining(gameState);
   const refreshReady = cooldownLeft === 0;
   const refreshCost = gigRefreshCostFor(GIG_REFRESH_COST, getOriginEffects(gameState));
@@ -150,6 +165,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
           1.1,
           prev.reputation,
           prev.cityId,
+          enquiryDemandWeight(prev.saveSeed, prev.currentDay),
         )
       ]
     }));
@@ -157,6 +173,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
 
   const handleAcceptEnquiry = (project: Project) => {
     if (gameState.activeProject || bookingId) return;
+    trackEnquiry('accepted', gameState, project);
     setBookingId(project.id);
     void gameAudio.playTactileClick();
 
@@ -165,7 +182,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
 
     // Tactile action feedback communicated within short beat (~180ms)
     window.setTimeout(() => {
-      const approach = getApproach(approaches[project.id]);
+      const approach = getApproach(approaches[project.id], project.genre);
       const chain = chains[project.id];
       const chainOk = chain && validateChain(chain, gameState, project.id).broken.length === 0;
       const plan = assignments[project.id];
@@ -178,6 +195,9 @@ export const ProjectList: React.FC<ProjectListProps> = ({
         brief: getProjectBrief(project),
         ...(approach ? { approachId: approach.id, focusAllocation: approach.focus } : {}),
       });
+      if (isDerivedOffer(project)) {
+        setGameState(prev => ({ ...prev, claimedOffers: [...(prev.claimedOffers ?? []), project.id].slice(-40) }));
+      }
       if (plan && plan.staffIds.length > 0) {
         setGameState(prev => prev.activeProject?.id !== project.id ? prev : {
           ...prev,
@@ -194,12 +214,14 @@ export const ProjectList: React.FC<ProjectListProps> = ({
 
   const handleDeclineEnquiry = (projectId: string) => {
     if (decliningId) return;
+    trackEnquiry('declined', gameState, gameState.availableProjects.find(p => p.id === projectId) ?? derivedOffers.find(p => p.id === projectId));
     setDecliningId(projectId);
     void gameAudio.playUISound('buttonClick');
 
     // Tactile pass feedback communicated within short beat (~180ms)
     window.setTimeout(() => {
-      setGameState(prev => ({
+      if (isDerivedOffer({ id: projectId })) setPassedFillers((prev) => [...prev, projectId]);
+      else setGameState(prev => ({
         ...prev,
         availableProjects: prev.availableProjects.filter(p => p.id !== projectId),
       }));
@@ -208,9 +230,23 @@ export const ProjectList: React.FC<ProjectListProps> = ({
   };
 
   // Story contracts are pinned to the top; everything else keeps its arrival order.
-  const board = [...gameState.availableProjects].sort(
-    (a, b) => Number(Boolean(b.isStoryContract)) - Number(Boolean(a.isStoryContract)),
-  );
+  const signature = signatureJobFor(gameState);
+  const derivedOffers = [...labelOffersFor(gameState).filter((l) => !passedFillers.includes(l.id)), ...(signature && !passedFillers.includes(signature.id) ? [signature] : []), ...fillerJobsFor(gameState).filter((f) => !passedFillers.includes(f.id))]
+    .map((p) => (p.labelTerms ? withChoices(p, labelChoices[p.id] ?? NO_CHOICES) : p));
+  const pulse = industryPulse(gameState.saveSeed, gameState.currentDay);
+  // Story contracts pin to the top in every filter/sort mode (see enquiryBoard).
+  const board = filterAndSortBoard([...gameState.availableProjects, ...derivedOffers], {
+    query,
+    fit: fitFilter,
+    sort: sortBy,
+  });
+  const totalOffers = gameState.availableProjects.length + derivedOffers.length;
+
+  React.useEffect(() => {
+    for (const project of board) {
+      trackEnquiryViewed(gameState, project);
+    }
+  }, [board, gameState]);
 
   return (
     <section className="rst-surface flex min-h-0 w-full flex-1 flex-col p-4" aria-label="Artist enquiries">
@@ -220,6 +256,17 @@ export const ProjectList: React.FC<ProjectListProps> = ({
           <p className="rst-muted mt-1 text-xs">
             Choose the sessions that best fit your room, staff and current cashflow.
           </p>
+          {pulse.length > 0 && (
+            <details data-testid="industry-pulse" className="mt-1 text-xs text-stone-400">
+              <summary className="cursor-pointer select-none">
+                Industry pulse: {pulse.map((l) => `${l.genre} ${l.arrow} ${l.word}`).join(' · ')}
+              </summary>
+              <ul className="mt-1 space-y-0.5">
+                {pulse.map((l) => <li key={l.genre}>{l.genre}: {l.effect}.</li>)}
+              </ul>
+              <p className="mt-1">Demand shapes which work turns up and how releases land. It never changes how good your recording is.</p>
+            </details>
+          )}
         </div>
         <MotionButton
           onClick={handleRefresh}
@@ -238,6 +285,47 @@ export const ProjectList: React.FC<ProjectListProps> = ({
             </>
           )}
         </MotionButton>
+      </div>
+
+      <div className="mb-3 flex shrink-0 flex-wrap items-center gap-2" role="search" aria-label="Filter enquiries">
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search title, genre, client…"
+          aria-label="Search enquiries"
+          className="rst-input min-h-9 flex-1 !text-xs"
+        />
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Fit filter">
+          {(['all', 'excellent', 'good', 'stretch'] as const).map((f) => (
+            <button
+              key={f}
+              type="button"
+              aria-pressed={fitFilter === f}
+              onClick={() => setFitFilter(f)}
+              className={`rst-chip cursor-pointer !text-[11px] ${fitFilter === f ? 'rst-chip-brass' : ''}`}
+            >
+              {f === 'all' ? 'All' : f === 'excellent' ? 'Excellent' : f === 'good' ? 'Good+' : 'Stretch'}
+            </button>
+          ))}
+        </div>
+        <label className="flex items-center gap-1.5 text-xs text-stone-400">
+          Sort
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+            aria-label="Sort enquiries"
+            className="rst-input min-h-9 !text-xs"
+          >
+            <option value="recommended">Recommended</option>
+            <option value="fee">Highest fee</option>
+            <option value="rep">Most rep</option>
+            <option value="quick">Quickest</option>
+          </select>
+        </label>
+        <span className="rst-muted text-[11px]" role="status">
+          {board.length} of {totalOffers} enquiry{totalOffers === 1 ? '' : 'ies'}
+        </span>
       </div>
 
       {gameState.activeProject && (
@@ -288,9 +376,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
           </div>
         )}
 
-        {board.length > 0 && <BookingCalendar state={gameState} />}
-
-        {board.map((project, index) => {
+              {board.map((project, index) => {
           const isBookingThis = bookingId === project.id;
           const isDecliningThis = decliningId === project.id;
           const isStory = Boolean(project.isStoryContract);
@@ -392,8 +478,20 @@ export const ProjectList: React.FC<ProjectListProps> = ({
 
                 <RiderPanel project={project} state={gameState} mode="booking" />
 
+                {project.labelTerms && (
+                  <LabelTermsPanel
+                    terms={project.labelTerms}
+                    onChange={(choices) => setLabelChoices((prev) => ({ ...prev, [project.id]: choices }))}
+                  />
+                )}
                 <BookingCostLine state={gameState} project={project} />
+                <p data-testid="enquiry-style-note" className="mb-3 text-xs text-stone-400">{enquiryStyleNote(gameState.studioExpertise, project.genre, project.brief?.serviceType)}</p>
 
+                <details className="mb-3 rounded-lg border border-[var(--rst-line)] bg-black/10 px-2.5 py-2" open={index === 0}>
+                  <summary className="cursor-pointer select-none text-xs font-semibold text-[var(--rst-ivory)]">
+                    Session details: forecast{['vocal-production', 'tracking'].includes(getProjectBrief(project).serviceType) ? ' & vocal chain' : ''}
+                  </summary>
+                  <div className="pt-2">
                 <ForecastPanel
                   project={project}
                   state={gameState}
@@ -415,6 +513,8 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                     onChange={(c) => setChains((prev) => ({ ...prev, [project.id]: c }))}
                   />
                 )}
+                  </div>
+                </details>
 
                 <StakePicker
                   value={chosenStake}
@@ -429,6 +529,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                 <div className="mt-3 flex items-center gap-2">
                   <MotionButton
                     magnetic
+                    data-rst-surface="deep-panel" data-rst-action-id="phone:accept-enquiry" data-rst-world-target="phone"
                     onClick={() => handleAcceptEnquiry(project)}
                     disabled={!!gameState.activeProject || !!bookingId || !!decliningId}
                     className={`rst-btn flex-1 ${gameState.activeProject ? '' : 'rst-btn-primary'} ${isBookingThis ? 'rst-btn-success' : ''}`}

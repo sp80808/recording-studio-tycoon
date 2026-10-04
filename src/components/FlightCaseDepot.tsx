@@ -1,8 +1,8 @@
 import { money } from '@/utils/displayMoney';
 import React, { useState } from 'react';
-import { Gem, Package } from 'lucide-react';
+import { Gem, Lock, Package } from 'lucide-react';
 import type { GameState } from '@/types/game';
-import { FLIGHT_CASES } from '@/data/flightCases';
+import { FLIGHT_CASES, FLIGHT_CASE_UNLOCK_LEVEL } from '@/data/flightCases';
 import type { Era } from '@/features/boxDrops/lootGenerator';
 import { useBoxDropsStore } from '@/features/boxDrops/boxDropsStore';
 import {
@@ -14,6 +14,7 @@ import {
   getCaseOdds,
   getGems,
   isCaseUnlocked,
+  isFlightCaseSystemUnlocked,
   openFlightCase,
   resolveCrateTier,
   type Currency,
@@ -33,6 +34,27 @@ export function FlightCaseDepot({ gameState, setGameState }: Props) {
     ? gameState.selectedEra
     : '1970s') as Era;
   const pending = gameState.pendingCrates ?? [];
+
+  // Pre-unlock teaser: the system stays hidden until producer level 3 (bead fec).
+  if (!isFlightCaseSystemUnlocked(gameState)) {
+    return (
+      <div className="flex flex-col gap-3 p-1 text-stone-100" data-testid="flight-case-depot-locked">
+        <div className="flex items-center gap-2 rounded-md border border-stone-700 bg-stone-900/70 px-3 py-2">
+          <Lock size={16} aria-hidden="true" className="text-stone-400" />
+          <span className="font-semibold">Flight Case Depot</span>
+        </div>
+        <p className="text-sm text-stone-300">
+          Touring crews trade sealed gear cases — but nobody deals with an unknown room.
+          Reach <strong className="text-amber-200">producer level {FLIGHT_CASE_UNLOCK_LEVEL}</strong> (now level {gameState.playerData.level}) to unlock the Depot.
+        </p>
+        {pending.length > 0 && (
+          <p className="text-sm text-amber-200/90">
+            {pending.length} earned case{pending.length === 1 ? '' : 's'} already waiting for the reveal.
+          </p>
+        )}
+      </div>
+    );
+  }
 
   const open = (crateId: string) => {
     const { items } = openFlightCase(gameState, crateId);

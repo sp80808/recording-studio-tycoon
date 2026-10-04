@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { motion, type TargetAndTransition, type Transition } from 'framer-motion';
+import { motion, useReducedMotion, type TargetAndTransition, type Transition } from 'framer-motion';
 import { ModularNpcDefinition } from './spriteTypes';
 import { NpcAnimationState, domMotionFor } from './npcAnimation';
 
@@ -30,6 +30,7 @@ export const ModularSpriteRenderer: React.FC<ModularSpriteRendererProps> = ({
   showBadge = true,
 }) => {
   const { body, hair, clothes, details, roleProps } = npc;
+  const reducedMotion = useReducedMotion();
 
   // Base dimensions: 32x48 virtual pixel canvas
   const width = 32 * scale;
@@ -37,6 +38,7 @@ export const ModularSpriteRenderer: React.FC<ModularSpriteRendererProps> = ({
 
   // Animation variants
   const bobVariants = useMemo((): { animate: TargetAndTransition; transition: Transition } => {
+    if (reducedMotion) return { animate: { y: 0, rotate: 0, scale: 1 }, transition: { duration: 0 } };
     switch (domMotionFor(animationState)) {
       case 'headbob':
         return {
@@ -60,7 +62,7 @@ export const ModularSpriteRenderer: React.FC<ModularSpriteRendererProps> = ({
           transition: { repeat: Infinity, duration: 2.2, ease: 'easeInOut' },
         };
     }
-  }, [animationState]);
+  }, [animationState, reducedMotion]);
 
   return (
     <div
@@ -90,6 +92,16 @@ export const ModularSpriteRenderer: React.FC<ModularSpriteRendererProps> = ({
             {/* Trousers / Lower */}
             <rect x="11" y="29" width="4" height="13" fill={clothes.lowerHex} />
             <rect x="17" y="29" width="4" height="13" fill={clothes.lowerHex} />
+            {/* Material and silhouette details make each lower-half choice legible. */}
+            {clothes.lower === 'bell_bottoms' && <g fill={clothes.lowerHex}><path d="M11 35H15L16 42H9Z" /><path d="M17 35H21L23 42H16Z" /></g>}
+            {clothes.lower === 'cargo_pants' && <g fill={clothes.topSecondaryHex}><rect x="10" y="33" width="3" height="3" /><rect x="19" y="33" width="3" height="3" /></g>}
+            {clothes.lower === 'ripped_jeans' && <g fill={body.skinHex}><rect x="11" y="35" width="3" height="1" /><rect x="18" y="37" width="3" height="1" /></g>}
+            {clothes.lower === 'corduroy_trousers' && <path d="M12 30V41M14 30V41M18 30V41M20 30V41" stroke="#ffffff" strokeOpacity=".16" strokeWidth=".5" />}
+            {clothes.lower === 'joggers' && <g fill="#27272a"><rect x="11" y="40" width="4" height="2" /><rect x="17" y="40" width="4" height="2" /></g>}
+            {(clothes.shoes === 'leather_boots' || clothes.shoes === 'hi_tops') && <g fill={clothes.shoesHex}><rect x="10" y="40" width="4" height="4" /><rect x="18" y="40" width="4" height="4" /></g>}
+            {clothes.shoes !== 'loafers' && <path d="M10 45H14M18 45H22" stroke={clothes.shoes === 'creepers' ? '#09090b' : '#d6d3d1'} strokeWidth={clothes.shoes === 'creepers' ? 2 : 1} />}
+            {clothes.shoes === 'hi_tops' && <path d="M11 41H13M19 41H21M11 43H13M19 43H21" stroke="#f5f5f4" strokeWidth=".6" />}
+            {clothes.shoes === 'canvas_skaters' && <path d="M10 43H14M18 43H22" stroke="#f5f5f4" strokeWidth="1" />}
             {/* Belt / Waist */}
             <rect x="11" y="28" width="10" height="2" fill="#18181b" />
 
@@ -103,6 +115,18 @@ export const ModularSpriteRenderer: React.FC<ModularSpriteRendererProps> = ({
             />
             {/* Collar & Secondary Accent */}
             <rect x="14" y="18" width="4" height="3" fill={clothes.topSecondaryHex} />
+
+            {/* Authored top details share the same saved garment selection as the floor sprite. */}
+            <g data-garment={clothes.top}>
+              {clothes.top === 'band_tee' && <g fill={clothes.topSecondaryHex}><path d="M13 22L16 20L19 22L16 25Z" /><rect x="13" y="26" width="6" height=".7" /></g>}
+              {clothes.top === 'flannel_shirt' && <path d="M10 21H22M10 25H22M13 18V28M18 18V28" stroke={clothes.topSecondaryHex} strokeWidth="1" />}
+              {clothes.top === 'turtleneck' && <rect x="13" y="16" width="6" height="4" fill={clothes.topPrimaryHex} />}
+              {clothes.top === 'leather_jacket' && <g fill={clothes.topSecondaryHex}><path d="M11 18L15 18L13 23ZM21 18L17 18L19 23Z" /><path d="M16 20L18 28" stroke="#d6d3d1" strokeWidth=".5" /><rect x="11" y="25" width="3" height=".7" /></g>}
+              {clothes.top === 'tracksuit_jacket' && <g fill={clothes.topSecondaryHex}><rect x="10" y="22" width="12" height="2" /><rect x="15.5" y="18" width="1" height="10" /></g>}
+              {clothes.top === 'oversized_hoodie' && <g><path d="M11 18L10 16L12 15H20L22 16L21 18" fill={clothes.topSecondaryHex} /><rect x="10" y="26" width="12" height="3" fill={clothes.topPrimaryHex} /><rect x="13" y="24" width="6" height="3" fill={clothes.topSecondaryHex} /><path d="M14 19V22M18 19V22" stroke="#e7e5e4" strokeWidth=".5" /></g>}
+              {clothes.top === 'denim_vest' && <g fill={clothes.topSecondaryHex}><rect x="15" y="18" width="2" height="10" /><rect x="11" y="21" width="3" height="2" /><rect x="18" y="21" width="3" height="2" /></g>}
+              {clothes.top === 'vintage_cardigan' && <g fill={clothes.topSecondaryHex}><path d="M13 18L16 23L19 18Z" /><rect x="15.5" y="23" width="1" height="5" /><rect x="11" y="25" width="3" height="2" /><rect x="18" y="25" width="3" height="2" /></g>}
+            </g>
 
             {/* Outerwear (Jackets, Vests) */}
             {clothes.outerwear !== 'none' && (
@@ -125,7 +149,7 @@ export const ModularSpriteRenderer: React.FC<ModularSpriteRendererProps> = ({
             {/* Right Arm (Holding Studio Role Prop) */}
             <motion.g
               animate={
-                domMotionFor(animationState) === 'working'
+                !reducedMotion && domMotionFor(animationState) === 'working'
                   ? { y: [0, -2, 0], x: [0, 1, 0] }
                   : { y: 0, x: 0 }
               }
@@ -360,7 +384,7 @@ export const ModularSpriteRenderer: React.FC<ModularSpriteRendererProps> = ({
                 stroke={details.headphoneColor}
                 strokeWidth="0.8"
                 initial={{ d: 'M 10 13 Q 8 20 12 25' }}
-                animate={{
+                animate={reducedMotion ? { d: 'M 10 13 Q 8 20 12 25' } : {
                   d: [
                     'M 10 13 Q 8 20 12 25',
                     'M 10 13 Q 9 20 13 25',

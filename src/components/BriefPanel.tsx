@@ -5,7 +5,7 @@ import {
   DIRECTION_LABELS,
   GRADE_LABELS,
   PRIORITY_LABELS,
-  PRODUCTION_APPROACHES,
+  approachesFor,
   SERVICE_LABELS,
   evaluateProjectBriefFit,
   getProjectBrief,
@@ -52,7 +52,7 @@ export const BriefPanel: React.FC<BriefPanelProps> = ({ project, state, approach
         ))}
       </ul>
       <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label="Production approach">
-        {PRODUCTION_APPROACHES.map((a) => (
+        {approachesFor(state.studioExpertise, project.genre).map((a) => (
           <button
             key={a.id}
             type="button"

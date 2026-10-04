@@ -148,10 +148,10 @@ const ERA_LIGHTING: Record<string, Omit<EraLightingKit, 'eraId'>> = {
   analog60s: {
     shaftAirAlpha: 0.042,
     shaftFloorAlpha: 0.052,
-    moteCount: 28,
-    moteBaseAlpha: 0.58,
-    rugPool: { color: 0xffb45a, alpha: 0.12, rx: 126, ry: 48 },
-    deskPool: { color: 0xffd58a, alpha: 0.075, rx: 76, ry: 28 },
+    moteCount: 12,
+    moteBaseAlpha: 0.32,
+    rugPool: { color: 0xffb45a, alpha: 0.07, rx: 92, ry: 34 },
+    deskPool: { color: 0xffd58a, alpha: 0.05, rx: 56, ry: 20 },
     propGlowScale: 1.08,
     neonFromTier: 5,
     neonPrimary: 0xffc266,
@@ -162,10 +162,10 @@ const ERA_LIGHTING: Record<string, Omit<EraLightingKit, 'eraId'>> = {
   digital80s: {
     shaftAirAlpha: 0.034,
     shaftFloorAlpha: 0.04,
-    moteCount: 22,
-    moteBaseAlpha: 0.5,
-    rugPool: { color: 0xc77dff, alpha: 0.1, rx: 118, ry: 44 },
-    deskPool: { color: 0x5aa9e6, alpha: 0.08, rx: 70, ry: 26 },
+    moteCount: 10,
+    moteBaseAlpha: 0.28,
+    rugPool: { color: 0xc77dff, alpha: 0.06, rx: 86, ry: 32 },
+    deskPool: { color: 0x5aa9e6, alpha: 0.05, rx: 52, ry: 19 },
     propGlowScale: 1.18,
     neonFromTier: 5,
     neonPrimary: 0xff4fd8,
@@ -176,10 +176,10 @@ const ERA_LIGHTING: Record<string, Omit<EraLightingKit, 'eraId'>> = {
   internet2000s: {
     shaftAirAlpha: 0.036,
     shaftFloorAlpha: 0.044,
-    moteCount: 24,
-    moteBaseAlpha: 0.52,
-    rugPool: { color: 0xff7a45, alpha: 0.1, rx: 120, ry: 46 },
-    deskPool: { color: 0x7ad9ff, alpha: 0.07, rx: 72, ry: 26 },
+    moteCount: 10,
+    moteBaseAlpha: 0.3,
+    rugPool: { color: 0xff7a45, alpha: 0.06, rx: 88, ry: 33 },
+    deskPool: { color: 0x7ad9ff, alpha: 0.045, rx: 54, ry: 19 },
     propGlowScale: 1.12,
     neonFromTier: 5,
     neonPrimary: 0xff7a45,
@@ -190,10 +190,10 @@ const ERA_LIGHTING: Record<string, Omit<EraLightingKit, 'eraId'>> = {
   streaming2020s: {
     shaftAirAlpha: 0.03,
     shaftFloorAlpha: 0.038,
-    moteCount: 18,
-    moteBaseAlpha: 0.48,
-    rugPool: { color: 0x7bf0c8, alpha: 0.09, rx: 114, ry: 42 },
-    deskPool: { color: 0xa78bfa, alpha: 0.08, rx: 68, ry: 24 },
+    moteCount: 8,
+    moteBaseAlpha: 0.26,
+    rugPool: { color: 0x7bf0c8, alpha: 0.055, rx: 84, ry: 30 },
+    deskPool: { color: 0xa78bfa, alpha: 0.05, rx: 50, ry: 18 },
     propGlowScale: 1.22,
     neonFromTier: 4,
     neonPrimary: 0x7bf0c8,
@@ -258,7 +258,14 @@ export const getWallClockTime = (
   day: number,
   tSeconds: number,
 ): { hour: number; minute: number; minutesOfDay: number } => {
-  const minutesOfDay = getStudioClockMinutes(day, tSeconds);
+  return getWallClockTimeFromMinutes(getStudioClockMinutes(day, tSeconds));
+};
+
+/** Convert a shared 24-hour clock value into hands for the analog wall face. */
+export const getWallClockTimeFromMinutes = (
+  inputMinutes: number,
+): { hour: number; minute: number; minutesOfDay: number } => {
+  const minutesOfDay = ((Math.floor(inputMinutes) % STUDIO_DAY_MINUTES) + STUDIO_DAY_MINUTES) % STUDIO_DAY_MINUTES;
   const face = minutesOfDay % WALL_CLOCK_MINUTES;
   return { hour: Math.floor(face / 60) % 12, minute: face % 60, minutesOfDay };
 };

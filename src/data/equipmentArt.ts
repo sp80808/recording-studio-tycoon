@@ -14,7 +14,7 @@
 export interface ArtSourceRef {
   pack: string;
   url: string;
-  license: 'CC0' | 'CC-BY' | 'In-house (CC0)';
+  license: 'CC0' | 'CC-BY' | 'original';
   author: string;
   notes?: string;
   needsReplacement?: boolean;
@@ -176,6 +176,7 @@ export const EQUIPMENT_ART_MAP: Record<string, EquipmentArtEntry> = {
   neumann_u87: entry('neumann_u87', 'microphone', 'assets/items/item_microphone_alt_condenser.png', '🎤', '#cbd5e1', OGA_HIFI, [], [STOCK, TUBE_GLOW, STUDIO_BLACK]),
   podcast_setup: entry('podcast_setup', 'microphone', 'assets/items/item_microphone_podcast.png', '🎙️', '#f472b6', KENNEY_ICONS, ['assets/items/item_microphone.png']),
   sphere_mic_system: entry('sphere_mic_system', 'microphone', 'assets/items/item_microphone_alt_condenser.png', '🎙️', '#22d3ee', OGA_HIFI, [], [STOCK, NEON_SKIN, STUDIO_BLACK]),
+  small_diaphragm_pair: entry('small_diaphragm_pair', 'microphone', 'assets/items/item_microphone_alt_condenser.png', '🎤', '#a3e635', OGA_HIFI, ['assets/items/item_microphone.png']),
 
   // ---- Outboard / mixers / recorders (OGA Hifi receiver + equalizer + tape-deck) ----
   telefunken_around: entry('telefunken_around', 'outboard', 'assets/items/item_outboard.png', '⚙️', '#f59e0b', OGA_HIFI),
@@ -193,6 +194,8 @@ export const EQUIPMENT_ART_MAP: Record<string, EquipmentArtEntry> = {
   ssl_4000_console: entry('ssl_4000_console', 'mixer', 'assets/items/item_console_large.png', '🎚️', '#16a34a', OGA_HIFI, ['assets/items/item_console.png']),
   tape_machine_4track: entry('tape_machine_4track', 'instrument', 'assets/items/item_tape.png', '📼', '#d6a35c', OGA_HIFI, ['assets/items/item_outboard.png']),
   mastering_chain_suite: entry('mastering_chain_suite', 'outboard', 'assets/items/item_console.png', '🎚️', '#fbbf24', OGA_HIFI, [], [STOCK, STUDIO_BLACK, NEON_SKIN]),
+  dbx_160_compressor: entry('dbx_160_compressor', 'outboard', 'assets/items/item_outboard.png', '⚙️', '#e7e5e4', OGA_HIFI),
+  adat_8track: entry('adat_8track', 'recorder', 'assets/items/item_tape.png', '📼', '#64748b', OGA_HIFI, ['assets/items/item_outboard.png']),
 
   // ---- Instruments (Kenney Generic Items + OGA Misc Tool Items) ----
   moog_or_less: entry('moog_or_less', 'instrument', 'assets/items/item_keyboard.png', '🎹', '#a855f7', KENNEY_GENERIC, ['assets/items/item_keyboard_alt.png'], [STOCK, NEON_SKIN, STUDIO_BLACK]),
@@ -207,6 +210,8 @@ export const EQUIPMENT_ART_MAP: Record<string, EquipmentArtEntry> = {
   vox_ac30: entry('vox_ac30', 'instrument', 'assets/items/item_guitar_amp.png', '🎸', '#292524', OGA_MISC_TOOL),
   drum_machine_808: entry('drum_machine_808', 'instrument', 'assets/items/item_drummachine.png', '🥁', '#f43f5e', KENNEY_GENERIC, ['assets/items/item_keyboard.png'], [STOCK, NEON_SKIN, ROADWORN]),
   sampler_mpc: entry('sampler_mpc', 'instrument', 'assets/items/item_drummachine.png', '🎛️', '#94a3b8', KENNEY_GENERIC),
+  rhodes_stage_piano: entry('rhodes_stage_piano', 'instrument', 'assets/items/item_keyboard.png', '🎹', '#b45309', KENNEY_GENERIC, ['assets/items/item_keyboard_alt.png']),
+  dx7_synth: entry('dx7_synth', 'instrument', 'assets/items/item_keyboard.png', '🎹', '#0ea5e9', KENNEY_GENERIC, ['assets/items/item_keyboard_alt.png']),
 
   // ---- Software & plugins (Kenney Game Icons, in-house faceplates) ----
   pro_tools_shed: entry('pro_tools_shed', 'software', 'assets/items/item_software_daw.png', '💻', '#38bdf8', KENNEY_ICONS),

@@ -124,3 +124,33 @@ Bead: `recording-studio-tycoon-k6e.5` (closed with evidence).
    EXIT:0 · eslint clean on new/changed files · browser smoke
    `tests/streak-bank.check.cjs` PASS: *locked→armed, STEADY HAND ×1.0 hold,
    payout credited, combo spent, zero console errors* (`/tmp/rst-smoke-streakbank3.log`).
+
+---
+
+## Session: Take calibration repair — PocketMeter sweep, pocket truth, assistance wiring (2026-10-04)
+
+Three defects found by reading `PocketMeter.tsx` / `takeEvaluation.ts` (no bead; direct request).
+
+1. **Sweep-clock reset (critical).** `useGamepad()` returns a fresh object every render and
+   the component re-renders each rAF frame (`setNeedlePos`), but the sweep effect listed
+   `gamepad`, `onLock`, `goldMin/goldMax` in its deps → cleanup + re-run every frame →
+   `startTimeRef` reset every frame → needle parked at `0.53 + 0.41·sin(2π·0.0167/1.8) ≈ 0.55`,
+   Gold unreachable, 3.2s auto-lock never fired. Fixed with `pocketRef` / `onLockRef` /
+   `hapticRef`; effect deps are now `[isArmed, settings.reducedMotion]`.
+2. **Faceplate ≠ grading (regression from `af0250e9`).** Meter drew/celebrated 0.66–0.88
+   while `evaluateTakeAccuracy` graded 0.70–0.85 → confetti + "LOCK GOLD TAKE!" on Silver
+   results. Both now read `getTakeGoldWindow()` from `rpg/takeEvaluation.ts`.
+3. **Dead setting.** `pocketMeterAssistance` (strict/normal/generous) existed in the settings
+   type/UI/locales but no logic consumed it. Now wired through `TAKE_POCKET_WINDOW.assistanceWidth`
+   (±7/±15/±25%, 'normal' = the historic 0.70–0.85 window, so default balance is unchanged)
+   for both the faceplate and the authoritative grading (`ActiveProject.handleLockTake`).
+4. **Feel/a11y.** Space/Enter lock parity (native semantics kept for focused controls),
+   visible auto-lock drain bar (hidden under reduced motion), needle state colours
+   (`data-needle-state`: teal below / amber pocket / red above).
+
+**Validation** — `tests/take-calibration.check.ts` (window ⇄ grading edge consistency across
+assistance + bonuses, sweep-visit simulation, source regression guards for the dep list and
+shared helper) registered in `scripts/run-checks.sh`; typecheck · `pnpm test` · `pnpm build` ·
+focused eslint · live Playwright probe (`tests/take-calibration.check.cjs` pattern) against the
+dev server: needle sweeps the full arc, in-pocket Space lock scores Gold, auto-lock fallback fires.
+

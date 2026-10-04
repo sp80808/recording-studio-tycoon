@@ -1,4 +1,4 @@
-# Booking icons (in-house CC0)
+# Booking icons (in-house proprietary original)
 
 Standalone 48x48 SVGs for the booking enquiry card: `brief`, `fit-S|A|B|C`,
 `approach-safe`, `approach-moonshot`. Not wired into any component yet so the

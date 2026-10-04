@@ -1,5 +1,5 @@
 // Earned flight cases waiting to be opened, shown as a stack on the studio floor (diegetic link to the
-// Flight Case Depot: tap the stack to open it). In-house CC0, Pixi Graphics, no image files.
+// Flight Case Depot: tap the stack to open it). In-house proprietary original, Pixi Graphics, no image files.
 
 import { Container, Graphics } from 'pixi.js';
 import { iso } from './isoMath';

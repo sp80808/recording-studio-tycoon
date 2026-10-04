@@ -23,7 +23,7 @@ export interface ContextDrawerProps {
   children: React.ReactNode;
   headerActions?: React.ReactNode;
   footerContent?: React.ReactNode;
-  width?: 'default' | 'wide' | 'session';
+  width?: 'default' | 'wide' | 'session' | 'charts';
   className?: string;
   returnFocusRef?: React.RefObject<HTMLElement | null> | HTMLElement | null;
 }
@@ -115,9 +115,11 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
   const widthStyle =
     width === 'session'
       ? 'w-full max-w-none md:w-[min(100%,760px)] lg:w-[min(46vw,640px)] xl:w-[min(40vw,680px)]'
-      : width === 'wide'
-        ? 'w-full md:max-w-2xl'
-        : 'w-full md:max-w-md lg:max-w-lg';
+      : width === 'charts'
+        ? 'w-full max-w-none md:w-[min(calc(100vw-24px),780px)] lg:w-[min(calc(100vw-24px),880px)] xl:w-[min(calc(100vw-24px),980px)]'
+        : width === 'wide'
+          ? 'w-full max-w-none md:w-[min(calc(100vw-24px),720px)] lg:w-[min(calc(100vw-24px),820px)]'
+          : 'w-[min(520px,calc(100vw-24px))]';
 
   // Remount the panel when the destination changes so each dock/hotspot open gets enter motion.
   const panelKey = destinationKey ?? `${activeTab}:${width}`;
@@ -143,8 +145,8 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
 
           {/* Floating panel: starts below the HUD (desktop) and goes edge-to-edge on phones. */}
           <div
-            className="studio-drawer-shell absolute right-3 bottom-3 flex max-w-full pointer-events-none"
-            style={{ top: 'var(--studio-drawer-top, 72px)' }}
+            className={`studio-drawer-shell absolute right-3 bottom-3 flex pointer-events-none ${widthStyle}`}
+            style={{ top: 'var(--studio-drawer-top, 72px)', maxWidth: 'calc(100% - 24px)' }}
           >
             <AnimatePresence mode="wait">
               <MotionPanel
@@ -154,7 +156,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="context-drawer-title"
-                className={`rst-modal pointer-events-auto flex flex-col h-full ${widthStyle} ${className}`}
+                className={`rst-modal pointer-events-auto flex min-w-0 w-full flex-col h-full ${className}`}
               >
                 {/* Header — title only, no tab strip */}
                 <div className="studio-drawer-head shrink-0 px-5 pt-4 pb-3 border-b border-[var(--rst-line)]">
@@ -165,7 +167,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
                         id="context-drawer-title"
                         ref={headingRef}
                         tabIndex={-1}
-                        className="rst-title mt-1 truncate text-xl outline-none sm:text-2xl"
+                        className="rst-title mt-1 break-words text-xl outline-none sm:text-2xl"
                       >
                         {resolvedTitle}
                       </h2>

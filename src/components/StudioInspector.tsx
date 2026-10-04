@@ -29,6 +29,11 @@ import {
   User,
   Users,
   Zap,
+  Clock3,
+  FastForward,
+  Moon,
+  Sun,
+  Sunset,
 } from 'lucide-react';
 import { getOriginEffects, gigRefreshCostFor } from '@/narrative/originPerks';
 import { getEraDecor } from '@/components/studio/studioDecorConfig';
@@ -40,6 +45,8 @@ import {
 } from '@/components/motion/primitives';
 import { findPendingChoreForHotspot } from '@/simulation/choreEngine';
 import { ChoreHotspotButton } from '@/components/chores/ChoreHotspotButton';
+import { useStudioClock } from '@/contexts/StudioClockContext';
+import { formatStudioCountdown, getStudioDayDurationLabel } from '@/game-mechanics/studioTime';
 
 export interface StudioInspectorProps {
   hotspot: StudioHotspotId;
@@ -95,11 +102,13 @@ const Shell: React.FC<{
       if (e.target === e.currentTarget) onClose();
     }}
   >
-    <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]" onClick={onClose} aria-hidden="true" />
+    <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
     <MotionPanel
       direction="scale"
       role="dialog"
       aria-label={INSPECTOR_META[hotspot].label}
+      data-rst-surface="contextual"
+      data-rst-world-target={hotspot}
       className="studio-inspector rst-modal absolute overflow-y-auto"
       onClick={(e: React.MouseEvent) => e.stopPropagation()}
     >
@@ -193,6 +202,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
 }) => {
   const [actingGigId, setActingGigId] = useState<string | null>(null);
   const [actingStaffId, setActingStaffId] = useState<string | null>(null);
+  const studioClock = useStudioClock();
 
   // Esc closes the inspector, and opening plays tactile gear switch.
   useEffect(() => {
@@ -207,6 +217,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
     return () => window.removeEventListener('keydown', onKey);
   }, [hotspot, onClose]);
 
+  const [offerIndex, setOfferIndex] = useState(0);
   const project = gameState.activeProject;
 
   const openDashboard = (tab: Parameters<StudioInspectorProps['onOpenDashboardTab']>[0]) => {
@@ -293,7 +304,8 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
     return (
       <Shell hotspot={hotspot} onClose={onClose}>
         {gigs.length === 0 && <div className="text-xs text-stone-400">No offers on the desk. Chase fresh gigs below.</div>}
-        {gigs.map((gig) => (
+        {gigs.length > 1 && <div className="flex items-center justify-between gap-2"><button type="button" className="rst-btn" onClick={() => setOfferIndex(index => (index + gigs.length - 1) % gigs.length)} aria-label="Previous enquiry">←</button><span className="rst-kicker">Enquiry {Math.min(offerIndex, gigs.length - 1) + 1} / {gigs.length}</span><button type="button" className="rst-btn" onClick={() => setOfferIndex(index => (index + 1) % gigs.length)} aria-label="Next enquiry">→</button></div>}
+        {gigs.slice(Math.min(offerIndex, Math.max(0, gigs.length - 1)), Math.min(offerIndex, Math.max(0, gigs.length - 1)) + 1).map((gig) => (
           <div key={gig.id} className="rounded border border-white/10 bg-white/5 p-2 space-y-1">
             <div className="flex items-start justify-between gap-2">
               <span className="font-semibold text-white text-xs">{gig.title}</span>
@@ -305,6 +317,8 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
             <MotionButton
               className="w-full h-7 mt-1 bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] text-emerald-100 text-xs font-bold"
               disabled={!!project || !!actingGigId}
+              data-rst-action-id="phone:accept"
+              data-rst-world-target="phone"
               onClick={() => handleTakeGig(gig)}
             >
               {actingGigId === gig.id ? (
@@ -390,8 +404,23 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
     const upkeep = calculateEquipmentUpkeep(gameState.ownedEquipment, getOriginEffects(gameState));
     const nextReq = ProgressionSystem.getNextUnlockRequirements(gameState);
     const status = ProgressionSystem.getProgressionStatus(gameState);
+    const PhaseIcon = studioClock.phase === 'night' ? Moon : studioClock.phase === 'day' ? Sun : Sunset;
     return (
       <Shell hotspot={hotspot} onClose={onClose}>
+        <section className="studio-calendar-clock" aria-label={`Studio time ${studioClock.formattedTime}, ${studioClock.phase}`}>
+          <div className="studio-calendar-clock__time">
+            <Clock3 aria-hidden="true" size={17} />
+            <span>{studioClock.formattedTime}</span>
+          </div>
+          <div className="studio-calendar-clock__meta">
+            <span className="capitalize"><PhaseIcon aria-hidden="true" size={13} /> {studioClock.phase}</span>
+            <span>Next day in {formatStudioCountdown(studioClock.remainingMs)}</span>
+          </div>
+          <div className="studio-calendar-clock__track" aria-hidden="true">
+            <i style={{ width: `${Math.max(2, studioClock.progress * 100)}%` }} />
+          </div>
+          <div className="studio-calendar-clock__labels" aria-hidden="true"><span>08</span><span>12</span><span>18</span><span>Night</span></div>
+        </section>
         <StatRow label="Day" value={<MotionNumber value={gameState.currentDay} />} />
         <StatRow label="Year" value={gameState.currentYear} />
         <StatRow label="Daily salaries" value={`-${money(salaries)}`} valueClass="text-red-400" />
@@ -410,16 +439,17 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           )}
         </div>
         <MotionButton
-          className="w-full h-8 bg-purple-400/[0.14] ring-1 ring-inset ring-purple-400/45 hover:bg-purple-400/[0.24] text-purple-100 text-xs font-bold"
+          className="studio-calendar-close-day w-full text-xs font-bold"
           onClick={() => {
             void gameAudio.playTactileClick();
             onAdvanceDay();
             onClose();
           }}
         >
-          <ActionIcon icon={CalendarDays} />
-          Advance to Day {gameState.currentDay + 1}
+          <FastForward aria-hidden="true" className="h-4 w-4" />
+          <span><small>Finish today now</small>Start Day {gameState.currentDay + 1}</span>
         </MotionButton>
+        <p className="text-[10px] leading-snug text-stone-500">{studioClock.difficulty[0].toUpperCase() + studioClock.difficulty.slice(1)} pace · {getStudioDayDurationLabel(studioClock.difficulty)} · the day rolls over automatically at the end of the studio day.</p>
         {(() => {
           const challenge = checkDailyChallenge(gameState);
           return (
@@ -508,15 +538,15 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           {gear.length === 0 && <div className="text-xs text-stone-400">Bare shelves — buy gear from the Equipment Shop.</div>}
         </div>
         <MotionButton
-          className="w-full h-7 text-xs border-white/20 text-stone-200 hover:bg-white/10"
+          className="rst-btn w-full min-h-10 text-xs"
           onClick={() => {
             void gameAudio.playTactileClick();
             onOpenDashboardTab('studio');
             onClose();
           }}
         >
-          <ActionIcon icon={ShoppingCart} />
-          Equipment Shop
+          <ShoppingCart aria-hidden="true" className="h-4 w-4 shrink-0" />
+          <span>Equipment Shop</span>
         </MotionButton>
       </Shell>
     );

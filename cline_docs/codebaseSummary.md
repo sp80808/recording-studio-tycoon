@@ -24,7 +24,7 @@ High-level architectural overview of Recording Studio Tycoon (v0.4.0).
 
 ### 3. Interactive Console Work Loop (`src/components/ActiveProject.tsx` / `PocketMeter.tsx`)
 - **Transport Dock:** 60fps illuminated Lock Take button with haptic animations.
-- **PocketMeter:** Real-time needle gauge evaluating take timing window (Gold, Silver, Solid).
+- **PocketMeter:** Real-time needle gauge evaluating take timing window (Gold, Silver, Solid). The faceplate, lock feedback and grading share one Gold-window helper (`getTakeGoldWindow`, `rpg/takeEvaluation.ts`) — including the Settings → PocketMeter Timing Window Assist levels (strict ±7% / normal ±15% / generous ±25%, normal = historic 0.70–0.85). Needle state is colour-coded (teal below / amber pocket / red above), Space/Enter locks from the keyboard, and a visible auto-lock drain bar shows the safe fallback.
 - **Variable Energy Takes:** 1⚡ (efficient), 2⚡ (standard), or 3⚡ Overdrive (+75% output boost).
 - **Real-time Focus Sliders:** Performance, Sound Capture, Layering sliders with real-time genre compatibility percentage matching.
 

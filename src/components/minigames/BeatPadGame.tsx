@@ -6,6 +6,7 @@ import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useSettings } from '@/contexts/settings-context-types';
 import { StandardButton } from '@/types/gamepad';
+import { tc } from '@/i18n/content';
 
 export interface MinigameComponentProps {
   minigameId: string;
@@ -257,8 +258,8 @@ export const BeatPadGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
 
   return (
     <MinigameChrome
-      title="MPC Finger-Drumming / Beat Pad"
-      subtitle="Punch in the rhythm cues using controller face buttons or keyboard"
+      title={tc('mg.BeatPadGame.title', 'MPC Finger-Drumming / Beat Pad')}
+      subtitle={tc('mg.BeatPadGame.subtitle', 'Punch in the rhythm cues using controller face buttons or keyboard')}
       onClose={onClose}
     >
       <div className="space-y-4 max-w-lg mx-auto select-none">
@@ -266,7 +267,7 @@ export const BeatPadGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
         <div className="relative h-20 bg-stone-950 rounded-lg border border-stone-800 p-2 overflow-hidden flex items-center shadow-inner">
           <div className="absolute left-16 top-0 bottom-0 w-1 bg-amber-500/80 shadow-[0_0_10px_#f59e0b] z-10" />
           <div className="absolute left-8 text-[10px] text-amber-400 font-mono font-bold tracking-widest uppercase">
-            TARGET
+            {tc('mg.BeatPadGame.target', 'TARGET')}
           </div>
 
           {cues.map((cue) => {
@@ -289,7 +290,7 @@ export const BeatPadGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
                   cue.hit ? 'opacity-30 scale-75' : 'scale-100'
                 }`}
               >
-                {config.label[0]}
+                {tc(`mg.BeatPadGame.pad_${cue.pad}`, config.label)[0]}
               </div>
             );
           })}
@@ -298,7 +299,7 @@ export const BeatPadGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
         {/* Feedback Banner */}
         <div className="h-6 flex items-center justify-between text-xs px-2">
           <div>
-            Score: <span className="font-mono text-amber-400 font-bold">{totalScore}</span> / 1600
+            {tc('mg.BeatPadGame.score_label', 'Score:')} <span className="font-mono text-amber-400 font-bold">{totalScore}</span> / 1600
           </div>
           {lastGrade && (
             <div
@@ -312,7 +313,7 @@ export const BeatPadGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
                   : 'text-red-400'
               }`}
             >
-              {lastGrade.grade} (+{lastGrade.points})
+              {tc(`mg.BeatPadGame.grade_${lastGrade.grade.toLowerCase()}`, lastGrade.grade)} (+{lastGrade.points})
             </div>
           )}
         </div>
@@ -337,7 +338,7 @@ export const BeatPadGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
               >
                 <div className="flex items-center gap-2">
                   <GamepadGlyph button={cfg.button} size="sm" />
-                  <span className="font-bold text-stone-200 text-sm tracking-wider uppercase">{cfg.label}</span>
+                  <span className="font-bold text-stone-200 text-sm tracking-wider uppercase">{tc(`mg.BeatPadGame.pad_${pad}`, cfg.label)}</span>
                 </div>
                 <span className="text-[10px] text-stone-500 font-mono">{cfg.key}</span>
               </button>
@@ -347,12 +348,12 @@ export const BeatPadGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
 
         {gameOver && (
           <div className="p-3 bg-emerald-950/60 border border-emerald-500/50 rounded-lg text-center animate-in zoom-in-95">
-            <h4 className="font-bold text-emerald-300 mb-1">Beat Recorded!</h4>
+            <h4 className="font-bold text-emerald-300 mb-1">{tc('mg.BeatPadGame.beat_recorded', 'Beat Recorded!')}</h4>
             <p className="text-xs text-stone-300 mb-3">
-              Final Score: <span className="font-mono text-amber-300 font-bold">{totalScore}</span>
+              {tc('mg.BeatPadGame.final_score', 'Final Score:')} <span className="font-mono text-amber-300 font-bold">{totalScore}</span>
             </p>
             <KenneyButton onClick={handleFinalize} variant="green" className="w-full">
-              Collect Studio Rewards
+              {tc('mg.BeatPadGame.collect_rewards', 'Collect Studio Rewards')}
             </KenneyButton>
           </div>
         )}
@@ -361,7 +362,7 @@ export const BeatPadGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
       <DialogFooter className="mt-4">
         {!gameOver && (
           <KenneyButton onClick={() => onComplete(totalScore, totalScore >= 450)} variant="blue">
-            Skip to Finish
+            {tc('mg.BeatPadGame.skip_to_finish', 'Skip to Finish')}
           </KenneyButton>
         )}
       </DialogFooter>

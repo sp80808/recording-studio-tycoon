@@ -1,4 +1,7 @@
+import { useCutsceneQueue } from '@/hooks/useCutsceneQueue';
 import { applyKnowHowEvents } from '@/rpg/studioKnowHow';
+import { telemetry } from '@/telemetry/sink';
+import { installTelemetryDevHandle } from '@/telemetry/devHandle';
 import { REWARD_POP_EVENT, type RewardPopDetail } from '@/utils/rewardFx';
 import React, { useState, useEffect, useCallback, useRef } from 'react'; // Added useCallback
 import { GameLayout } from '@/components/GameLayout';
@@ -24,6 +27,7 @@ import { announceAwards, applySeasonTick } from '@/economy/seasonRewards';
 import { seasonReviewNote } from '@/rpg/studioSeasons';
 import { GameState, Project, ProjectReport, StaffMember } from '@/types/game'; // Import GameState, Project, ProjectReport, StaffMember
 import DeliveryChoiceDialog from '@/components/DeliveryChoiceDialog';
+import { quoteFor } from '@/rpg/serviceQuote';
 import { applyDeliveryDecision, type UnresolvedIssue } from '@/rpg/sessionIssues';
 import { generateProjectReview } from '@/utils/projectReviewUtils'; // Import generateProjectReview
 import { getFocusEffectiveness, getMoodEffectiveness } from '@/utils/playerUtils';
@@ -37,9 +41,10 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useSaveSystem } from '@/contexts/SaveSystemContext';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { gameAudio as audioSystem } from '@/utils/audioSystem';
-import { MinigameType } from '@/components/minigames/MinigameManager'; // Import MinigameType
 import { WelcomeBackSummaryModal } from '@/components/modals/WelcomeBackSummaryModal';
 import { StorylineBranchModal } from '@/components/modals/StorylineBranchModal';
+import { PauseMenuModal } from '@/components/modals/PauseMenuModal';
+import { useGamepad } from '@/hooks/useGamepad';
 import { StoryEventModal } from '@/components/modals/StoryEventModal';
 import { DirectorEventModal } from '@/components/modals/DirectorEventModal';
 import { DayCloseBanner } from '@/components/DayCloseBanner';
@@ -47,7 +52,8 @@ import { getDayCloseBeat } from '@/narrative/dayClose';
 import { getPendingDirectorEvent, resolveDirectorChoice } from '@/narrative/directorEvents';
 import { CinematicStoryCutscene } from '@/components/cutscenes/CinematicStoryCutscene';
 import { getCampaignEnding } from '@/narrative/endings';
-import { buildActIntroCutscene, buildEndingCutscene } from '@/narrative/actCinematics';
+import { buildActIntroCutscene, buildEndingCutscene, buildMoveInCutscene } from '@/narrative/actCinematics';
+import { clearPremisesMoveBeat, getPremisesMoveBeat } from '@/rpg/premises';
 import {
   advanceSimulation,
   DEFAULT_MAX_OFFLINE_MS,
@@ -68,6 +74,7 @@ import type { ProducerBackgroundId } from '@/types/character';
 import { setDisplayCurrency } from '@/utils/displayMoney';
 import type { ProducerSetup } from '@/components/CareerStartScreen';
 import { useFeatureFlag } from '@/stores/featureFlagStore';
+import { StudioClockProvider } from '@/contexts/StudioClockContext';
 
 const MusicStudioTycoon = () => {
   const { gameState, setGameState, initializeGameState } = useGameState(); // REMOVED focusAllocation, setFocusAllocation
@@ -78,6 +85,7 @@ const MusicStudioTycoon = () => {
   
   const [showSplashScreen, setShowSplashScreen] = useState(true);
   const [gameInitialized, setGameInitialized] = useState(false);
+  const [studioCameraReset, setStudioCameraReset] = useState(0);
   
   const {
     startProject,
@@ -98,6 +106,8 @@ const MusicStudioTycoon = () => {
     setSelectedStaffForTraining,
     lastReview, // This might become obsolete or change with the new flow
     orbContainerRef,
+    autoTriggeredMinigame,
+    clearAutoTriggeredMinigame,
     contactArtist,
     triggerEraTransition,
     startResearchMod, // Destructure startResearchMod
@@ -105,11 +115,13 @@ const MusicStudioTycoon = () => {
     addStaffXP // Ensure this is destructured if not aliased
   } = useGameLogic(gameState, setGameState); // REMOVED focusAllocation, setFocusAllocation
 
+  const storyPresenter = useCutsceneQueue(state => state.presenter);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showTrainingModal, setShowTrainingModal] = useState(false);
   // const [showStaffModal, setShowStaffModal] = useState(false); // Assuming this was intended to be used elsewhere or can be removed if not
   // const [showRecruitmentModal, setShowRecruitmentModal] = useState(false); // Assuming this was intended to be used elsewhere or can be removed if not
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showPauseMenu, setShowPauseMenu] = useState(false);
   const [showStorylineBranchModal, setShowStorylineBranchModal] = useState(false);
   // Key of a subplot beat the player chose to decide later; cleared when the beat changes or they reopen it.
   const [deferredStoryEventKey, setDeferredStoryEventKey] = useState<string | null>(null);
@@ -120,6 +132,10 @@ const MusicStudioTycoon = () => {
   const desktopStripEnabled = desktopStripFlag && isTauriShell();
   const effectiveCompactStudioMode = compactStudioMode && desktopStripEnabled;
   const [activeProjectReport, setActiveProjectReport] = useState<ProjectReport | null>(null);
+  const deliveryAllowance = (projectId: string): number => {
+    const p = [gameState.activeProject, ...(gameState.activeProjects ?? [])].find(x => x?.id === projectId);
+    return p ? quoteFor(gameState, p).revisionAllowance : 0;
+  };
   const [pendingDelivery, setPendingDelivery] = useState<{ report: ProjectReport; issues: UnresolvedIssue[]; projectId: string } | null>(null);
   const [offlineSummary, setOfflineSummary] = useState<SimulationSummary | null>(null);
   const simulationLastTickRef = useRef(Date.now());
@@ -133,15 +149,42 @@ const MusicStudioTycoon = () => {
     // If called from splash settings, then setShowSplashScreen(false) and setGameInitialized(true) would be needed.
   };
 
-  // State for auto-triggered minigames
-  const [autoTriggeredMinigame, setAutoTriggeredMinigame] = useState<{ type: MinigameType; reason: string } | null>(null);
-  const clearAutoTriggeredMinigame = () => setAutoTriggeredMinigame(null);
-
   useBackgroundMusic();
 
 
+  // Read-only playtest state; no production debug controls or save mutations.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const target = window as Window & { render_game_to_text?: () => string };
+    target.render_game_to_text = () => JSON.stringify({
+      inputOwners: { storyPresenter, offline: Boolean(offlineSummary), review: showReviewModal, training: showTrainingModal, settings: showSettingsModal, pause: showPauseMenu, branch: showStorylineBranchModal, tutorialCompleted: settings.tutorialCompleted },
+      coordinates: 'Screen pixels: origin top-left, x right, y down. Studio management uses menu controls.',
+      mode: showSplashScreen ? 'career-start' : gameInitialized ? 'studio' : 'loading',
+      city: gameState.cityId,
+      era: gameState.currentEra,
+      year: gameState.currentYear,
+      day: gameState.currentDay,
+      money: gameState.money,
+      energy: gameState.playerData.dailyWorkCapacity,
+      reputation: gameState.reputation,
+      intervention: autoTriggeredMinigame,
+      storyEvent: gameState.storylineState?.director?.pending?.eventId ?? null,
+      lastStoryChoice: gameState.storylineState?.director?.history.at(-1)?.optionId ?? null,
+      equipment: gameState.ownedEquipment.map(item => item.templateId ?? item.id),
+      crew: gameState.hiredStaff.map(member => ({ name: member.name, role: member.role, status: member.status, energy: member.energy })),
+      project: gameState.activeProject ? { id: gameState.activeProject.id, title: gameState.activeProject.title, progress: gameState.activeProject.progress, stage: gameState.activeProject.currentStageIndex, takes: gameState.activeProject.workSessionCount, awaitingReview: gameState.activeProject.awaitingReview, stages: gameState.activeProject.stages.map(stage => ({ completed: stage.completed, work: stage.workUnitsCompleted })), focus: gameState.activeProject.focusAllocation } : null,
+      controls: Array.from(document.querySelectorAll<HTMLButtonElement>('button')).filter(button => button.getClientRects().length && !button.disabled).map(button => button.getAttribute('aria-label') || button.textContent?.trim()).slice(0, 32),
+    });
+    return () => { delete target.render_game_to_text; };
+  }, [gameState, showSplashScreen, gameInitialized, storyPresenter, offlineSummary, showReviewModal, showTrainingModal, showSettingsModal, showPauseMenu, showStorylineBranchModal, settings.tutorialCompleted, autoTriggeredMinigame]);
+
   useEffect(() => installFlightCaseRewards(setGameState), [setGameState]);
-  useAmbientIncome(gameInitialized && !showSplashScreen, setGameState);
+  useEffect(() => {
+    telemetry.startRun(gameState.saveSeed);
+    installTelemetryDevHandle();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useAmbientIncome(gameInitialized && !showSplashScreen && !showPauseMenu, setGameState);
 
   useEffect(() => {
     if (selectedStaffForTraining) {
@@ -175,8 +218,53 @@ const MusicStudioTycoon = () => {
     effectiveCompactStudioMode,
     offlineSummary,
     showReviewModal,
-    pendingBranchFlag,
   ]);
+
+  // Keyboard and gamepad pause menu handling
+  const gamepad = useGamepad();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (showSplashScreen || !gameInitialized) return;
+      if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
+        const target = e.target as HTMLElement | null;
+        if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
+        if (target?.isContentEditable) return;
+
+        // If settings or another modal is open, let that modal's escape handler handle it first
+        if (showSettingsModal || showReviewModal || showTrainingModal || showStorylineBranchModal || pendingDelivery) {
+          return;
+        }
+
+        e.preventDefault();
+        setShowPauseMenu((prev) => {
+          const next = !prev;
+          if (settings.sfxEnabled) {
+            void audioSystem.playUISound(next ? 'menuOpen' : 'menuClose');
+          }
+          return next;
+        });
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showSplashScreen, gameInitialized, showSettingsModal, showReviewModal, showTrainingModal, showStorylineBranchModal, pendingDelivery, settings.sfxEnabled]);
+
+  useEffect(() => {
+    if (!gamepad.isConnected || showSplashScreen || !gameInitialized) return;
+    if (gamepad.justPressed.start) {
+      if (showSettingsModal || showReviewModal || showTrainingModal || showStorylineBranchModal || pendingDelivery) {
+        return;
+      }
+      setShowPauseMenu((prev) => {
+        const next = !prev;
+        if (settings.sfxEnabled) {
+          void audioSystem.playUISound(next ? 'menuOpen' : 'menuClose');
+        }
+        return next;
+      });
+    }
+  }, [gamepad.isConnected, gamepad.justPressed.start, showSplashScreen, gameInitialized, showSettingsModal, showReviewModal, showTrainingModal, showStorylineBranchModal, pendingDelivery, settings.sfxEnabled]);
 
   const pendingStorylineBranch = getPendingStorylineBranch(gameState);
   const pendingStoryEvent = getPendingSubplotEvent(gameState);
@@ -204,8 +292,11 @@ const MusicStudioTycoon = () => {
   const activeCampaignNode = gameState.storylineState ? getActiveCampaignNode(gameState) : null;
   const actIntroFlag = activeCampaignNode ? `intro_seen_${activeCampaignNode.id}` : null;
   const showEpilogue = Boolean(campaignEnding) && !gameState.endingSeen && storyStageClear;
+  const moveBeat = getPremisesMoveBeat(gameState);
+  const showMoveIn = moveBeat !== null && !showEpilogue && storyStageClear;
   const showActIntro =
     !showEpilogue &&
+    !showMoveIn &&
     storyStageClear &&
     Boolean(activeCampaignNode && activeCampaignNode.act >= 2 && actIntroFlag) &&
     !gameState.storylineState?.campaignCompleted &&
@@ -323,7 +414,7 @@ const MusicStudioTycoon = () => {
       }
     );
     
-    setCompactStudioMode(false); // Reviews are full-studio moments; expand before presenting one.
+    setCompactStudioMode(false); // Reviews return to the full studio scene.
     const openIssues = completedProjectData.unresolvedIssues ?? [];
     if (openIssues.length > 0) {
       // #87: the player chooses Deliver or Polish before the review is shown.
@@ -645,6 +736,19 @@ const MusicStudioTycoon = () => {
 
   return (
     <GameLayout eraId={gameState.currentEra} cityId={gameState.cityId}>
+      <StudioClockProvider
+        currentDay={gameState.currentDay}
+        difficulty={settings.difficulty}
+        active={
+          gameInitialized &&
+          !showSplashScreen &&
+          !effectiveCompactStudioMode &&
+          settings.tutorialCompleted &&
+          !showPauseMenu &&
+          !(storyPresenter || offlineSummary || pendingDelivery || showReviewModal || showTrainingModal || showSettingsModal || (showStorylineBranchModal && pendingStorylineBranch))
+        }
+        onDayComplete={handleAdvanceDayWithReview}
+      >
       {!effectiveCompactStudioMode && <RewardFlights gameState={gameState} />}
       <ChartRevealScene playerLevel={gameState.playerData.level} />
       <SeasonAwardsCeremony />
@@ -653,6 +757,14 @@ const MusicStudioTycoon = () => {
           <GameHeader 
             gameState={gameState} 
             onOpenSettings={handleOpenSettings}
+            onPause={() => {
+              setShowPauseMenu(true);
+              if (settings.sfxEnabled) void audioSystem.playUISound('menuOpen');
+            }}
+            onCenterCamera={() => {
+              setStudioCameraReset(value => value + 1);
+              if (settings.sfxEnabled) audioSystem.playUISound('buttonClick');
+            }}
             onAdvanceDay={handleAdvanceDayWithReview}
             triggerEraTransition={triggerEraTransition}
             className="grid-area-header"
@@ -665,6 +777,8 @@ const MusicStudioTycoon = () => {
         />
         <div className="flex-grow min-h-0">
           <MainGameContent
+            cameraResetKey={studioCameraReset}
+            inputBlocked={Boolean(showPauseMenu || storyPresenter || offlineSummary || pendingDelivery || showReviewModal || showTrainingModal || showSettingsModal || (showStorylineBranchModal && pendingStorylineBranch) )}
             gameState={gameState}
             setGameState={setGameState}
             startProject={handleProjectStart}
@@ -720,6 +834,23 @@ const MusicStudioTycoon = () => {
         onLoadGameStateFromString={handleLoadGameStateFromString} // Pass the new handler
       />
 
+      <PauseMenuModal
+        isOpen={showPauseMenu && !effectiveCompactStudioMode}
+        gameState={gameState}
+        onClose={() => {
+          setShowPauseMenu(false);
+          if (settings.sfxEnabled) void audioSystem.playUISound('menuClose');
+        }}
+        onOpenSettings={() => {
+          setShowPauseMenu(false);
+          setShowSettingsModal(true);
+        }}
+        onQuitToTitle={() => {
+          setShowPauseMenu(false);
+          setShowSplashScreen(true);
+        }}
+      />
+
 
 
       {!effectiveCompactStudioMode && (
@@ -738,8 +869,9 @@ const MusicStudioTycoon = () => {
         <DeliveryChoiceDialog
           issues={pendingDelivery.issues}
           payout={pendingDelivery.report.moneyGained}
+          revisionAllowance={deliveryAllowance(pendingDelivery.projectId)}
           onChoose={(decision) => {
-            const adjusted = applyDeliveryDecision(pendingDelivery.report, pendingDelivery.issues, decision, pendingDelivery.projectId);
+            const adjusted = applyDeliveryDecision(pendingDelivery.report, pendingDelivery.issues, decision, pendingDelivery.projectId, deliveryAllowance(pendingDelivery.projectId));
             setPendingDelivery(null);
             setActiveProjectReport(adjusted);
             setShowReviewModal(true);
@@ -752,6 +884,7 @@ const MusicStudioTycoon = () => {
           isOpen={showReviewModal}
           onClose={handleFinalizeProjectCompletion} // Finalizes completion when modal is closed
           report={activeProjectReport}
+          saveSeed={gameState.saveSeed}
           seasonNote={(() => {
             const p = [gameState.activeProject, ...(gameState.activeProjects ?? [])].find(x => x?.id === activeProjectReport.projectId);
             const rel = p?.clientId ? gameState.clientRelationships?.[p.clientId] : undefined;
@@ -837,6 +970,13 @@ const MusicStudioTycoon = () => {
         />
       )}
 
+      {showMoveIn && moveBeat && (
+        <CinematicStoryCutscene
+          payload={buildMoveInCutscene(moveBeat)}
+          onComplete={() => setGameState((prev) => clearPremisesMoveBeat(prev))}
+        />
+      )}
+
       {showActIntro && activeCampaignNode && actIntroFlag && (
         <CinematicStoryCutscene
           payload={buildActIntroCutscene(activeCampaignNode, gameState.playerData.playstyle)}
@@ -855,6 +995,7 @@ const MusicStudioTycoon = () => {
           }
         />
       )}
+      </StudioClockProvider>
     </GameLayout>
   );
 };

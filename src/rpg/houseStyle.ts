@@ -154,6 +154,16 @@ export const houseStyleProfile = (state: StudioExpertise | undefined, limit = 4)
 export const levelPerk = (level: ExpertiseLevel): string =>
   level <= 0 ? 'Keep working to build familiarity.'
     : level < 3 ? 'Shorter setup estimates on familiar work.'
-      : level === 3 ? 'Authored house recipe to unlock (coming).'
+      : level === 3 ? 'House recipe unlocked: a new approach on enquiries for this genre.'
         : level === 4 ? 'Setup overhead stays low; repeat enquiries are likelier.'
-          : 'Signature: prestige briefs and a plaque on the wall.';
+          : 'Signature: a weekly prestige brief and a plaque on the wall.';
+
+/** One line on an enquiry explaining why the studio's track record helps (or that it is new ground). */
+export const enquiryStyleNote = (state: StudioExpertise | undefined, genre: string, serviceType?: string): string => {
+  const g = trackLevel(state, 'genres', genre);
+  const sv = trackLevel(state, 'services', serviceType);
+  if (g <= 0 && sv <= 0) return `New ground: ${genre} is not part of your house style yet.`;
+  const reduction = Math.round(setupTimeReduction(state, genre, serviceType) * 100);
+  const lead = g >= sv ? `${genre} (${LEVEL_NAMES[g]})` : `${serviceType} (${LEVEL_NAMES[sv]})`;
+  return reduction > 0 ? `House style: ${lead}, setup about ${reduction}% shorter.` : `House style: ${lead}.`;
+};

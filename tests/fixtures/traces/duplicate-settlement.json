@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "runId": "scenario-duplicate-settlement",
+  "simulationVersion": "2026.10.0",
+  "balanceVersion": "2026.10.0",
+  "balanceHash": "0bbd0cb5",
+  "scenarioId": "duplicate-settlement",
+  "initialHash": "7ee49985",
+  "events": [],
+  "actions": [
+    {
+      "kind": "settle",
+      "day": 10,
+      "report": {
+        "projectId": "a",
+        "projectTitle": "Demo",
+        "overallQualityScore": 70,
+        "moneyGained": 500,
+        "reputationGained": 2,
+        "playerManagementXpGained": 0,
+        "skillBreakdown": [],
+        "reviewSnippet": "ok",
+        "assignedPerson": {
+          "type": "player",
+          "id": "player",
+          "name": "You"
+        }
+      },
+      "expectedHash": "1fc7043e"
+    },
+    {
+      "kind": "settle",
+      "day": 11,
+      "report": {
+        "projectId": "b",
+        "projectTitle": "Demo",
+        "overallQualityScore": 90,
+        "moneyGained": 800,
+        "reputationGained": 2,
+        "playerManagementXpGained": 0,
+        "skillBreakdown": [],
+        "reviewSnippet": "ok",
+        "assignedPerson": {
+          "type": "player",
+          "id": "player",
+          "name": "You"
+        }
+      },
+      "expectedHash": "279901cc"
+    },
+    {
+      "kind": "settle",
+      "day": 11,
+      "report": {
+        "projectId": "a",
+        "projectTitle": "Demo",
+        "overallQualityScore": 70,
+        "moneyGained": 500,
+        "reputationGained": 2,
+        "playerManagementXpGained": 0,
+        "skillBreakdown": [],
+        "reviewSnippet": "ok",
+        "assignedPerson": {
+          "type": "player",
+          "id": "player",
+          "name": "You"
+        }
+      },
+      "expectedHash": "279901cc"
+    }
+  ]
+}

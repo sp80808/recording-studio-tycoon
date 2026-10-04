@@ -1,3 +1,7 @@
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { ModularSpriteRenderer } from '../src/features/sprites/ModularSpriteRenderer';
+import { PRODUCER_SHIRTS, PRODUCER_PANTS, PRODUCER_SHOES } from '../src/features/sprites/producerAppearance';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { createNewGameState } from '../src/utils/newGameState';
@@ -17,7 +21,7 @@ import { generateModularNpc } from '../src/features/sprites/npcGenerator';
 import { AVAILABLE_ERAS } from '../src/data/eras';
 
 const era = AVAILABLE_ERAS.find((e) => e.id === 'golden_age')!;
-const look: ProducerAppearance = { seed: 42, build: 'average', hair: 'long_wavy', hairColour: 'auburn', clothesColour: 'teal', accessory: 'flat_cap' };
+const look: ProducerAppearance = { seed: 42, build: 'average', hair: 'long_wavy', hairColour: 'auburn', clothesColour: 'teal', accessory: 'flat_cap', skinTone: 'tan', shirt: 'band_tee', pants: 'denim_jeans', shoes: 'vintage_sneakers' };
 const start = (extra: Record<string, unknown> = {}) =>
   createNewGameState({
     startingMoney: era.startingMoney, selectedEra: era.id, eraStartYear: era.startYear,
@@ -131,4 +135,19 @@ describe('producer customization (#126)', () => {
     // The original accessories keep their order at the front so saved picks and cycling are stable.
     assert.deepEqual(PRODUCER_ACCESSORIES.slice(0, 7), ['none', 'headphones', 'round_glasses', 'wayfarers', 'flat_cap', 'beanie', 'gold_chain']);
   });
+});
+
+
+it('creator preview visibly distinguishes every garment even with identical colours', () => {
+  for (const [part, options] of [['shirt', PRODUCER_SHIRTS], ['pants', PRODUCER_PANTS], ['shoes', PRODUCER_SHOES]] as const) {
+    const drawings = options.map((value) => {
+      const npc = buildProducerNpc({ ...DEFAULT_PRODUCER_APPEARANCE, [part]: value }, 'Preview');
+      // Isolate shape/detail differences rather than passing on colour changes alone.
+      npc.clothes.lowerHex = '#334455';
+      npc.clothes.shoesHex = '#334455';
+      return renderToStaticMarkup(React.createElement(ModularSpriteRenderer, { npc, showBadge: false }))
+        .replace(/data-garment="[^"]*"/g, '');
+    });
+    assert.equal(new Set(drawings).size, options.length, `${part}: each choice needs a visibly distinct drawing`);
+  }
 });

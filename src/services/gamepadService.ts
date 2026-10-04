@@ -129,6 +129,27 @@ export interface GamepadVibrationActuator {
   ) => Promise<unknown>;
 }
 
+export const normalizeTriggerValue = (rawValue: number | undefined): number => {
+  if (typeof rawValue !== 'number' || !Number.isFinite(rawValue)) return 0;
+  return Math.max(0, Math.min(1, rawValue));
+};
+
+export const isTriggerEngaged = (triggerValue: number, threshold = 0.4): boolean => {
+  return triggerValue >= threshold;
+};
+
+export const HAPTIC_PATTERNS: Record<
+  import('@/types/gamepad').HapticPattern,
+  { weak: number; strong: number; duration: number }
+> = {
+  tick: { weak: 0.18, strong: 0.0, duration: 25 },
+  detent: { weak: 0.25, strong: 0.15, duration: 30 },
+  goldSuccess: { weak: 0.75, strong: 0.95, duration: 120 },
+  solidSuccess: { weak: 0.35, strong: 0.45, duration: 60 },
+  offTime: { weak: 0.4, strong: 0.2, duration: 80 },
+  motorHum: { weak: 0.06, strong: 0.02, duration: 40 },
+};
+
 export const triggerGamepadHaptic = (
   gamepadIndex = 0,
   weakMagnitude = 0.4,
@@ -157,3 +178,14 @@ export const triggerGamepadHaptic = (
     // Fail silently in environments without haptic support
   }
 };
+
+export const triggerHapticPattern = (
+  gamepadIndex = 0,
+  pattern: import('@/types/gamepad').HapticPattern
+): void => {
+  const cfg = HAPTIC_PATTERNS[pattern];
+  if (cfg) {
+    triggerGamepadHaptic(gamepadIndex, cfg.weak, cfg.strong, cfg.duration);
+  }
+};
+

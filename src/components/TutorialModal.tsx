@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { useSettings } from '@/contexts/SettingsContext';
 import type { GameState } from '@/types/game';
 import { FirstSessionGuideStep, getFirstSessionGuideStep } from '@/utils/firstSessionGuide';
-import { selectTakeCalibrationFocused, useUiChromeStore } from '@/stores/uiChromeStore';
+import { selectTakeCalibrationFocused, selectConsoleFocused, useUiChromeStore } from '@/stores/uiChromeStore';
 import './first-session-guide.css';
 
 interface TutorialModalProps {
@@ -23,18 +23,18 @@ const STEPS: Array<{
 }> = [
   {
     id: 'book', title: 'Answer an enquiry',
-    body: 'Open Bookings and choose a session that fits your studio. The fee, time and fit are shown before you commit.',
-    action: 'Bookings → Book Session', Icon: Phone,
+    body: 'Answer the studio phone and choose a session that fits your room. The fee, time and fit are shown before you commit.',
+    action: 'Phone → Take Gig', Icon: Phone,
   },
   {
     id: 'work', title: 'Get behind the console',
-    body: 'Open Session and work the current stage. Your daily sessions are limited, so use them where they matter.',
-    action: 'Session → Work on Project', Icon: Headphones,
+    body: 'Open the studio console and choose a recording intent. Record, listen, then lock the take; each take uses energy.',
+    action: 'Console → Record take → Lock', Icon: Headphones,
   },
   {
     id: 'deliver', title: 'Keep the room moving',
-    body: 'Use Session to work directly, or Gear → Advance Day to restore daily sessions and progress booked work. When ready, Collect release settles the payout.',
-    action: 'Gear → Advance Day · Session → Collect release', Icon: CircleDollarSign,
+    body: 'Open the console, choose an intent, record and lock your takes. Rest when energy runs out; review the finished session to collect the payout.',
+    action: 'Console → Record · Lock take · Review', Icon: CircleDollarSign,
   },
   {
     id: 'reinvest', title: 'Make the next session easier',
@@ -46,6 +46,7 @@ const STEPS: Array<{
 export const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onComplete, gameState }) => {
   const [collapsed, setCollapsed] = React.useState(() => window.matchMedia('(max-width: 1100px)').matches);
   const { updateSettings } = useSettings();
+  const consoleFocused = useUiChromeStore(selectConsoleFocused);
   const takeCalibrationFocused = useUiChromeStore(selectTakeCalibrationFocused);
   const current = getFirstSessionGuideStep(gameState);
   const currentIndex = current === 'complete' ? STEPS.length : STEPS.findIndex(step => step.id === current);
@@ -65,7 +66,7 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onComplete
   }, [current, isOpen, onComplete, updateSettings]);
 
   // Take Calibration needs the full Session Progress / PocketMeter band — park the coach.
-  if (!isOpen || current === 'complete' || takeCalibrationFocused) return null;
+  if (!isOpen || current === 'complete' || takeCalibrationFocused || consoleFocused) return null;
 
   const step = STEPS[currentIndex];
   const finish = () => {

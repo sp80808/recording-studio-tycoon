@@ -1,3 +1,4 @@
+import { mirrorInterventionState } from '@/session/interventionCheckpoint';
 import { isCityId } from '@/rpg/cities';
 import { asEquipmentInstance, refreshGearForDay } from '@/features/usedGear/economy';
 import { GameState, Project, FocusAllocation } from '@/types/game';
@@ -152,7 +153,7 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
   processedState.producerCustomization = migrateProducerCustomization(processedState);
 
   // Premises tier (#70): legacy saves start in the borrowed room.
-  processedState.premisesTier = processedState.premisesTier === 2 ? 2 : processedState.premisesTier === 1 ? 1 : 0;
+  processedState.premisesTier = processedState.premisesTier === 3 ? 3 : processedState.premisesTier === 2 ? 2 : processedState.premisesTier === 1 ? 1 : 0;
 
   // Home city: keep only a known id; legacy saves stay neutral.
   if (!isCityId(processedState.cityId)) delete processedState.cityId;
@@ -187,5 +188,9 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
 
   // Branching storylines (bead 283.3): legacy saves without storylineState
   // receive a deterministic campaign seed without mutating other fields.
+  if (processedState.activeProject) {
+    const primary = processedState.activeProject;
+    processedState.activeProjects = processedState.activeProjects.map(candidate => mirrorInterventionState(primary, candidate));
+  }
   return refreshGearForDay(initializeStorylineState(processedState));
 };

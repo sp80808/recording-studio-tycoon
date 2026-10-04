@@ -108,8 +108,27 @@ export interface ClientRelationship {
   careerTier?: import('@/rpg/artistCareer').ArtistCareerTier;
 }
 
+/** Saved optional session choice. Reward authority remains in existing work/minigame paths. */
+export interface SessionIntervention {
+  id: string;
+  projectId: string;
+  stageIndex: number;
+  type: import('@/components/minigames/MinigameManager').MinigameType;
+  reason: string;
+  priority: number;
+  expiresAt: number;
+}
+
 export interface Project {
   id: string;
+  /** Label package terms (#50). Present only on label contracts. */
+  labelTerms?: import('@/rpg/labelAccounts').LabelTerms;
+  /** Game day the session was booked (set when it starts). */
+  bookedDay?: number;
+  /** Deposit taken at booking (#51); already in the bank, so settlement pays only the rest. */
+  depositPaid?: number;
+  /** Stages handed to outside specialists (#69). Absent = all in-house. */
+  outsourcing?: import('@/rpg/freelancers').OutsourcedStage[];
   title: string;
   genre: string;
   clientType: string;
@@ -132,6 +151,7 @@ export interface Project {
   comboCount?: number; // ⚡ consecutive same-day work sessions (streak multiplier)
   overdriveArmed?: boolean; // 🔥 next session burns extra energy for bonus output
   awaitingReview?: boolean; // Work is complete but rewards have not yet been settled
+  interventionCheckpoint?: { stageIndex: number; workBucket: number; pending: SessionIntervention | null };
   resolvedInterventionStageKeys?: string[]; // Persist one resolved/ignored intervention opportunity per stage
   gearNotes?: string[]; // Bounded, factual session gear ledger for review
   bookingRoomId?: string; // Physical studio suite reserved for this session
@@ -216,6 +236,10 @@ export interface StaffMember {
   portraitSeed?: number;
   /** Optional creator piece IDs; see staffPortrait.ts integration notes. */
   pieceIds?: CreatorPieceIds;
+  /** Recruitment channel this candidate came from, with a plain-language reason (#68). */
+  source?: { channelId: string; label: string; why: string };
+  /** Hired through College Placement: develops faster at low levels (#68). */
+  apprentice?: boolean;
   /** Clickable CV for the recruitment portal. */
   cv?: StaffCurriculumVitae;
   skills: { // UPDATED as per core_loop_plan.md
@@ -320,6 +344,11 @@ export interface TrainingCourse {
   knowHow?: import('@/rpg/studioKnowHow').KnowHowGate;
   /** Domain that completing this course teaches. */
   domain?: import('@/rpg/studioKnowHow').KnowHowDomain;
+  /** Discipline XP this course adds to the trainee's career on completion (#67). */
+  careerDiscipline?: import('@/rpg/staffCareer').StaffDiscipline;
+  careerXp?: number;
+  /** Staff-driven unlock (#67): needs a senior in this discipline on staff to teach it. */
+  taughtBySenior?: import('@/rpg/staffCareer').StaffDiscipline;
 }
 
 import { Band, SessionMusician, OriginalTrackProject } from './bands';
@@ -363,7 +392,9 @@ export interface GameState {
   /** Studio house style / expertise (#71). Absent on legacy saves; migrated to empty. */
   studioExpertise?: import('@/rpg/houseStyle').StudioExpertise;
   /** Studio premises tier (#70): 0 borrowed room, 1 project studio. Absent on legacy saves = 0. */
-  premisesTier?: 0 | 1 | 2;
+  premisesTier?: 0 | 1 | 2 | 3;
+  /** Move-day cinematic still to be shown after a premises move (#70). Cleared once seen. */
+  premisesMoveBeat?: 1 | 2 | 3;
   /** Home city picked at career start (currency display, regional taste, local names and events). Absent on legacy saves = neutral. */
   cityId?: import('@/rpg/cities').CityId;
   chainTemplates?: import('@/rpg/signalChain').SignalChain[]; // Saved chain templates (#86)
@@ -377,6 +408,10 @@ export interface GameState {
   
   hiredStaff: StaffMember[];
   availableCandidates: StaffMember[];
+  /** Running recruitment search (#68). Absent on legacy saves = none. */
+  recruitmentSearch?: import('@/rpg/recruitment').RecruitmentSearch | null;
+  /** Specialist freelancer contacts, familiarity and recent bookings (#69). Absent on legacy saves. */
+  freelancers?: import('@/rpg/freelancers').FreelancerState;
   lastSalaryDay: number;
   /** Day the gig list was last refreshed from the phone (bead goj.3 cooldown). */
   lastGigRefreshDay?: number;
@@ -407,6 +442,12 @@ export interface GameState {
   researchedMods: string[]; // Array of researched mod IDs
   clients?: Client[];
   recordLabels?: RecordLabel[];
+  /** Label interest 0-100 per label id, raised by strong client releases (#49). */
+  labelInterest?: Record<string, number>;
+  /** Ids of derived offers (fillers, signature briefs) already taken, so they do not reappear (#61, #71). */
+  claimedOffers?: string[];
+  /** Settled sessions for the studio-use summary (#51), newest last, capped. */
+  serviceLog?: import('@/rpg/serviceQuote').ServiceRecord[];
   
   // Automation system
   automation?: {
@@ -428,13 +469,15 @@ export interface GameState {
   pendingCrates?: Array<{
     id: string;
     era: string;
-    source: 'chore_streak' | 's_grade_take' | 'yard_sale' | 'shop_money' | 'shop_gems' | 'reward';
+    source: 'chore_streak' | 's_grade_take' | 'yard_sale' | 'shop_money' | 'shop_gems' | 'reward' | 'level_reward';
     /** Legacy 2-tier ids stay valid; the economy resolves them via legacyTierToFlightCase. */
     tier: 'standard' | 'vintage_flight_case' | 'cardboard_box' | 'road_case' | 'tour_trunk' | 'holy_grail_vault';
     generatedDay?: number;
     generatedYear?: number;
     generatedPriceMultiplier?: number;
   }>;
+  /** Producer levels whose flight-case level-up reward was already granted (bead fec). Absent on legacy saves = none claimed. */
+  flightCaseLevelsClaimed?: number[];
   /** Premium-feel soft currency (bead: flight cases + gems). Absent on legacy saves = 0. */
   gems?: number;
   /** Holding area for flight case finds the player stashed; claim via used-gear economy into ownedEquipment. */
@@ -537,6 +580,8 @@ export interface ProjectReport {
   playerManagementXpGained: number; // If staff worked
   skillBreakdown: ProjectReportSkillEntry[];
   reviewSnippet: string; // e.g., "Groundbreaking sound design, but the rhythm section feels a little loose."
+  /** Existing settlement cause attribution, separate from the review prose. */
+  qualityFactors?: string[];
   assignedPerson: { // Details of who worked on it
     type: 'player' | 'staff';
     id: string;

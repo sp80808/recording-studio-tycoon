@@ -297,6 +297,15 @@ export const getTriggeredMinigames = (
     });
   }
 
+  // GAIN STAGING - set preamp, fader and bus levels before the take (record / tracking / setup stages)
+  if (stageName.includes('record') || stageName.includes('tracking') || stageName.includes('setup')) {
+    triggers.push({
+      minigameType: 'gain-stage',
+      triggerReason: 'Set your levels before the red light - stage the gain!',
+      priority: 8
+    });
+  }
+
   // PHASE CHECK - fix inverted-polarity mics when tracking or mixing drums
   if (stageName.includes('record') || stageName.includes('tracking') || stageName.includes('mix')) {
     triggers.push({
@@ -333,6 +342,8 @@ export const getTriggeredMinigames = (
   // letting it take the last slot instead of being truncated away.
   const bus = sorted.find((t) => t.minigameType === 'bus-merge');
   if (bus && !top.includes(bus)) top[top.length - 1] = bus;
+  const gain = sorted.find((t) => t.minigameType === 'gain-stage');
+  if (gain && !top.includes(gain) && !(bus && top[top.length - 1] === bus)) top[top.length - 1] = gain;
   return top;
 };
 

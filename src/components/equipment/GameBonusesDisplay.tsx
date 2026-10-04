@@ -18,13 +18,13 @@ export const GameBonusesDisplay: React.FC<GameBonusesDisplayProps> = ({ bonuses 
         {bonuses.qualityBonus && (
           <div className="flex justify-between">
             <span className="text-stone-400">Quality Bonus:</span>
-            <span className="text-green-400">+{bonuses.qualityBonus}</span>
+            <span className="text-green-400">{bonuses.qualityBonus > 0 ? '+' : ''}{bonuses.qualityBonus}</span>
           </div>
         )}
         {bonuses.technicalBonus && (
           <div className="flex justify-between">
             <span className="text-stone-400">Technical Bonus:</span>
-            <span className="text-amber-300">+{bonuses.technicalBonus}</span>
+            <span className="text-amber-300">{bonuses.technicalBonus > 0 ? '+' : ''}{bonuses.technicalBonus}</span>
           </div>
         )}
         {bonuses.creativityBonus && (
@@ -38,7 +38,7 @@ export const GameBonusesDisplay: React.FC<GameBonusesDisplayProps> = ({ bonuses 
         {bonuses.speedBonus && (
           <div className="flex justify-between">
             <span className="text-stone-400">Speed Bonus:</span>
-            <span className="text-yellow-400">+{bonuses.speedBonus}</span>
+            <span className="text-yellow-400">{bonuses.speedBonus > 0 ? '+' : ''}{bonuses.speedBonus}</span>
           </div>
         )}
         {bonuses.genreBonus && Object.keys(bonuses.genreBonus).length > 0 && (
@@ -47,7 +47,7 @@ export const GameBonusesDisplay: React.FC<GameBonusesDisplayProps> = ({ bonuses 
             {Object.entries(bonuses.genreBonus).map(([genre, bonus]) => (
               <div key={genre} className="flex justify-between ml-2">
                 <span className="text-stone-500 capitalize">{genre}:</span>
-                <span className="text-green-400">+{bonus}</span>
+                <span className="text-green-400">{bonus > 0 ? '+' : ''}{bonus}</span>
               </div>
             ))}
           </div>

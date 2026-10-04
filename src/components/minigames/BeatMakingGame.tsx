@@ -7,6 +7,7 @@ import { DialogFooter } from '@/components/ui/dialog';
 import { MinigameChrome, KenneyButton } from './MinigameChrome';
 import { gameAudio } from '@/utils/audioSystem';
 import { triggerProjectCompleteJuice } from '@/utils/confettiJuice';
+import { tc } from '@/i18n/content';
 
 interface BeatMakingGameProps {
   onComplete: (score: number) => void;
@@ -165,15 +166,15 @@ export const BeatMakingGame: React.FC<BeatMakingGameProps> = ({ onComplete, onCl
 
   return (
     <Card className="w-full max-w-4xl mx-auto bg-stone-800 text-white border-stone-700">
-      <MinigameChrome title="🥁 Beat Making Challenge" score={score} timeLeft={timeLeft} accent="yellow">
+      <MinigameChrome title={tc('mg.BeatMakingGame.title', '🥁 Beat Making Challenge')} score={score} timeLeft={timeLeft} accent="yellow">
       <CardContent>
-        <p className="text-center text-sm text-stone-300">Create a sick beat pattern!</p>
+        <p className="text-center text-sm text-stone-300">{tc('mg.BeatMakingGame.instructions', 'Create a sick beat pattern!')}</p>
 
       <div className="space-y-4 mb-6">
         {beats.map((track, trackIndex) => (
           <div key={trackIndex} className="flex items-center gap-2">
             <div className={`w-16 text-center py-2 rounded text-white font-bold ${trackColors[trackIndex]}`}>
-              {trackNames[trackIndex]}
+              {tc(`mg.BeatMakingGame.track_${trackIndex}`, trackNames[trackIndex])}
             </div>
             <div className="flex gap-1">
               {track.map((isActive, stepIndex) => (
@@ -198,13 +199,13 @@ export const BeatMakingGame: React.FC<BeatMakingGameProps> = ({ onComplete, onCl
       </MinigameChrome>
       <DialogFooter className="flex flex-wrap gap-3 p-4 sm:justify-center">
         <KenneyButton variant={isPlaying ? 'red' : 'green'} onClick={() => setIsPlaying(!isPlaying)}>
-          {isPlaying ? '⏸️ Stop' : '▶️ Play'}
+          {isPlaying ? tc('mg.BeatMakingGame.stop', '⏸️ Stop') : tc('mg.BeatMakingGame.play', '▶️ Play')}
         </KenneyButton>
         <KenneyButton variant="yellow" onClick={handleComplete}>
-          🎵 Finish Beat
+          {tc('mg.BeatMakingGame.finish', '🎵 Finish Beat')}
         </KenneyButton>
         <KenneyButton variant="grey" onClick={handleClose}>
-          Cancel
+          {tc('mg.BeatMakingGame.cancel', 'Cancel')}
         </KenneyButton>
       </DialogFooter>
     </Card>

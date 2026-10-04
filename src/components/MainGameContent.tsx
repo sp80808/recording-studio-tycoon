@@ -1,9 +1,13 @@
+import { ActiveProject } from './ActiveProject';
+import { useFeatureFlag } from '@/stores/featureFlagStore';
 import { useArtistContracts } from '@/hooks/useArtistContracts';
+import { telemetry } from '@/telemetry/sink';
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ContextDrawer, type ContextDrawerTab } from './ContextDrawer';
 import { MotionNumber, MotionButton } from '@/components/motion/primitives';
 import { Headphones, Phone, SlidersHorizontal, Sparkles, Users, Disc3, Trophy, Minimize2, Moon, Package } from 'lucide-react';
-import { GameState, StaffMember, PlayerAttributes, Project } from '@/types/game';
+import { GameState, StaffMember, PlayerAttributes, Project, SessionIntervention } from '@/types/game';
 import { ProjectList } from './ProjectList';
 import { ProgressiveProjectInterface } from './ProgressiveProjectInterface';
 import { CareerHub } from './CareerHub';
@@ -24,7 +28,6 @@ import { HistoricalNewsModal } from './HistoricalNewsModal';
 import { FeatureBoundary } from './FeatureBoundary';
 import { checkForNewEvents, applyEventEffects, HistoricalEvent } from '@/utils/historicalEvents';
 import { useBandManagement } from '@/hooks/useBandManagement';
-import { MinigameType } from './minigames/MinigameManager';
 import { GamepadNavProvider, DockTabId } from '@/contexts/GamepadNavContext';
 import { useStudioHotkeys, type HotkeyBinding } from '@/hooks/useStudioHotkeys';
 import { ShortcutsOverlay } from './ShortcutsOverlay';
@@ -35,24 +38,27 @@ import { useGamepad } from '@/hooks/useGamepad';
 import { useSettings } from '@/contexts/settings-context-types';
 import { FlightCaseDepot } from './FlightCaseDepot';
 import { executeStudioChore, createInitialChoreState, getChoreDurationMs, findPendingChoreForHotspot, type StudioChoreId } from '@/simulation/choreEngine';
+import { isFlightCaseSystemUnlocked } from '@/economy/flightCaseEconomy';
 import { toast } from '@/hooks/use-toast';
 import { gameAudio } from '@/utils/audioSystem';
 import './studio-play.css';
 
 interface MainGameContentProps {
   gameState: GameState;
+  inputBlocked?: boolean;
+  cameraResetKey?: number;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
   // focusAllocation: FocusAllocation; // REMOVED
   // setFocusAllocation: React.Dispatch<React.SetStateAction<FocusAllocation>>; // REMOVED
   startProject: (project: Project) => void;
   performDailyWork: (options?: import('@/hooks/useStageWork').PerformDailyWorkOptions) => { isComplete: boolean; finalProjectData?: Project } | undefined;
   onProjectComplete?: (completedProject: Project) => void;
-  onMinigameReward: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => void;
+  onMinigameReward: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string, rawScore?: number, opportunityId?: string) => void;
   spendPerkPoint: (attribute: keyof PlayerAttributes) => void;
   advanceDay: () => void;
   purchaseEquipment: (equipmentId: string) => void;
   hireStaff: (candidateIndex: number) => boolean;
-  refreshCandidates: () => void;
+  refreshCandidates: (channelId?: import('@/rpg/recruitment').RecruitmentChannelId) => void;
   assignStaffToProject: (staffId: string) => void;
   unassignStaffFromProject: (staffId: string) => void;
   toggleStaffRest: (staffId: string) => void;
@@ -60,7 +66,7 @@ interface MainGameContentProps {
   orbContainerRef: React.RefObject<HTMLDivElement>;
   contactArtist: (artistId: string, offer: number) => void;
   triggerEraTransition: () => { fromEra?: string; toEra?: string } | void;
-  autoTriggeredMinigame: { type: MinigameType; reason: string } | null;
+  autoTriggeredMinigame: SessionIntervention | null;
   clearAutoTriggeredMinigame: () => void;
   startResearchMod?: (staffId: string, modId: string) => boolean;
   /** Cooldown/cost-gated gig refresh (bead goj.3). */
@@ -93,6 +99,8 @@ const DOCK_LABELS: Record<DockTabId, string> = {
 };
 export const MainGameContent: React.FC<MainGameContentProps> = ({
   gameState,
+  inputBlocked = false,
+  cameraResetKey = 0,
   setGameState,
   // focusAllocation, // REMOVED
   // setFocusAllocation, // REMOVED
@@ -123,8 +131,16 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   setCompactStudioMode,
   desktopStripEnabled
 }) => {
+  const { t } = useTranslation();
 
   const [panel, setPanel] = useState<Panel | null>(null);
+  const [consoleOpen, setConsoleOpen] = useState(false);
+  const [lockedHotspot, setLockedHotspot] = useState<import('@/components/WebGLCanvas').StudioHotspotId | null>(null);
+  const [interventionFocused, setInterventionFocused] = useState(false);
+  useEffect(() => { if (interventionFocused && !autoTriggeredMinigame) { setConsoleOpen(false); setInterventionFocused(false); } }, [interventionFocused, autoTriggeredMinigame]);
+  const worldConsoleEnabled = useFeatureFlag('world-session-controls');
+  const useWorldConsole = worldConsoleEnabled && !compactStudioMode && (gameState.activeProjects?.length ?? 0) <= 1;
+  useEffect(() => { if (!useWorldConsole) setConsoleOpen(false); }, [useWorldConsole]);
   // Studio floor + GUI reveal together: hold a lightweight loading veil until
   // the Pixi canvas paints its first frame (with a timeout fallback).
   const [studioReady, setStudioReady] = useState(false);
@@ -149,18 +165,26 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const previousProjectId = useRef(gameState.activeProject?.id);
-  const openPanel = (next: Panel) => {
+  const openPanel = useCallback((next: Panel) => {
+    setInterventionFocused(false);
+    if (next === 'session' && gameState.activeProject && useWorldConsole) {
+      setConsoleOpen(true);
+      setPanel(null);
+      return;
+    }
+    setConsoleOpen(false);
     if (!panel) returnFocusRef.current = document.activeElement as HTMLElement;
     setPanel(next);
-  };
+    if (next) telemetry.capture('management_panel_opened', gameState.currentDay, { destination: next });
+  }, [gameState.activeProject, gameState.currentDay, useWorldConsole, panel]);
   const bookProject = (project: Project) => {
     startProject(project);
     openPanel('session');
   };
-  const handleOpenDashboardTab = (tab: typeof dashboardTab) => {
+  const handleOpenDashboardTab = useCallback((tab: typeof dashboardTab) => {
     setDashboardTab(tab);
     openPanel('studio');
-  };
+  }, [openPanel]);
 
   const { settings } = useSettings();
   const [showRadialWheel, setShowRadialWheel] = useState(false);
@@ -194,7 +218,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         openPanel('career');
         break;
     }
-  }, []);
+  }, [openPanel, handleOpenDashboardTab]);
 
   const [showShortcuts, setShowShortcuts] = useState(false);
   const hotkeyBindings = useMemo<HotkeyBinding[]>(
@@ -210,7 +234,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
     [handleDockTabChange],
   );
   // The console tab hosts keyboard-driven minigames, so number keys stand down there.
-  useStudioHotkeys(hotkeyBindings, panel !== 'session' && !(compactStudioMode && desktopStripEnabled));
+  useStudioHotkeys(hotkeyBindings, !inputBlocked && !consoleOpen && panel !== 'session' && !(compactStudioMode && desktopStripEnabled));
 
   const handleRadialSelect = useCallback((sliceId: string) => {
     switch (sliceId) {
@@ -239,12 +263,12 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         setShowRadialWheel(false);
         break;
     }
-  }, []);
+  }, [openPanel, handleOpenDashboardTab]);
 
   // LT opens a hold-to-select radial wheel; Select/View keeps a toggle fallback.
   // R3 is reserved for the studio-floor camera recenter action.
   useEffect(() => {
-    if (!gamepad.isConnected) return;
+    if (!gamepad.isConnected || inputBlocked || consoleOpen) return;
 
     if (gamepad.justPressed.lt && !panel) {
       setRadialHoldMode(true);
@@ -258,31 +282,31 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
       setShowRadialWheel((prev) => !prev);
       gamepad.triggerHaptic(0.2, 0.3, 50);
     }
-  }, [gamepad.isConnected, gamepad.justPressed.select, gamepad.justPressed.lt, panel]);
+  }, [gamepad.isConnected, gamepad.justPressed.select, gamepad.justPressed.lt, panel, inputBlocked, consoleOpen]);
 
   // Controller B button closes active panel
   useEffect(() => {
-    if (!gamepad.isConnected || !panel) return;
+    if (!gamepad.isConnected || !panel || inputBlocked) return;
     if (gamepad.justPressed.east) {
       setPanel(null);
       gamepad.triggerHaptic(0.1, 0.2, 40);
     }
-  }, [gamepad.isConnected, gamepad.justPressed.east, panel]);
+  }, [gamepad.isConnected, gamepad.justPressed.east, panel, inputBlocked]);
 
   // Controller Y button advances day when session is open & out of capacity or in studio
   useEffect(() => {
-    if (!gamepad.isConnected) return;
+    if (!gamepad.isConnected || inputBlocked || consoleOpen) return;
     if (gamepad.justPressed.north) {
       if (gameState.playerData.dailyWorkCapacity <= 0 || panel === null) {
         advanceDay();
         gamepad.triggerHaptic(0.3, 0.4, 80);
       }
     }
-  }, [gamepad.isConnected, gamepad.justPressed.north, gameState.playerData.dailyWorkCapacity, panel, advanceDay]);
+  }, [gamepad.isConnected, gamepad.justPressed.north, gameState.playerData.dailyWorkCapacity, panel, advanceDay, inputBlocked, consoleOpen]);
 
   useEffect(() => {
-    if (autoTriggeredMinigame) setPanel('session');
-  }, [autoTriggeredMinigame]);
+    if (autoTriggeredMinigame && !useWorldConsole) setPanel('session');
+  }, [autoTriggeredMinigame, useWorldConsole]);
 
   useEffect(() => {
     if (panel) headingRef.current?.focus();
@@ -326,6 +350,13 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
 
 
 
+  useEffect(() => {
+    if (!consoleOpen) return;
+    const close = (event: KeyboardEvent) => { if (event.key === 'Escape') setConsoleOpen(false); };
+    window.addEventListener('keydown', close);
+    return () => window.removeEventListener('keydown', close);
+  }, [consoleOpen]);
+
   if (compactStudioMode && desktopStripEnabled) {
     return <div className="h-full flex items-end"><StudioStrip gameState={gameState}
       onExpand={() => setCompactStudioMode(false)}
@@ -333,7 +364,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   }
 
   const project = gameState.activeProject;
-  const sessionLabel = project?.awaitingReview ? 'Collect release' : project ? 'Continue session' : 'Book your first session';
+  const sessionLabel = project?.awaitingReview ? t('session_collect_release') : project ? t('session_continue') : t('session_book_first');
   const completeFloorChore = (hotspot: string) => {
     if (activeChoreId) return true;
     const choreState = gameState.choreState || createInitialChoreState();
@@ -413,66 +444,67 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
 
   const drawerTitle =
     panel === 'bookings'
-      ? 'Bookings'
+      ? t('drawer_bookings')
       : panel === 'session'
-        ? 'At the console'
+        ? t('drawer_session')
         : panel === 'career'
-          ? 'Your producer story'
+          ? t('drawer_career')
           : panel === 'cases'
-            ? 'Flight cases'
+            ? t('drawer_cases')
             : dashboardTab === 'staff'
-              ? 'Studio crew'
+              ? t('drawer_crew')
               : dashboardTab === 'bands'
-                ? 'Artists'
+                ? t('drawer_artists')
                 : dashboardTab === 'charts'
-                  ? 'Charts'
+                  ? t('drawer_charts')
                   : dashboardTab === 'skills'
-                    ? 'Skills & research'
-                    : 'Gear locker';
+                    ? t('drawer_skills')
+                    : t('drawer_gear');
 
   return (
-    <GamepadNavProvider onTabChange={handleDockTabChange}>
-      <div className="studio-play">
+    <GamepadNavProvider enabled={!inputBlocked && !consoleOpen} onTabChange={handleDockTabChange}>
+      <div className="studio-play" data-rst-studio="mounted" data-rst-input-blocked={inputBlocked} data-rst-world-controls={useWorldConsole}>
         <div className="studio-play-world" data-reward-source="floor">
-          {project && <SessionBeatBanner project={project} />}
-          <StudioRoom gameState={gameState} onAdvanceDay={advanceDay} onRefreshProjects={refreshProjects}
+          {project && <SessionBeatBanner project={project} intervention={autoTriggeredMinigame} />}
+          <StudioRoom gameState={gameState} cameraResetKey={cameraResetKey} onAdvanceDay={advanceDay} onRefreshProjects={refreshProjects}
             onStartProject={bookProject} onAssignStaff={assignStaffToProject} onUnassignStaff={unassignStaffFromProject}
             onOpenDashboardTab={handleOpenDashboardTab} onOpenCases={() => openPanel('cases')} onConsoleFocus={() => openPanel('session')} onCompleteChore={completeFloorChore} activeChoreId={activeChoreId}
-            onBookings={() => openPanel('bookings')} onStudioReady={handleStudioReady} floorFocused={panel === null && !showRadialWheel} className="studio-play-room" />
+            onBookings={() => openPanel('bookings')} onStudioReady={handleStudioReady} floorFocused={panel === null && !consoleOpen && !inputBlocked && !showRadialWheel} lockedHotspot={lockedHotspot} worldControls={useWorldConsole} intervention={autoTriggeredMinigame} onInterventionFocus={() => { setPanel(null); setInterventionFocused(true); setConsoleOpen(true); }} className="studio-play-room" />
           {!studioReady && (
             <div className="studio-room-loading" role="status" aria-live="polite" aria-busy="true">
               <span className="studio-boot-gate-mark">RST</span>
-              <p className="studio-boot-gate-title">Setting up the room…</p>
+              <p className="studio-boot-gate-title">{t('room_setting_up')}</p>
               <div className="studio-boot-progress" aria-hidden="true"><i /></div>
             </div>
           )}
         </div>
+        {project && useWorldConsole && <ActiveProject key={project.id} gameState={gameState} setGameState={setGameState} presentation="world" interventionOnly={interventionFocused} controlsEnabled={consoleOpen && panel === null && !inputBlocked && !showHistoricalNews && !showEraTransition && !showAttributesModal && !showShortcuts && !showRadialWheel} onCloseConsole={() => setConsoleOpen(false)} onRest={advanceDay} performDailyWork={performDailyWork} onMinigameReward={onMinigameReward} onProjectComplete={onProjectComplete} autoTriggeredMinigame={autoTriggeredMinigame} clearAutoTriggeredMinigame={clearAutoTriggeredMinigame} onLockHotspot={setLockedHotspot} />}
         <SessionRail
           gameState={gameState}
           onOpenSession={() => openPanel('session')}
           onOpenBookings={() => openPanel('bookings')}
         />
         <div className="studio-play-actions">
-          <button className="studio-primary-action" onClick={() => openPanel(project ? 'session' : 'bookings')}>
+          <button hidden={consoleOpen && useWorldConsole} className="studio-primary-action" data-rst-surface="contextual" data-rst-action-id={project ? 'dock:open-session' : 'dock:open-bookings'} onClick={() => openPanel(project ? 'session' : 'bookings')}>
             {gamepad.lastInputType === 'gamepad' && <GamepadGlyph button="south" size="xs" className="mr-1 inline-block" />}
             {project ? <Headphones size={20} /> : <Phone size={20} />}
             <span>{sessionLabel}</span><span aria-hidden="true">→</span>
           </button>
         <nav aria-label="Studio activities" className="studio-command-dock">
           {([
-            ['bookings', Phone, 'Artist', () => openPanel('bookings')],
-            ['session', Headphones, 'Session', () => openPanel('session')],
-            ['crew', Users, 'Crew', () => handleOpenDashboardTab('staff')],
-            ['gear', SlidersHorizontal, 'Room', () => handleOpenDashboardTab('studio')],
-            ['career', Sparkles, 'Career', () => openPanel('career')],
+            ['bookings', Phone, t('nav_artist'), () => openPanel('bookings')],
+            ['session', Headphones, t('nav_session'), () => openPanel('session')],
+            ['crew', Users, t('nav_crew'), () => handleOpenDashboardTab('staff')],
+            ['gear', SlidersHorizontal, t('nav_room'), () => handleOpenDashboardTab('studio')],
+            ['career', Sparkles, t('nav_career'), () => openPanel('career')],
           ] as const).map(([id, Icon, label, action], dockIndex) => (
-            <button key={id} onClick={action} className="studio-dock-button" title={`${label} (${dockIndex + 1})`} aria-label={label} aria-keyshortcuts={String(dockIndex + 1)}>
+            <button key={id} data-rst-surface="contextual" data-rst-action-id={`dock:open-${id}`} onClick={action} className="studio-dock-button" title={`${label} (${dockIndex + 1})`} aria-label={label} aria-keyshortcuts={String(dockIndex + 1)}>
               <Icon size={21} aria-hidden="true" /><span>{label}</span>
               {id === 'bookings' && gameState.availableProjects.length > 0 && (
                 <i className="studio-dock-badge"><MotionNumber value={gameState.availableProjects.length} /></i>
               )}
-              {id === 'career' && gameState.playerData.perkPoints + (gameState.pendingCrates?.length ?? 0) > 0 && (
-                <i className="studio-dock-badge">{gameState.playerData.perkPoints + (gameState.pendingCrates?.length ?? 0)}</i>
+              {id === 'career' && gameState.playerData.perkPoints + (isFlightCaseSystemUnlocked(gameState) ? (gameState.pendingCrates?.length ?? 0) : 0) > 0 && (
+                <i className="studio-dock-badge">{gameState.playerData.perkPoints + (isFlightCaseSystemUnlocked(gameState) ? (gameState.pendingCrates?.length ?? 0) : 0)}</i>
               )}
             </button>
           ))}
@@ -488,7 +520,13 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
         destinationKey={panel ? `${panel}:${dashboardTab}` : undefined}
         title={drawerTitle}
         subtitle="RECORDING STUDIO OS"
-        width={panel === 'session' ? 'session' : 'default'}
+        width={
+          panel === 'session'
+            ? 'session'
+            : dashboardTab === 'charts'
+              ? 'charts'
+              : 'default'
+        }
         returnFocusRef={returnFocusRef}
         headerActions={
           panel === 'session' && gameState.playerData.dailyWorkCapacity <= 0 && !project?.awaitingReview ? (
@@ -497,7 +535,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
               onClick={advanceDay}
             >
               <Moon size={14} />
-              <span>Rest & advance day</span>
+              <span>{t('rest_advance_day')}</span>
             </MotionButton>
           ) : null
         }
@@ -579,7 +617,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                 })}
               />
               <CityLorePanel cityId={gameState.cityId} eraId={gameState.currentEra} />
-              <ClientCareerPanel relationships={gameState.clientRelationships} />
+              <ClientCareerPanel relationships={gameState.clientRelationships} labelInterest={gameState.labelInterest} />
               <HouseStylePanel expertise={gameState.studioExpertise} />
               <div className="grid gap-2.5 p-1 pt-3 sm:grid-cols-2">
                 <button className="rst-btn" onClick={() => handleOpenDashboardTab('bands')}>

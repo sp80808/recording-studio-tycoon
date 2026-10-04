@@ -1,8 +1,11 @@
 import { money } from '@/utils/displayMoney';
+import { enquiryDemandWeight } from '@/rpg/marketDemand';
 import { refreshGearForDay } from '@/features/usedGear/economy';
+import { trackEnquiriesGenerated } from '@/telemetry/instrument';
 
 import { useCallback } from 'react';
 import { GameNotification, GameState } from '@/types/game';
+import { resolveRecruitmentSearchInState, searchBlocker, startRecruitmentSearchInState, RECRUITMENT_CHANNELS, type RecruitmentChannelId } from '@/rpg/recruitment';
 import { generateCandidates, generateNewProjects } from '@/utils/projectUtils';
 import { toast } from '@/hooks/use-toast';
 import { 
@@ -15,12 +18,14 @@ import { availableMods } from '@/data/equipmentMods';
 import { premisesDailyRent, premisesCandidateCount } from '@/rpg/premises';
 import { availableTrainingCourses } from '@/data/training';
 import { resolveDueReleases } from '@/rpg/artistCareer';
+import { applyLabelSignals } from '@/rpg/labelInterest';
 import { applyKnowHowEvents, type KnowHowEvent } from '@/rpg/studioKnowHow';
 import { applyEventsToState, rollDailyEvents } from '@/game-mechanics/eventIntegration';
 import { RandomEvent } from '@/game-mechanics/random-events';
 import { freshDailyTracking } from '@/utils/dailyChallenges';
 import { gameAudio } from '@/utils/audioSystem';
 import { triggerScreenShake } from '@/utils/screenShake';
+import { parseCrossTrainCourse, completeCrossTraining, applyCourseCareerXp } from '@/rpg/staffCareer';
 import {
   createInitialChoreState,
   refreshDailyChores,
@@ -78,7 +83,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     const updatedStaff = gameState.hiredStaff.map(staff => {
       let updatedStaffMember = { ...staff };
       if (staff.status === 'Training' && staff.trainingEndDay && newDay >= staff.trainingEndDay) {
-        if (staff.trainingCourse) completedCourseIds.push(staff.trainingCourse);
+        if (staff.trainingCourse && !parseCrossTrainCourse(staff.trainingCourse)) completedCourseIds.push(staff.trainingCourse);
         completedTraining.push(`${staff.name} completed training for ${staff.trainingCourse}!`); // Assuming trainingCourse stores the name or ID
         updatedStaffMember = {
           ...updatedStaffMember,
@@ -87,6 +92,9 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
           trainingCourse: undefined,
           energy: 100 // Restore energy after training
         };
+        const crossDiscipline = parseCrossTrainCourse(staff.trainingCourse);
+        if (crossDiscipline) updatedStaffMember = completeCrossTraining(updatedStaffMember, crossDiscipline);
+        else updatedStaffMember = applyCourseCareerXp(updatedStaffMember, availableTrainingCourses.find(c => c.id === staff.trainingCourse) ?? {});
       }
       if (staff.status === 'Researching' && staff.researchEndDay && staff.researchingModId && newDay >= staff.researchEndDay) {
         const mod = availableMods.find(m => m.id === staff.researchingModId);
@@ -216,12 +224,15 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       });
       // Artist career (#49): releases whose day has come resolve into reputation/referrals (never cash).
       const releaseTail = resolveDueReleases(baseBeforeReleases.clientRelationships, newDay);
-      const baseUpdatedState: GameState = releaseTail.notifications.length || releaseTail.reputation
+      const labelTail = applyLabelSignals(baseBeforeReleases.labelInterest, releaseTail.labelSignals);
+      const releaseNotes = [...releaseTail.notifications, ...labelTail.notifications];
+      const baseUpdatedState: GameState = releaseNotes.length || releaseTail.reputation
         ? {
             ...baseBeforeReleases,
             clientRelationships: releaseTail.relationships,
+            ...(labelTail.interest !== baseBeforeReleases.labelInterest ? { labelInterest: labelTail.interest } : {}),
             reputation: baseBeforeReleases.reputation + releaseTail.reputation,
-            notifications: [...baseBeforeReleases.notifications, ...releaseTail.notifications.map(n => ({ ...n, timestamp: Date.now() }))],
+            notifications: [...baseBeforeReleases.notifications, ...releaseNotes.map(n => ({ ...n, timestamp: Date.now() }))],
           }
         : releaseTail.relationships === baseBeforeReleases.clientRelationships
           ? baseBeforeReleases
@@ -321,6 +332,9 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       }));
     }
 
+    // Recruitment search (#68): a due search resolves into the shortlist, after the free day-roll batch.
+    setGameState(prev => resolveRecruitmentSearchInState(prev, newDay));
+
     completedTraining.forEach(message => {
       gameAudio.playUISound('trainingComplete');
       toast({
@@ -340,39 +354,27 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
     });
   }, [gameState, setGameState]);
 
-  const refreshCandidates = useCallback(() => {
-    const cost = 50;
-    if (gameState.money < cost) {
+  /** Start a recruitment search on a channel (#68). The shortlist arrives when the search resolves. */
+  const refreshCandidates = useCallback((channelId: RecruitmentChannelId = 'referral') => {
+    const blocker = searchBlocker(gameState, channelId);
+    if (blocker) {
       gameAudio.playUISound('unavailable');
       toast({
-        title: "💰 Insufficient Funds",
-        description: `Need ${money(cost)} to refresh candidate list.`,
+        title: "🔎 Search Unavailable",
+        description: `${RECRUITMENT_CHANNELS[channelId].name}: ${blocker}.`,
         className: "bg-stone-800 border-stone-600 text-white",
         variant: "destructive"
       });
       return;
     }
-
-    setGameState(prev => ({
-      ...spend(prev, cost, { category: 'marketing', memo: 'Candidate search' }),
-      availableCandidates: generateCandidates({
-        count: premisesCandidateCount(prev),
-        saveSeed: prev.saveSeed ?? 4242,
-        day: prev.currentDay,
-        era: prev.selectedEra || prev.currentEra,
-        year: prev.currentYear,
-        cityId: prev.cityId,
-        batchKey: `refresh:${prev.currentDay}:${prev.availableCandidates.map(c => c.id).join(',')}`,
-      })
-    }));
-
-    gameAudio.playUISound('notice');
+    setGameState(prev => startRecruitmentSearchInState(prev, channelId));
+    const ch = RECRUITMENT_CHANNELS[channelId];
     toast({
-      title: "👥 New Candidates Found",
-      description: "Fresh talent is now available for hire!",
+      title: "🔎 Search Started",
+      description: `${ch.name} reports back in ${ch.days} day${ch.days === 1 ? '' : 's'}.`,
       className: "bg-stone-800 border-stone-600 text-white",
     });
-  }, [gameState.money, setGameState]);
+  }, [gameState, setGameState]);
 
   /**
    * Chase fresh gig offers (bead goj.3): costs $50 and has a 3-day cooldown so
@@ -403,12 +405,15 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       return false;
     }
 
+    const fresh = generateNewProjects(1, gameState.playerData.level, gameState.currentEra, [], 1.1, gameState.reputation, gameState.cityId, enquiryDemandWeight(gameState.saveSeed, gameState.currentDay));
+    trackEnquiriesGenerated(gameState.currentDay, fresh, 'chase');
+
     setGameState(prev => ({
       ...spend(prev, refreshCost, { category: 'marketing', memo: 'Chase new gigs' }),
       lastGigRefreshDay: prev.currentDay,
       availableProjects: [
         ...prev.availableProjects,
-        ...generateNewProjects(1, prev.playerData.level, prev.currentEra, [], 1.1, prev.reputation, prev.cityId),
+        ...fresh,
       ],
     }));
 

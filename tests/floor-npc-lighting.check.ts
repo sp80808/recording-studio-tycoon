@@ -49,7 +49,8 @@ for (const era of ['analog60s', 'digital80s', 'internet2000s', 'streaming2020s']
   const kit = getEraLightingKit(era);
   const decor = getEraDecor(era);
   assert.equal(kit.eraId, decor.eraId);
-  assert.ok(kit.moteCount > 0);
+  assert.ok(kit.moteCount > 0 && kit.moteCount <= 12, 'Motes stay sparse enough to read as dust');
+  assert.ok(kit.moteBaseAlpha <= 0.32, 'Motes remain subordinate to the room');
   assert.ok(kit.shaftAirAlpha > 0 && kit.shaftFloorAlpha > 0);
   assert.ok(kit.neonFromTier >= 4 && kit.neonFromTier <= 5);
   assert.ok(kit.propGlowScale >= 1);
@@ -64,10 +65,21 @@ assert.match(webgl, /loadNpcPartsAtlas/, 'WebGLCanvas loads npc-parts atlas');
 assert.match(webgl, /applyFloorNpcMotion/, 'WebGLCanvas applies npcAnimation motion');
 assert.match(webgl, /getEraLightingKit/, 'WebGLCanvas uses era lighting kits');
 assert.match(webgl, /buildDecorLights\(\{ spec: decorSpec, kit:/, 'Decor lights receive kit + tier');
+assert.match(webgl, /addChild\(lights\.floorContainer\)/, 'Floor spill has its own below-props layer');
+assert.ok(
+  webgl.indexOf('addChild(lights.floorContainer)') < webgl.indexOf('addChild(dressing.props)'),
+  'Floor spill is inserted before physical props',
+);
+assert.doesNotMatch(webgl, /buildLightShaft/, 'Only the era lighting layer owns the window shaft');
+assert.doesNotMatch(webgl, /First gold record frame/, 'No generic gold plaque floats above the window');
 assert.match(webgl, /getWallClockTime|getDaynessFromClockMinutes/, 'Day/night follows the studio clock');
 assert.match(decor, /tierNeon|neonFromTier/, 'Decor lights draw tier neon from kit');
 assert.match(decor, /kit\.moteCount|kit\.shaftAirAlpha/, 'Decor lights consume kit alphas');
 assert.match(decor, /ambient\?\.dayness|DecorLightsAmbient/, 'Decor lights accept clock dayness');
+assert.match(decor, /Nested isometric footprints/, 'Window spill uses a layered floor falloff');
+assert.match(decor, /floorContent\.mask = floorMask/, 'Floor illumination is clipped to the room diamond');
+assert.match(decor, /practicalFloorG/, 'Practical base pools stay on the floor layer');
+assert.match(decor, /motes\.slice\(0, Math\.ceil\(motes\.length \/ 3\)\)/, 'Reduced motion uses a sparse static mote field');
 assert.match(room, /floorFigures/, 'StudioRoom passes floorFigures');
 assert.match(room, /animStateForStaffStatus/, 'StudioRoom maps staff status → anim state');
 assert.match(webgl, /pixi-studio-canvas/, 'Single living-studio canvas remains tagged');

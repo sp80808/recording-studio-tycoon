@@ -4,10 +4,12 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowUp, ArrowDown, MinusCircle, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
 import { MarketTrend, TrendDirection } from '@/types/charts'; // Removed MusicGenre, SubGenre
-import { marketService } from '@/services/marketService';
+import { marketService, marketTrendsAt } from '@/services/marketService';
 
 interface MusicIndustryReportProps {
-  // Props to control visibility, or it could be a standalone page/section
+  /** Save seed and in-game day: when given, the report shows that save's derived market. */
+  seed?: string | number;
+  day?: number;
 }
 
 const TrendIcon = ({ direction }: { direction: TrendDirection }) => {
@@ -21,9 +23,11 @@ const TrendIcon = ({ direction }: { direction: TrendDirection }) => {
   }
 };
 
-export const MusicIndustryReport: React.FC<MusicIndustryReportProps> = () => {
-  // Get market trends from the service
-  const allTrends = marketService.getAllTrends(); 
+export const MusicIndustryReport: React.FC<MusicIndustryReportProps> = ({ seed, day }) => {
+  const allTrends = React.useMemo(
+    () => (seed !== undefined && day !== undefined ? marketTrendsAt(seed, day) : marketService.getAllTrends()),
+    [seed, day],
+  );
   const isLoading = false; // TODO: Add loading state
   const error = null; // TODO: Add error handling
 

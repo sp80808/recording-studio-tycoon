@@ -1,3 +1,4 @@
+import { telemetry } from '@/telemetry/sink';
 import { money } from '@/utils/displayMoney';
 import { getHiringLimits, hiringBlockMessage } from '@/rpg/hiringLimits';
 
@@ -7,6 +8,7 @@ import { spend } from '@/economy/ledger';
 import { GameState, StaffMember, EquipmentMod, FocusAllocation } from '@/types/game'; // Added FocusAllocation
 import { toast } from '@/hooks/use-toast';
 import { availableTrainingCourses } from '@/data/training';
+import { courseTeacherBlocker } from '@/rpg/staffCareer';
 import { getStageOptimalFocus } from '@/utils/stageUtils'; // Added for optimal focus calculation
 import { availableMods } from '@/data/equipmentMods';
 import { getMoodEffectiveness } from '@/utils/playerUtils'; // Import from playerUtils
@@ -54,6 +56,7 @@ export const useStaffManagement = (
     setGameState(prev => {
       const nextLimits = getHiringLimits(prev);
       if (!nextLimits.canHire || prev.money < signingFee) return prev;
+      telemetry.capture('staff_hired', prev.currentDay, { role: newStaff.role }, newStaff.id);
       return {
         ...spend(prev, signingFee, { category: 'staff-hiring', staffId: newStaff.id, memo: candidate.name }),
         hiredStaff: [...prev.hiredStaff, newStaff],
@@ -183,6 +186,9 @@ export const useStaffManagement = (
       return;
     }
     if (course.knowHow && !meetsKnowHowGate(gameState.studioKnowHow ?? createInitialKnowHow(), course.knowHow)) {
+      return;
+    }
+    if (courseTeacherBlocker(course, gameState.hiredStaff, staffId)) {
       return;
     }
 

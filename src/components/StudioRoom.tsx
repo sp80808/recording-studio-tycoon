@@ -1,3 +1,4 @@
+import { pickFloorStaff } from '@/components/studio/staffStaging';
 import { TAKE_FEEDBACK_EVENT, takeQuip, type TakeFeedbackDetail } from '@/utils/takeFeedback';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import WebGLCanvas, { StudioHotspotId, HotspotAnchors } from '@/components/WebGLCanvas';
@@ -7,17 +8,18 @@ import { getOccupiedRoomIds, getOperationalStudioRooms } from '@/utils/studioRoo
 import { normalizeHotspotId } from '@/utils/studioHotspots';
 import { getDirectionalTargetIndex, getStickDirection, type ControllerNavDirection } from '@/utils/controllerNavigation';
 import { StudioInspector } from '@/components/StudioInspector';
-import { GameState, Project } from '@/types/game';
+import { GameState, Project, SessionIntervention } from '@/types/game';
 import { useSettings } from '@/contexts/SettingsContext';
 import { gameAudio } from '@/utils/audioSystem';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
 import { TierUpgradeAnimation } from './TierUpgradeAnimation';
 import { toast } from '@/hooks/use-toast';
-import { Coffee, LocateFixed, Waves, Wrench } from 'lucide-react';
+import { Coffee, Waves, Wrench } from 'lucide-react';
 import { getEraDecor, getTrophyInput } from '@/components/studio/studioDecorConfig';
+import { useStudioClock } from '@/contexts/StudioClockContext';
 import { triggerScreenShake } from '@/utils/screenShake';
 import { findPendingChoreForHotspot, getChoreCanonicalHotspot } from '@/simulation/choreEngine';
-import { ProducerSprite } from '@/components/ProducerSprite';
+import { isFlightCaseSystemUnlocked } from '@/economy/flightCaseEconomy';
 import { useGamepad } from '@/hooks/useGamepad';
 import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
 import { MotionReveal } from '@/components/motion/primitives';
@@ -63,7 +65,12 @@ interface StudioRoomProps {
   onStudioReady?: () => void;
   /** False while a ContextDrawer owns attention — suppresses idle auto-zoom. */
   floorFocused?: boolean;
+  lockedHotspot?: StudioHotspotId | null;
+  worldControls?: boolean;
+  intervention?: SessionIntervention | null;
+  onInterventionFocus?: () => void;
   className?: string;
+  cameraResetKey?: number;
   style?: React.CSSProperties;
 }
 
@@ -87,12 +94,17 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
   onBookings,
   onStudioReady,
   floorFocused = true,
+  lockedHotspot = null,
+  worldControls = false,
+  intervention = null,
+  onInterventionFocus,
   className = '',
+  cameraResetKey = 0,
   style,
 }) => {
   const { settings } = useSettings();
+  const studioClock = useStudioClock();
   const [activeInspector, setActiveInspector] = useState<StudioHotspotId | null>(null);
-  const [cameraReset, setCameraReset] = useState(0);
   const [anchors, setAnchors] = useState<HotspotAnchors>({});
   const [tierFlash, setTierFlash] = useState(false);
   const [pendingTierUpgrade, setPendingTierUpgrade] = useState<{ oldTier: number; newTier: number } | null>(null);
@@ -152,7 +164,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       progress = project.stages.length > 0 ? (done + currentFrac) / project.stages.length : 0;
     }
     const workingStaff = gameState.hiredStaff.filter((s) => s.status === 'Working').length;
-    const presentStaff = gameState.hiredStaff.filter((s) => s.status !== 'Resting');
+    const presentStaff = pickFloorStaff(gameState.hiredStaff);
     const activity = Math.min(
       1,
       0.08 + (project ? 0.3 + progress * 0.45 : 0) + workingStaff * 0.08
@@ -217,15 +229,19 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       ),
       ownedEquipment: gameState.ownedEquipment.length,
       day: gameState.currentDay,
+      clockMinutes: studioClock.minutesOfDay,
       eraId: eraDecor.eraId,
       cityId: gameState.cityId,
       roomTier,
       premisesTier: gameState.premisesTier ?? 0,
-      pendingCases: (gameState.pendingCrates ?? []).map((c) => c.tier),
+      pendingCases: isFlightCaseSystemUnlocked(gameState)
+        ? (gameState.pendingCrates ?? []).map((c) => c.tier)
+        : [],
       trophies: getTrophyInput(gameState),
       decorSeed: String(gameState.saveSeed ?? 'studio'),
       enquiryWaiting: gameState.availableProjects.length > 0,
       pendingChoreHotspot,
+      lockedHotspot,
       floorFocused: floorFocused && !activeInspector,
       coffeeSteaming: Boolean(gameState.choreState?.chores?.brew_espresso?.completed),
       riderBeers: Boolean(
@@ -233,7 +249,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           project.rider?.items.some((item) => item.kind === 'beer'),
       ),
     };
-  }, [gameState.activeProject, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, gameState.cityId, eraDecor.eraId, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, gameState.playerData, gameState.availableProjects.length, gameState.choreState, gameState.premisesTier, gameState.pendingCrates, roomTier, floorFocused, activeInspector]);
+  }, [gameState.activeProject, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, gameState.cityId, eraDecor.eraId, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, gameState.playerData, gameState.availableProjects.length, gameState.choreState, gameState.premisesTier, gameState.pendingCrates, roomTier, floorFocused, activeInspector, studioClock.minutesOfDay, lockedHotspot]);
 
   /**
    * Diegetic floor routes: pending chores always run the chore flow first.
@@ -248,6 +264,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     return all.find((p) => p?.bookingRoomId === roomId)?.title ?? null;
   };
   const handleHotspot = (id: StudioHotspotId | string) => {
+    if (!floorFocused) return;
     if (id === 'producer') {
       if (settings.sfxEnabled) void gameAudio.playTactileClick();
       setActiveInspector('producer');
@@ -283,6 +300,8 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     if (canonical === 'phone' && onBookings) { onBookings(); return; }
     setActiveInspector(canonical);
   };
+
+  useEffect(() => { if (!floorFocused) setActiveInspector(null); }, [floorFocused]);
 
   const closeInspector = () => {
     if (settings.sfxEnabled) gameAudio.playUISound('menuClose');
@@ -379,22 +398,12 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
 
   return (
     <div 
+      data-rst-studio="mounted"
       className={`relative overflow-hidden rounded-lg border border-stone-700/70 bg-[#1b1815] transition-all duration-300 ${className}`} 
       style={style}
     >
-      <WebGLCanvas state={sceneState} onHotspotSelect={handleHotspot} resetCameraKey={cameraReset} onHotspotAnchors={setAnchors} onFirstFrame={onStudioReady} />
-      {/* The producer at the desk: same modular sprite as play mode, from saved career-start choices (#126). */}
-      <div className="pointer-events-none absolute bottom-3 left-3 z-[5] hidden select-none flex-col items-center rounded border border-[var(--rst-line-strong)] bg-black/40 px-2 pb-1.5 pt-1 backdrop-blur-[2px] sm:flex">
-        <ProducerSprite
-          producerCustomization={gameState.producerCustomization}
-          selectedEra={gameState.selectedEra}
-          animationState={gameState.activeProject ? 'working' : 'idle'}
-          scale={2}
-        />
-        <span className="mt-0.5 max-w-[96px] truncate text-[9px] font-bold uppercase tracking-[0.18em] text-[var(--rst-brass-300)]">
-          {gameState.producerCustomization?.moniker ?? 'Producer'}
-        </span>
-      </div>
+      <WebGLCanvas state={sceneState} onHotspotSelect={handleHotspot} resetCameraKey={cameraResetKey} onHotspotAnchors={setAnchors} onFirstFrame={onStudioReady} />
+
       {viewRoom && <RoomVignette room={viewRoom} occupiedBy={roomProjectTitle(viewRoom.id)} />}
       <StudioRoomTabs rooms={operationalRooms} activeId={viewRoom ? viewRoom.id : 'studio-a'} occupied={occupiedRooms} onSelect={(id) => { if (settings.sfxEnabled) void gameAudio.playTactileClick(); setViewRoomId(id); }} />
       {tierFlash && <div className="tier-flash-overlay" />}
@@ -429,10 +438,14 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
         </div>
       </div>
 
-      {/* Anchored hybrid chore hotspots (stamp language + old duty depth). */}
+      {/* Chore overlay buttons (kept): same shortcut as clicking the floor
+          object itself — handleHotspot runs the pending chore first. Anchors
+          are clamped and separated so the chips never overlap each other, the
+          camera button, or the session strip; they hide while an inspector,
+          drawer, or room vignette owns attention. */}
       {(() => {
         const choreState = gameState.choreState;
-        if (!choreState || viewRoom) return null;
+        if (!choreState || viewRoom || !floorFocused || activeInspector) return null;
         const pendingConsoleChores = Object.values(choreState.chores).filter(
           (c) => getChoreCanonicalHotspot(c) === 'console' && !c.completed
         );
@@ -440,22 +453,26 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           (c) => getChoreCanonicalHotspot(c) === 'liveRoom' && !c.completed
         );
 
-        const anchorStyle = (id: StudioHotspotId): React.CSSProperties | undefined => {
-          const a = anchors[id];
+        const anchorStyle = (id: StudioHotspotId | 'coffee', dyPx: number): React.CSSProperties | undefined => {
+          const a = (anchors as any)[id];
           if (!a) return undefined;
           return {
             position: 'absolute',
-            left: `clamp(80px, ${a.x}px, calc(100% - 80px))`,
-            top: `max(${a.y}px, 40px)`,
-            transform: 'translate(-50%, calc(-100% - 8px))',
+            left: `clamp(88px, ${a.x}px, calc(100% - 88px))`,
+            top: `max(${a.y + dyPx}px, 96px)`,
+            transform: 'translate(-50%, calc(-100% - 10px))',
             zIndex: 20,
           };
         };
-        const consoleStyle = anchorStyle('console');
-        const liveStyle = anchorStyle('liveRoom');
+        // Console sits left, live room right, coffee sits at lounge candle table;
+        // vertical nudge keeps chips from colliding when 3D anchors project close.
+        const consoleStyle = anchorStyle('console', 0);
+        const liveStyle = anchorStyle('liveRoom', -26);
+        const coffeeStyle = anchorStyle('coffee', 0) || anchorStyle('shelf', 0);
         const busy = Boolean(activeChoreId);
         const consoleChore = pendingConsoleChores[0];
         const liveChore = pendingLiveRoomChores[0];
+        const shelfChore = findPendingChoreForHotspot(gameState.choreState, 'shelf');
 
         return (
           <>
@@ -471,7 +488,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
                     working={activeChoreId === consoleChore.id}
                     disabled={busy && activeChoreId !== consoleChore.id}
                     className={`studio-room-chip ${consoleStyle ? '' : 'studio-duty-console absolute bottom-14 left-6 z-20'} ${busy && activeChoreId !== consoleChore.id ? 'pointer-events-none opacity-70' : ''}`}
-                    title={`${pendingConsoleChores.length} console maintenance duty pending`}
+                    title={`${pendingConsoleChores.length} console maintenance duty pending — same as clicking the console desk`}
                     onClick={() => handleHotspot('console')}
                   />
                 </MotionReveal>
@@ -489,8 +506,26 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
                     working={activeChoreId === liveChore.id}
                     disabled={busy && activeChoreId !== liveChore.id}
                     className={`studio-room-chip ${liveStyle ? '' : 'studio-duty-live absolute bottom-16 right-6 z-20'} ${busy && activeChoreId !== liveChore.id ? 'pointer-events-none opacity-70' : ''}`}
-                    title="Live Room: Tune Acoustics"
+                    title="Live Room: Tune Acoustics — same as clicking the live booth"
                     onClick={() => handleHotspot('liveRoom')}
+                  />
+                </MotionReveal>
+              </div>
+            )}
+            {shelfChore && (
+              <div style={coffeeStyle}>
+                <MotionReveal direction="up" distance={6}>
+                  <ChoreHotspotButton
+                    kind="hospitality"
+                    icon={Coffee}
+                    label="Brew Espresso"
+                    meta={shelfChore.energyCost > 0 ? `${shelfChore.energyCost}⚡` : 'Free'}
+                    attention
+                    working={activeChoreId === shelfChore.id}
+                    disabled={busy && activeChoreId !== shelfChore.id}
+                    className={`studio-room-chip ${coffeeStyle ? '' : 'studio-duty-coffee absolute bottom-16 right-16 z-20'} ${busy && activeChoreId !== shelfChore.id ? 'pointer-events-none opacity-70' : ''}`}
+                    title="Lounge: Brew Espresso — click here or tap the coffee table"
+                    onClick={() => handleHotspot('shelf')}
                   />
                 </MotionReveal>
               </div>
@@ -498,41 +533,6 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           </>
         );
       })()}
-      {/* Camera recentre + lounge duty — right stack clears the session status strip. */}
-      {roomTier > 1 && <div className="studio-room-overlay-tr">
-        <button className="studio-camera-center studio-dock-button"
-          onClick={() => {
-            setCameraReset(value => value + 1);
-            playClick();
-            toast({ title: 'Studio view centered', description: 'The room camera is back at its default position.' });
-          }} aria-label="Center studio camera" title="Center studio camera">
-          {gamepad.isConnected && gamepad.lastInputType === 'gamepad' && (
-            <GamepadGlyph button="rs" size="xs" />
-          )}
-          <LocateFixed size={16} />
-        </button>
-        {(() => {
-          const shelfChore = findPendingChoreForHotspot(gameState.choreState, 'shelf');
-          if (!shelfChore) return null;
-          const busy = Boolean(activeChoreId);
-          return (
-            <MotionReveal direction="down" distance={6}>
-              <ChoreHotspotButton
-                kind="hospitality"
-                icon={Coffee}
-                label="Brew Espresso"
-                meta={shelfChore.energyCost > 0 ? `${shelfChore.energyCost}⚡` : 'Free'}
-                attention
-                working={activeChoreId === shelfChore.id}
-                disabled={busy && activeChoreId !== shelfChore.id}
-                className="studio-room-chip"
-                title="Lounge: Brew Espresso"
-                onClick={() => handleHotspot('shelf')}
-              />
-            </MotionReveal>
-          );
-        })()}
-      </div>}
       {gamepad.isConnected && gamepad.lastInputType === 'gamepad' ? (
         <div className="studio-room-gamepad-hint pointer-events-none select-none">
           <GamepadGlyph button="dpadLeft" size="xs" />

@@ -1,5 +1,5 @@
 /**
- * Draws the in-house CC0 layered-NPC part set into assets-src/layer/npc-parts/frames/.
+ * Draws the in-house proprietary original layered-NPC part set into assets-src/layer/npc-parts/frames/.
  * Parts share one 32x48 canvas and are drawn white/grey so the Pixi renderer can tint them
  * (skin, hair, clothing colours come from the NPC definition). Face and shadow keep their own colours.
  * Frame file names are `<slot>_<variant>_000.png`, matching npcLayers.ts variant keys (`hair/afro` -> hair_afro).
@@ -89,7 +89,7 @@ fs.mkdirSync(dir, { recursive: true });
 for (const f of fs.readdirSync(dir)) if (f.endsWith('.png')) fs.unlinkSync(path.join(dir, f));
 for (const [name, img] of Object.entries(parts)) fs.writeFileSync(path.join(dir, `${name}_000.png`), encodePng(img));
 fs.writeFileSync(path.join(dir, '..', 'asset.json'), JSON.stringify({
-  id: 'npc-parts', kind: 'layer', sourceType: 'vector_authored', author: 'RST in-house', license: 'In-house (CC0)',
+  id: 'npc-parts', kind: 'layer', sourceType: 'vector_authored', author: 'RST in-house', license: 'original',
   toolVersion: 'scripts/assets/make-layer-parts.ts (procedural rectangles)', paletteId: 'rst-npc-parts-tintable', palette: [W, L, D, '#171717', '#7c2d12', '#3f2212'],
   createdAt: '2026-09-30T00:00:00.000Z', pipelineSteps: ['draw-in-house', 'export-png-sequence'],
 }, null, 2) + '\n');

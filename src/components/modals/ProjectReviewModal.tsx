@@ -1,4 +1,5 @@
 import { moneySymbol, moneyValue } from '@/utils/displayMoney';
+import './project-review.css';
 import React, { useState, useEffect, useCallback } from 'react';
 import { ProjectReport, ProjectReportSkillEntry } from '@/types/game';
 import { Button } from '@/components/ui/button';
@@ -143,18 +144,18 @@ const SkillDisplay: React.FC<SkillDisplayProps> = ({ skillDetail, onAnimationCom
   const calculateXpToNextLevel = (level: number): number => Math.floor(100 * Math.pow(level, 1.5));
 
   return (
-    <li className="group rounded-xl border border-stone-700/70 bg-stone-900/80 p-3 shadow-[0_10px_28px_rgba(0,0,0,.18)] transition-colors hover:border-amber-400/35">
+    <li className="rst-review-skill group rounded-xl border border-stone-700/70 bg-stone-900/80 p-3 shadow-[0_10px_28px_rgba(0,0,0,.18)] transition-colors hover:border-amber-400/35">
       <div className="flex justify-between items-center mb-1">
         <span className={`font-semibold capitalize ${levelUpFlash ? 'text-yellow-300 animate-pulse-strong' : 'text-white'}`}>
-          {skillDetail.skillName}: Lvl {currentLevel}
+          {skillDetail.skillName.replace(/([a-z])([A-Z])/g, '$1 $2')}: Lvl {currentLevel}
         </span>
         <span className={`font-bold text-lg ${score > 80 ? 'text-green-400' : score > 60 ? 'text-yellow-400' : 'text-red-400'}`}>
           {score}/100
         </span>
       </div>
-      <div className="w-full bg-stone-600 rounded h-4 overflow-hidden relative">
+      <div className="rst-review-xp w-full bg-stone-600 rounded h-4 overflow-hidden relative" role="progressbar" aria-label={`${skillDetail.skillName.replace(/([a-z])([A-Z])/g, '$1 $2')} experience`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(Math.max(0, Math.min(100, xpBarProgress)))}>
         <div 
-          className="bg-amber-500 h-full transition-all duration-500 ease-out" 
+          className="rst-review-xp-fill bg-amber-500 h-full transition-all duration-500 ease-out" 
           style={{ width: `${xpBarProgress}%` }}
         />
         <span className="absolute inset-0 flex items-center justify-center text-xs text-white font-bold drop-shadow-md">
@@ -174,9 +175,11 @@ interface ProjectReviewModalProps {
   report: ProjectReport | null;
   /** Studio Seasons link: what this delivery adds to the chosen focus (#63). */
   seasonNote?: string | null;
+  /** Save seed so the cover differs per save for identical projects (bead u92). */
+  saveSeed?: string | number;
 }
 
-export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, onClose, report, seasonNote }) => {
+export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, onClose, report, seasonNote, saveSeed }) => {
   const [currentSkillIndex, setCurrentSkillIndex] = useState(-1);
   const [showOverallQuality, setShowOverallQuality] = useState(false);
   const [showRewards, setShowRewards] = useState(false);
@@ -242,7 +245,11 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
     if (isOpen && report) {
       setAlbumArtUrl(null);
       setIsGeneratingArt(true);
-      generateAlbumArt(`editorial album cover for ${report.projectTitle}, ${report.genre} music, tactile studio photography, bold geometric composition, no text, square artwork`)
+      generateAlbumArt(`editorial album cover for ${report.projectTitle}, ${report.genre} music, tactile studio photography, bold geometric composition, no text, square artwork`, {
+        title: report.projectTitle,
+        genre: report.genre,
+        saveSeed,
+      })
         .then(url => setAlbumArtUrl(url === '/placeholder.svg' ? null : url))
         .catch(() => setAlbumArtUrl(null))
         .finally(() => setIsGeneratingArt(false));
@@ -266,7 +273,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
         window.clearTimeout(fallback);
       };
     }
-  }, [isOpen, report]);
+  }, [isOpen, report, saveSeed]);
 
   useEffect(() => {
     if (!report || !isOpen) return;
@@ -370,10 +377,10 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
         }}
         aria-describedby={descriptionId} // Add aria-describedby for accessibility
       >
-        <DialogHeader className="pt-5 px-6 border-b border-stone-800/80 pb-3 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-2xl font-bold text-yellow-400">Project Complete: {report.projectTitle}</DialogTitle>
-            <span className="text-xs font-mono px-2.5 py-1 rounded bg-stone-800 text-stone-300 border border-stone-700">
+        <DialogHeader className="rst-review-header pt-5 px-6 border-b border-stone-800/80 pb-3 flex-shrink-0">
+          <div className="rst-review-heading flex items-center justify-between">
+            <DialogTitle className="rst-review-title text-2xl font-bold text-yellow-400">Project Complete: {report.projectTitle}</DialogTitle>
+            <span className="rst-review-genre text-xs font-mono px-2.5 py-1 rounded bg-stone-800 text-stone-300 border border-stone-700">
               {report.genre}
             </span>
           </div>
@@ -396,6 +403,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
                   imageUrl={albumArtUrl}
                   isGenerating={isGeneratingArt}
                   showVinylPeek={true}
+                  saveSeed={saveSeed}
                 />
 
                 {/* Press Critique */}
@@ -410,6 +418,9 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
                       <p className="text-sm text-stone-200 italic leading-relaxed">
                         "{reviewText || typedSnippet || report.reviewSnippet}"
                       </p>
+                      {Boolean(report.qualityFactors?.length) && <p className="mt-2 text-xs leading-relaxed text-stone-400" aria-label="Session factors">
+                        {report.qualityFactors?.slice(0, 2).join(' · ')}
+                      </p>}
                     </div>
                   )}
                 </div>
@@ -492,6 +503,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
           <CardFooter className="shrink-0 p-4 border-t border-stone-800/80 bg-stone-950/90">
             {showContinueButton ? (
               <MotionButton
+                data-rst-surface="deep-panel" data-rst-action-id="review:settle"
                 onClick={() => {
                   // Play sound before calling onClose, as onClose might unmount the component
                   gameAudio.playSound('button_click', 'sfx'); 

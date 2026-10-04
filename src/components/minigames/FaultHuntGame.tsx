@@ -12,6 +12,7 @@ import {
   toggleFlag,
   type FaultHuntState,
 } from '@/minigames/faultHunt';
+import { tc } from '@/i18n/content';
 
 interface Props {
   minigameId: string;
@@ -31,15 +32,17 @@ export const FaultHuntGame: React.FC<Props> = ({ onComplete, difficulty = 1, fre
   const result = useMemo(() => scoreFaultHunt(state, maxProbes), [state, maxProbes]);
   const flags = state.cells.filter((c) => c.flagged).length;
 
+  const faultLabel = (k: keyof typeof FAULT_LABELS) => tc(`mg.FaultHuntGame.fault_${k.replace(/-/g, '_')}`, FAULT_LABELS[k]);
+
   const press = (i: number) => setState((s) => (flagMode ? toggleFlag(s, i) : probe(s, i)));
 
   return (
-    <MinigameChrome title="Patchbay Panic" subtitle="Find the faulty jacks" score={state.finished ? result.total : undefined} accent="red">
+    <MinigameChrome title={tc('mg.FaultHuntGame.title', 'Patchbay Panic')} subtitle={tc('mg.FaultHuntGame.subtitle', 'Find the faulty jacks')} score={state.finished ? result.total : undefined} accent="red">
       <Card className="border-0 bg-transparent">
         <CardContent className="space-y-3 p-4">
           <p className="text-xs text-stone-300">
-            Probe a jack to read how many of its 8 neighbours are faulty. Probing a bad jack trips it, so flag the ones you
-            are sure about instead. Probes: <b>{state.probesLeft}</b> · Flags: <b>{flags}/{state.faultCount}</b>
+            {tc('mg.FaultHuntGame.instructions', 'Probe a jack to read how many of its 8 neighbours are faulty. Probing a bad jack trips it, so flag the ones you are sure about instead.')}{' '}
+            {tc('mg.FaultHuntGame.probes', 'Probes:')} <b>{state.probesLeft}</b> · {tc('mg.FaultHuntGame.flags', 'Flags:')} <b>{flags}/{state.faultCount}</b>
           </p>
           <div className="mx-auto grid max-w-xs gap-1" style={{ gridTemplateColumns: `repeat(${state.size}, minmax(0, 1fr))` }}>
             {state.cells.map((cell, i) => {
@@ -51,7 +54,7 @@ export const FaultHuntGame: React.FC<Props> = ({ onComplete, difficulty = 1, fre
                   type="button"
                   disabled={state.finished || revealed}
                   onClick={() => press(i)}
-                  aria-label={revealed ? (cell.fault ? FAULT_LABELS[cell.fault] : `${cell.adjacent} faulty neighbours`) : cell.flagged ? 'Flagged jack' : 'Unprobed jack'}
+                  aria-label={revealed ? (cell.fault ? faultLabel(cell.fault) : tc('mg.FaultHuntGame.faulty_neighbours', '{{n}} faulty neighbours', { n: cell.adjacent })) : cell.flagged ? tc('mg.FaultHuntGame.flagged_jack', 'Flagged jack') : tc('mg.FaultHuntGame.unprobed_jack', 'Unprobed jack')}
                   className={`aspect-square rounded-md border font-mono text-sm font-bold ${
                     cell.status === 'tripped'
                       ? 'border-red-500 bg-red-950 text-red-300'
@@ -70,14 +73,14 @@ export const FaultHuntGame: React.FC<Props> = ({ onComplete, difficulty = 1, fre
           {state.finished && (
             <div className="rounded-lg border border-stone-600 bg-stone-900/70 p-3 text-xs text-stone-200">
               <h4 className="mb-1 font-bold text-amber-300">
-                {result.found}/{state.faultCount} faults located
+                {tc('mg.FaultHuntGame.faults_located', '{{found}}/{{total}} faults located', { found: result.found, total: state.faultCount })}
               </h4>
               <ul className="mb-1 grid grid-cols-2 gap-x-3 text-[11px] text-stone-400">
                 {state.cells.filter((c) => c.fault).map((c, i) => (
-                  <li key={i}>{FAULT_LABELS[c.fault!]}{c.flagged || c.status === 'tripped' ? ' ✓' : ' ✗'}</li>
+                  <li key={i}>{faultLabel(c.fault!)}{c.flagged || c.status === 'tripped' ? ' ✓' : ' ✗'}</li>
                 ))}
               </ul>
-              {result.tips.join(' ') || 'Clean diagnosis. The session can start.'}
+              {result.tips.join(' ') || tc('mg.FaultHuntGame.result_clean', 'Clean diagnosis. The session can start.')}
             </div>
           )}
         </CardContent>
@@ -86,12 +89,12 @@ export const FaultHuntGame: React.FC<Props> = ({ onComplete, difficulty = 1, fre
         {!state.finished ? (
           <>
             <KenneyButton onClick={() => setFlagMode((m) => !m)} variant={flagMode ? 'yellow' : 'blue'}>
-              {flagMode ? 'Flagging ⚑' : 'Probing ○'}
+              {flagMode ? tc('mg.FaultHuntGame.mode_flagging', 'Flagging ⚑') : tc('mg.FaultHuntGame.mode_probing', 'Probing ○')}
             </KenneyButton>
-            <KenneyButton onClick={() => setState(finish)} variant="green">File report</KenneyButton>
+            <KenneyButton onClick={() => setState(finish)} variant="green">{tc('mg.FaultHuntGame.file_report', 'File report')}</KenneyButton>
           </>
         ) : (
-          <KenneyButton onClick={() => onComplete(result.total, result.total >= 500)} variant="green">Done</KenneyButton>
+          <KenneyButton onClick={() => onComplete(result.total, result.total >= 500)} variant="green">{tc('mg.FaultHuntGame.done', 'Done')}</KenneyButton>
         )}
       </DialogFooter>
     </MinigameChrome>

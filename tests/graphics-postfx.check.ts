@@ -28,10 +28,10 @@ const digitalTuning = getEraPostFxTuning('digital80s');
 const millenniumTuning = getEraPostFxTuning('internet2000s');
 const streamingTuning = getEraPostFxTuning('streaming2020s');
 
-assert.ok(analogTuning.scanlineAlpha <= 0.06 && analogTuning.scanlineAlpha >= 0.02, 'Analog scanline alpha is subtle');
+assert.strictEqual(analogTuning.scanlineAlpha, 0.0, 'Analog 60s has no scanlines (era-authentic)');
 assert.ok(digitalTuning.scanlineAlpha <= 0.06 && digitalTuning.scanlineAlpha >= 0.02, 'Digital scanline alpha is subtle');
 assert.ok(millenniumTuning.scanlineAlpha < digitalTuning.scanlineAlpha, 'Millennium LCD is cleaner than 80s CRT');
-assert.ok(streamingTuning.scanlineAlpha <= 0.02, 'Streaming era scanlines are ultra-fine');
+assert.strictEqual(streamingTuning.scanlineAlpha, 0.0, 'Streaming era has no scanlines');
 
 assert.strictEqual(analogTuning.vignetteColor, 0x1d1107, 'Warm analog tape amber vignette');
 assert.strictEqual(digitalTuning.vignetteColor, 0x160c24, 'Digital 80s slate violet vignette');

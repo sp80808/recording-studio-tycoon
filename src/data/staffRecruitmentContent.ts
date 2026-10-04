@@ -57,12 +57,12 @@ export const ROLE_HEADLINES: Record<StaffJobRole, readonly string[]> = {
 };
 
 export const ERA_TRAITS: Record<NpcEra, readonly string[]> = {
-  '1960s': ['tape-splicing instincts', 'mono-first ear', 'live-room calm', 'union hours respect', 'horn-section diplomacy'],
-  '1970s': ['console folklore', 'disco pocket', 'late-night stamina', 'band whisperer', 'vinyl-preview taste'],
-  '1980s': ['MIDI fluent', 'gated-reverb taste', 'video-ready polish', 'synth stacker', 'chart-conscious'],
-  '1990s': ['DAW bilingual', 'sample clearance wary', 'grunge patience', 'R&B layering', 'indie thrift'],
-  '2000s': ['laptop-rig tidy', 'blog-era hustle', 'plugin detective', 'tour-bus ready', 'myspace survivor'],
-  modern: ['remote-session native', 'stem delivery obsessive', 'playlist fluent', 'content-safe credits', 'hybrid analog taste'],
+  '1960s': ['tape-splicing instincts', 'mono-first ear', 'live-room calm', 'union hours respect', 'horn-section diplomacy', 'gain-riding reflexes', 'echo-chamber patience'],
+  '1970s': ['console folklore', 'disco pocket', 'late-night stamina', 'band whisperer', 'vinyl-preview taste', 'razor-edit confidence', 'headroom generous'],
+  '1980s': ['MIDI fluent', 'gated-reverb taste', 'video-ready polish', 'synth stacker', 'chart-conscious', 'automation fearless', 'drum-machine pocket'],
+  '1990s': ['DAW bilingual', 'sample clearance wary', 'grunge patience', 'R&B layering', 'indie thrift', 'ADAT clock wrangler', 'breakbeat archivist'],
+  '2000s': ['laptop-rig tidy', 'blog-era hustle', 'plugin detective', 'tour-bus ready', 'myspace survivor', 'vocal-stack precise', 'recall-sheet disciplined'],
+  modern: ['remote-session native', 'stem delivery obsessive', 'playlist fluent', 'content-safe credits', 'hybrid analog taste', 'immersive-mix curious', 'version-control calm'],
 };
 
 export const ERA_STUDIOS: Record<NpcEra, readonly string[]> = {

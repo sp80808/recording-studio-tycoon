@@ -2,6 +2,9 @@
 import {
   getStaffCareer, creditSession, setActiveDiscipline, getPromotionOffer, promoteStaffInState, careerFitBonus,
   defaultDiscipline, disciplineForStage, experienceIn, CAREER_LEVEL_XP,
+  crossTrainOptions, startCrossTrainingInState, completeCrossTraining, parseCrossTrainCourse,
+  courseTeacherBlocker, applyCourseCareerXp,
+  startMentoringInState, stopMentoringInState, mentorshipScale, canMentor, MENTOR_JUNIOR_SCALE, MENTOR_COST_SCALE,
 } from '../src/rpg/staffCareer';
 import { calculateStaffProjectFit } from '../src/utils/staffFitUtils';
 import { initializeSkillsStaff } from '../src/utils/skillUtils';
@@ -53,7 +56,10 @@ ok(toSenior.to === 'senior' && toSenior.title === 'Senior Recording Engineer' &&
 ok(!toSenior.eligible, 'senior needs more than a single promotion step');
 let grind = regular;
 for (let i = 0; i < 12; i++) grind = creditSession(grind, `g${i}`, ['Basic Tracking'], 95);
-ok(getPromotionOffer(grind)!.eligible, 'grinding the discipline eventually earns the senior promotion');
+ok(!getPromotionOffer(grind)!.eligible, 'senior also needs a completed cross-training');
+ok(promoteStaffInState({ hiredStaff: [grind] }, 's1').hiredStaff[0].salary === grind.salary, 'senior promotion without cross-training is a no-op');
+grind = completeCrossTraining(grind, 'mixing');
+ok(getPromotionOffer(grind)!.eligible, 'grinding plus a cross-training earns the senior promotion');
 const senior = promoteStaffInState({ hiredStaff: [grind] }, 's1').hiredStaff[0];
 ok(senior.career!.seniority === 'senior' && senior.salary === getPromotionOffer(grind)!.salaryAfter && senior.salary > regular.salary, 'senior promotion raises the salary visibly');
 ok(getPromotionOffer(senior) === null, 'no further promotion in this slice');
@@ -71,4 +77,51 @@ ok(!fitJunior.reasons.some(r => /experience/.test(r)), 'no career reason for sta
 ok(careerFitBonus(senior, 'Basic Tracking').points <= 10, 'career fit bonus is capped');
 ok(careerFitBonus(senior, 'Final Mix').points < careerFitBonus(senior, 'Basic Tracking').points, 'experience helps most on its own discipline');
 ok(CAREER_LEVEL_XP.length === 6, 'six level thresholds (0-5)');
+// Cross-training: costs money, takes staff off the floor, keeps all experience.
+const charge = (g: any, cost: number) => ({ ...g, money: g.money - cost });
+const idle = staff();
+const base = { hiredStaff: [idle], money: 1000, currentDay: 10 };
+ok(crossTrainOptions(idle).length === 3 && !crossTrainOptions(idle).some(o => o.discipline === 'recording'), 'cross-training offers every discipline but the active one');
+const started = startCrossTrainingInState(base, 's1', 'mixing', charge);
+const trainee = started.hiredStaff[0];
+ok(trainee.status === 'Training' && trainee.trainingEndDay === 13 && parseCrossTrainCourse(trainee.trainingCourse) === 'mixing' && started.money < 1000, 'cross-training takes the trainee off the floor for days and charges the exact cost');
+ok(startCrossTrainingInState(started, 's1', 'production', charge) === started, 'a trainee cannot start a second course');
+ok(startCrossTrainingInState({ ...base, money: 10 }, 's1', 'mixing', charge).hiredStaff[0].status === 'Idle', 'cross-training needs the cash');
+ok(startCrossTrainingInState({ ...base, hiredStaff: [{ ...idle, status: 'Working' }] } as never, 's1', 'mixing', charge).hiredStaff[0].status === 'Working', 'working staff cannot cross-train');
+const worked = creditSession(idle, 'w', ['Basic Tracking'], 80);
+const trained = completeCrossTraining(worked, 'mixing');
+ok(experienceIn(trained.career, 'mixing').xp === 40 && trained.career.secondaryDiscipline === 'mixing', 'cross-training adds xp in the new discipline');
+ok(experienceIn(trained.career, 'recording').xp === experienceIn(worked.career, 'recording').xp && trained.career.activeDiscipline === 'recording', 'cross-training never erases earlier experience');
+let deep = trained;
+for (let i = 0; i < 3; i++) deep = completeCrossTraining(deep, 'mixing');
+ok(experienceIn(deep.career, 'mixing').level >= 3 && experienceIn(completeCrossTraining(deep, 'mixing').career, 'mixing').xp - experienceIn(deep.career, 'mixing').xp === 20, 'repeat cross-training has diminishing gains');
+ok(careerFitBonus(trained, 'Final Mix').points > 0, 'cross-training changes what the staff member can credibly do');
+
+// Mentorship: only pays while the mentor is working; never passive.
+const mentor = { ...senior, id: 'm1', status: 'Working' as const };
+const junior = staff({ id: 'j1' });
+const team = { hiredStaff: [mentor, junior] };
+ok(canMentor(mentor, junior) && !canMentor(junior, mentor), 'only a senior can mentor a junior');
+const linked = startMentoringInState(team, 'm1', 'j1');
+const j1 = linked.hiredStaff[1];
+ok(getStaffCareer(j1).mentorId === 'm1' && j1.skills === junior.skills, 'mentoring links without touching skills');
+ok(startMentoringInState({ hiredStaff: [...linked.hiredStaff, staff({ id: 'j2' })] }, 'm1', 'j2').hiredStaff[2].career === undefined, 'a senior mentors only one junior');
+ok(mentorshipScale(j1, linked.hiredStaff) === MENTOR_JUNIOR_SCALE, 'a mentored junior learns faster while the mentor works');
+const idleMentor = linked.hiredStaff.map(s => s.id === 'm1' ? { ...s, status: 'Idle' as const } : s);
+ok(mentorshipScale(j1, idleMentor) === 1, 'no bonus when the mentor is idle (no passive xp)');
+ok(mentorshipScale(linked.hiredStaff[0], linked.hiredStaff) === MENTOR_COST_SCALE, 'the mentor pays a small cost on their own sessions');
+ok(experienceIn(creditSession(j1, 'k', ['Basic Tracking'], 80, MENTOR_JUNIOR_SCALE).career, 'recording').xp > experienceIn(creditSession(j1, 'k', ['Basic Tracking'], 80).career, 'recording').xp, 'mentored junior earns more xp');
+ok(mentorshipScale(stopMentoringInState(linked, 'j1').hiredStaff[1], idleMentor) === 1, 'ending mentorship removes the link');
+
+// Courses feed careers; a senior-taught course needs a teacher.
+const course = { careerDiscipline: 'mixing' as const, careerXp: 40, taughtBySenior: 'mixing' as const };
+const learner = staff({ id: 'l1' });
+ok(experienceIn(applyCourseCareerXp(learner, course).career!, 'mixing').xp === 40 && experienceIn(applyCourseCareerXp(learner, course).career!, 'recording').xp === 0, 'a course adds xp to its discipline only');
+ok(applyCourseCareerXp(learner, {}) === learner, 'a course without career effects changes nothing');
+ok(courseTeacherBlocker(course, [learner], 'l1') !== null, 'no senior teacher blocks the course');
+const mixSenior = { ...senior, id: 'ms', career: { ...senior.career!, activeDiscipline: 'mixing' as const } };
+ok(courseTeacherBlocker(course, [learner, mixSenior], 'l1') === null, 'a senior in the discipline unlocks the course');
+ok(courseTeacherBlocker(course, [mixSenior], 'ms') !== null, 'a senior cannot teach themselves');
+ok(courseTeacherBlocker({ careerXp: 5 }, [learner], 'l1') === null, 'open courses are never blocked');
+
 console.log(`staff-career: all ${n} checks passed`);

@@ -1,10 +1,11 @@
 // Sunlight falling through the window onto the studio floor, with dust motes drifting in the beam.
 // The patch slides across the floor as the sun crosses the sky (same clock as studioWindowView) and
-// fades out at night. In-house CC0, Pixi Graphics only, no image files.
+// fades out at night. In-house proprietary original, Pixi Graphics only, no image files.
 
 import { Container, Graphics } from 'pixi.js';
 import { iso } from './isoMath';
 import { getCelestialPosition } from './studioWindowView';
+import { createStudioGodrayFilter, calculateGodrayColor } from '@/lib/render/shaders/godrayFilter';
 
 export interface LightShaft {
   container: Container;
@@ -33,6 +34,10 @@ export const getShaftShift = (minutesOfDay: number): number => {
 export const buildLightShaft = (seed = 3): LightShaft => {
   const container = new Container();
   container.eventMode = 'none';
+  const godray = createStudioGodrayFilter();
+  if (godray) {
+    container.filters = [godray.filter];
+  }
   const patch = new Graphics();
   const motes = new Graphics();
   container.addChild(patch, motes);
@@ -51,6 +56,16 @@ export const buildLightShaft = (seed = 3): LightShaft => {
       const strength = getShaftStrength(m);
       container.visible = strength > 0.02;
       if (!container.visible) { lastKey = ''; return; }
+      if (godray) {
+        const lightColor = calculateGodrayColor(m);
+        const winCenter = iso(6.0, 0.15);
+        godray.update(
+          [winCenter.x, winCenter.y - 65],
+          strength,
+          [lightColor.r, lightColor.g, lightColor.b],
+          reduceMotion ? 0 : t
+        );
+      }
       const shift = getShaftShift(m);
       const warm = Math.abs(getCelestialPosition(m).u - 0.5) * 2 > 0.6;
       const key = `${Math.round(strength * 40)}|${Math.round(shift * 20)}|${reduceMotion ? 0 : Math.floor(t * 8)}`;

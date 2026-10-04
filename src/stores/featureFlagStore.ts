@@ -9,6 +9,8 @@ export const useFeatureFlagStore = create<FeatureFlags>((set) => ({
   flags: {
     // default: features are off; enable via dev tools or config
     'advanced-production-queue': false,
+    // Foreground solo sessions keep the world visible; false restores the deep console drawer.
+    'world-session-controls': false,
     'quick-assign-presets': false,
     // Flight Case Monetisation (bead 89o): store + premium reveals, default off.
     'monetisation-dealer': false,

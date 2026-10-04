@@ -1,18 +1,32 @@
 # Recording Studio Tycoon
 *A tactile music industry simulation game built with React, PixiJS, Tone.js, TypeScript, and modern web technologies.*
 
+> [!IMPORTANT]
+> **Proprietary source — not open source.** Recording Studio Tycoon and its original code, game design, text, artwork, audio, data, and documentation are all rights reserved. Public availability on GitHub does not grant permission to copy, redistribute, commercialise, or build another game from RST. Third-party components remain under their own licences. See [LICENSE](./LICENSE) and [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).
+
 ---
 
 ## 🎯 Project Overview
 
 **Recording Studio Tycoon** is an immersive music industry simulation game: build and manage a legendary recording studio from the 1960s analog tape era through to modern digital streaming. Hire specialized engineers and session musicians, invest in vintage and cutting-edge hardware, pitch for record label contracts, master interactive production minigames, and settle hit records to top the industry charts.
 
-- **Current Version:** 0.4.0 (The Living Isometric Studio & Interactive Console Overhaul)
+- **Current Version:** 0.5.0 (The Living Studio & Campaign Expansion)
 - **Development Status:** Active Development
-- **Last Updated:** September 29, 2026
-- **Live Shell:** `src/pages/Index.tsx` mounts the game. The main viewport features an interactive isometric PixiJS studio floor (`src/components/StudioRoom.tsx` / `src/components/WebGLCanvas.tsx`) with 6 clickable hotspots — console desk, live room, analog phone, studio clock, CRT monitor, and vinyl shelf — backed by contextual slide-over management drawers and tactile hardware controls.
+- **Last Updated:** October 4, 2026
+- **Live Shell:** `src/pages/Index.tsx` mounts the game. The main viewport features an interactive isometric PixiJS studio floor (`src/components/StudioRoom.tsx` / `src/components/WebGLCanvas.tsx`) with clickable hotspots, contextual slide-over management drawers, tactile hardware controls, era props, a trophy wall, and the current session state.
 
 ---
+
+## 🆕 What&apos;s New in v0.5.0
+
+The latest milestone expands the tactile studio loop into a broader campaign:
+
+- **Bus & Stem Merge:** Route tracks through buses and stems in a 2048-style mixing puzzle while managing headroom and move limits.
+- **Campaign & Lore:** Follow rival studios, story contracts, 13 era-gated subplots, decision popups, a chronicle, 25 achievements, and multiple endings.
+- **Producer Origins:** Start each career with a distinct background and gameplay perk.
+- **Era-Authentic Gigs:** Choose contracts across the 1960s, 1980s, 2000s, and 2020s with risk/reward stakes.
+- **Warm Flat UI:** A unified visual language now spans the HUD, drawers, popups, toasts, and minigames.
+- **Keyboard Shortcuts:** Use `1–5` for dock tabs and `?` to open the shortcut overlay.
 
 ## 📸 Current Build (October 2026)
 
@@ -182,7 +196,8 @@ pnpm run build
 ## 📚 Project Documentation
 
 - **[Current Development Status](./docs/current/CURRENT_STATUS.md)** - Active development phase, completed modules, and priorities
-- **[Development Progress & Changelog](./docs/progress.md)** - Comprehensive version changelog from v0.1.0 to v0.4.0
+- **[Development Progress & Changelog](./docs/progress.md)** - Comprehensive version changelog from v0.1.0 through the current v0.5.0 milestone
+- **[Release Changelog](./CHANGELOG.md)** - Concise release notes for the latest versions
 - **[Quick Start Guide](./docs/QUICK_START.md)** - Detailed local environment setup
 - **[Troubleshooting Guide](./docs/TROUBLESHOOTING.md)** - Common development questions and fixes
 - **[Feature Specifications](./docs/features/)** - Deep dives into simulation and RPG subsystems
@@ -206,6 +221,14 @@ bd update <issue-id> --claim
 # Close a completed task
 bd close <issue-id> -r "Resolution summary"
 ```
+
+---
+
+## 🔒 Licence
+
+Recording Studio Tycoon is **proprietary source-available software, not open source**. No licence is granted to copy, redistribute, modify, commercialise, or create derivative games from RST original material except by explicit written permission or where applicable law independently permits it. GitHub's own limited public-repository rights still apply, and separately licensed third-party material remains under its upstream licence.
+
+See [LICENSE](./LICENSE), [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md), and [assets/provenance.json](./assets/provenance.json).
 
 ---
 

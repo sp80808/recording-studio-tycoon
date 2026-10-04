@@ -1,7 +1,8 @@
 // Premises furniture (#70): what the Living Studio gains when you move up.
 //   Tier 1 Project Studio: client waiting bench + wall-side storage rack.
-//   Tier 2 Commercial Studio: reception counter with a sign, water cooler and a second rack.
-// In-house CC0, drawn in Pixi Graphics (logged in docs/ART_SOURCING_LOG.md). Presentation only.
+//   Tier 2 Commercial Studio: reception counter with a sign and a second rack.
+//   Tier 3 Multi-room Facility: premium client sofa and a third rack bay.
+// In-house proprietary original, drawn in Pixi Graphics (logged in docs/ART_SOURCING_LOG.md). Presentation only.
 
 import { Container, Graphics } from 'pixi.js';
 import { iso } from './isoMath';
@@ -9,7 +10,7 @@ import { iso } from './isoMath';
 export interface PremisesProp {
   id: string;
   /** Lowest premises tier that shows this prop. */
-  minTier: 1 | 2;
+  minTier: 1 | 2 | 3;
   x: number;
   y: number;
   build: (accent: number) => Container;
@@ -64,14 +65,14 @@ const buildReception = (accent: number): Container => {
   return wrap(g);
 };
 
-const buildCooler = (): Container => {
+const buildSofa = (accent: number): Container => {
   const g = new Graphics();
-  g.ellipse(0, 2, 11, 4).fill({ color: 0x000000, alpha: 0.28 });
-  g.roundRect(-7, -26, 14, 26, 2).fill(0xdfe5ee);
-  g.roundRect(-7, -26, 14, 26, 2).stroke({ width: 1, color: 0x9aa5b5 });
-  g.circle(0, -38, 7).fill({ color: 0x7fc8ff, alpha: 0.75 });
-  g.rect(-7, -40, 14, 3).fill({ color: 0xffffff, alpha: 0.2 });
-  g.rect(-2, -20, 4, 3).fill(0x4a90d9);
+  g.ellipse(0, 4, 40, 9).fill({ color: 0x000000, alpha: 0.28 });
+  g.roundRect(-34, -16, 68, 16, 5).fill(0x2f3a4a);
+  g.roundRect(-34, -34, 68, 18, 6).fill(0x3d4b60);
+  g.roundRect(-30, -14, 28, 10, 3).fill(0x4a5b73);
+  g.roundRect(2, -14, 28, 10, 3).fill(0x4a5b73);
+  g.rect(-34, -24, 4, 12).fill({ color: accent, alpha: 0.7 });
   return wrap(g);
 };
 
@@ -79,8 +80,9 @@ export const PREMISES_PROPS: PremisesProp[] = [
   { id: 'clientBench', minTier: 1, x: 2.9, y: 6.7, build: buildBench },
   { id: 'storageRack', minTier: 1, x: 4.3, y: 0.6, build: buildRack },
   { id: 'reception', minTier: 2, x: 1.15, y: 5.9, build: buildReception },
-  { id: 'waterCooler', minTier: 2, x: 7.2, y: 6.45, build: buildCooler },
   { id: 'storageRack2', minTier: 2, x: 5.15, y: 0.6, build: buildRack },
+  { id: 'premiumSofa', minTier: 3, x: 5.2, y: 6.9, build: buildSofa },
+  { id: 'storageRack3', minTier: 3, x: 6.0, y: 0.6, build: buildRack },
 ];
 
 export const getPremisesProps = (premisesTier: number): PremisesProp[] =>

@@ -1,17 +1,19 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { forecastDelivery, type DeliveryDecision, type UnresolvedIssue } from '@/rpg/sessionIssues';
+import { forecastDelivery, REVISION_ROUND_FEE, type DeliveryDecision, type UnresolvedIssue } from '@/rpg/sessionIssues';
 
 interface DeliveryChoiceDialogProps {
   issues: UnresolvedIssue[];
   payout: number;
+  /** Revision rounds this booking already includes (#51). */
+  revisionAllowance?: number;
   onChoose: (decision: DeliveryDecision) => void;
 }
 
 const SEVERITY = ['', 'minor', 'noticeable', 'serious'];
 
 /** Deliver now or polish first, with the bounded forecast from #87. */
-export const DeliveryChoiceDialog: React.FC<DeliveryChoiceDialogProps> = ({ issues, payout, onChoose }) => {
+export const DeliveryChoiceDialog: React.FC<DeliveryChoiceDialogProps> = ({ issues, payout, revisionAllowance = 0, onChoose }) => {
   const f = forecastDelivery(issues, payout);
   return (
     <Dialog open onOpenChange={() => undefined}>
@@ -30,11 +32,11 @@ export const DeliveryChoiceDialog: React.FC<DeliveryChoiceDialogProps> = ({ issu
           ))}
         </ul>
         <div className="grid grid-cols-2 gap-3 text-xs">
-          <button type="button" onClick={() => onChoose('deliver')} className="rst-btn flex-col !items-start text-left">
+          <button type="button" data-rst-surface="contextual" data-rst-action-id="wrap:deliver" onClick={() => onChoose('deliver')} className="rst-btn flex-col !items-start text-left">
             <span className="font-semibold">Deliver now</span>
-            <span className="text-stone-400">Up to -{f.deliver.qualityPenalty} quality, {f.deliver.revisionChance}% revision risk. Frees the room today.</span>
+            <span className="text-stone-400">Up to -{f.deliver.qualityPenalty} quality, {f.deliver.revisionChance}% revision risk{revisionAllowance > 0 ? ` (a round is included: costs ${Math.round(REVISION_ROUND_FEE * 100)}% of the fee, not trust)` : ''}. Frees the room today.</span>
           </button>
-          <button type="button" onClick={() => onChoose('polish')} className="rst-btn rst-btn-primary flex-col !items-start text-left">
+          <button type="button" data-rst-surface="contextual" data-rst-action-id="wrap:polish" onClick={() => onChoose('polish')} className="rst-btn rst-btn-primary flex-col !items-start text-left">
             <span className="font-semibold">Polish first</span>
             <span className="text-stone-200">-${f.polish.cost} studio time, issues cleared, +{f.polish.knowHow} Know-How.</span>
           </button>

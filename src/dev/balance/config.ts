@@ -112,6 +112,14 @@ export const SCENARIOS: Record<string, Partial<BalanceConfig>> = {
   early: {},
   mid: { startingCash: 6000, startingReputation: 120, startingSkillLevel: 6, studioLevel: 3, dailyCost: 120, equipmentQuality: 65 },
   late: { startingCash: 30000, startingReputation: 450, startingSkillLevel: 12, studioLevel: 5, dailyCost: 400, equipmentQuality: 85 },
+  // Lab presets (#57): named pressure points on the same simulation, each a known state plus overrides.
+  'first-hire': { startingCash: 1800, startingReputation: 25, startingSkillLevel: 2, studioLevel: 1, dailyCost: 60, equipmentQuality: 52 },
+  'high-rep-capacity-pressure': { startingCash: 9000, startingReputation: 300, startingSkillLevel: 9, studioLevel: 3, dailyCost: 220, projectsPerDay: 6, equipmentQuality: 70 },
+  'label-prestige': { startingCash: 15000, startingReputation: 380, startingSkillLevel: 10, studioLevel: 4, dailyCost: 300, equipmentQuality: 78 },
+  // Issue #57 names for the same states (aliases keep one source of truth) plus a workload-stress preset.
+  'day-1-bedroom': {},
+  'two-room-midgame': { startingCash: 6000, startingReputation: 120, startingSkillLevel: 6, studioLevel: 3, dailyCost: 120, equipmentQuality: 65 },
+  'burnout-risk': { startingCash: 3500, startingReputation: 90, startingSkillLevel: 4, studioLevel: 2, dailyCost: 150, projectsPerDay: 6, equipmentQuality: 55 },
 };
 
 export const resolveConfig = (overrides: Partial<BalanceConfig> = {}): BalanceConfig => ({

@@ -59,7 +59,7 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
 
   return (
     <div
-      className="fixed bottom-4 left-4 z-50 flex max-h-[min(48vh,22rem)] w-[min(calc(100vw-2rem),24rem)] flex-col-reverse gap-2 overflow-hidden"
+      className="rst-game-notifications fixed bottom-4 left-4 z-50 flex max-h-[min(48vh,22rem)] w-[min(calc(100vw-2rem),24rem)] flex-col-reverse gap-2 overflow-hidden"
       role="region"
       aria-label="Game notifications"
       aria-live="polite"

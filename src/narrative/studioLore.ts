@@ -231,6 +231,19 @@ export const RIVAL_STUDIOS: readonly RivalStudio[] = [
     catchphrase: 'If the landlord can hear it, the mix is almost loud enough.',
     rivalryBonus: 'Surviving a Union challenge unlocks underground co-op tour referrals.',
   },
+  {
+    id: 'lacquer-room',
+    name: 'The Lacquer Room',
+    headProducer: 'Odette Marlowe',
+    epithet: 'The Groove Surgeon',
+    philosophy: 'A record is not finished until the cutting lathe says so. Mixes are opinions; grooves are verdicts.',
+    primaryPlaystyle: 'purist',
+    preferredEra: 'vintage-warmth',
+    signatureGenres: ['Jazz', 'Blues', 'Folk'],
+    threatLevel: 'Rising',
+    catchphrase: 'Bring me a master with dynamics, or do not bring me anything.',
+    rivalryBonus: 'Out-cutting the Lacquer Room unlocks audiophile vinyl-mastering briefs.',
+  },
 ] as const;
 
 export const HISTORIC_STUDIOS: readonly HistoricStudio[] = [
@@ -260,6 +273,33 @@ export const HISTORIC_STUDIOS: readonly HistoricStudio[] = [
     claimToFame: 'The studio that never slept: rhythm sections recorded in morning, horns at lunch, vocals by midnight.',
     acousticSecret: 'Attic studio floor with direct-injection DI boxes that punched basslines straight onto acetate.',
     legendaryRecord: 'Ain’t No Fader High Enough (1968)',
+  },
+  {
+    id: 'island-pressure-house',
+    name: 'The Island Pressure House',
+    city: 'Lagos, Nigeria',
+    establishedYear: 1976,
+    claimToFame: 'Eleven-piece horn sections tracked live to two-inch tape while the whole island danced outside the shutters.',
+    acousticSecret: 'Corrugated courtyard roof that slaps the backbeat a fraction late — engineers stopped fighting it and started booking around it.',
+    legendaryRecord: 'Horn Fire Assembly (1979)',
+  },
+  {
+    id: 'bunker-vox-rooms',
+    name: 'Bunker Vox Rooms',
+    city: 'Berlin, Germany',
+    establishedYear: 1983,
+    claimToFame: 'Post-punk and early electronic records cut inside a decommissioned concrete bunker nobody admits to owning.',
+    acousticSecret: 'An eleven-second concrete tail on the main chamber; clap once and the room finishes your sentence.',
+    legendaryRecord: 'Concrete Cathedral Takes (1986)',
+  },
+  {
+    id: 'demo-shed',
+    name: 'The Demo Shed',
+    city: 'Nashville, TN',
+    establishedYear: 1971,
+    claimToFame: 'A pine-walled shed where half the decade’s hits arrived as work tapes cut between rain showers.',
+    acousticSecret: 'Carpeted ceiling over knotty pine walls: dead overhead, alive at ear height, perfect for a voice and a guitar.',
+    legendaryRecord: 'Three Chords Ledger (1974)',
   },
 ] as const;
 

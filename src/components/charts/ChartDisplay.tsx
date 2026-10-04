@@ -1,7 +1,5 @@
 import React from 'react';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { ChartEntry, Chart } from '@/types/charts';
 import { GameState } from '@/types/game';
 import { Play, Pause, TrendingUp, Clock, Star, ArrowUp, ArrowDown, Minus } from 'lucide-react';
@@ -34,11 +32,18 @@ export const ChartDisplay: React.FC<ChartDisplayProps> = ({
 
   const getMovementIcon = (movement: ChartEntry['movement']) => {
     switch (movement) {
-      case 'up': return <ArrowUp className="h-3 w-3" />;
-      case 'down': return <ArrowDown className="h-3 w-3" />;
-      case 'new': return '🆕';
-      default: return <Minus className="h-3 w-3" />;
+      case 'up': return <ArrowUp className="h-3 w-3" aria-hidden="true" />;
+      case 'down': return <ArrowDown className="h-3 w-3" aria-hidden="true" />;
+      case 'new': return <span className="chart-entry__new">New</span>;
+      default: return <Minus className="h-3 w-3" aria-hidden="true" />;
     }
+  };
+
+  const getMovementLabel = (entry: ChartEntry) => {
+    if (entry.movement === 'new') return 'New chart entry';
+    if (entry.movement === 'returning') return 'Returning chart entry';
+    if (entry.movement === 'steady') return 'No change';
+    return `${entry.movement === 'up' ? 'Up' : 'Down'} ${Math.abs(entry.positionChange)} places`;
   };
 
   const getMovementColor = (movement: ChartEntry['movement']) => {
@@ -51,23 +56,20 @@ export const ChartDisplay: React.FC<ChartDisplayProps> = ({
   };
 
   return (
-    <Card className="bg-stone-800/50 border-stone-600 p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h4 className="font-semibold text-white">{chart.name}</h4>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs">
-            {chart.region}
-          </Badge>
-          <Badge variant="outline" className="text-xs">
-            Updates weekly
-          </Badge>
+    <section className="chart-board" aria-label={`${chart.name} chart`}>
+      <header className="chart-board__header">
+        <div>
+          <span className="chart-board__issue">Current issue · Top 20</span>
+          <h4>{chart.name}</h4>
+          <p>{chart.description}</p>
         </div>
-      </div>
+        <div className="chart-board__badges" aria-label="Chart details">
+          <span>{chart.region}</span>
+          <span>Weekly</span>
+        </div>
+      </header>
 
-      <p className="text-sm text-stone-400 mb-4">{chart.description}</p>
-
-      {/* Chart Entries - Enhanced Layout like Billboard */}
-      <div className="space-y-3 max-h-80 overflow-y-auto">
+      <div className="chart-board__entries">
         {chart.entries.slice(0, 20).map((entry, index) => {
           const contactCost = calculateContactCost(
             entry.position,
@@ -83,15 +85,13 @@ export const ChartDisplay: React.FC<ChartDisplayProps> = ({
           const segment = getPlaybackSegment(entry);
 
           return (
-            <Card
+            <article
               key={trackId}
-              className="p-3 bg-stone-700/30 border-stone-600/50 hover:bg-stone-700/50 transition-all duration-200"
+              className={`chart-entry ${index === 0 ? 'chart-entry--number-one' : ''}`}
             >
-              <div className="flex items-center justify-between gap-4">
-                {/* Chart Position & Movement */}
-                <div className="flex items-center gap-2 min-w-[80px]">
-                  <div className="text-xl font-bold text-white">{entry.position}.</div>
-                  <div className={`text-sm flex items-center gap-1 ${getMovementColor(entry.movement)}`}>
+                <div className="chart-entry__rank">
+                  <strong>{entry.position}</strong>
+                  <div className={`chart-entry__movement ${getMovementColor(entry.movement)}`} aria-label={getMovementLabel(entry)}>
                     {getMovementIcon(entry.movement)}
                     {entry.positionChange !== 0 && (
                       <span className="text-xs font-medium">
@@ -101,8 +101,11 @@ export const ChartDisplay: React.FC<ChartDisplayProps> = ({
                   </div>
                 </div>
 
-                {/* Song & Artist Info */}
-                <div className="flex-1 min-w-0">
+                <div className="chart-entry__art" aria-hidden="true">
+                  <span>{entry.song.artist.name.slice(0, 1)}</span>
+                </div>
+
+                <div className="chart-entry__identity">
                   <HoverPreview
                     preview={
                       <span>
@@ -111,40 +114,38 @@ export const ChartDisplay: React.FC<ChartDisplayProps> = ({
                       </span>
                     }
                   >
-                    <h4 className="text-lg font-bold text-white truncate">
+                    <h5>
                       {entry.song.title}
-                    </h4>
+                    </h5>
                   </HoverPreview>
-                  <p className="text-sm text-stone-300 truncate">
-                    {entry.song.artist.name}
-                  </p>
+                  <p>{entry.song.artist.name}</p>
                 </div>
 
-                {/* Genre, Weeks, Peak */}
-                <div className="flex items-center gap-3 text-xs text-stone-500 min-w-[150px] justify-end">
-                   <Badge variant="outline" className="text-xs px-2 py-0 capitalize flex items-center gap-1">
+                <div className="chart-entry__metadata">
+                   <span className="chart-entry__genre">
                       {getGenreEmoji(entry.song.genre)} {entry.song.genre}
-                    </Badge>
-                    <div className="flex items-center gap-1">
+                    </span>
+                    <span aria-label={`${entry.weeksOnChart} ${entry.weeksOnChart === 1 ? 'week' : 'weeks'} on chart`}>
                       <Clock className="h-3 w-3" />
-                      <span>{entry.weeksOnChart}w</span>
-                    </div>
+                      <span aria-hidden="true">{entry.weeksOnChart}w</span>
+                    </span>
                     {entry.peakPosition !== entry.position && (
-                      <div className="flex items-center gap-1">
+                      <span>
                         <TrendingUp className="h-3 w-3" />
                         <span>Peak #{entry.peakPosition}</span>
-                      </div>
+                      </span>
                     )}
                 </div>
 
-                {/* Audio Control */}
-                <div className="flex flex-col items-center gap-2 min-w-[60px]">
+                <div className="chart-entry__preview">
                    <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => playAudioClip(entry)}
                     disabled={!hasAudio}
-                    className={`h-8 w-8 rounded-full p-0 transition-all relative ${
+                    aria-label={`${isPlaying ? 'Pause' : 'Play'} preview: ${entry.song.title} by ${entry.song.artist.name}`}
+                    aria-pressed={isPlaying}
+                    className={`chart-entry__play ${
                       isPlaying
                         ? 'bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] text-emerald-100 shadow-lg animate-pulse'
                         : hasAudio
@@ -155,13 +156,13 @@ export const ChartDisplay: React.FC<ChartDisplayProps> = ({
                   >
                     {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                      {hasAudio && !isPlaying && (
-                      <div className="absolute -top-1 -right-1 h-3 w-3 bg-amber-500 rounded-full text-[8px] flex items-center justify-center font-bold text-stone-950">
+                      <span className="chart-entry__segment">
                         {segment.segmentNumber}
-                      </div>
+                      </span>
                     )}
                   </Button>
                    {hasAudio && (progress > 0 || isPlaying) && (
-                    <div className="w-8 h-1 bg-stone-600 rounded-full overflow-hidden">
+                    <div className="chart-entry__progress">
                       <div
                         className={`h-full transition-all duration-75 ${
                           isPlaying ? 'bg-green-400' : 'bg-stone-400'
@@ -172,30 +173,28 @@ export const ChartDisplay: React.FC<ChartDisplayProps> = ({
                   )}
                 </div>
 
-                {/* Contact Button */}
-                <div className="min-w-[100px] text-right">
+                <div className="chart-entry__action">
                   {canContact && (
                     <Button
                       size="sm"
                       onClick={() => onContactArtist(entry)}
                       disabled={!canAfford}
-                      className="bg-purple-400/[0.14] ring-1 ring-inset ring-purple-400/45 hover:bg-purple-400/[0.24] disabled:opacity-50 text-xs px-3"
+                      className="chart-entry__contact"
                     >
                       Contact
                     </Button>
                   )}
                    {!canContact && (
-                      <div className="text-red-400 text-xs mt-1">
+                      <div className="chart-entry__requirement">
                         {entry.position <= 10 ? 'Req. Level 8+' :
                           entry.position <= 25 ? 'Req. Level 5+' : 'Req. Reputation'}
                       </div>
                     )}
                 </div>
-              </div>
-            </Card>
+            </article>
           );
         })}
       </div>
-    </Card>
+    </section>
   );
 };

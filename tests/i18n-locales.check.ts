@@ -79,15 +79,21 @@ const baseKeys = Object.keys(byLocale.en).sort();
 assert.ok(baseKeys.length >= 80, `expected expanded en coverage, got ${baseKeys.length} keys`);
 
 const placeholders = (value: string) => (value.match(/\{\{\s*\w+\s*\}\}/g) ?? []).map((m) => m.replace(/\s/g, '')).sort();
+// i18next plural forms differ per language (ja has only _other, ru adds _few/_many): compare the plural family, not each suffix.
+const PLURAL = /_(zero|one|two|few|many|other)$/;
+const family = (key: string) => key.replace(PLURAL, '');
+const familySet = (keys: string[]) => [...new Set(keys.map(family))].sort();
+const enFamilies = familySet(baseKeys);
 
 for (const code of SUPPORTED_LOCALE_CODES) {
   const keys = Object.keys(byLocale[code]).sort();
-  assert.deepEqual(keys, baseKeys, `${code} keys must match en key set (parity)`);
-  for (const key of baseKeys) {
+  assert.deepEqual(familySet(keys), enFamilies, `${code} keys must match en key set (parity)`);
+  for (const key of keys) {
     assert.ok(byLocale[code][key].trim().length > 0, `${code}.${key} must be non-empty`);
+    const reference = byLocale.en[key] ?? byLocale.en[`${family(key)}_other`];
     assert.deepEqual(
       placeholders(byLocale[code][key]),
-      placeholders(byLocale.en[key]),
+      placeholders(reference),
       `${code}.${key} must keep the same {{placeholders}} as en`
     );
   }
@@ -145,7 +151,8 @@ for (const e of DIRECTOR_EVENTS) {
   assert.ok(eventsEn[`event.${e.id}.title`], `events.json missing title for ${e.id} (re-dump en/events.json)`);
   for (const op of e.options) assert.ok(eventsEn[`event.${e.id}.opt.${op.id}.label`], `events.json missing option ${e.id}/${op.id}`);
 }
-for (const [file, en] of [['content', contentEn], ['events', eventsEn]] as const) {
+const readEn = (f: string) => JSON.parse(fs.readFileSync(path.join(localesRoot, 'en', `${f}.json`), 'utf8')) as Record<string, string>;
+for (const [file, en] of [['content', contentEn], ['events', eventsEn], ['minigames', readEn('minigames')], ['crew', readEn('crew')]] as const) {
   for (const code of SUPPORTED_LOCALE_CODES) {
     const f = path.join(localesRoot, code, `${file}.json`);
     if (!fs.existsSync(f)) continue; // missing file => English fallback
@@ -168,3 +175,23 @@ assert.equal(germanLines[2], englishLines[2], 'ids missing from the dictionary f
 setContentLocale('en');
 assert.equal(tc('nope', 'Hello {{n}}', { n: 3 }), 'Hello 3');
 console.log('i18n-content: all checks passed');
+
+// Every literal tc('mg.*'/'crew.*') id in source must exist in en JSON with the same English fallback.
+{
+  const idsFile = { mg: readEn('minigames'), crew: readEn('crew') };
+  const walk = (dir: string): string[] =>
+    fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(dir, e.name)) : /\.tsx?$/.test(e.name) ? [path.join(dir, e.name)] : []));
+  const rx = /tc\(\s*(['"])((?:mg|crew)\.[^'"]+)\1\s*,\s*(['"])((?:\\.|(?!\3).)*)\3/g;
+  let checked = 0;
+  for (const file of walk(path.join(process.cwd(), 'src'))) {
+    const text = fs.readFileSync(file, 'utf8');
+    for (const m of text.matchAll(rx)) {
+      const dict = m[2].startsWith('mg.') ? idsFile.mg : idsFile.crew;
+      assert.ok(m[2] in dict, `${path.basename(file)}: ${m[2]} missing from en json`);
+      assert.equal(dict[m[2]], m[4].replace(/\\(['"])/g, '$1'), `${path.basename(file)}: english fallback for ${m[2]} drifted from en json`);
+      checked += 1;
+    }
+  }
+  assert.ok(checked > 300, `expected many tc ids, checked ${checked}`);
+  console.log(`i18n-content: ${checked} literal tc ids match en json`);
+}

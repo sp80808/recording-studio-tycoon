@@ -240,14 +240,20 @@
 /* Apply slider colors dynamically using CSS custom properties with zero position latency */
 .slider-optimal .bg-primary,
 .slider-good .bg-primary,
-.slider-default .bg-primary {
+.slider-default .bg-primary,
+.slider-optimal [data-radix-slider-range],
+.slider-good [data-radix-slider-range],
+.slider-default [data-radix-slider-range] {
   background: linear-gradient(90deg, var(--slider-bg), var(--slider-bg-dark)) !important;
   transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease !important;
 }
 
 .slider-optimal .border-primary,
 .slider-good .border-primary,
-.slider-default .border-primary {
+.slider-default .border-primary,
+.slider-optimal [data-radix-slider-thumb],
+.slider-good [data-radix-slider-thumb],
+.slider-default [data-radix-slider-thumb] {
   border-color: var(--slider-border) !important;
   box-shadow: 0 4px 12px var(--slider-shadow);
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;

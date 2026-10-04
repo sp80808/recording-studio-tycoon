@@ -88,4 +88,41 @@ const f1 = calculateSessionForecast(trained, project, defaultAssignment(trained,
 ok(JSON.stringify(f0.quality) === JSON.stringify(f1.quality), 'expertise never moves the forecast quality range');
 ok(f1.time.estimatedWorkUnits <= f0.time.estimatedWorkUnits, 'expertise only shortens the setup/work estimate');
 void brief;
+import { enquiryStyleNote, awardExpertise as _aw, createInitialExpertise as _init, levelForXp as _lv } from '../src/rpg/houseStyle';
+{
+  const fresh = _init();
+  ok(/New ground/.test(enquiryStyleNote(fresh, 'Soul')) && /New ground/.test(enquiryStyleNote(undefined, 'Soul')), 'enquiry note calls unfamiliar genres new ground');
+  const seasoned: any = { ...fresh, genres: { Soul: { xp: 300, level: _lv(300), notableProjectIds: [] } } };
+  ok(/House style: Soul \(Signature\), setup about 12% shorter/.test(enquiryStyleNote(seasoned, 'Soul')), 'enquiry note names the level and the setup saving');
+  ok(enquiryStyleNote(seasoned, 'Soul') === enquiryStyleNote(seasoned, 'Soul'), 'enquiry note is deterministic');
+}
+
+// Level 3 house recipe and level 5 signature brief (#71).
+import { approachesFor, houseRecipe, getApproach, PRODUCTION_APPROACHES, evaluateProjectBriefFit } from '../src/rpg/projectBrief';
+import { signatureJobFor, signatureGenres, isSignatureJob, SIGNATURE_PAY_FACTOR } from '../src/rpg/signatureBrief';
+{
+  const mk = (xp: number): any => ({ ..._init(), genres: { Soul: { xp, level: _lv(xp), completedCount: 5, notableProjectIds: [] } } });
+  ok(approachesFor(mk(54), 'Soul').length === PRODUCTION_APPROACHES.length, 'level 2 offers only the standard approaches');
+  ok(approachesFor(mk(110), 'Soul').some((a) => a.id === 'house-recipe'), 'level 3 unlocks the house recipe');
+  ok(!approachesFor(mk(110), 'Rock').some((a) => a.id === 'house-recipe'), 'the recipe is only offered in the genre that earned it');
+  ok(approachesFor(undefined, 'Soul').length === PRODUCTION_APPROACHES.length, 'legacy saves get the standard approaches');
+  ok(houseRecipe('Rock').direction === 'live' && houseRecipe('Zydeco').direction === 'polished', 'recipes are authored per genre with a safe default');
+  ok(getApproach('house-recipe', 'Punk')?.direction === 'raw', 'getApproach resolves the recipe for a genre');
+  const total = (f: { performance: number; soundCapture: number; layering: number }) => f.performance + f.soundCapture + f.layering;
+  ok(total(houseRecipe('Electronic').focus) === 100 && total(houseRecipe('Folk').focus) === 100, 'recipe focus sums to 100');
+  const plain = evaluateProjectBriefFit(project, base as any, undefined);
+  const withRecipe = evaluateProjectBriefFit(project, base as any, 'house-recipe');
+  ok(withRecipe.score - plain.score <= 6 + 14 && withRecipe.reasons.some((r) => /house recipe/i.test(r)), 'recipe fit bonus is small and explained');
+
+  const sigState = (xp: number, extra: any = {}) => ({ ...base, saveSeed: 'sig', currentDay: 15, studioExpertise: mk(xp), ...extra }) as any;
+  ok(signatureJobFor(sigState(299)) === undefined, 'no signature brief below level 5');
+  const job = signatureJobFor(sigState(300))!;
+  ok(!!job && isSignatureJob(job) && job.genre === 'Soul', 'level 5 offers a signature brief in that genre');
+  ok(JSON.stringify(job) === JSON.stringify(signatureJobFor(sigState(300))), 'the signature brief is deterministic');
+  ok(job.id !== signatureJobFor(sigState(300, { currentDay: 22 }))!.id, 'a new week brings a new signature brief');
+  ok(signatureJobFor(sigState(300, { claimedOffers: [job.id] })) === undefined, 'a claimed signature brief does not return');
+  ok(signatureGenres(mk(300)).join() === 'Soul', 'signature genres list the plaque');
+  const tpl = job.payoutBase / SIGNATURE_PAY_FACTOR;
+  ok(Math.abs(tpl - Math.round(tpl)) < 1, 'signature fee is the template fee times the factor');
+}
 console.log(`house-style: all ${n} checks passed`);

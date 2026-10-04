@@ -28,9 +28,9 @@ describe('studio hotkeys', () => {
     assert.match(src, /FOOTER_TABS\.map\(\(id, index\)/);
     assert.match(src, /FOOTER_TABS: DockTabId\[\] = \['bookings', 'session', 'crew', 'gear', 'career'\]/);
     const dock = src.slice(src.indexOf('aria-label="Studio activities"'), src.indexOf('] as const).map'));
-    assert.deepEqual([...dock.matchAll(/, '([A-Za-z]+)', \(\) =>/g)].map(m => m[1]), ['Artist', 'Session', 'Crew', 'Room', 'Career']);
+    assert.deepEqual([...dock.matchAll(/, t\('(nav_[a-z]+)'\), \(\) =>/g)].map(m => m[1]), ['nav_artist', 'nav_session', 'nav_crew', 'nav_room', 'nav_career']);
     assert.match(src, /key: String\(index \+ 1\)/);
-    assert.match(src, /useStudioHotkeys\(hotkeyBindings, panel !== 'session'/);
+    assert.match(src, /useStudioHotkeys\(hotkeyBindings, !inputBlocked && !consoleOpen && panel !== 'session'/, 'Dock hotkeys yield to blockers, the world console, and minigames');
     assert.equal(DOCK_TABS.length, 7);
     assert.match(src, /aria-keyshortcuts/);
   });

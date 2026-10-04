@@ -1,4 +1,5 @@
 import assert from 'node:assert';
+import { readFileSync } from 'node:fs';
 import {
   ButterflyTwistLatch,
   SnakeCableConnector,
@@ -43,5 +44,15 @@ assert.doesNotThrow(() => {
 assert.doesNotThrow(async () => {
   await playAuditionChord('1970s', 'vintage');
 }, 'playAuditionChord must execute safely in headless Node');
+
+// 3. Patch cable is a real drag interaction, not a button (bead 0r6).
+const cableSrc = readFileSync('src/features/boxDrops/connectors/InteractivePatchCable.tsx', 'utf8');
+assert.ok(/^\s*drag$/m.test(cableSrc), 'plug is draggable');
+assert.ok(cableSrc.includes('touch-none'), 'touch drags move the plug instead of scrolling');
+assert.ok(cableSrc.includes('onDragEnd'), 'drag release resolves the patch attempt');
+assert.ok(cableSrc.includes('PATCH_DRAG_THRESHOLD_PX'), 'tap-vs-drag threshold is explicit');
+assert.ok(cableSrc.includes('onTap'), 'taps still toggle without conflicting with drags');
+assert.ok(cableSrc.includes('role="switch"'), 'plug is keyboard-operable');
+assert.doesNotMatch(cableSrc, /CONNECT PATCH CABLE/, 'connect button removed');
 
 console.log('flight-case-connectors: all checks passed');

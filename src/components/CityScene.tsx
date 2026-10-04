@@ -14,7 +14,7 @@ const SKIES: Record<SceneMood, [string, string, string]> = {
 /** Stars at fixed spots so the scene never shimmers between renders. */
 const STARS: [number, number][] = [[12, 8], [30, 16], [52, 6], [74, 14], [98, 7], [120, 18], [144, 9], [170, 15], [196, 6], [222, 13]];
 
-/** In-house cutscene card: layered city skyline under a mood sky, lit windows and a studio sign. Pure SVG, CC0. */
+/** In-house cutscene card: layered city skyline under a mood sky, lit windows and a studio sign. Pure SVG; proprietary RST original. */
 export const CityScene: React.FC<{ cityId?: string; mood?: SceneMood; className?: string }> = ({ cityId, mood = 'dusk', className = '' }) => {
   const city = getCityById(cityId);
   if (!city) return null;

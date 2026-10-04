@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { getCelestialPosition, getCityLightLevel, getStarLevel } from '../src/components/studio/studioWindowView';
+import { getCelestialPosition, getCityLightLevel, getCloudU, getStarLevel } from '../src/components/studio/studioWindowView';
 
 assert.equal(getCelestialPosition(720).body, 'sun');
 assert.equal(getCelestialPosition(0).body, 'moon');
@@ -18,6 +18,13 @@ assert.equal(getCityLightLevel(1), 0);
 assert.equal(getCityLightLevel(0), 1);
 assert.equal(getStarLevel(1), 0);
 assert.equal(getStarLevel(0), 1);
+// Clouds drift slowly inside the glass and freeze to a stable reduced-motion composition.
+for (let t = 0; t < 360; t += 5) {
+  const u = getCloudU(t, 1.3, false);
+  assert.ok(u >= 0.2 && u <= 0.8, `cloud stays inside the glass at ${t}s`);
+}
+assert.notEqual(getCloudU(0, 1.3, false), getCloudU(30, 1.3, false));
+assert.equal(getCloudU(0, 1.3, true), getCloudU(300, 1.3, true));
 console.log('window view check passed');
 
 // Floor light shaft follows the sun and is off at night.

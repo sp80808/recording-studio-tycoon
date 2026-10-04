@@ -1,17 +1,25 @@
+import { staffActivityCue, staffDestination, stepStaffPosition } from '@/components/studio/staffStaging';
 import type { NpcVisualIdentity } from '@/features/sprites/npcAppearance';
 import type { ModularNpcDefinition } from '@/features/sprites/spriteTypes';
 import { lastTake, nodOffset } from '@/utils/takeFeedback';
 import React, { useEffect, useRef } from 'react';
 import { AnimatedSprite, Application, Container, Graphics, Matrix, Rectangle, Sprite, Text, type Renderer } from 'pixi.js';
+import { createDiegeticCrtFilter, type DiegeticCrtFilterHandle } from '@/lib/render/shaders/diegeticCrtFilter';
+import { createTubeGlowFilter, calculateTubeGlowIntensity, type TubeGlowFilterHandle } from '@/lib/render/shaders/tubeGlowFilter';
 import { applyReelState, buildReelTextures, createReelSprite } from '@/features/gearStudio/gearSpriteAnimation';
 import { STATUS_LED_HEX, gearAttention, gearVisualKey, getConsoleTierGear, statusLedColor, tubeGlowLevel } from '@/features/gearStudio/consoleTierGear';
 import { dimTint, gearConditionKey, shelfConditionStyle, toSpriteVisualState } from '@/features/gearStudio/gearVisualState';
 import { getPropTexture, loadPropSprites } from '@/components/studio/propSprites';
 import {
-  layoutShelfSlots,
+  resolveRackFaceplate,
   resolveShelfCapacity,
   shelfStructuralKey,
 } from '@/components/studio/equipmentShelfSprites';
+import {
+  layoutGearLocker,
+  lockerQuadPoints,
+  projectPointInLockerQuad,
+} from '@/components/studio/gearLocker';
 import {
   ensureEquipmentTexture,
   getEquipmentTexture,
@@ -49,7 +57,6 @@ import { cityWallColors } from '@/components/studio/cityWallTint';
 import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from '@/components/studio/isoMath';
 import { buildCaseStack, CASE_STACK_TILE, type CaseStack } from '@/components/studio/studioCaseStack';
 import { buildWindowView, type WindowView } from '@/components/studio/studioWindowView';
-import { buildLightShaft, type LightShaft } from '@/components/studio/studioLightShaft';
 import { buildPremisesDecor } from '@/components/studio/studioPremisesDecor';
 import { buildFurnishingLayer, type StudioCat } from '@/components/studio/studioFloorFurnishings';
 import {
@@ -76,6 +83,7 @@ import {
   getEraLightingKit,
   getNightTintAlpha,
   getWallClockTime,
+  getWallClockTimeFromMinutes,
   getWindowSkyColor,
   REDUCED_MOTION_DAYNESS,
   trophyKey,
@@ -88,7 +96,7 @@ import {
   vuNeedleNorm,
 } from '@/components/studio/studioFloorLife';
 import { addStudioProps, loadStudioKit, type StudioKitTextures } from '@/features/sprites/studioKit';
-import type { FloorNpcFigure, FloorNpcHandle } from '@/features/sprites/floorNpcs';
+import type { FloorNpcFigure, FloorNpcHandle, StagedStaffHandle } from '@/features/sprites/floorNpcs';
 import {
   applyFloorNpcMotion,
   createFloorNpcVisual,
@@ -135,7 +143,7 @@ export const getEraPostFxTuning = (eraId?: string): EraPostFxTuning => {
       };
     case 'streaming2020s':
       return {
-        scanlineAlpha: 0.01,
+        scanlineAlpha: 0.0,
         scanlinePitch: 3,
         vignetteColor: 0x080f0c, // Ultra-subtle charcoal
         vignetteAlpha: 0.12,
@@ -143,7 +151,7 @@ export const getEraPostFxTuning = (eraId?: string): EraPostFxTuning => {
     case 'analog60s':
     default:
       return {
-        scanlineAlpha: 0.02,
+        scanlineAlpha: 0.0,
         scanlinePitch: 4,
         vignetteColor: 0x1d1107, // Warm tape amber-sepia
         vignetteAlpha: 0.20,
@@ -218,7 +226,7 @@ export type StudioHotspotId = 'console' | 'liveRoom' | 'phone' | 'clock' | 'tv' 
  */
 const Z = { world: 0, depth: 100, fx: 3000 } as const;
 
-export type HotspotAnchors = Partial<Record<StudioHotspotId, { x: number; y: number }>>;
+export type HotspotAnchors = Partial<Record<StudioHotspotId | 'coffee', { x: number; y: number }>>;
 
 /**
  * Live state fed into the scene. Purely presentational — the scene reads the
@@ -249,7 +257,7 @@ export interface StudioSceneState {
   producerNpc?: ModularNpcDefinition;
   /**
    * Owned gear IDs for the equipment shelf sprites.
-   * Falls back to coloured bars when PNG art is missing.
+   * Falls back to horizontal rack faceplates when PNG art is missing.
    * `ownedEquipment` count is derived when ids are omitted (legacy / tests).
    */
   ownedEquipmentIds?: string[];
@@ -262,13 +270,15 @@ export interface StudioSceneState {
   ownedEquipment?: number;
   /** In-game day counter (drives the wall clock) */
   day: number;
+  /** Shared playable-day clock (0..1439). When present, wall, window and tint use it together. */
+  clockMinutes?: number;
   /** Current era id — drives the room's colour grade + signage (bead goj.3) */
   eraId?: string;
   /** Home city id: nudges the wall colours toward the city accent. */
   cityId?: string;
   /** Studio tier 1-5 from ProgressionSystem — drives visible room upgrades (bead ifx.3) */
   roomTier?: number;
-  /** Premises tier (#70): 1 adds the client bench + storage rack, 2 adds reception, water cooler and a second rack. */
+  /** Premises tier (#70): 3 adds a premium sofa and third rack; 1 adds the client bench + storage rack, 2 adds reception, water cooler and a second rack. */
   premisesTier?: number;
   /** Tier ids of earned, unopened flight cases (drives the floor stack). */
   pendingCases?: string[];
@@ -280,6 +290,8 @@ export interface StudioSceneState {
   enquiryWaiting?: boolean;
   /** First incomplete floor chore hotspot (console / liveRoom / shelf), if any. */
   pendingChoreHotspot?: PendingChoreHotspot | null;
+  /** Explicitly focus the camera on one hotspot and ignore all others (diegetic interactions). */
+  lockedHotspot?: StudioHotspotId | null;
   /**
    * True when the floor owns attention (no ContextDrawer / inspector).
    * Idle auto-zoom + hints stay quiet while drawers are open.
@@ -490,18 +502,23 @@ interface ShelfAnimItem {
   baseY: number;
   baseRot: number;
   phase: number;
+  /** Rack-mounted items stay physically seated in the cabinet. */
+  seated?: boolean;
 }
 
 /** Per-build dynamic refs the ticker animates */
 interface SceneRefs {
   vuBars: AnimBar[];
   tvBars: AnimBar[];
+  tvWrap: Container | null;
+  tvCrtFilter: DiegeticCrtFilterHandle | null;
+  tubeGlowFilter: TubeGlowFilterHandle | null;
   statusLeds: StatusLed[];
   shelfItems: ShelfAnimItem[];
   phoneRing: Graphics | null;
   clockHand: Graphics | null;
   setClockTime: ((hour: number, minute: number) => void) | null;
-  staffFigures: FloorNpcHandle[];
+  staffFigures: StagedStaffHandle[];
   /** The booked artist, standing at the live-room mic while a session is in progress. */
   artist: (FloorNpcHandle & { tag: Text; shown: string; baseX: number }) | null;
   /** Floor anchor just inside the door threshold (client enter/exit). */
@@ -516,7 +533,6 @@ interface SceneRefs {
   windowView: WindowView | null;
   /** Earned flight cases waiting on the floor; tapping opens the depot. */
   caseStack: CaseStack | null;
-  lightShaft: LightShaft | null;
   /** performance.now() of the last tap on the player character (drives the hop + emote). */
   producerTapAt: number;
   producerEmote: Text | null;
@@ -532,6 +548,8 @@ interface SceneRefs {
   vignetteLayer: Container | null;
   dynamicBloomG: Graphics | null;
   decor: DecorLights | null;
+  /** Lounge candle table container for diegetic coffee anchor tracking. */
+  candleTable: Container | null;
   /** Brew mug on the candle table — visible only after `brew_espresso`. */
   candleDrink: Container | null;
   /** Local y rest pose for the candle drink settle animation. */
@@ -657,6 +675,9 @@ const buildScene = (
   const refs: SceneRefs = {
     vuBars: [],
     tvBars: [],
+    tvWrap: null,
+    tvCrtFilter: null,
+    tubeGlowFilter: null,
     statusLeds: [],
     shelfItems: [],
     phoneRing: null,
@@ -671,7 +692,6 @@ const buildScene = (
     windowPanePoly: null,
     windowView: null,
     caseStack: null,
-    lightShaft: null,
     producerTapAt: -1e9,
     producerEmote: null,
     setWindowSky: null,
@@ -685,6 +705,7 @@ const buildScene = (
     vignetteLayer: null,
     dynamicBloomG: null,
     decor: null,
+    candleTable: null,
     candleDrink: null,
     candleDrinkBaseY: 0,
     candleBeers: null,
@@ -698,6 +719,7 @@ const buildScene = (
   const eraGrade = getEraGrade(state.eraId);
   const grade = { ...eraGrade, ...cityWallColors(eraGrade.wallLeft, eraGrade.wallRight, state.cityId) };
   const tier = clampTier(state.roomTier);
+  const postFxTuning = getEraPostFxTuning(state.eraId);
 
   // Fit the whole room into the viewport so walls/floor never clip
   const bounds = { minX: -196, maxX: 224, minY: -135, maxY: 215 };
@@ -757,12 +779,13 @@ const buildScene = (
   const winB = iso(6.9, 0);
   const winPoly = [winA.x, winA.y - 96, winB.x, winB.y - 96, winB.x, winB.y - 34, winA.x, winA.y - 34];
   const windowPane = new Graphics();
-  const initialSky = getWindowSkyColor(getWallClockTime(state.day, 0).minutesOfDay);
+  const initialClockMinutes = state.clockMinutes ?? getWallClockTime(state.day, 0).minutesOfDay;
+  const initialSky = getWindowSkyColor(initialClockMinutes);
   windowPane.poly(winPoly).fill(initialSky);
   windowWrap.addChild(windowPane);
   {
     const view = buildWindowView(winA, winB, 34, 96, hashSeed(decorSeed));
-    const initial = getWallClockTime(state.day, 0).minutesOfDay;
+    const initial = initialClockMinutes;
     view.update(initial, getDaynessFromClockMinutes(initial), 0, false);
     windowWrap.addChild(view.container);
     refs.windowView = view;
@@ -807,6 +830,19 @@ const buildScene = (
     refs.tvBars.push({ g: bar, x: 0, y: 0, color: COLORS.gear[i % COLORS.gear.length], plane: { y0, y1: y0 + 0.22, lift: 60 } });
   }
   root.addChild(tvWrap);
+  refs.tvWrap = tvWrap;
+  const isCrtEra = state.eraId === 'digital80s' || state.eraId === 'internet2000s';
+  if (isCrtEra) {
+    const crt = createDiegeticCrtFilter({
+      pitch: postFxTuning.scanlinePitch,
+      scanlineAlpha: postFxTuning.scanlineAlpha,
+      curvature: 0.04,
+    });
+    if (crt) {
+      refs.tvCrtFilter = crt;
+      tvWrap.filters = [crt.filter];
+    }
+  }
   const tvHit = new Graphics();
   tvHit
     .poly([tvA.x, tvA.y - 110, tvB.x, tvB.y - 110, tvB.x, tvB.y - 50, tvA.x, tvA.y - 50])
@@ -835,6 +871,10 @@ const buildScene = (
   const floor = buildPlankFloor(decorSpec, decorSeed);
   root.addChild(floor);
   root.addChild(buildRug());
+  // Floor spill is clipped to the room diamond and must sit below every prop/figure.
+  const lights = buildDecorLights({ spec: decorSpec, kit: getEraLightingKit(state.eraId), tier });
+  refs.decor = lights;
+  root.addChild(lights.floorContainer);
   root.addChild(dressing.props); // free-standing era props sit on top of the floor
 
   // Streaming-era phone/ring-light: same era gate as the visible led-strip prop.
@@ -990,13 +1030,6 @@ const buildScene = (
       refs.caseStack = stack;
     }
   }
-  {
-    const shaft = buildLightShaft(hashSeed(decorSeed));
-    shaft.container.zIndex = Z.world + 2;
-    shaft.update(getWallClockTime(state.day, 0).minutesOfDay, 0, false);
-    root.addChild(shaft.container);
-    refs.lightShaft = shaft;
-  }
   for (const prop of buildPremisesDecor(state.premisesTier ?? 0, grade.accent)) {
     prop.container.zIndex = Z.depth + prop.y;
     root.addChild(prop.container);
@@ -1056,10 +1089,9 @@ const buildScene = (
   shelf
     .poly([q1.x, q1.y - shelfH, q2.x, q2.y - shelfH, q3.x, q3.y - shelfH, q4.x, q4.y - shelfH])
     .fill(COLORS.shelf);
-  shelf.poly([q4.x, q4.y - shelfH, q3.x, q3.y - shelfH, q3.x, q3.y, q4.x, q4.y]).fill(COLORS.shelfSide);
   shelf.poly([q2.x, q2.y - shelfH, q3.x, q3.y - shelfH, q3.x, q3.y, q2.x, q2.y]).fill(COLORS.shelfSide);
   shelfWrap.addChild(shelf);
-  // Gear items — owned IDs drive sprites (equipmentArt / equipmentSpriteMap); missing art → tinted bars
+  // Owned gear sits inside the visible front face as horizontal rack modules.
   const gearCapacity = resolveShelfCapacity(tier);
   const ownedIds = state.ownedEquipmentIds?.length
     ? state.ownedEquipmentIds
@@ -1072,76 +1104,100 @@ const buildScene = (
         },
         (_, i) => `legacy_slot_${i}`,
       );
-  const shelfSlots = layoutShelfSlots({
+  const locker = layoutGearLocker({
     ownedIds,
     capacity: gearCapacity,
-    q1,
-    q2,
+    q4,
+    q3,
     shelfH,
     palette: COLORS.gear,
   });
-  // Always show at least one placeholder bar when the shelf is empty so the rack reads as furniture
-  const slotsToDraw = shelfSlots.length > 0
-    ? shelfSlots
-    : [{
-        equipmentId: '_empty',
-        x: q1.x + (q2.x - q1.x) * 0.5,
-        y: q1.y + (q2.y - q1.y) * 0.5 - shelfH,
-        width: 10,
-        height: 14,
-        tint: COLORS.gear[0],
-        spritePath: '',
-        spriteFile: null,
-      }];
-  for (const slot of slotsToDraw) {
+  const cabinet = new Graphics();
+  cabinet.poly(locker.shadow.flatMap(point => [point.x, point.y])).fill({ color: 0x090705, alpha: 0.42 });
+  cabinet.poly(lockerQuadPoints(locker.outer)).fill(0x33251b).stroke({ width: 1.4, color: 0x806549 });
+  cabinet.poly(lockerQuadPoints(locker.opening)).fill(0x100e0c).stroke({ width: 2, color: 0x594534 });
+  for (const rail of locker.rails) {
+    cabinet.moveTo(rail.from.x, rail.from.y).lineTo(rail.to.x, rail.to.y)
+      .stroke({ width: 2.2, color: 0x8a6c48, alpha: 0.82 });
+  }
+  for (const ledge of locker.shelves) {
+    cabinet.moveTo(ledge.from.x, ledge.from.y).lineTo(ledge.to.x, ledge.to.y)
+      .stroke({ width: 1, color: 0x6d5947, alpha: 0.62 });
+  }
+  for (const foot of locker.feet) {
+    cabinet.moveTo(foot.top.x, foot.top.y).lineTo(foot.bottom.x, foot.bottom.y)
+      .stroke({ width: 4, color: 0x1b1511 });
+  }
+  shelfWrap.addChild(cabinet);
+
+  for (const slot of locker.slots) {
     // Restrained wear from authoritative condition; unknown ids show no wear.
-    const rawCond = slot.equipmentId !== '_empty' ? state.gearConditions?.[slot.equipmentId] : undefined;
+    const rawCond = state.gearConditions?.[slot.equipmentId];
     const wear = typeof rawCond === 'number' ? shelfConditionStyle(rawCond) : null;
     const faceTint = wear ? dimTint(slot.tint, wear.dim) : slot.tint;
+    const fp = wear ? resolveRackFaceplate(slot.equipmentId, faceTint) : slot.faceplate;
     if (wear?.warn) {
-      // Failing-item warning LED rides the existing status-LED ticker (pulse + reduced-motion free).
       const warnLed = new Graphics();
       shelfWrap.addChild(warnLed);
       refs.statusLeds.push({
         g: warnLed,
-        x: slot.x + slot.width / 2 + 2,
-        y: slot.y - slot.height - 4,
+        x: slot.quad.topRight.x - 3,
+        y: slot.quad.topRight.y + 3,
         color: 0xef4444,
         radius: 1.4,
       });
     }
-    const tex = slot.equipmentId !== '_empty' ? getEquipmentTexture(slot.equipmentId) : null;
+    const item = new Graphics();
+    item.poly(lockerQuadPoints(slot.quad)).fill(fp.panel).stroke({ width: 1, color: fp.edge, alpha: 0.9 });
+    const moduleScale = Math.min(slot.spriteMaxWidth, slot.spriteMaxHeight);
+    for (const detail of fp.details) {
+      if (detail.shape === 'circle') {
+        const point = projectPointInLockerQuad(slot.quad, detail.x, detail.y);
+        item.circle(point.x, point.y, (detail.radius ?? 0.04) * moduleScale)
+          .fill({ color: detail.color, alpha: detail.alpha ?? 1 });
+      } else {
+        const u1 = detail.x + (detail.width ?? 0.1);
+        const v1 = detail.y + (detail.height ?? 0.1);
+        const detailQuad = {
+          topLeft: projectPointInLockerQuad(slot.quad, detail.x, detail.y),
+          topRight: projectPointInLockerQuad(slot.quad, u1, detail.y),
+          bottomRight: projectPointInLockerQuad(slot.quad, u1, v1),
+          bottomLeft: projectPointInLockerQuad(slot.quad, detail.x, v1),
+        };
+        item.poly(lockerQuadPoints(detailQuad)).fill({ color: detail.color, alpha: detail.alpha ?? 1 });
+      }
+    }
+    shelfWrap.addChild(item);
+
+    const tex = getEquipmentTexture(slot.equipmentId);
     if (tex) {
       const sprite = new Sprite(tex);
-      const maxW = Math.max(10, slot.width * 1.6);
-      const maxH = Math.max(14, slot.height + 6);
-      const scale = Math.min(maxW / Math.max(1, tex.width), maxH / Math.max(1, tex.height));
+      const scale = Math.min(
+        slot.spriteMaxWidth / Math.max(1, tex.width),
+        slot.spriteMaxHeight / Math.max(1, tex.height),
+      );
       sprite.scale.set(scale);
       sprite.anchor.set(0.5, 1);
-      sprite.position.set(slot.x, slot.y);
+      sprite.position.set(slot.spriteAnchor.x, slot.spriteAnchor.y);
       sprite.tint = faceTint;
       shelfWrap.addChild(sprite);
       refs.shelfItems.push({
         display: sprite,
-        baseY: slot.y,
+        baseY: slot.spriteAnchor.y,
         baseRot: 0,
         phase: refs.shelfItems.length * 0.9,
+        seated: true,
       });
-      // Warm the cache for ids that haven't resolved yet (async; next rebuild paints sprites)
       void ensureEquipmentTexture(slot.equipmentId);
     } else {
-      const item = new Graphics();
-      item.rect(slot.x - slot.width / 2, slot.y - slot.height, slot.width, slot.height).fill(faceTint);
-      shelfWrap.addChild(item);
-      if (slot.equipmentId !== '_empty') {
-        refs.shelfItems.push({
-          display: item,
-          baseY: slot.y,
-          baseRot: 0,
-          phase: refs.shelfItems.length * 0.9,
-        });
-        void ensureEquipmentTexture(slot.equipmentId);
-      }
+      refs.shelfItems.push({
+        display: item,
+        baseY: item.y,
+        baseRot: 0,
+        phase: refs.shelfItems.length * 0.9,
+        seated: true,
+      });
+      void ensureEquipmentTexture(slot.equipmentId);
     }
   }
   const shelfHit = new Graphics();
@@ -1509,11 +1565,17 @@ const buildScene = (
   deskProps.zIndex = deskZ;
   root.addChild(deskProps);
 
-  // Listening candle table — presentation only (no hotspot; glow lives in decor lights)
+  // Listening candle table — lounge coffee hotspot + presentation
   {
     const candleTable = buildCandleTable();
     candleTable.zIndex = Z.depth + iso(6.55, 5.35).y;
+    candleTable.eventMode = 'static';
+    candleTable.cursor = 'pointer';
+    candleTable.on('pointertap', () => {
+      onSelect?.('shelf');
+    });
     root.addChild(candleTable);
+    refs.candleTable = candleTable;
     // Drink/mug only after brew_espresso — settle anim driven by the ticker
     const drink = buildCandleDrink();
     drink.zIndex = candleTable.zIndex + 1;
@@ -1602,9 +1664,20 @@ const buildScene = (
     });
     visual.display.position.set(spot.x, spot.y);
     visual.display.zIndex = Z.depth + spot.y;
+    const activityCue = new Text({ text: '', style: { fontFamily: 'Arial', fontSize: 18, fontWeight: 'bold', fill: 0xffffff, stroke: { color: 0x151b22, width: 3 } } });
+    activityCue.anchor.set(0.5, 1);
+    activityCue.position.set(0, -70);
+    activityCue.eventMode = 'none';
+    visual.display.addChild(activityCue);
+    // Short station paths remain in each figure's floor lane; no simulated tasks or needs.
+    const workSpots = [iso(3.0, 4.8), iso(5.7, 4.4), iso(3.5, 2.0), iso(6.1, 5.7), iso(2.3, 2.8)];
+    const restSpots = [spot, iso(4.4, 6.7), iso(5.6, 6.8), iso(7.2, 6.5), iso(1.7, 4.0)];
     refs.staffFigures.push({
       fig: visual.display,
+      baseX: spot.x,
       baseY: spot.y,
+      stations: { home: spot, work: workSpots[i], rest: restSpots[i] },
+      activityCue,
       animState: figure.animState ?? (state.hasActiveProject ? 'working' : 'idle'),
       destroy: visual.destroy,
     });
@@ -1707,12 +1780,6 @@ const buildScene = (
       upgrades.circle(plantBase.x + 10, plantBase.y - 26, 11).fill(0x357044);
     }
     upgrades.zIndex = Z.depth + plantBase.y;
-    // First gold record frame on the right wall
-    const frameA = iso(6.6, 0);
-    const rec = { x: frameA.x, y: frameA.y - 88 };
-    upgrades.rect(rec.x - 12, rec.y - 12, 24, 24).fill(0x2a1f0d);
-    upgrades.rect(rec.x - 12, rec.y - 12, 24, 24).stroke({ width: 3, color: grade.accent });
-    upgrades.circle(rec.x, rec.y, 8).fill(0xd9a441);
     root.addChild(upgrades);
   }
 
@@ -1769,8 +1836,6 @@ const buildScene = (
   }
 
   /* ---- Additive lighting: window shaft, motes, lamp pools, era glow ------- */
-  const lights = buildDecorLights({ spec: decorSpec, kit: getEraLightingKit(state.eraId), tier });
-  refs.decor = lights;
   lights.container.zIndex = Z.fx;
   root.addChild(lights.container);
 
@@ -1793,8 +1858,6 @@ const buildScene = (
   overlayRoot.addChild(tintLayer);
 
   /* ---- CRT scanlines & Vignette Post-FX layers (screen space) ------------ */
-  const postFxTuning = getEraPostFxTuning(state.eraId);
-
   const vignetteLayer = new Container();
   vignetteLayer.eventMode = 'none';
   {
@@ -1818,12 +1881,14 @@ const buildScene = (
 
   const crtLayer = new Container();
   crtLayer.eventMode = 'none';
-  const crtG = new Graphics();
-  const pitch = postFxTuning.scanlinePitch;
-  for (let y = 0; y < height; y += pitch) {
-    crtG.rect(0, y, width, 1.0).fill({ color: 0x000000, alpha: postFxTuning.scanlineAlpha });
+  if (postFxTuning.scanlineAlpha > 0) {
+    const crtG = new Graphics();
+    const pitch = postFxTuning.scanlinePitch;
+    for (let y = 0; y < height; y += pitch) {
+      crtG.rect(0, y, width, 1.0).fill({ color: 0x000000, alpha: postFxTuning.scanlineAlpha });
+    }
+    crtLayer.addChild(crtG);
   }
-  crtLayer.addChild(crtG);
   refs.crtLayer = crtLayer;
   overlayRoot.addChild(crtLayer);
 
@@ -1831,6 +1896,11 @@ const buildScene = (
   const bloomLayer = new Container();
   bloomLayer.eventMode = 'none';
   bloomLayer.blendMode = 'add';
+  const tubeFilter = createTubeGlowFilter();
+  if (tubeFilter) {
+    bloomLayer.filters = [tubeFilter.filter];
+    refs.tubeGlowFilter = tubeFilter;
+  }
   const dynamicBloomG = new Graphics();
   bloomLayer.addChild(dynamicBloomG);
   refs.dynamicBloomG = dynamicBloomG;
@@ -1866,7 +1936,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   const idleCameraRef = useRef({
     mode: 'idle' as 'idle' | 'focusing' | 'restoring',
     saved: { x: 0, y: 0, zoom: 1.0 } as CameraPose,
-    targetId: null as IdleDirectionHotspot | null,
+    targetId: null as StudioHotspotId | null,
   });
   const gestureRef = useRef(new Map<number, { x: number; y: number }>());
   const suppressTapRef = useRef(false);
@@ -1903,6 +1973,9 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     const sc = sceneRef.current;
     if (sc) {
       if (sc.refs.crtLayer) sc.refs.crtLayer.visible = Boolean(settings.crtScanlines);
+      if (sc.refs.tvWrap && sc.refs.tvCrtFilter) {
+        sc.refs.tvWrap.filters = settings.crtScanlines ? [sc.refs.tvCrtFilter.filter] : [];
+      }
       if (sc.refs.vignetteLayer) sc.refs.vignetteLayer.visible = Boolean(settings.analogTapeWarmth);
       if (sc.refs.bloomLayer) sc.refs.bloomLayer.visible = Boolean(settings.bloomAndGlow);
     }
@@ -1942,7 +2015,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   // Structural key: only layout-affecting state triggers a scene rebuild
   const gearKey = shelfStructuralKey(state?.ownedEquipmentIds, state?.ownedEquipment ?? 0);
   const floorKey = (state?.floorFigures ?? [])
-    .map((f) => `${f.identity?.seed ?? f.seed ?? ''}:${f.animState ?? ''}:${f.role ?? ''}`)
+    .map((f) => `${f.identity?.seed ?? f.seed ?? ''}:${f.role ?? ''}`)
     .join(',');
   const producerLookKey = state?.producerNpc
     ? [state.producerNpc.hair.shape, state.producerNpc.hair.colour, state.producerNpc.body.build, state.producerNpc.clothes.topPrimaryHex].join(':')
@@ -1992,6 +2065,9 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     );
     if (settingsRef.current) {
       if (scene.refs.crtLayer) scene.refs.crtLayer.visible = Boolean(settingsRef.current.crtScanlines);
+      if (scene.refs.tvWrap && scene.refs.tvCrtFilter) {
+        scene.refs.tvWrap.filters = settingsRef.current.crtScanlines ? [scene.refs.tvCrtFilter.filter] : [];
+      }
       if (scene.refs.vignetteLayer) scene.refs.vignetteLayer.visible = Boolean(settingsRef.current.analogTapeWarmth);
       if (scene.refs.bloomLayer) scene.refs.bloomLayer.visible = Boolean(settingsRef.current.bloomAndGlow);
     }
@@ -2378,8 +2454,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
 
           const reduceMotion = readReduceMotion();
           const floorFocused = s.floorFocused !== false;
-          // Don't bank idle time while drawers/inspectors own attention.
-          if (!floorFocused) {
+          // Don't bank idle time while drawers/inspectors own attention, UNLESS we have a locked hotspot.
+          if (!floorFocused && !s.lockedHotspot) {
             lastCanvasInputRef.current = performance.now();
             (['phone', 'console', 'liveRoom', 'shelf', 'door'] as const).forEach((id) => {
               const hint = refs.idleHints[id];
@@ -2397,7 +2473,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             }
           } else {
           const idleMs = performance.now() - lastCanvasInputRef.current;
-          const hintedHotspot = pickIdleDirectionTarget({
+          // If locked, we immediately target it. Otherwise, use normal idle logic.
+          const hintedHotspot = s.lockedHotspot || pickIdleDirectionTarget({
             idleMs,
             floorFocused: true,
             enquiryWaiting: Boolean(s.enquiryWaiting),
@@ -2480,6 +2557,15 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
               const prev = lastAnchorsRef.current[id];
               if (!prev || prev.x !== pt.x || prev.y !== pt.y) changed = true;
             });
+            if (refs.candleTable) {
+              const cb = refs.candleTable.getBounds();
+              if (cb && cb.maxX > cb.minX) {
+                const pt = { x: Math.round((cb.minX + cb.maxX) / 2), y: Math.round(cb.minY) };
+                next.coffee = pt;
+                const prev = lastAnchorsRef.current.coffee;
+                if (!prev || prev.x !== pt.x || prev.y !== pt.y) changed = true;
+              }
+            }
             if (changed) {
               lastAnchorsRef.current = next;
               anchorsCbRef.current(next);
@@ -2533,13 +2619,22 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
 
           // Shelf gear micro-sway (does not move hotspot hit geometry)
           refs.shelfItems.forEach((item, i) => {
+            if (item.seated) {
+              item.display.y = item.baseY;
+              item.display.rotation = item.baseRot;
+              item.display.alpha = 1;
+              return;
+            }
             const m = shelfIdleMotion(t, i + item.phase, s.hasActiveProject, reduceMotion);
             item.display.y = item.baseY + m.dy;
             item.display.rotation = item.baseRot + m.rot;
             item.display.alpha = m.alpha;
           });
 
-          // Charts TV equalizer — bars are quads on the left-wall plane so they stay inside the bezel
+          // Charts TV equalizer & diegetic CRT filter time drift
+          if (refs.tvCrtFilter && !reduceMotion) {
+            refs.tvCrtFilter.updateTime(t);
+          }
           const tvPeaks: { x: number; y: number }[] = [];
           refs.tvBars.forEach((bar, i) => {
             const h = reduceMotion
@@ -2559,8 +2654,12 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             }
           });
 
-          // Emissive dynamic bloom updates (world-space, additive blend)
+          // Emissive dynamic bloom & thermionic tube glow updates (world-space, additive blend)
           if (refs.dynamicBloomG && refs.bloomLayer?.visible) {
+            if (refs.tubeGlowFilter) {
+              const tubeIntensity = calculateTubeGlowIntensity(s.activity, s.hasActiveProject);
+              refs.tubeGlowFilter.update(tubeIntensity, t, s.hasActiveProject, s.activity, reduceMotion);
+            }
             const bg = refs.dynamicBloomG;
             bg.clear();
 
@@ -2636,6 +2735,18 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             else if (!s.hasActiveProject && (f.animState === 'working' || f.animState === 'mixing' || f.animState === 'recording')) {
               f.animState = 'idle';
             }
+            const target = staffDestination(f.animState, f.stations);
+            const position = stepStaffPosition({ x: f.baseX, y: f.baseY }, target, ticker.deltaMS, reduceMotion);
+            f.baseX = position.x;
+            f.baseY = position.y;
+            f.fig.x = position.x;
+            f.fig.zIndex = Z.depth + position.y;
+            const walking = Math.hypot(target.x - position.x, target.y - position.y) > 0.5;
+            const cue = staffActivityCue(f.animState);
+            if (f.activityCue.text !== cue.text) f.activityCue.text = cue.text;
+            if (f.activityCue.style.fill !== cue.color) f.activityCue.style.fill = cue.color;
+            f.activityCue.visible = !walking && cue.text !== '';
+            applyFloorNpcMotion({ ...f, animState: walking ? 'walk' : f.animState }, t, i * 1.4, reduceMotion);
             applyFloorNpcMotion(f, t, i * 1.4, reduceMotion);
             if (i === 0 && refs.producerEmote) {
               // Tap reaction: a quick hop with a squash, and a note that floats up and fades.
@@ -2750,7 +2861,9 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
 
             // Wall clock + day/night ambience share one minute stream (studioDecorConfig).
             // Hands: 12h face. Lighting/window: 24h day so morning ≠ evening exterior.
-            const { hour, minute, minutesOfDay } = getWallClockTime(s.day, t);
+            const { hour, minute, minutesOfDay } = getWallClockTimeFromMinutes(
+              s.clockMinutes ?? getWallClockTime(s.day, t).minutesOfDay,
+            );
             const faceMins = hour * 60 + minute;
             if (faceMins !== clockMinuteRef.current) {
               clockMinuteRef.current = faceMins;
@@ -2772,7 +2885,6 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
 
             refs.windowView?.update(minutesOfDay, dayness, t, reduceMotion);
             refs.caseStack?.update(t, reduceMotion);
-            refs.lightShaft?.update(minutesOfDay, t, reduceMotion);
 
             if (refs.nightTintLayer) {
               refs.nightTintLayer.alpha = getNightTintAlpha(dayness);

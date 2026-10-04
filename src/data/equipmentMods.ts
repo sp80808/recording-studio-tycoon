@@ -1,6 +1,6 @@
 import { EquipmentMod } from '@/types/game';
 
-// All mods are in-house original designs (CC0) — no external art source needed.
+// All mods are in-house proprietary original designs — no external art source needed.
 // Art = CSS/SVG faceplate variant + iconOverride; physical sprite stays on the
 // base equipment entry in equipmentArt.ts. Research costs scale with tier.
 
@@ -145,5 +145,26 @@ export const availableMods: EquipmentMod[] = [
     statChanges: { qualityBonus: 5, speedBonus: 3, technicalBonus: 3 },
     nameSuffix: '(Reclocked)',
     researchRequirements: { engineerSkill: 'Electronics', engineerSkillLevel: 2, researchTime: 6, cost: 280 },
+  },
+  {
+    id: 'api_opamp_swap',
+    name: 'API Op-Amp Swap (Red Dot 2520)',
+    description:
+      'Drops discrete red-dot op-amps into the EQ cards. Punchier mids, faster transients, louder attitude.',
+    modifiesEquipmentId: 'api_the_wiser',
+    statChanges: { qualityBonus: 5, technicalBonus: 6 },
+    nameSuffix: '(Red Dot)',
+    iconOverride: '⚙️',
+    researchRequirements: { engineerSkill: 'Electronics', engineerSkillLevel: 2, researchTime: 6, cost: 300 },
+  },
+  {
+    id: 'modular_quantizer_brain',
+    name: 'Quantizer Brain for the Eurorack Rig',
+    description:
+      'A quad quantizer that forces the spaghetti patching into key. Happy accidents, now in tune.',
+    modifiesEquipmentId: 'modular_synth_rig',
+    statChanges: { creativityBonus: 8, technicalBonus: 4, genreBonus: { Electronic: 1 } },
+    nameSuffix: '(Quantized)',
+    researchRequirements: { engineerSkill: 'Electronics', engineerSkillLevel: 3, researchTime: 8, cost: 450 },
   },
 ];

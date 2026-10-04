@@ -2,7 +2,8 @@
 
 Single log for where every sprite / variant / sticker / emblem comes from,
 what is bundled vs procedural, and what is deferred to the later roadmap.
-Policy: **CC0 only** for anything bundled. No GPL / NC / ND assets in the repo.
+Policy: **third-party bundled assets must use an approved permissive licence** (for example CC0, MIT or Apache-2.0) and must be provenance-tracked. **RST-created original material is proprietary** unless an explicit, deliberate exception says otherwise. No GPL / NC / ND assets in the repo.
+Enforcement: `pnpm assets:verify` (part of `pnpm test`) fails on any file under `public/assets/` that is not declared in `assets/provenance.json`. Add the manifest entry or `originalTrees` directory in the same change as the log line. Process in `assets/README.md`.
 
 ## 1. Flight cases (`src/data/flightCases.ts`)
 
@@ -24,7 +25,7 @@ Legacy compat: `GameState.pendingCrates` tiers (`standard` /
 
 ## 2. Equipment mods (`src/data/equipmentMods.ts`)
 
-12 mods (was 1). All **in-house original designs, CC0** — art is a CSS/SVG
+12 mods (was 1). All **in-house proprietary original designs** — art is a CSS/SVG
 faceplate variant + `iconOverride`, so no external source to attribute:
 
 - UREI 1176 Rev A (existing), Shurely capsule swap, condenser tube stage,
@@ -83,7 +84,7 @@ beads issue `recording-studio-tycoon-art.X` (3D models + skins/sticker UI):
 - 3D gear models: Kenney Furniture Kit / City Kit CC0 .obj/.fbx/.glb for room dressing.
 - Animated variants (VU bounce, tube flicker) — artist pass or Higgsfield generation.
 - Skins equip UI, sticker slotting UI, shelf display scene (PixiJS).
-- AI-generated filler (Higgsfield `higgsfield-generate` skill) ONLY where no CC0 equivalent exists; must be logged here as in-house CC0.
+- AI-generated filler (Higgsfield `higgsfield-generate` skill) ONLY where no CC0 equivalent exists; must be logged here as in-house proprietary original.
 
 ## 6. Image-generation connectors available
 
@@ -94,7 +95,7 @@ beads issue `recording-studio-tycoon-art.X` (3D models + skins/sticker UI):
 ## 8. Signature studio props (door, wall clock, mic stand, mug, notepad, stool, music stand)
 
 Kenney.nl / OpenGameArt were unreachable from the build environment, so these
-these were drawn in-house. License: **In-house (CC0)**. Source SVGs live in
+these were drawn in-house. License: **original**. Source SVGs live in
 `public/assets/props/*.svg`; PNGs are 2x renders via
 `scripts/render-prop-sprites.cjs`. Loaded by `src/components/studio/propSprites.ts`;
 the scene falls back to the original procedural drawing if a texture is missing.
@@ -111,7 +112,7 @@ the scene falls back to the original procedural drawing if a texture is missing.
 
 Swap for Kenney/OGA CC0 art later by replacing the PNGs (same sizes).
 
-Second batch (same in-house CC0 pipeline, same folder):
+Second batch (same in-house proprietary original pipeline, same folder):
 
 | Sprite | File | Used in |
 | --- | --- | --- |
@@ -120,20 +121,20 @@ Second batch (same in-house CC0 pipeline, same folder):
 | Lava lamp (2000s) | `public/assets/props/lava-lamp.png` | `studioDecor.ts` era prop (animated blobs still drawn on top) |
 | Ring light (2020s) | `public/assets/props/ring-light.png` | `studioDecor.ts` era prop |
 
-Third batch (in-house CC0):
+Third batch (in-house proprietary original):
 
 - Trophy wall plaques (`trophy-gold|platinum|award.png`) replace the procedural plaques in `buildWallDressing`, sheared into the right-wall plane. Not yet screenshot-verified in-game (needs earned trophies).
 - Booking icons in `public/assets/icons/booking/` (`brief`, `fit-S|A|B|C`, `approach-safe`, `approach-moonshot`) are standalone SVGs, deliberately not wired in, so the booking enquiry card work in #101 can import them.
 
-## 7. In-house reward sprites (CC0)
+## 7. In-house reward sprites (proprietary original)
 
 `public/assets/rewards/coin.svg`, `xp-star.svg`, `spark.svg` were hand-drawn as SVG
-for this project (no external source, no AI generation) and are released CC0. Used by
+for this project (no external source, no AI generation) and are proprietary RST originals. Used by
 `RewardFlights` for cash/XP loot travel.
 
 ## 9. Asset factory sample sources (issues #78, #79)
 
-Procedurally drawn in-house (rectangles, no third-party art). License: **In-house (CC0)**.
+Procedurally drawn in-house (rectangles, no third-party art). License: **original**.
 
 | Asset | Source | Output |
 | --- | --- | --- |
@@ -145,7 +146,7 @@ Every built atlas has a `*.provenance.json` (schema in `docs/ASSET_PIPELINE.md`)
 
 ## Producer character creator (#126)
 
-In-house original pixel art, **CC0**, drawn as SVG rects/circles inside
+In-house proprietary original pixel art, drawn as SVG rects/circles inside
 `src/features/sprites/ModularSpriteRenderer.tsx` (no external source, nothing bundled):
 
 - Hair shapes `messy_curly`, `long_wavy`, `topknot` (the renderer previously only drew 6 of the 10 shapes).
@@ -156,7 +157,7 @@ In-house original pixel art, **CC0**, drawn as SVG rects/circles inside
 
 ## 10. Studio models rendered in Blender (`tools/blender`, `public/assets/studio`)
 
-In-house original low-poly models, CC0, no external source. Rendered headless from the scripts in
+In-house proprietary original low-poly models, no external source. Rendered headless from the scripts in
 `tools/blender` (see its README) so they can be regenerated or restyled.
 
 | Asset | Files | Used by |
@@ -170,14 +171,14 @@ Every asset has a procedural Graphics fallback if its PNG fails to load.
 
 ## 12. Bus & Stem Merge track glyphs (`src/components/minigames/busMergeArt.tsx`, issue #138)
 
-In-house original vector glyphs, CC0, no external source. 19 single-stroke 32x32 inline SVG icons
+In-house proprietary original vector glyphs, no external source. 19 single-stroke 32x32 inline SVG icons
 (kick, snare, overheads, guitar L/R, bass, keys, vocal lead/double, Hero Sample star, buses, stems,
 pre-mix, mix) drawn by hand in code and tinted per family (drums amber, music green, vox pink,
 mix gold, special blue). No raster files, nothing to attribute.
 
 ## 11. Console-tier deck gear (issue #81, tiers 2-5)
 
-In-house original, CC0, no external source. Drawn procedurally in Pixi (`WebGLCanvas.tsx`, `gearSpriteAnimation.ts`); no new image files.
+In-house proprietary original, no external source. Drawn procedurally in Pixi (`WebGLCanvas.tsx`, `gearSpriteAnimation.ts`); no new image files.
 
 | Asset | Source | Used by |
 |---|---|---|
@@ -186,7 +187,7 @@ In-house original, CC0, no external source. Drawn procedurally in Pixi (`WebGLCa
 
 ## 13. Floor furnishings and the studio cat (`studioFloorFurnishings.ts`)
 
-In-house original, CC0, no external source. Drawn procedurally in Pixi Graphics; no new image files.
+In-house proprietary original, no external source. Drawn procedurally in Pixi Graphics; no new image files.
 
 | Asset | Source | Used by |
 |---|---|---|
@@ -195,7 +196,7 @@ In-house original, CC0, no external source. Drawn procedurally in Pixi Graphics;
 
 ## 14. Producer accessories: headwear, eyewear, jewellery (`ModularSpriteRenderer.tsx`)
 
-In-house original, CC0, no external source. SVG rects and paths drawn in code on the 32px NPC grid; no image files.
+In-house proprietary original, no external source. SVG rects and paths drawn in code on the 32px NPC grid; no image files.
 
 | Asset | Source | Used by |
 |---|---|---|
@@ -205,16 +206,17 @@ In-house original, CC0, no external source. SVG rects and paths drawn in code on
 
 ## 15. Premises furniture (`studioPremisesDecor.ts`, issue #70)
 
-In-house original, CC0, no external source. Drawn procedurally in Pixi Graphics; no image files.
+In-house proprietary original, no external source. Drawn procedurally in Pixi Graphics; no image files.
 
 | Asset | Source | Used by |
 |---|---|---|
 | Client waiting bench, storage rack (Project Studio) | Pixi Graphics, drawn in code | `WebGLCanvas.tsx` (`buildScene`) |
 | Reception counter with accent sign, water cooler, second rack (Commercial Studio) | Pixi Graphics, drawn in code | `WebGLCanvas.tsx` (`buildScene`) |
+| Premium client sofa and third rack bay (Multi-room Facility) | Pixi Graphics, drawn in code, proprietary original | `WebGLCanvas.tsx` (`buildScene`) |
 
 ## 16. Window view (`studioWindowView.ts`)
 
-In-house original, CC0, no external source. Pixi Graphics drawn in code; no image files.
+In-house proprietary original, no external source. Pixi Graphics drawn in code; no image files.
 
 | Asset | Source | Used by |
 |---|---|---|
@@ -222,7 +224,7 @@ In-house original, CC0, no external source. Pixi Graphics drawn in code; no imag
 
 ## 17. Flight case floor stack (`studioCaseStack.ts`)
 
-In-house original, CC0, no external source. Pixi Graphics drawn in code; no image files.
+In-house proprietary original, no external source. Pixi Graphics drawn in code; no image files.
 
 | Asset | Source | Used by |
 |---|---|---|
@@ -230,7 +232,7 @@ In-house original, CC0, no external source. Pixi Graphics drawn in code; no imag
 
 ## 18. Extra room views (`RoomVignette.tsx`)
 
-In-house original, CC0, no external source. Inline SVG drawn in code; no image files.
+In-house proprietary original, no external source. Inline SVG drawn in code; no image files.
 
 | Asset | Source | Used by |
 |---|---|---|
@@ -238,21 +240,21 @@ In-house original, CC0, no external source. Inline SVG drawn in code; no image f
 
 ## 20. City scene cards (`CityScene.tsx`)
 
-In-house original, CC0, no external source. Inline SVG drawn in code (layered skyline silhouettes reused from `CitySkyline.tsx`, mood sky gradients, fixed star field, lit windows, studio sign); no image files.
+In-house proprietary original, no external source. Inline SVG drawn in code (layered skyline silhouettes reused from `CitySkyline.tsx`, mood sky gradients, fixed star field, lit windows, studio sign); no image files.
 
 | Asset | Source | Used by |
 |---|---|---|
 | Six city scenes in four moods (dusk, night, dawn, day) | SVG shapes in code | `DirectorEventModal` (saga beats and city events) via `StoryDecisionModal` illustration slot |
 
 ## 19. Window light shaft and dust motes (floor)
-In-house, Pixi Graphics only (`studioLightShaft.ts`). Warm translucent patch and 14 drifting motes; slides with the sun, off at night. CC0.
+In-house proprietary original, Pixi Graphics only (`studioLightShaft.ts`). Warm translucent patch and 14 drifting motes; slides with the sun, off at night.
 
 ## 21. UI icon set (`components/icons/GameIcons.tsx`)
-In-house original, CC0, no external source. Inline SVG stroke icons drawn in code, tinted by `currentColor`; no image files.
+In-house proprietary original, no external source. Inline SVG stroke icons drawn in code, tinted by `currentColor`; no image files.
 
 | Asset | Source | Used by |
 |---|---|---|
 | 16 genre icons, plus energy, combo, bank, mood, goal, chart, unlock and check icons | SVG paths in code | `ChartsPanel`, `StreakBankControl`, `StudioInspector`, `ActiveProject` console (replacing emoji glyphs); also cash, creativity, technical, flame, bulb, sparkle, phone, note, pad, party, users |
 
 ## 21. Fitted hover brackets and producer tap emote
-In-house, Pixi Graphics and Text only (`fitHoverGlow` in `WebGLCanvas.tsx`). Corner brackets sized from sprite and click-shape bounds; floating note emote on tapping the producer. CC0.
+In-house proprietary original, Pixi Graphics and Text only (`fitHoverGlow` in `WebGLCanvas.tsx`). Corner brackets sized from sprite and click-shape bounds; floating note emote on tapping the producer.

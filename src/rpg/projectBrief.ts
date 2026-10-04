@@ -34,7 +34,7 @@ export interface BriefFit {
 }
 
 export interface ProductionApproach {
-  id: 'clean-commercial' | 'intimate-raw' | 'experimental-layers';
+  id: 'clean-commercial' | 'intimate-raw' | 'experimental-layers' | 'house-recipe';
   label: string;
   blurb: string;
   direction: BriefDirection;
@@ -96,7 +96,7 @@ export const PRODUCTION_APPROACHES: ProductionApproach[] = [
   },
 ];
 
-const SERVICE_ROOM: Record<BriefServiceType, StudioRoomType> = {
+export const SERVICE_ROOM: Record<BriefServiceType, StudioRoomType> = {
   tracking: 'live-room',
   'vocal-production': 'vocal-suite',
   mix: 'mix-suite',
@@ -104,7 +104,7 @@ const SERVICE_ROOM: Record<BriefServiceType, StudioRoomType> = {
   'full-production': 'project-studio',
 };
 
-const SERVICE_ROLE: Record<BriefServiceType, StaffMember['role']> = {
+export const SERVICE_ROLE: Record<BriefServiceType, StaffMember['role']> = {
   tracking: 'Engineer',
   'vocal-production': 'Producer',
   mix: 'Engineer',
@@ -119,7 +119,7 @@ const ROOM_NAMES: Record<StudioRoomType, string> = {
   'mix-suite': 'Mix Suite',
 };
 
-const GENRE_DIRECTIONS: Record<string, BriefDirection[]> = {
+export const GENRE_DIRECTIONS: Record<string, BriefDirection[]> = {
   Rock: ['raw', 'live', 'heavy'],
   Pop: ['polished', 'intimate', 'experimental'],
   Electronic: ['polished', 'experimental', 'heavy'],
@@ -129,9 +129,9 @@ const GENRE_DIRECTIONS: Record<string, BriefDirection[]> = {
   Folk: ['intimate', 'raw', 'live'],
   Soul: ['intimate', 'polished', 'live'],
 };
-const DEFAULT_DIRECTIONS: BriefDirection[] = ['raw', 'polished', 'intimate'];
-const SERVICES: BriefServiceType[] = ['tracking', 'vocal-production', 'mix', 'master', 'full-production'];
-const PRIORITIES: BriefPriority[] = ['quality', 'speed', 'budget'];
+export const DEFAULT_DIRECTIONS: BriefDirection[] = ['raw', 'polished', 'intimate'];
+export const SERVICES: BriefServiceType[] = ['tracking', 'vocal-production', 'mix', 'master', 'full-production'];
+export const PRIORITIES: BriefPriority[] = ['quality', 'speed', 'budget'];
 
 const pick = <T,>(items: readonly T[], rng: () => number): T => items[Math.floor(rng() * items.length) % items.length];
 
@@ -149,8 +149,40 @@ export function deriveBrief(project: Pick<Project, 'id' | 'genre'>): ProjectBrie
 /** Old saves have no brief; derive one on read so nothing needs migrating. */
 export const getProjectBrief = (project: Project): ProjectBrief => project.brief ?? deriveBrief(project);
 
-export const getApproach = (id: string | undefined): ProductionApproach | undefined =>
-  PRODUCTION_APPROACHES.find((a) => a.id === id);
+/** Authored house recipe (#71, level 3): the direction this studio has learned works for a genre. */
+const RECIPE_DIRECTION: Record<string, BriefDirection> = {
+  Rock: 'live', Country: 'live', Jazz: 'live',
+  Folk: 'intimate', Soul: 'intimate', Emo: 'intimate', Indie: 'intimate', Acoustic: 'intimate',
+  Blues: 'raw', Punk: 'raw', 'Pop-punk': 'raw', 'Lo-fi': 'raw',
+  'Hip-Hop': 'heavy', 'Hair Metal': 'heavy', EDM: 'heavy', Trap: 'heavy',
+  Electronic: 'experimental',
+};
+const RECIPE_FOCUS: Record<BriefDirection, ProductionApproach['focus']> = {
+  raw: { performance: 50, soundCapture: 30, layering: 20 },
+  live: { performance: 50, soundCapture: 30, layering: 20 },
+  intimate: { performance: 45, soundCapture: 35, layering: 20 },
+  polished: { performance: 25, soundCapture: 45, layering: 30 },
+  heavy: { performance: 30, soundCapture: 40, layering: 30 },
+  experimental: { performance: 20, soundCapture: 25, layering: 55 },
+};
+
+export const houseRecipe = (genre: string): ProductionApproach => {
+  const direction = RECIPE_DIRECTION[genre] ?? 'polished';
+  return {
+    id: 'house-recipe',
+    label: `House recipe: ${genre}`,
+    blurb: `The way this studio has learned to cut ${genre}. Plays to what it already does well.`,
+    direction,
+    focus: RECIPE_FOCUS[direction],
+  };
+};
+
+export const getApproach = (id: string | undefined, genre?: string): ProductionApproach | undefined =>
+  id === 'house-recipe' ? houseRecipe(genre ?? '') : PRODUCTION_APPROACHES.find((a) => a.id === id);
+
+/** The approaches on offer for this genre: the three standards, plus the house recipe once the studio is Experienced in it. */
+export const approachesFor = (expertise: { genres: Record<string, { level: number } | undefined> } | undefined, genre: string): ProductionApproach[] =>
+  (expertise?.genres[genre]?.level ?? 0) >= 3 ? [...PRODUCTION_APPROACHES, houseRecipe(genre)] : PRODUCTION_APPROACHES;
 
 type FitState = Pick<GameState, 'studioRooms' | 'hiredStaff' | 'ownedEquipment' | 'clientRelationships'>;
 
@@ -164,6 +196,7 @@ interface FitContext {
   clientId?: string;
   clientSessions: number;
   approachId?: ProductionApproach['id'];
+  genre: string;
 }
 
 interface FitRule {
@@ -276,6 +309,10 @@ const FIT_RULES: FitRule[] = [
     },
   },
   {
+    id: 'house-recipe',
+    apply: (c) => (c.approachId === 'house-recipe' ? { delta: 6, reason: `Your house recipe: the studio knows how to cut ${c.genre}` } : null),
+  },
+  {
     id: 'repeat-client',
     apply: (c) => (c.clientSessions > 0 ? { delta: Math.min(10, c.clientSessions * 3), reason: 'Repeat client: you already speak the same language' } : null),
   },
@@ -300,7 +337,7 @@ export function evaluateBriefFit(
   brief: ProjectBrief,
   ctx: { room: Pick<StudioRoom, 'type' | 'name'>; staff: StaffMember[]; equipment: Equipment[]; clientId?: string; clientSessions?: number; approachId?: string },
 ): BriefFit {
-  const approach = getApproach(ctx.approachId);
+  const approach = getApproach(ctx.approachId, brief.genre);
   const c: FitContext = {
     brief,
     direction: approach?.direction ?? brief.direction,
@@ -311,6 +348,7 @@ export function evaluateBriefFit(
     clientId: ctx.clientId,
     clientSessions: ctx.clientSessions ?? 0,
     approachId: approach?.id,
+    genre: brief.genre,
   };
   let score = BASE_SCORE;
   const applied: { delta: number; reason: string; rule: FitRule }[] = [];

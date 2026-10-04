@@ -388,7 +388,7 @@ Shipped this pass (data + CSS rendering, no binary downloads):
   road_case, tour_trunk, vintage_flight_case, holy_grail_vault) with loot
   weights, era bias, drop sources, CC0 source per tier, and
   `legacyTierToFlightCase()` back-compat for `GameState.pendingCrates`.
-- `src/data/equipmentMods.ts` — 12 in-house CC0 mods (was 1), one+ per
+- `src/data/equipmentMods.ts` — 12 in-house proprietary original mods (was 1), one+ per
   category, research costs 120–900 / 3–12 days.
 - `src/data/equipmentArt.ts` — art registry for all 57 equipment ids: base
   sprite target, alts, fallback emoji, tint, CC0 source, 3+ CSS variants,

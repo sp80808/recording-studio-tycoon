@@ -48,7 +48,9 @@ const BRASS = 0xe6b866;
 
 /* --------------------------------------------------------------- helpers */
 
-/** Soft radial glow faked with stacked ellipses (use in an additive layer). */
+/** Soft radial glow faked with stacked ellipses (use in an additive layer).
+ * Uses many thin steps with a smooth cosine falloff so no concentric ring edges read.
+ * Total integrated alpha stays ≈ `alpha`; outer steps fade to ~0 instead of a hard rim. */
 const radialGlow = (
   g: Graphics,
   x: number,
@@ -57,11 +59,22 @@ const radialGlow = (
   ry: number,
   color: number,
   alpha: number,
-  steps = 7,
+  steps = 16,
 ) => {
-  for (let i = 0; i < steps; i++) {
-    const k = 1 - i / steps;
-    g.ellipse(x, y, rx * k, ry * k).fill({ color, alpha: (alpha / steps) * (1 + i * 0.35) });
+  const n = Math.max(10, Math.floor(steps));
+  // Cosine weights sum-normalised so callers' alpha semantics are preserved.
+  let wSum = 0;
+  const weights: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const t = i / (n - 1); // 0 outer → 1 centre
+    const w = 0.5 - 0.5 * Math.cos(t * Math.PI);
+    weights.push(w);
+    wSum += w;
+  }
+  const scale = wSum > 0 ? alpha / wSum : 0;
+  for (let i = 0; i < n; i++) {
+    const k = 1 - i / n;
+    g.ellipse(x, y, Math.max(0.5, rx * k), Math.max(0.5, ry * k)).fill({ color, alpha: weights[i] * scale });
   }
 };
 
@@ -415,41 +428,71 @@ export const buildDeskProps = (deskH = 40): Container => {
 /** Iso tile under the brass candle table (listening-side rug edge). */
 export const CANDLE_TABLE_TILE = { x: 6.55, y: 5.35 } as const;
 
+/** Height in px of the side-table top above the floorboards. */
+const CANDLE_TABLE_H = 14;
+
 /** World-space flame tip used by the additive candle glow (must match `buildCandleTable`). */
 export const CANDLE_FLAME_POS = (() => {
   const p = iso(CANDLE_TABLE_TILE.x, CANDLE_TABLE_TILE.y);
-  return { x: p.x, y: p.y - 28 };
+  // Candle sits at back-left of tabletop (p.x - 6.5, topY - 2.2), flame tip is 16.5px above candle base
+  return { x: p.x - 6.5, y: p.y - CANDLE_TABLE_H - 18.7 };
 })();
 
 /**
- * Mug rim on the candle table (beside the candlestick, toward camera).
- * Steam / settle animation must target this — never the desk or window sill.
+ * Mug rim on the candle table (front-right of tabletop, beside the candlestick).
+ * Steam / settle animation targets this — never the desk or window sill.
  */
 export const CANDLE_MUG_POS = (() => {
-  const p = iso(CANDLE_TABLE_TILE.x + 0.22, CANDLE_TABLE_TILE.y + 0.14);
-  return { x: p.x + 1, y: p.y - 12 };
+  const p = iso(CANDLE_TABLE_TILE.x, CANDLE_TABLE_TILE.y);
+  return { x: p.x + 6, y: p.y - CANDLE_TABLE_H - 3.5 };
 })();
 
 /**
- * Small brass side-table + candle near the front-right rug edge.
- * Presentation only — not a hotspot (hit targets stay on shelf / console / door).
+ * Small brass side-table / coffee stand with candle near the front-right rug edge.
+ * Features a complete pedestal base on the floorboards, central brass-accented column,
+ * wood tabletop with brass rim, and a cream candlestick at the back-left.
  */
 export const buildCandleTable = (): Container => {
   const c = new Container();
   c.eventMode = 'none';
   const g = new Graphics();
   const base = iso(CANDLE_TABLE_TILE.x, CANDLE_TABLE_TILE.y);
-  // Round table top (iso squash)
-  g.ellipse(base.x, base.y, 14, 6).fill({ color: 0x000000, alpha: 0.28 });
-  g.ellipse(base.x, base.y - 2, 13, 5.5).fill(0x3a2a1c);
-  g.ellipse(base.x, base.y - 2, 13, 5.5).stroke({ width: 1, color: BRASS, alpha: 0.55 });
-  g.rect(base.x - 1.4, base.y - 2, 2.8, 10).fill(0x2a1c12);
-  // Brass candlestick + cream candle
-  g.ellipse(base.x, base.y - 12, 3.2, 1.4).fill(0xc9974a);
-  g.rect(base.x - 1.1, base.y - 24, 2.2, 12).fill(0xf3ead6);
-  g.ellipse(base.x, base.y - 24, 1.1, 0.6).fill(0xe8dcc4);
+  const topY = base.y - CANDLE_TABLE_H;
+
+  // 1. Floor contact shadow
+  g.ellipse(base.x, base.y, 11, 5).fill({ color: 0x000000, alpha: 0.32 });
+
+  // 2. Pedestal base resting flat on the floor (bottom half)
+  g.ellipse(base.x, base.y, 7.5, 3.2).fill(0x1a120b); // cast bronze foot
+  g.ellipse(base.x, base.y - 1, 7, 2.9).fill(0x2a1c12); // bevelled top
+  g.ellipse(base.x, base.y - 1, 7, 2.9).stroke({ width: 0.8, color: BRASS, alpha: 0.75 }); // brass rim ring
+  g.ellipse(base.x, base.y - 2, 2.8, 1.2).fill(0xc9974a); // brass lower collar
+
+  // 3. Central column / stem connecting base to tabletop
+  const stemH = base.y - 2 - topY;
+  g.rect(base.x - 1.2, topY, 2.4, stemH).fill(0x24180f); // dark walnut column
+  g.rect(base.x - 0.4, topY, 0.8, stemH).fill(0xc9974a); // brass highlight pinstripe
+  g.ellipse(base.x, topY + 0.5, 3.2, 1.4).fill(0xc9974a); // upper mounting bracket
+
+  // 4. Round table top (wood surface + brass rim)
+  g.ellipse(base.x, topY + 1.2, 14.5, 6.2).fill(0x181009); // under-lip shadow/depth
+  g.ellipse(base.x, topY, 14.5, 6.2).fill(0x3a2a1c); // walnut tabletop
+  g.ellipse(base.x, topY, 14.5, 6.2).stroke({ width: 1.0, color: BRASS, alpha: 0.85 }); // gleaming brass rim
+  g.ellipse(base.x, topY, 11.5, 4.8).stroke({ width: 0.5, color: 0x4d3725, alpha: 0.5 }); // inlaid wood ring
+
+  // 5. Brass candlestick + cream candle (tucked neatly at the back-left so drinks do not collide)
+  const candleX = base.x - 6.5;
+  const candleY = topY - 2.2;
+  g.ellipse(candleX, candleY, 3.2, 1.4).fill(0xc9974a); // saucer base
+  g.ellipse(candleX, candleY, 3.2, 1.4).stroke({ width: 0.5, color: BRASS, alpha: 0.7 });
+  g.rect(candleX - 0.9, candleY - 2.5, 1.8, 2.5).fill(0x8a6328); // brass stem
+  g.ellipse(candleX, candleY - 2.5, 1.3, 0.6).fill(0xc9974a);
+  g.rect(candleX - 1.1, candleY - 14, 2.2, 11.5).fill(0xf3ead6); // cream candle wax
+  g.ellipse(candleX, candleY - 14, 1.1, 0.6).fill(0xe8dcc4); // candle top
+  g.rect(candleX - 0.3, candleY - 15.5, 0.6, 1.5).fill(0x2a1c12); // wick
   // Static wick tip (flame glow lives in the additive layer)
-  g.circle(base.x, base.y - 26.5, 1.1).fill(0xffc266);
+  g.circle(candleX, candleY - 16.5, 1.1).fill(0xffc266);
+
   c.addChild(g);
   c.zIndex = base.y;
   return c;
@@ -489,10 +532,10 @@ export const buildCandleDrink = (): Container => {
 /** Settle-in duration (seconds) when the brew mug first appears on the candle table. */
 export const CANDLE_DRINK_SETTLE_SEC = 0.45;
 
-/** World-space beer bottle feet on the candle table (opposite the brew mug). */
+/** World-space beer bottle feet on the candle table (left side, opposite the brew mug). */
 export const CANDLE_BEER_POS = (() => {
-  const p = iso(CANDLE_TABLE_TILE.x - 0.28, CANDLE_TABLE_TILE.y + 0.1);
-  return { x: p.x - 2, y: p.y - 6 };
+  const p = iso(CANDLE_TABLE_TILE.x, CANDLE_TABLE_TILE.y);
+  return { x: p.x - 9, y: p.y - CANDLE_TABLE_H + 0.8 };
 })();
 
 /**
@@ -540,6 +583,8 @@ export interface DecorLightsAmbient {
 }
 
 export interface DecorLights {
+  /** Floor-clipped spill, inserted above the floor and below props/figures. */
+  floorContainer: Container;
   container: Container;
   kit: EraLightingKit;
   /**
@@ -557,10 +602,20 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
   const container = new Container();
   container.eventMode = 'none';
   container.blendMode = 'add';
+  const floorContainer = new Container();
+  floorContainer.eventMode = 'none';
+  floorContainer.blendMode = 'add';
+  const floorContent = new Container();
+  const floorMask = new Graphics();
+  isoQuad(floorMask, 0, 0, ROOM_W, ROOM_D);
+  floorMask.fill(0xffffff);
+  floorContent.mask = floorMask;
+  floorContainer.addChild(floorMask, floorContent);
 
-  /* Window light shaft: a soft parallelogram from the window down onto the floor. */
+  /* Window light: one coherent source from the glazing to a soft floor footprint. */
   const shaft = new Container();
   const shaftG = new Graphics();
+  const floorShaftG = new Graphics();
   const winA = rightWallPt(5.1, 96);
   const winB = rightWallPt(6.9, 96);
   const winC = rightWallPt(6.9, 34);
@@ -569,21 +624,29 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
   const f1 = iso(5.95, 3.9);
   const f2 = iso(6.9, 0.2);
   const f3 = iso(5.1, 0.2);
-  // Airborne beam — alphas from the era lighting kit
-  shaftG.poly([winA.x, winA.y, winB.x, winB.y, f1.x, f1.y, f0.x, f0.y]).fill({ color: spec.daylight, alpha: kit.shaftAirAlpha });
-  shaftG.poly([winD.x, winD.y, winC.x, winC.y, f1.x, f1.y, f0.x, f0.y]).fill({ color: spec.daylight, alpha: kit.shaftAirAlpha * 0.85 });
-  // Floor pool, layered for a soft edge
-  for (let i = 0; i < 5; i++) {
-    const k = i / 5;
-    const lerp = (a: { x: number; y: number }, b: { x: number; y: number }) => ({ x: a.x + (b.x - a.x) * k * 0.28, y: a.y + (b.y - a.y) * k * 0.28 });
-    const p0 = lerp(f0, f3);
-    const p1 = lerp(f1, f2);
-    const p2 = lerp(f2, f1);
-    const p3 = lerp(f3, f0);
-    shaftG.poly([p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y]).fill({ color: spec.daylight, alpha: kit.shaftFloorAlpha * (1 - k * 0.15) });
+  // A restrained airborne wash joins the lower window edge to the floor. Keeping
+  // this below the floor spill prevents a bright wall-to-floor banner.
+  shaftG
+    .poly([winA.x, winA.y, winB.x, winB.y, f1.x, f1.y, f0.x, f0.y])
+    .fill({ color: spec.daylight, alpha: kit.shaftAirAlpha });
+  // Nested isometric footprints distribute the configured alpha across a soft
+  // falloff instead of stacking five near-opaque copies with a hard outer rim.
+  const footprint = [f0, f1, f2, f3];
+  const center = footprint.reduce((p, q) => ({ x: p.x + q.x / 4, y: p.y + q.y / 4 }), { x: 0, y: 0 });
+  for (let i = 0; i < 7; i++) {
+    const inset = i / 18;
+    const layer = footprint.map((p) => ({
+      x: p.x + (center.x - p.x) * inset,
+      y: p.y + (center.y - p.y) * inset,
+    }));
+    floorShaftG.poly(layer.flatMap((p) => [p.x, p.y])).fill({
+      color: spec.daylight,
+      alpha: kit.shaftFloorAlpha * (0.035 + i * 0.012),
+    });
   }
   shaft.addChild(shaftG);
   container.addChild(shaft);
+  floorContent.addChild(floorShaftG);
 
   /* Dust motes drifting through the beam */
   const motes = getMoteSeeds(kit.moteCount, spec.eraId);
@@ -598,17 +661,21 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
     return { x: topX + (botX - topX) * u, y: topY + (botY - topY) * u };
   };
 
-  /* Lamp pools (warm glow on the floor around the console + rug) — kit colours */
+  /* Lamp pools (warm glow on the floor around the console + rug) — kit colours.
+   * Both pools sit on the floor plane (like the contact shadow at deskFoot.y + 3);
+   * a lifted centre would read as a detached halo floating above the boards. */
   const pools = new Graphics();
-  const rug = iso(4.5, 4.3);
-  radialGlow(pools, rug.x, rug.y + 4, kit.rugPool.rx, kit.rugPool.ry, kit.rugPool.color, kit.rugPool.alpha);
+  const rug = iso(4.5, 4.25);
+  radialGlow(pools, rug.x, rug.y + 3, kit.rugPool.rx, kit.rugPool.ry, kit.rugPool.color, kit.rugPool.alpha);
   const desk = iso(4.5, 4.05);
-  radialGlow(pools, desk.x, desk.y - 42, kit.deskPool.rx, kit.deskPool.ry, kit.deskPool.color, kit.deskPool.alpha);
-  container.addChild(pools);
+  radialGlow(pools, desk.x, desk.y + 3, kit.deskPool.rx, kit.deskPool.ry, kit.deskPool.color, kit.deskPool.alpha);
+  floorContent.addChild(pools);
 
   /* Era signature glows */
   const glowG = new Graphics();
   container.addChild(glowG);
+  const practicalFloorG = new Graphics();
+  floorContent.addChild(practicalFloorG);
 
   /* Tier neon strip behind the live-room glass (data-driven; was hard-coded in WebGLCanvas). */
   const tierNeon = new Graphics();
@@ -665,9 +732,11 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
         });
       }
     } else {
-      for (const m of motes) {
+      // Static motes retain depth without turning reduced-motion mode into a
+      // frozen field of bright particles.
+      for (const m of motes.slice(0, Math.ceil(motes.length / 3))) {
         const p = beamPoint(m.u, m.v);
-        moteG.circle(p.x, p.y, m.size).fill({ color: spec.daylight, alpha: kit.moteBaseAlpha * 0.4 });
+        moteG.circle(p.x, p.y, Math.min(1.1, m.size)).fill({ color: spec.daylight, alpha: kit.moteBaseAlpha * 0.22 });
       }
     }
 
@@ -679,12 +748,14 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
 
     // Era prop glows (scaled by kit; brighter after dark so the room still reads)
     glowG.clear();
+    practicalFloorG.clear();
     const nightGlow = glowScale * interiorBoost;
     if (spec.prop === 'brass-lamp') {
       const b = iso(7.55, 2.3);
       const f = (reduce ? 1 : 0.96 + 0.04 * Math.sin(t * 2.1)) * nightGlow;
-      radialGlow(glowG, b.x, b.y - 66, 34, 24, spec.glow, 0.32 * f, 6);
-      radialGlow(glowG, b.x, b.y - 2, 80, 30, spec.glow2, 0.11 * f, 6);
+      // Shade halo hugs the shade; floor pool sits at the prop base (b.y + 2), not floating.
+      radialGlow(glowG, b.x, b.y - 66, 22, 15, spec.glow, 0.20 * f);
+      radialGlow(practicalFloorG, b.x, b.y + 2, 52, 18, spec.glow2, 0.07 * f);
     } else if (spec.prop === 'neon-sign') {
       const flick = reduce ? 1 : Math.sin(t * 23) * Math.sin(t * 7) > 0.93 ? 0.35 : 1;
       const pts = bolt.flatMap(([u, v]) => {
@@ -702,8 +773,8 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
       radialGlow(glowG, wall.x, wall.y, 46, 34, spec.glow, 0.13 * a, 6);
     } else if (spec.prop === 'lava-lamp') {
       const t0 = iso(7.45, 1.1);
-      radialGlow(glowG, t0.x, t0.y - 34, 26, 30, spec.glow, 0.25 * nightGlow, 6);
-      radialGlow(glowG, t0.x, t0.y, 60, 22, spec.glow, 0.09 * nightGlow, 5);
+      radialGlow(glowG, t0.x, t0.y - 34, 18, 20, spec.glow, 0.16 * nightGlow);
+      radialGlow(practicalFloorG, t0.x, t0.y + 2, 40, 14, spec.glow, 0.06 * nightGlow);
       for (let i = 0; i < 3; i++) {
         const y = t0.y - 28 - (reduce ? i * 8 : (Math.sin(t * (0.5 + i * 0.23) + i * 2) * 0.5 + 0.5) * 20);
         glowG.circle(t0.x + (reduce ? 0 : Math.sin(t * 0.9 + i) * 1.4), y, 2.6 + i * 0.7).fill({ color: 0xffa070, alpha: 0.75 });
@@ -796,7 +867,7 @@ export const buildDecorLights = (input: DecorLightsInput): DecorLights => {
   };
 
   update(0, true);
-  return { container, kit, update };
+  return { floorContainer, container, kit, update };
 };
 
 /** HSL → 0xRRGGBB (h,s,l in 0..1). */
@@ -934,7 +1005,8 @@ export const buildLiveBooth = (): Container => {
     return sprites;
   }
   const c = new Container();
-  const g = new Graphics();
+  const gBack = new Graphics();
+  const gFront = new Graphics();
   const x0 = 1.0;
   const x1 = 3.5;
   const y0 = 0;
@@ -948,8 +1020,8 @@ export const buildLiveBooth = (): Container => {
   const quad = (a: ReturnType<typeof P>, b: ReturnType<typeof P>, c2: ReturnType<typeof P>, d: ReturnType<typeof P>) => [a.x, a.y, b.x, b.y, c2.x, c2.y, d.x, d.y];
 
   // Carpet
-  g.poly(quad(P(x0, y0), P(x1, y0), P(x1, y1), P(x0, y1))).fill(0x2e2521);
-  g.poly(quad(P(x0 + 0.08, y0 + 0.08), P(x1 - 0.08, y0 + 0.08), P(x1 - 0.08, y1 - 0.06), P(x0 + 0.08, y1 - 0.06))).stroke({ width: 0.8, color: BRASS, alpha: 0.25 });
+  gBack.poly(quad(P(x0, y0), P(x1, y0), P(x1, y1), P(x0, y1))).fill(0x2e2521);
+  gBack.poly(quad(P(x0 + 0.08, y0 + 0.08), P(x1 - 0.08, y0 + 0.08), P(x1 - 0.08, y1 - 0.06), P(x0 + 0.08, y1 - 0.06))).stroke({ width: 0.8, color: BRASS, alpha: 0.25 });
 
   // Foam on the back (right) wall: egg-crate checker
   const cols = 10;
@@ -960,22 +1032,37 @@ export const buildLiveBooth = (): Container => {
       const xb = x0 + ((x1 - x0) * (i + 1)) / cols;
       const la = 4 + ((GH - 6) * j) / rows;
       const lb = 4 + ((GH - 6) * (j + 1)) / rows;
-      g.poly(rightWallQuad(xa, xb, la, lb)).fill((i + j) % 2 ? 0x241d19 : 0x191411);
+      gBack.poly(rightWallQuad(xa, xb, la, lb)).fill((i + j) % 2 ? 0x241d19 : 0x191411);
     }
   }
-  g.poly(rightWallQuad(x0, x1, 0, 4)).fill(0x120e0b);
+  gBack.poly(rightWallQuad(x0, x1, 0, 4)).fill(0x120e0b);
 
   // Inner face of the left side wall (x = x0), foam stripes
   for (let j = 0; j < 6; j++) {
     const la = 4 + ((GH - 4) * j) / 6;
     const lb = 4 + ((GH - 4) * (j + 1)) / 6;
-    g.poly(quad(P(x0, y0, la), P(x0, y1, la), P(x0, y1, lb), P(x0, y0, lb))).fill(j % 2 ? 0x241d19 : 0x1a1512);
+    gBack.poly(quad(P(x0, y0, la), P(x0, y1, la), P(x0, y1, lb), P(x0, y0, lb))).fill(j % 2 ? 0x241d19 : 0x1a1512);
   }
 
   // Mic stand + pop filter + stool + music stand, deep in the booth
+  const stool = P(1.75, 0.52);
+  let stoolSpriteRef: Sprite | null = null;
+  const stoolTex = getPropTexture('stool');
+  if (stoolTex) {
+    const sp = new Sprite(stoolTex);
+    sp.anchor.set(0.5, 72 / 80);
+    sp.scale.set(44 / stoolTex.height * 1.0);
+    sp.position.set(stool.x, stool.y);
+    stoolSpriteRef = sp;
+  } else {
+    gBack.ellipse(stool.x, stool.y, 9, 4.2).fill({ color: 0x000000, alpha: 0.3 });
+    gBack.rect(stool.x - 1, stool.y - 18, 2, 18).fill(0x4a4038);
+    gBack.ellipse(stool.x, stool.y - 20, 9, 4.2).fill(0x6b3a2a);
+    gBack.ellipse(stool.x, stool.y - 20, 9, 4.2).stroke({ width: 0.8, color: 0x2a1610 });
+  }
+
   const base = P(2.25, 0.55);
   let micSpriteRef: Sprite | null = null;
-  const boothSprites: Sprite[] = [];
   const micTex = getPropTexture('micStand');
   if (micTex) {
     const micSprite = new Sprite(micTex);
@@ -984,81 +1071,72 @@ export const buildLiveBooth = (): Container => {
     micSprite.position.set(base.x, base.y + 2);
     micSpriteRef = micSprite;
   } else {
-    g.ellipse(base.x, base.y, 12, 6).fill(0x1b1613);
-    g.rect(base.x - 1.6, base.y - 46, 3.2, 46).fill(0x8f98ab);
-    g.moveTo(base.x, base.y - 46).lineTo(base.x + 10, base.y - 52).stroke({ width: 2, color: 0x8f98ab });
-    g.circle(base.x + 11, base.y - 53, 5.5).fill(BRASS);
-    g.circle(base.x + 11, base.y - 53, 5.5).stroke({ width: 1, color: 0x6b4a1c });
-    g.circle(base.x + 4, base.y - 50, 8).stroke({ width: 1, color: 0x000000, alpha: 0.7 });
+    gBack.ellipse(base.x, base.y, 12, 6).fill(0x1b1613);
+    gBack.rect(base.x - 1.6, base.y - 46, 3.2, 46).fill(0x8f98ab);
+    gBack.moveTo(base.x, base.y - 46).lineTo(base.x + 10, base.y - 52).stroke({ width: 2, color: 0x8f98ab });
+    gBack.circle(base.x + 11, base.y - 53, 5.5).fill(BRASS);
+    gBack.circle(base.x + 11, base.y - 53, 5.5).stroke({ width: 1, color: 0x6b4a1c });
+    gBack.circle(base.x + 4, base.y - 50, 8).stroke({ width: 1, color: 0x000000, alpha: 0.7 });
   }
-  const stool = P(1.75, 0.7);
-  const stoolTex = getPropTexture('stool');
-  if (stoolTex) {
-    const sp = new Sprite(stoolTex);
-    sp.anchor.set(0.5, 72 / 80);
-    sp.scale.set(44 / stoolTex.height * 1.0);
-    sp.position.set(stool.x, stool.y);
-    boothSprites.push(sp);
-  } else {
-    g.ellipse(stool.x, stool.y, 9, 4.2).fill({ color: 0x000000, alpha: 0.3 });
-    g.rect(stool.x - 1, stool.y - 18, 2, 18).fill(0x4a4038);
-    g.ellipse(stool.x, stool.y - 20, 9, 4.2).fill(0x6b3a2a);
-    g.ellipse(stool.x, stool.y - 20, 9, 4.2).stroke({ width: 0.8, color: 0x2a1610 });
-  }
+
   const stand = P(2.85, 0.6);
+  let standSpriteRef: Sprite | null = null;
   const standTex = getPropTexture('musicStand');
   if (standTex) {
     const sp = new Sprite(standTex);
     sp.anchor.set(0.5, 104 / 112);
     sp.scale.set(54 / standTex.height * 1.0);
     sp.position.set(stand.x, stand.y);
-    boothSprites.push(sp);
+    standSpriteRef = sp;
   } else {
-    g.rect(stand.x - 0.8, stand.y - 38, 1.6, 38).fill(0x3a3f45);
-    g.poly([stand.x - 9, stand.y - 42, stand.x + 9, stand.y - 48, stand.x + 9, stand.y - 36, stand.x - 9, stand.y - 30]).fill(0x2f353c);
+    gBack.rect(stand.x - 0.8, stand.y - 38, 1.6, 38).fill(0x3a3f45);
+    gBack.poly([stand.x - 9, stand.y - 42, stand.x + 9, stand.y - 48, stand.x + 9, stand.y - 36, stand.x - 9, stand.y - 30]).fill(0x2f353c);
   }
 
   // Glass front (y = y1)
   const gl = quad(P(x0, y1), P(x1, y1), P(x1, y1, GH), P(x0, y1, GH));
-  g.poly(gl).fill({ color: 0xa6d8e6, alpha: 0.13 });
+  gFront.poly(gl).fill({ color: 0xa6d8e6, alpha: 0.13 });
   // reflection streaks
-  g.poly(quad(P(1.35, y1), P(1.6, y1), P(2.05, y1, GH), P(1.8, y1, GH))).fill({ color: 0xffffff, alpha: 0.07 });
-  g.poly(quad(P(2.0, y1), P(2.12, y1), P(2.55, y1, GH), P(2.43, y1, GH))).fill({ color: 0xffffff, alpha: 0.05 });
-  g.poly(gl).stroke({ width: 1.4, color: 0x9fb1b5, alpha: 0.85 });
+  gFront.poly(quad(P(1.35, y1), P(1.6, y1), P(2.05, y1, GH), P(1.8, y1, GH))).fill({ color: 0xffffff, alpha: 0.07 });
+  gFront.poly(quad(P(2.0, y1), P(2.12, y1), P(2.55, y1, GH), P(2.43, y1, GH))).fill({ color: 0xffffff, alpha: 0.05 });
+  gFront.poly(gl).stroke({ width: 1.4, color: 0x9fb1b5, alpha: 0.85 });
   // Posts (left, mid, door jamb, right)
   for (const px of [x0, 1.9, 2.75, x1]) {
-    g.poly(quad(P(px - 0.035, y1), P(px + 0.035, y1), P(px + 0.035, y1, H), P(px - 0.035, y1, H))).fill(0x2a2521);
-    g.poly(quad(P(px - 0.035, y1), P(px + 0.035, y1), P(px + 0.035, y1, H), P(px - 0.035, y1, H))).stroke({ width: 0.6, color: BRASS, alpha: 0.6 });
+    gFront.poly(quad(P(px - 0.035, y1), P(px + 0.035, y1), P(px + 0.035, y1, H), P(px - 0.035, y1, H))).fill(0x2a2521);
+    gFront.poly(quad(P(px - 0.035, y1), P(px + 0.035, y1), P(px + 0.035, y1, H), P(px - 0.035, y1, H))).stroke({ width: 0.6, color: BRASS, alpha: 0.6 });
   }
   // Door outline + handle between the last two posts
-  g.poly(quad(P(2.79, y1, 2), P(x1 - 0.04, y1, 2), P(x1 - 0.04, y1, GH - 2), P(2.79, y1, GH - 2))).stroke({ width: 1, color: 0xcfe0e4, alpha: 0.55 });
+  gFront.poly(quad(P(2.79, y1, 2), P(x1 - 0.04, y1, 2), P(x1 - 0.04, y1, GH - 2), P(2.79, y1, GH - 2))).stroke({ width: 1, color: 0xcfe0e4, alpha: 0.55 });
   const hdl = P(2.88, y1, 36);
-  g.roundRect(hdl.x - 1, hdl.y - 6, 2, 12, 1).fill(BRASS);
+  gFront.roundRect(hdl.x - 1, hdl.y - 6, 2, 12, 1).fill(BRASS);
 
   // Header beam across the top of the glass
-  g.poly(quad(P(x0, y1, GH), P(x1, y1, GH), P(x1, y1, H), P(x0, y1, H))).fill(0x231b16);
-  g.poly(quad(P(x0, y1, GH), P(x1, y1, GH), P(x1, y1, GH + 1.6), P(x0, y1, GH + 1.6))).fill({ color: BRASS, alpha: 0.8 });
+  gFront.poly(quad(P(x0, y1, GH), P(x1, y1, GH), P(x1, y1, H), P(x0, y1, H))).fill(0x231b16);
+  gFront.poly(quad(P(x0, y1, GH), P(x1, y1, GH), P(x1, y1, GH + 1.6), P(x0, y1, GH + 1.6))).fill({ color: BRASS, alpha: 0.8 });
   // Nameplate + lamp housing on the header
-  g.poly(quad(P(1.35, y1, 76), P(1.95, y1, 76), P(1.95, y1, 83), P(1.35, y1, 83))).fill(0x3a2c1f);
-  g.poly(quad(P(1.35, y1, 76), P(1.95, y1, 76), P(1.95, y1, 83), P(1.35, y1, 83))).stroke({ width: 0.7, color: BRASS, alpha: 0.7 });
+  gFront.poly(quad(P(1.35, y1, 76), P(1.95, y1, 76), P(1.95, y1, 83), P(1.35, y1, 83))).fill(0x3a2c1f);
+  gFront.poly(quad(P(1.35, y1, 76), P(1.95, y1, 76), P(1.95, y1, 83), P(1.35, y1, 83))).stroke({ width: 0.7, color: BRASS, alpha: 0.7 });
   const lamp = BOOTH_HEADER_LAMP;
-  g.roundRect(lamp.x - 7, lamp.y - 4, 14, 8, 2).fill(0x120d0a);
-  g.circle(lamp.x, lamp.y, 2.6).fill(0x5a1a14);
+  gFront.roundRect(lamp.x - 7, lamp.y - 4, 14, 8, 2).fill(0x120d0a);
+  gFront.circle(lamp.x, lamp.y, 2.6).fill(0x5a1a14);
 
   // Outer face of the right side wall (x = x1), facing the room
-  g.poly(quad(P(x1, y0), P(x1, y1), P(x1, y1, H), P(x1, y0, H))).fill(0x3d302a);
-  g.poly(quad(P(x1, y0), P(x1, y1), P(x1, y1, 38), P(x1, y0, 38))).fill(0x2a201b);
-  g.poly(quad(P(x1, y0, 38), P(x1, y1, 38), P(x1, y1, 41), P(x1, y0, 41))).fill({ color: BRASS, alpha: 0.5 });
-  g.poly(quad(P(x1, y0), P(x1, y1), P(x1, y1, H), P(x1, y0, H))).stroke({ width: 1, color: 0x120d09, alpha: 0.8 });
+  gFront.poly(quad(P(x1, y0), P(x1, y1), P(x1, y1, H), P(x1, y0, H))).fill(0x3d302a);
+  gFront.poly(quad(P(x1, y0), P(x1, y1), P(x1, y1, 38), P(x1, y0, 38))).fill(0x2a201b);
+  gFront.poly(quad(P(x1, y0, 38), P(x1, y1, 38), P(x1, y1, 41), P(x1, y0, 41))).fill({ color: BRASS, alpha: 0.5 });
+  gFront.poly(quad(P(x1, y0), P(x1, y1), P(x1, y1, H), P(x1, y0, H))).stroke({ width: 1, color: 0x120d09, alpha: 0.8 });
 
   // Flat roof
-  g.poly(quad(P(x0, y0, H), P(x1, y0, H), P(x1, y1, H), P(x0, y1, H))).fill(0x4a3d34);
-  g.poly(quad(P(x0 + 0.1, y0 + 0.1, H), P(x1 - 0.1, y0 + 0.1, H), P(x1 - 0.1, y1 - 0.1, H), P(x0 + 0.1, y1 - 0.1, H))).fill(0x54463c);
-  g.poly(quad(P(x0, y0, H), P(x1, y0, H), P(x1, y1, H), P(x0, y1, H))).stroke({ width: 1.2, color: 0x120d09, alpha: 0.9 });
-  g.poly([P(x0, y1, H).x, P(x0, y1, H).y, P(x1, y1, H).x, P(x1, y1, H).y, P(x1, y1, H).x, P(x1, y1, H).y - 0.1]).stroke({ width: 1.2, color: BRASS, alpha: 0.7 });
-  c.addChild(g);
-  for (const sp of boothSprites) c.addChild(sp);
+  gFront.poly(quad(P(x0, y0, H), P(x1, y0, H), P(x1, y1, H), P(x0, y1, H))).fill(0x4a3d34);
+  gFront.poly(quad(P(x0 + 0.1, y0 + 0.1, H), P(x1 - 0.1, y0 + 0.1, H), P(x1 - 0.1, y1 - 0.1, H), P(x0 + 0.1, y1 - 0.1, H))).fill(0x54463c);
+  gFront.poly(quad(P(x0, y0, H), P(x1, y0, H), P(x1, y1, H), P(x0, y1, H))).stroke({ width: 1.2, color: 0x120d09, alpha: 0.9 });
+  gFront.poly([P(x0, y1, H).x, P(x0, y1, H).y, P(x1, y1, H).x, P(x1, y1, H).y, P(x1, y1, H).x, P(x1, y1, H).y - 0.1]).stroke({ width: 1.2, color: BRASS, alpha: 0.7 });
+
+  c.addChild(gBack);
+  if (stoolSpriteRef) c.addChild(stoolSpriteRef);
   if (micSpriteRef) c.addChild(micSpriteRef);
+  if (standSpriteRef) c.addChild(standSpriteRef);
+  c.addChild(gFront);
   return c;
 };
 

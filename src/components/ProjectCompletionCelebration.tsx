@@ -52,7 +52,7 @@ export function ProjectCompletionCelebration({ isVisible, projectTitle, genre, o
                 <h2>{projectTitle}</h2>
               </Dialog.Title>
             </div>
-            <MotionButton className="release-continue flex items-center gap-2" onClick={finish}>
+            <MotionButton data-rst-surface="contextual" data-rst-action-id="wrap:view-review" className="release-continue flex items-center gap-2" onClick={finish}>
               <span>View session review</span>
               <ArrowRight size={18} />
             </MotionButton>

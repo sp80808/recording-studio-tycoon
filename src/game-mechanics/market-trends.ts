@@ -1,3 +1,4 @@
+import { createSeededRandom } from '@/simulation/seededRandom';
 import { GenreId, SubGenreId } from './common.types';
 
 export type TrendDirection = 'rising' | 'stable' | 'falling';
@@ -35,7 +36,11 @@ export class MarketService {
   private genres: Map<GenreId, Genre> = new Map(); // Load from game data
   private subGenres: Map<SubGenreId, SubGenre> = new Map(); // Load from game data
 
-  constructor(initialGenres: Genre[], initialSubGenres: SubGenre[]) {
+  private roll: () => number;
+
+  /** Seeded (#52): no Math.random, so the same seed always builds the same market. */
+  constructor(initialGenres: Genre[], initialSubGenres: SubGenre[], seed: string | number = 'mechanics-market') {
+    this.roll = createSeededRandom(`market:${seed}`);
     initialGenres.forEach(genre => this.genres.set(genre.id, genre));
     initialSubGenres.forEach(subGenre => this.subGenres.set(subGenre.id, subGenre));
     this.initializeMarketTrends();
@@ -62,8 +67,8 @@ export class MarketService {
       this.marketTrends.set(key, {
         genreId,
         subGenreId,
-        popularity: Math.floor(Math.random() * 70) + 15, // Initial popularity 15-85
-        trendDirection: ['rising', 'stable', 'falling'][Math.floor(Math.random() * 3)] as TrendDirection,
+        popularity: Math.floor(this.roll() * 70) + 15, // Initial popularity 15-85
+        trendDirection: ['rising', 'stable', 'falling'][Math.floor(this.roll() * 3)] as TrendDirection,
         lastUpdated: 0, // Assuming game time starts at 0
       });
     }
@@ -88,12 +93,12 @@ export class MarketService {
 
       // 1. Time-based decay/growth (natural market fluctuation)
       if (trend.trendDirection === 'rising') {
-        popularityChange += Math.random() * 2;
+        popularityChange += this.roll() * 2;
       } else if (trend.trendDirection === 'falling') {
-        popularityChange -= Math.random() * 2;
+        popularityChange -= this.roll() * 2;
       }
       // Small random fluctuation
-      popularityChange += (Math.random() - 0.5) * 1; 
+      popularityChange += (this.roll() - 0.5) * 1; 
 
       // 2. Impact of successful player releases
       successfulReleases?.forEach(release => {
@@ -169,6 +174,7 @@ Integration with Projects & Charts:
 UI Feedback (Conceptual) - useMarketTrends Hook:
 
 // src/hooks/useMarketTrends.ts
+import { createSeededRandom } from '@/simulation/seededRandom';
 import { useState, useEffect } from 'react';
 import { marketServiceInstance } from '../services'; // Assuming a singleton instance
 import { MarketTrend } from '../game-mechanics/market-trends';

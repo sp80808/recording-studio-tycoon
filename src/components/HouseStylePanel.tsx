@@ -1,5 +1,6 @@
 import { Award } from 'lucide-react';
 import { houseStyleProfile, levelPerk, type StudioExpertise } from '@/rpg/houseStyle';
+import { signatureGenres } from '@/rpg/signatureBrief';
 import { SERVICE_LABELS, PRODUCTION_APPROACHES, type BriefServiceType } from '@/rpg/projectBrief';
 
 interface HouseStylePanelProps {
@@ -14,6 +15,7 @@ const labelFor = (kind: string, key: string) =>
 /** Compact Career profile for studio house style (#71): what the studio is known for and what is next. */
 export function HouseStylePanel({ expertise }: HouseStylePanelProps) {
   const lines = houseStyleProfile(expertise, 4);
+  const signatures = signatureGenres(expertise);
   return (
     <section className="rst-surface m-1 mt-3 p-3 text-xs" aria-label="House style">
       <header className="flex items-center gap-1.5">
@@ -37,6 +39,12 @@ export function HouseStylePanel({ expertise }: HouseStylePanelProps) {
             </li>
           ))}
         </ul>
+      )}
+      {signatures.length > 0 && (
+        <div data-testid="signature-plaque" className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-amber-200">
+          <p className="font-semibold">Signature plaque</p>
+          <p>{signatures.join(', ')}: known for it. A prestige brief arrives every week.</p>
+        </div>
       )}
     </section>
   );

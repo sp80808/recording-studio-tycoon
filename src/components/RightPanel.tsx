@@ -3,12 +3,14 @@ import { ArtistRoster } from '@/components/ArtistRoster';
 import type { ArtistProspect, ContractTerms, NegotiationOutcome } from '@/simulation/artistContracts';
 import { ShowPlan } from '@/simulation/liveShows';
 import { StudioRecycler } from '@/features/usedGear/StudioRecycler';
+import { trackRoomPurchased } from '@/telemetry/instrument';
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { GamePanel } from '@/components/ui/GamePanel';
 import { KenneyButton } from '@/components/ui/KenneyButton';
-import { promoteStaffInState } from '@/rpg/staffCareer';
+import { promoteStaffInState, startCrossTrainingInState, startMentoringInState, stopMentoringInState } from '@/rpg/staffCareer';
+import { spend } from '@/economy/ledger';
 import { GameState, PlayerAttributes, StaffMember } from '@/types/game';
 import { SkillsModal } from '@/components/modals/SkillsModal';
 import { AttributesModal } from '@/components/modals/AttributesModal';
@@ -45,7 +47,7 @@ export interface RightPanelProps {
   spendPerkPoint: (attribute: keyof PlayerAttributes) => void;
   purchaseEquipment: (equipmentId: string) => void;
   hireStaff: (candidateIndex: number) => boolean;
-  refreshCandidates: () => void;
+  refreshCandidates: (channelId?: import('@/rpg/recruitment').RecruitmentChannelId) => void;
   assignStaffToProject: (staffId: string) => void;
   unassignStaffFromProject: (staffId: string) => void;
   toggleStaffRest: (staffId: string) => void;
@@ -123,7 +125,11 @@ export const RightPanel: React.FC<RightPanelProps> = ({
 
   const purchaseStudioRoom = (roomId: string) => {
     void gameAudio.playGearSwitch();
-    setGameState(prev => applyStudioRoomPurchase(prev, roomId, ProgressionSystem.getRoomExpansionLimit(prev)));
+    setGameState(prev => {
+      const next = applyStudioRoomPurchase(prev, roomId, ProgressionSystem.getRoomExpansionLimit(prev));
+      if (next !== prev) trackRoomPurchased(prev, roomId);
+      return next;
+    });
   };
   const applyModToEquipment = (equipmentId: string, modId: string | null) => {
     void gameAudio.playGearSwitch();
@@ -257,7 +263,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             </div>
             
             {/* Equipment Shop Section */}
-            <div className="rounded-lg border border-stone-700 bg-stone-950/50 p-2.5 max-h-72 overflow-y-auto pr-1">
+            <div className="rounded-lg border border-stone-700 bg-stone-950/50 p-2.5">
               <EquipmentList purchaseEquipment={purchaseEquipment} gameState={gameState} />
             </div>
 
@@ -340,6 +346,8 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             toggleStaffRest={toggleStaffRest}
             openTrainingModal={openTrainingModal}
             promoteStaff={(staffId) => { void gameAudio.playGearSwitch(); setGameState(prev => promoteStaffInState(prev, staffId)); }}
+            crossTrainStaff={(staffId, d) => setGameState(prev => startCrossTrainingInState(prev, staffId, d, (g, cost, id, memo) => spend(g, cost, { category: 'training', staffId: id, memo })))}
+            setMentor={(juniorId, mentorId) => setGameState(prev => mentorId ? startMentoringInState(prev, mentorId, juniorId) : stopMentoringInState(prev, juniorId))}
           />
           {gameState.hiredStaff.some(s => s.role === 'Engineer' && s.status === 'Idle') && (
             <KenneyButton

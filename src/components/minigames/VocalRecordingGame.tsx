@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { DialogFooter } from '@/components/ui/dialog';
 import { MinigameChrome, KenneyButton } from './MinigameChrome';
 import { Progress } from '@/components/ui/progress';
+import { tc } from '@/i18n/content';
 
 interface PitchBlock {
   id: string;
@@ -156,35 +157,34 @@ export const VocalRecordingGame: React.FC<VocalRecordingGameProps> = ({ onComple
 
   return (
     <Card className="w-full max-w-4xl mx-auto bg-stone-800 text-white border-stone-700">
-      <MinigameChrome title="🎤 Vocal Tuning Challenge" score={score} streak={streak >= 2 ? streak : undefined} accent="red">
+      <MinigameChrome title={tc('mg.VocalRecordingGame.title', '🎤 Vocal Tuning Challenge')} score={score} streak={streak >= 2 ? streak : undefined} accent="red">
       <CardContent>
-        <p className="mb-3 text-center text-sm text-stone-300">Hit the pitch blocks when the cursor reaches them! Hits: {hitCount}/{totalBlocks}</p>
+        <p className="mb-3 text-center text-sm text-stone-300">{tc('mg.VocalRecordingGame.intro', 'Hit the pitch blocks when the cursor reaches them! Hits: {{hits}}/{{total}}', { hits: hitCount, total: totalBlocks })}</p>
 
       {!gameStarted ? (
         <div className="space-y-4 py-4 text-center">
           <p className="text-stone-300">
-            Click or press SPACEBAR when the cursor line hits each pitch block.
-            Perfect timing gives you maximum creativity points!
+            {tc('mg.VocalRecordingGame.instructions', 'Click or press SPACEBAR when the cursor line hits each pitch block. Perfect timing gives you maximum creativity points!')}
           </p>
           <KenneyButton variant="red" onClick={startGame}>
-            Start Vocal Session
+            {tc('mg.VocalRecordingGame.start', 'Start Vocal Session')}
           </KenneyButton>
         </div>
       ) : !gameActive ? (
         <div key={score} className="space-y-4 py-4 text-center">
-          <div className={`text-2xl font-bold text-yellow-400 ${getAccuracy() >= 70 ? 'mg-perfect-pop' : 'mg-miss-shake'}`}>Vocal Session Complete!</div>
+          <div className={`text-2xl font-bold text-yellow-400 ${getAccuracy() >= 70 ? 'mg-perfect-pop' : 'mg-miss-shake'}`}>{tc('mg.VocalRecordingGame.complete', 'Vocal Session Complete!')}</div>
           <div className="space-y-2">
-            <div className="text-lg">Accuracy: {getAccuracy()}%</div>
-            <div className="text-lg">Final Score: {score}</div>
+            <div className="text-lg">{tc('mg.VocalRecordingGame.accuracy', 'Accuracy: {{pct}}%', { pct: getAccuracy() })}</div>
+            <div className="text-lg">{tc('mg.VocalRecordingGame.final_score', 'Final Score: {{score}}', { score })}</div>
             {getAccuracy() >= 90 && (
-              <div className="mg-perfect-pop text-green-400 font-bold text-xl">🌟 Polished Vocals!</div>
+              <div className="mg-perfect-pop text-green-400 font-bold text-xl">{tc('mg.VocalRecordingGame.polished', '🌟 Polished Vocals!')}</div>
             )}
             {getAccuracy() >= 70 && getAccuracy() < 90 && (
-              <div className="text-[var(--rst-live)] font-bold">🎵 Good Performance!</div>
+              <div className="text-[var(--rst-live)] font-bold">{tc('mg.VocalRecordingGame.good_performance', '🎵 Good Performance!')}</div>
             )}
           </div>
           <KenneyButton variant="green" onClick={onClose}>
-            Collect Rewards
+            {tc('mg.VocalRecordingGame.collect', 'Collect Rewards')}
           </KenneyButton>
         </div>
       ) : (
@@ -238,7 +238,7 @@ export const VocalRecordingGame: React.FC<VocalRecordingGameProps> = ({ onComple
             
             {/* Hit zone indicator */}
             <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-white text-xs">
-              Click or press SPACEBAR
+              {tc('mg.VocalRecordingGame.hint', 'Click or press SPACEBAR')}
             </div>
           </div>
           
@@ -251,7 +251,7 @@ export const VocalRecordingGame: React.FC<VocalRecordingGameProps> = ({ onComple
       {!finished && gameStarted && (
         <DialogFooter className="p-4">
           <KenneyButton variant="grey" onClick={onClose}>
-            Close
+            {tc('mg.VocalRecordingGame.close', 'Close')}
           </KenneyButton>
         </DialogFooter>
       )}

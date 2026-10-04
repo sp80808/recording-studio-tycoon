@@ -1,12 +1,15 @@
+import { claimInterventionReward, currentIntervention } from '@/session/interventionCheckpoint';
 import { meetsKnowHowGate, spendKnowHow, createInitialKnowHow } from '@/rpg/studioKnowHow';
 import { useArtistContracts } from '@/hooks/useArtistContracts';
 import type { PerformDailyWorkOptions } from '@/hooks/useStageWork';
 import { gameEvents } from '@/engine/gameEventBus';
+import { trackGear } from '@/telemetry/instrument';
 import { useState, useCallback, useMemo } from 'react'; // Added useMemo
 import { spend } from '@/economy/ledger';
 import { GameState, StaffMember, PlayerAttributes, ProjectReport, Project } from '@/types/game';
 import { toast } from '@/hooks/use-toast';
 import { availableTrainingCourses } from '@/data/training';
+import { courseTeacherBlocker } from '@/rpg/staffCareer';
 import { canPurchaseEquipment, addNotification, applyEquipmentEffects } from '@/utils/gameUtils';
 import { playSound } from '@/utils/soundUtils';
 import { getAvailableEquipmentForYear, getEraAdjustedPrice } from '@/data/eraEquipment';
@@ -33,6 +36,18 @@ import {
   SAMPLE_STAFF_WELLBEING,
   SAMPLE_RANDOM_EVENTS
 } from '@/game-mechanics/sample-data';
+
+type AdvanceDayWorkState = Pick<GameState, 'activeProject'> & {
+  playerData: Pick<GameState['playerData'], 'dailyWorkCapacity'>;
+};
+
+/**
+ * Day close spends a remaining work point when one exists. An explicit rest at
+ * zero capacity must go straight to the day authority instead of attempting a
+ * take that can only fail with an insufficient-energy message.
+ */
+export const shouldPerformWorkBeforeAdvance = (state: AdvanceDayWorkState): boolean =>
+  Boolean(state.activeProject && state.playerData.dailyWorkCapacity > 0);
 
 
 export const useGameLogic = (
@@ -74,28 +89,31 @@ export const useGameLogic = (
   });
 
   // Handle minigame rewards by updating project points and checking for level ups
-  const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string, rawScore?: number) => {
+  const handleMinigameReward = (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string, rawScore?: number, opportunityId?: string) => {
     if (gameState.activeProject) {
-      setGameState(prev => withDailyTracking({
+      if (opportunityId && currentIntervention(gameState.activeProject, Date.now())?.id !== opportunityId) return;
+      const projectId = gameState.activeProject.id;
+      setGameState(prev => {
+        if (!prev.activeProject || prev.activeProject.id !== projectId) return prev;
+        const claimed = opportunityId ? claimInterventionReward(prev.activeProject, opportunityId, Date.now()) : prev.activeProject;
+        if (!claimed) return prev;
+        const awarded = { ...claimed,
+          accumulatedCPoints: claimed.accumulatedCPoints + creativityBonus,
+          accumulatedTPoints: claimed.accumulatedTPoints + technicalBonus,
+          minigamePoints: typeof rawScore === 'number' && Number.isFinite(rawScore) ? Math.min(10, (claimed.minigamePoints ?? 0) + (rawScore / 1000) * 2) : claimed.minigamePoints,
+          stageTake: typeof rawScore === 'number' && Number.isFinite(rawScore) ? bestTake(claimed.stageTake, takeFromRawScore(rawScore)) : claimed.stageTake,
+        };
+        return withDailyTracking({
         ...prev,
-        activeProject: prev.activeProject ? {
-          ...prev.activeProject,
-          accumulatedCPoints: prev.activeProject.accumulatedCPoints + creativityBonus,
-          accumulatedTPoints: prev.activeProject.accumulatedTPoints + technicalBonus,
-          minigamePoints: typeof rawScore === 'number' && Number.isFinite(rawScore)
-            ? Math.min(10, (prev.activeProject.minigamePoints ?? 0) + (rawScore / 1000) * 2)
-            : prev.activeProject.minigamePoints,
-          // Best minigame take this stage (sd3.2); reset on stage advance.
-          stageTake: typeof rawScore === 'number' && Number.isFinite(rawScore)
-            ? bestTake(prev.activeProject.stageTake, takeFromRawScore(rawScore))
-            : prev.activeProject.stageTake
-        } : null,
+        activeProjects: (prev.activeProjects ?? []).map(candidate => candidate.id === projectId ? awarded : candidate),
+        activeProject: awarded,
         playerData: {
           ...prev.playerData,
           xp: prev.playerData.xp + xpBonus,
           lastMinigameType: minigameType || prev.playerData.lastMinigameType
         }
-      }, { minigames: 1 }));
+      }, { minigames: 1 });
+      });
 
       if (typeof rawScore === 'number' && Number.isFinite(rawScore)) {
         gameEvents.emit('minigame:success', { minigameType, score: rawScore });
@@ -176,6 +194,7 @@ export const useGameLogic = (
     }
 
     const withEffects = applyEquipmentEffects(equipment, purchased.state);
+    trackGear('bought', gameState.currentDay, priced.price, 'retail');
     setGameState(withEffects);
 
     toast({
@@ -194,6 +213,9 @@ export const useGameLogic = (
       return;
     }
     if (course.knowHow && !meetsKnowHowGate(gameState.studioKnowHow ?? createInitialKnowHow(), course.knowHow)) {
+      return;
+    }
+    if (courseTeacherBlocker(course, gameState.hiredStaff, staffId)) {
       return;
     }
 
@@ -266,9 +288,13 @@ export const useGameLogic = (
   // Returns the work result so callers (Index) can route a completed project
   // into the same review/settlement flow as manual work sessions.
   const handleAdvanceDay = useCallback((): { finalProjectData?: Project; isComplete: boolean } | undefined => {
-    // First, perform daily work if there's an active project
+    // Spend remaining capacity before day close. At zero capacity this is an
+    // intentional recharge action, so do not route through the failed-take UX.
     let workResult: { finalProjectData?: Project; isComplete: boolean } | undefined;
-    if (gameState.activeProject) {
+    if (shouldPerformWorkBeforeAdvance({
+      activeProject: gameState.activeProject,
+      playerData: { dailyWorkCapacity: gameState.playerData.dailyWorkCapacity },
+    })) {
       console.log('Auto-performing daily work before advancing day');
       workResult = performDailyWork();
     }
@@ -280,7 +306,7 @@ export const useGameLogic = (
     // Advance the day (handles salaries, staff training, etc.)
     advanceDay();
     return workResult;
-  }, [gameState.activeProject, performDailyWork, processTourIncome, processContracts, advanceDay]);
+  }, [gameState.activeProject, gameState.playerData.dailyWorkCapacity, performDailyWork, processTourIncome, processContracts, advanceDay]);
 
   // Contact artist for collaboration
   const contactArtist = useCallback((artistId: string, offer: number) => {

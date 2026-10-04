@@ -15,6 +15,7 @@ import {
   type BusMergeState,
 } from '@/minigames/busMerge';
 import { playPadTone } from '@/minigames/chainTones';
+import { tc } from '@/i18n/content';
 
 interface Props {
   minigameId: string;
@@ -35,6 +36,8 @@ const NOTES = ['C4', 'E4', 'G4', 'C5', 'E5'];
 export const BusMergeGame: React.FC<Props> = ({ onComplete, difficulty = 1, bonusHeadroom = 0 }) => {
   const [state, setState] = useState<BusMergeState>(() => createBusMerge(Date.now(), { difficulty, bonusHeadroom }));
   const result = useMemo(() => scoreBusMerge(state), [state]);
+
+  const trackLabel = (kind: keyof typeof TRACK_LABELS) => tc(`mg.BusMergeGame.track_${kind.replace(/-/g, '_')}`, TRACK_LABELS[kind]);
 
   const slide = (dir: BusDir) => {
     setState((s) => {
@@ -60,31 +63,29 @@ export const BusMergeGame: React.FC<Props> = ({ onComplete, difficulty = 1, bonu
   const mixed = state.built.includes('mix');
 
   return (
-    <MinigameChrome title="Bus & Stem Merge" subtitle="Route the tracks into one mix" score={state.finished ? result.total : undefined} accent="yellow">
+    <MinigameChrome title={tc('mg.BusMergeGame.title', 'Bus & Stem Merge')} subtitle={tc('mg.BusMergeGame.subtitle', 'Route the tracks into one mix')} score={state.finished ? result.total : undefined} accent="yellow">
       <Card className="border-0 bg-transparent">
         <CardContent className="space-y-3 p-4">
           <p className="text-xs text-stone-300">
-            Slide tracks (arrow keys, WASD or the pad). Matching tracks merge: Kick + Snare = Drum Bus, Guitar L + R = Guitar Bus,
-            then DRUM + MUSIC + VOX stems become the MIX. Merging eats headroom and duplicates add bus depth (par {PAR_DEPTH}).
-            Merge the Hero Sample into the finished MIX to print it.
+            {tc('mg.BusMergeGame.instructions', 'Slide tracks (arrow keys, WASD or the pad). Matching tracks merge: Kick + Snare = Drum Bus, Guitar L + R = Guitar Bus, then DRUM + MUSIC + VOX stems become the MIX. Merging eats headroom and duplicates add bus depth (par {{par}}). Merge the Hero Sample into the finished MIX to print it.', { par: PAR_DEPTH })}
           </p>
           <div className="flex items-center gap-2 text-[11px] text-stone-300">
-            <span className="w-20">Headroom</span>
+            <span className="w-20">{tc('mg.BusMergeGame.headroom', 'Headroom')}</span>
             <div className="h-2 flex-1 overflow-hidden rounded bg-stone-800" role="meter" aria-valuenow={headroomPct} aria-valuemin={0} aria-valuemax={100}>
               <div className={`h-full ${meterColour}`} style={{ width: `${headroomPct}%` }} />
             </div>
-            <span className="w-24 text-right">Moves <b>{state.movesLeft}</b></span>
+            <span className="w-24 text-right">{tc('mg.BusMergeGame.moves', 'Moves')} <b>{state.movesLeft}</b></span>
           </div>
           <div className="mx-auto grid max-w-xs grid-cols-4 gap-1.5 rounded-lg bg-stone-950/70 p-1.5">
             {state.cells.map((cell, i) =>
               cell ? (
                 <div
                   key={i}
-                  title={`${TRACK_LABELS[cell.kind]} (depth ${cell.depth})`}
+                  title={tc('mg.BusMergeGame.tile_title', '{{label}} (depth {{depth}})', { label: trackLabel(cell.kind), depth: cell.depth })}
                   className={`flex aspect-square flex-col items-center justify-center rounded-md border text-center ${FAMILY_STYLE[TRACK_FAMILY[cell.kind]].tile}`}
                 >
                   <TrackGlyph kind={cell.kind} />
-                  <span className="mt-0.5 text-[9px] font-bold leading-none">{TRACK_LABELS[cell.kind]}</span>
+                  <span className="mt-0.5 text-[9px] font-bold leading-none">{trackLabel(cell.kind)}</span>
                 </div>
               ) : (
                 <div key={i} className="aspect-square rounded-md border border-stone-800 bg-stone-900/60" />
@@ -92,10 +93,10 @@ export const BusMergeGame: React.FC<Props> = ({ onComplete, difficulty = 1, bonu
             )}
           </div>
           <p className="text-center text-[11px] text-stone-400">
-            Built: {state.built.length}/8 milestones · Incoming: {state.deck.length} tracks{mixed ? ' · MIX ready' : ''}
+            {tc('mg.BusMergeGame.status', 'Built: {{built}}/8 milestones · Incoming: {{incoming}} tracks', { built: state.built.length, incoming: state.deck.length })}{mixed ? ' · ' + tc('mg.BusMergeGame.mix_ready', 'MIX ready') : ''}
           </p>
           {!state.finished && (
-            <div className="mx-auto grid w-32 grid-cols-3 gap-1" aria-label="Slide pad">
+            <div className="mx-auto grid w-32 grid-cols-3 gap-1" aria-label={tc('mg.BusMergeGame.slide_pad', 'Slide pad')}>
               <span />
               <KenneyButton onClick={() => slide('up')} variant="blue">{ARROWS.up}</KenneyButton>
               <span />
@@ -107,18 +108,18 @@ export const BusMergeGame: React.FC<Props> = ({ onComplete, difficulty = 1, bonu
           {state.finished && (
             <div className="rounded-lg border border-stone-600 bg-stone-900/70 p-3 text-xs text-stone-200">
               <h4 className="mb-1 font-bold text-amber-300">
-                {result.mixed ? 'Mix bounced' : 'Session ran out of road'} · {result.milestones}/8 milestones
+                {result.mixed ? tc('mg.BusMergeGame.mix_bounced', 'Mix bounced') : tc('mg.BusMergeGame.out_of_road', 'Session ran out of road')} · {tc('mg.BusMergeGame.milestones', '{{n}}/8 milestones', { n: result.milestones })}
               </h4>
-              {result.tips.join(' ') || 'Clean routing, plenty of headroom, and the sample is printed.'}
+              {result.tips.join(' ') || tc('mg.BusMergeGame.result_clean', 'Clean routing, plenty of headroom, and the sample is printed.')}
             </div>
           )}
         </CardContent>
       </Card>
       <DialogFooter className="gap-2 p-4 pt-0">
         {!state.finished ? (
-          <KenneyButton onClick={() => setState(finish)} variant="green">{mixed ? 'Bounce mix' : 'Bounce anyway'}</KenneyButton>
+          <KenneyButton onClick={() => setState(finish)} variant="green">{mixed ? tc('mg.BusMergeGame.bounce_mix', 'Bounce mix') : tc('mg.BusMergeGame.bounce_anyway', 'Bounce anyway')}</KenneyButton>
         ) : (
-          <KenneyButton onClick={() => onComplete(result.total, result.total >= 500)} variant="green">Done</KenneyButton>
+          <KenneyButton onClick={() => onComplete(result.total, result.total >= 500)} variant="green">{tc('mg.BusMergeGame.done', 'Done')}</KenneyButton>
         )}
       </DialogFooter>
     </MinigameChrome>

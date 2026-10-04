@@ -1,6 +1,6 @@
 {
   "$schema": "https://github.com/sp80808/recording-studio-tycoon (see assets/README.md)",
-  "description": "Asset provenance manifest \u2014 GitHub issue #58 first slice. Tracks every third-party (CC0) asset actually committed to the repo. See assets/README.md for scope and how to extend this file.",
+  "description": "Asset provenance manifest (GitHub issue #58). `assets` lists third-party (CC0) files one by one; `originalTrees` lists in-house directories whose every file is original work. See assets/README.md for the process.",
   "assets": [
     {
       "id": "kenney-ui-pack-Blue-Default-button_rectangle_depth_flat",
@@ -9,7 +9,7 @@
       "sourcePage": "https://kenney.nl/assets/ui-pack",
       "author": "Kenney (www.kenney.nl)",
       "license": "CC0-1.0",
-      "modifications": "none \u2014 unmodified file from the pack",
+      "modifications": "none — unmodified file from the pack",
       "intendedUse": "ui",
       "notes": "License verified in-repo at public/assets/kenney-ui/License.txt (CC0 1.0 Universal, committed alongside the pack)."
     },
@@ -20,7 +20,7 @@
       "sourcePage": "https://kenney.nl/assets/ui-pack",
       "author": "Kenney (www.kenney.nl)",
       "license": "CC0-1.0",
-      "modifications": "none \u2014 unmodified file from the pack",
+      "modifications": "none — unmodified file from the pack",
       "intendedUse": "ui",
       "notes": "License verified in-repo at public/assets/kenney-ui/License.txt (CC0 1.0 Universal, committed alongside the pack)."
     },
@@ -31,7 +31,7 @@
       "sourcePage": "https://kenney.nl/assets/ui-pack",
       "author": "Kenney (www.kenney.nl)",
       "license": "CC0-1.0",
-      "modifications": "none \u2014 unmodified file from the pack",
+      "modifications": "none — unmodified file from the pack",
       "intendedUse": "ui",
       "notes": "License verified in-repo at public/assets/kenney-ui/License.txt (CC0 1.0 Universal, committed alongside the pack)."
     },
@@ -42,7 +42,7 @@
       "sourcePage": "https://kenney.nl/assets/ui-pack",
       "author": "Kenney (www.kenney.nl)",
       "license": "CC0-1.0",
-      "modifications": "none \u2014 unmodified file from the pack",
+      "modifications": "none — unmodified file from the pack",
       "intendedUse": "ui",
       "notes": "License verified in-repo at public/assets/kenney-ui/License.txt (CC0 1.0 Universal, committed alongside the pack)."
     },
@@ -53,7 +53,7 @@
       "sourcePage": "https://kenney.nl/assets/ui-pack",
       "author": "Kenney (www.kenney.nl)",
       "license": "CC0-1.0",
-      "modifications": "none \u2014 unmodified file from the pack",
+      "modifications": "none — unmodified file from the pack",
       "intendedUse": "ui",
       "notes": "License verified in-repo at public/assets/kenney-ui/License.txt (CC0 1.0 Universal, committed alongside the pack)."
     },
@@ -64,7 +64,7 @@
       "sourcePage": "https://kenney.nl/assets/ui-pack",
       "author": "Kenney (www.kenney.nl)",
       "license": "CC0-1.0",
-      "modifications": "none \u2014 unmodified file from the pack",
+      "modifications": "none — unmodified file from the pack",
       "intendedUse": "ui",
       "notes": "License verified in-repo at public/assets/kenney-ui/License.txt (CC0 1.0 Universal, committed alongside the pack)."
     },
@@ -75,7 +75,7 @@
       "sourcePage": "https://kenney.nl/assets/ui-pack",
       "author": "Kenney (www.kenney.nl)",
       "license": "CC0-1.0",
-      "modifications": "none \u2014 unmodified file from the pack",
+      "modifications": "none — unmodified file from the pack",
       "intendedUse": "ui",
       "notes": "License verified in-repo at public/assets/kenney-ui/License.txt (CC0 1.0 Universal, committed alongside the pack)."
     },
@@ -86,7 +86,7 @@
       "sourcePage": "https://kenney.nl/assets/ui-pack",
       "author": "Kenney (www.kenney.nl)",
       "license": "CC0-1.0",
-      "modifications": "none \u2014 unmodified file from the pack",
+      "modifications": "none — unmodified file from the pack",
       "intendedUse": "ui",
       "notes": "License verified in-repo at public/assets/kenney-ui/License.txt (CC0 1.0 Universal, committed alongside the pack)."
     },
@@ -97,7 +97,7 @@
       "sourcePage": "https://kenney.nl/assets/ui-pack",
       "author": "Kenney (www.kenney.nl)",
       "license": "CC0-1.0",
-      "modifications": "none \u2014 unmodified file from the pack",
+      "modifications": "none — unmodified file from the pack",
       "intendedUse": "ui",
       "notes": "License verified in-repo at public/assets/kenney-ui/License.txt (CC0 1.0 Universal, committed alongside the pack)."
     },
@@ -108,7 +108,7 @@
       "sourcePage": "https://kenney.nl/assets/ui-pack",
       "author": "Kenney (www.kenney.nl)",
       "license": "CC0-1.0",
-      "modifications": "none \u2014 unmodified file from the pack",
+      "modifications": "none — unmodified file from the pack",
       "intendedUse": "ui",
       "notes": "License verified in-repo at public/assets/kenney-ui/License.txt (CC0 1.0 Universal, committed alongside the pack)."
     },
@@ -119,97 +119,189 @@
       "sourcePage": "https://kenney.nl/assets/ui-pack",
       "author": "Kenney (www.kenney.nl)",
       "license": "CC0-1.0",
-      "modifications": "none \u2014 unmodified file from the pack",
+      "modifications": "none — unmodified file from the pack",
       "intendedUse": "ui",
       "notes": "License verified in-repo at public/assets/kenney-ui/License.txt (CC0 1.0 Universal, committed alongside the pack)."
     },
     {
       "id": "kenney-ui-audio-click1",
       "localPath": "public/audio/ui-sfx/kenney/click1.wav",
-      "sourcePack": "Kenney UI/Interface audio (exact pack page not re-verified this pass \u2014 see notes)",
+      "sourcePack": "Kenney UI/Interface audio (exact pack page not re-verified this pass — see notes)",
       "sourcePage": "https://kenney.nl/assets/interface-sounds",
       "author": "Kenney (www.kenney.nl)",
       "license": "CC0-1.0",
-      "modifications": "none \u2014 unmodified file",
+      "modifications": "none — unmodified file",
       "intendedUse": "sfx",
       "notes": "Carries forward the pre-existing in-repo attribution (src/utils/audioSystem.ts already labels these 'Kenney UI Audio'). No network access this pass to re-confirm the exact source page against kenney.nl/support's blanket CC0 policy; flagged here rather than silently assumed. Re-verify the page link before treating it as authoritative."
     },
     {
       "id": "kenney-ui-audio-click2",
       "localPath": "public/audio/ui-sfx/kenney/click2.wav",
-      "sourcePack": "Kenney UI/Interface audio (exact pack page not re-verified this pass \u2014 see notes)",
+      "sourcePack": "Kenney UI/Interface audio (exact pack page not re-verified this pass — see notes)",
       "sourcePage": "https://kenney.nl/assets/interface-sounds",
       "author": "Kenney (www.kenney.nl)",
       "license": "CC0-1.0",
-      "modifications": "none \u2014 unmodified file",
+      "modifications": "none — unmodified file",
       "intendedUse": "sfx",
       "notes": "Carries forward the pre-existing in-repo attribution (src/utils/audioSystem.ts already labels these 'Kenney UI Audio'). No network access this pass to re-confirm the exact source page against kenney.nl/support's blanket CC0 policy; flagged here rather than silently assumed. Re-verify the page link before treating it as authoritative."
     },
     {
       "id": "kenney-ui-audio-click3",
       "localPath": "public/audio/ui-sfx/kenney/click3.wav",
-      "sourcePack": "Kenney UI/Interface audio (exact pack page not re-verified this pass \u2014 see notes)",
+      "sourcePack": "Kenney UI/Interface audio (exact pack page not re-verified this pass — see notes)",
       "sourcePage": "https://kenney.nl/assets/interface-sounds",
       "author": "Kenney (www.kenney.nl)",
       "license": "CC0-1.0",
-      "modifications": "none \u2014 unmodified file",
+      "modifications": "none — unmodified file",
       "intendedUse": "sfx",
       "notes": "Carries forward the pre-existing in-repo attribution (src/utils/audioSystem.ts already labels these 'Kenney UI Audio'). No network access this pass to re-confirm the exact source page against kenney.nl/support's blanket CC0 policy; flagged here rather than silently assumed. Re-verify the page link before treating it as authoritative."
     },
     {
       "id": "kenney-ui-audio-click4",
       "localPath": "public/audio/ui-sfx/kenney/click4.wav",
-      "sourcePack": "Kenney UI/Interface audio (exact pack page not re-verified this pass \u2014 see notes)",
+      "sourcePack": "Kenney UI/Interface audio (exact pack page not re-verified this pass — see notes)",
       "sourcePage": "https://kenney.nl/assets/interface-sounds",
       "author": "Kenney (www.kenney.nl)",
       "license": "CC0-1.0",
-      "modifications": "none \u2014 unmodified file",
+      "modifications": "none — unmodified file",
       "intendedUse": "sfx",
       "notes": "Carries forward the pre-existing in-repo attribution (src/utils/audioSystem.ts already labels these 'Kenney UI Audio'). No network access this pass to re-confirm the exact source page against kenney.nl/support's blanket CC0 policy; flagged here rather than silently assumed. Re-verify the page link before treating it as authoritative."
     },
     {
       "id": "kenney-ui-audio-click5",
       "localPath": "public/audio/ui-sfx/kenney/click5.wav",
-      "sourcePack": "Kenney UI/Interface audio (exact pack page not re-verified this pass \u2014 see notes)",
+      "sourcePack": "Kenney UI/Interface audio (exact pack page not re-verified this pass — see notes)",
       "sourcePage": "https://kenney.nl/assets/interface-sounds",
       "author": "Kenney (www.kenney.nl)",
       "license": "CC0-1.0",
-      "modifications": "none \u2014 unmodified file",
+      "modifications": "none — unmodified file",
       "intendedUse": "sfx",
       "notes": "Carries forward the pre-existing in-repo attribution (src/utils/audioSystem.ts already labels these 'Kenney UI Audio'). No network access this pass to re-confirm the exact source page against kenney.nl/support's blanket CC0 policy; flagged here rather than silently assumed. Re-verify the page link before treating it as authoritative."
     },
     {
       "id": "kenney-ui-audio-switch1",
       "localPath": "public/audio/ui-sfx/kenney/switch1.wav",
-      "sourcePack": "Kenney UI/Interface audio (exact pack page not re-verified this pass \u2014 see notes)",
+      "sourcePack": "Kenney UI/Interface audio (exact pack page not re-verified this pass — see notes)",
       "sourcePage": "https://kenney.nl/assets/interface-sounds",
       "author": "Kenney (www.kenney.nl)",
       "license": "CC0-1.0",
-      "modifications": "none \u2014 unmodified file",
+      "modifications": "none — unmodified file",
       "intendedUse": "sfx",
       "notes": "Carries forward the pre-existing in-repo attribution (src/utils/audioSystem.ts already labels these 'Kenney UI Audio'). No network access this pass to re-confirm the exact source page against kenney.nl/support's blanket CC0 policy; flagged here rather than silently assumed. Re-verify the page link before treating it as authoritative."
     },
     {
       "id": "kenney-ui-audio-switch2",
       "localPath": "public/audio/ui-sfx/kenney/switch2.wav",
-      "sourcePack": "Kenney UI/Interface audio (exact pack page not re-verified this pass \u2014 see notes)",
+      "sourcePack": "Kenney UI/Interface audio (exact pack page not re-verified this pass — see notes)",
       "sourcePage": "https://kenney.nl/assets/interface-sounds",
       "author": "Kenney (www.kenney.nl)",
       "license": "CC0-1.0",
-      "modifications": "none \u2014 unmodified file",
+      "modifications": "none — unmodified file",
       "intendedUse": "sfx",
       "notes": "Carries forward the pre-existing in-repo attribution (src/utils/audioSystem.ts already labels these 'Kenney UI Audio'). No network access this pass to re-confirm the exact source page against kenney.nl/support's blanket CC0 policy; flagged here rather than silently assumed. Re-verify the page link before treating it as authoritative."
     },
     {
       "id": "kenney-ui-audio-switch3",
       "localPath": "public/audio/ui-sfx/kenney/switch3.wav",
-      "sourcePack": "Kenney UI/Interface audio (exact pack page not re-verified this pass \u2014 see notes)",
+      "sourcePack": "Kenney UI/Interface audio (exact pack page not re-verified this pass — see notes)",
       "sourcePage": "https://kenney.nl/assets/interface-sounds",
       "author": "Kenney (www.kenney.nl)",
       "license": "CC0-1.0",
-      "modifications": "none \u2014 unmodified file",
+      "modifications": "none — unmodified file",
       "intendedUse": "sfx",
       "notes": "Carries forward the pre-existing in-repo attribution (src/utils/audioSystem.ts already labels these 'Kenney UI Audio'). No network access this pass to re-confirm the exact source page against kenney.nl/support's blanket CC0 policy; flagged here rather than silently assumed. Re-verify the page link before treating it as authoritative."
+    },
+    {
+      "id": "original-splash-studio",
+      "localPath": "public/assets/splash-studio.jpg",
+      "sourceName": "Screenshot of the Tier 1 studio captured from this game (commit 37d49e7a)",
+      "intendedUse": "scene",
+      "notes": "Captured from the game's own renderer, so it contains only in-house art.",
+      "author": "Recording Studio Tycoon (in-house)",
+      "license": "original",
+      "modifications": "n/a: authored in-repo"
+    },
+    {
+      "id": "original-project-cards-atlas-png",
+      "localPath": "public/assets/project-cards-atlas.png",
+      "sourceName": "Generated placeholder atlas for project cards (commit cb9be7f6)",
+      "intendedUse": "placeholder",
+      "notes": "95-byte placeholder image, no third-party content.",
+      "author": "Recording Studio Tycoon (in-house)",
+      "license": "original",
+      "modifications": "n/a: authored in-repo"
+    },
+    {
+      "id": "original-project-cards-atlas-json",
+      "localPath": "public/assets/project-cards-atlas.json",
+      "sourceName": "Frame data for the project-cards placeholder atlas (commit cb9be7f6)",
+      "intendedUse": "placeholder",
+      "notes": "Data file authored in-repo.",
+      "author": "Recording Studio Tycoon (in-house)",
+      "license": "original",
+      "modifications": "n/a: authored in-repo"
+    }
+  ],
+  "originalTrees": [
+    {
+      "id": "original-props",
+      "path": "public/assets/props",
+      "license": "original",
+      "author": "Recording Studio Tycoon (in-house)",
+      "sourceLog": "docs/ART_SOURCING_LOG.md section 8",
+      "modifications": "n/a: authored in-repo",
+      "intendedUse": "scene",
+      "notes": "In-house SVG props drawn for the studio floor; PNGs are 2x renders via scripts/render-prop-sprites.cjs."
+    },
+    {
+      "id": "original-studio",
+      "path": "public/assets/studio",
+      "license": "original",
+      "author": "Recording Studio Tycoon (in-house)",
+      "sourceLog": "docs/ART_SOURCING_LOG.md section 10",
+      "modifications": "n/a: authored in-repo",
+      "intendedUse": "scene",
+      "notes": "In-house low-poly models rendered headless from tools/blender (consoles, booth, clock, crew character layers)."
+    },
+    {
+      "id": "original-rewards",
+      "path": "public/assets/rewards",
+      "license": "original",
+      "author": "Recording Studio Tycoon (in-house)",
+      "sourceLog": "docs/ART_SOURCING_LOG.md section 7",
+      "modifications": "n/a: authored in-repo",
+      "intendedUse": "ui",
+      "notes": "In-house reward sprites."
+    },
+    {
+      "id": "original-icons",
+      "path": "public/assets/icons",
+      "license": "original",
+      "author": "Recording Studio Tycoon (in-house)",
+      "sourceLog": "docs/ART_SOURCING_LOG.md section 21",
+      "modifications": "n/a: authored in-repo",
+      "intendedUse": "ui",
+      "notes": "In-house booking icon set (SVG)."
+    },
+    {
+      "id": "original-studio-kit",
+      "path": "public/assets/studio-kit",
+      "license": "original",
+      "author": "Recording Studio Tycoon (in-house)",
+      "sourceLog": "docs/ART_SOURCING_LOG.md section 10",
+      "modifications": "n/a: authored in-repo",
+      "intendedUse": "scene",
+      "notes": "In-house studio kit sheets built by scripts/assets/build-studio-kit.py."
+    },
+    {
+      "id": "original-atlases",
+      "path": "public/assets/atlases",
+      "license": "original",
+      "author": "Recording Studio Tycoon (in-house)",
+      "sourceLog": "docs/ASSET_PIPELINE.md",
+      "modifications": "n/a: authored in-repo",
+      "intendedUse": "scene",
+      "notes": "Atlases packed by the in-repo asset pipeline from the in-house sources above."
     }
   ]
 }

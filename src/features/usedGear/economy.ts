@@ -1,4 +1,5 @@
 import type { Equipment, GameState } from '@/types/game';
+import { trackRepairCompleted } from '@/telemetry/instrument';
 import { INVENTORY_SLOT_ID } from '@/types/equipmentSlots';
 import { availableEquipment, getEraAdjustedPrice } from '@/data/eraEquipment';
 import { grantSkillXp } from '@/utils/skillUtils';
@@ -31,6 +32,7 @@ export const refreshGearForDay = (state: GameState): GameState => {
     const job = item.maintenance;
     if (job?.status === 'scheduled' && state.currentDay >= job.readyDay) {
       changed = true;
+      trackRepairCompleted(state.currentDay, job.kind, job.conditionAfter, item.id);
       return { ...item, condition: clampCondition(job.conditionAfter), maintenance: null, fault: null,
         quirks: job.clearsQuirks ? [] : item.quirks, restorationState: 'serviced' as const, lastServiceDay: state.currentDay };
     }

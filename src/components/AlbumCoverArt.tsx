@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Disc3, Music2, Sparkles, Flame, Radio, Zap, Volume2, Award } from 'lucide-react';
+import { renderAlbumArtSync } from '@/utils/albumArt';
 
 interface AlbumCoverArtProps {
   title: string;
@@ -10,6 +11,8 @@ interface AlbumCoverArtProps {
   isGenerating?: boolean;
   className?: string;
   showVinylPeek?: boolean;
+  /** Save seed: identical projects render different covers per save (bead u92). */
+  saveSeed?: string | number;
 }
 
 interface GenreTheme {
@@ -31,14 +34,23 @@ export const AlbumCoverArt: React.FC<AlbumCoverArtProps> = ({
   isGenerating = false,
   className = '',
   showVinylPeek = true,
+  saveSeed,
 }) => {
   const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     setImageError(false);
-  }, [imageUrl]);
+  }, [imageUrl, title, genre, saveSeed]);
 
-  const isImageValid = imageUrl && !imageError && imageUrl !== '/placeholder.svg' && !imageUrl.includes('placeholder.svg');
+  const remoteValid = imageUrl && !imageError && imageUrl !== '/placeholder.svg' && !imageUrl.includes('placeholder.svg');
+  // Deterministic local cover: instant, offline, unique per title+genre+save.
+  // Remote art (AI) still wins when present; this is the designed fallback, not a blank.
+  const localArt = useMemo(() => {
+    if (remoteValid) return null;
+    return renderAlbumArtSync({ title, genre, artist, score, saveSeed });
+  }, [remoteValid, title, genre, artist, score, saveSeed]);
+  const isImageValid = Boolean(remoteValid || localArt);
+  const displaySrc = remoteValid ? String(imageUrl) : localArt;
 
   // Genre specific aesthetic mapping
   const getGenreTheme = (g: string): GenreTheme => {
@@ -142,9 +154,9 @@ export const AlbumCoverArt: React.FC<AlbumCoverArtProps> = ({
           boxShadow: `0 20px 40px -15px ${theme.glowColor}, 0 0 0 1px rgba(255,255,255,0.1) inset`
         }}
       >
-        {isImageValid ? (
+        {isImageValid && displaySrc ? (
           <img
-            src={imageUrl}
+            src={displaySrc}
             alt={title}
             onError={() => setImageError(true)}
             className="absolute inset-0 w-full h-full object-cover"

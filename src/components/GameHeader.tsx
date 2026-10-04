@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { GameState } from '@/types/game';
 import { currencySymbol, getCityById, toLocalAmount } from '@/rpg/cities';
 import { AnimatedCounter } from './AnimatedCounter';
-import { Maximize, Minimize, Settings, CalendarDays, Coins, Star, Sunrise } from 'lucide-react';
+import { LocateFixed, Maximize, Minimize, Settings, CalendarDays, Coins, Star, SkipForward, Pause } from 'lucide-react';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import { EraProgressModal } from './modals/EraProgressModal';
 import { useTranslation } from 'react-i18next';
@@ -11,19 +11,23 @@ import './chip-fidelity.css';
 import { SettleTicker } from './SettleTicker';
 import { StreakFlame } from './StreakFlame';
 import { PressRipple } from './ui/PressRipple';
+import { useStudioClock } from '@/contexts/StudioClockContext';
 
 interface GameHeaderProps {
   gameState: GameState;
   onOpenSettings?: () => void;
+  onPause?: () => void;
+  onCenterCamera?: () => void;
   onAdvanceDay?: () => void;
   triggerEraTransition?: () => void;
   className?: string;
 }
 
-export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSettings, onAdvanceDay, triggerEraTransition, className = '' }) => {
+export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSettings, onPause, onCenterCamera, onAdvanceDay, triggerEraTransition, className = '' }) => {
   const [showEraProgress, setShowEraProgress] = useState(false);
   const { isFullscreen, toggleFullscreen } = useFullscreen('root');
   const { t } = useTranslation();
+  const studioClock = useStudioClock();
   const player = gameState.playerData;
   const signage = getStudioSignage(gameState.currentEra, Object.keys(gameState.unlockedAchievements ?? {}).length, getCityById(gameState.cityId)?.name);
   return <>
@@ -42,19 +46,21 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSetting
             type="button"
             className="studio-hud-day"
             onClick={() => setShowEraProgress(true)}
-            aria-label={`${t('current_day', { day: gameState.currentDay })}, ${t('view_era_progress')}`}
+            aria-label={`${t('current_day', { day: gameState.currentDay })}, ${studioClock.formattedTime}, ${studioClock.phase}, ${t('view_era_progress')}`}
           >
-            <CalendarDays size={14} aria-hidden="true" />{t('current_day', { day: gameState.currentDay })}
+            <CalendarDays size={14} aria-hidden="true" />
+            <span>{t('current_day', { day: gameState.currentDay })}</span>
+            <span className="studio-hud-time" aria-hidden="true">{studioClock.formattedTime}</span>
           </button>
           {onAdvanceDay && (
             <button
               type="button"
               className="studio-hud-advance"
               onClick={onAdvanceDay}
-              aria-label={t('rest_and_advance_day')}
-              title={t('rest_and_advance_day')}
+              aria-label={`Close Day ${gameState.currentDay} and begin Day ${gameState.currentDay + 1}`}
+              title={`Close Day ${gameState.currentDay} now`}
             >
-              <PressRipple><Sunrise size={16} /></PressRipple>
+              <PressRipple><SkipForward size={16} /><span className="studio-hud-advance-label">Close day</span></PressRipple>
             </button>
           )}
         </div>
@@ -81,17 +87,34 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSetting
           <span>{signage}</span>
         </PressRipple>
       </div>
-      <div className="studio-hud-controls">
+      <div className="studio-hud-controls" role="group" aria-label="Studio view controls">
+        {onCenterCamera && (
+          <button type="button" className="studio-hud-icon" onClick={onCenterCamera} aria-label="Center studio camera" title="Center studio camera">
+            <PressRipple><LocateFixed size={16} /></PressRipple>
+          </button>
+        )}
         <button
           type="button"
           className="studio-hud-icon"
           onClick={toggleFullscreen}
+          title={isFullscreen ? t('exit_fullscreen_aria_label') : t('enter_fullscreen_aria_label')}
           aria-label={isFullscreen ? t('exit_fullscreen_aria_label') : t('enter_fullscreen_aria_label')}
         >
           <PressRipple>{isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}</PressRipple>
         </button>
+        {onPause && (
+          <button
+            type="button"
+            className="studio-hud-icon"
+            onClick={onPause}
+            aria-label="Pause session (Esc)"
+            title="Pause session (Esc)"
+          >
+            <PressRipple><Pause size={16} /></PressRipple>
+          </button>
+        )}
         {onOpenSettings && (
-          <button type="button" className="studio-hud-icon" onClick={onOpenSettings} aria-label={t('open_settings')}>
+          <button type="button" className="studio-hud-icon" onClick={onOpenSettings} aria-label={t('open_settings')} title={t('open_settings')}>
             <PressRipple><Settings size={16} /></PressRipple>
           </button>
         )}

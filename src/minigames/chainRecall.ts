@@ -5,6 +5,7 @@
  * The sequence grows one stage per round. Decoy gear on the rack is never in the path.
  */
 import { createSeededRandom, randomInt, type RandomSource } from '@/simulation/seededRandom';
+import { tc } from '@/i18n/content';
 
 export interface RackPiece {
   id: string;
@@ -145,7 +146,7 @@ export function scoreChainRecall(state: ChainRecallState): ChainScore {
   const clean = state.roundsCleared === 0 ? 0 : state.strikes === 0 ? 150 : state.strikes === 1 ? 60 : 0;
   const replay = state.roundsCleared === 0 ? 0 : Math.max(0, 100 - state.replays * 50);
   const total = Math.round(Math.max(0, Math.min(1000, rounds + clean + replay)));
-  if (!state.won) tips.push('Say the chain out loud as it lights: each pad has its own pitch to hum along with.');
-  if (state.replays > 0) tips.push('Replays cost points. Try humming the pitches instead.');
+  if (!state.won) tips.push(tc('mg.chainRecall.tip_lost', 'Say the chain out loud as it lights: each pad has its own pitch to hum along with.'));
+  if (state.replays > 0) tips.push(tc('mg.chainRecall.tip_replays', 'Replays cost points. Try humming the pitches instead.'));
   return { total, tips };
 }

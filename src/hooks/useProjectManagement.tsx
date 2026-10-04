@@ -1,3 +1,14 @@
+import { applyLabelOutcome } from '@/rpg/labelAccounts';
+import { enquiryDemandWeight } from '@/rpg/marketDemand';
+import { depositFor } from '@/rpg/serviceQuote';
+import { earn } from '@/economy/ledger';
+import {
+  trackSessionBooked,
+  trackSessionSettled,
+  trackSessionStarted,
+  trackRelationshipTier,
+  trackEnquiriesGenerated,
+} from '@/telemetry/instrument';
 import { useCallback } from 'react';
 import { GameState, Project, ProjectReport } from '@/types/game';
 import { generateNewProjects } from '@/utils/projectUtils';
@@ -40,24 +51,35 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
       return false;
     }
 
-    setGameState(prev => ({
-      ...prev,
+    setGameState(prev => {
+      // Deposit (#51): cash timing only. It is banked now and taken off the payout at settlement.
+      const deposit = depositFor(prev, project).amount;
+      trackSessionBooked(prev, project, room.type);
+      trackSessionStarted(prev, project, room.type);
+      const banked = deposit > 0
+        ? earn(prev, deposit, { category: 'deposit-income', projectId: project.id, sourceId: `deposit-${project.id}`, memo: project.title })
+        : prev;
+      return {
+      ...banked,
       activeProject: {
         ...project,
+        depositPaid: banked === prev ? undefined : deposit,
         currentStageIndex: 0,
         completedStages: [],
         bookingRoomId: room.id,
+        bookedDay: prev.currentDay,
         stages: project.stages.map(s => ({
           ...s,
           workUnitsCompleted: 0
         }))
       },
       availableProjects: prev.availableProjects.filter(p => p.id !== project.id)
-    }));
+      };
+    });
 
     toast({
       title: "🚀 Session Booked!",
-      description: `Booked "${project.title}" into ${room.name}.`,
+      description: `Booked "${project.title}" into ${room.name}.${depositFor(gameState, project).amount > 0 ? ` Deposit of $${depositFor(gameState, project).amount} banked.` : ""}`,
       className: "bg-stone-800 border-stone-600 text-white",
     });
     return true;
@@ -69,6 +91,7 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
     setGameState(prev => {
       const settled = applyReportToState(prev, projectReport);
       if (settled === prev) return prev;
+      trackSessionSettled(prev, prev.activeProject?.id === projectId ? prev.activeProject : prev.activeProjects?.find(x => x.id === projectId), projectReport);
 
       const involvedStaffIds = new Set(
         prev.hiredStaff
@@ -122,7 +145,9 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
         getOriginEffects(prev).repeatClientPremium,
         settled.reputation,
         prev.cityId,
+        enquiryDemandWeight(prev.saveSeed, prev.currentDay),
       );
+      trackEnquiriesGenerated(prev.currentDay, nextEnquiries, 'settlement');
 
       const prevRelationship = completedProject?.clientId
         ? prev.clientRelationships?.[completedProject.clientId]
@@ -130,6 +155,9 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
       const nextRelationship = completedProject?.clientId
         ? updatedClientRelationships[completedProject.clientId]
         : undefined;
+      if (completedProject?.clientId) {
+        trackRelationshipTier(prev.currentDay, prevRelationship?.tier, nextRelationship?.tier, completedProject.clientId);
+      }
       const withSeasonLedger = recordSeasonDelivery(
         { ...settled, clientRelationships: updatedClientRelationships },
         {
@@ -149,9 +177,12 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
         },
       );
 
+      // Label contracts (#50): late or short delivery trims the fee and a little interest; a clean one earns a bonus.
+      const withLabelOutcome = applyLabelOutcome(withSeasonLedger, completedProject, projectReport.overallQualityScore, projectReport.moneyGained);
+
       return advanceStory(
         withDailyTracking({
-          ...withSeasonLedger,
+          ...withLabelOutcome,
           activeProject: null,
           activeProjects: (settled.activeProjects || []).filter(p => p.id !== projectId),
           availableProjects: [...settled.availableProjects, ...nextEnquiries],

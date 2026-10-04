@@ -6,9 +6,33 @@ const active = fs.readFileSync('src/components/ActiveProject.tsx', 'utf8');
 const takeEval = fs.readFileSync('src/rpg/takeEvaluation.ts', 'utf8');
 const stageWork = fs.readFileSync('src/hooks/useStageWork.tsx', 'utf8');
 
-// Needle: quick console check — snappier than 1.6/3.3, still slower than twitchy ~1.1.
-assert.match(meter, /cycleSeconds:\s*1\.8/, 'needle sweep should feel like a quick console check');
-assert.match(meter, /autoLockSeconds:\s*3\.2/, 'auto-lock should match the 3.2s design fallback');
+const timingValue = (name: 'cycleSeconds' | 'autoLockSeconds'): number => {
+  const match = meter.match(new RegExp(`${name}:\\s*([0-9.]+)`));
+  assert.ok(match, `PocketMeter must declare ${name}`);
+  const value = Number(match[1]);
+  assert.ok(Number.isFinite(value) && value > 0, `${name} must be a positive duration`);
+  return value;
+};
+
+const cycleSeconds = timingValue('cycleSeconds');
+const autoLockSeconds = timingValue('autoLockSeconds');
+
+// Needle: verify the playable timing relationships rather than pinning one tuning pass.
+// PocketMeter's live sweep is center 0.53 / amplitude 0.41 and the base Gold
+// window is 0.70–0.85. Measure the rising crossing that the player reacts to.
+const crossingSeconds = (
+  Math.asin((0.85 - 0.53) / 0.41) - Math.asin((0.70 - 0.53) / 0.41)
+) / (Math.PI * 2) * cycleSeconds;
+assert.ok(
+  crossingSeconds >= 0.09 && crossingSeconds <= 0.16,
+  `Gold crossing must remain readable without dragging (${Math.round(crossingSeconds * 1000)}ms)`,
+);
+const cyclesBeforeFallback = autoLockSeconds / cycleSeconds;
+assert.ok(
+  cyclesBeforeFallback >= 1.5 && cyclesBeforeFallback <= 2,
+  `auto-lock must allow more than one pass without becoming a wait (${cyclesBeforeFallback.toFixed(2)} cycles)`,
+);
+assert.ok(autoLockSeconds <= 3.5, 'safe fallback must resolve the console check promptly');
 assert.match(meter, /prefers-reduced-motion: reduce/, 'reduced motion must use the static accessible path');
 assert.match(meter, /role="meter"/, 'meter must expose its live value to assistive technology');
 

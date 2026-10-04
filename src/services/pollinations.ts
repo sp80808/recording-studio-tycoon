@@ -1,3 +1,5 @@
+import { renderAlbumArtSync } from '@/utils/albumArt';
+
 export async function generateBandName(): Promise<string> {
   const response = await fetch('/api/pollinations/band-name');
   if (!response.ok) {
@@ -7,19 +9,35 @@ export async function generateBandName(): Promise<string> {
   return data.name;
 }
 
-export async function generateAlbumArt(prompt: string): Promise<string> {
+export async function generateAlbumArt(prompt: string, opts?: { title?: string; genre?: string; saveSeed?: string | number }): Promise<string> {
+  // Remote art (when hosted) still wins — but it must fail fast so the review
+  // modal never hangs on a missing endpoint. Anything else falls back to the
+  // deterministic local renderer instead of a placeholder.
   try {
-    const response = await fetch(`/api/pollinations/album-art?prompt=${encodeURIComponent(prompt)}`);
-    if (!response.ok) {
-      throw new Error(`Error generating album art: ${response.statusText}`);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 2800);
+    try {
+      const response = await fetch(`/api/pollinations/album-art?prompt=${encodeURIComponent(prompt)}`, {
+        signal: controller.signal,
+      });
+      if (response.ok) {
+        const data: { url: string } = await response.json();
+        if (data.url && !data.url.includes('placeholder')) return data.url;
+      }
+    } finally {
+      window.clearTimeout(timeout);
     }
-    const data: { url: string } = await response.json();
-    return data.url;
   } catch (err) {
-    console.warn('generateAlbumArt failed, using fallback', err);
-    // Fallback: return placeholder artwork
-    return '/placeholder.svg';
+    console.warn('generateAlbumArt remote failed, using local art', err);
   }
+  try {
+    const local = renderAlbumArtSync({ title: opts?.title ?? prompt.slice(0, 80), genre: opts?.genre, saveSeed: opts?.saveSeed });
+    if (local) return local;
+  } catch (err) {
+    console.warn('generateAlbumArt local render failed', err);
+  }
+  // Last resort: callers treat placeholder as "no art" and show CSS art.
+  return '/placeholder.svg';
 }
 
 export async function generateReview(projectName: string): Promise<string> {

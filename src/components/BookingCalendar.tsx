@@ -1,9 +1,10 @@
 import React from 'react';
 import type { GameState, Project } from '@/types/game';
 import { money } from '@/utils/displayMoney';
-import { buildBookingCalendar, previewBooking, SLOT_NAMES, SLOTS_PER_DAY } from '@/rpg/bookingCalendar';
+import { buildBookingCalendar, previewBooking, reschedulePreview, SLOT_NAMES, SLOTS_PER_DAY } from '@/rpg/bookingCalendar';
+import { quoteFor, MARGIN_LABEL } from '@/rpg/serviceQuote';
 
-type CalState = Pick<GameState, 'currentDay' | 'studioRooms' | 'activeProject' | 'activeProjects' | 'cityId'>;
+type CalState = Pick<GameState, 'currentDay' | 'studioRooms' | 'activeProject' | 'activeProjects' | 'cityId' | 'clientRelationships' | 'hiredStaff'> & Partial<Pick<GameState, 'saveSeed' | 'money' | 'freelancers' | 'premisesTier' | 'serviceLog'>>;
 
 export const BookingCalendar: React.FC<{ state: CalState }> = ({ state }) => {
   const cal = buildBookingCalendar(state);
@@ -38,18 +39,43 @@ export const BookingCalendar: React.FC<{ state: CalState }> = ({ state }) => {
   );
 };
 
+const TERMS_LABEL = {
+  fixed: 'Fixed: client needs the first slot',
+  narrow: 'Narrow: client can wait up to 2 days',
+  flexible: 'Flexible: client can wait up to 5 days',
+} as const;
+
 export const BookingCostLine: React.FC<{ state: CalState; project: Project }> = ({ state, project }) => {
   const p = previewBooking(state, project);
+  const q = quoteFor(state, project);
+  const later = reschedulePreview(state, project, (p.firstSlot ? p.firstSlot.day - state.currentDay : 0) + 1);
   return (
     <div data-testid="booking-cost-line" className="mb-3 rounded-lg border border-[var(--rst-line)] bg-black/20 p-2 text-xs text-stone-300">
       Takes {p.sessions} session{p.sessions === 1 ? '' : 's'}
       {p.firstSlot ? <> · starts {SLOT_NAMES[p.firstSlot.slot].toLowerCase()} day {p.firstSlot.day}{p.roomName ? ` in ${p.roomName}` : ''}</> : ' · no free slot this week'}
       {' '}· {money(p.payoutPerSlot)} per slot ({money(p.payout)} total)
+      <span data-testid="booking-quote" className="mt-1 block text-stone-400">
+        {q.serviceLabel}: about {q.roomHours} room hours, {q.staffHours} staff hours{q.setupSavedHours > 0 ? ` (setup reused: ${q.setupSavedHours}h saved)` : ''} · {q.revisionAllowance > 0 ? `${q.revisionAllowance} revision round${q.revisionAllowance === 1 ? '' : 's'} included · ` : ''}margin <strong className="text-stone-200">{MARGIN_LABEL[q.marginBand]}</strong>
+        {q.freelancerFees > 0 && <span className="block">Outside specialists already booked: {money(q.freelancerFees)} (in the margin)</span>}
+        {q.outsideHint && q.freelancerFees === 0 && <span data-testid="booking-outside-hint" className="block">Outside help is available for {q.outsideHint.stageName} from {money(q.outsideHint.from)}; it only counts against the margin if you book it.</span>}
+        <span data-testid="booking-deposit" className="block">{q.deposit.reason}{q.deposit.required ? ` (${money(q.deposit.amount)} now, ${money(Math.max(0, q.fee - q.deposit.amount))} on delivery)` : ''}</span>
+      </span>
+      <span data-testid="booking-terms" className={`mt-1 block ${p.startBufferDays < 0 ? 'text-amber-300' : 'text-stone-400'}`}>
+        {TERMS_LABEL[p.terms.flexibility]}
+        {!p.firstSlot ? '' : p.startBufferDays < 0
+          ? ` · first free start is ${-p.startBufferDays} day${p.startBufferDays === -1 ? '' : 's'} too late`
+          : ` · ${p.startBufferDays} day${p.startBufferDays === 1 ? '' : 's'} of slack`}
+      </span>
       <span data-testid="booking-opportunity" className="mt-1 block text-stone-400">
         Studio {Math.round(p.utilizationAfter * 100)}% booked after this
         {p.nextFreeAfter
           ? <> · next free slot {SLOT_NAMES[p.nextFreeAfter.slot].toLowerCase()} day {p.nextFreeAfter.day}</>
           : ' · takes the last free slot this week'}
+      </span>
+      <span data-testid="booking-reschedule" className="mt-1 block text-stone-400">
+        {later.slot
+          ? <>Start a day later ({SLOT_NAMES[later.slot.slot].toLowerCase()} day {later.slot.day}{later.roomName ? `, ${later.roomName}` : ''}): {later.clientAccepts ? 'within the client\'s terms' : 'outside the client\'s terms'} · studio {Math.round(later.utilizationAfter * 100)}% booked</>
+          : 'Starting a day later leaves no free slot this week'}
       </span>
     </div>
   );

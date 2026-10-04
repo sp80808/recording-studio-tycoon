@@ -1,5 +1,6 @@
 import React, { createContext, useContext } from 'react';
 import type { ControllerLayoutPreference } from '@/types/gamepad';
+import type { PocketMeterAssistance } from '@/rpg/takeEvaluation';
 
 export interface GameSettings {
   // Audio
@@ -28,7 +29,7 @@ export interface GameSettings {
   // Accessibility
   screenShake: boolean;         // Celebration/milestone screenshake
   reducedMotion: boolean;       // Honors OS prefers-reduced-motion or manual toggle
-  pocketMeterAssistance: 'strict' | 'normal' | 'generous'; // +/- tolerance
+  pocketMeterAssistance: PocketMeterAssistance; // Gold-pocket window width; shared by the PocketMeter faceplate and take grading
   textScale: 'small' | 'normal' | 'large' | 'xl'; // Root font-size multiplier (rem-based UI scales with it)
   highContrast: boolean;        // Brighter secondary text + stronger borders
   hapticsEnabled: boolean;      // Phone vibration ticks (Android/Chromium)

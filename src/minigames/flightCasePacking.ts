@@ -5,6 +5,7 @@
  * expensive, fragile gear needs a soft neighbour, and anything left on the floor adds session risk.
  */
 import { createSeededRandom, randomInt, type RandomSource } from '@/simulation/seededRandom';
+import { tc } from '@/i18n/content';
 
 export type GearTrait = 'fragile' | 'heavy' | 'soft' | 'expensive';
 
@@ -182,8 +183,8 @@ export function scoreFlightCase(s: FlightCaseState): PackScore {
   const used = s.placed.reduce((n, p) => n + cellsOf(s, p).length, 0);
   const fillPts = (used / (s.cols * s.rows)) * 100;
   const total = Math.round(Math.max(0, Math.min(1000, packedPts + protectPts + stackPts + fillPts)));
-  if (a.leftBehind.length) tips.push(`Left on the floor: ${a.leftBehind.map((id) => itemById(s, id).label).join(', ')}. That adds session risk.`);
-  if (a.unprotected.length) tips.push('Fragile gear needs a cable bag or foam wedge touching it.');
-  if (a.crushed.length) tips.push('Heavy gear sat above expensive gear. Put it beside or below.');
+  if (a.leftBehind.length) tips.push(tc('mg.flightCasePacking.tip_left_behind', 'Left on the floor: {{items}}. That adds session risk.', { items: a.leftBehind.map((id) => tc(`mg.FlightCasePackingGame.item_${id}`, itemById(s, id).label)).join(', ') }));
+  if (a.unprotected.length) tips.push(tc('mg.flightCasePacking.tip_fragile', 'Fragile gear needs a cable bag or foam wedge touching it.'));
+  if (a.crushed.length) tips.push(tc('mg.flightCasePacking.tip_heavy', 'Heavy gear sat above expensive gear. Put it beside or below.'));
   return { total, tips };
 }
