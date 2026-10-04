@@ -1,6 +1,15 @@
 import type { Config } from "tailwindcss";
 import tailwindcssAnimate from "tailwindcss-animate";
 
+// Height tween for Radix disclosure panels. Authored in-house (issue #254);
+// Radix exposes the measured panel height through this CSS variable.
+const RADIX_CONTENT_HEIGHT = 'var(--radix-accordion-content-height)';
+const DISCLOSURE_TIMING = '200ms ease-out';
+const collapseFrames = (start: string, end: string) => ({
+	from: { height: start },
+	to: { height: end },
+});
+
 export default {
 	darkMode: ["class"],
 	content: [
@@ -102,22 +111,8 @@ export default {
 				sm: 'calc(var(--radius) - 4px)'
 			},
 			keyframes: {
-				'accordion-down': {
-					from: {
-						height: '0'
-					},
-					to: {
-						height: 'var(--radix-accordion-content-height)'
-					}
-				},
-				'accordion-up': {
-					from: {
-						height: 'var(--radix-accordion-content-height)'
-					},
-					to: {
-						height: '0'
-					}
-				},
+				'accordion-down': collapseFrames('0', RADIX_CONTENT_HEIGHT),
+				'accordion-up': collapseFrames(RADIX_CONTENT_HEIGHT, '0'),
 				'fade-in': {
 					from: {
 						opacity: '0',
@@ -130,8 +125,8 @@ export default {
 				}
 			},
 			animation: {
-				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out',
+				'accordion-down': `accordion-down ${DISCLOSURE_TIMING}`,
+				'accordion-up': `accordion-up ${DISCLOSURE_TIMING}`,
 				'fade-in': 'fade-in 0.3s ease-out'
 			}
 		}
