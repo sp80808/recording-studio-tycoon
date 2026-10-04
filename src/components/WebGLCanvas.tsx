@@ -5,6 +5,7 @@ import { lastTake, nodOffset } from '@/utils/takeFeedback';
 import React, { useEffect, useRef } from 'react';
 import { AnimatedSprite, Application, Container, Graphics, Matrix, Rectangle, Sprite, Text, type Renderer } from 'pixi.js';
 import { createDiegeticCrtFilter, type DiegeticCrtFilterHandle } from '@/lib/render/shaders/diegeticCrtFilter';
+import { createTubeGlowFilter, calculateTubeGlowIntensity, type TubeGlowFilterHandle } from '@/lib/render/shaders/tubeGlowFilter';
 import { applyReelState, buildReelTextures, createReelSprite } from '@/features/gearStudio/gearSpriteAnimation';
 import { STATUS_LED_HEX, gearAttention, gearVisualKey, getConsoleTierGear, statusLedColor, tubeGlowLevel } from '@/features/gearStudio/consoleTierGear';
 import { dimTint, gearConditionKey, shelfConditionStyle, toSpriteVisualState } from '@/features/gearStudio/gearVisualState';
@@ -500,6 +501,7 @@ interface SceneRefs {
   tvBars: AnimBar[];
   tvWrap: Container | null;
   tvCrtFilter: DiegeticCrtFilterHandle | null;
+  tubeGlowFilter: TubeGlowFilterHandle | null;
   statusLeds: StatusLed[];
   shelfItems: ShelfAnimItem[];
   phoneRing: Graphics | null;
@@ -663,6 +665,7 @@ const buildScene = (
     tvBars: [],
     tvWrap: null,
     tvCrtFilter: null,
+    tubeGlowFilter: null,
     statusLeds: [],
     shelfItems: [],
     phoneRing: null,
@@ -1862,6 +1865,11 @@ const buildScene = (
   const bloomLayer = new Container();
   bloomLayer.eventMode = 'none';
   bloomLayer.blendMode = 'add';
+  const tubeFilter = createTubeGlowFilter();
+  if (tubeFilter) {
+    bloomLayer.filters = [tubeFilter.filter];
+    refs.tubeGlowFilter = tubeFilter;
+  }
   const dynamicBloomG = new Graphics();
   bloomLayer.addChild(dynamicBloomG);
   refs.dynamicBloomG = dynamicBloomG;
@@ -2599,8 +2607,12 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             }
           });
 
-          // Emissive dynamic bloom updates (world-space, additive blend)
+          // Emissive dynamic bloom & thermionic tube glow updates (world-space, additive blend)
           if (refs.dynamicBloomG && refs.bloomLayer?.visible) {
+            if (refs.tubeGlowFilter) {
+              const tubeIntensity = calculateTubeGlowIntensity(s.activity, s.hasActiveProject);
+              refs.tubeGlowFilter.update(tubeIntensity, t, s.hasActiveProject, s.activity, reduceMotion);
+            }
             const bg = refs.dynamicBloomG;
             bg.clear();
 
