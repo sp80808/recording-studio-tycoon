@@ -188,6 +188,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
 
   const { settings } = useSettings();
   const [showRadialWheel, setShowRadialWheel] = useState(false);
+  const [radialHoldMode, setRadialHoldMode] = useState(false);
   const gamepad = useGamepad({
     preferredLayout: settings?.controllerLayout,
     hapticsEnabled: settings?.gamepadHaptics,
@@ -264,14 +265,24 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
     }
   }, [openPanel, handleOpenDashboardTab]);
 
-  // Quick radial wheel toggle on R3 or Left Trigger held when on floor
+  // LT opens a hold-to-select radial wheel; Select/View keeps a toggle fallback.
+  // R3 is reserved for the studio-floor camera recenter action.
   useEffect(() => {
     if (!gamepad.isConnected || inputBlocked || consoleOpen) return;
-    if (gamepad.justPressed.rs || (gamepad.justPressed.lt && !panel)) {
+
+    if (gamepad.justPressed.lt && !panel) {
+      setRadialHoldMode(true);
+      setShowRadialWheel(true);
+      gamepad.triggerHaptic(0.2, 0.3, 50);
+      return;
+    }
+
+    if (gamepad.justPressed.select && !panel) {
+      setRadialHoldMode(false);
       setShowRadialWheel((prev) => !prev);
       gamepad.triggerHaptic(0.2, 0.3, 50);
     }
-  }, [gamepad.isConnected, gamepad.justPressed.rs, gamepad.justPressed.lt, panel, inputBlocked, consoleOpen]);
+  }, [gamepad.isConnected, gamepad.justPressed.select, gamepad.justPressed.lt, panel, inputBlocked, consoleOpen]);
 
   // Controller B button closes active panel
   useEffect(() => {
@@ -458,7 +469,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           <StudioRoom gameState={gameState} cameraResetKey={cameraResetKey} onAdvanceDay={advanceDay} onRefreshProjects={refreshProjects}
             onStartProject={bookProject} onAssignStaff={assignStaffToProject} onUnassignStaff={unassignStaffFromProject}
             onOpenDashboardTab={handleOpenDashboardTab} onOpenCases={() => openPanel('cases')} onConsoleFocus={() => openPanel('session')} onCompleteChore={completeFloorChore} activeChoreId={activeChoreId}
-            onBookings={() => openPanel('bookings')} onStudioReady={handleStudioReady} floorFocused={panel === null && !consoleOpen && !inputBlocked} lockedHotspot={lockedHotspot} worldControls={useWorldConsole} intervention={autoTriggeredMinigame} onInterventionFocus={() => { setPanel(null); setInterventionFocused(true); setConsoleOpen(true); }} className="studio-play-room" />
+            onBookings={() => openPanel('bookings')} onStudioReady={handleStudioReady} floorFocused={panel === null && !consoleOpen && !inputBlocked && !showRadialWheel} lockedHotspot={lockedHotspot} worldControls={useWorldConsole} intervention={autoTriggeredMinigame} onInterventionFocus={() => { setPanel(null); setInterventionFocused(true); setConsoleOpen(true); }} className="studio-play-room" />
           {!studioReady && (
             <div className="studio-room-loading" role="status" aria-live="polite" aria-busy="true">
               <span className="studio-boot-gate-mark">RST</span>
@@ -662,7 +673,11 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
       <RadialActionWheel
         isOpen={showRadialWheel}
         onSelect={handleRadialSelect}
-        onClose={() => setShowRadialWheel(false)}
+        selectOnLeftTriggerRelease={radialHoldMode}
+        onClose={() => {
+          setShowRadialWheel(false);
+          setRadialHoldMode(false);
+        }}
       />
       <GamepadHUD hasOpenModal={panel !== null} />
     </div>
