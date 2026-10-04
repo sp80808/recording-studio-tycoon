@@ -62,7 +62,7 @@ assert.doesNotThrow(() => JSON.stringify(rep));
 
 // Provenance
 const base = {
-  schemaVersion: 2 as const, assetId: 'npc-a', sourceType: 'aseprite' as const, author: 'x', license: 'In-house (CC0)',
+  schemaVersion: 2 as const, assetId: 'npc-a', sourceType: 'aseprite' as const, author: 'x', license: 'original',
   toolVersion: '1', pipelineSteps: ['a'], dimensions: { width: 1, height: 1 }, sourceDimensions: { width: 1, height: 1 },
   paletteId: 'p', palette: ['#000000'], frameTags: ['idle'], creationTimestamp: '2026-01-01T00:00:00.000Z', checksum: 'abc',
 };
