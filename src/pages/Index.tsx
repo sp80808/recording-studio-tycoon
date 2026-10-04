@@ -351,6 +351,8 @@ const MusicStudioTycoon = () => {
   };
 
   const finalizingReviewRef = useRef<string | null>(null);
+  // The settle guard only matters while a report is open; clear it so an imported/earlier save can finalize the same project id again.
+  useEffect(() => { if (!activeProjectReport) finalizingReviewRef.current = null; }, [activeProjectReport]);
   const handleShowProjectReview = useCallback((completedProjectData: Project) => {
     if (!canOpenProjectReview({ reviewOpen: showReviewModal, hasReport: Boolean(activeProjectReport), hasPendingDelivery: Boolean(pendingDelivery) })) {
       traceReviewFlow('show-review-skipped', `${completedProjectData.id} already open`);
