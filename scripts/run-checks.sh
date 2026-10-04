@@ -311,4 +311,7 @@ echo "=== one-shot UI SFX policy (#256) ==="
 ./node_modules/.bin/esbuild tests/oneshot-sfx.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-oneshot-sfx.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-oneshot-sfx.cjs"
 
+./node_modules/.bin/esbuild tests/career-chronicle.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-career-chronicle.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-career-chronicle.cjs"
+
 echo "All automated checks passed."
