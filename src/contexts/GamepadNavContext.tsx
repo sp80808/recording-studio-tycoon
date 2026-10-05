@@ -106,6 +106,7 @@ export const GamepadNavProvider: React.FC<GamepadNavProviderProps> = ({ children
   // Bumper tab cycling
   useEffect(() => {
     if (!gamepad.isConnected || !enabled) return;
+    if (document.querySelector('[data-gamepad-exclusive="true"]')) return;
     if (gamepad.justPressed.lb) {
       cycleDockTab('prev');
     } else if (gamepad.justPressed.rb) {
@@ -116,6 +117,7 @@ export const GamepadNavProvider: React.FC<GamepadNavProviderProps> = ({ children
   // Global registered shortcuts or default menu activation (A, B, X, Y)
   useEffect(() => {
     if (!gamepad.isConnected || !enabled) return;
+    if (document.querySelector('[data-gamepad-exclusive="true"]')) return;
 
     if (gamepad.justPressed.south) {
       if (shortcutsRef.current.has('south')) {
@@ -165,6 +167,7 @@ export const GamepadNavProvider: React.FC<GamepadNavProviderProps> = ({ children
   // Trigger and Right Stick scrolling for menus/dialogs
   useEffect(() => {
     if (!gamepad.isConnected || !enabled) return;
+    if (document.querySelector('[data-gamepad-exclusive="true"]')) return;
 
     const scrollDown = gamepad.triggers.right;
     const scrollUp = gamepad.triggers.left;
@@ -184,6 +187,7 @@ export const GamepadNavProvider: React.FC<GamepadNavProviderProps> = ({ children
   // Spatial navigation via D-pad and Left Stick, with specialized slider controls
   useEffect(() => {
     if (!gamepad.isConnected || !enabled) return;
+    if (document.querySelector('[data-gamepad-exclusive="true"]')) return;
 
     const stickThreshold = 0.45;
     const prev = prevStickRef.current;

@@ -8,6 +8,7 @@
  */
 import { marketTrendsAt } from '@/services/marketService';
 import type { MarketTrend } from '@/types/charts';
+import { eventReason, eventShift } from '@/rpg/industryEvents';
 
 export const MARKET_WEEK_DAYS = 7;
 /** Enquiry weight swing at the hottest and coldest genre: 1 ± this. */
@@ -40,14 +41,19 @@ const weeklyMarket = (seed: string | number, day: number): MarketTrend[] => {
   return trends;
 };
 
-const scoreOf = (t: MarketTrend): number => Math.max(-1, Math.min(1, (t.popularity - 50) / 50));
+const clampScore = (n: number): number => Math.max(-1, Math.min(1, n));
+const scoreOf = (t: MarketTrend): number => clampScore((t.popularity - 50) / 50);
+const weekOf = (day: number): number => Math.floor(weekStartDay(day) / MARKET_WEEK_DAYS);
+/** Underlying seeded market plus any active industry event, still bounded to -1..1. */
+const demandOf = (seed: string | number, day: number, t: MarketTrend): number =>
+  clampScore(scoreOf(t) + eventShift(seed, weekOf(day), t.genreId));
 
 /** -1 (cold) to +1 (hot) for a genre this week; 0 for genres the market does not model. */
 export const genreDemand = (seed: string | number | undefined, day: number, genre: string): number => {
   const market = MARKET_GENRE[genre.trim().toLowerCase()];
   if (!market || seed === undefined) return 0;
   const t = weeklyMarket(seed, day).find((x) => x.genreId === market);
-  return t ? scoreOf(t) : 0;
+  return t ? demandOf(seed, day, t) : 0;
 };
 
 /** Multiplier for how often an enquiry of this genre turns up: 0.75 to 1.25, 1 when unknown. */
@@ -65,6 +71,8 @@ export interface PulseLine {
   arrow: '↑' | '→' | '↓';
   /** What it does to the work on offer, in plain words. */
   effect: string;
+  /** Why it is moving, when an industry event is behind it. */
+  reason?: string;
 }
 
 const GENRE_NAME: Record<string, string> = { pop: 'Pop', rock: 'Rock', 'hip-hop': 'Hip-Hop', electronic: 'Electronic', country: 'Country', jazz: 'Jazz' };
@@ -73,14 +81,16 @@ const GENRE_NAME: Record<string, string> = { pop: 'Pop', rock: 'Rock', 'hip-hop'
 export const industryPulse = (seed: string | number | undefined, day: number, limit = 3): PulseLine[] => {
   if (seed === undefined) return [];
   return weeklyMarket(seed, day)
-    .map((t) => ({ t, s: scoreOf(t) }))
+    .map((t) => ({ t, s: demandOf(seed, day, t) }))
     .sort((a, b) => Math.abs(b.s) - Math.abs(a.s) || a.t.genreId.localeCompare(b.t.genreId))
     .slice(0, limit)
     .map(({ t, s }) => {
+      const reason = eventReason(seed, weekOf(day), t.genreId);
       const word: PulseWord = t.trendDirection === 'falling' || s < -0.3 ? 'Cooling' : t.trendDirection === 'rising' || t.trendDirection === 'emerging' || s > 0.3 ? 'Rising' : 'Stable';
       return {
         genre: GENRE_NAME[t.genreId] ?? t.genreId,
         word,
+        reason,
         arrow: word === 'Rising' ? '↑' : word === 'Cooling' ? '↓' : '→',
         effect: s > 0.3 ? 'More enquiries, releases land a little better' : s < -0.3 ? 'Fewer enquiries, releases land a little softer' : 'Typical enquiries',
       };

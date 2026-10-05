@@ -240,6 +240,8 @@ export interface StaffMember {
   source?: { channelId: string; label: string; why: string };
   /** Hired through College Placement: develops faster at low levels (#68). */
   apprentice?: boolean;
+  /** Explainable work-style trait assigned at recruitment (#68). */
+  workStyle?: 'methodical' | 'quick-study' | 'steady-hand' | 'showman' | 'night-owl';
   /** Clickable CV for the recruitment portal. */
   cv?: StaffCurriculumVitae;
   skills: { // UPDATED as per core_loop_plan.md
@@ -495,6 +497,8 @@ export interface GameState {
   unlockedAchievements?: Record<string, number>;
   /** Set once the campaign epilogue has been shown, so it never replays. */
   endingSeen?: boolean;
+  /** Progressive technique unlocks (#260). Absent on legacy saves (progressed ones keep every technique). */
+  featureProgress?: import('@/rpg/featureUnlocks').FeatureProgress;
 }
 
 export interface Artist {

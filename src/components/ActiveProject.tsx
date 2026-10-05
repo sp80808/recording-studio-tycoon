@@ -1,4 +1,5 @@
 import { RECORDING_INTENTS, matchesRecordingIntent } from '@/session/recordingIntent';
+import { isProjectReadyForReview, traceReviewFlow } from '@/utils/projectReviewFlow';
 import { StatIcon } from '@/components/icons/GameIcons';
 import { trackIntervention, trackInterventionOffered } from '@/telemetry/instrument';
 import { money } from '@/utils/displayMoney';
@@ -30,6 +31,8 @@ import { REWARD_POP_EVENT, takePopTier, type RewardPopDetail } from '@/utils/rew
 import { evaluateTakeAccuracy, calculateTakeEnergyCost } from '@/rpg/takeEvaluation';
 import { StreakBankControl } from './StreakBankControl';
 import type { BankResult } from '@/rpg/streakBank';
+import { resolveProducerFeatureUnlocks, nextFeatureReveal, acknowledgeFeatureReveal, type ProducerFeature } from '@/rpg/featureUnlocks';
+import { FeatureRevealBanner } from './FeatureRevealBanner';
 import { hasActiveChoreBuff, getActiveBuffMagnitude } from '@/simulation/choreEngine';
 import { PocketMeter } from '@/components/console/PocketMeter';
 
@@ -151,9 +154,15 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   });
 
   // 🔥 Overdrive risk/reward toggle (consumed by useStageWork on the next session)
-  const overdriveArmed = !!gameState.activeProject?.overdriveArmed;
+  // Progressive unlocks (#260): hidden controls can't be reached by keyboard/gamepad either.
+  const featureUnlocks = resolveProducerFeatureUnlocks(gameState);
+  const overdriveUnlocked = featureUnlocks.overdrive.unlocked;
+  const streakBankUnlocked = featureUnlocks['streak-bank'].unlocked;
+  const pendingReveal = nextFeatureReveal(gameState);
+  const acknowledgeReveal = (f: ProducerFeature) => setGameState(prev => acknowledgeFeatureReveal(prev, f));
+  const overdriveArmed = overdriveUnlocked && !!gameState.activeProject?.overdriveArmed;
   const toggleOverdrive = () => {
-    if (!gameState.activeProject) return;
+    if (!gameState.activeProject || !overdriveUnlocked) return;
     if (!overdriveArmed && gameState.playerData.dailyWorkCapacity < 2) {
       toast({
         title: '⚡ Not Enough Energy',
@@ -176,7 +185,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   // + XP. Only a gold release preserves the streak; every other outcome spends
   // it (comboCount → 0), so banking trades future output for liquidity now.
   const handleStreakBank = (result: BankResult) => {
-    if (!gameState.activeProject) return;
+    if (!gameState.activeProject || !streakBankUnlocked) return;
     setGameState(prev => ({
       ...earn(prev, result.cash, { category: 'reward-income', projectId: prev.activeProject?.id, memo: 'Streak bank' }),
       playerData: {
@@ -198,7 +207,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     });
   };
 
-  const isProjectComplete = !!gameState.activeProject && gameState.activeProject.stages.every(stage => stage.completed);
+  const isProjectComplete = isProjectReadyForReview(gameState.activeProject);
 
   // Present an intervention as an optional opportunity. It never opens itself
   // and never pauses ordinary session progress.
@@ -335,7 +344,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
     // Overdrive: West (X on Xbox, □ on PS, Y on Switch)
     if (gamepad.justPressed.west) {
-      if ((availableEnergy >= 2 || overdriveArmed) && !isProjectComplete) {
+      if (overdriveUnlocked && (availableEnergy >= 2 || overdriveArmed) && !isProjectComplete) {
         toggleOverdrive();
         gamepad.triggerHaptic(0.2, 0.3, 50);
       }
@@ -343,7 +352,10 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
     // Arm take when idle: South (A / ✕)
     if (takeState === 'idle' && gamepad.justPressed.south) {
-      if (availableEnergy > 0 && !isProjectComplete) {
+      if (isProjectComplete) {
+        handleOpenProjectReview();
+        gamepad.triggerHaptic(0.2, 0.4, 60);
+      } else if (availableEnergy > 0) {
         handleArmTake();
         gamepad.triggerHaptic(0.2, 0.4, 60);
       }
@@ -553,12 +565,20 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const energySaver = hasActiveChoreBuff(gameState.choreState, 'energy_saver');
   const energyCost = calculateTakeEnergyCost(availableEnergy, overdriveArmed, energySaver);
 
+  // Authoritative review transition for an already-complete project (#255).
+  // Works even if the final-take callback was missed (reload, race, other path).
+  const handleOpenProjectReview = () => {
+    const project = gameState.activeProject;
+    if (!controlsEnabled || !project || !isProjectReadyForReview(project)) return;
+    traceReviewFlow('recovery-cta', project.id);
+    onProjectComplete?.(project);
+  };
+
   const handleArmTake = () => {
     if (!controlsEnabled || availableEnergy <= 0 || isProjectComplete) return;
     clearTakeRearm();
     hapticTick(14);
-    playSound('ui-click', 0.5);
-    void gameAudio.playGearSwitch();
+    void gameAudio.playGearSwitch(); // one press, one cue (#256)
     setTakeState('tracking');
   };
 
@@ -604,6 +624,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       qualityBonus: verdict.qualityBonus
     });
 
+    traceReviewFlow('final-take', `complete=${Boolean(result?.isComplete)} data=${Boolean(result?.finalProjectData)}`);
     if (result?.isComplete && result.finalProjectData) {
       playSound('project-complete', 0.8);
       const isMilestone = presentation === 'panel' && verdict.grade === 'Gold';
@@ -611,7 +632,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
         setCelebrationDisplayData({ title: result.finalProjectData.title, genre: result.finalProjectData.genre });
         setProjectDataForCompletionCall(result.finalProjectData);
         setShowCelebration(true);
+        traceReviewFlow('celebration-deferred', result.finalProjectData.id);
       } else {
+        traceReviewFlow('on-project-complete', result.finalProjectData.id);
         // Reserve full-screen celebrations for actual milestones; direct settle for routine sessions (#75)
         onProjectComplete?.(result.finalProjectData);
       }
@@ -846,12 +869,12 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
               className="rst-btn rst-btn-primary world-console-record w-full flex items-center justify-center gap-1.5"
               data-rst-action-id="console:record"
               data-rst-surface="contextual"
-              onClick={handleArmTake}
-              disabled={availableEnergy <= 0 || isProjectComplete}
+              onClick={isProjectComplete ? handleOpenProjectReview : handleArmTake}
+              disabled={!isProjectComplete && availableEnergy <= 0}
             >
               {gamepad.isConnected && <GamepadGlyph button="south" controllerType={gamepad.controllerType} size="xs" />}
               <span>●</span>
-              <span>{isProjectComplete ? 'Take ready for review' : availableEnergy <= 0 ? 'Rest to recharge' : `Record take · ${energyCost} energy`}</span>
+              <span>{isProjectComplete ? 'Review project' : availableEnergy <= 0 ? 'Rest to recharge' : `Record take · ${energyCost} energy`}</span>
             </button>
           </div>
         )}
@@ -1475,6 +1498,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   (a spent streak is combo 0 — gating on combo would unmount the
                   chip before the player sees the payout). */}
               {!isProjectComplete && (
+                <FeatureRevealBanner feature={takeState === 'idle' ? pendingReveal : null} onAcknowledge={acknowledgeReveal} />
+              )}
+              {!isProjectComplete && streakBankUnlocked && (
                 <StreakBankControl
                   combo={project.comboCount ?? 0}
                   level={gameState.playerData.level}
@@ -1482,7 +1508,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 />
               )}
 
-              <div className="flex items-center gap-2">
+              {overdriveUnlocked && <div className="flex items-center gap-2">
                 <Button
                   onClick={toggleOverdrive}
                   disabled={availableEnergy < 2 || isProjectComplete}
@@ -1502,13 +1528,13 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                       : <><StatIcon name="flame" /> {t('active_arm_overdrive', { cost: energySaver ? t('active_cost_patchbay') : '2' })}</>}
                   </span>
                 </Button>
-              </div>
+              </div>}
 
               <button
                 data-rst-surface="contextual" data-rst-action-id="console:record" data-rst-world-target="console"
-                onClick={handleArmTake}
-                disabled={availableEnergy <= 0 || isProjectComplete}
-                aria-label={t('active_work_on_project')}
+                onClick={isProjectComplete ? handleOpenProjectReview : handleArmTake}
+                disabled={!isProjectComplete && availableEnergy <= 0}
+                aria-label={isProjectComplete ? 'Review project' : t('active_work_on_project')}
                 className={`w-full py-3.5 text-sm font-black uppercase tracking-wider rounded-[2px] border transition-all flex items-center justify-center gap-2 shadow-lg ${
                   isProjectComplete
                     ? 'bg-emerald-400/[0.16] border-emerald-400/55 text-emerald-100'
