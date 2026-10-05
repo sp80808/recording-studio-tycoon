@@ -1,6 +1,6 @@
-// Themed floor views for the extra studio rooms (Vocal Suite, Live Room, Mix Suite).
-// Studio A (the original control room) stays the main Pixi scene; these are unlockable extras the
-// player switches to from the room tabs. In-house proprietary original SVG drawn in code (see docs/ART_SOURCING_LOG.md).
+// Non-gameplay fallback/thumbnail for the extra studio rooms (Vocal Suite, Live Room, Mix Suite).
+// The playable rooms are full isometric Pixi scenes (roomLayouts.ts / roomLayoutScene.ts, #248); StudioRoom no
+// longer mounts this. Kept for text-only fallbacks and the room-switcher check. In-house proprietary original SVG drawn in code (see docs/ART_SOURCING_LOG.md).
 import React from 'react';
 import type { StudioRoom } from '@/types/game';
 

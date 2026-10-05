@@ -56,7 +56,7 @@ for check in tools-assets audio-system confetti-juice minigames-audio user-inter
 done
 
 echo "=== gamepad service & controller suites ==="
-for check in gamepad-service gamepad-glyph gamepad-navigation spatial-navigation radial-wheel beat-pad-game tape-jog-game console-ride-game vocal-comp album-sequence fault-hunt chain-recall flight-case-packing session-scramble phase-check booking-calendar filler-jobs city-selection onboarding-steps city-sagas market-determinism house-style artist-career label-interest label-accounts service-quote gameplay-telemetry market-demand balance-lab content-workbench freelancers staff-career recruitment-channels bus-merge gamepad-suite; do
+for check in gamepad-service gamepad-glyph gamepad-navigation spatial-navigation radial-wheel beat-pad-game tape-jog-game console-ride-game vocal-comp album-sequence fault-hunt chain-recall flight-case-packing session-scramble phase-check booking-calendar filler-jobs city-selection onboarding-steps city-sagas market-determinism house-style artist-career label-interest label-accounts service-quote gameplay-telemetry market-demand industry-events balance-lab content-workbench freelancers staff-career recruitment-channels bus-merge gamepad-suite; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-$check.cjs" --alias:@=./src >/dev/null
   node "${CHECK_OUTPUT_DIR}/rst-$check.cjs"
 done
@@ -212,6 +212,8 @@ echo "=== studio ux presentation (HUD + love-room) ==="
 node "${CHECK_OUTPUT_DIR}/rst-studio-clock-progression.cjs"
 ./node_modules/.bin/esbuild tests/room-switcher.check.tsx --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-room-switcher.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-room-switcher.cjs"
+./node_modules/.bin/esbuild tests/room-layouts.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-room-layouts.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-room-layouts.cjs"
 ./node_modules/.bin/esbuild tests/window-view.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-window-view.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-window-view.cjs"
 ./node_modules/.bin/esbuild tests/floor-furnishings.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-floor-furnishings.cjs" --alias:@=./src >/dev/null
@@ -235,6 +237,8 @@ done
 echo "=== producer customization -> modular sprite (#126) ==="
 ./node_modules/.bin/esbuild tests/producer-customization.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-producer-customization.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-producer-customization.cjs"
+./node_modules/.bin/esbuild tests/producer-appearance-model.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-producer-appearance-model.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-producer-appearance-model.cjs"
 
 echo "=== era-authentic gigs, story contracts & economy floors ==="
 for check in project-era-starters project-brief session-issues signal-chain economy-income economy-ledger story-contracts achievements campaign-endings studio-hotkeys studio-know-how studio-premises; do
@@ -310,5 +314,12 @@ node "${CHECK_OUTPUT_DIR}/rst-advance-day-work.cjs"
 node "${CHECK_OUTPUT_DIR}/rst-session-wrap.cjs"
 ./node_modules/.bin/esbuild tests/session-beat.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-session-beat.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-session-beat.cjs"
+
+echo "=== project review recovery (#255) ==="
+./node_modules/.bin/esbuild tests/project-review-recovery.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-project-review-recovery.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-project-review-recovery.cjs"
+
+./node_modules/.bin/esbuild tests/career-chronicle.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-career-chronicle.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-career-chronicle.cjs"
 
 echo "All automated checks passed."
