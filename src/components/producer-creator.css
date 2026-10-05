@@ -1,20 +1,31 @@
-/* Producer creator: large preview beside the labelled editor (stacked on narrow screens). */
-.producer-creator { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 20px; align-items: start; width: 100%; max-width: 62rem; margin: 1.25rem auto 0; text-align: left; color: var(--rst-ink, #f3ecdd); }
-.producer-creator-preview { display: grid; place-items: center; min-height: 540px; border: 1px solid var(--rst-line-strong); border-radius: 18px; background: linear-gradient(180deg, #3a3835 0%, #2a2826 100%); overflow: hidden; }
+/* Producer creator: large preview beside the labelled editor; on phones the preview pins above a single list. */
+.producer-creator { display: grid; grid-template-columns: minmax(300px, 4fr) minmax(0, 7fr); gap: 20px; align-items: start; width: 100%; max-width: 76rem; margin: 1rem auto 0; text-align: left; color: var(--rst-ink, #f3ecdd); }
+.producer-creator-preview { display: grid; place-items: center; align-self: start; padding: 12px; border: 1px solid var(--rst-line-strong); border-radius: 18px; background: linear-gradient(180deg, #3a3835 0%, #2a2826 100%); overflow: hidden; }
 .producer-creator-preview svg { max-width: none; image-rendering: pixelated; }
 .producer-creator-panel { display: grid; gap: 10px; min-width: 0; }
-.producer-creator-name { display: grid; gap: .4rem; font-size: 10px; text-transform: uppercase; letter-spacing: .18em; font-weight: 700; color: var(--rst-brass-200); }
+.producer-creator-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 10px; }
+.producer-creator-name { display: grid; gap: .4rem; font-size: 10px; text-transform: uppercase; letter-spacing: .18em; font-weight: 700; color: var(--rst-brass-200); min-width: 0; }
 .producer-creator-name input { width: 100%; font-size: 20px; min-height: 48px; }
 .producer-creator-tools { display: flex; gap: 8px; }
-.producer-creator-tools button { flex: 1; display: flex; gap: 6px; align-items: center; justify-content: center; min-height: 44px; padding: 0 10px; font-size: 13px; border-radius: 8px; border: 1px solid #e6b86640; color: var(--rst-brass-200); touch-action: manipulation; }
+.producer-creator-tools button { display: flex; gap: 6px; align-items: center; justify-content: center; min-height: 48px; padding: 0 14px; font-size: 13px; border-radius: 8px; border: 1px solid #e6b86640; color: var(--rst-brass-200); touch-action: manipulation; white-space: nowrap; }
 .producer-creator-tools button:disabled { opacity: .3; }
 .producer-creator button:focus-visible { outline: 2px solid #ffe0a8; outline-offset: 3px; }
+/* The character step trades the intro copy for room: the creator is the content. */
+.career-character-step .rst-kicker, .career-character-step .rst-body { display: none; }
+.career-character-step h1 { font-size: 32px; }
+.career-character-step main > div > .animate-rst-rise, .career-character-step .animate-rst-rise { margin-top: 12px; }
+@media (max-width: 1023px) {
+  .producer-creator { grid-template-columns: minmax(240px, 5fr) minmax(0, 6fr); gap: 14px; }
+  .producer-creator-head { grid-template-columns: minmax(0, 1fr); }
+}
 @media (max-width: 767px) {
-  .producer-creator { grid-template-columns: minmax(0, 1fr); gap: 12px; margin-top: 12px; }
-  .producer-creator-preview { min-height: 380px; }
-  .career-character-step .rst-kicker, .career-character-step .rst-body { display: none; }
-  .career-character-step h1 { font-size: 28px; }
+  .producer-creator { grid-template-columns: minmax(0, 1fr); gap: 10px; margin-top: 8px; }
+  /* Pinned so the look stays visible while the list scrolls beneath it. */
+  .producer-creator-preview { position: sticky; top: 0; z-index: 5; padding: 6px; border-radius: 14px; background: #2a2826; box-shadow: 0 8px 14px -8px #000c; }
+  .career-character-step h1 { font-size: 26px; }
   .career-character-step footer p { display: none; }
   .career-character-step footer button { width: 100%; min-height: 44px; }
   .producer-creator-name input { min-height: 44px; }
+  .producer-creator-tools { display: grid; grid-template-columns: 1fr 1fr; }
+  .producer-creator-tools button { min-height: 44px; }
 }
