@@ -22,6 +22,10 @@ assert.match(dash, /onClick=\{\(\) => openSession\?\.\(project\)\}/);
 
 assert.equal(prog.split('<ProjectSwitcher').length - 1, 2, 'both session views offer the project switcher');
 
+assert.match(dash, /useState\('projects'\)/, 'dashboard opens on the project cards');
+assert.match(dash, /multi-project-current/, 'card marks the project on the desk');
+assert.match(dash, /Remove\?/, 'remove needs a second tap');
+
 // Compact cards: sliders present, no truncated titles, buttons wrap.
 assert.match(dash, /data-testid="multi-project-sliders"/);
 assert.match(dash, /<Slider/);

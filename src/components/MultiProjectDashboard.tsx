@@ -36,8 +36,10 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
 }) => {
   // Never let "Open session" be a silent no-op: fall back to selecting the project.
   const openSession = onWorkSession ?? onProjectSelect;
-  const [selectedTab, setSelectedTab] = useState('overview');
+  const [selectedTab, setSelectedTab] = useState('projects');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  /** Two-step remove so a stray tap cannot drop a booked project. */
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
   
   const {
     projectCapacity,
@@ -262,6 +264,10 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
               const room = gameState.studioRooms.find(r => r.id === project.bookingRoomId)?.name || 'Unassigned';
               const pct = Math.round((progress?.overallProgress || 0) * 100);
               const expanded = expandedId === project.id;
+              const isCurrent = gameState.activeProject?.id === project.id;
+              const reviewReady = Boolean(project.awaitingReview);
+              const issues = project.unresolvedIssues?.length ?? 0;
+              const confirming = confirmRemoveId === project.id;
 
               return (
                 <Card key={project.id} className="relative min-w-0" data-testid={`multi-project-card-${project.id}`}>
@@ -272,16 +278,27 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
                           <span className="rst-chip whitespace-nowrap">{project.genre}</span>
                           <span className={`rst-chip whitespace-nowrap ${getPriorityColor(priority)}`}>P{priority}</span>
+                          {isCurrent && <span className="rst-chip rst-chip-money whitespace-nowrap" data-testid="multi-project-current">On the desk</span>}
+                          {reviewReady && <span className="rst-chip rst-chip-brass whitespace-nowrap">Ready to release</span>}
+                          {issues > 0 && <span className="rst-chip rst-chip-danger whitespace-nowrap">{issues} issue{issues === 1 ? '' : 's'}</span>}
                         </div>
                       </div>
                       <button
                         type="button"
-                        onClick={() => handleRemoveProject(project.id)}
-                        aria-label={`Remove ${project.title}`}
-                        title="Remove project"
-                        className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-stone-400 hover:bg-white/10 hover:text-rose-300"
+                        onClick={() => {
+                          if (confirming) {
+                            setConfirmRemoveId(null);
+                            handleRemoveProject(project.id);
+                          } else {
+                            setConfirmRemoveId(project.id);
+                          }
+                        }}
+                        onBlur={() => setConfirmRemoveId((id) => (id === project.id ? null : id))}
+                        aria-label={confirming ? `Confirm remove ${project.title}` : `Remove ${project.title}`}
+                        title={confirming ? 'Tap again to remove' : 'Remove project'}
+                        className={`grid h-9 shrink-0 place-items-center rounded-md hover:bg-white/10 ${confirming ? 'px-2 text-xs font-semibold text-rose-300' : 'w-9 text-stone-400 hover:text-rose-300'}`}
                       >
-                        <X className="w-4 h-4" />
+                        {confirming ? 'Remove?' : <X className="w-4 h-4" />}
                       </button>
                     </div>
 
@@ -325,7 +342,7 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
                         onClick={() => openSession?.(project)}
                         className="rst-btn rst-btn-primary min-w-[7.5rem] flex-1 whitespace-nowrap !min-h-9 !px-3 !text-xs"
                       >
-                        Open session
+                        {reviewReady ? 'Review & release' : isCurrent ? 'Resume session' : 'Open session'}
                       </button>
                       <button
                         type="button"
