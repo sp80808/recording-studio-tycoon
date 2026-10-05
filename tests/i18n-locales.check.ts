@@ -152,7 +152,7 @@ for (const e of DIRECTOR_EVENTS) {
   for (const op of e.options) assert.ok(eventsEn[`event.${e.id}.opt.${op.id}.label`], `events.json missing option ${e.id}/${op.id}`);
 }
 const readEn = (f: string) => JSON.parse(fs.readFileSync(path.join(localesRoot, 'en', `${f}.json`), 'utf8')) as Record<string, string>;
-for (const [file, en] of [['content', contentEn], ['events', eventsEn], ['minigames', readEn('minigames')], ['crew', readEn('crew')]] as const) {
+for (const [file, en] of [['content', contentEn], ['events', eventsEn], ['minigames', readEn('minigames')], ['crew', readEn('crew')], ['appearance', readEn('appearance')]] as const) {
   for (const code of SUPPORTED_LOCALE_CODES) {
     const f = path.join(localesRoot, code, `${file}.json`);
     if (!fs.existsSync(f)) continue; // missing file => English fallback
