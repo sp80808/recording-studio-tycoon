@@ -11,6 +11,7 @@ import { initializeStorylineState } from '@/narrative/branchingStorylineEngine';
 import { migrateProducerCustomization } from '@/utils/producerCustomization';
 import { migrateKnowHow } from '@/rpg/studioKnowHow';
 import { migrateExpertise } from '@/rpg/houseStyle';
+import { migrateCustomization } from '@/rpg/studioCustomization';
 
 const DEFAULT_FOCUS_ALLOCATION: FocusAllocation = {
   performance: 33,
@@ -154,6 +155,9 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
 
   // Premises tier (#70): legacy saves start in the borrowed room.
   processedState.premisesTier = processedState.premisesTier === 3 ? 3 : processedState.premisesTier === 2 ? 2 : processedState.premisesTier === 1 ? 1 : 0;
+
+  // Cosmetics (#258): legacy saves start with an empty, valid customisation state.
+  processedState.studioCustomization = migrateCustomization(processedState.studioCustomization);
 
   // Home city: keep only a known id; legacy saves stay neutral.
   if (!isCityId(processedState.cityId)) delete processedState.cityId;

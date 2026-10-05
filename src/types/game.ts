@@ -393,6 +393,8 @@ export interface GameState {
   studioKnowHow?: import('@/rpg/studioKnowHow').StudioKnowHow;
   /** Studio house style / expertise (#71). Absent on legacy saves; migrated to empty. */
   studioExpertise?: import('@/rpg/houseStyle').StudioExpertise;
+  /** Room/producer cosmetics and their provenance (#258). Absent on legacy saves = empty. Purely visual, never gameplay power. */
+  studioCustomization?: import('@/rpg/studioCustomization').StudioCustomizationState;
   /** Studio premises tier (#70): 0 borrowed room, 1 project studio. Absent on legacy saves = 0. */
   premisesTier?: 0 | 1 | 2 | 3;
   /** Move-day cinematic still to be shown after a premises move (#70). Cleared once seen. */
