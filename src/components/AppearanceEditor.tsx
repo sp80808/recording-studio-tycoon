@@ -77,8 +77,8 @@ function AppearanceRow({ field, appearance, onChange }: { field: AppearanceField
         aria-valuemin={1} aria-valuemax={field.options.length} aria-valuenow={index + 1} aria-valuetext={value}
         title={appearanceUi('appearance.ui.position', { index: index + 1, total: field.options.length })}
         onKeyDown={(e) => {
-          if (e.key === 'ArrowRight') step(1);
-          else if (e.key === 'ArrowLeft') step(-1);
+          if (e.key === 'ArrowRight' || e.key === 'ArrowUp') step(1);
+          else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') step(-1);
           else if (e.key === 'Home') onChange(field.set(appearance, field.options[0].value));
           else if (e.key === 'End') onChange(field.set(appearance, field.options[last].value));
           else return;
