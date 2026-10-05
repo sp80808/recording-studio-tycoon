@@ -167,7 +167,7 @@ export const StreakBankControl: React.FC<StreakBankControlProps> = ({
       }
       if (idx > tickIdxRef.current) {
         tickIdxRef.current = idx;
-        void gameAudio.playTactileClick(0.3 + 0.45 * p);
+        // Haptic + visual progress only: no repeated click train during the hold (#256).
         gamepad.triggerHaptic(0.12 + 0.45 * p, 0.1 + 0.35 * p, 25);
       }
 
