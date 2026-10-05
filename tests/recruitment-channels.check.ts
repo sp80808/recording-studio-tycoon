@@ -58,4 +58,10 @@ const avgSal = (xs: any[]) => xs.reduce((t, c) => t + c.salary, 0) / xs.length;
 ok(avgSal(hh) > avgSal(brd) * 1.5, 'headhunters cost meaningfully more than the board');
 ok(t3.money - startRecruitmentSearchInState(t3, 'headhunter').money === RECRUITMENT_CHANNELS.headhunter.cost, 'the headhunter fee is charged up front');
 ok(JSON.stringify(pool2(t3, 'headhunter')) === JSON.stringify(hh), 'headhunter shortlists are deterministic');
+// Work-style trait: every candidate has one, deterministic, survives reload, and channels bias it.
+import { WORK_STYLES, pickWorkStyle } from '../src/rpg/workStyle';
+ok([...college, ...referral, ...board, ...spec, ...hh].every((c: any) => c.workStyle in WORK_STYLES), 'every candidate carries a known work style');
+ok(JSON.stringify(a.availableCandidates.map((c: any) => c.workStyle)) === JSON.stringify(b.availableCandidates.map((c: any) => c.workStyle)), 'work styles survive reload unchanged');
+const tally = (ch: string) => { const t: Record<string, number> = {}; for (let i = 0; i < 600; i++) { const k = pickWorkStyle(ch, `s${i}`); t[k] = (t[k] ?? 0) + 1; } return t; };
+ok(tally('college')['quick-study'] > tally('board')['quick-study'] && tally('specialist').methodical > tally('board').methodical, 'channels bias which work styles appear');
 console.log(`recruitment-channels: all ${n} checks passed`);

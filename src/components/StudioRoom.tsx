@@ -7,6 +7,7 @@ import { getRoomLayoutProfile } from '@/components/studio/roomLayouts';
 import { StudioRoomTabs } from '@/components/studio/StudioRoomTabs';
 import { getOccupiedRoomIds, getOperationalStudioRooms } from '@/utils/studioRoomUtils';
 import { normalizeHotspotId } from '@/utils/studioHotspots';
+import { getDirectionalTargetIndex, getStickDirection, type ControllerNavDirection } from '@/utils/controllerNavigation';
 import { StudioInspector } from '@/components/StudioInspector';
 import { GameState, Project, SessionIntervention } from '@/types/game';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -164,7 +165,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
   // Extra rooms bring their own hotspots (gamepad focus cycles through these instead of Studio A's).
   const roomLayout = getRoomLayoutProfile(viewRoom?.type);
   const roomHotspotList = roomLayout?.hotspots.map((h) => h.label);
-  const activeHotspots: StudioHotspotId[] = roomLayout ? roomLayout.hotspots.map((h) => h.id) : studioHotspots;
+  const activeHotspots = useMemo<StudioHotspotId[]>(() => (roomLayout ? roomLayout.hotspots.map((h) => h.id) : studioHotspots), [roomLayout, eraDecor.prop]);
   const activeHotspotName = (id: StudioHotspotId) => roomLayout?.hotspots.find((h) => h.id === id)?.label ?? HOTSPOT_NAMES[id];
   useEffect(() => { setFocusedHotspotIndex(0); }, [viewRoomId]);
 
@@ -323,6 +324,8 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     hapticsEnabled: settings?.gamepadHaptics,
   });
 
+  const [localCameraReset, setCameraReset] = useState(0);
+  const previousFloorStickDirectionRef = useRef<ControllerNavDirection | null>(null);
 
   // Close inspector on B button
   useEffect(() => {
@@ -333,33 +336,76 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     }
   }, [gamepad.isConnected, activeInspector, gamepad.justPressed.east]);
 
-  // Navigate hotspots via D-Pad or Left Stick when on studio floor
+  // Navigate floor hotspots in screen-space: D-pad or left stick moves toward
+  // what the player can actually see, rather than cycling a hidden linear list.
   useEffect(() => {
-    if (!gamepad.isConnected || activeInspector || !floorFocused) return;
+    if (!gamepad.isConnected || activeInspector || !floorFocused || activeHotspots.length === 0) return;
 
-    if (gamepad.justPressed.dpadRight || gamepad.justPressed.dpadDown) {
-      setFocusedHotspotIndex((prev) => (prev + 1) % activeHotspots.length);
+    const stickDirection = getStickDirection(gamepad.leftStick.x, gamepad.leftStick.y);
+    const stickJustMoved = stickDirection && stickDirection !== previousFloorStickDirectionRef.current;
+    previousFloorStickDirectionRef.current = stickDirection;
+
+    const direction: ControllerNavDirection | null =
+      gamepad.justPressed.dpadRight ? 'right' :
+      gamepad.justPressed.dpadLeft ? 'left' :
+      gamepad.justPressed.dpadDown ? 'down' :
+      gamepad.justPressed.dpadUp ? 'up' :
+      stickJustMoved ? stickDirection :
+      null;
+
+    if (direction) {
+      setFocusedHotspotIndex((prev) =>
+        getDirectionalTargetIndex(activeHotspots, anchors, prev, direction)
+      );
       gamepad.triggerHaptic(0.1, 0.15, 30);
-    } else if (gamepad.justPressed.dpadLeft || gamepad.justPressed.dpadUp) {
-      setFocusedHotspotIndex((prev) => (prev - 1 + activeHotspots.length) % activeHotspots.length);
-      gamepad.triggerHaptic(0.1, 0.15, 30);
-    } else if (gamepad.justPressed.south) {
+      return;
+    }
+
+    if (gamepad.justPressed.south) {
       const selected = activeHotspots[focusedHotspotIndex % activeHotspots.length];
       handleHotspot(selected);
       gamepad.triggerHaptic(0.2, 0.3, 50);
+      return;
+    }
+
+    // X / Square is a real contextual quick-work button on the floor.
+    if (gamepad.justPressed.west) {
+      if (gameState.activeProject) {
+        onConsoleFocus();
+      } else if (gameState.availableProjects.length > 0 && onBookings) {
+        onBookings();
+      } else {
+        handleHotspot('console');
+      }
+      gamepad.triggerHaptic(0.2, 0.3, 55);
     }
   }, [
     gamepad.isConnected,
-    floorFocused,
-    activeInspector,
     gamepad.justPressed.dpadRight,
     gamepad.justPressed.dpadDown,
     gamepad.justPressed.dpadLeft,
     gamepad.justPressed.dpadUp,
     gamepad.justPressed.south,
+    gamepad.justPressed.west,
+    gamepad.leftStick.x,
+    gamepad.leftStick.y,
+    activeInspector,
+    floorFocused,
     focusedHotspotIndex,
-    activeHotspots.length,
+    activeHotspots,
+    anchors,
+    gameState.activeProject,
+    gameState.availableProjects.length,
+    onBookings,
+    onConsoleFocus,
   ]);
+
+  // R3 recentres the isometric floor camera from anywhere on the unobstructed floor.
+  useEffect(() => {
+    if (!gamepad.isConnected || activeInspector || !floorFocused || !gamepad.justPressed.rs) return;
+    setCameraReset((value) => value + 1);
+    gamepad.triggerHaptic(0.14, 0.28, 45);
+  }, [gamepad.isConnected, gamepad.justPressed.rs, activeInspector, floorFocused]);
 
   return (
     <div 
@@ -367,7 +413,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       className={`relative overflow-hidden rounded-lg border border-stone-700/70 bg-[#1b1815] transition-all duration-300 ${className}`} 
       style={style}
     >
-      <WebGLCanvas state={sceneState} onHotspotSelect={handleHotspot} resetCameraKey={cameraResetKey} onHotspotAnchors={setAnchors} onFirstFrame={onStudioReady} />
+      <WebGLCanvas state={sceneState} onHotspotSelect={handleHotspot} resetCameraKey={cameraResetKey + localCameraReset} onHotspotAnchors={setAnchors} onFirstFrame={onStudioReady} />
 
       {viewRoom && <RoomInfoStrip room={viewRoom} occupiedBy={roomProjectTitle(viewRoom.id)} hotspots={roomHotspotList} />}
       <StudioRoomTabs rooms={operationalRooms} activeId={viewRoom ? viewRoom.id : 'studio-a'} occupied={occupiedRooms} onSelect={(id) => { if (settings.sfxEnabled) void gameAudio.playTactileClick(); setViewRoomId(id); }} />
