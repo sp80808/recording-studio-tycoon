@@ -395,6 +395,8 @@ export interface GameState {
   studioExpertise?: import('@/rpg/houseStyle').StudioExpertise;
   /** Studio premises tier (#70): 0 borrowed room, 1 project studio. Absent on legacy saves = 0. */
   premisesTier?: 0 | 1 | 2 | 3;
+  /** Pinned defining moments (#259): career milestone ids, max 3. Absent on legacy saves = none. */
+  pinnedMoments?: string[];
   /** Move-day cinematic still to be shown after a premises move (#70). Cleared once seen. */
   premisesMoveBeat?: 1 | 2 | 3;
   /** Home city picked at career start (currency display, regional taste, local names and events). Absent on legacy saves = neutral. */

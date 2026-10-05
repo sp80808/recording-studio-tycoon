@@ -10,6 +10,7 @@ import { Headphones, Phone, SlidersHorizontal, Sparkles, Users, Disc3, Trophy, M
 import { GameState, StaffMember, PlayerAttributes, Project, SessionIntervention } from '@/types/game';
 import { ProjectList } from './ProjectList';
 import { ProgressiveProjectInterface } from './ProgressiveProjectInterface';
+import { togglePinnedMoment } from '@/utils/careerChronicle';
 import { CareerHub } from './CareerHub';
 import HouseStylePanel from '@/components/HouseStylePanel';
 import ClientCareerPanel from '@/components/ClientCareerPanel';
@@ -608,6 +609,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                 onOpenStorylineBranch={onOpenStorylineBranch}
                 onOpenStoryEvent={onOpenStoryEvent}
                 onChooseSeasonFocus={focus => setGameState(prev => chooseFocus(prev, focus))}
+                onTogglePinnedMoment={id => setGameState(prev => togglePinnedMoment(prev, id))}
               />
               <KnowHowPanel
                 knowHow={gameState.studioKnowHow}

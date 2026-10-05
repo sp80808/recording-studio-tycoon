@@ -46,3 +46,42 @@ const target = resolveCareerTarget(played);
 assert.ok(target.label.length > 0 && target.detail.length > 0);
 assert.doesNotThrow(() => resolveCareerTarget({ ...base, storylineState: undefined }));
 console.log('career chronicle derivations passed');
+
+// ---- Slice 2: chapters, pins, consequences ----
+import { resolveChapterIndex, resolveCareerChapter, groupMilestonesByChapter, togglePinnedMoment, resolvePinnedMoments, deriveBranchConsequences } from '../src/utils/careerChronicle';
+import { initializeStorylineState, getCampaignTreeForState } from '../src/narrative/branchingStorylineEngine';
+{
+  assert.equal(resolveCareerChapter(sparse).id, 'bedroom', 'sparse legacy save starts in the bedroom');
+  assert.doesNotThrow(() => resolveChapterIndex(legacy));
+  assert.doesNotThrow(() => groupMilestonesByChapter(legacy));
+  assert.equal(resolveCareerChapter(played).id, 'real-studio', 'premises tier 1 outranks first clients');
+  assert.equal(resolveChapterIndex({ ...played, premisesTier: 3 }), 6);
+  const groups = groupMilestonesByChapter(played);
+  assert.equal(groups[0].chapter.id, 'real-studio');
+  assert.equal(groups[0].current, true);
+  const flat = groups.flatMap((g) => g.milestones.map((m) => m.id)).sort();
+  assert.deepEqual(flat, [...ids].sort(), 'every milestone lands in exactly one chapter');
+  assert.deepEqual(groupMilestonesByChapter(played), groups, 'deterministic');
+
+  let s = played;
+  s = togglePinnedMoment(s, 'first-paid-session');
+  assert.equal(played.pinnedMoments, undefined, 'immutable');
+  assert.deepEqual(s.pinnedMoments, ['first-paid-session']);
+  s = togglePinnedMoment(s, 'first-paid-session');
+  assert.deepEqual(s.pinnedMoments, [], 'toggle unpins');
+  for (const id of ['first-paid-session', 'first-repeat-client', 'first-poor-session', 'first-loyal-client']) s = togglePinnedMoment(s, id);
+  assert.deepEqual(s.pinnedMoments, ['first-repeat-client', 'first-poor-session', 'first-loyal-client'], 'cap of 3 evicts oldest');
+  assert.deepEqual(resolvePinnedMoments({ ...s, pinnedMoments: ['gone', 'first-loyal-client'] }).map((m) => m.id), ['first-loyal-client'], 'stale pins drop');
+
+  assert.deepEqual(deriveBranchConsequences(played), []);
+  const seeded = initializeStorylineState(played);
+  const tree = getCampaignTreeForState(seeded);
+  const withDilemma = tree.nodes.find((n) => n.branchDilemma)!;
+  const opt = withDilemma.branchDilemma!.options[0];
+  const withChoice: GameState = { ...seeded, storylineState: { ...seeded.storylineState!, branchHistory: [{ nodeId: withDilemma.id, chosenOptionId: opt.id, resolvedDay: 9, storyFlagGranted: opt.storyFlag }] } };
+  const cons = deriveBranchConsequences(withChoice);
+  assert.equal(cons.length, 1);
+  assert.equal(cons[0].headline, `You chose: ${opt.label}`);
+  assert.equal(cons[0].outcome, opt.consequences.narrativeOutcome);
+}
+console.log('career-chronicle slice 2 checks passed');

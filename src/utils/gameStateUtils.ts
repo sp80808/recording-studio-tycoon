@@ -155,6 +155,11 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
   // Premises tier (#70): legacy saves start in the borrowed room.
   processedState.premisesTier = processedState.premisesTier === 3 ? 3 : processedState.premisesTier === 2 ? 2 : processedState.premisesTier === 1 ? 1 : 0;
 
+  // Pinned defining moments (#259): keep only a short list of strings.
+  processedState.pinnedMoments = Array.isArray(processedState.pinnedMoments)
+    ? processedState.pinnedMoments.filter((id): id is string => typeof id === 'string').slice(0, 3)
+    : [];
+
   // Home city: keep only a known id; legacy saves stay neutral.
   if (!isCityId(processedState.cityId)) delete processedState.cityId;
 
