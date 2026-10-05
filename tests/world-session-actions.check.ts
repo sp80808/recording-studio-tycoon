@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {
   describeConsoleSessionAction,
   describePhoneAnswerAction,
@@ -87,3 +88,15 @@ for (const preset of RECORDING_INTENTS) {
   assert.equal(matchesRecordingIntent({ ...preset.focus, layering: preset.focus.layering + 1 }, preset.focus), false);
 }
 assert.equal(new Set(RECORDING_INTENTS.map(preset => JSON.stringify(preset.focus))).size, 3);
+
+// #189/#197: the phone is the front door — it opens the compact in-room offer card, never the drawer — and every
+// world object is reachable from the keyboard as a real button tagged for the evidence recorder.
+{
+  const room = fs.readFileSync('src/components/StudioRoom.tsx', 'utf8');
+  const inspector = fs.readFileSync('src/components/StudioInspector.tsx', 'utf8');
+  assert.ok(!/canonical === 'phone' && onBookings/.test(room), 'phone tap no longer redirects to the bookings drawer');
+  assert.match(room, /aria-label="Studio objects"/);
+  assert.match(room, /data-rst-action-id=\{`world:\$\{id\}`\}/);
+  assert.match(inspector, /Compare all enquiries/, 'the full enquiry list stays one tap away from the offer card');
+  assert.ok(!/bg-emerald-400|text-green-400|bg-red-600/.test(inspector.slice(inspector.indexOf("hotspot === 'phone'"), inspector.indexOf("hotspot === 'phone'") + 4000)), 'phone card uses palette tokens');
+}

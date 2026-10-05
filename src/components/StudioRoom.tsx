@@ -308,7 +308,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     }
     // Console desk and live booth share the session work screen when idle.
     if (canonical === 'console' || canonical === 'liveRoom') { onConsoleFocus(); return; }
-    if (canonical === 'phone' && onBookings) { onBookings(); return; }
+    // The phone opens a compact offer card in the room; the full enquiry list stays one tap away inside it.
     setActiveInspector(canonical);
   };
 
@@ -372,8 +372,8 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     if (gamepad.justPressed.west) {
       if (gameState.activeProject) {
         onConsoleFocus();
-      } else if (gameState.availableProjects.length > 0 && onBookings) {
-        onBookings();
+      } else if (gameState.availableProjects.length > 0) {
+        handleHotspot('phone');
       } else {
         handleHotspot('console');
       }
@@ -425,6 +425,25 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           <div className="take-fx-bubble">{takeQuip(takeFx.grade, takeFx.seq)}</div>
         </div>
       )}
+      {/* Keyboard / screen-reader route to every world object: Tab to a target, Enter to use it. Focus lights the same
+          target highlight the gamepad uses, so the room — not a menu — stays the control surface. */}
+      <ul className="m-0 list-none p-0" aria-label="Studio objects">
+        {activeHotspots.map((id, index) => (
+          <li key={id}>
+            <button
+              type="button"
+              className="rst-chip sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-[84px] focus:z-40"
+              data-rst-surface="world"
+              data-rst-action-id={`world:${id}`}
+              data-rst-world-target={id}
+              onFocus={() => setFocusedHotspotIndex(index)}
+              onClick={() => handleHotspot(id)}
+            >
+              {activeHotspotName(id)}
+            </button>
+          </li>
+        ))}
+      </ul>
       {activeInspector && (
         <StudioInspector
           hotspot={activeInspector}

@@ -303,19 +303,25 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
     const gigs = gameState.availableProjects.slice(0, 4);
     return (
       <Shell hotspot={hotspot} onClose={onClose}>
-        {gigs.length === 0 && <div className="text-xs text-stone-400">No offers on the desk. Chase fresh gigs below.</div>}
-        {gigs.length > 1 && <div className="flex items-center justify-between gap-2"><button type="button" className="rst-btn" onClick={() => setOfferIndex(index => (index + gigs.length - 1) % gigs.length)} aria-label="Previous enquiry">←</button><span className="rst-kicker">Enquiry {Math.min(offerIndex, gigs.length - 1) + 1} / {gigs.length}</span><button type="button" className="rst-btn" onClick={() => setOfferIndex(index => (index + 1) % gigs.length)} aria-label="Next enquiry">→</button></div>}
+        {gigs.length === 0 && <div className="rst-muted text-xs">No offers on the desk. Chase fresh gigs below.</div>}
+        {gigs.length > 1 && (
+          <div className="flex items-center justify-between gap-2">
+            <button type="button" className="rst-btn !min-h-8 !px-3" onClick={() => setOfferIndex(index => (index + gigs.length - 1) % gigs.length)} aria-label="Previous enquiry">←</button>
+            <span className="rst-kicker">Enquiry {Math.min(offerIndex, gigs.length - 1) + 1} / {gigs.length}</span>
+            <button type="button" className="rst-btn !min-h-8 !px-3" onClick={() => setOfferIndex(index => (index + 1) % gigs.length)} aria-label="Next enquiry">→</button>
+          </div>
+        )}
         {gigs.slice(Math.min(offerIndex, Math.max(0, gigs.length - 1)), Math.min(offerIndex, Math.max(0, gigs.length - 1)) + 1).map((gig) => (
-          <div key={gig.id} className="rounded border border-white/10 bg-white/5 p-2 space-y-1">
+          <div key={gig.id} className="space-y-1.5 rounded-xl border border-[var(--rst-line)] bg-[var(--rst-fill-1)] p-2.5">
             <div className="flex items-start justify-between gap-2">
-              <span className="font-semibold text-white text-xs">{gig.title}</span>
-              <span className="text-[10px] px-1 py-0.5 rounded bg-red-600/80 text-white whitespace-nowrap">{gig.clientType}</span>
+              <span className="text-xs font-semibold text-[var(--rst-ivory)]">{gig.title}</span>
+              <span className="rst-chip whitespace-nowrap !py-0.5 text-[10px]">{gig.clientType}</span>
             </div>
             <StatRow label="Genre" value={gig.genre} />
-            <StatRow label="Payout" value={money(gig.payoutBase)} valueClass="text-green-400" />
-            <StatRow label="Rep" value={`+${gig.repGainBase}`} valueClass="text-amber-300" />
+            <StatRow label="Payout" value={money(gig.payoutBase)} valueClass="text-[var(--rst-money)]" />
+            <StatRow label="Rep" value={`+${gig.repGainBase}`} valueClass="text-[var(--rst-brass-300)]" />
             <MotionButton
-              className="w-full h-7 mt-1 bg-emerald-400/[0.14] ring-1 ring-inset ring-emerald-400/45 hover:bg-emerald-400/[0.24] text-emerald-100 text-xs font-bold"
+              className={`rst-btn mt-1 w-full !min-h-9 text-xs ${project ? '' : 'rst-btn-primary'}`}
               disabled={!!project || !!actingGigId}
               data-rst-action-id="phone:accept"
               data-rst-world-target="phone"
@@ -331,6 +337,15 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
             </MotionButton>
           </div>
         ))}
+        {gigs.length > 0 && onBookings && (
+          <button
+            type="button"
+            className="rst-btn rst-btn-ghost w-full !min-h-8 text-xs"
+            onClick={() => { void gameAudio.playTactileClick(); onClose(); onBookings(); }}
+          >
+            Compare all enquiries
+          </button>
+        )}
         <div className="pt-1 border-t border-white/10">
           <MotionButton
             className={`w-full h-7 text-xs border-white/20 ${ready ? 'text-amber-200 hover:bg-amber-500/10' : 'text-stone-500'}`}
