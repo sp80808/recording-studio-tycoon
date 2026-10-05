@@ -157,6 +157,10 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
               gameState={gameState}
               setGameState={setGameState}
               onProjectSelect={onProjectSelect}
+              onWorkSession={(project) => {
+                onProjectSelect?.(project);
+                setShowMultiProjectInTransition(false);
+              }}
             />
           </div>
         ) : (

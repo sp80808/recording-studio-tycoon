@@ -8,7 +8,7 @@ import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { AlertCircle, Users, Zap, Settings, Play, Pause, Plus, X } from 'lucide-react';
-import { GameState, Project, AutomationMode, AutomationSettings } from '@/types/game';
+import { GameState, Project, AutomationMode, AutomationSettings, FocusAllocation } from '@/types/game';
 import { useMultiProjectManagement } from '@/hooks/useMultiProjectManagement';
 import { calculateStaffProjectFit } from '@/utils/staffFitUtils';
 import { formatNumber } from '@/i18n/formatLocale';
@@ -21,13 +21,23 @@ interface MultiProjectDashboardProps {
   onWorkSession?: (project: Project) => void;
 }
 
+const DEFAULT_FOCUS: FocusAllocation = { performance: 33, soundCapture: 33, layering: 34 };
+const FOCUS_CHANNELS: Array<{ key: keyof FocusAllocation; label: string }> = [
+  { key: 'performance', label: 'Perform' },
+  { key: 'soundCapture', label: 'Capture' },
+  { key: 'layering', label: 'Layer' },
+];
+
 export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
   gameState,
   setGameState,
   onProjectSelect,
   onWorkSession
 }) => {
+  // Never let "Open session" be a silent no-op: fall back to selecting the project.
+  const openSession = onWorkSession ?? onProjectSelect;
   const [selectedTab, setSelectedTab] = useState('overview');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   
   const {
     projectCapacity,
@@ -55,6 +65,18 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
     if (canAddProject()) {
       addProject(availableProject);
     }
+  };
+
+  const setFocus = (projectId: string, key: keyof FocusAllocation, value: number) => {
+    setGameState(prev => {
+      const patch = (p: Project): Project =>
+        p.id === projectId ? { ...p, focusAllocation: { ...(p.focusAllocation ?? DEFAULT_FOCUS), [key]: value } } : p;
+      return {
+        ...prev,
+        activeProject: prev.activeProject ? patch(prev.activeProject) : prev.activeProject,
+        activeProjects: prev.activeProjects.map(patch),
+      };
+    });
   };
 
   const handleRemoveProject = (projectId: string) => {
@@ -231,78 +253,94 @@ export const MultiProjectDashboard: React.FC<MultiProjectDashboardProps> = ({
 
         {/* Projects Tab */}
         <TabsContent value="projects" className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,17rem),1fr))] gap-3" data-testid="multi-project-cards">
             {activeProjects.map((project) => {
               const progress = projectProgress.find(p => p.projectId === project.id);
               const assignedStaff = gameState.hiredStaff.filter(s => s.assignedProjectId === project.id);
               const priority = projectPriorities.findIndex(p => p.projectId === project.id) + 1;
-              
+              const focus = project.focusAllocation ?? DEFAULT_FOCUS;
+              const room = gameState.studioRooms.find(r => r.id === project.bookingRoomId)?.name || 'Unassigned';
+              const pct = Math.round((progress?.overallProgress || 0) * 100);
+              const expanded = expandedId === project.id;
+
               return (
-                <Card key={project.id} className="relative">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <CardTitle className="text-lg truncate">{project.title}</CardTitle>
+                <Card key={project.id} className="relative min-w-0" data-testid={`multi-project-card-${project.id}`}>
+                  <CardContent className="space-y-2.5 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <h3 className="rst-title break-words text-base leading-tight">{project.title}</h3>
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                          <span className="rst-chip whitespace-nowrap">{project.genre}</span>
+                          <span className={`rst-chip whitespace-nowrap ${getPriorityColor(priority)}`}>P{priority}</span>
+                        </div>
+                      </div>
                       <button
                         type="button"
                         onClick={() => handleRemoveProject(project.id)}
                         aria-label={`Remove ${project.title}`}
                         title="Remove project"
-                        className="grid h-10 w-10 shrink-0 place-items-center rounded-md text-stone-400 hover:bg-white/10 hover:text-rose-300"
+                        className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-stone-400 hover:bg-white/10 hover:text-rose-300"
                       >
                         <X className="w-4 h-4" />
                       </button>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="rst-chip whitespace-nowrap">{project.genre}</span>
-                      <span className={`rst-chip whitespace-nowrap ${getPriorityColor(priority)}`}>
-                        P{priority}
-                      </span>
-                    </div>
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-3">
+
                     <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Overall Progress</span>
-                        <span>{Math.round((progress?.overallProgress || 0) * 100)}%</span>
+                      <div className="mb-1 flex justify-between gap-2 text-xs">
+                        <span className="rst-muted min-w-0 break-words">{progress?.currentStage}</span>
+                        <span className="shrink-0 font-semibold">{pct}%</span>
                       </div>
-                      <Progress 
-                        value={(progress?.overallProgress || 0) * 100} 
-                        className="h-2"
-                        aria-label={`${project.title} overall progress`}
-                      />
+                      <Progress value={pct} className="h-2" aria-label={`${project.title} overall progress`} />
                     </div>
-                    
-                    <div className="rst-muted text-xs space-y-0.5">
-                      <div>Current: {progress?.currentStage}</div>
-                      <div>
-                        Room: {gameState.studioRooms.find(room => room.id === project.bookingRoomId)?.name || 'Unassigned'}
+
+                    <div className="space-y-1.5" data-testid="multi-project-sliders">
+                      {FOCUS_CHANNELS.map(({ key, label }) => (
+                        <div key={key} className="flex items-center gap-2">
+                          <span className="rst-muted w-14 shrink-0 text-[10px] uppercase tracking-wide">{label}</span>
+                          <Slider
+                            value={[focus[key]]}
+                            onValueChange={([value]) => setFocus(project.id, key, value)}
+                            min={0}
+                            max={100}
+                            step={1}
+                            aria-label={`${project.title} ${label} focus`}
+                            className="min-w-0 flex-1"
+                          />
+                          <span className="w-7 shrink-0 text-right text-[11px] tabular-nums">{focus[key]}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {expanded && (
+                      <div className="rst-muted space-y-0.5 rounded-md border border-[var(--rst-line)] bg-black/20 p-2 text-xs" data-testid="multi-project-details">
+                        <div>Room: {room}</div>
+                        <div>Staff: {assignedStaff.length}{assignedStaff.length > 0 ? ` (${assignedStaff.map(st => st.name).join(', ')})` : ''}</div>
+                        <div>Est. completion: {progress?.estimatedCompletion === Infinity || progress?.estimatedCompletion == null ? 'N/A' : `${progress.estimatedCompletion} days`}</div>
                       </div>
-                      <div>Staff: {assignedStaff.length}</div>
-                      <div>Est. Completion: {progress?.estimatedCompletion === Infinity ? 'N/A' : `${progress?.estimatedCompletion} days`}</div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 pt-1">
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => onWorkSession?.(project)}
-                        className="rst-btn rst-btn-primary flex-1 !min-h-9 !text-xs"
+                        onClick={() => openSession?.(project)}
+                        className="rst-btn rst-btn-primary min-w-[7.5rem] flex-1 whitespace-nowrap !min-h-9 !px-3 !text-xs"
                       >
                         Open session
                       </button>
                       <button
                         type="button"
-                        onClick={() => onProjectSelect?.(project)}
-                        className="rst-btn flex-1 !min-h-9 !text-xs"
+                        aria-expanded={expanded}
+                        onClick={() => setExpandedId(expanded ? null : project.id)}
+                        className="rst-btn min-w-[6rem] flex-1 whitespace-nowrap !min-h-9 !px-3 !text-xs"
                       >
-                        View Details
+                        {expanded ? 'Hide details' : 'Details'}
                       </button>
                     </div>
                   </CardContent>
                 </Card>
               );
             })}
-            
+
             {/* Add Project Card */}
             {canAddProject() && (
               <Card className="border-dashed border-2 border-stone-300 hover:border-stone-400 transition-colors">
