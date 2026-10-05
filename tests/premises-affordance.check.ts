@@ -66,3 +66,12 @@ const legacy = buildMoveInCutscene(2);
 assert(legacy.moveDay === undefined && legacy.stats!.length === 3, 'no context keeps the legacy cutscene');
 
 console.log('premises-affordance checks passed');
+
+// Layout invariants (#284): the basement bench stays out of the main vocal-booth footprint; move-day cases never reach the sign.
+import { PREMISES_PROPS } from '../src/components/studio/studioPremisesDecor';
+import { moveDayCaseX, CASE_W, SIGN_X } from '../src/components/cutscenes/MoveDayStrip';
+const bench = getPremisesProps(1, 'basement').find(p => p.id === 'gearBench')!;
+assert(!(bench.x >= 1 && bench.x <= 3.5 && bench.y >= 0 && bench.y <= 1), 'gear bench is outside the booth footprint');
+assert(PREMISES_PROPS.length > 0, 'premises props exist');
+for (let n = 1; n <= 8; n++) assert(moveDayCaseX(n - 1, n) + CASE_W < SIGN_X, `case row of ${n} ends before the arrival sign`);
+console.log('premises layout invariants ok');

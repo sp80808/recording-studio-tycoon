@@ -138,6 +138,10 @@ function CinematicStoryContent({ payload, onComplete }: Props) {
             <MoveDayStrip lineIndex={lineIndex} cases={payload.moveDay.cases} affordanceLabel={payload.moveDay.affordanceLabel} accent={accent} />
           )}
 
+          {payload.moveDay && !showingChoice && lastLine && (
+            <p className="rst-muted mt-3 text-sm italic">{payload.moveDay.affordanceLabel}: {payload.moveDay.affordanceVerb}</p>
+          )}
+
           <div aria-live="polite" className="flex flex-1 items-center py-8">
             {!showingChoice ? (
               <motion.p

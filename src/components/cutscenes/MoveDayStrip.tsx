@@ -1,6 +1,11 @@
 import React from 'react';
 import { moveDayStage, type MoveDayStage } from '@/rpg/premisesAffordance';
 
+export const CASE_W = 28;
+/** Arrival sign box (x 246..286); cases must end before it so the sign sits beside them. */
+export const SIGN_X = 246;
+export const moveDayCaseX = (i: number, n: number): number => 6 + i * (n <= 6 ? 34 : 29);
+
 interface Props {
   /** Current cutscene line index: 0 packing, 1 the old room empties, 2+ arrival. */
   lineIndex: number;
@@ -17,7 +22,7 @@ interface Props {
 export const MoveDayStrip: React.FC<Props> = ({ lineIndex, cases, affordanceLabel, accent }) => {
   const stage: MoveDayStage = moveDayStage(lineIndex);
   const n = Math.max(1, Math.min(8, cases));
-  const slot = (i: number) => 14 + i * 34;
+  const slot = (i: number) => moveDayCaseX(i, n);
   const caseBox = (i: number, x: number, filled: boolean) => (
     <g key={i} transform={`translate(${x} ${i % 2 ? 40 : 44})`}>
       <rect width="28" height="20" rx="2.5" fill={filled ? '#2b2f38' : 'none'} stroke={filled ? '#8a93a6' : 'rgba(243,236,221,0.28)'} strokeDasharray={filled ? undefined : '3 3'} />

@@ -126,7 +126,7 @@ const buildRecordWall = (): Container => {
 /** One visible prop per property archetype (#250). Ids match `ARCHETYPE_AFFORDANCES`. */
 const ARCHETYPE_PROPS: Record<string, Omit<PremisesProp, 'minTier'>> = {
   writingNook: { id: 'writingNook', x: 6.3, y: 6.5, build: buildWritingNook },
-  gearBench: { id: 'gearBench', x: 2.6, y: 0.8, build: buildGearBench },
+  gearBench: { id: 'gearBench', x: 0.9, y: 4.2, build: buildGearBench },
   drumRiser: { id: 'drumRiser', x: 6.4, y: 4.4, build: buildDrumRiser },
   onAirSign: { id: 'onAirSign', x: 2.2, y: 0.5, build: buildOnAirSign },
   recordWall: { id: 'recordWall', x: 2.8, y: 0.5, build: buildRecordWall },
