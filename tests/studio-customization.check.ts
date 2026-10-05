@@ -95,3 +95,17 @@ assert.deepEqual(applyMetaLedger(null), createInitialCustomization());
 assert.doesNotThrow(() => applyMetaLedger({ items: [null, { id: 1 }, { id: 'ghost', reason: 'x' }] }));
 
 console.log('studio customization checks passed');
+
+// Review fixes: duplicate placements collapse and carry-over provenance does not compound.
+{
+  const multi = STUDIO_FURNISHINGS.find((f) => f.compatibleAnchors.length >= 2)!;
+  assert.ok(multi, 'a multi-anchor furnishing exists');
+  const unlocked = multi.unlock.kind === 'milestone' ? [multi.id] : [];
+  const raw = { unlockedItems: unlocked, equippedByAnchor: { [multi.compatibleAnchors[0]]: multi.id, [multi.compatibleAnchors[1]]: multi.id } };
+  const fixed = migrateCustomization(raw);
+  assert.ok(Object.values(fixed.equippedByAnchor).filter((x) => x === multi.id).length <= 1, 'one physical item is placed once');
+  const m = STUDIO_FURNISHINGS.find((f) => f.unlock.kind === 'milestone')!;
+  const once = applyMetaLedger({ version: 1, items: [{ id: m.id, reason: 'Won a prize' }] });
+  const twice = applyMetaLedger(exportMetaLedger(once));
+  assert.equal(twice.provenance[m.id], once.provenance[m.id], 'carry-over prefix is not stacked');
+}

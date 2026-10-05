@@ -118,9 +118,10 @@ export const migrateCustomization = (raw: unknown): StudioCustomizationState => 
   const provenance = strRecord(r.provenance);
   for (const k of Object.keys(provenance)) if (!known.has(k)) delete provenance[k];
   const next: StudioCustomizationState = { equippedByAnchor: {}, equippedProducer: {}, unlockedItems, provenance };
+  const placed = new Set<string>(); // one physical item sits in one anchor
   for (const [anchor, id] of Object.entries(strRecord(r.equippedByAnchor))) {
     const def = FURNISHING_BY_ID.get(id);
-    if (def && isItemUnlocked(next, id) && (def.compatibleAnchors as readonly string[]).includes(anchor)) next.equippedByAnchor[anchor] = id;
+    if (def && !placed.has(id) && isItemUnlocked(next, id) && (def.compatibleAnchors as readonly string[]).includes(anchor)) { next.equippedByAnchor[anchor] = id; placed.add(id); }
   }
   for (const [slot, id] of Object.entries(strRecord(r.equippedProducer))) {
     const def = COSMETIC_BY_ID.get(id);
@@ -233,12 +234,14 @@ export const exportMetaLedger = (c: StudioCustomizationState): MetaUnlockLedger 
   items: c.unlockedItems.map((id) => ({ id, reason: c.provenance[id] ?? '' })),
 });
 
+const CARRIED_PREFIX = 'Carried over: ';
+
 /** Seed a fresh career's customisation from a ledger. Nothing is equipped automatically. */
 export const applyMetaLedger = (ledger: unknown): StudioCustomizationState => {
   const items = ledger && typeof ledger === 'object' && Array.isArray((ledger as MetaUnlockLedger).items) ? (ledger as MetaUnlockLedger).items : [];
   const valid = items.filter((i) => i && typeof i.id === 'string' && typeof i.reason === 'string');
   return migrateCustomization({
     unlockedItems: valid.map((i) => i.id),
-    provenance: Object.fromEntries(valid.map((i) => [i.id, `Carried over: ${i.reason}`])),
+    provenance: Object.fromEntries(valid.map((i) => [i.id, i.reason.startsWith(CARRIED_PREFIX) ? i.reason : `${CARRIED_PREFIX}${i.reason}`])),
   });
 };
