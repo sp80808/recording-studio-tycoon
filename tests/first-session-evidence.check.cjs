@@ -83,10 +83,21 @@ async (page) => {
   await reachable('studio');
   const activities = page.getByRole('navigation', { name: 'Studio activities' });
   await activities.waitFor();
-  await activities.getByRole('button', { name: 'Artist' }).click();
-  const book = page.getByRole('button', { name: 'Book Session' }).first();
-  await book.waitFor();
-  await book.click();
+  // The studio phone is the front door for enquiries: tap it (keyboard route = the world-object list), take the gig in the
+  // compact offer card. The Artist drawer stays as the deep comparison fallback.
+  const phone = page.locator('[data-rst-action-id="world:phone"]').first();
+  if (await phone.count()) {
+    await phone.focus();
+    await page.keyboard.press('Enter');
+    const takeGig = page.locator('[data-rst-action-id="phone:accept"]').first();
+    await takeGig.waitFor({ timeout: 10000 });
+    await takeGig.click();
+  } else {
+    await activities.getByRole('button', { name: 'Artist' }).click();
+    const book = page.getByRole('button', { name: 'Book Session' }).first();
+    await book.waitFor();
+    await book.click();
+  }
   stepAt('booked');
   await page.locator('[data-rst-action-id="console:record"], [data-testid="mobile-session-body"]').first().waitFor({ timeout: 20000 });
   await reachable('session-open');

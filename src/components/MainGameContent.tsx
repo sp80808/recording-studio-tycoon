@@ -465,7 +465,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
     <GamepadNavProvider enabled={!inputBlocked && !consoleOpen} onTabChange={handleDockTabChange}>
       <div className="studio-play" data-rst-studio="mounted" data-rst-input-blocked={inputBlocked} data-rst-world-controls={useWorldConsole}>
         <div className="studio-play-world" data-reward-source="floor">
-          {project && <SessionBeatBanner project={project} intervention={autoTriggeredMinigame} />}
+          <SessionBeatBanner project={project ?? null} intervention={autoTriggeredMinigame} showRoutine={(gameState.financials?.reports?.length ?? 0) < 3} />
           <StudioRoom gameState={gameState} cameraResetKey={cameraResetKey} onAdvanceDay={advanceDay} onRefreshProjects={refreshProjects}
             onStartProject={bookProject} onAssignStaff={assignStaffToProject} onUnassignStaff={unassignStaffFromProject}
             onOpenDashboardTab={handleOpenDashboardTab} onOpenCases={() => openPanel('cases')} onConsoleFocus={() => openPanel('session')} onCompleteChore={completeFloorChore} activeChoreId={activeChoreId}

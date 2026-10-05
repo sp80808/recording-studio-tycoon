@@ -69,7 +69,9 @@ test('Studio OS V2 Motion (#75) - Enquiry Arrival & Peripheral Indication', () =
   assert.doesNotMatch(studioRoomCode, /Go out/, 'StudioRoom has no floating Go out pill');
   assert.doesNotMatch(studioRoomCode, />Enquiry</, 'StudioRoom has no floating Enquiry pill');
   assert.doesNotMatch(studioRoomCode, />Promotion</, 'StudioRoom has no floating Promotion pill');
-  assert.match(studioRoomCode, /canonical === 'phone' && onBookings/, 'Phone hotspot still opens bookings');
+  // #189: the phone opens a compact in-room offer card (StudioInspector); the drawer is the "Compare all enquiries" fallback.
+  assert.doesNotMatch(studioRoomCode, /canonical === 'phone' && onBookings/, 'Phone hotspot no longer jumps to the bookings drawer');
+  assert.match(fs.readFileSync(path.join(process.cwd(), 'src/components/StudioInspector.tsx'), 'utf8'), /Compare all enquiries/, 'Offer card links to the full enquiry list');
   assert.match(studioRoomCode, /canonical === 'console' \|\| canonical === 'liveRoom'/, 'Console and live room share the session work route');
   assert.match(studioRoomCode, /onConsoleFocus\(\)/, 'Live room / console open session via onConsoleFocus');
   assert.match(studioRoomCode, /setActiveInspector\(canonical\)/, 'Door/promotion hotspots still open StudioInspector');
