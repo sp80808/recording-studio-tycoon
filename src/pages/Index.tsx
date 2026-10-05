@@ -343,6 +343,7 @@ const MusicStudioTycoon = () => {
       equipmentMultiplier: era.equipmentMultiplier
     });
     
+    telemetry.startRun(newGameState.saveSeed);
     trackCareerStarted(newGameState, producer?.experienced === true);
     setGameState(newGameState);
     setShowSplashScreen(false);
