@@ -1,5 +1,5 @@
 import { applyLabelOutcome } from '@/rpg/labelAccounts';
-import { enquiryDemandWeight } from '@/rpg/marketDemand';
+import { enquiryDemandWeight, releaseSignals } from '@/rpg/marketDemand';
 import { depositFor } from '@/rpg/serviceQuote';
 import { earn } from '@/economy/ledger';
 import {
@@ -137,6 +137,14 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
         });
       }
 
+      // Keep the release recorded during settlement: the hook rebuilds relationships from the pre-settlement map.
+      for (const [key, rel] of Object.entries(settled.clientRelationships ?? {})) {
+        const have = updatedClientRelationships[key];
+        if (rel.releases && (!have || (have.releases?.length ?? 0) < rel.releases.length)) {
+          updatedClientRelationships[key] = { ...(have ?? rel), releases: rel.releases };
+        }
+      }
+
       const nextEnquiries = generateNewProjects(
         1,
         settled.playerData.level,
@@ -145,7 +153,7 @@ export const useProjectManagement = (gameState: GameState, setGameState: React.D
         getOriginEffects(prev).repeatClientPremium,
         settled.reputation,
         prev.cityId,
-        enquiryDemandWeight(prev.saveSeed, prev.currentDay),
+        enquiryDemandWeight(prev.saveSeed, prev.currentDay, releaseSignals(updatedClientRelationships)),
       );
       trackEnquiriesGenerated(prev.currentDay, nextEnquiries, 'settlement');
 
