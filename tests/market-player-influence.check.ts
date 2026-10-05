@@ -65,4 +65,6 @@ const pulseBase = JSON.stringify(industryPulse(SEED, DAY, 6));
 const pulseNudged = JSON.stringify(industryPulse(SEED, DAY, 6, many));
 ok(pulseBase !== pulseNudged, "the pulse reflects the studio's own releases");
 
+ok(industryPulse(SEED, 2).every((l) => !/12\+/.test(l.since)), 'a new save does not claim 12+ weeks of history');
+
 console.log(`${n} market player-influence checks passed`);

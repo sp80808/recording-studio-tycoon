@@ -128,7 +128,8 @@ const lastChangedWeek = (seed: string | number, day: number, genreId: string, cu
     const t = weeklyMarket(seed, d).find((x) => x.genreId === genreId);
     if (!t || wordFor(t, demandOf(seed, d, t, releases)) !== current) return now - k + 1;
   }
-  return undefined;
+  // Fewer weeks of history than the lookback: it has held since the start, not for 12+ weeks.
+  return now >= PULSE_LOOKBACK_WEEKS ? undefined : 0;
 };
 
 /** The few genres moving most this week, for the compact Industry Pulse. */
