@@ -2,7 +2,8 @@ import { pickFloorStaff } from '@/components/studio/staffStaging';
 import { TAKE_FEEDBACK_EVENT, takeQuip, type TakeFeedbackDetail } from '@/utils/takeFeedback';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import WebGLCanvas, { StudioHotspotId, HotspotAnchors } from '@/components/WebGLCanvas';
-import { RoomVignette } from '@/components/studio/RoomVignette';
+import { RoomInfoStrip } from '@/components/studio/RoomInfoStrip';
+import { getRoomLayoutProfile } from '@/components/studio/roomLayouts';
 import { StudioRoomTabs } from '@/components/studio/StudioRoomTabs';
 import { getOccupiedRoomIds, getOperationalStudioRooms } from '@/utils/studioRoomUtils';
 import { normalizeHotspotId } from '@/utils/studioHotspots';
@@ -151,6 +152,22 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     return () => { window.removeEventListener(TAKE_FEEDBACK_EVENT, onTake); if (timer) clearTimeout(timer); };
   }, []);
 
+  const [viewRoomId, setViewRoomId] = useState('studio-a');
+  const operationalRooms = useMemo(() => getOperationalStudioRooms(gameState), [gameState.studioRooms]);
+  const occupiedRooms = useMemo(() => getOccupiedRoomIds(gameState), [gameState.activeProject, gameState.activeProjects]);
+  const viewRoom = operationalRooms.find((r) => r.id === viewRoomId && r.id !== 'studio-a');
+  const roomProjectTitle = (roomId: string): string | null => {
+    const all = [gameState.activeProject, ...(gameState.activeProjects ?? [])];
+    return all.find((p) => p?.bookingRoomId === roomId)?.title ?? null;
+  };
+  const [focusedHotspotIndex, setFocusedHotspotIndex] = useState(0);
+  // Extra rooms bring their own hotspots (gamepad focus cycles through these instead of Studio A's).
+  const roomLayout = getRoomLayoutProfile(viewRoom?.type);
+  const roomHotspotList = roomLayout?.hotspots.map((h) => h.label);
+  const activeHotspots: StudioHotspotId[] = roomLayout ? roomLayout.hotspots.map((h) => h.id) : studioHotspots;
+  const activeHotspotName = (id: StudioHotspotId) => roomLayout?.hotspots.find((h) => h.id === id)?.label ?? HOTSPOT_NAMES[id];
+  useEffect(() => { setFocusedHotspotIndex(0); }, [viewRoomId]);
+
   const sceneState = useMemo(() => {
     const project = gameState.activeProject;
     let progress = 0;
@@ -241,6 +258,8 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       enquiryWaiting: gameState.availableProjects.length > 0,
       pendingChoreHotspot,
       lockedHotspot,
+      roomType: viewRoom?.type,
+      roomOccupied: viewRoom ? occupiedRooms.has(viewRoom.id) : false,
       floorFocused: floorFocused && !activeInspector,
       coffeeSteaming: Boolean(gameState.choreState?.chores?.brew_espresso?.completed),
       riderBeers: Boolean(
@@ -248,20 +267,12 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           project.rider?.items.some((item) => item.kind === 'beer'),
       ),
     };
-  }, [gameState.activeProject, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, gameState.cityId, eraDecor.eraId, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, gameState.playerData, gameState.availableProjects.length, gameState.choreState, gameState.premisesTier, gameState.pendingCrates, roomTier, floorFocused, activeInspector, studioClock.minutesOfDay, lockedHotspot]);
+  }, [gameState.activeProject, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, gameState.cityId, eraDecor.eraId, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, gameState.playerData, gameState.availableProjects.length, gameState.choreState, gameState.premisesTier, gameState.pendingCrates, roomTier, floorFocused, activeInspector, studioClock.minutesOfDay, lockedHotspot, viewRoom?.type, viewRoom?.id, occupiedRooms]);
 
   /**
    * Diegetic floor routes: pending chores always run the chore flow first.
    * Console + live room open the session work panel only when no duty remains.
    */
-  const [viewRoomId, setViewRoomId] = useState('studio-a');
-  const operationalRooms = useMemo(() => getOperationalStudioRooms(gameState), [gameState.studioRooms]);
-  const occupiedRooms = useMemo(() => getOccupiedRoomIds(gameState), [gameState.activeProject, gameState.activeProjects]);
-  const viewRoom = operationalRooms.find((r) => r.id === viewRoomId && r.id !== 'studio-a');
-  const roomProjectTitle = (roomId: string): string | null => {
-    const all = [gameState.activeProject, ...(gameState.activeProjects ?? [])];
-    return all.find((p) => p?.bookingRoomId === roomId)?.title ?? null;
-  };
   const handleHotspot = (id: StudioHotspotId | string) => {
     if (!floorFocused) return;
     if (id === 'producer') {
@@ -287,7 +298,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
         void gameAudio.playTactileClick();
       }
     }
-    if (canonical === 'console' || canonical === 'liveRoom' || canonical === 'shelf') {
+    if (!viewRoom && (canonical === 'console' || canonical === 'liveRoom' || canonical === 'shelf')) {
       const pending = findPendingChoreForHotspot(gameState.choreState, canonical);
       if (pending) {
         onCompleteChore?.(canonical);
@@ -312,7 +323,6 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     hapticsEnabled: settings?.gamepadHaptics,
   });
 
-  const [focusedHotspotIndex, setFocusedHotspotIndex] = useState(0);
 
   // Close inspector on B button
   useEffect(() => {
@@ -328,13 +338,13 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     if (!gamepad.isConnected || activeInspector || !floorFocused) return;
 
     if (gamepad.justPressed.dpadRight || gamepad.justPressed.dpadDown) {
-      setFocusedHotspotIndex((prev) => (prev + 1) % studioHotspots.length);
+      setFocusedHotspotIndex((prev) => (prev + 1) % activeHotspots.length);
       gamepad.triggerHaptic(0.1, 0.15, 30);
     } else if (gamepad.justPressed.dpadLeft || gamepad.justPressed.dpadUp) {
-      setFocusedHotspotIndex((prev) => (prev - 1 + studioHotspots.length) % studioHotspots.length);
+      setFocusedHotspotIndex((prev) => (prev - 1 + activeHotspots.length) % activeHotspots.length);
       gamepad.triggerHaptic(0.1, 0.15, 30);
     } else if (gamepad.justPressed.south) {
-      const selected = studioHotspots[focusedHotspotIndex % studioHotspots.length];
+      const selected = activeHotspots[focusedHotspotIndex % activeHotspots.length];
       handleHotspot(selected);
       gamepad.triggerHaptic(0.2, 0.3, 50);
     }
@@ -348,7 +358,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     gamepad.justPressed.dpadUp,
     gamepad.justPressed.south,
     focusedHotspotIndex,
-    studioHotspots.length,
+    activeHotspots.length,
   ]);
 
   return (
@@ -359,7 +369,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     >
       <WebGLCanvas state={sceneState} onHotspotSelect={handleHotspot} resetCameraKey={cameraResetKey} onHotspotAnchors={setAnchors} onFirstFrame={onStudioReady} />
 
-      {viewRoom && <RoomVignette room={viewRoom} occupiedBy={roomProjectTitle(viewRoom.id)} />}
+      {viewRoom && <RoomInfoStrip room={viewRoom} occupiedBy={roomProjectTitle(viewRoom.id)} hotspots={roomHotspotList} />}
       <StudioRoomTabs rooms={operationalRooms} activeId={viewRoom ? viewRoom.id : 'studio-a'} occupied={occupiedRooms} onSelect={(id) => { if (settings.sfxEnabled) void gameAudio.playTactileClick(); setViewRoomId(id); }} />
       {tierFlash && <div className="tier-flash-overlay" />}
       {takeFx && (
@@ -492,7 +502,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
         <div className="studio-room-gamepad-hint pointer-events-none select-none">
           <GamepadGlyph button="dpadLeft" size="xs" />
           <GamepadGlyph button="dpadRight" size="xs" />
-          <span>Target: <b className="text-amber-300">{HOTSPOT_NAMES[studioHotspots[focusedHotspotIndex % studioHotspots.length]]}</b></span>
+          <span>Target: <b className="text-amber-300">{activeHotspotName(activeHotspots[focusedHotspotIndex % activeHotspots.length])}</b></span>
           <span className="text-stone-600">|</span>
           <GamepadGlyph button="south" size="xs" />
           <span>Inspect</span>
