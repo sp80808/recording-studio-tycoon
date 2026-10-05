@@ -113,6 +113,21 @@ describe('AppearanceEditor markup (#212)', () => {
     assert.equal((markup.match(/role="radio"/g) ?? []).length, swatchCount);
   });
 
+  it('keyboard and controller: one tab stop per property, arrows buttons are not stops', () => {
+    const spin = markup.match(/role="spinbutton"[^>]*>/g) ?? [];
+    assert.equal(spin.length, 6);
+    for (const s of spin) assert.match(s, /tabindex="0"/);
+    for (const s of spin) assert.match(s, /data-gamepad-adjust/);
+    for (const s of spin) assert.match(s, /aria-valuetext=/);
+    const steps = markup.match(/<button type="button" class="appearance-step"[^>]*>/g) ?? [];
+    assert.equal(steps.length, 12);
+    for (const s of steps) assert.match(s, /tabindex="-1"/);
+    for (const s of steps) assert.match(s, /data-gamepad-skip/);
+    // One selected swatch per colour group is the stop; the rest are skipped.
+    assert.equal((markup.match(/role="radio"[^>]*tabindex="0"/g) ?? []).length, 3);
+    assert.equal((markup.match(/data-gamepad-adjust=""/g) ?? []).length, 3);
+  });
+
   it('never exposes raw enum ids as text', () => {
     const text = markup.replace(/<[^>]*>/g, ' ');
     for (const field of APPEARANCE_FIELDS) for (const o of field.options) if (o.value.includes('_')) assert.ok(!text.includes(o.value), `${o.value} leaked`);

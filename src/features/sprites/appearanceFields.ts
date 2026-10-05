@@ -11,6 +11,7 @@ import { tc } from '@/i18n/content';
 import { CLOTHING_PALETTES, HAIR_HEX, SKIN_PALETTES } from './npcAppearanceData';
 import {
   PRODUCER_ACCESSORIES,
+  buildProducerNpc,
   PRODUCER_BUILDS,
   PRODUCER_CLOTHES_COLOURS,
   PRODUCER_HAIR_COLOURS,
@@ -48,7 +49,12 @@ export interface AppearanceField {
   options: readonly AppearanceOption[];
   get: (appearance: ResolvedProducerAppearance) => string;
   set: (appearance: ResolvedProducerAppearance, value: string) => ResolvedProducerAppearance;
+  /** False when changing this field cannot show in the preview for the given appearance (the UI disables the row). */
+  isRelevant?: (appearance: ResolvedProducerAppearance) => boolean;
 }
+
+/** Facial-hair styles the preview actually draws (the seed picks one; the creator has no control for it). */
+const DRAWN_FACIAL_HAIR: readonly string[] = ['vintage_mustache', 'full_beard', 'goatee'];
 
 const titleCase = (id: string) => id.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
 
@@ -84,10 +90,14 @@ export const APPEARANCE_FIELDS: readonly AppearanceField[] = [
     pompadour: 'Pompadour', slicked: 'Slicked back', bob: 'Bob', messy_curly: 'Messy curls', long_wavy: 'Long waves',
     afro: 'Afro', dreads: 'Dreadlocks', topknot: 'Top knot', buzzcut: 'Buzz cut', bald: 'Bald',
   })),
-  field('hairColour', 'Hair colour', 'swatch', options('hairColour', PRODUCER_HAIR_COLOURS, {
-    jet_black: 'Jet black', dark_brown: 'Dark brown', chestnut: 'Chestnut', auburn: 'Auburn', bleached_blonde: 'Bleached blonde',
-    silver_grey: 'Silver grey', neon_pink: 'Neon pink', electric_blue: 'Electric blue',
-  }, (v) => HAIR_HEX[v as keyof typeof HAIR_HEX])),
+  {
+    ...field('hairColour', 'Hair colour', 'swatch', options('hairColour', PRODUCER_HAIR_COLOURS, {
+      jet_black: 'Jet black', dark_brown: 'Dark brown', chestnut: 'Chestnut', auburn: 'Auburn', bleached_blonde: 'Bleached blonde',
+      silver_grey: 'Silver grey', neon_pink: 'Neon pink', electric_blue: 'Electric blue',
+    }, (v) => HAIR_HEX[v as keyof typeof HAIR_HEX])),
+    // Hair colour tints the hair and any drawn facial hair; a bald producer with neither shows no hair at all.
+    isRelevant: (a) => a.hair !== 'bald' || DRAWN_FACIAL_HAIR.includes(buildProducerNpc(a, 'x').hair.facialHair),
+  },
   field('shirt', 'Top', 'choice', options('shirt', PRODUCER_SHIRTS, {
     flannel_shirt: 'Flannel shirt', band_tee: 'Band tee', turtleneck: 'Turtleneck', leather_jacket: 'Leather jacket',
     tracksuit_jacket: 'Tracksuit jacket', oversized_hoodie: 'Oversized hoodie', denim_vest: 'Denim vest', vintage_cardigan: 'Vintage cardigan',
@@ -148,6 +158,7 @@ export const APPEARANCE_UI = {
   'appearance.ui.previous': 'Previous {{label}}',
   'appearance.ui.next': 'Next {{label}}',
   'appearance.ui.position': '{{index}} of {{total}}',
+  'appearance.ui.hidden': 'Not visible',
 } as const;
 export type AppearanceUiKey = keyof typeof APPEARANCE_UI;
 export const appearanceUi = (key: AppearanceUiKey, vars?: Record<string, string | number>): string => tc(key, APPEARANCE_UI[key], vars);
@@ -161,3 +172,7 @@ export const appearanceCopy = (): Record<string, string> => {
   }
   return copy;
 };
+
+/** Whether editing `f` can change the preview for `appearance` (rows that cannot are shown disabled). */
+export const isAppearanceFieldRelevant = (f: AppearanceField, appearance: ProducerAppearance): boolean =>
+  f.isRelevant?.(sanitizeProducerAppearance(appearance)) ?? true;
