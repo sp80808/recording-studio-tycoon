@@ -127,16 +127,16 @@ interface ArchetypeDef {
 
 const ARCHETYPES: Record<1 | 2 | 3, ArchetypeDef[]> = {
   1: [
-    { archetype: 'project-room', source: 'landlord', name: 'The spare unit upstairs', answers: ['rooms-full', 'enquiries-waiting'], solves: 'A proper second room so bookings stop colliding.', tradeoff: 'Thin walls and no street presence, so it will never impress a label.', cue: 'Your landlord rings: the unit upstairs is coming free and he would rather rent it to you.' },
+    { archetype: 'project-room', source: 'landlord', name: 'The spare unit upstairs', answers: ['rooms-full', 'enquiries-waiting'], solves: 'A proper second room so bookings stop colliding.', tradeoff: 'Thin walls and no street presence, so it will never impress a label.', cue: 'Your landlord knocks on the door: the unit upstairs is coming free and he would rather rent it to you.' },
     { archetype: 'basement', source: 'referral', name: 'Basement room behind the rehearsal rooms', answers: ['crew-crowded', 'live-room-missing'], solves: 'Space for the crew and a room that suits loud bands.', tradeoff: 'Damp, needs treatment, and clients have to find it.', cue: 'A drummer you recorded mentions a basement behind his rehearsal rooms that is going cheap.' },
   ],
   2: [
-    { archetype: 'commercial', source: 'agent', name: 'Small city-centre commercial studio', answers: ['strong-demand', 'rooms-full', 'live-room-missing'], solves: 'Walk-in clients, a live room and the footprint to take on bigger jobs.', tradeoff: 'Rent bites every single day whether or not the rooms are booked.', cue: 'An estate agent emails a listing: a licensed commercial studio unit, city centre, ready to move into.' },
+    { archetype: 'commercial', source: 'agent', name: 'Small city-centre commercial studio', answers: ['strong-demand', 'rooms-full', 'live-room-missing'], solves: 'Walk-in clients, a live room and the footprint to take on bigger jobs.', tradeoff: 'Rent bites every single day whether or not the rooms are booked.', cue: 'An estate agent phones about a listing: a licensed commercial studio unit, city centre, ready to move into.' },
     { archetype: 'warehouse', source: 'referral', name: 'Warehouse unit on the industrial estate', answers: ['crew-crowded', 'live-room-missing', 'enquiries-waiting'], solves: 'Loads of floor for a live room and a bigger crew.', tradeoff: 'Cold, unglamorous and a long way from the clients who pay best.', cue: 'A band manager says a warehouse unit on the estate is empty and the owner wants it let fast.' },
   ],
   3: [
     { archetype: 'existing-studio', source: 'distressed-sale', name: 'Struggling multi-room studio, being sold', answers: ['strong-demand', 'rooms-full', 'crew-crowded'], solves: 'Several control rooms already built, so staff can work in parallel.', tradeoff: 'Highest deposit and a lot of ageing infrastructure to keep alive.', cue: 'Word gets round: a multi-room studio across town is quietly being sold off.' },
-    { archetype: 'commercial', source: 'agent', name: 'Purpose-built facility lease', answers: ['strong-demand', 'enquiries-waiting', 'live-room-missing'], solves: 'A clean, modern layout with room to grow.', tradeoff: 'Long lease, steep rent, and nothing in it is yours yet.', cue: 'An agent sends over a purpose-built facility lease: three rooms, reception, big rent.' },
+    { archetype: 'commercial', source: 'agent', name: 'Purpose-built facility lease', answers: ['strong-demand', 'enquiries-waiting', 'live-room-missing'], solves: 'A clean, modern layout with room to grow.', tradeoff: 'Long lease, steep rent, and nothing in it is yours yet.', cue: 'An agent phones about a purpose-built facility lease: three rooms, reception, big rent.' },
   ],
 };
 
