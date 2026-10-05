@@ -34,6 +34,8 @@ export interface ProducerSetup {
   appearance: ProducerAppearance;
   /** Home city: currency display, regional taste, local names and events. */
   cityId?: CityId;
+  /** Experienced Producer start (#260): all console techniques unlocked from the first session. */
+  experienced?: boolean;
 }
 
 interface CareerStartScreenProps {
@@ -72,6 +74,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [eraId, setEraId] = useState<string | null>(null);
   const [originId, setOriginId] = useState<ProducerBackgroundId | null>(null);
+  const [experienced, setExperienced] = useState(false);
   const [moniker, setMoniker] = useState('The Architect');
   const [cityId, setCityId] = useState<CityId>(DEFAULT_CITY_ID);
   const [look, setLook] = useState<ProducerAppearance>(() => ({
@@ -112,9 +115,9 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
       setStep(3);
     } else if (step === 3 && era && origin) {
       click();
-      onBegin(era, origin.id, { name: moniker.trim(), appearance: look, cityId });
+      onBegin(era, origin.id, { name: moniker.trim(), appearance: look, cityId, ...(experienced ? { experienced: true } : {}) });
     }
-  }, [step, era, origin, moniker, look, cityId, onBegin]);
+  }, [step, era, origin, moniker, look, cityId, experienced, onBegin]);
 
   const goBack = useCallback(() => {
     click();
@@ -281,6 +284,22 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
 
         {step === 2 && (
           <ProducerCreator moniker={moniker} onMoniker={setMoniker} look={look} npc={previewNpc} onPatch={patchLook} onRandomise={randomise} />
+        )}
+
+        {step === 3 && (
+          <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-lg border border-[var(--rst-line)] bg-black/25 p-3 text-xs text-stone-200">
+            <input
+              type="checkbox"
+              data-testid="experienced-producer"
+              checked={experienced}
+              onChange={(e) => { click(); setExperienced(e.target.checked); }}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--rst-brass-300)]"
+            />
+            <span>
+              <b className="block text-[var(--rst-brass-200)]">Experienced Producer</b>
+              Skip the lessons: Overdrive, Combo and Streak Bank are available from the first session. Money, gear and rooms still start the same.
+            </span>
+          </label>
         )}
 
         {step === 3 && (
