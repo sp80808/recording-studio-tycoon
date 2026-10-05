@@ -293,6 +293,7 @@
   "session_collect_release": "リリースを受け取る",
   "session_continue": "セッションを続ける",
   "session_book_first": "最初のセッションを予約",
+  "session_book_next": "セッションを予約",
   "drawer_bookings": "予約",
   "drawer_session": "コンソールにて",
   "drawer_career": "プロデューサーの物語",
