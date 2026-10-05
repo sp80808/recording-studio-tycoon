@@ -121,6 +121,7 @@ export const createDefaultGameState = (options?: Partial<EraInitOptions>): GameS
     studioKnowHow: createInitialKnowHow(),
     studioExpertise: createInitialExpertise(),
     premisesTier: 0,
+    featureProgress: { bestCombo: 0, goodTake: false, seen: [] },
     cityId: isCityId(options?.cityId) ? options!.cityId : DEFAULT_CITY_ID,
     activeProject: null, // Keep for backward compatibility
     // Multi-project system

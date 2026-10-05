@@ -30,6 +30,7 @@ import { advanceFlow } from '@/rpg/focusFlow';
 import { applyKnowHowEvents, domainForStage, sessionTemplateBonus, type KnowHowEvent } from '@/rpg/studioKnowHow';
 import { activeUplift } from '@/rpg/freelancers';
 import { gradeStage, focusMatchFraction } from '@/rpg/stageGrades';
+import { isFeatureUnlocked, recordTechniqueProgress } from '@/rpg/featureUnlocks';
 import {
   getActiveBuffMagnitude,
   consumeChoreBuffSession,
@@ -200,12 +201,12 @@ export const useStageWork = ({
     console.log(`🔢 Work session count: ${project.workSessionCount} -> ${newWorkSessionCount}`);
 
     // 🔥 Overdrive: armed from the Studio UI — burns 2 energy for a big output boost
-    const overdrive = !!project.overdriveArmed && gameState.playerData.dailyWorkCapacity >= 2;
+    const overdrive = !!project.overdriveArmed && gameState.playerData.dailyWorkCapacity >= 2 && isFeatureUnlocked(gameState, 'overdrive');
 
     // ⚡ Combo: consecutive same-day sessions build a streak multiplier (caps at +50%)
     const sameDay = project.lastWorkDay === gameState.currentDay;
-    const newCombo = sameDay ? (project.comboCount || 0) + 1 : 1;
-    const comboMultiplier = 1 + Math.min(0.5, (newCombo - 1) * 0.1);
+    const newCombo = !isFeatureUnlocked(gameState, 'combo') ? 0 : sameDay ? (project.comboCount || 0) + 1 : 1;
+    const comboMultiplier = 1 + Math.min(0.5, Math.max(0, newCombo - 1) * 0.1);
     console.log(`⚡ Combo x${newCombo} (x${comboMultiplier.toFixed(2)}) | 🔥 Overdrive: ${overdrive}`);
 
     // 🌊 Focus Flow (sd3.2): the top focus dial matching a stage focus area
@@ -488,7 +489,8 @@ export const useStageWork = ({
 
       const gemGain = stageCompleted && completedGrade?.grade === 'Gold' ? 2 : stageCompleted && completedGrade?.grade === 'Silver' ? 1 : 0;
 
-      return withDailyTracking({
+      const techniqueProgress = recordTechniqueProgress(prev, { combo: newCombo, grade: options?.takeGrade === 'Gold' || options?.takeGrade === 'Silver' ? options.takeGrade : null }).featureProgress;
+      return { ...withDailyTracking({
         ...withKnowHow,
         ...gearUse.state,
         gems: (prev.gems ?? 0) + gemGain,
@@ -512,7 +514,7 @@ export const useStageWork = ({
           }
           return s;
         })
-      }, { sessions: 1, combo: newCombo });
+      }, { sessions: 1, combo: newCombo }), featureProgress: techniqueProgress };
     });
 
     // ✨ Celebrate new synergy discoveries

@@ -262,7 +262,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                 Industry pulse: {pulse.map((l) => `${l.genre} ${l.arrow} ${l.word}`).join(' · ')}
               </summary>
               <ul className="mt-1 space-y-0.5">
-                {pulse.map((l) => <li key={l.genre}>{l.genre}: {l.effect}.</li>)}
+                {pulse.map((l) => <li key={l.genre}>{l.genre}: {l.effect}.{l.reason ? ` ${l.reason}.` : ''}</li>)}
               </ul>
               <p className="mt-1">Demand shapes which work turns up and how releases land. It never changes how good your recording is.</p>
             </details>
