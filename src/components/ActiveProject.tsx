@@ -31,6 +31,8 @@ import { REWARD_POP_EVENT, takePopTier, type RewardPopDetail } from '@/utils/rew
 import { evaluateTakeAccuracy, calculateTakeEnergyCost } from '@/rpg/takeEvaluation';
 import { StreakBankControl } from './StreakBankControl';
 import type { BankResult } from '@/rpg/streakBank';
+import { resolveProducerFeatureUnlocks, nextFeatureReveal, acknowledgeFeatureReveal, type ProducerFeature } from '@/rpg/featureUnlocks';
+import { FeatureRevealBanner } from './FeatureRevealBanner';
 import { hasActiveChoreBuff, getActiveBuffMagnitude } from '@/simulation/choreEngine';
 import { PocketMeter } from '@/components/console/PocketMeter';
 
@@ -152,9 +154,15 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   });
 
   // 🔥 Overdrive risk/reward toggle (consumed by useStageWork on the next session)
-  const overdriveArmed = !!gameState.activeProject?.overdriveArmed;
+  // Progressive unlocks (#260): hidden controls can't be reached by keyboard/gamepad either.
+  const featureUnlocks = resolveProducerFeatureUnlocks(gameState);
+  const overdriveUnlocked = featureUnlocks.overdrive.unlocked;
+  const streakBankUnlocked = featureUnlocks['streak-bank'].unlocked;
+  const pendingReveal = nextFeatureReveal(gameState);
+  const acknowledgeReveal = (f: ProducerFeature) => setGameState(prev => acknowledgeFeatureReveal(prev, f));
+  const overdriveArmed = overdriveUnlocked && !!gameState.activeProject?.overdriveArmed;
   const toggleOverdrive = () => {
-    if (!gameState.activeProject) return;
+    if (!gameState.activeProject || !overdriveUnlocked) return;
     if (!overdriveArmed && gameState.playerData.dailyWorkCapacity < 2) {
       toast({
         title: '⚡ Not Enough Energy',
@@ -177,7 +185,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   // + XP. Only a gold release preserves the streak; every other outcome spends
   // it (comboCount → 0), so banking trades future output for liquidity now.
   const handleStreakBank = (result: BankResult) => {
-    if (!gameState.activeProject) return;
+    if (!gameState.activeProject || !streakBankUnlocked) return;
     setGameState(prev => ({
       ...earn(prev, result.cash, { category: 'reward-income', projectId: prev.activeProject?.id, memo: 'Streak bank' }),
       playerData: {
@@ -336,7 +344,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
     // Overdrive: West (X on Xbox, □ on PS, Y on Switch)
     if (gamepad.justPressed.west) {
-      if ((availableEnergy >= 2 || overdriveArmed) && !isProjectComplete) {
+      if (overdriveUnlocked && (availableEnergy >= 2 || overdriveArmed) && !isProjectComplete) {
         toggleOverdrive();
         gamepad.triggerHaptic(0.2, 0.3, 50);
       }
@@ -1491,6 +1499,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                   (a spent streak is combo 0 — gating on combo would unmount the
                   chip before the player sees the payout). */}
               {!isProjectComplete && (
+                <FeatureRevealBanner feature={takeState === 'idle' ? pendingReveal : null} onAcknowledge={acknowledgeReveal} />
+              )}
+              {!isProjectComplete && streakBankUnlocked && (
                 <StreakBankControl
                   combo={project.comboCount ?? 0}
                   level={gameState.playerData.level}
@@ -1498,7 +1509,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 />
               )}
 
-              <div className="flex items-center gap-2">
+              {overdriveUnlocked && <div className="flex items-center gap-2">
                 <Button
                   onClick={toggleOverdrive}
                   disabled={availableEnergy < 2 || isProjectComplete}
@@ -1518,7 +1529,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                       : <><StatIcon name="flame" /> {t('active_arm_overdrive', { cost: energySaver ? t('active_cost_patchbay') : '2' })}</>}
                   </span>
                 </Button>
-              </div>
+              </div>}
 
               <button
                 data-rst-surface="contextual" data-rst-action-id="console:record" data-rst-world-target="console"

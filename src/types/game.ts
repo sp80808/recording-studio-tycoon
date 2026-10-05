@@ -497,6 +497,8 @@ export interface GameState {
   unlockedAchievements?: Record<string, number>;
   /** Set once the campaign epilogue has been shown, so it never replays. */
   endingSeen?: boolean;
+  /** Progressive technique unlocks (#260). Absent on legacy saves (progressed ones keep every technique). */
+  featureProgress?: import('@/rpg/featureUnlocks').FeatureProgress;
 }
 
 export interface Artist {

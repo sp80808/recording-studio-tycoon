@@ -167,6 +167,10 @@ echo "=== streak bank (k6e.5 combo cash-out) ==="
 ./node_modules/.bin/esbuild tests/streak-bank.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-streak-bank.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-streak-bank.cjs"
 
+echo "=== progressive technique unlocks (#260) ==="
+./node_modules/.bin/esbuild tests/feature-unlocks.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-feature-unlocks.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-feature-unlocks.cjs"
+
 echo "=== motion platform & originkit architecture (#72) ==="
 ./node_modules/.bin/esbuild tests/motion-platform.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-motion-platform.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-motion-platform.cjs"
