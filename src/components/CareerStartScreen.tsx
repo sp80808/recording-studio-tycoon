@@ -25,6 +25,7 @@ import { CitySkyline } from '@/components/CitySkyline';
 import { useContentLocale } from '@/i18n/content';
 import { CITIES, DEFAULT_CITY_ID, cityText, currencyFor, describeCity, formatMoney, getCityById, localName, type CityId } from '@/rpg/cities';
 import { ProducerCreator } from '@/components/ProducerCreator';
+import { GamepadNavProvider, useGamepadNav } from '@/contexts/GamepadNavContext';
 import { EraEmblem, type EraEmblemId } from './EraEmblems';
 import './splash.css';
 
@@ -66,7 +67,7 @@ const stepClass = (active: boolean, done: boolean) =>
 const cycleOption = <T extends string>(list: readonly T[], current: T, delta: number): T =>
   list[(list.indexOf(current) + delta + list.length) % list.length];
 
-export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
+function CareerStartScreenInner({ onBegin, onBack }: CareerStartScreenProps) {
   const { t } = useTranslation();
   useContentLocale();
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
@@ -87,9 +88,9 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
     if (local) setMoniker(local.slice(0, 24));
     setLook(randomiseProducerAppearance(rng));
   };
-  const patchLook = (patch: Partial<ProducerAppearance>) => {
+  const changeLook = (next: ProducerAppearance) => {
     click();
-    setLook((current) => ({ ...current, ...patch }));
+    setLook(next);
   };
 
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -129,11 +130,19 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') goBack();
-      if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'BUTTON') goNext();
+      if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'BUTTON' && (e.target as HTMLElement).getAttribute('role') !== 'spinbutton') goNext();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [goBack, goNext]);
+
+  // Controller: B/East goes back; X/West is Surprise me on the character step. D-pad/stick traversal, A and
+  // left/right adjustment come from the shared GamepadNavProvider (see data-gamepad-* attributes).
+  const { registerShortcut } = useGamepadNav();
+  const randomiseRef = useRef(randomise);
+  randomiseRef.current = randomise;
+  useEffect(() => registerShortcut('east', goBack), [registerShortcut, goBack]);
+  useEffect(() => (step === 2 ? registerShortcut('west', () => randomiseRef.current()) : undefined), [registerShortcut, step]);
 
   /** Arrow keys move the selection inside a radiogroup, as native radios would. */
   const arrowSelect = <T extends string>(items: readonly T[], current: T | null, set: (v: T) => void) =>
@@ -148,7 +157,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
   const rival = origin ? getPrimaryRival(origin.primaryPlaystyle) : null;
 
   return (
-    <main className={`career-start-page${step === 2 ? ' career-character-step' : ''}`} aria-label="Start a new career">
+    <main className={`career-start-page${step === 2 ? ' career-character-step' : ''}`} aria-label="Start a new career" data-gamepad-scope>
             <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col px-4 pb-28 pt-6 sm:px-8">
         {/* Header + stepper */}
         <header className="flex items-center justify-between gap-3 sm:grid sm:grid-cols-[1fr_auto_1fr]">
@@ -280,7 +289,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
         )}
 
         {step === 2 && (
-          <ProducerCreator moniker={moniker} onMoniker={setMoniker} look={look} npc={previewNpc} onPatch={patchLook} onRandomise={randomise} />
+          <ProducerCreator moniker={moniker} onMoniker={setMoniker} look={look} npc={previewNpc} onLookChange={changeLook} onRandomise={randomise} />
         )}
 
         {step === 3 && (
@@ -391,5 +400,14 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
         </div>
       </footer>
     </main>
+  );
+}
+
+/** The career-start flow owns controller focus: the shared nav provider scopes D-pad traversal to this screen. */
+export function CareerStartScreen(props: CareerStartScreenProps) {
+  return (
+    <GamepadNavProvider>
+      <CareerStartScreenInner {...props} />
+    </GamepadNavProvider>
   );
 }
