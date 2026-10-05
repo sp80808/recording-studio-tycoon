@@ -5,11 +5,12 @@
  * degrade to empty lists / generic copy instead of needing a migration.
  */
 import type { GameState } from '@/types/game';
+import { formatMoney } from '@/rpg/cities';
 import { getPremisesDef, getPremisesTier } from '@/rpg/premises';
 import { getActiveCampaignNode, getCampaignTreeForState, getStorylineObjectiveProgress, hasPendingStorylineBranch } from '@/narrative/branchingStorylineEngine';
 
 type IdentityState = Pick<GameState, 'playerData' | 'financials'> &
-  Partial<Pick<GameState, 'clientRelationships' | 'premisesTier' | 'hiredStaff' | 'studioRooms' | 'chartRun' | 'firstChart' | 'reputation' | 'storylineState'>>;
+  Partial<Pick<GameState, 'clientRelationships' | 'premisesTier' | 'hiredStaff' | 'studioRooms' | 'chartRun' | 'firstChart' | 'reputation' | 'storylineState' | 'cityId' | 'currentEra'>>;
 
 const SKILL_LABEL: Record<string, string> = {
   songwriting: 'songwriting',
@@ -303,7 +304,7 @@ export const deriveSelectedCredits = (state: IdentityState): SelectedCredit[] =>
   const best = reports.reduce<(typeof reports)[number] | null>((b, r) => (!b || r.overallQualityScore > b.overallQualityScore ? r : b), null);
   if (best) out.push({ id: 'best-quality', label: 'Highest quality', title: best.projectTitle, detail: `Scored ${Math.round(best.overallQualityScore)}/100.` });
   const rich = reports.reduce<(typeof reports)[number] | null>((b, r) => ((r.moneyGained ?? 0) > (b?.moneyGained ?? 0) ? r : b), null);
-  if (rich && (rich.moneyGained ?? 0) > 0) out.push({ id: 'biggest-earner', label: 'Biggest payday', title: rich.projectTitle, detail: `Brought in $${Math.round(rich.moneyGained).toLocaleString('en-US')}.` });
+  if (rich && (rich.moneyGained ?? 0) > 0) out.push({ id: 'biggest-earner', label: 'Biggest payday', title: rich.projectTitle, detail: `Brought in ${formatMoney(Math.round(rich.moneyGained), state.cityId, state.currentEra)}.` });
   const genre = topGenres(state, 1)[0];
   if (genre) out.push({ id: 'favourite-genre', label: 'Most-used genre', title: genre, detail: `${reports.filter((r) => r.genre === genre).length} sessions delivered.` });
   let top: { title: string; band: string; client: string; rank: number; quality: number } | null = null;

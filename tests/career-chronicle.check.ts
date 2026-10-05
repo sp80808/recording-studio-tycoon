@@ -132,3 +132,10 @@ console.log('career-chronicle slice 2 checks passed');
   assert.doesNotThrow(() => deriveSelectedCredits({ ...empty, financials: undefined } as unknown as GameState));
   console.log('career-chronicle slice 3 checks passed');
 }
+
+// Selected-credit payday uses the career's city currency (#281 review).
+{
+  const credits = deriveSelectedCredits({ ...({ playerData: {}, financials: { reports: [{ projectTitle: 'Rich', overallQualityScore: 50, moneyGained: 1000, genre: 'Pop' }] } } as any), cityId: 'london', currentEra: 'modern' } as any);
+  const payday = credits.find((c) => c.id === 'biggest-earner');
+  if (!payday || payday.detail.includes('$')) throw new Error(`FAIL: payday credit should use the city currency, got ${payday?.detail}`);
+}
