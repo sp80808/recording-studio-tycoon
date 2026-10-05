@@ -5,9 +5,9 @@
  * Pure: the caller injects `render` (e.g. `renderToStaticMarkup` of `ModularSpriteRenderer`) to also capture what
  * the preview draws. Nothing here is imported by game code.
  */
-import { APPEARANCE_FIELDS, type AppearanceFieldId } from '@/features/sprites/appearanceFields';
+import { APPEARANCE_FIELDS, isAppearanceFieldRelevant, type AppearanceFieldId } from '@/features/sprites/appearanceFields';
 import { buildNpcLayerStack } from '@/features/sprites/npcLayers';
-import { buildProducerNpc, DEFAULT_PRODUCER_APPEARANCE, type ResolvedProducerAppearance } from '@/features/sprites/producerAppearance';
+import { buildProducerNpc, DEFAULT_PRODUCER_APPEARANCE, PRODUCER_ACCESSORIES, PRODUCER_HAIR_SHAPES, PRODUCER_SHIRTS, type ResolvedProducerAppearance } from '@/features/sprites/producerAppearance';
 import type { ModularNpcDefinition } from '@/features/sprites/spriteTypes';
 
 export interface AppearanceOptionProbe {
@@ -36,7 +36,7 @@ export const enumerateAppearanceOptions = (
   render?: (npc: ModularNpcDefinition) => string,
   eraId = 'modern',
 ): AppearanceOptionProbe[] =>
-  APPEARANCE_FIELDS.flatMap((field) =>
+  APPEARANCE_FIELDS.filter((field) => isAppearanceFieldRelevant(field, baseline)).flatMap((field) =>
     field.options.map((option) => {
       const appearance = field.set(baseline, option.value);
       const npc = buildProducerNpc(appearance, 'Audit', eraId);
@@ -67,3 +67,15 @@ export const findNoOpOptions = (probes: readonly AppearanceOptionProbe[], by: 'd
   }
   return problems;
 };
+
+/**
+ * States to audit from. A no-op can be reachable only from some states (e.g. hair colour on a bald producer
+ * with no drawn facial hair), so every hair shape is combined with several face seeds, and accessories and
+ * tops are varied too. Irrelevant fields (see `isRelevant`) are skipped per baseline, which is what the UI disables.
+ */
+export const AUDIT_BASELINES: readonly ResolvedProducerAppearance[] = [
+  DEFAULT_PRODUCER_APPEARANCE,
+  ...PRODUCER_HAIR_SHAPES.flatMap((hair) => [0, 1, 2, 3, 4, 5, 6, 7].map((seed) => ({ ...DEFAULT_PRODUCER_APPEARANCE, hair, seed }))),
+  ...PRODUCER_ACCESSORIES.map((accessory) => ({ ...DEFAULT_PRODUCER_APPEARANCE, accessory })),
+  ...PRODUCER_SHIRTS.map((shirt) => ({ ...DEFAULT_PRODUCER_APPEARANCE, shirt })),
+];

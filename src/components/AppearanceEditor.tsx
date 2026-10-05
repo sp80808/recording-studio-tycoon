@@ -6,6 +6,7 @@ import {
   appearanceOptionLabel,
   appearanceUi,
   appearanceValueLabel,
+  isAppearanceFieldRelevant,
   cycleAppearanceField,
   setAppearanceField,
   type AppearanceField,
@@ -29,10 +30,11 @@ function AppearanceRow({ field, appearance, onChange }: { field: AppearanceField
   const value = appearanceValueLabel(field, appearance);
   const selected = field.get(appearance);
   const labelId = `appearance-label-${field.id}`;
+  const relevant = isAppearanceFieldRelevant(field, appearance);
 
   if (field.kind === 'swatch') {
     return (
-      <div className="appearance-row appearance-row--swatch" data-field={field.id} role="radiogroup" aria-labelledby={labelId}
+      <div className="appearance-row appearance-row--swatch" data-field={field.id} role="radiogroup" aria-labelledby={labelId} aria-disabled={!relevant || undefined} data-disabled={!relevant || undefined}
         onKeyDown={(e) => {
           if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
           e.preventDefault();
@@ -42,12 +44,12 @@ function AppearanceRow({ field, appearance, onChange }: { field: AppearanceField
           e.currentTarget.querySelector<HTMLElement>(`[data-value="${field.get(next)}"]`)?.focus();
         }}>
         <span id={labelId} className="appearance-row-label">{label}</span>
-        <span className="appearance-row-value" data-testid={`appearance-value-${field.id}`}>{value}</span>
+        <span className="appearance-row-value" data-testid={`appearance-value-${field.id}`}>{relevant ? value : appearanceUi('appearance.ui.hidden')}</span>
         <span className="appearance-swatches">
           {field.options.map((option) => {
             const name = appearanceOptionLabel(option);
             return (
-              <button key={option.value} type="button" role="radio" aria-checked={selected === option.value} aria-label={name} title={name} data-value={option.value}
+              <button key={option.value} type="button" role="radio" disabled={!relevant} aria-checked={selected === option.value} aria-label={name} title={name} data-value={option.value}
                 tabIndex={selected === option.value ? 0 : -1} className="appearance-swatch" style={{ '--swatch': option.swatch } as React.CSSProperties}
                 onClick={() => onChange(setAppearanceField(field, appearance, option.value))} />
             );

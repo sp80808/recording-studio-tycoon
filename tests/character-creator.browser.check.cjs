@@ -27,6 +27,7 @@ async (page) => {
       field: row.getAttribute('data-field'),
       value: row.querySelector('[data-testid^=appearance-value-]')?.textContent?.trim(),
       checked: row.querySelector('[role=radio][aria-checked=true]')?.getAttribute('data-value') ?? null,
+      disabled: row.hasAttribute('data-disabled'),
     }));
     return { appearance: JSON.parse(preview.getAttribute('data-appearance')), svg: preview.querySelector('svg').outerHTML, rows };
   });
@@ -69,6 +70,7 @@ async (page) => {
     await page.getByTestId('producer-randomise').click();
     const now = await snapshot();
     for (const row of now.rows) {
+      if (row.disabled) { assert(row.field === 'hairColour' && now.appearance.hair === 'bald', `only hair colour on a bald producer may be disabled (${row.field})`); continue; }
       const stored = now.appearance[row.field];
       if (row.checked !== null) {
         assert(row.checked === stored, `${row.field}: checked swatch ${row.checked} != stored ${stored}`);

@@ -24,3 +24,5 @@
   .appearance-step { transition: none; }
   .appearance-step:active { transform: none; }
 }
+.appearance-row[data-disabled] { opacity: .5; }
+.appearance-swatch:disabled { cursor: not-allowed; }

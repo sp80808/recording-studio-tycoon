@@ -10,6 +10,7 @@
   "appearance.ui.previous": "Previous {{label}}",
   "appearance.ui.next": "Next {{label}}",
   "appearance.ui.position": "{{index}} of {{total}}",
+  "appearance.ui.hidden": "Not visible",
   "appearance.field.build": "Build",
   "appearance.build.slim": "Slim",
   "appearance.build.average": "Average",

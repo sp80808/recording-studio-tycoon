@@ -7,11 +7,11 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { ModularNpcDefinition } from '../src/features/sprites/spriteTypes';
 import { ModularSpriteRenderer } from '../src/features/sprites/ModularSpriteRenderer';
-import { APPEARANCE_FIELDS } from '../src/features/sprites/appearanceFields';
+import { APPEARANCE_FIELDS, isAppearanceFieldRelevant } from '../src/features/sprites/appearanceFields';
 import { DEFAULT_PRODUCER_APPEARANCE, buildProducerNpc, randomiseProducerAppearance, sanitizeProducerAppearance } from '../src/features/sprites/producerAppearance';
 import { SKIN_PALETTES } from '../src/features/sprites/npcAppearanceData';
 import { createSeededRandom } from '../src/simulation/seededRandom';
-import { enumerateAppearanceOptions, findNoOpOptions, INTENTIONAL_SHARED_RENDER } from '../src/dev/appearanceAudit';
+import { AUDIT_BASELINES, enumerateAppearanceOptions, findNoOpOptions, INTENTIONAL_SHARED_RENDER } from '../src/dev/appearanceAudit';
 
 const draw = (npc: ModularNpcDefinition) =>
   renderToStaticMarkup(<ModularSpriteRenderer npc={npc} animationState="idle" scale={9} showBadge={false} />);
@@ -27,6 +27,30 @@ describe('appearance option audit (#215)', () => {
       assert.deepEqual(findNoOpOptions(probes, by), [], `no-op options by ${by}`);
     }
     assert.equal(INTENTIONAL_SHARED_RENDER.size, 0, 'update this test if sharing is introduced on purpose');
+  });
+
+  it('no option is a no-op from any audited state (every hair shape x face seeds, accessories, tops)', () => {
+    let relevantProbes = 0;
+    for (const baseline of AUDIT_BASELINES) {
+      const states = enumerateAppearanceOptions(baseline, draw);
+      relevantProbes += states.length;
+      assert.deepEqual(findNoOpOptions(states, 'drawing'), [], `no-op from ${JSON.stringify(baseline)}`);
+    }
+    assert.ok(relevantProbes > 1000);
+  });
+
+  it('hair colour is gated off exactly when it cannot show (bald, no drawn facial hair)', () => {
+    const hairColour = APPEARANCE_FIELDS.find((f) => f.id === 'hairColour')!;
+    let gated = 0;
+    let shown = 0;
+    for (let seed = 0; seed < 40; seed++) {
+      const bald = { ...DEFAULT_PRODUCER_APPEARANCE, hair: 'bald' as const, seed };
+      const draws = new Set(hairColour.options.map((o) => draw(buildProducerNpc(hairColour.set(bald, o.value), 'Audit', 'modern'))));
+      if (isAppearanceFieldRelevant(hairColour, bald)) { shown++; assert.equal(draws.size, hairColour.options.length, `seed ${seed}: relevant but no-op`); }
+      else { gated++; assert.equal(draws.size, 1, `seed ${seed}: gated off but colour would show`); }
+    }
+    assert.ok(gated > 0 && shown > 0, `both cases must occur in the seed sample (gated ${gated}, shown ${shown})`);
+    assert.equal(isAppearanceFieldRelevant(hairColour, DEFAULT_PRODUCER_APPEARANCE), true);
   });
 
   it('the detector flags a no-op option when one exists', () => {
@@ -96,6 +120,7 @@ describe('Surprise me keeps controls and preview in step (#215)', () => {
       const a = randomiseProducerAppearance(createSeededRandom(`s${i}`));
       const npc = buildProducerNpc(a, 'P', 'modern');
       for (const field of APPEARANCE_FIELDS) {
+        if (!isAppearanceFieldRelevant(field, a)) continue;
         const probe = enumerateAppearanceOptions(a).find((p) => p.field === field.id && p.value === field.get(a))!;
         assert.equal(probe.appearance[field.id], field.get(a));
       }
