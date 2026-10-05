@@ -2158,6 +2158,11 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     const roomKey = roomProfile?.type ?? 'project-studio';
     if (roomKeyRef.current !== roomKey) {
       roomKeyRef.current = roomKey;
+      // Snap the artist transit to the destination room's session status (no walk-out on room switch).
+      const destSession = Boolean(
+        stateRef.current.hasActiveProject && (roomKey === 'project-studio' || stateRef.current.roomOccupied),
+      );
+      clientTransitRef.current = createClientTransitState(destSession);
       cameraRef.current = { x: 0, y: 0, zoom: 1.0 };
       idleCameraRef.current = { mode: 'idle', saved: { x: 0, y: 0, zoom: 1.0 }, targetId: null };
       lastAnchorsRef.current = {};
@@ -2849,7 +2854,9 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           // Extra rooms only show a session when the project is booked into the room being viewed.
           const sessionHere = s.hasActiveProject && (roomKeyRef.current === 'project-studio' || Boolean(s.roomOccupied));
           refs.staffFigures.forEach((f, i) => {
-            const live = stateRef.current.floorFigures?.[i]?.animState;
+            const supplied = stateRef.current.floorFigures?.[i]?.animState;
+            // Extra rooms: supplied states are not room-scoped for staff; stay idle unless a session is here.
+            const live = roomKeyRef.current !== 'project-studio' && !sessionHere ? 'idle' : supplied;
             if (live) f.animState = live;
             else if (sessionHere && f.animState === 'idle') f.animState = 'working';
             else if (!sessionHere && (f.animState === 'working' || f.animState === 'mixing' || f.animState === 'recording')) {

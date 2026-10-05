@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { getRoomLayoutProfile, ROOM_LAYOUT_PROFILES, validateRoomLayout } from '../src/components/studio/roomLayouts';
 import { roomStaffCount } from '../src/components/studio/roomFigures';
 import { buildRoomLayoutScene, computeRoomView } from '../src/components/studio/roomLayoutScene';
-import { createDefaultStudioRooms } from '../src/utils/studioRoomUtils';
+import { createDefaultStudioRooms, getProjectForRoom } from '../src/utils/studioRoomUtils';
 
 // Every purchasable extra room has a layout; Studio A keeps its hand-built scene (no profile).
 const rooms = createDefaultStudioRooms();
@@ -79,5 +79,18 @@ const studioSrc = readFileSync('src/components/StudioRoom.tsx', 'utf8');
 assert.ok(!/<RoomVignette/.test(studioSrc), 'RoomVignette SVG is not a gameplay surface any more');
 assert.ok(studioSrc.includes('roomType: viewRoom?.type'), 'StudioRoom passes the viewed room into the Pixi scene');
 assert.ok(studioSrc.includes('activeHotspots'), 'gamepad hotspot cycling follows the active room');
+
+// Room-to-project resolution: concurrent projects resolve by bookingRoomId; extra rooms never borrow the primary.
+const pA = { id: 'a', title: 'A', bookingRoomId: 'studio-a' } as never;
+const pB = { id: 'b', title: 'B', bookingRoomId: 'room-b' } as never;
+const pC = { id: 'c', title: 'C', bookingRoomId: 'room-c' } as never;
+const projState = { activeProject: pA, activeProjects: [pB] };
+assert.equal(getProjectForRoom(projState, undefined), pA);
+assert.equal(getProjectForRoom(projState, 'studio-a'), pA);
+assert.equal(getProjectForRoom(projState, 'room-b'), pB);
+assert.equal(getProjectForRoom(projState, 'room-c'), null);
+assert.equal(getProjectForRoom({ activeProject: pC, activeProjects: [pB] }, 'room-c'), pC);
+assert.equal(getProjectForRoom({ activeProject: null, activeProjects: [] }, 'room-b'), null);
+assert.ok(canvasSrc.includes('createClientTransitState(destSession)'), 'room switch resets artist transit');
 
 console.log('room layouts check passed');
