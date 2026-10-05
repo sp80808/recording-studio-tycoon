@@ -20,6 +20,8 @@ for (const m of mounts) assert.match(m.slice(0, 600), /onWorkSession=/, 'dashboa
 assert.match(dash, /onWorkSession \?\? onProjectSelect/, 'Open session must fall back instead of silently doing nothing');
 assert.match(dash, /onClick=\{\(\) => openSession\?\.\(project\)\}/);
 
+assert.equal(prog.split('<ProjectSwitcher').length - 1, 2, 'both session views offer the project switcher');
+
 // Compact cards: sliders present, no truncated titles, buttons wrap.
 assert.match(dash, /data-testid="multi-project-sliders"/);
 assert.match(dash, /<Slider/);
