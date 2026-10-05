@@ -261,3 +261,7 @@ In-house proprietary original, Pixi Graphics and Text only (`fitHoverGlow` in `W
 
 ## 22. Premises seating and rack (#249)
 In-house proprietary original, Pixi Graphics only (`studioPremisesDecor.ts`). Client waiting bench, premium sofa and storage racks rebuilt from a small 2:1 isometric box kit (top, front-left and front-right faces, legs, arms, backrest, cushions); no external source. Visual smoke harness: `tests/studio-scene.html?premises=1` (before/after in `docs/img/premises-*.png`).
+
+## 23. Isometric room layouts: Vocal Suite, Live Room, Mix Suite (#248)
+In-house proprietary original, Pixi Graphics only (`roomLayouts.ts` data, `roomLayoutScene.ts` painters, `studioIsoKit.ts` box kit). Floors, walls, acoustic foam/diffuser/brick/panel treatments, drum kit, amp stacks, stage box, mic stands and boom, headphone stand, cue desk, mixing console with fader strips and LED meters, nearfield monitors, outboard racks, bass traps, sofa, rug, plant and lamp are all drawn in code from 2:1 isometric boxes, ellipses and polygons. No external source, textures or fonts. `RoomVignette.tsx` (inline SVG) is kept only as a non-gameplay fallback component.
+
