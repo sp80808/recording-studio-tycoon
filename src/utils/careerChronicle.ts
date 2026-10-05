@@ -251,3 +251,70 @@ export const deriveBranchConsequences = (state: GameState): BranchConsequence[] 
   }
   return out;
 };
+
+// ---- Slice 3: cast of your career + selected credits (#259 §7, §8) ----
+
+export interface CastMember {
+  id: 'longest-client' | 'loyal-artist' | 'referrer' | 'key-staff';
+  role: string;
+  name: string;
+  detail: string;
+}
+
+const TIER_RANK: Record<string, number> = { Unknown: 0, Acquaintance: 1, Friendly: 2, Regular: 3, Loyal: 4, Advocate: 5 };
+
+/**
+ * A short "cast of your career" summary. Deliberately a handful of lines, not the Artists or Crew screens.
+ * Ties break on name so the result is deterministic. Legacy/sparse saves return an empty list.
+ */
+export const deriveCareerCast = (state: IdentityState): CastMember[] => {
+  const out: CastMember[] = [];
+  const rels = Object.values(state.clientRelationships ?? {});
+  const byName = (a: { clientName: string }, b: { clientName: string }) => a.clientName.localeCompare(b.clientName);
+  const longest = [...rels].filter((c) => c.sessionsCompleted >= 2).sort((a, b) => b.sessionsCompleted - a.sessionsCompleted || byName(a, b))[0];
+  if (longest) out.push({ id: 'longest-client', role: 'Longest-running client', name: longest.clientName, detail: `${longest.sessionsCompleted} sessions together.` });
+  const loyal = [...rels]
+    .filter((c) => (TIER_RANK[c.tier] ?? 0) >= 4)
+    .sort((a, b) => (TIER_RANK[b.tier] ?? 0) - (TIER_RANK[a.tier] ?? 0) || b.relationshipXp - a.relationshipXp || byName(a, b))[0];
+  if (loyal) out.push({ id: 'loyal-artist', role: 'Most loyal artist', name: loyal.clientName, detail: `${loyal.tier} client. Trusts the studio with ${loyal.primaryGenre ? loyal.primaryGenre.toLowerCase() : 'their'} records.` });
+  const referrer = [...rels].filter((c) => (c.referralCount ?? 0) > 0).sort((a, b) => b.referralCount - a.referralCount || byName(a, b))[0];
+  if (referrer) out.push({ id: 'referrer', role: 'Biggest referrer', name: referrer.clientName, detail: `Sent ${referrer.referralCount} new client${referrer.referralCount === 1 ? '' : 's'} your way.` });
+  const staff = [...(state.hiredStaff ?? [])].sort(
+    (a, b) => (b.levelInRole ?? 0) - (a.levelInRole ?? 0) || (b.xpInRole ?? 0) - (a.xpInRole ?? 0) || a.name.localeCompare(b.name),
+  )[0];
+  if (staff) out.push({ id: 'key-staff', role: 'Key crew member', name: staff.name, detail: `${staff.role}, level ${staff.levelInRole ?? 1}.` });
+  return out;
+};
+
+export interface SelectedCredit {
+  id: 'best-quality' | 'biggest-earner' | 'favourite-genre' | 'top-release' | 'premises';
+  label: string;
+  title: string;
+  detail: string;
+}
+
+const OUTCOME_RANK: Record<string, number> = { quiet: 0, solid: 1, breakthrough: 2, prestige: 3 };
+
+/** Compact discography highlights, derived from reports, client release history and premises. Empty on sparse saves. */
+export const deriveSelectedCredits = (state: IdentityState): SelectedCredit[] => {
+  const out: SelectedCredit[] = [];
+  const reports = state.financials?.reports ?? [];
+  // First report wins ties so the earliest strong record keeps the credit.
+  const best = reports.reduce<(typeof reports)[number] | null>((b, r) => (!b || r.overallQualityScore > b.overallQualityScore ? r : b), null);
+  if (best) out.push({ id: 'best-quality', label: 'Highest quality', title: best.projectTitle, detail: `Scored ${Math.round(best.overallQualityScore)}/100.` });
+  const rich = reports.reduce<(typeof reports)[number] | null>((b, r) => ((r.moneyGained ?? 0) > (b?.moneyGained ?? 0) ? r : b), null);
+  if (rich && (rich.moneyGained ?? 0) > 0) out.push({ id: 'biggest-earner', label: 'Biggest payday', title: rich.projectTitle, detail: `Brought in $${Math.round(rich.moneyGained).toLocaleString('en-US')}.` });
+  const genre = topGenres(state, 1)[0];
+  if (genre) out.push({ id: 'favourite-genre', label: 'Most-used genre', title: genre, detail: `${reports.filter((r) => r.genre === genre).length} sessions delivered.` });
+  let top: { title: string; band: string; client: string; rank: number; quality: number } | null = null;
+  for (const c of Object.values(state.clientRelationships ?? {}).sort((a, b) => a.clientName.localeCompare(b.clientName))) {
+    for (const r of c.releases ?? []) {
+      if (!r.resolved) continue;
+      const rank = OUTCOME_RANK[r.outcomeBand] ?? 0;
+      if (rank > 0 && (!top || rank > top.rank || (rank === top.rank && r.qualityScore > top.quality))) top = { title: r.title, band: r.outcomeBand, client: c.clientName, rank, quality: r.qualityScore };
+    }
+  }
+  if (top) out.push({ id: 'top-release', label: 'Biggest release', title: top.title, detail: `A ${top.band} result for ${top.client}.` });
+  if (getPremisesTier(state) > 0) out.push({ id: 'premises', label: 'Studio milestone', title: getPremisesDef(state).name, detail: 'Where the studio calls home now.' });
+  return out;
+};
