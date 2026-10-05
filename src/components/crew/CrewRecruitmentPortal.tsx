@@ -28,7 +28,7 @@ interface CrewRecruitmentPortalProps {
 
 type PortalView = 'board' | 'roster';
 
-import { WORK_STYLES } from '@/rpg/workStyle';
+import { WORK_STYLES, workStyleEffectText } from '@/rpg/workStyle';
 
 const P = 'crew.CrewRecruitmentPortal.';
 const disciplineLabel = (d: StaffDiscipline) => tc(`${P}discipline_${d}`, DISCIPLINE_LABEL[d]);
@@ -162,7 +162,7 @@ export const CrewRecruitmentPortal: React.FC<CrewRecruitmentPortalProps> = ({
                       )}
                       {candidate.workStyle && WORK_STYLES[candidate.workStyle] && (
                         <p className="text-[10px] text-stone-300 mt-1" data-testid="candidate-work-style">
-                          {tc(`${P}work_style_${candidate.workStyle.replace(/-/g, '_')}`, WORK_STYLES[candidate.workStyle].label)}{' · '}{WORK_STYLES[candidate.workStyle].blurb}
+                          {tc(`${P}work_style_${candidate.workStyle.replace(/-/g, '_')}`, WORK_STYLES[candidate.workStyle].label)}{' · '}{WORK_STYLES[candidate.workStyle].blurb}{' · '}{tc(`${P}work_style_effect`, 'Stage fit: {{effect}}', { effect: workStyleEffectText(candidate.workStyle) })}
                         </p>
                       )}
                       {candidate.source && (

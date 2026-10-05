@@ -238,6 +238,8 @@ export interface StaffMember {
   pieceIds?: CreatorPieceIds;
   /** Recruitment channel this candidate came from, with a plain-language reason (#68). */
   source?: { channelId: string; label: string; why: string };
+  /** A known client or label that put this candidate forward (#68). Absent on legacy saves and unreferred candidates. */
+  referredBy?: { kind: 'client' | 'label'; id: string; name: string };
   /** Hired through College Placement: develops faster at low levels (#68). */
   apprentice?: boolean;
   /** Explainable work-style trait assigned at recruitment (#68). */
