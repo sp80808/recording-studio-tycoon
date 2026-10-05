@@ -6,10 +6,10 @@
  */
 import type { GameState } from '@/types/game';
 import { getPremisesDef, getPremisesTier } from '@/rpg/premises';
-import { getActiveCampaignNode, getStorylineObjectiveProgress, hasPendingStorylineBranch } from '@/narrative/branchingStorylineEngine';
+import { getActiveCampaignNode, getCampaignTreeForState, getStorylineObjectiveProgress, hasPendingStorylineBranch } from '@/narrative/branchingStorylineEngine';
 
 type IdentityState = Pick<GameState, 'playerData' | 'financials'> &
-  Partial<Pick<GameState, 'clientRelationships' | 'premisesTier' | 'hiredStaff' | 'studioRooms' | 'chartRun' | 'reputation' | 'storylineState'>>;
+  Partial<Pick<GameState, 'clientRelationships' | 'premisesTier' | 'hiredStaff' | 'studioRooms' | 'chartRun' | 'firstChart' | 'reputation' | 'storylineState'>>;
 
 const SKILL_LABEL: Record<string, string> = {
   songwriting: 'songwriting',
@@ -107,7 +107,7 @@ export const deriveCareerMilestones = (state: IdentityState): CareerMilestone[] 
   if (getPremisesTier(state) > 0) out.push({ id: 'first-premises-move', title: 'Moved out of the borrowed room', detail: `Now operating from a ${getPremisesDef(state).name}.` });
   const loyal = loyalClients(state)[0];
   if (loyal) out.push({ id: 'first-loyal-client', title: 'A loyal client', detail: `${loyal.clientName} trusts the studio with their records.` });
-  const chart = state.chartRun?.[0];
+  const chart = state.firstChart ?? state.chartRun?.[0];
   if (chart) out.push({ id: 'first-charting-release', title: 'First charting release', detail: `${chart.title} reached #${chart.peak} on ${chart.chartName}.` });
   if ((state.storylineState?.branchHistory?.length ?? 0) > 0) out.push({ id: 'first-story-choice', title: 'A defining choice', detail: 'You picked a path that shaped the studio story.' });
   return out;
@@ -140,4 +140,114 @@ export const resolveCareerTarget = (state: GameState): CareerTarget => {
     return { type: 'premises', label: `Move up to a ${nextDef.name}`, detail: 'More rooms and crew capacity once the studio can afford it.' };
   }
   return { type: 'reputation', label: 'Build the studio legacy', detail: `Reputation ${state.reputation ?? 0}. Keep delivering strong records.` };
+};
+
+// ---- Slice 2: chapters, pinned defining moments, branch consequences (#259) ----
+
+export interface CareerChapter {
+  id: string;
+  title: string;
+  blurb: string;
+}
+
+/** Ordered chapters. A run reaches the highest one whose trigger holds; earlier ones are always "behind" the player. */
+export const CAREER_CHAPTERS: readonly CareerChapter[] = [
+  { id: 'bedroom', title: 'The Bedroom Years', blurb: 'One console, a borrowed room, and something to prove.' },
+  { id: 'first-clients', title: 'First Paying Clients', blurb: 'Real money changed hands. People trust you with their songs.' },
+  { id: 'sound', title: 'Finding Your Sound', blurb: 'The records start to sound like you.' },
+  { id: 'real-studio', title: 'First Real Studio', blurb: 'You moved out of the borrowed room.' },
+  { id: 'breakthrough', title: 'Breaking Through', blurb: 'The scene is starting to notice the studio.' },
+  { id: 'facility', title: 'Running a Facility', blurb: 'Rooms, crew and payroll. The studio is bigger than you.' },
+  { id: 'legacy', title: 'Legacy', blurb: 'The story is written. What the studio stands for is settled.' },
+];
+
+/** Chapter each milestone belongs to, so the story can be grouped. Unknown ids fall back to the current chapter. */
+const MILESTONE_CHAPTER: Record<string, string> = {
+  'first-paid-session': 'first-clients',
+  'first-repeat-client': 'first-clients',
+  'first-poor-session': 'first-clients',
+  'first-loyal-client': 'sound',
+  'first-story-choice': 'sound',
+  'first-staff-hire': 'facility',
+  'first-room-added': 'facility',
+  'first-premises-move': 'real-studio',
+  'first-charting-release': 'breakthrough',
+};
+
+type ChapterState = IdentityState;
+
+/** Index into CAREER_CHAPTERS of the chapter the career is in now. Pure and monotone in the evidence. */
+export const resolveChapterIndex = (state: ChapterState): number => {
+  const reports = state.financials?.reports ?? [];
+  const tier = state.premisesTier ?? 0;
+  const rooms = (state.studioRooms ?? []).filter((r) => r.unlocked).length;
+  const staff = state.hiredStaff?.length ?? 0;
+  const done = Boolean(state.storylineState?.campaignCompleted);
+  if (done || tier >= 3) return 6;
+  if (tier >= 2 || (staff >= 2 && rooms >= 2)) return 5;
+  if (state.firstChart || (state.chartRun?.length ?? 0) > 0) return 4;
+  if (tier >= 1) return 3;
+  if (reports.length >= 5 && (loyalClients(state).length > 0 || strongestSkill({ playerData: state.playerData }))) return 2;
+  if (reports.some((r) => (r.moneyGained ?? 0) > 0)) return 1;
+  return 0;
+};
+
+export const resolveCareerChapter = (state: ChapterState): CareerChapter => CAREER_CHAPTERS[resolveChapterIndex(state)];
+
+export interface ChapterGroup {
+  chapter: CareerChapter;
+  current: boolean;
+  milestones: CareerMilestone[];
+}
+
+/** Milestones grouped by chapter, only chapters that already started and have something to show. Newest chapter first. */
+export const groupMilestonesByChapter = (state: ChapterState): ChapterGroup[] => {
+  const idx = resolveChapterIndex(state);
+  const groups: ChapterGroup[] = CAREER_CHAPTERS.slice(0, idx + 1).map((chapter, i) => ({ chapter, current: i === idx, milestones: [] }));
+  for (const m of deriveCareerMilestones(state)) {
+    const target = Math.min(idx, CAREER_CHAPTERS.findIndex((c) => c.id === (MILESTONE_CHAPTER[m.id] ?? CAREER_CHAPTERS[idx].id)));
+    groups[Math.max(0, target)].milestones.push(m);
+  }
+  return groups.filter((g) => g.current || g.milestones.length > 0).reverse();
+};
+
+export const MAX_PINNED_MOMENTS = 3;
+
+/** Pinned moments that still resolve to a real milestone, in pin order. Stale ids (e.g. a vanished milestone) drop silently. */
+export const resolvePinnedMoments = (state: ChapterState & Partial<Pick<GameState, 'pinnedMoments'>>): CareerMilestone[] => {
+  const all = deriveCareerMilestones(state);
+  return (state.pinnedMoments ?? []).map((id) => all.find((m) => m.id === id)).filter((m): m is CareerMilestone => Boolean(m)).slice(0, MAX_PINNED_MOMENTS);
+};
+
+/** Immutable pin toggle. Pinning beyond the cap evicts the oldest pin so the click always does something. */
+export const togglePinnedMoment = <T extends Partial<Pick<GameState, 'pinnedMoments'>>>(state: T, id: string): T => {
+  const cur = state.pinnedMoments ?? [];
+  const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id].slice(-MAX_PINNED_MOMENTS);
+  return { ...state, pinnedMoments: next };
+};
+
+export interface BranchConsequence {
+  nodeId: string;
+  day: number;
+  headline: string;
+  outcome: string;
+}
+
+/** Lasting consequence of each major storyline decision, read from the deterministic campaign tree. */
+export const deriveBranchConsequences = (state: GameState): BranchConsequence[] => {
+  const history = state.storylineState?.branchHistory ?? [];
+  if (history.length === 0) return [];
+  let nodes: ReturnType<typeof getCampaignTreeForState>['nodes'] = [];
+  try {
+    nodes = getCampaignTreeForState(state).nodes;
+  } catch {
+    return [];
+  }
+  const out: BranchConsequence[] = [];
+  for (const rec of history) {
+    const opt = nodes.find((n) => n.id === rec.nodeId)?.branchDilemma?.options.find((o) => o.id === rec.chosenOptionId);
+    if (!opt) continue;
+    out.push({ nodeId: rec.nodeId, day: rec.resolvedDay, headline: `You chose: ${opt.label}`, outcome: opt.consequences.narrativeOutcome });
+  }
+  return out;
 };
