@@ -14,7 +14,7 @@ echo "=== mobile onboarding regression (blank screen + creator touch) ==="
 node "${CHECK_OUTPUT_DIR}/rst-mobile-onboarding.cjs"
 
 echo "=== tutorial and room purchases ==="
-for check in first-session-guide studio-room-purchase toast-spam; do
+for check in first-session-guide studio-room-purchase toast-spam pause-menu-keys; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-$check.cjs" --alias:@=./src >/dev/null
   node "${CHECK_OUTPUT_DIR}/rst-$check.cjs"
 done
