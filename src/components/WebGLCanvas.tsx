@@ -58,6 +58,9 @@ import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from
 import { buildCaseStack, CASE_STACK_TILE, type CaseStack } from '@/components/studio/studioCaseStack';
 import { buildWindowView, type WindowView } from '@/components/studio/studioWindowView';
 import { buildPremisesDecor } from '@/components/studio/studioPremisesDecor';
+import { getRoomLayoutProfile, type RoomLayoutProfile } from '@/components/studio/roomLayouts';
+import { buildRoomLayoutScene } from '@/components/studio/roomLayoutScene';
+import type { StudioRoomType } from '@/types/game';
 import { buildFurnishingLayer, type StudioCat } from '@/components/studio/studioFloorFurnishings';
 import {
   buildDecorLights,
@@ -278,6 +281,10 @@ export interface StudioSceneState {
   cityId?: string;
   /** Studio tier 1-5 from ProgressionSystem — drives visible room upgrades (bead ifx.3) */
   roomTier?: number;
+  /** Extra room being viewed (#248). Absent or 'project-studio' renders the full Studio A scene. */
+  roomType?: StudioRoomType;
+  /** A project is booked into the viewed extra room right now (drives the on-air lamp). */
+  roomOccupied?: boolean;
   /** Premises tier (#70): 3 adds a premium sofa and third rack; 1 adds the client bench + storage rack, 2 adds reception, water cooler and a second rack. */
   premisesTier?: number;
   /** Tier ids of earned, unopened flight cases (drives the floor stack). */
@@ -572,6 +579,8 @@ interface BuiltScene {
   refs: SceneRefs;
   basePosition: { x: number; y: number };
   baseScale: number;
+  /** Per-frame animation hook for scenes that are not the Studio A scene. */
+  tick?: (seconds: number, reduceMotion: boolean) => void;
 }
 
 /** Hover colours per hotspot (match the legacy rings). */
@@ -662,17 +671,7 @@ const addHotspot = (
   parent.addChild(hit);
 };
 
-const buildScene = (
-  width: number,
-  height: number,
-  state: StudioSceneState,
-  onSelect?: (id: StudioHotspotId) => void,
-  renderer?: Renderer,
-  kitTextures?: StudioKitTextures | null,
-  npcAtlas?: LoadedAtlas | null,
-): BuiltScene => {
-  const root = new Container();
-  const refs: SceneRefs = {
+const createSceneRefs = (): SceneRefs => ({
     vuBars: [],
     tvBars: [],
     tvWrap: null,
@@ -713,7 +712,19 @@ const buildScene = (
     gearTubes: [],
     gearLeds: [],
     floorCat: null,
-  };
+  });
+
+const buildScene = (
+  width: number,
+  height: number,
+  state: StudioSceneState,
+  onSelect?: (id: StudioHotspotId) => void,
+  renderer?: Renderer,
+  kitTextures?: StudioKitTextures | null,
+  npcAtlas?: LoadedAtlas | null,
+): BuiltScene => {
+  const root = new Container();
+  const refs: SceneRefs = createSceneRefs();
 
   // Era colour grade + studio tier drive the room's look (beads goj.3 / ifx.3)
   const eraGrade = getEraGrade(state.eraId);
@@ -1911,6 +1922,44 @@ const buildScene = (
   return { root, underlayRoot, overlayRoot, refs, basePosition: { x: originX, y: originY }, baseScale: fitScale };
 };
 
+/**
+ * Scene for the extra rooms (#248): same Pixi Application, same camera/fit rules and hotspot plumbing as
+ * Studio A, but the floor, walls and props come from a data-driven RoomLayoutProfile.
+ */
+const buildRoomScene = (
+  profile: RoomLayoutProfile,
+  width: number,
+  height: number,
+  state: StudioSceneState,
+  onSelect?: (id: StudioHotspotId) => void,
+): BuiltScene => {
+  const refs = createSceneRefs();
+  const eraGrade = getEraGrade(state.eraId);
+  const grade = { ...eraGrade, ...cityWallColors(eraGrade.wallLeft, eraGrade.wallRight, state.cityId) };
+  const built = buildRoomLayoutScene(profile, {
+    occupied: Boolean(state.roomOccupied),
+    seed: state.decorSeed ?? 'studio',
+    tint: { wallLeft: grade.wallLeft, wallRight: grade.wallRight, accent: grade.accent },
+    addHotspot: (id, hit, visual, zIndex, parent) => addHotspot(parent, id, hit, visual, refs, onSelect, zIndex),
+  });
+  const { bounds } = built;
+  const topInset = width <= 540 ? 116 : 68;
+  const bottomInset = height < 500 ? 96 : 160;
+  const fitScale = Math.min(
+    (width - 60) / (bounds.maxX - bounds.minX),
+    Math.max(80, height - topInset - bottomInset - 20) / (bounds.maxY - bounds.minY),
+    2.4,
+  );
+  const originX = width / 2 - ((bounds.minX + bounds.maxX) / 2) * fitScale;
+  const originY = (topInset + height - bottomInset) / 2 - ((bounds.minY + bounds.maxY) / 2) * fitScale;
+  built.root.scale.set(fitScale);
+  built.root.position.set(originX, originY);
+  const underlayRoot = buildUnderlay(width, height, { x: width / 2, y: (topInset + height - bottomInset) / 2 }, fitScale);
+  const overlayRoot = new Container();
+  overlayRoot.eventMode = 'none';
+  return { root: built.root, underlayRoot, overlayRoot, refs, basePosition: { x: originX, y: originY }, baseScale: fitScale, tick: built.tick };
+};
+
 /* ---------------------------------------------------------------------------
  * Component
  * ------------------------------------------------------------------------- */
@@ -1932,6 +1981,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   };
   const lastAnchorsRef = useRef<HotspotAnchors>({});
   const timeRef = useRef(0);
+  const roomKeyRef = useRef('project-studio');
   const cameraRef = useRef({ x: 0, y: 0, zoom: 1.0 });
   const idleCameraRef = useRef({
     mode: 'idle' as 'idle' | 'focusing' | 'restoring',
@@ -2020,7 +2070,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   const producerLookKey = state?.producerNpc
     ? [state.producerNpc.hair.shape, state.producerNpc.hair.colour, state.producerNpc.body.build, state.producerNpc.clothes.topPrimaryHex].join(':')
     : '';
-  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${producerLookKey}|${floorKey}|${state?.staffOnFloor ?? 1}|${gearKey}|${gearConditionKey(state?.gearConditions)}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${state?.premisesTier ?? 0}|${(state?.pendingCases ?? []).join(',')}|${trophyKey(state?.trophies ?? { covers: [] })}|${state?.decorSeed ?? 'studio'}`;
+  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${producerLookKey}|${floorKey}|${state?.staffOnFloor ?? 1}|${gearKey}|${gearConditionKey(state?.gearConditions)}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${state?.premisesTier ?? 0}|${(state?.pendingCases ?? []).join(',')}|${trophyKey(state?.trophies ?? { covers: [] })}|${state?.decorSeed ?? 'studio'}|${state?.roomType ?? 'project-studio'}|${state?.roomOccupied ? 1 : 0}`;
 
   // Rebuild the room (new window size or layout change)
   const rebuild = () => {
@@ -2038,24 +2088,36 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
         sceneRef.current.overlayRoot.destroy({ children: true });
       }
     }
-    const scene = buildScene(
-      app.screen.width,
-      app.screen.height,
-      stateRef.current,
-      (id) => {
-        // Skip in-flight door walk so selection never feels blocked
-        if (isClientTransitAnimating(clientTransitRef.current)) {
-          clientTransitRef.current = skipClientTransit(
-            clientTransitRef.current,
-            Boolean(stateRef.current.hasActiveProject),
-          );
-        }
-        if (!suppressTapRef.current) selectRef.current?.(id);
-      },
-      app.renderer,
-      kitTexturesRef.current,
-      npcAtlasRef.current,
-    );
+    const onSelectHotspot = (id: StudioHotspotId) => {
+      // Skip in-flight door walk so selection never feels blocked
+      if (isClientTransitAnimating(clientTransitRef.current)) {
+        clientTransitRef.current = skipClientTransit(
+          clientTransitRef.current,
+          Boolean(stateRef.current.hasActiveProject),
+        );
+      }
+      if (!suppressTapRef.current) selectRef.current?.(id);
+    };
+    // Switching rooms swaps the scene on this same Application; the camera starts fresh for each room.
+    const roomProfile = getRoomLayoutProfile(stateRef.current.roomType);
+    const roomKey = roomProfile?.type ?? 'project-studio';
+    if (roomKeyRef.current !== roomKey) {
+      roomKeyRef.current = roomKey;
+      cameraRef.current = { x: 0, y: 0, zoom: 1.0 };
+      idleCameraRef.current = { mode: 'idle', saved: { x: 0, y: 0, zoom: 1.0 }, targetId: null };
+      lastAnchorsRef.current = {};
+    }
+    const scene = roomProfile
+      ? buildRoomScene(roomProfile, app.screen.width, app.screen.height, stateRef.current, onSelectHotspot)
+      : buildScene(
+          app.screen.width,
+          app.screen.height,
+          stateRef.current,
+          onSelectHotspot,
+          app.renderer,
+          kitTexturesRef.current,
+          npcAtlasRef.current,
+        );
     reelKeyRef.current = '';
     const zoom = cameraRef.current.zoom ?? 1.0;
     scene.root.scale.set(scene.baseScale * zoom);
@@ -2451,6 +2513,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           const scene = sceneRef.current;
           if (!scene) return;
           const refs = scene.refs;
+          scene.tick?.(t, readReduceMotion());
 
           const reduceMotion = readReduceMotion();
           const floorFocused = s.floorFocused !== false;

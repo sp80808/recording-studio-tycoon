@@ -6,6 +6,7 @@
 
 import { Container, Graphics } from 'pixi.js';
 import { iso } from './isoMath';
+import { buildRack, buildSeat, LEATHER, LEATHER_BACK, NAVY, NAVY_BACK, WOOD, wrap } from './studioIsoKit';
 
 export interface PremisesProp {
   id: string;
@@ -16,34 +17,8 @@ export interface PremisesProp {
   build: (accent: number) => Container;
 }
 
-const wrap = (g: Graphics): Container => {
-  const c = new Container();
-  c.eventMode = 'none';
-  c.addChild(g);
-  return c;
-};
-
-const buildBench = (): Container => {
-  const g = new Graphics();
-  g.ellipse(0, 4, 36, 8).fill({ color: 0x000000, alpha: 0.28 });
-  g.roundRect(-30, -14, 60, 12, 4).fill(0x6b4a2f);
-  g.roundRect(-30, -24, 60, 10, 4).fill(0x8a6340);
-  g.rect(-26, -2, 5, 8).fill(0x2a1f14);
-  g.rect(21, -2, 5, 8).fill(0x2a1f14);
-  return wrap(g);
-};
-
-const buildRack = (): Container => {
-  const g = new Graphics();
-  g.ellipse(0, 2, 20, 6).fill({ color: 0x000000, alpha: 0.28 });
-  g.rect(-16, -58, 32, 58).fill(0x2b3039);
-  g.rect(-16, -58, 32, 58).stroke({ width: 2, color: 0x4c5769 });
-  for (let i = 0; i < 4; i++) {
-    g.rect(-13, -54 + i * 13, 26, 9).fill(0x3d4452);
-    g.circle(9, -49.5 + i * 13, 1.8).fill(i % 2 ? 0x59d98a : 0xf0b84a);
-  }
-  return wrap(g);
-};
+const buildBench = (): Container =>
+  buildSeat({ half: 31, depth: 11, seatZ: 8, backZ: 30, armZ: 18, armW: 5, cushions: 2, frame: WOOD, cushion: LEATHER, back: LEATHER_BACK, legH: 8 });
 
 /** Reception counter: wood front, light top, desk lamp, bell and an accent sign on the front panel. */
 const buildReception = (accent: number): Container => {
@@ -65,19 +40,11 @@ const buildReception = (accent: number): Container => {
   return wrap(g);
 };
 
-const buildSofa = (accent: number): Container => {
-  const g = new Graphics();
-  g.ellipse(0, 4, 40, 9).fill({ color: 0x000000, alpha: 0.28 });
-  g.roundRect(-34, -16, 68, 16, 5).fill(0x2f3a4a);
-  g.roundRect(-34, -34, 68, 18, 6).fill(0x3d4b60);
-  g.roundRect(-30, -14, 28, 10, 3).fill(0x4a5b73);
-  g.roundRect(2, -14, 28, 10, 3).fill(0x4a5b73);
-  g.rect(-34, -24, 4, 12).fill({ color: accent, alpha: 0.7 });
-  return wrap(g);
-};
+const buildSofa = (accent: number): Container =>
+  buildSeat({ half: 38, depth: 13, seatZ: 6, backZ: 36, armZ: 22, armW: 8, cushions: 3, frame: NAVY_BACK, cushion: NAVY, back: NAVY_BACK, legH: 3, accent });
 
 export const PREMISES_PROPS: PremisesProp[] = [
-  { id: 'clientBench', minTier: 1, x: 2.9, y: 6.7, build: buildBench },
+  { id: 'clientBench', minTier: 1, x: 1.9, y: 6.55, build: buildBench },
   { id: 'storageRack', minTier: 1, x: 4.3, y: 0.6, build: buildRack },
   { id: 'reception', minTier: 2, x: 1.15, y: 5.9, build: buildReception },
   { id: 'storageRack2', minTier: 2, x: 5.15, y: 0.6, build: buildRack },

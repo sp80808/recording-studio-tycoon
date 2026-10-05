@@ -1,6 +1,7 @@
 // Sound System for Recording Studio Tycoon
 // Using Web Audio API with real audio files
 // import Recorder from 'recorder-js';
+import { OneShotGate, resolveLoop } from '@/utils/oneShotPolicy';
 import * as Tone from 'tone';
 
 interface AudioSettings {
@@ -25,6 +26,8 @@ class GameAudioSystem {
    * input can't stack polyphony. Discrete events (stage complete, awards)
    * skip throttling.
    */
+  /** Central one-shot dedupe: identical sounds within the cooldown are dropped (#256). */
+  private oneShots = new OneShotGate();
   private lastPlayed: Map<string, number> = new Map();
   private settings: AudioSettings = {
     masterVolume: 0.7,
@@ -159,6 +162,12 @@ class GameAudioSystem {
   // Public method to play sound, loads on demand if not cached
   // Name can be a key (for preloaded) or a full path (for on-demand, e.g. chart clips)
   async playSound(nameOrPath: string, type: 'sfx' | 'music' = 'sfx', volume: number = 1, loop: boolean = false): Promise<AudioBufferSourceNode | null> {
+    if (type === 'sfx' && loop) {
+      if (import.meta.env?.DEV) console.warn(`[audio] SFX must not loop; ignoring loop for ${nameOrPath}`);
+      loop = false;
+    }
+    // Music restarts deliberately; SFX are deduped so one action cannot stack identical sources.
+    if (type === 'sfx' && !this.oneShots.admit(`sfx:${nameOrPath}`)) return null;
     await this.ensureInitialized();
     if (!this.audioContext) return null;
 
@@ -183,7 +192,7 @@ class GameAudioSystem {
     const gainControl = this.audioContext.createGain();
 
     source.buffer = buffer;
-    source.loop = loop;
+    source.loop = resolveLoop(type, loop);
     source.connect(gainControl);
     gainControl.connect(gainNode);
     
@@ -413,6 +422,7 @@ class GameAudioSystem {
   }
 
   async playClick() {
+    if (!this.oneShots.admit('synth:click')) return;
     await this.ensureInitialized();
     if (!this.audioContext || !this.masterGain) return;
 
@@ -934,15 +944,15 @@ class GameAudioSystem {
         await this.playRankReveal('S+');
         break;
       default:
-        // Fall back to basic click sound for unknown types
-        await this.playClick();
+        // Unknown names must not silently become an extra click (#256).
+        if (import.meta.env?.DEV) console.warn(`[audio] Unknown UI sound "${soundType}"; playing nothing`);
     }
   }
 
   async playTakeChord(genre: string = 'Pop', grade: 'Gold' | 'Silver' | 'Solid' = 'Solid') {
     if (typeof window === 'undefined') return;
     try {
-      this.playTactileClick();
+      // No prepended click: the chord is the take's one primary cue (#256).
       // Genre chord voicings
       const chords: Record<string, string[]> = {
         Rock: ['E3', 'B3', 'E4', 'G4'],
@@ -990,6 +1000,7 @@ class GameAudioSystem {
 const gameAudioSystem = new GameAudioSystem();
 export default gameAudioSystem;
 
+/** `loop` applies to music only; SFX are always one-shots. */
 export const playSound = async (soundName: string, volume: number = 1, type: 'sfx' | 'music' = 'sfx', loop: boolean = false) => {
   if (!gameAudioSystem.isAudioInitialized()) {
     console.warn('Audio system not initialized. Attempting to initialize now. This should ideally be done at app start');

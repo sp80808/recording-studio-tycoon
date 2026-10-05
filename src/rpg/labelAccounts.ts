@@ -14,6 +14,7 @@ import { ERA_DEFINITIONS } from '@/utils/eraProgression';
 import { GIG_TEMPLATES, type GigTemplate } from '@/data/gigTemplates';
 import { createSeededRandom } from '@/simulation/seededRandom';
 import { deriveBrief } from '@/rpg/projectBrief';
+import { genreDemand } from '@/rpg/marketDemand';
 import { LABEL_ACCOUNTS, interestOf, labelsForGenre, type LabelAccount, type LabelTier } from '@/rpg/labelInterest';
 
 export const LABEL_WEEK_DAYS = 7;
@@ -52,6 +53,8 @@ export interface LabelTerms {
   baseDeadlineDays: number;
   baseTarget: number;
   baseRevisions: number;
+  /** Set when the label sent this because the genre is in demand this week (#52). Optional, so old saves load. */
+  commissionedGenre?: string;
   choices: LabelChoices;
   /** Resolved terms for the current choices. */
   fee: number;
@@ -79,11 +82,34 @@ export const withChoices = (project: Project, choices: LabelChoices): Project =>
 
 type OfferState = Pick<GameState, 'currentDay' | 'currentEra' | 'saveSeed' | 'labelInterest' | 'claimedOffers'>;
 
-const templateFor = (label: LabelAccount, eraId: string, rng: () => number): GigTemplate | undefined => {
+/** A genre must be at least this hot (-1..1 demand) before a label commissions it. */
+export const COMMISSION_HEAT = 0.15;
+
+const poolFor = (label: LabelAccount, eraId: string): GigTemplate[] => {
   const eraGenres = (ERA_DEFINITIONS.find((e) => e.id === eraId) ?? ERA_DEFINITIONS[0]).availableGenres;
   const fits = (t: GigTemplate) => labelsForGenre(t.genre).some((l) => l.id === label.id);
   const native = GIG_TEMPLATES.filter((t) => eraGenres.includes(t.genre) && fits(t));
-  const pool = native.length ? native : GIG_TEMPLATES.filter(fits);
+  return native.length ? native : GIG_TEMPLATES.filter(fits);
+};
+
+/**
+ * The genre a label is actively commissioning this week (#52): the hottest genre in its own pool, if any is
+ * hot enough. Pure; derived from the seeded market and event layer, ties broken by name. Undefined means the
+ * label has no particular commission and sends its usual mix.
+ */
+export const commissionedGenre = (label: LabelAccount, eraId: string, seed: string | number | undefined, day: number): string | undefined => {
+  let best: { genre: string; heat: number } | undefined;
+  for (const genre of [...new Set(poolFor(label, eraId).map((t) => t.genre))].sort()) {
+    const heat = genreDemand(seed, day, genre);
+    if (!best || heat > best.heat) best = { genre, heat };
+  }
+  return best && best.heat >= COMMISSION_HEAT ? best.genre : undefined;
+};
+
+const templateFor = (label: LabelAccount, eraId: string, rng: () => number, commission?: string): GigTemplate | undefined => {
+  const all = poolFor(label, eraId);
+  const commissioned = commission ? all.filter((t) => t.genre === commission) : [];
+  const pool = commissioned.length ? commissioned : all;
   return pool.length ? pool[Math.floor(rng() * pool.length)] : undefined;
 };
 
@@ -96,7 +122,9 @@ export const labelOffersFor = (state: OfferState): Project[] => {
     const id = `label-${label.id}-${week}`;
     if (state.claimedOffers?.includes(id)) continue;
     const rng = createSeededRandom(`label-offer:${state.saveSeed ?? 'legacy'}:${label.id}:${week}`);
-    const template = templateFor(label, state.currentEra ?? 'analog60s', rng);
+    const era = state.currentEra ?? 'analog60s';
+    const commission = commissionedGenre(label, era, state.saveSeed, state.currentDay);
+    const template = templateFor(label, era, rng, commission);
     if (!template) continue;
     const stages = [0, 1, 2].map((i) => template.baseStages[i % template.baseStages.length]);
     const base = {
@@ -109,7 +137,7 @@ export const labelOffersFor = (state: OfferState): Project[] => {
     const r = resolveTerms(base, NO_CHOICES);
     const project: Project = {
       id,
-      title: `${label.name}: 3-track ${title}`,
+      title: `${label.name}: 3-track ${title}${commission && commission === template.genre ? ' (commissioned)' : ''}`,
       genre: template.genre,
       clientType: 'Record Label',
       clientId: `label-${label.id}`,
@@ -128,7 +156,7 @@ export const labelOffersFor = (state: OfferState): Project[] => {
       accumulatedTPoints: 0,
       workSessionCount: 0,
       focusAllocation: { performance: 33, soundCapture: 33, layering: 34 },
-      labelTerms: { labelId: label.id, labelName: label.name, tier: label.tier, ...base, choices: NO_CHOICES, ...r },
+      labelTerms: { labelId: label.id, labelName: label.name, tier: label.tier, ...base, choices: NO_CHOICES, ...r, ...(commission && commission === template.genre ? { commissionedGenre: commission } : {}) },
     };
     project.brief = deriveBrief(project);
     out.push(project);

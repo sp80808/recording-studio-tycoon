@@ -1,6 +1,7 @@
 /**
  * Deterministic staff recruitment: portraits, era-aware names, traits, and CVs.
  */
+import { pickWorkStyle } from '@/rpg/workStyle';
 import { localName } from '@/rpg/cities';
 import type { StaffCurriculumVitae, StaffMember } from '@/types/game';
 import { createSeededRandom, pickWithRandom, randomInt } from '@/simulation/seededRandom';
@@ -191,7 +192,8 @@ export const generateCandidates = (countOrCtx: number | CandidateGenerationConte
 
   for (let i = 0; i < count; i++) {
     const seed = staffPortraitSeed(saveSeed, day, batchKey, i);
-    candidates.push(generateOneCandidate(seed, era, i, batchKey, ctx.cityId));
+    const candidate = generateOneCandidate(seed, era, i, batchKey, ctx.cityId);
+    candidates.push({ ...candidate, workStyle: pickWorkStyle('board', `${seed}:${candidate.id}`) });
   }
   return candidates;
 };
