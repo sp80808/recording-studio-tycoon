@@ -44,6 +44,14 @@ ok(calculateSliderStep(50, 'dec', 5, 0, 100) === 45, 'decrements slider by step 
 ok(calculateSliderStep(98, 'inc', 5, 0, 100) === 100, 'clamps slider increment to max');
 ok(calculateSliderStep(2, 'dec', 5, 0, 100) === 0, 'clamps slider decrement to min');
 
+// 3b. Opt-in adjusters (character creator carousels / swatch groups)
+const mockAdjustEl = {
+  getAttribute: () => null,
+  hasAttribute: (attr: string) => attr === 'data-gamepad-adjust',
+  tagName: 'DIV',
+} as any;
+ok(isSliderElement(mockAdjustEl) === true, 'data-gamepad-adjust elements receive left/right as adjustments');
+
 // 4. Focus navigation wrap
 ok(getNextFocusableIndex(0, 'next', 5) === 1, 'next advances index');
 ok(getNextFocusableIndex(4, 'next', 5) === 0, 'next wraps from end to 0');

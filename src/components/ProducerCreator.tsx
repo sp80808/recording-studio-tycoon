@@ -20,12 +20,13 @@ interface ProducerCreatorProps {
 }
 
 /** Sprite pixel scale per layout: phones keep the preview pinned and compact, roomy desktops go large. */
-export const previewScale = (compact: boolean, roomy: boolean): number => (compact ? 5 : roomy ? 10 : 7);
+export const previewScale = (compact: boolean, roomy: boolean, tall = false): number => (compact ? (tall ? 6 : 5) : roomy ? 10 : 7);
 
 /** Large live preview beside the descriptor-driven editor (pinned above it on phones). */
 export function ProducerCreator({ moniker, onMoniker, look, npc, onLookChange, onRandomise }: ProducerCreatorProps) {
   const compact = useMediaQuery('(max-width: 767px)');
   const roomy = useMediaQuery('(min-width: 768px) and (min-height: 760px)');
+  const tall = useMediaQuery('(min-height: 800px)');
   const [previous, setPrevious] = useState<{ look: ProducerAppearance; name?: string } | null>(null);
   const change = (next: ResolvedProducerAppearance) => {
     setPrevious({ look: { ...look } });
@@ -36,7 +37,7 @@ export function ProducerCreator({ moniker, onMoniker, look, npc, onLookChange, o
     <section className="producer-creator" aria-label={appearanceUi('appearance.ui.editor')} data-testid="producer-creator">
       <div className="producer-creator-preview" data-testid="producer-preview" role="img" data-appearance={JSON.stringify(sanitizeProducerAppearance(look))}
         aria-label={appearanceUi('appearance.ui.preview', { name: moniker || appearanceUi('appearance.ui.preview_fallback') })}>
-        <ModularSpriteRenderer npc={npc} animationState="idle" scale={previewScale(compact, roomy)} showBadge={false} />
+        <ModularSpriteRenderer npc={npc} animationState="idle" scale={previewScale(compact, roomy, tall)} showBadge={false} />
       </div>
       <div className="producer-creator-panel">
         <div className="producer-creator-head">
