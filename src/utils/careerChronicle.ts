@@ -9,7 +9,7 @@ import { getPremisesDef, getPremisesTier } from '@/rpg/premises';
 import { getActiveCampaignNode, getCampaignTreeForState, getStorylineObjectiveProgress, hasPendingStorylineBranch } from '@/narrative/branchingStorylineEngine';
 
 type IdentityState = Pick<GameState, 'playerData' | 'financials'> &
-  Partial<Pick<GameState, 'clientRelationships' | 'premisesTier' | 'hiredStaff' | 'studioRooms' | 'chartRun' | 'reputation' | 'storylineState'>>;
+  Partial<Pick<GameState, 'clientRelationships' | 'premisesTier' | 'hiredStaff' | 'studioRooms' | 'chartRun' | 'firstChart' | 'reputation' | 'storylineState'>>;
 
 const SKILL_LABEL: Record<string, string> = {
   songwriting: 'songwriting',
@@ -107,7 +107,7 @@ export const deriveCareerMilestones = (state: IdentityState): CareerMilestone[] 
   if (getPremisesTier(state) > 0) out.push({ id: 'first-premises-move', title: 'Moved out of the borrowed room', detail: `Now operating from a ${getPremisesDef(state).name}.` });
   const loyal = loyalClients(state)[0];
   if (loyal) out.push({ id: 'first-loyal-client', title: 'A loyal client', detail: `${loyal.clientName} trusts the studio with their records.` });
-  const chart = state.chartRun?.[0];
+  const chart = state.firstChart ?? state.chartRun?.[0];
   if (chart) out.push({ id: 'first-charting-release', title: 'First charting release', detail: `${chart.title} reached #${chart.peak} on ${chart.chartName}.` });
   if ((state.storylineState?.branchHistory?.length ?? 0) > 0) out.push({ id: 'first-story-choice', title: 'A defining choice', detail: 'You picked a path that shaped the studio story.' });
   return out;
@@ -185,7 +185,7 @@ export const resolveChapterIndex = (state: ChapterState): number => {
   const done = Boolean(state.storylineState?.campaignCompleted);
   if (done || tier >= 3) return 6;
   if (tier >= 2 || (staff >= 2 && rooms >= 2)) return 5;
-  if ((state.chartRun?.length ?? 0) > 0) return 4;
+  if (state.firstChart || (state.chartRun?.length ?? 0) > 0) return 4;
   if (tier >= 1) return 3;
   if (reports.length >= 5 && (loyalClients(state).length > 0 || strongestSkill({ playerData: state.playerData }))) return 2;
   if (reports.some((r) => (r.moneyGained ?? 0) > 0)) return 1;

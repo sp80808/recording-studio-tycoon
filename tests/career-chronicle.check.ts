@@ -84,4 +84,14 @@ import { initializeStorylineState, getCampaignTreeForState } from '../src/narrat
   assert.equal(cons[0].headline, `You chose: ${opt.label}`);
   assert.equal(cons[0].outcome, opt.consequences.narrativeOutcome);
 }
+{
+  // #259 review: chart evidence must outlive the song leaving the chart.
+  const charted: GameState = { ...base, chartRun: undefined, firstChart: { projectId: 'p1', title: 'Night Drive', chartName: 'Indie 40', peak: 7 } };
+  assert.ok(resolveChapterIndex(charted) >= 4, 'chapter does not regress once the song exits');
+  const pinned = resolvePinnedMoments({ ...charted, pinnedMoments: ['first-charting-release'] });
+  assert.equal(pinned.length, 1);
+  assert.match(pinned[0].detail, /Night Drive/);
+  const later: GameState = { ...charted, chartRun: [{ projectId: 'p2', title: 'Other', chartName: 'Indie 40', quality: 50, position: 30, peak: 30, weeks: 1, lastUpdateDay: 1 }] };
+  assert.match(resolvePinnedMoments({ ...later, pinnedMoments: ['first-charting-release'] })[0].detail, /Night Drive/, 'a later chart entry does not rewrite the pin');
+}
 console.log('career-chronicle slice 2 checks passed');
