@@ -1,7 +1,7 @@
 # Multi-Room Blueprints
 
 **Date:** 2026-09-29  
-**Status:** Design blueprint (docs only — no runtime change in this drop).  
+**Status:** Per-room isometric detail shipped (#248: `roomLayouts.ts` profiles + `roomLayoutScene.ts` on the shared Pixi app). Facility blueprint map still design only.  
 **Depends on:** living iso room in `WebGLCanvas.tsx`; booking/economy rooms in `src/utils/studioRoomUtils.ts` + `StudioRoom` type in `src/types/game.ts`.  
 **Related:** [pixi-presentation-audit.md](./pixi-presentation-audit.md), [ux-visual-iterative-plan.md](./ux-visual-iterative-plan.md), [docs/superpowers/specs/2026-09-29-flight-case-monetisation-adr.md](./superpowers/specs/2026-09-29-flight-case-monetisation-adr.md).
 
