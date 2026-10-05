@@ -306,5 +306,14 @@
   "rest_advance_day": "休んで日を進める",
   "story_no_cost": "すぐのコストなし",
   "story_decide_later": "あとで決める",
-  "story_continue": "続ける"
+  "story_continue": "続ける",
+  "career_aria": "新しいキャリアを始める",
+  "career_where_when": "場所と時代",
+  "career_quick_start": "クイックスタート",
+  "career_continue": "続ける",
+  "career_kicker": "スタジオを開こう",
+  "career_title_place": "どこで、いつ?",
+  "career_title_person": "あなたは誰?",
+  "move_in_studio_named": "{{name}} スタジオ",
+  "move_in_studio_default": "あなたのスタジオ"
 }

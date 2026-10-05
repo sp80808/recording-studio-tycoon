@@ -145,23 +145,23 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
   const surfaceIndex = SETUP_SURFACES.indexOf(surface);
 
   return (
-    <main className={`career-start-page${surface === 'person' ? ' career-character-step' : ''}`} aria-label="Start a new career" data-surface={surface}>
+    <main className={`career-start-page${surface === 'person' ? ' career-character-step' : ''}`} aria-label={t('career_aria')} data-surface={surface}>
       <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col px-4 pb-28 pt-6 sm:px-8">
         <header className="flex items-center justify-between gap-3">
           <button type="button" onClick={goBack} className="rst-btn rst-btn-ghost shrink-0 whitespace-nowrap !min-h-9 !px-3 !text-xs">
             <ArrowLeft size={14} aria-hidden="true" />
-            {surface === 'place' ? t('career_back') : 'Where & when'}
+            {surface === 'place' ? t('career_back') : t('career_where_when')}
           </button>
           <button type="button" onClick={quickStart} data-testid="quick-start" className="rst-btn rst-btn-ghost shrink-0 whitespace-nowrap !min-h-9 !px-3 !text-xs">
             <Zap size={14} aria-hidden="true" />
-            Quick start
+            {t('career_quick_start')}
           </button>
         </header>
 
         <div className="mt-6 text-center animate-rst-rise" key={surface}>
-          <p className="rst-kicker">Open your studio</p>
+          <p className="rst-kicker">{t('career_kicker')}</p>
           <h1 ref={headingRef} tabIndex={-1} className="rst-title mt-2 text-3xl outline-none sm:text-5xl">
-            {surface === 'place' ? 'Where and when?' : 'Who are you?'}
+            {surface === 'place' ? t('career_title_place') : t('career_title_person')}
           </h1>
         </div>
 
@@ -306,7 +306,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
             disabled={!isSurfaceReady(surface, choices)}
             onClick={goNext}
           >
-            {surface === 'place' ? 'Continue' : t('career_open_studio')}
+            {surface === 'place' ? t('career_continue') : t('career_open_studio')}
             <ArrowRight size={15} aria-hidden="true" />
           </button>
         </div>

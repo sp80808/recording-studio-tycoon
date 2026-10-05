@@ -309,5 +309,14 @@
   "story_decide_later": "Zdecyduj później",
   "story_continue": "Dalej",
   "home_enquiries_waiting_few": "{{count}} zapytania czekają",
-  "home_enquiries_waiting_many": "{{count}} zapytań czeka"
+  "home_enquiries_waiting_many": "{{count}} zapytań czeka",
+  "career_aria": "Zacznij nową karierę",
+  "career_where_when": "Gdzie i kiedy",
+  "career_quick_start": "Szybki start",
+  "career_continue": "Dalej",
+  "career_kicker": "Otwórz swoje studio",
+  "career_title_place": "Gdzie i kiedy?",
+  "career_title_person": "Kim jesteś?",
+  "move_in_studio_named": "Studio {{name}}",
+  "move_in_studio_default": "Twoje studio"
 }

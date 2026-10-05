@@ -140,7 +140,7 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
         {brief ? (
           <div className="studio-move-in-sign" data-testid="move-in-sign">
             <span className="studio-move-in-city">{brief.headline}</span>
-            <span className="studio-move-in-name">{moveIn?.name ? `${moveIn.name} Studios` : 'Your studio'}</span>
+            <span className="studio-move-in-name">{moveIn?.name ? t('move_in_studio_named', { name: moveIn.name }) : t('move_in_studio_default')}</span>
           </div>
         ) : (
           <p className="studio-boot-gate-title">Opening the studio…</p>
