@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Studio scene harness</title></head>
+<body style="margin:0;background:#020617">
+  <div id="root" style="width:100vw;height:100vh"></div>
+  <script type="module">
+    // Dev harness: mounts the real Pixi studio floor with query-string scene state, no game save needed.
+    // e.g. /tests/studio-scene.html?premises=1&room=2 (used for visual smoke screenshots).
+    import React from 'react';
+    import { createRoot } from 'react-dom/client';
+    import WebGLCanvas from '/src/components/WebGLCanvas.tsx';
+    import { SettingsProvider } from '/src/contexts/SettingsContext.tsx';
+    const q = new URLSearchParams(location.search);
+    const state = {
+      activity: 0.3, hasActiveProject: false, staffOnFloor: Number(q.get('staff') ?? 1), day: 3, clockMinutes: 840,
+      roomTier: Number(q.get('room') ?? 1), premisesTier: Number(q.get('premises') ?? 1), decorSeed: 'harness',
+      ownedEquipmentIds: [],
+    };
+    window.__ready = false;
+    createRoot(document.getElementById('root')).render(
+      React.createElement(SettingsProvider, null,
+        React.createElement(WebGLCanvas, { state, onHotspotSelect: () => {}, onFirstFrame: () => { window.__ready = true; } })));
+  </script>
+</body>
+</html>

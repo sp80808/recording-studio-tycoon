@@ -9,6 +9,7 @@ import { calculateEquipmentUpkeep } from '@/hooks/useGameActions';
 import { getOriginEffects } from '@/narrative/originPerks';
 import { gameAudio } from '@/utils/audioSystem';
 import { resolveCareerNextAction } from '@/utils/careerNextAction';
+import { careerTitle, deriveCareerMilestones, deriveKnownFor, resolveCareerTarget } from '@/utils/careerChronicle';
 import { getProducerOrigin } from '@/narrative/characterOrigins';
 import { getRivalAccent, getRivalForNode, initialsOf } from '@/narrative/rivalCast';
 import type { ProducerBackgroundId } from '@/types/character';
@@ -40,17 +41,6 @@ interface CareerHubProps {
 }
 
 const CHRONICLE_ICON: Record<ChronicleKind, typeof Scroll> = { campaign: Flag, subplot: Feather, ending: Scroll, event: Sparkles };
-
-const careerTitle = (level: number): string =>
-  level >= 12
-    ? 'Industry legend'
-    : level >= 8
-      ? 'Studio visionary'
-      : level >= 5
-        ? 'Hitmaker'
-        : level >= 3
-          ? 'Rising producer'
-          : 'Independent producer';
 
 /** XP ring around the level number. Decorative: the numeric XP text carries the meaning. */
 function LevelBadge({ level, ratio }: { level: number; ratio: number }) {
@@ -118,6 +108,11 @@ export function CareerHub({
   const rival = activeNode ? getRivalForNode(activeNode.id, player.playstyle) : null;
   const rivalAccent = rival ? getRivalAccent(rival.id) : '#e6b866';
 
+  const knownFor = useMemo(() => deriveKnownFor(gameState), [gameState]);
+  const milestones = useMemo(() => deriveCareerMilestones(gameState).slice(-3).reverse(), [gameState]);
+  const careerTarget = useMemo(() => resolveCareerTarget(gameState), [gameState]);
+  const producerName = gameState.producerCustomization?.name || player.name;
+
   const resolved = resolveCareerNextAction(gameState, ` · ${money(expenses)} daily costs`);
   const nextAction = {
     ...resolved,
@@ -136,7 +131,11 @@ export function CareerHub({
         <LevelBadge level={player.level} ratio={xpRatio} />
         <span className="min-w-0 flex-1">
           <span className="rst-kicker block truncate">{origin ? origin.name : 'Your producer story'}</span>
-          <span className="rst-title mt-0.5 block truncate text-xl">{careerTitle(player.level)}</span>
+          <span className="rst-title mt-0.5 block truncate text-xl">
+            {producerName ? `${producerName} — ` : ''}
+            {careerTitle(player.level)}
+          </span>
+          <span className="mt-1 block text-xs leading-snug text-stone-300">{knownFor.line}</span>
           <span
             className="mt-2 block h-1.5 overflow-hidden rounded-full bg-white/10"
             role="progressbar"
@@ -176,12 +175,35 @@ export function CareerHub({
             {player.dailyWorkCapacity} sessions left today
           </p>
           <p className="mt-1 text-xs text-stone-400">{nextAction.subtext}</p>
+          <p className="mt-2 text-xs text-stone-300" data-testid="career-target">
+            <span className="rst-kicker mr-1.5">Ambition</span>
+            {careerTarget.label}
+            <span className="block text-stone-500">{careerTarget.detail}</span>
+          </p>
         </div>
         <button onClick={nextAction.action} className="rst-btn rst-btn-primary">
           {nextAction.label}
           <ArrowRight size={15} aria-hidden="true" />
         </button>
       </div>
+
+      {/* Your story so far: derived career firsts, never routine sessions */}
+      {milestones.length > 0 && (
+        <div className="rst-surface p-4 text-xs" aria-label="Your story so far">
+          <p className="rst-kicker mb-1.5">Your story so far</p>
+          <ul className="space-y-1.5">
+            {milestones.map((m) => (
+              <li key={m.id} className="flex gap-2">
+                <Flag size={12} className="mt-0.5 shrink-0 text-[var(--rst-brass-300)]" aria-hidden="true" />
+                <span className="min-w-0">
+                  <span className="text-stone-200">{m.title}</span>
+                  <span className="block text-stone-500">{m.detail}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Campaign */}
       {activeNode && story && (

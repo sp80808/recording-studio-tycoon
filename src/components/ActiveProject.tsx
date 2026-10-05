@@ -1,4 +1,5 @@
 import { RECORDING_INTENTS, matchesRecordingIntent } from '@/session/recordingIntent';
+import { isProjectReadyForReview, traceReviewFlow } from '@/utils/projectReviewFlow';
 import { StatIcon } from '@/components/icons/GameIcons';
 import { trackIntervention, trackInterventionOffered } from '@/telemetry/instrument';
 import { money } from '@/utils/displayMoney';
@@ -198,7 +199,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     });
   };
 
-  const isProjectComplete = !!gameState.activeProject && gameState.activeProject.stages.every(stage => stage.completed);
+  const isProjectComplete = isProjectReadyForReview(gameState.activeProject);
 
   // Present an intervention as an optional opportunity. It never opens itself
   // and never pauses ordinary session progress.
@@ -343,7 +344,10 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
     // Arm take when idle: South (A / ✕)
     if (takeState === 'idle' && gamepad.justPressed.south) {
-      if (availableEnergy > 0 && !isProjectComplete) {
+      if (isProjectComplete) {
+        handleOpenProjectReview();
+        gamepad.triggerHaptic(0.2, 0.4, 60);
+      } else if (availableEnergy > 0) {
         handleArmTake();
         gamepad.triggerHaptic(0.2, 0.4, 60);
       }
@@ -553,6 +557,15 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   const energySaver = hasActiveChoreBuff(gameState.choreState, 'energy_saver');
   const energyCost = calculateTakeEnergyCost(availableEnergy, overdriveArmed, energySaver);
 
+  // Authoritative review transition for an already-complete project (#255).
+  // Works even if the final-take callback was missed (reload, race, other path).
+  const handleOpenProjectReview = () => {
+    const project = gameState.activeProject;
+    if (!controlsEnabled || !project || !isProjectReadyForReview(project)) return;
+    traceReviewFlow('recovery-cta', project.id);
+    onProjectComplete?.(project);
+  };
+
   const handleArmTake = () => {
     if (!controlsEnabled || availableEnergy <= 0 || isProjectComplete) return;
     clearTakeRearm();
@@ -604,6 +617,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       qualityBonus: verdict.qualityBonus
     });
 
+    traceReviewFlow('final-take', `complete=${Boolean(result?.isComplete)} data=${Boolean(result?.finalProjectData)}`);
     if (result?.isComplete && result.finalProjectData) {
       playSound('project-complete', 0.8);
       const isMilestone = presentation === 'panel' && verdict.grade === 'Gold';
@@ -611,7 +625,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
         setCelebrationDisplayData({ title: result.finalProjectData.title, genre: result.finalProjectData.genre });
         setProjectDataForCompletionCall(result.finalProjectData);
         setShowCelebration(true);
+        traceReviewFlow('celebration-deferred', result.finalProjectData.id);
       } else {
+        traceReviewFlow('on-project-complete', result.finalProjectData.id);
         // Reserve full-screen celebrations for actual milestones; direct settle for routine sessions (#75)
         onProjectComplete?.(result.finalProjectData);
       }
@@ -846,12 +862,12 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
               className="rst-btn rst-btn-primary world-console-record w-full flex items-center justify-center gap-1.5"
               data-rst-action-id="console:record"
               data-rst-surface="contextual"
-              onClick={handleArmTake}
-              disabled={availableEnergy <= 0 || isProjectComplete}
+              onClick={isProjectComplete ? handleOpenProjectReview : handleArmTake}
+              disabled={!isProjectComplete && availableEnergy <= 0}
             >
               {gamepad.isConnected && <GamepadGlyph button="south" controllerType={gamepad.controllerType} size="xs" />}
               <span>●</span>
-              <span>{isProjectComplete ? 'Take ready for review' : availableEnergy <= 0 ? 'Rest to recharge' : `Record take · ${energyCost} energy`}</span>
+              <span>{isProjectComplete ? 'Review project' : availableEnergy <= 0 ? 'Rest to recharge' : `Record take · ${energyCost} energy`}</span>
             </button>
           </div>
         )}
@@ -1506,9 +1522,9 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
               <button
                 data-rst-surface="contextual" data-rst-action-id="console:record" data-rst-world-target="console"
-                onClick={handleArmTake}
-                disabled={availableEnergy <= 0 || isProjectComplete}
-                aria-label={t('active_work_on_project')}
+                onClick={isProjectComplete ? handleOpenProjectReview : handleArmTake}
+                disabled={!isProjectComplete && availableEnergy <= 0}
+                aria-label={isProjectComplete ? 'Review project' : t('active_work_on_project')}
                 className={`w-full py-3.5 text-sm font-black uppercase tracking-wider rounded-[2px] border transition-all flex items-center justify-center gap-2 shadow-lg ${
                   isProjectComplete
                     ? 'bg-emerald-400/[0.16] border-emerald-400/55 text-emerald-100'

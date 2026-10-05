@@ -240,6 +240,8 @@ export interface StaffMember {
   source?: { channelId: string; label: string; why: string };
   /** Hired through College Placement: develops faster at low levels (#68). */
   apprentice?: boolean;
+  /** Explainable work-style trait assigned at recruitment (#68). */
+  workStyle?: 'methodical' | 'quick-study' | 'steady-hand' | 'showman' | 'night-owl';
   /** Clickable CV for the recruitment portal. */
   cv?: StaffCurriculumVitae;
   skills: { // UPDATED as per core_loop_plan.md
