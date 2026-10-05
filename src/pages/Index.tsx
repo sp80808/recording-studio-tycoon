@@ -76,6 +76,7 @@ import type { ProducerSetup } from '@/components/CareerStartScreen';
 import { useFeatureFlag } from '@/stores/featureFlagStore';
 import { canOpenProjectReview, traceReviewFlow } from '@/utils/projectReviewFlow';
 import { StudioClockProvider } from '@/contexts/StudioClockContext';
+import { usePremisesCue } from '@/hooks/usePremisesCue';
 
 const MusicStudioTycoon = () => {
   const { gameState, setGameState, initializeGameState } = useGameState(); // REMOVED focusAllocation, setFocusAllocation
@@ -180,6 +181,7 @@ const MusicStudioTycoon = () => {
   }, [gameState, showSplashScreen, gameInitialized, storyPresenter, offlineSummary, showReviewModal, showTrainingModal, showSettingsModal, showPauseMenu, showStorylineBranchModal, settings.tutorialCompleted, autoTriggeredMinigame]);
 
   useEffect(() => installFlightCaseRewards(setGameState), [setGameState]);
+  usePremisesCue(gameState, setGameState, gameInitialized && !showSplashScreen, settings.sfxEnabled);
   useEffect(() => {
     telemetry.startRun(gameState.saveSeed);
     installTelemetryDevHandle();

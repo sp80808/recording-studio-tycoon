@@ -10,7 +10,10 @@
  */
 import type { GameState } from '@/types/game';
 import { createSeededRandom } from '@/simulation/seededRandom';
-import { getPremisesOffer, getPremisesTier, premisesStaffCap, PREMISES_TIERS } from '@/rpg/premises';
+import { getPremisesOffer, getPremisesTier, premisesStaffCap, premisesMoveDeposit, PREMISES_TIERS } from '@/rpg/premises';
+import { ARCHETYPE_MODIFIERS, type PremisesArchetype } from '@/rpg/premisesTraits';
+
+export type { PremisesArchetype };
 
 export type PressureReasonId = 'rooms-full' | 'enquiries-waiting' | 'crew-crowded' | 'live-room-missing' | 'strong-demand';
 
@@ -41,6 +44,8 @@ export interface StudioPressure {
 export type PressureState = Pick<GameState, 'studioRooms'> & Partial<Pick<GameState, 'activeProjects' | 'activeProject' | 'availableProjects' | 'hiredStaff' | 'premisesTier' | 'reputation' | 'currentDay' | 'saveSeed' | 'money' | 'financials' | 'clientRelationships'>>;
 
 const LIVE_HINT = /band|live|rock|metal|punk|folk|jazz/i;
+/** Leads are live for one game week; the next week derives a fresh set from the same pressure. */
+export const LEAD_WINDOW_DAYS = 7;
 /** Opportunity cadence: below this the studio is coping and nobody phones. */
 export const PRESSURE_OPPORTUNITY_THRESHOLD = 0.5;
 
@@ -81,7 +86,6 @@ export const deriveStudioPressure = (s: PressureState): StudioPressure => {
   return { utilisation, roomContention, crewCrowding, capabilityMisses, demandMomentum, reasons, score };
 };
 
-export type PremisesArchetype = 'project-room' | 'warehouse' | 'basement' | 'commercial' | 'existing-studio';
 export type PremisesSource = 'landlord' | 'referral' | 'agent' | 'distressed-sale';
 
 export interface PremisesOpportunity {
@@ -103,6 +107,12 @@ export interface PremisesOpportunity {
   cue: string;
   answers: PressureReasonId[];
   eligible: boolean;
+  /** Cost shape of this archetype versus the band standard (deposit, rent, crew). */
+  terms: string;
+  /** Game day the lead goes cold (exclusive). A fresh, deterministic lead replaces it next window. */
+  expiresDay: number;
+  /** Whole days left to act, at least 1 while the lead is live. */
+  daysLeft: number;
 }
 
 interface ArchetypeDef {
@@ -151,22 +161,30 @@ export const generatePremisesOpportunities = (s: PressureState): PremisesOpportu
     .sort((x, y) => y.fit - x.fit)
     .map(x => x.a);
   const count = pressure.reasons.length >= 2 || rand() > 0.5 ? 2 : 1;
-  return ranked.slice(0, count).map(a => ({
+  const day = Math.floor(s.currentDay ?? 0);
+  const expiresDay = (week + 1) * LEAD_WINDOW_DAYS;
+  return ranked.slice(0, count).map(a => {
+    const mod = ARCHETYPE_MODIFIERS[a.archetype];
+    return {
     id: `${seed}|${a.archetype}`,
     archetype: a.archetype,
     source: a.source,
     internalTier: tier,
     name: a.name,
-    deposit: offer.deposit,
-    dailyRent: offer.dailyRent,
-    staffCap: def.staffCap,
+    deposit: premisesMoveDeposit(offer, a.archetype),
+    dailyRent: Math.round(offer.dailyRent * mod.rentMult),
+    staffCap: def.staffCap + mod.staffCapDelta,
     roomAllowanceBonus: def.roomAllowanceBonus,
     solves: a.solves,
     tradeoff: a.tradeoff,
     cue: a.cue,
     answers: a.answers,
-    eligible: offer.eligible,
-  }));
+    eligible: offer.eligible && (s.money ?? 0) >= premisesMoveDeposit(offer, a.archetype),
+    terms: mod.terms,
+    expiresDay,
+    daysLeft: Math.max(1, expiresDay - day),
+    };
+  });
 };
 
 /** The single in-world line (phone / landlord / referral) that opens the opportunity, or null. */
