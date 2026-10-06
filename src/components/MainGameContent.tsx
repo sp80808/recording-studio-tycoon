@@ -43,6 +43,7 @@ import { executeStudioChore, createInitialChoreState, getChoreDurationMs, findPe
 import { isFlightCaseSystemUnlocked } from '@/economy/flightCaseEconomy';
 import { toast } from '@/hooks/use-toast';
 import { gameAudio } from '@/utils/audioSystem';
+import { hasPlayedAnySession } from '@/utils/careerNextAction';
 import './studio-play.css';
 
 interface MainGameContentProps {
@@ -366,7 +367,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   }
 
   const project = gameState.activeProject;
-  const sessionLabel = project?.awaitingReview ? t('session_collect_release') : project ? t('session_continue') : t('session_book_first');
+  const sessionLabel = project?.awaitingReview ? t('session_collect_release') : project ? t('session_continue') : hasPlayedAnySession(gameState) ? t('session_book_next') : t('session_book_first');
   const completeFloorChore = (hotspot: string) => {
     if (activeChoreId) return true;
     const choreState = gameState.choreState || createInitialChoreState();

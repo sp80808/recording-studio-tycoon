@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { resolveCareerNextAction, countDeliveredSessions } from '../src/utils/careerNextAction';
+import { resolveCareerNextAction, countDeliveredSessions, hasPlayedAnySession } from '../src/utils/careerNextAction';
 import { inspectSaveGame } from '../src/utils/savePreview';
 import { GameState, Project } from '../src/types/game';
 
@@ -198,6 +198,16 @@ describe('CareerHub Next-Action Priority Logic', () => {
     const action = resolveCareerHubAction(state);
     assert.equal(action.type, 'book');
     assert.equal(action.label, 'Find a gig');
+  });
+
+  test('does not say "first session" mid-career even with an empty ledger (Day 26 bug)', () => {
+    const base = { activeProject: null, financials: { reports: [] }, playerData: { dailyWorkCapacity: 3, level: 1, xp: 0 } };
+    assert.equal(hasPlayedAnySession({ ...base, currentDay: 1 } as unknown as GameState), false);
+    assert.equal(hasPlayedAnySession({ ...base, currentDay: 26 } as unknown as GameState), true);
+    assert.equal(hasPlayedAnySession({ ...base, playerData: { ...base.playerData, level: 12 } } as unknown as GameState), true);
+    const rel = { c1: { sessionsCompleted: 2 } };
+    assert.equal(hasPlayedAnySession({ ...base, clientRelationships: rel } as unknown as GameState), true);
+    assert.equal(resolveCareerHubAction({ ...base, currentDay: 26 } as unknown as GameState).label, 'Find a gig');
   });
 
   test('never throws on sparse or legacy state (regression: completedProjects crash)', () => {

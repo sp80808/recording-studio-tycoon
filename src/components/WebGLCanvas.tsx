@@ -58,6 +58,7 @@ import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from
 import { buildCaseStack, CASE_STACK_TILE, type CaseStack } from '@/components/studio/studioCaseStack';
 import { buildWindowView, type WindowView } from '@/components/studio/studioWindowView';
 import { buildPremisesDecor } from '@/components/studio/studioPremisesDecor';
+import { buildFurnishingRenderLayer, type FurnishingRenderItem } from '@/components/studio/studioFurnishingRender';
 import { getRoomLayoutProfile, PROP_METRICS, type RoomLayoutProfile } from '@/components/studio/roomLayouts';
 import { buildRoomLayoutScene, computeRoomView } from '@/components/studio/roomLayoutScene';
 import { buildRoomFigures } from '@/components/studio/roomFigures';
@@ -289,6 +290,8 @@ export interface StudioSceneState {
   /** Premises tier (#70): 3 adds a premium sofa and third rack; 1 adds the client bench + storage rack, 2 adds reception, water cooler and a second rack. */
   premisesTier?: number;
   premisesArchetype?: string;
+  /** Equipped room furnishings from studioCustomization (#258), already mapped by mapFurnishingsToRender. */
+  furnishings?: FurnishingRenderItem[];
   /** Tier ids of earned, unopened flight cases (drives the floor stack). */
   pendingCases?: string[];
   /** Completed-project album covers hung above the booth (from financials.reports). */
@@ -1044,6 +1047,10 @@ const buildScene = (
     }
   }
   for (const prop of buildPremisesDecor(state.premisesTier ?? 0, grade.accent, state.premisesArchetype)) {
+    prop.container.zIndex = Z.depth + prop.y;
+    root.addChild(prop.container);
+  }
+  for (const prop of buildFurnishingRenderLayer(state.furnishings ?? [])) {
     prop.container.zIndex = Z.depth + prop.y;
     root.addChild(prop.container);
   }
@@ -2125,9 +2132,9 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     .map((f) => `${f.identity?.seed ?? f.seed ?? ''}:${f.role ?? ''}`)
     .join(',');
   const producerLookKey = state?.producerNpc
-    ? [state.producerNpc.hair.shape, state.producerNpc.hair.colour, state.producerNpc.body.build, state.producerNpc.clothes.topPrimaryHex].join(':')
+    ? [state.producerNpc.hair.shape, state.producerNpc.hair.colour, state.producerNpc.body.build, state.producerNpc.clothes.topPrimaryHex, state.producerNpc.clothes.top, state.producerNpc.details.headwear ?? '', state.producerNpc.details.headphones ? 1 : 0, state.producerNpc.details.glasses, state.producerNpc.details.jewellery].join(':')
     : '';
-  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${producerLookKey}|${floorKey}|${state?.staffOnFloor ?? 1}|${gearKey}|${gearConditionKey(state?.gearConditions)}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${state?.premisesTier ?? 0}|${state?.premisesArchetype ?? ''}|${(state?.pendingCases ?? []).join(',')}|${trophyKey(state?.trophies ?? { covers: [] })}|${state?.decorSeed ?? 'studio'}|${state?.roomType ?? 'project-studio'}|${state?.roomOccupied ? 1 : 0}`;
+  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${producerLookKey}|${floorKey}|${state?.staffOnFloor ?? 1}|${gearKey}|${gearConditionKey(state?.gearConditions)}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${state?.premisesTier ?? 0}|${state?.premisesArchetype ?? ''}|${(state?.pendingCases ?? []).join(',')}|${trophyKey(state?.trophies ?? { covers: [] })}|${state?.decorSeed ?? 'studio'}|${state?.roomType ?? 'project-studio'}|${state?.roomOccupied ? 1 : 0}|${(state?.furnishings ?? []).map((f) => `${f.anchorId}=${f.itemId}`).join(',')}`;
 
   // Rebuild the room (new window size or layout change)
   const rebuild = () => {
