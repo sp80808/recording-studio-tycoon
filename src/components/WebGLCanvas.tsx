@@ -796,7 +796,7 @@ const buildScene = (
   windowPane.poly(winPoly).fill(initialSky);
   windowWrap.addChild(windowPane);
   {
-    const view = buildWindowView(winA, winB, 34, 96, hashSeed(decorSeed));
+    const view = buildWindowView(winA, winB, 34, 96, hashSeed(decorSeed), state.cityId);
     const initial = initialClockMinutes;
     view.update(initial, getDaynessFromClockMinutes(initial), 0, false);
     windowWrap.addChild(view.container);
@@ -1942,6 +1942,7 @@ const buildRoomScene = (
   const built = buildRoomLayoutScene(profile, {
     occupied: Boolean(state.roomOccupied),
     seed: state.decorSeed ?? 'studio',
+    cityId: state.cityId,
     tint: { wallLeft: grade.wallLeft, wallRight: grade.wallRight, accent: grade.accent },
     addHotspot: (id, hit, visual, zIndex, parent) => addHotspot(parent, id, hit, visual, refs, onSelect, zIndex),
     clockMinutes: state.clockMinutes ?? getWallClockTime(state.day, 0).minutesOfDay,

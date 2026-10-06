@@ -268,3 +268,6 @@ In-house proprietary original, Pixi Graphics only (`roomLayouts.ts` data, `roomL
 
 ## 24. Room figures, windows and cameras (#248 follow-up)
 In-house proprietary original. Producer, crew and the booked artist in the extra rooms reuse the existing CC0 NPC layer kit (`features/sprites`, already logged) via `roomFigures.ts`; the room windows reuse the in-house Pixi sky/sun/moon/skyline view (`studioWindowView.ts`). No new external art. Screenshots: `docs/img/room-*-{day,night}.png`, produced by `tests/room-layouts.check.cjs`.
+
+## 25. Per-city window skylines (#291)
+In-house proprietary original, Pixi Graphics only (`studioSkylines.ts` data, `drawLandmark` in `studioWindowView.ts`). Each of the eight cities gets its own silhouette density and one landmark (palms, twin spires, gherkin, TV tower, red tower, Sugarloaf, cylinders, cranes) drawn from plain polygons. No external source.
