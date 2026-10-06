@@ -29,6 +29,8 @@ export interface ProducerSetup {
   appearance: ProducerAppearance;
   /** Home city: currency display, regional taste, local names and events. */
   cityId?: CityId;
+  /** Experienced Producer start (#260): all console techniques unlocked from the first session. */
+  experienced?: boolean;
 }
 
 interface CareerStartScreenProps {
