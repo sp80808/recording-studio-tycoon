@@ -307,5 +307,20 @@
   "rest_advance_day": "Riposa e passa al giorno dopo",
   "story_no_cost": "Nessun costo immediato",
   "story_decide_later": "Decidi dopo",
-  "story_continue": "Continua"
+  "story_continue": "Continua",
+  "career_titles_kicker": "Titles and keepsakes",
+  "career_title_current": "Known as {{title}}",
+  "career_title_earned_by": "Earned by: {{because}}",
+  "career_keepsake_furnishing": "Studio keepsake",
+  "career_keepsake_cosmetic": "Producer look",
+  "career_titles_earlier": "Earlier titles",
+  "career_title_first-paid-session": "Paid Professional",
+  "career_title_first-repeat-client": "Worth Rebooking",
+  "career_title_first-poor-session": "Battle-Scarred",
+  "career_title_first-loyal-client": "Keeper of Regulars",
+  "career_title_first-story-choice": "Decisive",
+  "career_title_first-staff-hire": "Bandleader",
+  "career_title_first-room-added": "Multi-Room Operator",
+  "career_title_first-premises-move": "Out of the Bedroom",
+  "career_title_first-charting-release": "Chart Maker"
 }
