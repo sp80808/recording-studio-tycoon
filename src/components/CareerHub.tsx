@@ -1,6 +1,7 @@
 import { money } from '@/utils/displayMoney';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { nextTechniqueTease } from '@/rpg/featureUnlocks';
 import { EMPTY_STATES } from '@/data/flavour';
 import { ArrowRight, BookOpen, Pin, Check, ChevronDown, Circle, Feather, Flag, Scroll, Sparkles, Swords, Target, Zap } from 'lucide-react';
 import { GameState } from '@/types/game';
@@ -150,6 +151,7 @@ export function CareerHub({
     action: resolved.type === 'rest' ? onRest : resolved.type === 'book' ? onBookings : onWork,
   };
 
+  const tease = useMemo(() => nextTechniqueTease(gameState), [gameState]);
   const click = () => void gameAudio.playClick().catch(() => {});
 
   return (
@@ -197,6 +199,16 @@ export function CareerHub({
       </button>
 
       <SeasonPanel gameState={gameState} onChooseFocus={onChooseSeasonFocus} />
+
+      {tease && (
+        <p data-testid="technique-tease" className="rst-surface flex items-start gap-2 p-3 text-xs leading-snug text-stone-300">
+          <Sparkles size={13} className="mt-0.5 shrink-0 text-[var(--rst-brass-300)]" aria-hidden="true" />
+          <span>
+            <span className="font-semibold text-stone-100">{t('technique_tease_title')}</span>{' '}
+            {t(`technique_tease_${tease.feature}`)}
+          </span>
+        </p>
+      )}
 
       {/* Next action */}
       <div className="rst-surface flex flex-wrap items-center gap-3 p-4">
