@@ -53,3 +53,29 @@ export const SKYLINE_STYLES: Record<string, SkylineStyle> = {
 };
 
 export const getSkylineStyle = (cityId?: string): SkylineStyle => (cityId ? SKYLINE_STYLES[cityId] : undefined) ?? DEFAULT_SKYLINE;
+
+/**
+ * Era look of the window view (#291). The default analog era is the identity (no tint, the original warm/cool
+ * lit windows), so unknown or missing eras render exactly as before.
+ */
+export interface EraWindowStyle {
+  /** Colour the skyline silhouettes are nudged toward, and the share of it (0 = untouched). */
+  tint: number;
+  tintAmount: number;
+  warm: number;
+  cool: number;
+  /** Chance a lit window uses the warm colour. */
+  warmShare: number;
+}
+
+export const DEFAULT_ERA_WINDOW: EraWindowStyle = { tint: 0, tintAmount: 0, warm: 0xffd98a, cool: 0x9fd8ff, warmShare: 0.75 };
+
+export const ERA_WINDOW_STYLES: Record<string, EraWindowStyle> = {
+  analog60s: DEFAULT_ERA_WINDOW,
+  // 80s neon magenta and cyan, 2000s cooler office lighting, 2020s whiter LED panels.
+  digital80s: { tint: 0x3a1f4a, tintAmount: 0.22, warm: 0xff6fd0, cool: 0x5fe3ff, warmShare: 0.5 },
+  internet2000s: { tint: 0x16303a, tintAmount: 0.15, warm: 0xffe6a8, cool: 0xc4f0ff, warmShare: 0.4 },
+  streaming2020s: { tint: 0x1a2a36, tintAmount: 0.1, warm: 0xfff0d0, cool: 0xa8d8ff, warmShare: 0.3 },
+};
+
+export const getEraWindowStyle = (eraId?: string): EraWindowStyle => (eraId ? ERA_WINDOW_STYLES[eraId] : undefined) ?? DEFAULT_ERA_WINDOW;

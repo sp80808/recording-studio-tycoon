@@ -287,3 +287,6 @@ In-house proprietary original, Pixi Graphics only (`cityRoomStyle.ts`). Wall tri
 ## Vocal chain rack (`src/components/chain-composer.css`, #289)
 
 Foam-cutout gear tray (dot-grid foam, inset chip slots, latch tab, hinged-lid open) and the physical patch cable between jacks (SVG sheath/sheen/shadow with a settle wobble) are drawn in-house as pure CSS/SVG. No external or binary assets.
+
+## 29. Per-city floor, props and era window lighting (#291)
+In-house proprietary original, Pixi Graphics only (`cityRoomStyle.ts`, `studioSkylines.ts`, `studioWindowView.ts`). Floorboards are mixed toward each city accent with a faint checker, runner, border or diagonal overlay; one small floor prop per city (surfboard, guitar case, umbrella stand, crate, lantern, conga, record crate, drum) is plain polygons and ellipses; the window skyline takes an era tint and lit-window palette. No external source.
