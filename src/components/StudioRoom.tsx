@@ -5,7 +5,8 @@ import WebGLCanvas, { StudioHotspotId, HotspotAnchors } from '@/components/WebGL
 import { RoomInfoStrip } from '@/components/studio/RoomInfoStrip';
 import { getRoomLayoutProfile } from '@/components/studio/roomLayouts';
 import { StudioRoomTabs } from '@/components/studio/StudioRoomTabs';
-import { getOccupiedRoomIds, getOperationalStudioRooms } from '@/utils/studioRoomUtils';
+import { FacilityMap } from '@/components/studio/FacilityMap';
+import { getOccupiedRoomIds, getOperationalStudioRooms, getProjectForRoom } from '@/utils/studioRoomUtils';
 import { normalizeHotspotId } from '@/utils/studioHotspots';
 import { getDirectionalTargetIndex, getStickDirection, type ControllerNavDirection } from '@/utils/controllerNavigation';
 import { StudioInspector } from '@/components/StudioInspector';
@@ -170,7 +171,8 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
   useEffect(() => { setFocusedHotspotIndex(0); }, [viewRoomId]);
 
   const sceneState = useMemo(() => {
-    const project = gameState.activeProject;
+    // Room-scoped: an extra room shows the project booked into it (primary or concurrent).
+    const project = getProjectForRoom(gameState, viewRoom?.id);
     let progress = 0;
     if (project) {
       const done = project.stages.filter((s) => s.completed).length;
@@ -251,6 +253,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       cityId: gameState.cityId,
       roomTier,
       premisesTier: gameState.premisesTier ?? 0,
+      premisesArchetype: gameState.premisesArchetype,
       pendingCases: isFlightCaseSystemUnlocked(gameState)
         ? (gameState.pendingCrates ?? []).map((c) => c.tier)
         : [],
@@ -268,7 +271,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           project.rider?.items.some((item) => item.kind === 'beer'),
       ),
     };
-  }, [gameState.activeProject, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, gameState.cityId, eraDecor.eraId, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, gameState.playerData, gameState.availableProjects.length, gameState.choreState, gameState.premisesTier, gameState.pendingCrates, roomTier, floorFocused, activeInspector, studioClock.minutesOfDay, lockedHotspot, viewRoom?.type, viewRoom?.id, occupiedRooms]);
+  }, [gameState.activeProject, gameState.activeProjects, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, gameState.cityId, eraDecor.eraId, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, gameState.playerData, gameState.availableProjects.length, gameState.choreState, gameState.premisesTier, gameState.premisesArchetype, gameState.pendingCrates, roomTier, floorFocused, activeInspector, studioClock.minutesOfDay, lockedHotspot, viewRoom?.type, viewRoom?.id, occupiedRooms]);
 
   /**
    * Diegetic floor routes: pending chores always run the chore flow first.
@@ -417,6 +420,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
 
       {viewRoom && <RoomInfoStrip room={viewRoom} occupiedBy={roomProjectTitle(viewRoom.id)} hotspots={roomHotspotList} />}
       <StudioRoomTabs rooms={operationalRooms} activeId={viewRoom ? viewRoom.id : 'studio-a'} occupied={occupiedRooms} onSelect={(id) => { if (settings.sfxEnabled) void gameAudio.playTactileClick(); setViewRoomId(id); }} />
+      {operationalRooms.length >= 2 && <FacilityMap rooms={gameState.studioRooms || []} activeId={viewRoom ? viewRoom.id : 'studio-a'} occupied={occupiedRooms} premisesTier={gameState.premisesTier ?? 0} playerLevel={gameState.playerData.level} onSelect={(id) => { if (settings.sfxEnabled) void gameAudio.playTactileClick(); setViewRoomId(id); }} />}
       {tierFlash && <div className="tier-flash-overlay" />}
       {takeFx && (
         <div key={takeFx.seq} className={`take-fx take-fx-${takeFx.grade.toLowerCase()}`} aria-hidden="true">

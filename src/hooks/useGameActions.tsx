@@ -1,5 +1,5 @@
 import { money } from '@/utils/displayMoney';
-import { enquiryDemandWeight } from '@/rpg/marketDemand';
+import { enquiryDemandWeight, releaseSignals } from '@/rpg/marketDemand';
 import { refreshGearForDay } from '@/features/usedGear/economy';
 import { trackEnquiriesGenerated } from '@/telemetry/instrument';
 
@@ -405,7 +405,7 @@ export const useGameActions = (gameState: GameState, setGameState: React.Dispatc
       return false;
     }
 
-    const fresh = generateNewProjects(1, gameState.playerData.level, gameState.currentEra, [], 1.1, gameState.reputation, gameState.cityId, enquiryDemandWeight(gameState.saveSeed, gameState.currentDay));
+    const fresh = generateNewProjects(1, gameState.playerData.level, gameState.currentEra, [], 1.1, gameState.reputation, gameState.cityId, enquiryDemandWeight(gameState.saveSeed, gameState.currentDay, releaseSignals(gameState.clientRelationships)));
     trackEnquiriesGenerated(gameState.currentDay, fresh, 'chase');
 
     setGameState(prev => ({

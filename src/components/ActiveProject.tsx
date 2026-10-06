@@ -1,7 +1,7 @@
 import { RECORDING_INTENTS, matchesRecordingIntent } from '@/session/recordingIntent';
 import { isProjectReadyForReview, traceReviewFlow } from '@/utils/projectReviewFlow';
 import { StatIcon } from '@/components/icons/GameIcons';
-import { trackIntervention, trackInterventionOffered } from '@/telemetry/instrument';
+import { trackIntervention, trackInterventionOffered, trackFeatureUsed } from '@/telemetry/instrument';
 import { money } from '@/utils/displayMoney';
 import { emitTakeFeedback } from '@/utils/takeFeedback';
 import { ProducerSprite } from '@/components/ProducerSprite';
@@ -172,6 +172,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
       });
       return;
     }
+    if (!overdriveArmed) trackFeatureUsed(gameState.currentDay, 'overdrive');
     setGameState(prev => ({
       ...prev,
       activeProject: prev.activeProject
@@ -186,6 +187,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   // it (comboCount → 0), so banking trades future output for liquidity now.
   const handleStreakBank = (result: BankResult) => {
     if (!gameState.activeProject || !streakBankUnlocked) return;
+    trackFeatureUsed(gameState.currentDay, 'streak-bank');
     setGameState(prev => ({
       ...earn(prev, result.cash, { category: 'reward-income', projectId: prev.activeProject?.id, memo: 'Streak bank' }),
       playerData: {

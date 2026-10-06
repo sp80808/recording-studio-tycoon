@@ -6,6 +6,11 @@ import {
   resolveProducerFeatureUnlocks, nextFeatureReveal, acknowledgeFeatureReveal, recordTechniqueProgress,
   isFeatureUnlocked, FEATURE_ORDER,
 } from '../src/rpg/featureUnlocks';
+import { createExperiencedProgress } from '../src/rpg/featureUnlocks';
+import { telemetry } from '../src/telemetry/sink';
+import { trackCareerStarted, trackFeatureUnlocks, trackFeatureUsed } from '../src/telemetry/instrument';
+import { summarizeTrace } from '../src/telemetry/analyze';
+import { exportLiveTrace } from '../src/telemetry/trace';
 import type { GameState } from '../src/types/game';
 
 const fresh = (): GameState => createNewGameState({ saveSeed: 1 });
@@ -96,5 +101,48 @@ describe('progressive technique unlocks (#260)', () => {
     const work = readFileSync('src/hooks/useStageWork.tsx', 'utf8');
     assert.match(work, /isFeatureUnlocked\(gameState, 'overdrive'\)/);
     assert.match(work, /isFeatureUnlocked\(gameState, 'combo'\)/);
+  });
+
+  it('Experienced Producer start grandfathers every technique with no reveal, economy unchanged', () => {
+    const std = fresh();
+    const exp = createNewGameState({ saveSeed: 1, experiencedProducer: true });
+    const r = resolveProducerFeatureUnlocks(exp);
+    for (const f of FEATURE_ORDER) { assert.equal(r[f].unlocked, true); assert.equal(r[f].newlyUnlocked, false); }
+    assert.equal(nextFeatureReveal(exp), null);
+    assert.deepEqual(exp.featureProgress, createExperiencedProgress());
+    assert.equal(exp.money, std.money);
+    assert.equal(exp.premisesTier, std.premisesTier);
+    // survives a later progress write and a reload
+    const after = JSON.parse(JSON.stringify(recordTechniqueProgress(exp, { combo: 2 }))) as GameState;
+    for (const f of FEATURE_ORDER) assert.equal(isFeatureUnlocked(after, f), true);
+    for (const f of FEATURE_ORDER) assert.equal(isFeatureUnlocked(std, f), false, 'standard start stays gated');
+  });
+
+  it('career start screen exposes the option and Index passes it through', () => {
+    assert.match(readFileSync('src/components/CareerStartScreen.tsx', 'utf8'), /data-testid="experienced-producer"/);
+    assert.match(readFileSync('src/pages/Index.tsx', 'utf8'), /experiencedProducer: producer\?\.experienced === true/);
+  });
+
+  it('playtest metrics: unlock timing, one-at-a-time reveals and use within 2 sessions', () => {
+    telemetry.startRun(1);
+    trackCareerStarted(fresh(), false);
+    const early = recordTechniqueProgress(withSessions(fresh(), 2), { grade: 'Gold' });
+    trackFeatureUnlocks({ ...early, currentDay: 3 });
+    trackFeatureUnlocks({ ...early, currentDay: 4 }); // idempotent
+    trackFeatureUsed(5, 'overdrive');
+    const later = recordTechniqueProgress(withSessions(early, 4), { grade: 'Gold' });
+    trackFeatureUnlocks({ ...later, currentDay: 9 });
+    const sum = summarizeTrace(exportLiveTrace(telemetry));
+    assert.equal(sum.startOption, 'standard');
+    assert.deepEqual(Object.keys(sum.featureUnlocks), ['overdrive', 'combo']);
+    assert.equal(sum.featureUnlocks.overdrive.sessions, 2);
+    assert.equal(sum.featureUnlocks.combo.sessions, 4);
+    assert.equal(sum.featureUnlocks.overdrive.usedWithin2Sessions, true);
+    assert.equal(sum.featureUnlocks.combo.usedWithin2Sessions, false);
+    assert.equal(sum.maxUnlocksPerDay, 1);
+    // experienced careers never emit unlock events
+    telemetry.startRun(2);
+    trackFeatureUnlocks(createNewGameState({ saveSeed: 2, experiencedProducer: true }));
+    assert.deepEqual(summarizeTrace(exportLiveTrace(telemetry)).featureUnlocks, {});
   });
 });

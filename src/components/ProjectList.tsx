@@ -1,5 +1,5 @@
 import { money } from '@/utils/displayMoney';
-import { enquiryDemandWeight, industryPulse } from '@/rpg/marketDemand';
+import { enquiryDemandWeight, industryPulse, releaseSignals } from '@/rpg/marketDemand';
 import { trackEnquiry, trackEnquiryViewed } from '@/telemetry/instrument';
 import React, { useState } from 'react';
 import { GameState, Project } from '@/types/game';
@@ -165,7 +165,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
           1.1,
           prev.reputation,
           prev.cityId,
-          enquiryDemandWeight(prev.saveSeed, prev.currentDay),
+          enquiryDemandWeight(prev.saveSeed, prev.currentDay, releaseSignals(prev.clientRelationships)),
         )
       ]
     }));
@@ -233,7 +233,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
   const signature = signatureJobFor(gameState);
   const derivedOffers = [...labelOffersFor(gameState).filter((l) => !passedFillers.includes(l.id)), ...(signature && !passedFillers.includes(signature.id) ? [signature] : []), ...fillerJobsFor(gameState).filter((f) => !passedFillers.includes(f.id))]
     .map((p) => (p.labelTerms ? withChoices(p, labelChoices[p.id] ?? NO_CHOICES) : p));
-  const pulse = industryPulse(gameState.saveSeed, gameState.currentDay);
+  const pulse = industryPulse(gameState.saveSeed, gameState.currentDay, 3, releaseSignals(gameState.clientRelationships));
   // Story contracts pin to the top in every filter/sort mode (see enquiryBoard).
   const board = filterAndSortBoard([...gameState.availableProjects, ...derivedOffers], {
     query,
@@ -262,9 +262,9 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                 Industry pulse: {pulse.map((l) => `${l.genre} ${l.arrow} ${l.word}`).join(' · ')}
               </summary>
               <ul className="mt-1 space-y-0.5">
-                {pulse.map((l) => <li key={l.genre}>{l.genre}: {l.effect}.{l.reason ? ` ${l.reason}.` : ''}</li>)}
+                {pulse.map((l) => <li key={l.genre}>{l.genre}: {l.effect} ({l.since}).{l.reason ? ` ${l.reason}.` : ''}</li>)}
               </ul>
-              <p className="mt-1">Demand shapes which work turns up and how releases land. It never changes how good your recording is.</p>
+              <p className="mt-1">Demand shapes which work turns up and how releases land. Your own recent releases nudge their genre a little. It never changes how good your recording is.</p>
             </details>
           )}
         </div>

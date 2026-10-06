@@ -1,5 +1,6 @@
 import { Project, StaffMember } from '@/types/game';
 import { careerFitBonus } from '@/rpg/staffCareer';
+import { workStyleStageFit } from '@/rpg/workStyle';
 import { inferProjectStageKind } from '@/utils/studioRoomUtils';
 
 export interface StaffProjectFit {
@@ -76,13 +77,16 @@ export const calculateStaffProjectFit = (
   const familiarityBonus = Math.min(10, clientSessions * 2);
   const career = careerFitBonus(staff, project.stages?.[project.currentStageIndex || 0]?.stageName ?? '');
 
+  const style = workStyleStageFit(staff.workStyle, inferProjectStageKind(project));
+
   const rawScore =
     baseStat * 0.45 +
     stageSkill.level * 7 +
     genreBonus * 0.35 +
     roleBonus +
     familiarityBonus +
-    career.points;
+    career.points +
+    style.points;
 
   const score = Math.max(1, Math.min(100, Math.round(rawScore * readiness)));
 
@@ -90,6 +94,7 @@ export const calculateStaffProjectFit = (
     `${stageSkill.name} ${stageSkill.level}`,
     ...(genreBonus > 0 ? [`${project.genre} affinity +${genreBonus}%`] : []),
     ...(career.reason ? [career.reason] : []),
+    ...(style.reason ? [style.reason] : []),
     ...(clientSessions > 0 ? [`${clientSessions} prior client session${clientSessions === 1 ? '' : 's'}`] : []),
     `${Math.round(staff.energy)}% energy`,
     `${Math.round(staff.mood)}% mood`

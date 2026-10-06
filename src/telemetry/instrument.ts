@@ -2,6 +2,7 @@ import type { GameState, Project, ProjectReport } from '@/types/game';
 import { quoteFor } from '@/rpg/serviceQuote';
 import { getProjectBrief } from '@/rpg/projectBrief';
 import { telemetry } from './sink';
+import { FEATURE_ORDER, resolveProducerFeatureUnlocks, type ProducerFeature } from '@/rpg/featureUnlocks';
 import { durationBand, feeBand, qualityBand } from './gameplayEvents';
 
 /** Call-site helpers: build allowlisted properties from game objects. Gameplay code imports only this and the sink. */
@@ -95,3 +96,23 @@ export const trackRepairCompleted = (day: number, kind: string, condition: numbe
     condition: Math.round(condition),
   }, `repair-${equipmentId}-${day}`);
 
+
+/** Progressive unlocks (#260). Idempotent per run: safe to call on every state change. */
+export const trackCareerStarted = (state: GameState, experienced: boolean): void =>
+  telemetry.capture('career_started', state.currentDay, { startOption: experienced ? 'experienced' : 'standard' }, `career-${state.saveSeed ?? 'x'}`);
+
+/** Emit one `feature_unlocked` per newly earned technique, with how many sessions it took. */
+export const trackFeatureUnlocks = (state: GameState): void => {
+  const r = resolveProducerFeatureUnlocks(state);
+  for (const f of FEATURE_ORDER) {
+    if (!r[f].unlocked || !r[f].newlyUnlocked) continue;
+    telemetry.capture('feature_unlocked', state.currentDay, {
+      feature: f,
+      sessions: state.financials?.reports?.length ?? 0,
+      level: state.playerData?.level ?? 1,
+    }, `unlock-${f}`);
+  }
+};
+
+export const trackFeatureUsed = (day: number, feature: ProducerFeature): void =>
+  telemetry.capture('feature_used', day, { feature });
