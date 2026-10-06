@@ -79,6 +79,7 @@ import {
   buildUnderlay,
   buildWallDressing,
   type DecorLights,
+  CANDLE_TABLE_TILE,
 } from '@/components/studio/studioDecor';
 import {
   getDaynessFromClockMinutes,
@@ -1033,7 +1034,7 @@ const buildScene = (
 
   /* ---- Live room booth: enclosed (walls, roof, header, foam, glass front) ---- */
   const liveWrap = buildLiveBooth();
-  if (kitTextures) addStudioProps(root, kitTextures, tier, visualEraId(state.eraId ?? 'analog60s'));
+  if (kitTextures) addStudioProps(root, kitTextures, tier, visualEraId(state.eraId ?? 'analog60s'), Z.depth);
   {
     const stack = buildCaseStack(state.pendingCases ?? [], grade.accent);
     if (stack) {
@@ -1581,7 +1582,7 @@ const buildScene = (
   // Listening candle table — lounge coffee hotspot + presentation
   {
     const candleTable = buildCandleTable();
-    candleTable.zIndex = Z.depth + iso(6.55, 5.35).y;
+    candleTable.zIndex = Z.depth + iso(CANDLE_TABLE_TILE.x, CANDLE_TABLE_TILE.y).y;
     candleTable.eventMode = 'static';
     candleTable.cursor = 'pointer';
     candleTable.on('pointertap', () => {
@@ -1799,7 +1800,7 @@ const buildScene = (
   if (tier >= 3) {
     const lounge = new Graphics();
     // Green-room sofa along the front-right corner
-    const sofa = iso(6.0, 5.6);
+    const sofa = iso(7.3, 5.9);
     if (!kitTextures) {
       lounge.roundRect(sofa.x - 26, sofa.y - 26, 52, 24, 6).fill(0x5b3f6e);
       lounge.roundRect(sofa.x - 26, sofa.y - 34, 52, 12, 5).fill(0x6d4c85);

@@ -88,10 +88,10 @@ export const studioProps = (tier: number, era?: string): StudioProp[] => [
   { model: 'kitchenCoffeeMachine', x: 1.7, y: 6.2, tier: 2, scale: 1.3, lift: 21 },
   { model: 'radio', x: 2.15, y: 6.2, tier: 2, scale: 1.1, lift: 21 },
   { model: 'plantSmall2', x: 1.3, y: 6.4, tier: 2, scale: 1.3 },
-  { model: era === 'streaming2020s' ? 'loungeDesignSofa' : 'loungeSofa', x: 6, y: 5.6, tier: 3, scale: 1.6 },
-  { model: 'tableCoffee', x: 6, y: 6.45, tier: 3, scale: 1.3 },
-  { model: 'loungeChair', x: 7.15, y: 5.4, tier: 3, scale: 1.3 },
-  { model: 'lampRoundFloor', x: 7.4, y: 5.9, tier: 3, scale: 1.4 },
+  { model: era === 'streaming2020s' ? 'loungeDesignSofa' : 'loungeSofa', x: 7.3, y: 5.9, tier: 3, scale: 1.6 },
+  { model: 'tableCoffee', x: 7.3, y: 6.75, tier: 3, scale: 1.3 },
+  { model: 'loungeChair', x: 5.4, y: 6.6, tier: 3, scale: 1.3 },
+  { model: 'lampRoundFloor', x: 7.7, y: 4.9, tier: 3, scale: 1.4 },
   { model: 'speaker', x: 3.4, y: 1, tier: 3, scale: 1.4 },
   { model: 'bookcaseOpen', x: 7.1, y: 0.7, tier: 4, scale: 1.5 },
   { model: 'sideTable', x: 7, y: 3.2, tier: 4, scale: 1.5 },
@@ -100,7 +100,10 @@ export const studioProps = (tier: number, era?: string): StudioProp[] => [
   { model: 'plantSmall3', x: 4.5, y: 6.5, tier: 5, scale: 1.7 },
 ].filter(prop => prop.tier <= tier);
 
-export const addStudioProps = (root: Container, textures: StudioKitTextures, tier: number, era?: string): void => {
+/** Lounge pieces sit in front of the console, so they depth-sort with the rest of the room instead of drawing underneath it. */
+const DEPTH_SORTED_MODELS = new Set(['loungeSofa', 'loungeDesignSofa', 'loungeChair', 'tableCoffee', 'lampRoundFloor']);
+
+export const addStudioProps = (root: Container, textures: StudioKitTextures, tier: number, era?: string, depthBase?: number): void => {
   for (const prop of studioProps(tier, era)) {
     if (usesCrispProceduralProp(prop.model)) {
       const procedural = prop.model === 'cardboardBoxClosed'
@@ -120,6 +123,7 @@ export const addStudioProps = (root: Container, textures: StudioKitTextures, tie
     sprite.scale.set(prop.scale);
     sprite.position.set((prop.x - prop.y) * 28, (prop.x + prop.y) * 14 - (prop.lift ?? 0));
     sprite.eventMode = 'none';
+    if (depthBase !== undefined && DEPTH_SORTED_MODELS.has(prop.model)) sprite.zIndex = depthBase + sprite.position.y;
     // Floor props sit behind the interactive console/booth; people remain in front.
     root.addChild(sprite);
   }
