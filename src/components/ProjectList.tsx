@@ -448,24 +448,25 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                     </div>
                   </div>
                   <div className="rounded-lg border border-[var(--rst-line)] bg-black/25 p-2">
-                    <div className="rst-kicker !text-[10px]">Time</div>
+                    <div className="rst-kicker !text-[10px]">Time · Diff</div>
                     <div className="text-sm font-bold text-[var(--rst-ivory)]">
                       <MotionNumber value={project.durationDaysTotal} suffix="d" />
+                      <span className="ml-1.5 text-[11px] font-semibold text-[var(--rst-brass-300)]">{project.difficulty}/10</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="mb-2 flex items-center justify-between text-xs">
-                  <span className="rst-muted">Session difficulty</span>
-                  <span className="font-semibold text-[var(--rst-brass-300)]">{project.difficulty}/10</span>
-                </div>
-
-                <div className="mb-3 rounded-lg border border-[var(--rst-line)] bg-black/20 p-2.5 text-xs leading-relaxed text-stone-300">
+                <div className="mb-3 rounded-lg border border-[var(--rst-line)] bg-black/20 p-2 text-xs leading-snug text-stone-300">
                   {isStory
                     ? 'The rival is watching this one. A strong result counts toward the campaign objective.'
                     : getOpportunityNote(project)}
                 </div>
 
+                <details data-testid="enquiry-brief-details" className="mb-3 rounded-lg border border-[var(--rst-line)] bg-black/10 px-2.5 py-2">
+                  <summary className="cursor-pointer select-none text-xs font-semibold text-[var(--rst-ivory)]">
+                    Brief, rider &amp; approach
+                  </summary>
+                  <div className="pt-2">
                 <BriefPanel
                   project={project}
                   state={gameState}
@@ -478,6 +479,8 @@ export const ProjectList: React.FC<ProjectListProps> = ({
 
                 <RiderPanel project={project} state={gameState} mode="booking" />
 
+                  </div>
+                </details>
                 {project.labelTerms && (
                   <LabelTermsPanel
                     terms={project.labelTerms}
@@ -487,7 +490,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                 <BookingCostLine state={gameState} project={project} />
                 <p data-testid="enquiry-style-note" className="mb-3 text-xs text-stone-400">{enquiryStyleNote(gameState.studioExpertise, project.genre, project.brief?.serviceType)}</p>
 
-                <details className="mb-3 rounded-lg border border-[var(--rst-line)] bg-black/10 px-2.5 py-2" open={index === 0}>
+                <details className="mb-3 rounded-lg border border-[var(--rst-line)] bg-black/10 px-2.5 py-2" >
                   <summary className="cursor-pointer select-none text-xs font-semibold text-[var(--rst-ivory)]">
                     Session details: forecast{['vocal-production', 'tracking'].includes(getProjectBrief(project).serviceType) ? ' & vocal chain' : ''}
                   </summary>

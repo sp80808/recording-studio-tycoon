@@ -1,6 +1,7 @@
 import { useCutsceneQueue } from '@/hooks/useCutsceneQueue';
 import { applyKnowHowEvents } from '@/rpg/studioKnowHow';
 import { telemetry } from '@/telemetry/sink';
+import { trackCareerStarted, trackFeatureUnlocks } from '@/telemetry/instrument';
 import { installTelemetryDevHandle } from '@/telemetry/devHandle';
 import { REWARD_POP_EVENT, type RewardPopDetail } from '@/utils/rewardFx';
 import React, { useState, useEffect, useCallback, useRef } from 'react'; // Added useCallback
@@ -43,6 +44,7 @@ import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { gameAudio as audioSystem } from '@/utils/audioSystem';
 import { WelcomeBackSummaryModal } from '@/components/modals/WelcomeBackSummaryModal';
 import { StorylineBranchModal } from '@/components/modals/StorylineBranchModal';
+import { shouldTogglePauseOnKey } from '@/utils/pauseMenuKeys';
 import { PauseMenuModal } from '@/components/modals/PauseMenuModal';
 import { useGamepad } from '@/hooks/useGamepad';
 import { StoryEventModal } from '@/components/modals/StoryEventModal';
@@ -76,6 +78,8 @@ import type { ProducerSetup } from '@/components/CareerStartScreen';
 import { useFeatureFlag } from '@/stores/featureFlagStore';
 import { canOpenProjectReview, traceReviewFlow } from '@/utils/projectReviewFlow';
 import { StudioClockProvider } from '@/contexts/StudioClockContext';
+import { usePremisesCue } from '@/hooks/usePremisesCue';
+import { useCustomizationSync } from '@/hooks/useCustomizationSync';
 
 const MusicStudioTycoon = () => {
   const { gameState, setGameState, initializeGameState } = useGameState(); // REMOVED focusAllocation, setFocusAllocation
@@ -180,11 +184,14 @@ const MusicStudioTycoon = () => {
   }, [gameState, showSplashScreen, gameInitialized, storyPresenter, offlineSummary, showReviewModal, showTrainingModal, showSettingsModal, showPauseMenu, showStorylineBranchModal, settings.tutorialCompleted, autoTriggeredMinigame]);
 
   useEffect(() => installFlightCaseRewards(setGameState), [setGameState]);
+  usePremisesCue(gameState, setGameState, gameInitialized && !showSplashScreen, settings.sfxEnabled);
+  useCustomizationSync(gameState, setGameState, gameInitialized && !showSplashScreen);
   useEffect(() => {
     telemetry.startRun(gameState.saveSeed);
     installTelemetryDevHandle();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  useEffect(() => { trackFeatureUnlocks(gameState); }, [gameState]);
   useAmbientIncome(gameInitialized && !showSplashScreen && !showPauseMenu, setGameState);
 
   useEffect(() => {
@@ -227,7 +234,7 @@ const MusicStudioTycoon = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (showSplashScreen || !gameInitialized) return;
-      if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
+      if (shouldTogglePauseOnKey(e.key, showPauseMenu)) {
         const target = e.target as HTMLElement | null;
         if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
         if (target?.isContentEditable) return;
@@ -249,7 +256,7 @@ const MusicStudioTycoon = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showSplashScreen, gameInitialized, showSettingsModal, showReviewModal, showTrainingModal, showStorylineBranchModal, pendingDelivery, settings.sfxEnabled]);
+  }, [showSplashScreen, gameInitialized, showPauseMenu, showSettingsModal, showReviewModal, showTrainingModal, showStorylineBranchModal, pendingDelivery, settings.sfxEnabled]);
 
   useEffect(() => {
     if (!gamepad.isConnected || showSplashScreen || !gameInitialized) return;
@@ -333,6 +340,7 @@ const MusicStudioTycoon = () => {
       producerName: producer?.name,
       producerAppearance: producer?.appearance,
       cityId: producer?.cityId,
+      experiencedProducer: producer?.experienced === true,
       startingMoney: era.startingMoney,
       selectedEra: era.id,
       eraStartYear: era.startYear,
@@ -340,6 +348,8 @@ const MusicStudioTycoon = () => {
       equipmentMultiplier: era.equipmentMultiplier
     });
     
+    telemetry.startRun(newGameState.saveSeed);
+    trackCareerStarted(newGameState, producer?.experienced === true);
     setGameState(newGameState);
     setShowSplashScreen(false);
     setGameInitialized(true);
@@ -996,7 +1006,7 @@ const MusicStudioTycoon = () => {
 
       {showMoveIn && moveBeat && (
         <CinematicStoryCutscene
-          payload={buildMoveInCutscene(moveBeat)}
+          payload={buildMoveInCutscene(moveBeat, undefined, gameState)}
           onComplete={() => setGameState((prev) => clearPremisesMoveBeat(prev))}
         />
       )}

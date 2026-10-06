@@ -1,5 +1,7 @@
 import { money } from '@/utils/displayMoney';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { nextTechniqueTease } from '@/rpg/featureUnlocks';
 import { EMPTY_STATES } from '@/data/flavour';
 import { ArrowRight, BookOpen, Pin, Check, ChevronDown, Circle, Feather, Flag, Scroll, Sparkles, Swords, Target, Zap } from 'lucide-react';
 import { GameState } from '@/types/game';
@@ -10,6 +12,7 @@ import { getOriginEffects } from '@/narrative/originPerks';
 import { gameAudio } from '@/utils/audioSystem';
 import { resolveCareerNextAction } from '@/utils/careerNextAction';
 import { careerTitle, deriveBranchConsequences, deriveCareerCast, deriveCareerMilestones, deriveSelectedCredits, deriveKnownFor, groupMilestonesByChapter, resolveCareerChapter, resolveCareerTarget, resolvePinnedMoments, type CareerMilestone } from '@/utils/careerChronicle';
+import { deriveEarnedTitles, deriveKeepsakes } from '@/utils/careerRewards';
 import { getProducerOrigin } from '@/narrative/characterOrigins';
 import { getRivalAccent, getRivalForNode, initialsOf } from '@/narrative/rivalCast';
 import type { ProducerBackgroundId } from '@/types/character';
@@ -84,6 +87,7 @@ export function CareerHub({
   onChooseSeasonFocus,
   onTogglePinnedMoment,
 }: CareerHubProps) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [storyLogOpen, setStoryLogOpen] = useState(false);
   const [chaptersOpen, setChaptersOpen] = useState(false);
@@ -119,6 +123,8 @@ export function CareerHub({
   const pinned = useMemo(() => resolvePinnedMoments(gameState), [gameState]);
   const cast = useMemo(() => deriveCareerCast(gameState), [gameState]);
   const credits = useMemo(() => deriveSelectedCredits(gameState), [gameState]);
+  const earnedTitles = useMemo(() => deriveEarnedTitles(gameState), [gameState]);
+  const keepsakes = useMemo(() => deriveKeepsakes(gameState).slice(-4).reverse(), [gameState]);
   const consequences = useMemo(() => deriveBranchConsequences(gameState), [gameState]);
   const pinnedIds = new Set(pinned.map((m) => m.id));
   const pinButton = (m: CareerMilestone) =>
@@ -145,6 +151,7 @@ export function CareerHub({
     action: resolved.type === 'rest' ? onRest : resolved.type === 'book' ? onBookings : onWork,
   };
 
+  const tease = useMemo(() => nextTechniqueTease(gameState), [gameState]);
   const click = () => void gameAudio.playClick().catch(() => {});
 
   return (
@@ -192,6 +199,16 @@ export function CareerHub({
       </button>
 
       <SeasonPanel gameState={gameState} onChooseFocus={onChooseSeasonFocus} />
+
+      {tease && (
+        <p data-testid="technique-tease" className="rst-surface flex items-start gap-2 p-3 text-xs leading-snug text-stone-300">
+          <Sparkles size={13} className="mt-0.5 shrink-0 text-[var(--rst-brass-300)]" aria-hidden="true" />
+          <span>
+            <span className="font-semibold text-stone-100">{t('technique_tease_title')}</span>{' '}
+            {t(`technique_tease_${tease.feature}`)}
+          </span>
+        </p>
+      )}
 
       {/* Next action */}
       <div className="rst-surface flex flex-wrap items-center gap-3 p-4">
@@ -299,6 +316,38 @@ export function CareerHub({
                   ))}
                 </ul>
               </div>
+            )}
+          </div>
+        )}
+
+        {earnedTitles.length > 0 && (
+          <div className="mt-3" data-testid="career-titles">
+            <p className="rst-kicker mb-1.5">{t('career_titles_kicker')}</p>
+            <p className="text-stone-200" data-testid="career-current-title">
+              {t('career_title_current', { title: t(`career_title_${earnedTitles[earnedTitles.length - 1].id}`, { defaultValue: earnedTitles[earnedTitles.length - 1].title }) })}
+            </p>
+            <p className="text-stone-500">{t('career_title_earned_by', { because: earnedTitles[earnedTitles.length - 1].because })}</p>
+            {earnedTitles.length > 1 && (
+              <p className="mt-1 text-stone-500">
+                {t('career_titles_earlier')}:{' '}
+                {earnedTitles
+                  .slice(0, -1)
+                  .reverse()
+                  .map((e) => t(`career_title_${e.id}`, { defaultValue: e.title }))
+                  .join(' · ')}
+              </p>
+            )}
+            {keepsakes.length > 0 && (
+              <ul className="mt-1.5 space-y-1.5" data-testid="career-keepsakes">
+                {keepsakes.map((k) => (
+                  <li key={k.itemId}>
+                    <span className="text-stone-200">{k.name}</span>
+                    <span className="block text-stone-500">
+                      {t(k.kind === 'furnishing' ? 'career_keepsake_furnishing' : 'career_keepsake_cosmetic')}. {k.provenance}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         )}

@@ -3,6 +3,7 @@
 // the sky colour, wall clock and room tint (see studioDecorConfig). In-house proprietary original, Pixi Graphics only.
 
 import { Container, Graphics } from 'pixi.js';
+import { getSkylineStyle, type SkylineStyle } from './studioSkylines';
 
 export interface WindowView {
   container: Container;
@@ -48,11 +49,63 @@ export const getStarLevel = (dayness: number): number => 1 - smoothstep(0.1, 0.3
 export const getCloudU = (tSeconds: number, phase: number, reduceMotion: boolean): number =>
   0.5 + Math.sin((reduceMotion ? 0 : tSeconds * 0.035) + phase) * 0.3;
 
+type QuadFn = (u0: number, v0: number, u1: number, v1: number) => number[];
+
+/** One recognisable silhouette per city, drawn over the far layer from plain polygons. */
+const drawLandmark = (g: Graphics, style: SkylineStyle, quad: QuadFn): void => {
+  const u = style.landmarkU;
+  const fill = { color: style.landmarkColor, alpha: 1 };
+  switch (style.landmark) {
+    case 'palms':
+      for (const [du, h] of [[0, 0.34], [0.09, 0.28], [-0.08, 0.24]]) {
+        g.poly(quad(u + du, 0, u + du + 0.012, h)).fill(fill);
+        g.poly(quad(u + du - 0.045, h - 0.02, u + du + 0.055, h + 0.025)).fill(fill);
+      }
+      break;
+    case 'twin-spires':
+      g.poly(quad(u, 0, u + 0.07, 0.4)).fill(fill);
+      g.poly(quad(u + 0.005, 0.4, u + 0.02, 0.52)).fill(fill);
+      g.poly(quad(u + 0.05, 0.4, u + 0.065, 0.52)).fill(fill);
+      break;
+    case 'gherkin':
+      g.poly(quad(u, 0, u + 0.08, 0.2)).fill(fill);
+      g.poly(quad(u + 0.012, 0.2, u + 0.068, 0.34)).fill(fill);
+      g.poly(quad(u + 0.026, 0.34, u + 0.054, 0.42)).fill(fill);
+      g.poly(quad(u - 0.14, 0, u - 0.12, 0.34)).fill(fill);
+      break;
+    case 'tv-tower':
+      g.poly(quad(u + 0.012, 0, u + 0.024, 0.55)).fill(fill);
+      g.poly(quad(u - 0.008, 0.36, u + 0.044, 0.44)).fill(fill);
+      break;
+    case 'red-tower':
+      g.poly(quad(u, 0, u + 0.09, 0.14)).fill(fill);
+      g.poly(quad(u + 0.015, 0.14, u + 0.075, 0.3)).fill(fill);
+      g.poly(quad(u + 0.035, 0.3, u + 0.055, 0.5)).fill(fill);
+      break;
+    case 'sugarloaf':
+      g.poly(quad(u - 0.1, 0, u + 0.14, 0.14)).fill(fill);
+      g.poly(quad(u - 0.04, 0.14, u + 0.08, 0.3)).fill(fill);
+      g.poly(quad(u - 0.01, 0.3, u + 0.05, 0.38)).fill(fill);
+      break;
+    case 'cylinders':
+      for (const [du, h] of [[0, 0.46], [0.07, 0.34], [-0.07, 0.34]]) g.poly(quad(u + du, 0, u + du + 0.055, h)).fill(fill);
+      break;
+    case 'cranes':
+      for (const du of [0, 0.3]) {
+        g.poly(quad(u + du, 0, u + du + 0.008, 0.5)).fill(fill);
+        g.poly(quad(u + du - 0.1, 0.46, u + du + 0.14, 0.5)).fill(fill);
+      }
+      break;
+    default:
+  }
+};
+
 /**
  * `a`/`b` are the bottom-left and bottom-right corners of the glass on the wall plane and
  * `bottomLift`/`topLift` its vertical extent in pixels (same numbers `WebGLCanvas` used for the pane).
  */
-export const buildWindowView = (a: Pt, b: Pt, bottomLift: number, topLift: number, seed = 7): WindowView => {
+export const buildWindowView = (a: Pt, b: Pt, bottomLift: number, topLift: number, seed = 7, cityId?: string): WindowView => {
+  const style = getSkylineStyle(cityId);
   const pt = (u: number, v: number): Pt => ({
     x: a.x + (b.x - a.x) * u,
     y: a.y + (b.y - a.y) * u - (bottomLift + (topLift - bottomLift) * v),
@@ -93,14 +146,11 @@ export const buildWindowView = (a: Pt, b: Pt, bottomLift: number, topLift: numbe
   const lights = new Graphics();
   const lightCells: { rect: number[]; warm: boolean; flicker: number }[] = [];
   let u = 0.0;
-  const layers = [
-    { top: 0.34, hMin: 0.12, hMax: 0.3, color: 0x1a2236, alpha: 0.75 },
-    { top: 0.22, hMin: 0.08, hMax: 0.22, color: 0x10151f, alpha: 1 },
-  ];
+  const layers = [style.far, style.near];
   for (const layer of layers) {
     u = layer === layers[0] ? -0.02 : 0.02;
     while (u < 1) {
-      const w = 0.07 + random() * 0.09;
+      const w = layer.wMin + random() * (layer.wMax - layer.wMin);
       const h = layer.hMin + random() * (layer.hMax - layer.hMin);
       const u1 = Math.min(1, u + w);
       skyline.poly(quad(Math.max(0, u), 0, u1, h)).fill({ color: layer.color, alpha: layer.alpha });
@@ -111,7 +161,7 @@ export const buildWindowView = (a: Pt, b: Pt, bottomLift: number, topLift: numbe
       const rows = Math.max(1, Math.floor(h / 0.045));
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-          if (random() > (layer === layers[0] ? 0.4 : 0.55)) continue;
+          if (random() > style.lit * (layer === layers[0] ? 0.8 : 1.1)) continue;
           const cu = u + 0.008 + c * ((w - 0.016) / cols);
           const cv = 0.02 + r * (h / rows) * 0.92;
           lightCells.push({ rect: quad(cu, cv, cu + 0.012, cv + 0.02), warm: random() > 0.25, flicker: random() });
@@ -120,6 +170,7 @@ export const buildWindowView = (a: Pt, b: Pt, bottomLift: number, topLift: numbe
       u = u1 + 0.005 + random() * 0.015;
     }
   }
+  drawLandmark(skyline, style, quad);
   container.addChild(skyline);
   for (const c of lightCells) lights.poly(c.rect).fill({ color: c.warm ? 0xffd98a : 0x9fd8ff, alpha: 0.5 + c.flicker * 0.5 });
   container.addChild(lights);

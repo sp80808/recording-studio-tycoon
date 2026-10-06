@@ -17,6 +17,11 @@ export interface TraceSummary {
   /** 6. Management panel opens before the first settled session, and by destination. */
   panelsBeforeFirstSettle: number;
   panelsByDestination: Record<string, number>;
+  /** 7. Progressive unlocks (#260): when each technique unlocked and whether it was used within the next 2 settled sessions. */
+  featureUnlocks: Record<string, { day: number; sessions: number; level: number; usedWithin2Sessions: boolean }>;
+  /** 8. Most techniques revealed on one game day (pacing budget wants 1). */
+  maxUnlocksPerDay: number;
+  startOption: string | null;
 }
 
 const rate = (declined: number, total: number) => (total ? Math.round((declined / total) * 100) / 100 : 0);
@@ -34,11 +39,24 @@ export const summarizeTrace = (trace: GameplayTrace): TraceSummary => {
   let panelsBefore = 0, firstSettleSeen = false;
   const iv = { played: 0, delegated: 0, skipped: 0 };
   let firstHire: number | null = null;
+  const unlocks: TraceSummary['featureUnlocks'] = {};
+  const settledAtUnlock: Record<string, number> = {};
+  const unlocksPerDay: Record<number, number> = {};
+  let startOption: string | null = null;
   const bump = (m: Record<string, [number, number]>, k: string, isDecline: boolean) => { const c = m[k] ?? [0, 0]; c[1]++; if (isDecline) c[0]++; m[k] = c; };
 
   for (const e of ev) {
     const p = e.properties;
-    if (e.name === 'enquiry_accepted' || e.name === 'enquiry_declined') {
+    if (e.name === 'career_started') startOption = String(p.startOption ?? 'standard');
+    else if (e.name === 'feature_unlocked') {
+      const f = String(p.feature);
+      unlocks[f] = { day: e.gameDay, sessions: Number(p.sessions ?? 0), level: Number(p.level ?? 1), usedWithin2Sessions: false };
+      settledAtUnlock[f] = settled;
+      unlocksPerDay[e.gameDay] = (unlocksPerDay[e.gameDay] ?? 0) + 1;
+    } else if (e.name === 'feature_used') {
+      const f = String(p.feature);
+      if (unlocks[f] && settled - settledAtUnlock[f] <= 2) unlocks[f].usedWithin2Sessions = true;
+    } else if (e.name === 'enquiry_accepted' || e.name === 'enquiry_declined') {
       const dec = e.name === 'enquiry_declined';
       dec ? declined++ : accepted++;
       bump(byBand, String(p.feeBand ?? 'unknown'), dec);
@@ -79,5 +97,8 @@ export const summarizeTrace = (trace: GameplayTrace): TraceSummary => {
     },
     panelsBeforeFirstSettle: panelsBefore,
     panelsByDestination: panels,
+    featureUnlocks: unlocks,
+    maxUnlocksPerDay: Math.max(0, ...Object.values(unlocksPerDay)),
+    startOption,
   };
 };
