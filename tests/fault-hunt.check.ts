@@ -1,4 +1,4 @@
-import { createFaultHunt, probe, toggleFlag, finish, scoreFaultHunt, FAULT_DIFFICULTY, neighbours } from '@/minigames/faultHunt';
+import { createFaultHunt, probe, toggleFlag, finish, scoreFaultHunt, FAULT_DIFFICULTY, neighbours, FAULT_LABELS, FAULT_FIELD_NOTES } from '@/minigames/faultHunt';
 let n = 0;
 const ok = (c: boolean, m: string) => { if (!c) throw new Error(`FAIL: ${m}`); n++; console.log(`PASS: ${m}`); };
 
@@ -63,4 +63,5 @@ for (let i = 0; i < 30; i++) {
   if (t < 0 || t > 1000) throw new Error('score out of range');
 }
 ok(true, 'scores stay within 0..1000');
+ok(Object.keys(FAULT_LABELS).every((k) => FAULT_FIELD_NOTES[k as keyof typeof FAULT_LABELS]?.symptom.length > 10 && FAULT_FIELD_NOTES[k as keyof typeof FAULT_LABELS]?.fix.length > 10), 'every fault kind teaches a symptom and a fix');
 console.log(`fault-hunt: all ${n} checks passed`);

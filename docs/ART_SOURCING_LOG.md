@@ -275,5 +275,8 @@ In-house proprietary original. Pixi Graphics only in `studioPremisesDecor.ts` (w
 ## 26. Per-city window skylines (#291)
 In-house proprietary original, Pixi Graphics only (`studioSkylines.ts` data, `drawLandmark` in `studioWindowView.ts`). Each of the eight cities gets its own silhouette density and one landmark (palms, twin spires, gherkin, TV tower, red tower, Sugarloaf, cylinders, cranes) drawn from plain polygons. No external source.
 
-## 27. Flight case gear silhouettes and bench test plugs (#289)
+## 27. Equipped room furnishings (#258)
+In-house proprietary original, Pixi Graphics only (`studioFurnishingRender.ts`): lamp, fern, rug, sofa, foam panel, frames, poster, mug, keys, tape reel and gold disc drawn from plain polygons, ellipses and circles. No external source, textures or fonts. Producer cosmetics reuse the existing producer sprite kit (no new art).
+
+## 28. Flight case gear silhouettes and bench test plugs (#289)
 In-house original, CC0. Inline SVG gear outlines in `src/features/boxDrops/GearSilhouette.tsx` (mic, rack unit, console, tape recorder, amp, keys, headphones, speaker, stand, licence key) used as the foam cutout and lifted-out gear, and CSS-drawn XLR / 1/4" plugs and sockets in `connectors/test-bench.css`. Plain shapes only, no external source, textures or fonts.

@@ -220,6 +220,8 @@ node "${CHECK_OUTPUT_DIR}/rst-studio-clock-progression.cjs"
 node "${CHECK_OUTPUT_DIR}/rst-room-switcher.cjs"
 ./node_modules/.bin/esbuild tests/room-layouts.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-room-layouts.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-room-layouts.cjs"
+./node_modules/.bin/esbuild tests/studio-a-layout.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-studio-a-layout.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-studio-a-layout.cjs"
 ./node_modules/.bin/esbuild tests/facility-map.check.tsx --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-facility-map.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-facility-map.cjs"
 ./node_modules/.bin/esbuild tests/window-view.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-window-view.cjs" --alias:@=./src >/dev/null
@@ -352,5 +354,9 @@ node "${CHECK_OUTPUT_DIR}/rst-studio-customization.cjs"
 
 ./node_modules/.bin/esbuild tests/studio-customization-panel.check.tsx --bundle --platform=node --format=cjs --loader:.css=empty --outfile="${CHECK_OUTPUT_DIR}/rst-studio-customization-panel.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-studio-customization-panel.cjs"
+
+echo "=== equipped furnishings and cosmetics render mapping (#258) ==="
+./node_modules/.bin/esbuild tests/studio-customization-render.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-studio-customization-render.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-studio-customization-render.cjs"
 
 echo "All automated checks passed."

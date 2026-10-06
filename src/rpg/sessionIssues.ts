@@ -18,6 +18,8 @@ export interface UnresolvedIssue {
   /** Why it happened, shown to the player. */
   cause: string;
   label: string;
+  /** What a working engineer does to avoid this next time. Optional so older saves stay valid. */
+  habit?: string;
 }
 
 export interface SessionEvent {
@@ -26,6 +28,8 @@ export interface SessionEvent {
   label: string;
   /** Why this can happen; shown with the event. */
   why: string;
+  /** The professional habit that prevents (or repeats) this; shown with the event. */
+  habit?: string;
   /** Issue the event leaves behind, if any. */
   issue?: { category: IssueCategory; severity: 1 | 2 };
   /** Positive events polish one existing issue away. */
@@ -33,15 +37,15 @@ export interface SessionEvent {
 }
 
 export const SESSION_EVENTS: SessionEvent[] = [
-  { id: 'great-take', phase: 'tracking', label: 'Great take', why: 'The performer locked in and the room sounded right.', clears: true },
-  { id: 'noisy-take', phase: 'tracking', label: 'Noisy take', why: 'Tired or worn gear let a hum into the signal.', issue: { category: 'noise', severity: 1 } },
-  { id: 'performer-fatigue', phase: 'tracking', label: 'Performer fatigue', why: 'A long day loosened the timing.', issue: { category: 'timing', severity: 2 } },
-  { id: 'translation-issue', phase: 'mix', label: 'Translation issue', why: 'The mix sounds different off the studio monitors.', issue: { category: 'translation', severity: 2 } },
-  { id: 'reference-mismatch', phase: 'mix', label: 'Reference mismatch', why: "The client's reference track points somewhere else.", issue: { category: 'client-note', severity: 1 } },
-  { id: 'creative-breakthrough', phase: 'mix', label: 'Creative breakthrough', why: 'A bold move landed and fixed a lingering worry.', clears: true },
-  { id: 'clipped-render', phase: 'qc', label: 'Clipped render', why: 'The bounce peaked over full scale.', issue: { category: 'noise', severity: 2 } },
-  { id: 'metadata-miss', phase: 'qc', label: 'Metadata miss', why: 'Titles and formats did not match the client sheet.', issue: { category: 'client-note', severity: 1 } },
-  { id: 'clean-approval', phase: 'qc', label: 'Clean approval', why: 'QC found nothing to flag.', clears: true },
+  { id: 'great-take', phase: 'tracking', label: 'Great take', why: 'The performer locked in and the room sounded right.', habit: "Good takes start before you hit record: warm the player up and check the level.", clears: true },
+  { id: 'noisy-take', phase: 'tracking', label: 'Noisy take', why: 'Tired or worn gear let a hum into the signal.', habit: "Listen for hum during soundcheck. It is far easier to fix at the source than in the mix.", issue: { category: 'noise', severity: 1 } },
+  { id: 'performer-fatigue', phase: 'tracking', label: 'Performer fatigue', why: 'A long day loosened the timing.', habit: "Do the hardest parts first and take breaks. Players get sloppy as they tire.", issue: { category: 'timing', severity: 2 } },
+  { id: 'translation-issue', phase: 'mix', label: 'Translation issue', why: 'The mix sounds different off the studio monitors.', habit: "Play the mix on headphones and a small speaker before calling it done.", issue: { category: 'translation', severity: 2 } },
+  { id: 'reference-mismatch', phase: 'mix', label: 'Reference mismatch', why: "The client's reference track points somewhere else.", habit: "Ask for the reference song early and flip back and forth with it at the same volume.", issue: { category: 'client-note', severity: 1 } },
+  { id: 'creative-breakthrough', phase: 'mix', label: 'Creative breakthrough', why: 'A bold move landed and fixed a lingering worry.', habit: "Save a version first, then you can afford to try the bold move.", clears: true },
+  { id: 'clipped-render', phase: 'qc', label: 'Clipped render', why: 'The bounce peaked over full scale.', habit: "Keep the loudest peaks below the top of the meter. Once clipped, it cannot be undone.", issue: { category: 'noise', severity: 2 } },
+  { id: 'metadata-miss', phase: 'qc', label: 'Metadata miss', why: 'Titles and formats did not match the client sheet.', habit: "Check titles and file formats against the client sheet before sending.", issue: { category: 'client-note', severity: 1 } },
+  { id: 'clean-approval', phase: 'qc', label: 'Clean approval', why: 'QC found nothing to flag.', habit: "A last listen with fresh ears is how clean deliveries happen.", clears: true },
 ];
 
 export const MAX_OPEN_ISSUES = 5;
@@ -102,6 +106,7 @@ export function applySessionEvent(project: Project, event: SessionEvent, stageIn
       phase: event.phase,
       cause: event.why,
       label: event.label,
+      habit: event.habit,
     });
   } else if (event.clears && issues.length > 0) {
     issues.sort((a, b) => b.severity - a.severity);

@@ -727,5 +727,16 @@
   "mg.InstrumentLayeringGame.type_guitar": "기타",
   "mg.InstrumentLayeringGame.type_keys": "건반",
   "mg.InstrumentLayeringGame.type_vocal": "보컬",
-  "mg.InstrumentLayeringGame.type_strings": "스트링"
+  "mg.InstrumentLayeringGame.type_strings": "스트링",
+  "mg.FaultHuntGame.note_fix_prefix": "Fix:",
+  "mg.FaultHuntGame.note_bad_cable_symptom": "Crackles or cuts out when you touch it.",
+  "mg.FaultHuntGame.note_bad_cable_fix": "Swap the cable first. It is the cheapest thing to try.",
+  "mg.FaultHuntGame.note_noisy_psu_symptom": "A steady buzz that never changes, whatever you play.",
+  "mg.FaultHuntGame.note_noisy_psu_fix": "Move the power supply away from the audio cables.",
+  "mg.FaultHuntGame.note_dead_preamp_symptom": "One channel is silent while the others move.",
+  "mg.FaultHuntGame.note_dead_preamp_fix": "Plug the mic into a spare preamp to see if it is the channel.",
+  "mg.FaultHuntGame.note_ground_loop_symptom": "A low hum that starts when two plugged-in devices are connected.",
+  "mg.FaultHuntGame.note_ground_loop_fix": "Run everything off the same power strip.",
+  "mg.FaultHuntGame.note_phase_flip_symptom": "Two mics together sound thin and hollow.",
+  "mg.FaultHuntGame.note_phase_flip_fix": "Flip the polarity switch on one of them and the body comes back."
 }
