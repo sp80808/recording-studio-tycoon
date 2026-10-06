@@ -5,6 +5,7 @@ import { getProjectBrief, evaluateProjectBriefFit, BRIEF_FIT_MULTIPLIER, recordB
 import { evaluateProjectRider } from '@/rpg/studioRider';
 import { recordGearUse } from '@/features/usedGear/session';
 import { useCallback, useEffect, useRef } from 'react';
+import { trackFeatureUsed } from '@/telemetry/instrument';
 import { GameState, FocusAllocation, Project } from '@/types/game';
 import { TakeGrade, evaluateTakeAccuracy, calculateTakeEnergyCost, calculateTakeBaseUnits } from '@/rpg/takeEvaluation';
 // calculateStudioSkillBonus and getEquipmentBonuses are now used within projectUtils
@@ -206,6 +207,7 @@ export const useStageWork = ({
     // ⚡ Combo: consecutive same-day sessions build a streak multiplier (caps at +50%)
     const sameDay = project.lastWorkDay === gameState.currentDay;
     const newCombo = !isFeatureUnlocked(gameState, 'combo') ? 0 : sameDay ? (project.comboCount || 0) + 1 : 1;
+    if (newCombo >= 2) trackFeatureUsed(gameState.currentDay, 'combo');
     const comboMultiplier = 1 + Math.min(0.5, Math.max(0, newCombo - 1) * 0.1);
     console.log(`⚡ Combo x${newCombo} (x${comboMultiplier.toFixed(2)}) | 🔥 Overdrive: ${overdrive}`);
 
