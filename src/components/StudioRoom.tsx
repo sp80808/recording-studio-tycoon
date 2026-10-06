@@ -28,6 +28,8 @@ import { MotionReveal } from '@/components/motion/primitives';
 import { ChoreHotspotButton } from '@/components/chores/ChoreHotspotButton';
 import { parseNpcVisualIdentity, type NpcVisualIdentity } from '@/features/sprites/npcAppearance';
 import { buildProducerNpc } from '@/features/sprites/producerAppearance';
+import { applyProducerCosmetics, getCustomization } from '@/rpg/studioCustomization';
+import { mapFurnishingsToRender } from '@/components/studio/studioFurnishingRender';
 import {
   animStateForStaffStatus,
   hashSeed,
@@ -197,7 +199,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     const customization = gameState.producerCustomization;
     const producerNpc = customization
       ? buildProducerNpc(
-          customization.appearance,
+          applyProducerCosmetics(customization.appearance, getCustomization(gameState)),
           customization.moniker ?? (gameState.playerData as { name?: string } | undefined)?.name ?? 'Producer',
           gameState.selectedEra ?? gameState.currentEra,
         )
@@ -254,6 +256,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       roomTier,
       premisesTier: gameState.premisesTier ?? 0,
       premisesArchetype: gameState.premisesArchetype,
+      furnishings: mapFurnishingsToRender(getCustomization(gameState), gameState.premisesTier),
       pendingCases: isFlightCaseSystemUnlocked(gameState)
         ? (gameState.pendingCrates ?? []).map((c) => c.tier)
         : [],
