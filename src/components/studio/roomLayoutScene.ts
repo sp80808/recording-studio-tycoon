@@ -13,6 +13,8 @@ export interface RoomSceneOptions {
   /** A project is booked into this room right now. */
   occupied: boolean;
   seed: string | number;
+  /** Picks the window skyline (#291). */
+  cityId?: string;
   /** Era/city grade blended into the room palette so rooms still age with the studio. */
   /** Studio clock (minutes of day) used for the first paint of the window; the ticker keeps it live afterwards. */
   clockMinutes?: number;
@@ -359,7 +361,7 @@ const paintWallTreatment = (g: Graphics, w: RoomWallSpec, base: number, rand: ()
   }
 };
 
-const buildWindow = (profile: RoomLayoutProfile, pal: RoomLayoutProfile['palette'], seed: number, minutes: number) => {
+const buildWindow = (profile: RoomLayoutProfile, pal: RoomLayoutProfile['palette'], seed: number, minutes: number, cityId?: string) => {
   const { side, from, to } = profile.window;
   const { bottom, top } = ROOM_WINDOW_LIFT;
   // buildWindowView wants the left-then-right glass corners; the left wall runs right-to-left in screen x.
@@ -371,7 +373,7 @@ const buildWindow = (profile: RoomLayoutProfile, pal: RoomLayoutProfile['palette
   const setSky = (color: number) => { pane.clear(); pane.poly(poly).fill(color); };
   setSky(getWindowSkyColor(minutes));
   wrapC.addChild(pane);
-  const view = buildWindowView(a, b, bottom, top, seed);
+  const view = buildWindowView(a, b, bottom, top, seed, cityId);
   view.update(minutes, getDaynessFromClockMinutes(minutes), 0, false);
   wrapC.addChild(view.container);
   const frame = new Graphics();
@@ -466,7 +468,7 @@ export const buildRoomLayoutScene = (profile: RoomLayoutProfile, opts: RoomScene
 
   const { shell, onAir } = buildShell(profile, pal, rand, accent);
   root.addChild(shell);
-  const win = buildWindow(profile, pal, hash(`${opts.seed}:${profile.type}:window`), opts.clockMinutes ?? 840);
+  const win = buildWindow(profile, pal, hash(`${opts.seed}:${profile.type}:window`), opts.clockMinutes ?? 840, opts.cityId);
   win.container.eventMode = 'none';
   win.container.zIndex = -90;
   root.addChild(win.container);

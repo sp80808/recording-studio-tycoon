@@ -5,6 +5,7 @@ import WebGLCanvas, { StudioHotspotId, HotspotAnchors } from '@/components/WebGL
 import { RoomInfoStrip } from '@/components/studio/RoomInfoStrip';
 import { getRoomLayoutProfile } from '@/components/studio/roomLayouts';
 import { StudioRoomTabs } from '@/components/studio/StudioRoomTabs';
+import { FacilityMap } from '@/components/studio/FacilityMap';
 import { getOccupiedRoomIds, getOperationalStudioRooms, getProjectForRoom } from '@/utils/studioRoomUtils';
 import { normalizeHotspotId } from '@/utils/studioHotspots';
 import { getDirectionalTargetIndex, getStickDirection, type ControllerNavDirection } from '@/utils/controllerNavigation';
@@ -27,6 +28,8 @@ import { MotionReveal } from '@/components/motion/primitives';
 import { ChoreHotspotButton } from '@/components/chores/ChoreHotspotButton';
 import { parseNpcVisualIdentity, type NpcVisualIdentity } from '@/features/sprites/npcAppearance';
 import { buildProducerNpc } from '@/features/sprites/producerAppearance';
+import { applyProducerCosmetics, getCustomization } from '@/rpg/studioCustomization';
+import { mapFurnishingsToRender } from '@/components/studio/studioFurnishingRender';
 import {
   animStateForStaffStatus,
   hashSeed,
@@ -196,7 +199,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     const customization = gameState.producerCustomization;
     const producerNpc = customization
       ? buildProducerNpc(
-          customization.appearance,
+          applyProducerCosmetics(customization.appearance, getCustomization(gameState)),
           customization.moniker ?? (gameState.playerData as { name?: string } | undefined)?.name ?? 'Producer',
           gameState.selectedEra ?? gameState.currentEra,
         )
@@ -253,6 +256,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       roomTier,
       premisesTier: gameState.premisesTier ?? 0,
       premisesArchetype: gameState.premisesArchetype,
+      furnishings: mapFurnishingsToRender(getCustomization(gameState), gameState.premisesTier),
       pendingCases: isFlightCaseSystemUnlocked(gameState)
         ? (gameState.pendingCrates ?? []).map((c) => c.tier)
         : [],
@@ -419,6 +423,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
 
       {viewRoom && <RoomInfoStrip room={viewRoom} occupiedBy={roomProjectTitle(viewRoom.id)} hotspots={roomHotspotList} />}
       <StudioRoomTabs rooms={operationalRooms} activeId={viewRoom ? viewRoom.id : 'studio-a'} occupied={occupiedRooms} onSelect={(id) => { if (settings.sfxEnabled) void gameAudio.playTactileClick(); setViewRoomId(id); }} />
+      {operationalRooms.length >= 2 && <FacilityMap rooms={gameState.studioRooms || []} activeId={viewRoom ? viewRoom.id : 'studio-a'} occupied={occupiedRooms} premisesTier={gameState.premisesTier ?? 0} playerLevel={gameState.playerData.level} onSelect={(id) => { if (settings.sfxEnabled) void gameAudio.playTactileClick(); setViewRoomId(id); }} />}
       {tierFlash && <div className="tier-flash-overlay" />}
       {takeFx && (
         <div key={takeFx.seq} className={`take-fx take-fx-${takeFx.grade.toLowerCase()}`} aria-hidden="true">

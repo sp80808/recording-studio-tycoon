@@ -133,6 +133,16 @@
     linear-gradient(145deg, #211c16, #110e0b 62%, #191714);
   animation: studio-boot-fade-in .45s ease-out both;
 }
+.studio-move-in-sign {
+  display: grid; gap: 6px; text-align: center; padding: 16px 28px; border-radius: 10px;
+  border: 2px solid var(--move-in-accent, #d9a441);
+  background: rgba(14,12,10,.55);
+  box-shadow: 0 0 36px color-mix(in srgb, var(--move-in-accent, #d9a441) 35%, transparent);
+  animation: studio-move-in-sign .7s cubic-bezier(.2,.8,.2,1) both;
+}
+.studio-move-in-city { font-size: 11px; font-weight: 900; letter-spacing: .28em; color: var(--move-in-accent, #d9a441); }
+.studio-move-in-name { font-size: clamp(22px, 5vw, 34px); font-weight: 800; letter-spacing: -.02em; color: #f3f1ee; }
+@keyframes studio-move-in-sign { from { opacity: 0; transform: translateY(14px) scale(.96); } to { opacity: 1; transform: none; } }
 .studio-boot-gate-mark { font-size: 11px; font-weight: 900; letter-spacing: .28em; color: #f3c476; }
 .studio-boot-gate-title { font-size: clamp(18px, 3vw, 24px); font-weight: 800; letter-spacing: -.02em; color: #f3f1ee; }
 .studio-boot-skeleton { width: min(280px, 72vw); display: grid; gap: 10px; }
@@ -155,7 +165,7 @@
 @keyframes studio-boot-shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
 @keyframes studio-boot-progress { 0% { transform: translateX(-120%); } 100% { transform: translateX(280%); } }
 @media (prefers-reduced-motion: reduce) {
-  .studio-boot-gate, .studio-boot-skeleton span, .studio-boot-progress > i { animation: none !important; }
+  .studio-boot-gate, .studio-move-in-sign, .studio-boot-skeleton span, .studio-boot-progress > i { animation: none !important; }
   .studio-boot-skeleton span { background: #40382e; }
   .studio-boot-progress > i { width: 55%; transform: none; }
 }
@@ -214,6 +224,13 @@
   .studio-hud-day { padding:2px 0; font-size:10px; gap:3px; }
   .studio-hud-day > svg { display:none; }
   .studio-hud-xp { width:68px; font-size:9px; }
+  /* Close-day: compact icon chip in line with the clock; ::after keeps a 44px tap area */
+  .studio-hud-day-group { flex-wrap:nowrap; }
+  .studio-hud .studio-hud-advance { width:30px; min-width:30px; height:30px; min-height:30px; padding:0; border-radius:8px; }
+  .studio-hud-advance::after { content:''; position:absolute; inset:-7px; }
+  .studio-hud-advance svg { width:14px; height:14px; }
+  .studio-hud .studio-hud-icon { min-width:40px; min-height:40px; }
+  .studio-hud .studio-hud-stats, .studio-hud .studio-hud-controls { min-height:36px; }
   .studio-hud-stats .flame-pop { grid-column:1 / -1; grid-row:3; }
   .studio-play-room { --studio-hud-clearance:calc(68px + env(safe-area-inset-top,0px)); }
   .studio-drawer-shell { --studio-drawer-top:80px; }
@@ -279,7 +296,8 @@
   .studio-command-dock .studio-dock-button { min-height:48px; min-width:48px; }
   .studio-primary-action { min-height:44px; }
   .studio-hud-stats, .studio-hud-controls, .studio-hud-title { min-height:40px; }
-  .studio-hud-day, .studio-hud-advance { min-height:36px; }
+  .studio-hud-day { min-height:36px; }
+  .studio-hud-advance { min-height:30px; }
   .studio-hud-icon { min-width:44px; min-height:44px; }
   .studio-panel-heading button, .studio-activity-panel button[aria-label] { min-width:44px; min-height:44px; }
 }
