@@ -12,7 +12,7 @@
     import { SettingsProvider } from '/src/contexts/SettingsContext.tsx';
     const q = new URLSearchParams(location.search);
     const state = {
-      activity: 0.3, hasActiveProject: false, staffOnFloor: Number(q.get('staff') ?? 1), day: 3, clockMinutes: 840,
+      activity: 0.3, hasActiveProject: q.get('active') === '1', staffOnFloor: Number(q.get('staff') ?? 1), day: 3, clockMinutes: Number(q.get('clock') ?? 840), artistName: 'Mara Vale',
       roomTier: Number(q.get('room') ?? 1), premisesTier: Number(q.get('premises') ?? 1), decorSeed: 'harness',
       ownedEquipmentIds: [],
       roomType: q.get('type') ?? undefined, roomOccupied: q.get('occupied') === '1',
@@ -23,7 +23,7 @@
       React.createElement(SettingsProvider, null,
         React.createElement(WebGLCanvas, { state: { ...state, ...next }, onHotspotSelect: (id) => { window.__lastHotspot = id; }, onFirstFrame: () => { window.__ready = true; } })));
     // Room switching hook for the smoke check: swaps the scene on the same mounted canvas.
-    window.__setRoom = (type, occupied = false) => render({ roomType: type || undefined, roomOccupied: occupied });
+    window.__setRoom = (type, occupied = false, extra = {}) => render({ roomType: type || undefined, roomOccupied: occupied, ...extra });
     render({});
   </script>
 </body>

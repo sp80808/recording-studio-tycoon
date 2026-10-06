@@ -54,17 +54,20 @@ export const createDefaultStudioRooms = (): StudioRoom[] => [
 export const getOperationalStudioRooms = (gameState: Pick<GameState, 'studioRooms'>): StudioRoom[] =>
   (gameState.studioRooms || []).filter(room => room.unlocked);
 
+/** Premises tier that first allows each extra suite (#248/#250): rooms arrive with the move, not with cash alone. */
+export const ROOM_REQUIRED_PREMISES_TIER: Record<string, number> = { 'vocal-suite': 1, 'live-room': 2, 'mix-suite': 3 };
+
 export type StudioRoomPurchaseAvailability =
   | { available: true; room: StudioRoom }
   | {
       available: false;
       room?: StudioRoom;
-      reason: 'not-found' | 'already-owned' | 'invalid-state' | 'level' | 'expansion-limit' | 'funds';
+      reason: 'not-found' | 'already-owned' | 'invalid-state' | 'premises' | 'level' | 'expansion-limit' | 'funds';
       explanation: string;
     };
 
 export const getStudioRoomPurchaseAvailability = (
-  gameState: Pick<GameState, 'money' | 'playerData' | 'studioRooms'>,
+  gameState: Pick<GameState, 'money' | 'playerData' | 'studioRooms'> & { premisesTier?: number },
   roomId: string,
   roomExpansionLimit: number
 ): StudioRoomPurchaseAvailability => {
@@ -85,6 +88,15 @@ export const getStudioRoomPurchaseAvailability = (
     roomExpansionLimit < 0
   ) {
     return { available: false, room, reason: 'invalid-state', explanation: 'Room purchase data is invalid.' };
+  }
+  const neededTier = ROOM_REQUIRED_PREMISES_TIER[room.id];
+  if (neededTier !== undefined && gameState.premisesTier !== undefined && gameState.premisesTier < neededTier) {
+    return {
+      available: false,
+      room,
+      reason: 'premises',
+      explanation: 'A bigger space comes first: move to better premises before adding this room.'
+    };
   }
   if (gameState.playerData.level < room.requiredPlayerLevel) {
     return {
@@ -144,6 +156,20 @@ export const getOccupiedRoomIds = (
   });
 
   return roomIds;
+};
+
+/**
+ * The project whose session is shown in a viewed room. Extra rooms only show a project
+ * booked into them (primary or concurrent); Studio A (roomId undefined/'studio-a') shows the
+ * primary project.
+ */
+export const getProjectForRoom = (
+  gameState: Pick<GameState, 'activeProject' | 'activeProjects'>,
+  roomId?: string | null
+): Project | null => {
+  if (!roomId || roomId === 'studio-a') return gameState.activeProject ?? null;
+  const all = [gameState.activeProject, ...(gameState.activeProjects || [])];
+  return all.find((p): p is Project => !!p && p.bookingRoomId === roomId) ?? null;
 };
 
 export const inferProjectStageKind = (project: Project): StudioRoomStageKind => {

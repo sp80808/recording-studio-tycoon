@@ -37,7 +37,7 @@ export const FACES: readonly Weighted<FaceExpression>[] = [
 
 export const SKIN_PALETTES: Record<SkinTone, { base: string; shadow: string }> = {
   fair: { base: '#fed7aa', shadow: '#fb923c' },
-  warm: { base: '#fde047', shadow: '#eab308' },
+  warm: { base: '#e6b887', shadow: '#b8844f' },
   olive: { base: '#d4b996', shadow: '#a6825c' },
   tan: { base: '#c28b5b', shadow: '#945b2f' },
   deep: { base: '#8d5524', shadow: '#5c3311' },

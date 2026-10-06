@@ -245,7 +245,9 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                             onClick={() => purchaseStudioRoom(room.id)}
                             className="text-[10px] py-0.5 px-2"
                           >
-                            {levelLocked
+                            {availability.available === false && availability.reason === 'premises'
+                              ? 'Move'
+                              : levelLocked
                               ? `Lvl ${room.requiredPlayerLevel}`
                               : expansionLocked
                                 ? 'Milestone'

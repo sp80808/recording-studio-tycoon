@@ -160,6 +160,11 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
   if (!getArchetypeModifiers(processedState.premisesArchetype, processedState.premisesTier)) delete processedState.premisesArchetype;
   if (typeof processedState.premisesCueSeen !== 'string') delete processedState.premisesCueSeen;
 
+  // Pinned defining moments (#259): keep only a short list of strings.
+  processedState.pinnedMoments = Array.isArray(processedState.pinnedMoments)
+    ? processedState.pinnedMoments.filter((id): id is string => typeof id === 'string').slice(0, 3)
+    : [];
+
   // Home city: keep only a known id; legacy saves stay neutral.
   if (!isCityId(processedState.cityId)) delete processedState.cityId;
 

@@ -265,3 +265,6 @@ In-house proprietary original, Pixi Graphics only (`studioPremisesDecor.ts`). Cl
 ## 23. Isometric room layouts: Vocal Suite, Live Room, Mix Suite (#248)
 In-house proprietary original, Pixi Graphics only (`roomLayouts.ts` data, `roomLayoutScene.ts` painters, `studioIsoKit.ts` box kit). Floors, walls, acoustic foam/diffuser/brick/panel treatments, drum kit, amp stacks, stage box, mic stands and boom, headphone stand, cue desk, mixing console with fader strips and LED meters, nearfield monitors, outboard racks, bass traps, sofa, rug, plant and lamp are all drawn in code from 2:1 isometric boxes, ellipses and polygons. No external source, textures or fonts. `RoomVignette.tsx` (inline SVG) is kept only as a non-gameplay fallback component.
 
+
+## 24. Room figures, windows and cameras (#248 follow-up)
+In-house proprietary original. Producer, crew and the booked artist in the extra rooms reuse the existing CC0 NPC layer kit (`features/sprites`, already logged) via `roomFigures.ts`; the room windows reuse the in-house Pixi sky/sun/moon/skyline view (`studioWindowView.ts`). No new external art. Screenshots: `docs/img/room-*-{day,night}.png`, produced by `tests/room-layouts.check.cjs`.
