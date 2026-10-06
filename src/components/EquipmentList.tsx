@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { GameBonusesDisplay } from '@/components/equipment/GameBonusesDisplay';
+import { GearWhyHint } from '@/components/equipment/GearWhyHint';
 import { GameState } from '@/types/game';
 import { getAvailableEquipmentForYear, getEraAdjustedPrice } from '@/data/eraEquipment';
 import { money } from '@/utils/displayMoney';
@@ -28,6 +29,7 @@ export const EquipmentList: React.FC<EquipmentListProps> = ({ purchaseEquipment,
   const visible = offers.filter(({ equipment, price }) =>
     (category === 'all' || equipment.category === category) && (!affordableOnly || price <= gameState.money)
   );
+  const ownedCategories = gameState.ownedEquipment.map(owned => owned.category);
   const categories = [...new Set(available.map(equipment => equipment.category))];
 
   return (
@@ -71,7 +73,7 @@ export const EquipmentList: React.FC<EquipmentListProps> = ({ purchaseEquipment,
                   <span className="gear-shop__icon" aria-hidden="true">{equipment.icon}</span>
                   <div className="min-w-0 flex-1">
                     <p className="text-[10px] uppercase tracking-widest text-stone-400">{equipment.category} · Since {equipment.availableFrom}</p>
-                    <h4 className="font-semibold text-white text-sm">{equipment.name}</h4>
+                    <h4 className="font-semibold text-white text-sm">{equipment.name}<GearWhyHint gear={equipment} ownedCategories={ownedCategories} knowHow={gameState.studioKnowHow} /></h4>
                     {isVintage && <span className="text-[10px] text-amber-300">Vintage find</span>}
                     <p className="mt-1 text-xs leading-relaxed text-stone-300">{equipment.eraDescription || equipment.description}</p>
                   </div>
