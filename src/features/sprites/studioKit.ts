@@ -77,6 +77,7 @@ const buildCrispBox = (): Graphics => {
   return g;
 };
 
+/** Pruned after playtest: the scaled-up armchair, coffee table, floor lamp, bookcase and tier-4 side-table cluster read blurry and crowded the floor. */
 /** Tile coordinates and baked ground origins share the room's 28x14 projection. */
 export const studioProps = (tier: number, era?: string): StudioProp[] => [
   { model: 'chairDesk', x: 3, y: 5.25, tier: 1, scale: 1.3 },
@@ -89,19 +90,12 @@ export const studioProps = (tier: number, era?: string): StudioProp[] => [
   { model: 'radio', x: 2.15, y: 6.2, tier: 2, scale: 1.1, lift: 21 },
   { model: 'plantSmall2', x: 1.3, y: 6.4, tier: 2, scale: 1.3 },
   { model: era === 'streaming2020s' ? 'loungeDesignSofa' : 'loungeSofa', x: 7.3, y: 5.9, tier: 3, scale: 1.6 },
-  { model: 'tableCoffee', x: 7.3, y: 6.75, tier: 3, scale: 1.3 },
-  { model: 'loungeChair', x: 5.4, y: 6.6, tier: 3, scale: 1.3 },
-  { model: 'lampRoundFloor', x: 7.7, y: 4.9, tier: 3, scale: 1.4 },
   { model: 'speaker', x: 3.4, y: 1, tier: 3, scale: 1.4 },
-  { model: 'bookcaseOpen', x: 7.1, y: 0.7, tier: 4, scale: 1.5 },
-  { model: 'sideTable', x: 7, y: 3.2, tier: 4, scale: 1.5 },
-  { model: 'laptop', x: 7, y: 3.2, tier: 4, scale: 1.5, lift: 21 },
-  { model: 'lampRoundTable', x: 7.25, y: 3.2, tier: 4, scale: 1.2, lift: 21 },
   { model: 'plantSmall3', x: 4.5, y: 6.5, tier: 5, scale: 1.7 },
 ].filter(prop => prop.tier <= tier);
 
 /** Lounge pieces sit in front of the console, so they depth-sort with the rest of the room instead of drawing underneath it. */
-const DEPTH_SORTED_MODELS = new Set(['loungeSofa', 'loungeDesignSofa', 'loungeChair', 'tableCoffee', 'lampRoundFloor']);
+const DEPTH_SORTED_MODELS = new Set(['loungeSofa', 'loungeDesignSofa']);
 
 export const addStudioProps = (root: Container, textures: StudioKitTextures, tier: number, era?: string, depthBase?: number): void => {
   for (const prop of studioProps(tier, era)) {
