@@ -7,6 +7,8 @@
  * All functions are immutable and return a fresh state.
  */
 
+import { isAudioConceptId, type AudioConceptId } from './audioConcepts';
+
 export type KnowHowDomain =
   | 'tracking'
   | 'production'
@@ -31,6 +33,8 @@ export interface StudioKnowHow {
   repeatCounts: Record<string, number>;
   /** Recent award ids — guards against save/reload or double-fire duplicates. */
   awardLog: string[];
+  /** Audio concepts (#306) the player has met through play. Optional so older saves stay valid. */
+  conceptsMet?: AudioConceptId[];
 }
 
 export type KnowHowEvent =
@@ -80,6 +84,7 @@ export const migrateKnowHow = (raw: unknown): StudioKnowHow => {
     for (const [k, v] of Object.entries(r.repeatCounts)) repeatCounts[k] = num(v);
   }
   const strs = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
+  const concepts = [...new Set(strs(r.conceptsMet).filter(isAudioConceptId))];
   return {
     totalEarned: num(r.totalEarned),
     available: num(r.available),
@@ -88,6 +93,8 @@ export const migrateKnowHow = (raw: unknown): StudioKnowHow => {
     discoveries: strs(r.discoveries),
     repeatCounts,
     awardLog: strs(r.awardLog).slice(-AWARD_LOG_CAP),
+    // Omitted when empty so a fresh state round-trips unchanged.
+    ...(concepts.length ? { conceptsMet: concepts } : {}),
   };
 };
 
@@ -249,6 +256,21 @@ export const applyKnowHowEvents = <S extends { studioKnowHow?: StudioKnowHow }>(
   }
   return { game: { ...game, studioKnowHow: kh }, awards };
 };
+
+/** Record concepts the player has met (immutable; returns the same game when nothing is new). */
+export const noteConceptsMet = <S extends { studioKnowHow?: StudioKnowHow }>(
+  game: S,
+  concepts: readonly AudioConceptId[],
+): S => {
+  const kh = game.studioKnowHow ?? createInitialKnowHow();
+  const have = kh.conceptsMet ?? [];
+  const fresh = [...new Set(concepts)].filter(c => !have.includes(c));
+  if (fresh.length === 0) return game;
+  return { ...game, studioKnowHow: { ...kh, conceptsMet: [...have, ...fresh] } };
+};
+
+export const hasMetConcept = (kh: StudioKnowHow | undefined, concept: AudioConceptId): boolean =>
+  !!kh?.conceptsMet?.includes(concept);
 
 // ---------------------------------------------------------------------------
 // Capability effects — small horizontal gameplay changes, never raw quality.

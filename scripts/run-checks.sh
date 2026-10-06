@@ -359,6 +359,10 @@ echo "=== equipped furnishings and cosmetics render mapping (#258) ==="
 ./node_modules/.bin/esbuild tests/studio-customization-render.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-studio-customization-render.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-studio-customization-render.cjs"
 
+echo "=== audio concept tags (#306) ==="
+./node_modules/.bin/esbuild tests/audio-concepts.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-audio-concepts.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-audio-concepts.cjs"
+
 echo "=== city room style (#291) ==="
 ./node_modules/.bin/esbuild tests/city-room-style.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-city-room-style.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-city-room-style.cjs"
