@@ -84,7 +84,7 @@ export const FaultHuntGame: React.FC<Props> = ({ onComplete, difficulty = 1, fre
           </div>
           {lastTrip && !state.finished && (
             <p className="rounded-md border border-red-500/40 bg-red-950/40 p-2 text-[11px] text-red-200" role="status">
-              <b>{faultLabel(lastTrip)}.</b> {noteFor(lastTrip).symptom} {tc('mg.FaultHuntGame.note_fix_prefix', 'Fix:')} {noteFor(lastTrip).fix}
+              <b>{faultLabel(lastTrip)}.</b> {noteFor(lastTrip).symptom} {noteFor(lastTrip).fix}
             </p>
           )}
           {state.finished && (
@@ -93,12 +93,15 @@ export const FaultHuntGame: React.FC<Props> = ({ onComplete, difficulty = 1, fre
                 {tc('mg.FaultHuntGame.faults_located', '{{found}}/{{total}} faults located', { found: result.found, total: state.faultCount })}
               </h4>
               <ul className="mb-1 space-y-1 text-[11px] text-stone-400">
-                {state.cells.filter((c) => c.fault).map((c, i) => (
-                  <li key={i}>
-                    <b className="text-stone-300">{faultLabel(c.fault!)}{c.flagged || c.status === 'tripped' ? ' ✓' : ' ✗'}</b>{' '}
-                    {noteFor(c.fault!).symptom} {tc('mg.FaultHuntGame.note_fix_prefix', 'Fix:')} {noteFor(c.fault!).fix}
-                  </li>
-                ))}
+                {state.cells.filter((c) => c.fault).map((c, i) => {
+                  const spotted = c.flagged;
+                  return (
+                    <li key={i}>
+                      <b className="text-stone-300">{faultLabel(c.fault!)}{spotted || c.status === 'tripped' ? ' ✓' : ' ✗'}</b>
+                      {!spotted && <>{' '}{noteFor(c.fault!).symptom} {noteFor(c.fault!).fix}</>}
+                    </li>
+                  );
+                })}
               </ul>
               {result.tips.join(' ') || tc('mg.FaultHuntGame.result_clean', 'Clean diagnosis. The session can start.')}
             </div>

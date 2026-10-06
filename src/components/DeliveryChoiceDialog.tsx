@@ -15,6 +15,8 @@ const SEVERITY = ['', 'minor', 'noticeable', 'serious'];
 /** Deliver now or polish first, with the bounded forecast from #87. */
 export const DeliveryChoiceDialog: React.FC<DeliveryChoiceDialogProps> = ({ issues, payout, revisionAllowance = 0, onChoose }) => {
   const f = forecastDelivery(issues, payout);
+  // One calm tip for the worst problem, never a list.
+  const tip = [...issues].sort((a, b) => b.severity - a.severity).find((i) => i.habit)?.habit;
   return (
     <Dialog open onOpenChange={() => undefined}>
       <DialogContent className="mx-4 max-w-md border-stone-600 bg-stone-900 text-white" data-testid="delivery-choice">
@@ -28,10 +30,10 @@ export const DeliveryChoiceDialog: React.FC<DeliveryChoiceDialogProps> = ({ issu
           {issues.map((i) => (
             <li key={i.id}>
               · {i.label} <span className="text-stone-500">({SEVERITY[i.severity]}, {i.phase})</span> — {i.cause}
-              {i.habit && <span className="block pl-3 text-xs text-amber-200/80">Next time: {i.habit}</span>}
             </li>
           ))}
         </ul>
+        {tip && <p className="text-xs italic text-stone-400">Tip: {tip}</p>}
         <div className="grid grid-cols-2 gap-3 text-xs">
           <button type="button" data-rst-surface="contextual" data-rst-action-id="wrap:deliver" onClick={() => onChoose('deliver')} className="rst-btn flex-col !items-start text-left">
             <span className="font-semibold">Deliver now</span>
