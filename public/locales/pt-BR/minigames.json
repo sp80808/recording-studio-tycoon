@@ -727,5 +727,16 @@
   "mg.InstrumentLayeringGame.type_guitar": "guitarra",
   "mg.InstrumentLayeringGame.type_keys": "teclados",
   "mg.InstrumentLayeringGame.type_vocal": "vocal",
-  "mg.InstrumentLayeringGame.type_strings": "cordas"
+  "mg.InstrumentLayeringGame.type_strings": "cordas",
+  "mg.FaultHuntGame.note_fix_prefix": "Fix:",
+  "mg.FaultHuntGame.note_bad_cable_symptom": "Crackle or dropouts when the cable is touched or wiggled.",
+  "mg.FaultHuntGame.note_bad_cable_fix": "Swap the cable first; it is the cheapest suspect in the chain.",
+  "mg.FaultHuntGame.note_noisy_psu_symptom": "A steady buzz or whine that stays the same whatever you play.",
+  "mg.FaultHuntGame.note_noisy_psu_fix": "Move the supply away from audio cables and try a different outlet or supply.",
+  "mg.FaultHuntGame.note_dead_preamp_symptom": "Silence on one channel while the meters on its neighbours move.",
+  "mg.FaultHuntGame.note_dead_preamp_fix": "Check phantom power and pad, then patch the mic into a spare preamp.",
+  "mg.FaultHuntGame.note_ground_loop_symptom": "A low hum at 50/60 Hz that appears when two grounded devices are connected.",
+  "mg.FaultHuntGame.note_ground_loop_fix": "Plug the gear into one power strip, or use a DI with a ground lift.",
+  "mg.FaultHuntGame.note_phase_flip_symptom": "The sound turns thin and hollow when two mics or tracks are combined.",
+  "mg.FaultHuntGame.note_phase_flip_fix": "Hit the polarity (phase) switch on one channel and listen for the body to return."
 }

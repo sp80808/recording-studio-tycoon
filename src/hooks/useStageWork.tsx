@@ -553,7 +553,7 @@ export const useStageWork = ({
     if (phaseEvent) {
       toast({
         title: phaseEvent.issue ? `⚠️ ${phaseEvent.label}` : `✨ ${phaseEvent.label}`,
-        description: phaseEvent.why,
+        description: phaseEvent.habit ? `${phaseEvent.why} ${phaseEvent.habit}` : phaseEvent.why,
         className: "bg-stone-800 border-stone-600 text-white",
       });
     }
