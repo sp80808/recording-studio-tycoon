@@ -68,6 +68,14 @@ const isLegacyProgressed = (s: Unlockable): boolean =>
   !s.featureProgress &&
   (sessionsCompleted(s) >= 1 || (s.playerData?.level ?? 1) >= 2 || (s.activeProject?.workSessionCount ?? 0) > 0);
 
+/** "Experienced Producer" start (#260): every technique is yours from day one and nothing is announced. */
+export const createExperiencedProgress = (): FeatureProgress => ({
+  bestCombo: 0,
+  goodTake: true,
+  seen: [...FEATURE_ORDER],
+  grandfathered: [...FEATURE_ORDER],
+});
+
 const emptyProgress = (): FeatureProgress => ({ bestCombo: 0, goodTake: false, seen: [] });
 
 const rules = (s: Unlockable, p: FeatureProgress): Record<ProducerFeature, boolean> => {

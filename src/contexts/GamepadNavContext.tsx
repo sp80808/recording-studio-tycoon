@@ -22,6 +22,8 @@ export function isSliderElement(el: HTMLElement | null): boolean {
   return (
     el.getAttribute('role') === 'slider' ||
     el.hasAttribute('data-radix-slider-thumb') ||
+    // Any control that handles ArrowLeft/ArrowRight itself (carousel rows, swatch groups) opts in the same way.
+    el.hasAttribute('data-gamepad-adjust') ||
     (el.tagName === 'INPUT' && (el as HTMLInputElement).type === 'range')
   );
 }
@@ -212,8 +214,11 @@ export const GamepadNavProvider: React.FC<GamepadNavProviderProps> = ({ children
       return;
     }
 
+    // Discrete adjusters (option carousels) step once per tap; holding the stick must not spin through every option.
+    const discrete = !!activeEl?.hasAttribute?.('data-gamepad-discrete');
+
     // 2. Continuous analog stick sliding when holding stick horizontally on a slider
-    if (onSlider && Math.abs(gamepad.leftStick.x) > stickThreshold) {
+    if (onSlider && !discrete && Math.abs(gamepad.leftStick.x) > stickThreshold) {
       const now = performance.now();
       if (now - lastSliderHoldTimeRef.current > 85) {
         lastSliderHoldTimeRef.current = now;
@@ -227,14 +232,18 @@ export const GamepadNavProvider: React.FC<GamepadNavProviderProps> = ({ children
 
     // 3. Spatial navigation across menus and interactive elements
     if (isUp || isDown || isLeft || isRight) {
-      const container = document.querySelector<HTMLElement>('[role="dialog"], .studio-activity-panel') || document.body;
+      const container = document.querySelector<HTMLElement>('[role="dialog"], .studio-activity-panel')
+        || document.querySelector<HTMLElement>('[data-gamepad-scope]')
+        || document.body;
       const focusables = Array.from(
         container.querySelectorAll<HTMLElement>(
           '[role="slider"], button:not([disabled]):not([aria-hidden="true"]), [role="button"]:not([aria-disabled="true"]):not([aria-hidden="true"]), [role="tab"]:not([aria-disabled="true"]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]:not([aria-hidden="true"])'
         )
       ).filter((el) => {
         const rect = el.getBoundingClientRect();
-        return rect.width > 0 && rect.height > 0 && window.getComputedStyle(el).visibility !== 'hidden';
+        // `data-gamepad-skip` marks secondary controls whose job a focusable sibling already does (e.g. the
+        // prev/next buttons beside an option carousel), so D-pad traversal visits one stop per property.
+        return !el.hasAttribute('data-gamepad-skip') && rect.width > 0 && rect.height > 0 && window.getComputedStyle(el).visibility !== 'hidden';
       });
 
       if (focusables.length === 0) return;

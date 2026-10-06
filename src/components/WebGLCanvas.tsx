@@ -58,8 +58,9 @@ import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from
 import { buildCaseStack, CASE_STACK_TILE, type CaseStack } from '@/components/studio/studioCaseStack';
 import { buildWindowView, type WindowView } from '@/components/studio/studioWindowView';
 import { buildPremisesDecor } from '@/components/studio/studioPremisesDecor';
-import { getRoomLayoutProfile, type RoomLayoutProfile } from '@/components/studio/roomLayouts';
-import { buildRoomLayoutScene } from '@/components/studio/roomLayoutScene';
+import { getRoomLayoutProfile, PROP_METRICS, type RoomLayoutProfile } from '@/components/studio/roomLayouts';
+import { buildRoomLayoutScene, computeRoomView } from '@/components/studio/roomLayoutScene';
+import { buildRoomFigures } from '@/components/studio/roomFigures';
 import type { StudioRoomType } from '@/types/game';
 import { buildFurnishingLayer, type StudioCat } from '@/components/studio/studioFloorFurnishings';
 import {
@@ -287,6 +288,7 @@ export interface StudioSceneState {
   roomOccupied?: boolean;
   /** Premises tier (#70): 3 adds a premium sofa and third rack; 1 adds the client bench + storage rack, 2 adds reception, water cooler and a second rack. */
   premisesTier?: number;
+  premisesArchetype?: string;
   /** Tier ids of earned, unopened flight cases (drives the floor stack). */
   pendingCases?: string[];
   /** Completed-project album covers hung above the booth (from financials.reports). */
@@ -1041,7 +1043,7 @@ const buildScene = (
       refs.caseStack = stack;
     }
   }
-  for (const prop of buildPremisesDecor(state.premisesTier ?? 0, grade.accent)) {
+  for (const prop of buildPremisesDecor(state.premisesTier ?? 0, grade.accent, state.premisesArchetype)) {
     prop.container.zIndex = Z.depth + prop.y;
     root.addChild(prop.container);
   }
@@ -1932,6 +1934,8 @@ const buildRoomScene = (
   height: number,
   state: StudioSceneState,
   onSelect?: (id: StudioHotspotId) => void,
+  renderer?: Renderer | null,
+  npcAtlas?: LoadedAtlas | null,
 ): BuiltScene => {
   const refs = createSceneRefs();
   const eraGrade = getEraGrade(state.eraId);
@@ -1941,22 +1945,74 @@ const buildRoomScene = (
     seed: state.decorSeed ?? 'studio',
     tint: { wallLeft: grade.wallLeft, wallRight: grade.wallRight, accent: grade.accent },
     addHotspot: (id, hit, visual, zIndex, parent) => addHotspot(parent, id, hit, visual, refs, onSelect, zIndex),
+    clockMinutes: state.clockMinutes ?? getWallClockTime(state.day, 0).minutesOfDay,
+    depthBase: Z.depth,
   });
   const { bounds } = built;
   const topInset = width <= 540 ? 116 : 68;
   const bottomInset = height < 500 ? 96 : 160;
-  const fitScale = Math.min(
-    (width - 60) / (bounds.maxX - bounds.minX),
-    Math.max(80, height - topInset - bottomInset - 20) / (bounds.maxY - bounds.minY),
-    2.4,
-  );
-  const originX = width / 2 - ((bounds.minX + bounds.maxX) / 2) * fitScale;
-  const originY = (topInset + height - bottomInset) / 2 - ((bounds.minY + bounds.maxY) / 2) * fitScale;
+  const view = computeRoomView(profile, bounds, { width, height, topInset, bottomInset });
+  const fitScale = view.scale;
+  const originX = view.x;
+  const originY = view.y;
   built.root.scale.set(fitScale);
   built.root.position.set(originX, originY);
+
+  // Window + day/night: same clock-driven refs Studio A uses, so the shared ticker keeps them live.
+  refs.windowView = built.windowView;
+  refs.setWindowSky = built.setWindowSky;
+
+  // Per-room idle camera targets and hint rings on this room's hotspots.
+  for (const spec of profile.props) {
+    const id = spec.hotspot;
+    if (id !== 'console' && id !== 'liveRoom' && id !== 'shelf') continue;
+    const m = PROP_METRICS[spec.kind];
+    const c = iso(spec.x, spec.y);
+    const rx = Math.max(m.w, m.d) * 30 + 12;
+    const hint = new Graphics();
+    hint.ellipse(c.x, c.y + 2, rx, rx * 0.5).stroke({ width: 7, color: 0x0b0906, alpha: 0.5 });
+    hint.ellipse(c.x, c.y + 2, rx, rx * 0.5).stroke({ width: 2.5, color: 0xd9a441, alpha: 0.88 });
+    hint.alpha = 0;
+    hint.eventMode = 'none';
+    hint.zIndex = Z.fx;
+    refs.idleHints[id] = hint;
+    refs.idleFocusPoints[id] = { x: c.x, y: c.y - m.h / 2 };
+    built.root.addChild(hint);
+  }
+
+  // People: producer + crew on the room's staff spots, booked artist at the room's mic.
+  const figures = buildRoomFigures({
+    profile,
+    parent: built.root,
+    depthBase: Z.depth,
+    renderer,
+    atlas: npcAtlas,
+    eraId: state.eraId,
+    accent: grade.accent,
+    decorSeed: state.decorSeed ?? 'studio',
+    staffOnFloor: state.staffOnFloor,
+    hasActiveProject: Boolean(state.roomOccupied && state.hasActiveProject),
+    floorFigures: state.floorFigures,
+    producerNpc: state.producerNpc,
+    producerAppearance: state.producerAppearance,
+    artistName: state.artistName,
+    onSelect,
+  });
+  refs.staffFigures = figures.staff;
+  refs.artist = figures.artist;
+  refs.artistStand = figures.artistStand;
+  refs.doorFloor = figures.doorFloor;
+
   const underlayRoot = buildUnderlay(width, height, { x: width / 2, y: (topInset + height - bottomInset) / 2 }, fitScale);
   const overlayRoot = new Container();
   overlayRoot.eventMode = 'none';
+  // Night tint over the whole canvas, driven by the studio clock like Studio A's.
+  const tintLayer = new Container();
+  tintLayer.addChild(new Graphics().rect(0, 0, width, height).fill(grade.tint));
+  tintLayer.alpha = 0;
+  tintLayer.eventMode = 'none';
+  refs.nightTintLayer = tintLayer;
+  overlayRoot.addChild(tintLayer);
   return { root: built.root, underlayRoot, overlayRoot, refs, basePosition: { x: originX, y: originY }, baseScale: fitScale, tick: built.tick };
 };
 
@@ -2070,7 +2126,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   const producerLookKey = state?.producerNpc
     ? [state.producerNpc.hair.shape, state.producerNpc.hair.colour, state.producerNpc.body.build, state.producerNpc.clothes.topPrimaryHex].join(':')
     : '';
-  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${producerLookKey}|${floorKey}|${state?.staffOnFloor ?? 1}|${gearKey}|${gearConditionKey(state?.gearConditions)}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${state?.premisesTier ?? 0}|${(state?.pendingCases ?? []).join(',')}|${trophyKey(state?.trophies ?? { covers: [] })}|${state?.decorSeed ?? 'studio'}|${state?.roomType ?? 'project-studio'}|${state?.roomOccupied ? 1 : 0}`;
+  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${producerLookKey}|${floorKey}|${state?.staffOnFloor ?? 1}|${gearKey}|${gearConditionKey(state?.gearConditions)}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${state?.premisesTier ?? 0}|${state?.premisesArchetype ?? ''}|${(state?.pendingCases ?? []).join(',')}|${trophyKey(state?.trophies ?? { covers: [] })}|${state?.decorSeed ?? 'studio'}|${state?.roomType ?? 'project-studio'}|${state?.roomOccupied ? 1 : 0}`;
 
   // Rebuild the room (new window size or layout change)
   const rebuild = () => {
@@ -2103,12 +2159,17 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     const roomKey = roomProfile?.type ?? 'project-studio';
     if (roomKeyRef.current !== roomKey) {
       roomKeyRef.current = roomKey;
+      // Snap the artist transit to the destination room's session status (no walk-out on room switch).
+      const destSession = Boolean(
+        stateRef.current.hasActiveProject && (roomKey === 'project-studio' || stateRef.current.roomOccupied),
+      );
+      clientTransitRef.current = createClientTransitState(destSession);
       cameraRef.current = { x: 0, y: 0, zoom: 1.0 };
       idleCameraRef.current = { mode: 'idle', saved: { x: 0, y: 0, zoom: 1.0 }, targetId: null };
       lastAnchorsRef.current = {};
     }
     const scene = roomProfile
-      ? buildRoomScene(roomProfile, app.screen.width, app.screen.height, stateRef.current, onSelectHotspot)
+      ? buildRoomScene(roomProfile, app.screen.width, app.screen.height, stateRef.current, onSelectHotspot, app.renderer, npcAtlasRef.current)
       : buildScene(
           app.screen.width,
           app.screen.height,
@@ -2790,12 +2851,16 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             if (attention.reelsSpin) refs.reels.forEach((r) => { if (r.playing) r.update(ticker); });
           }
 
-          // Staff / artist motion from npcAnimation states (presentation only)
+          // Staff / artist motion from npcAnimation states (presentation only).
+          // Extra rooms only show a session when the project is booked into the room being viewed.
+          const sessionHere = s.hasActiveProject && (roomKeyRef.current === 'project-studio' || Boolean(s.roomOccupied));
           refs.staffFigures.forEach((f, i) => {
-            const live = stateRef.current.floorFigures?.[i]?.animState;
+            const supplied = stateRef.current.floorFigures?.[i]?.animState;
+            // Extra rooms: supplied states are not room-scoped for staff; stay idle unless a session is here.
+            const live = roomKeyRef.current !== 'project-studio' && !sessionHere ? 'idle' : supplied;
             if (live) f.animState = live;
-            else if (s.hasActiveProject && f.animState === 'idle') f.animState = 'working';
-            else if (!s.hasActiveProject && (f.animState === 'working' || f.animState === 'mixing' || f.animState === 'recording')) {
+            else if (sessionHere && f.animState === 'idle') f.animState = 'working';
+            else if (!sessionHere && (f.animState === 'working' || f.animState === 'mixing' || f.animState === 'recording')) {
               f.animState = 'idle';
             }
             const target = staffDestination(f.animState, f.stations);
@@ -2834,7 +2899,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             const door = refs.doorFloor ?? { x: a.baseX, y: a.baseY };
             const stand = refs.artistStand ?? { x: a.baseX, y: a.baseY };
             clientTransitRef.current = advanceClientTransit(clientTransitRef.current, {
-              sessionActive: s.hasActiveProject,
+              sessionActive: sessionHere,
               dtMs: ticker.deltaMS,
               reduceMotion,
             });
@@ -2845,7 +2910,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             const name = s.artistName ?? '';
             if (a.shown !== name) { a.tag.text = name; a.shown = name; }
             const atMic = clientTransitRef.current.phase === 'present';
-            if (atMic && s.hasActiveProject) {
+            if (atMic && sessionHere) {
               a.animState = 'recording';
               a.baseY = pose.y;
               applyFloorNpcMotion(a, t, 0.7, reduceMotion);

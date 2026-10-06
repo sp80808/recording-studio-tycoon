@@ -20,6 +20,7 @@ import { useContentLocale } from '@/i18n/content';
 import { CITIES, cityText, currencyFor, getCityById, localName, type CityId } from '@/rpg/cities';
 import { SETUP_SURFACES, defaultCareerSetup, isSetupValid, isSurfaceReady, openingBrief, quickStartSetup, type SetupSurface } from '@/rpg/careerSetup';
 import { ProducerCreator } from '@/components/ProducerCreator';
+import { GamepadNavProvider, useGamepadNav } from '@/contexts/GamepadNavContext';
 import './splash.css';
 
 /** The producer the player made on this screen: name + sprite look (persisted as ProducerCustomization). */
@@ -47,13 +48,14 @@ const ERAS_OLDEST_FIRST = [...AVAILABLE_ERAS].sort((a, b) => a.startYear - b.sta
  *   person - name + look + origin
  * Every choice has a valid default, so Quick start (or just Continue, Open the studio) always works.
  */
-export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
+function CareerStartScreenInner({ onBegin, onBack }: CareerStartScreenProps) {
   const { t } = useTranslation();
   useContentLocale();
   const defaults = useMemo(defaultCareerSetup, []);
   const [surface, setSurface] = useState<SetupSurface>('place');
   const [eraId, setEraId] = useState<string>(defaults.eraId);
   const [originId, setOriginId] = useState<ProducerBackgroundId>(defaults.originId);
+  const [experienced, setExperienced] = useState(false);
   const [moniker, setMoniker] = useState(defaults.name);
   const [cityId, setCityId] = useState<CityId>(defaults.cityId);
   const [look, setLook] = useState<ProducerAppearance>(() => ({
@@ -70,9 +72,9 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
     if (local) setMoniker(local.slice(0, 24));
     setLook(randomiseProducerAppearance(rng));
   };
-  const patchLook = (patch: Partial<ProducerAppearance>) => {
+  const changeLook = (next: ProducerAppearance) => {
     click();
-    setLook((current) => ({ ...current, ...patch }));
+    setLook(next);
   };
 
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -86,8 +88,8 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
   const open = useCallback(() => {
     if (!era || !origin || !isSetupValid({ cityId, eraId, originId, name: moniker })) return;
     click();
-    onBegin(era, origin.id, { name: moniker.trim(), appearance: look, cityId });
-  }, [era, origin, moniker, look, cityId, eraId, originId, onBegin]);
+    onBegin(era, origin.id, { name: moniker.trim(), appearance: look, cityId, ...(experienced ? { experienced: true } : {}) });
+  }, [era, origin, moniker, look, cityId, eraId, originId, experienced, onBegin]);
 
   /** Fast path: a seeded, valid studio and producer; straight into the move-in transition. */
   const quickStart = () => {
@@ -122,11 +124,19 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') goBack();
       const tag = (e.target as HTMLElement).tagName;
-      if (e.key === 'Enter' && tag !== 'BUTTON' && tag !== 'INPUT') goNext();
+      if (e.key === 'Enter' && tag !== 'BUTTON' && tag !== 'INPUT' && (e.target as HTMLElement).getAttribute('role') !== 'spinbutton') goNext();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [goBack, goNext]);
+
+  // Controller: B/East goes back; X/West is Surprise me on the person surface. D-pad/stick traversal, A and
+  // left/right adjustment come from the shared GamepadNavProvider (see data-gamepad-* attributes).
+  const { registerShortcut } = useGamepadNav();
+  const randomiseRef = useRef(randomise);
+  randomiseRef.current = randomise;
+  useEffect(() => registerShortcut('east', goBack), [registerShortcut, goBack]);
+  useEffect(() => (surface === 'person' ? registerShortcut('west', () => randomiseRef.current()) : undefined), [registerShortcut, surface]);
 
   /** Arrow keys move the selection inside a radiogroup, as native radios would. */
   const arrowSelect = <T extends string>(items: readonly T[], current: T | null, set: (v: T) => void) =>
@@ -145,7 +155,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
   const surfaceIndex = SETUP_SURFACES.indexOf(surface);
 
   return (
-    <main className={`career-start-page${surface === 'person' ? ' career-character-step' : ''}`} aria-label={t('career_aria')} data-surface={surface}>
+    <main className={`career-start-page${surface === 'person' ? ' career-character-step' : ''}`} aria-label={t('career_aria')} data-surface={surface} data-gamepad-scope>
       <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col px-4 pb-28 pt-6 sm:px-8">
         <header className="flex items-center justify-between gap-3">
           <button type="button" onClick={goBack} className="rst-btn rst-btn-ghost shrink-0 whitespace-nowrap !min-h-9 !px-3 !text-xs">
@@ -224,7 +234,7 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
 
         {surface === 'person' && (
           <>
-            <ProducerCreator moniker={moniker} onMoniker={setMoniker} look={look} npc={previewNpc} onPatch={patchLook} onRandomise={randomise} />
+            <ProducerCreator moniker={moniker} onMoniker={setMoniker} look={look} npc={previewNpc} onLookChange={changeLook} onRandomise={randomise} />
             <div
               role="radiogroup"
               aria-label="Choose a producer origin"
@@ -287,6 +297,22 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
       </div>
 
       {/* Sticky footer: the summary + the one primary action */}
+        {surface === 'person' && (
+          <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-lg border border-[var(--rst-line)] bg-black/25 p-3 text-xs text-stone-200">
+            <input
+              type="checkbox"
+              data-testid="experienced-producer"
+              checked={experienced}
+              onChange={(e) => { click(); setExperienced(e.target.checked); }}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--rst-brass-300)]"
+            />
+            <span>
+              <b className="block text-[var(--rst-brass-200)]">Experienced Producer</b>
+              Skip the lessons: Overdrive, Combo and Streak Bank are available from the first session. Money, gear and rooms still start the same.
+            </span>
+          </label>
+        )}
+
       <footer className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--rst-line-strong)] bg-[rgba(14,12,10,0.92)] backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3 sm:px-8">
           <p className="min-w-0 basis-full text-xs text-stone-300 sm:flex-1 sm:basis-0" aria-live="polite">
@@ -312,5 +338,14 @@ export function CareerStartScreen({ onBegin, onBack }: CareerStartScreenProps) {
         </div>
       </footer>
     </main>
+  );
+}
+
+/** The career-start flow owns controller focus: the shared nav provider scopes D-pad traversal to this screen. */
+export function CareerStartScreen(props: CareerStartScreenProps) {
+  return (
+    <GamepadNavProvider>
+      <CareerStartScreenInner {...props} />
+    </GamepadNavProvider>
   );
 }
