@@ -426,7 +426,7 @@ export const buildDeskProps = (deskH = 40): Container => {
 /* ---------------------------------------------------------- candle table */
 
 /** Iso tile under the brass candle table (listening-side rug edge). */
-export const CANDLE_TABLE_TILE = { x: 6.55, y: 5.35 } as const;
+export const CANDLE_TABLE_TILE = { x: 6.4, y: 6.15 } as const;
 
 /** Height in px of the side-table top above the floorboards. */
 const CANDLE_TABLE_H = 14;
