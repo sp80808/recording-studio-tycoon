@@ -44,6 +44,7 @@ import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { gameAudio as audioSystem } from '@/utils/audioSystem';
 import { WelcomeBackSummaryModal } from '@/components/modals/WelcomeBackSummaryModal';
 import { StorylineBranchModal } from '@/components/modals/StorylineBranchModal';
+import { shouldTogglePauseOnKey } from '@/utils/pauseMenuKeys';
 import { PauseMenuModal } from '@/components/modals/PauseMenuModal';
 import { useGamepad } from '@/hooks/useGamepad';
 import { StoryEventModal } from '@/components/modals/StoryEventModal';
@@ -78,6 +79,7 @@ import { useFeatureFlag } from '@/stores/featureFlagStore';
 import { canOpenProjectReview, traceReviewFlow } from '@/utils/projectReviewFlow';
 import { StudioClockProvider } from '@/contexts/StudioClockContext';
 import { usePremisesCue } from '@/hooks/usePremisesCue';
+import { useCustomizationSync } from '@/hooks/useCustomizationSync';
 
 const MusicStudioTycoon = () => {
   const { gameState, setGameState, initializeGameState } = useGameState(); // REMOVED focusAllocation, setFocusAllocation
@@ -183,6 +185,7 @@ const MusicStudioTycoon = () => {
 
   useEffect(() => installFlightCaseRewards(setGameState), [setGameState]);
   usePremisesCue(gameState, setGameState, gameInitialized && !showSplashScreen, settings.sfxEnabled);
+  useCustomizationSync(gameState, setGameState, gameInitialized && !showSplashScreen);
   useEffect(() => {
     telemetry.startRun(gameState.saveSeed);
     installTelemetryDevHandle();
@@ -231,7 +234,7 @@ const MusicStudioTycoon = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (showSplashScreen || !gameInitialized) return;
-      if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
+      if (shouldTogglePauseOnKey(e.key, showPauseMenu)) {
         const target = e.target as HTMLElement | null;
         if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
         if (target?.isContentEditable) return;
@@ -253,7 +256,7 @@ const MusicStudioTycoon = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showSplashScreen, gameInitialized, showSettingsModal, showReviewModal, showTrainingModal, showStorylineBranchModal, pendingDelivery, settings.sfxEnabled]);
+  }, [showSplashScreen, gameInitialized, showPauseMenu, showSettingsModal, showReviewModal, showTrainingModal, showStorylineBranchModal, pendingDelivery, settings.sfxEnabled]);
 
   useEffect(() => {
     if (!gamepad.isConnected || showSplashScreen || !gameInitialized) return;

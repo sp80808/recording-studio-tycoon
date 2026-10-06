@@ -58,6 +58,7 @@ import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from
 import { buildCaseStack, CASE_STACK_TILE, type CaseStack } from '@/components/studio/studioCaseStack';
 import { buildWindowView, type WindowView } from '@/components/studio/studioWindowView';
 import { buildPremisesDecor } from '@/components/studio/studioPremisesDecor';
+import { buildFurnishingRenderLayer, type FurnishingRenderItem } from '@/components/studio/studioFurnishingRender';
 import { getRoomLayoutProfile, PROP_METRICS, type RoomLayoutProfile } from '@/components/studio/roomLayouts';
 import { buildRoomLayoutScene, computeRoomView } from '@/components/studio/roomLayoutScene';
 import { buildRoomFigures } from '@/components/studio/roomFigures';
@@ -79,6 +80,7 @@ import {
   buildUnderlay,
   buildWallDressing,
   type DecorLights,
+  CANDLE_TABLE_TILE,
 } from '@/components/studio/studioDecor';
 import {
   getDaynessFromClockMinutes,
@@ -289,6 +291,8 @@ export interface StudioSceneState {
   /** Premises tier (#70): 3 adds a premium sofa and third rack; 1 adds the client bench + storage rack, 2 adds reception, water cooler and a second rack. */
   premisesTier?: number;
   premisesArchetype?: string;
+  /** Equipped room furnishings from studioCustomization (#258), already mapped by mapFurnishingsToRender. */
+  furnishings?: FurnishingRenderItem[];
   /** Tier ids of earned, unopened flight cases (drives the floor stack). */
   pendingCases?: string[];
   /** Completed-project album covers hung above the booth (from financials.reports). */
@@ -797,7 +801,7 @@ const buildScene = (
   windowPane.poly(winPoly).fill(initialSky);
   windowWrap.addChild(windowPane);
   {
-    const view = buildWindowView(winA, winB, 34, 96, hashSeed(decorSeed));
+    const view = buildWindowView(winA, winB, 34, 96, hashSeed(decorSeed), state.cityId);
     const initial = initialClockMinutes;
     view.update(initial, getDaynessFromClockMinutes(initial), 0, false);
     windowWrap.addChild(view.container);
@@ -1033,7 +1037,7 @@ const buildScene = (
 
   /* ---- Live room booth: enclosed (walls, roof, header, foam, glass front) ---- */
   const liveWrap = buildLiveBooth();
-  if (kitTextures) addStudioProps(root, kitTextures, tier, visualEraId(state.eraId ?? 'analog60s'));
+  if (kitTextures) addStudioProps(root, kitTextures, tier, visualEraId(state.eraId ?? 'analog60s'), Z.depth);
   {
     const stack = buildCaseStack(state.pendingCases ?? [], grade.accent);
     if (stack) {
@@ -1044,6 +1048,10 @@ const buildScene = (
     }
   }
   for (const prop of buildPremisesDecor(state.premisesTier ?? 0, grade.accent, state.premisesArchetype)) {
+    prop.container.zIndex = Z.depth + prop.y;
+    root.addChild(prop.container);
+  }
+  for (const prop of buildFurnishingRenderLayer(state.furnishings ?? [])) {
     prop.container.zIndex = Z.depth + prop.y;
     root.addChild(prop.container);
   }
@@ -1581,7 +1589,7 @@ const buildScene = (
   // Listening candle table — lounge coffee hotspot + presentation
   {
     const candleTable = buildCandleTable();
-    candleTable.zIndex = Z.depth + iso(6.55, 5.35).y;
+    candleTable.zIndex = Z.depth + iso(CANDLE_TABLE_TILE.x, CANDLE_TABLE_TILE.y).y;
     candleTable.eventMode = 'static';
     candleTable.cursor = 'pointer';
     candleTable.on('pointertap', () => {
@@ -1799,7 +1807,7 @@ const buildScene = (
   if (tier >= 3) {
     const lounge = new Graphics();
     // Green-room sofa along the front-right corner
-    const sofa = iso(6.0, 5.6);
+    const sofa = iso(7.3, 5.9);
     if (!kitTextures) {
       lounge.roundRect(sofa.x - 26, sofa.y - 26, 52, 24, 6).fill(0x5b3f6e);
       lounge.roundRect(sofa.x - 26, sofa.y - 34, 52, 12, 5).fill(0x6d4c85);
@@ -1943,6 +1951,7 @@ const buildRoomScene = (
   const built = buildRoomLayoutScene(profile, {
     occupied: Boolean(state.roomOccupied),
     seed: state.decorSeed ?? 'studio',
+    cityId: state.cityId,
     tint: { wallLeft: grade.wallLeft, wallRight: grade.wallRight, accent: grade.accent },
     addHotspot: (id, hit, visual, zIndex, parent) => addHotspot(parent, id, hit, visual, refs, onSelect, zIndex),
     clockMinutes: state.clockMinutes ?? getWallClockTime(state.day, 0).minutesOfDay,
@@ -2124,9 +2133,9 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     .map((f) => `${f.identity?.seed ?? f.seed ?? ''}:${f.role ?? ''}`)
     .join(',');
   const producerLookKey = state?.producerNpc
-    ? [state.producerNpc.hair.shape, state.producerNpc.hair.colour, state.producerNpc.body.build, state.producerNpc.clothes.topPrimaryHex].join(':')
+    ? [state.producerNpc.hair.shape, state.producerNpc.hair.colour, state.producerNpc.body.build, state.producerNpc.clothes.topPrimaryHex, state.producerNpc.clothes.top, state.producerNpc.details.headwear ?? '', state.producerNpc.details.headphones ? 1 : 0, state.producerNpc.details.glasses, state.producerNpc.details.jewellery].join(':')
     : '';
-  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${producerLookKey}|${floorKey}|${state?.staffOnFloor ?? 1}|${gearKey}|${gearConditionKey(state?.gearConditions)}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${state?.premisesTier ?? 0}|${state?.premisesArchetype ?? ''}|${(state?.pendingCases ?? []).join(',')}|${trophyKey(state?.trophies ?? { covers: [] })}|${state?.decorSeed ?? 'studio'}|${state?.roomType ?? 'project-studio'}|${state?.roomOccupied ? 1 : 0}`;
+  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${producerLookKey}|${floorKey}|${state?.staffOnFloor ?? 1}|${gearKey}|${gearConditionKey(state?.gearConditions)}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${state?.premisesTier ?? 0}|${state?.premisesArchetype ?? ''}|${(state?.pendingCases ?? []).join(',')}|${trophyKey(state?.trophies ?? { covers: [] })}|${state?.decorSeed ?? 'studio'}|${state?.roomType ?? 'project-studio'}|${state?.roomOccupied ? 1 : 0}|${(state?.furnishings ?? []).map((f) => `${f.anchorId}=${f.itemId}`).join(',')}`;
 
   // Rebuild the room (new window size or layout change)
   const rebuild = () => {
