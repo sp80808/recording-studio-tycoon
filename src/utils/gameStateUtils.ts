@@ -11,6 +11,7 @@ import { initializeStorylineState } from '@/narrative/branchingStorylineEngine';
 import { migrateProducerCustomization } from '@/utils/producerCustomization';
 import { migrateKnowHow } from '@/rpg/studioKnowHow';
 import { migrateExpertise } from '@/rpg/houseStyle';
+import { getArchetypeModifiers } from '@/rpg/premisesTraits';
 
 const DEFAULT_FOCUS_ALLOCATION: FocusAllocation = {
   performance: 33,
@@ -154,6 +155,10 @@ export const migrateAndInitializeGameState = (loadedGameState: GameState): GameS
 
   // Premises tier (#70): legacy saves start in the borrowed room.
   processedState.premisesTier = processedState.premisesTier === 3 ? 3 : processedState.premisesTier === 2 ? 2 : processedState.premisesTier === 1 ? 1 : 0;
+
+  // Property archetype (#250): keep only one that fits the current band; cue marker must be a string.
+  if (!getArchetypeModifiers(processedState.premisesArchetype, processedState.premisesTier)) delete processedState.premisesArchetype;
+  if (typeof processedState.premisesCueSeen !== 'string') delete processedState.premisesCueSeen;
 
   // Pinned defining moments (#259): keep only a short list of strings.
   processedState.pinnedMoments = Array.isArray(processedState.pinnedMoments)
