@@ -283,3 +283,7 @@ In-house original, CC0. Inline SVG gear outlines in `src/features/boxDrops/GearS
 
 ## 27. Per-city wall trim and posters (#291)
 In-house proprietary original, Pixi Graphics only (`cityRoomStyle.ts`). Wall trim is the base colour mixed toward each city accent; two small left-wall posters per city (sunburst, stripes, bars, diamond, rings, wave) are plain polygons and ellipses. No external source.
+
+## Vocal chain rack (`src/components/chain-composer.css`, #289)
+
+Foam-cutout gear tray (dot-grid foam, inset chip slots, latch tab, hinged-lid open) and the physical patch cable between jacks (SVG sheath/sheen/shadow with a settle wobble) are drawn in-house as pure CSS/SVG. No external or binary assets.
