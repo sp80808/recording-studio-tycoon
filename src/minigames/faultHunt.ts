@@ -23,11 +23,11 @@ export const FAULT_LABELS: Record<FaultKind, string> = {
  * Shown the moment a jack trips and again on the report, so the consequence teaches the habit.
  */
 export const FAULT_FIELD_NOTES: Record<FaultKind, { symptom: string; fix: string }> = {
-  'bad-cable': { symptom: 'Crackle or dropouts when the cable is touched or wiggled.', fix: 'Swap the cable first; it is the cheapest suspect in the chain.' },
-  'noisy-psu': { symptom: 'A steady buzz or whine that stays the same whatever you play.', fix: 'Move the supply away from audio cables and try a different outlet or supply.' },
-  'dead-preamp': { symptom: 'Silence on one channel while the meters on its neighbours move.', fix: 'Check phantom power and pad, then patch the mic into a spare preamp.' },
-  'ground-loop': { symptom: 'A low hum at 50/60 Hz that appears when two grounded devices are connected.', fix: 'Plug the gear into one power strip, or use a DI with a ground lift.' },
-  'phase-flip': { symptom: 'The sound turns thin and hollow when two mics or tracks are combined.', fix: 'Hit the polarity (phase) switch on one channel and listen for the body to return.' },
+  'bad-cable': { symptom: 'Crackles or cuts out when you touch it.', fix: 'Swap the cable first. It is the cheapest thing to try.' },
+  'noisy-psu': { symptom: 'A steady buzz that never changes, whatever you play.', fix: 'Move the power supply away from the audio cables.' },
+  'dead-preamp': { symptom: 'One channel is silent while the others move.', fix: 'Plug the mic into a spare preamp to see if it is the channel.' },
+  'ground-loop': { symptom: 'A low hum that starts when two plugged-in devices are connected.', fix: 'Run everything off the same power strip.' },
+  'phase-flip': { symptom: 'Two mics together sound thin and hollow.', fix: 'Flip the polarity switch on one of them and the body comes back.' },
 };
 
 const FAULT_KINDS = Object.keys(FAULT_LABELS) as FaultKind[];
