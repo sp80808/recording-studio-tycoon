@@ -16,6 +16,8 @@ import {
   type PhaseChannel,
   type PhaseState,
 } from '@/minigames/phaseCheck';
+import { MinigameDebrief } from './MinigameDebrief';
+import { debriefPhaseCheck } from '@/minigames/debriefs';
 import { tc } from '@/i18n/content';
 
 interface Props {
@@ -116,6 +118,7 @@ export const PhaseCheckGame: React.FC<Props> = ({ onComplete, difficulty = 2 }) 
                 {result.inPhaseKits === ROUNDS ? tc('mg.PhaseCheckGame.every_kit_in_phase', 'Every kit in phase') : tc('mg.PhaseCheckGame.kits_in_phase', '{{n}}/{{total}} kits in phase', { n: result.inPhaseKits, total: ROUNDS })}
               </h4>
               {result.tips.join(' ') || tc('mg.PhaseCheckGame.all_good', 'Tight, punchy and full. The low end is back.')}
+              <MinigameDebrief lines={debriefPhaseCheck(state)} />
             </div>
           )}
         </CardContent>

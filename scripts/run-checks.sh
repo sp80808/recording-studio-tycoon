@@ -60,7 +60,7 @@ for check in tools-assets audio-system confetti-juice minigames-audio user-inter
 done
 
 echo "=== gamepad service & controller suites ==="
-for check in gamepad-service gamepad-glyph gamepad-navigation spatial-navigation radial-wheel beat-pad-game tape-jog-game console-ride-game vocal-comp album-sequence fault-hunt chain-recall flight-case-packing session-scramble phase-check booking-calendar filler-jobs city-selection onboarding-steps city-sagas market-determinism house-style artist-career label-interest label-accounts service-quote gameplay-telemetry market-demand industry-events balance-lab content-workbench freelancers staff-career recruitment-channels market-player-influence work-style-effect bus-merge gamepad-suite; do
+for check in gamepad-service gamepad-glyph gamepad-navigation spatial-navigation radial-wheel beat-pad-game tape-jog-game console-ride-game vocal-comp album-sequence fault-hunt minigame-debriefs chain-recall flight-case-packing session-scramble phase-check booking-calendar filler-jobs city-selection onboarding-steps city-sagas market-determinism house-style artist-career label-interest label-accounts service-quote gameplay-telemetry market-demand industry-events balance-lab content-workbench freelancers staff-career recruitment-channels market-player-influence work-style-effect bus-merge gamepad-suite; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-$check.cjs" --alias:@=./src >/dev/null
   node "${CHECK_OUTPUT_DIR}/rst-$check.cjs"
 done
@@ -358,5 +358,13 @@ node "${CHECK_OUTPUT_DIR}/rst-studio-customization-panel.cjs"
 echo "=== equipped furnishings and cosmetics render mapping (#258) ==="
 ./node_modules/.bin/esbuild tests/studio-customization-render.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-studio-customization-render.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-studio-customization-render.cjs"
+
+echo "=== audio concept tags (#306) ==="
+./node_modules/.bin/esbuild tests/audio-concepts.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-audio-concepts.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-audio-concepts.cjs"
+
+echo "=== city room style (#291) ==="
+./node_modules/.bin/esbuild tests/city-room-style.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-city-room-style.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-city-room-style.cjs"
 
 echo "All automated checks passed."
