@@ -5,6 +5,7 @@ import { MinigameChrome, KenneyButton } from './MinigameChrome';
 import {
   FAULT_DIFFICULTY,
   FAULT_LABELS,
+  FAULT_FIELD_NOTES,
   createFaultHunt,
   finish,
   probe,
@@ -34,7 +35,18 @@ export const FaultHuntGame: React.FC<Props> = ({ onComplete, difficulty = 1, fre
 
   const faultLabel = (k: keyof typeof FAULT_LABELS) => tc(`mg.FaultHuntGame.fault_${k.replace(/-/g, '_')}`, FAULT_LABELS[k]);
 
-  const press = (i: number) => setState((s) => (flagMode ? toggleFlag(s, i) : probe(s, i)));
+  const [lastTrip, setLastTrip] = useState<keyof typeof FAULT_LABELS | null>(null);
+  const noteFor = (k: keyof typeof FAULT_LABELS) => ({
+    symptom: tc(`mg.FaultHuntGame.note_${k.replace(/-/g, '_')}_symptom`, FAULT_FIELD_NOTES[k].symptom),
+    fix: tc(`mg.FaultHuntGame.note_${k.replace(/-/g, '_')}_fix`, FAULT_FIELD_NOTES[k].fix),
+  });
+
+  const press = (i: number) => {
+    if (flagMode) return setState((s) => toggleFlag(s, i));
+    const cell = state.cells[i];
+    setState((s) => probe(s, i));
+    if (cell?.fault && cell.status === 'hidden') setLastTrip(cell.fault);
+  };
 
   return (
     <MinigameChrome title={tc('mg.FaultHuntGame.title', 'Patchbay Panic')} subtitle={tc('mg.FaultHuntGame.subtitle', 'Find the faulty jacks')} score={state.finished ? result.total : undefined} accent="red">
@@ -70,14 +82,22 @@ export const FaultHuntGame: React.FC<Props> = ({ onComplete, difficulty = 1, fre
               );
             })}
           </div>
+          {lastTrip && !state.finished && (
+            <p className="rounded-md border border-red-500/40 bg-red-950/40 p-2 text-[11px] text-red-200" role="status">
+              <b>{faultLabel(lastTrip)}.</b> {noteFor(lastTrip).symptom} {tc('mg.FaultHuntGame.note_fix_prefix', 'Fix:')} {noteFor(lastTrip).fix}
+            </p>
+          )}
           {state.finished && (
             <div className="rounded-lg border border-stone-600 bg-stone-900/70 p-3 text-xs text-stone-200">
               <h4 className="mb-1 font-bold text-amber-300">
                 {tc('mg.FaultHuntGame.faults_located', '{{found}}/{{total}} faults located', { found: result.found, total: state.faultCount })}
               </h4>
-              <ul className="mb-1 grid grid-cols-2 gap-x-3 text-[11px] text-stone-400">
+              <ul className="mb-1 space-y-1 text-[11px] text-stone-400">
                 {state.cells.filter((c) => c.fault).map((c, i) => (
-                  <li key={i}>{faultLabel(c.fault!)}{c.flagged || c.status === 'tripped' ? ' ✓' : ' ✗'}</li>
+                  <li key={i}>
+                    <b className="text-stone-300">{faultLabel(c.fault!)}{c.flagged || c.status === 'tripped' ? ' ✓' : ' ✗'}</b>{' '}
+                    {noteFor(c.fault!).symptom} {tc('mg.FaultHuntGame.note_fix_prefix', 'Fix:')} {noteFor(c.fault!).fix}
+                  </li>
                 ))}
               </ul>
               {result.tips.join(' ') || tc('mg.FaultHuntGame.result_clean', 'Clean diagnosis. The session can start.')}

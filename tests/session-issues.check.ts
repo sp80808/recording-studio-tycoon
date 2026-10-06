@@ -33,6 +33,8 @@ const bad = SESSION_EVENTS.find((e) => e.id === 'noisy-take')!;
 const p2 = applySessionEvent(proj('p2'), bad, 0);
 ok(p2.unresolvedIssues?.length === 1 && p2.unresolvedIssues[0].cause.length > 0, 'bad event leaves an explainable issue');
 const good = SESSION_EVENTS.find((e) => e.id === 'great-take')!;
+ok(SESSION_EVENTS.every((e) => (e.habit ?? '').length > 15), 'every session event teaches a professional habit');
+ok(p2.unresolvedIssues?.[0].habit === bad.habit, 'issues carry the habit for the delivery dialog');
 ok(applySessionEvent(p2, good, 1).unresolvedIssues?.length === 0, 'good event clears an issue');
 
 const issues = [issue(1, 3), issue(2, 2)];

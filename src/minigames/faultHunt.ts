@@ -18,6 +18,18 @@ export const FAULT_LABELS: Record<FaultKind, string> = {
   'phase-flip': 'Phase flip',
 };
 
+/**
+ * What each fault actually sounds or looks like on a real desk, and what a working engineer does about it.
+ * Shown the moment a jack trips and again on the report, so the consequence teaches the habit.
+ */
+export const FAULT_FIELD_NOTES: Record<FaultKind, { symptom: string; fix: string }> = {
+  'bad-cable': { symptom: 'Crackle or dropouts when the cable is touched or wiggled.', fix: 'Swap the cable first; it is the cheapest suspect in the chain.' },
+  'noisy-psu': { symptom: 'A steady buzz or whine that stays the same whatever you play.', fix: 'Move the supply away from audio cables and try a different outlet or supply.' },
+  'dead-preamp': { symptom: 'Silence on one channel while the meters on its neighbours move.', fix: 'Check phantom power and pad, then patch the mic into a spare preamp.' },
+  'ground-loop': { symptom: 'A low hum at 50/60 Hz that appears when two grounded devices are connected.', fix: 'Plug the gear into one power strip, or use a DI with a ground lift.' },
+  'phase-flip': { symptom: 'The sound turns thin and hollow when two mics or tracks are combined.', fix: 'Hit the polarity (phase) switch on one channel and listen for the body to return.' },
+};
+
 const FAULT_KINDS = Object.keys(FAULT_LABELS) as FaultKind[];
 
 export type CellStatus = 'hidden' | 'probed' | 'tripped';
