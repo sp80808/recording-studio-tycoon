@@ -29,6 +29,8 @@ import { MinigameChrome, KenneyButton } from './MinigameChrome';
 import { gameAudio } from '@/utils/audioSystem';
 import { triggerMilestoneCelebration, triggerProjectCompleteJuice } from '@/utils/confettiJuice';
 import { tc } from '@/i18n/content';
+import { MinigameDebrief } from './MinigameDebrief';
+import { debriefEQMatch } from '@/minigames/debriefs';
 
 export interface MinigameComponentProps {
   minigameId: string;
@@ -695,6 +697,7 @@ export const EQMatchGame: React.FC<MinigameComponentProps> = ({ minigameId, onCo
                     </span>
                   ))}
                 </div>
+                <MinigameDebrief lines={debriefEQMatch(targets, values)} />
               </div>
             )}
           </div>

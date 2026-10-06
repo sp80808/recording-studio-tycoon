@@ -28,7 +28,8 @@ import { resolveSessionEquipment } from '@/utils/gameUtils';
 import { createSeededRandom } from '@/simulation/seededRandom';
 import { evaluateProjectSynergies, calculateSynergyBonuses, recordDiscoveredSynergies } from '@/utils/synergyUtils';
 import { advanceFlow } from '@/rpg/focusFlow';
-import { applyKnowHowEvents, domainForStage, sessionTemplateBonus, type KnowHowEvent } from '@/rpg/studioKnowHow';
+import { conceptsForSessionEvent } from '@/rpg/audioConcepts';
+import { applyKnowHowEvents, noteConceptsMet, domainForStage, sessionTemplateBonus, type KnowHowEvent } from '@/rpg/studioKnowHow';
 import { activeUplift } from '@/rpg/freelancers';
 import { gradeStage, focusMatchFraction } from '@/rpg/stageGrades';
 import { isFeatureUnlocked, recordTechniqueProgress } from '@/rpg/featureUnlocks';
@@ -487,7 +488,8 @@ export const useStageWork = ({
         domain: 'production',
         label: syn.name,
       }));
-      const { game: withKnowHow } = applyKnowHowEvents(prev, knowHowEvents);
+      const { game: withKnowHowEvents } = applyKnowHowEvents(prev, knowHowEvents);
+      const withKnowHow = noteConceptsMet(withKnowHowEvents, conceptsForSessionEvent(phaseEvent?.id));
 
       const gemGain = stageCompleted && completedGrade?.grade === 'Gold' ? 2 : stageCompleted && completedGrade?.grade === 'Silver' ? 1 : 0;
 

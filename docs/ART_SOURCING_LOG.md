@@ -280,3 +280,6 @@ In-house proprietary original, Pixi Graphics only (`studioFurnishingRender.ts`):
 
 ## 28. Flight case gear silhouettes and bench test plugs (#289)
 In-house original, CC0. Inline SVG gear outlines in `src/features/boxDrops/GearSilhouette.tsx` (mic, rack unit, console, tape recorder, amp, keys, headphones, speaker, stand, licence key) used as the foam cutout and lifted-out gear, and CSS-drawn XLR / 1/4" plugs and sockets in `connectors/test-bench.css`. Plain shapes only, no external source, textures or fonts.
+
+## 27. Per-city wall trim and posters (#291)
+In-house proprietary original, Pixi Graphics only (`cityRoomStyle.ts`). Wall trim is the base colour mixed toward each city accent; two small left-wall posters per city (sunburst, stripes, bars, diamond, rings, wave) are plain polygons and ellipses. No external source.

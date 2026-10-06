@@ -738,5 +738,20 @@
   "mg.FaultHuntGame.note_ground_loop_symptom": "A low hum that starts when two plugged-in devices are connected.",
   "mg.FaultHuntGame.note_ground_loop_fix": "Run everything off the same power strip.",
   "mg.FaultHuntGame.note_phase_flip_symptom": "Two mics together sound thin and hollow.",
-  "mg.FaultHuntGame.note_phase_flip_fix": "Flip the polarity switch on one of them and the body comes back."
+  "mg.FaultHuntGame.note_phase_flip_fix": "Flip the polarity switch on one of them and the body comes back.",
+  "mg.debrief.gain.clipped": "Take {{n}} peaked {{db}} dB hot at the {{stage}}, so everything after it clipped. Pull that stage back before the next one adds more.",
+  "mg.debrief.gain.noisy": "Take {{n}} left the preamp at {{db}} dBFS, {{gap}} dB under where it should sit, so the fader had to lift the noise floor with it.",
+  "mg.debrief.phase.thin": "Kit {{n}} went out with {{mics}} still out of polarity, so the mono sum only reached {{pct}}% and the low end thinned out.",
+  "mg.debrief.phase.flips": "Kit {{n}} took {{flips}} flips where {{min}} would do. A listen shows which mic disagrees with the first channel before you touch a switch.",
+  "mg.debrief.chain.lost_first": "The chain broke at the very first stage. The signal starts at the {{expected}}.",
+  "mg.debrief.chain.lost": "The chain broke at stage {{stage}}. After the {{prev}} the signal goes to the {{expected}}, not somewhere else on the rack.",
+  "mg.debrief.chain.slips": "Got there, but with {{n}} wrong tap(s) along the way. Say the path out loud as it lights.",
+  "mg.debrief.chain.replays": "You leaned on the replay {{n}} time(s). Hum each pad pitch to lock the order in.",
+  "mg.debrief.gain.low": "Take {{n}} printed {{db}} dB too quiet. Clean, but the mix will have to make it up later.",
+  "mg.debrief.gain.high": "Take {{n}} printed {{db}} dB too hot for the print window. Nothing clipped, but there is no headroom left.",
+  "mg.debrief.eq.too_much": "The {{region}} ended {{db}} dB too much. The reference sits at {{target}} dB there.",
+  "mg.debrief.eq.too_little": "The {{region}} ended {{db}} dB short. The reference sits at {{target}} dB there.",
+  "mg.debrief.eq.also_high": "The {{region}} was also {{db}} dB high.",
+  "mg.debrief.eq.also_low": "The {{region}} was also {{db}} dB low.",
+  "mg.debrief.title": "Engineer's notes"
 }
