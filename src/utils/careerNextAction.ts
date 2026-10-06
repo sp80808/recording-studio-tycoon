@@ -21,8 +21,23 @@ export interface CareerNextAction {
 export const countDeliveredSessions = (state: Pick<GameState, 'financials'>): number =>
   state.financials?.reports?.length ?? 0;
 
+/**
+ * True once the player has played any session, from any record of one: the
+ * settlement ledger, client relationships, or progress that
+ * can only come from play (level/XP) or from days passing. Some saves reach
+ * Day 26 with an empty ledger, so the ledger alone must not decide "first".
+ */
+export const hasPlayedAnySession = (
+  state: Partial<Pick<GameState, 'financials' | 'clientRelationships' | 'playerData'  | 'currentDay'>>,
+): boolean => {
+  if (countDeliveredSessions(state as Pick<GameState, 'financials'>) > 0) return true;
+  if (Object.values(state.clientRelationships ?? {}).some(r => (r?.sessionsCompleted ?? 0) > 0)) return true;
+  if ((state.playerData?.level ?? 1) > 1 || (state.playerData?.xp ?? 0) > 0) return true;
+  return (state.currentDay ?? 1) > 1;
+};
+
 export const resolveCareerNextAction = (
-  state: Pick<GameState, 'activeProject' | 'playerData' | 'financials'>,
+  state: Pick<GameState, 'activeProject' | 'playerData' | 'financials'> & Partial<Pick<GameState, 'clientRelationships'  | 'currentDay'>>,
   dailyCostsLabel = '',
 ): CareerNextAction => {
   const project = state.activeProject;
@@ -46,7 +61,7 @@ export const resolveCareerNextAction = (
   }
   return {
     type: 'book',
-    label: countDeliveredSessions(state) === 0 ? 'Book your first session' : 'Find a gig',
+    label: hasPlayedAnySession(state) ? 'Find a gig' : 'Book your first session',
     subtext: 'Your next record starts with a booking.',
   };
 };
