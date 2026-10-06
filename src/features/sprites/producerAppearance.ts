@@ -15,12 +15,6 @@ export const PRODUCER_SKIN_TONES = SKIN_TONES;
 export const PRODUCER_SHIRTS: readonly ClothesTop[] = ['flannel_shirt', 'band_tee', 'turtleneck', 'leather_jacket', 'tracksuit_jacket', 'oversized_hoodie', 'denim_vest', 'vintage_cardigan'];
 export const PRODUCER_PANTS: readonly ClothesLower[] = ['denim_jeans', 'corduroy_trousers', 'bell_bottoms', 'cargo_pants', 'joggers', 'ripped_jeans'];
 export const PRODUCER_SHOES: readonly ShoesType[] = ['vintage_sneakers', 'leather_boots', 'creepers', 'hi_tops', 'loafers', 'canvas_skaters'];
-export const APPEARANCE_LABELS: Record<string, string> = {
-  fair: 'Fair', warm: 'Warm', olive: 'Olive', tan: 'Tan', deep: 'Deep', rich: 'Rich',
-  flannel_shirt: 'Flannel', band_tee: 'Band tee', turtleneck: 'Turtleneck', leather_jacket: 'Leather jacket', tracksuit_jacket: 'Tracksuit', oversized_hoodie: 'Oversized hoodie', denim_vest: 'Denim vest', vintage_cardigan: 'Cardigan',
-  denim_jeans: 'Denim jeans', corduroy_trousers: 'Corduroy', bell_bottoms: 'Bell bottoms', cargo_pants: 'Cargo pants', joggers: 'Joggers', ripped_jeans: 'Ripped jeans',
-  vintage_sneakers: 'Sneakers', leather_boots: 'Leather boots', creepers: 'Creepers', hi_tops: 'Hi-tops', loafers: 'Loafers', canvas_skaters: 'Canvas skaters',
-};
 
 export const PRODUCER_HAIR_SHAPES: readonly HairShape[] = [
   'pompadour', 'slicked', 'bob', 'messy_curly', 'long_wavy', 'afro', 'dreads', 'topknot', 'buzzcut', 'bald',
@@ -50,26 +44,6 @@ export type ProducerAccessory = (typeof PRODUCER_ACCESSORIES)[number];
 
 /** Explicit physique picker (slim / average / stocky). Seed still drives skin and face. */
 export const PRODUCER_BUILDS: readonly BodyBuild[] = ['slim', 'average', 'stocky'];
-export const BUILD_LABELS: Record<BodyBuild, string> = { slim: 'Slim', average: 'Average', stocky: 'Stocky' };
-
-export const ACCESSORY_LABELS: Record<ProducerAccessory, string> = {
-  none: 'Nothing',
-  headphones: 'Cans',
-  round_glasses: 'Round specs',
-  wayfarers: 'Wayfarers',
-  flat_cap: 'Flat cap',
-  beanie: 'Beanie',
-  gold_chain: 'Gold chain',
-  aviators: 'Aviators',
-  horn_rims: 'Horn-rims',
-  visor: 'Cyber visor',
-  bucket_hat: 'Bucket hat',
-  bandana: 'Bandana',
-  headband: 'Headband',
-  hoops: 'Silver hoops',
-  choker: 'Choker',
-  cassette_pendant: 'Tape pendant',
-};
 
 const ACCESSORY_HEADWEAR: Partial<Record<ProducerAccessory, Headwear>> = {
   flat_cap: 'flat_cap', beanie: 'beanie', bucket_hat: 'bucket_hat', bandana: 'bandana', headband: 'headband',
