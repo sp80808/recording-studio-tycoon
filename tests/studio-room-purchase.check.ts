@@ -54,4 +54,9 @@ if (applyStudioRoomPurchase(invalid, 'vocal-suite', 4) !== invalid) {
   throw new Error('Non-finite purchase state was accepted');
 }
 
+const early = getStudioRoomPurchaseAvailability(makeState({ premisesTier: 0 } as Partial<GameState>), 'vocal-suite', 4);
+if (early.available || early.reason !== 'premises') throw new Error('Rooms must wait for premises tier');
+const later = getStudioRoomPurchaseAvailability(makeState({ premisesTier: 1 } as Partial<GameState>), 'vocal-suite', 4);
+if (!later.available) throw new Error('Room should be buyable once premises tier is reached');
+
 console.log('PASS: Studio room purchases are atomic, idempotent, and explain unavailable rooms');
