@@ -15,6 +15,7 @@ import {
 } from '@/rpg/signalChain';
 import { conditionBand, type GearConditionBand } from '@/features/gearStudio/gearVisualState';
 import { gameAudio } from '@/utils/audioSystem';
+import { DRAG_START_PX, exceedsDragThreshold, findSnapTarget, magneticPosition, type Point } from '@/rpg/chainPatchDrag';
 import { hapticTick } from '@/utils/mobilePlatform';
 import './chain-composer.css';
 
@@ -30,6 +31,14 @@ const SLOT_ICON: Record<SignalSlot, LucideIcon> = {
   preamp: AudioWaveform,
   dynamics: Waves,
   recorderInterface: Disc3,
+};
+
+interface DragState { gear: Equipment; point: Point; snap: SignalSlot | null }
+
+const prefersReducedMotion = (): boolean => {
+  if (typeof document !== 'undefined' && document.documentElement.dataset.reducedMotion === 'true') return true;
+  return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 };
 
 type SlotMotion = 'seat' | 'unseat';
@@ -52,7 +61,11 @@ export const ChainComposer: React.FC<ChainComposerProps> = ({ project, state, ch
   const [linger, setLinger] = useState<Partial<Record<SignalSlot, Equipment>>>({});
   const [undoSlots, setUndoSlots] = useState<SignalChain['slots'] | null>(null);
   const [latched, setLatched] = useState(false);
+  const [drag, setDrag] = useState<DragState | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const jackRefs = useRef<Partial<Record<SignalSlot, HTMLButtonElement | null>>>({});
+  const dragRef = useRef<{ gear: Equipment; start: Point; active: boolean; pointerId: number } | null>(null);
+  const suppressClick = useRef(false);
   const wasComplete = useRef<boolean | null>(null);
   const motionTimers = useRef<Partial<Record<SignalSlot, number>>>({});
 
@@ -184,6 +197,51 @@ export const ChainComposer: React.FC<ChainComposerProps> = ({ project, state, ch
     setOpenSlot((prev) => (prev === slot ? null : slot));
   };
 
+  const jackTargets = (gear: Equipment) => SIGNAL_SLOTS.flatMap((slot) => {
+    const el = jackRefs.current[slot];
+    if (!el) return [];
+    const r = el.getBoundingClientRect();
+    const accepts = availableForSlot(state, slot, project.id).some((g) => g.id === gear.id);
+    return [{ id: slot, rect: { left: r.left, top: r.top, width: r.width, height: r.height }, accepts }];
+  });
+
+  const onChipPointerDown = (e: React.PointerEvent, gear: Equipment) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    dragRef.current = { gear, start: { x: e.clientX, y: e.clientY }, active: false, pointerId: e.pointerId };
+  };
+
+  const onChipPointerMove = (e: React.PointerEvent) => {
+    const d = dragRef.current;
+    if (!d || d.pointerId !== e.pointerId) return;
+    const point = { x: e.clientX, y: e.clientY };
+    if (!d.active) {
+      if (!exceedsDragThreshold(d.start, point, DRAG_START_PX)) return;
+      d.active = true;
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* capture is best effort */ }
+      hapticTick(6);
+    }
+    const snap = findSnapTarget(point, jackTargets(d.gear)) as SignalSlot | null;
+    setDrag((prev) => {
+      if (snap && prev?.snap !== snap) hapticTick(5);
+      return { gear: d.gear, point, snap };
+    });
+  };
+
+  const endChipDrag = (e: React.PointerEvent, commit: boolean) => {
+    const d = dragRef.current;
+    if (!d || d.pointerId !== e.pointerId) return;
+    dragRef.current = null;
+    if (!d.active) return;
+    suppressClick.current = true;
+    window.setTimeout(() => { suppressClick.current = false; }, 0);
+    const snap = commit ? findSnapTarget({ x: e.clientX, y: e.clientY }, jackTargets(d.gear)) as SignalSlot | null : null;
+    setDrag(null);
+    if (snap) {
+      setSlot(snap, d.gear.id);
+      setOpenSlot(null);
+    }
+  };
+
   const options = openSlot ? availableForSlot(state, openSlot, project.id) : [];
   const openFilledId = openSlot ? current.slots[openSlot] : undefined;
   // Keep the currently seated piece visible in the tray even if another project would mark it busy.
@@ -198,7 +256,7 @@ export const ChainComposer: React.FC<ChainComposerProps> = ({ project, state, ch
 
   const status = (() => {
     if (complete && !(validation && validation.broken.length)) return `Chain locked in · ${formatChainStatusLine(ev!, [])}`;
-    if (!chain || !ev || !validation) return 'Tap a jack to patch mic → pre → dynamics → recorder';
+    if (!chain || !ev || !validation) return 'Tap a jack (or drag gear onto one) to patch mic → pre → dynamics → recorder';
     return formatChainStatusLine(ev, validation.broken);
   })();
 
@@ -252,8 +310,9 @@ export const ChainComposer: React.FC<ChainComposerProps> = ({ project, state, ch
           return (
             <button
               key={slot}
+              ref={(el) => { jackRefs.current[slot] = el; }}
               type="button"
-              className={`chain-jack${filled ? ' is-filled' : ''}${openSlot === slot ? ' is-open' : ''}${motionClass}`}
+              className={`chain-jack${drag?.snap === slot ? ' is-snap' : ''}${filled ? ' is-filled' : ''}${openSlot === slot ? ' is-open' : ''}${motionClass}`}
               aria-pressed={openSlot === slot}
               aria-label={`${SLOT_LABELS[slot]}: ${gear?.name ?? 'empty jack'}`}
               title={gear ? `${gear.name} · ${Math.round(gear.condition ?? 100)}%` : `${SLOT_LABELS[slot]} — empty`}
@@ -298,8 +357,13 @@ export const ChainComposer: React.FC<ChainComposerProps> = ({ project, state, ch
                   type="button"
                   role="option"
                   aria-selected={active}
-                  className={`chain-rack__opt${active ? ' is-active' : ''}`}
+                  className={`chain-rack__opt${active ? ' is-active' : ''}${drag?.gear.id === g.id ? ' is-dragging' : ''}`}
+                  onPointerDown={(e) => onChipPointerDown(e, g)}
+                  onPointerMove={onChipPointerMove}
+                  onPointerUp={(e) => endChipDrag(e, true)}
+                  onPointerCancel={(e) => endChipDrag(e, false)}
                   onClick={() => {
+                    if (suppressClick.current) return;
                     if (active) {
                       setSlot(openSlot, undefined);
                     } else {
@@ -319,6 +383,21 @@ export const ChainComposer: React.FC<ChainComposerProps> = ({ project, state, ch
           </div>
         </div>
       )}
+
+      {drag && (() => {
+        const snapEl = drag.snap ? jackRefs.current[drag.snap] : null;
+        const r = snapEl?.getBoundingClientRect();
+        const pos = magneticPosition(
+          drag.point,
+          r ? { left: r.left, top: r.top, width: r.width, height: r.height } : null,
+          prefersReducedMotion(),
+        );
+        return (
+          <div className={`chain-drag-ghost${drag.snap ? ' is-snapped' : ''}`} style={{ left: pos.x, top: pos.y }} aria-hidden="true">
+            {drag.gear.name}
+          </div>
+        );
+      })()}
 
       <p className={`chain-rack__status${validation && validation.broken.length > 0 ? ' is-warn' : ''}`}>
         {status}
