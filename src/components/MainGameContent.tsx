@@ -13,6 +13,7 @@ import { ProgressiveProjectInterface } from './ProgressiveProjectInterface';
 import { togglePinnedMoment } from '@/utils/careerChronicle';
 import { CareerHub } from './CareerHub';
 import HouseStylePanel from '@/components/HouseStylePanel';
+import StudioCustomizationPanel from '@/components/StudioCustomizationPanel';
 import ClientCareerPanel from '@/components/ClientCareerPanel';
 import CityLorePanel from '@/components/CityLorePanel';
 import { KnowHowPanel } from './KnowHowPanel';
@@ -42,6 +43,7 @@ import { executeStudioChore, createInitialChoreState, getChoreDurationMs, findPe
 import { isFlightCaseSystemUnlocked } from '@/economy/flightCaseEconomy';
 import { toast } from '@/hooks/use-toast';
 import { gameAudio } from '@/utils/audioSystem';
+import { hasPlayedAnySession } from '@/utils/careerNextAction';
 import './studio-play.css';
 
 interface MainGameContentProps {
@@ -365,7 +367,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   }
 
   const project = gameState.activeProject;
-  const sessionLabel = project?.awaitingReview ? t('session_collect_release') : project ? t('session_continue') : t('session_book_first');
+  const sessionLabel = project?.awaitingReview ? t('session_collect_release') : project ? t('session_continue') : hasPlayedAnySession(gameState) ? t('session_book_next') : t('session_book_first');
   const completeFloorChore = (hotspot: string) => {
     if (activeChoreId) return true;
     const choreState = gameState.choreState || createInitialChoreState();
@@ -621,6 +623,11 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
               <CityLorePanel cityId={gameState.cityId} eraId={gameState.currentEra} />
               <ClientCareerPanel relationships={gameState.clientRelationships} labelInterest={gameState.labelInterest} />
               <HouseStylePanel expertise={gameState.studioExpertise} />
+              <StudioCustomizationPanel
+                customization={gameState.studioCustomization}
+                premisesTier={gameState.premisesTier}
+                onChange={next => setGameState(prev => ({ ...prev, studioCustomization: next }))}
+              />
               <div className="grid gap-2.5 p-1 pt-3 sm:grid-cols-2">
                 <button className="rst-btn" onClick={() => handleOpenDashboardTab('bands')}>
                   <Disc3 size={17} />Artist roster

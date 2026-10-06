@@ -90,6 +90,8 @@ test('Studio OS V2 Motion (#75) - Enquiry Arrival & Peripheral Indication', () =
   const enStrings = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'public/locales/en/common.json'), 'utf8')) as Record<string, string>;
   assert.match(mainGameContentCode, /t\('session_book_first'\)/, 'Floor keeps Book-first-session primary CTA');
   assert.equal(enStrings.session_book_first, 'Book your first session');
+  assert.match(mainGameContentCode, /hasPlayedAnySession\(gameState\) \? t\('session_book_next'\)/, 'Floor CTA only says first session when nothing was ever played');
+  assert.equal(enStrings.session_book_next, 'Book a session');
   assert.match(mainGameContentCode, /t\('session_continue'\)/, 'Floor primary CTA covers Continue session');
   assert.equal(enStrings.session_continue, 'Continue session');
   assert.match(mainGameContentCode, /t\('session_collect_release'\)/, 'Floor primary CTA covers Collect release');

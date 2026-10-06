@@ -162,7 +162,7 @@ export const FURNISHINGS: FurnishingDef[] = [
   { id: 'cableRun', label: 'Snake cable run', x: 2.3, y: 5.4, minTier: 1, build: buildCableRun },
   { id: 'guitarStand', label: 'Guitar stand', x: 0.6, y: 2.4, minTier: 1, build: buildGuitarStand },
   { id: 'vinylCrate', label: 'Vinyl crate', x: 7.2, y: 4.45, minTier: 2, build: buildVinylCrate },
-  { id: 'amp', label: 'Combo amp', x: 5.4, y: 6.6, minTier: 2, build: buildAmp },
+  { id: 'amp', label: 'Combo amp', x: 2.9, y: 6.7, minTier: 2, build: buildAmp },
   { id: 'beanBag', label: 'Bean bag', x: 4.05, y: 6.85, minTier: 3, build: buildBeanBag },
   { id: 'roadCase', label: 'Road case', x: 0.55, y: 2.9, minTier: 4, build: buildRoadCase },
   { id: 'keyboardStand', label: 'Keyboard stand', x: 4.9, y: 6.25, minTier: 5, build: buildKeyboardStand },
