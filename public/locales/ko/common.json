@@ -306,5 +306,9 @@
   "rest_advance_day": "쉬고 하루 넘기기",
   "story_no_cost": "즉각적인 비용 없음",
   "story_decide_later": "나중에 결정",
-  "story_continue": "계속"
+  "story_continue": "계속",
+  "technique_tease_title": "고급 콘솔 기술",
+  "technique_tease_overdrive": "오버드라이브: 2회 세션을 마치고 실버 또는 골드 테이크를 달성하세요(또는 4회 세션 완료).",
+  "technique_tease_combo": "콤보: 4회 세션을 완료하세요.",
+  "technique_tease_streak-bank": "스트릭 뱅크: 콤보 해금 후 x3 콤보를 달성하세요(또는 8회 세션 완료)."
 }

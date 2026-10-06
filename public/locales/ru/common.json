@@ -309,5 +309,9 @@
   "story_decide_later": "Решить позже",
   "story_continue": "Продолжить",
   "home_enquiries_waiting_few": "{{count}} запроса ждут",
-  "home_enquiries_waiting_many": "{{count}} запросов ждут"
+  "home_enquiries_waiting_many": "{{count}} запросов ждут",
+  "technique_tease_title": "Продвинутые приемы консоли",
+  "technique_tease_overdrive": "Овердрайв: завершите 2 сессии и запишите дубль уровня Серебро или Золото (или завершите 4 сессии).",
+  "technique_tease_combo": "Комбо: завершите 4 сессии.",
+  "technique_tease_streak-bank": "Банк серии: достигните комбо x3 после открытия Комбо (или завершите 8 сессий)."
 }

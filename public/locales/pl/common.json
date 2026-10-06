@@ -309,5 +309,9 @@
   "story_decide_later": "Zdecyduj później",
   "story_continue": "Dalej",
   "home_enquiries_waiting_few": "{{count}} zapytania czekają",
-  "home_enquiries_waiting_many": "{{count}} zapytań czeka"
+  "home_enquiries_waiting_many": "{{count}} zapytań czeka",
+  "technique_tease_title": "Zaawansowane techniki konsoli",
+  "technique_tease_overdrive": "Overdrive: ukoncz 2 sesje i zdobadz ujecie Srebrne lub Zlote (albo ukoncz 4 sesje).",
+  "technique_tease_combo": "Combo: ukoncz 4 sesje.",
+  "technique_tease_streak-bank": "Bank serii: osiagnij combo x3 po odblokowaniu Combo (albo ukoncz 8 sesji)."
 }

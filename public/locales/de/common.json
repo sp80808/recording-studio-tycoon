@@ -307,5 +307,9 @@
   "rest_advance_day": "Ausruhen & Tag beenden",
   "story_no_cost": "Keine direkten Kosten",
   "story_decide_later": "Später entscheiden",
-  "story_continue": "Weiter"
+  "story_continue": "Weiter",
+  "technique_tease_title": "Fortgeschrittene Konsolentechniken",
+  "technique_tease_overdrive": "Overdrive: Schliesse 2 Sessions ab und erziele einen Silber- oder Gold-Take (oder schliesse 4 Sessions ab).",
+  "technique_tease_combo": "Combo: Schliesse 4 Sessions ab.",
+  "technique_tease_streak-bank": "Streak-Bank: Erreiche eine x3-Combo, sobald Combo freigeschaltet ist (oder schliesse 8 Sessions ab)."
 }

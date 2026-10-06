@@ -306,5 +306,9 @@
   "rest_advance_day": "休息并进入下一天",
   "story_no_cost": "无即时代价",
   "story_decide_later": "稍后决定",
-  "story_continue": "继续"
+  "story_continue": "继续",
+  "technique_tease_title": "高级调音台技巧",
+  "technique_tease_overdrive": "过载：完成2场录音并录出银级或金级一遍（或完成4场录音）。",
+  "technique_tease_combo": "连击：完成4场录音。",
+  "technique_tease_streak-bank": "连击银行：解锁连击后达成x3连击（或完成8场录音）。"
 }

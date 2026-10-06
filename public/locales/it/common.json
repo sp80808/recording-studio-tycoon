@@ -307,5 +307,9 @@
   "rest_advance_day": "Riposa e passa al giorno dopo",
   "story_no_cost": "Nessun costo immediato",
   "story_decide_later": "Decidi dopo",
-  "story_continue": "Continua"
+  "story_continue": "Continua",
+  "technique_tease_title": "Tecniche avanzate di console",
+  "technique_tease_overdrive": "Overdrive: completa 2 sessioni e ottieni una take Argento o Oro (o completa 4 sessioni).",
+  "technique_tease_combo": "Combo: completa 4 sessioni.",
+  "technique_tease_streak-bank": "Banca della serie: raggiungi un combo x3 dopo aver sbloccato Combo (o completa 8 sessioni)."
 }

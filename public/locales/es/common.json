@@ -307,5 +307,9 @@
   "rest_advance_day": "Descansar y avanzar el día",
   "story_no_cost": "Sin coste inmediato",
   "story_decide_later": "Decidir más tarde",
-  "story_continue": "Continuar"
+  "story_continue": "Continuar",
+  "technique_tease_title": "Tecnicas avanzadas de consola",
+  "technique_tease_overdrive": "Overdrive: termina 2 sesiones y consigue una toma de plata u oro (o termina 4 sesiones).",
+  "technique_tease_combo": "Combo: termina 4 sesiones.",
+  "technique_tease_streak-bank": "Banco de racha: alcanza un combo x3 con Combo desbloqueado (o termina 8 sesiones)."
 }
