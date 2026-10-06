@@ -20,6 +20,8 @@ import {
   scoreGainStaging,
   type GainState,
 } from '@/minigames/gainStaging';
+import { MinigameDebrief } from './MinigameDebrief';
+import { debriefGainStaging } from '@/minigames/debriefs';
 import { tc } from '@/i18n/content';
 
 interface Props {
@@ -93,6 +95,7 @@ export const GainStagingGame: React.FC<Props> = ({ onComplete, difficulty = 2 })
                 {result.cleanTakes === ROUNDS ? tc('mg.GainStagingGame.every_take_clean', 'Every take clean') : tc('mg.GainStagingGame.takes_clean', '{{n}}/{{total}} takes clean', { n: result.cleanTakes, total: ROUNDS })}
               </h4>
               {result.tips.join(' ') || tc('mg.GainStagingGame.result_clean', 'Healthy headroom and a clean floor. The take will mix beautifully.')}
+              <MinigameDebrief lines={debriefGainStaging(state)} />
             </div>
           )}
         </CardContent>
