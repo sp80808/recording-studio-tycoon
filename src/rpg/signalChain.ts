@@ -203,3 +203,35 @@ export function growFamiliarity(staff: StaffMember[], chain: SignalChain, staffI
     return { ...s, gearFamiliarity: next };
   });
 }
+
+/**
+ * One-tap "quick fill": seats the best-fitting free gear in every EMPTY slot, never
+ * touching what the player already patched. Greedy per slot in signal order, scored
+ * by the same evaluator the rack uses; ties break by condition then id so it is
+ * deterministic. Returns the new slots map and which slots it filled.
+ */
+export function suggestFill(
+  chain: SignalChain,
+  state: Pick<GameState, 'ownedEquipment' | 'activeProject' | 'activeProjects'>,
+  staff: StaffMember[],
+  brief: Pick<ProjectBrief, 'direction' | 'priority' | 'genre'>,
+  exceptProjectId?: string,
+): { slots: SignalChain['slots']; filled: SignalSlot[] } {
+  const slots: SignalChain['slots'] = { ...chain.slots };
+  const filled: SignalSlot[] = [];
+  const taken = new Set(Object.values(slots).filter((id): id is string => Boolean(id)));
+  for (const slot of SIGNAL_SLOTS) {
+    if (slots[slot]) continue;
+    const candidates = availableForSlot(state, slot, exceptProjectId).filter((e) => !taken.has(e.id));
+    if (candidates.length === 0) continue;
+    const scored = candidates.map((e) => ({
+      e,
+      score: evaluateChain({ ...chain, slots: { ...slots, [slot]: e.id } }, state, staff, brief).compatibility,
+    }));
+    scored.sort((a, b) => b.score - a.score || (b.e.condition ?? 100) - (a.e.condition ?? 100) || a.e.id.localeCompare(b.e.id));
+    slots[slot] = scored[0].e.id;
+    taken.add(scored[0].e.id);
+    filled.push(slot);
+  }
+  return { slots, filled };
+}

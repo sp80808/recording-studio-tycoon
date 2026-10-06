@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AudioWaveform, Disc3, Mic, Waves, type LucideIcon } from 'lucide-react';
+import { AudioWaveform, Disc3, Mic, Sparkles, Undo2, Waves, type LucideIcon } from 'lucide-react';
 import type { Equipment, GameState, Project } from '@/types/game';
 import { getProjectBrief } from '@/rpg/projectBrief';
 import {
@@ -8,12 +8,14 @@ import {
   availableForSlot,
   evaluateChain,
   formatChainStatusLine,
+  suggestFill,
   validateChain,
   type SignalChain,
   type SignalSlot,
 } from '@/rpg/signalChain';
 import { conditionBand, type GearConditionBand } from '@/features/gearStudio/gearVisualState';
 import { gameAudio } from '@/utils/audioSystem';
+import { hapticTick } from '@/utils/mobilePlatform';
 import './chain-composer.css';
 
 interface ChainComposerProps {
@@ -48,13 +50,35 @@ export const ChainComposer: React.FC<ChainComposerProps> = ({ project, state, ch
   const [openSlot, setOpenSlot] = useState<SignalSlot | null>(null);
   const [motion, setMotion] = useState<Partial<Record<SignalSlot, SlotMotion>>>({});
   const [linger, setLinger] = useState<Partial<Record<SignalSlot, Equipment>>>({});
+  const [undoSlots, setUndoSlots] = useState<SignalChain['slots'] | null>(null);
+  const [latched, setLatched] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const wasComplete = useRef<boolean | null>(null);
   const motionTimers = useRef<Partial<Record<SignalSlot, number>>>({});
 
   const current = chain ?? emptyChain(project);
   const brief = getProjectBrief(project);
   const validation = chain ? validateChain(chain, state, project.id) : null;
   const ev = chain ? evaluateChain(chain, state, state.hiredStaff, brief) : null;
+
+  const complete = Boolean(validation && validation.valid && validation.filled.length === SIGNAL_SLOTS.length);
+  useEffect(() => {
+    // First render only records the starting state, so reopening a finished chain stays quiet.
+    if (wasComplete.current === null) {
+      wasComplete.current = complete;
+      return;
+    }
+    if (complete && !wasComplete.current) {
+      setLatched(true);
+      hapticTick([14, 40, 22]);
+      void gameAudio.playGearSwitch(0.8);
+      const t = window.setTimeout(() => setLatched(false), 1400);
+      wasComplete.current = complete;
+      return () => window.clearTimeout(t);
+    }
+    wasComplete.current = complete;
+    if (!complete) setLatched(false);
+  }, [complete]);
 
   useEffect(() => () => {
     Object.values(motionTimers.current).forEach((id) => id && window.clearTimeout(id));
@@ -102,6 +126,8 @@ export const ChainComposer: React.FC<ChainComposerProps> = ({ project, state, ch
   };
 
   const setSlot = (slot: SignalSlot, id: string | undefined) => {
+    setUndoSlots({ ...current.slots });
+    hapticTick(id ? 14 : 8);
     const slots = { ...current.slots };
     const previous = gearById(state, slots[slot]);
     if (id) {
@@ -126,7 +152,34 @@ export const ChainComposer: React.FC<ChainComposerProps> = ({ project, state, ch
     writeSlots(slots);
   };
 
+  const quickFill = () => {
+    const { slots, filled } = suggestFill(current, state, state.hiredStaff, brief, project.id);
+    if (filled.length === 0) return;
+    setUndoSlots({ ...current.slots });
+    setOpenSlot(null);
+    filled.forEach((slot, i) => window.setTimeout(() => {
+      pulse(slot, 'seat');
+      hapticTick(10);
+      void gameAudio.playGearSwitch(0.4 + i * 0.1);
+    }, i * 90));
+    writeSlots(slots);
+  };
+
+  const undo = () => {
+    if (!undoSlots) return;
+    void gameAudio.playTactileClick(0.5);
+    hapticTick(8);
+    setUndoSlots(null);
+    setOpenSlot(null);
+    writeSlots(undoSlots);
+  };
+
+  const canQuickFill = SIGNAL_SLOTS.some(
+    (slot) => !current.slots[slot] && availableForSlot(state, slot, project.id).length > 0,
+  );
+
   const onJack = (slot: SignalSlot) => {
+    hapticTick(6);
     void gameAudio.playTactileClick(0.4);
     setOpenSlot((prev) => (prev === slot ? null : slot));
   };
@@ -144,12 +197,13 @@ export const ChainComposer: React.FC<ChainComposerProps> = ({ project, state, ch
     : [];
 
   const status = (() => {
+    if (complete && !(validation && validation.broken.length)) return `Chain locked in · ${formatChainStatusLine(ev!, [])}`;
     if (!chain || !ev || !validation) return 'Tap a jack to patch mic → pre → dynamics → recorder';
     return formatChainStatusLine(ev, validation.broken);
   })();
 
   return (
-    <div ref={rootRef} className="chain-rack" data-testid="chain-composer">
+    <div ref={rootRef} className={`chain-rack${latched ? ' is-latched' : ''}`} data-testid="chain-composer">
       <div className="chain-rack__ears chain-rack__ears--l" aria-hidden="true">
         <span className="chain-rack__screw" />
         <span className="chain-rack__screw" />
@@ -161,7 +215,19 @@ export const ChainComposer: React.FC<ChainComposerProps> = ({ project, state, ch
 
       <div className="chain-rack__head">
         <span className="rst-kicker !text-[10px]">Vocal chain</span>
-        <span className="rst-muted text-[10px]">optional patch</span>
+        <span className="chain-rack__tools">
+          {undoSlots && (
+            <button type="button" className="chain-rack__tool" onClick={undo} aria-label="Undo last patch change" data-testid="chain-undo">
+              <Undo2 size={13} aria-hidden="true" /> Undo
+            </button>
+          )}
+          {canQuickFill && (
+            <button type="button" className="chain-rack__tool is-primary" onClick={quickFill} aria-label="Quick fill empty jacks with best-fitting gear" data-testid="chain-quick-fill">
+              <Sparkles size={13} aria-hidden="true" /> Quick fill
+            </button>
+          )}
+          {!undoSlots && !canQuickFill && <span className="rst-muted text-[10px]">optional patch</span>}
+        </span>
       </div>
 
       <div className="chain-rack__slots" role="group" aria-label="Vocal signal chain slots">
