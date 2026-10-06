@@ -6,6 +6,7 @@ import {
   listLockedItems, getProvenance, getAnchorsForTier, exportMetaLedger, applyMetaLedger,
 } from '../src/rpg/studioCustomization';
 import { deriveCareerMilestones } from '../src/utils/careerChronicle';
+import { applyCustomizationUnlocks, hasPendingCustomizationUpdate } from '../src/hooks/useCustomizationSync';
 import type { GameState } from '../src/types/game';
 
 const base = createDefaultGameState();
@@ -109,3 +110,18 @@ console.log('studio customization checks passed');
   const twice = applyMetaLedger(exportMetaLedger(once));
   assert.equal(twice.provenance[m.id], once.provenance[m.id], 'carry-over prefix is not stacked');
 }
+
+// Game-loop integration (#258 slice 2): the sync hook's pure transition.
+assert.equal(applyCustomizationUnlocks(base), base, 'fresh career: nothing to grant, same object');
+assert.equal(hasPendingCustomizationUpdate(base), false);
+assert.equal(hasPendingCustomizationUpdate(played), true);
+const grantedState = applyCustomizationUnlocks(played);
+assert.notEqual(grantedState, played);
+assert.equal(played.studioCustomization, undefined, 'input state not mutated');
+assert.ok(isItemUnlocked(grantedState.studioCustomization!, 'first-cheque-frame'));
+assert.equal(applyCustomizationUnlocks(grantedState), grantedState, 'idempotent: second pass is a no-op');
+const downgraded = { ...grantedState, premisesTier: 0 as const, studioCustomization: equipFurnishing(grantedState.studioCustomization!, getAnchorsForTier(1), 'trophy-shelf', 'studio-plaque') };
+const remapped = applyCustomizationUnlocks(downgraded);
+assert.equal(remapped.studioCustomization!.equippedByAnchor['wall-art'], 'studio-plaque', 'displaced item remaps to a compatible anchor');
+assert.equal(applyCustomizationUnlocks(remapped), remapped);
+console.log('studio customization integration checks passed');

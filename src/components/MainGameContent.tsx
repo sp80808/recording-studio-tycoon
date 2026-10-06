@@ -13,6 +13,7 @@ import { ProgressiveProjectInterface } from './ProgressiveProjectInterface';
 import { togglePinnedMoment } from '@/utils/careerChronicle';
 import { CareerHub } from './CareerHub';
 import HouseStylePanel from '@/components/HouseStylePanel';
+import StudioCustomizationPanel from '@/components/StudioCustomizationPanel';
 import ClientCareerPanel from '@/components/ClientCareerPanel';
 import CityLorePanel from '@/components/CityLorePanel';
 import { KnowHowPanel } from './KnowHowPanel';
@@ -621,6 +622,11 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
               <CityLorePanel cityId={gameState.cityId} eraId={gameState.currentEra} />
               <ClientCareerPanel relationships={gameState.clientRelationships} labelInterest={gameState.labelInterest} />
               <HouseStylePanel expertise={gameState.studioExpertise} />
+              <StudioCustomizationPanel
+                customization={gameState.studioCustomization}
+                premisesTier={gameState.premisesTier}
+                onChange={next => setGameState(prev => ({ ...prev, studioCustomization: next }))}
+              />
               <div className="grid gap-2.5 p-1 pt-3 sm:grid-cols-2">
                 <button className="rst-btn" onClick={() => handleOpenDashboardTab('bands')}>
                   <Disc3 size={17} />Artist roster
