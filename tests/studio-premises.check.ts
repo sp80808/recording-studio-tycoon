@@ -127,7 +127,7 @@ console.log('studio-premises.check passed');
   const opps = generatePremisesOpportunities(busy);
   assert(opps.length >= 1 && opps.length <= 2, 'busy studio gets 1-2 opportunities');
   assert(JSON.stringify(opps) === JSON.stringify(generatePremisesOpportunities(JSON.parse(JSON.stringify(busy)))), 'same state and seed give identical opportunities');
-  assert(opps.every(o => o.internalTier === 1 && o.deposit === PROJECT_STUDIO_DEPOSIT && o.tradeoff.length > 0 && o.solves.length > 0 && o.cue.length > 0), 'opportunities carry real terms and a trade-off');
+  assert(opps.every(o => o.internalTier === 1 && o.deposit === Math.round(PROJECT_STUDIO_DEPOSIT * (o.archetype === 'basement' ? 0.7 : 1.1)) && o.tradeoff.length > 0 && o.solves.length > 0 && o.cue.length > 0), 'opportunities carry real terms and a trade-off');
   assert(new Set(opps.map(o => o.archetype)).size === opps.length, 'opportunities are materially different archetypes');
   assert(getPremisesWorldCue(busy) === opps[0].cue, 'world cue comes from the first opportunity');
   assert(generatePremisesOpportunities({ ...busy, currentDay: 13 })[0].id === opps[0].id, 'stable within the same game week');

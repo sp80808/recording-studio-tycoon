@@ -77,6 +77,7 @@ import type { ProducerSetup } from '@/components/CareerStartScreen';
 import { useFeatureFlag } from '@/stores/featureFlagStore';
 import { canOpenProjectReview, traceReviewFlow } from '@/utils/projectReviewFlow';
 import { StudioClockProvider } from '@/contexts/StudioClockContext';
+import { usePremisesCue } from '@/hooks/usePremisesCue';
 
 const MusicStudioTycoon = () => {
   const { gameState, setGameState, initializeGameState } = useGameState(); // REMOVED focusAllocation, setFocusAllocation
@@ -181,6 +182,7 @@ const MusicStudioTycoon = () => {
   }, [gameState, showSplashScreen, gameInitialized, storyPresenter, offlineSummary, showReviewModal, showTrainingModal, showSettingsModal, showPauseMenu, showStorylineBranchModal, settings.tutorialCompleted, autoTriggeredMinigame]);
 
   useEffect(() => installFlightCaseRewards(setGameState), [setGameState]);
+  usePremisesCue(gameState, setGameState, gameInitialized && !showSplashScreen, settings.sfxEnabled);
   useEffect(() => {
     telemetry.startRun(gameState.saveSeed);
     installTelemetryDevHandle();
@@ -463,6 +465,7 @@ const MusicStudioTycoon = () => {
       setGameState(prev => applyKnowHowEvents({
         ...prev,
         chartRun: [...(prev.chartRun ?? []).filter(e => e.projectId !== debut.projectId), debut],
+        firstChart: prev.firstChart ?? { projectId: debut.projectId, title: debut.title, chartName: debut.chartName, peak: debut.peak },
       }, [{ kind: 'discovery', eventId: `chart-debut:${debut.projectId}`, domain: 'business', label: `a ${debut.chartName} debut` }]).game);
       gameEvents.emit('chart:placement', { chartName: debut.chartName, title: debut.title, position: debut.position });
     }
@@ -512,7 +515,15 @@ const MusicStudioTycoon = () => {
       }
       return [current];
     });
-    setGameState(prev => ({ ...prev, chartRun: next }));
+    setGameState(prev => {
+      const first = prev.firstChart;
+      const live = first ? next.find(e => e.projectId === first.projectId) : undefined;
+      return {
+        ...prev,
+        chartRun: next,
+        ...(first && live && live.peak < first.peak ? { firstChart: { ...first, peak: live.peak } } : {}),
+      };
+    });
     // Only reveal the latest move per song so a long day-skip doesn't queue a flood.
     const latest = new Map(moves.map(m => [m.title, m]));
     latest.forEach(m => gameEvents.emit('chart:placement', m));
@@ -992,7 +1003,7 @@ const MusicStudioTycoon = () => {
 
       {showMoveIn && moveBeat && (
         <CinematicStoryCutscene
-          payload={buildMoveInCutscene(moveBeat)}
+          payload={buildMoveInCutscene(moveBeat, undefined, gameState)}
           onComplete={() => setGameState((prev) => clearPremisesMoveBeat(prev))}
         />
       )}
