@@ -403,6 +403,10 @@ export interface GameState {
   firstChart?: { projectId: string; title: string; chartName: string; peak: number };
   /** Move-day cinematic still to be shown after a premises move (#70). Cleared once seen. */
   premisesMoveBeat?: 1 | 2 | 3;
+  /** Property archetype taken on the last premises move (#250). Absent on legacy saves = band-standard terms. */
+  premisesArchetype?: import('@/rpg/premisesTraits').PremisesArchetype;
+  /** Id of the last property lead whose world cue (phone ring / door knock) was delivered (#250). */
+  premisesCueSeen?: string;
   /** Home city picked at career start (currency display, regional taste, local names and events). Absent on legacy saves = neutral. */
   cityId?: import('@/rpg/cities').CityId;
   chainTemplates?: import('@/rpg/signalChain').SignalChain[]; // Saved chain templates (#86)
