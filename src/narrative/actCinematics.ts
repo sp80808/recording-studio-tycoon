@@ -5,6 +5,7 @@
 import type { StorylineNode } from './branchingStorylineEngine';
 import type { CampaignEnding } from './endings';
 import { PREMISES_TIERS, type PremisesTier } from '@/rpg/premises';
+import { buildMoveDayBeat } from '@/rpg/premisesAffordance';
 import { getRivalAccent, getRivalForNode, initialsOf } from './rivalCast';
 
 export interface CinematicPayload {
@@ -21,6 +22,8 @@ export interface CinematicPayload {
   /** Label for the last button when the cinematic has no choices. */
   finalLabel: string;
   choices?: never;
+  /** Move-day relocation visual (#250): flight cases pack, the old room empties, the new one fills. */
+  moveDay?: { cases: number; affordanceLabel: string; affordanceVerb: string };
 }
 
 const ROMAN = ['', 'I', 'II', 'III'] as const;
@@ -68,10 +71,16 @@ const MOVE_BEATS: Record<1 | 2 | 3, { chapter: string; kicker: string; speaker: 
   },
 };
 
-export const buildMoveInCutscene = (tier: 1 | 2 | 3, studioName?: string): CinematicPayload => {
+export const buildMoveInCutscene = (
+  tier: 1 | 2 | 3,
+  studioName?: string,
+  /** Optional save slice: adds the carried-over counts and the new affordance (#250). */
+  ctx?: { premisesArchetype?: unknown; ownedEquipment?: unknown[]; hiredStaff?: unknown[] },
+): CinematicPayload => {
   const beat = MOVE_BEATS[tier];
   const def = PREMISES_TIERS[tier as PremisesTier];
   const unlocks = def.grantsRoomId ? def.grantsRoomId.replace(/-/g, ' ') : 'new rooms';
+  const move = ctx ? buildMoveDayBeat({ premisesTier: tier, ...ctx }) : null;
   return {
     title: def.name,
     chapter: beat.chapter,
@@ -86,7 +95,12 @@ export const buildMoveInCutscene = (tier: 1 | 2 | 3, studioName?: string): Cinem
       { label: 'Crew cap', value: String(def.staffCap) },
       { label: 'Rent', value: `$${def.dailyRent}/day` },
       { label: 'New room', value: unlocks },
+      ...(move ? [
+        { label: 'Carried over', value: `${move.gearCount} gear · ${move.crewCount} crew` },
+        { label: 'New here', value: move.affordance.label },
+      ] : []),
     ],
+    ...(move ? { moveDay: { cases: move.cases, affordanceLabel: move.affordance.label, affordanceVerb: move.affordance.verb } } : {}),
     finalLabel: 'Walk in',
   };
 };

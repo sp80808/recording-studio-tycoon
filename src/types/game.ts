@@ -238,6 +238,8 @@ export interface StaffMember {
   pieceIds?: CreatorPieceIds;
   /** Recruitment channel this candidate came from, with a plain-language reason (#68). */
   source?: { channelId: string; label: string; why: string };
+  /** A known client or label that put this candidate forward (#68). Absent on legacy saves and unreferred candidates. */
+  referredBy?: { kind: 'client' | 'label'; id: string; name: string };
   /** Hired through College Placement: develops faster at low levels (#68). */
   apprentice?: boolean;
   /** Explainable work-style trait assigned at recruitment (#68). */
@@ -397,8 +399,16 @@ export interface GameState {
   studioCustomization?: import('@/rpg/studioCustomization').StudioCustomizationState;
   /** Studio premises tier (#70): 0 borrowed room, 1 project studio. Absent on legacy saves = 0. */
   premisesTier?: 0 | 1 | 2 | 3;
+  /** Pinned defining moments (#259): career milestone ids, max 3. Absent on legacy saves = none. */
+  pinnedMoments?: string[];
+  /** Durable record of the first release that charted (#259), so chapter and pinned moment survive the song leaving the chart. */
+  firstChart?: { projectId: string; title: string; chartName: string; peak: number };
   /** Move-day cinematic still to be shown after a premises move (#70). Cleared once seen. */
   premisesMoveBeat?: 1 | 2 | 3;
+  /** Property archetype taken on the last premises move (#250). Absent on legacy saves = band-standard terms. */
+  premisesArchetype?: import('@/rpg/premisesTraits').PremisesArchetype;
+  /** Id of the last property lead whose world cue (phone ring / door knock) was delivered (#250). */
+  premisesCueSeen?: string;
   /** Home city picked at career start (currency display, regional taste, local names and events). Absent on legacy saves = neutral. */
   cityId?: import('@/rpg/cities').CityId;
   chainTemplates?: import('@/rpg/signalChain').SignalChain[]; // Saved chain templates (#86)

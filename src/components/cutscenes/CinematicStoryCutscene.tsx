@@ -2,6 +2,7 @@ import { useCutsceneQueue } from '@/hooks/useCutsceneQueue';
 import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { CareerCutsceneChoice } from './careerCutscenes';
+import { MoveDayStrip } from './MoveDayStrip';
 
 interface Payload {
   title: string;
@@ -21,6 +22,8 @@ interface Payload {
   stats?: Array<{ label: string; value: string }>;
   /** Label of the last button when there are no choices. */
   finalLabel?: string;
+  /** Move-day relocation visual (#250). */
+  moveDay?: { cases: number; affordanceLabel: string; affordanceVerb: string };
 }
 
 interface Props {
@@ -130,6 +133,14 @@ function CinematicStoryContent({ payload, onComplete }: Props) {
           >
             {payload.title}
           </motion.h1>
+
+          {payload.moveDay && !showingChoice && (
+            <MoveDayStrip lineIndex={lineIndex} cases={payload.moveDay.cases} affordanceLabel={payload.moveDay.affordanceLabel} accent={accent} />
+          )}
+
+          {payload.moveDay && !showingChoice && lastLine && (
+            <p className="rst-muted mt-3 text-sm italic">{payload.moveDay.affordanceLabel}: {payload.moveDay.affordanceVerb}</p>
+          )}
 
           <div aria-live="polite" className="flex flex-1 items-center py-8">
             {!showingChoice ? (
