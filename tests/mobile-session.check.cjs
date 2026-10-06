@@ -94,7 +94,11 @@ async (page) => {
     assert(!headingBox || headingBox.width <= 1, `${w}x${h}: "At the console" heading still visible`);
     assert(await page.locator('[data-studio-drawer="session"]').getByRole('tab').count() === 0, `${w}x${h}: duplicate drawer tab rail still present`);
     const mixer = await page.getByTestId('mobile-focus-mixer').boundingBox();
-    assert(mixer.height <= (h < 500 ? 150 : 220), `${w}x${h}: mixer too tall (${Math.round(mixer.height)}px)`);
+    // #295: tall portrait phones fill the panel with vertical strips (no empty void above the dock);
+    // short/landscape viewports keep the compact rows.
+    const dock = await page.locator('.rst-transport-dock').boundingBox();
+    if (h < 500) assert(mixer.height <= 150, `${w}x${h}: mixer too tall (${Math.round(mixer.height)}px)`);
+    else assert(dock.y - (mixer.y + mixer.height) <= 24, `${w}x${h}: ${Math.round(dock.y - (mixer.y + mixer.height))}px void between mixer and dock`);
     await shot(`session-${w}x${h}`);
   }
 

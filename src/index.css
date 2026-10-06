@@ -645,13 +645,28 @@ button, [role="button"], a, .studio-dock-button, .studio-primary-action { touch-
 }
 
 /* Phone focus mixer (#295): one uniform fader look for all channels. */
-.rst-mixer-slider [data-radix-slider-range] {
+.rst-mixer-slider .bg-primary {
   background: linear-gradient(90deg, #d4a017, #b8860b) !important;
 }
-.rst-mixer-slider [data-radix-slider-thumb] {
+.rst-mixer-slider .border-primary {
   border-color: #b8860b !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
   height: 1.5rem;
   width: 1.5rem;
 }
 .rst-mixer-slider > span:first-child { height: 0.75rem; }
+.rst-mixer-slider[data-orientation='vertical'] {
+  width: 3rem;
+  flex-direction: column;
+  padding: 0;
+  touch-action: none;
+}
+.rst-mixer-slider[data-orientation='vertical'] > span:first-child {
+  height: 100%;
+  width: 1rem;
+}
+.rst-mixer-slider[data-orientation='vertical'] .bg-primary {
+  height: auto !important;
+  width: 100%;
+  background: linear-gradient(0deg, #b8860b, #d4a017) !important;
+}
