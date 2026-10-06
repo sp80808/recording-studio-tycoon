@@ -54,6 +54,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { resolveRendererOrder } from '@/lib/render/rendererChoice';
 import { claimPixiApplication, STUDIO_FLOOR_OWNER } from '@/lib/motion/pixiGuard';
 import { cityWallColors } from '@/components/studio/cityWallTint';
+import { cityTrimColor, drawCityPosters } from '@/components/studio/cityRoomStyle';
 import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from '@/components/studio/isoMath';
 import { buildCaseStack, CASE_STACK_TILE, type CaseStack } from '@/components/studio/studioCaseStack';
 import { buildWindowView, type WindowView } from '@/components/studio/studioWindowView';
@@ -781,7 +782,7 @@ const buildScene = (
       wr1.x, wr1.y - WALL_H,
       wr1.x, wr1.y,
     ])
-    .stroke({ width: 4, color: COLORS.wallTrim });
+    .stroke({ width: 4, color: cityTrimColor(COLORS.wallTrim, state.cityId) });
   // Center corner vertical seam
   walls
     .poly([wl0.x, wl0.y, wl0.x, wl0.y - WALL_H])
@@ -789,6 +790,9 @@ const buildScene = (
   root.addChild(walls);
   const dressing = buildWallDressing(decorSpec, trophyInput, tier);
   root.addChild(dressing.container);
+  const cityPosterLayer = new Graphics();
+  drawCityPosters(cityPosterLayer, state.cityId);
+  root.addChild(cityPosterLayer);
 
   /* ---- Window (right wall) — pane sky tracks the studio clock ------------ */
   const windowWrap = new Container();
