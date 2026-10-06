@@ -353,4 +353,8 @@ node "${CHECK_OUTPUT_DIR}/rst-studio-customization.cjs"
 ./node_modules/.bin/esbuild tests/studio-customization-panel.check.tsx --bundle --platform=node --format=cjs --loader:.css=empty --outfile="${CHECK_OUTPUT_DIR}/rst-studio-customization-panel.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-studio-customization-panel.cjs"
 
+echo "=== equipped furnishings and cosmetics render mapping (#258) ==="
+./node_modules/.bin/esbuild tests/studio-customization-render.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-studio-customization-render.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-studio-customization-render.cjs"
+
 echo "All automated checks passed."
