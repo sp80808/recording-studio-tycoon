@@ -26,17 +26,17 @@ interface AnchorSpot { surface: FurnishingSurface; x: number; y: number; lift: n
 /** Authored spots, kept to small pieces in corners and wall gaps so they never cover a hotspot. */
 export const ANCHOR_SPOTS: Record<FurnishingAnchorId, AnchorSpot> = {
   rug: { surface: 'floor', x: 5.0, y: 4.5, lift: 0 },
-  lamp: { surface: 'floor', x: 7.4, y: 1.0, lift: 0 },
-  plant: { surface: 'floor', x: 0.5, y: 6.4, lift: 0 },
-  sofa: { surface: 'floor', x: 1.6, y: 6.3, lift: 0 },
-  'desk-accessory': { surface: 'floor', x: 4.4, y: 5.6, lift: 22 },
-  shelf: { surface: 'right-wall', x: 6.9, y: 0, lift: 46 },
-  'trophy-shelf': { surface: 'right-wall', x: 5.7, y: 0, lift: 78 },
-  'wall-art': { surface: 'left-wall', x: 0, y: 5.2, lift: 84 },
-  poster: { surface: 'left-wall', x: 0, y: 2.4, lift: 84 },
-  'console-ornament': { surface: 'floor', x: 4.0, y: 4.9, lift: 28 },
-  'rack-side': { surface: 'left-wall', x: 0, y: 3.7, lift: 40 },
-  'acoustic-panel': { surface: 'left-wall', x: 0, y: 1.2, lift: 70 },
+  lamp: { surface: 'floor', x: 7.8, y: 4.3, lift: 0 },
+  plant: { surface: 'floor', x: 7.75, y: 0.45, lift: 0 },
+  sofa: { surface: 'floor', x: 7.2, y: 5.1, lift: 0 },
+  'desk-accessory': { surface: 'floor', x: 3.4, y: 5.1, lift: 45 },
+  shelf: { surface: 'right-wall', x: 4.35, y: 0, lift: 52 },
+  'trophy-shelf': { surface: 'right-wall', x: 5.7, y: 0, lift: 106 },
+  'wall-art': { surface: 'left-wall', x: 0, y: 3.7, lift: 100 },
+  poster: { surface: 'left-wall', x: 0, y: 0.75, lift: 4 },
+  'console-ornament': { surface: 'floor', x: 6.0, y: 3.95, lift: 45 },
+  'rack-side': { surface: 'right-wall', x: 6.55, y: 0, lift: 106 },
+  'acoustic-panel': { surface: 'left-wall', x: 0, y: 2.15, lift: 30 },
 };
 
 const LOOKS: Record<string, { shape: FurnishingShape; color: number }> = {
