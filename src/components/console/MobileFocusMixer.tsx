@@ -37,7 +37,7 @@ export interface MobileFocusMixerProps {
 const CHANNELS: Channel[] = ['performance', 'soundCapture', 'layering'];
 
 // Status lives on the value chip only; every fader shares one neutral style so the
-// three rows read as a matched set (#287). The target band is drawn on the track.
+// three rows read as a matched set (#295). The target band is drawn on the track.
 const tone = (diff: number) =>
   diff <= 10
     ? { chip: 'bg-emerald-950 text-emerald-400 border-emerald-500/40' }
