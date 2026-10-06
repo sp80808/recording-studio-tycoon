@@ -293,7 +293,15 @@ export const ChainComposer: React.FC<ChainComposerProps> = ({ project, state, ch
           {SIGNAL_SLOTS.slice(0, -1).map((slot, i) => {
             const next = SIGNAL_SLOTS[i + 1];
             const live = Boolean(current.slots[slot] && current.slots[next]);
-            return <span key={slot} className={`chain-rack__patch-seg${live ? ' is-live' : ''}`} />;
+            return (
+              <span key={slot} className={`chain-rack__patch-seg${live ? ' is-live' : ''}`}>
+                <svg className="chain-cable" viewBox="0 0 100 24" preserveAspectRatio="none" focusable="false">
+                  <path className="chain-cable__shadow" d="M0 4 C 22 26, 78 26, 100 4" vectorEffect="non-scaling-stroke" />
+                  <path className="chain-cable__sheath" d="M0 4 C 22 22, 78 22, 100 4" vectorEffect="non-scaling-stroke" />
+                  <path className="chain-cable__sheen" d="M0 4 C 22 22, 78 22, 100 4" vectorEffect="non-scaling-stroke" />
+                </svg>
+              </span>
+            );
           })}
         </div>
 
@@ -332,7 +340,8 @@ export const ChainComposer: React.FC<ChainComposerProps> = ({ project, state, ch
       </div>
 
       {openSlot && (
-        <div className="chain-rack__tray" role="listbox" aria-label={`Assign ${SLOT_LABELS[openSlot]}`}>
+        <div className="chain-rack__tray chain-rack__foam" role="listbox" aria-label={`Assign ${SLOT_LABELS[openSlot]}`}>
+          <span className="chain-rack__latch" aria-hidden="true" />
           <div className="chain-rack__tray-title">{SLOT_LABELS[openSlot]} bay</div>
           <div className="chain-rack__options">
             {openFilledId && (

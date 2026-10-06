@@ -54,7 +54,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { resolveRendererOrder } from '@/lib/render/rendererChoice';
 import { claimPixiApplication, STUDIO_FLOOR_OWNER } from '@/lib/motion/pixiGuard';
 import { cityWallColors } from '@/components/studio/cityWallTint';
-import { cityTrimColor, drawCityPosters } from '@/components/studio/cityRoomStyle';
+import { cityFloorPlanks, cityTrimColor, drawCityFloorPattern, drawCityPosters, drawCityProp } from '@/components/studio/cityRoomStyle';
 import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from '@/components/studio/isoMath';
 import { buildCaseStack, CASE_STACK_TILE, type CaseStack } from '@/components/studio/studioCaseStack';
 import { buildWindowView, type WindowView } from '@/components/studio/studioWindowView';
@@ -805,7 +805,7 @@ const buildScene = (
   windowPane.poly(winPoly).fill(initialSky);
   windowWrap.addChild(windowPane);
   {
-    const view = buildWindowView(winA, winB, 34, 96, hashSeed(decorSeed), state.cityId);
+    const view = buildWindowView(winA, winB, 34, 96, hashSeed(decorSeed), state.cityId, state.eraId);
     const initial = initialClockMinutes;
     view.update(initial, getDaynessFromClockMinutes(initial), 0, false);
     windowWrap.addChild(view.container);
@@ -889,14 +889,20 @@ const buildScene = (
     .stroke({ width: 2, color: 0xffd166 });
 
   /* ---- Floor ---------------------------------------------------------- */
-  const floor = buildPlankFloor(decorSpec, decorSeed);
+  const floor = buildPlankFloor({ ...decorSpec, planks: cityFloorPlanks(decorSpec.planks, state.cityId) }, decorSeed);
   root.addChild(floor);
+  const cityFloorLayer = new Graphics();
+  drawCityFloorPattern(cityFloorLayer, state.cityId);
+  root.addChild(cityFloorLayer);
   root.addChild(buildRug());
   // Floor spill is clipped to the room diamond and must sit below every prop/figure.
   const lights = buildDecorLights({ spec: decorSpec, kit: getEraLightingKit(state.eraId), tier });
   refs.decor = lights;
   root.addChild(lights.floorContainer);
   root.addChild(dressing.props); // free-standing era props sit on top of the floor
+  const cityPropLayer = new Graphics();
+  drawCityProp(cityPropLayer, state.cityId);
+  root.addChild(cityPropLayer);
 
   // Streaming-era phone/ring-light: same era gate as the visible led-strip prop.
   if (decorSpec.prop === 'led-strip') {
@@ -2139,7 +2145,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   const producerLookKey = state?.producerNpc
     ? [state.producerNpc.hair.shape, state.producerNpc.hair.colour, state.producerNpc.body.build, state.producerNpc.clothes.topPrimaryHex, state.producerNpc.clothes.top, state.producerNpc.details.headwear ?? '', state.producerNpc.details.headphones ? 1 : 0, state.producerNpc.details.glasses, state.producerNpc.details.jewellery].join(':')
     : '';
-  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${producerLookKey}|${floorKey}|${state?.staffOnFloor ?? 1}|${gearKey}|${gearConditionKey(state?.gearConditions)}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${state?.premisesTier ?? 0}|${state?.premisesArchetype ?? ''}|${(state?.pendingCases ?? []).join(',')}|${trophyKey(state?.trophies ?? { covers: [] })}|${state?.decorSeed ?? 'studio'}|${state?.roomType ?? 'project-studio'}|${state?.roomOccupied ? 1 : 0}|${(state?.furnishings ?? []).map((f) => `${f.anchorId}=${f.itemId}`).join(',')}`;
+  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${producerLookKey}|${floorKey}|${state?.staffOnFloor ?? 1}|${gearKey}|${gearConditionKey(state?.gearConditions)}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${state?.premisesTier ?? 0}|${state?.premisesArchetype ?? ''}|${(state?.pendingCases ?? []).join(',')}|${trophyKey(state?.trophies ?? { covers: [] })}|${state?.decorSeed ?? 'studio'}|${state?.cityId ?? ''}|${state?.roomType ?? 'project-studio'}|${state?.roomOccupied ? 1 : 0}|${(state?.furnishings ?? []).map((f) => `${f.anchorId}=${f.itemId}`).join(',')}`;
 
   // Rebuild the room (new window size or layout change)
   const rebuild = () => {

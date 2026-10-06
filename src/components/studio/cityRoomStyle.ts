@@ -5,7 +5,7 @@
  */
 import type { Graphics } from 'pixi.js';
 import { getCityById } from '@/rpg/cities';
-import { leftWallPt } from './isoMath';
+import { iso, isoQuad, leftWallPt, ROOM_D, ROOM_W } from './isoMath';
 import { mixColor } from './cityWallTint';
 
 export type PosterMotif = 'sunburst' | 'stripes' | 'bars' | 'diamond' | 'rings' | 'wave';
@@ -102,5 +102,128 @@ export const drawCityPosters = (g: Graphics, cityId?: string): void => {
         break;
       }
     }
+  }
+};
+
+/* ------------------------------------------------------------ floor + props */
+
+export type FloorPattern = 'checker' | 'runner' | 'border' | 'diagonal';
+export type CityProp = 'surfboard' | 'guitar-case' | 'umbrella-stand' | 'crate' | 'lantern' | 'conga' | 'record-crate' | 'drum';
+
+export interface CityFloorSpec {
+  pattern: FloorPattern;
+  /** Overlay colour for the pattern (low alpha). */
+  color: number;
+  prop: CityProp;
+  propColor: number;
+  propAccent: number;
+}
+
+/** Share of the city accent mixed into the floorboards. */
+export const CITY_FLOOR_TINT = 0.1;
+
+export const CITY_FLOORS: Record<string, CityFloorSpec> = {
+  'los-angeles': { pattern: 'diagonal', color: 0xf2a65a, prop: 'surfboard', propColor: 0xf2d6a0, propAccent: 0xe0604a },
+  nashville: { pattern: 'runner', color: 0xd98c4a, prop: 'guitar-case', propColor: 0x2a1d14, propAccent: 0xc9a050 },
+  london: { pattern: 'checker', color: 0xd9d0c0, prop: 'umbrella-stand', propColor: 0x2c3a52, propAccent: 0xd9463e },
+  berlin: { pattern: 'border', color: 0x9aa3b8, prop: 'crate', propColor: 0x4a5060, propAccent: 0xe6e9f2 },
+  tokyo: { pattern: 'border', color: 0xe8d9b0, prop: 'lantern', propColor: 0xc4372c, propAccent: 0xffd98a },
+  rio: { pattern: 'diagonal', color: 0xf2d33a, prop: 'conga', propColor: 0x7a3a1a, propAccent: 0x5fbf7a },
+  detroit: { pattern: 'checker', color: 0x5aa7a7, prop: 'record-crate', propColor: 0x3a3028, propAccent: 0x5aa7a7 },
+  lagos: { pattern: 'runner', color: 0xd5a52f, prop: 'drum', propColor: 0x8a5a2a, propAccent: 0x4fbf6a },
+};
+
+export const cityFloorSpec = (cityId?: string): CityFloorSpec | undefined => (cityId ? CITY_FLOORS[cityId] : undefined);
+
+/** Floorboard tones nudged toward the home city's accent; unchanged without a known city. */
+export const cityFloorPlanks = (planks: [number, number, number], cityId?: string): [number, number, number] => {
+  const city = getCityById(cityId);
+  if (!city) return planks;
+  const accent = parseHex(city.accent);
+  return [mixColor(planks[0], accent, CITY_FLOOR_TINT), mixColor(planks[1], accent, CITY_FLOOR_TINT), mixColor(planks[2], accent, CITY_FLOOR_TINT)];
+};
+
+/** Faint floor pattern over the boards (checker, centre runner, edge border, diagonal stripes). */
+export const drawCityFloorPattern = (g: Graphics, cityId?: string): void => {
+  const spec = cityFloorSpec(cityId);
+  if (!spec) return;
+  const fill = (x0: number, y0: number, x1: number, y1: number, alpha: number) => {
+    isoQuad(g, x0, y0, x1, y1);
+    g.fill({ color: spec.color, alpha });
+  };
+  switch (spec.pattern) {
+    case 'checker':
+      for (let x = 0; x < ROOM_W; x++) for (let y = 0; y < ROOM_D; y++) if ((x + y) % 2 === 0) fill(x, y, x + 1, y + 1, 0.11);
+      break;
+    case 'runner':
+      fill(0, 2.6, ROOM_W, 2.8, 0.22);
+      fill(0, 3.2, ROOM_W, 3.3, 0.16);
+      break;
+    case 'border':
+      fill(0.15, 0.15, ROOM_W - 0.15, 0.3, 0.2);
+      fill(0.15, 0.15, 0.3, ROOM_D - 0.15, 0.2);
+      fill(0.15, ROOM_D - 0.3, ROOM_W - 0.15, ROOM_D - 0.15, 0.2);
+      fill(ROOM_W - 0.3, 0.15, ROOM_W - 0.15, ROOM_D - 0.15, 0.2);
+      break;
+    case 'diagonal':
+      for (let i = 1; i < ROOM_W; i += 2) fill(i, 0, i + 0.4, ROOM_D, 0.13);
+      break;
+  }
+};
+
+/** Anchor of the city floor prop, in room tiles (front edge of the floor, clear of the desk, sofa and doors). */
+export const CITY_PROP_ANCHOR = { x: 3.6, y: 6.5 } as const;
+
+/** One small floor prop per city, drawn from plain polygons and ellipses. Nothing without a known city. */
+export const drawCityProp = (g: Graphics, cityId?: string): void => {
+  const spec = cityFloorSpec(cityId);
+  if (!spec) return;
+  const o = iso(CITY_PROP_ANCHOR.x, CITY_PROP_ANCHOR.y);
+  const { propColor: c, propAccent: a } = spec;
+  g.ellipse(o.x, o.y + 1, 12, 5).fill({ color: 0x000000, alpha: 0.28 });
+  switch (spec.prop) {
+    case 'surfboard':
+      g.ellipse(o.x, o.y - 18, 5, 19).fill(c);
+      g.rect(o.x - 0.6, o.y - 36, 1.2, 36).fill({ color: a, alpha: 0.9 });
+      break;
+    case 'guitar-case':
+      g.ellipse(o.x, o.y - 8, 8, 10).fill(c);
+      g.rect(o.x - 3, o.y - 30, 6, 20).fill(c);
+      g.rect(o.x - 4, o.y - 12, 8, 1.5).fill(a);
+      g.rect(o.x - 4, o.y - 6, 8, 1.5).fill(a);
+      break;
+    case 'umbrella-stand':
+      g.rect(o.x - 6, o.y - 14, 12, 14).fill(c);
+      g.rect(o.x - 6, o.y - 14, 12, 2).fill(a);
+      g.rect(o.x - 3, o.y - 30, 1.6, 17).fill(a);
+      g.rect(o.x + 1, o.y - 26, 1.6, 13).fill(0xd8d0c0);
+      break;
+    case 'crate':
+      g.poly([o.x - 10, o.y - 6, o.x, o.y - 11, o.x + 10, o.y - 6, o.x, o.y - 1]).fill(a);
+      g.poly([o.x - 10, o.y - 6, o.x, o.y - 1, o.x, o.y + 6, o.x - 10, o.y + 1]).fill(c);
+      g.poly([o.x + 10, o.y - 6, o.x, o.y - 1, o.x, o.y + 6, o.x + 10, o.y + 1]).fill({ color: c, alpha: 0.75 });
+      break;
+    case 'lantern':
+      g.rect(o.x - 0.8, o.y - 34, 1.6, 8).fill(a);
+      g.ellipse(o.x, o.y - 20, 8, 10).fill(c);
+      g.ellipse(o.x, o.y - 20, 4, 6).fill({ color: a, alpha: 0.6 });
+      g.rect(o.x - 4, o.y - 31, 8, 2).fill(0x2a1a14);
+      g.rect(o.x - 4, o.y - 10, 8, 2).fill(0x2a1a14);
+      break;
+    case 'conga':
+      g.poly([o.x - 7, o.y - 26, o.x + 7, o.y - 26, o.x + 5, o.y, o.x - 5, o.y]).fill(c);
+      g.ellipse(o.x, o.y - 26, 7, 3).fill(0xe8d9b0);
+      g.rect(o.x - 6, o.y - 18, 12, 1.6).fill(a);
+      break;
+    case 'record-crate':
+      g.rect(o.x - 9, o.y - 12, 18, 12).fill(c);
+      for (let i = 0; i < 5; i++) g.rect(o.x - 7 + i * 3.2, o.y - 18 - (i % 2), 2.2, 7).fill(i % 2 ? 0x1a1a1e : a);
+      break;
+    case 'drum':
+      g.ellipse(o.x, o.y - 6, 8, 4).fill(c);
+      g.rect(o.x - 8, o.y - 20, 16, 14).fill(c);
+      g.ellipse(o.x, o.y - 20, 8, 4).fill(0xe8d9b0);
+      g.rect(o.x - 8, o.y - 14, 16, 1.6).fill(a);
+      break;
   }
 };
