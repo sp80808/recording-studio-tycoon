@@ -5,6 +5,7 @@ import WebGLCanvas, { StudioHotspotId, HotspotAnchors } from '@/components/WebGL
 import { RoomInfoStrip } from '@/components/studio/RoomInfoStrip';
 import { getRoomLayoutProfile } from '@/components/studio/roomLayouts';
 import { StudioRoomTabs } from '@/components/studio/StudioRoomTabs';
+import { FacilityMap } from '@/components/studio/FacilityMap';
 import { getOccupiedRoomIds, getOperationalStudioRooms, getProjectForRoom } from '@/utils/studioRoomUtils';
 import { normalizeHotspotId } from '@/utils/studioHotspots';
 import { getDirectionalTargetIndex, getStickDirection, type ControllerNavDirection } from '@/utils/controllerNavigation';
@@ -419,6 +420,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
 
       {viewRoom && <RoomInfoStrip room={viewRoom} occupiedBy={roomProjectTitle(viewRoom.id)} hotspots={roomHotspotList} />}
       <StudioRoomTabs rooms={operationalRooms} activeId={viewRoom ? viewRoom.id : 'studio-a'} occupied={occupiedRooms} onSelect={(id) => { if (settings.sfxEnabled) void gameAudio.playTactileClick(); setViewRoomId(id); }} />
+      {operationalRooms.length >= 2 && <FacilityMap rooms={gameState.studioRooms || []} activeId={viewRoom ? viewRoom.id : 'studio-a'} occupied={occupiedRooms} premisesTier={gameState.premisesTier ?? 0} playerLevel={gameState.playerData.level} onSelect={(id) => { if (settings.sfxEnabled) void gameAudio.playTactileClick(); setViewRoomId(id); }} />}
       {tierFlash && <div className="tier-flash-overlay" />}
       {takeFx && (
         <div key={takeFx.seq} className={`take-fx take-fx-${takeFx.grade.toLowerCase()}`} aria-hidden="true">

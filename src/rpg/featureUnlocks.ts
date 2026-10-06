@@ -160,3 +160,10 @@ export const acknowledgeFeatureReveal = (state: GameState, feature: ProducerFeat
       : story,
   };
 };
+
+/** CareerHub tease (#260): the single next locked technique, or null once all are earned. A quiet hint, never a control. */
+export const nextTechniqueTease = (state: Unlockable): { feature: ProducerFeature; requirement: string } | null => {
+  const r = resolveProducerFeatureUnlocks(state);
+  const f = FEATURE_ORDER.find((x) => !r[x].unlocked);
+  return f ? { feature: f, requirement: r[f].requirement } : null;
+};

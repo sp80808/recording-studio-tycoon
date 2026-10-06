@@ -25,6 +25,11 @@ for (let t = 0; t < 360; t += 5) {
 }
 assert.notEqual(getCloudU(0, 1.3, false), getCloudU(30, 1.3, false));
 assert.equal(getCloudU(0, 1.3, true), getCloudU(300, 1.3, true));
+import { SKYLINE_STYLES, getSkylineStyle, DEFAULT_SKYLINE } from '../src/components/studio/studioSkylines';
+import { CITIES } from '../src/rpg/cities';
+for (const c of CITIES) assert.ok(SKYLINE_STYLES[c.id], `skyline style for ${c.id}`);
+assert.equal(new Set(CITIES.map((c) => SKYLINE_STYLES[c.id].landmark)).size, CITIES.length, 'each city has its own landmark');
+assert.equal(getSkylineStyle('nowhere'), DEFAULT_SKYLINE);
 console.log('window view check passed');
 
 // Floor light shaft follows the sun and is off at night.
