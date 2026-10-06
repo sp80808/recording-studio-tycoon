@@ -643,3 +643,15 @@ button, [role="button"], a, .studio-dock-button, .studio-primary-action { touch-
   body { -webkit-user-select: none; user-select: none; }
   input, textarea, [contenteditable] { -webkit-user-select: text; user-select: text; }
 }
+
+/* Phone focus mixer (#287): one uniform fader look for all channels. */
+.rst-mixer-slider [data-radix-slider-range] {
+  background: linear-gradient(90deg, #d4a017, #b8860b) !important;
+}
+.rst-mixer-slider [data-radix-slider-thumb] {
+  border-color: #b8860b !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  height: 1.5rem;
+  width: 1.5rem;
+}
+.rst-mixer-slider > span:first-child { height: 0.75rem; }

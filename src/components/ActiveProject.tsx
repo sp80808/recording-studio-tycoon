@@ -986,7 +986,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
             {takeState !== 'tracking' && <OutsideHelpCard compact gameState={gameState} setGameState={setGameState} />}
 
-            <div className="flex-1 min-h-0 min-w-0 flex flex-col justify-center overflow-hidden" data-testid="mobile-session-workspace">
+            <div className="flex-1 min-h-0 min-w-0 flex flex-col justify-start gap-1.5 overflow-hidden" data-testid="mobile-session-workspace">
               {takeState === 'tracking' ? (
                 <div className="flex-1 min-h-0 flex flex-col justify-between overflow-hidden gap-1.5" data-testid="mobile-tracking-workspace">
                   <PocketMeter

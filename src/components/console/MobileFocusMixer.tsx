@@ -36,12 +36,14 @@ export interface MobileFocusMixerProps {
 
 const CHANNELS: Channel[] = ['performance', 'soundCapture', 'layering'];
 
+// Status lives on the value chip only; every fader shares one neutral style so the
+// three rows read as a matched set (#287). The target band is drawn on the track.
 const tone = (diff: number) =>
   diff <= 10
-    ? { chip: 'bg-emerald-950 text-emerald-400 border-emerald-500/40', slider: 'slider-optimal' }
+    ? { chip: 'bg-emerald-950 text-emerald-400 border-emerald-500/40' }
     : diff <= 25
-      ? { chip: 'bg-amber-950 text-amber-400 border-amber-500/40', slider: 'slider-good' }
-      : { chip: 'bg-rose-950 text-rose-400 border-rose-500/40', slider: 'slider-default' };
+      ? { chip: 'bg-amber-950 text-amber-400 border-amber-500/40' }
+      : { chip: 'bg-rose-950 text-rose-400 border-rose-500/40' };
 
 export const MobileFocusMixer: React.FC<MobileFocusMixerProps> = ({
   focus, optimal, labels, matchPct, guidanceTitle, guidance, canAutoAlign, onChange, onAutoAlign,
@@ -83,7 +85,7 @@ export const MobileFocusMixer: React.FC<MobileFocusMixerProps> = ({
           <span className="text-amber-300"><StatIcon name="bulb" /> </span><span className="font-medium">{guidanceTitle}:</span> {guidance}
         </div>
       )}
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         {CHANNELS.map((key, idx) => {
           const diff = Math.abs(focus[key] - optimal[key]);
           const t = tone(diff);
@@ -92,34 +94,41 @@ export const MobileFocusMixer: React.FC<MobileFocusMixerProps> = ({
             <div
               key={key}
               onClick={() => onSelectChannel?.(key)}
-              className={`flex items-center gap-2 p-1 rounded transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-1 py-0.5 min-h-11 rounded transition-all cursor-pointer ${
                 isSelected && gamepadActive
                   ? 'bg-amber-950/40 ring-1 ring-amber-400/60 border border-amber-400/40'
                   : ''
               }`}
               data-focus-channel={key}
             >
-              <span className="w-[88px] shrink-0 truncate text-[11px] font-semibold text-stone-200 flex items-center gap-1" title={stripLead(labels[key].label)}>
+              <span className="w-[84px] shrink-0 text-[11px] leading-tight font-semibold text-stone-200 flex items-center gap-1" title={stripLead(labels[key].label)}>
                 {gamepadActive && (
                   <span className="shrink-0">
                     {idx === 0 && <GamepadGlyph button="lb" controllerType={controllerType} size="xs" />}
                     {idx === 2 && <GamepadGlyph button="rb" controllerType={controllerType} size="xs" />}
                   </span>
                 )}
-                <span className="truncate">{stripLead(labels[key].label)}</span>
+                <span className="min-w-0 break-words">{stripLead(labels[key].label)}</span>
               </span>
               <div className="flex-1 flex items-center gap-1">
                 {gamepadActive && isSelected && (
                   <GamepadGlyph button="dpadLeft" controllerType={controllerType} size="xs" />
                 )}
+                <div className="relative flex-1 flex items-center">
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute top-1/2 h-2 -translate-y-1/2 rounded-full bg-emerald-400/25 ring-1 ring-emerald-400/40"
+                  style={{ left: `${Math.max(0, optimal[key] - 10)}%`, width: `${Math.min(100, optimal[key] + 10) - Math.max(0, optimal[key] - 10)}%` }}
+                />
                 <Slider
                   value={[focus[key]]}
                   onValueChange={(v) => onChange(key, v[0])}
                   max={100}
                   step={5}
                   aria-label={tr('active_focus_aria', { name: stripLead(labels[key].label) })}
-                  className={`flex-1 ${t.slider}`}
+                  className="rst-mixer-slider flex-1"
                 />
+                </div>
                 {gamepadActive && isSelected && (
                   <GamepadGlyph button="dpadRight" controllerType={controllerType} size="xs" />
                 )}
