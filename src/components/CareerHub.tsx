@@ -9,7 +9,7 @@ import { calculateEquipmentUpkeep } from '@/hooks/useGameActions';
 import { getOriginEffects } from '@/narrative/originPerks';
 import { gameAudio } from '@/utils/audioSystem';
 import { resolveCareerNextAction } from '@/utils/careerNextAction';
-import { careerTitle, deriveBranchConsequences, deriveCareerMilestones, deriveKnownFor, groupMilestonesByChapter, resolveCareerChapter, resolveCareerTarget, resolvePinnedMoments, type CareerMilestone } from '@/utils/careerChronicle';
+import { careerTitle, deriveBranchConsequences, deriveCareerCast, deriveCareerMilestones, deriveSelectedCredits, deriveKnownFor, groupMilestonesByChapter, resolveCareerChapter, resolveCareerTarget, resolvePinnedMoments, type CareerMilestone } from '@/utils/careerChronicle';
 import { getProducerOrigin } from '@/narrative/characterOrigins';
 import { getRivalAccent, getRivalForNode, initialsOf } from '@/narrative/rivalCast';
 import type { ProducerBackgroundId } from '@/types/character';
@@ -117,6 +117,8 @@ export function CareerHub({
   const chapter = useMemo(() => resolveCareerChapter(gameState), [gameState]);
   const chapterGroups = useMemo(() => groupMilestonesByChapter(gameState), [gameState]);
   const pinned = useMemo(() => resolvePinnedMoments(gameState), [gameState]);
+  const cast = useMemo(() => deriveCareerCast(gameState), [gameState]);
+  const credits = useMemo(() => deriveSelectedCredits(gameState), [gameState]);
   const consequences = useMemo(() => deriveBranchConsequences(gameState), [gameState]);
   const pinnedIds = new Set(pinned.map((m) => m.id));
   const pinButton = (m: CareerMilestone) =>
@@ -267,6 +269,37 @@ export function CareerHub({
                 </li>
               ))}
             </ul>
+          </div>
+        )}
+
+        {(cast.length > 0 || credits.length > 0) && (
+          <div className="mt-3 grid gap-3 sm:grid-cols-2" data-testid="career-cast-credits">
+            {cast.length > 0 && (
+              <div data-testid="career-cast">
+                <p className="rst-kicker mb-1.5">Cast of your career</p>
+                <ul className="space-y-1.5">
+                  {cast.map((c) => (
+                    <li key={c.id}>
+                      <span className="text-stone-200">{c.name}</span>
+                      <span className="block text-stone-500">{c.role}. {c.detail}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {credits.length > 0 && (
+              <div data-testid="career-credits">
+                <p className="rst-kicker mb-1.5">Selected credits</p>
+                <ul className="space-y-1.5">
+                  {credits.map((c) => (
+                    <li key={c.id}>
+                      <span className="text-stone-200">{c.title}</span>
+                      <span className="block text-stone-500">{c.label}. {c.detail}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
 
