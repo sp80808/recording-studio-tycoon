@@ -54,6 +54,17 @@ export const BookingCostLine: React.FC<{ state: CalState; project: Project }> = 
       Takes {p.sessions} session{p.sessions === 1 ? '' : 's'}
       {p.firstSlot ? <> · starts {SLOT_NAMES[p.firstSlot.slot].toLowerCase()} day {p.firstSlot.day}{p.roomName ? ` in ${p.roomName}` : ''}</> : ' · no free slot this week'}
       {' '}· {money(p.payoutPerSlot)} per slot ({money(p.payout)} total)
+      {(!p.firstSlot || p.startBufferDays < 0) && (
+        <span data-testid="booking-warning" className="mt-1 block text-amber-300">
+          {!p.firstSlot ? 'No free slot this week' : `First free start is ${-p.startBufferDays} day${p.startBufferDays === -1 ? '' : 's'} too late for the client`}
+        </span>
+      )}
+      <span className="mt-1 block text-stone-400">
+        Margin <strong className="text-stone-200">{MARGIN_LABEL[q.marginBand]}</strong>
+        {q.deposit.required ? ` · ${money(q.deposit.amount)} deposit now` : ''}
+      </span>
+      <details data-testid="booking-cost-details" className="mt-1">
+        <summary className="cursor-pointer select-none text-[11px] font-semibold text-[var(--rst-brass-300)]">Costs, deposit &amp; scheduling</summary>
       <span data-testid="booking-quote" className="mt-1 block text-stone-400">
         {q.serviceLabel}: about {q.roomHours} room hours, {q.staffHours} staff hours{q.setupSavedHours > 0 ? ` (setup reused: ${q.setupSavedHours}h saved)` : ''} · {q.revisionAllowance > 0 ? `${q.revisionAllowance} revision round${q.revisionAllowance === 1 ? '' : 's'} included · ` : ''}margin <strong className="text-stone-200">{MARGIN_LABEL[q.marginBand]}</strong>
         {q.freelancerFees > 0 && <span className="block">Outside specialists already booked: {money(q.freelancerFees)} (in the margin)</span>}
@@ -77,6 +88,7 @@ export const BookingCostLine: React.FC<{ state: CalState; project: Project }> = 
           ? <>Start a day later ({SLOT_NAMES[later.slot.slot].toLowerCase()} day {later.slot.day}{later.roomName ? `, ${later.roomName}` : ''}): {later.clientAccepts ? 'within the client\'s terms' : 'outside the client\'s terms'} · studio {Math.round(later.utilizationAfter * 100)}% booked</>
           : 'Starting a day later leaves no free slot this week'}
       </span>
+      </details>
     </div>
   );
 };
