@@ -13,6 +13,8 @@ import {
   type ChainRecallState,
 } from '@/minigames/chainRecall';
 import { playPadTone } from '@/minigames/chainTones';
+import { MinigameDebrief } from './MinigameDebrief';
+import { debriefChainRecall } from '@/minigames/debriefs';
 import { tc } from '@/i18n/content';
 
 interface Props {
@@ -93,6 +95,7 @@ export const ChainRecallGame: React.FC<Props> = ({ onComplete, difficulty = 2 })
                 {state.won ? tc('mg.ChainRecallGame.won', 'Chain locked in') : tc('mg.ChainRecallGame.lost', 'Signal lost')}
               </h4>
               {result.tips.join(' ') || tc('mg.ChainRecallGame.result_clean', 'Every stage recalled without a slip.')}
+              <MinigameDebrief lines={debriefChainRecall(state)} />
             </div>
           )}
         </CardContent>
