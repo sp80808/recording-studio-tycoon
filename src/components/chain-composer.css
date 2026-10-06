@@ -218,9 +218,37 @@
   background: rgba(255, 244, 214, 0.03);
   color: var(--rst-ivory-soft, #efe6d4);
   font-size: 11px;
-  cursor: pointer;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
   transition: border-color 0.15s, background 0.15s, transform 0.12s;
 }
+.chain-rack__opt.is-dragging { opacity: 0.45; cursor: grabbing; }
+.chain-drag-ghost {
+  position: fixed;
+  z-index: 60;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  max-width: 11rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid rgba(230, 184, 102, 0.75);
+  border-radius: 6px;
+  background: rgba(58, 44, 26, 0.94);
+  color: var(--rst-brass-200, #f0d9a8);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+  transition: left 0.08s ease-out, top 0.08s ease-out;
+}
+.chain-drag-ghost.is-snapped { box-shadow: 0 0 14px rgba(230, 184, 102, 0.6); }
+.chain-jack.is-snap .chain-jack__well {
+  border-color: rgba(255, 226, 150, 0.95);
+  box-shadow: 0 0 0 3px rgba(230, 184, 102, 0.35), 0 0 14px rgba(230, 184, 102, 0.55);
+}
+@media (prefers-reduced-motion: reduce) { .chain-drag-ghost { transition: none; } }
+html[data-reduced-motion='true'] .chain-drag-ghost { transition: none; }
 .chain-rack__opt:hover {
   border-color: rgba(230, 184, 102, 0.45);
   background: rgba(230, 184, 102, 0.08);
