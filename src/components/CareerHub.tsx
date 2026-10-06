@@ -1,7 +1,7 @@
 import { money } from '@/utils/displayMoney';
 import { useMemo, useState } from 'react';
 import { EMPTY_STATES } from '@/data/flavour';
-import { ArrowRight, BookOpen, Check, ChevronDown, Circle, Feather, Flag, Scroll, Sparkles, Swords, Target, Zap } from 'lucide-react';
+import { ArrowRight, BookOpen, Pin, Check, ChevronDown, Circle, Feather, Flag, Scroll, Sparkles, Swords, Target, Zap } from 'lucide-react';
 import { GameState } from '@/types/game';
 import { checkDailyChallenge } from '@/utils/dailyChallenges';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
@@ -9,7 +9,7 @@ import { calculateEquipmentUpkeep } from '@/hooks/useGameActions';
 import { getOriginEffects } from '@/narrative/originPerks';
 import { gameAudio } from '@/utils/audioSystem';
 import { resolveCareerNextAction } from '@/utils/careerNextAction';
-import { careerTitle, deriveCareerMilestones, deriveKnownFor, resolveCareerTarget } from '@/utils/careerChronicle';
+import { careerTitle, deriveBranchConsequences, deriveCareerCast, deriveCareerMilestones, deriveSelectedCredits, deriveKnownFor, groupMilestonesByChapter, resolveCareerChapter, resolveCareerTarget, resolvePinnedMoments, type CareerMilestone } from '@/utils/careerChronicle';
 import { getProducerOrigin } from '@/narrative/characterOrigins';
 import { getRivalAccent, getRivalForNode, initialsOf } from '@/narrative/rivalCast';
 import type { ProducerBackgroundId } from '@/types/character';
@@ -38,6 +38,8 @@ interface CareerHubProps {
   onOpenStoryEvent?: () => void;
   /** Choose the Studio Season focus (#63). */
   onChooseSeasonFocus?: (focus: StudioFocus) => void;
+  /** Pin or unpin a defining moment (max 3). Omitted = read-only. */
+  onTogglePinnedMoment?: (id: string) => void;
 }
 
 const CHRONICLE_ICON: Record<ChronicleKind, typeof Scroll> = { campaign: Flag, subplot: Feather, ending: Scroll, event: Sparkles };
@@ -80,9 +82,11 @@ export function CareerHub({
   onOpenStorylineBranch,
   onOpenStoryEvent,
   onChooseSeasonFocus,
+  onTogglePinnedMoment,
 }: CareerHubProps) {
   const [expanded, setExpanded] = useState(false);
   const [storyLogOpen, setStoryLogOpen] = useState(false);
+  const [chaptersOpen, setChaptersOpen] = useState(false);
   const player = gameState.playerData;
   const challenge = checkDailyChallenge(gameState);
   const claimed =
@@ -110,6 +114,28 @@ export function CareerHub({
 
   const knownFor = useMemo(() => deriveKnownFor(gameState), [gameState]);
   const milestones = useMemo(() => deriveCareerMilestones(gameState).slice(-3).reverse(), [gameState]);
+  const chapter = useMemo(() => resolveCareerChapter(gameState), [gameState]);
+  const chapterGroups = useMemo(() => groupMilestonesByChapter(gameState), [gameState]);
+  const pinned = useMemo(() => resolvePinnedMoments(gameState), [gameState]);
+  const cast = useMemo(() => deriveCareerCast(gameState), [gameState]);
+  const credits = useMemo(() => deriveSelectedCredits(gameState), [gameState]);
+  const consequences = useMemo(() => deriveBranchConsequences(gameState), [gameState]);
+  const pinnedIds = new Set(pinned.map((m) => m.id));
+  const pinButton = (m: CareerMilestone) =>
+    onTogglePinnedMoment && (
+      <button
+        type="button"
+        onClick={() => {
+          click();
+          onTogglePinnedMoment(m.id);
+        }}
+        aria-pressed={pinnedIds.has(m.id)}
+        aria-label={`${pinnedIds.has(m.id) ? 'Unpin' : 'Pin'} ${m.title}`}
+        className={`ml-auto grid h-8 w-8 shrink-0 place-items-center rounded-md ${pinnedIds.has(m.id) ? 'text-[var(--rst-brass-300)]' : 'text-stone-600 hover:text-stone-300'}`}
+      >
+        <Pin size={13} className={pinnedIds.has(m.id) ? 'fill-current' : ''} aria-hidden="true" />
+      </button>
+    );
   const careerTarget = useMemo(() => resolveCareerTarget(gameState), [gameState]);
   const producerName = gameState.producerCustomization?.name || player.name;
 
@@ -187,23 +213,141 @@ export function CareerHub({
         </button>
       </div>
 
-      {/* Your story so far: derived career firsts, never routine sessions */}
-      {milestones.length > 0 && (
-        <div className="rst-surface p-4 text-xs" aria-label="Your story so far">
-          <p className="rst-kicker mb-1.5">Your story so far</p>
-          <ul className="space-y-1.5">
-            {milestones.map((m) => (
-              <li key={m.id} className="flex gap-2">
-                <Flag size={12} className="mt-0.5 shrink-0 text-[var(--rst-brass-300)]" aria-hidden="true" />
-                <span className="min-w-0">
-                  <span className="text-stone-200">{m.title}</span>
-                  <span className="block text-stone-500">{m.detail}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {/* Your story so far: chapter, pinned moments, branch consequences, derived firsts. Never routine sessions. */}
+      <div className="rst-surface p-4 text-xs" aria-label="Your story so far" data-testid="career-chapter">
+        <p className="rst-kicker mb-1">Current chapter</p>
+        <p className="rst-title text-base">{chapter.title}</p>
+        <p className="mt-0.5 text-stone-400">{chapter.blurb}</p>
+
+        {pinned.length > 0 && (
+          <div className="mt-3" data-testid="pinned-moments">
+            <p className="rst-kicker mb-1.5">Defining moments</p>
+            <ul className="space-y-1.5">
+              {pinned.map((m) => (
+                <li key={m.id} className="flex items-start gap-2">
+                  <Pin size={12} className="mt-0.5 shrink-0 fill-current text-[var(--rst-brass-300)]" aria-hidden="true" />
+                  <span className="min-w-0">
+                    <span className="text-stone-200">{m.title}</span>
+                    <span className="block text-stone-500">{m.detail}</span>
+                  </span>
+                  {pinButton(m)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {consequences.length > 0 && (
+          <div className="mt-3" data-testid="branch-consequences">
+            <p className="rst-kicker mb-1.5">What changed because of you</p>
+            <ul className="space-y-1.5">
+              {consequences.map((c) => (
+                <li key={`${c.nodeId}-${c.day}`} className="flex gap-2">
+                  <Flag size={12} className="mt-0.5 shrink-0 text-[var(--rst-story)]" aria-hidden="true" />
+                  <span className="min-w-0">
+                    <span className="text-stone-200">{c.headline}</span>
+                    <span className="block text-stone-500">{c.outcome}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {milestones.length > 0 && (
+          <div className="mt-3">
+            <p className="rst-kicker mb-1.5">Recent</p>
+            <ul className="space-y-1.5">
+              {milestones.map((m) => (
+                <li key={m.id} className="flex items-start gap-2">
+                  <Flag size={12} className="mt-0.5 shrink-0 text-[var(--rst-brass-300)]" aria-hidden="true" />
+                  <span className="min-w-0">
+                    <span className="text-stone-200">{m.title}</span>
+                    <span className="block text-stone-500">{m.detail}</span>
+                  </span>
+                  {pinButton(m)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {(cast.length > 0 || credits.length > 0) && (
+          <div className="mt-3 grid gap-3 sm:grid-cols-2" data-testid="career-cast-credits">
+            {cast.length > 0 && (
+              <div data-testid="career-cast">
+                <p className="rst-kicker mb-1.5">Cast of your career</p>
+                <ul className="space-y-1.5">
+                  {cast.map((c) => (
+                    <li key={c.id}>
+                      <span className="text-stone-200">{c.name}</span>
+                      <span className="block text-stone-500">{c.role}. {c.detail}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {credits.length > 0 && (
+              <div data-testid="career-credits">
+                <p className="rst-kicker mb-1.5">Selected credits</p>
+                <ul className="space-y-1.5">
+                  {credits.map((c) => (
+                    <li key={c.id}>
+                      <span className="text-stone-200">{c.title}</span>
+                      <span className="block text-stone-500">{c.label}. {c.detail}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        {chapterGroups.some((g) => g.milestones.length > 0) && (
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                click();
+                setChaptersOpen((prev) => !prev);
+              }}
+              className="rst-btn rst-btn-ghost mt-3 !min-h-9 !px-3 !text-xs"
+              aria-expanded={chaptersOpen}
+            >
+              <BookOpen size={13} aria-hidden="true" />
+              All chapters
+              <ChevronDown size={13} className={`transition-transform duration-200 ${chaptersOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+            </button>
+            {chaptersOpen && (
+              <ol className="mt-2 space-y-3 border-t border-[var(--rst-line)] pt-3" data-testid="chapter-list">
+                {chapterGroups.map((g) => (
+                  <li key={g.chapter.id}>
+                    <p className="text-stone-200">
+                      {g.chapter.title}
+                      {g.current && <span className="rst-chip rst-chip-brass ml-2">Now</span>}
+                    </p>
+                    {g.milestones.length === 0 ? (
+                      <p className="text-stone-500">{g.chapter.blurb}</p>
+                    ) : (
+                      <ul className="mt-1 space-y-1">
+                        {g.milestones.map((m) => (
+                          <li key={m.id} className="flex items-start gap-2">
+                            <span className="min-w-0 text-stone-400">
+                              {m.title}
+                              <span className="block text-stone-500">{m.detail}</span>
+                            </span>
+                            {pinButton(m)}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            )}
+          </>
+        )}
+      </div>
 
       {/* Campaign */}
       {activeNode && story && (

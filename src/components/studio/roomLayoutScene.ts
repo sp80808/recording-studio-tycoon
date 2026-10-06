@@ -5,13 +5,19 @@
 import { Container, Graphics } from 'pixi.js';
 import { iso, isoQuad, WALL_H as ROOM_WALL_H } from './isoMath';
 import { buildRack, buildSeat, isoBox, NAVY, NAVY_BACK, pt, quad, wrap, type BoxColors } from './studioIsoKit';
-import { PROP_METRICS, type RoomHotspotId, type RoomLayoutProfile, type RoomPropSpec, type RoomWallSpec } from './roomLayouts';
+import { getDaynessFromClockMinutes, getWindowSkyColor } from './studioDecorConfig';
+import { buildWindowView, type WindowView } from './studioWindowView';
+import { PROP_METRICS, ROOM_WINDOW_LIFT, type RoomHotspotId, type RoomLayoutProfile, type RoomPropSpec, type RoomWallSpec } from './roomLayouts';
 
 export interface RoomSceneOptions {
   /** A project is booked into this room right now. */
   occupied: boolean;
   seed: string | number;
   /** Era/city grade blended into the room palette so rooms still age with the studio. */
+  /** Studio clock (minutes of day) used for the first paint of the window; the ticker keeps it live afterwards. */
+  clockMinutes?: number;
+  /** Added to every prop's zIndex so figures staged by the caller sort against props on one depth scale. */
+  depthBase?: number;
   tint?: { wallLeft: number; wallRight: number; accent: number };
   /** Hotspot wiring supplied by WebGLCanvas (hover glow, gamepad anchors, selection). Optional for headless use. */
   addHotspot?: (id: RoomHotspotId, hit: Graphics, visual: Container, zIndex: number, parent: Container) => void;
@@ -23,6 +29,10 @@ export interface RoomSceneBuild {
   /** Animates the on-air lamp. Cheap: touches one Graphics alpha. */
   tick: (seconds: number, reduceMotion: boolean) => void;
   hotspotIds: RoomHotspotId[];
+  /** Sun, moon, stars and skyline seen through the room's window. */
+  windowView: WindowView;
+  /** Repaints the window glass (sky colour from the studio clock). */
+  setWindowSky: (color: number) => void;
   /** Number of display objects in the tree (used by the performance budget check). */
   objectCount: () => number;
 }
@@ -349,6 +359,29 @@ const paintWallTreatment = (g: Graphics, w: RoomWallSpec, base: number, rand: ()
   }
 };
 
+const buildWindow = (profile: RoomLayoutProfile, pal: RoomLayoutProfile['palette'], seed: number, minutes: number) => {
+  const { side, from, to } = profile.window;
+  const { bottom, top } = ROOM_WINDOW_LIFT;
+  // buildWindowView wants the left-then-right glass corners; the left wall runs right-to-left in screen x.
+  const a = side === 'right' ? iso(from, 0) : iso(0, to);
+  const b = side === 'right' ? iso(to, 0) : iso(0, from);
+  const poly = [a.x, a.y - top, b.x, b.y - top, b.x, b.y - bottom, a.x, a.y - bottom];
+  const wrapC = new Container();
+  const pane = new Graphics();
+  const setSky = (color: number) => { pane.clear(); pane.poly(poly).fill(color); };
+  setSky(getWindowSkyColor(minutes));
+  wrapC.addChild(pane);
+  const view = buildWindowView(a, b, bottom, top, seed);
+  view.update(minutes, getDaynessFromClockMinutes(minutes), 0, false);
+  wrapC.addChild(view.container);
+  const frame = new Graphics();
+  frame.poly(poly).stroke({ width: 3.5, color: pal.trim });
+  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+  frame.rect(mx - 1.5, my - top + 4, 3, top - bottom - 8).fill(pal.trim);
+  wrapC.addChild(frame);
+  return { container: wrapC, view, setSky };
+};
+
 const buildShell = (profile: RoomLayoutProfile, pal: RoomLayoutProfile['palette'], rand: () => number, accent: number): { shell: Container; onAir: Graphics } => {
   const { width: W, depth: D } = profile.footprint;
   const shell = new Container();
@@ -433,6 +466,11 @@ export const buildRoomLayoutScene = (profile: RoomLayoutProfile, opts: RoomScene
 
   const { shell, onAir } = buildShell(profile, pal, rand, accent);
   root.addChild(shell);
+  const win = buildWindow(profile, pal, hash(`${opts.seed}:${profile.type}:window`), opts.clockMinutes ?? 840);
+  win.container.eventMode = 'none';
+  win.container.zIndex = -90;
+  root.addChild(win.container);
+  const depthBase = opts.depthBase ?? 0;
 
   const hotspotIds: RoomHotspotId[] = [];
   const pools = new Graphics();
@@ -451,7 +489,7 @@ export const buildRoomLayoutScene = (profile: RoomLayoutProfile, opts: RoomScene
     const pos = iso(spec.x, spec.y);
     visual.position.set(pos.x, pos.y);
     visual.label = `room-prop:${spec.id}`;
-    const z = pos.y;
+    const z = depthBase + pos.y;
     visual.zIndex = z;
     if (spec.hotspot) {
       hotspotIds.push(spec.hotspot);
@@ -494,5 +532,36 @@ export const buildRoomLayoutScene = (profile: RoomLayoutProfile, opts: RoomScene
   };
 
   const count = (c: Container): number => c.children.reduce((n, ch) => n + 1 + (ch instanceof Container ? count(ch) : 0), 0);
-  return { root, bounds, tick, hotspotIds, objectCount: () => count(root) };
+  return { root, bounds, tick, hotspotIds, windowView: win.view, setWindowSky: win.setSky, objectCount: () => count(root) };
+};
+
+/**
+ * Resting camera for a room: fit the room to the viewport, zoom by the profile's multiplier and centre the
+ * profile's focus tile, then clamp so the room never slides off screen. Pure so the checks can assert it.
+ */
+export const computeRoomView = (
+  profile: RoomLayoutProfile,
+  bounds: RoomSceneBuild['bounds'],
+  viewport: { width: number; height: number; topInset: number; bottomInset: number },
+): { scale: number; x: number; y: number } => {
+  const { width, height, topInset, bottomInset } = viewport;
+  const fit = Math.min(
+    (width - 60) / (bounds.maxX - bounds.minX),
+    Math.max(80, height - topInset - bottomInset - 20) / (bounds.maxY - bounds.minY),
+    2.4,
+  );
+  const scale = Math.min(fit * profile.camera.zoom, 2.6);
+  const f = iso(profile.camera.focus.x, profile.camera.focus.y);
+  const cx = width / 2;
+  const cy = (topInset + height - bottomInset) / 2;
+  const clampAxis = (origin: number, min: number, max: number, lo: number, hi: number) => {
+    const a = lo - min * scale;
+    const b = hi - max * scale;
+    return Math.max(Math.min(a, b), Math.min(Math.max(a, b), origin));
+  };
+  return {
+    scale,
+    x: clampAxis(cx - f.x * scale, bounds.minX, bounds.maxX, 10, width - 10),
+    y: clampAxis(cy - f.y * scale, bounds.minY, bounds.maxY, topInset, height - bottomInset),
+  };
 };
