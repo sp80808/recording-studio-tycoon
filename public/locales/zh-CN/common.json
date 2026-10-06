@@ -306,5 +306,14 @@
   "rest_advance_day": "休息并进入下一天",
   "story_no_cost": "无即时代价",
   "story_decide_later": "稍后决定",
-  "story_continue": "继续"
+  "story_continue": "继续",
+  "career_aria": "开始新的职业生涯",
+  "career_where_when": "地点与时代",
+  "career_quick_start": "快速开始",
+  "career_continue": "继续",
+  "career_kicker": "开设你的工作室",
+  "career_title_place": "在哪里,什么时候?",
+  "career_title_person": "你是谁?",
+  "move_in_studio_named": "{{name}} 工作室",
+  "move_in_studio_default": "你的工作室"
 }

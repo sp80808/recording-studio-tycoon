@@ -309,5 +309,14 @@
   "story_decide_later": "Решить позже",
   "story_continue": "Продолжить",
   "home_enquiries_waiting_few": "{{count}} запроса ждут",
-  "home_enquiries_waiting_many": "{{count}} запросов ждут"
+  "home_enquiries_waiting_many": "{{count}} запросов ждут",
+  "career_aria": "Начать новую карьеру",
+  "career_where_when": "Где и когда",
+  "career_quick_start": "Быстрый старт",
+  "career_continue": "Далее",
+  "career_kicker": "Открой свою студию",
+  "career_title_place": "Где и когда?",
+  "career_title_person": "Кто ты?",
+  "move_in_studio_named": "Студия {{name}}",
+  "move_in_studio_default": "Твоя студия"
 }

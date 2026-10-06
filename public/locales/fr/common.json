@@ -307,5 +307,14 @@
   "rest_advance_day": "Se reposer et passer au jour suivant",
   "story_no_cost": "Aucun coût immédiat",
   "story_decide_later": "Décider plus tard",
-  "story_continue": "Continuer"
+  "story_continue": "Continuer",
+  "career_aria": "Commencer une nouvelle carrière",
+  "career_where_when": "Où et quand",
+  "career_quick_start": "Démarrage rapide",
+  "career_continue": "Continuer",
+  "career_kicker": "Ouvre ton studio",
+  "career_title_place": "Où et quand ?",
+  "career_title_person": "Qui es-tu ?",
+  "move_in_studio_named": "Studios {{name}}",
+  "move_in_studio_default": "Ton studio"
 }
