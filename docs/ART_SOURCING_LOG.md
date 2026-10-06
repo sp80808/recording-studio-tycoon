@@ -283,3 +283,6 @@ In-house original, CC0. Inline SVG gear outlines in `src/features/boxDrops/GearS
 
 ## 27. Per-city wall trim and posters (#291)
 In-house proprietary original, Pixi Graphics only (`cityRoomStyle.ts`). Wall trim is the base colour mixed toward each city accent; two small left-wall posters per city (sunburst, stripes, bars, diamond, rings, wave) are plain polygons and ellipses. No external source.
+
+## 29. Per-city floor, props and era window lighting (#291)
+In-house proprietary original, Pixi Graphics only (`cityRoomStyle.ts`, `studioSkylines.ts`, `studioWindowView.ts`). Floorboards are mixed toward each city accent with a faint checker, runner, border or diagonal overlay; one small floor prop per city (surfboard, guitar case, umbrella stand, crate, lantern, conga, record crate, drum) is plain polygons and ellipses; the window skyline takes an era tint and lit-window palette. No external source.

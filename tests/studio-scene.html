@@ -15,7 +15,7 @@
       activity: 0.3, hasActiveProject: q.get('active') === '1', staffOnFloor: Number(q.get('staff') ?? 1), day: 3, clockMinutes: Number(q.get('clock') ?? 840), artistName: 'Mara Vale',
       roomTier: Number(q.get('room') ?? 1), premisesTier: Number(q.get('premises') ?? 1), decorSeed: 'harness',
       ownedEquipmentIds: [],
-      roomType: q.get('type') ?? undefined, roomOccupied: q.get('occupied') === '1',
+      cityId: q.get('city') ?? undefined, eraId: q.get('era') ?? undefined, roomType: q.get('type') ?? undefined, roomOccupied: q.get('occupied') === '1',
     };
     window.__ready = false;
     const root = createRoot(document.getElementById('root'));

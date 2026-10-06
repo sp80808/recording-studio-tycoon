@@ -3,7 +3,8 @@
 // the sky colour, wall clock and room tint (see studioDecorConfig). In-house proprietary original, Pixi Graphics only.
 
 import { Container, Graphics } from 'pixi.js';
-import { getSkylineStyle, type SkylineStyle } from './studioSkylines';
+import { getEraWindowStyle, getSkylineStyle, type SkylineStyle } from './studioSkylines';
+import { mixColor } from './cityWallTint';
 
 export interface WindowView {
   container: Container;
@@ -104,8 +105,10 @@ const drawLandmark = (g: Graphics, style: SkylineStyle, quad: QuadFn): void => {
  * `a`/`b` are the bottom-left and bottom-right corners of the glass on the wall plane and
  * `bottomLift`/`topLift` its vertical extent in pixels (same numbers `WebGLCanvas` used for the pane).
  */
-export const buildWindowView = (a: Pt, b: Pt, bottomLift: number, topLift: number, seed = 7, cityId?: string): WindowView => {
+export const buildWindowView = (a: Pt, b: Pt, bottomLift: number, topLift: number, seed = 7, cityId?: string, eraId?: string): WindowView => {
   const style = getSkylineStyle(cityId);
+  const era = getEraWindowStyle(eraId);
+  const eraTone = (color: number) => (era.tintAmount > 0 ? mixColor(color, era.tint, era.tintAmount) : color);
   const pt = (u: number, v: number): Pt => ({
     x: a.x + (b.x - a.x) * u,
     y: a.y + (b.y - a.y) * u - (bottomLift + (topLift - bottomLift) * v),
@@ -153,9 +156,9 @@ export const buildWindowView = (a: Pt, b: Pt, bottomLift: number, topLift: numbe
       const w = layer.wMin + random() * (layer.wMax - layer.wMin);
       const h = layer.hMin + random() * (layer.hMax - layer.hMin);
       const u1 = Math.min(1, u + w);
-      skyline.poly(quad(Math.max(0, u), 0, u1, h)).fill({ color: layer.color, alpha: layer.alpha });
+      skyline.poly(quad(Math.max(0, u), 0, u1, h)).fill({ color: eraTone(layer.color), alpha: layer.alpha });
       // Roof detail on some towers
-      if (random() > 0.6) skyline.poly(quad(u + w * 0.4, h, u + w * 0.55, h + 0.06)).fill({ color: layer.color, alpha: layer.alpha });
+      if (random() > 0.6) skyline.poly(quad(u + w * 0.4, h, u + w * 0.55, h + 0.06)).fill({ color: eraTone(layer.color), alpha: layer.alpha });
       // Window grid
       const cols = Math.max(1, Math.floor(w / 0.022));
       const rows = Math.max(1, Math.floor(h / 0.045));
@@ -164,7 +167,7 @@ export const buildWindowView = (a: Pt, b: Pt, bottomLift: number, topLift: numbe
           if (random() > style.lit * (layer === layers[0] ? 0.8 : 1.1)) continue;
           const cu = u + 0.008 + c * ((w - 0.016) / cols);
           const cv = 0.02 + r * (h / rows) * 0.92;
-          lightCells.push({ rect: quad(cu, cv, cu + 0.012, cv + 0.02), warm: random() > 0.25, flicker: random() });
+          lightCells.push({ rect: quad(cu, cv, cu + 0.012, cv + 0.02), warm: random() > 1 - era.warmShare, flicker: random() });
         }
       }
       u = u1 + 0.005 + random() * 0.015;
@@ -172,7 +175,7 @@ export const buildWindowView = (a: Pt, b: Pt, bottomLift: number, topLift: numbe
   }
   drawLandmark(skyline, style, quad);
   container.addChild(skyline);
-  for (const c of lightCells) lights.poly(c.rect).fill({ color: c.warm ? 0xffd98a : 0x9fd8ff, alpha: 0.5 + c.flicker * 0.5 });
+  for (const c of lightCells) lights.poly(c.rect).fill({ color: c.warm ? era.warm : era.cool, alpha: 0.5 + c.flicker * 0.5 });
   container.addChild(lights);
   lights.alpha = 0;
 
