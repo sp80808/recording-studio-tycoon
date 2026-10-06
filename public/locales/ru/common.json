@@ -322,5 +322,20 @@
   "technique_tease_title": "Продвинутые приемы консоли",
   "technique_tease_overdrive": "Овердрайв: завершите 2 сессии и запишите дубль уровня Серебро или Золото (или завершите 4 сессии).",
   "technique_tease_combo": "Комбо: завершите 4 сессии.",
-  "technique_tease_streak-bank": "Банк серии: достигните комбо x3 после открытия Комбо (или завершите 8 сессий)."
+  "technique_tease_streak-bank": "Банк серии: достигните комбо x3 после открытия Комбо (или завершите 8 сессий).",
+  "career_titles_kicker": "Titles and keepsakes",
+  "career_title_current": "Known as {{title}}",
+  "career_title_earned_by": "Earned by: {{because}}",
+  "career_keepsake_furnishing": "Studio keepsake",
+  "career_keepsake_cosmetic": "Producer look",
+  "career_titles_earlier": "Earlier titles",
+  "career_title_first-paid-session": "Paid Professional",
+  "career_title_first-repeat-client": "Worth Rebooking",
+  "career_title_first-poor-session": "Battle-Scarred",
+  "career_title_first-loyal-client": "Keeper of Regulars",
+  "career_title_first-story-choice": "Decisive",
+  "career_title_first-staff-hire": "Bandleader",
+  "career_title_first-room-added": "Multi-Room Operator",
+  "career_title_first-premises-move": "Out of the Bedroom",
+  "career_title_first-charting-release": "Chart Maker"
 }
