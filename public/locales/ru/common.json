@@ -318,5 +318,9 @@
   "career_title_place": "Где и когда?",
   "career_title_person": "Кто ты?",
   "move_in_studio_named": "Студия {{name}}",
-  "move_in_studio_default": "Твоя студия"
+  "move_in_studio_default": "Твоя студия",
+  "technique_tease_title": "Продвинутые приемы консоли",
+  "technique_tease_overdrive": "Овердрайв: завершите 2 сессии и запишите дубль уровня Серебро или Золото (или завершите 4 сессии).",
+  "technique_tease_combo": "Комбо: завершите 4 сессии.",
+  "technique_tease_streak-bank": "Банк серии: достигните комбо x3 после открытия Комбо (или завершите 8 сессий)."
 }

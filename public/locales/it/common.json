@@ -316,5 +316,9 @@
   "career_title_place": "Dove e quando?",
   "career_title_person": "Chi sei?",
   "move_in_studio_named": "{{name}} Studios",
-  "move_in_studio_default": "Il tuo studio"
+  "move_in_studio_default": "Il tuo studio",
+  "technique_tease_title": "Tecniche avanzate di console",
+  "technique_tease_overdrive": "Overdrive: completa 2 sessioni e ottieni una take Argento o Oro (o completa 4 sessioni).",
+  "technique_tease_combo": "Combo: completa 4 sessioni.",
+  "technique_tease_streak-bank": "Banca della serie: raggiungi un combo x3 dopo aver sbloccato Combo (o completa 8 sessioni)."
 }

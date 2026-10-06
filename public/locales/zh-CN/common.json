@@ -315,5 +315,9 @@
   "career_title_place": "在哪里,什么时候?",
   "career_title_person": "你是谁?",
   "move_in_studio_named": "{{name}} 工作室",
-  "move_in_studio_default": "你的工作室"
+  "move_in_studio_default": "你的工作室",
+  "technique_tease_title": "高级调音台技巧",
+  "technique_tease_overdrive": "过载：完成2场录音并录出银级或金级一遍（或完成4场录音）。",
+  "technique_tease_combo": "连击：完成4场录音。",
+  "technique_tease_streak-bank": "连击银行：解锁连击后达成x3连击（或完成8场录音）。"
 }

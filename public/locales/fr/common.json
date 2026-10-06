@@ -316,5 +316,9 @@
   "career_title_place": "Où et quand ?",
   "career_title_person": "Qui es-tu ?",
   "move_in_studio_named": "Studios {{name}}",
-  "move_in_studio_default": "Ton studio"
+  "move_in_studio_default": "Ton studio",
+  "technique_tease_title": "Techniques de console avancees",
+  "technique_tease_overdrive": "Overdrive : termine 2 sessions et decroche une prise Argent ou Or (ou termine 4 sessions).",
+  "technique_tease_combo": "Combo : termine 4 sessions.",
+  "technique_tease_streak-bank": "Banque de serie : atteins un combo x3 une fois Combo debloque (ou termine 8 sessions)."
 }

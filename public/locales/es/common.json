@@ -316,5 +316,9 @@
   "career_title_place": "¿Dónde y cuándo?",
   "career_title_person": "¿Quién eres?",
   "move_in_studio_named": "Estudios {{name}}",
-  "move_in_studio_default": "Tu estudio"
+  "move_in_studio_default": "Tu estudio",
+  "technique_tease_title": "Tecnicas avanzadas de consola",
+  "technique_tease_overdrive": "Overdrive: termina 2 sesiones y consigue una toma de plata u oro (o termina 4 sesiones).",
+  "technique_tease_combo": "Combo: termina 4 sesiones.",
+  "technique_tease_streak-bank": "Banco de racha: alcanza un combo x3 con Combo desbloqueado (o termina 8 sesiones)."
 }
