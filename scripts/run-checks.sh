@@ -170,6 +170,8 @@ node "${CHECK_OUTPUT_DIR}/rst-streak-bank.cjs"
 echo "=== progressive technique unlocks (#260) ==="
 ./node_modules/.bin/esbuild tests/feature-unlocks.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-feature-unlocks.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-feature-unlocks.cjs"
+./node_modules/.bin/esbuild tests/technique-tease.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-technique-tease.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-technique-tease.cjs"
 
 echo "=== motion platform & originkit architecture (#72) ==="
 ./node_modules/.bin/esbuild tests/motion-platform.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-motion-platform.cjs" --alias:@=./src >/dev/null
@@ -245,7 +247,7 @@ node "${CHECK_OUTPUT_DIR}/rst-appearance-editor.cjs"
 node "${CHECK_OUTPUT_DIR}/rst-appearance-preview.cjs"
 
 echo "=== era-authentic gigs, story contracts & economy floors ==="
-for check in project-era-starters project-brief session-issues signal-chain economy-income economy-ledger story-contracts achievements campaign-endings studio-hotkeys studio-know-how studio-premises premises-cue; do
+for check in project-era-starters project-brief session-issues signal-chain economy-income economy-ledger story-contracts achievements campaign-endings studio-hotkeys studio-know-how studio-premises premises-cue premises-affordance; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-$check.cjs" --alias:@=./src >/dev/null
   node "${CHECK_OUTPUT_DIR}/rst-$check.cjs"
 done
@@ -329,5 +331,13 @@ node "${CHECK_OUTPUT_DIR}/rst-project-review-recovery.cjs"
 
 ./node_modules/.bin/esbuild tests/career-chronicle.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-career-chronicle.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-career-chronicle.cjs"
+
+echo "=== compact career setup (#204) ==="
+./node_modules/.bin/esbuild tests/career-setup.check.tsx --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-career-setup.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-career-setup.cjs"
+
+echo "=== room and producer cosmetics (#258) ==="
+./node_modules/.bin/esbuild tests/studio-customization.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-studio-customization.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-studio-customization.cjs"
 
 echo "All automated checks passed."

@@ -1,6 +1,7 @@
 import { useCutsceneQueue } from '@/hooks/useCutsceneQueue';
 import { applyKnowHowEvents } from '@/rpg/studioKnowHow';
 import { telemetry } from '@/telemetry/sink';
+import { trackCareerStarted, trackFeatureUnlocks } from '@/telemetry/instrument';
 import { installTelemetryDevHandle } from '@/telemetry/devHandle';
 import { REWARD_POP_EVENT, type RewardPopDetail } from '@/utils/rewardFx';
 import React, { useState, useEffect, useCallback, useRef } from 'react'; // Added useCallback
@@ -187,6 +188,7 @@ const MusicStudioTycoon = () => {
     installTelemetryDevHandle();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  useEffect(() => { trackFeatureUnlocks(gameState); }, [gameState]);
   useAmbientIncome(gameInitialized && !showSplashScreen && !showPauseMenu, setGameState);
 
   useEffect(() => {
@@ -335,6 +337,7 @@ const MusicStudioTycoon = () => {
       producerName: producer?.name,
       producerAppearance: producer?.appearance,
       cityId: producer?.cityId,
+      experiencedProducer: producer?.experienced === true,
       startingMoney: era.startingMoney,
       selectedEra: era.id,
       eraStartYear: era.startYear,
@@ -342,6 +345,8 @@ const MusicStudioTycoon = () => {
       equipmentMultiplier: era.equipmentMultiplier
     });
     
+    telemetry.startRun(newGameState.saveSeed);
+    trackCareerStarted(newGameState, producer?.experienced === true);
     setGameState(newGameState);
     setShowSplashScreen(false);
     setGameInitialized(true);
@@ -998,7 +1003,7 @@ const MusicStudioTycoon = () => {
 
       {showMoveIn && moveBeat && (
         <CinematicStoryCutscene
-          payload={buildMoveInCutscene(moveBeat)}
+          payload={buildMoveInCutscene(moveBeat, undefined, gameState)}
           onComplete={() => setGameState((prev) => clearPremisesMoveBeat(prev))}
         />
       )}
