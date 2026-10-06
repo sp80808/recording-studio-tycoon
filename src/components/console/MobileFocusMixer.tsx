@@ -50,8 +50,8 @@ export const MobileFocusMixer: React.FC<MobileFocusMixerProps> = ({
   const { t: tr } = useTranslation();
   const [showGuide, setShowGuide] = useState(false);
   return (
-    <div className="rst-mobile-mixer relative bg-stone-900/90 border border-stone-800 rounded-[2px] p-1.5" data-testid="mobile-focus-mixer">
-      <div className="flex items-center gap-1.5 mb-1">
+    <div className="rst-mobile-mixer relative flex min-h-0 flex-1 flex-col bg-stone-900/90 border border-stone-800 rounded-[2px] p-1.5" data-testid="mobile-focus-mixer">
+      <div className="shrink-0 flex items-center gap-1.5 mb-1">
         <span className="text-[10px] font-bold uppercase tracking-wider text-stone-300"><StatIcon name="technical" /> {tr('active_focus')}</span>
         <span className="text-[10px] font-bold px-1.5 rounded-full border bg-stone-950 text-amber-300 border-amber-500/40 tabular-nums">{tr('active_match', { pct: matchPct })}</span>
         <button
@@ -83,7 +83,8 @@ export const MobileFocusMixer: React.FC<MobileFocusMixerProps> = ({
           <span className="text-amber-300"><StatIcon name="bulb" /> </span><span className="font-medium">{guidanceTitle}:</span> {guidance}
         </div>
       )}
-      <div className="space-y-1">
+      {/* Rows share the panel height so tall phones get roomier faders, not an empty gap. */}
+      <div className="flex min-h-0 flex-1 flex-col justify-evenly gap-1">
         {CHANNELS.map((key, idx) => {
           const diff = Math.abs(focus[key] - optimal[key]);
           const t = tone(diff);
@@ -92,21 +93,21 @@ export const MobileFocusMixer: React.FC<MobileFocusMixerProps> = ({
             <div
               key={key}
               onClick={() => onSelectChannel?.(key)}
-              className={`flex items-center gap-2 p-1 rounded transition-all cursor-pointer ${
+              className={`flex min-h-[44px] items-center gap-2 p-1 rounded transition-all cursor-pointer ${
                 isSelected && gamepadActive
                   ? 'bg-amber-950/40 ring-1 ring-amber-400/60 border border-amber-400/40'
                   : ''
               }`}
               data-focus-channel={key}
             >
-              <span className="w-[88px] shrink-0 truncate text-[11px] font-semibold text-stone-200 flex items-center gap-1" title={stripLead(labels[key].label)}>
+              <span className="w-[88px] shrink-0 text-[11px] leading-tight font-semibold text-stone-200 flex items-center gap-1">
                 {gamepadActive && (
                   <span className="shrink-0">
                     {idx === 0 && <GamepadGlyph button="lb" controllerType={controllerType} size="xs" />}
                     {idx === 2 && <GamepadGlyph button="rb" controllerType={controllerType} size="xs" />}
                   </span>
                 )}
-                <span className="truncate">{stripLead(labels[key].label)}</span>
+                <span className="min-w-0 break-words">{stripLead(labels[key].label)}</span>
               </span>
               <div className="flex-1 flex items-center gap-1">
                 {gamepadActive && isSelected && (
@@ -124,13 +125,17 @@ export const MobileFocusMixer: React.FC<MobileFocusMixerProps> = ({
                   <GamepadGlyph button="dpadRight" controllerType={controllerType} size="xs" />
                 )}
               </div>
-              <span className={`w-[50px] shrink-0 text-center text-[10px] font-mono font-bold rounded border ${t.chip}`} title={tr('active_target_title', { min: Math.max(0, optimal[key] - 10), max: Math.min(100, optimal[key] + 10) })}>
+              <span className={`w-[50px] shrink-0 text-center text-[10px] font-mono font-bold rounded border ${t.chip}`}>
                 {focus[key]}%{diff <= 10 ? <StatIcon name="check" size="0.9em" /> : null}
               </span>
             </div>
           );
         })}
       </div>
+      {/* Tall phones have room for the stage note the popover otherwise hides. */}
+      <p className="hidden [@media(min-height:700px)]:block shrink-0 mt-1 border-t border-stone-800 pt-1.5 text-[11px] leading-snug text-stone-400" data-testid="mobile-focus-guidance">
+        <span className="text-amber-300"><StatIcon name="bulb" /> </span><span className="font-medium text-stone-300">{guidanceTitle}:</span> {guidance}
+      </p>
     </div>
   );
 };
