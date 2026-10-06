@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Building2 } from 'lucide-react';
 import type { GameState } from '@/types/game';
 import { bookEntry } from '@/economy/ledger';
-import { applyPremisesMove, getPremisesDef, getPremisesOffer, premisesStaffCap } from '@/rpg/premises';
+import { applyPremisesMove, getPremisesDef, getPremisesOffer, premisesDailyRent, premisesStaffCap } from '@/rpg/premises';
 import { deriveStudioPressure, generatePremisesOpportunities } from '@/rpg/premisesPressure';
 import { formatNumber } from '@/i18n/formatLocale';
 
@@ -22,7 +22,7 @@ export function PremisesPanel({ gameState, setGameState }: PremisesPanelProps) {
     <section className="rounded-lg border border-stone-700 bg-stone-950/50 p-2.5 text-xs" aria-label="Studio premises">
       <h3 className="flex items-center gap-1.5 text-sm font-semibold text-white">
         <Building2 size={15} aria-hidden="true" />{def.name}
-        {def.dailyRent > 0 && <span className="ml-auto text-stone-400">Rent ${def.dailyRent}/day</span>}
+        {premisesDailyRent(gameState) > 0 && <span className="ml-auto text-stone-400">Rent ${premisesDailyRent(gameState)}/day</span>}
       </h3>
       {pressure.reasons.length > 0 && (
         <ul className="mt-1.5 space-y-0.5 text-amber-300" aria-label="Studio pressure">
@@ -42,7 +42,9 @@ export function PremisesPanel({ gameState, setGameState }: PremisesPanelProps) {
                 <p className="font-semibold text-white">{o.name}</p>
                 <p className="text-emerald-300">+ {o.solves}</p>
                 <p className="text-rose-300">- {o.tradeoff}</p>
-                <p className="text-stone-400">Deposit ${formatNumber(o.deposit)}, rent ${o.dailyRent}/day (now ${def.dailyRent}). Staff cap {premisesStaffCap(gameState)} → {o.staffCap}, +{o.roomAllowanceBonus - def.roomAllowanceBonus} room allowance. Moving takes today's studio time. Staff, gear, clients and Know-How come with you.</p>
+                <p className="text-stone-300">{o.terms}</p>
+                <p className="text-amber-300">{o.daysLeft === 1 ? 'Last day to take it.' : `Available for ${o.daysLeft} more days.`}</p>
+                <p className="text-stone-400">Deposit ${formatNumber(o.deposit)}, rent ${o.dailyRent}/day (now ${premisesDailyRent(gameState)}). Staff cap {premisesStaffCap(gameState)} → {o.staffCap}, +{o.roomAllowanceBonus - def.roomAllowanceBonus} room allowance. Moving takes today's studio time. Staff, gear, clients and Know-How come with you.</p>
                 <button
                   className="rst-btn mt-1.5"
                   disabled={!o.eligible}
@@ -50,7 +52,7 @@ export function PremisesPanel({ gameState, setGameState }: PremisesPanelProps) {
                     if (confirming !== o.id) return setConfirming(o.id);
                     setConfirming(null);
                     setGameState(prev => {
-                      const moved = applyPremisesMove(prev);
+                      const moved = applyPremisesMove(prev, o.archetype);
                       return moved === prev
                         ? prev
                         : bookEntry(moved, { category: 'premises-rent', amount: moved.money - prev.money, sourceId: 'premises-deposit', memo: 'Studio deposit' });

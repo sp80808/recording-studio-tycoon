@@ -9,6 +9,8 @@ import { spend } from '@/economy/ledger';
 import { generateCandidates } from '@/utils/staffRecruitment';
 import { premisesCandidateCount } from '@/rpg/premises';
 import { pickWorkStyle } from '@/rpg/workStyle';
+import { createSeededRandom } from '@/simulation/seededRandom';
+import { LABEL_ACCOUNTS } from '@/rpg/labelInterest';
 import { getStaffCareer, defaultDiscipline, levelFor, type StaffDiscipline } from '@/rpg/staffCareer';
 
 export type RecruitmentChannelId = 'referral' | 'college' | 'board' | 'specialist' | 'headhunter';
@@ -101,6 +103,41 @@ const withCareer = (c: StaffMember, discipline: StaffDiscipline | undefined, xp:
   };
 };
 
+/** Chance a candidate arrives referred by someone the studio knows, by channel. Other channels never do. */
+export const REFERRAL_CHANCE: Partial<Record<RecruitmentChannelId, number>> = { referral: 0.5, board: 0.2, headhunter: 0.3 };
+/** Interest a label needs before it will put someone forward. */
+export const LABEL_REFERRAL_MIN_INTEREST = 25;
+/** Client sessions a candidate who knows the artist starts with. */
+export const REFERRED_CLIENT_FAMILIARITY = 1;
+
+/** Who a candidate might be referred by: clients with a completed session, labels showing interest. */
+const referrers = (s: RecruitState): NonNullable<StaffMember['referredBy']>[] => {
+  const clients = Object.entries(s.clientRelationships ?? {})
+    .filter(([, r]) => (r?.sessionsCompleted ?? 0) >= 1)
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([id, r]) => ({ kind: 'client' as const, id, name: r.clientName }));
+  const labels = LABEL_ACCOUNTS
+    .filter((l) => (s.labelInterest?.[l.id] ?? 0) >= LABEL_REFERRAL_MIN_INTEREST)
+    .map((l) => ({ kind: 'label' as const, id: l.id, name: l.name }));
+  return [...clients, ...labels];
+};
+
+/** Seeded referral: same search and candidate always get the same referrer. A client referral means they already know that artist. */
+const withReferral = (c: StaffMember, channelId: RecruitmentChannelId, searchSeed: string, pool: NonNullable<StaffMember['referredBy']>[]): StaffMember => {
+  const chance = REFERRAL_CHANCE[channelId] ?? 0;
+  if (!chance || pool.length === 0) return c;
+  const rng = createSeededRandom(`referral:${searchSeed}:${c.id}`);
+  if (rng() >= chance) return c;
+  const by = pool[Math.floor(rng() * pool.length)];
+  const why = by.kind === 'client' ? `Referred by ${by.name}, who already knows their work` : `Put forward by ${by.name}`;
+  return {
+    ...c,
+    referredBy: by,
+    clientFamiliarity: by.kind === 'client' ? { ...(c.clientFamiliarity ?? {}), [by.id]: REFERRED_CLIENT_FAMILIARITY } : c.clientFamiliarity,
+    source: c.source ? { ...c.source, why: `${why}. ${c.source.why}` } : c.source,
+  };
+};
+
 /** Deterministic shortlist for a search. Same search + same state inputs, same people. */
 export function buildSearchCandidates(s: RecruitState, search: RecruitmentSearch): StaffMember[] {
   const base = generateCandidates({
@@ -114,7 +151,10 @@ export function buildSearchCandidates(s: RecruitState, search: RecruitmentSearch
   });
   const ch = RECRUITMENT_CHANNELS[search.channelId];
   const crewRole = majorityRole(s.hiredStaff);
-  return base.map((raw): StaffMember => {
+  const pool = referrers(s);
+  return base.map((raw): StaffMember => withReferral(buildOne(raw), search.channelId, search.seed, pool));
+
+  function buildOne(raw: StaffMember): StaffMember {
     const c: StaffMember = { ...raw, workStyle: pickWorkStyle(search.channelId, `${search.seed}:${raw.id}`) };
     if (search.channelId === 'college') {
       const p = c.primaryStats;
@@ -158,7 +198,7 @@ export function buildSearchCandidates(s: RecruitState, search: RecruitmentSearch
       }, undefined, 250, 'senior');
     }
     return { ...c, source: { channelId: ch.id, label: ch.name, why: 'Answered your job-board listing' } };
-  });
+  }
 }
 
 /** Day tick: a due search resolves into the shortlist exactly once and clears itself. */
