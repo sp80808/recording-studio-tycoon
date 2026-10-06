@@ -158,6 +158,20 @@ export const getOccupiedRoomIds = (
   return roomIds;
 };
 
+/**
+ * The project whose session is shown in a viewed room. Extra rooms only show a project
+ * booked into them (primary or concurrent); Studio A (roomId undefined/'studio-a') shows the
+ * primary project.
+ */
+export const getProjectForRoom = (
+  gameState: Pick<GameState, 'activeProject' | 'activeProjects'>,
+  roomId?: string | null
+): Project | null => {
+  if (!roomId || roomId === 'studio-a') return gameState.activeProject ?? null;
+  const all = [gameState.activeProject, ...(gameState.activeProjects || [])];
+  return all.find((p): p is Project => !!p && p.bookingRoomId === roomId) ?? null;
+};
+
 export const inferProjectStageKind = (project: Project): StudioRoomStageKind => {
   const stage = project.stages?.[project.currentStageIndex || 0];
   const name = stage?.stageName?.toLowerCase() || '';

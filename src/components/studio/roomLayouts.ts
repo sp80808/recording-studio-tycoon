@@ -82,7 +82,24 @@ export interface RoomLayoutProfile {
   staffSpots: { x: number; y: number }[];
   /** Tile where the on-air lamp is mounted on the right wall. */
   onAirX: number;
+  /** Window with a live sky, sun/moon and skyline driven by the studio clock. */
+  window: RoomWindowSpec;
+  /** Where the booked artist stands during a session, and the floor tile they walk in from. */
+  artistSpot: { x: number; y: number };
+  doorSpot: { x: number; y: number };
+  /** Resting camera: the tile centred on screen and a zoom multiplier on top of the fit-to-room scale. */
+  camera: { focus: { x: number; y: number }; zoom: number };
 }
+
+export interface RoomWindowSpec {
+  side: 'left' | 'right';
+  /** Tile range along the wall; keep it clear of wall treatments and the on-air lamp. */
+  from: number;
+  to: number;
+}
+
+/** Glass extent above the floor in px, shared by the scene and the layout checks. */
+export const ROOM_WINDOW_LIFT = { bottom: 34, top: 96 } as const;
 
 /** Footprint of each prop kind in tiles (width along x, depth along y) and its rough height in px. */
 export const PROP_METRICS: Record<RoomPropKind, { w: number; d: number; h: number }> = {
@@ -121,14 +138,17 @@ const VOCAL_SUITE: RoomLayoutProfile = {
   walls: [
     { side: 'right', from: 0.4, to: 3.1, kind: 'foam', lift0: 30, lift1: 112 },
     { side: 'left', from: 0.4, to: 5.6, kind: 'foam', lift0: 30, lift1: 112 },
-    { side: 'right', from: 3.6, to: 5.6, kind: 'panel', lift0: 30, lift1: 112 },
   ],
   hotspots: [
     { id: 'liveRoom', propId: 'vocalMic', label: 'Vocal booth' },
     { id: 'console', propId: 'cueDesk', label: 'Cue desk' },
   ],
-  staffSpots: [{ x: 3.0, y: 4.1 }, { x: 4.6, y: 2.4 }],
+  staffSpots: [{ x: 4.5, y: 2.1 }, { x: 1.7, y: 3.4 }],
   onAirX: 3.35,
+  window: { side: 'right', from: 3.8, to: 5.5 },
+  artistSpot: { x: 3.0, y: 3.8 },
+  doorSpot: { x: 0.5, y: 3.4 },
+  camera: { focus: { x: 3.0, y: 3.0 }, zoom: 1.0 },
 };
 
 const LIVE_ROOM: RoomLayoutProfile = {
@@ -152,15 +172,19 @@ const LIVE_ROOM: RoomLayoutProfile = {
     { side: 'right', from: 0.4, to: 5.2, kind: 'brick', lift0: 0, lift1: 120 },
     { side: 'right', from: 5.2, to: 7.8, kind: 'foam', lift0: 24, lift1: 104 },
     { side: 'left', from: 0.4, to: 3.4, kind: 'diffuser', lift0: 24, lift1: 108 },
-    { side: 'left', from: 3.8, to: 7.6, kind: 'foam', lift0: 24, lift1: 108 },
+    { side: 'left', from: 6.6, to: 7.6, kind: 'foam', lift0: 24, lift1: 108 },
   ],
   hotspots: [
     { id: 'liveRoom', propId: 'drums', label: 'Live floor' },
     { id: 'shelf', propId: 'ampWall', label: 'Amp wall' },
     { id: 'console', propId: 'stageBox', label: 'Tracking patch' },
   ],
-  staffSpots: [{ x: 4.4, y: 6.0 }, { x: 2.6, y: 3.4 }, { x: 6.8, y: 4.2 }],
+  staffSpots: [{ x: 4.4, y: 6.3 }, { x: 2.6, y: 3.4 }, { x: 6.8, y: 4.2 }],
   onAirX: 3.4,
+  window: { side: 'left', from: 3.9, to: 6.4 },
+  artistSpot: { x: 4.4, y: 4.9 },
+  doorSpot: { x: 0.5, y: 5.6 },
+  camera: { focus: { x: 4.4, y: 4.0 }, zoom: 1.0 },
 };
 
 const MIX_SUITE: RoomLayoutProfile = {
@@ -181,15 +205,19 @@ const MIX_SUITE: RoomLayoutProfile = {
     { id: 'lamp', kind: 'lamp', x: 0.8, y: 4.6 },
   ],
   walls: [
-    { side: 'right', from: 0.4, to: 5.6, kind: 'diffuser', lift0: 26, lift1: 112 },
+    { side: 'right', from: 0.4, to: 3.9, kind: 'diffuser', lift0: 26, lift1: 112 },
     { side: 'left', from: 0.4, to: 5.6, kind: 'foam', lift0: 26, lift1: 112 },
   ],
   hotspots: [
     { id: 'console', propId: 'mixConsole', label: 'Mix console' },
     { id: 'shelf', propId: 'outboardA', label: 'Outboard racks' },
   ],
-  staffSpots: [{ x: 3.4, y: 3.9 }, { x: 5.4, y: 3.2 }],
+  staffSpots: [{ x: 3.4, y: 3.9 }, { x: 1.8, y: 3.3 }],
   onAirX: 3.4,
+  window: { side: 'right', from: 4.3, to: 5.7 },
+  artistSpot: { x: 5.3, y: 4.4 },
+  doorSpot: { x: 0.5, y: 3.0 },
+  camera: { focus: { x: 3.4, y: 2.8 }, zoom: 1.1 },
 };
 
 /**
@@ -238,6 +266,28 @@ export const validateRoomLayout = (profile: RoomLayoutProfile): string[] => {
       if (s.x > r.x0 - 0.15 && s.x < r.x1 + 0.15 && s.y > r.y0 - 0.15 && s.y < r.y1 + 0.15) problems.push(`staff spot (${s.x},${s.y}) is blocked by ${p.id}`);
     }
   }
+  for (const [label, spot] of [['artist spot', profile.artistSpot], ['door spot', profile.doorSpot]] as const) {
+    if (spot.x < 0 || spot.y < 0 || spot.x > width || spot.y > depth) problems.push(`${label} outside the footprint`);
+  }
+  for (const p of solids) {
+    const r = propRect(p);
+    const a = profile.artistSpot;
+    if (a.x > r.x0 - 0.15 && a.x < r.x1 + 0.15 && a.y > r.y0 - 0.15 && a.y < r.y1 + 0.15) problems.push(`artist spot is blocked by ${p.id}`);
+  }
+  for (const s of profile.staffSpots) {
+    if (Math.hypot(s.x - profile.artistSpot.x, s.y - profile.artistSpot.y) < 0.9) problems.push('artist spot crowds a staff spot');
+  }
+  {
+    const win = profile.window;
+    const max = win.side === 'right' ? width : depth;
+    if (win.from < 0 || win.to > max || win.to <= win.from) problems.push('window out of range');
+    for (const w of profile.walls) {
+      if (w.side === win.side && w.from < win.to && w.to > win.from) problems.push(`window overlaps ${w.kind} wall treatment`);
+    }
+    if (win.side === 'right' && profile.onAirX + 0.3 > win.from && profile.onAirX - 0.3 < win.to) problems.push('window overlaps the on-air lamp');
+  }
+  if (profile.camera.zoom < 0.8 || profile.camera.zoom > 1.6) problems.push('camera zoom out of range');
+  if (profile.camera.focus.x < 0 || profile.camera.focus.y < 0 || profile.camera.focus.x > width || profile.camera.focus.y > depth) problems.push('camera focus outside the footprint');
   const seen = new Set<RoomHotspotId>();
   for (const h of profile.hotspots) {
     if (seen.has(h.id)) problems.push(`hotspot ${h.id} declared twice`);

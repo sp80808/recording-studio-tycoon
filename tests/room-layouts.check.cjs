@@ -32,7 +32,20 @@ async (page) => {
       assert(hit === room.expect, `${room.type}: clicking its hotspot gave ${hit}, expected ${room.expect}`);
     }
   }
+  // Visual evidence: every room with crew, the booked artist and the window, by day and by night.
+  const shots = [];
+  for (const [type, label] of [['', 'studio-a'], ['vocal-suite', 'vocal-suite'], ['live-room', 'live-room'], ['mix-suite', 'mix-suite']]) {
+    for (const [clock, tag] of [[840, 'day'], [1350, 'night']]) {
+      await page.evaluate(([t, c]) => window.__setRoom(t, true, { hasActiveProject: true, staffOnFloor: 3, clockMinutes: c }), [type, clock]);
+      await page.waitForTimeout(2600);
+      const file = `docs/img/room-${label}-${tag}.png`;
+      await page.screenshot({ path: file });
+      shots.push(file);
+    }
+  }
+  const state = await page.evaluate(() => ({ canvases: document.querySelectorAll('canvas').length, same: document.querySelector('canvas') === window.__canvas }));
+  assert(state.canvases === 1 && state.same, 'canvas recreated while taking room screenshots');
   const real = errors.filter((e) => !/AudioContext|GL Driver|GPU stall/.test(e));
   assert(real.length === 0, `console errors while switching rooms: ${real.join(' | ')}`);
-  return 'room layouts smoke passed';
+  return `room layouts smoke passed (${shots.length} screenshots)`;
 }
