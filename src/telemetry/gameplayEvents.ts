@@ -29,7 +29,10 @@ export type GameplayEventName =
   | 'gear_sold'
   | 'repair_completed'
   | 'relationship_tier_changed'
-  | 'management_panel_opened';
+  | 'management_panel_opened'
+  | 'career_started'
+  | 'feature_unlocked'
+  | 'feature_used';
 
 export type TelemetryValue = string | number | boolean | null;
 
@@ -68,6 +71,9 @@ export const ALLOWED_PROPERTIES: Record<GameplayEventName, readonly string[]> = 
   repair_completed: ['kind', 'condition'],
   relationship_tier_changed: ['from', 'to'],
   management_panel_opened: ['destination'],
+  career_started: ['startOption'],
+  feature_unlocked: ['feature', 'sessions', 'level'],
+  feature_used: ['feature'],
 };
 
 const SAFE_STRING = /^[a-z0-9][a-z0-9_.\-]{0,31}$/i;

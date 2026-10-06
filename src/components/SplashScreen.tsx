@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Maximize, Minimize, Play, Plus, Settings, Volume2, VolumeX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Era } from './EraSelectionModal';
 import type { ProducerBackgroundId } from '@/types/character';
 import { CareerStartScreen, type ProducerSetup } from './CareerStartScreen';
+import { openingBrief, type OpeningBrief } from '@/rpg/careerSetup';
 import { SettingsModal } from './modals/SettingsModal';
 import {
   AlertDialog,
@@ -39,6 +40,7 @@ const TIP_KEYS = [
 export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScreenProps) {
   const [showEraSelection, setShowEraSelection] = useState(false);
   const [isEnteringStudio, setIsEnteringStudio] = useState(false);
+  const [moveIn, setMoveIn] = useState<{ brief: OpeningBrief | null; name?: string } | null>(null);
   const transitionTimer = useRef<number | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false);
@@ -119,6 +121,7 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
   const fullscreenLabel = isFullscreen ? t('exit_fullscreen') : t('enter_fullscreen');
 
   const handleBeginStudio = (era: Era, originId: ProducerBackgroundId, producer?: ProducerSetup) => {
+    setMoveIn({ brief: openingBrief(producer?.cityId ?? '', era.id), name: producer?.name });
     setIsEnteringStudio(true);
     transitionTimer.current = window.setTimeout(() => {
       setShowEraSelection(false);
@@ -128,12 +131,21 @@ export function SplashScreen({ onStartGame, onLoadGame, hasSaveGame }: SplashScr
   };
 
   if (isEnteringStudio) {
+    // Move-in: the sign over the door carries the city, era and producer the player just chose.
+    const brief = moveIn?.brief ?? null;
     return (
-      <main className="studio-boot-gate" role="status" aria-live="polite" aria-busy="true">
+      <main className="studio-boot-gate" role="status" aria-live="polite" aria-busy="true" data-testid="studio-move-in"
+        style={brief ? ({ '--move-in-accent': brief.accent } as React.CSSProperties) : undefined}>
         <span className="studio-boot-gate-mark">RST</span>
-        <p className="studio-boot-gate-title">Opening the studio…</p>
-        <p className="studio-boot-gate-copy">Setting the room, routing the signal, and finding the good pencil.</p>
-        <div className="studio-boot-skeleton" aria-hidden="true"><span /><span /><span /></div>
+        {brief ? (
+          <div className="studio-move-in-sign" data-testid="move-in-sign">
+            <span className="studio-move-in-city">{brief.headline}</span>
+            <span className="studio-move-in-name">{moveIn?.name ? t('move_in_studio_named', { name: moveIn.name }) : t('move_in_studio_default')}</span>
+          </div>
+        ) : (
+          <p className="studio-boot-gate-title">Opening the studio…</p>
+        )}
+        <p className="studio-boot-gate-copy">{brief ? `Unlocking the door. ${brief.eraName}, ${brief.cityName}. Time to move in.` : 'Setting the room, routing the signal, and finding the good pencil.'}</p>
         <div className="studio-boot-progress" aria-hidden="true"><i /></div>
       </main>
     );

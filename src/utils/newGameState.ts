@@ -12,6 +12,7 @@ import { ProgressionSystem } from '@/services/ProgressionSystem';
 import { resolvePlayerLevelUps } from '@/utils/playerUtils';
 import { initializeSkillsPlayer } from '@/utils/skillUtils';
 import { createInitialKnowHow } from '@/rpg/studioKnowHow';
+import { createExperiencedProgress } from '@/rpg/featureUnlocks';
 import { createInitialExpertise } from '@/rpg/houseStyle';
 import { DEFAULT_CITY_ID, applyCityEdge, isCityId, type CityId } from '@/rpg/cities';
 import { createDefaultStudioRooms } from '@/utils/studioRoomUtils';
@@ -41,6 +42,8 @@ export interface EraInitOptions {
   producer?: { name?: string; appearance?: unknown };
   /** Home city picked at career start. Defaults to Los Angeles for new runs. */
   cityId?: CityId;
+  /** "Experienced Producer" start (#260): grandfathers every console technique; economy and premises are unchanged. */
+  experiencedProducer?: boolean;
   /** Fixed run seed (tests / replays). Defaults to Date.now() for a fresh run. */
   saveSeed?: number | string;
 }
@@ -121,7 +124,7 @@ export const createDefaultGameState = (options?: Partial<EraInitOptions>): GameS
     studioKnowHow: createInitialKnowHow(),
     studioExpertise: createInitialExpertise(),
     premisesTier: 0,
-    featureProgress: { bestCombo: 0, goodTake: false, seen: [] },
+    featureProgress: options?.experiencedProducer ? createExperiencedProgress() : { bestCombo: 0, goodTake: false, seen: [] },
     cityId: isCityId(options?.cityId) ? options!.cityId : DEFAULT_CITY_ID,
     activeProject: null, // Keep for backward compatibility
     // Multi-project system

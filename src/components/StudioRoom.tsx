@@ -253,6 +253,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       cityId: gameState.cityId,
       roomTier,
       premisesTier: gameState.premisesTier ?? 0,
+      premisesArchetype: gameState.premisesArchetype,
       pendingCases: isFlightCaseSystemUnlocked(gameState)
         ? (gameState.pendingCrates ?? []).map((c) => c.tier)
         : [],
@@ -270,7 +271,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           project.rider?.items.some((item) => item.kind === 'beer'),
       ),
     };
-  }, [gameState.activeProject, gameState.activeProjects, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, gameState.cityId, eraDecor.eraId, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, gameState.playerData, gameState.availableProjects.length, gameState.choreState, gameState.premisesTier, gameState.pendingCrates, roomTier, floorFocused, activeInspector, studioClock.minutesOfDay, lockedHotspot, viewRoom?.type, viewRoom?.id, occupiedRooms]);
+  }, [gameState.activeProject, gameState.activeProjects, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, gameState.cityId, eraDecor.eraId, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, gameState.playerData, gameState.availableProjects.length, gameState.choreState, gameState.premisesTier, gameState.premisesArchetype, gameState.pendingCrates, roomTier, floorFocused, activeInspector, studioClock.minutesOfDay, lockedHotspot, viewRoom?.type, viewRoom?.id, occupiedRooms]);
 
   /**
    * Diegetic floor routes: pending chores always run the chore flow first.

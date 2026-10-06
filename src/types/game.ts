@@ -395,6 +395,8 @@ export interface GameState {
   studioKnowHow?: import('@/rpg/studioKnowHow').StudioKnowHow;
   /** Studio house style / expertise (#71). Absent on legacy saves; migrated to empty. */
   studioExpertise?: import('@/rpg/houseStyle').StudioExpertise;
+  /** Room/producer cosmetics and their provenance (#258). Absent on legacy saves = empty. Purely visual, never gameplay power. */
+  studioCustomization?: import('@/rpg/studioCustomization').StudioCustomizationState;
   /** Studio premises tier (#70): 0 borrowed room, 1 project studio. Absent on legacy saves = 0. */
   premisesTier?: 0 | 1 | 2 | 3;
   /** Pinned defining moments (#259): career milestone ids, max 3. Absent on legacy saves = none. */
@@ -403,6 +405,10 @@ export interface GameState {
   firstChart?: { projectId: string; title: string; chartName: string; peak: number };
   /** Move-day cinematic still to be shown after a premises move (#70). Cleared once seen. */
   premisesMoveBeat?: 1 | 2 | 3;
+  /** Property archetype taken on the last premises move (#250). Absent on legacy saves = band-standard terms. */
+  premisesArchetype?: import('@/rpg/premisesTraits').PremisesArchetype;
+  /** Id of the last property lead whose world cue (phone ring / door knock) was delivered (#250). */
+  premisesCueSeen?: string;
   /** Home city picked at career start (currency display, regional taste, local names and events). Absent on legacy saves = neutral. */
   cityId?: import('@/rpg/cities').CityId;
   chainTemplates?: import('@/rpg/signalChain').SignalChain[]; // Saved chain templates (#86)

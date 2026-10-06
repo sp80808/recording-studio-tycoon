@@ -307,5 +307,18 @@
   "rest_advance_day": "Rest & advance day",
   "story_no_cost": "No immediate cost",
   "story_decide_later": "Decide later",
-  "story_continue": "Continue"
+  "story_continue": "Continue",
+  "career_aria": "Start a new career",
+  "career_where_when": "Where & when",
+  "career_quick_start": "Quick start",
+  "career_continue": "Continue",
+  "career_kicker": "Open your studio",
+  "career_title_place": "Where and when?",
+  "career_title_person": "Who are you?",
+  "move_in_studio_named": "{{name}} Studios",
+  "move_in_studio_default": "Your studio",
+  "technique_tease_title": "Advanced console techniques",
+  "technique_tease_overdrive": "Overdrive: finish 2 sessions and land a Silver or Gold take (or finish 4 sessions).",
+  "technique_tease_combo": "Combo: finish 4 sessions.",
+  "technique_tease_streak-bank": "Streak Bank: reach a x3 combo once Combo is unlocked (or finish 8 sessions)."
 }
