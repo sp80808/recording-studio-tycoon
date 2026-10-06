@@ -88,7 +88,7 @@ if [ -f tests/studio-strip-desktop-gate.check.ts ]; then
 fi
 
 echo "=== studio chores, progression & crate unboxing suites ==="
-for check in chart-reveal chart-run chore-engine chore-progression-coupling studio-duties-clipboard chore-hotspots crate-unboxing flight-case-economy flight-case-reveal flight-case-connectors reward-animation-sprite-pipeline; do
+for check in chart-reveal chart-run chore-engine chore-progression-coupling studio-duties-clipboard chore-hotspots crate-unboxing flight-case-economy flight-case-reveal flight-case-connectors flight-case-bench reward-animation-sprite-pipeline; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-$check.cjs" --alias:@=./src >/dev/null
   node "${CHECK_OUTPUT_DIR}/rst-$check.cjs"
 done

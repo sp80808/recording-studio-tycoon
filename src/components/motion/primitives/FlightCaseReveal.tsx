@@ -9,9 +9,7 @@ import {
   Archive,
   BadgeCheck,
   FastForward,
-  Box,
   CheckCircle2,
-  Cable,
 } from 'lucide-react';
 import { EquipmentItem, Rarity } from '@/features/boxDrops/lootGenerator';
 import { FlightCaseTier, FLIGHT_CASES, getFlightCaseDef } from '@/data/flightCases';
@@ -43,16 +41,15 @@ import {
   playConnectorSnap,
   playJackInsert,
   playJackRemove,
-  playGroundSpark,
   playAuditionChord,
   ButterflyTwistLatch,
-  SnakeCableConnector,
-  ChassisGroundClip,
-  HardwarePatchPanel,
-  InteractivePatchCable,
+  TestBench,
   ConnectorActionRouting,
   type PatchSocket,
 } from '@/features/boxDrops/connectors';
+import { BENCH_TESTS, gearKindOf, type GearKind } from '@/features/boxDrops/gearKind';
+import { GearSilhouette } from '@/features/boxDrops/GearSilhouette';
+import { hapticTick } from '@/utils/mobilePlatform';
 import { formatNumber } from '@/i18n/formatLocale';
 
 export interface PremiumDisplayItem {
@@ -165,12 +162,11 @@ export function inferTierFromOutcome(outcome: EquipmentItem | PremiumCaseReward)
  * Adheres strictly to the 7-phase reveal state machine:
  * closed -> latch -> open -> silhouette -> reveal -> details -> collect.
  *
- * Enhanced with studio hardware connectors:
- * - Industrial butterfly twist latches
- * - Multi-pin audio snake quick-disconnect
- * - Braided chassis ground bond
- * - Analog rack patch panel with VU meters & phosphor CRT oscilloscope
- * - Dynamic interactive patch cable with real-time polyphonic auditioning
+ * Physical flow, like a real road case:
+ * - Flip the two butterfly latches on the front and the lid lifts
+ * - The gear sits in a foam cutout shaped like it, then lifts out
+ * - Bench test: its own cable ends in the plug it really has (XLR, 1/4");
+ *   only the matching input accepts it, and the meter reads its condition
  */
 export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
   outcome,
@@ -192,15 +188,13 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
     createInitialRevealState(outcome, { reducedMotion })
   );
 
-  // Interactive connector states (closed/latch phase)
+  // Butterfly latches on the case front (closed phase)
   const [leftLatchOpen, setLeftLatchOpen] = useState(false);
   const [rightLatchOpen, setRightLatchOpen] = useState(false);
-  const [snakeDisconnected, setSnakeDisconnected] = useState(false);
-  const [groundDetached, setGroundDetached] = useState(false);
 
-  // Audio patch cable & socket auditioning (details phase)
+  // Bench test after unboxing (details phase)
   const [isPatched, setIsPatched] = useState(false);
-  const [activeSocket, setActiveSocket] = useState<PatchSocket>('trs');
+  const [hasAuditioned, setHasAuditioned] = useState(false);
 
   const activeTimersRef = useRef<Set<any>>(new Set());
 
@@ -232,22 +226,20 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
     ? RARITY_CONFIG[currentItem.rarity] || RARITY_CONFIG.common
     : RARITY_CONFIG.legendary;
 
+  const gearKind: GearKind = currentItem ? gearKindOf(currentItem) : 'rack';
+  const benchPlug = BENCH_TESTS[gearKind].plug;
+
   const shellTitle = titleOverride ?? (isPremium ? premiumReward?.productTitle : caseDef.cssTheme.stencil);
 
-  // Released connector count for visual progress
-  const releasedCount =
-    (leftLatchOpen ? 1 : 0) +
-    (rightLatchOpen ? 1 : 0) +
-    (snakeDisconnected ? 1 : 0) +
-    (groundDetached ? 1 : 0);
+  // Latches flipped so far
+  const releasedCount = (leftLatchOpen ? 1 : 0) + (rightLatchOpen ? 1 : 0);
 
-  // Tactile audio triggers
+  // Lid comes up: the latches are already open, this is the lid's thump.
   const triggerTactileLatch = useCallback(() => {
     playConnectorSnap(0.85);
     setLeftLatchOpen(true);
     setRightLatchOpen(true);
-    setSnakeDisconnected(true);
-    setGroundDetached(true);
+    hapticTick([10, 30, 18]);
     gamepad.triggerHaptic(0.5, 0.7, 90);
   }, [gamepad]);
 
@@ -300,93 +292,75 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
     dispatch({ type: 'START_UNLATCH' });
   }, [state.phase]);
 
-  // Individual connector interaction handlers
-  const handleToggleLeftLatch = useCallback(() => {
-    if (state.phase !== 'closed') return;
-    const next = !leftLatchOpen;
-    setLeftLatchOpen(next);
-    playConnectorSnap(0.65);
-    gamepad.triggerHaptic(0.4, 0.6, 60);
-  }, [state.phase, leftLatchOpen, gamepad]);
+  // Butterfly latches: a latch flips open once; a real case doesn't need re-locking mid-unbox.
+  const flipLatch = useCallback(
+    (side: 'left' | 'right') => {
+      if (state.phase !== 'closed') return;
+      const already = side === 'left' ? leftLatchOpen : rightLatchOpen;
+      if (already) return;
+      (side === 'left' ? setLeftLatchOpen : setRightLatchOpen)(true);
+      playConnectorSnap(0.65);
+      hapticTick(14);
+      gamepad.triggerHaptic(0.4, 0.6, 60);
+    },
+    [state.phase, leftLatchOpen, rightLatchOpen, gamepad]
+  );
+  const handleToggleLeftLatch = useCallback(() => flipLatch('left'), [flipLatch]);
+  const handleToggleRightLatch = useCallback(() => flipLatch('right'), [flipLatch]);
 
-  const handleToggleRightLatch = useCallback(() => {
+  // One button for players who just want it open: flips each remaining latch in turn, then the lid lifts.
+  const handleFlipAll = useCallback(() => {
     if (state.phase !== 'closed') return;
-    const next = !rightLatchOpen;
-    setRightLatchOpen(next);
-    playConnectorSnap(0.65);
-    gamepad.triggerHaptic(0.4, 0.6, 60);
-  }, [state.phase, rightLatchOpen, gamepad]);
+    if (!leftLatchOpen) flipLatch('left');
+    if (!rightLatchOpen) {
+      const t = setTimeout(() => {
+        setRightLatchOpen(true);
+        playConnectorSnap(0.65);
+        hapticTick(14);
+      }, leftLatchOpen ? 0 : 170);
+      activeTimersRef.current.add(t);
+    }
+  }, [state.phase, leftLatchOpen, rightLatchOpen, flipLatch]);
 
-  const handleToggleSnake = useCallback(() => {
-    if (state.phase !== 'closed') return;
-    const next = !snakeDisconnected;
-    setSnakeDisconnected(next);
-    playConnectorSnap(0.7);
-    gamepad.triggerHaptic(0.4, 0.6, 70);
-  }, [state.phase, snakeDisconnected, gamepad]);
-
-  const handleToggleGround = useCallback(() => {
-    if (state.phase !== 'closed') return;
-    const next = !groundDetached;
-    setGroundDetached(next);
-    playGroundSpark(0.5);
-    gamepad.triggerHaptic(0.3, 0.5, 50);
-  }, [state.phase, groundDetached, gamepad]);
-
-  // Auto-advance if player manually unlatches all 4 connectors
+  // Both latches open: the lid lifts.
   useEffect(() => {
-    if (
-      state.phase === 'closed' &&
-      leftLatchOpen &&
-      rightLatchOpen &&
-      snakeDisconnected &&
-      groundDetached
-    ) {
+    if (state.phase === 'closed' && leftLatchOpen && rightLatchOpen) {
       const timer = setTimeout(() => {
         handleStartUnlatch();
-      }, 200);
+      }, 220);
       return () => clearTimeout(timer);
     }
-  }, [
-    state.phase,
-    leftLatchOpen,
-    rightLatchOpen,
-    snakeDisconnected,
-    groundDetached,
-    handleStartUnlatch,
-  ]);
+  }, [state.phase, leftLatchOpen, rightLatchOpen, handleStartUnlatch]);
 
-  // Interactive patch audition handler
-  const handleTogglePatch = useCallback(
-    (target?: PatchSocket) => {
+  // Bench test: only the socket the plug fits accepts it (TestBench enforces the fit).
+  const handlePatch = useCallback(
+    (_socket: PatchSocket) => {
       if (state.phase !== 'details' || !currentItem) return;
-
-      if (target && isPatched && activeSocket !== target) {
-        setActiveSocket(target);
-        playJackInsert(0.8);
-        gamepad.triggerHaptic(0.5, 0.7, 80);
-        playAuditionChord(currentItem.era, currentItem.rarity);
-        return;
-      }
-
-      if (target) {
-        setActiveSocket(target);
-      }
-
-      const next = !isPatched;
-      setIsPatched(next);
-
-      if (next) {
-        playJackInsert(0.85);
-        gamepad.triggerHaptic(0.6, 0.8, 100);
-        playAuditionChord(currentItem.era, currentItem.rarity);
-      } else {
-        playJackRemove(0.6);
-        gamepad.triggerHaptic(0.3, 0.4, 50);
-      }
+      setIsPatched(true);
+      playJackInsert(0.85);
+      hapticTick([12, 24, 20]);
+      gamepad.triggerHaptic(0.6, 0.8, 100);
+      if (currentItem.condition >= 50 || !hasAuditioned) playAuditionChord(currentItem.era, currentItem.rarity);
+      setHasAuditioned(true);
     },
-    [state.phase, currentItem, isPatched, activeSocket, gamepad]
+    [state.phase, currentItem, gamepad, hasAuditioned]
   );
+  const handleUnpatch = useCallback(() => {
+    if (!isPatched) return;
+    setIsPatched(false);
+    playJackRemove(0.6);
+    hapticTick(8);
+    gamepad.triggerHaptic(0.3, 0.4, 50);
+  }, [isPatched, gamepad]);
+  const handleWrongSocket = useCallback(() => {
+    playConnectorSnap(0.3);
+    hapticTick([30, 40, 30]);
+    gamepad.triggerHaptic(0.2, 0.3, 80);
+  }, [gamepad]);
+  const handleTogglePatch = useCallback(() => {
+    if (isPatched) handleUnpatch();
+    else if (benchPlug) handlePatch(benchPlug);
+  }, [isPatched, benchPlug, handlePatch, handleUnpatch]);
 
   // Action resolution
   const handleAction = useCallback(
@@ -413,7 +387,7 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
       if (e.key === ' ' || e.key === 'Enter') {
         if (state.phase === 'closed') {
           e.preventDefault();
-          handleStartUnlatch();
+          handleFlipAll();
         } else if (state.phase === 'details') {
           e.preventDefault();
           if (isPremium) handleAction('claim');
@@ -438,7 +412,7 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [
     state.phase,
-    handleStartUnlatch,
+    handleFlipAll,
     handleSkip,
     handleAction,
     handleTogglePatch,
@@ -457,7 +431,7 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
     pressedButtons.forEach((btn) => {
       if (state.phase === 'closed') {
         if (btn === 'south' || btn === 'start') {
-          handleStartUnlatch();
+          handleFlipAll();
         } else if (btn === 'west') {
           handleToggleLeftLatch();
         } else if (btn === 'east') {
@@ -482,7 +456,7 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
     gamepad.isConnected,
     gamepad.justPressed,
     state.phase,
-    handleStartUnlatch,
+    handleFlipAll,
     handleToggleLeftLatch,
     handleToggleRightLatch,
     handleTogglePatch,
@@ -492,7 +466,7 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
     isPremium,
   ]);
 
-  const latchesOpen = state.phase !== 'closed' || leftLatchOpen || rightLatchOpen;
+  const lidFree = state.phase !== 'closed';
 
   return (
     <div
@@ -577,9 +551,7 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
                     className="absolute inset-x-0 -top-4 h-12 bg-gradient-to-b from-stone-700 via-stone-800 to-stone-900 border-2 border-stone-400 rounded-t-sm shadow-2xl z-30 pointer-events-none flex items-center justify-center"
                   >
                     <div className="w-full h-1.5 bg-stone-300 border-b border-stone-500 absolute bottom-0 shadow-sm" />
-                    <span className="text-[8px] font-mono font-black text-amber-400 tracking-widest uppercase">
-                      LID DISENGAGED • UNSEALED
-                    </span>
+                    <span className="w-16 h-2 rounded-full bg-stone-950 border border-stone-500" aria-hidden="true" />
                   </motion.div>
                 )}
 
@@ -598,7 +570,7 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
                 </div>
 
                 {/* Stenciled Tour / Brand Markings */}
-                <div className="flex justify-between items-center border-b border-stone-800 pb-2 mb-3 text-[10px] font-mono tracking-widest text-stone-400">
+                <div className="flex justify-between items-center gap-2 border-b border-stone-800 pb-2 mb-3 text-[10px] font-mono tracking-widest text-stone-400">
                   <span className="uppercase truncate max-w-[200px] font-bold">{shellTitle}</span>
                   <span className="text-amber-400 font-bold shrink-0">
                     {isPremium ? 'COLLECTOR EDITION' : source === 'purchase' ? 'VERIFIED PURCHASE' : caseDef.tagline}
@@ -607,14 +579,14 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
 
                 {/* Main Case Compartment / Foam Inlay Area */}
                 <div className="min-h-52 bg-stone-950/95 border border-stone-800 rounded-sm flex flex-col items-center justify-center p-3 relative overflow-hidden shadow-inner">
-                  {/* Acoustic Waffle Foam Pattern Background */}
-                  <div
+                  {/* Acoustic Waffle Foam Pattern Background (inside the case only) */}
+                  {state.phase !== 'closed' && state.phase !== 'latch' && <div
                     className="absolute inset-0 opacity-25 pointer-events-none"
                     style={{
                       backgroundImage: 'radial-gradient(circle at 50% 50%, #292524 2px, transparent 2.5px)',
                       backgroundSize: '12px 12px',
                     }}
-                  />
+                  />}
 
                   {/* Ambient Backlight Beam during Open/Silhouette */}
                   {(state.phase === 'open' || state.phase === 'silhouette') && (
@@ -629,123 +601,74 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
                     />
                   )}
 
-                  {/* Interactive Connectors Assembly (shown during closed & latch) */}
+                  {/* Case front: lid seam, carry handle, shipping label and two butterfly latches */}
                   {(state.phase === 'closed' || state.phase === 'latch') && (
-                    <div className="w-full flex flex-col items-center justify-center z-10">
-                      {/* Top Connector Row: Audio Snake & Chassis Ground Clip */}
-                      <div className="w-full flex items-center justify-between border-b border-stone-800/80 pb-2 mb-2 px-1">
-                        <SnakeCableConnector
-                          isDisconnected={snakeDisconnected || latchesOpen}
-                          onDisconnect={handleToggleSnake}
-                          disabled={state.phase !== 'closed'}
-                          tierAccent={caseDef.cssTheme.accent}
-                        />
-
-                        <div className="px-3 py-1 bg-stone-900 border border-stone-700 rounded text-center">
-                          <span className="text-[8px] font-mono text-stone-400 block tracking-wider">
-                            SEALED IN
-                          </span>
-                          <span className="text-xs font-mono font-bold text-amber-400 uppercase tracking-widest">
-                            {isPremium ? 'COLLECTOR' : currentItem?.era}
-                          </span>
-                        </div>
-
-                        <ChassisGroundClip
-                          isDetached={groundDetached || latchesOpen}
-                          onDetach={handleToggleGround}
-                          disabled={state.phase !== 'closed'}
-                        />
+                    <div className="w-full flex flex-col items-center justify-center z-10" data-testid="case-front">
+                      <div className="w-full flex items-center justify-center mb-2" aria-hidden="true">
+                        <div className="w-24 h-4 rounded-full border-[3px] border-stone-500 border-b-0 bg-transparent" />
                       </div>
-
-                      {/* Center Butterfly Twist Latch Assembly */}
-                      <div className="flex items-center justify-around w-full mb-1">
+                      <div className="relative w-full flex items-center justify-between px-1">
+                        {/* Lid seam the latches straddle */}
+                        <div className="absolute inset-x-0 top-1/2 h-[3px] -mt-px bg-gradient-to-r from-stone-600 via-stone-400 to-stone-600 shadow-[0_1px_0_rgba(0,0,0,0.8)]" aria-hidden="true" />
                         <ButterflyTwistLatch
                           side="left"
-                          isOpen={leftLatchOpen || latchesOpen}
+                          isOpen={leftLatchOpen || lidFree}
                           onToggle={handleToggleLeftLatch}
-                          disabled={state.phase !== 'closed'}
+                          disabled={state.phase !== 'closed' || leftLatchOpen}
                           accentColor={caseDef.cssTheme.accent}
                         />
-
-                        <div className="flex flex-col items-center text-center px-1">
-                          <div className="px-2.5 py-1 bg-stone-900/90 border border-stone-700/80 rounded-sm mb-1.5">
-                            <span className="text-[9px] font-mono tracking-wider text-amber-300 block font-bold">
-                              {releasedCount === 4
-                                ? 'ALL CONNECTORS RELEASED'
-                                : `${releasedCount} OF 4 CONNECTORS OPEN`}
-                            </span>
-                            <span className="text-[7.5px] font-mono text-stone-400 block">
-                              Click latches or cable to disconnect
-                            </span>
-                          </div>
-
-                          <div className="w-28 h-1.5 bg-stone-800 rounded-full overflow-hidden border border-stone-700">
-                            <motion.div
-                              className="h-full bg-gradient-to-r from-amber-500 to-emerald-400"
-                              animate={{ width: `${(releasedCount / 4) * 100}%` }}
-                              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                            />
-                          </div>
+                        <div className="relative rotate-[-3deg] px-3 py-1.5 bg-amber-100 text-stone-900 rounded-[2px] shadow-md text-center border border-amber-200">
+                          <span className="block text-[9px] font-black tracking-widest uppercase text-rose-700">Fragile</span>
+                          <span className="block text-[11px] font-mono font-bold uppercase">
+                            {isPremium ? 'Collector' : `${currentItem?.era} gear`}
+                          </span>
+                          <span className="block text-[8px] font-mono uppercase text-stone-600">This way up ↑</span>
                         </div>
-
                         <ButterflyTwistLatch
                           side="right"
-                          isOpen={rightLatchOpen || latchesOpen}
+                          isOpen={rightLatchOpen || lidFree}
                           onToggle={handleToggleRightLatch}
-                          disabled={state.phase !== 'closed'}
+                          disabled={state.phase !== 'closed' || rightLatchOpen}
                           accentColor={caseDef.cssTheme.accent}
                         />
                       </div>
-
-                      {state.phase === 'latch' && (
-                        <div className="text-center mt-1">
-                          <p className="text-xs font-bold font-mono text-emerald-400 uppercase tracking-wider animate-pulse">
-                            Disengaging Connectors & Latches...
-                          </p>
-                        </div>
-                      )}
+                      <p className="mt-2 text-[12px] text-stone-300 text-center" aria-live="polite">
+                        {state.phase === 'latch'
+                          ? 'Lifting the lid…'
+                          : releasedCount === 0
+                          ? 'Flip both latches to open the lid.'
+                          : 'One more latch.'}
+                      </p>
                     </div>
                   )}
 
-                  {/* Foam Interior & Lid Opening (open phase) */}
-                  {state.phase === 'open' && (
+                  {/* Lid up: foam with the gear sitting in its cutout, then backlit */}
+                  {(state.phase === 'open' || state.phase === 'silhouette') && (
                     <motion.div
-                      initial={{ scale: 0.9, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      className="flex flex-col items-center justify-center text-center z-10"
-                    >
-                      <div className="w-12 h-12 rounded-full border-2 border-stone-700 bg-stone-900 flex items-center justify-center mb-2 text-stone-400 shadow-md">
-                        <Box size={24} className="animate-pulse" />
-                      </div>
-                      <span className="text-xs font-mono font-bold text-stone-300 tracking-wider uppercase">
-                        Unsealing Case Cavity...
-                      </span>
-                      <span className="text-[9px] font-mono text-stone-500 mt-1">
-                        DIE-CUT PROTECTIVE FOAM CAVITY
-                      </span>
-                    </motion.div>
-                  )}
-
-                  {/* Silhouette Phase: Hardware outline nestled in die-cut foam cutout */}
-                  {state.phase === 'silhouette' && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.85 }}
+                      initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={motionSpring.snappy}
                       className="relative flex flex-col items-center justify-center text-center z-10 w-full h-full"
                     >
-                      <div className="w-52 h-28 bg-stone-950/90 border-2 border-stone-800 rounded-md shadow-[inset_0_4px_16px_rgba(0,0,0,0.95)] flex flex-col items-center justify-center relative overflow-hidden">
-                        <div
-                          className="absolute w-28 h-28 rounded-full blur-xl pointer-events-none opacity-40"
-                          style={{ backgroundColor: rarityInfo.rayColor }}
-                        />
-                        <div className="text-3xl opacity-20 filter contrast-200">
-                          {isPremium ? '🎁' : currentItem?.rarity === 'legendary' ? '🏆' : '🎛️'}
-                        </div>
-                        <span className="text-[10px] font-mono font-bold text-stone-400 tracking-widest uppercase mt-2 z-10">
-                          {isPremium ? 'COLLECTIBLE REVEAL' : `${currentItem?.rarity.toUpperCase()} HARDWARE`}
-                        </span>
+                      <div className="relative w-56 h-28 bg-stone-800/90 rounded-md shadow-[inset_0_4px_16px_rgba(0,0,0,0.95)] flex items-center justify-center overflow-hidden"
+                        style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, #44403c 2px, transparent 2.6px)', backgroundSize: '9px 9px' }}>
+                        {state.phase === 'silhouette' && (
+                          <div className="absolute w-28 h-28 rounded-full blur-xl pointer-events-none opacity-40" style={{ backgroundColor: rarityInfo.rayColor }} />
+                        )}
+                        {isPremium ? (
+                          <div className="text-3xl opacity-30">🎁</div>
+                        ) : (
+                          <GearSilhouette
+                            kind={gearKind}
+                            variant={state.phase === 'open' ? 'solid' : 'outline'}
+                            className="relative w-44 h-auto"
+                            style={{ color: rarityInfo.rayColor, opacity: state.phase === 'open' ? 0.75 : 1 }}
+                          />
+                        )}
                       </div>
+                      <span className="text-[11px] font-mono text-stone-400 tracking-wider uppercase mt-2">
+                        {state.phase === 'open' ? 'Snug in its foam' : 'Lifting it out…'}
+                      </span>
                     </motion.div>
                   )}
 
@@ -760,9 +683,13 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
                       {!reducedMotion && heavyEffects && (
                         <GlowSweep tone={rarityInfo.glowTone} repeat={false} />
                       )}
-                      <div className="w-14 h-14 rounded-md border-2 border-amber-400/80 bg-stone-900/90 flex items-center justify-center mb-2 shadow-[0_0_25px_rgba(245,158,11,0.5)]">
-                        <span className="text-3xl">{isPremium ? '★' : '🎛️'}</span>
-                      </div>
+                      {isPremium ? (
+                        <div className="w-14 h-14 rounded-md border-2 border-amber-400/80 bg-stone-900/90 flex items-center justify-center mb-2 shadow-[0_0_25px_rgba(245,158,11,0.5)]">
+                          <span className="text-3xl">★</span>
+                        </div>
+                      ) : (
+                        <GearSilhouette kind={gearKind} variant="solid" className="w-40 h-auto mb-2 drop-shadow-[0_10px_12px_rgba(0,0,0,0.8)]" style={{ color: rarityInfo.rayColor }} />
+                      )}
                       <span className="text-sm font-black text-white tracking-wide uppercase">
                         {isPremium ? premiumReward?.productTitle : currentItem?.name}
                       </span>
@@ -780,18 +707,13 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
                 {state.phase === 'closed' ? (
                   <button
                     type="button"
-                    onClick={handleStartUnlatch}
+                    onClick={handleFlipAll}
                     className="w-full mt-3 py-3 bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-500 text-stone-950 font-black text-xs uppercase tracking-wider rounded-sm shadow-[0_0_15px_rgba(245,158,11,0.5)] hover:brightness-110 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     {gamepad.isConnected && gamepad.lastInputType === 'gamepad' && (
                       <GamepadGlyph button="south" size="xs" />
                     )}
-                    <Cable size={14} className="stroke-[2.5]" />
-                    <span>
-                      {releasedCount === 0
-                        ? `RELEASE CONNECTORS & OPEN ${caseDef.name.toUpperCase()}`
-                        : `OPEN UNSEALED ${caseDef.name.toUpperCase()}`}
-                    </span>
+                    <span>{releasedCount === 0 ? 'Flip both latches' : 'Flip the other latch'}</span>
                   </button>
                 ) : (
                   <div className="flex justify-between items-center mt-3 pt-1 border-t border-stone-800/80">
@@ -938,22 +860,15 @@ export const FlightCaseReveal: React.FC<FlightCaseRevealProps> = ({
                   </div>
                 </div>
 
-                {/* 19" Rack-Mount Studio Patch Panel with Dual VU & Phosphor Oscilloscope */}
-                <HardwarePatchPanel
-                  era={currentItem.era}
-                  rarity={currentItem.rarity}
-                  isPatched={isPatched}
-                  activeSocket={activeSocket}
-                  onTogglePatch={handleTogglePatch}
+                {/* Bench test: plug its own cable into the input it fits */}
+                <TestBench
+                  kind={gearKind}
                   condition={currentItem.condition}
-                />
-
-                {/* Interactive Dynamic Studio Patch Cable */}
-                <InteractivePatchCable
                   isPatched={isPatched}
-                  activeSocket={activeSocket}
-                  onTogglePatch={handleTogglePatch}
-                  rarity={currentItem.rarity}
+                  onPatch={handlePatch}
+                  onUnpatch={handleUnpatch}
+                  onWrongSocket={handleWrongSocket}
+                  reducedMotion={reducedMotion}
                 />
 
                 {/* Audio Output Destination Routing Terminals */}

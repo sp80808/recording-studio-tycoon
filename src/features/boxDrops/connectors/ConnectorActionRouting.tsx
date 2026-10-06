@@ -39,9 +39,9 @@ export const ConnectorActionRouting: React.FC<ConnectorActionRoutingProps> = ({
       <div className="flex items-center justify-between text-[9px] font-mono text-stone-400 mb-1.5 px-1">
         <span className="flex items-center gap-1">
           <Cable size={11} className="text-amber-400" />
-          <span>ROUTE HARDWARE OUTPUT:</span>
+          <span>WHERE DOES IT GO?</span>
         </span>
-        <span className="text-stone-500">SELECT DESTINATION TERMINAL</span>
+        <span className="text-stone-500">PICK ONE</span>
       </div>
 
       {/* Action Buttons Grid with Connector Terminal Motifs */}
@@ -68,9 +68,9 @@ export const ConnectorActionRouting: React.FC<ConnectorActionRoutingProps> = ({
             <PackageCheck size={14} className="text-emerald-200" />
           </div>
 
-          <span className="tracking-wide">EQUIP RACK</span>
+          <span className="tracking-wide">USE IT</span>
           <span className="text-[8px] font-mono text-emerald-200/90 font-normal">
-            CH 1 CONSOLE BUS
+            INTO THE STUDIO
           </span>
         </motion.button>
 
@@ -96,9 +96,9 @@ export const ConnectorActionRouting: React.FC<ConnectorActionRoutingProps> = ({
             <Archive size={14} className="text-stone-300" />
           </div>
 
-          <span className="tracking-wide">STASH VAULT</span>
+          <span className="tracking-wide">STORE IT</span>
           <span className="text-[8px] font-mono text-stone-400 font-normal">
-            STORAGE TRUNK
+            ON THE SHELF
           </span>
         </motion.button>
 
@@ -124,18 +124,13 @@ export const ConnectorActionRouting: React.FC<ConnectorActionRoutingProps> = ({
             <DollarSign size={14} className="text-stone-950" />
           </div>
 
-          <span className="tracking-wide">LIQUIDATE</span>
+          <span className="tracking-wide">SELL IT</span>
           <span className="text-[8px] font-mono text-stone-900 font-bold">
             +${baseValue.toLocaleString()} CASH
           </span>
         </motion.button>
       </div>
 
-      {activeRouting && (
-        <div className="mt-1 text-center font-mono text-[9px] text-amber-400 animate-pulse">
-          Routing signal to {activeRouting === 'equip' ? 'Console Master Bus' : activeRouting === 'stash' ? 'Studio Storage' : 'Gear Broker'}...
-        </div>
-      )}
     </div>
   );
 };

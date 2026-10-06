@@ -277,3 +277,6 @@ In-house proprietary original, Pixi Graphics only (`studioSkylines.ts` data, `dr
 
 ## 27. Equipped room furnishings (#258)
 In-house proprietary original, Pixi Graphics only (`studioFurnishingRender.ts`): lamp, fern, rug, sofa, foam panel, frames, poster, mug, keys, tape reel and gold disc drawn from plain polygons, ellipses and circles. No external source, textures or fonts. Producer cosmetics reuse the existing producer sprite kit (no new art).
+
+## 28. Flight case gear silhouettes and bench test plugs (#289)
+In-house original, CC0. Inline SVG gear outlines in `src/features/boxDrops/GearSilhouette.tsx` (mic, rack unit, console, tape recorder, amp, keys, headphones, speaker, stand, licence key) used as the foam cutout and lifted-out gear, and CSS-drawn XLR / 1/4" plugs and sockets in `connectors/test-bench.css`. Plain shapes only, no external source, textures or fonts.

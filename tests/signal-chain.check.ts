@@ -1,5 +1,5 @@
 import {
-  availableForSlot, validateChain, evaluateChain, chainMultiplier, saveTemplate, resolveTemplates, growFamiliarity, activeChainSlots, busyGearIds, formatChainStatusLine,
+  availableForSlot, suggestFill, validateChain, evaluateChain, chainMultiplier, saveTemplate, resolveTemplates, growFamiliarity, activeChainSlots, busyGearIds, formatChainStatusLine,
   type SignalChain,
 } from '../src/rpg/signalChain';
 import { evaluateProjectSynergies } from '../src/utils/synergyUtils';
@@ -71,5 +71,15 @@ ok(!/onSaveTemplate|Template name|Load template|resolveTemplates/.test(composer)
 ok(!/saveTemplate|onSaveTemplate/.test(list), 'booking list no longer wires template save');
 ok(/chain-rack|chain-jack|is-seating|is-unseating/.test(composer) && /chain-seat|chain-unseat/.test(css), 'composer is a tappable rack with seat/unseat motion');
 ok(/vocal-production|tracking/.test(list) && /ChainComposer/.test(list), 'vocal chain stays on booking cards');
+
+const empty: SignalChain = { ...chain, slots: {} };
+const sf = suggestFill(empty, base(), [s], brief);
+ok(sf.filled.length === 4 && validateChain({ ...empty, slots: sf.slots }, base()).valid, 'quick fill seats a valid full chain');
+ok(JSON.stringify(sf) === JSON.stringify(suggestFill(empty, base(), [s], brief)), 'quick fill is deterministic');
+ok(sf.slots.microphone === 'ribbon_vintage_mic', 'quick fill prefers the mic that suits an intimate brief');
+const keep = suggestFill({ ...empty, slots: { microphone: 'condenser_mic' } }, base(), [s], brief);
+ok(keep.slots.microphone === 'condenser_mic' && !keep.filled.includes('microphone'), 'quick fill never overwrites patched jacks');
+ok(suggestFill(chain, base(), [s], brief).filled.length === 0, 'quick fill is a no-op on a full chain');
+ok(/chain-quick-fill/.test(composer) && /chain-undo/.test(composer) && /hapticTick/.test(composer) && /chain-latch/.test(css), 'composer has quick fill, undo, haptics and latch payoff');
 
 console.log(`\n${passed} checks passed`);
