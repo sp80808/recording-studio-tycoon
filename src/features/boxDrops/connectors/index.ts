@@ -5,3 +5,4 @@ export * from './ChassisGroundClip';
 export * from './HardwarePatchPanel';
 export * from './InteractivePatchCable';
 export * from './ConnectorActionRouting';
+export { TestBench, SNAP_RADIUS_PX } from './TestBench';
