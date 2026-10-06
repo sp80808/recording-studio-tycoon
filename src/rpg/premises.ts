@@ -6,6 +6,7 @@
  */
 import type { GameState, StaffMember } from '@/types/game';
 import { getStaffCareer, SENIORITY_ORDER } from '@/rpg/staffCareer';
+import { getArchetypeModifiers, type PremisesArchetype } from '@/rpg/premisesTraits';
 
 export type PremisesTier = 0 | 1 | 2 | 3;
 
@@ -50,6 +51,7 @@ const FACILITY_RESERVE_AFTER_DEPOSIT = 10000;
 type PremisesState = Pick<GameState, 'money' | 'financials' | 'clientRelationships' | 'studioRooms'> & {
   playerData?: GameState['playerData'];
   premisesTier?: PremisesTier;
+  premisesArchetype?: PremisesArchetype;
   reputation?: number;
   hiredStaff?: Partial<StaffMember>[];
 };
@@ -146,25 +148,44 @@ export const getPremisesOffer = (s: PremisesState): PremisesOffer | null => {
   };
 };
 
-/** Explicit, confirmed move. Keeps staff, gear, clients, Know-How and history untouched. */
-export const applyPremisesMove = <S extends PremisesState>(s: S): S => {
+/** Deposit for a move to the offered band, bent by the chosen archetype (absent = legacy terms). */
+export const premisesMoveDeposit = (offer: Pick<PremisesOffer, 'tier' | 'deposit'>, archetype?: unknown): number => {
+  const mod = getArchetypeModifiers(archetype, offer.tier);
+  return mod ? Math.round(offer.deposit * mod.depositMult) : offer.deposit;
+};
+
+/**
+ * Explicit, confirmed move. Keeps staff, gear, clients, Know-How and history untouched.
+ * `archetype` (#250) picks which property the move takes; omitted keeps the legacy terms.
+ * An archetype that does not fit the offered band is ignored rather than half-applied.
+ */
+export const applyPremisesMove = <S extends PremisesState>(s: S, archetype?: PremisesArchetype): S => {
   const offer = getPremisesOffer(s);
   if (!offer || !offer.eligible) return s;
+  const chosen = getArchetypeModifiers(archetype, offer.tier) ? archetype : undefined;
+  const deposit = premisesMoveDeposit(offer, chosen);
+  if (s.money < deposit) return s;
   const def = PREMISES_TIERS[offer.tier];
+  const { premisesArchetype: _old, ...rest } = s;
+  void _old;
   return {
-    ...s,
+    ...rest,
     premisesTier: offer.tier,
+    ...(chosen ? { premisesArchetype: chosen } : {}),
     premisesMoveBeat: offer.tier,
-    money: s.money - offer.deposit,
+    money: s.money - deposit,
     // One day of downtime: moving day uses up today's work capacity (refills on the next day).
     ...(s.playerData ? { playerData: { ...s.playerData, dailyWorkCapacity: 0 } } : {}),
     studioRooms: s.studioRooms.map(r => (r.id === def.grantsRoomId ? { ...r, unlocked: true } : r)),
-  };
+  } as unknown as S;
 };
 
-export const premisesDailyRent = (s: { premisesTier?: number }): number => getPremisesDef(s).dailyRent;
+type PremisesTerms = { premisesTier?: number; premisesArchetype?: unknown };
+const currentMods = (s: PremisesTerms) => getArchetypeModifiers(s.premisesArchetype, getPremisesTier(s));
+
+export const premisesDailyRent = (s: PremisesTerms): number => Math.round(getPremisesDef(s).dailyRent * (currentMods(s)?.rentMult ?? 1));
 export const premisesRoomAllowanceBonus = (s: { premisesTier?: number }): number => getPremisesDef(s).roomAllowanceBonus;
-export const premisesStaffCap = (s: { premisesTier?: number }): number => getPremisesDef(s).staffCap;
+export const premisesStaffCap = (s: PremisesTerms): number => getPremisesDef(s).staffCap + (currentMods(s)?.staffCapDelta ?? 0);
 export const premisesCandidateCount = (s: { premisesTier?: number }, base = 3): number => base + getPremisesDef(s).extraCandidates;
 
 /** Mark the move-day cinematic as seen. */

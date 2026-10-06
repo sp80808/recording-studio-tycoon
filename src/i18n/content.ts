@@ -10,7 +10,7 @@ import { DEFAULT_LOCALE, resolveSupportedLocale, type SupportedLocaleCode } from
 type Dict = Readonly<Record<string, string>>;
 
 /** Dictionaries per locale; each is merged into one lookup. Add a file here to add a content domain. */
-export const CONTENT_FILES = ['content', 'events', 'minigames', 'crew'] as const;
+export const CONTENT_FILES = ['content', 'events', 'minigames', 'crew', 'appearance'] as const;
 
 const cache = new Map<SupportedLocaleCode, Dict>();
 const pending = new Set<SupportedLocaleCode>();
