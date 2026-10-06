@@ -216,6 +216,8 @@ node "${CHECK_OUTPUT_DIR}/rst-studio-clock-progression.cjs"
 node "${CHECK_OUTPUT_DIR}/rst-room-switcher.cjs"
 ./node_modules/.bin/esbuild tests/room-layouts.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-room-layouts.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-room-layouts.cjs"
+./node_modules/.bin/esbuild tests/facility-map.check.tsx --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-facility-map.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-facility-map.cjs"
 ./node_modules/.bin/esbuild tests/window-view.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-window-view.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-window-view.cjs"
 ./node_modules/.bin/esbuild tests/floor-furnishings.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-floor-furnishings.cjs" --alias:@=./src >/dev/null
