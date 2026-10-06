@@ -288,6 +288,7 @@ export interface StudioSceneState {
   roomOccupied?: boolean;
   /** Premises tier (#70): 3 adds a premium sofa and third rack; 1 adds the client bench + storage rack, 2 adds reception, water cooler and a second rack. */
   premisesTier?: number;
+  premisesArchetype?: string;
   /** Tier ids of earned, unopened flight cases (drives the floor stack). */
   pendingCases?: string[];
   /** Completed-project album covers hung above the booth (from financials.reports). */
@@ -1042,7 +1043,7 @@ const buildScene = (
       refs.caseStack = stack;
     }
   }
-  for (const prop of buildPremisesDecor(state.premisesTier ?? 0, grade.accent)) {
+  for (const prop of buildPremisesDecor(state.premisesTier ?? 0, grade.accent, state.premisesArchetype)) {
     prop.container.zIndex = Z.depth + prop.y;
     root.addChild(prop.container);
   }
@@ -2125,7 +2126,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   const producerLookKey = state?.producerNpc
     ? [state.producerNpc.hair.shape, state.producerNpc.hair.colour, state.producerNpc.body.build, state.producerNpc.clothes.topPrimaryHex].join(':')
     : '';
-  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${producerLookKey}|${floorKey}|${state?.staffOnFloor ?? 1}|${gearKey}|${gearConditionKey(state?.gearConditions)}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${state?.premisesTier ?? 0}|${(state?.pendingCases ?? []).join(',')}|${trophyKey(state?.trophies ?? { covers: [] })}|${state?.decorSeed ?? 'studio'}|${state?.roomType ?? 'project-studio'}|${state?.roomOccupied ? 1 : 0}`;
+  const structuralKey = `${JSON.stringify(state?.producerAppearance ?? null)}|${producerLookKey}|${floorKey}|${state?.staffOnFloor ?? 1}|${gearKey}|${gearConditionKey(state?.gearConditions)}|${state?.eraId ?? 'analog60s'}|${state?.roomTier ?? 1}|${state?.premisesTier ?? 0}|${state?.premisesArchetype ?? ''}|${(state?.pendingCases ?? []).join(',')}|${trophyKey(state?.trophies ?? { covers: [] })}|${state?.decorSeed ?? 'studio'}|${state?.roomType ?? 'project-studio'}|${state?.roomOccupied ? 1 : 0}`;
 
   // Rebuild the room (new window size or layout change)
   const rebuild = () => {

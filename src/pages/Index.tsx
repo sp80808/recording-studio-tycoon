@@ -998,7 +998,7 @@ const MusicStudioTycoon = () => {
 
       {showMoveIn && moveBeat && (
         <CinematicStoryCutscene
-          payload={buildMoveInCutscene(moveBeat)}
+          payload={buildMoveInCutscene(moveBeat, undefined, gameState)}
           onComplete={() => setGameState((prev) => clearPremisesMoveBeat(prev))}
         />
       )}

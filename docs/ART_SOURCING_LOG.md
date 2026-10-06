@@ -268,3 +268,6 @@ In-house proprietary original, Pixi Graphics only (`roomLayouts.ts` data, `roomL
 
 ## 24. Room figures, windows and cameras (#248 follow-up)
 In-house proprietary original. Producer, crew and the booked artist in the extra rooms reuse the existing CC0 NPC layer kit (`features/sprites`, already logged) via `roomFigures.ts`; the room windows reuse the in-house Pixi sky/sun/moon/skyline view (`studioWindowView.ts`). No new external art. Screenshots: `docs/img/room-*-{day,night}.png`, produced by `tests/room-layouts.check.cjs`.
+
+## 25. Premises affordance props and move-day case strip (#250)
+In-house proprietary original. Pixi Graphics only in `studioPremisesDecor.ts` (writing nook, gear bench, rehearsal riser, on-air sign, record wall, built from the `studioIsoKit.ts` box kit) and an inline SVG flight-case strip in `MoveDayStrip.tsx`. No external source, textures or fonts.

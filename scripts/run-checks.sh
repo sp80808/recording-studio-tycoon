@@ -245,7 +245,7 @@ node "${CHECK_OUTPUT_DIR}/rst-appearance-editor.cjs"
 node "${CHECK_OUTPUT_DIR}/rst-appearance-preview.cjs"
 
 echo "=== era-authentic gigs, story contracts & economy floors ==="
-for check in project-era-starters project-brief session-issues signal-chain economy-income economy-ledger story-contracts achievements campaign-endings studio-hotkeys studio-know-how studio-premises premises-cue; do
+for check in project-era-starters project-brief session-issues signal-chain economy-income economy-ledger story-contracts achievements campaign-endings studio-hotkeys studio-know-how studio-premises premises-cue premises-affordance; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-$check.cjs" --alias:@=./src >/dev/null
   node "${CHECK_OUTPUT_DIR}/rst-$check.cjs"
 done
