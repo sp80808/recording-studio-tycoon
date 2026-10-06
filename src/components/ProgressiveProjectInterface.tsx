@@ -21,6 +21,37 @@ interface ProgressiveProjectInterfaceProps {
   clearAutoTriggeredMinigame?: () => void;
 }
 
+/** Chips to hop between running projects (and back to the dashboard) while in a session view. */
+const ProjectSwitcher: React.FC<{
+  gameState: GameState;
+  onSelect?: (project: Project) => void;
+  onBack: () => void;
+}> = ({ gameState, onSelect, onBack }) => {
+  const projects = gameState.activeProjects ?? [];
+  if (projects.length < 2) return null;
+  return (
+    <div className="mb-1.5 flex shrink-0 items-center gap-1.5 overflow-x-auto" data-testid="project-switcher" role="tablist" aria-label="Switch project">
+      <button type="button" onClick={onBack} className="rst-btn shrink-0 whitespace-nowrap !min-h-8 !px-2.5 !text-[11px]">← Dashboard</button>
+      {projects.map((p) => {
+        const current = gameState.activeProject?.id === p.id;
+        return (
+          <button
+            key={p.id}
+            type="button"
+            role="tab"
+            aria-selected={current}
+            onClick={() => onSelect?.(p)}
+            className={`rst-btn max-w-[11rem] shrink-0 !min-h-8 !px-2.5 !text-[11px] ${current ? 'rst-btn-primary' : ''}`}
+            title={p.title}
+          >
+            <span className="truncate">{p.title}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
 /** Save seeds that already saw the multi-project unlock toast this session. */
 const firedMultiProjectToast = new Set<string>();
 
@@ -157,21 +188,26 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
               gameState={gameState}
               setGameState={setGameState}
               onProjectSelect={onProjectSelect}
+              onWorkSession={(project) => {
+                onProjectSelect?.(project);
+                setShowMultiProjectInTransition(false);
+              }}
             />
           </div>
         ) : (
-          <ActiveProject
-            gameState={gameState}
-            setGameState={setGameState}
-            // focusAllocation={currentFocusAllocation} // REMOVED
-            // setFocusAllocation={handleSetFocusAllocation} // REMOVED
-            onProjectSelect={onProjectSelect}
-            performDailyWork={performDailyWork}
-            onMinigameReward={onMinigameReward}
-            onProjectComplete={onProjectComplete}
-            autoTriggeredMinigame={autoTriggeredMinigame}
-            clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
-          />
+          <>
+            <ProjectSwitcher gameState={gameState} onSelect={onProjectSelect} onBack={() => setShowMultiProjectInTransition(true)} />
+            <ActiveProject
+              gameState={gameState}
+              setGameState={setGameState}
+              onProjectSelect={onProjectSelect}
+              performDailyWork={performDailyWork}
+              onMinigameReward={onMinigameReward}
+              onProjectComplete={onProjectComplete}
+              autoTriggeredMinigame={autoTriggeredMinigame}
+              clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
+            />
+          </>
         )}
       </div>
     );
@@ -205,6 +241,7 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
         </div>
         {showSessionWork ? (
           <div className="min-h-0 flex-1 flex flex-col overflow-hidden">
+            <ProjectSwitcher gameState={gameState} onSelect={onProjectSelect} onBack={() => setShowSessionWork(false)} />
             <ActiveProject
               gameState={gameState}
               setGameState={setGameState}
