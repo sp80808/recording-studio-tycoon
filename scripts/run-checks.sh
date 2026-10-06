@@ -367,4 +367,8 @@ echo "=== city room style (#291) ==="
 ./node_modules/.bin/esbuild tests/city-room-style.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-city-room-style.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-city-room-style.cjs"
 
+echo "=== gear why hint (#306) ==="
+./node_modules/.bin/esbuild tests/gear-why.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-gear-why.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-gear-why.cjs"
+
 echo "All automated checks passed."

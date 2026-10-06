@@ -111,5 +111,15 @@
   "city.lagos.era_analog60s": "Highlife bands fill hotel rooms and radio studios with guitars, horns and dance-floor arrangements.",
   "city.lagos.era_digital80s": "Afrobeat’s long forms meet boogie keyboards, cassette studios and a fast-moving pop circuit.",
   "city.lagos.era_internet2000s": "Home studios and music-video channels carry a new Nigerian pop sound across the continent.",
-  "city.lagos.era_streaming2020s": "Afrobeats sessions travel worldwide while Lagos rooms keep the percussion and call-and-response close."
+  "city.lagos.era_streaming2020s": "Afrobeats sessions travel worldwide while Lagos rooms keep the percussion and call-and-response close.",
+  "gear.why.label": "Why does a pro reach for this?",
+  "gear.why.compressor": "A compressor evens out loud and quiet moments, so a vocal or drum sits steady in the mix instead of jumping out and vanishing.",
+  "gear.why.preamp": "A preamp lifts a tiny mic signal to a usable level. Set it hot enough to beat noise, but not so hot that it clips, and its tone colors everything after it.",
+  "gear.why.reverb": "Reverb places a sound in a space. A little makes a dry take feel real; a lot pushes it back behind everything else.",
+  "gear.why.microphone": "Where you place a mic changes the sound more than the mic itself. Closer is fuller and drier, farther is airier and roomier.",
+  "gear.why.monitor": "Monitors are your reference. You can only fix what you can hear, and a flat, honest speaker keeps mixes translating to other systems.",
+  "gear.why.interface": "An interface turns analog signal into digital. Healthy gain here keeps takes clean: low enough to avoid clipping, high enough to stay above the noise.",
+  "gear.why.outboard": "Outboard gear shapes tone and dynamics with hardware character. Pros reach for it to add color and control before the mix gets crowded.",
+  "gear.why.recorder": "The recorder is where the signal is captured. Knowing the path into it helps you find where noise or loss creeps in.",
+  "gear.why.mixer": "A mixer blends many sources and sets their levels. Gain staging channel by channel keeps the whole path clean."
 }
