@@ -405,4 +405,8 @@ echo "=== story contract board brief (#334) ==="
 ./node_modules/.bin/esbuild tests/story-contract-brief.check.tsx --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-story-contract-brief.cjs" --alias:@=./src --loader:.css=empty >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-story-contract-brief.cjs"
 
+echo "=== first Easy session always offered an intervention, exhaustive over seeds (#340/#347) ==="
+./node_modules/.bin/esbuild tests/first-session-intervention.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-first-session-intervention.cjs" --alias:@=./src --loader:.css=empty >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-first-session-intervention.cjs"
+
 echo "All automated checks passed."
