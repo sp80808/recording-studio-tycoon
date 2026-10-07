@@ -30,7 +30,7 @@ ok(!isKnownUISound('buttonClik'), 'a typo is not a known sound');
 
 const audio = read('src/utils/audioSystem.ts');
 ok(/source\.loop = resolveLoop\(type, loop\)/.test(audio), 'engine routes loop through the SFX-no-loop policy');
-ok(/oneShots\.admit\(`sfx:\$\{nameOrPath\}`\)/.test(audio), 'playSound dedupes SFX centrally');
+ok(/oneShots\.admit\(`sfx:\$\{resolved\}`\)/.test(audio), 'playSound dedupes SFX centrally on resolved key');
 ok(/oneShots\.admit\('synth:click'\)/.test(audio), 'synth playClick is throttled');
 const dflt = audio.slice(audio.indexOf('default:', audio.indexOf('async playUISound')));
 ok(!/playClick\(\)/.test(dflt.slice(0, 400)), 'unknown playUISound name does not fall back to a click');

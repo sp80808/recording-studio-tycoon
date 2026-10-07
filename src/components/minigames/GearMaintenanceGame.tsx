@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { DialogFooter } from '@/components/ui/dialog';
-import { playSound } from '@/utils/soundUtils';
+import { playSound } from '@/utils/audioSystem';
 import { useSettings } from '@/contexts/SettingsContext';
 import { MinigameTutorialPopup, minigameTutorials } from '@/components/minigames/index';
 import { MinigameChrome, KenneyButton } from './MinigameChrome';

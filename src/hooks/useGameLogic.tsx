@@ -13,7 +13,7 @@ import { toast } from '@/hooks/use-toast';
 import { availableTrainingCourses } from '@/data/training';
 import { courseTeacherBlocker } from '@/rpg/staffCareer';
 import { canPurchaseEquipment, addNotification, applyEquipmentEffects } from '@/utils/gameUtils';
-import { playSound } from '@/utils/soundUtils';
+import { playSound } from '@/utils/audioSystem';
 import { getAvailableEquipmentForYear, getEraAdjustedPrice } from '@/data/eraEquipment';
 import { applyGearAction } from '@/features/usedGear/economy';
 import { withDailyTracking } from '@/utils/dailyChallenges';

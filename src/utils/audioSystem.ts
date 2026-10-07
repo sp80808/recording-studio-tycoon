@@ -4,6 +4,66 @@
 import { OneShotGate, resolveLoop } from '@/utils/oneShotPolicy';
 import * as Tone from 'tone';
 
+/**
+ * Sound alias map: maps logical caller keys to concrete sources.
+ * Sources can be:
+ * - Preload buffer names (e.g., 'ui-proj-complete')
+ * - Full /audio/... paths for on-demand loading (e.g., '/audio/ui-sfx/purchase-complete.m4a')
+ * - Synth helper sentinels (e.g., 'synth:playClick', 'synth:playSuccess', 'synth:playLevelUp', 'synth:playSliderMove', 'synth:playEquipmentPurchase', 'synth:playCompleteProject', 'synth:playError')
+ * Unknown keys that don't start with '/audio/' are rejected (no site-root fetch).
+ */
+const SOUND_ALIASES: Record<string, string> = {
+  // ProjectReviewModal keys
+  'xp-tick': 'ui-tactile-click',                    // light tick for XP bar
+  'level_up_skill': 'synth:playLevelUp',            // ascending arpeggio
+  'score-tick': 'ui-tactile-click',                 // light tick for score
+  'review_start': 'ui-email-notif',                 // review screen entrance
+  'score_total_tick': 'ui-cash-register',           // cash register for total
+  'purchase': 'synth:playEquipmentPurchase',        // equipment purchase synth
+  'text_complete': 'ui-stage-complete',             // stage complete for text done
+  'text_scroll': 'ui-tactile-click',                // throttled tick for scrolling
+  'review_complete': 'ui-proj-complete',            // project complete for review end
+  'button_click': 'synth:playClick',                // synthetic click
+
+  // ActiveProject keys
+  'notification.wav': 'ui-email-notif',             // email notification
+  'ui sfx/purchase-complete.m4a': 'ui-purchase-complete', // direct asset path
+  'start_minigame': 'ui-gear-switch',               // gear switch for minigame start
+  'reward': 'ui-cash-register',                     // cash register for rewards
+  'success': 'synth:playSuccess',                   // success synth
+  'ui-click': 'synth:playClick',                    // synthetic click
+  'project-complete': 'ui-proj-complete',           // project complete asset
+  'slider.wav': 'synth:playSliderMove',             // slider movement synth
+  'close_modal.wav': 'ui-close-menu',               // close menu asset
+  'notification': 'ui-email-notif',                 // notification alias
+
+  // GearMaintenanceGame keys
+  'buttonClick': 'synth:playClick',                 // synthetic click
+  'proj-complete': 'ui-proj-complete',              // project complete asset
+  'notice': 'ui-notice',                            // notice asset
+
+  // StudioDutiesClipboard keys
+  'error.wav': 'synth:playError',                   // error synth
+  // 'ui-click' already mapped above
+
+  // useGameLogic keys
+  // 'error.wav' already mapped above
+  // 'ui sfx/purchase-complete.m4a' already mapped above
+
+  // Legacy soundUtils keys that might be called via playSound
+  'error': 'synth:playError',
+  'hover': 'synth:playButtonHover',                 // if ever used
+};
+
+/** True if `key` is a known alias that must never become a site-root fetch. */
+const isKnownAlias = (key: string): boolean => Object.prototype.hasOwnProperty.call(SOUND_ALIASES, key);
+
+/** Resolve a logical key to a concrete source. Returns null if unknown and not an /audio/ path. */
+const resolveSoundSource = (key: string): string | null => {
+  if (key.startsWith('/audio/')) return key; // ChartsPanel full paths pass through
+  return SOUND_ALIASES[key] ?? null;
+};
+
 interface AudioSettings {
   masterVolume: number;
   sfxVolume: number;
@@ -160,25 +220,54 @@ class GameAudioSystem {
   }
 
   // Public method to play sound, loads on demand if not cached
-  // Name can be a key (for preloaded) or a full path (for on-demand, e.g. chart clips)
+  // Name can be a logical key (resolved via SOUND_ALIASES), a preload buffer name,
+  // or a full /audio/... path (for on-demand, e.g. chart clips).
+  // Unknown keys that don't start with /audio/ are rejected (no site-root fetch).
   async playSound(nameOrPath: string, type: 'sfx' | 'music' = 'sfx', volume: number = 1, loop: boolean = false): Promise<AudioBufferSourceNode | null> {
     if (type === 'sfx' && loop) {
       if (import.meta.env?.DEV) console.warn(`[audio] SFX must not loop; ignoring loop for ${nameOrPath}`);
       loop = false;
     }
+
+    // Resolve logical key to concrete source
+    const resolved = resolveSoundSource(nameOrPath);
+    if (resolved === null) {
+      if (import.meta.env?.DEV) console.warn(`[audio] Unknown sound key "${nameOrPath}"; not in alias map and not an /audio/ path. Rejecting to prevent site-root 404.`);
+      return null;
+    }
+
+    // Synth helper sentinels: delegate to dedicated methods (they handle one-shot gating internally)
+    if (resolved.startsWith('synth:')) {
+      const synthName = resolved.slice('synth:'.length);
+      await this.ensureInitialized();
+      switch (synthName) {
+        case 'playClick': return this.playClick() as any;
+        case 'playSuccess': return this.playSuccess() as any;
+        case 'playLevelUp': return this.playLevelUp() as any;
+        case 'playSliderMove': return this.playSliderMove() as any;
+        case 'playEquipmentPurchase': return this.playEquipmentPurchase() as any;
+        case 'playCompleteProject': return this.playCompleteProject() as any;
+        case 'playError': return this.playError() as any;
+        case 'playButtonHover': return this.playButtonHover() as any;
+        default:
+          if (import.meta.env?.DEV) console.warn(`[audio] Unknown synth helper "${synthName}"`);
+          return null;
+      }
+    }
+
     // Music restarts deliberately; SFX are deduped so one action cannot stack identical sources.
-    if (type === 'sfx' && !this.oneShots.admit(`sfx:${nameOrPath}`)) return null;
+    if (type === 'sfx' && !this.oneShots.admit(`sfx:${resolved}`)) return null;
     await this.ensureInitialized();
     if (!this.audioContext) return null;
 
-    let buffer = this.audioBuffers.get(nameOrPath);
+    let buffer = this.audioBuffers.get(resolved);
     if (!buffer) {
-      console.log(`Buffer for ${nameOrPath} not found in cache, attempting to load...`);
-      buffer = await this.loadAndCacheAudio(nameOrPath, nameOrPath);
+      console.log(`Buffer for ${resolved} not found in cache, attempting to load...`);
+      buffer = await this.loadAndCacheAudio(resolved, resolved);
     }
 
     if (!buffer) {
-      console.warn(`Audio buffer not found or could not be loaded: ${nameOrPath}`);
+      console.warn(`Audio buffer not found or could not be loaded: ${resolved}`);
       return null;
     }
     
