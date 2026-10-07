@@ -29,7 +29,10 @@ import { createSeededRandom } from '@/simulation/seededRandom';
 import { evaluateProjectSynergies, calculateSynergyBonuses, recordDiscoveredSynergies } from '@/utils/synergyUtils';
 import { advanceFlow } from '@/rpg/focusFlow';
 import { conceptsForSessionEvent } from '@/rpg/audioConcepts';
-import { applyKnowHowEvents, noteConceptsMet, domainForStage, sessionTemplateBonus, type KnowHowEvent } from '@/rpg/studioKnowHow';
+import { noteConceptsWithReward } from '@/rpg/conceptCodex';
+import { micPlacementLine, type MicPlacementLine } from '@/rpg/micPlacementLine';
+import { tc } from '@/i18n/content';
+import { applyKnowHowEvents, domainForStage, sessionTemplateBonus, type KnowHowEvent } from '@/rpg/studioKnowHow';
 import { activeUplift } from '@/rpg/freelancers';
 import { gradeStage, focusMatchFraction } from '@/rpg/stageGrades';
 import { isFeatureUnlocked, recordTechniqueProgress } from '@/rpg/featureUnlocks';
@@ -292,6 +295,16 @@ export const useStageWork = ({
       activeSynergies
     );
 
+    // Mic-placement line (#306): first take of a tracking stage, when a mic is in the session.
+    const pendingMicLine: MicPlacementLine | null = domainForStage(currentStage.stageName) === 'tracking'
+      && ((project.stageSessionsTaken ?? [])[currentStageIndex] ?? 0) === 0
+      ? micPlacementLine(
+          getBookedStudioRoom(gameState, project)?.type,
+          resolveSessionEquipment(gameState, project.bookingRoomId).some(g => g.category === 'microphone'),
+          `${gameState.saveSeed ?? 4242}:${project.id}:${currentStageIndex}`,
+        )
+      : null;
+
     // 🎛️ Creative brief fit (#48): small bounded modifier + named discoveries
     const briefFit = evaluateProjectBriefFit(project, gameState);
     const chainOk = project.signalChain && validateChain(project.signalChain, gameState, project.id).broken.length === 0;
@@ -490,7 +503,10 @@ export const useStageWork = ({
         label: syn.name,
       }));
       const { game: withKnowHowEvents } = applyKnowHowEvents(prev, knowHowEvents);
-      const withKnowHow = noteConceptsMet(withKnowHowEvents, conceptsForSessionEvent(phaseEvent?.id));
+      const withKnowHow = noteConceptsWithReward(
+        withKnowHowEvents,
+        [...conceptsForSessionEvent(phaseEvent?.id), ...(pendingMicLine ? [pendingMicLine.concept] : [])],
+      );
 
       const gemGain = stageCompleted && completedGrade?.grade === 'Gold' ? 2 : stageCompleted && completedGrade?.grade === 'Silver' ? 1 : 0;
 
@@ -521,6 +537,14 @@ export const useStageWork = ({
         })
       }, { sessions: 1, combo: newCombo }), featureProgress: techniqueProgress };
     });
+
+    if (pendingMicLine) {
+      toast({
+        title: tc('mic.line.title', 'Mic placement'),
+        description: tc(pendingMicLine.id, pendingMicLine.english),
+        className: "bg-stone-800 border-stone-600 text-white",
+      });
+    }
 
     // ✨ Celebrate new synergy discoveries
     if (newlyDiscovered.length > 0) {
