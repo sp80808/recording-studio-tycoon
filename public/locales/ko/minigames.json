@@ -178,6 +178,7 @@
   "mg.FaderRideGame.close": "닫기",
   "mg.FaderRideGame.fader": "페이더",
   "mg.FaderRideGame.finalize": "마무리하고 점수 받기",
+  "mg.FaderRideGame.finish_early": "Finish early (scores the full run)",
   "mg.FaderRideGame.green_zone": "초록 구간 40-60",
   "mg.FaderRideGame.in_zone": "(구간 안)",
   "mg.FaderRideGame.in_zone_ticks": "구간 내 틱: {{in}}/{{total}}",

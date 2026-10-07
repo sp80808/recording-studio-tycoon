@@ -5,7 +5,8 @@
  */
 import type { Graphics } from 'pixi.js';
 import { getCityById } from '@/rpg/cities';
-import { iso, isoQuad, leftWallPt, ROOM_D, ROOM_W } from './isoMath';
+import { iso, isoQuad, leftWallPt, rightWallPt, ROOM_D, ROOM_W } from './isoMath';
+import type { StudioRoomType } from '@/types/game';
 import { mixColor } from './cityWallTint';
 
 export type PosterMotif = 'sunburst' | 'stripes' | 'bars' | 'diamond' | 'rings' | 'wave';
@@ -14,7 +15,9 @@ export interface PosterSpec {
   motif: PosterMotif;
   bg: number;
   fg: number;
-  /** Left-wall span in tiles (y0 < y1). */
+  /** Wall the poster hangs on (default left). */
+  side?: 'left' | 'right';
+  /** Span in tiles along that wall (y for the left wall, x for the right wall; y0 < y1). */
   y0: number;
   y1: number;
 }
@@ -22,24 +25,39 @@ export interface PosterSpec {
 /** Share of the city accent mixed into the wall trim. */
 export const CITY_TRIM_TINT = 0.4;
 
-const SLOT_A = { y0: 3.0, y1: 3.75 } as const;
-const SLOT_B = { y0: 4.3, y1: 4.9 } as const;
 export const POSTER_LIFT = { low: 54, high: 112 } as const;
 
-const poster = (slot: { y0: number; y1: number }, motif: PosterMotif, bg: number, fg: number): PosterSpec => ({ ...slot, motif, bg, fg });
+const poster = (slot: { y0: number; y1: number; side?: 'left' | 'right' }, motif: PosterMotif, bg: number, fg: number): PosterSpec => ({ ...slot, motif, bg, fg });
 
-export const CITY_POSTERS: Record<string, readonly [PosterSpec, PosterSpec]> = {
-  'los-angeles': [poster(SLOT_A, 'sunburst', 0x3a2038, 0xf2a65a), poster(SLOT_B, 'stripes', 0x1d2a3a, 0xff7a6b)],
-  nashville: [poster(SLOT_A, 'diamond', 0x2a1d14, 0xd98c4a), poster(SLOT_B, 'rings', 0x1d2a22, 0xe8d9a8)],
-  london: [poster(SLOT_A, 'rings', 0x1a2540, 0xd9463e), poster(SLOT_B, 'stripes', 0x20283a, 0x7fa8d9)],
-  berlin: [poster(SLOT_A, 'bars', 0x15171d, 0x9aa3b8), poster(SLOT_B, 'wave', 0x22262f, 0xe6e9f2)],
-  tokyo: [poster(SLOT_A, 'sunburst', 0xefe6d6, 0xc4372c), poster(SLOT_B, 'wave', 0x1b2038, 0xe87aa0)],
-  rio: [poster(SLOT_A, 'stripes', 0x14301f, 0xf2d33a), poster(SLOT_B, 'sunburst', 0x0f2a3a, 0x5fbf7a)],
-  detroit: [poster(SLOT_A, 'bars', 0x1a1d22, 0x5aa7a7), poster(SLOT_B, 'diamond', 0x2a2d33, 0xd7dbe0)],
-  lagos: [poster(SLOT_A, 'diamond', 0x1d2a1a, 0xd5a52f), poster(SLOT_B, 'stripes', 0x2a1a14, 0x4fbf6a)],
+/**
+ * Free wall spans per room, clear of the door, window, on-air lamp and wall treatments (checked in
+ * city-room-style.check.ts). Studio A has none: its left wall is the door, clock and TV wall, so posters
+ * there used to hide behind the door. They hang in the rooms bought later instead.
+ */
+export const ROOM_POSTER_SLOTS: Partial<Record<StudioRoomType, readonly { y0: number; y1: number; side: 'left' | 'right' }[]>> = {
+  'live-room': [{ side: 'right', y0: 0.75, y1: 1.4 }, { side: 'right', y0: 4.35, y1: 5.0 }],
+  'mix-suite': [{ side: 'right', y0: 5.9, y1: 6.6 }],
 };
 
-export const cityPosters = (cityId?: string): readonly PosterSpec[] => (cityId ? CITY_POSTERS[cityId] : undefined) ?? [];
+/** Per-city motif and palette for the first and second poster; later slots reuse them in order. */
+export const CITY_POSTERS: Record<string, readonly [Pick<PosterSpec, 'motif' | 'bg' | 'fg'>, Pick<PosterSpec, 'motif' | 'bg' | 'fg'>]> = {
+  'los-angeles': [{ motif: 'sunburst', bg: 0x3a2038, fg: 0xf2a65a }, { motif: 'stripes', bg: 0x1d2a3a, fg: 0xff7a6b }],
+  nashville: [{ motif: 'diamond', bg: 0x2a1d14, fg: 0xd98c4a }, { motif: 'rings', bg: 0x1d2a22, fg: 0xe8d9a8 }],
+  london: [{ motif: 'rings', bg: 0x1a2540, fg: 0xd9463e }, { motif: 'stripes', bg: 0x20283a, fg: 0x7fa8d9 }],
+  berlin: [{ motif: 'bars', bg: 0x15171d, fg: 0x9aa3b8 }, { motif: 'wave', bg: 0x22262f, fg: 0xe6e9f2 }],
+  tokyo: [{ motif: 'sunburst', bg: 0xefe6d6, fg: 0xc4372c }, { motif: 'wave', bg: 0x1b2038, fg: 0xe87aa0 }],
+  rio: [{ motif: 'stripes', bg: 0x14301f, fg: 0xf2d33a }, { motif: 'sunburst', bg: 0x0f2a3a, fg: 0x5fbf7a }],
+  detroit: [{ motif: 'bars', bg: 0x1a1d22, fg: 0x5aa7a7 }, { motif: 'diamond', bg: 0x2a2d33, fg: 0xd7dbe0 }],
+  lagos: [{ motif: 'diamond', bg: 0x1d2a1a, fg: 0xd5a52f }, { motif: 'stripes', bg: 0x2a1a14, fg: 0x4fbf6a }],
+};
+
+/** Posters for a room: none without a known city, none in Studio A (door wall stays clear). */
+export const cityPosters = (cityId?: string, roomType?: StudioRoomType | null): readonly PosterSpec[] => {
+  const looks = cityId ? CITY_POSTERS[cityId] : undefined;
+  const slots = roomType ? ROOM_POSTER_SLOTS[roomType] : undefined;
+  if (!looks || !slots) return [];
+  return slots.map((slot, i) => poster(slot, looks[i % looks.length].motif, looks[i % looks.length].bg, looks[i % looks.length].fg));
+};
 
 const parseHex = (hex: string): number => parseInt(hex.replace('#', ''), 16);
 
@@ -49,10 +67,11 @@ export const cityTrimColor = (trim: number, cityId?: string): number => {
   return city ? mixColor(trim, parseHex(city.accent), CITY_TRIM_TINT) : trim;
 };
 
-/** Paint the city's posters on the left wall (frame, backing, motif). */
-export const drawCityPosters = (g: Graphics, cityId?: string): void => {
-  for (const p of cityPosters(cityId)) {
-    const pt = (u: number, v: number) => leftWallPt(p.y0 + u * (p.y1 - p.y0), POSTER_LIFT.low + v * (POSTER_LIFT.high - POSTER_LIFT.low));
+/** Paint the city's posters on the room's free wall spans (frame, backing, motif). */
+export const drawCityPosters = (g: Graphics, cityId?: string, roomType?: StudioRoomType | null): void => {
+  for (const p of cityPosters(cityId, roomType)) {
+    const wallPt = p.side === 'right' ? rightWallPt : leftWallPt;
+    const pt = (u: number, v: number) => wallPt(p.y0 + u * (p.y1 - p.y0), POSTER_LIFT.low + v * (POSTER_LIFT.high - POSTER_LIFT.low));
     const quad = (u0: number, u1: number, v0: number, v1: number) => {
       const a = pt(u0, v0); const b = pt(u1, v0); const c = pt(u1, v1); const d = pt(u0, v1);
       return [a.x, a.y, b.x, b.y, c.x, c.y, d.x, d.y];

@@ -47,6 +47,7 @@ import { gameAudio as audioSystem } from '@/utils/audioSystem';
 import { WelcomeBackSummaryModal } from '@/components/modals/WelcomeBackSummaryModal';
 import { StorylineBranchModal } from '@/components/modals/StorylineBranchModal';
 import { shouldTogglePauseOnKey } from '@/utils/pauseMenuKeys';
+import { PauseNavState, PauseView, pauseNavBack, pauseNavHasLayer, pauseNavOpenSettings } from '@/utils/pauseMenuNav';
 import { PauseMenuModal } from '@/components/modals/PauseMenuModal';
 import { useGamepad } from '@/hooks/useGamepad';
 import { StoryEventModal } from '@/components/modals/StoryEventModal';
@@ -130,6 +131,22 @@ const MusicStudioTycoon = () => {
   // const [showRecruitmentModal, setShowRecruitmentModal] = useState(false); // Assuming this was intended to be used elsewhere or can be removed if not
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showPauseMenu, setShowPauseMenu] = useState(false);
+  const [pauseView, setPauseView] = useState<PauseView>('main');
+  const [settingsFromPause, setSettingsFromPause] = useState(false);
+  const pauseNav: PauseNavState = { pauseOpen: showPauseMenu, view: pauseView, settingsOpen: showSettingsModal, settingsFromPause };
+  const applyPauseNav = (next: PauseNavState) => {
+    setShowPauseMenu(next.pauseOpen);
+    setPauseView(next.view);
+    setShowSettingsModal(next.settingsOpen);
+    setSettingsFromPause(next.settingsFromPause);
+  };
+  useEffect(() => { if (!showPauseMenu) setPauseView('main'); }, [showPauseMenu]);
+  const pauseNavRef = useRef(pauseNav);
+  pauseNavRef.current = pauseNav;
+  const pauseBack = () => {
+    applyPauseNav(pauseNavBack(pauseNavRef.current));
+    if (settings.sfxEnabled) void audioSystem.playUISound('menuClose');
+  };
   const [showStorylineBranchModal, setShowStorylineBranchModal] = useState(false);
   // Key of a subplot beat the player chose to decide later; cleared when the beat changes or they reopen it.
   const [deferredStoryEventKey, setDeferredStoryEventKey] = useState<string | null>(null);
@@ -230,6 +247,26 @@ const MusicStudioTycoon = () => {
     offlineSummary,
     showReviewModal,
   ]);
+
+  // Phone back gesture / browser back: one history entry while the pause menu
+  // (or settings opened from it) is up; popstate steps back one level.
+  const pauseLayerActive = pauseNavHasLayer(pauseNav);
+  const pauseBackRef = useRef(pauseBack);
+  pauseBackRef.current = pauseBack;
+  useEffect(() => {
+    if (!pauseLayerActive) return;
+    let popped = false;
+    try { window.history.pushState({ rstPauseLayer: true }, ''); } catch { return; }
+    const onPop = () => {
+      popped = true;
+      pauseBackRef.current();
+    };
+    window.addEventListener('popstate', onPop);
+    return () => {
+      window.removeEventListener('popstate', onPop);
+      if (!popped && window.history.state?.rstPauseLayer) window.history.back();
+    };
+  }, [pauseLayerActive]);
 
   // Keyboard and gamepad pause menu handling
   const gamepad = useGamepad();
@@ -866,7 +903,7 @@ const MusicStudioTycoon = () => {
 
       <SettingsModal
         isOpen={showSettingsModal && !effectiveCompactStudioMode}
-        onClose={() => setShowSettingsModal(false)}
+        onClose={() => applyPauseNav(pauseNavBack({ ...pauseNavRef.current, settingsOpen: true }))}
         onResetGame={resetGame} // Pass resetGame from useSaveSystem
         context="ingame" // Explicitly set context for in-game settings
         onLoadGameStateFromString={handleLoadGameStateFromString} // Pass the new handler
@@ -875,16 +912,13 @@ const MusicStudioTycoon = () => {
       <PauseMenuModal
         isOpen={showPauseMenu && !effectiveCompactStudioMode}
         gameState={gameState}
-        onClose={() => {
-          setShowPauseMenu(false);
-          if (settings.sfxEnabled) void audioSystem.playUISound('menuClose');
-        }}
-        onOpenSettings={() => {
-          setShowPauseMenu(false);
-          setShowSettingsModal(true);
-        }}
+        view={pauseView}
+        onViewChange={setPauseView}
+        onClose={pauseBack}
+        onOpenSettings={() => applyPauseNav(pauseNavOpenSettings(pauseNavRef.current))}
         onQuitToTitle={() => {
           setShowPauseMenu(false);
+          setPauseView('main');
           setShowSplashScreen(true);
         }}
       />
