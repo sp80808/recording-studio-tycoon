@@ -2,6 +2,7 @@
 // Runs inside the one shared Pixi Application owned by WebGLCanvas: this module only builds a Container
 // tree (static Graphics, no filters, no textures, no tickers) plus a tiny `tick` for the on-air lamp.
 // In-house proprietary original, Pixi Graphics only (logged in docs/ART_SOURCING_LOG.md).
+import { drawCityPosters } from './cityRoomStyle';
 import { Container, Graphics, Text } from 'pixi.js';
 import { iso, isoQuad, WALL_H as ROOM_WALL_H } from './isoMath';
 import { buildRack, buildSeat, isoBox, NAVY, NAVY_BACK, pt, quad, wrap, type BoxColors } from './studioIsoKit';
@@ -533,6 +534,10 @@ export const buildRoomLayoutScene = (profile: RoomLayoutProfile, opts: RoomScene
 
   const { shell, onAir, onAirGlow } = buildShell(profile, pal, rand, accent);
   root.addChild(shell);
+  const posters = new Graphics();
+  posters.eventMode = 'none';
+  drawCityPosters(posters, opts.cityId, profile.type);
+  root.addChild(posters);
   const win = buildWindow(profile, pal, hash(`${opts.seed}:${profile.type}:window`), opts.clockMinutes ?? 840, opts.cityId);
   win.container.eventMode = 'none';
   win.container.zIndex = -90;
