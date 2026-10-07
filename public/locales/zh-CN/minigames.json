@@ -178,6 +178,7 @@
   "mg.FaderRideGame.close": "关闭",
   "mg.FaderRideGame.fader": "推子",
   "mg.FaderRideGame.finalize": "完成并结算得分",
+  "mg.FaderRideGame.finish_early": "Finish early (scores the full run)",
   "mg.FaderRideGame.green_zone": "绿区 40-60",
   "mg.FaderRideGame.in_zone": "（区内）",
   "mg.FaderRideGame.in_zone_ticks": "区内次数：{{in}}/{{total}}",

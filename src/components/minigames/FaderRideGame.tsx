@@ -477,7 +477,7 @@ export const FaderRideGame: React.FC<MinigameComponentProps> = ({ minigameId, on
           {tc('mg.FaderRideGame.close', 'Close')}
         </KenneyButton>
         <KenneyButton variant="green" onClick={finalize} disabled={gameOver || totalTicks === 0}>
-          {tc('mg.FaderRideGame.finalize', 'Finish early (scores the full run)')}
+          {tc('mg.FaderRideGame.finish_early', 'Finish early (scores the full run)')}
         </KenneyButton>
       </DialogFooter>
     </Card>
