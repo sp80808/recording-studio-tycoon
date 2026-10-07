@@ -46,6 +46,7 @@ import {
   advanceClientTransit,
   clientTransitPose,
   createClientTransitState,
+  doorOpenAmount,
   isClientTransitAnimating,
   skipClientTransit,
   type ClientTransitState,
@@ -565,6 +566,8 @@ interface SceneRefs {
   artist: (FloorNpcHandle & { tag: Text; shown: string; baseX: number }) | null;
   /** Floor anchor just inside the door threshold (client enter/exit). */
   doorFloor: { x: number; y: number } | null;
+  /** Warm hallway light in the doorway + on the floor while a client walks through (#194). */
+  doorSpill?: Graphics;
   /** Live-room mic stand pose for the booked artist. */
   artistStand: { x: number; y: number } | null;
   nightTintLayer: Container | null;
@@ -1023,6 +1026,25 @@ const buildScene = (
     } else {
       doorWrap.addChild(doorGfx);
     }
+    // Door ajar: hallway light fills the frame and spills across the threshold while a client passes.
+    const spill = new Graphics();
+    spill
+      .poly([
+        doorA.x + 2, doorA.y - 2,
+        doorB.x - 2, doorB.y - 2,
+        doorB.x - 2, doorB.y - doorH + 4,
+        doorA.x + 2, doorA.y - doorH + 4,
+      ])
+      .fill({ color: 0xffd9a0, alpha: 0.7 });
+    const fA = iso(0.02, 3.2);
+    const fB = iso(0.02, 4.3);
+    const fC = iso(1.7, 4.75);
+    const fD = iso(1.7, 2.8);
+    spill.poly([fA.x, fA.y, fB.x, fB.y, fC.x, fC.y, fD.x, fD.y]).fill({ color: 0xffcf88, alpha: 0.22 });
+    spill.alpha = 0;
+    spill.eventMode = 'none';
+    doorWrap.addChild(spill);
+    refs.doorSpill = spill;
     const lintel = new Graphics();
     lintel
       .poly([
@@ -2679,7 +2701,11 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           // World attention cue (#194): derive this frame's ring, ripple, framing and punch.
           attentionRef.current = expireCue(attentionRef.current, now);
           const cueTarget = attentionRef.current.active?.target;
-          const cueFocus = cueTarget ? refs.idleFocusPoints[cueTarget] : undefined;
+          // Arrival rides on the artist as they walk in; everything else sits on its object.
+          const walker = attentionRef.current.active?.reason === 'arrival' && refs.artist?.fig.visible ? refs.artist.fig : null;
+          const cueFocus = walker
+            ? { x: walker.x, y: walker.y - 18 }
+            : cueTarget ? refs.idleFocusPoints[cueTarget] : undefined;
           const cueScreen = cueFocus
             ? {
                 x: scene.root.position.x + cueFocus.x * scene.root.scale.x,
@@ -3072,6 +3098,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             }
             a.fig.zIndex = Z.depth + pose.y;
           }
+
+          if (refs.doorSpill) refs.doorSpill.alpha = doorOpenAmount(clientTransitRef.current);
 
           // Phone ring pulse — stronger when enquiries are waiting
           if (refs.phoneRing) {

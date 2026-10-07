@@ -14,6 +14,7 @@ import {
   takePunchScale,
   type AttentionFrameInput,
 } from '../src/components/studio/attentionDirector';
+import { advanceClientTransit, createClientTransitState, doorOpenAmount, CLIENT_ENTER_MS } from '../src/components/studio/clientDoorTransit';
 
 const idle = (now: number, extra: Partial<AttentionFrameInput> = {}): AttentionFrameInput => ({
   now,
@@ -136,6 +137,25 @@ const idle = (now: number, extra: Partial<AttentionFrameInput> = {}): AttentionF
   assert.equal(isOffCentre({ x: 200, y: 400 }, screen), false);
   assert.equal(isOffCentre({ x: 260, y: 420 }, screen), false);
   assert.equal(isOffCentre({ x: 360, y: 400 }, screen), true);
+}
+
+// Door light: opens as the client walks in, shuts behind them, never shows at rest or under Reduced Motion.
+{
+  let t = createClientTransitState(false);
+  assert.equal(doorOpenAmount(t), 0);
+  t = advanceClientTransit(t, { sessionActive: true, dtMs: CLIENT_ENTER_MS * 0.3, reduceMotion: false });
+  assert.equal(t.phase, 'entering');
+  assert.ok(doorOpenAmount(t) > 0.95, 'door is open mid-walk');
+  t = advanceClientTransit(t, { sessionActive: true, dtMs: CLIENT_ENTER_MS * 0.62, reduceMotion: false });
+  assert.ok(doorOpenAmount(t) < 0.5, 'door eases shut as they reach the booth');
+  t = advanceClientTransit(t, { sessionActive: true, dtMs: CLIENT_ENTER_MS, reduceMotion: false });
+  assert.equal(doorOpenAmount(t), 0, 'closed once present');
+  const snapped = advanceClientTransit(createClientTransitState(false), { sessionActive: true, dtMs: 16, reduceMotion: true });
+  assert.equal(doorOpenAmount(snapped), 0, 'Reduced Motion snaps with the door shut');
+  let out = advanceClientTransit(createClientTransitState(true), { sessionActive: false, dtMs: 16, reduceMotion: false });
+  assert.ok(doorOpenAmount(out) < 0.1, 'exit starts at the booth with the door shut');
+  out = advanceClientTransit(out, { sessionActive: false, dtMs: 1_100 * 0.8, reduceMotion: false });
+  assert.ok(doorOpenAmount(out) > 0.9, 'door opens as they reach it');
 }
 
 console.log('world attention director passed');

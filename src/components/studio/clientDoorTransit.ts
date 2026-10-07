@@ -14,8 +14,8 @@ export interface ClientTransitState {
   sessionActive: boolean;
 }
 
-export const CLIENT_ENTER_MS = 900;
-export const CLIENT_EXIT_MS = 700;
+export const CLIENT_ENTER_MS = 1_500;
+export const CLIENT_EXIT_MS = 1_100;
 
 export function createClientTransitState(sessionActive = false): ClientTransitState {
   return {
@@ -127,4 +127,18 @@ export function clientTransitPose(
   const doorProximity = state.phase === 'entering' ? pathT : raw;
   const alpha = clamp01(0.25 + doorProximity * 0.75);
   return { x, y, visible: true, alpha, pathT };
+}
+
+/**
+ * How far open the studio door reads (0..1) while a client walks through it:
+ * swings open over the first 12% of the walk, holds, then eases shut over the last 30%.
+ * Purely cosmetic; 0 whenever nobody is mid-transit (so Reduced Motion's snap never shows it).
+ */
+export function doorOpenAmount(state: ClientTransitState): number {
+  if (state.phase !== 'entering' && state.phase !== 'exiting') return 0;
+  // Exits walk stand → door, so the door opens late and shuts as they leave.
+  const t = state.phase === 'entering' ? state.t : 1 - state.t;
+  const open = Math.min(1, t / 0.12);
+  const close = t > 0.7 ? Math.max(0, (1 - t) / 0.3) : 1;
+  return easeClientTransit(Math.min(open, close));
 }
