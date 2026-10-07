@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { GameState } from '@/types/game';
 import { currencySymbol, getCityById, toLocalAmount } from '@/rpg/cities';
 import { getStudioSignage } from '@/components/WebGLCanvas';
+import { getPremisesDef } from '@/rpg/premises';
 import { useStudioClock } from '@/contexts/StudioClockContext';
 import { useSaveSystem } from '@/contexts/SaveSystemContext';
 import { gameAudio } from '@/utils/audioSystem';
@@ -57,7 +58,8 @@ export const PauseMenuModal: React.FC<PauseMenuModalProps> = ({
   const signage = getStudioSignage(
     gameState.currentEra,
     Object.keys(gameState.unlockedAchievements ?? {}).length,
-    getCityById(gameState.cityId)?.name
+    getCityById(gameState.cityId)?.name,
+    getPremisesDef(gameState).name
   );
   const activeProject = gameState.activeProject;
 
