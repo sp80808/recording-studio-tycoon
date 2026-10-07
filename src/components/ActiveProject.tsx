@@ -34,6 +34,7 @@ import type { BankResult } from '@/rpg/streakBank';
 import { resolveProducerFeatureUnlocks, nextFeatureReveal, acknowledgeFeatureReveal, type ProducerFeature } from '@/rpg/featureUnlocks';
 import { FeatureRevealBanner } from './FeatureRevealBanner';
 import { hasActiveChoreBuff, getActiveBuffMagnitude } from '@/simulation/choreEngine';
+import { IdleConsole } from '@/components/console/IdleConsole';
 import { PocketMeter, type TakeLockSource } from '@/components/console/PocketMeter';
 
 /** Inter-take dock pacing — keep calibration a quick console check, not a chapter. */
@@ -88,6 +89,10 @@ interface ActiveProjectProps {
   onMinigameReward?: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string, rawScore?: number, opportunityId?: string) => void;
   onProjectComplete?: (completedProject: Project) => void;
   onProjectSelect?: (project: Project) => void;
+  /** Idle console: book an enquiry straight from the console. */
+  onBookEnquiry?: (project: Project) => void;
+  /** Idle console: open the full enquiries board. */
+  onOpenBookings?: () => void;
   autoTriggeredMinigame?: SessionIntervention | null;
   clearAutoTriggeredMinigame?: () => void;
   onLockHotspot?: (id: import('@/components/WebGLCanvas').StudioHotspotId | null) => void;
@@ -105,6 +110,8 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   onMinigameReward,
   onProjectComplete,
   onProjectSelect,
+  onBookEnquiry,
+  onOpenBookings,
   autoTriggeredMinigame,
   clearAutoTriggeredMinigame,
   onLockHotspot
@@ -387,21 +394,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
   if (!gameState.activeProject) {
     return (
-      <div className="flex-1 min-h-0 overflow-y-auto space-y-4">
-        <GamePanel className="flex-1 p-6 backdrop-blur-sm">
-          <div className="text-center text-stone-400 animate-fade-in">
-            <div className="text-6xl mb-4 animate-pulse"><StatIcon name="note" size="1em" /></div>
-            <h3 className="text-xl font-bold mb-2 text-white">{t('active_studio_ready')}</h3>
-            <p className="mb-4 text-stone-300">{t('active_choose_enquiry')}</p>
-            <div className="bg-stone-950/60 border border-stone-700/80 rounded-lg p-4 text-sm text-amber-200 shadow-inner">
-              <p className="font-semibold mb-2"><StatIcon name="phone" /> {t('active_next_move')}</p>
-              <p>1. {t('active_step_browse')}</p>
-              <p>2. {t('active_step_book')}</p>
-              <p>3. {t('active_step_return')}</p>
-            </div>
-          </div>
-        </GamePanel>
-      </div>
+      <IdleConsole gameState={gameState} onBook={onBookEnquiry} onOpenBookings={onOpenBookings} onResume={onProjectSelect} />
     );
   }
 

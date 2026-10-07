@@ -579,6 +579,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                 onProjectComplete={onProjectComplete}
                 autoTriggeredMinigame={autoTriggeredMinigame}
                 clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
+                onBookEnquiry={bookProject}
+                onOpenBookings={() => openPanel('bookings')}
                 onProjectSelect={(project) => {
                   setGameState(prev => ({ ...prev, activeProject: project }));
                   setPanel('session');
