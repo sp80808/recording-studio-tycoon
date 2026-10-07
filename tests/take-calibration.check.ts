@@ -127,5 +127,12 @@ ok(firstVisit(generous) > firstVisit(normal), 'generous pockets hold longer for 
 const passes = autoLock / cycle;
 ok(passes >= 1.5 && passes <= 2, `fallback resolves after ~1.8 passes without becoming a wait (${passes.toFixed(2)})`);
 
+// 3. #335/#339: who locked the take is visible, and accessible names carry the visible text.
+ok(/onLockRef\.current\([^)]*'auto'\)/.test(meter) && /onLockRef\.current\(pos, 'player'\)/.test(meter), 'PocketMeter reports player vs auto lock source');
+ok(/source === 'auto' \? 'Auto-locked' : 'Locked'/.test(active), 'take result text shows manual vs auto lock');
+ok(/aria-label=\{`Lock take: \$\{lockLabel\}/.test(meter) && /<span>\{lockLabel\}<\/span>/.test(meter), 'Lock button name includes its visible label');
+ok(/t\('active_arm_take'[^)]*\)\}\s*—/.test(active), 'Arm button name includes its visible ARM TAKE text');
+ok(!/performDailyWork/.test(active.slice(active.indexOf('const handleArmTake'), active.indexOf('const handleStandDown'))), 'arming never spends energy or advances work');
+
 console.log(`take-calibration: all ${passed} checks passed`);
 

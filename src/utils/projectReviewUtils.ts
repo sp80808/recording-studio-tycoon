@@ -4,6 +4,7 @@ import { createSeededRandom, pickWithRandom, randomInt } from '@/simulation/seed
 import { STAGE_GRADE_CARRY, gradeCapsProject, A_GRADE_CAP } from '@/rpg/stageGrades';
 import { gradeQuality } from '@/rpg/rankChase';
 import { settleStake } from '@/rpg/contractStakes';
+import { humanizeSkill } from '@/utils/reviewCopy';
 import { evaluateProjectRider } from '@/rpg/studioRider';
 
 /**
@@ -266,6 +267,8 @@ export const generateProjectReview = (
   );
   const bronzeCapped = stageGrades.some(gradeCapsProject);
   overallQualityScore = clamp(overallQualityScore + stageCarry, 0, 100);
+  // The cap is only worth mentioning when it actually lowered the score.
+  const capApplied = bronzeCapped && overallQualityScore > A_GRADE_CAP;
   if (bronzeCapped) overallQualityScore = Math.min(overallQualityScore, A_GRADE_CAP);
 
   // Contract stake (sd3.2): the booking gamble settles against the final
@@ -331,11 +334,11 @@ export const generateProjectReview = (
     const worstSkill = sortedSkills[sortedSkills.length - 1];
 
     if (bestSkill.score > 85) {
-      reviewSnippet += ` The ${bestSkill.skillName} was particularly ${pickRandom(positiveAdjectives)}.`;
+      reviewSnippet += ` The ${humanizeSkill(bestSkill.skillName)} was particularly ${pickRandom(positiveAdjectives)}.`;
     } else if (worstSkill.score < 40 && sortedSkills.length > 1 && bestSkill.skillName !== worstSkill.skillName) {
-      reviewSnippet += ` However, the ${worstSkill.skillName} felt a bit ${pickRandom(negativeAdjectives)}.`;
+      reviewSnippet += ` However, the ${humanizeSkill(worstSkill.skillName)} felt a bit ${pickRandom(negativeAdjectives)}.`;
     } else if (bestSkill.score > 70 && overallQualityScore < midQualityThreshold) {
-         reviewSnippet += ` Despite some challenges, the ${bestSkill.skillName} showed promise.`;
+         reviewSnippet += ` Despite some challenges, the ${humanizeSkill(bestSkill.skillName)} showed promise.`;
     }
   }
   if (project.accumulatedCPoints > 50 && project.accumulatedTPoints < 20 && overallQualityScore < highQualityThreshold) {
@@ -347,7 +350,7 @@ export const generateProjectReview = (
   // Competence-forward cause attribution (GH #20): name at least one factor that
   // affected quality instead of an unexplained score.
   const factorNotes: string[] = [];
-  if (sortedSkills.length > 0) factorNotes.push(`${sortedSkills[0].skillName} led the session`);
+  if (sortedSkills.length > 0) factorNotes.push(`${humanizeSkill(sortedSkills[0].skillName)} led the session`);
   if (staffBonus >= 6) factorNotes.push('the assigned crew lifted the takes');
   if (studioBonus >= 6) factorNotes.push('studio genre expertise showed');
   if (equipBonusExtra >= 6) factorNotes.push('the gear chain stayed clean');
@@ -380,7 +383,7 @@ export const generateProjectReview = (
   // Stage + stake ledger (sd3.2): factual, one line each.
   if (stageGrades.length > 0) {
     reviewSnippet += ` Stage grades: ${stageGrades.join(', ')}.`;
-    if (bronzeCapped) reviewSnippet += ' A rough stage capped this project at A.';
+    if (capApplied) reviewSnippet += ' A rough stage capped this project at A.';
   }
   if ((project.stake ?? 'safe') !== 'safe') {
     reviewSnippet += stakeSettle.met

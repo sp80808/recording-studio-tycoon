@@ -606,6 +606,8 @@ export interface ProjectReport {
   genre?: string;
   /** Studio Know-How earned by resolving issues before delivery (#87, capped per project). */
   knowHowGained?: number;
+  /** Signed money change from the Deliver/Polish choice, so the review can itemise it. */
+  deliveryAdjustment?: { kind: 'polish' | 'deliver'; amount: number };
 }
 
 export interface Financials {

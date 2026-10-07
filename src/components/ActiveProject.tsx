@@ -34,7 +34,7 @@ import type { BankResult } from '@/rpg/streakBank';
 import { resolveProducerFeatureUnlocks, nextFeatureReveal, acknowledgeFeatureReveal, type ProducerFeature } from '@/rpg/featureUnlocks';
 import { FeatureRevealBanner } from './FeatureRevealBanner';
 import { hasActiveChoreBuff, getActiveBuffMagnitude } from '@/simulation/choreEngine';
-import { PocketMeter } from '@/components/console/PocketMeter';
+import { PocketMeter, type TakeLockSource } from '@/components/console/PocketMeter';
 
 /** Inter-take dock pacing — keep calibration a quick console check, not a chapter. */
 export const TAKE_SESSION_PACING = {
@@ -591,7 +591,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     playSound('ui-click', 0.35);
   };
 
-  const handleLockTake = (needlePosition: number) => {
+  const handleLockTake = (needlePosition: number, source: TakeLockSource = 'player') => {
     if (!controlsEnabled || availableEnergy <= 0 || isProjectComplete) return;
     const timingBonus = getActiveBuffMagnitude(gameState.choreState, 'timing_bonus');
     const verdict = evaluateTakeAccuracy(needlePosition, timingBonus, settings.pocketMeterAssistance);
@@ -657,12 +657,12 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     if (verdict.grade === 'Gold' || verdict.grade === 'Silver' || verdict.grade === 'Solid') emitTakeFeedback(verdict.grade);
     setLastTakeGrade({
       grade: verdict.grade,
-      text: `${verdict.label}! +${verdict.qualityBonus} Quality (${Math.round((verdict.multiplier - 1) * 100)}% Boost)`
+      text: `${source === 'auto' ? 'Auto-locked' : 'Locked'}: ${verdict.label}! +${verdict.qualityBonus} Quality (${Math.round((verdict.multiplier - 1) * 100)}% Boost)`
     });
 
     toast({
       title: verdict.grade === 'Gold' ? '🔥 IN THE POCKET! (Gold Take)' : verdict.grade === 'Silver' ? '✨ TIGHT TAKE! (Silver Take)' : '🎵 SOLID TAKE',
-      description: `${verdict.label}: Advanced stage with ${energyCost} energy spent.`,
+      description: `${source === 'auto' ? 'Auto-locked' : 'You locked it'} · ${verdict.label}: Advanced stage with ${energyCost} energy spent.`,
       className: verdict.grade === 'Gold' ? 'bg-amber-950 border-amber-500 text-amber-200' : 'bg-stone-800 border-stone-600 text-white',
       duration: TAKE_SESSION_PACING.takeToastMs
     });
@@ -1537,7 +1537,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 data-rst-surface="contextual" data-rst-action-id="console:record" data-rst-world-target="console"
                 onClick={isProjectComplete ? handleOpenProjectReview : handleArmTake}
                 disabled={!isProjectComplete && availableEnergy <= 0}
-                aria-label={isProjectComplete ? 'Review project' : t('active_work_on_project')}
+                aria-label={isProjectComplete ? 'Review project' : availableEnergy > 0 ? `${t('active_arm_take', { cost: energyCost, left: availableEnergy })} — ${t('active_work_on_project')}` : t('active_out_of_capacity')}
                 className={`w-full py-3.5 text-sm font-black uppercase tracking-wider rounded-[2px] border transition-all flex items-center justify-center gap-2 shadow-lg ${
                   isProjectComplete
                     ? 'bg-emerald-400/[0.16] border-emerald-400/55 text-emerald-100'

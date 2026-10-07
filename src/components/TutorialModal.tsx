@@ -40,7 +40,7 @@ const STEPS: Array<{
   {
     id: 'reinvest', title: 'Make the next session easier',
     body: 'Put the first payout back into the studio. Gear improves the room; Crew adds staff you can assign to active sessions.',
-    action: 'Gear or Crew → Buy / Hire', Icon: SlidersHorizontal,
+    action: 'Open the Gear or Crew tab to buy or hire', Icon: SlidersHorizontal,
   },
 ];
 
