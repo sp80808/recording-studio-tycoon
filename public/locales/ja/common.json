@@ -358,5 +358,6 @@
   "customise_slot_accessory": "Accessory",
   "customise_slot_shirt": "Jacket / shirt",
   "customise_slot_pants": "Trousers",
-  "customise_slot_shoes": "Shoes"
+  "customise_slot_shoes": "Shoes",
+  "home_n_waiting": "{{count}}件待機中"
 }

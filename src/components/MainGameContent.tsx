@@ -506,7 +506,11 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
           <button hidden={consoleOpen && useWorldConsole} className="studio-primary-action" data-rst-surface="contextual" data-rst-action-id={project ? 'dock:open-session' : 'dock:open-bookings'} onClick={() => openPanel(project ? 'session' : 'bookings')}>
             {gamepad.lastInputType === 'gamepad' && <GamepadGlyph button="south" size="xs" className="mr-1 inline-block" />}
             {project ? <Headphones size={20} /> : <Phone size={20} />}
-            <span>{sessionLabel}</span><span aria-hidden="true">→</span>
+            <span>{sessionLabel}</span>
+            {!project && gameState.availableProjects.length > 0 && (
+              <span className="studio-primary-badge" data-testid="primary-waiting-badge">{t('home_n_waiting', { count: gameState.availableProjects.length })}</span>
+            )}
+            <span aria-hidden="true">→</span>
           </button>
         <nav aria-label="Studio activities" className="studio-command-dock">
           {([

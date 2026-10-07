@@ -361,5 +361,6 @@
   "customise_slot_accessory": "Dodatek",
   "customise_slot_shirt": "Kurtka / koszula",
   "customise_slot_pants": "Spodnie",
-  "customise_slot_shoes": "Buty"
+  "customise_slot_shoes": "Buty",
+  "home_n_waiting": "{{count}} czeka"
 }
