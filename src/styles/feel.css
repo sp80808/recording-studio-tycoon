@@ -93,3 +93,18 @@ html[data-high-contrast='true'] .text-stone-300 { color: #fafaf9 !important; }
 html[data-high-contrast='true'] .border-stone-800,
 html[data-high-contrast='true'] .border-stone-700,
 html[data-high-contrast='true'] .border-stone-700\/80 { border-color: #a8a29e !important; }
+
+/* Facility blueprint (#248): hover/focus lift on rooms, ON AIR lamp and you-are-here pin. */
+.facility-plan .facility-room { outline: none; transition: opacity .15s ease; }
+.facility-plan .facility-room[aria-disabled="true"] { opacity: .85; }
+.facility-plan .facility-room:not([aria-disabled="true"]):hover .facility-room-outline,
+.facility-plan .facility-room:focus-visible .facility-room-outline { stroke: #fcd34d; stroke-width: 2.4px; }
+.facility-plan .facility-onair { animation: facility-onair 1.4s ease-in-out infinite; }
+.facility-plan .facility-pin { animation: facility-pin 1.8s ease-in-out infinite; transform-box: fill-box; }
+@keyframes facility-onair { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@keyframes facility-pin { 0%, 100% { translate: 0 0; } 50% { translate: 0 -1.2px; } }
+html[data-reduced-motion='true'] .facility-plan .facility-onair,
+html[data-reduced-motion='true'] .facility-plan .facility-pin { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .facility-plan .facility-onair, .facility-plan .facility-pin { animation: none; }
+}
