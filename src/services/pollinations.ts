@@ -43,12 +43,19 @@ export async function generateAlbumArt(prompt: string, opts?: { title?: string; 
 export async function generateReview(projectName: string): Promise<string> {
   try {
     const prompt = `Write a concise in-universe review of the album titled '${projectName}', including critical feedback and praise.`;
-    const response = await fetch(`/api/pollinations/text?prompt=${encodeURIComponent(prompt)}`);
-    if (!response.ok) {
-      throw new Error(`Error generating review: ${response.statusText}`);
+    // Fail fast like generateAlbumArt: a hung request must not outlive the review modal.
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 2800);
+    try {
+      const response = await fetch(`/api/pollinations/text?prompt=${encodeURIComponent(prompt)}`, { signal: controller.signal });
+      if (!response.ok) {
+        throw new Error(`Error generating review: ${response.statusText}`);
+      }
+      const data: { text: string } = await response.json();
+      return data.text;
+    } finally {
+      window.clearTimeout(timeout);
     }
-    const data: { text: string } = await response.json();
-    return data.text;
   } catch (err) {
     console.warn('generateReview failed, using fallback', err);
     // Fallback: generate simple contextual review

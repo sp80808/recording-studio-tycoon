@@ -379,4 +379,8 @@ echo "=== gear why hint (#306) ==="
 ./node_modules/.bin/esbuild tests/gear-why.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-gear-why.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-gear-why.cjs"
 
+echo "=== software GL guard + review watchdog (#352/#353) ==="
+./node_modules/.bin/esbuild tests/software-gl-guard.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-software-gl-guard.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-software-gl-guard.cjs"
+
 echo "All automated checks passed."
