@@ -391,7 +391,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
         </MotionReveal>
       )}
 
-      <div className="edge-fade-b min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+      <div className="edge-fade-b min-h-0 flex-1 space-y-3 pr-1">
         {board.length === 0 && (
           <div className="px-4 py-10 text-center">
             <Inbox size={34} strokeWidth={1.4} className="mx-auto mb-3 text-[var(--rst-brass-400)]" aria-hidden="true" />
