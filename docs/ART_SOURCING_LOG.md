@@ -298,6 +298,7 @@ In-house proprietary original. The swinging door leaf (panels, edge strip, brass
 - Furnishing shapes `trophy` and `cassette` (and 12 new furnishing looks) are drawn in-house as Pixi Graphics in `studioFurnishingRender.ts`. Original, CC0.
 - 10 new gear ids reuse existing item sprite slots in `equipmentArt.ts` (emoji fallback + tint per item); no new external art.
 - New producer cosmetics (headwear, shirts, trousers, shoes) reuse the existing in-house SVG layers in `ModularSpriteRenderer.tsx`.
+
 ## 31. Ringing desk phone, riding faders, pumping monitors and tap reactions (#194)
 In-house proprietary original. The phone handset, cradle prongs, dial and bell marks, the live console fader caps and the monitor woofer cones are Pixi Graphics in `WebGLCanvas.tsx` (`drawFaders`, `drawWoofers`), with timing curves in `studioObjectFeel.ts`. The phone bell (two triangle partials with a 22 Hz hammer tremolo) and the handset pickup (sine thump plus high-passed noise click) are synthesised with Web Audio in `audioSystem.ts` (`playPhoneRing`, `playHandsetLift`). No external source, textures or samples.
 
