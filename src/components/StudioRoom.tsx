@@ -174,6 +174,10 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     if (event.outcome === 'shown' && (event.reason === 'arrival' || event.reason === 'wrap') && settings.sfxEnabled && !viewRoom) {
       void gameAudio.playDoor();
     }
+    // The phone rings once when an enquiry lands; the handset keeps rattling silently after that.
+    if (event.outcome === 'shown' && event.reason === 'enquiry' && settings.sfxEnabled && !viewRoom) {
+      void gameAudio.playPhoneRing();
+    }
     if (event.outcome === 'shown' && event.reason === 'issue' && settings.sfxEnabled) {
       void (event.target === 'shelf' ? gameAudio.playRackSelect() : gameAudio.playUISound('notice'));
     }
@@ -334,7 +338,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       } else if (canonical === 'shelf') {
         void gameAudio.playRackSelect();
       } else if (canonical === 'phone') {
-        void gameAudio.playEnquiryTone();
+        void gameAudio.playHandsetLift();
       } else {
         void gameAudio.playTactileClick();
       }

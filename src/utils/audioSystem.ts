@@ -684,6 +684,80 @@ class GameAudioSystem {
     creak.stop(now + 0.62);
   }
 
+  /**
+   * Desk phone bell (#194): one double ring (two short bursts of two struck bell partials,
+   * hammered at ~22 Hz). Synthesised in-house; played once when an enquiry lands, not looped.
+   */
+  async playPhoneRing(volume: number = 0.35) {
+    await this.ensureInitialized();
+    const ctx = this.audioContext;
+    if (!ctx || !this.sfxGain || this.shouldThrottle('phone-ring', 2500)) return;
+    const now = ctx.currentTime;
+    const out = ctx.createGain();
+    out.gain.value = volume;
+    out.connect(this.sfxGain);
+    for (const [start, len] of [[0, 0.4], [0.6, 0.4]] as const) {
+      const env = ctx.createGain();
+      env.gain.setValueAtTime(0.0001, now + start);
+      env.gain.exponentialRampToValueAtTime(0.5, now + start + 0.02);
+      env.gain.setValueAtTime(0.5, now + start + len - 0.05);
+      env.gain.exponentialRampToValueAtTime(0.0001, now + start + len);
+      // Hammer tremolo: an LFO on a second gain stage.
+      const trem = ctx.createGain();
+      trem.gain.value = 0.55;
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = 22;
+      const lfoDepth = ctx.createGain();
+      lfoDepth.gain.value = 0.45;
+      lfo.connect(lfoDepth).connect(trem.gain);
+      env.connect(trem).connect(out);
+      for (const [freq, amp] of [[1180, 0.6], [1630, 0.35]] as const) {
+        const osc = ctx.createOscillator();
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+        const g = ctx.createGain();
+        g.gain.value = amp;
+        osc.connect(g).connect(env);
+        osc.start(now + start);
+        osc.stop(now + start + len + 0.02);
+      }
+      lfo.start(now + start);
+      lfo.stop(now + start + len + 0.02);
+    }
+  }
+
+  /** Handset picked up off the cradle: a soft plastic clunk with a short hook-switch click. */
+  async playHandsetLift(volume: number = 0.5) {
+    await this.ensureInitialized();
+    const ctx = this.audioContext;
+    if (!ctx || !this.sfxGain || this.shouldThrottle('handset', 250)) return;
+    const now = ctx.currentTime;
+    const thump = ctx.createOscillator();
+    thump.type = 'sine';
+    thump.frequency.setValueAtTime(260, now);
+    thump.frequency.exponentialRampToValueAtTime(120, now + 0.08);
+    const tg = ctx.createGain();
+    tg.gain.setValueAtTime(0.0001, now);
+    tg.gain.exponentialRampToValueAtTime(0.35 * volume, now + 0.005);
+    tg.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
+    thump.connect(tg).connect(this.sfxGain);
+    thump.start(now);
+    thump.stop(now + 0.12);
+    const len = Math.floor(ctx.sampleRate * 0.015);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len) ** 2;
+    const click = ctx.createBufferSource();
+    click.buffer = buf;
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 3000;
+    const cg = ctx.createGain();
+    cg.gain.value = 0.3 * volume;
+    click.connect(hp).connect(cg).connect(this.sfxGain);
+    click.start(now + 0.04);
+  }
+
   async playZoneEnter() {
     await this.ensureInitialized();
     if (!this.audioContext || !this.masterGain) return;

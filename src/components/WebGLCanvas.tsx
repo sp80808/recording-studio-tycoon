@@ -85,6 +85,7 @@ import { claimPixiApplication, STUDIO_FLOOR_OWNER } from '@/lib/motion/pixiGuard
 import { cityWallColors } from '@/components/studio/cityWallTint';
 import { cityFloorPlanks, cityTrimColor, drawCityFloorPattern, drawCityPosters, drawCityProp } from '@/components/studio/cityRoomStyle';
 import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from '@/components/studio/isoMath';
+import { FEEL_MS, faderLevel, feelKindFor, handsetLift, handsetRattle, objectFeelPose, phoneRingLevel, takePush, wooferPump, type ObjectFeelKind } from '@/components/studio/studioObjectFeel';
 import { DOOR_FREE_Y, DOOR_HINGE_Y, doorFreeEdge, doorLeafShade, doorLightPool, doorSwingDeg } from '@/components/studio/studioDoor';
 import { buildCaseStack, CASE_STACK_TILE, type CaseStack } from '@/components/studio/studioCaseStack';
 import { buildWindowView, type WindowView } from '@/components/studio/studioWindowView';
@@ -573,6 +574,18 @@ interface SceneRefs {
   statusLeds: StatusLed[];
   shelfItems: ShelfAnimItem[];
   phoneRing: Graphics | null;
+  /** Desk phone handset (#194): rattles on its cradle while ringing, lifts when picked up. */
+  phoneHandset: { g: Graphics; x: number; y: number } | null;
+  /** Bell vibration marks either side of the phone while it rings. */
+  phoneBell: { g: Graphics; x: number; y: number } | null;
+  /** White wash over the TV screen for the tap "knock" flick. */
+  tvFlash: Graphics | null;
+  /** Console faders, redrawn only when their levels change. */
+  faders?: { g: Graphics; caps: { top: { x: number; y: number }; bottom: { x: number; y: number }; rest: number; color: number }[]; live: number; lastKey: string };
+  /** Monitor woofer cones that pump on the beat during a session. */
+  woofers?: { g: Graphics; cones: { x: number; y: number; r: number; cone: number; cap: number }[]; last: number };
+  /** Per-hotspot tap reaction targets (wrap container about its base or nail). */
+  feelTargets: Partial<Record<StudioHotspotId, { display: Container; kind: ObjectFeelKind; baseY: number }>>;
   clockHand: Graphics | null;
   setClockTime: ((hour: number, minute: number) => void) | null;
   staffFigures: StagedStaffHandle[];
@@ -698,6 +711,15 @@ const addHotspot = (
   const wrap = new Container();
   if (zIndex !== undefined) wrap.zIndex = zIndex;
   if (visual) wrap.addChild(visual);
+  // Tap reaction pivot (#194): wall-hung things swing from the top, everything else squashes from its base.
+  {
+    const b = hitArea.getLocalBounds();
+    const kind = feelKindFor(id);
+    const anchor = { x: b.x + b.width / 2, y: kind === 'wobble' ? b.y : b.y + b.height };
+    wrap.pivot.set(anchor.x, anchor.y);
+    wrap.position.set(anchor.x, anchor.y);
+    refs.feelTargets[id] = { display: wrap, kind, baseY: anchor.y };
+  }
 
   // Glow ring shown on hover (populated by the caller with real coordinates)
   const glow = new Graphics();
@@ -734,6 +756,10 @@ const createSceneRefs = (): SceneRefs => ({
     statusLeds: [],
     shelfItems: [],
     phoneRing: null,
+    phoneHandset: null,
+    phoneBell: null,
+    tvFlash: null,
+    feelTargets: {},
     clockHand: null,
     setClockTime: null,
     staffFigures: [],
@@ -890,6 +916,13 @@ const buildScene = (
   tv.poly(tvPoly).fill(0x11151f);
   tv.poly(tvPoly).stroke({ width: 3, color: 0x0a0d14 });
   tvWrap.addChild(tv);
+  {
+    const flash = new Graphics();
+    flash.poly(tvPoly).fill(0xe8f4ff);
+    flash.alpha = 0;
+    flash.eventMode = 'none';
+    refs.tvFlash = flash;
+  }
   // Animated equalizer bars on the TV screen — drawn as wall-plane quads so they sit inside the bezel
   for (let i = 0; i < 5; i++) {
     const bar = new Graphics();
@@ -897,6 +930,7 @@ const buildScene = (
     tvWrap.addChild(bar);
     refs.tvBars.push({ g: bar, x: 0, y: 0, color: COLORS.gear[i % COLORS.gear.length], plane: { y0, y1: y0 + 0.22, lift: 60 } });
   }
+  if (refs.tvFlash) tvWrap.addChild(refs.tvFlash);
   root.addChild(tvWrap);
   refs.tvWrap = tvWrap;
   const isCrtEra = state.eraId === 'digital80s' || state.eraId === 'internet2000s';
@@ -1383,6 +1417,7 @@ const buildScene = (
   // Meter Bridge (angled bridge at back of desk)
   const bridgeH = 14;
   const bridgeG = new Graphics();
+  const woofers: { x: number; y: number; r: number; cone: number; cap: number }[] = [];
   const mbTop = [
     dPt(3.22, 3.42, deskH + bridgeH),
     dPt(5.42, 3.42, deskH + bridgeH),
@@ -1473,7 +1508,7 @@ const buildScene = (
     bridgeG.roundRect(spL.x - 7, spL.y - 14, 14, 14, 1).fill(0x3e2c1e);
     bridgeG.roundRect(spL.x - 7, spL.y - 14, 14, 14, 1).stroke({ width: 1, color: 0x5a432f });
     bridgeG.circle(spL.x, spL.y - 7, 4.5).fill(0x1f1710);
-    bridgeG.circle(spL.x, spL.y - 7, 2).fill(0x6e5238);
+    woofers.push({ x: spL.x, y: spL.y - 7, r: 3.4, cone: 0x3a2a1c, cap: 0x6e5238 });
   } else {
     // Pair of studio monitors (Yamaha NS-10 style with white cones)
     const speakerCoords = [dPt(3.20, 3.46, deskH + bridgeH + 1), dPt(5.34, 3.46, deskH + bridgeH + 1)];
@@ -1482,15 +1517,23 @@ const buildScene = (
       bridgeG.roundRect(sp.x - 8, sp.y - 20, 16, 20, 2).stroke({ width: 1.5, color: 0x3d4756 });
       // Tweeter
       bridgeG.circle(sp.x, sp.y - 15, 2).fill(0x475569);
-      // Woofer with iconic white cone
-      bridgeG.circle(sp.x, sp.y - 7, 5).fill(0xeeeae1);
-      bridgeG.circle(sp.x, sp.y - 7, 2).fill(0x252c38);
+      // Woofer with iconic white cone (cone drawn live so it pumps with the music, #194)
+      bridgeG.circle(sp.x, sp.y - 7, 5.6).fill(0x0d1016);
+      woofers.push({ x: sp.x, y: sp.y - 7, r: 5, cone: 0xeeeae1, cap: 0x252c38 });
     }
   }
   deskWrap.addChild(bridgeG);
+  {
+    const coneG = new Graphics();
+    coneG.eventMode = 'none';
+    deskWrap.addChild(coneG);
+    refs.woofers = { g: coneG, cones: woofers, last: -1 };
+    drawWoofers(refs.woofers, 0);
+  }
 
   // Channel Strips on desk surface
   const channelG = new Graphics();
+  const faderCaps: { top: { x: number; y: number }; bottom: { x: number; y: number }; rest: number; color: number }[] = [];
   for (let i = 0; i < consoleProfile.channels; i++) {
     const cgx = 3.30 + (i + 0.5) / consoleProfile.channels * (5.22 - 3.30);
     // Knobs (gain, 3-band EQ, pan)
@@ -1525,18 +1568,18 @@ const buildScene = (
     const fEnd = dPt(cgx, 4.65);
     channelG.poly([fStart.x - 0.8, fStart.y, fEnd.x - 0.8, fEnd.y, fEnd.x + 0.8, fEnd.y, fStart.x + 0.8, fStart.y]).fill(0x10141a);
 
-    // Fader cap (metallic slider)
+    // Fader cap (metallic slider): drawn live so the faders ride during a session (#194).
     const fGy = 4.49 + ((i * 7) % 5) * 0.032;
-    const fCapPt = dPt(cgx, fGy);
-    channelG.roundRect(fCapPt.x - 2.5, fCapPt.y - 1.5, 5, 3, 0.5).fill(0xe5e7eb);
-    channelG.rect(fCapPt.x - 0.5, fCapPt.y - 1.5, 1, 3).fill(0x1f2937);
+    faderCaps.push({ top: dPt(cgx, 4.46), bottom: dPt(cgx, 4.65), rest: (4.65 - fGy) / 0.19, color: 0xe5e7eb });
   }
 
   // Master Section on right side
-  const masterFaderL = dPt(5.32, 4.57);
-  const masterFaderR = dPt(5.40, 4.57);
-  channelG.roundRect(masterFaderL.x - 2.5, masterFaderL.y - 1.5, 5, 3, 0.5).fill(0xef4444);
-  channelG.roundRect(masterFaderR.x - 2.5, masterFaderR.y - 1.5, 5, 3, 0.5).fill(0xef4444);
+  for (const mx of [5.32, 5.40]) {
+    const top = dPt(mx, 4.46);
+    const bottom = dPt(mx, 4.65);
+    channelG.poly([top.x - 0.8, top.y, bottom.x - 0.8, bottom.y, bottom.x + 0.8, bottom.y, top.x + 0.8, top.y]).fill(0x10141a);
+    faderCaps.push({ top, bottom, rest: (4.65 - 4.57) / 0.19, color: 0xef4444 });
+  }
   // Big Master Volume Knob
   const masterVol = dPt(5.36, 4.12);
   channelG.circle(masterVol.x, masterVol.y, 3.5).fill(0xd4d8e2);
@@ -1598,6 +1641,13 @@ const buildScene = (
     }
   }
   deskWrap.addChild(channelG);
+  {
+    const faderG = new Graphics();
+    faderG.eventMode = 'none';
+    deskWrap.addChild(faderG);
+    refs.faders = { g: faderG, caps: faderCaps, live: 0, lastKey: '' };
+    drawFaders(refs.faders, faderCaps.map((c) => c.rest));
+  }
 
   // Tiers 2-5 outboard deck (#81): tape machine reels, valve glow and status LEDs. Drawn on top of
   // the baked body so it shows with or without the Blender sprite; reels fall back to static
@@ -1719,9 +1769,25 @@ const buildScene = (
   const ph4 = dPt(5.55, 3.68, deskH);
   phone.poly([ph1.x, ph1.y, ph2.x, ph2.y, ph3.x, ph3.y, ph4.x, ph4.y]).fill(0xd94f4f);
   phone.poly([ph4.x, ph4.y, ph3.x, ph3.y, ph3.x, ph3.y + 5, ph4.x, ph4.y + 5]).fill(0x8f2f2f);
-  // Phone receiver handset
-  phone.roundRect(pPos.x - 7, pPos.y - 7, 14, 4, 1.5).fill(0x3b1515);
+  // Cradle prongs the handset rests on, and a dial on the body
+  phone.roundRect(pPos.x - 7.5, pPos.y - 4.5, 2.2, 2.4, 0.6).fill(0x5e1f1f);
+  phone.roundRect(pPos.x + 5.3, pPos.y - 4.5, 2.2, 2.4, 0.6).fill(0x5e1f1f);
+  phone.ellipse(pPos.x, pPos.y + 0.5, 3.4, 1.8).fill(0xf3ecdd);
+  phone.ellipse(pPos.x, pPos.y + 0.5, 1.2, 0.65).fill(0x8f2f2f);
   phoneWrap.addChild(phone);
+  // Receiver handset: its own Graphics, pivoted on the cradle, so it can rattle and lift.
+  const handset = new Graphics();
+  handset.roundRect(-7, -2, 14, 4, 1.5).fill(0x3b1515);
+  handset.roundRect(-8, -2.6, 4, 5.2, 1.6).fill(0x2e1010);
+  handset.roundRect(4, -2.6, 4, 5.2, 1.6).fill(0x2e1010);
+  handset.roundRect(-6, -2, 12, 1, 0.5).fill({ color: 0xffffff, alpha: 0.14 });
+  handset.position.set(pPos.x, pPos.y - 3.8);
+  phoneWrap.addChild(handset);
+  refs.phoneHandset = { g: handset, x: pPos.x, y: pPos.y - 3.8 };
+  const bell = new Graphics();
+  bell.eventMode = 'none';
+  phoneWrap.addChild(bell);
+  refs.phoneBell = { g: bell, x: pPos.x, y: pPos.y - 5 };
 
   const ring = new Graphics();
   ring.position.set(pPos.x, pPos.y - 3);
@@ -2118,6 +2184,30 @@ const buildRoomScene = (
  * Component
  * ------------------------------------------------------------------------- */
 /** Redraw the door leaf, hallway and light pool for a swing angle (only when it changes). */
+
+/** Redraw console fader caps at the given levels (1 = fully up). */
+function drawFaders(f: NonNullable<SceneRefs['faders']>, levels: number[]) {
+  f.g.clear();
+  f.caps.forEach((c, i) => {
+    const u = levels[i] ?? c.rest;
+    const x = c.bottom.x + (c.top.x - c.bottom.x) * u;
+    const y = c.bottom.y + (c.top.y - c.bottom.y) * u;
+    f.g.roundRect(x - 2.5, y - 1.5, 5, 3, 0.5).fill(c.color);
+    f.g.rect(x - 0.5, y - 1.5, 1, 3).fill(0x1f2937);
+  });
+}
+
+/** Redraw the woofer cones at an excursion of 0..1 (pushes the cone out and brightens the dust cap). */
+function drawWoofers(w: NonNullable<SceneRefs['woofers']>, pump: number) {
+  w.g.clear();
+  for (const c of w.cones) {
+    const r = c.r * (1 + 0.09 * pump);
+    w.g.circle(c.x, c.y - pump * 0.5, r).fill(c.cone);
+    w.g.circle(c.x, c.y - pump * 0.5, r).stroke({ width: 0.6, color: 0x000000, alpha: 0.35 + 0.25 * pump });
+    w.g.circle(c.x, c.y - pump * 0.9, c.r * 0.4 * (1 + 0.15 * pump)).fill(c.cap);
+  }
+}
+
 function drawDoorSwing(door: NonNullable<SceneRefs['doorSwing']>, deg: number): void {
   if (Math.abs(deg - door.lastDeg) < 0.05) return;
   door.lastDeg = deg;
@@ -2217,6 +2307,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   const punchActiveRef = useRef(false);
   // Living actors (#190): last take reaction + the artist's arrival bark bubble.
   const takeReactionRef = useRef<{ at: number; reaction: TakeReaction } | null>(null);
+  /** Last tapped hotspot and when (#194 tap reactions). */
+  const feelRef = useRef<{ id: StudioHotspotId; at: number } | null>(null);
   const barkRef = useRef<{ owner: Container; box: Container; bg: Graphics; text: Text; startedAt: number; line: string } | null>(null);
   const artistPhaseRef = useRef<string>('');
   const attentionCbRef = useRef(onAttentionCue);
@@ -2349,6 +2441,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           attentionCbRef.current?.({ reason: live.reason, target: live.target, outcome: 'acted' });
         }
         attentionRef.current = noteTargetInteraction(attentionRef.current, id);
+        feelRef.current = { id, at: performance.now() };
         selectRef.current?.(id);
       }
     };
@@ -3237,15 +3330,84 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
 
           if (refs.doorSwing) drawDoorSwing(refs.doorSwing, doorSwingDeg(doorOpenAmount(clientTransitRef.current)));
 
-          // Phone ring pulse — stronger when enquiries are waiting
-          if (refs.phoneRing) {
+          // Console faders ride and monitors pump while a session plays here (#194); parked otherwise.
+          {
+            const liveHere = s.hasActiveProject && (roomKeyRef.current === 'project-studio' || Boolean(s.roomOccupied));
+            const tr2 = takeReactionRef.current;
+            const push = tr2 && !reduceMotion ? takePush(now - tr2.at, tr2.reaction.crew === 'celebrating' ? 'Gold' : tr2.reaction.crew === 'inspired' ? 'Silver' : 'Solid') : 0;
+            const f = refs.faders;
+            if (f) {
+              const want = liveHere ? 1 : 0;
+              f.live = reduceMotion ? want : f.live + (want - f.live) * Math.min(1, ticker.deltaMS / 450);
+              if (Math.abs(f.live - want) < 0.002) f.live = want;
+              const ride = reduceMotion ? 0 : s.activity;
+              const levels = f.caps.map((c, i) => faderLevel(c.rest, i, reduceMotion ? 0 : t, ride, f.live, push));
+              const key = levels.map((v) => v.toFixed(3)).join(',');
+              if (key !== f.lastKey) { f.lastKey = key; drawFaders(f, levels); }
+            }
+            const w = refs.woofers;
+            if (w) {
+              const pump = reduceMotion ? 0 : wooferPump(t, 96, s.activity, liveHere);
+              const q = Math.round(pump * 20) / 20;
+              if (q !== w.last) { w.last = q; drawWoofers(w, q); }
+            }
+          }
+
+          // Tap reactions (#194): the tapped object squashes, swings, rattles or flicks, then rests.
+          {
+            const fr = feelRef.current;
+            const elapsed = fr ? now - fr.at : Infinity;
+            for (const [id, target] of Object.entries(refs.feelTargets)) {
+              if (!target) continue;
+              const pose = fr && fr.id === id ? objectFeelPose(target.kind, elapsed, reduceMotion) : null;
+              target.display.scale.set(pose?.sx ?? 1, pose?.sy ?? 1);
+              target.display.rotation = pose?.rot ?? 0;
+              target.display.y = target.baseY + (pose?.dy ?? 0);
+              if (id === 'tv' && refs.tvFlash) refs.tvFlash.alpha = (pose?.flash ?? 0) * 0.45;
+            }
+            if (fr && elapsed > FEEL_MS.lift + 50) feelRef.current = null;
+          }
+
+          // Desk phone: a real double ring while enquiries wait; the handset rattles and the ring
+          // ripples only during the bell. Picking it up lifts the handset off the cradle.
+          {
             const waiting = Boolean(s.enquiryWaiting) && !s.hasActiveProject;
-            const speed = waiting ? 4.2 : s.hasActiveProject ? 1.2 : 2.4;
-            const pulse = (Math.sin(t * speed) + 1) / 2;
-            refs.phoneRing.alpha = waiting
-              ? 0.35 + pulse * 0.65
-              : 0.15 + pulse * 0.85;
-            refs.phoneRing.scale.set(1 + pulse * (waiting ? 0.35 : 0.25));
+            const ring = waiting ? phoneRingLevel(now) : 0;
+            if (refs.phoneRing) {
+              if (waiting && !reduceMotion) {
+                const p = ((now % 400) / 400);
+                refs.phoneRing.alpha = ring * (1 - p) * 0.95 + 0.2;
+                refs.phoneRing.scale.set(1 + (ring > 0 ? p * 0.45 : 0));
+              } else {
+                // Idle: a faint steady outline so the phone stays findable without flashing.
+                refs.phoneRing.alpha = waiting ? 0.85 : s.hasActiveProject ? 0.12 : 0.22;
+                refs.phoneRing.scale.set(1);
+              }
+            }
+            const fr = feelRef.current;
+            const lift = fr && fr.id === 'phone' ? handsetLift(now - fr.at, reduceMotion) : { lift: 0, tilt: 0 };
+            const lifted = lift.lift > 0.5;
+            if (refs.phoneHandset) {
+              const rattle = lifted ? { dy: 0, rot: 0 } : handsetRattle(now, ring, reduceMotion);
+              const h = refs.phoneHandset;
+              h.g.position.set(h.x + (lifted ? lift.lift * 0.35 : 0), h.y - lift.lift + rattle.dy);
+              h.g.rotation = lift.tilt + rattle.rot;
+            }
+            if (refs.phoneBell) {
+              const b = refs.phoneBell;
+              b.g.clear();
+              if (ring > 0.05 && !lifted && !reduceMotion) {
+                const jitter = Math.sin((now / 1000) * Math.PI * 22) * 1.2;
+                for (const side of [-1, 1]) {
+                  for (let k = 0; k < 2; k++) {
+                    const r = 11 + k * 4 + jitter * side * 0.4;
+                    const cx = b.x + side * r;
+                    b.g.moveTo(cx, b.y - 4 - k).lineTo(cx + side * 2.2, b.y - 1).lineTo(cx, b.y + 2 + k)
+                      .stroke({ width: 1.4, color: 0xffd166, alpha: ring * (k === 0 ? 0.9 : 0.55) });
+                  }
+                }
+              }
+            }
           }
 
           // Candle-table drink: spawn after brew_espresso; clear when daily chores reset
