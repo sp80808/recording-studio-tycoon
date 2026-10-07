@@ -135,5 +135,6 @@
   "story.stake.safe": "Prove-it session — finish clean; the rival is scouting, not swinging.",
   "story.stake.ambitious": "Challenge cut — A-rank earns respect; a miss costs reputation.",
   "story.stake.moonshot": "Last-word master — S-rank or the rival owns the story.",
-  "story.stake.unlockNote": "{{unlock}} — the story fixes it for this gig."
+  "story.stake.unlockNote": "{{unlock}} — the story fixes it for this gig.",
+  "premises.needs": "Needs {{what}}"
 }

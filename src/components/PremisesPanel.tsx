@@ -3,8 +3,9 @@ import { Building2 } from 'lucide-react';
 import type { GameState } from '@/types/game';
 import { bookEntry } from '@/economy/ledger';
 import { applyPremisesMove, getPremisesDef, getPremisesOffer, premisesDailyRent, premisesStaffCap } from '@/rpg/premises';
-import { deriveStudioPressure, generatePremisesOpportunities } from '@/rpg/premisesPressure';
+import { deriveStudioPressure, generatePremisesOpportunities, opportunityBlockers } from '@/rpg/premisesPressure';
 import { formatNumber } from '@/i18n/formatLocale';
+import { tc } from '@/i18n/content';
 
 interface PremisesPanelProps {
   gameState: GameState;
@@ -37,7 +38,9 @@ export function PremisesPanel({ gameState, setGameState }: PremisesPanelProps) {
         <>
           <p className="mt-1.5 italic text-stone-300">{opportunities[0].cue}</p>
           <div className="mt-1.5 space-y-2">
-            {opportunities.map(o => (
+            {opportunities.map(o => {
+              const blockers = o.eligible ? [] : opportunityBlockers(offer, o.deposit, gameState.money);
+              return (
               <div key={o.id} className="rounded border border-stone-700 p-2" data-testid="premises-opportunity">
                 <p className="font-semibold text-white">{o.name}</p>
                 <p className="text-emerald-300">+ {o.solves}</p>
@@ -62,8 +65,14 @@ export function PremisesPanel({ gameState, setGameState }: PremisesPanelProps) {
                   {confirming === o.id ? 'Confirm move' : `Take ${o.name.toLowerCase()}`}
                 </button>
                 {confirming === o.id && <button className="rst-btn ml-2" onClick={() => setConfirming(null)}>Stay lean</button>}
+                {blockers.length > 0 && (
+                  <p className="mt-1 text-amber-300" data-testid="premises-needs">
+                    {tc('premises.needs', 'Needs {{what}}', { what: blockers.join('; ') })}
+                  </p>
+                )}
               </div>
-            ))}
+              );
+            })}
           </div>
           {!offer.eligible && (
             <>

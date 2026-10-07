@@ -228,7 +228,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                         <div className="min-w-0">
                           <div className="text-xs font-medium text-stone-100">{room.name}</div>
                           <div className="text-[10px] text-stone-500 capitalize">
-                            {room.type.replace('-', ' ')} · Q+{room.qualityBonus} · S+{room.speedBonus}
+                            {room.type === 'project-studio' ? 'Main room' : room.type.replace('-', ' ')} · Q+{room.qualityBonus} · S+{room.speedBonus}
                           </div>
                         </div>
                         {room.unlocked ? (
