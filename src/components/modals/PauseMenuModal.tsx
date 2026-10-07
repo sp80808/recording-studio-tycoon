@@ -10,6 +10,7 @@ import { useSaveSystem } from '@/contexts/SaveSystemContext';
 import { gameAudio } from '@/utils/audioSystem';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useGamepad } from '@/hooks/useGamepad';
+import type { PauseView } from '@/utils/pauseMenuNav';
 import { GameConfirmDialog } from '@/components/ui/GameConfirmDialog';
 import {
   Play,
@@ -32,7 +33,10 @@ import {
 interface PauseMenuModalProps {
   isOpen: boolean;
   gameState: GameState;
+  /** Steps back one level; at the top level it resumes the game. */
   onClose: () => void;
+  view: PauseView;
+  onViewChange: (view: PauseView) => void;
   onOpenSettings: () => void;
   onQuitToTitle: () => void;
 }
@@ -41,6 +45,8 @@ export const PauseMenuModal: React.FC<PauseMenuModalProps> = ({
   isOpen,
   gameState,
   onClose,
+  view,
+  onViewChange,
   onOpenSettings,
   onQuitToTitle,
 }) => {
@@ -50,8 +56,8 @@ export const PauseMenuModal: React.FC<PauseMenuModalProps> = ({
   const gamepad = useGamepad();
 
   const [savedTime, setSavedTime] = useState<string | null>(null);
-  const [showControlsGuide, setShowControlsGuide] = useState(false);
-  const [showQuitConfirm, setShowQuitConfirm] = useState(false);
+  const showControlsGuide = view === 'controls';
+  const showQuitConfirm = view === 'quit';
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const player = gameState.playerData;
@@ -100,10 +106,10 @@ export const PauseMenuModal: React.FC<PauseMenuModalProps> = ({
         onOpenSettings();
         break;
       case 'controls':
-        setShowControlsGuide((prev) => !prev);
+        onViewChange(showControlsGuide ? 'main' : 'controls');
         break;
       case 'quit':
-        setShowQuitConfirm(true);
+        onViewChange('quit');
         break;
     }
   };
@@ -120,7 +126,7 @@ export const PauseMenuModal: React.FC<PauseMenuModalProps> = ({
       if (settings.sfxEnabled) void gameAudio.playTactileClick();
     } else if (gamepad.justPressed.south) {
       handleSelectOption(selectedIndex);
-    } else if (gamepad.justPressed.east || gamepad.justPressed.start) {
+    } else if (gamepad.justPressed.east) {
       onClose();
     }
   }, [isOpen, gamepad.isConnected, gamepad.justPressed, selectedIndex, menuOptions.length]);
@@ -129,8 +135,11 @@ export const PauseMenuModal: React.FC<PauseMenuModalProps> = ({
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-xl p-0 overflow-hidden border border-[var(--rst-brass-line)] bg-stone-950/95 text-stone-100 shadow-2xl backdrop-blur-xl">
+      <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+        <DialogContent
+          onEscapeKeyDown={(e) => { e.preventDefault(); onClose(); }}
+          onInteractOutside={(e) => { if (showQuitConfirm) e.preventDefault(); }}
+          className="max-w-xl p-0 overflow-hidden border border-[var(--rst-brass-line)] bg-stone-950/95 text-stone-100 shadow-2xl backdrop-blur-xl">
           {/* Header tape deck banner */}
           <div className="relative border-b border-stone-800 bg-gradient-to-r from-stone-900 via-stone-900/90 to-stone-950 p-6 pb-5">
             <div className="flex items-center justify-between">
@@ -300,11 +309,10 @@ export const PauseMenuModal: React.FC<PauseMenuModalProps> = ({
         cancelLabel="Stay in Studio"
         variant="warning"
         onConfirm={() => {
-          setShowQuitConfirm(false);
-          onClose();
+          onViewChange('main');
           onQuitToTitle();
         }}
-        onCancel={() => setShowQuitConfirm(false)}
+        onCancel={() => onViewChange('main')}
       />
     </>
   );
