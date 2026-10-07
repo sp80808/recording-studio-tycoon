@@ -9,6 +9,7 @@ import { shouldShowFullscreenControl } from '@/lib/appDisplayMode';
 import { EraProgressModal } from './modals/EraProgressModal';
 import { useTranslation } from 'react-i18next';
 import { getStudioSignage } from './WebGLCanvas';
+import { getPremisesDef } from '@/rpg/premises';
 import './chip-fidelity.css';
 import { SettleTicker } from './SettleTicker';
 import { StreakFlame } from './StreakFlame';
@@ -32,7 +33,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSetting
   const { t } = useTranslation();
   const studioClock = useStudioClock();
   const player = gameState.playerData;
-  const signage = getStudioSignage(gameState.currentEra, Object.keys(gameState.unlockedAchievements ?? {}).length, getCityById(gameState.cityId)?.name);
+  const signage = getStudioSignage(gameState.currentEra, Object.keys(gameState.unlockedAchievements ?? {}).length, getCityById(gameState.cityId)?.name, getPremisesDef(gameState).name);
   return <>
     <header className={`studio-hud ${className}`} aria-label={t('studio_status_aria')}>
       <div className="studio-hud-stats">

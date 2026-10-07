@@ -30,6 +30,7 @@ import { GameState, Project, ProjectReport, StaffMember } from '@/types/game'; /
 import DeliveryChoiceDialog from '@/components/DeliveryChoiceDialog';
 import { quoteFor } from '@/rpg/serviceQuote';
 import { buildSettlementLedger } from '@/rpg/settlementLedger';
+import { labelSettlementAdjustment } from '@/rpg/labelAccounts';
 import { applyDeliveryDecision, type UnresolvedIssue } from '@/rpg/sessionIssues';
 import { generateProjectReview } from '@/utils/projectReviewUtils'; // Import generateProjectReview
 import { getFocusEffectiveness, getMoodEffectiveness } from '@/utils/playerUtils';
@@ -924,7 +925,7 @@ const MusicStudioTycoon = () => {
           saveSeed={gameState.saveSeed}
           ledger={(() => {
             const p = [gameState.activeProject, ...(gameState.activeProjects ?? [])].find(x => x?.id === activeProjectReport.projectId);
-            return buildSettlementLedger(activeProjectReport, p?.payoutBase ?? activeProjectReport.moneyGained, p?.depositPaid);
+            return buildSettlementLedger(activeProjectReport, p?.payoutBase ?? activeProjectReport.moneyGained, p?.depositPaid, labelSettlementAdjustment(gameState, p, activeProjectReport.overallQualityScore, activeProjectReport.moneyGained));
           })()}
           seasonNote={(() => {
             const p = [gameState.activeProject, ...(gameState.activeProjects ?? [])].find(x => x?.id === activeProjectReport.projectId);
