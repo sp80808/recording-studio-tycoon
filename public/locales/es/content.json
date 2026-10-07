@@ -123,5 +123,12 @@
   "gear.why.recorder": "The recorder is where the signal is captured. Knowing the path into it helps you find where noise or loss creeps in.",
   "gear.why.mixer": "A mixer blends many sources and sets their levels. Gain staging channel by channel keeps the whole path clean.",
   "gear.effects.none": "Starter kit: no quality or speed change, it just gets you recording.",
-  "stake.unlock.line": "{{label}} unlocks at producer level {{level}}"
+  "stake.unlock.line": "{{label}} unlocks at producer level {{level}}",
+  "story.brief.watching": "{{rival}} is watching",
+  "story.brief.voice": "{{producer}} — {{epithet}}. “{{catchphrase}}”",
+  "story.brief.stake": "Stake: {{label}}",
+  "story.stake.safe": "Prove-it session — finish clean; the rival is scouting, not swinging.",
+  "story.stake.ambitious": "Challenge cut — A-rank earns respect; a miss costs reputation.",
+  "story.stake.moonshot": "Last-word master — S-rank or the rival owns the story.",
+  "story.stake.unlockNote": "{{unlock}} — the story fixes it for this gig."
 }
