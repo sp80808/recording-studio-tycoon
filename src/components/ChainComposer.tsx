@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AudioWaveform, Disc3, Mic, Sparkles, Undo2, Waves, type LucideIcon } from 'lucide-react';
+import { AudioWaveform, Disc3, Mic, Sparkles, Star, Undo2, Waves, type LucideIcon } from 'lucide-react';
 import type { Equipment, GameState, Project } from '@/types/game';
 import { getProjectBrief } from '@/rpg/projectBrief';
 import {
@@ -17,6 +17,8 @@ import { conditionBand, type GearConditionBand } from '@/features/gearStudio/gea
 import { gameAudio } from '@/utils/audioSystem';
 import { DRAG_START_PX, exceedsDragThreshold, findSnapTarget, magneticPosition, type Point } from '@/rpg/chainPatchDrag';
 import { hapticTick } from '@/utils/mobilePlatform';
+import { tc, useContentLocale } from '@/i18n/content';
+import { patchLesson, suggestedGearForSlot } from '@/rpg/patchLearning';
 import './chain-composer.css';
 
 interface ChainComposerProps {
@@ -56,7 +58,10 @@ const gearById = (state: GameState, id?: string): Equipment | undefined =>
 
 /** Diegetic four-slot vocal rack: tap a jack to assign or clear gear. */
 export const ChainComposer: React.FC<ChainComposerProps> = ({ project, state, chain, onChange }) => {
+  useContentLocale();
   const [openSlot, setOpenSlot] = useState<SignalSlot | null>(null);
+  const [lessonSlot, setLessonSlot] = useState<SignalSlot | null>(null);
+  const lessonTimer = useRef<number>();
   const [motion, setMotion] = useState<Partial<Record<SignalSlot, SlotMotion>>>({});
   const [linger, setLinger] = useState<Partial<Record<SignalSlot, Equipment>>>({});
   const [undoSlots, setUndoSlots] = useState<SignalChain['slots'] | null>(null);
@@ -95,6 +100,7 @@ export const ChainComposer: React.FC<ChainComposerProps> = ({ project, state, ch
 
   useEffect(() => () => {
     Object.values(motionTimers.current).forEach((id) => id && window.clearTimeout(id));
+    if (lessonTimer.current) window.clearTimeout(lessonTimer.current);
   }, []);
 
   useEffect(() => {
@@ -153,6 +159,9 @@ export const ChainComposer: React.FC<ChainComposerProps> = ({ project, state, ch
       });
       pulse(slot, 'seat');
       void gameAudio.playGearSwitch(0.45);
+      setLessonSlot(slot);
+      if (lessonTimer.current) window.clearTimeout(lessonTimer.current);
+      lessonTimer.current = window.setTimeout(() => setLessonSlot(null), 7000);
       writeSlots(slots);
       return;
     }
@@ -253,6 +262,9 @@ export const ChainComposer: React.FC<ChainComposerProps> = ({ project, state, ch
         return list;
       })()
     : [];
+
+  const favouriteId = openSlot ? suggestedGearForSlot(openSlot, current, state, state.hiredStaff, brief, project.id) : undefined;
+  const lesson = lessonSlot && current.slots[lessonSlot] ? patchLesson(lessonSlot) : null;
 
   const status = (() => {
     if (complete && !(validation && validation.broken.length)) return `Chain locked in · ${formatChainStatusLine(ev!, [])}`;
@@ -366,7 +378,7 @@ export const ChainComposer: React.FC<ChainComposerProps> = ({ project, state, ch
                   type="button"
                   role="option"
                   aria-selected={active}
-                  className={`chain-rack__opt${active ? ' is-active' : ''}${drag?.gear.id === g.id ? ' is-dragging' : ''}`}
+                  className={`chain-rack__opt${active ? ' is-active' : ''}${favouriteId === g.id ? ' is-favourite' : ''}${drag?.gear.id === g.id ? ' is-dragging' : ''}`}
                   onPointerDown={(e) => onChipPointerDown(e, g)}
                   onPointerMove={onChipPointerMove}
                   onPointerUp={(e) => endChipDrag(e, true)}
@@ -382,6 +394,12 @@ export const ChainComposer: React.FC<ChainComposerProps> = ({ project, state, ch
                   }}
                 >
                   <span className="truncate">{g.name}</span>
+                  {favouriteId === g.id && (
+                    <span className="chain-rack__fav" title={tc('chain.hint.suggested', 'Crew favourite for this brief')}>
+                      <Star size={10} aria-hidden="true" />
+                      <span className="sr-only">{tc('chain.hint.suggested', 'Crew favourite for this brief')}</span>
+                    </span>
+                  )}
                   <span className="chain-rack__opt-cond">{Math.round(g.condition ?? 100)}%</span>
                 </button>
               );
@@ -407,6 +425,12 @@ export const ChainComposer: React.FC<ChainComposerProps> = ({ project, state, ch
           </div>
         );
       })()}
+
+      {lesson && (
+        <p className="chain-rack__lesson" role="status" data-testid="chain-lesson">
+          {tc(lesson.id, lesson.english)}
+        </p>
+      )}
 
       <p className={`chain-rack__status${validation && validation.broken.length > 0 ? ' is-warn' : ''}`}>
         {status}

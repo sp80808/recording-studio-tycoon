@@ -393,3 +393,30 @@ html[data-reduced-motion='true'] .chain-rack__tray {
 }
 @media (prefers-reduced-motion: reduce) { .chain-rack.is-latched { animation: none; } }
 html[data-reduced-motion='true'] .chain-rack.is-latched { animation: none; }
+
+.chain-rack__opt.is-favourite {
+  box-shadow: 0 0 0 1px rgba(230, 184, 102, 0.35), 0 0 10px rgba(230, 184, 102, 0.22);
+}
+.chain-rack__fav {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.3rem;
+  color: var(--rst-brass-300, #e6b866);
+}
+.chain-rack__lesson {
+  margin: 0.4rem 0.35rem 0;
+  padding-left: 0.5rem;
+  border-left: 2px solid rgba(230, 184, 102, 0.5);
+  font-size: 11px;
+  line-height: 1.4;
+  font-style: italic;
+  color: rgba(240, 217, 168, 0.85);
+  animation: chain-lesson-in 260ms ease-out;
+}
+@keyframes chain-lesson-in {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chain-rack__lesson { animation: none; }
+}

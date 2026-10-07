@@ -389,4 +389,8 @@ echo "=== shop effect lines + stake unlock hints ==="
 ./node_modules/.bin/esbuild tests/shop-effects-stake-hints.check.tsx --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-shop-effects-stake-hints.cjs" --alias:@=./src --loader:.css=empty >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-shop-effects-stake-hints.cjs"
 
+echo "=== patch learning line + suggested chain hint (#289) ==="
+./node_modules/.bin/esbuild tests/patch-learning.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-patch-learning.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-patch-learning.cjs"
+
 echo "All automated checks passed."
