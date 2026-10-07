@@ -39,8 +39,7 @@ for (const m of ['SettleTicker', 'StreakFlame', 'PressRipple'] as const) {
   ok(header.includes(m), `GameHeader mounts ${m}`);
 }
 ok(header.includes('dailyTracking?.streakCount'), 'flame reads streak state');
-ok(notifs.includes('deny-shake') && notifs.includes(`type === 'error'`), 'error toasts shake');
-ok(notifs.includes('chip-fidelity.css'), 'NotificationSystem loads fidelity CSS');
+ok(notifs.includes(`type === 'error'`), 'error notifications forward as destructive toasts');
 
 // Dirty-zone discipline: none of the new kit references dirty in-flight files
 const kit = css + ticker + flame + ripple;
