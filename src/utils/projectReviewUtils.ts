@@ -11,6 +11,9 @@ import { evaluateProjectRider } from '@/rpg/studioRider';
  * All fields optional for backward compatibility — absent values fall back
  * to neutral defaults so existing callers keep working.
  */
+/** Minimum score for a brand-new studio's first Easy project (#356). */
+export const FIRST_SESSION_QUALITY_FLOOR = 45;
+
 export interface SettlementContext {
   /** Multiplier from player focus mastery, e.g. getFocusEffectiveness(gameState) (~1.0-1.2). */
   focusEffectiveness?: number;
@@ -40,6 +43,8 @@ export interface SettlementContext {
   sessionEquipment?: import('@/types/game').Equipment[];
   /** True when brew/hospitality chore covered hospitality rider asks. */
   brewReady?: boolean;
+  /** True for a brand-new studio's first Easy project: kinder floor and instructive critique (#356). */
+  firstSession?: boolean;
 }
 
 export const MATCH_RATING_MULTIPLIERS: Record<Project['matchRating'], number> = {
@@ -265,6 +270,10 @@ export const generateProjectReview = (
 
   // Contract stake (sd3.2): the booking gamble settles against the final
   // rank. Safe (default) is a no-op by construction.
+  // First guided Easy session: following the coaching must not read as failure. Honest floor, not a free A.
+  if (settlementContext?.firstSession && project.difficulty <= 1) {
+    overallQualityScore = Math.max(overallQualityScore, FIRST_SESSION_QUALITY_FLOOR);
+  }
   const finalRank = gradeQuality(overallQualityScore).rank;
   const stakeSettle = settleStake(project.stake ?? 'safe', finalRank);
 
@@ -309,6 +318,11 @@ export const generateProjectReview = (
     reviewSnippet = `"${project.title}" turned out to be a bit ${pickRandom(negativeAdjectives)}. There's room for improvement.`;
   } else {
     reviewSnippet = `Unfortunately, "${project.title}" didn't quite hit the mark. Back to the drawing board.`;
+  }
+
+  const firstSessionKind = settlementContext?.firstSession && project.difficulty <= 1 && overallQualityScore < midQualityThreshold;
+  if (firstSessionKind) {
+    reviewSnippet = `A first session is for learning the room, and "${project.title}" is a workable start. Book another job and aim a little cleaner next time.`;
   }
 
   const sortedSkills = [...skillBreakdown].sort((a, b) => b.score - a.score);

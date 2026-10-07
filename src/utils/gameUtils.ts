@@ -6,6 +6,7 @@ import {
   INVENTORY_SLOT_ID,
   generateDefaultRoomSlots,
 } from '@/types/equipmentSlots';
+import { debugLog } from '@/utils/debugLog';
 
 export const calculateStudioSkillBonus = (skill: StudioSkill, type: 'creativity' | 'technical' | 'quality'): number => {
   const level = skill.level;
@@ -53,22 +54,22 @@ export const getEquipmentBonuses = (ownedEquipment: Equipment[], genre?: string)
 };
 
 export const canPurchaseEquipment = (equipment: Equipment, gameState: GameState): { canPurchase: boolean; reason?: string } => {
-  console.log(`Checking purchase for ${equipment.name}:`);
-  console.log(`- Player money: $${gameState.money}`);
-  console.log(`- Equipment cost: $${equipment.price}`);
+  debugLog(`Checking purchase for ${equipment.name}:`);
+  debugLog(`- Player money: $${gameState.money}`);
+  debugLog(`- Equipment cost: $${equipment.price}`);
   
   if (gameState.ownedEquipment.some(e => e.id === equipment.id)) {
-    console.log('- Result: Already owned');
+    debugLog('- Result: Already owned');
     return { canPurchase: false, reason: 'Already owned' };
   }
 
   if (equipment.skillRequirement) {
     const skill = gameState.studioSkills[equipment.skillRequirement.skill];
-    console.log(`- Skill requirement: ${equipment.skillRequirement.skill} Level ${equipment.skillRequirement.level}`);
-    console.log(`- Player skill level: ${skill?.level || 0}`);
+    debugLog(`- Skill requirement: ${equipment.skillRequirement.skill} Level ${equipment.skillRequirement.level}`);
+    debugLog(`- Player skill level: ${skill?.level || 0}`);
     
     if (!skill || skill.level < equipment.skillRequirement.level) {
-      console.log('- Result: Skill requirement not met');
+      debugLog('- Result: Skill requirement not met');
       return { 
         canPurchase: false, 
         reason: `Requires ${equipment.skillRequirement.skill} Level ${equipment.skillRequirement.level}` 
@@ -77,17 +78,17 @@ export const canPurchaseEquipment = (equipment: Equipment, gameState: GameState)
   }
   
   if (gameState.money < equipment.price) {
-    console.log('- Result: Insufficient funds');
+    debugLog('- Result: Insufficient funds');
     return { canPurchase: false, reason: 'Insufficient funds' };
   }
 
-  console.log('- Result: Can purchase');
+  debugLog('- Result: Can purchase');
   return { canPurchase: true };
 };
 
 export const applyEquipmentEffects = (equipment: Equipment, gameState: GameState): GameState => {
-  console.log(`=== APPLYING EQUIPMENT EFFECTS for ${equipment.name} ===`);
-  console.log('Equipment bonuses:', equipment.bonuses);
+  debugLog(`=== APPLYING EQUIPMENT EFFECTS for ${equipment.name} ===`);
+  debugLog('Equipment bonuses:', equipment.bonuses);
   
   const updatedGameState = { ...gameState };
   
@@ -119,7 +120,7 @@ export const applyEquipmentEffects = (equipment: Equipment, gameState: GameState
           xpToNext: newXpToNext
         };
         
-        console.log(`- ${genre} skill: Level ${updatedSkills[genre].level}, XP: ${remainingXp}/${newXpToNext}`);
+        debugLog(`- ${genre} skill: Level ${updatedSkills[genre].level}, XP: ${remainingXp}/${newXpToNext}`);
       }
     });
     
@@ -133,13 +134,13 @@ export const applyEquipmentEffects = (equipment: Equipment, gameState: GameState
     if (equipment.bonuses.creativityBonus) {
       const bonus = Math.floor(equipment.bonuses.creativityBonus / 10); // Convert percentage to attribute points
       updatedAttributes.creativeIntuition += bonus;
-      console.log(`- Creative Intuition increased by ${bonus}`);
+      debugLog(`- Creative Intuition increased by ${bonus}`);
     }
     
     if (equipment.bonuses.technicalBonus) {
       const bonus = Math.floor(equipment.bonuses.technicalBonus / 10);
       updatedAttributes.technicalAptitude += bonus;
-      console.log(`- Technical Aptitude increased by ${bonus}`);
+      debugLog(`- Technical Aptitude increased by ${bonus}`);
     }
     
     updatedGameState.playerData = {
@@ -148,7 +149,7 @@ export const applyEquipmentEffects = (equipment: Equipment, gameState: GameState
     };
   }
   
-  console.log('=== EQUIPMENT EFFECTS APPLIED ===');
+  debugLog('=== EQUIPMENT EFFECTS APPLIED ===');
   return updatedGameState;
 };
 

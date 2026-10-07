@@ -72,6 +72,7 @@ import { MobileSessionStatusStrip } from '@/components/console/MobileSessionStat
 import { MobileFocusMixer } from '@/components/console/MobileFocusMixer';
 
 import { OutsideHelpCard } from '@/components/OutsideHelpCard';
+import { debugLog } from '@/utils/debugLog';
 
 interface ActiveProjectProps {
   gameState: GameState;
@@ -539,7 +540,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
     const cappedTechnical = Math.min(12, Math.max(0, technicalBonus));
     const cappedXp = Math.min(5, Math.max(0, xpBonus));
 
-    console.log('🎮 Intervention rewards received:', {
+    debugLog('🎮 Intervention rewards received:', {
       creativityBonus: cappedCreativity,
       technicalBonus: cappedTechnical,
       xpBonus: cappedXp,
@@ -679,7 +680,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
   };
 
   const handleProjectCelebrationComplete = () => {
-    console.log('🎊 Celebration complete. Calling onProjectComplete with stored project data.');
+    debugLog('🎊 Celebration complete. Calling onProjectComplete with stored project data.');
     if (onProjectComplete && projectDataForCompletionCall) {
       onProjectComplete(projectDataForCompletionCall);
     }
@@ -919,7 +920,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
           creativityGain={lastGains.creativity}
           technicalGain={lastGains.technical}
           onComplete={() => {
-            console.log('🎨 Blob animation complete.');
+            debugLog('🎨 Blob animation complete.');
             setShowBlobAnimation(false);
             setLastGains({ creativity: 0, technical: 0 });
           }}

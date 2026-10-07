@@ -40,6 +40,7 @@ import {
 } from '@/narrative/originPerks';
 import { calculateEquipmentUpkeep } from '@/economy/upkeep';
 import { bookEntry, spend } from '@/economy/ledger';
+import { debugLog } from '@/utils/debugLog';
 
 export { calculateEquipmentUpkeep };
 
@@ -57,7 +58,7 @@ export const gigRefreshCooldownRemaining = (gameState: GameState): number => {
 export const useGameActions = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
   const advanceDay = useCallback(() => {
     const newDay = gameState.currentDay + 1;
-    console.log(`Advancing to day ${newDay}`);
+    debugLog(`Advancing to day ${newDay}`);
     
     // Calculate new year based on era progression
     const newYear = calculateYearFromDay(newDay, gameState.eraStartYear, gameState.currentEra);

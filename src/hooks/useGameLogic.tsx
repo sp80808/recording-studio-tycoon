@@ -38,6 +38,7 @@ import {
   SAMPLE_STAFF_WELLBEING,
   SAMPLE_RANDOM_EVENTS
 } from '@/game-mechanics/sample-data';
+import { debugLog } from '@/utils/debugLog';
 
 type AdvanceDayWorkState = Pick<GameState, 'activeProject'> & {
   playerData: Pick<GameState['playerData'], 'dailyWorkCapacity'>;
@@ -133,11 +134,11 @@ export const useGameLogic = (
   };
 
   const handlePerformDailyWork = (options?: PerformDailyWorkOptions) => {
-    console.log('=== HANDLE PERFORM DAILY WORK ===');
+    debugLog('=== HANDLE PERFORM DAILY WORK ===');
     const result = performDailyWork(options); // Now returns { isComplete: boolean, finalProjectData?: Project }
     
     if (result?.isComplete && result.finalProjectData) {
-      console.log('Project work units complete. Passing up final project data for celebration:', result.finalProjectData.title);
+      debugLog('Project work units complete. Passing up final project data for celebration:', result.finalProjectData.title);
       // The actual `completeProject` call (which gives XP, money, etc.)
       // will happen after the celebration, triggered by ActiveProject.tsx -> Index.tsx
       // So, we don't setLastReview or update player XP here directly from a review object.
@@ -149,12 +150,12 @@ export const useGameLogic = (
   };
 
   const purchaseEquipment = (equipmentId: string) => {
-    console.log(`=== PURCHASING EQUIPMENT: ${equipmentId} ===`);
+    debugLog(`=== PURCHASING EQUIPMENT: ${equipmentId} ===`);
 
     const available = getAvailableEquipmentForYear(gameState.currentYear || 2024);
     const equipment = available.find(e => e.id === equipmentId);
     if (!equipment) {
-      console.log('Equipment not found');
+      debugLog('Equipment not found');
       return false;
     }
 
@@ -171,7 +172,7 @@ export const useGameLogic = (
       })),
     });
     if (!purchaseCheck.canPurchase) {
-      console.log(`Purchase blocked: ${purchaseCheck.reason}`);
+      debugLog(`Purchase blocked: ${purchaseCheck.reason}`);
       playSound('error.wav', 0.5);
       toast({
         title: "❌ Cannot Purchase",
@@ -264,7 +265,7 @@ export const useGameLogic = (
 
   // Enhanced spendPerkPoint function
   const handleSpendPerkPoint = (attribute: keyof PlayerAttributes) => {
-    console.log(`Spending perk point on: ${attribute}`);
+    debugLog(`Spending perk point on: ${attribute}`);
     if (gameState.playerData.perkPoints <= 0) {
       toast({
         title: "❌ No Perk Points",
@@ -297,7 +298,7 @@ export const useGameLogic = (
       activeProject: gameState.activeProject,
       playerData: { dailyWorkCapacity: gameState.playerData.dailyWorkCapacity },
     })) {
-      console.log('Auto-performing daily work before advancing day');
+      debugLog('Auto-performing daily work before advancing day');
       workResult = performDailyWork();
     }
 
@@ -312,7 +313,7 @@ export const useGameLogic = (
 
   // Contact artist for collaboration
   const contactArtist = useCallback((artistId: string, offer: number) => {
-    console.log(`=== CONTACTING ARTIST: ${artistId} with offer: $${offer} ===`);
+    debugLog(`=== CONTACTING ARTIST: ${artistId} with offer: $${offer} ===`);
     
     // Deduct the offer amount from player's money
     if (gameState.money < offer) {

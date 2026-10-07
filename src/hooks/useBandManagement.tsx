@@ -7,10 +7,11 @@ import { Band, OriginalTrackProject } from '@/types/bands';
 import { generateBandName } from '@/utils/bandUtils';
 import { toast } from '@/hooks/use-toast';
 import { canPlayShow, resolveShow, ShowPlan } from '@/simulation/liveShows';
+import { debugLog } from '@/utils/debugLog';
 
 export const useBandManagement = (gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>) => {
   const createBand = useCallback((bandName: string, memberIds: string[]) => {
-    console.log('Creating band:', bandName, 'with members:', memberIds);
+    debugLog('Creating band:', bandName, 'with members:', memberIds);
     
     if (!bandName.trim() || memberIds.length === 0) {
       toast({
@@ -76,11 +77,11 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
       duration: 3000
     });
 
-    console.log('Band created successfully:', newBand);
+    debugLog('Band created successfully:', newBand);
   }, [gameState.hiredStaff, setGameState]);
 
   const startTour = useCallback((bandId: string) => {
-    console.log('Starting tour for band:', bandId);
+    debugLog('Starting tour for band:', bandId);
     
     const band = gameState.playerBands.find(b => b.id === bandId);
     if (!band) {
@@ -204,7 +205,7 @@ export const useBandManagement = (gameState: GameState, setGameState: React.Disp
   }, [gameState.playerBands, gameState.reputation, gameState.money, gameState.currentDay, gameState.saveSeed, setGameState]);
 
   const createOriginalTrack = useCallback((bandId: string) => {
-    console.log('Creating original track for band:', bandId);
+    debugLog('Creating original track for band:', bandId);
     
     const band = gameState.playerBands.find(b => b.id === bandId);
     if (!band) {

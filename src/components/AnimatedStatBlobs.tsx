@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { debugLog } from '@/utils/debugLog';
 
 interface StatBlob {
   id: string;
@@ -28,7 +29,7 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
   const [animating, setAnimating] = useState(false);
 
   useEffect(() => {
-    console.log('🎨 AnimatedStatBlobs effect triggered:', { creativityGain, technicalGain });
+    debugLog('🎨 AnimatedStatBlobs effect triggered:', { creativityGain, technicalGain });
     let animationTimeoutId: NodeJS.Timeout | null = null;
 
     if ((creativityGain > 0 || technicalGain > 0) && containerRef.current) {
@@ -36,13 +37,13 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
       const containerRect = container.getBoundingClientRect();
       const newBlobs: StatBlob[] = [];
 
-      console.log('📦 Container rect:', containerRect);
+      debugLog('📦 Container rect:', containerRect);
 
       // Find target elements with more specific selectors
       const creativityTarget = document.querySelector('[data-creativity-target]') || document.getElementById('creativity-points');
       const technicalTarget = document.querySelector('[data-technical-target]') || document.getElementById('technical-points');
 
-      console.log('🎯 Target elements found:', { 
+      debugLog('🎯 Target elements found:', { 
         creativityTarget: !!creativityTarget, 
         technicalTarget: !!technicalTarget,
         creativitySelector: creativityTarget?.id || creativityTarget?.getAttribute('data-creativity-target'),
@@ -55,7 +56,7 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
         const targetX = targetRect.left - containerRect.left + targetRect.width / 2;
         const targetY = targetRect.top - containerRect.top + targetRect.height / 2;
 
-        console.log('💙 Creating creativity blobs at target:', { targetX, targetY, targetRect, containerRect });
+        debugLog('💙 Creating creativity blobs at target:', { targetX, targetY, targetRect, containerRect });
 
         // Create multiple blobs for better visual effect
         const blobCount = 1; // one "+N" chip per stat; dozens of "+1" discs scattered over the work card
@@ -74,7 +75,7 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
           });
         }
       } else if (creativityGain > 0) {
-        console.log('❌ Creativity target not found for creativity gain:', creativityGain);
+        debugLog('❌ Creativity target not found for creativity gain:', creativityGain);
       }
 
       // Create technical blobs
@@ -83,7 +84,7 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
         const targetX = targetRect.left - containerRect.left + targetRect.width / 2;
         const targetY = targetRect.top - containerRect.top + targetRect.height / 2;
 
-        console.log('💚 Creating technical blobs at target:', { targetX, targetY, targetRect, containerRect });
+        debugLog('💚 Creating technical blobs at target:', { targetX, targetY, targetRect, containerRect });
 
         const blobCount = 1;
         const valuePerBlob = Math.ceil(technicalGain / blobCount);
@@ -101,10 +102,10 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
           });
         }
       } else if (technicalGain > 0) {
-        console.log('❌ Technical target not found for technical gain:', technicalGain);
+        debugLog('❌ Technical target not found for technical gain:', technicalGain);
       }
 
-      console.log(`✨ Created ${newBlobs.length} blobs:`, newBlobs.map(b => `${b.id}: +${b.value}`));
+      debugLog(`✨ Created ${newBlobs.length} blobs:`, newBlobs.map(b => `${b.id}: +${b.value}`));
 
       if (newBlobs.length > 0) {
         setBlobs(newBlobs);
@@ -113,17 +114,17 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
         // Complete animation after all blobs finish
         const totalDuration = Math.max(...newBlobs.map(b => b.delay)) + 1800; // Updated for new animation timing
         animationTimeoutId = setTimeout(() => {
-          console.log('🏁 Animation complete');
+          debugLog('🏁 Animation complete');
           setAnimating(false);
           setBlobs([]);
           onComplete();
         }, totalDuration);
       } else {
-        console.log('❌ No blobs created, calling onComplete immediately');
+        debugLog('❌ No blobs created, calling onComplete immediately');
         onComplete();
       }
     } else {
-      console.log('❌ Animation conditions not met:', {
+      debugLog('❌ Animation conditions not met:', {
         hasGains: creativityGain > 0 || technicalGain > 0,
         hasContainer: !!containerRef.current,
         creativityGain,
@@ -140,7 +141,7 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
     return () => {
       if (animationTimeoutId) {
         clearTimeout(animationTimeoutId);
-        console.log('🧹 Animation timeout cleared on unmount/re-effect');
+        debugLog('🧹 Animation timeout cleared on unmount/re-effect');
         // If unmounting during animation, ensure onComplete is called
         // and state is reset to prevent updates on unmounted component.
         // Check if animating to avoid calling onComplete multiple times if it already ran.
@@ -148,18 +149,18 @@ export const AnimatedStatBlobs: React.FC<AnimatedStatBlobsProps> = ({
             setAnimating(false);
             setBlobs([]);
             onComplete(); 
-            console.log('🧹 Called onComplete and reset state during cleanup as animation was active.');
+            debugLog('🧹 Called onComplete and reset state during cleanup as animation was active.');
         }
       }
     };
   }, [creativityGain, technicalGain, containerRef, onComplete, animating]); // Added animating to dependency array
 
   if (!animating || blobs.length === 0) {
-    console.log('❌ Not animating or no blobs:', { animating, blobCount: blobs.length });
+    debugLog('❌ Not animating or no blobs:', { animating, blobCount: blobs.length });
     return null;
   }
 
-  console.log('🎬 Rendering blobs:', blobs.length);
+  debugLog('🎬 Rendering blobs:', blobs.length);
 
   return (
     <div className="absolute inset-0 pointer-events-none z-50">
