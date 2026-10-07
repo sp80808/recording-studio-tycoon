@@ -17,6 +17,8 @@ interface ProgressiveProjectInterfaceProps {
   onMinigameReward?: (creativityBonus: number, technicalBonus: number, xpBonus: number, minigameType?: string) => void;
   onProjectComplete?: (completedProject: Project) => void;
   onProjectSelect?: (project: Project) => void;
+  onBookEnquiry?: (project: Project) => void;
+  onOpenBookings?: () => void;
   autoTriggeredMinigame?: SessionIntervention | null;
   clearAutoTriggeredMinigame?: () => void;
 }
@@ -64,6 +66,8 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
   onMinigameReward,
   onProjectComplete,
   onProjectSelect,
+  onBookEnquiry,
+  onOpenBookings,
   autoTriggeredMinigame,
   clearAutoTriggeredMinigame
 }) => {
@@ -144,6 +148,8 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
           // focusAllocation={currentFocusAllocation} // REMOVED
           // setFocusAllocation={handleSetFocusAllocation} // REMOVED
           onProjectSelect={onProjectSelect}
+          onBookEnquiry={onBookEnquiry}
+          onOpenBookings={onOpenBookings}
           performDailyWork={performDailyWork}
           onMinigameReward={onMinigameReward}
           onProjectComplete={onProjectComplete}
@@ -201,6 +207,8 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
               gameState={gameState}
               setGameState={setGameState}
               onProjectSelect={onProjectSelect}
+          onBookEnquiry={onBookEnquiry}
+          onOpenBookings={onOpenBookings}
               performDailyWork={performDailyWork}
               onMinigameReward={onMinigameReward}
               onProjectComplete={onProjectComplete}
@@ -246,6 +254,8 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
               gameState={gameState}
               setGameState={setGameState}
               onProjectSelect={onProjectSelect}
+          onBookEnquiry={onBookEnquiry}
+          onOpenBookings={onOpenBookings}
               performDailyWork={performDailyWork}
               onMinigameReward={onMinigameReward}
               onProjectComplete={onProjectComplete}

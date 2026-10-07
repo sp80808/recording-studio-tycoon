@@ -23,6 +23,10 @@ for check in first-session-guide studio-room-purchase toast-spam pause-menu-keys
   node "${CHECK_OUTPUT_DIR}/rst-$check.cjs"
 done
 
+echo "=== idle console summary ==="
+./node_modules/.bin/esbuild tests/idle-console.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-idle-console.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-idle-console.cjs"
+
 echo "=== multi-project session view ==="
 ./node_modules/.bin/esbuild tests/multi-project-session-view.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-multi-project-session-view.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-multi-project-session-view.cjs"
