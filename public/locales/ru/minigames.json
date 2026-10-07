@@ -178,6 +178,7 @@
   "mg.FaderRideGame.close": "Закрыть",
   "mg.FaderRideGame.fader": "Фейдер",
   "mg.FaderRideGame.finalize": "Завершить и узнать счёт",
+  "mg.FaderRideGame.finish_early": "Finish early (scores the full run)",
   "mg.FaderRideGame.green_zone": "Зелёная зона 40-60",
   "mg.FaderRideGame.in_zone": "(В ЗОНЕ)",
   "mg.FaderRideGame.in_zone_ticks": "Тактов в зоне: {{in}}/{{total}}",

@@ -178,6 +178,7 @@
   "mg.FaderRideGame.close": "Fermer",
   "mg.FaderRideGame.fader": "Fader",
   "mg.FaderRideGame.finalize": "Valider et obtenir le score",
+  "mg.FaderRideGame.finish_early": "Finish early (scores the full run)",
   "mg.FaderRideGame.green_zone": "Zone verte 40-60",
   "mg.FaderRideGame.in_zone": "(DANS LA ZONE)",
   "mg.FaderRideGame.in_zone_ticks": "Ticks dans la zone : {{in}}/{{total}}",

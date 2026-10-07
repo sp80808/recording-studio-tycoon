@@ -438,3 +438,4 @@ body:has(.studio-inspector-layer) .first-session-guide { display:none; }
 
 
 .studio-primary-action[hidden] { display:none; }
+.studio-primary-badge { display:inline-flex; align-items:center; padding:1px 7px; border-radius:999px; font-size:11px; font-weight:800; color:#1c1711; background:var(--rst-brass-300); }
