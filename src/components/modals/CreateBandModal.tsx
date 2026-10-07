@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { GameState, StaffMember } from '@/types/game';
 import { Band } from '@/types/bands';
-import { generateBandName } from '@/services/pollinations';
+import { generateBandName } from '@/utils/bandUtils';
 import { toast } from '@/hooks/use-toast';
 
 interface CreateBandModalProps {
@@ -35,8 +35,7 @@ export const CreateBandModal: React.FC<CreateBandModalProps> = ({
     setLoadingName(true);
     setNameError(null);
     try {
-      const name = await generateBandName();
-      setBandName(name);
+      setBandName(generateBandName());
     } catch (err) {
       setNameError((err as Error).message || 'Error generating name');
     } finally {
@@ -45,10 +44,8 @@ export const CreateBandModal: React.FC<CreateBandModalProps> = ({
   };
 
   useEffect(() => {
-    generateBandName()
-      .then(name => setBandName(name))
-      .catch(err => setNameError(err.message || 'Error generating name'))
-      .finally(() => setLoadingName(false));
+    setBandName(generateBandName());
+    setLoadingName(false);
   }, []);
 
   const toggleMember = (staffId: string) => {

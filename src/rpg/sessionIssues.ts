@@ -156,6 +156,7 @@ export function applyDeliveryDecision(report: ProjectReport, issues: UnresolvedI
       ...report,
       overallQualityScore: quality,
       moneyGained: pay,
+      deliveryAdjustment: { kind: 'polish', amount: pay - report.moneyGained },
       knowHowGained: knowHow,
       reviewSnippet: `${report.reviewSnippet} You polished ${issues.length} open issue${issues.length === 1 ? '' : 's'} before delivery (-$${f.polish.cost}).`,
     };
@@ -166,10 +167,12 @@ export function applyDeliveryDecision(report: ProjectReport, issues: UnresolvedI
   const factor = report.overallQualityScore > 0 ? quality / report.overallQualityScore : 1;
   const covered = revision && revisionAllowance > 0;
   const repPenalty = revision && !covered ? Math.min(report.reputationGained, Math.ceil(totalSeverity(issues) / 2)) : 0;
+  const deliveredPay = Math.round(report.moneyGained * (0.5 + 0.5 * factor) * (covered ? 1 - REVISION_ROUND_FEE : 1));
   return {
     ...report,
     overallQualityScore: quality,
-    moneyGained: Math.round(report.moneyGained * (0.5 + 0.5 * factor) * (covered ? 1 - REVISION_ROUND_FEE : 1)),
+    moneyGained: deliveredPay,
+    deliveryAdjustment: { kind: 'deliver', amount: deliveredPay - report.moneyGained },
     reputationGained: Math.max(0, report.reputationGained - repPenalty),
     reviewSnippet: `${report.reviewSnippet} Delivered early with ${issues.length} open issue${issues.length === 1 ? '' : 's'}; main cause: ${top.label.toLowerCase()} (${top.cause.toLowerCase()})${covered ? ' The client asked for a revision; the booking included a round, so it cost studio time, not trust.' : revision ? ' The client asked for a revision and trust took a small hit.' : ''}`,
   };
