@@ -1,5 +1,5 @@
 import type { GameState, Project, SessionIntervention } from '@/types/game';
-import { shouldAutoTriggerMinigame } from '@/utils/minigameUtils';
+import { firstSessionGentleTrigger, shouldAutoTriggerMinigame } from '@/utils/minigameUtils';
 import { createSeededRandom } from '@/simulation/seededRandom';
 
 /** Foreground Project owns intervention metadata; preserve every other mirror field. */
@@ -48,9 +48,12 @@ export function advanceInterventionCheckpoint(project: Project, state: GameState
   const bucket = Math.floor(project.workSessionCount || 0);
   const checkpoint = project.interventionCheckpoint;
   if (bucket <= 0 || (checkpoint?.stageIndex === project.currentStageIndex && checkpoint.workBucket >= bucket)) return project;
-  const trigger = shouldAutoTriggerMinigame(project, state,
-    project.focusAllocation || { performance: 33, soundCapture: 33, layering: 34 }, bucket,
-    createSeededRandom(`${project.id}:intervention:${project.currentStageIndex}:${bucket}`));
+  const focus = project.focusAllocation || { performance: 33, soundCapture: 33, layering: 34 };
+  const seed = `${project.id}:intervention:${project.currentStageIndex}:${bucket}`;
+  const trigger = shouldAutoTriggerMinigame(project, state, focus, bucket, createSeededRandom(seed)) ??
+    // Easy first session: if nothing has ever been offered on this project, guarantee one gentle chance.
+    (project.difficulty <= 2 && !(project.resolvedInterventionStageKeys ?? []).length
+      ? firstSessionGentleTrigger(project, state, focus, bucket, createSeededRandom(`${seed}:first`)) : null);
   return { ...project, interventionCheckpoint: {
     stageIndex: project.currentStageIndex,
     workBucket: bucket,

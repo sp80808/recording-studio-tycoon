@@ -6,10 +6,13 @@ import { useSettings } from '@/contexts/settings-context-types';
 import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
 import { getTakeGoldWindow } from '@/rpg/takeEvaluation';
 
+export type TakeLockSource = 'player' | 'auto';
+
 export interface PocketMeterProps {
   isArmed: boolean;
   isPaused?: boolean;
-  onLock: (needlePosition: number) => void;
+  /** `source` says who locked: the player (button/key/pad/meter tap) or the safe auto-lock fallback. */
+  onLock: (needlePosition: number, source: TakeLockSource) => void;
   timingBonus?: number;
   className?: string;
 }
@@ -107,7 +110,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
       const timeout = window.setTimeout(() => {
         if (!lockedRef.current && !isPausedRef.current) {
           lockedRef.current = true;
-          onLockRef.current(accessiblePosition);
+          onLockRef.current(accessiblePosition, 'auto');
         }
       }, POCKET_METER_TIMING.autoLockSeconds * 1000);
       return () => window.clearTimeout(timeout);
@@ -135,7 +138,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
       if (elapsed >= POCKET_METER_TIMING.autoLockSeconds) {
         lockedRef.current = true;
         setAutoLockLeft(0);
-        onLockRef.current(currentPosRef.current);
+        onLockRef.current(currentPosRef.current, 'auto');
         return;
       }
 
@@ -170,6 +173,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
     : isInPocket
       ? (timingBonus > 0 ? 'IN THE POCKET (CALIBRATED)' : 'IN THE POCKET')
       : needlePos < goldMin ? 'COMING UP' : 'TOO HOT';
+  const lockLabel = isInPocket ? 'LOCK GOLD TAKE!' : needlePos < goldMin ? 'LOW — AIM FOR GOLD' : 'HOT — AIM FOR GOLD';
   const needleState: 'below' | 'pocket' | 'above' | 'paused' = isPaused
     ? 'paused'
     : isInPocket
@@ -215,7 +219,7 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
       hapticRef.current(0.2, 0.3, 60);
     }
 
-    onLockRef.current(pos);
+    onLockRef.current(pos, 'player');
   }, [isArmed]);
 
   // Keyboard parity with the gamepad lock: Space or Enter anywhere while armed.
@@ -342,18 +346,18 @@ export const PocketMeter: React.FC<PocketMeterProps> = ({
           e.stopPropagation();
           handleMeterClick();
         }}
-        aria-label={`Lock take. ${meterFeedback}. Target is ${Math.round(goldMin * 100)} to ${Math.round(goldMax * 100)}.`}
+        aria-label={`Lock take: ${lockLabel}. ${meterFeedback}. Target is ${Math.round(goldMin * 100)} to ${Math.round(goldMax * 100)}.`}
         className={`w-full py-3 mt-2 font-black tracking-wider uppercase text-sm rounded-[2px] border transition-all flex items-center justify-center gap-2 active:scale-[0.98] ${
           isInPocket
-            ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-stone-950 border-amber-300 shadow-[0_0_18px_rgba(251,191,36,0.8)] animate-pulse'
-            : 'bg-gradient-to-r from-stone-800 to-stone-700 text-amber-300 border-stone-600 hover:border-amber-400/60 shadow-md'
+            ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-black border-amber-200 shadow-[0_0_18px_rgba(251,191,36,0.8)] animate-pulse'
+            : 'bg-gradient-to-r from-stone-800 to-stone-700 text-amber-200 border-stone-500 hover:border-amber-400/60 shadow-md'
         }`}
       >
         {gamepad.isConnected && gamepad.lastInputType === 'gamepad' && (
           <GamepadGlyph button="south" size="xs" />
         )}
         <span><StatIcon name={isInPocket ? 'flame' : 'goal'} /></span>
-        <span>{isInPocket ? 'LOCK GOLD TAKE!' : needlePos < goldMin ? 'LOW — AIM FOR GOLD' : 'HOT — AIM FOR GOLD'}</span>
+        <span>{lockLabel}</span>
       </button>
     </div>
   );

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { musicPlayer } from '../utils/musicPlayer';
+import { debugLog } from '@/utils/debugLog';
 import { userHasInteracted } from '../utils/userInteraction'; // Import user interaction utility
 
 interface BackgroundMusicManager {
@@ -33,7 +34,7 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
   // Effect to listen for the custom 'userInteracted' event and update local state
   useEffect(() => {
     const handleUserInteractionEvent = () => {
-      console.log('BGM: "userInteracted" event received by hook.');
+      debugLog('BGM: "userInteracted" event received by hook.');
       if (!hasInteractedState) { // Only update if state is not yet true
         setHasInteractedState(true);
       }
@@ -43,15 +44,15 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
     // If it has happened globally but local state is stale, update local state.
     if (!userHasInteracted()) {
       document.addEventListener('userInteracted', handleUserInteractionEvent);
-      console.log('BGM: Added "userInteracted" event listener.');
+      debugLog('BGM: Added "userInteracted" event listener.');
     } else if (!hasInteractedState) {
-      console.log('BGM: User already interacted globally, syncing local state.');
+      debugLog('BGM: User already interacted globally, syncing local state.');
       setHasInteractedState(true); // Sync local state if global interaction already occurred
     }
 
     return () => {
       document.removeEventListener('userInteracted', handleUserInteractionEvent);
-      console.log('BGM: Removed "userInteracted" event listener.');
+      debugLog('BGM: Removed "userInteracted" event listener.');
     };
   }, [hasInteractedState]); // Re-run if local hasInteractedState changes, to remove listener once true
 
@@ -137,7 +138,7 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
     }
 
     if (!hasInteractedState) {
-      console.log(`BGM: Play for track ${trackNumber} deferred, user has not interacted.`);
+      debugLog(`BGM: Play for track ${trackNumber} deferred, user has not interacted.`);
       // globalPendingPlayDueToNoInteraction = true;
       return; // Don't try to play if no interaction
     }
@@ -148,16 +149,16 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
 
       // Only reload and play if the track is different or if it's not playing
       if (globalCurrentSrc !== newSrc || !musicPlayer.isRunning()) {
-        console.log(`BGM: Loading and playing track ${trackNumber}`);
+        debugLog(`BGM: Loading and playing track ${trackNumber}`);
         globalCurrentSrc = newSrc;
         globalCurrentTrack = trackNumber;
         await musicPlayer.play(newSrc);
         globalIsPlaying = true;
         setCurrentTrack(trackNumber);
         setIsPlaying(true);
-        console.log(`Playing BGM track ${trackNumber}`);
+        debugLog(`Playing BGM track ${trackNumber}`);
       } else {
-        console.log(`BGM: Track ${trackNumber} is already playing.`);
+        debugLog(`BGM: Track ${trackNumber} is already playing.`);
       }
     } catch (error) {
       console.warn(`Failed to play BGM track ${trackNumber}:`, error);
@@ -182,7 +183,7 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
   const resumeMusic = () => {
     if (globalPlayerReady && !globalIsPlaying && settings.musicEnabled) {
       if (!hasInteractedState) {
-        console.log('BGM: Resume deferred, user has not interacted.');
+        debugLog('BGM: Resume deferred, user has not interacted.');
         // globalPendingPlayDueToNoInteraction = true;
         return; // Don't try to play if no interaction
       }
@@ -190,7 +191,7 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
       musicPlayer.resume().then(() => {
         globalIsPlaying = true;
         setIsPlaying(true);
-        console.log('BGM: Music resumed.');
+        debugLog('BGM: Music resumed.');
       }).catch(error => {
         console.warn('Failed to resume music:', error);
       });
@@ -201,17 +202,17 @@ export const useBackgroundMusic = (): BackgroundMusicManager => {
   useEffect(() => {
     if (settings.musicEnabled && hasInteractedState) {
       if (!globalIsPlaying && globalPlayerReady) {
-        console.log('BGM: Main Play/Pause Effect - Attempting to play track.', { track: globalCurrentTrack, musicEnabled: settings.musicEnabled, hasInteracted: hasInteractedState, isPlaying: globalIsPlaying });
+        debugLog('BGM: Main Play/Pause Effect - Attempting to play track.', { track: globalCurrentTrack, musicEnabled: settings.musicEnabled, hasInteracted: hasInteractedState, isPlaying: globalIsPlaying });
         playTrack(globalCurrentTrack);
       } else {
-        console.log('BGM: Main Play/Pause Effect - Conditions not met for playing or already playing.', { musicEnabled: settings.musicEnabled, hasInteracted: hasInteractedState, isPlaying: globalIsPlaying });
+        debugLog('BGM: Main Play/Pause Effect - Conditions not met for playing or already playing.', { musicEnabled: settings.musicEnabled, hasInteracted: hasInteractedState, isPlaying: globalIsPlaying });
       }
     } else { // Music is disabled OR user hasn't interacted
       if (globalIsPlaying && globalPlayerReady) {
-        console.log('BGM: Main Play/Pause Effect - Attempting to pause music.', { musicEnabled: settings.musicEnabled, hasInteracted: hasInteractedState, isPlaying: globalIsPlaying });
+        debugLog('BGM: Main Play/Pause Effect - Attempting to pause music.', { musicEnabled: settings.musicEnabled, hasInteracted: hasInteractedState, isPlaying: globalIsPlaying });
         pauseMusic();
       } else {
-         console.log('BGM: Main Play/Pause Effect - Conditions not met for pausing or already paused.', { musicEnabled: settings.musicEnabled, hasInteracted: hasInteractedState, isPlaying: globalIsPlaying });
+         debugLog('BGM: Main Play/Pause Effect - Conditions not met for pausing or already paused.', { musicEnabled: settings.musicEnabled, hasInteracted: hasInteractedState, isPlaying: globalIsPlaying });
       }
     }
   }, [settings.musicEnabled, hasInteractedState, globalIsPlaying]); // globalIsPlaying ensures this re-evaluates if an attempt to play fails and sets isPlaying to false

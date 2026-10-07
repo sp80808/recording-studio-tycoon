@@ -1,3 +1,4 @@
+import { debugLog } from '@/utils/debugLog';
 interface SoundCache {
   [key: string]: HTMLAudioElement;
 }
@@ -46,7 +47,7 @@ export const playSound = (soundName: string, volume: number = 0.7): void => {
  */
 export const toggleMuteSounds = (): boolean => {
   isMuted = !isMuted;
-  console.log(`Sounds ${isMuted ? 'muted' : 'unmuted'}`);
+  debugLog(`Sounds ${isMuted ? 'muted' : 'unmuted'}`);
   // If unmuting and sounds were playing but paused due to mute, this won't auto-resume them.
   // This primarily prevents new sounds from playing.
   return isMuted;
@@ -75,7 +76,7 @@ export const preloadSounds = (soundNames: string | string[]): void => {
         audio.volume = 0.01;
         audio.pause(); 
         audioCache[soundName] = audio;
-        console.log(`Preloaded sound: ${soundName}`);
+        debugLog(`Preloaded sound: ${soundName}`);
       } catch (error) {
         console.warn(`Could not preload sound "${soundName}":`, error);
       }

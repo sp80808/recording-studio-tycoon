@@ -1,4 +1,5 @@
 import { gameAudio } from './audioSystem';
+import { debugLog } from '@/utils/debugLog';
 
 declare global {
   interface Window {
@@ -23,12 +24,12 @@ const onFirstUserInteraction = () => {
   if (hasInteractedGlobal) return;
   hasInteractedGlobal = true;
 
-  console.log('User has interacted with the document for the first time.');
+  debugLog('User has interacted with the document for the first time.');
 
   // Attempt to resume the main AudioContext and Tone.js context from audioSystem.ts
   if (gameAudio && typeof gameAudio.userGestureSignal === 'function') {
     gameAudio.userGestureSignal().then(() => {
-       console.log('GameAudio & Tone.js context unlocked on interaction.');
+       debugLog('GameAudio & Tone.js context unlocked on interaction.');
     }).catch((e: Error) => console.warn("Error unlocking gameAudio on interaction:", e));
   } else {
     console.warn('gameAudio or gameAudio.userGestureSignal is not available for interaction handling.');
@@ -61,6 +62,6 @@ export const initInteractionListener = () => {
     // iOS only unlocks audio from touchend/click, so the first touchstart alone is not enough
     document.addEventListener('touchend', onFirstUserInteraction, { once: true, capture: true });
     window.__interactionListenerSetupDone = true;
-    console.log('User interaction listeners initialized.');
+    debugLog('User interaction listeners initialized.');
   }
 };

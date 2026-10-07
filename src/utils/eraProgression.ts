@@ -2,6 +2,7 @@
 import { GameState } from '@/types/game';
 import { regionalPopularityDelta } from '@/rpg/cities';
 import { gameEvents } from '@/engine/gameEventBus';
+import { debugLog } from '@/utils/debugLog';
 
 export interface EraDefinition {
   id: string;
@@ -196,7 +197,7 @@ export const transitionToEra = (gameState: GameState, newEra: EraDefinition): Ga
     return gameState;
   }
 
-  console.log(`Transitioning to era: ${newEra.name}`);
+  debugLog(`Transitioning to era: ${newEra.name}`);
   
   // Calculate new starting conditions for the era
   const newEraStartYear = newEra.startYear;
