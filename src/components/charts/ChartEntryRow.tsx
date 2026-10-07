@@ -6,6 +6,7 @@ import { ChartEntry } from '@/types/charts';
 import { GameState } from '@/types/game';
 import { Play, Pause, TrendingUp, Clock, Star, ArrowUp, ArrowDown, Minus } from 'lucide-react';
 import { calculateContactCost, isArtistContactable } from '@/data/chartsData';
+import { debugLog } from '@/utils/debugLog';
 
 interface ChartEntryRowProps {
   entry: ChartEntry;
@@ -152,7 +153,7 @@ export const ChartEntryRow: React.FC<ChartEntryRowProps> = ({
           <div className="mt-4">
             {/* Level gating logic: Requires player level >= 5 to study tracks */}
             {gameState.playerData.level >= 5 ? (
-               <Button size="sm" variant="secondary" onClick={() => console.log('Study Track clicked', entry)}>
+               <Button size="sm" variant="secondary" onClick={() => debugLog('Study Track clicked', entry)}>
                  Study Track
                </Button>
             ) : (

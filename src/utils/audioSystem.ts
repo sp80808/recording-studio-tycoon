@@ -3,6 +3,7 @@
 // import Recorder from 'recorder-js';
 import { OneShotGate, resolveLoop } from '@/utils/oneShotPolicy';
 import * as Tone from 'tone';
+import { debugLog } from '@/utils/debugLog';
 
 /**
  * Sound alias map: maps logical caller keys to concrete sources.
@@ -179,7 +180,7 @@ class GameAudioSystem {
       const arrayBuffer = await response.arrayBuffer();
       const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
       this.audioBuffers.set(name, audioBuffer);
-      console.log(`Audio loaded and cached: ${name}`);
+      debugLog(`Audio loaded and cached: ${name}`);
       return audioBuffer;
     } catch (error) {
       console.warn(`Failed to load audio file ${name} from ${path}:`, error);
@@ -293,7 +294,7 @@ class GameAudioSystem {
         console.warn(`Audio buffer not found for key "${resolved}" (not an /audio/ path; refusing site-root fetch)`);
         return null;
       }
-      console.log(`Buffer for ${resolved} not found in cache, attempting to load...`);
+      debugLog(`Buffer for ${resolved} not found in cache, attempting to load...`);
       buffer = await this.loadAndCacheAudio(resolved, resolved);
     }
 
@@ -380,10 +381,10 @@ class GameAudioSystem {
 
   // Call this after the first user interaction to ensure AudioContext is running
   async userGestureSignal(): Promise<boolean> {
-    console.log('User gesture detected, ensuring audio context is active.');
+    debugLog('User gesture detected, ensuring audio context is active.');
     const initialized = await this.ensureInitialized();
     if (initialized && this.audioContext?.state === 'running') {
-      console.log('Audio context is active and running.');
+      debugLog('Audio context is active and running.');
       // Optionally, auto-play initial background music here if desired
       // For example: this.playSound('bgm1', 'music', 0.5, true);
     } else if (initialized) {
@@ -395,7 +396,7 @@ class GameAudioSystem {
     try {
       if (typeof window !== 'undefined' && Tone.getContext().state !== 'running') {
         await Tone.start();
-        console.log('Tone.js audio context started.');
+        debugLog('Tone.js audio context started.');
       }
     } catch (e) {
       console.warn('Tone.start() initialization deferred:', e);

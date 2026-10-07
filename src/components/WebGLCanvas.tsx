@@ -30,7 +30,7 @@ import {
   type NpcReadableState,
   type TakeReaction,
 } from '@/components/studio/actorReadability';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatedSprite, Application, Container, Graphics, Matrix, Rectangle, Sprite, Text, type Renderer } from 'pixi.js';
 import { createDiegeticCrtFilter, type DiegeticCrtFilterHandle } from '@/lib/render/shaders/diegeticCrtFilter';
 import { createTubeGlowFilter, calculateTubeGlowIntensity, type TubeGlowFilterHandle } from '@/lib/render/shaders/tubeGlowFilter';
@@ -80,7 +80,7 @@ import {
 } from '@/components/studio/idleFloorDirection';
 import { visualEraId } from '@/utils/eraProgression';
 import { useSettings } from '@/contexts/SettingsContext';
-import { resolveRendererOrder } from '@/lib/render/rendererChoice';
+import { applySoftwareGlProfile, isSoftwareGlRendererName, readGlRendererName, resolveRendererOrder } from '@/lib/render/rendererChoice';
 import { claimPixiApplication, STUDIO_FLOOR_OWNER } from '@/lib/motion/pixiGuard';
 import { cityWallColors } from '@/components/studio/cityWallTint';
 import { cityFloorPlanks, cityTrimColor, drawCityFloorPattern, drawCityPosters, drawCityProp } from '@/components/studio/cityRoomStyle';
@@ -2322,7 +2322,13 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     }
   };
 
-  const { settings } = useSettings();
+  const { settings: savedSettings } = useSettings();
+  // CPU rasteriser detected after the GL context exists (#352/#353): clamp presentation only.
+  const [softwareGl, setSoftwareGl] = useState(false);
+  const settings = useMemo(
+    () => (softwareGl ? applySoftwareGlProfile(savedSettings) : savedSettings),
+    [softwareGl, savedSettings],
+  );
   const settingsRef = useRef(settings);
 
   useEffect(() => {
@@ -2642,6 +2648,10 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           return;
         }
         appRef.current = app;
+        if (isSoftwareGlRendererName(readGlRendererName((app.renderer as { gl?: unknown }).gl))) {
+          app.canvas.setAttribute('data-soft-gl', 'true');
+          setSoftwareGl(true);
+        }
         container.appendChild(app.canvas);
         app.canvas.id = 'pixi-studio-canvas';
         app.canvas.setAttribute('data-engine', 'pixi');

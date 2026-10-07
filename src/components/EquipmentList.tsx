@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { gearEffectParts, GEAR_NO_EFFECT_TEXT } from '@/rpg/gearEffects';
 import { GameBonusesDisplay } from '@/components/equipment/GameBonusesDisplay';
 import { GearWhyHint } from '@/components/equipment/GearWhyHint';
 import { GameState } from '@/types/game';
 import { getAvailableEquipmentForYear, getEraAdjustedPrice } from '@/data/eraEquipment';
+import { tc, useContentLocale } from '@/i18n/content';
 import { money } from '@/utils/displayMoney';
 import './equipment/gear-shop.css';
 
@@ -14,6 +16,7 @@ interface EquipmentListProps {
 }
 
 export const EquipmentList: React.FC<EquipmentListProps> = ({ purchaseEquipment, gameState }) => {
+  useContentLocale();
   const [category, setCategory] = useState('all');
   const [affordableOnly, setAffordableOnly] = useState(false);
   const year = gameState.currentYear ?? 2024;
@@ -66,6 +69,7 @@ export const EquipmentList: React.FC<EquipmentListProps> = ({ purchaseEquipment,
         <div className="space-y-3">
           {visible.map(({ equipment, price }) => {
             const canAfford = gameState.money >= price;
+            const effectParts = gearEffectParts(equipment.bonuses);
             const isVintage = equipment.isVintage && year > (equipment.availableUntil ?? equipment.availableFrom + 20);
             return (
               <Card key={equipment.id} className="gear-shop__card p-3 bg-stone-800/50 border-stone-600" data-affordable={canAfford}>
@@ -76,6 +80,9 @@ export const EquipmentList: React.FC<EquipmentListProps> = ({ purchaseEquipment,
                     <h4 className="font-semibold text-white text-sm">{equipment.name}<GearWhyHint gear={equipment} ownedCategories={ownedCategories} knowHow={gameState.studioKnowHow} /></h4>
                     {isVintage && <span className="text-[10px] text-amber-300">Vintage find</span>}
                     <p className="mt-1 text-xs leading-relaxed text-stone-300">{equipment.eraDescription || equipment.description}</p>
+                    <p className="gear-shop__effects mt-1 text-xs font-medium text-emerald-300" data-testid="gear-effects">
+                      {effectParts.length > 0 ? effectParts.join(' · ') : tc('gear.effects.none', GEAR_NO_EFFECT_TEXT)}
+                    </p>
                   </div>
                 </div>
                 <details className="gear-shop__details mt-2">

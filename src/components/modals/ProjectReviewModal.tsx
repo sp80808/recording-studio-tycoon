@@ -15,12 +15,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Progress } from '@/components/ui/progress'; // Assuming Progress component for XP bars
 import { gameAudio } from '@/utils/audioSystem'; // For sound effects
 import { X } from 'lucide-react'; // For skip button icon
-import { generateAlbumArt, generateReview } from '@/services/pollinations';
+import { generateAlbumArt } from '@/services/pollinations';
+import { pressQuote } from '@/utils/reviewCopy';
+import type { SettlementLedger } from '@/rpg/settlementLedger';
 import { AlbumCoverArt } from '@/components/AlbumCoverArt';
 import { triggerMilestoneCelebration } from '@/utils/confettiJuice';
 import { gradeQuality, type RankResult } from '@/rpg/rankChase';
 import { RankRevealOverlay } from '@/components/RankRevealOverlay';
 import { MotionReward, MotionButton, MotionNumber } from '@/components/motion/primitives';
+
+/** Longest the animated reveal may run before it fast-forwards itself (a normal reveal takes ~8s). */
+export const REVEAL_WATCHDOG_MS = 15000;
 
 interface AnimatedNumberProps {
   targetValue: number;
@@ -169,6 +174,17 @@ const SkillDisplay: React.FC<SkillDisplayProps> = ({ skillDetail, onAnimationCom
   );
 };
 
+const LedgerRow: React.FC<{ label: string; amount: number; signed?: boolean; strong?: boolean; tone?: string }> = ({ label, amount, signed, strong, tone }) => {
+  const shown = moneyValue(Math.abs(amount));
+  const sign = amount < 0 ? '-' : signed && amount > 0 ? '+' : '';
+  return (
+    <div className={`flex justify-between gap-3 ${strong ? 'border-t border-stone-700/70 pt-0.5 font-semibold' : ''}`}>
+      <dt>{label}</dt>
+      <dd className={`tabular-nums ${tone ?? ''}`}>{sign}{moneySymbol()}{shown.toLocaleString()}</dd>
+    </div>
+  );
+};
+
 interface ProjectReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -177,9 +193,11 @@ interface ProjectReviewModalProps {
   seasonNote?: string | null;
   /** Save seed so the cover differs per save for identical projects (bead u92). */
   saveSeed?: string | number;
+  /** Itemised settlement so Money on this screen reconciles with the wallet (#336). */
+  ledger?: SettlementLedger;
 }
 
-export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, onClose, report, seasonNote, saveSeed }) => {
+export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, onClose, report, seasonNote, saveSeed, ledger }) => {
   const [currentSkillIndex, setCurrentSkillIndex] = useState(-1);
   const [showOverallQuality, setShowOverallQuality] = useState(false);
   const [showRewards, setShowRewards] = useState(false);
@@ -187,8 +205,6 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
   const [showContinueButton, setShowContinueButton] = useState(false);
   const [animatedOverallQualityValue, setAnimatedOverallQualityValue] = useState(0);
   const [typedSnippet, setTypedSnippet] = useState("");
-  const [reviewText, setReviewText] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [rankStamp, setRankStamp] = useState<RankResult | null>(null);
   const [skipped, setSkipped] = useState(false);
   const [albumArtUrl, setAlbumArtUrl] = useState<string | null>(null);
@@ -224,6 +240,15 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
     return () => window.removeEventListener('keydown', onKey);
   }, [isOpen, showContinueButton, skipReveal]);
 
+  // Watchdog (#353): the reveal is a chain of timers. On a starved main thread (software GL,
+  // overloaded box) or if any link never fires, "Calculating..." would last forever and the
+  // dialog refuses to close. After REVEAL_WATCHDOG_MS the final numbers are shown regardless.
+  useEffect(() => {
+    if (!isOpen || !report || showContinueButton) return;
+    const id = window.setTimeout(skipReveal, REVEAL_WATCHDOG_MS);
+    return () => window.clearTimeout(id);
+  }, [isOpen, report, showContinueButton, skipReveal]);
+
   useEffect(() => {
     if (isOpen && report) {
       setSkipped(false);
@@ -254,24 +279,6 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
         .catch(() => setAlbumArtUrl(null))
         .finally(() => setIsGeneratingArt(false));
 
-      let settled = false;
-      setIsGenerating(true);
-      setReviewText(null);
-      const fallback = window.setTimeout(() => {
-        settled = true;
-        setReviewText(report.reviewSnippet);
-        setIsGenerating(false);
-      }, 2500);
-      generateReview(report.projectTitle)
-        .then(text => { if (!settled) setReviewText(text); })
-        .catch(() => { if (!settled) setReviewText(report.reviewSnippet); })
-        .finally(() => {
-          if (!settled) setIsGenerating(false);
-        });
-      return () => {
-        settled = true;
-        window.clearTimeout(fallback);
-      };
     }
   }, [isOpen, report, saveSeed]);
 
@@ -408,7 +415,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
 
                 {/* Press Critique */}
                 <div className="w-full max-w-sm">
-                  {isGenerating ? (
+                  {isGeneratingArt ? (
                     <div className="text-center text-amber-300/80 font-mono text-xs tracking-wider animate-pulse py-2">
                       🎛️ Mastering album art & press review...
                     </div>
@@ -416,7 +423,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
                     <div className="w-full p-3.5 bg-stone-900/90 border border-stone-700/80 rounded-lg shadow-inner text-center">
                       <p className="text-[10px] font-mono tracking-widest text-amber-400/80 uppercase mb-1">Press Critique</p>
                       <p className="text-sm text-stone-200 italic leading-relaxed">
-                        "{reviewText || typedSnippet || report.reviewSnippet}"
+                        {pressQuote(report.reviewSnippet)}
                       </p>
                       {Boolean(report.qualityFactors?.length) && <p className="mt-2 text-xs leading-relaxed text-stone-400" aria-label="Session factors">
                         {report.qualityFactors?.slice(0, 2).join(' · ')}
@@ -440,10 +447,21 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
                     className="w-full max-w-sm pt-2 space-y-1 text-center bg-stone-900/70 border border-amber-500/30 rounded-lg p-3 shadow"
                   >
                     <h4 className="text-xl font-semibold text-yellow-200">Rewards</h4>
-                    <p className="text-lg text-white flex items-center justify-center gap-1.5">
-                      <span>💰 Money:</span>
-                      <span className="text-emerald-400 font-bold"><MotionNumber value={moneyValue(report.moneyGained)} prefix={moneySymbol()} /></span>
-                    </p>
+                    {ledger ? (
+                      <dl className="text-left text-sm text-stone-200 space-y-0.5" data-testid="settlement-ledger" aria-label="Settlement ledger">
+                        <LedgerRow label="Booked fee" amount={ledger.bookedFee} />
+                        <LedgerRow label="Quality, market and match" amount={ledger.performanceAdjustment} signed />
+                        {ledger.deliveryAdjustment !== 0 && <LedgerRow label={ledger.deliveryLabel} amount={ledger.deliveryAdjustment} signed />}
+                        <LedgerRow label="Payout" amount={ledger.payout} strong />
+                        {ledger.depositPaid > 0 && <LedgerRow label="Deposit already paid" amount={-ledger.depositPaid} signed />}
+                        <LedgerRow label="Credited now" amount={ledger.netCredit} strong tone="text-emerald-400" />
+                      </dl>
+                    ) : (
+                      <p className="text-lg text-white flex items-center justify-center gap-1.5">
+                        <span>💰 Payout:</span>
+                        <span className="text-emerald-400 font-bold"><MotionNumber value={moneyValue(report.moneyGained)} prefix={moneySymbol()} /></span>
+                      </p>
+                    )}
                     <p className="text-lg text-white flex items-center justify-center gap-1.5">
                       <span>🌟 Reputation:</span>
                       <span className="text-amber-300 font-bold"><MotionNumber value={report.reputationGained} prefix="+" /></span>
@@ -511,7 +529,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
                 }} 
                 className="w-full bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-amber-100 font-bold text-lg py-3 rounded"
               >
-                Awesome!
+                {report.overallQualityScore >= 55 ? 'Awesome!' : 'Back to the studio'}
               </MotionButton>
             ) : (
               <div className="flex w-full items-center justify-between gap-3">

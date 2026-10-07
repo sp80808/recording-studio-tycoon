@@ -29,6 +29,7 @@ import { seasonReviewNote } from '@/rpg/studioSeasons';
 import { GameState, Project, ProjectReport, StaffMember } from '@/types/game'; // Import GameState, Project, ProjectReport, StaffMember
 import DeliveryChoiceDialog from '@/components/DeliveryChoiceDialog';
 import { quoteFor } from '@/rpg/serviceQuote';
+import { buildSettlementLedger } from '@/rpg/settlementLedger';
 import { applyDeliveryDecision, type UnresolvedIssue } from '@/rpg/sessionIssues';
 import { generateProjectReview } from '@/utils/projectReviewUtils'; // Import generateProjectReview
 import { getFocusEffectiveness, getMoodEffectiveness } from '@/utils/playerUtils';
@@ -80,6 +81,7 @@ import { canOpenProjectReview, traceReviewFlow } from '@/utils/projectReviewFlow
 import { StudioClockProvider } from '@/contexts/StudioClockContext';
 import { usePremisesCue } from '@/hooks/usePremisesCue';
 import { useCustomizationSync } from '@/hooks/useCustomizationSync';
+import { debugLog } from '@/utils/debugLog';
 
 const MusicStudioTycoon = () => {
   const { gameState, setGameState, initializeGameState } = useGameState(); // REMOVED focusAllocation, setFocusAllocation
@@ -369,7 +371,7 @@ const MusicStudioTycoon = () => {
       return;
     }
     traceReviewFlow('show-review', completedProjectData.id);
-    console.log('Index.tsx: Generating review for project:', completedProjectData.title);
+    debugLog('Index.tsx: Generating review for project:', completedProjectData.title);
     // Determine assigned person (this is a simplified assumption)
     // In a more complex setup, MainGameContent or ActiveProject would pass this.
     let assignedPersonDetails: { type: 'player' | 'staff'; id: string; name: string };
@@ -422,6 +424,7 @@ const MusicStudioTycoon = () => {
         ),
         marketMultiplier: getGenreMarketMultiplier(completedProjectData.genre, gameState.currentEra),
         sessionEquipment,
+        firstSession: (gameState.financials?.reports?.length ?? 0) === 0,
         brewReady:
           gameState.choreState?.chores.brew_espresso?.completed === true ||
           hasActiveChoreBuff(gameState.choreState, 'vibe_boost'),
@@ -458,7 +461,7 @@ const MusicStudioTycoon = () => {
     }
     finalizingReviewRef.current = activeProjectReport.projectId; // repeat clicks cannot settle twice
     traceReviewFlow('finalize', activeProjectReport.projectId);
-    console.log('Index.tsx: Finalizing project completion for:', activeProjectReport.projectTitle);
+    debugLog('Index.tsx: Finalizing project completion for:', activeProjectReport.projectTitle);
     completeProject(activeProjectReport); // Call the updated completeProject with the report
 
     // Signed artists' name value raises the quality a debut is placed (and climbs) with.
@@ -547,7 +550,7 @@ const MusicStudioTycoon = () => {
   const handleAdvanceDayWithReview = useCallback(() => {
     const result = advanceDay();
     if (result?.isComplete && result.finalProjectData) {
-      console.log('Index.tsx: Advance-day work completed project, showing review:', result.finalProjectData.title);
+      debugLog('Index.tsx: Advance-day work completed project, showing review:', result.finalProjectData.title);
       handleShowProjectReview(result.finalProjectData);
     }
   }, [advanceDay, handleShowProjectReview]);
@@ -919,6 +922,10 @@ const MusicStudioTycoon = () => {
           onClose={handleFinalizeProjectCompletion} // Finalizes completion when modal is closed
           report={activeProjectReport}
           saveSeed={gameState.saveSeed}
+          ledger={(() => {
+            const p = [gameState.activeProject, ...(gameState.activeProjects ?? [])].find(x => x?.id === activeProjectReport.projectId);
+            return buildSettlementLedger(activeProjectReport, p?.payoutBase ?? activeProjectReport.moneyGained, p?.depositPaid);
+          })()}
           seasonNote={(() => {
             const p = [gameState.activeProject, ...(gameState.activeProjects ?? [])].find(x => x?.id === activeProjectReport.projectId);
             const rel = p?.clientId ? gameState.clientRelationships?.[p.clientId] : undefined;
