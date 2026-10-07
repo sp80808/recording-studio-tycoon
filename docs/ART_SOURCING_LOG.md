@@ -290,3 +290,6 @@ Foam-cutout gear tray (dot-grid foam, inset chip slots, latch tab, hinged-lid op
 
 ## 29. Per-city floor, props and era window lighting (#291)
 In-house proprietary original, Pixi Graphics only (`cityRoomStyle.ts`, `studioSkylines.ts`, `studioWindowView.ts`). Floorboards are mixed toward each city accent with a faint checker, runner, border or diagonal overlay; one small floor prop per city (surfboard, guitar case, umbrella stand, crate, lantern, conga, record crate, drum) is plain polygons and ellipses; the window skyline takes an era tint and lit-window palette. No external source.
+
+## 30. Studio A swinging door, hallway and door sound (#194)
+In-house proprietary original. The swinging door leaf (panels, edge strip, brass handle, contact shadow), the lit hallway behind it and the floor light pool are Pixi Graphics polygons in `WebGLCanvas.tsx` (`drawDoorSwing`) with geometry in `studioDoor.ts`. The latch-and-creak is synthesised with Web Audio in `audioSystem.ts` (`playDoor`): filtered noise plus a band-passed sawtooth. No external source, textures or samples.

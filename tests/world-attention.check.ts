@@ -14,6 +14,7 @@ import {
   takePunchScale,
   type AttentionFrameInput,
 } from '../src/components/studio/attentionDirector';
+import { DOOR_HINGE_Y, DOOR_FREE_Y, DOOR_MAX_SWING_DEG, doorFreeEdge, doorLightPool, doorSwingDeg } from '../src/components/studio/studioDoor';
 import { advanceClientTransit, createClientTransitState, doorOpenAmount, CLIENT_ENTER_MS } from '../src/components/studio/clientDoorTransit';
 
 const idle = (now: number, extra: Partial<AttentionFrameInput> = {}): AttentionFrameInput => ({
@@ -156,6 +157,21 @@ const idle = (now: number, extra: Partial<AttentionFrameInput> = {}): AttentionF
   assert.ok(doorOpenAmount(out) < 0.1, 'exit starts at the booth with the door shut');
   out = advanceClientTransit(out, { sessionActive: false, dtMs: 1_100 * 0.8, reduceMotion: false });
   assert.ok(doorOpenAmount(out) > 0.9, 'door opens as they reach it');
+}
+
+// Door swing geometry: shut lies in the wall plane, opens into the room on its back hinge.
+{
+  assert.equal(doorSwingDeg(0), 0);
+  assert.ok(Math.abs(doorSwingDeg(1) - DOOR_MAX_SWING_DEG) < 0.01, 'settles exactly at full open');
+  let prev = -1;
+  for (let a = 0; a <= 0.82; a += 0.02) { const d = doorSwingDeg(a); assert.ok(d >= prev, 'opens without flapping'); prev = d; }
+  const shut = doorFreeEdge(0);
+  assert.ok(Math.abs(shut.x) < 1e-9 && Math.abs(shut.y - DOOR_FREE_Y) < 1e-9, 'shut leaf sits in the doorway');
+  const open = doorFreeEdge(DOOR_MAX_SWING_DEG);
+  assert.ok(open.x > 1 && open.y > DOOR_HINGE_Y, 'open leaf swings into the room');
+  assert.ok(Math.abs(Math.hypot(open.x, open.y - DOOR_HINGE_Y) - (DOOR_FREE_Y - DOOR_HINGE_Y)) < 1e-9, 'leaf keeps its width');
+  assert.deepEqual(doorLightPool(0), [], 'no light while shut');
+  assert.equal(doorLightPool(40).length, 4);
 }
 
 console.log('world attention director passed');

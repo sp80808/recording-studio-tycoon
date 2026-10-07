@@ -85,6 +85,7 @@ import { claimPixiApplication, STUDIO_FLOOR_OWNER } from '@/lib/motion/pixiGuard
 import { cityWallColors } from '@/components/studio/cityWallTint';
 import { cityFloorPlanks, cityTrimColor, drawCityFloorPattern, drawCityPosters, drawCityProp } from '@/components/studio/cityRoomStyle';
 import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from '@/components/studio/isoMath';
+import { DOOR_FREE_Y, DOOR_HINGE_Y, doorFreeEdge, doorLeafShade, doorLightPool, doorSwingDeg } from '@/components/studio/studioDoor';
 import { buildCaseStack, CASE_STACK_TILE, type CaseStack } from '@/components/studio/studioCaseStack';
 import { buildWindowView, type WindowView } from '@/components/studio/studioWindowView';
 import { buildPremisesDecor } from '@/components/studio/studioPremisesDecor';
@@ -581,8 +582,8 @@ interface SceneRefs {
   doorFloor: { x: number; y: number } | null;
   /** Floor spots the crew walk to when a session issue lives on that object (#190). */
   issueStations?: Partial<Record<'shelf' | 'liveRoom', { x: number; y: number }>>;
-  /** Warm hallway light in the doorway + on the floor while a client walks through (#194). */
-  doorSpill?: Graphics;
+  /** Studio A door that swings open on its hinge while a client walks through (#194). */
+  doorSwing?: { closed: Container; opening: Graphics; pool: Graphics; leaf: Graphics; height: number; lastDeg: number };
   /** Live-room mic stand pose for the booked artist. */
   artistStand: { x: number; y: number } | null;
   nightTintLayer: Container | null;
@@ -1029,6 +1030,7 @@ const buildScene = (
     thresh.fill({ color: 0x2a2118, alpha: 0.85 });
     doorWrap.addChild(thresh);
     const doorTex = getPropTexture('door');
+    let closedDoor: Container = doorGfx;
     if (doorTex) {
       // Sprite is authored flat; shear it into the left-wall plane.
       const doorSprite = new Sprite(doorTex);
@@ -1037,29 +1039,39 @@ const buildScene = (
         0, doorH / doorTex.height,
         doorA.x, doorA.y - doorH,
       ));
-      doorWrap.addChild(doorSprite);
-    } else {
-      doorWrap.addChild(doorGfx);
+      closedDoor = doorSprite;
     }
-    // Door ajar: hallway light fills the frame and spills across the threshold while a client passes.
-    const spill = new Graphics();
-    spill
-      .poly([
-        doorA.x + 2, doorA.y - 2,
-        doorB.x - 2, doorB.y - 2,
-        doorB.x - 2, doorB.y - doorH + 4,
-        doorA.x + 2, doorA.y - doorH + 4,
-      ])
-      .fill({ color: 0xffd9a0, alpha: 0.7 });
-    const fA = iso(0.02, 3.2);
-    const fB = iso(0.02, 4.3);
-    const fC = iso(1.7, 4.75);
-    const fD = iso(1.7, 2.8);
-    spill.poly([fA.x, fA.y, fB.x, fB.y, fC.x, fC.y, fD.x, fD.y]).fill({ color: 0xffcf88, alpha: 0.22 });
-    spill.alpha = 0;
-    spill.eventMode = 'none';
-    doorWrap.addChild(spill);
-    refs.doorSpill = spill;
+    // Behind the door: a lit hallway, only seen while the leaf is swung open.
+    const opening = new Graphics();
+    {
+      const wp = (y: number, h: number) => { const p = iso(0, y); return [p.x, p.y - h]; };
+      const y0 = DOOR_HINGE_Y + 0.02;
+      const y1 = DOOR_FREE_Y - 0.02;
+      const top = doorH - 3;
+      opening.poly([...wp(y0, 0), ...wp(y1, 0), ...wp(y1, top), ...wp(y0, top)]).fill(0x2a1d15);
+      // Far hallway wall, warmly lit from a lamp off to the right.
+      opening.poly([...wp(y0 + 0.18, 10), ...wp(y1, 10), ...wp(y1, top - 8), ...wp(y0 + 0.18, top - 8)]).fill(0x8a5a36);
+      opening.poly([...wp(y0 + 0.5, 12), ...wp(y1, 12), ...wp(y1, top - 10), ...wp(y0 + 0.5, top - 10)]).fill({ color: 0xffc77a, alpha: 0.55 });
+      opening.poly([...wp(y0 + 0.78, 14), ...wp(y1, 14), ...wp(y1, top - 14), ...wp(y0 + 0.78, top - 14)]).fill({ color: 0xffe2b0, alpha: 0.55 });
+      // Hallway floor runner.
+      opening.poly([...wp(y0, 0), ...wp(y1, 0), ...wp(y1, 10), ...wp(y0 + 0.18, 10)]).fill(0x5a3b26);
+      opening.poly([...wp(y0 + 0.3, 2), ...wp(y1 - 0.15, 2), ...wp(y1 - 0.15, 8), ...wp(y0 + 0.3, 8)]).fill({ color: 0xa8432f, alpha: 0.85 });
+    }
+    opening.visible = false;
+    opening.eventMode = 'none';
+    doorWrap.addChild(opening);
+    doorWrap.addChild(closedDoor);
+    // Light pool through the gap; redrawn with the swing.
+    const pool = new Graphics();
+    pool.eventMode = 'none';
+    doorWrap.addChild(pool);
+    // The leaf swings into the room, so it depth-sorts with the floor actors, not the wall.
+    const leaf = new Graphics();
+    leaf.eventMode = 'none';
+    leaf.visible = false;
+    leaf.zIndex = Z.depth + iso(0.35, 3.75).y;
+    root.addChild(leaf);
+    refs.doorSwing = { closed: closedDoor, opening, pool, leaf, height: doorH, lastDeg: 0 };
     const lintel = new Graphics();
     lintel
       .poly([
@@ -2105,6 +2117,59 @@ const buildRoomScene = (
 /* ---------------------------------------------------------------------------
  * Component
  * ------------------------------------------------------------------------- */
+/** Redraw the door leaf, hallway and light pool for a swing angle (only when it changes). */
+function drawDoorSwing(door: NonNullable<SceneRefs['doorSwing']>, deg: number): void {
+  if (Math.abs(deg - door.lastDeg) < 0.05) return;
+  door.lastDeg = deg;
+  const open = deg > 0.5;
+  door.closed.visible = !open;
+  door.opening.visible = open;
+  door.leaf.visible = open;
+  door.leaf.clear();
+  door.pool.clear();
+  if (!open) return;
+  const h = door.height;
+  const hinge = iso(0, DOOR_HINGE_Y);
+  const edge = doorFreeEdge(deg);
+  const free = iso(edge.x, edge.y);
+  const shade = doorLeafShade(deg);
+  const tone = (hex: number, k: number) => {
+    const r = Math.min(255, Math.round(((hex >> 16) & 0xff) * k));
+    const g = Math.min(255, Math.round(((hex >> 8) & 0xff) * k));
+    const b = Math.min(255, Math.round((hex & 0xff) * k));
+    return (r << 16) | (g << 8) | b;
+  };
+  // Point on the leaf: u along hinge → free edge, v up from the floor (px).
+  const lp = (u: number, v: number) => [hinge.x + (free.x - hinge.x) * u, hinge.y + (free.y - hinge.y) * u - v];
+
+  const pool = doorLightPool(deg);
+  if (pool.length) {
+    const pts = pool.flatMap((p) => { const q = iso(p.x, p.y); return [q.x, q.y]; });
+    door.pool.poly(pts).fill({ color: 0xffcf88, alpha: 0.2 });
+    // Brighter core near the threshold.
+    const core = pool.map((p, i) => (i < 2 ? p : { x: p.x * 0.55, y: (p.y + pool[i === 2 ? 1 : 0].y) / 2 }));
+    door.pool.poly(core.flatMap((p) => { const q = iso(p.x, p.y); return [q.x, q.y]; })).fill({ color: 0xffe2b0, alpha: 0.22 });
+  }
+
+  // Contact shadow where the leaf meets the floor.
+  const sh1 = iso(edge.x + 0.12, edge.y + 0.1);
+  const sh2 = iso(0.08, DOOR_HINGE_Y + 0.1);
+  door.pool.poly([hinge.x, hinge.y, free.x, free.y, sh1.x, sh1.y, sh2.x, sh2.y]).fill({ color: 0x0b0906, alpha: 0.28 });
+
+  // Leaf face, two raised panels, a thickness strip on the free edge, and the brass handle.
+  door.leaf.poly([...lp(0, 0), ...lp(1, 0), ...lp(1, h - 6), ...lp(0, h - 6)]).fill(tone(0x6a4a34, shade));
+  door.leaf.poly([...lp(0.16, h * 0.55), ...lp(0.84, h * 0.55), ...lp(0.84, h - 16), ...lp(0.16, h - 16)]).fill(tone(0x7b583e, shade));
+  door.leaf.poly([...lp(0.16, 12), ...lp(0.84, 12), ...lp(0.84, h * 0.48), ...lp(0.16, h * 0.48)]).fill(tone(0x7b583e, shade));
+  door.leaf.poly([...lp(0.16, h - 16), ...lp(0.84, h - 16), ...lp(0.84, h - 19), ...lp(0.16, h - 19)]).fill({ color: 0x000000, alpha: 0.18 });
+  const [fx, fy] = lp(1, 0);
+  door.leaf.poly([fx, fy, fx + 3, fy + 1.5, fx + 3, fy - h + 7.5, fx, fy - h + 6]).fill(tone(0x3d2a1e, shade));
+  const [hx, hy] = lp(0.86, 42);
+  door.leaf.circle(hx, hy, 2.4).fill(0xd9a441);
+  door.leaf.circle(hx - 0.6, hy - 0.6, 0.9).fill(0xffe3a3);
+  // Outline so the leaf reads against the hallway light.
+  door.leaf.poly([...lp(0, 0), ...lp(1, 0), ...lp(1, h - 6), ...lp(0, h - 6)]).stroke({ width: 1, color: 0x1a120c, alpha: 0.7 });
+}
+
 const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, className, resetCameraKey, onHotspotAnchors, onFirstFrame, onAttentionCue }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
@@ -3170,7 +3235,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             if (bark) bark.box.alpha = sessionHere ? barkAlpha(now - bark.startedAt) : 0;
           }
 
-          if (refs.doorSpill) refs.doorSpill.alpha = doorOpenAmount(clientTransitRef.current);
+          if (refs.doorSwing) drawDoorSwing(refs.doorSwing, doorSwingDeg(doorOpenAmount(clientTransitRef.current)));
 
           // Phone ring pulse — stronger when enquiries are waiting
           if (refs.phoneRing) {

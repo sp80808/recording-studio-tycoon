@@ -170,6 +170,10 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
   const onAttentionCue = (event: AttentionCueEvent) => {
     telemetry.capture('attention_cue', gameState.currentDay, { reason: event.reason, outcome: event.outcome });
     // The cause speaks first: one short studio-sourced cue for a new issue; other cues already have their own sound.
+    // The door opens for arrivals and departures: one latch-and-creak as it swings.
+    if (event.outcome === 'shown' && (event.reason === 'arrival' || event.reason === 'wrap') && settings.sfxEnabled && !viewRoom) {
+      void gameAudio.playDoor();
+    }
     if (event.outcome === 'shown' && event.reason === 'issue' && settings.sfxEnabled) {
       void (event.target === 'shelf' ? gameAudio.playRackSelect() : gameAudio.playUISound('notice'));
     }

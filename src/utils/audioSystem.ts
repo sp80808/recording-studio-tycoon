@@ -642,6 +642,48 @@ class GameAudioSystem {
     return this.playSound('ui-gear-switch-alt', 'sfx', volume);
   }
 
+  /**
+   * Studio door (#194): a latch click, then a short low wooden creak as the leaf swings.
+   * Synthesised in-house so it needs no asset; quiet enough to sit under the room tone.
+   */
+  async playDoor(volume: number = 0.5) {
+    await this.ensureInitialized();
+    const ctx = this.audioContext;
+    if (!ctx || !this.sfxGain || this.shouldThrottle('door', 400)) return;
+    const now = ctx.currentTime;
+    // Latch: a short filtered noise tick.
+    const len = Math.floor(ctx.sampleRate * 0.03);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len) ** 3;
+    const tick = ctx.createBufferSource();
+    tick.buffer = buf;
+    const tickFilter = ctx.createBiquadFilter();
+    tickFilter.type = 'bandpass';
+    tickFilter.frequency.value = 2400;
+    const tickGain = ctx.createGain();
+    tickGain.gain.value = 0.5 * volume;
+    tick.connect(tickFilter).connect(tickGain).connect(this.sfxGain);
+    tick.start(now);
+    // Creak: a slow, slightly wavering low sawtooth through a resonant band.
+    const creak = ctx.createOscillator();
+    creak.type = 'sawtooth';
+    creak.frequency.setValueAtTime(92, now + 0.05);
+    creak.frequency.linearRampToValueAtTime(128, now + 0.35);
+    creak.frequency.linearRampToValueAtTime(104, now + 0.55);
+    const band = ctx.createBiquadFilter();
+    band.type = 'bandpass';
+    band.frequency.value = 700;
+    band.Q.value = 6;
+    const creakGain = ctx.createGain();
+    creakGain.gain.setValueAtTime(0.0001, now + 0.05);
+    creakGain.gain.exponentialRampToValueAtTime(0.09 * volume, now + 0.14);
+    creakGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
+    creak.connect(band).connect(creakGain).connect(this.sfxGain);
+    creak.start(now + 0.05);
+    creak.stop(now + 0.62);
+  }
+
   async playZoneEnter() {
     await this.ensureInitialized();
     if (!this.audioContext || !this.masterGain) return;
