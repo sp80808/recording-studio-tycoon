@@ -17,6 +17,7 @@ import StudioCustomizationPanel from '@/components/StudioCustomizationPanel';
 import ClientCareerPanel from '@/components/ClientCareerPanel';
 import CityLorePanel from '@/components/CityLorePanel';
 import { KnowHowPanel } from './KnowHowPanel';
+import { ConceptCodexPanel } from './ConceptCodexPanel';
 import { createInitialKnowHow, unlockCapability } from '@/rpg/studioKnowHow';
 import { chooseFocus } from '@/rpg/studioSeasons';
 import { AttributesModal } from './modals/AttributesModal';
@@ -620,6 +621,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                   return next ? { ...prev, studioKnowHow: next } : prev;
                 })}
               />
+              <ConceptCodexPanel knowHow={gameState.studioKnowHow} />
               <CityLorePanel cityId={gameState.cityId} eraId={gameState.currentEra} />
               <ClientCareerPanel relationships={gameState.clientRelationships} labelInterest={gameState.labelInterest} />
               <HouseStylePanel expertise={gameState.studioExpertise} />

@@ -389,6 +389,10 @@ echo "=== shop effect lines + stake unlock hints ==="
 ./node_modules/.bin/esbuild tests/shop-effects-stake-hints.check.tsx --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-shop-effects-stake-hints.cjs" --alias:@=./src --loader:.css=empty >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-shop-effects-stake-hints.cjs"
 
+echo "=== concept codex (#306) ==="
+./node_modules/.bin/esbuild tests/concept-codex.check.tsx --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-concept-codex.cjs" --alias:@=./src --loader:.css=empty >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-concept-codex.cjs"
+
 echo "=== premises tier labels and Needs reasons (#366) ==="
 ./node_modules/.bin/esbuild tests/premises-labels-needs.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-premises-labels-needs.cjs" --alias:@=./src --loader:.css=empty >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-premises-labels-needs.cjs"
