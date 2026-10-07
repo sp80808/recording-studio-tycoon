@@ -19,6 +19,17 @@ import {
   type AttentionTarget,
   type CueRequest,
 } from '@/components/studio/attentionDirector';
+import {
+  TAKE_REACTION_MS,
+  barkAlpha,
+  cheerHop,
+  hesitationSway,
+  motionTempo,
+  readableCue,
+  takeReaction,
+  type NpcReadableState,
+  type TakeReaction,
+} from '@/components/studio/actorReadability';
 import React, { useEffect, useRef } from 'react';
 import { AnimatedSprite, Application, Container, Graphics, Matrix, Rectangle, Sprite, Text, type Renderer } from 'pixi.js';
 import { createDiegeticCrtFilter, type DiegeticCrtFilterHandle } from '@/lib/render/shaders/diegeticCrtFilter';
@@ -339,6 +350,8 @@ export interface StudioSceneState {
    * Coffee stays brew-gated (`coffeeSteaming`); beers are rider-driven.
    */
   riderBeers?: boolean;
+  /** One arrival line for the booked artist, shown once they reach the mic (#190). */
+  artistBark?: string | null;
   /** Where the active session's open issue lives (console / liveRoom / shelf), if any (#194). */
   sessionIssueTarget?: AttentionTarget | null;
 }
@@ -566,6 +579,8 @@ interface SceneRefs {
   artist: (FloorNpcHandle & { tag: Text; shown: string; baseX: number }) | null;
   /** Floor anchor just inside the door threshold (client enter/exit). */
   doorFloor: { x: number; y: number } | null;
+  /** Floor spots the crew walk to when a session issue lives on that object (#190). */
+  issueStations?: Partial<Record<'shelf' | 'liveRoom', { x: number; y: number }>>;
   /** Warm hallway light in the doorway + on the floor while a client walks through (#194). */
   doorSpill?: Graphics;
   /** Live-room mic stand pose for the booked artist. */
@@ -1149,6 +1164,7 @@ const buildScene = (
     liveHint.eventMode = 'none';
     liveHint.zIndex = Z.fx;
     refs.idleHints.liveRoom = liveHint;
+    refs.issueStations = { ...refs.issueStations, liveRoom: iso(boothX0 + 0.35, boothGlassY + 0.85) };
     refs.idleFocusPoints.liveRoom = {
       x: (gA.x + gB.x) / 2,
       y: (gA.y + gB.y) / 2 - 45,
@@ -1165,6 +1181,7 @@ const buildScene = (
   const q2 = iso(2.0 + shelfExtension, 5.0); // back-right
   const q3 = iso(2.0 + shelfExtension, 6.0); // front-right
   const q4 = iso(0.5, 6.0); // front-left
+  refs.issueStations = { ...refs.issueStations, shelf: iso(1.25 + shelfExtension / 2, 6.6) };
   const shelfH = 44;
   const shelf = new Graphics();
   shelf
@@ -2133,6 +2150,10 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   const attentionEdgeRef = useRef<AttentionEdgeInput | null>(null);
   const attentionRippleRef = useRef<Graphics | null>(null);
   const punchActiveRef = useRef(false);
+  // Living actors (#190): last take reaction + the artist's arrival bark bubble.
+  const takeReactionRef = useRef<{ at: number; reaction: TakeReaction } | null>(null);
+  const barkRef = useRef<{ owner: Container; box: Container; bg: Graphics; text: Text; startedAt: number; line: string } | null>(null);
+  const artistPhaseRef = useRef<string>('');
   const attentionCbRef = useRef(onAttentionCue);
   attentionCbRef.current = onAttentionCue;
   const offerCue = (request: CueRequest) => {
@@ -2191,6 +2212,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
       const detail = (e as CustomEvent<TakeFeedbackDetail>).detail;
       if (!detail) return;
       offerCue({ target: 'liveRoom', reason: 'take', punch: takeIntensity(detail.grade) });
+      takeReactionRef.current = { at: performance.now(), reaction: takeReaction(detail.grade) };
     };
     window.addEventListener(TAKE_FEEDBACK_EVENT, onTake);
     return () => window.removeEventListener(TAKE_FEEDBACK_EVENT, onTake);
@@ -3028,6 +3050,14 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           // Staff / artist motion from npcAnimation states (presentation only).
           // Extra rooms only show a session when the project is booked into the room being viewed.
           const sessionHere = s.hasActiveProject && (roomKeyRef.current === 'project-studio' || Boolean(s.roomOccupied));
+          // One crew member owns each take reaction: the first hired hand on the floor, else the producer.
+          const tr = takeReactionRef.current;
+          const trElapsed = tr ? now - tr.at : Infinity;
+          const reactionLive = Boolean(tr && trElapsed < TAKE_REACTION_MS && sessionHere);
+          const crewIndex = refs.staffFigures.length > 1 ? 1 : 0;
+          const issueStation = s.sessionIssueTarget === 'shelf' || s.sessionIssueTarget === 'liveRoom'
+            ? refs.issueStations?.[s.sessionIssueTarget]
+            : undefined;
           refs.staffFigures.forEach((f, i) => {
             const supplied = stateRef.current.floorFigures?.[i]?.animState;
             // Extra rooms: supplied states are not room-scoped for staff; stay idle unless a session is here.
@@ -3037,19 +3067,26 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             else if (!sessionHere && (f.animState === 'working' || f.animState === 'mixing' || f.animState === 'recording')) {
               f.animState = 'idle';
             }
-            const target = staffDestination(f.animState, f.stations);
+            let readable: NpcReadableState | undefined = stateRef.current.floorFigures?.[i]?.readable;
+            if (!sessionHere && readable === 'blocked') readable = 'working';
+            // Blocked crew walk to the object the issue lives on: the cause is readable from across the room.
+            const target = readable === 'blocked' && issueStation ? issueStation : staffDestination(f.animState, f.stations);
             const position = stepStaffPosition({ x: f.baseX, y: f.baseY }, target, ticker.deltaMS, reduceMotion);
             f.baseX = position.x;
             f.baseY = position.y;
             f.fig.x = position.x;
             f.fig.zIndex = Z.depth + position.y;
             const walking = Math.hypot(target.x - position.x, target.y - position.y) > 0.5;
-            const cue = staffActivityCue(f.animState);
+            const reacting = reactionLive && i === crewIndex && tr?.reaction.crew ? tr.reaction.crew : null;
+            const shownState = reacting ?? readable;
+            const cue = shownState ? readableCue(shownState) : staffActivityCue(f.animState);
             if (f.activityCue.text !== cue.text) f.activityCue.text = cue.text;
             if (f.activityCue.style.fill !== cue.color) f.activityCue.style.fill = cue.color;
             f.activityCue.visible = !walking && cue.text !== '';
-            applyFloorNpcMotion({ ...f, animState: walking ? 'walk' : f.animState }, t, i * 1.4, reduceMotion);
-            applyFloorNpcMotion(f, t, i * 1.4, reduceMotion);
+            const tempoT = t * (shownState ? motionTempo(shownState) : 1);
+            applyFloorNpcMotion({ ...f, animState: walking ? 'walk' : f.animState }, tempoT, i * 1.4, reduceMotion);
+            applyFloorNpcMotion(f, tempoT, i * 1.4, reduceMotion);
+            if (reacting === 'celebrating' && !reduceMotion) f.fig.y -= cheerHop(trElapsed);
             if (i === 0 && refs.producerEmote) {
               // Tap reaction: a quick hop with a squash, and a note that floats up and fades.
               const since = (performance.now() - refs.producerTapAt) / 1000;
@@ -3091,12 +3128,46 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
               const tk = lastTake();
               const nod = tk && !reduceMotion ? nodOffset(performance.now() - tk.at, tk.grade) : 0;
               a.fig.y += nod;
+              if (reactionLive && tr?.reaction.artistHesitates && !reduceMotion) a.fig.x += hesitationSway(trElapsed);
             } else {
               a.fig.y = pose.y;
               a.fig.rotation = 0;
               a.fig.scale.y = 1;
             }
             a.fig.zIndex = Z.depth + pose.y;
+
+            // Arrival bark: one line once they reach the mic, then gone (never repeats on rebuild or reload).
+            const phase = clientTransitRef.current.phase;
+            const arrived = artistPhaseRef.current === 'entering' && phase === 'present';
+            artistPhaseRef.current = phase;
+            let bark = barkRef.current;
+            if (bark && bark.owner !== a.fig) bark = barkRef.current = null;
+            if (arrived && sessionHere && s.artistBark) {
+              if (!bark) {
+                const box = new Container();
+                box.eventMode = 'none';
+                const bg = new Graphics();
+                const text = new Text({
+                  text: '',
+                  style: { fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: 11, fontWeight: '600', fill: 0x2a231b },
+                });
+                text.anchor.set(0.5, 0.5);
+                box.addChild(bg, text);
+                box.position.set(0, -92);
+                a.fig.addChild(box);
+                bark = barkRef.current = { owner: a.fig, box, bg, text, startedAt: now, line: '' };
+              }
+              if (bark.line !== s.artistBark) {
+                bark.line = s.artistBark;
+                bark.text.text = s.artistBark;
+                const w = bark.text.width + 16;
+                bark.bg.clear();
+                bark.bg.roundRect(-w / 2, -10, w, 20, 9).fill({ color: 0xf3ecdd, alpha: 0.95 });
+                bark.bg.poly([-4, 9, 4, 9, 0, 15]).fill({ color: 0xf3ecdd, alpha: 0.95 });
+              }
+              bark.startedAt = now;
+            }
+            if (bark) bark.box.alpha = sessionHere ? barkAlpha(now - bark.startedAt) : 0;
           }
 
           if (refs.doorSpill) refs.doorSpill.alpha = doorOpenAmount(clientTransitRef.current);

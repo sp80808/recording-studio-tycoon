@@ -29,6 +29,8 @@ export interface FloorNpcFigure {
   name?: string;
   /** Presentation-only motion; never blocks gameplay. */
   animState?: NpcAnimationState;
+  /** One readable need/state shown over the head (#190); derived, never saved. */
+  readable?: import('@/components/studio/actorReadability').NpcReadableState;
 }
 
 export interface FloorNpcMotion {

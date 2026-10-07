@@ -3,6 +3,7 @@ import { TAKE_FEEDBACK_EVENT, takeQuip, type TakeFeedbackDetail } from '@/utils/
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import WebGLCanvas, { StudioHotspotId, HotspotAnchors, type AttentionCueEvent } from '@/components/WebGLCanvas';
 import { worldTargetForIntervention } from '@/session/worldSessionActions';
+import { arrivalBark, readableStaffState } from '@/components/studio/actorReadability';
 import { telemetry } from '@/telemetry/sink';
 import { RoomInfoStrip } from '@/components/studio/RoomInfoStrip';
 import { getRoomLayoutProfile } from '@/components/studio/roomLayouts';
@@ -241,6 +242,13 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           role: staffRoleToStudioRole(member.role),
           name: member.name,
           animState: animStateForStaffStatus(member.status, !!project),
+          readable: readableStaffState({
+            status: member.status,
+            energy: member.energy,
+            mood: member.mood,
+            hasActiveProject: !!project,
+            issueOpen: Boolean(sessionIssueTarget),
+          }),
         };
       }),
     ];
@@ -292,8 +300,11 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           project.rider?.items.some((item) => item.kind === 'beer'),
       ),
       sessionIssueTarget: viewRoom ? null : sessionIssueTarget,
+      artistBark: project
+        ? arrivalBark(project.clientId ? gameState.clientRelationships?.[project.clientId] : undefined, hashSeed(project.id))
+        : null,
     };
-  }, [sessionIssueTarget, gameState.activeProject, gameState.activeProjects, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, gameState.cityId, eraDecor.eraId, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, gameState.playerData, gameState.availableProjects.length, gameState.choreState, gameState.premisesTier, gameState.premisesArchetype, gameState.pendingCrates, roomTier, floorFocused, activeInspector, studioClock.minutesOfDay, lockedHotspot, viewRoom?.type, viewRoom?.id, occupiedRooms]);
+  }, [sessionIssueTarget, gameState.clientRelationships, gameState.activeProject, gameState.activeProjects, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, gameState.cityId, eraDecor.eraId, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, gameState.playerData, gameState.availableProjects.length, gameState.choreState, gameState.premisesTier, gameState.premisesArchetype, gameState.pendingCrates, roomTier, floorFocused, activeInspector, studioClock.minutesOfDay, lockedHotspot, viewRoom?.type, viewRoom?.id, occupiedRooms]);
 
   /**
    * Diegetic floor routes: pending chores always run the chore flow first.
