@@ -1,3 +1,4 @@
+import { useChromeSurface } from "@/hooks/useChromeSurface"
 import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
@@ -28,6 +29,12 @@ const DialogOverlay = React.forwardRef<
 ))
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
+/** Mounted only while the dialog content is actually open: an open dialog owns the screen, so routine feedback waits instead of covering its actions. */
+const ModalSurface = () => {
+  useChromeSurface('modal')
+  return null
+}
+
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
@@ -47,6 +54,7 @@ const DialogContent = React.forwardRef<
         )}
         {...props}
       >
+        <ModalSurface />
         {children}
         <DialogPrimitive.Close
           onClick={() => {

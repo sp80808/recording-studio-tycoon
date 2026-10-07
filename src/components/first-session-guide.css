@@ -113,6 +113,11 @@ body:has([data-studio-drawer='session']) .first-session-guide { display: none; }
   body:has([data-studio-drawer]) .first-session-guide { display: none; }
 }
 
+/* Short landscape phones: full-bleed drawers cover the whole screen too. */
+@media (max-height: 500px) {
+  body:has([data-studio-drawer]) .first-session-guide { display: none; }
+}
+
 /* Take Calibration / session-critical: never cover PocketMeter or feedback */
 html[data-chrome-busy='world-console'] .first-session-guide,
 html[data-chrome-busy='take-calibration'] .first-session-guide,
@@ -127,11 +132,5 @@ html[data-chrome-busy='session-critical'] .first-session-guide {
   }
 }
 
-/* Keep actionable session controls and the dock clear on narrow screens. */
-@media (max-width: 767px) {
-  html[data-chrome-busy='world-console'] .rst-game-notifications,
-  html[data-chrome-busy='take-calibration'] .rst-game-notifications {
-    top: max(180px, calc(env(safe-area-inset-top, 0px) + 180px));
-    bottom: auto;
-  }
-}
+/* Notification placement is owned by styles/mobile-shell.css (shared rail lanes), not this host. */
+

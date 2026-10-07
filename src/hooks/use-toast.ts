@@ -6,9 +6,13 @@ import type {
   ToastProps,
 } from "@/components/ui/toast"
 import {
+  resolveToastPriority,
   toastGate,
+  type ToastGateInput,
   type ToastPriority,
 } from "@/lib/toastGate"
+import { shouldDefer } from "@/lib/notificationPlacement"
+import { currentNotificationPlacement, selectChromeState, useUiChromeStore } from "@/stores/uiChromeStore"
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000000
@@ -149,16 +153,104 @@ function nodeToText(node: React.ReactNode): string {
   return ""
 }
 
+type Admission = ReturnType<typeof toastGate.admit>
+
+/**
+ * Feedback with no safe lane right now (take calibration, open drawer/modal on a phone) waits here
+ * and is shown when the chrome state frees up. Admission (dedupe / rate limit) has already run, so
+ * the queue is small, coalesced, and stale entries are dropped rather than replayed late.
+ */
+const DEFER_MAX = 4
+const DEFER_TTL_MS = 20000
+type DeferredToast = { id: string; props: Toast; admission: Admission; priority: ToastPriority; at: number }
+let deferred: DeferredToast[] = []
+/** Cards currently on screen, so a state change can pull back the ones that would now cover a primary action. */
+let shown: DeferredToast[] = []
+let watchingChrome = false
+let lastChromeState = ""
+
+function flushDeferred() {
+  if (deferred.length === 0) return
+  const placement = currentNotificationPlacement()
+  const now = Date.now()
+  deferred = deferred.filter((entry) => now - entry.at < DEFER_TTL_MS)
+  const ready = deferred.filter((entry) => !shouldDefer(placement, entry.priority))
+  if (ready.length === 0) return
+  deferred = deferred.filter((entry) => shouldDefer(placement, entry.priority))
+  // Only the newest cards fit the lane; older ones are already stale.
+  ready.slice(-placement.capacity).forEach((entry) => present(entry.id, entry.props, entry.admission))
+}
+
+/** A drawer / calibration / session just took over: feedback still on screen yields and waits its turn. */
+function yieldVisibleToasts() {
+  const placement = currentNotificationPlacement()
+  const now = Date.now()
+  shown = shown.filter((entry) => now - entry.at < (entry.admission.durationMs ?? 3200))
+  const covering = shown.filter((entry) => shouldDefer(placement, entry.priority))
+  if (covering.length === 0) return
+  shown = shown.filter((entry) => !covering.includes(entry))
+  covering.forEach((entry) => {
+    sonnerToast.dismiss(entry.id)
+    deferred = [...deferred.filter((d) => d.id !== entry.id), entry].slice(-DEFER_MAX)
+  })
+}
+
+function watchChrome() {
+  if (watchingChrome) return
+  watchingChrome = true
+  lastChromeState = selectChromeState(useUiChromeStore.getState())
+  useUiChromeStore.subscribe((state) => {
+    const next = selectChromeState(state)
+    if (next !== lastChromeState) {
+      lastChromeState = next
+      yieldVisibleToasts()
+    }
+    flushDeferred()
+  })
+}
+
+function present(id: string, props: Toast, admission: Admission) {
+  watchChrome()
+  shown = [...shown.filter((entry) => entry.id !== id), { id, props, admission, priority: resolveToastPriority(props.variant, props.priority), at: Date.now() }].slice(-DEFER_MAX)
+  dispatch({
+    type: "ADD_TOAST",
+    toast: {
+      ...props,
+      id,
+      open: true,
+      onOpenChange: (open) => {
+        if (!open) dispatch({ type: "DISMISS_TOAST", toastId: id })
+      },
+    },
+  })
+
+  // Bridge to Sonner — App mounts a single <Toaster /> from components/ui/toaster.
+  const { title, description, className, variant, action } = props
+  const options = {
+    id,
+    description,
+    duration: admission.durationMs,
+    className,
+    ...(action ? { action } : {}),
+  }
+  if (variant === "destructive") {
+    sonnerToast.error(title ?? "", options)
+  } else {
+    sonnerToast(title ?? "", options)
+  }
+}
+
 function toast({ ...props }: Toast) {
   const titleText = nodeToText(props.title)
   const descriptionText = nodeToText(props.description)
-  const admission = toastGate.admit({
+  const gateInput: ToastGateInput = {
     title: titleText,
     description: descriptionText || undefined,
     variant: props.variant,
     priority: props.priority,
     duration: props.duration,
-  })
+  }
+  const admission = toastGate.admit(gateInput)
 
   if (!admission.allow) {
     if (props.priority === "quiet" && typeof console !== "undefined") {
@@ -178,34 +270,19 @@ function toast({ ...props }: Toast) {
       type: "UPDATE_TOAST",
       toast: { ...next, id },
     })
-  const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
-
-  dispatch({
-    type: "ADD_TOAST",
-    toast: {
-      ...props,
-      id,
-      open: true,
-      onOpenChange: (open) => {
-        if (!open) dismiss()
-      },
-    },
-  })
-
-  // Bridge to Sonner — App mounts a single <Toaster /> from components/ui/toaster.
-  const { title, description, className, variant, action } = props
-  const options = {
-    id,
-    description,
-    duration: admission.durationMs,
-    className,
-    ...(action ? { action } : {}),
+  const dismiss = () => {
+    deferred = deferred.filter((entry) => entry.id !== id)
+    dispatch({ type: "DISMISS_TOAST", toastId: id })
   }
-  if (variant === "destructive") {
-    sonnerToast.error(title ?? "", options)
-  } else {
-    sonnerToast(title ?? "", options)
+
+  const priority = resolveToastPriority(props.variant, props.priority)
+  if (shouldDefer(currentNotificationPlacement(), priority)) {
+    deferred = [...deferred.filter((entry) => entry.id !== id), { id, props, admission, priority, at: Date.now() }].slice(-DEFER_MAX)
+    watchChrome()
+    return { id, dismiss, update }
   }
+
+  present(id, props, admission)
 
   return {
     id,
@@ -213,6 +290,9 @@ function toast({ ...props }: Toast) {
     update,
   }
 }
+
+/** Test seam: pending deferred cards. */
+export const __deferredToastCount = () => deferred.length
 
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)

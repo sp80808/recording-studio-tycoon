@@ -1,11 +1,18 @@
 import { Era } from "@/types/game";
 
+/**
+ * Era pickers and opening briefs label an era by decade ("2020s"), never by `startYear + "s"`:
+ * a start year is a simulation boundary, not display copy (#326). Saves keep their own
+ * stored eraStartYear/currentYear, so changing a boundary here never rewrites an existing career.
+ */
+export const eraDecadeLabel = (startYear: number): string => `${Math.floor(startYear / 10) * 10}s`;
+
 export const AVAILABLE_ERAS: Era[] = [
   {
     id: 'modern',
     name: 'modern',
     displayName: 'Modern Era',
-    startYear: 2024,
+    startYear: 2020,
     description: 'Start in the current music industry with all modern equipment and streaming services.',
     funnyDescription: 'Auto-tune? Check. Social media drama? Double check. Actual musical talent? Optional!',
     startingMoney: 9000,

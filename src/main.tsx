@@ -6,6 +6,7 @@ import App from './App.tsx';
 import { AppErrorBoundary } from './components/AppErrorBoundary';
 import SpeightsoftIdent from './components/branding/SpeightsoftIdent';
 import './index.css';
+import './styles/mobile-shell.css';
 import './styles/studio-theme.css';
 import './styles/feel.css';
 import { useSettings, SettingsProvider } from './contexts/SettingsContext';
