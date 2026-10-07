@@ -1,7 +1,9 @@
 import { pickFloorStaff } from '@/components/studio/staffStaging';
 import { TAKE_FEEDBACK_EVENT, takeQuip, type TakeFeedbackDetail } from '@/utils/takeFeedback';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import WebGLCanvas, { StudioHotspotId, HotspotAnchors } from '@/components/WebGLCanvas';
+import WebGLCanvas, { StudioHotspotId, HotspotAnchors, type AttentionCueEvent } from '@/components/WebGLCanvas';
+import { worldTargetForIntervention } from '@/session/worldSessionActions';
+import { telemetry } from '@/telemetry/sink';
 import { RoomInfoStrip } from '@/components/studio/RoomInfoStrip';
 import { getRoomLayoutProfile } from '@/components/studio/roomLayouts';
 import { StudioRoomTabs } from '@/components/studio/StudioRoomTabs';
@@ -156,6 +158,22 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
     return () => { window.removeEventListener(TAKE_FEEDBACK_EVENT, onTake); if (timer) clearTimeout(timer); };
   }, []);
 
+  // The open session issue lives on a physical object; the floor points at it (#194).
+  const activeSessionId = gameState.activeProject?.id;
+  const sessionIssueTarget = useMemo((): 'console' | 'liveRoom' | 'shelf' | null => {
+    if (!intervention || !activeSessionId || intervention.projectId !== activeSessionId) return null;
+    const target = worldTargetForIntervention(intervention.type);
+    return target === 'liveRoom' || target === 'shelf' ? target : 'console';
+  }, [intervention, activeSessionId]);
+
+  const onAttentionCue = (event: AttentionCueEvent) => {
+    telemetry.capture('attention_cue', gameState.currentDay, { reason: event.reason, outcome: event.outcome });
+    // The cause speaks first: one short studio-sourced cue for a new issue; other cues already have their own sound.
+    if (event.outcome === 'shown' && event.reason === 'issue' && settings.sfxEnabled) {
+      void (event.target === 'shelf' ? gameAudio.playRackSelect() : gameAudio.playUISound('notice'));
+    }
+  };
+
   const [viewRoomId, setViewRoomId] = useState('studio-a');
   const operationalRooms = useMemo(() => getOperationalStudioRooms(gameState), [gameState.studioRooms]);
   const occupiedRooms = useMemo(() => getOccupiedRoomIds(gameState), [gameState.activeProject, gameState.activeProjects]);
@@ -273,8 +291,9 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
         project &&
           project.rider?.items.some((item) => item.kind === 'beer'),
       ),
+      sessionIssueTarget: viewRoom ? null : sessionIssueTarget,
     };
-  }, [gameState.activeProject, gameState.activeProjects, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, gameState.cityId, eraDecor.eraId, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, gameState.playerData, gameState.availableProjects.length, gameState.choreState, gameState.premisesTier, gameState.premisesArchetype, gameState.pendingCrates, roomTier, floorFocused, activeInspector, studioClock.minutesOfDay, lockedHotspot, viewRoom?.type, viewRoom?.id, occupiedRooms]);
+  }, [sessionIssueTarget, gameState.activeProject, gameState.activeProjects, gameState.hiredStaff, gameState.ownedEquipment, gameState.currentDay, gameState.currentEra, gameState.cityId, eraDecor.eraId, gameState.financials, gameState.unlockedAchievements, gameState.saveSeed, gameState.playerData, gameState.availableProjects.length, gameState.choreState, gameState.premisesTier, gameState.premisesArchetype, gameState.pendingCrates, roomTier, floorFocused, activeInspector, studioClock.minutesOfDay, lockedHotspot, viewRoom?.type, viewRoom?.id, occupiedRooms]);
 
   /**
    * Diegetic floor routes: pending chores always run the chore flow first.
@@ -312,6 +331,8 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
         return;
       }
     }
+    // Tapping the object the open issue lives on goes straight to that issue.
+    if (!viewRoom && worldControls && onInterventionFocus && sessionIssueTarget === canonical) { onInterventionFocus(); return; }
     // Console desk and live booth share the session work screen when idle.
     if (canonical === 'console' || canonical === 'liveRoom') { onConsoleFocus(); return; }
     if (canonical === 'phone' && onBookings) { onBookings(); return; }
@@ -419,7 +440,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
       className={`relative overflow-hidden rounded-lg border border-stone-700/70 bg-[#1b1815] transition-all duration-300 ${className}`} 
       style={style}
     >
-      <WebGLCanvas state={sceneState} onHotspotSelect={handleHotspot} resetCameraKey={cameraResetKey + localCameraReset} onHotspotAnchors={setAnchors} onFirstFrame={onStudioReady} />
+      <WebGLCanvas state={sceneState} onHotspotSelect={handleHotspot} resetCameraKey={cameraResetKey + localCameraReset} onHotspotAnchors={setAnchors} onFirstFrame={onStudioReady} onAttentionCue={onAttentionCue} />
 
       {viewRoom && <RoomInfoStrip room={viewRoom} occupiedBy={roomProjectTitle(viewRoom.id)} hotspots={roomHotspotList} />}
       <StudioRoomTabs rooms={operationalRooms} activeId={viewRoom ? viewRoom.id : 'studio-a'} occupied={occupiedRooms} onSelect={(id) => { if (settings.sfxEnabled) void gameAudio.playTactileClick(); setViewRoomId(id); }} />

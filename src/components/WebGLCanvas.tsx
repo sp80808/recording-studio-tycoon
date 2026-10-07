@@ -1,7 +1,24 @@
 import { staffActivityCue, staffDestination, stepStaffPosition } from '@/components/studio/staffStaging';
 import type { NpcVisualIdentity } from '@/features/sprites/npcAppearance';
 import type { ModularNpcDefinition } from '@/features/sprites/spriteTypes';
-import { lastTake, nodOffset } from '@/utils/takeFeedback';
+import { lastTake, nodOffset, TAKE_FEEDBACK_EVENT, takeIntensity, type TakeFeedbackDetail } from '@/utils/takeFeedback';
+import {
+  ATTENTION_CAMERA_BLEND,
+  ATTENTION_CAMERA_ZOOM,
+  attentionFrame,
+  createAttentionDirector,
+  cuesForTransition,
+  expireCue,
+  isOffCentre,
+  noteManualInput,
+  noteTargetInteraction,
+  pushCue,
+  type AttentionDirectorState,
+  type AttentionEdgeInput,
+  type AttentionReason,
+  type AttentionTarget,
+  type CueRequest,
+} from '@/components/studio/attentionDirector';
 import React, { useEffect, useRef } from 'react';
 import { AnimatedSprite, Application, Container, Graphics, Matrix, Rectangle, Sprite, Text, type Renderer } from 'pixi.js';
 import { createDiegeticCrtFilter, type DiegeticCrtFilterHandle } from '@/lib/render/shaders/diegeticCrtFilter';
@@ -321,6 +338,15 @@ export interface StudioSceneState {
    * Coffee stays brew-gated (`coffeeSteaming`); beers are rider-driven.
    */
   riderBeers?: boolean;
+  /** Where the active session's open issue lives (console / liveRoom / shelf), if any (#194). */
+  sessionIssueTarget?: AttentionTarget | null;
+}
+
+/** Presentation-only attention cue outcome, for telemetry/audio in the shell (#194). */
+export interface AttentionCueEvent {
+  reason: AttentionReason;
+  target: AttentionTarget;
+  outcome: 'shown' | 'acted';
 }
 
 interface WebGLCanvasProps {
@@ -331,6 +357,8 @@ interface WebGLCanvasProps {
   onHotspotAnchors?: (anchors: HotspotAnchors) => void;
   /** Fired once after the first rendered frame so the shell can reveal GUI + 3D together. */
   onFirstFrame?: () => void;
+  /** World attention cue shown / acted on (never authoritative game state). */
+  onAttentionCue?: (event: AttentionCueEvent) => void;
   className?: string;
 }
 
@@ -2038,7 +2066,7 @@ const buildRoomScene = (
 /* ---------------------------------------------------------------------------
  * Component
  * ------------------------------------------------------------------------- */
-const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, className, resetCameraKey, onHotspotAnchors, onFirstFrame }) => {
+const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, className, resetCameraKey, onHotspotAnchors, onFirstFrame, onAttentionCue }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const sceneRef = useRef<BuiltScene | null>(null);
@@ -2078,6 +2106,21 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
     createClientTransitState(Boolean(state?.hasActiveProject)),
   );
   const shelfPrefetchKeyRef = useRef('');
+  // World attention director (#194): ephemeral, presentation only, never saved.
+  const attentionRef = useRef<AttentionDirectorState>(createAttentionDirector());
+  const attentionEdgeRef = useRef<AttentionEdgeInput | null>(null);
+  const attentionRippleRef = useRef<Graphics | null>(null);
+  const punchActiveRef = useRef(false);
+  const attentionCbRef = useRef(onAttentionCue);
+  attentionCbRef.current = onAttentionCue;
+  const offerCue = (request: CueRequest) => {
+    const before = attentionRef.current.active?.id;
+    attentionRef.current = pushCue(attentionRef.current, request, performance.now());
+    const after = attentionRef.current.active;
+    if (after && after.id !== before) {
+      attentionCbRef.current?.({ reason: after.reason, target: after.target, outcome: 'shown' });
+    }
+  };
 
   const { settings } = useSettings();
   const settingsRef = useRef(settings);
@@ -2109,7 +2152,27 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
   // Keep the latest props in refs so the ticker/callbacks never go stale
   useEffect(() => {
     stateRef.current = { ...DEFAULT_STATE, ...state };
+    // Cue on transitions only: the first snapshot (mount / save load) seeds the edge, so reloads never replay a cue.
+    const next: AttentionEdgeInput = {
+      enquiryWaiting: Boolean(state?.enquiryWaiting),
+      hasActiveProject: Boolean(state?.hasActiveProject),
+      issueTarget: state?.sessionIssueTarget ?? null,
+    };
+    const prev = attentionEdgeRef.current;
+    attentionEdgeRef.current = next;
+    if (prev) cuesForTransition(prev, next).forEach(offerCue);
   }, [state]);
+
+  // Lock Take: micro scene punch + booth ripple; the VU flash and artist nod already live in the ticker.
+  useEffect(() => {
+    const onTake = (e: Event) => {
+      const detail = (e as CustomEvent<TakeFeedbackDetail>).detail;
+      if (!detail) return;
+      offerCue({ target: 'liveRoom', reason: 'take', punch: takeIntensity(detail.grade) });
+    };
+    window.addEventListener(TAKE_FEEDBACK_EVENT, onTake);
+    return () => window.removeEventListener(TAKE_FEEDBACK_EVENT, onTake);
+  }, []);
 
   useEffect(() => {
     selectRef.current = onHotspotSelect;
@@ -2171,7 +2234,14 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           Boolean(stateRef.current.hasActiveProject),
         );
       }
-      if (!suppressTapRef.current) selectRef.current?.(id);
+      if (!suppressTapRef.current) {
+        const live = attentionRef.current.active;
+        if (live && live.target === id) {
+          attentionCbRef.current?.({ reason: live.reason, target: live.target, outcome: 'acted' });
+        }
+        attentionRef.current = noteTargetInteraction(attentionRef.current, id);
+        selectRef.current?.(id);
+      }
     };
     // Switching rooms swaps the scene on this same Application; the camera starts fresh for each room.
     const roomProfile = getRoomLayoutProfile(stateRef.current.roomType);
@@ -2219,6 +2289,13 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
       app.stage.addChild(scene.overlayRoot);
     }
     sceneRef.current = scene;
+    // One ripple ring per scene for the active attention cue (drawn on the cause, in world space).
+    const ripple = new Graphics();
+    ripple.eventMode = 'none';
+    ripple.zIndex = Z.fx + 1;
+    scene.root.addChild(ripple);
+    attentionRippleRef.current = ripple;
+    punchActiveRef.current = false;
     app.canvas.dataset.studioArt = kitTexturesRef.current ? 'cc0-v1' : 'built-in';
     // Keep brew-drink settle in sync across rebuilds (no re-drop if already brewed today)
     coffeeWasSteamingRef.current = Boolean(stateRef.current.coffeeSteaming);
@@ -2398,6 +2475,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
 
         const markCanvasInput = () => {
           lastCanvasInputRef.current = performance.now();
+          attentionRef.current = noteManualInput(attentionRef.current, lastCanvasInputRef.current);
           const hints = sceneRef.current?.refs.idleHints;
           if (hints) {
             (Object.keys(hints) as IdleDirectionHotspot[]).forEach((id) => {
@@ -2597,6 +2675,40 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
 
           const reduceMotion = readReduceMotion();
           const floorFocused = s.floorFocused !== false;
+
+          // World attention cue (#194): derive this frame's ring, ripple, framing and punch.
+          attentionRef.current = expireCue(attentionRef.current, now);
+          const cueTarget = attentionRef.current.active?.target;
+          const cueFocus = cueTarget ? refs.idleFocusPoints[cueTarget] : undefined;
+          const cueScreen = cueFocus
+            ? {
+                x: scene.root.position.x + cueFocus.x * scene.root.scale.x,
+                y: scene.root.position.y + cueFocus.y * scene.root.scale.y,
+              }
+            : null;
+          const cue = attentionFrame(attentionRef.current, {
+            now,
+            reduceMotion,
+            floorFocused: floorFocused && !s.lockedHotspot,
+            targetOffCentre: cueScreen ? isOffCentre(cueScreen, app.screen) : false,
+          });
+          const ripple = attentionRippleRef.current;
+          if (ripple && !ripple.destroyed) {
+            ripple.clear();
+            if (cue.target && cueFocus && cue.highlight > 0.01) {
+              const warm = cue.reason === 'issue' ? 0xff8a5c : 0xffe3a3;
+              const ry = cueFocus.y + 18;
+              if (cue.ripple !== null) {
+                const k = cue.ripple;
+                const rx = 26 + 46 * k;
+                ripple.ellipse(cueFocus.x, ry, rx, rx * 0.5).stroke({ width: 2.2, color: warm, alpha: (1 - k) * 0.85 * cue.highlight });
+              }
+              // Steady inner ring: the complete non-camera cue under Reduced Motion.
+              ripple.ellipse(cueFocus.x, ry, 24, 12).stroke({ width: 5, color: 0x0b0906, alpha: 0.35 * cue.highlight });
+              ripple.ellipse(cueFocus.x, ry, 24, 12).stroke({ width: 1.8, color: warm, alpha: 0.9 * cue.highlight });
+            }
+          }
+
           // Don't bank idle time while drawers/inspectors own attention, UNLESS we have a locked hotspot.
           if (!floorFocused && !s.lockedHotspot) {
             lastCanvasInputRef.current = performance.now();
@@ -2617,7 +2729,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           } else {
           const idleMs = performance.now() - lastCanvasInputRef.current;
           // If locked, we immediately target it. Otherwise, use normal idle logic.
-          const hintedHotspot = s.lockedHotspot || pickIdleDirectionTarget({
+          const hintedHotspot = s.lockedHotspot || cue.cameraTarget || pickIdleDirectionTarget({
             idleMs,
             floorFocused: true,
             enquiryWaiting: Boolean(s.enquiryWaiting),
@@ -2641,7 +2753,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
             hint.alpha = pulse;
           });
 
-          // Subtle auto-zoom / pan toward the idle target; restore on cancel.
+          // Subtle auto-zoom / pan toward the idle target (or a framed cue); restore on cancel.
+          const framingCue = !s.lockedHotspot && cue.cameraTarget !== null && hintedHotspot === cue.cameraTarget;
           if (!reduceMotion && hintedHotspot) {
             const focus = refs.idleFocusPoints[hintedHotspot];
             if (focus) {
@@ -2658,12 +2771,14 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
                 basePosition: scene.basePosition,
                 baseScale: scene.baseScale,
                 screen: { width: app.screen.width, height: app.screen.height },
-                targetZoom: Math.max(cameraRef.current.zoom, IDLE_CAMERA_ZOOM),
+                targetZoom: framingCue
+                  ? Math.max(cam.saved.zoom, Math.min(ATTENTION_CAMERA_ZOOM, MAX_ZOOM))
+                  : Math.max(cameraRef.current.zoom, IDLE_CAMERA_ZOOM),
                 minZoom: MIN_ZOOM,
                 maxZoom: MAX_ZOOM,
               });
-              // Keep the nudge mild — blend toward a soft pull, not a hard lock.
-              const softTarget = lerpCameraPose(cam.saved, desired, 0.55);
+              // Keep the nudge mild — blend toward a soft pull, not a hard lock (cues pull even less).
+              const softTarget = lerpCameraPose(cam.saved, desired, framingCue ? ATTENTION_CAMERA_BLEND : 0.55);
               applyCameraPose(lerpCameraPose(cameraRef.current, softTarget, IDLE_CAMERA_LERP));
             }
           } else if (idleCameraRef.current.mode === 'restoring') {
@@ -2677,6 +2792,20 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ state, onHotspotSelect, class
           } else if (idleCameraRef.current.mode === 'focusing' && !hintedHotspot) {
             beginIdleCameraRestore();
           }
+          }
+
+          // Lock Take punch: scale about the screen centre on top of the camera, never written back to it.
+          if (cue.punchScale !== 1 || punchActiveRef.current) {
+            const p = cue.punchScale;
+            const cam = cameraRef.current;
+            const cx = app.screen.width / 2;
+            const cy = app.screen.height / 2;
+            scene.root.scale.set(scene.baseScale * cam.zoom * p);
+            scene.root.position.set(
+              cx + (scene.basePosition.x + cam.x - cx) * p,
+              cy + (scene.basePosition.y + cam.y - cy) * p,
+            );
+            punchActiveRef.current = p !== 1;
           }
 
           // Smoothly interpolate hotspot hover glow alphas for tactile feedback

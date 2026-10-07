@@ -32,7 +32,8 @@ export type GameplayEventName =
   | 'management_panel_opened'
   | 'career_started'
   | 'feature_unlocked'
-  | 'feature_used';
+  | 'feature_used'
+  | 'attention_cue';
 
 export type TelemetryValue = string | number | boolean | null;
 
@@ -74,6 +75,7 @@ export const ALLOWED_PROPERTIES: Record<GameplayEventName, readonly string[]> = 
   career_started: ['startOption'],
   feature_unlocked: ['feature', 'sessions', 'level'],
   feature_used: ['feature'],
+  attention_cue: ['reason', 'outcome'],
 };
 
 const SAFE_STRING = /^[a-z0-9][a-z0-9_.\-]{0,31}$/i;
