@@ -40,7 +40,7 @@ ok(app.includes('<Toaster />'), 'App mounts Toaster');
 ok(!/import\s+\{\s*Toaster as Sonner\s*\}/.test(app) && !app.includes('<Sonner />'), 'App does not mount a second Sonner toaster');
 
 const toaster = read('src/components/ui/toaster.tsx');
-ok(toaster.includes('visibleToasts={2}'), 'Sonner host caps visible toasts at 2');
+ok(toaster.includes('visibleToasts={placement.capacity}'), 'Sonner host caps visible toasts from the shared placement policy (1 on phones, 2 on desktop)');
 
 const guideCss = read('src/components/first-session-guide.css');
 ok(guideCss.includes("data-chrome-busy='take-calibration'"), 'coach CSS hides during take-calibration');

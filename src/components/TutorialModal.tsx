@@ -1,3 +1,4 @@
+import { useChromeSurface } from '@/hooks/useChromeSurface';
 import React from 'react';
 import { Check, ChevronDown, CircleDollarSign, Headphones, Phone, SlidersHorizontal, Users, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -64,6 +65,9 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onComplete
       onComplete();
     }
   }, [current, isOpen, onComplete, updateSettings]);
+
+  const coachVisible = isOpen && current !== 'complete' && !takeCalibrationFocused && !consoleFocused;
+  useChromeSurface(coachVisible ? 'coach' : null);
 
   // Take Calibration needs the full Session Progress / PocketMeter band — park the coach.
   if (!isOpen || current === 'complete' || takeCalibrationFocused || consoleFocused) return null;

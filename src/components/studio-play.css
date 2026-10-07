@@ -16,6 +16,7 @@
 .studio-play-room { height:100%; border:0!important; border-radius:0!important; }
 .studio-play-status { display:flex; align-items:center; gap:8px; padding:4px 10px; font-size:11px; color:var(--rst-ivory-soft); position:absolute; top:calc(var(--studio-hud-clearance, 52px) + 4px); right:12px; left:auto; bottom:auto; transform:none; z-index:28; max-width:min(300px, calc(100% - 24px)); border:1px solid rgba(130,121,109,.35); border-radius:8px; background:rgba(22,19,16,.72); backdrop-filter:blur(8px); pointer-events:none; }
 .studio-hud-day-group { display:inline-flex; align-items:center; gap:3px; flex:none; }
+.studio-hud-day::after { content:''; position:absolute; inset:-8px -3px; } /* keeps a 44px tap area on the compact day chip */
 .studio-hud-dot { color:var(--rst-stone); opacity:.5; font-weight:700; line-height:1; user-select:none; flex:none; }
 .studio-live-light { width:5px; height:5px; border-radius:50%; background:var(--rst-live); box-shadow:0 0 8px var(--rst-live); flex:none; }
 .studio-play-actions { position:absolute; bottom:0; left:50%; transform:translateX(-50%); z-index:29; width:min(100%, 640px); display:flex; flex-direction:column; align-items:center; gap:6px; padding:4px 12px max(8px,env(safe-area-inset-bottom, 0px)); pointer-events:none; }
@@ -36,7 +37,7 @@
 .studio-panel-heading p { font-size:9px; letter-spacing:.2em; color:#b9a67f; }
 .studio-panel-body { flex:1; min-height:0; min-width:0; display:flex; flex-direction:column; position:relative; overflow:hidden; padding:8px; }
 .studio-panel-hint { flex:none; padding:6px 12px; text-align:center; font-size:10px; color:#a3998c; border-top:1px solid #ffffff0b; }
-.studio-hud { position:absolute; inset:0 0 auto; z-index:30; pointer-events:none; display:grid; grid-template-columns:auto minmax(180px,1fr) auto; align-items:center; gap:8px; padding:max(6px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 4px max(10px,env(safe-area-inset-left)); color:#e9e6e2; }
+.studio-hud { position:absolute; inset:0 0 auto; z-index:30; pointer-events:none; display:grid; grid-template-columns:auto minmax(180px,1fr) auto; align-items:center; gap:8px; padding:var(--rst-top-inset) max(10px,var(--rst-safe-right)) 4px max(10px,var(--rst-safe-left)); color:#e9e6e2; }
 .studio-hud-stats, .studio-hud-controls, .studio-hud-title { pointer-events:auto; background:rgba(22,19,16,.78); border:1px solid var(--rst-line-strong); border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,.3); min-height:34px; backdrop-filter:blur(12px); }
 .studio-hud-stats { display:flex; flex-wrap:wrap; align-items:center; gap:4px 6px; min-width:0; max-width:100%; padding:3px 10px; }
 .studio-hud-controls { display:flex; align-items:center; gap:2px; flex:none; padding:2px; }
@@ -78,7 +79,7 @@
   .studio-command-dock { width:100%; justify-content:space-between; gap:0; padding:4px; }
   .studio-command-dock .studio-dock-button { width:auto; flex:1; min-width:40px; }
   .studio-play-actions { padding-left:6px; padding-right:6px; width:100%; left:0; transform:none; }
-  .studio-play-room { --studio-hud-clearance: calc(68px + env(safe-area-inset-top)); }
+  .studio-play-room { --studio-hud-clearance: var(--rst-hud-clearance); }
   .studio-play-status { font-size:10px; gap:6px; top:calc(var(--studio-hud-clearance, 52px) + 4px); right:8px; max-width:min(240px, calc(100% - 16px)); }
   .studio-room-overlay-tr { top:calc(var(--studio-hud-clearance, 56px) + 32px); right:8px; }
   .studio-hud { gap:6px; }
@@ -217,7 +218,7 @@
   .studio-hud-stat { font-size:clamp(10px,1.4vw,12px); }
 }
 @media(max-width:700px) {
-  .studio-play { --studio-hud-clearance:calc(68px + env(safe-area-inset-top,0px)); }
+  .studio-play { --studio-hud-clearance:var(--rst-hud-clearance); }
   .studio-hud-stats { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:3px 6px; padding:4px 8px; }
   .studio-hud-stats > .studio-hud-stat:nth-of-type(2) { justify-self:end; }
   .studio-hud-day-group { flex-wrap:wrap; min-width:0; }
@@ -229,15 +230,15 @@
   .studio-hud .studio-hud-advance { width:30px; min-width:30px; height:30px; min-height:30px; padding:0; border-radius:8px; }
   .studio-hud-advance::after { content:''; position:absolute; inset:-7px; }
   .studio-hud-advance svg { width:14px; height:14px; }
-  .studio-hud .studio-hud-icon { min-width:40px; min-height:40px; }
+  .studio-hud .studio-hud-icon { min-width:var(--rst-touch-target); min-height:var(--rst-touch-target); }
   .studio-hud .studio-hud-stats, .studio-hud .studio-hud-controls { min-height:36px; }
   .studio-hud-stats .flame-pop { grid-column:1 / -1; grid-row:3; }
-  .studio-play-room { --studio-hud-clearance:calc(68px + env(safe-area-inset-top,0px)); }
+  .studio-play-room { --studio-hud-clearance:var(--rst-hud-clearance); }
   .studio-drawer-shell { --studio-drawer-top:80px; }
 }
 @media(max-width:380px) {
-  .studio-play { --studio-hud-clearance:calc(92px + env(safe-area-inset-top,0px)); }
-  .studio-play-room { --studio-hud-clearance:calc(92px + env(safe-area-inset-top,0px)); }
+  .studio-play { --studio-hud-clearance:var(--rst-hud-clearance); }
+  .studio-play-room { --studio-hud-clearance:var(--rst-hud-clearance); }
 }
 @media(max-width:540px) {
   /* Phones: the drawer is a full-bleed sheet, so the HUD steps aside instead of colliding with it. */
@@ -258,12 +259,12 @@
    Keep the Work/Overdrive dock visible: one-row compact HUD and shrink clearances. */
 @media (max-width:540px) {
   .studio-hud-title { display:none; }
-  .studio-play-room { --studio-hud-clearance: calc(68px + env(safe-area-inset-top)); }
+  .studio-play-room { --studio-hud-clearance: var(--rst-hud-clearance); }
 }
 @media (max-height:480px) and (orientation:landscape) {
   .studio-play { --studio-dock-clearance: calc(64px + env(safe-area-inset-bottom, 0px)); }
-  .studio-play-room { --studio-hud-clearance: calc(44px + env(safe-area-inset-top)); }
-  .studio-hud { padding-top:max(2px,env(safe-area-inset-top)); gap:4px; }
+  .studio-play-room { --studio-hud-clearance: var(--rst-hud-clearance); }
+  .studio-hud { gap:4px; }
   .studio-hud-title { display:none; }
   .studio-hud-stats, .studio-hud-controls { min-height:30px; }
   .studio-hud-stats { padding:2px 8px; gap:4px; }

@@ -48,6 +48,7 @@ for (const c of CITIES) {
   }
 }
 assert.equal(openingBrief('london', 'golden_age')?.headline, 'LONDON · 1980s');
+assert.equal(openingBrief('los-angeles', 'modern')?.headline, 'LOS ANGELES · 2020s', 'modern era reads 2020s, never 2024s (#326)');
 assert.equal(openingBrief('nowhere', 'modern'), null);
 
 // Source guards: no numbered stepper / Next-Back wizard copy; accessibility semantics retained.
