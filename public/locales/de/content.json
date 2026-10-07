@@ -128,5 +128,12 @@
   "chain.learn.dynamics": "Compression after the preamp tames peaks once the signal is healthy, so the recorder is not hit by sudden spikes and the vocal stays even.",
   "chain.learn.recorderInterface": "The recorder comes last: it prints whatever arrives. Leave a little headroom so a loud take never clips.",
   "gear.effects.none": "Starter kit: no quality or speed change, it just gets you recording.",
-  "stake.unlock.line": "{{label}} unlocks at producer level {{level}}"
+  "stake.unlock.line": "{{label}} unlocks at producer level {{level}}",
+  "story.brief.watching": "{{rival}} is watching",
+  "story.brief.voice": "{{producer}} — {{epithet}}. “{{catchphrase}}”",
+  "story.brief.stake": "Stake: {{label}}",
+  "story.stake.safe": "Prove-it session — finish clean; the rival is scouting, not swinging.",
+  "story.stake.ambitious": "Challenge cut — A-rank earns respect; a miss costs reputation.",
+  "story.stake.moonshot": "Last-word master — S-rank or the rival owns the story.",
+  "story.stake.unlockNote": "{{unlock}} — the story fixes it for this gig."
 }
