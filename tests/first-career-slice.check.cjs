@@ -25,12 +25,19 @@ async (page) => {
   await page.evaluate(() => localStorage.clear());
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.getByRole('button', { name: /New studio/ }).click();
-  await page.getByRole('button', { name: /Choose an era/ }).click();
-  await page.getByText('Modern Era', { exact: true }).click();
-  await page.getByRole('button', { name: /Create your producer/ }).click();
-  await page.getByRole('button', { name: /Choose a role/ }).click();
-  await page.getByText('The Bedroom Beatmaker').first().click();
-  await page.getByRole('button', { name: /Open the studio/ }).click();
+  // Current onboarding (#204): one "Quick start" button opens the studio with a valid random setup.
+  // Fall back to the older step-by-step wizard when that button is absent.
+  const quick = page.getByRole('button', { name: /Quick start/i });
+  if (await quick.count()) {
+    await quick.first().click();
+  } else {
+    await page.getByRole('button', { name: /Choose an era/ }).click();
+    await page.getByText('Modern Era', { exact: true }).click();
+    await page.getByRole('button', { name: /Create your producer/ }).click();
+    await page.getByRole('button', { name: /Choose a role/ }).click();
+    await page.getByText('The Bedroom Beatmaker').first().click();
+    await page.getByRole('button', { name: /Open the studio/ }).click();
+  }
   for (let i = 0; i < 12; i++) {
     const start = page.getByRole('button', { name: /Start Playing/ });
     if (await start.isVisible()) { await start.click(); break; }
