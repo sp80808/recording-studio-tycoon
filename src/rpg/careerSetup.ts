@@ -6,7 +6,7 @@
  *   person - producer name + look + origin
  * Every choice always holds a valid value, so Quick start can enter the studio with zero clicks.
  */
-import { AVAILABLE_ERAS } from '@/data/eras';
+import { AVAILABLE_ERAS, eraDecadeLabel } from '@/data/eras';
 import { PRODUCER_ORIGINS } from '@/narrative/characterOrigins';
 import type { ProducerBackgroundId } from '@/types/character';
 import { CITIES, DEFAULT_CITY_ID, currencyFor, formatMoney, getCityById, localName, type CityId } from '@/rpg/cities';
@@ -79,7 +79,7 @@ export const openingBrief = (cityId: string, eraId: string): OpeningBrief | null
   const era = AVAILABLE_ERAS.find((e) => e.id === eraId);
   if (!city || !era) return null;
   return {
-    headline: `${city.name.toUpperCase()} · ${era.startYear}s`,
+    headline: `${city.name.toUpperCase()} · ${eraDecadeLabel(era.startYear)}`,
     cityName: city.name,
     eraName: era.displayName,
     accent: city.accent,

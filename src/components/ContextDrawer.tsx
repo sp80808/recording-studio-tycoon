@@ -7,6 +7,7 @@ import {
   MotionButton,
 } from '@/components/motion/primitives';
 import { gameAudio } from '@/utils/audioSystem';
+import { useChromeSurface } from '@/hooks/useChromeSurface';
 
 /** Destination id for motion/title fallbacks — mirrors former drawer tabs. */
 export type ContextDrawerTab = 'artist' | 'room' | 'staff' | 'gear' | 'session' | 'career';
@@ -59,6 +60,8 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
   returnFocusRef,
 }) => {
   const { t } = useTranslation();
+  // Tell the notification rail what owns the screen: the session console keeps a free band, other drawers do not.
+  useChromeSurface(isOpen ? (width === 'session' ? 'session-panel' : 'drawer') : null);
   const drawerRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const prevFocusedElem = useRef<HTMLElement | null>(null);

@@ -1,10 +1,14 @@
 
 import React, { useEffect, useRef } from 'react';
 import { GameNotification } from '@/types/game';
+import { toast } from '@/hooks/use-toast';
+import { useAppDisplayMode } from '@/hooks/useAppDisplayMode';
 import './chip-fidelity.css';
 
 const DEFAULT_TOAST_MS = 9000;
 const MAX_VISIBLE_TOASTS = 3;
+/** Phone-width foreground cards last long enough to read a story line, but never linger over gameplay. */
+const COMPACT_TOAST_MS = 5000;
 
 interface NotificationSystemProps {
   notifications: GameNotification[];
@@ -16,10 +20,29 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
   removeNotification
 }) => {
   const timersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const forwardedRef = useRef(new Set<string>());
+  // On phones there is one notification rail (the Sonner host, which owns safe-lane placement,
+  // priority and deferral). Game notifications are forwarded into it, so two stacks can never overlap.
+  const { compact } = useAppDisplayMode();
+
+  useEffect(() => {
+    if (!compact) return;
+    for (const notification of notifications) {
+      if (forwardedRef.current.has(notification.id)) continue;
+      forwardedRef.current.add(notification.id);
+      toast({
+        title: notification.message,
+        variant: notification.type === 'error' ? 'destructive' : undefined,
+        duration: Math.min(notification.duration ?? COMPACT_TOAST_MS, COMPACT_TOAST_MS),
+      });
+      removeNotification(notification.id);
+    }
+  }, [compact, notifications, removeNotification]);
 
   // Schedule each notification once. Re-rendering after a burst must not reset
   // older timers and keep stale cards on screen indefinitely.
   useEffect(() => {
+    if (compact) return;
     const activeIds = new Set(notifications.map((notification) => notification.id));
     for (const [id, timer] of timersRef.current) {
       if (!activeIds.has(id)) {
@@ -40,7 +63,7 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
     return () => {
       // Timers remain owned by their notification ids across normal updates.
     };
-  }, [notifications, removeNotification]);
+  }, [compact, notifications, removeNotification]);
 
   useEffect(() => () => {
     for (const timer of timersRef.current.values()) clearTimeout(timer);
@@ -56,6 +79,8 @@ export const NotificationSystem: React.FC<NotificationSystemProps> = ({
       default: return 'rst-toast rst-toast-info';
     }
   };
+
+  if (compact) return null;
 
   return (
     <div

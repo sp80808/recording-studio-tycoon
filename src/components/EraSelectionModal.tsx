@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AVAILABLE_ERAS } from '@/data/eras';
+import { AVAILABLE_ERAS, eraDecadeLabel } from '@/data/eras';
 import { Era } from '@/types/game';
 import { formatNumber } from '@/i18n/formatLocale';
 
@@ -65,7 +65,7 @@ export const EraSelectionModal: React.FC<EraSelectionModalProps> = ({
                       {era.difficulty}
                     </Badge>
                   </div>
-                  <p className="text-stone-300 text-sm mb-2">{era.startYear}s</p>
+                  <p className="text-stone-300 text-sm mb-2">{eraDecadeLabel(era.startYear)}</p>
                   <p className="text-stone-400 text-sm mb-3">{era.description}</p>
                   <p className="text-yellow-400 text-xs italic mb-3">"{era.funnyDescription}"</p>
                   

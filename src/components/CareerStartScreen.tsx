@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Building2, Check, Globe2, Landmark, MapPin, Radio, Swords, Waves, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { AVAILABLE_ERAS } from '@/data/eras';
+import { AVAILABLE_ERAS, eraDecadeLabel } from '@/data/eras';
 import type { Era } from '@/types/game';
 import type { ProducerBackgroundId } from '@/types/character';
 import { PRODUCER_ORIGINS } from '@/narrative/characterOrigins';
@@ -158,13 +158,13 @@ function CareerStartScreenInner({ onBegin, onBack }: CareerStartScreenProps) {
 
   return (
     <main className={`career-start-page${surface === 'person' ? ' career-character-step' : ''}`} aria-label={t('career_aria')} data-surface={surface} data-gamepad-scope>
-      <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col px-4 pb-28 pt-6 sm:px-8">
+      <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col pb-28 pl-[max(1rem,var(--rst-safe-left))] pr-[max(1rem,var(--rst-safe-right))] pt-[var(--rst-top-inset)] sm:pl-[max(2rem,var(--rst-safe-left))] sm:pr-[max(2rem,var(--rst-safe-right))] sm:pt-[max(1.5rem,var(--rst-top-inset))]">
         <header className="flex items-center justify-between gap-3">
-          <button type="button" onClick={goBack} className="rst-btn rst-btn-ghost shrink-0 whitespace-nowrap !min-h-9 !px-3 !text-xs">
+          <button type="button" onClick={goBack} className="rst-btn rst-btn-ghost rst-top-action shrink-0 whitespace-nowrap !px-3 !text-xs">
             <ArrowLeft size={14} aria-hidden="true" />
             {surface === 'place' ? t('career_back') : t('career_where_when')}
           </button>
-          <button type="button" onClick={quickStart} data-testid="quick-start" className="rst-btn rst-btn-ghost shrink-0 whitespace-nowrap !min-h-9 !px-3 !text-xs">
+          <button type="button" onClick={quickStart} data-testid="quick-start" className="rst-btn rst-btn-ghost rst-top-action shrink-0 whitespace-nowrap !px-3 !text-xs">
             <Zap size={14} aria-hidden="true" />
             {t('career_quick_start')}
           </button>
@@ -208,7 +208,7 @@ function CareerStartScreenInner({ onBegin, onBack }: CareerStartScreenProps) {
                   <button key={e.id} type="button" role="radio" aria-checked={selected} tabIndex={selected ? 0 : -1}
                     onClick={() => { click(); setEraId(e.id); }}
                     className={`rst-option relative flex flex-col items-center gap-1 !p-2.5 text-center ${selected ? 'ring-2 ring-[var(--rst-brass-300)]/80' : ''}`}>
-                    <span className="rst-title text-lg tabular-nums sm:text-xl">{e.startYear}s</span>
+                    <span className="rst-title text-lg tabular-nums sm:text-xl">{eraDecadeLabel(e.startYear)}</span>
                     <span className="hidden text-[11px] text-stone-400 sm:block">{e.displayName}</span>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-stone-300">
                       {e.difficulty}

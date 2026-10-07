@@ -1,34 +1,39 @@
-import { useUiChromeStore, selectConsoleFocused } from '@/stores/uiChromeStore';
+import { useUiChromeStore, selectChromeState } from '@/stores/uiChromeStore';
 import * as React from "react"
 import { useTheme } from "next-themes"
 import { Toaster as Sonner } from "sonner"
 import { CheckCircle2, Info, AlertTriangle, XCircle, Loader2 } from "lucide-react"
+import { useAppDisplayMode } from "@/hooks/useAppDisplayMode"
+import { resolveNotificationPlacement, type NotificationLane } from "@/lib/notificationPlacement"
 
 type ToasterProps = React.ComponentProps<typeof Sonner>
 
+/** Phone cards sit in a centred rail clear of the notch/rounded-corner insets (tokens: styles/mobile-shell.css). */
+const RAIL_SIDE = "max(12px, var(--rst-safe-left))"
+const RAIL_SIDE_RIGHT = "max(12px, var(--rst-safe-right))"
+
+/**
+ * Single Sonner host. Placement comes from the shared notification policy (lib/notificationPlacement):
+ * phones get one card in a safe lane chosen from the current UI chrome state; wide screens keep the
+ * left-aligned stack (right-aligned cards sat on the drawer's ARM TAKE / Book Session buttons).
+ * Lane geometry is CSS (`.rst-toaster--<lane>` in styles/mobile-shell.css), not pixel values here.
+ */
 export const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme()
-  const consoleFocused = useUiChromeStore(selectConsoleFocused)
-  // On desktop the activity drawer and session console live on the right edge; right-aligned
-  // toasts sat on top of their primary buttons (ARM TAKE, Book Session). Keep toasts left there.
-  const [desktop, setDesktop] = React.useState(
-    () => typeof window !== "undefined" && window.matchMedia?.("(min-width: 768px)").matches
-  )
-  React.useEffect(() => {
-    const mq = window.matchMedia?.("(min-width: 768px)")
-    if (!mq) return
-    const onChange = () => setDesktop(mq.matches)
-    mq.addEventListener("change", onChange)
-    return () => mq.removeEventListener("change", onChange)
-  }, [])
+  const { compact, shortLandscape } = useAppDisplayMode()
+  const chromeState = useUiChromeStore(selectChromeState)
+  const placement = resolveNotificationPlacement(chromeState, compact, shortLandscape)
+  // 'hold' never renders (cards wait in the toast bridge); keep the last visible lane's geometry for exits.
+  const lane: NotificationLane = placement.lane === "hold" ? placement.criticalLane : placement.lane
 
   return (
     <Sonner
       theme={theme as ToasterProps["theme"]}
-      className="toaster group"
-      position={!desktop && consoleFocused ? "top-center" : desktop ? "bottom-left" : "bottom-right"}
-      offset={!desktop && consoleFocused ? 180 : undefined}
-      visibleToasts={2}
+      className={`toaster group rst-toaster rst-toaster--${lane}${shortLandscape ? " rst-toaster--landscape" : ""}`}
+      position={compact ? "top-center" : "bottom-left"}
+      offset={compact ? { top: "var(--rst-notify-top)", left: RAIL_SIDE, right: RAIL_SIDE_RIGHT } : undefined}
+      mobileOffset={{ top: "var(--rst-notify-top)", left: RAIL_SIDE, right: RAIL_SIDE_RIGHT, bottom: 16 }}
+      visibleToasts={placement.capacity}
       duration={3200}
       closeButton
       gap={10}

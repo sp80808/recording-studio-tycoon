@@ -1,0 +1,97 @@
+/**
+ * Mobile / PWA app-shell layout contract (#324, #325).
+ * One place for safe-area insets, the top comfort gutter, touch-target size and the notification
+ * rail lanes, so HUDs, drawers and feedback share the same geometry instead of one-off pixel values.
+ *
+ * Overrides for testing: set --rst-safe-top (etc.) on :root to simulate a notch / Dynamic Island.
+ */
+:root {
+  --rst-safe-top: env(safe-area-inset-top, 0px);
+  --rst-safe-right: env(safe-area-inset-right, 0px);
+  --rst-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --rst-safe-left: env(safe-area-inset-left, 0px);
+
+  /* Comfort gap between the system area (status bar / notch / Dynamic Island) and the first tappable control. */
+  --rst-mobile-top-gutter: 6px;
+  /* Minimum interactive target. Visible icons may be smaller; the hit area is not. */
+  --rst-touch-target: 44px;
+
+  /* First interactive top chrome starts here. */
+  --rst-top-inset: calc(var(--rst-safe-top) + var(--rst-mobile-top-gutter));
+  /* Bottom edge of the studio HUD row (stats + controls). */
+  --rst-hud-clearance: calc(var(--rst-top-inset) + 64px);
+  /* Height of the enquiry / studio-label chip row that hangs under the HUD. */
+  --rst-hud-chip-row: 52px;
+  /* Session console: header + REC bar sit above the free band. */
+  --rst-session-head: 112px;
+
+  /* Notification rail lanes (phones). Each is the top edge of the single foreground card. */
+  --rst-notify-top-idle: calc(var(--rst-hud-clearance) + var(--rst-hud-chip-row));
+  --rst-notify-top-session: calc(var(--rst-top-inset) + var(--rst-session-head));
+  --rst-notify-top: var(--rst-notify-top-idle);
+}
+
+/* Touch / installed-app / phone shells get a deliberate gap below the notch and Dynamic Island. */
+@media (max-width: 767px), (pointer: coarse), (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
+  :root { --rst-mobile-top-gutter: 12px; }
+}
+
+/* Very narrow phones: the HUD stacks one more row. */
+@media (max-width: 380px) {
+  :root { --rst-hud-clearance: calc(var(--rst-top-inset) + 88px); }
+}
+
+/* Short landscape phones: the notch is on the side, so keep the vertical gutter small. */
+@media (max-height: 480px) and (orientation: landscape) {
+  :root {
+    --rst-mobile-top-gutter: 6px;
+    --rst-hud-clearance: calc(var(--rst-top-inset) + 38px);
+  }
+}
+
+/* ---- Top-row touch comfort -------------------------------------------------------------- */
+.rst-btn.rst-top-action,
+.rst-top-action {
+  min-height: var(--rst-touch-target);
+  min-width: var(--rst-touch-target);
+}
+
+/* Full-bleed drawers/sheets begin below the system area, not under it. */
+@media (max-width: 540px), (max-height: 500px) {
+  .studio-drawer-shell .studio-drawer-head {
+    padding-top: max(var(--rst-top-inset), 10px) !important;
+    padding-left: max(14px, var(--rst-safe-left)) !important;
+    padding-right: max(14px, var(--rst-safe-right)) !important;
+  }
+}
+
+/* ---- Notification rail (Sonner host; see lib/notificationPlacement.ts) ------------------------ */
+.rst-toaster--top { --rst-notify-top: var(--rst-notify-top-idle); }
+.rst-toaster--session,
+.rst-toaster--hold { --rst-notify-top: var(--rst-notify-top-session); }
+
+/* The host spans the lane width; only the card itself takes pointer events. */
+.rst-toaster { pointer-events: none; }
+.rst-toaster [data-sonner-toast] { pointer-events: auto; }
+
+@media (max-width: 767px), (max-height: 500px) and (pointer: coarse) {
+  /* Compact foreground card: title first, short description, bounded height. */
+  .rst-toaster .rst-toast {
+    max-height: 76px;
+    overflow: hidden;
+    padding: 8px 12px;
+  }
+  .rst-toaster .rst-toast [data-title] { line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .rst-toaster .rst-toast [data-description] { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+}
+
+/* Phone on its side: the room is a small centred island, so the single card hugs the right edge under the HUD. */
+@media (max-height: 500px) and (orientation: landscape) and (pointer: coarse) {
+  .rst-toaster.rst-toaster--landscape[data-sonner-toaster] {
+    left: auto !important;
+    right: max(12px, var(--rst-safe-right)) !important;
+    transform: none !important;
+    width: min(290px, 34vw) !important;
+  }
+  .rst-toaster.rst-toaster--landscape [data-sonner-toast] { width: 100% !important; left: 0 !important; right: 0 !important; }
+}

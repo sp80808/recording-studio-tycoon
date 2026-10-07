@@ -4,6 +4,8 @@ import { currencySymbol, getCityById, toLocalAmount } from '@/rpg/cities';
 import { AnimatedCounter } from './AnimatedCounter';
 import { LocateFixed, Maximize, Minimize, Settings, CalendarDays, Coins, Star, SkipForward, Pause } from 'lucide-react';
 import { useFullscreen } from '@/hooks/useFullscreen';
+import { useAppDisplayMode } from '@/hooks/useAppDisplayMode';
+import { shouldShowFullscreenControl } from '@/lib/appDisplayMode';
 import { EraProgressModal } from './modals/EraProgressModal';
 import { useTranslation } from 'react-i18next';
 import { getStudioSignage } from './WebGLCanvas';
@@ -26,6 +28,7 @@ interface GameHeaderProps {
 export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSettings, onPause, onCenterCamera, onAdvanceDay, triggerEraTransition, className = '' }) => {
   const [showEraProgress, setShowEraProgress] = useState(false);
   const { isFullscreen, toggleFullscreen } = useFullscreen('root');
+  const showFullscreen = shouldShowFullscreenControl(useAppDisplayMode());
   const { t } = useTranslation();
   const studioClock = useStudioClock();
   const player = gameState.playerData;
@@ -93,15 +96,18 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ gameState, onOpenSetting
             <PressRipple><LocateFixed size={16} /></PressRipple>
           </button>
         )}
+        {showFullscreen && (
         <button
           type="button"
           className="studio-hud-icon"
+          data-testid="hud-fullscreen"
           onClick={toggleFullscreen}
           title={isFullscreen ? t('exit_fullscreen_aria_label') : t('enter_fullscreen_aria_label')}
           aria-label={isFullscreen ? t('exit_fullscreen_aria_label') : t('enter_fullscreen_aria_label')}
         >
           <PressRipple>{isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}</PressRipple>
         </button>
+        )}
         {onPause && (
           <button
             type="button"
