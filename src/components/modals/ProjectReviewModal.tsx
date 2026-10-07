@@ -24,6 +24,9 @@ import { gradeQuality, type RankResult } from '@/rpg/rankChase';
 import { RankRevealOverlay } from '@/components/RankRevealOverlay';
 import { MotionReward, MotionButton, MotionNumber } from '@/components/motion/primitives';
 
+/** Longest the animated reveal may run before it fast-forwards itself (a normal reveal takes ~8s). */
+export const REVEAL_WATCHDOG_MS = 15000;
+
 interface AnimatedNumberProps {
   targetValue: number;
   duration?: number;
@@ -236,6 +239,15 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [isOpen, showContinueButton, skipReveal]);
+
+  // Watchdog (#353): the reveal is a chain of timers. On a starved main thread (software GL,
+  // overloaded box) or if any link never fires, "Calculating..." would last forever and the
+  // dialog refuses to close. After REVEAL_WATCHDOG_MS the final numbers are shown regardless.
+  useEffect(() => {
+    if (!isOpen || !report || showContinueButton) return;
+    const id = window.setTimeout(skipReveal, REVEAL_WATCHDOG_MS);
+    return () => window.clearTimeout(id);
+  }, [isOpen, report, showContinueButton, skipReveal]);
 
   useEffect(() => {
     if (isOpen && report) {
