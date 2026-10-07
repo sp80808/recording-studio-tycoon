@@ -23,7 +23,8 @@ ok(sanitizeProperties('enquiry_accepted', { service: 'Maya Ross' }).service === 
 ok(sanitizeProperties('enquiry_accepted', { service: 'x'.repeat(80) }).service === undefined, 'long strings are dropped');
 ok(sanitizeProperties('session_settled', { quality: Number.NaN }).quality === undefined, 'non-finite numbers are dropped');
 ok(sanitizeProperties('staff_hired', { role: 'Engineer', extra: 1 }).extra === undefined, 'each event has its own allowlist');
-ok(Object.keys(ALLOWED_PROPERTIES).length === 22, 'all vocabulary events are present in allowlist');
+ok(Object.keys(ALLOWED_PROPERTIES).length === 23, 'all vocabulary events are present in allowlist');
+ok(Object.keys(sanitizeProperties('attention_cue', { reason: 'issue', outcome: 'shown', x: 120, y: 40 })).sort().join() === 'outcome,reason', 'attention cues carry reason + outcome only, never pointer positions');
 ok(sanitizeProperties('gear_bought', { source: 'retail', priceBand: 'high', cheat: 99 }).cheat === undefined, 'gear_bought drops unlisted keys');
 ok(sanitizeProperties('repair_completed', { kind: 'service', condition: 85.4 }).condition === 85.4, 'repair_completed preserves valid primitives');
 ok(Object.values(ALLOWED_PROPERTIES).every((keys) => keys.every((k) => !/name|email|text|path|ip|id$/i.test(k))), 'no allowlisted key looks like identity or free text');

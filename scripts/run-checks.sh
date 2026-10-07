@@ -28,7 +28,7 @@ echo "=== multi-project session view ==="
 node "${CHECK_OUTPUT_DIR}/rst-multi-project-session-view.cjs"
 
 echo "=== story presentation and living staff ==="
-for check in story-presentation staff-staging; do
+for check in story-presentation staff-staging world-attention; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-$check.cjs" --alias:@=./src >/dev/null
   node "${CHECK_OUTPUT_DIR}/rst-$check.cjs"
 done
