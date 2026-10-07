@@ -181,6 +181,10 @@ export const ModularSpriteRenderer: React.FC<ModularSpriteRendererProps> = ({
             </motion.g>
 
             {/* Layer 5: Neck & Head */}
+            {/* Afro volume sits behind the head so the face stays visible; the hairline is drawn in Layer 6. */}
+            {hair.shape === 'afro' && (
+              <circle cx="16" cy="6.5" r="8" fill={hair.hairHex} />
+            )}
             <rect x="14" y="15" width="4" height="3" fill={body.shadowHex} />
             <rect x="11" y="8" width="10" height="9" fill={body.skinHex} />
 
@@ -273,7 +277,7 @@ export const ModularSpriteRenderer: React.FC<ModularSpriteRendererProps> = ({
 
             {/* Layer 6: Hair Styling */}
             {hair.shape === 'afro' && (
-              <circle cx="16" cy="10" r="7" fill={hair.hairHex} />
+              <rect x="11" y="7" width="10" height="2" fill={hair.hairHex} />
             )}
             {hair.shape === 'pompadour' && (
               <path
