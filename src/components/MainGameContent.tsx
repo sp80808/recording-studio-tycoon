@@ -183,8 +183,22 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
   }, [gameState.activeProject, gameState.currentDay, useWorldConsole, panel]);
   const bookProject = (project: Project) => {
     startProject(project);
-    openPanel('session');
+    // Post-book handoff (#357): do not gate on stale activeProject (still null this tick).
+    if (useWorldConsole) {
+      setConsoleOpen(true);
+      setPanel(null);
+    } else {
+      setPanel('session');
+    }
   };
+  const handleBookingsBooked = useCallback(() => {
+    if (useWorldConsole) {
+      setConsoleOpen(true);
+      setPanel(null);
+    } else {
+      setPanel('session');
+    }
+  }, [useWorldConsole]);
   const handleOpenDashboardTab = useCallback((tab: typeof dashboardTab) => {
     setDashboardTab(tab);
     openPanel('studio');
@@ -552,6 +566,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
               setGameState={setGameState}
               startProject={bookProject}
               onRefreshProjects={refreshProjects}
+              onBooked={handleBookingsBooked}
             />
           )}
           {panel === 'session' && (
