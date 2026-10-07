@@ -98,6 +98,12 @@ export interface RoomWindowSpec {
   to: number;
 }
 
+/** Half-width of the right-wall ON AIR lightbox, in tiles. */
+export const ROOM_ON_AIR_HALF = 0.6;
+
+/** Door in the left wall, centred on doorSpot.y: half its width in tiles and its height in px. */
+export const ROOM_DOOR = { half: 0.55, height: 82 } as const;
+
 /** Glass extent above the floor in px, shared by the scene and the layout checks. */
 export const ROOM_WINDOW_LIFT = { bottom: 34, top: 96 } as const;
 
@@ -137,14 +143,15 @@ const VOCAL_SUITE: RoomLayoutProfile = {
   ],
   walls: [
     { side: 'right', from: 0.4, to: 3.1, kind: 'foam', lift0: 30, lift1: 112 },
-    { side: 'left', from: 0.4, to: 5.6, kind: 'foam', lift0: 30, lift1: 112 },
+    { side: 'left', from: 0.4, to: 2.75, kind: 'foam', lift0: 30, lift1: 112 },
+    { side: 'left', from: 4.05, to: 5.6, kind: 'foam', lift0: 30, lift1: 112 },
   ],
   hotspots: [
     { id: 'liveRoom', propId: 'vocalMic', label: 'Vocal booth' },
     { id: 'console', propId: 'cueDesk', label: 'Cue desk' },
   ],
   staffSpots: [{ x: 4.5, y: 2.1 }, { x: 1.7, y: 3.4 }],
-  onAirX: 3.35,
+  onAirX: 2.9,
   window: { side: 'right', from: 3.8, to: 5.5 },
   artistSpot: { x: 3.0, y: 3.8 },
   doorSpot: { x: 0.5, y: 3.4 },
@@ -166,12 +173,12 @@ const LIVE_ROOM: RoomLayoutProfile = {
     { id: 'boomA', kind: 'micBoom', x: 3.1, y: 5.3 },
     { id: 'boomB', kind: 'micBoom', x: 5.9, y: 5.2 },
     { id: 'bench', kind: 'sofa', x: 1.6, y: 6.8 },
-    { id: 'trapCorner', kind: 'bassTrap', x: 0.7, y: 4.4 },
+    { id: 'trapCorner', kind: 'bassTrap', x: 0.5, y: 0.5 },
   ],
   walls: [
     { side: 'right', from: 0.4, to: 5.2, kind: 'brick', lift0: 0, lift1: 120 },
     { side: 'right', from: 5.2, to: 7.8, kind: 'foam', lift0: 24, lift1: 104 },
-    { side: 'left', from: 0.4, to: 3.4, kind: 'diffuser', lift0: 24, lift1: 108 },
+    { side: 'left', from: 0.4, to: 2.55, kind: 'diffuser', lift0: 24, lift1: 108 },
     { side: 'left', from: 6.6, to: 7.6, kind: 'foam', lift0: 24, lift1: 108 },
   ],
   hotspots: [
@@ -183,7 +190,7 @@ const LIVE_ROOM: RoomLayoutProfile = {
   onAirX: 3.4,
   window: { side: 'left', from: 3.9, to: 6.4 },
   artistSpot: { x: 4.4, y: 4.9 },
-  doorSpot: { x: 0.5, y: 5.6 },
+  doorSpot: { x: 0.5, y: 3.2 },
   camera: { focus: { x: 4.4, y: 4.0 }, zoom: 1.0 },
 };
 
@@ -206,7 +213,8 @@ const MIX_SUITE: RoomLayoutProfile = {
   ],
   walls: [
     { side: 'right', from: 0.4, to: 3.9, kind: 'diffuser', lift0: 26, lift1: 112 },
-    { side: 'left', from: 0.4, to: 5.6, kind: 'foam', lift0: 26, lift1: 112 },
+    { side: 'left', from: 0.4, to: 2.35, kind: 'foam', lift0: 26, lift1: 112 },
+    { side: 'left', from: 3.65, to: 5.6, kind: 'foam', lift0: 26, lift1: 112 },
   ],
   hotspots: [
     { id: 'console', propId: 'mixConsole', label: 'Mix console' },
@@ -284,7 +292,20 @@ export const validateRoomLayout = (profile: RoomLayoutProfile): string[] => {
     for (const w of profile.walls) {
       if (w.side === win.side && w.from < win.to && w.to > win.from) problems.push(`window overlaps ${w.kind} wall treatment`);
     }
-    if (win.side === 'right' && profile.onAirX + 0.3 > win.from && profile.onAirX - 0.3 < win.to) problems.push('window overlaps the on-air lamp');
+    if (win.side === 'right' && profile.onAirX + ROOM_ON_AIR_HALF > win.from && profile.onAirX - ROOM_ON_AIR_HALF < win.to) problems.push('window overlaps the on-air lamp');
+  }
+  {
+    // The door is cut into the left wall where the artist walks in: keep it on the wall, clear of
+    // the window and of wall treatments, and with nothing standing in front of it.
+    const d0 = profile.doorSpot.y - ROOM_DOOR.half;
+    const d1 = profile.doorSpot.y + ROOM_DOOR.half;
+    if (d0 < 0.15 || d1 > depth - 0.15) problems.push('door runs off the left wall');
+    if (profile.window.side === 'left' && d0 < profile.window.to && d1 > profile.window.from) problems.push('door overlaps the window');
+    for (const w of profile.walls) if (w.side === 'left' && d0 < w.to && d1 > w.from) problems.push(`door overlaps ${w.kind} wall treatment`);
+    for (const p of solids) {
+      const r = propRect(p);
+      if (r.x0 < 0.9 && r.y0 < d1 && r.y1 > d0) problems.push(`${p.id} blocks the door`);
+    }
   }
   if (profile.camera.zoom < 0.8 || profile.camera.zoom > 1.6) problems.push('camera zoom out of range');
   if (profile.camera.focus.x < 0 || profile.camera.focus.y < 0 || profile.camera.focus.x > width || profile.camera.focus.y > depth) problems.push('camera focus outside the footprint');
