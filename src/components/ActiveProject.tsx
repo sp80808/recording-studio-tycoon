@@ -988,7 +988,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
             {takeState !== 'tracking' && <OutsideHelpCard compact gameState={gameState} setGameState={setGameState} />}
 
-            <div className="flex-1 min-h-0 min-w-0 flex flex-col justify-center overflow-hidden" data-testid="mobile-session-workspace">
+            <div className="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden" data-testid="mobile-session-workspace">
               {takeState === 'tracking' ? (
                 <div className="flex-1 min-h-0 flex flex-col justify-between overflow-hidden gap-1.5" data-testid="mobile-tracking-workspace">
                   <PocketMeter
@@ -1271,7 +1271,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                             {idx === 2 && <GamepadGlyph button="rb" controllerType={gamepad.controllerType} size="xs" />}
                           </span>
                         )}
-                        <span className="text-xs font-semibold text-stone-200 truncate">
+                        <span className="text-xs font-semibold leading-tight text-stone-200 break-words">
                           {labelObj.label}
                         </span>
                       </div>
@@ -1314,8 +1314,8 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                       </div>
                     )}
 
-                    <div className="flex justify-between items-center text-[10px] text-stone-400 mt-1">
-                      <span>{t('active_target_range', { min: Math.max(0, targetVal - 10), max: Math.min(100, targetVal + 10) })}</span>
+                    {/* No target range on screen: finding the sweet spot is the game. */}
+                    <div className="flex justify-end items-center text-[10px] text-stone-400 mt-1">
                       <span className={isOptimal ? 'text-emerald-400 font-semibold flex items-center gap-0.5' : 'text-stone-500'}>
                         {isOptimal ? <><StatIcon name="check" /> {t('active_optimal')}</> : t('active_adjust')}
                       </span>
