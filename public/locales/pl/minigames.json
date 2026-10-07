@@ -178,6 +178,7 @@
   "mg.FaderRideGame.close": "Zamknij",
   "mg.FaderRideGame.fader": "Fader",
   "mg.FaderRideGame.finalize": "Zakończ i pokaż wynik",
+  "mg.FaderRideGame.finish_early": "Finish early (scores the full run)",
   "mg.FaderRideGame.green_zone": "Zielona strefa 40-60",
   "mg.FaderRideGame.in_zone": "(W STREFIE)",
   "mg.FaderRideGame.in_zone_ticks": "Takty w strefie: {{in}}/{{total}}",

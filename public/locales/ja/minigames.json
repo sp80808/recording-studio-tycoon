@@ -178,6 +178,7 @@
   "mg.FaderRideGame.close": "閉じる",
   "mg.FaderRideGame.fader": "フェーダー",
   "mg.FaderRideGame.finalize": "確定してスコアを見る",
+  "mg.FaderRideGame.finish_early": "Finish early (scores the full run)",
   "mg.FaderRideGame.green_zone": "グリーンゾーン 40-60",
   "mg.FaderRideGame.in_zone": "(ゾーン内)",
   "mg.FaderRideGame.in_zone_ticks": "ゾーン内ティック：{{in}}/{{total}}",
