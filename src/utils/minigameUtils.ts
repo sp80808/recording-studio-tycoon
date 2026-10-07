@@ -432,7 +432,11 @@ export const firstSessionGentleTrigger = (
   rng: RandomSource,
 ): MinigameTrigger | null => {
   if (workCount < FIRST_SESSION_INTERVENTION_TAKE || gameState.playerData.level >= 4) return null;
+  if (!project?.stages?.[project.currentStageIndex]) return null;
   const triggers = getTriggeredMinigames(project, gameState, focusAllocation).filter(t => t.priority >= 5);
-  if (triggers.length === 0) return null;
+  // Generic, stage-agnostic prompt when no genre/stage-specific candidate fits.
+  if (triggers.length === 0) {
+    return { minigameType: 'rhythm', triggerReason: 'Quick warm-up - tap along to lock in the groove!', priority: 5 };
+  }
   return triggers[Math.floor(rng() * triggers.length)];
 };
