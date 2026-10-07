@@ -362,6 +362,7 @@
   "customise_slot_shirt": "Kurtka / koszula",
   "customise_slot_pants": "Spodnie",
   "customise_slot_shoes": "Buty",
+  "home_n_waiting": "{{count}} czeka",
   "idle_console_status": "Stan studia",
   "idle_console_energy_one": "{{count}} energii",
   "idle_console_energy_other": "{{count}} energii",

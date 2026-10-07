@@ -362,6 +362,7 @@
   "customise_slot_shirt": "Jacket / shirt",
   "customise_slot_pants": "Trousers",
   "customise_slot_shoes": "Shoes",
+  "home_n_waiting": "{{count}} ждёт",
   "idle_console_status": "Studio status",
   "idle_console_energy_one": "{{count}} energy left",
   "idle_console_energy_other": "{{count}} energy left",

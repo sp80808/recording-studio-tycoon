@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, ChevronRight, CircleDot, Headphones, Phone, Users } from 'lucide-react';
+import { AlertTriangle, ChevronRight, CircleDot, Headphones, Users } from 'lucide-react';
 import type { GameState } from '@/types/game';
 import { getBookedStudioRoom, inferProjectStageKind } from '@/utils/studioRoomUtils';
 
@@ -26,27 +26,8 @@ export const SessionRail: React.FC<SessionRailProps> = ({ gameState, onOpenSessi
   const { t } = useTranslation();
   const project = gameState.activeProject;
 
-  if (!project) {
-    const waiting = gameState.availableProjects?.length ?? 0;
-    return (
-      <div className="studio-play-status" role="status" aria-live="polite" data-testid="session-rail-empty">
-        <span className="studio-live-light" aria-hidden="true" style={{ background: '#7bd389', boxShadow: '0 0 8px #7bd389' }} />
-        <span className="min-w-0 truncate">
-          {waiting > 0 ? t('home_enquiries_waiting', { count: waiting }) : t('home_room_quiet')}
-        </span>
-        <button
-          type="button"
-          onClick={onOpenBookings}
-          className="session-rail-cta"
-          aria-label={waiting > 0 ? t('home_open_bookings_answer') : t('home_open_bookings')}
-        >
-          <Phone size={12} aria-hidden="true" />
-          <span>{waiting > 0 ? t('home_answer') : t('home_bookings')}</span>
-          <ChevronRight size={12} aria-hidden="true" />
-        </button>
-      </div>
-    );
-  }
+  // Idle state: the bottom "Book a session" button is the single route to enquiries (it carries the waiting count).
+  if (!project) return null;
 
   const room = getBookedStudioRoom(gameState, project)?.name ?? t('home_main_room');
   const stages = project.stages ?? [];
