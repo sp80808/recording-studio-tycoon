@@ -299,3 +299,6 @@ In-house proprietary original. The phone handset, cradle prongs, dial and bell m
 
 ## 32. Facility blueprint floor plan (#248)
 In-house proprietary original. Inline SVG in `FacilityMap.tsx` (walls, door swings, furniture symbols, ON AIR badge, location pin, padlock, drafting grid and hatch patterns) with geometry from `facilityPlan.ts`. No external source or fonts.
+
+## 33. Extra-room doors and ON AIR lightboxes (#248)
+In-house proprietary original, Pixi Graphics plus one Pixi Text label (`paintRoomDoor` and the ON AIR sign in `roomLayoutScene.ts`): trimmed door frame, two-panel slab, brass handle and kick plate, room plate, threshold light, and a lettered lightbox with an additive wall halo. No external source or fonts beyond the system sans.
