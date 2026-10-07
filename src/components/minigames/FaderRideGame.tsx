@@ -37,11 +37,10 @@ export interface MinigameComponentProps {
   equipmentContext?: { name: string };
 }
 
-const ZONE_LO = 40;
-const ZONE_HI = 60;
-const CLIP_LEVEL = 95;
-const TICK_MS = 150;
-const GAME_SECONDS = 30;
+import {
+  ZONE_LO, ZONE_HI, CLIP_LEVEL, TICK_MS, PASS_SCORE, trackLevelAt, outputLevel, inZone as isInZone,
+  isRunComplete, runProgress, secondsLeft, scoreRide,
+} from '@/minigames/faderRide';
 
 // Web Audio Dynamic Lead & Vocal Synth
 class FaderAudioEngine {
@@ -151,7 +150,6 @@ class FaderAudioEngine {
 }
 
 export const FaderRideGame: React.FC<MinigameComponentProps> = ({ minigameId, onComplete, onClose }) => {
-  const [timeLeft, setTimeLeft] = useState(GAME_SECONDS);
   const [gameOver, setGameOver] = useState(false);
   const [trackLevel, setTrackLevel] = useState(50);
   const [fader, setFader] = useState(50);
@@ -180,16 +178,6 @@ export const FaderRideGame: React.FC<MinigameComponentProps> = ({ minigameId, on
     engineRef.current.setFaderLevel(fader);
   }, [fader]);
 
-  // Game timer
-  useEffect(() => {
-    if (timeLeft <= 0 || gameOver) {
-      setGameOver(true);
-      return;
-    }
-    const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [timeLeft, gameOver]);
-
   // Track level random walk + natural musical dynamic swells
   useEffect(() => {
     if (gameOver) return;
@@ -198,22 +186,19 @@ export const FaderRideGame: React.FC<MinigameComponentProps> = ({ minigameId, on
     const id = setInterval(() => {
       stepCount++;
       // Natural vocal swell: combination of sine wave chorus swells + randomized dynamics
-      const swell = Math.sin(stepCount * 0.12) * 18;
-      const walk = (Math.random() * 12 - 6);
-      const next = Math.min(95, Math.max(15, 50 + swell + walk));
+      const next = trackLevelAt(stepCount, Math.random() * 12 - 6);
 
       trackRef.current = next;
       setTrackLevel(next);
 
       // Output calculation: fader balances the track level
-      const out = next + (faderRef.current - 50) * 0.75;
-      const clampedOut = Math.max(0, Math.min(100, out));
+      const clampedOut = outputLevel(next, faderRef.current);
       setOutput(clampedOut);
 
       setTotalTicks(t => t + 1);
       setMaxOutput(m => Math.max(m, clampedOut));
 
-      if (clampedOut >= ZONE_LO && clampedOut <= ZONE_HI) {
+      if (isInZone(clampedOut)) {
         setInZoneTicks(c => c + 1);
       }
     }, TICK_MS);
@@ -230,7 +215,7 @@ export const FaderRideGame: React.FC<MinigameComponentProps> = ({ minigameId, on
   };
 
   // Vertical Touch / Mouse dragging on the console fader track
-  const handleFaderPointer = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleFaderPointer = (e: React.PointerEvent<HTMLDivElement>) => {
     const track = faderTrackRef.current;
     if (!track || gameOver) return;
     const rect = track.getBoundingClientRect();
@@ -241,20 +226,29 @@ export const FaderRideGame: React.FC<MinigameComponentProps> = ({ minigameId, on
     handleFaderChange(val);
   };
 
-  const baseScore = totalTicks > 0 ? Math.round((inZoneTicks / totalTicks) * 1000) : 0;
+  const timeLeft = secondsLeft(totalTicks);
+  const progress = runProgress(totalTicks) * 100;
+  const score = scoreRide(inZoneTicks, totalTicks, maxOutput);
   const noClip = maxOutput <= CLIP_LEVEL;
-  const score = Math.min(1000, Math.round(baseScore * (noClip ? 1.1 : 1)));
-  const inZone = output >= ZONE_LO && output <= ZONE_HI;
+  const inZone = isInZone(output);
   const streak = Math.floor(inZoneTicks / 6);
+  const finishedRef = useRef(false);
 
-  const handleFinalize = () => {
+  const finalize = useCallback(() => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
     setGameOver(true);
-    if (score >= 600) {
+    if (score >= PASS_SCORE) {
       void gameAudio.playSuccess();
       triggerProjectCompleteJuice();
     }
-    onComplete(score, score >= 600);
-  };
+    onComplete(score, score >= PASS_SCORE);
+  }, [score, onComplete]);
+
+  // The run scores itself when the clock hits zero, so no one has to ride and click at once.
+  useEffect(() => {
+    if (isRunComplete(totalTicks)) finalize();
+  }, [totalTicks, finalize]);
 
   const toggleSound = () => {
     if (isPlaying) {
@@ -299,6 +293,15 @@ export const FaderRideGame: React.FC<MinigameComponentProps> = ({ minigameId, on
                 {inZone ? tc('mg.FaderRideGame.in_zone', '(IN ZONE)') : tc('mg.FaderRideGame.out', '(OUT)')}
               </Badge>
             </div>
+          </div>
+
+          {/* Run countdown: the take scores itself at zero */}
+          <div className="space-y-1" data-testid="fader-run-progress">
+            <div className="flex justify-between text-xs font-mono text-stone-300">
+              <span>{gameOver ? 'Take printed' : 'Auto-scores when the tape stops'}</span>
+              <span className="text-emerald-300 font-bold">{timeLeft}s</span>
+            </div>
+            <Progress value={progress} className="h-2 bg-stone-800" aria-label="Run progress" />
           </div>
 
           {/* Analog Console Channel Strip & Precision Meter Interface */}
@@ -398,15 +401,17 @@ export const FaderRideGame: React.FC<MinigameComponentProps> = ({ minigameId, on
               <div
                 ref={faderTrackRef}
                 className="relative w-14 h-52 bg-gradient-to-b from-stone-950 via-stone-900 to-stone-950 rounded-lg border-2 border-stone-700 flex justify-center cursor-pointer select-none"
-                onMouseDown={(e) => {
+                style={{ touchAction: 'none' }}
+                onPointerDown={(e) => {
+                  e.currentTarget.setPointerCapture?.(e.pointerId);
                   setIsDraggingFader(true);
                   handleFaderPointer(e);
                 }}
-                onMouseMove={(e) => {
+                onPointerMove={(e) => {
                   if (isDraggingFader) handleFaderPointer(e);
                 }}
-                onMouseUp={() => setIsDraggingFader(false)}
-                onMouseLeave={() => setIsDraggingFader(false)}
+                onPointerUp={() => setIsDraggingFader(false)}
+                onPointerCancel={() => setIsDraggingFader(false)}
               >
                 {/* Metal Guide Slot */}
                 <div className="w-1.5 h-full bg-black rounded-full border-x border-stone-700" />
@@ -471,8 +476,8 @@ export const FaderRideGame: React.FC<MinigameComponentProps> = ({ minigameId, on
         <KenneyButton variant="green" onClick={onClose}>
           {tc('mg.FaderRideGame.close', 'Close')}
         </KenneyButton>
-        <KenneyButton variant="green" onClick={handleFinalize}>
-          {tc('mg.FaderRideGame.finalize', 'Finalize & Get Score')}
+        <KenneyButton variant="green" onClick={finalize} disabled={gameOver || totalTicks === 0}>
+          {tc('mg.FaderRideGame.finalize', 'Finish early (scores the full run)')}
         </KenneyButton>
       </DialogFooter>
     </Card>
