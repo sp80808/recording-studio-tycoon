@@ -2,9 +2,10 @@ import React, { useEffect, useRef, useCallback } from 'react';
 import { MotionPanel, MotionReveal, MotionButton, TextScramble, motionTokens } from '@/components/motion/primitives';
 import { useMotionCapabilities } from '@/lib/motion/capabilities';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
-import { getConsoleProfile, getStudioTierName } from '@/components/WebGLCanvas';
+import { getConsoleProfile } from '@/components/WebGLCanvas';
 import { useGamepad } from '@/hooks/useGamepad';
 import { GamepadGlyph } from '@/components/ui/GamepadGlyph';
+import { tc } from '@/i18n/content';
 import { Layers, Sliders, Cpu, Sparkles, CheckCircle2 } from 'lucide-react';
 
 export interface TierUpgradeAnimationProps {
@@ -13,6 +14,8 @@ export interface TierUpgradeAnimationProps {
   newTier: number;
   onComplete: () => void;
   focusMode?: boolean;
+  /** The studio's premises name (Borrowed Room, Project Studio...): the one canonical studio name (#366). */
+  premisesName?: string;
 }
 
 export const TierUpgradeAnimation: React.FC<TierUpgradeAnimationProps> = ({
@@ -21,6 +24,7 @@ export const TierUpgradeAnimation: React.FC<TierUpgradeAnimationProps> = ({
   newTier,
   onComplete,
   focusMode = false,
+  premisesName,
 }) => {
   const capabilities = useMotionCapabilities({ focusMode });
   const completedRef = useRef(false);
@@ -99,20 +103,20 @@ export const TierUpgradeAnimation: React.FC<TierUpgradeAnimationProps> = ({
             </span>
             <div>
               <span className="text-[11px] font-mono tracking-widest text-amber-400 uppercase font-bold">
-                Progression Milestone · Tier Upgraded
+                {tc('tier.upgrade.kicker', 'Progression Milestone · Console Upgraded')}
               </span>
               <h2 className="text-2xl font-black text-white tracking-wide flex items-center gap-2">
-                <span>TIER {oldTier}</span>
+                <span>CONSOLE {oldTier}</span>
                 <span className="text-amber-400">→</span>
                 <span className="text-amber-300">
-                  <TextScramble text={`TIER ${newTier} : ${newDetails.name}`} speed={capabilities.reducedMotion ? 0 : 25} />
+                  <TextScramble text={`CONSOLE ${newTier} : ${newDetails.name}`} speed={capabilities.reducedMotion ? 0 : 25} />
                 </span>
               </h2>
             </div>
           </div>
           <div className="text-right">
             <span className="text-[10px] font-mono tracking-wider text-stone-400 uppercase block">Console Spec</span>
-            <span className="text-xs font-mono font-bold text-amber-300">L{newTier} PRO FACILITY</span>
+            <span className="text-xs font-mono font-bold text-amber-300">L{newTier} DESK</span>
           </div>
         </div>
 
@@ -121,10 +125,10 @@ export const TierUpgradeAnimation: React.FC<TierUpgradeAnimationProps> = ({
           {/* Old Console */}
           <div className="p-3.5 bg-stone-900/60 rounded-lg border border-stone-800">
             <span className="text-[10px] font-mono text-stone-400 block mb-1 uppercase tracking-wider">
-              Previous Desk (Tier {oldTier})
+              Previous Desk (Console {oldTier})
             </span>
             <p className="text-sm font-bold text-stone-300 mb-2 truncate">
-              {getStudioTierName(oldTier)}
+              {oldDetails.name}
             </p>
             <div className="space-y-1 text-xs text-stone-400">
               <div className="flex justify-between">
@@ -146,7 +150,7 @@ export const TierUpgradeAnimation: React.FC<TierUpgradeAnimationProps> = ({
           <div className="p-3.5 bg-amber-950/25 rounded-lg border border-amber-500/40 shadow-inner">
             <div className="flex justify-between items-center mb-1">
               <span className="text-[10px] font-mono text-amber-400 font-bold uppercase tracking-wider">
-                Upgraded Desk (Tier {newTier})
+                Upgraded Desk (Console {newTier})
               </span>
               <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/30 text-amber-300 font-mono font-bold">
                 ONLINE
@@ -203,7 +207,7 @@ export const TierUpgradeAnimation: React.FC<TierUpgradeAnimationProps> = ({
         {/* Footer with Skip / Continue Controls */}
         <div className="flex items-center justify-between pt-3 border-t border-stone-800">
           <p className="text-[11px] text-stone-400">
-            Authoritative state synced · Studio floor updated live
+            {premisesName ? tc('tier.upgrade.footerPremises', '{{premises}} · console installed, studio floor updated live', { premises: premisesName }) : 'Console installed · Studio floor updated live'}
           </p>
           <div className="flex items-center gap-2">
             <MotionButton

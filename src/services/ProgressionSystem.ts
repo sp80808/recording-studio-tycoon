@@ -325,13 +325,8 @@ export class ProgressionSystem {
   /** Metadata, console hardware, and unlock details for each tier */
   static getStudioTierDetails(tier: number) {
     const t = (Math.max(1, Math.min(5, Math.floor(tier)))) as 1 | 2 | 3 | 4 | 5;
-    const names = [
-      'HOME STUDIO',
-      'BEDROOM+ STUDIO',
-      'PROJECT STUDIO',
-      'STUDIO A',
-      'HIT FACTORY',
-    ];
+    // Gear names for the console desk. The studio itself is named by its premises (src/rpg/premises.ts), never here (#366).
+    const names = ['Valve Desk', 'Analog Slate Console', 'British Console', 'Large-Format Console', 'Flagship Master Console'];
     const desks = [
       '4-channel compact valve desk',
       '8-channel analog slate console with rack bay',

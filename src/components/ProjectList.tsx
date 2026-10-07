@@ -1,9 +1,10 @@
 import { money } from '@/utils/displayMoney';
 import { tc } from '@/i18n/content';
+import { getActiveCampaignNode } from '@/narrative/branchingStorylineEngine';
 import { buildStoryContractBrief, type StoryContractBrief } from '@/narrative/storyContractBrief';
 import { enquiryDemandWeight, industryPulse, releaseSignals } from '@/rpg/marketDemand';
 import { trackEnquiry, trackEnquiryViewed } from '@/telemetry/instrument';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { GameState, Project } from '@/types/game';
 import { generateNewProjects } from '@/utils/projectUtils';
 import {
@@ -92,6 +93,7 @@ const StoryBrief: React.FC<{ brief: StoryContractBrief }> = ({ brief }) => (
   <div data-testid="story-brief" role="group" aria-label={brief.watching} className="space-y-1.5">
     <p className="font-semibold text-[var(--rst-ivory)]" data-testid="story-brief-watching">{brief.watching}</p>
     <p className="italic" data-testid="story-brief-voice">{brief.voice}</p>
+    {brief.nodeLine && <p className="rst-muted text-[11px]" data-testid="story-brief-node">{brief.nodeLine}</p>}
     <p data-testid="story-brief-stake">
       <span className="rst-chip rst-chip-story mr-1.5 !py-0.5 text-[10px]">{brief.stakeKicker}</span>
       {brief.stakeMeaning}
@@ -177,6 +179,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
   const refreshReady = cooldownLeft === 0;
   const refreshCost = gigRefreshCostFor(GIG_REFRESH_COST, getOriginEffects(gameState));
   const level = gameState.playerData.level;
+  const activeNode = useMemo(() => getActiveCampaignNode(gameState), [gameState]);
 
   const handleRefresh = () => {
     void gameAudio.playTactileClick();
@@ -534,7 +537,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                   <div className="pt-2 space-y-2">
                     <div className="rounded-lg border border-[var(--rst-line)] bg-black/20 p-2 text-xs leading-snug text-stone-300">
                       {isStory && rival ? (
-                        <StoryBrief brief={buildStoryContractBrief(rival, chosenStake, level)} />
+                        <StoryBrief brief={buildStoryContractBrief(rival, chosenStake, level, activeNode && activeNode.id === project.storyNodeId ? activeNode.title : undefined)} />
                       ) : isStory ? (
                         'The rival is watching this one. A strong result counts toward the campaign objective.'
                       ) : (
