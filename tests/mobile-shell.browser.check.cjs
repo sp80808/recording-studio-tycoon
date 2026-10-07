@@ -176,6 +176,7 @@ async (page) => {
     const { ctx, p } = await session({ width: 1440, height: 900 }, { touch: false, notch: 0 });
     await enterStudio(p);
     assert((await p.locator('[data-testid="hud-fullscreen"]').count()) === 1, 'desktop: fullscreen button must remain');
+    assert((await p.locator('.rst-game-notifications').count()) === 0, 'desktop: no legacy notification stack beside Sonner (#325)');
     await shot(p, 'desktop-1-idle');
     results.push('desktop ok');
     await ctx.close();
