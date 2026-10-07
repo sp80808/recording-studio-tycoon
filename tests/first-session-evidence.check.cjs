@@ -48,10 +48,9 @@ async (page) => {
   await page.evaluate(() => localStorage.clear());
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.getByRole('button', { name: /New studio/ }).click();
-  await page.getByRole('button', { name: /Choose an era/ }).click();
-  await page.getByText('Modern Era', { exact: true }).click();
-  await page.getByRole('button', { name: /Create your producer/ }).click();
-  await page.getByRole('button', { name: /Choose a role/ }).click();
+  // Era picker is a radiogroup ("Choose an era") of radios labelled by decade; Modern Era = 2020s (#359).
+  await page.getByRole('radiogroup', { name: /Choose an era/ }).getByRole('radio', { name: /^2020s/ }).click();
+  await page.getByTestId('setup-cta').click(); // Continue -> producer step
   await page.getByText('The Bedroom Beatmaker').first().click();
   await page.getByRole('button', { name: /Open the studio/ }).click();
   for (let i = 0; i < 12; i++) {
@@ -152,7 +151,7 @@ async (page) => {
   const review = page.getByRole('dialog').filter({ hasText: /Project Complete:/ });
   await review.getByRole('button', { name: /Skip/ }).waitFor({ timeout: 30000 });
   await page.keyboard.press('Space');
-  const settle = review.getByRole('button', { name: /Awesome!/ });
+  const settle = review.getByRole('button', { name: /Awesome!|Back to the studio/ });
   await settle.waitFor({ timeout: 30000 });
   await settle.click();
   await review.waitFor({ state: 'hidden', timeout: 20000 });
