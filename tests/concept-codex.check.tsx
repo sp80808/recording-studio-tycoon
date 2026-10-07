@@ -6,7 +6,8 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ConceptCodexPanel } from '../src/components/ConceptCodexPanel';
 import { AUDIO_CONCEPT_IDS } from '../src/rpg/audioConcepts';
-import { CODEX_CONCEPTS, codexLineId, codexNameId, codexProgress, deriveCodex } from '../src/rpg/conceptCodex';
+import { CODEX_COMPLETE_XP, CODEX_CONCEPTS, noteConceptsWithReward, codexLineId, codexNameId, codexProgress, deriveCodex } from '../src/rpg/conceptCodex';
+import { MIC_LINE_TEXT, micLineId, micPlacementLine } from '../src/rpg/micPlacementLine';
 import { createInitialKnowHow, noteConceptsMet } from '../src/rpg/studioKnowHow';
 
 // Every concept has a name and a short one-line explanation.
@@ -37,9 +38,31 @@ assert.doesNotMatch(html, /Compression/);
 const all = noteConceptsMet({ studioKnowHow: createInitialKnowHow() }, AUDIO_CONCEPT_IDS);
 assert.equal(codexProgress(all.studioKnowHow).complete, true);
 
+// Completion reward: paid once, XP only, badge shown in the panel.
+const base = { studioKnowHow: createInitialKnowHow(), playerData: { xp: 10 } };
+const part = noteConceptsWithReward(base, ['eq']);
+assert.equal(part.playerData.xp, 10);
+assert.doesNotMatch(renderToStaticMarkup(<ConceptCodexPanel knowHow={part.studioKnowHow} />), /Good Ears/);
+const done = noteConceptsWithReward(base, AUDIO_CONCEPT_IDS);
+assert.equal(done.playerData.xp, 10 + CODEX_COMPLETE_XP);
+assert.equal(noteConceptsWithReward(done, AUDIO_CONCEPT_IDS).playerData.xp, done.playerData.xp, 'one-time');
+assert.equal(noteConceptsWithReward(done, ['eq']), done);
+assert.match(renderToStaticMarkup(<ConceptCodexPanel knowHow={done.studioKnowHow} />), /Good Ears/);
+
+// Mic-placement line: needs a mic, deterministic, no digits, marks the concept.
+assert.equal(micPlacementLine('vocal-suite', false, 's'), null);
+const ml = micPlacementLine('vocal-suite', true, 's')!;
+assert.deepEqual(micPlacementLine('vocal-suite', true, 's'), ml);
+assert.equal(ml.concept, 'mic-placement');
+assert.equal(micPlacementLine(undefined, true, 's')!.id.startsWith('mic.line.project-studio.'), true);
+for (const lines of Object.values(MIC_LINE_TEXT)) for (const l of lines) assert.doesNotMatch(l, /\d/);
+const met = noteConceptsMet({ studioKnowHow: createInitialKnowHow() }, [ml.concept]);
+assert.equal(deriveCodex(met.studioKnowHow).find(e => e.id === 'mic-placement')!.met, true);
+
 // Locale keys exist in every content.json.
 const dir = path.join(process.cwd(), 'public', 'locales');
-const keys = ['codex.title', 'codex.empty', 'codex.locked', ...AUDIO_CONCEPT_IDS.flatMap(id => [codexNameId(id), codexLineId(id)])];
+const micKeys = Object.entries(MIC_LINE_TEXT).flatMap(([r, ls]) => ls.map((_, i) => micLineId(r as keyof typeof MIC_LINE_TEXT, i)));
+const keys = ['mic.line.title', 'codex.badge.name', 'codex.badge.line', ...micKeys, 'codex.title', 'codex.empty', 'codex.locked', ...AUDIO_CONCEPT_IDS.flatMap(id => [codexNameId(id), codexLineId(id)])];
 for (const loc of fs.readdirSync(dir)) {
   const f = path.join(dir, loc, 'content.json');
   if (!fs.existsSync(f)) continue;
