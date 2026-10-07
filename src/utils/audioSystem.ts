@@ -55,13 +55,39 @@ const SOUND_ALIASES: Record<string, string> = {
   'hover': 'synth:playButtonHover',                 // if ever used
 };
 
+/** Preload buffer names — cache keys, never site-root URLs. */
+const PRELOAD_BUFFER_NAMES = new Set<string>([
+  'kick', 'snare', 'hihat', 'openhat',
+  'ui-bubble-pop', 'ui-close-menu', 'ui-email-notif', 'ui-notice',
+  'ui-proj-complete', 'ui-purchase-complete', 'ui-cash-register',
+  'ui-staff-unavailable', 'ui-stage-complete', 'ui-training-complete', 'ui-unavailable',
+  'ui-tactile-click', 'ui-tactile-click-alt', 'ui-gear-switch', 'ui-gear-switch-alt',
+  'ui-rack-select', 'ui-enquiry-tone', 'ui-latch',
+]);
+
 /** True if `key` is a known alias that must never become a site-root fetch. */
 const isKnownAlias = (key: string): boolean => Object.prototype.hasOwnProperty.call(SOUND_ALIASES, key);
 
-/** Resolve a logical key to a concrete source. Returns null if unknown and not an /audio/ path. */
+/**
+ * Resolve a logical key to a concrete source.
+ * - /audio/... paths pass through (ChartsPanel clips, on-demand assets)
+ * - SOUND_ALIASES map caller ids → preload names or synth: helpers
+ * - Known preload buffer names pass through as cache keys
+ * - Everything else is rejected (never fetch bare ids from site root)
+ */
 const resolveSoundSource = (key: string): string | null => {
-  if (key.startsWith('/audio/')) return key; // ChartsPanel full paths pass through
-  return SOUND_ALIASES[key] ?? null;
+  if (key.startsWith('/audio/')) return key;
+  if (isKnownAlias(key)) return SOUND_ALIASES[key];
+  if (PRELOAD_BUFFER_NAMES.has(key)) return key;
+  return null;
+};
+
+/** Exported for lightweight static checks. */
+export const __sfxResolverTest = {
+  SOUND_ALIASES,
+  PRELOAD_BUFFER_NAMES,
+  resolveSoundSource,
+  isKnownAlias,
 };
 
 interface AudioSettings {
@@ -262,6 +288,11 @@ class GameAudioSystem {
 
     let buffer = this.audioBuffers.get(resolved);
     if (!buffer) {
+      // Only fetch real asset paths under /audio/. Never treat a logical/preload key as a URL.
+      if (!resolved.startsWith('/audio/')) {
+        console.warn(`Audio buffer not found for key "${resolved}" (not an /audio/ path; refusing site-root fetch)`);
+        return null;
+      }
       console.log(`Buffer for ${resolved} not found in cache, attempting to load...`);
       buffer = await this.loadAndCacheAudio(resolved, resolved);
     }
