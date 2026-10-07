@@ -21,11 +21,13 @@ export interface StoryContractBrief {
   stakeMeaning: string;
   /** Mechanical terms from describeStake (fee multiplier, rank bar, rep cost). */
   stakeTerms: string;
+  /** "Because this act: Act I: The Sound of ..." — present only when the active campaign node title is known. */
+  nodeLine?: string;
   /** Present only when the player's level is below the stake's normal unlock. */
   unlockNote?: string;
 }
 
-export const buildStoryContractBrief = (rival: RivalStudio, stake: ContractStake, playerLevel: number): StoryContractBrief => {
+export const buildStoryContractBrief = (rival: RivalStudio, stake: ContractStake, playerLevel: number, nodeTitle?: string): StoryContractBrief => {
   const label = STAKE_LABEL[stake];
   return {
     watching: tc('story.brief.watching', '{{rival}} is watching', { rival: rival.name }),
@@ -34,6 +36,7 @@ export const buildStoryContractBrief = (rival: RivalStudio, stake: ContractStake
       epithet: rival.epithet,
       catchphrase: rival.catchphrase,
     }),
+    nodeLine: nodeTitle ? tc('story.brief.node', 'Because this act: {{title}}', { title: nodeTitle }) : undefined,
     stakeKicker: tc('story.brief.stake', 'Stake: {{label}}', { label }),
     stakeLabel: label,
     stakeMeaning: tc(`story.stake.${stake}`, STAKE_STORY_MEANING[stake]),
@@ -43,3 +46,23 @@ export const buildStoryContractBrief = (rival: RivalStudio, stake: ContractStake
       : tc('story.stake.unlockNote', '{{unlock}} — the story fixes it for this gig.', { unlock: describeStakeUnlock(stake) }),
   };
 };
+
+/** Who-are-you rival face (#334 addendum): the same epithet and catchphrase the board and cinematic use. */
+export interface RivalIntro {
+  /** "Roxy Riot — The Sonic Saboteur · The Distortion Cellar" */
+  headline: string;
+  /** "“Turn it up…”" */
+  catchphrase: string;
+  /** Optional campaign opener title, e.g. "Act I: The Sound of The Distortion Cellar". */
+  nodeLine?: string;
+}
+
+export const buildRivalIntro = (rival: RivalStudio, nodeTitle?: string): RivalIntro => ({
+  headline: tc('story.rivalIntro.headline', '{{producer}} — {{epithet}} · {{studio}}', {
+    producer: rival.headProducer,
+    epithet: rival.epithet,
+    studio: rival.name,
+  }),
+  catchphrase: tc('story.rivalIntro.catchphrase', '“{{catchphrase}}”', { catchphrase: rival.catchphrase }),
+  nodeLine: nodeTitle ? tc('story.brief.node', 'Because this act: {{title}}', { title: nodeTitle }) : undefined,
+});

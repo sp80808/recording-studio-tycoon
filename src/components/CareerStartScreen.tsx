@@ -6,6 +6,7 @@ import type { Era } from '@/types/game';
 import type { ProducerBackgroundId } from '@/types/character';
 import { PRODUCER_ORIGINS } from '@/narrative/characterOrigins';
 import { describeOriginPerks } from '@/narrative/originPerks';
+import { buildRivalIntro } from '@/narrative/storyContractBrief';
 import { getPrimaryRival, getRivalAccent, initialsOf } from '@/narrative/rivalCast';
 import { THEME_VISUAL_CONFIGS } from '@/narrative/playstyleTheme';
 import { gameAudio } from '@/utils/audioSystem';
@@ -154,6 +155,7 @@ function CareerStartScreenInner({ onBegin, onBack }: CareerStartScreenProps) {
     };
 
   const rival = origin ? getPrimaryRival(origin.primaryPlaystyle) : null;
+  const rivalIntro = rival ? buildRivalIntro(rival) : null;
   const surfaceIndex = SETUP_SURFACES.indexOf(surface);
 
   return (
@@ -288,10 +290,13 @@ function CareerStartScreenInner({ onBegin, onBack }: CareerStartScreenProps) {
                     <li key={line} className="flex gap-1.5"><Check size={12} className="mt-0.5 shrink-0 text-[var(--rst-money)]" aria-hidden="true" />{line}</li>
                   ))}
                 </ul>
-                <p className="mt-2 flex items-center gap-2 text-xs text-stone-400">
-                  <Swords size={13} style={{ color: getRivalAccent(rival.id) }} aria-hidden="true" />
-                  Rival: <b className="text-stone-200">{rival.headProducer}</b><span className="truncate">· {rival.name}</span>
-                </p>
+                <div className="mt-2 text-xs text-stone-400" data-testid="rival-intro">
+                  <p className="flex items-start gap-2">
+                    <Swords size={13} className="mt-0.5 shrink-0" style={{ color: getRivalAccent(rival.id) }} aria-hidden="true" />
+                    <span>Rival: <b className="text-stone-200" data-testid="rival-intro-headline">{rivalIntro?.headline}</b></span>
+                  </p>
+                  <p className="mt-0.5 pl-[21px] italic text-stone-300" data-testid="rival-intro-catchphrase">{rivalIntro?.catchphrase}</p>
+                </div>
               </section>
             )}
           </>

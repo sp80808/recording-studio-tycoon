@@ -17,6 +17,7 @@ import { GameState, Project, SessionIntervention } from '@/types/game';
 import { useSettings } from '@/contexts/SettingsContext';
 import { gameAudio } from '@/utils/audioSystem';
 import { ProgressionSystem } from '@/services/ProgressionSystem';
+import { getPremisesDef } from '@/rpg/premises';
 import { TierUpgradeAnimation } from './TierUpgradeAnimation';
 import { toast } from '@/hooks/use-toast';
 import { Coffee, Waves, Wrench } from 'lucide-react';
@@ -608,6 +609,7 @@ export const StudioRoom: React.FC<StudioRoomProps> = ({
           newTier={pendingTierUpgrade.newTier}
           onComplete={() => setPendingTierUpgrade(null)}
           focusMode={settings.reducedMotion}
+          premisesName={getPremisesDef(gameState).name}
         />
       )}
     </div>

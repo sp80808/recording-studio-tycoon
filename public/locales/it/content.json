@@ -151,5 +151,10 @@
   "story.stake.ambitious": "Challenge cut — A-rank earns respect; a miss costs reputation.",
   "story.stake.moonshot": "Last-word master — S-rank or the rival owns the story.",
   "story.stake.unlockNote": "{{unlock}} — the story fixes it for this gig.",
-  "premises.needs": "Needs {{what}}"
+  "premises.needs": "Needs {{what}}",
+  "story.brief.node": "Because this act: {{title}}",
+  "story.rivalIntro.headline": "{{producer}} — {{epithet}} · {{studio}}",
+  "story.rivalIntro.catchphrase": "“{{catchphrase}}”",
+  "tier.upgrade.kicker": "Progression Milestone · Console Upgraded",
+  "tier.upgrade.footerPremises": "{{premises}} · console installed, studio floor updated live"
 }
