@@ -195,7 +195,7 @@ const paintProceduralNpc = (
   body.roundRect(-width / 2, -36, width, 27, 5).stroke({ width: 2, color: 0x243044, alpha: 0.55 });
   body.circle(0, -45, 11).fill(skin);
   if (npc.hair.shape !== 'bald') {
-    if (npc.hair.shape === 'afro') body.circle(0, -54, 14).fill(hair);
+    if (npc.hair.shape === 'afro') body.circle(0, -58, 13).fill(hair);
     else if (npc.hair.shape === 'bob' || npc.hair.shape === 'dreads') body.roundRect(-13, -57, 26, 18, 3).fill(hair);
     else body.ellipse(0, -52, 11, npc.hair.shape === 'buzzcut' ? 2 : 5).fill(hair);
   }
