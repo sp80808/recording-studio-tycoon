@@ -1,6 +1,6 @@
 import { claimInterventionReward, currentIntervention } from '@/session/interventionCheckpoint';
 import { conceptsForMinigame } from '@/rpg/audioConcepts';
-import { noteConceptsMet } from '@/rpg/studioKnowHow';
+import { noteConceptsWithReward } from '@/rpg/conceptCodex';
 import { meetsKnowHowGate, spendKnowHow, createInitialKnowHow } from '@/rpg/studioKnowHow';
 import { useArtistContracts } from '@/hooks/useArtistContracts';
 import type { PerformDailyWorkOptions } from '@/hooks/useStageWork';
@@ -106,7 +106,7 @@ export const useGameLogic = (
           minigamePoints: typeof rawScore === 'number' && Number.isFinite(rawScore) ? Math.min(10, (claimed.minigamePoints ?? 0) + (rawScore / 1000) * 2) : claimed.minigamePoints,
           stageTake: typeof rawScore === 'number' && Number.isFinite(rawScore) ? bestTake(claimed.stageTake, takeFromRawScore(rawScore)) : claimed.stageTake,
         };
-        return noteConceptsMet(withDailyTracking({
+        return noteConceptsWithReward(withDailyTracking({
         ...prev,
         activeProjects: (prev.activeProjects ?? []).map(candidate => candidate.id === projectId ? awarded : candidate),
         activeProject: awarded,

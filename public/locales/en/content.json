@@ -151,5 +151,16 @@
   "story.stake.ambitious": "Challenge cut — A-rank earns respect; a miss costs reputation.",
   "story.stake.moonshot": "Last-word master — S-rank or the rival owns the story.",
   "story.stake.unlockNote": "{{unlock}} — the story fixes it for this gig.",
-  "premises.needs": "Needs {{what}}"
+  "premises.needs": "Needs {{what}}",
+  "mic.line.title": "Mic placement",
+  "codex.badge.name": "Good Ears",
+  "codex.badge.line": "Every concept met. Earned {{xp}} XP, once.",
+  "mic.line.vocal-suite.0": "Close on the capsule, the voice came back full and dry. Back off a hand and it would breathe more.",
+  "mic.line.vocal-suite.1": "A pop screen and a little off-axis tamed the breath noise without dulling the tone.",
+  "mic.line.live-room.0": "With the mic out in the room, the take picked up space and a little bleed. That air is the point.",
+  "mic.line.live-room.1": "Pulling the mic back let the room do some of the arranging; closer would have tightened it up.",
+  "mic.line.mix-suite.0": "In a treated control room the mic hears less of the walls, so placement matters even more.",
+  "mic.line.mix-suite.1": "Same source, different spot: moving the mic a few inches changes the tone more than swapping it.",
+  "mic.line.project-studio.0": "In a small room, close mic placement keeps the walls out of the recording.",
+  "mic.line.project-studio.1": "Angle the mic slightly off the source and the harsh edge softens without losing presence."
 }
