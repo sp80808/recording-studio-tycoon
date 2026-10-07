@@ -10,6 +10,16 @@ const additions = [
   ['dx7_synth', 1983],
   ['adat_8track', 1992],
   ['small_diaphragm_pair', 2004],
+  ['pultec_eqp1a', 1965],
+  ['neve_1073_preamp', 1972],
+  ['hammond_b3', 1962],
+  ['ampeg_svt', 1969],
+  ['akg_c414', 1976],
+  ['shure_sm7_broadcast', 1978],
+  ['roland_tr909', 1984],
+  ['avalon_vt737', 1995],
+  ['yamaha_hs8', 2001],
+  ['melodyne_pitch_editor', 2009],
 ] as const;
 
 assert.deepEqual(missingArtFor(additions.map(([id]) => id)), [], 'new gear uses the shelf/shop art authority');

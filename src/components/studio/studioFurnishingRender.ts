@@ -7,7 +7,7 @@ import {
 } from '@/rpg/studioCustomization';
 
 export type FurnishingSurface = 'floor' | 'right-wall' | 'left-wall';
-export type FurnishingShape = 'lamp' | 'plant' | 'rug' | 'sofa' | 'panel' | 'frame' | 'poster' | 'mug' | 'keys' | 'reel' | 'disc';
+export type FurnishingShape = 'lamp' | 'plant' | 'rug' | 'sofa' | 'panel' | 'frame' | 'poster' | 'mug' | 'keys' | 'reel' | 'disc' | 'trophy' | 'cassette';
 
 export interface FurnishingRenderItem {
   anchorId: FurnishingAnchorId;
@@ -54,6 +54,18 @@ const LOOKS: Record<string, { shape: FurnishingShape; color: number }> = {
   'tape-reel-display': { shape: 'reel', color: 0x8a8d96 },
   'gold-reference-disc': { shape: 'disc', color: 0xf2c84b },
   'bad-day-ticket': { shape: 'frame', color: 0xcfc6a8 },
+  'green-banker-lamp': { shape: 'lamp', color: 0x2f7d4f },
+  'pothos-trail': { shape: 'plant', color: 0x5faa5a },
+  'shag-rug': { shape: 'rug', color: 0x2f8f8a },
+  'velvet-sofa': { shape: 'sofa', color: 0x7a3f6e },
+  'bass-trap-skin': { shape: 'panel', color: 0x6b2a35 },
+  'demo-cassette-wall': { shape: 'cassette', color: 0xb9a98a },
+  'client-cup': { shape: 'trophy', color: 0xcfa94a },
+  'crew-group-photo': { shape: 'frame', color: 0xd8d2c0 },
+  'chart-trophy': { shape: 'trophy', color: 0xf2c84b },
+  'loyalty-gold-poster': { shape: 'poster', color: 0xe0a93b },
+  'lease-signed-frame': { shape: 'frame', color: 0xe6dfc4 },
+  'storyline-reel-poster': { shape: 'poster', color: 0x4a7fb5 },
 };
 
 /** Pure: what to draw for equipped, unlocked furnishings whose anchor exists at this premises tier. */
@@ -138,6 +150,20 @@ const draw = (item: FurnishingRenderItem): Graphics => {
       wallRect(g, dir, 22, 22, 0x1d1d22);
       g.circle(0, -11, 8).fill(c);
       g.circle(0, -11, 2.4).fill(0x1d1d22);
+      break;
+    case 'trophy':
+      g.ellipse(0, 1, 7, 3).fill({ color: 0x000000, alpha: 0.28 });
+      g.rect(-5, -3, 10, 3).fill(shade(c, 0.6));
+      g.rect(-1.2, -11, 2.4, 8).fill(shade(c, 0.85));
+      g.poly([-7, -24, 7, -24, 5, -11, -5, -11]).fill(c);
+      g.circle(-8, -19, 2.6).stroke({ width: 1.2, color: c });
+      g.circle(8, -19, 2.6).stroke({ width: 1.2, color: c });
+      break;
+    case 'cassette':
+      wallRect(g, dir, 24, 16, 0x2a2118);
+      wallRect(g, dir, 20, 12, c);
+      g.circle(-4, -8, 2).fill(0x2a2118);
+      g.circle(4, -8, 2).fill(0x2a2118);
       break;
     case 'disc':
       g.circle(0, -10, 9).fill(c);

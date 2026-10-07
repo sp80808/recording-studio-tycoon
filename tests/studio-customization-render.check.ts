@@ -43,7 +43,7 @@ const WALL_ZONES: Zone[] = [
 ];
 // Wall footprint per drawn shape (px, from studioFurnishingRender draw()): width / 28 px-per-tile, height as drawn.
 const WALL_SHAPES: Record<string, { w: number; h: number }> = {
-  frame: { w: 22, h: 17 }, poster: { w: 22, h: 30 }, panel: { w: 44, h: 36 }, reel: { w: 22, h: 22 }, disc: { w: 18, h: 19 }, mug: { w: 16, h: 9 },
+  frame: { w: 22, h: 17 }, poster: { w: 22, h: 30 }, panel: { w: 44, h: 36 }, reel: { w: 22, h: 22 }, disc: { w: 18, h: 19 }, trophy: { w: 22, h: 25 }, cassette: { w: 24, h: 16 }, mug: { w: 16, h: 9 },
 };
 const wallBoxes = getAnchorsForTier(3).flatMap((id) => {
   const spot = ANCHOR_SPOTS[id];

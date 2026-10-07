@@ -236,6 +236,18 @@ export const EQUIPMENT_ART_MAP: Record<string, EquipmentArtEntry> = {
   audio_interface: entry('audio_interface', 'interface', 'assets/items/item_interface.png', '🔌', '#f97316', OGA_HIFI),
   basic_interface: entry('basic_interface', 'interface', 'assets/items/item_interface.png', '🔌', '#ef4444', OGA_HIFI),
   apogee_symphony_phony: entry('apogee_symphony_phony', 'interface', 'assets/items/item_interface.png', '🔌', '#22d3ee', OGA_HIFI, [], [STOCK, TUBE_GLOW, STUDIO_BLACK]),
+
+  // ---- Catalogue expansion (classic desks, amps, mics, monitors, plugins) ----
+  pultec_eqp1a: entry('pultec_eqp1a', 'outboard', 'assets/items/item_outboard.png', '⚙️', '#d6a35c', OGA_HIFI, ['assets/items/item_outboard_alt_blue.png']),
+  neve_1073_preamp: entry('neve_1073_preamp', 'outboard', 'assets/items/item_outboard.png', '⚙️', '#7c8a5a', OGA_HIFI, []),
+  hammond_b3: entry('hammond_b3', 'instrument', 'assets/items/item_keyboard.png', '🎹', '#92400e', KENNEY_GENERIC, ['assets/items/item_keyboard_alt.png']),
+  ampeg_svt: entry('ampeg_svt', 'instrument', 'assets/items/item_guitar_amp.png', '🎸', '#1c1917', OGA_MISC_TOOL, []),
+  akg_c414: entry('akg_c414', 'microphone', 'assets/items/item_microphone_alt_condenser.png', '🎤', '#e5e7eb', OGA_HIFI, [], [STOCK, TUBE_GLOW, STUDIO_BLACK]),
+  shure_sm7_broadcast: entry('shure_sm7_broadcast', 'microphone', 'assets/items/item_microphone.png', '🎙️', '#334155', OGA_HIFI, []),
+  roland_tr909: entry('roland_tr909', 'instrument', 'assets/items/item_drummachine.png', '🥁', '#f43f5e', KENNEY_GENERIC, [], [STOCK, NEON_SKIN, ROADWORN]),
+  avalon_vt737: entry('avalon_vt737', 'outboard', 'assets/items/item_outboard.png', '⚙️', '#fbbf24', OGA_HIFI, [], [STOCK, TUBE_GLOW, STUDIO_BLACK]),
+  yamaha_hs8: entry('yamaha_hs8', 'monitor', 'assets/items/item_monitor.png', '🔊', '#e2e8f0', OGA_HIFI, []),
+  melodyne_pitch_editor: entry('melodyne_pitch_editor', 'software', 'assets/items/item_plugin.png', '💻', '#f472b6', KENNEY_ICONS, []),
 };
 
 export const EQUIPMENT_ART_LIST: EquipmentArtEntry[] = Object.values(EQUIPMENT_ART_MAP);

@@ -8,7 +8,7 @@
  */
 import type { GameState } from '@/types/game';
 import type { ProducerAppearance, ProducerAccessory } from '@/features/sprites/producerAppearance';
-import type { ClothesTop } from '@/features/sprites/spriteTypes';
+import type { ClothesTop, ClothesLower, ShoesType } from '@/features/sprites/spriteTypes';
 import { deriveCareerMilestones } from '@/utils/careerChronicle';
 
 export type FurnishingAnchorId =
@@ -49,9 +49,21 @@ export const STUDIO_FURNISHINGS: readonly StudioFurnishingDefinition[] = [
   { id: 'tape-reel-display', name: 'Tape reel wall display', compatibleAnchors: ['wall-art', 'rack-side'], unlock: { kind: 'milestone', milestoneId: 'first-story-choice', hint: 'Make a defining story choice' }, tags: ['story', 'analog'] },
   { id: 'gold-reference-disc', name: 'Gold reference disc', compatibleAnchors: ['trophy-shelf', 'shelf', 'console-ornament'], unlock: { kind: 'milestone', milestoneId: 'first-charting-release', hint: 'Chart a release' }, tags: ['chart'] },
   { id: 'bad-day-ticket', name: 'Torn session ticket', compatibleAnchors: ['desk-accessory', 'wall-art'], unlock: { kind: 'milestone', milestoneId: 'first-poor-session', hint: 'Survive a rough session' }, tags: ['humility'] },
+  { id: 'green-banker-lamp', name: 'Green banker lamp', compatibleAnchors: ['lamp'], unlock: { kind: 'default' } },
+  { id: 'pothos-trail', name: 'Trailing pothos', compatibleAnchors: ['plant'], unlock: { kind: 'default' } },
+  { id: 'shag-rug', name: 'Teal shag rug', compatibleAnchors: ['rug'], unlock: { kind: 'default' } },
+  { id: 'velvet-sofa', name: 'Plum velvet sofa', compatibleAnchors: ['sofa'], unlock: { kind: 'default' } },
+  { id: 'bass-trap-skin', name: 'Maroon bass traps', compatibleAnchors: ['acoustic-panel'], unlock: { kind: 'default' } },
+  { id: 'demo-cassette-wall', name: 'Demo cassette wall', compatibleAnchors: ['wall-art', 'shelf'], unlock: { kind: 'milestone', milestoneId: 'first-paid-session', hint: 'Get paid for a session' }, tags: ['money'] },
+  { id: 'client-cup', name: 'Loving cup', compatibleAnchors: ['trophy-shelf', 'shelf'], unlock: { kind: 'milestone', milestoneId: 'first-repeat-client', hint: 'Have a client book again' }, tags: ['clients'] },
+  { id: 'crew-group-photo', name: 'Crew group photo', compatibleAnchors: ['wall-art', 'shelf', 'poster'], unlock: { kind: 'milestone', milestoneId: 'first-staff-hire', hint: 'Hire your first crew member' }, tags: ['crew'] },
+  { id: 'chart-trophy', name: 'Chart-topper trophy', compatibleAnchors: ['trophy-shelf', 'shelf'], unlock: { kind: 'milestone', milestoneId: 'first-charting-release', hint: 'Chart a release' }, tags: ['chart'] },
+  { id: 'loyalty-gold-poster', name: 'Gold tour poster', compatibleAnchors: ['poster', 'wall-art'], unlock: { kind: 'milestone', milestoneId: 'first-loyal-client', hint: 'Earn a loyal client' }, tags: ['clients'] },
+  { id: 'lease-signed-frame', name: 'Framed lease', compatibleAnchors: ['wall-art', 'trophy-shelf'], unlock: { kind: 'milestone', milestoneId: 'first-premises-move', hint: 'Move into a new premises' }, tags: ['premises'] },
+  { id: 'storyline-reel-poster', name: 'Branch-point poster', compatibleAnchors: ['poster', 'wall-art'], unlock: { kind: 'milestone', milestoneId: 'first-story-choice', hint: 'Make a defining story choice' }, tags: ['story'] },
 ];
 
-export type ProducerCosmeticSlot = 'accessory' | 'shirt';
+export type ProducerCosmeticSlot = 'accessory' | 'shirt' | 'pants' | 'shoes';
 
 export interface ProducerCosmeticDefinition {
   id: string;
@@ -60,6 +72,8 @@ export interface ProducerCosmeticDefinition {
   /** Value written into the derived appearance for that slot. */
   accessory?: ProducerAccessory;
   shirt?: ClothesTop;
+  pants?: ClothesLower;
+  shoes?: ShoesType;
   unlock: CosmeticUnlock;
 }
 
@@ -70,6 +84,21 @@ export const PRODUCER_COSMETICS: readonly ProducerCosmeticDefinition[] = [
   { id: 'movers-aviators', name: "Mover's aviators", slot: 'accessory', accessory: 'aviators', unlock: { kind: 'milestone', milestoneId: 'first-premises-move', hint: 'Move into a new premises' } },
   { id: 'tape-pendant', name: 'Tape pendant', slot: 'accessory', accessory: 'cassette_pendant', unlock: { kind: 'milestone', milestoneId: 'first-story-choice', hint: 'Make a defining story choice' } },
   { id: 'chart-leather', name: 'Chart-night leather jacket', slot: 'shirt', shirt: 'leather_jacket', unlock: { kind: 'milestone', milestoneId: 'first-charting-release', hint: 'Chart a release' } },
+  { id: 'crew-beanie', name: 'Crew beanie', slot: 'accessory', accessory: 'beanie', unlock: { kind: 'milestone', milestoneId: 'first-staff-hire', hint: 'Hire your first crew member' } },
+  { id: 'rough-day-bucket-hat', name: 'Rough-day bucket hat', slot: 'accessory', accessory: 'bucket_hat', unlock: { kind: 'milestone', milestoneId: 'first-poor-session', hint: 'Survive a rough session' } },
+  { id: 'room-hoops', name: 'Second-room hoops', slot: 'accessory', accessory: 'hoops', unlock: { kind: 'milestone', milestoneId: 'first-room-added', hint: 'Open a second room' } },
+  { id: 'cheque-round-specs', name: 'First-cheque specs', slot: 'accessory', accessory: 'round_glasses', unlock: { kind: 'milestone', milestoneId: 'first-paid-session', hint: 'Get paid for a session' } },
+  { id: 'chart-visor', name: 'Chart-night visor', slot: 'accessory', accessory: 'visor', unlock: { kind: 'milestone', milestoneId: 'first-charting-release', hint: 'Chart a release' } },
+  { id: 'studio-turtleneck', name: 'Studio turtleneck', slot: 'shirt', shirt: 'turtleneck', unlock: { kind: 'default' } },
+  { id: 'loyal-cardigan', name: 'Loyal-client cardigan', slot: 'shirt', shirt: 'vintage_cardigan', unlock: { kind: 'milestone', milestoneId: 'first-loyal-client', hint: 'Earn a loyal client' } },
+  { id: 'story-hoodie', name: 'Crossroads hoodie', slot: 'shirt', shirt: 'oversized_hoodie', unlock: { kind: 'milestone', milestoneId: 'first-story-choice', hint: 'Make a defining story choice' } },
+  { id: 'lease-denim-vest', name: 'Lease-day denim vest', slot: 'shirt', shirt: 'denim_vest', unlock: { kind: 'milestone', milestoneId: 'first-premises-move', hint: 'Move into a new premises' } },
+  { id: 'studio-cords', name: 'Studio cords', slot: 'pants', pants: 'corduroy_trousers', unlock: { kind: 'default' } },
+  { id: 'flared-regulars', name: 'Flared regulars trousers', slot: 'pants', pants: 'bell_bottoms', unlock: { kind: 'milestone', milestoneId: 'first-repeat-client', hint: 'Have a client book again' } },
+  { id: 'scuffed-rippers', name: 'Scuffed rippers', slot: 'pants', pants: 'ripped_jeans', unlock: { kind: 'milestone', milestoneId: 'first-poor-session', hint: 'Survive a rough session' } },
+  { id: 'room-hi-tops', name: 'Second-room hi-tops', slot: 'shoes', shoes: 'hi_tops', unlock: { kind: 'default' } },
+  { id: 'rebook-creepers', name: 'Rebook creepers', slot: 'shoes', shoes: 'creepers', unlock: { kind: 'milestone', milestoneId: 'first-repeat-client', hint: 'Have a client book again' } },
+  { id: 'chart-boots', name: 'Chart-night boots', slot: 'shoes', shoes: 'leather_boots', unlock: { kind: 'milestone', milestoneId: 'first-charting-release', hint: 'Chart a release' } },
 ];
 
 export interface StudioCustomizationState {
@@ -221,7 +250,7 @@ export const applyProducerCosmetics = (appearance: ProducerAppearance, c: Studio
   for (const id of Object.values(c.equippedProducer)) {
     const def = COSMETIC_BY_ID.get(id);
     if (!def || !isItemUnlocked(c, id)) continue;
-    out = { ...out, ...(def.accessory ? { accessory: def.accessory } : {}), ...(def.shirt ? { shirt: def.shirt } : {}) };
+    out = { ...out, ...(def.accessory ? { accessory: def.accessory } : {}), ...(def.shirt ? { shirt: def.shirt } : {}), ...(def.pants ? { pants: def.pants } : {}), ...(def.shoes ? { shoes: def.shoes } : {}) };
   }
   return out;
 };
