@@ -293,3 +293,6 @@ In-house proprietary original, Pixi Graphics only (`cityRoomStyle.ts`, `studioSk
 
 ## 30. Studio A swinging door, hallway and door sound (#194)
 In-house proprietary original. The swinging door leaf (panels, edge strip, brass handle, contact shadow), the lit hallway behind it and the floor light pool are Pixi Graphics polygons in `WebGLCanvas.tsx` (`drawDoorSwing`) with geometry in `studioDoor.ts`. The latch-and-creak is synthesised with Web Audio in `audioSystem.ts` (`playDoor`): filtered noise plus a band-passed sawtooth. No external source, textures or samples.
+
+## 31. Ringing desk phone, riding faders, pumping monitors and tap reactions (#194)
+In-house proprietary original. The phone handset, cradle prongs, dial and bell marks, the live console fader caps and the monitor woofer cones are Pixi Graphics in `WebGLCanvas.tsx` (`drawFaders`, `drawWoofers`), with timing curves in `studioObjectFeel.ts`. The phone bell (two triangle partials with a 22 Hz hammer tremolo) and the handset pickup (sine thump plus high-passed noise click) are synthesised with Web Audio in `audioSystem.ts` (`playPhoneRing`, `playHandsetLift`). No external source, textures or samples.
