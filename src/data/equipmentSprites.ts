@@ -93,6 +93,18 @@ export const equipmentSpriteMap: Record<string, EquipmentSpriteMapping> = {
   audio_interface: art('audio_interface', 120, 420),
   basic_interface: art('basic_interface', 140, 420),
   apogee_symphony_phony: art('apogee_symphony_phony', 160, 420),
+
+  // Catalogue expansion
+  pultec_eqp1a: art('pultec_eqp1a', 400, 260),
+  neve_1073_preamp: art('neve_1073_preamp', 420, 260),
+  avalon_vt737: art('avalon_vt737', 440, 260),
+  hammond_b3: art('hammond_b3', 380, 300),
+  ampeg_svt: art('ampeg_svt', 400, 300),
+  roland_tr909: art('roland_tr909', 420, 300),
+  akg_c414: art('akg_c414', 360, 220),
+  shure_sm7_broadcast: art('shure_sm7_broadcast', 380, 220),
+  yamaha_hs8: art('yamaha_hs8', 240, 380),
+  melodyne_pitch_editor: art('melodyne_pitch_editor', 300, 340),
 };
 
 // Sprite filenames should match those in your assets directory (e.g., public/assets/ or similar)

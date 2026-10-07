@@ -20,7 +20,7 @@ assert.deepEqual(repaired.equippedByAnchor, { lamp: 'brass-lamp', shelf: 'crew-m
 assert.deepEqual(repaired.equippedProducer, {}, 'locked or mis-slotted producer items dropped');
 
 // Catalogue sanity.
-assert.ok(STUDIO_FURNISHINGS.length >= 12 && PRODUCER_COSMETICS.length >= 6);
+assert.ok(STUDIO_FURNISHINGS.length >= 24 && PRODUCER_COSMETICS.length >= 21);
 for (const f of STUDIO_FURNISHINGS) for (const a of f.compatibleAnchors) assert.ok(PREMISES_ANCHORS[3].includes(a), `${f.id} anchor ${a}`);
 const knownMilestones = new Set(['first-paid-session', 'first-repeat-client', 'first-poor-session', 'first-staff-hire', 'first-room-added', 'first-premises-move', 'first-loyal-client', 'first-charting-release', 'first-story-choice']);
 const sources = new Set([...STUDIO_FURNISHINGS, ...PRODUCER_COSMETICS].flatMap((i) => (i.unlock.kind === 'milestone' ? [i.unlock.milestoneId] : [])));
@@ -82,7 +82,7 @@ assert.equal(equipProducerCosmetic(fresh, 'session-cans'), fresh);
 p = equipProducerCosmetic(p, 'loyalty-chain');
 assert.equal(p.equippedProducer.accessory, 'loyalty-chain', 'slot holds one item');
 assert.deepEqual(applyProducerCosmetics(look, unequipProducerSlot(p, 'accessory')), look);
-for (const cos of PRODUCER_COSMETICS) assert.deepEqual(Object.keys(cos).filter((k) => !['id', 'name', 'slot', 'accessory', 'shirt', 'unlock'].includes(k)), [], 'no stat fields');
+for (const cos of PRODUCER_COSMETICS) assert.deepEqual(Object.keys(cos).filter((k) => !['id', 'name', 'slot', 'accessory', 'shirt', 'pants', 'shoes', 'unlock'].includes(k)), [], 'no stat fields');
 
 // Meta ledger: cosmetic ids and stories only, no gameplay power.
 const ledger = exportMetaLedger(synced);

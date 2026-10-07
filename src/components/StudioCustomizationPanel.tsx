@@ -13,7 +13,7 @@ interface StudioCustomizationPanelProps {
   onChange: (next: StudioCustomizationState) => void;
 }
 
-const SLOTS: ProducerCosmeticSlot[] = ['accessory', 'shirt'];
+const SLOTS: ProducerCosmeticSlot[] = ['accessory', 'shirt', 'pants', 'shoes'];
 
 /** Compact Career panel (#258): equip owned furnishings and producer cosmetics; locked items show a spoiler-free hint. */
 export function StudioCustomizationPanel({ customization, premisesTier, onChange }: StudioCustomizationPanelProps) {

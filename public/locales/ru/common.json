@@ -359,5 +359,7 @@
   "customise_anchor_rack-side": "Rack side",
   "customise_anchor_acoustic-panel": "Acoustic panels",
   "customise_slot_accessory": "Accessory",
-  "customise_slot_shirt": "Jacket / shirt"
+  "customise_slot_shirt": "Jacket / shirt",
+  "customise_slot_pants": "Trousers",
+  "customise_slot_shoes": "Shoes"
 }
