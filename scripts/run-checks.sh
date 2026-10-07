@@ -337,6 +337,10 @@ echo "=== one-shot UI SFX policy (#256) ==="
 ./node_modules/.bin/esbuild tests/oneshot-sfx.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-oneshot-sfx.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-oneshot-sfx.cjs"
 
+echo "=== sfx key resolver (no site-root fetches) ==="
+./node_modules/.bin/esbuild tests/sfx-key-resolver.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-sfx-key-resolver.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-sfx-key-resolver.cjs"
+
 echo "=== project review recovery (#255) ==="
 ./node_modules/.bin/esbuild tests/project-review-recovery.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-project-review-recovery.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-project-review-recovery.cjs"
