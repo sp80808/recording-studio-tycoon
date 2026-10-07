@@ -1,4 +1,5 @@
 import { money } from '@/utils/displayMoney';
+import { tc } from '@/i18n/content';
 import { enquiryDemandWeight, industryPulse, releaseSignals } from '@/rpg/marketDemand';
 import { trackEnquiry, trackEnquiryViewed } from '@/telemetry/instrument';
 import React, { useState } from 'react';
@@ -34,6 +35,7 @@ import { getOriginEffects, gigRefreshCostFor } from '@/narrative/originPerks';
 import { getRivalAccent, getRivalLines, initialsOf } from '@/narrative/rivalCast';
 import { RIVAL_STUDIOS } from '@/narrative/studioLore';
 import {
+  describeStakeUnlock,
   STAKE_MIN_LEVEL,
   STAKE_ORDER,
   STAKE_LABEL,
@@ -111,7 +113,7 @@ const StakePicker: React.FC<{
             disabled={locked || !unlocked}
             onClick={() => onChange(stake)}
             className={`rst-btn !min-h-9 !px-2 !text-xs ${selected ? 'rst-btn-primary' : ''}`}
-            title={unlocked ? describeStake(stake) : `Unlocks at producer level ${STAKE_MIN_LEVEL[stake]}`}
+            title={unlocked ? describeStake(stake) : describeStakeUnlock(stake)}
           >
             {!unlocked && <Lock size={11} aria-hidden="true" />}
             {STAKE_LABEL[stake]}
@@ -120,6 +122,12 @@ const StakePicker: React.FC<{
       })}
     </div>
     <p className="rst-muted mt-1.5 text-[11px] leading-relaxed">{describeStake(value)}</p>
+    {!locked && STAKE_ORDER.filter(stake => !isStakeUnlocked(stake, level)).map(stake => (
+      <p key={stake} className="rst-muted text-[11px] leading-relaxed" data-testid={`stake-unlock-${stake}`}>
+        <Lock size={10} className="mr-1 inline" aria-hidden="true" />
+        {tc('stake.unlock.line', '{{label}} unlocks at producer level {{level}}', { label: STAKE_LABEL[stake], level: STAKE_MIN_LEVEL[stake] })}
+      </p>
+    ))}
   </div>
 );
 

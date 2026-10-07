@@ -121,5 +121,7 @@
   "gear.why.interface": "An interface turns analog signal into digital. Healthy gain here keeps takes clean: low enough to avoid clipping, high enough to stay above the noise.",
   "gear.why.outboard": "Outboard gear shapes tone and dynamics with hardware character. Pros reach for it to add color and control before the mix gets crowded.",
   "gear.why.recorder": "The recorder is where the signal is captured. Knowing the path into it helps you find where noise or loss creeps in.",
-  "gear.why.mixer": "A mixer blends many sources and sets their levels. Gain staging channel by channel keeps the whole path clean."
+  "gear.why.mixer": "A mixer blends many sources and sets their levels. Gain staging channel by channel keeps the whole path clean.",
+  "gear.effects.none": "Starter kit: no quality or speed change, it just gets you recording.",
+  "stake.unlock.line": "{{label}} unlocks at producer level {{level}}"
 }
