@@ -1,6 +1,8 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { EraAvailableEquipment } from '@/data/eraEquipment';
+import { gearEffectParts, GEAR_NO_EFFECT_TEXT } from '@/rpg/gearEffects';
+import { tc } from '@/i18n/content';
 import { TrendingUp } from 'lucide-react';
 
 interface GameBonusesDisplayProps {
@@ -15,6 +17,7 @@ export const GameBonusesDisplay: React.FC<GameBonusesDisplayProps> = ({ bonuses 
         Game Bonuses
       </h3>
       <div className="space-y-2 text-sm">
+        {gearEffectParts(bonuses).length === 0 && <p className="text-stone-400">{tc('gear.effects.none', GEAR_NO_EFFECT_TEXT)}</p>}
         {bonuses.qualityBonus && (
           <div className="flex justify-between">
             <span className="text-stone-400">Quality Bonus:</span>

@@ -55,3 +55,7 @@ export const describeStake = (stake: ContractStake): string => {
   if (stake === 'safe') return 'No gamble — standard fee, no penalty.';
   return `Hit ${t.needsRank}-rank for ×${t.payoutMult} fee · miss it and lose ${t.failRepHit} rep.`;
 };
+
+/** One-line, visible reason a locked stake is closed, from the real unlock rule (issue #360). */
+export const describeStakeUnlock = (stake: ContractStake): string =>
+  `Unlocks at producer level ${STAKE_MIN_LEVEL[stake]}`;
