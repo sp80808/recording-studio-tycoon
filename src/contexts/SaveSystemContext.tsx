@@ -23,6 +23,7 @@ import {
   resetGameSavePreservingLedger,
   sanitizeImportedSaveEnvelope,
 } from '@/monetization/saveIsolation';
+import { debugLog } from '@/utils/debugLog';
 
 export { useSaveSystem };
 export type { LoadedGameSnapshot };
@@ -45,7 +46,7 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
       };
       
       localStorage.setItem('recordingStudioTycoonSave', JSON.stringify(saveData));
-      console.log(`Game saved successfully - Version ${versionInfo.version}`);
+      debugLog(`Game saved successfully - Version ${versionInfo.version}`);
     } catch (error) {
       console.error('Failed to save game:', error);
     }
@@ -73,7 +74,7 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
         }
       }
       
-      console.log(`Game loaded successfully - Save Version: ${parsed.version || 'legacy'}`);
+      debugLog(`Game loaded successfully - Save Version: ${parsed.version || 'legacy'}`);
       const migratedGameState = migrateAndInitializeGameState(parsed.gameState as GameState);
       const savedAt = Number.isFinite(parsed.timestamp) ? Number(parsed.timestamp) : Date.now();
 
@@ -95,7 +96,7 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
     try {
       // 89o.8: clear career save only — entitlement ledger cache survives.
       resetGameSavePreservingLedger(localStorage, GAME_SAVE_STORAGE_KEY);
-      console.log('Save data cleared');
+      debugLog('Save data cleared');
     } catch (error) {
       console.error('Failed to clear save data:', error);
     }
@@ -139,7 +140,7 @@ export const SaveSystemProvider: React.FC<SaveSystemProviderProps> = ({ children
         }
       }
 
-      console.log(`Game loaded successfully from string - Save Version: ${parsed.version || 'legacy'}`);
+      debugLog(`Game loaded successfully from string - Save Version: ${parsed.version || 'legacy'}`);
       return migrateAndInitializeGameState(parsed.gameState as GameState);
     } catch (error) {
       console.error('Failed to load game from string:', error);

@@ -517,7 +517,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
                 }} 
                 className="w-full bg-amber-400/[0.14] ring-1 ring-inset ring-amber-400/45 hover:bg-amber-400/[0.24] text-amber-100 font-bold text-lg py-3 rounded"
               >
-                Awesome!
+                {report.overallQualityScore >= 55 ? 'Awesome!' : 'Back to the studio'}
               </MotionButton>
             ) : (
               <div className="flex w-full items-center justify-between gap-3">

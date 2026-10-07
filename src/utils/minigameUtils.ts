@@ -371,13 +371,11 @@ export const shouldAutoTriggerMinigame = (
   
   // In early game, require minimum gap between minigames per project
   if (isEarlyGame && lastWorkSession < 3) {
-    console.log('🚫 Early game anti-spam: preventing minigame (need at least 3 work sessions)');
     return null;
   }
   
   // Prevent triggering on consecutive work sessions in early game
   if (isEarlyGame && workCount < 2) {
-    console.log('🚫 Early game anti-spam: preventing consecutive minigame triggers');
     return null;
   }
   
@@ -418,4 +416,27 @@ export const shouldAutoTriggerMinigame = (
   }
 
   return null;
+};
+
+/**
+ * Early-game safety net (#340/#347): a brand-new player on an Easy first project should be
+ * offered at least one (skippable, expiring) intervention instead of none across a whole session.
+ * Deterministic by the caller's seeded rng; the caller guarantees "once per project".
+ */
+export const FIRST_SESSION_INTERVENTION_TAKE = 3;
+export const firstSessionGentleTrigger = (
+  project: Project,
+  gameState: GameState,
+  focusAllocation: FocusAllocation,
+  workCount: number,
+  rng: RandomSource,
+): MinigameTrigger | null => {
+  if (workCount < FIRST_SESSION_INTERVENTION_TAKE || gameState.playerData.level >= 4) return null;
+  if (!project?.stages?.[project.currentStageIndex]) return null;
+  const triggers = getTriggeredMinigames(project, gameState, focusAllocation).filter(t => t.priority >= 5);
+  // Generic, stage-agnostic prompt when no genre/stage-specific candidate fits.
+  if (triggers.length === 0) {
+    return { minigameType: 'rhythm', triggerReason: 'Quick warm-up - tap along to lock in the groove!', priority: 5 };
+  }
+  return triggers[Math.floor(rng() * triggers.length)];
 };

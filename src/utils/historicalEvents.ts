@@ -1,5 +1,6 @@
 // Historical events system for Recording Studio Tycoon
 import { GameState } from '@/types/game';
+import { debugLog } from '@/utils/debugLog';
 
 export interface HistoricalEvent {
   id: string;
@@ -298,7 +299,7 @@ export const applyEventEffects = (event: HistoricalEvent, gameState: GameState):
   if (event.impact.marketChanges) {
     // These effects would typically be applied to future projects and transactions
     // For now, we'll store them in a way that other systems can use
-    console.log(`Applying market effects for event: ${event.title}`);
+    debugLog(`Applying market effects for event: ${event.title}`);
   }
   
   // Add notification

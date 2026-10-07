@@ -325,6 +325,8 @@ node "${CHECK_OUTPUT_DIR}/rst-console-chrome.cjs"
 
 ./node_modules/.bin/esbuild tests/intervention-checkpoint.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-intervention-checkpoint.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-intervention-checkpoint.cjs"
+./node_modules/.bin/esbuild tests/early-game-feel.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-early-game-feel.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-early-game-feel.cjs"
 ./node_modules/.bin/esbuild tests/advance-day-work.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-advance-day-work.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-advance-day-work.cjs"
 

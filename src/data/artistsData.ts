@@ -1,5 +1,6 @@
 import { Artist, MusicGenre } from '@/types/charts';
 import { generateBandName } from '../utils/bandUtils';
+import { debugLog } from '@/utils/debugLog';
 
 // Basic structure for the artist database
 export const artistsDatabase: Artist[] = [
@@ -109,7 +110,7 @@ export const updateArtistAvailability = (artistId: string, status: 'available' |
     if (responseTime !== undefined) {
       artistsDatabase[artistIndex].availability.responseTime = responseTime;
     }
-    console.log(`Updated availability for artist ${artistId} to ${status}`);
+    debugLog(`Updated availability for artist ${artistId} to ${status}`);
   } else {
     console.warn(`Artist with ID ${artistId} not found in database.`);
   }

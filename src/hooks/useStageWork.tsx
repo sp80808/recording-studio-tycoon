@@ -38,6 +38,7 @@ import {
   consumeChoreBuffSession,
   hasActiveChoreBuff,
 } from '@/simulation/choreEngine';
+import { debugLog } from '@/utils/debugLog';
 
 /** Take-driven overrides for a work session (cost, grade and quality bonus from the lock-take dock). */
 export interface PerformDailyWorkOptions {
@@ -105,9 +106,9 @@ export const useStageWork = ({
   }, [autoTriggeredMinigame, clearAutoTriggeredMinigame]);
 
   const createOrb = useCallback((type: 'creativity' | 'technical', amount: number) => {
-    console.log(`🎯 Creating ${type} orb with amount: ${amount}`);
+    debugLog(`🎯 Creating ${type} orb with amount: ${amount}`);
     if (!orbContainerRef.current) {
-      console.log('❌ No orb container found');
+      debugLog('❌ No orb container found');
       return;
     }
 
@@ -145,10 +146,10 @@ export const useStageWork = ({
   // getMoodEffectiveness is now imported from playerUtils
 
   const performDailyWork = useCallback((options?: PerformDailyWorkOptions): { finalProjectData?: Project; isComplete: boolean } | undefined => {
-    console.log('🚀 === PERFORMING DAILY WORK ===');
+    debugLog('🚀 === PERFORMING DAILY WORK ===');
     
     if (!gameState.activeProject) {
-      console.log('❌ No active project');
+      debugLog('❌ No active project');
       return;
     }
 
@@ -170,11 +171,11 @@ export const useStageWork = ({
     // Get project-specific focus allocation
     const currentProjectFocus = project.focusAllocation || { performance: 33, soundCapture: 33, layering: 34 }; // Fallback
 
-    console.log(`🎵 Working on project: ${project.title}`);
-    console.log(`📊 Project stages:`, project.stages.map((s, i) => `${i}: ${s.stageName} (${s.workUnitsCompleted}/${s.workUnitsBase})`));
+    debugLog(`🎵 Working on project: ${project.title}`);
+    debugLog(`📊 Project stages:`, project.stages.map((s, i) => `${i}: ${s.stageName} (${s.workUnitsCompleted}/${s.workUnitsBase})`));
     
     if (!project.stages || project.stages.length === 0) {
-      console.log('❌ Project has no stages');
+      debugLog('❌ Project has no stages');
       return;
     }
 
@@ -184,23 +185,23 @@ export const useStageWork = ({
     );
 
     const currentStage = project.stages[currentStageIndex];
-    console.log(`📍 Current stage: ${currentStage.stageName} (index: ${currentStageIndex})`);
-    console.log(`📈 Stage progress: ${currentStage.workUnitsCompleted}/${currentStage.workUnitsBase}`);
+    debugLog(`📍 Current stage: ${currentStage.stageName} (index: ${currentStageIndex})`);
+    debugLog(`📈 Stage progress: ${currentStage.workUnitsCompleted}/${currentStage.workUnitsBase}`);
 
     if (currentStage.completed) {
       if (project.stages.every(stage => stage.completed)) {
         // Recovery path: all work is done (e.g. finished via Advance Day) but
         // the project was never settled — route to the review flow instead of
         // stranding it with a dead-end toast.
-        console.log('🎉 Project work already complete. Routing to review flow.');
+        debugLog('🎉 Project work already complete. Routing to review flow.');
         return { finalProjectData: { ...project }, isComplete: true };
       }
-      console.log('✅ Current stage already completed');
+      debugLog('✅ Current stage already completed');
       return;
     }
 
     const newWorkSessionCount = (project.workSessionCount || 0) + 1;
-    console.log(`🔢 Work session count: ${project.workSessionCount} -> ${newWorkSessionCount}`);
+    debugLog(`🔢 Work session count: ${project.workSessionCount} -> ${newWorkSessionCount}`);
 
     // 🔥 Overdrive: armed from the Studio UI — burns 2 energy for a big output boost
     const overdrive = !!project.overdriveArmed && gameState.playerData.dailyWorkCapacity >= 2 && isFeatureUnlocked(gameState, 'overdrive');
@@ -210,7 +211,7 @@ export const useStageWork = ({
     const newCombo = !isFeatureUnlocked(gameState, 'combo') ? 0 : sameDay ? (project.comboCount || 0) + 1 : 1;
     if (newCombo >= 2) trackFeatureUsed(gameState.currentDay, 'combo');
     const comboMultiplier = 1 + Math.min(0.5, Math.max(0, newCombo - 1) * 0.1);
-    console.log(`⚡ Combo x${newCombo} (x${comboMultiplier.toFixed(2)}) | 🔥 Overdrive: ${overdrive}`);
+    debugLog(`⚡ Combo x${newCombo} (x${comboMultiplier.toFixed(2)}) | 🔥 Overdrive: ${overdrive}`);
 
     // 🌊 Focus Flow (sd3.2): the top focus dial matching a stage focus area
     // extends the aura streak; 3 in a row ignites FLOW x2 up to x4 on gains.
@@ -220,7 +221,7 @@ export const useStageWork = ({
     const prevFlow = { streak: project.flowStreak ?? 0, multiplier: project.flowMultiplier ?? 1 };
     const flow = advanceFlow(prevFlow, focusMatched);
     if (flow.multiplier > prevFlow.multiplier && flow.multiplier > 1) {
-      console.log(`🌊 FOCUS FLOW x${flow.multiplier} ignited!`);
+      debugLog(`🌊 FOCUS FLOW x${flow.multiplier} ignited!`);
       toast({
         title: `🌊 FOCUS FLOW x${flow.multiplier}!`,
         description: 'Matched focus keeps chaining — ride it for bonus output.',
@@ -239,13 +240,13 @@ export const useStageWork = ({
       gameState.playerData.dailyWorkCapacity,
       gameState.playerData.attributes
     );
-    console.log(`💪 Base work points - C: ${workPoints.creativity}, T: ${workPoints.technical}`);
+    debugLog(`💪 Base work points - C: ${workPoints.creativity}, T: ${workPoints.technical}`);
 
     // Apply player attribute multipliers and focus allocation
     const creativityMultiplier = getCreativityMultiplier(gameState);
     const technicalMultiplier = getTechnicalMultiplier(gameState);
     const focusEffectiveness = getFocusEffectiveness(gameState);
-    console.log(`🔥 Multipliers - Creativity: ${creativityMultiplier.toFixed(2)}, Technical: ${technicalMultiplier.toFixed(2)}, Focus: ${focusEffectiveness.toFixed(2)}`);
+    debugLog(`🔥 Multipliers - Creativity: ${creativityMultiplier.toFixed(2)}, Technical: ${technicalMultiplier.toFixed(2)}, Focus: ${focusEffectiveness.toFixed(2)}`);
     
     workPoints = applyFocusAndMultipliers(
       workPoints,
@@ -254,7 +255,7 @@ export const useStageWork = ({
       technicalMultiplier,
       focusEffectiveness
     );
-    console.log(`📊 After focus & multipliers - C: ${workPoints.creativity}, T: ${workPoints.technical}`);
+    debugLog(`📊 After focus & multipliers - C: ${workPoints.creativity}, T: ${workPoints.technical}`);
     
     // Apply studio skill bonuses
     workPoints = applyStudioSkillBonusesToWorkPoints(
@@ -262,7 +263,7 @@ export const useStageWork = ({
       project.genre,
       gameState.studioSkills
     );
-    console.log(`🎸 After skill bonuses - C: ${workPoints.creativity}, T: ${workPoints.technical}`);
+    debugLog(`🎸 After skill bonuses - C: ${workPoints.creativity}, T: ${workPoints.technical}`);
 
     // Apply equipment bonuses (seated room gear when racks are in use — bead 8om)
     workPoints = applyEquipmentBonusesToWorkPoints(
@@ -270,18 +271,18 @@ export const useStageWork = ({
       resolveSessionEquipment(gameState, project.bookingRoomId),
       project.genre
     );
-    console.log(`🎛️ After equipment bonuses - C: ${workPoints.creativity}, T: ${workPoints.technical}`);
+    debugLog(`🎛️ After equipment bonuses - C: ${workPoints.creativity}, T: ${workPoints.technical}`);
 
     // Add staff contributions
     const assignedStaff = gameState.hiredStaff.filter(s => s.assignedProjectId === project.id && s.status === 'Working');
-    console.log(`👥 Assigned staff count: ${assignedStaff.length}`);
+    debugLog(`👥 Assigned staff count: ${assignedStaff.length}`);
     workPoints = calculateStaffWorkContribution(
       workPoints,
       assignedStaff,
       project.genre,
       getMoodEffectiveness // Imported from playerUtils
     );
-    console.log(`🎯 FINAL GAINS - C: ${workPoints.creativity}, T: ${workPoints.technical}`);
+    debugLog(`🎯 FINAL GAINS - C: ${workPoints.creativity}, T: ${workPoints.technical}`);
     
     // 🌟 Studio Synergies (Issues #45 & #48)
     const activeSynergies = evaluateProjectSynergies(project, gameState);
@@ -327,11 +328,11 @@ export const useStageWork = ({
     const totalPointsGenerated = creativityGain + technicalGain;
 
     // Log values for debugging stage progression
-    console.log(`🐞 DEBUG - Current Stage workUnitsBase: ${currentStage.workUnitsBase}`);
-    console.log(`🐞 DEBUG - Creativity Gain: ${creativityGain} (Synergy x${synergyBonuses.creativityMultiplier})`);
-    console.log(`🐞 DEBUG - Technical Gain: ${technicalGain} (Synergy x${synergyBonuses.technicalMultiplier})`);
-    console.log(`🐞 DEBUG - Total Points Generated: ${totalPointsGenerated}`);
-    console.log(`🐞 DEBUG - Current Stage workUnitsCompleted (before): ${currentStage.workUnitsCompleted}`);
+    debugLog(`🐞 DEBUG - Current Stage workUnitsBase: ${currentStage.workUnitsBase}`);
+    debugLog(`🐞 DEBUG - Creativity Gain: ${creativityGain} (Synergy x${synergyBonuses.creativityMultiplier})`);
+    debugLog(`🐞 DEBUG - Technical Gain: ${technicalGain} (Synergy x${synergyBonuses.technicalMultiplier})`);
+    debugLog(`🐞 DEBUG - Total Points Generated: ${totalPointsGenerated}`);
+    debugLog(`🐞 DEBUG - Current Stage workUnitsCompleted (before): ${currentStage.workUnitsCompleted}`);
     
     // Enhanced work unit calculation:
     // - Base conversion: points to work units (divide by 3 for faster progression)
@@ -360,9 +361,9 @@ export const useStageWork = ({
       currentStage.workUnitsBase
     );
 
-    console.log(`⚡ Total points generated: ${totalPointsGenerated}`);
-    console.log(`🔨 Work units to add (calculated): ${workUnitsToAdd}, (actual applied): ${actualWorkUnitsToAdd}`);
-    console.log(`📈 Work units: ${currentStage.workUnitsCompleted} -> ${newWorkUnitsCompleted} (max: ${currentStage.workUnitsBase})`);
+    debugLog(`⚡ Total points generated: ${totalPointsGenerated}`);
+    debugLog(`🔨 Work units to add (calculated): ${workUnitsToAdd}, (actual applied): ${actualWorkUnitsToAdd}`);
+    debugLog(`📈 Work units: ${currentStage.workUnitsCompleted} -> ${newWorkUnitsCompleted} (max: ${currentStage.workUnitsBase})`);
 
     // Check if stage is completed
     const stageCompleted = newWorkUnitsCompleted >= currentStage.workUnitsBase;
@@ -379,14 +380,14 @@ export const useStageWork = ({
     let completedGrade: ReturnType<typeof gradeStage> | null = null;
     if (stageCompleted && !currentStage.completed) {
       newCurrentStageIndex = Math.min(currentStageIndex + 1, project.stages.length - 1);
-      console.log(`✅ Stage completed! Moving to stage index: ${newCurrentStageIndex}`);
+      debugLog(`✅ Stage completed! Moving to stage index: ${newCurrentStageIndex}`);
       completedGrade = gradeStage({
         sessionsTaken: newStageSessions[currentStageIndex] ?? 1,
         parSessions,
         minigameTake: project.stageTake ?? null,
         focusMatch: focusMatchFraction(focusMatched),
       });
-      console.log(`🏅 Stage grade: ${completedGrade.grade} (+${completedGrade.qualityCarry} carry${completedGrade.capsProjectAtA ? ', caps project at A' : ''})`);
+      debugLog(`🏅 Stage grade: ${completedGrade.grade} (+${completedGrade.qualityCarry} carry${completedGrade.capsProjectAtA ? ', caps project at A' : ''})`);
     }
 
     // 🎚️ Phase event (#87): deterministic, at most one per finished stage.
@@ -406,7 +407,7 @@ export const useStageWork = ({
     // FIXED: Immutable state update for React re-rendering
     setGameState(prev => {
       if (prev.activeProject?.id !== project.id || prev.activeProject.workSessionCount !== project.workSessionCount) return prev;
-      console.log('🔄 Updating game state with immutable update...');
+      debugLog('🔄 Updating game state with immutable update...');
       
       // Deep copy the active project to avoid mutation
       const baseProject = phaseEvent
@@ -416,7 +417,7 @@ export const useStageWork = ({
         ...baseProject,
         stages: prev.activeProject!.stages.map((stage, index) => {
           if (index === currentStageIndex) {
-            console.log(`🔄 Updating stage ${index}: ${stage.workUnitsCompleted} -> ${newWorkUnitsCompleted}, completed: ${stageCompleted}`);
+            debugLog(`🔄 Updating stage ${index}: ${stage.workUnitsCompleted} -> ${newWorkUnitsCompleted}, completed: ${stageCompleted}`);
             return {
               ...stage,
               workUnitsCompleted: newWorkUnitsCompleted,
@@ -451,9 +452,9 @@ export const useStageWork = ({
         })(),
       };
 
-      console.log(`📋 Project C points: ${prev.activeProject!.accumulatedCPoints} -> ${updatedProject.accumulatedCPoints}`);
-      console.log(`📋 Project T points: ${prev.activeProject!.accumulatedTPoints} -> ${updatedProject.accumulatedTPoints}`);
-      console.log(`📋 Updated stages:`, updatedProject.stages.map((s, i) => `${i}: ${s.stageName} (${s.workUnitsCompleted}/${s.workUnitsBase}) ${s.completed ? '✅' : '⏳'}`));
+      debugLog(`📋 Project C points: ${prev.activeProject!.accumulatedCPoints} -> ${updatedProject.accumulatedCPoints}`);
+      debugLog(`📋 Project T points: ${prev.activeProject!.accumulatedTPoints} -> ${updatedProject.accumulatedTPoints}`);
+      debugLog(`📋 Updated stages:`, updatedProject.stages.map((s, i) => `${i}: ${s.stageName} (${s.workUnitsCompleted}/${s.workUnitsBase}) ${s.completed ? '✅' : '⏳'}`));
 
       const nextChoreState = stageCompleted && prev.choreState
         ? consumeChoreBuffSession(prev.choreState)
@@ -566,7 +567,7 @@ export const useStageWork = ({
     );
     
     if (allStagesComplete) {
-      console.log('🎉 PROJECT WORK UNITS COMPLETE! Preparing data for celebration.');
+      debugLog('🎉 PROJECT WORK UNITS COMPLETE! Preparing data for celebration.');
       const finalProjectData = { // Capture all necessary details for the celebration and eventual completion call
         ...(phaseEvent ? applySessionEvent(project, phaseEvent, currentStageIndex) : project), // gameState.activeProject plus this stage's event
         stages: project.stages.map((stage, index) => {

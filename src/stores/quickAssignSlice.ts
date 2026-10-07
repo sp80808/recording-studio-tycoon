@@ -1,4 +1,5 @@
 import { StateCreator } from 'zustand'
+import { debugLog } from '@/utils/debugLog';
 
 export type QuickAssignPreset = {
   id: string
@@ -24,6 +25,6 @@ export const createQuickAssignSlice: StateCreator<any, [], [], QuickAssignSlice>
     const preset = get().presets.find((p: QuickAssignPreset) => p.id === id)
     if (!preset) return
     // Side-effects (assigning staff) are intentionally left to the integration layer
-    console.log('applyPreset', preset)
+    debugLog('applyPreset', preset)
   },
 })
