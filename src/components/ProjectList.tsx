@@ -53,6 +53,8 @@ interface ProjectListProps {
   startProject: (project: Project) => void;
   /** Cooldown + cost gated gig refresh (bead goj.3). Falls back to inline roll. */
   onRefreshProjects?: () => boolean;
+  /** Close bookings drawer / hand off into session after a successful book (#357). */
+  onBooked?: () => void;
 }
 
 const fitChip = (matchRating: Project['matchRating']) => {
@@ -139,12 +141,17 @@ const StakePicker: React.FC<{
       })}
     </div>
     <p className="rst-muted mt-1.5 text-[11px] leading-relaxed">{describeStake(value)}</p>
-    {!locked && STAKE_ORDER.filter(stake => !isStakeUnlocked(stake, level)).map(stake => (
-      <p key={stake} className="rst-muted text-[11px] leading-relaxed" data-testid={`stake-unlock-${stake}`}>
-        <Lock size={10} className="mr-1 inline" aria-hidden="true" />
-        {tc('stake.unlock.line', '{{label}} unlocks at producer level {{level}}', { label: STAKE_LABEL[stake], level: STAKE_MIN_LEVEL[stake] })}
-      </p>
-    ))}
+    {!locked && STAKE_ORDER.some(stake => !isStakeUnlocked(stake, level)) && (
+      <details className="mt-1">
+        <summary className="cursor-pointer select-none text-[11px] text-stone-500">More stakes unlock later</summary>
+        {STAKE_ORDER.filter(stake => !isStakeUnlocked(stake, level)).map(stake => (
+          <p key={stake} className="rst-muted text-[11px] leading-relaxed" data-testid={`stake-unlock-${stake}`}>
+            <Lock size={10} className="mr-1 inline" aria-hidden="true" />
+            {tc('stake.unlock.line', '{{label}} unlocks at producer level {{level}}', { label: STAKE_LABEL[stake], level: STAKE_MIN_LEVEL[stake] })}
+          </p>
+        ))}
+      </details>
+    )}
   </div>
 );
 
@@ -155,6 +162,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
   setGameState,
   startProject,
   onRefreshProjects,
+  onBooked,
 }) => {
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [decliningId, setDecliningId] = useState<string | null>(null);
@@ -206,35 +214,39 @@ export const ProjectList: React.FC<ProjectListProps> = ({
     // The player's chosen gamble rides along (story contracts keep their fixed stake).
     const stake = project.stakeLocked ? project.stake ?? 'safe' : stakes[project.id] ?? project.stake ?? 'safe';
 
-    // Tactile action feedback communicated within short beat (~180ms)
+    // Short tactile beat, then book + leave the success string / close drawer (#357).
     window.setTimeout(() => {
-      const approach = getApproach(approaches[project.id], project.genre);
-      const chain = chains[project.id];
-      const chainOk = chain && validateChain(chain, gameState, project.id).broken.length === 0;
-      const plan = assignments[project.id];
-      startProject({
-        ...project,
-        stake,
-        // The room and crew the player forecast with are the ones that get booked (#55).
-        ...(plan?.roomId ? { bookingRoomId: plan.roomId } : {}),
-        ...(chainOk ? { signalChain: chain } : {}),
-        brief: getProjectBrief(project),
-        ...(approach ? { approachId: approach.id, focusAllocation: approach.focus } : {}),
-      });
-      if (isDerivedOffer(project)) {
-        setGameState(prev => ({ ...prev, claimedOffers: [...(prev.claimedOffers ?? []), project.id].slice(-40) }));
-      }
-      if (plan && plan.staffIds.length > 0) {
-        setGameState(prev => prev.activeProject?.id !== project.id ? prev : {
-          ...prev,
-          hiredStaff: prev.hiredStaff.map(s =>
-            plan.staffIds.includes(s.id) && !s.assignedProjectId && s.status === 'Idle' && s.energy >= 20
-              ? { ...s, status: 'Working', assignedProjectId: project.id }
-              : s
-          ),
+      try {
+        const approach = getApproach(approaches[project.id], project.genre);
+        const chain = chains[project.id];
+        const chainOk = chain && validateChain(chain, gameState, project.id).broken.length === 0;
+        const plan = assignments[project.id];
+        startProject({
+          ...project,
+          stake,
+          // The room and crew the player forecast with are the ones that get booked (#55).
+          ...(plan?.roomId ? { bookingRoomId: plan.roomId } : {}),
+          ...(chainOk ? { signalChain: chain } : {}),
+          brief: getProjectBrief(project),
+          ...(approach ? { approachId: approach.id, focusAllocation: approach.focus } : {}),
         });
+        if (isDerivedOffer(project)) {
+          setGameState(prev => ({ ...prev, claimedOffers: [...(prev.claimedOffers ?? []), project.id].slice(-40) }));
+        }
+        if (plan && plan.staffIds.length > 0) {
+          setGameState(prev => prev.activeProject?.id !== project.id ? prev : {
+            ...prev,
+            hiredStaff: prev.hiredStaff.map(s =>
+              plan.staffIds.includes(s.id) && !s.assignedProjectId && s.status === 'Idle' && s.energy >= 20
+                ? { ...s, status: 'Working', assignedProjectId: project.id }
+                : s
+            ),
+          });
+        }
+        onBooked?.();
+      } finally {
+        setBookingId(null);
       }
-      setBookingId(null);
     }, 180);
   };
 
@@ -280,7 +292,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
         <div>
           <h2 className="rst-title text-xl">Artist Enquiries</h2>
           <p className="rst-muted mt-1 text-xs">
-            Choose the sessions that best fit your room, staff and current cashflow.
+            Pick a fit — book when ready.
           </p>
           {pulse.length > 0 && (
             <details data-testid="industry-pulse" className="mt-1 text-xs text-stone-400">
@@ -382,7 +394,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({
         </MotionReveal>
       )}
 
-      <div className="edge-fade-b min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+      <div className="edge-fade-b min-h-0 flex-1 space-y-3 pr-1">
         {board.length === 0 && (
           <div className="px-4 py-10 text-center">
             <Inbox size={34} strokeWidth={1.4} className="mx-auto mb-3 text-[var(--rst-brass-400)]" aria-hidden="true" />
@@ -482,21 +494,57 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                   </div>
                 </div>
 
-                <div className="mb-3 rounded-lg border border-[var(--rst-line)] bg-black/20 p-2 text-xs leading-snug text-stone-300">
-                  {isStory && rival ? (
-                    <StoryBrief brief={buildStoryContractBrief(rival, chosenStake, level, activeNode && activeNode.id === project.storyNodeId ? activeNode.title : undefined)} />
-                  ) : isStory ? (
-                    'The rival is watching this one. A strong result counts toward the campaign objective.'
-                  ) : (
-                    getOpportunityNote(project)
+                <BookingCostLine state={gameState} project={project} />
+
+                {/* Primary CTA up front + sticky so Book stays reachable on phone (#357). */}
+                <div className="sticky bottom-0 z-10 -mx-1 mt-2 mb-2 flex items-center gap-2 rounded-lg border border-[var(--rst-line)] bg-[rgba(18,16,14,0.96)] px-1 py-2 backdrop-blur-sm">
+                  <MotionButton
+                    magnetic
+                    data-rst-surface="deep-panel" data-rst-action-id="phone:accept-enquiry" data-rst-world-target="phone"
+                    onClick={() => handleAcceptEnquiry(project)}
+                    disabled={!!gameState.activeProject || !!bookingId || !!decliningId}
+                    className={`rst-btn flex-1 ${gameState.activeProject ? '' : 'rst-btn-primary'} ${isBookingThis ? 'rst-btn-success' : ''}`}
+                  >
+                    {isBookingThis ? (
+                      <>
+                        <Check size={14} className="animate-in zoom-in" />
+                        <span>Booked! Starting…</span>
+                      </>
+                    ) : gameState.activeProject ? (
+                      'Studio Occupied'
+                    ) : (
+                      'Book Session'
+                    )}
+                  </MotionButton>
+
+                  {!gameState.activeProject && !isStory && (
+                    <MotionButton
+                      onClick={() => handleDeclineEnquiry(project.id)}
+                      disabled={!!bookingId || !!decliningId}
+                      className="rst-btn rst-btn-ghost !min-h-9 !px-2.5 text-stone-400 hover:!text-rose-300"
+                      title="Decline enquiry"
+                      aria-label={`Decline enquiry from ${project.title}`}
+                    >
+                      <XCircle size={16} />
+                    </MotionButton>
                   )}
                 </div>
 
                 <details data-testid="enquiry-brief-details" className="mb-3 rounded-lg border border-[var(--rst-line)] bg-black/10 px-2.5 py-2">
                   <summary className="cursor-pointer select-none text-xs font-semibold text-[var(--rst-ivory)]">
-                    Brief, rider &amp; approach
+                    Brief, rider &amp; note
                   </summary>
-                  <div className="pt-2">
+                  <div className="pt-2 space-y-2">
+                    <div className="rounded-lg border border-[var(--rst-line)] bg-black/20 p-2 text-xs leading-snug text-stone-300">
+                      {isStory && rival ? (
+                        <StoryBrief brief={buildStoryContractBrief(rival, chosenStake, level, activeNode && activeNode.id === project.storyNodeId ? activeNode.title : undefined)} />
+                      ) : isStory ? (
+                        'The rival is watching this one. A strong result counts toward the campaign objective.'
+                      ) : (
+                        getOpportunityNote(project)
+                      )}
+                    </div>
+                    <p data-testid="enquiry-style-note" className="text-xs text-stone-400">{enquiryStyleNote(gameState.studioExpertise, project.genre, project.brief?.serviceType)}</p>
                 <BriefPanel
                   project={project}
                   state={gameState}
@@ -517,8 +565,6 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                     onChange={(choices) => setLabelChoices((prev) => ({ ...prev, [project.id]: choices }))}
                   />
                 )}
-                <BookingCostLine state={gameState} project={project} />
-                <p data-testid="enquiry-style-note" className="mb-3 text-xs text-stone-400">{enquiryStyleNote(gameState.studioExpertise, project.genre, project.brief?.serviceType)}</p>
 
                 <details className="mb-3 rounded-lg border border-[var(--rst-line)] bg-black/10 px-2.5 py-2" >
                   <summary className="cursor-pointer select-none text-xs font-semibold text-[var(--rst-ivory)]">
@@ -558,39 +604,6 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                     setStakes((prev) => ({ ...prev, [project.id]: stake }));
                   }}
                 />
-
-                <div className="mt-3 flex items-center gap-2">
-                  <MotionButton
-                    magnetic
-                    data-rst-surface="deep-panel" data-rst-action-id="phone:accept-enquiry" data-rst-world-target="phone"
-                    onClick={() => handleAcceptEnquiry(project)}
-                    disabled={!!gameState.activeProject || !!bookingId || !!decliningId}
-                    className={`rst-btn flex-1 ${gameState.activeProject ? '' : 'rst-btn-primary'} ${isBookingThis ? 'rst-btn-success' : ''}`}
-                  >
-                    {isBookingThis ? (
-                      <>
-                        <Check size={14} className="animate-in zoom-in" />
-                        <span>Booked! Starting…</span>
-                      </>
-                    ) : gameState.activeProject ? (
-                      'Studio Occupied'
-                    ) : (
-                      'Book Session'
-                    )}
-                  </MotionButton>
-
-                  {!gameState.activeProject && !isStory && (
-                    <MotionButton
-                      onClick={() => handleDeclineEnquiry(project.id)}
-                      disabled={!!bookingId || !!decliningId}
-                      className="rst-btn rst-btn-ghost !min-h-9 !px-2.5 text-stone-400 hover:!text-rose-300"
-                      title="Decline enquiry"
-                      aria-label={`Decline enquiry from ${project.title}`}
-                    >
-                      <XCircle size={16} />
-                    </MotionButton>
-                  )}
-                </div>
               </article>
             </MotionReveal>
           );

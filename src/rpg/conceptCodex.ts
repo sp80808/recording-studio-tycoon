@@ -4,7 +4,7 @@
  * Unmet concepts show as locked placeholders with no text, so nothing is spoiled or lectured.
  */
 import { AUDIO_CONCEPT_IDS, type AudioConceptId } from './audioConcepts';
-import { hasMetConcept, type StudioKnowHow } from './studioKnowHow';
+import { hasMetConcept, noteConceptsMet, createInitialKnowHow, type StudioKnowHow } from './studioKnowHow';
 
 export interface CodexConcept {
   id: AudioConceptId;
@@ -61,4 +61,26 @@ export const deriveCodex = (kh: StudioKnowHow | undefined): CodexEntry[] =>
 export const codexProgress = (kh: StudioKnowHow | undefined): { met: number; total: number; complete: boolean } => {
   const met = deriveCodex(kh).filter(e => e.met).length;
   return { met, total: AUDIO_CONCEPT_IDS.length, complete: met === AUDIO_CONCEPT_IDS.length };
+};
+
+/** One-time reward for completing the whole set: plain XP and a Career badge. No currency or loot. */
+export const CODEX_COMPLETE_XP = 150;
+export const CODEX_COMPLETE_KEY = 'codex:complete';
+
+export const isCodexRewardClaimed = (kh: StudioKnowHow | undefined): boolean =>
+  !!kh?.discoveries.includes(CODEX_COMPLETE_KEY);
+
+/** Like noteConceptsMet, but pays the completion reward exactly once when the set fills. */
+export const noteConceptsWithReward = <S extends { studioKnowHow?: StudioKnowHow; playerData: { xp: number } }>(
+  game: S,
+  concepts: readonly AudioConceptId[],
+): S => {
+  const noted = noteConceptsMet(game, concepts);
+  const kh = noted.studioKnowHow ?? createInitialKnowHow();
+  if (!codexProgress(kh).complete || isCodexRewardClaimed(kh)) return noted;
+  return {
+    ...noted,
+    studioKnowHow: { ...kh, discoveries: [...kh.discoveries, CODEX_COMPLETE_KEY] },
+    playerData: { ...noted.playerData, xp: noted.playerData.xp + CODEX_COMPLETE_XP },
+  };
 };

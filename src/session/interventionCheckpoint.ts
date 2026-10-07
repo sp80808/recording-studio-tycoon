@@ -2,6 +2,9 @@ import type { GameState, Project, SessionIntervention } from '@/types/game';
 import { firstSessionGentleTrigger, shouldAutoTriggerMinigame } from '@/utils/minigameUtils';
 import { createSeededRandom } from '@/simulation/seededRandom';
 
+export const INTERVENTION_OFFER_MS = 90_000;
+export const FIRST_SESSION_OFFER_MS = 300_000;
+
 /** Foreground Project owns intervention metadata; preserve every other mirror field. */
 export function mirrorInterventionState(primary: Project, mirror: Project): Project {
   if (primary.id !== mirror.id ||
@@ -50,10 +53,12 @@ export function advanceInterventionCheckpoint(project: Project, state: GameState
   if (bucket <= 0 || (checkpoint?.stageIndex === project.currentStageIndex && checkpoint.workBucket >= bucket)) return project;
   const focus = project.focusAllocation || { performance: 33, soundCapture: 33, layering: 34 };
   const seed = `${project.id}:intervention:${project.currentStageIndex}:${bucket}`;
-  const trigger = shouldAutoTriggerMinigame(project, state, focus, bucket, createSeededRandom(seed)) ??
-    // Easy first session: if nothing has ever been offered on this project, guarantee one gentle chance.
-    (project.difficulty <= 2 && !(project.resolvedInterventionStageKeys ?? []).length
-      ? firstSessionGentleTrigger(project, state, focus, bucket, createSeededRandom(`${seed}:first`)) : null);
+  const regular = shouldAutoTriggerMinigame(project, state, focus, bucket, createSeededRandom(seed));
+  // Easy first session: if nothing has ever been offered on this project, guarantee one gentle chance,
+  // with a longer window because a new player is slow to open the console (#340/#347).
+  const gentle = !regular && project.difficulty <= 2 && !(project.resolvedInterventionStageKeys ?? []).length
+    ? firstSessionGentleTrigger(project, state, focus, bucket, createSeededRandom(`${seed}:first`)) : null;
+  const trigger = regular ?? gentle;
   return { ...project, interventionCheckpoint: {
     stageIndex: project.currentStageIndex,
     workBucket: bucket,
@@ -64,7 +69,7 @@ export function advanceInterventionCheckpoint(project: Project, state: GameState
       type: trigger.minigameType,
       reason: trigger.triggerReason,
       priority: trigger.priority,
-      expiresAt: now + 90_000,
+      expiresAt: now + (gentle ? FIRST_SESSION_OFFER_MS : INTERVENTION_OFFER_MS),
     } : null,
   } };
 }

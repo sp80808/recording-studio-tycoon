@@ -1,7 +1,7 @@
 /** Specialist freelancer network (#69): contacts, deterministic offers, stage uplift, margin, delivery credit. */
 import {
   FREELANCERS, CONTACT_BY_ID, specialtiesForStage, knownContacts, offersFor, arrangeFreelancer, settleFreelancers,
-  activeUplift, internalShare, freelancerFees, familiarityWith, feeFor, upliftFor, leadDaysFor, rateDiscount,
+  lockedForStage, activeUplift, internalShare, freelancerFees, familiarityWith, feeFor, upliftFor, leadDaysFor, rateDiscount,
   BAND_UPLIFT, BASE_FEE, SUCCESS_QUALITY, EASY_SCHEDULING_AT, type FreelancerState,
 } from '../src/rpg/freelancers';
 import { quoteFor } from '../src/rpg/serviceQuote';
@@ -25,7 +25,7 @@ const base: GameState = { ...createNewGameState(), money: 2000, currentDay: 10, 
 const withJob = (p = job(), over: Partial<GameState> = {}): GameState => ({ ...base, activeProject: p, activeProjects: [], ...over } as GameState);
 
 // ───── Content ─────
-ok(FREELANCERS.length >= 8 && FREELANCERS.length <= 12, 'the network has 8-12 authored contacts');
+ok(FREELANCERS.length >= 8 && FREELANCERS.length <= 14, 'the network has 8-14 authored contacts');
 ok(new Set(FREELANCERS.map((c) => c.id)).size === FREELANCERS.length, 'contact ids are unique');
 for (const sp of ['mix', 'master', 'session'] as const) ok(FREELANCERS.some((c) => c.specialties.includes(sp) && c.unlock.kind === 'start'), `a ${sp} specialist is in the starting contacts`);
 ok(FREELANCERS.every((c) => c.unlock.kind !== 'referral' || (CONTACT_BY_ID[c.unlock.from] && c.unlock.from !== c.id)), 'every referral names a real, different contact');
@@ -148,7 +148,7 @@ const payouts: number[] = [];
 for (let lvl = 1; lvl <= 13; lvl += 2) for (const p of generateNewProjects(10, lvl, 'modern', [], 1, 5)) payouts.push(Math.round(p.payoutBase));
 const lo = Math.min(...payouts), hi = Math.max(...payouts);
 ok(hi > lo * 3, `real payouts span a wide range ($${lo} to $${hi})`);
-let allKnown: GameState = { ...base, premisesTier: 3, hiredStaff: [{ id: 'a' }, { id: 'b' }], clientRelationships: { c: { ...regular.clientRelationships!.c, tier: 'Loyal' } }, freelancers: { known: [], familiarity: Object.fromEntries(FREELANCERS.map((c) => [c.id, 2])), log: [] } } as unknown as GameState;
+let allKnown: GameState = { ...base, premisesTier: 3, labelInterest: { indie_label_001: 40 }, playerBands: [{ id: 'b', fame: 40 }], hiredStaff: [{ id: 'a' }, { id: 'b' }], clientRelationships: { c: { ...regular.clientRelationships!.c, tier: 'Loyal' } }, freelancers: { known: [], familiarity: Object.fromEntries(FREELANCERS.map((c) => [c.id, 2])), log: [] } } as unknown as GameState;
 const stagesOf = ['Mixing', 'Streaming Master', 'Horn Section Overdubs'];
 let dominated = 0, tested = 0;
 for (const c of FREELANCERS) {
@@ -165,5 +165,25 @@ for (const c of FREELANCERS) {
   if (signs.size < 2) { dominated++; console.log('ONE-SIDED', c.id, [...signs]); }
 }
 ok(dominated === 0, `no contact is always worth it or never worth it across the payout range (${tested} checked)`);
+
+// ───── Label and venue contact sources ─────
+const odile = CONTACT_BY_ID['odile-brandt'], cass = CONTACT_BY_ID['cass-ferreira'];
+ok(odile.unlock.kind === 'label' && cass.unlock.kind === 'venue' && odile.specialties.includes('master') && cass.specialties.includes('mix'), 'a label house engineer (master) and a venue engineer (mix) are authored');
+ok(!knownContacts({ ...base, labelInterest: { major_label_001: 24 } } as GameState).some((c) => c.id === 'odile-brandt'), 'label interest below the line opens nobody');
+ok(knownContacts({ ...base, labelInterest: { indie_label_001: 25 } } as GameState).some((c) => c.id === 'odile-brandt'), 'a label at 25 interest introduces its house engineer');
+const bandWith = (fame: number) => ({ id: 'b', fame }) as unknown as GameState['playerBands'][number];
+ok(!knownContacts({ ...base, playerBands: [bandWith(24)] } as GameState).some((c) => c.id === 'cass-ferreira'), 'a band below the fame line opens nobody');
+ok(knownContacts({ ...base, playerBands: [bandWith(10), bandWith(25)] } as GameState).some((c) => c.id === 'cass-ferreira'), 'a band with 25 fame gets a venue introduction');
+ok(knownContacts({ ...base, playerBands: undefined, labelInterest: undefined } as unknown as GameState).length === 3, 'saves without bands or label interest add no contacts');
+const keep = knownContacts({ ...base, labelInterest: { indie_label_001: 30 } } as GameState).map((c) => c.id);
+ok(knownContacts({ ...base, freelancers: { known: keep, familiarity: {}, log: [] } } as GameState).some((c) => c.id === 'odile-brandt'), 'once met, the label contact stays known if interest later falls');
+// Next-contact hint.
+const lockedMaster = lockedForStage(base, 'Streaming Master');
+ok(lockedMaster.length > 0 && lockedMaster.every((l) => l.contact.specialties.includes('master')), 'the hint lists unmet mastering contacts only');
+ok(lockedMaster[0].contact.unlock.kind !== 'referral', 'milestone contacts come before referral-gated ones');
+ok(lockedMaster.some((l) => l.contact.id === 'odile-brandt' && /label/i.test(l.hint)), 'the label contact explains how to meet her');
+ok(lockedForStage(base, 'Pre-Production').length === 0, 'a stage nobody could take over has no hint');
+const everyone = { ...allKnown, labelInterest: { indie_label_001: 40 }, playerBands: [bandWith(40)] } as GameState;
+ok(lockedForStage(everyone, 'Mixing').length === 0 && lockedForStage(everyone, 'Streaming Master').length === 0, 'nothing is left to meet once every contact is known');
 
 console.log(`freelancers: ${n} checks passed`);
