@@ -151,5 +151,8 @@
   "story.stake.ambitious": "Challenge cut — A-rank earns respect; a miss costs reputation.",
   "story.stake.moonshot": "Last-word master — S-rank or the rival owns the story.",
   "story.stake.unlockNote": "{{unlock}} — the story fixes it for this gig.",
-  "premises.needs": "Needs {{what}}"
+  "premises.needs": "Needs {{what}}",
+  "freelancer.next": "Next contact: {{name}}. {{hint}}",
+  "freelancer.unlock.label": "Introduced by a label once its interest in you reaches {{n}}.",
+  "freelancer.unlock.venue": "Introduced by a venue once your band has {{n}} fame."
 }

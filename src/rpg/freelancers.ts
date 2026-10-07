@@ -19,6 +19,10 @@ export type ContactUnlock =
   | { kind: 'premises'; tier: 1 | 2 | 3 }
   | { kind: 'client'; tier: 'Regular' | 'Loyal' }
   | { kind: 'staff'; count: number }
+  /** A record label's interest (label interest, #49) has reached this line: the label's house engineer opens up. */
+  | { kind: 'label'; interest: number }
+  /** A player band has built this much fame on stage (live shows): the venue's regulars know someone. */
+  | { kind: 'venue'; fame: number }
   | { kind: 'referral'; from: string; familiarity: number };
 
 export interface FreelancerContact {
@@ -43,6 +47,8 @@ export const FREELANCERS: readonly FreelancerContact[] = [
   { id: 'wendell-cray', name: 'Wendell Cray', specialties: ['master'], tagline: 'Vinyl-era ears, booked months ahead', genreAffinity: ['Rock', 'Jazz', 'Soul'], rateBand: 'premium', reliability: 92, unlock: { kind: 'premises', tier: 2 } },
   { id: 'tobi-adeyemi', name: 'Tobi Adeyemi', specialties: ['session'], tagline: 'Bass and keys, plays what the song needs', genreAffinity: ['Hip-hop', 'Electronic', 'Soul'], rateBand: 'low', reliability: 65, unlock: { kind: 'staff', count: 2 } },
   { id: 'ray-kowalski', name: 'Ray Kowalski', specialties: ['session'], tagline: 'Pedal steel and slide guitar', genreAffinity: ['Country', 'Folk', 'Rock'], rateBand: 'low', reliability: 78, unlock: { kind: 'client', tier: 'Loyal' } },
+  { id: 'odile-brandt', name: 'Odile Brandt', specialties: ['master'], tagline: 'Label house mastering engineer, free for outside work', genreAffinity: ['Pop', 'Rock', 'Hip-hop'], rateBand: 'standard', reliability: 86, unlock: { kind: 'label', interest: 25 } },
+  { id: 'cass-ferreira', name: 'Cass Ferreira', specialties: ['mix'], tagline: 'Venue house engineer who mixes live-to-two', genreAffinity: ['Rock', 'Folk', 'Country'], rateBand: 'low', reliability: 74, unlock: { kind: 'venue', fame: 25 } },
   { id: 'marta-lindqvist', name: 'Marta Lindqvist', specialties: ['mix'], tagline: 'Warm, wide acoustic mixes', genreAffinity: ['Jazz', 'Folk', 'Acoustic'], rateBand: 'standard', reliability: 82, unlock: { kind: 'referral', from: 'hollis-bright', familiarity: 2 } },
   { id: 'lucia-bellamy', name: 'Lucia Bellamy', specialties: ['session'], tagline: 'Strings and horn arrangements, booked as a section', genreAffinity: ['Soul', 'Jazz', 'Folk'], rateBand: 'standard', reliability: 72, unlock: { kind: 'referral', from: 'jo-marek', familiarity: 2 } },
   { id: 'kenji-watanabe', name: 'Kenji Watanabe', specialties: ['mix', 'master'], tagline: 'Mixes and masters in one sitting', genreAffinity: ['Electronic', 'Hip-hop'], rateBand: 'standard', reliability: 77, unlock: { kind: 'referral', from: 'dev-rao', familiarity: 2 } },
@@ -89,7 +95,7 @@ export interface OutsourcedStage {
   uplift: number;
 }
 
-type NetState = Pick<GameState, 'saveSeed' | 'currentDay' | 'money'> & Partial<Pick<GameState, 'freelancers' | 'premisesTier' | 'clientRelationships' | 'hiredStaff' | 'ledger'>>;
+type NetState = Pick<GameState, 'saveSeed' | 'currentDay' | 'money'> & Partial<Pick<GameState, 'freelancers' | 'premisesTier' | 'clientRelationships' | 'hiredStaff' | 'ledger' | 'labelInterest' | 'playerBands'>>;
 
 const EMPTY: FreelancerState = { known: [], familiarity: {}, log: [] };
 export const getFreelancers = (s: { freelancers?: FreelancerState }): FreelancerState => s.freelancers ?? EMPTY;
@@ -104,6 +110,8 @@ export function unlockMet(s: NetState, c: FreelancerContact): boolean {
     case 'premises': return (s.premisesTier ?? 0) >= u.tier;
     case 'client': return Object.values(s.clientRelationships ?? {}).some((r) => TIER_ORDER.indexOf(r.tier) >= TIER_ORDER.indexOf(u.tier));
     case 'staff': return (s.hiredStaff?.length ?? 0) >= u.count;
+    case 'label': return Object.values(s.labelInterest ?? {}).some((v) => v >= u.interest);
+    case 'venue': return (s.playerBands ?? []).some((b) => (b.fame ?? 0) >= u.fame);
     case 'referral': return familiarityWith(s, u.from) >= u.familiarity;
   }
 }
@@ -121,6 +129,8 @@ export const unlockHint = (c: FreelancerContact): string => {
     case 'premises': return u.tier === 1 ? 'Opens with a Project Studio' : u.tier === 2 ? 'Opens with a Commercial Studio' : 'Opens with a Multi-room Facility';
     case 'client': return `Introduced by a ${u.tier} client`;
     case 'staff': return `Introduced by your crew once you have ${u.count} staff`;
+    case 'label': return `Introduced by a label once its interest in you reaches ${u.interest}`;
+    case 'venue': return `Introduced by a venue once your band has ${u.fame} fame`;
     case 'referral': return `Referred by ${CONTACT_BY_ID[u.from]?.name ?? 'a contact'} after ${u.familiarity} good jobs together`;
   }
 };
@@ -281,4 +291,17 @@ export function settleFreelancers(state: GameState, project: Project | undefined
   const next: GameState = { ...state, freelancers: { known: now.map((c) => c.id), familiarity, log: fl.log } };
   const note = opened.length ? ` ${opened.map((c) => c.name).join(' and ')} ${opened.length > 1 ? 'are' : 'is'} now in your contacts.` : undefined;
   return { state: next, note };
+}
+
+/**
+ * Contacts the player has not met that could take over this stage, nearest first (referrals last), with the plain
+ * reason they are closed. Drives the one-line "who you could meet" hint on the stage card; never a purchase.
+ */
+export function lockedForStage(s: NetState, stageName: string): { contact: FreelancerContact; hint: string }[] {
+  const wanted = specialtiesForStage(stageName);
+  const kept = new Set(knownContacts(s).map((c) => c.id));
+  return FREELANCERS
+    .filter((c) => !kept.has(c.id) && c.specialties.some((sp) => wanted.includes(sp)))
+    .map((c) => ({ contact: c, hint: unlockHint(c) }))
+    .sort((a, b) => Number(a.contact.unlock.kind === 'referral') - Number(b.contact.unlock.kind === 'referral') || a.contact.id.localeCompare(b.contact.id));
 }
