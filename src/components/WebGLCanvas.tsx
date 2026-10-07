@@ -83,7 +83,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { applySoftwareGlProfile, isSoftwareGlRendererName, readGlRendererName, resolveRendererOrder } from '@/lib/render/rendererChoice';
 import { claimPixiApplication, STUDIO_FLOOR_OWNER } from '@/lib/motion/pixiGuard';
 import { cityWallColors } from '@/components/studio/cityWallTint';
-import { cityFloorPlanks, cityTrimColor, drawCityFloorPattern, drawCityPosters, drawCityProp } from '@/components/studio/cityRoomStyle';
+import { cityFloorPlanks, cityTrimColor, drawCityFloorPattern, drawCityProp } from '@/components/studio/cityRoomStyle';
 import { TILE_W, TILE_H, ROOM_W, ROOM_D, WALL_H, iso, isoQuad, leftWallPt } from '@/components/studio/isoMath';
 import { FEEL_MS, faderLevel, feelKindFor, handsetLift, handsetRattle, objectFeelPose, phoneRingLevel, takePush, wooferPump, type ObjectFeelKind } from '@/components/studio/studioObjectFeel';
 import { DOOR_FREE_Y, DOOR_HINGE_Y, doorFreeEdge, doorLeafShade, doorLightPool, doorSwingDeg } from '@/components/studio/studioDoor';
@@ -867,9 +867,6 @@ const buildScene = (
   root.addChild(walls);
   const dressing = buildWallDressing(decorSpec, trophyInput, tier);
   root.addChild(dressing.container);
-  const cityPosterLayer = new Graphics();
-  drawCityPosters(cityPosterLayer, state.cityId);
-  root.addChild(cityPosterLayer);
 
   /* ---- Window (right wall) — pane sky tracks the studio clock ------------ */
   const windowWrap = new Container();

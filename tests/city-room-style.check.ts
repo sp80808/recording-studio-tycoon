@@ -1,6 +1,7 @@
 import { CITIES } from '@/rpg/cities';
 import { getEraWindowStyle, DEFAULT_ERA_WINDOW } from '@/components/studio/studioSkylines';
-import { cityFloorPlanks, cityFloorSpec, CITY_FLOORS, cityPosters, cityTrimColor, CITY_POSTERS } from '@/components/studio/cityRoomStyle';
+import { cityFloorPlanks, cityFloorSpec, CITY_FLOORS, cityPosters, cityTrimColor, CITY_POSTERS, ROOM_POSTER_SLOTS } from '@/components/studio/cityRoomStyle';
+import { ROOM_LAYOUT_PROFILES, ROOM_DOOR, ROOM_ON_AIR_HALF } from '@/components/studio/roomLayouts';
 
 const assert = (c: unknown, m: string) => { if (!c) { console.error('FAIL', m); process.exit(1); } };
 const base = 0x2a1f18;
@@ -15,10 +16,27 @@ for (const c of CITIES) {
   assert(t !== base, `${c.id} trim differs`);
   assert(cityTrimColor(base, c.id) === t, `${c.id} trim deterministic`);
   trims.add(t);
-  const p = cityPosters(c.id);
-  assert(p.length === 2, `${c.id} has two posters`);
-  assert(p[0].y1 <= p[1].y0, `${c.id} posters do not overlap`);
-  assert(p.every((s) => s.y0 < s.y1 && s.y0 >= 2.5 && s.y1 <= 5.5), `${c.id} posters sit on the free left wall span`);
+  assert(cityPosters(c.id, 'project-studio').length === 0, `${c.id}: Studio A door wall stays free of posters`);
+  assert(cityPosters(c.id).length === 0, `${c.id}: no room means no posters`);
+  for (const [type, slots] of Object.entries(ROOM_POSTER_SLOTS)) {
+    assert(cityPosters(c.id, type as never).length === slots!.length, `${c.id} ${type} gets one poster per slot`);
+  }
+}
+for (const [type, slots] of Object.entries(ROOM_POSTER_SLOTS)) {
+  const prof = ROOM_LAYOUT_PROFILES[type as keyof typeof ROOM_LAYOUT_PROFILES];
+  assert(!!prof, `${type} has a layout`);
+  const { width, depth } = prof.footprint;
+  const door = { a: prof.doorSpot.y - ROOM_DOOR.half - 0.1, b: prof.doorSpot.y + ROOM_DOOR.half + 0.1 };
+  slots!.forEach((s, i) => {
+    const tag = `${type} poster ${i}`;
+    assert(s.y0 < s.y1 && s.y0 >= 0.3 && s.y1 <= (s.side === 'right' ? width : depth) - 0.1, `${tag} sits on its wall`);
+    const hit = (a: number, b: number) => s.y0 < b && s.y1 > a;
+    if (s.side === 'left') assert(!hit(door.a, door.b), `${tag} is clear of the door`);
+    for (const w of prof.walls) if (w.side === s.side && w.kind !== 'brick') assert(!hit(w.from, w.to), `${tag} is clear of ${w.kind} treatment`);
+    if (prof.window.side === s.side) assert(!hit(prof.window.from, prof.window.to), `${tag} is clear of the window`);
+    if (s.side === 'right') assert(!hit(prof.onAirX - ROOM_ON_AIR_HALF - 0.1, prof.onAirX + ROOM_ON_AIR_HALF + 0.1), `${tag} is clear of the on-air lamp`);
+    slots!.forEach((o, j) => { if (j > i && o.side === s.side) assert(s.y1 <= o.y0 || o.y1 <= s.y0, `${tag} does not overlap poster ${j}`); });
+  });
 }
 assert(trims.size === CITIES.length, 'every city has a distinct trim');
 assert(Object.keys(CITY_POSTERS).length === CITIES.length, 'poster table covers every city');
