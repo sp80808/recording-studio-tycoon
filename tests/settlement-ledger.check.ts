@@ -7,6 +7,7 @@ import { earn } from '../src/economy/ledger';
 import { createNewGameState } from '../src/utils/newGameState';
 import { generateNewProjects } from '../src/utils/projectUtils';
 import { generateProjectReview } from '../src/utils/projectReviewUtils';
+import { applyLabelOutcome, labelSettlementAdjustment, labelOutcome, resolveTerms, NO_CHOICES } from '../src/rpg/labelAccounts';
 import { pressQuote, humanizeSkill } from '../src/utils/reviewCopy';
 import type { Project, ProjectReport } from '../src/types/game';
 
@@ -44,6 +45,25 @@ for (const [name, deposit, decision] of scenarios) {
   ok(ledger.payout === rep.moneyGained, `${name}: payout matches the review Money`);
   if (decision === 'polish') ok(ledger.deliveryAdjustment < 0 && ledger.deliveryLabel === 'Polish before delivery', `${name}: polish is itemised as a debit`);
 }
+
+// Label contracts (#369): the on-time bonus / late cut appears as a ledger line and still sums to the balance delta.
+for (const [name, quality, bookedDay] of [['on time and on target', 80, 3], ['late delivery', 80, -30], ['short of target', 10, 3]] as const) {
+  const base0 = { baseFee: 1200, baseDeadlineDays: 10, baseTarget: 60, baseRevisions: 1 };
+  const terms = { labelId: 'l1', labelName: 'Northside Records', tier: 'indie' as const, ...base0, choices: NO_CHOICES, ...resolveTerms(base0, NO_CHOICES) };
+  const project = { ...offer, id: `lbl-${name}`, payoutBase: 1200, bookedDay, labelTerms: terms } as Project;
+  const rep = report(project.id, 1200);
+  rep.overallQualityScore = quality;
+  const open = { ...base, activeProject: project, activeProjects: [] as Project[] };
+  const adj = labelSettlementAdjustment(open, project, quality, rep.moneyGained);
+  ok(!!adj && adj.amount === labelOutcome(terms, Math.max(1, open.currentDay - bookedDay + 1), quality, 1200).money, `${name}: ledger adjustment matches the label outcome`);
+  const ledger = buildSettlementLedger(rep, 1200, undefined, adj);
+  const settled = applyLabelOutcome(applyReportToState(open, rep), project, quality, rep.moneyGained);
+  ok(ledger.netCredit === settled.money - open.money, `${name}: credited now (with label line) equals the real balance change`);
+  ok(ledger.labelAdjustment !== 0 && ledger.labelLabel.includes('Northside Records'), `${name}: the label line is itemised and named`);
+}
+ok(labelSettlementAdjustment(base, { ...offer } as Project, 50, 100) === undefined, 'non-label projects get no label line');
+ok(buildSettlementLedger(report('x', 500), 500).labelAdjustment === 0, 'no label line when there is no label contract');
+ok(fs.readFileSync('src/components/modals/ProjectReviewModal.tsx', 'utf8').includes('ledger.labelAdjustment'), 'the review modal renders the label line');
 
 // Copy: one quote mark pair, readable skill names, honest cap text.
 ok(pressQuote('"Cut" turned out fine.') === '"Cut" turned out fine.', 'a snippet that opens with a quote is not wrapped again');

@@ -1,5 +1,6 @@
 import { money } from '@/utils/displayMoney';
 import { tc } from '@/i18n/content';
+import { buildStoryContractBrief, type StoryContractBrief } from '@/narrative/storyContractBrief';
 import { enquiryDemandWeight, industryPulse, releaseSignals } from '@/rpg/marketDemand';
 import { trackEnquiry, trackEnquiryViewed } from '@/telemetry/instrument';
 import React, { useState } from 'react';
@@ -85,6 +86,20 @@ const getOpportunityNote = (project: Project) => {
 
   return 'Balanced booking — reliable cash, experience and relationship potential.';
 };
+
+/** Rival brief + locked stake meaning on the pinned story contract (#334). Full text, never truncated. */
+const StoryBrief: React.FC<{ brief: StoryContractBrief }> = ({ brief }) => (
+  <div data-testid="story-brief" role="group" aria-label={brief.watching} className="space-y-1.5">
+    <p className="font-semibold text-[var(--rst-ivory)]" data-testid="story-brief-watching">{brief.watching}</p>
+    <p className="italic" data-testid="story-brief-voice">{brief.voice}</p>
+    <p data-testid="story-brief-stake">
+      <span className="rst-chip rst-chip-story mr-1.5 !py-0.5 text-[10px]">{brief.stakeKicker}</span>
+      {brief.stakeMeaning}
+    </p>
+    <p className="rst-muted text-[11px]" data-testid="story-brief-terms">{brief.stakeTerms}</p>
+    {brief.unlockNote && <p className="rst-muted text-[11px]" data-testid="story-brief-unlock">{brief.unlockNote}</p>}
+  </div>
+);
 
 /** Safe / Ambitious / Moonshot picker. Locked tiers say which level opens them. */
 const StakePicker: React.FC<{
@@ -517,11 +532,15 @@ export const ProjectList: React.FC<ProjectListProps> = ({
                     Brief, rider &amp; note
                   </summary>
                   <div className="pt-2 space-y-2">
-                    <p className="rounded-lg border border-[var(--rst-line)] bg-black/20 p-2 text-xs leading-snug text-stone-300">
-                      {isStory
-                        ? 'The rival is watching this one. A strong result counts toward the campaign objective.'
-                        : getOpportunityNote(project)}
-                    </p>
+                    <div className="rounded-lg border border-[var(--rst-line)] bg-black/20 p-2 text-xs leading-snug text-stone-300">
+                      {isStory && rival ? (
+                        <StoryBrief brief={buildStoryContractBrief(rival, chosenStake, level)} />
+                      ) : isStory ? (
+                        'The rival is watching this one. A strong result counts toward the campaign objective.'
+                      ) : (
+                        getOpportunityNote(project)
+                      )}
+                    </div>
                     <p data-testid="enquiry-style-note" className="text-xs text-stone-400">{enquiryStyleNote(gameState.studioExpertise, project.genre, project.brief?.serviceType)}</p>
                 <BriefPanel
                   project={project}

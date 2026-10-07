@@ -127,7 +127,8 @@ const toaster = read('src/components/ui/toaster.tsx');
 ok(toaster.includes('resolveNotificationPlacement') && toaster.includes('visibleToasts={placement.capacity}'), 'Sonner capacity and lane come from the shared policy');
 ok(!toaster.includes('bottom-right'), 'Sonner no longer parks phone toasts bottom-right');
 const notifs = read('src/components/NotificationSystem.tsx');
-ok(notifs.includes('if (compact) return null') && /toast\(\{/.test(notifs), 'game notifications forward into the single Sonner rail on phones');
+ok(notifs.includes('return null') && /toast\(\{/.test(notifs) && !notifs.includes('if (compact) return'), 'game notifications forward into the single Sonner rail at every width');
+ok(!notifs.includes('rst-game-notifications') && !notifs.includes('fixed bottom-4'), 'no second legacy notification stack that could overlap Sonner on desktop');
 ok(!read('src/components/first-session-guide.css').includes('.rst-game-notifications'), 'no scattered per-host notification overrides remain');
 ok(/\.rst-toaster \{ pointer-events: none; \}/.test(shell) && shell.includes('[data-sonner-toast] { pointer-events: auto; }'), 'rail only captures pointer events on the card itself');
 

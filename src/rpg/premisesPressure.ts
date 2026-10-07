@@ -190,3 +190,13 @@ export const generatePremisesOpportunities = (s: PressureState): PremisesOpportu
 /** The single in-world line (phone / landlord / referral) that opens the opportunity, or null. */
 export const getPremisesWorldCue = (s: PressureState): string | null =>
   generatePremisesOpportunities(s)[0]?.cue ?? null;
+
+/**
+ * Why a premises opportunity cannot be taken yet (#366): the unmet offer conditions, plus a deposit shortfall for
+ * this specific lease. Empty when it can be taken. Pure; reads only the offer and the current cash.
+ */
+export const opportunityBlockers = (offer: { conditions: { label: string; met: boolean }[] } | null, deposit: number, money: number): string[] => {
+  const unmet = (offer?.conditions ?? []).filter(c => !c.met).map(c => c.label);
+  if (money < deposit && !unmet.some(l => l.startsWith('$'))) unmet.push(`$${Math.round(deposit).toLocaleString('en-US')} for this deposit (you have $${Math.max(0, Math.round(money)).toLocaleString('en-US')})`);
+  return unmet;
+};
