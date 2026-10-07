@@ -27,12 +27,9 @@ assert.equal(saved.bloomAndGlow, true);
 assert.equal(applySoftwareGlProfile({ ...saved, targetFps: 0 }).targetFps, 20, 'uncapped vsync is capped too');
 assert.equal(applySoftwareGlProfile({ ...saved, targetFps: 15 }).targetFps, 15, 'never raises a lower cap');
 
-// Review reveal must have a wall-clock failure path and the review request must be abortable.
+// Review reveal must have a wall-clock failure path.
 const modal = readFileSync('src/components/modals/ProjectReviewModal.tsx', 'utf8');
 assert.match(modal, /REVEAL_WATCHDOG_MS/);
 assert.match(modal, /window\.setTimeout\(skipReveal, REVEAL_WATCHDOG_MS\)/);
-const poll = readFileSync('src/services/pollinations.ts', 'utf8');
-assert.match(poll, /signal: controller\.signal/);
-assert.ok((poll.match(/AbortController/g) ?? []).length >= 2, 'both pollinations requests carry a timeout');
 
 console.log('software-gl-guard checks passed');

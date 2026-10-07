@@ -64,7 +64,7 @@ for check in tools-assets audio-system confetti-juice minigames-audio user-inter
 done
 
 echo "=== gamepad service & controller suites ==="
-for check in gamepad-service gamepad-glyph gamepad-navigation spatial-navigation radial-wheel beat-pad-game tape-jog-game console-ride-game vocal-comp album-sequence fault-hunt minigame-debriefs chain-recall flight-case-packing session-scramble phase-check booking-calendar filler-jobs city-selection onboarding-steps city-sagas market-determinism house-style artist-career label-interest label-accounts service-quote gameplay-telemetry market-demand industry-events balance-lab content-workbench freelancers staff-career recruitment-channels market-player-influence work-style-effect bus-merge gamepad-suite; do
+for check in gamepad-service gamepad-glyph gamepad-navigation spatial-navigation radial-wheel beat-pad-game tape-jog-game console-ride-game vocal-comp album-sequence fault-hunt minigame-debriefs chain-recall flight-case-packing session-scramble phase-check booking-calendar filler-jobs city-selection onboarding-steps city-sagas market-determinism house-style artist-career label-interest label-accounts service-quote settlement-ledger gameplay-telemetry market-demand industry-events balance-lab content-workbench freelancers staff-career recruitment-channels market-player-influence work-style-effect bus-merge gamepad-suite; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-$check.cjs" --alias:@=./src >/dev/null
   node "${CHECK_OUTPUT_DIR}/rst-$check.cjs"
 done
@@ -382,5 +382,9 @@ node "${CHECK_OUTPUT_DIR}/rst-gear-why.cjs"
 echo "=== software GL guard + review watchdog (#352/#353) ==="
 ./node_modules/.bin/esbuild tests/software-gl-guard.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-software-gl-guard.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-software-gl-guard.cjs"
+
+echo "=== shop effect lines + stake unlock hints ==="
+./node_modules/.bin/esbuild tests/shop-effects-stake-hints.check.tsx --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-shop-effects-stake-hints.cjs" --alias:@=./src --loader:.css=empty >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-shop-effects-stake-hints.cjs"
 
 echo "All automated checks passed."

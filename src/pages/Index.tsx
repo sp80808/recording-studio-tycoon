@@ -29,6 +29,7 @@ import { seasonReviewNote } from '@/rpg/studioSeasons';
 import { GameState, Project, ProjectReport, StaffMember } from '@/types/game'; // Import GameState, Project, ProjectReport, StaffMember
 import DeliveryChoiceDialog from '@/components/DeliveryChoiceDialog';
 import { quoteFor } from '@/rpg/serviceQuote';
+import { buildSettlementLedger } from '@/rpg/settlementLedger';
 import { applyDeliveryDecision, type UnresolvedIssue } from '@/rpg/sessionIssues';
 import { generateProjectReview } from '@/utils/projectReviewUtils'; // Import generateProjectReview
 import { getFocusEffectiveness, getMoodEffectiveness } from '@/utils/playerUtils';
@@ -919,6 +920,10 @@ const MusicStudioTycoon = () => {
           onClose={handleFinalizeProjectCompletion} // Finalizes completion when modal is closed
           report={activeProjectReport}
           saveSeed={gameState.saveSeed}
+          ledger={(() => {
+            const p = [gameState.activeProject, ...(gameState.activeProjects ?? [])].find(x => x?.id === activeProjectReport.projectId);
+            return buildSettlementLedger(activeProjectReport, p?.payoutBase ?? activeProjectReport.moneyGained, p?.depositPaid);
+          })()}
           seasonNote={(() => {
             const p = [gameState.activeProject, ...(gameState.activeProjects ?? [])].find(x => x?.id === activeProjectReport.projectId);
             const rel = p?.clientId ? gameState.clientRelationships?.[p.clientId] : undefined;
