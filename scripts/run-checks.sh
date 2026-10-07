@@ -18,7 +18,7 @@ echo "=== mobile shell: display mode, safe area, notification lanes, era labels 
 node "${CHECK_OUTPUT_DIR}/rst-mobile-shell.cjs"
 
 echo "=== tutorial and room purchases ==="
-for check in first-session-guide studio-room-purchase toast-spam pause-menu-keys; do
+for check in first-session-guide studio-room-purchase toast-spam pause-menu-keys pause-menu-nav; do
   ./node_modules/.bin/esbuild "tests/$check.check.ts" --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-$check.cjs" --alias:@=./src >/dev/null
   node "${CHECK_OUTPUT_DIR}/rst-$check.cjs"
 done
