@@ -17,7 +17,7 @@
 
 ---
 
-## 🆕 What&apos;s New in v0.5.0
+## 🆕 What's New in v0.5.0
 
 The latest milestone expands the tactile studio loop into a broader campaign:
 
