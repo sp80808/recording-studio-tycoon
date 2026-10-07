@@ -152,13 +152,11 @@
   "story.stake.moonshot": "Last-word master — S-rank or the rival owns the story.",
   "story.stake.unlockNote": "{{unlock}} — the story fixes it for this gig.",
   "premises.needs": "Needs {{what}}",
-<<<<<<< HEAD
   "story.brief.node": "Because this act: {{title}}",
   "story.rivalIntro.headline": "{{producer}} — {{epithet}} · {{studio}}",
   "story.rivalIntro.catchphrase": "“{{catchphrase}}”",
   "tier.upgrade.kicker": "Progression Milestone · Console Upgraded",
-  "tier.upgrade.footerPremises": "{{premises}} · console installed, studio floor updated live"
-=======
+  "tier.upgrade.footerPremises": "{{premises}} · console installed, studio floor updated live",
   "freelancer.next": "Next contact: {{name}}. {{hint}}",
   "freelancer.unlock.label": "Introduced by a label once its interest in you reaches {{n}}.",
   "freelancer.unlock.venue": "Introduced by a venue once your band has {{n}} fame.",
@@ -173,5 +171,4 @@
   "mic.line.mix-suite.1": "Same source, different spot: moving the mic a few inches changes the tone more than swapping it.",
   "mic.line.project-studio.0": "In a small room, close mic placement keeps the walls out of the recording.",
   "mic.line.project-studio.1": "Angle the mic slightly off the source and the harsh edge softens without losing presence."
->>>>>>> origin/main
 }
