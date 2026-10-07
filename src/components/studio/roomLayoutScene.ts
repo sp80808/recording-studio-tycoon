@@ -2,12 +2,12 @@
 // Runs inside the one shared Pixi Application owned by WebGLCanvas: this module only builds a Container
 // tree (static Graphics, no filters, no textures, no tickers) plus a tiny `tick` for the on-air lamp.
 // In-house proprietary original, Pixi Graphics only (logged in docs/ART_SOURCING_LOG.md).
-import { Container, Graphics } from 'pixi.js';
+import { Container, Graphics, Text } from 'pixi.js';
 import { iso, isoQuad, WALL_H as ROOM_WALL_H } from './isoMath';
 import { buildRack, buildSeat, isoBox, NAVY, NAVY_BACK, pt, quad, wrap, type BoxColors } from './studioIsoKit';
 import { getDaynessFromClockMinutes, getWindowSkyColor } from './studioDecorConfig';
 import { buildWindowView, type WindowView } from './studioWindowView';
-import { PROP_METRICS, ROOM_WINDOW_LIFT, type RoomHotspotId, type RoomLayoutProfile, type RoomPropSpec, type RoomWallSpec } from './roomLayouts';
+import { PROP_METRICS, ROOM_DOOR, ROOM_ON_AIR_HALF, ROOM_WINDOW_LIFT, type RoomHotspotId, type RoomLayoutProfile, type RoomPropSpec, type RoomWallSpec } from './roomLayouts';
 
 export interface RoomSceneOptions {
   /** A project is booked into this room right now. */
@@ -384,7 +384,7 @@ const buildWindow = (profile: RoomLayoutProfile, pal: RoomLayoutProfile['palette
   return { container: wrapC, view, setSky };
 };
 
-const buildShell = (profile: RoomLayoutProfile, pal: RoomLayoutProfile['palette'], rand: () => number, accent: number): { shell: Container; onAir: Graphics } => {
+const buildShell = (profile: RoomLayoutProfile, pal: RoomLayoutProfile['palette'], rand: () => number, accent: number): { shell: Container; onAir: Container; onAirGlow: Graphics } => {
   const { width: W, depth: D } = profile.footprint;
   const shell = new Container();
   shell.eventMode = 'none';
@@ -429,15 +429,80 @@ const buildShell = (profile: RoomLayoutProfile, pal: RoomLayoutProfile['palette'
   walls.poly([back.x, back.y, back.x, back.y - ROOM_WALL_H]).stroke({ width: 2, color: pal.trim, alpha: 0.6 });
   shell.addChild(walls);
 
-  // On-air lamp (right wall): dim housing always, lit glow while a project is booked in.
+  shell.addChild(paintRoomDoor(profile, pal, accent));
+
+  // On-air sign (right wall): a lightbox with lettering. Dark glass always; the glass, the
+  // lettering and a halo on the wall light up while a project is booked in.
   const housing = new Graphics();
-  const x0 = profile.onAirX - 0.3, x1 = profile.onAirX + 0.3;
-  housing.poly([...wallPt('right', x0, 118), ...wallPt('right', x1, 118), ...wallPt('right', x1, 106), ...wallPt('right', x0, 106)]).fill(0x14100d);
+  const x0 = profile.onAirX - ROOM_ON_AIR_HALF, x1 = profile.onAirX + ROOM_ON_AIR_HALF;
+  const wq = (a: number, b: number, l0: number, l1: number) => [...wallPt('right', a, l1), ...wallPt('right', b, l1), ...wallPt('right', b, l0), ...wallPt('right', a, l0)];
+  housing.poly(wq(x0 - 0.04, x1 + 0.04, 103, 121)).fill({ color: 0x000000, alpha: 0.35 });
+  housing.poly(wq(x0, x1, 104, 120)).fill(0x14100d);
+  housing.poly(wq(x0 + 0.05, x1 - 0.05, 106, 118)).fill(shade(accent, -0.72));
   shell.addChild(housing);
-  const onAir = new Graphics();
-  onAir.poly([...wallPt('right', x0 + 0.04, 116), ...wallPt('right', x1 - 0.04, 116), ...wallPt('right', x1 - 0.04, 108), ...wallPt('right', x0 + 0.04, 108)]).fill(accent);
+  const onAirGlow = new Graphics();
+  onAirGlow.blendMode = 'add';
+  {
+    const [cx, cy] = wallPt('right', profile.onAirX, 112);
+    for (let i = 0; i < 4; i++) onAirGlow.ellipse(cx, cy + i, 44 - i * 8, 22 - i * 4).fill({ color: accent, alpha: 0.07 + i * 0.03 });
+  }
+  shell.addChild(onAirGlow);
+  const onAir = new Container();
+  const glass = new Graphics();
+  glass.poly(wq(x0 + 0.05, x1 - 0.05, 106, 118)).fill(accent);
+  onAir.addChild(glass);
+  // Lettering needs a canvas; headless builds (checks, SSR) keep the lit glass only.
+  if (typeof document !== 'undefined') {
+    const [lx, ly] = wallPt('right', profile.onAirX, 112);
+    const label = new Text({ text: 'ON AIR', style: { fontFamily: 'Arial, sans-serif', fontSize: 7.5, fontWeight: '900', fill: 0xfff6ec, letterSpacing: 0.6 } });
+    label.anchor.set(0.5);
+    label.resolution = 3;
+    label.position.set(lx, ly);
+    // Lie the lettering in the right-wall plane (drops 1px per 2px across).
+    label.skew.set(0, Math.atan2(14, 28));
+    onAir.addChild(label);
+  }
   shell.addChild(onAir);
-  return { shell, onAir };
+  return { shell, onAir, onAirGlow };
+};
+
+/**
+ * The door the artist walks in through (left wall, centred on doorSpot.y): a trimmed frame, a
+ * two-panel slab, brass handle and kick plate, a small room plate above it and a thin line of
+ * hallway light along the threshold.
+ */
+const paintRoomDoor = (profile: RoomLayoutProfile, pal: RoomLayoutProfile['palette'], accent: number): Graphics => {
+  const g = new Graphics();
+  const c = profile.doorSpot.y;
+  const a = c - ROOM_DOOR.half;
+  const b = c + ROOM_DOOR.half;
+  const H = ROOM_DOOR.height;
+  const q = (t0: number, t1: number, l0: number, l1: number) => [...wallPt('left', t0, l0), ...wallPt('left', t1, l0), ...wallPt('left', t1, l1), ...wallPt('left', t0, l1)];
+  const slab = shade(pal.trim, 0.35);
+  // Frame (architrave) and shadowed reveal
+  g.poly(q(a - 0.09, b + 0.09, 0, H + 7)).fill(shade(pal.trim, 0.12));
+  g.poly(q(a, b, 0, H)).fill(shade(pal.trim, -0.4));
+  // Slab
+  g.poly(q(a + 0.04, b - 0.02, 1, H - 2)).fill(slab);
+  g.poly(q(a + 0.04, b - 0.02, 1, H - 2)).stroke({ width: 0.8, color: 0x000000, alpha: 0.45 });
+  // Two raised panels
+  for (const [l0, l1] of [[46, H - 9], [12, 40]] as const) {
+    g.poly(q(a + 0.16, b - 0.14, l0, l1)).fill(shade(slab, -0.12));
+    g.poly(q(a + 0.19, b - 0.17, l0 + 2, l1 - 2)).fill(shade(slab, 0.07));
+  }
+  // Kick plate and handle (handle on the far side from the hinge)
+  g.poly(q(a + 0.06, b - 0.04, 2, 8)).fill({ color: 0xc9a14a, alpha: 0.75 });
+  const [hx, hy] = wallPt('left', b - 0.14, 40);
+  g.roundRect(hx - 1.6, hy - 3.5, 3.2, 7, 1.4).fill(0xd8b25a);
+  g.circle(hx, hy - 4.5, 1.6).fill(0xe8c878);
+  // Room plate above the door, in the room accent
+  g.poly(q(c - 0.22, c + 0.22, H + 10, H + 17)).fill(0x14100d);
+  g.poly(q(c - 0.18, c + 0.18, H + 11.5, H + 15.5)).fill({ color: accent, alpha: 0.85 });
+  // Hallway light leaking under the door onto the floor
+  const f0 = iso(0, a + 0.06), f1 = iso(0, b - 0.04), f2 = iso(0.45, b - 0.1), f3 = iso(0.45, a + 0.12);
+  g.poly([f0.x, f0.y, f1.x, f1.y, f2.x, f2.y, f3.x, f3.y]).fill({ color: 0xffd9a0, alpha: 0.10 });
+  g.poly(q(a + 0.05, b - 0.03, 0, 1.4)).fill({ color: 0xffe2b0, alpha: 0.7 });
+  return g;
 };
 
 /* ------------------------------------------------------------------ build */
@@ -466,7 +531,7 @@ export const buildRoomLayoutScene = (profile: RoomLayoutProfile, opts: RoomScene
   const root = new Container();
   root.sortableChildren = true;
 
-  const { shell, onAir } = buildShell(profile, pal, rand, accent);
+  const { shell, onAir, onAirGlow } = buildShell(profile, pal, rand, accent);
   root.addChild(shell);
   const win = buildWindow(profile, pal, hash(`${opts.seed}:${profile.type}:window`), opts.clockMinutes ?? 840, opts.cityId);
   win.container.eventMode = 'none';
@@ -526,11 +591,15 @@ export const buildRoomLayoutScene = (profile: RoomLayoutProfile, opts: RoomScene
     maxY: iso(W, D).y + 16,
   };
 
-  const baseAlpha = opts.occupied ? 1 : 0.18;
+  const baseAlpha = opts.occupied ? 1 : 0.12;
   onAir.alpha = baseAlpha;
+  onAirGlow.alpha = opts.occupied ? 1 : 0;
   const tick = (seconds: number, reduceMotion: boolean) => {
     if (!opts.occupied) return;
-    onAir.alpha = reduceMotion ? 1 : 0.7 + 0.3 * Math.sin(seconds * 3.2);
+    // A lit tungsten box breathes a little; it never blinks off.
+    const breathe = reduceMotion ? 1 : 0.86 + 0.14 * Math.sin(seconds * 2.4);
+    onAir.alpha = breathe;
+    onAirGlow.alpha = breathe;
   };
 
   const count = (c: Container): number => c.children.reduce((n, ch) => n + 1 + (ch instanceof Container ? count(ch) : 0), 0);
