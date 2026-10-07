@@ -449,10 +449,14 @@ export const getStudioTierName = (tier: number): string => {
   return 'HOME STUDIO';
 };
 
-export const getStudioSignage = (eraId?: string, milestonesCount = 0, cityName?: string): string => {
+/**
+ * HUD signage. The studio is named once, by its premises (Borrowed Room, Project Studio, ...), so the HUD, Crew and
+ * Rooms agree (#366). Without a premises name it falls back to the console-tier name.
+ */
+export const getStudioSignage = (eraId?: string, milestonesCount = 0, cityName?: string, premisesName?: string): string => {
   const grade = getEraGrade(eraId);
   const tier = clampTier(Math.floor(milestonesCount / 2) + 1);
-  return `${cityName ? `${cityName.toUpperCase()} · ` : ''}${grade.label} · ${getStudioTierName(tier)}`;
+  return `${cityName ? `${cityName.toUpperCase()} · ` : ''}${grade.label} · ${premisesName ? premisesName.toUpperCase() : getStudioTierName(tier)}`;
 };
 
 export interface ConsoleProfile {

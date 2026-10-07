@@ -209,3 +209,20 @@ export const applyLabelOutcome = (state: GameState, project: Project | undefined
     notifications: [...state.notifications, { id: `label-outcome-${project.id}`, message: o.message, type: o.money >= 0 ? 'success' : 'info', timestamp: Date.now(), duration: 7000 }],
   };
 };
+
+/**
+ * The label-contract fee adjustment a delivery will book (#369), computed with exactly the inputs
+ * applyLabelOutcome uses so the review ledger and the wallet agree. Undefined for non-label projects.
+ */
+export const labelSettlementAdjustment = (
+  state: Pick<GameState, 'currentDay'>,
+  project: Project | undefined,
+  quality: number,
+  fee: number,
+): { amount: number; bonus: boolean; labelName: string } | undefined => {
+  const terms = project?.labelTerms;
+  if (!terms || !project) return undefined;
+  const daysTaken = Math.max(1, state.currentDay - (project.bookedDay ?? state.currentDay) + 1);
+  const o = labelOutcome(terms, daysTaken, quality, fee);
+  return { amount: o.money, bonus: o.money >= 0, labelName: terms.labelName };
+};

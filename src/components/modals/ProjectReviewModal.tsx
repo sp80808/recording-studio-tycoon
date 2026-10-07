@@ -454,6 +454,7 @@ export const ProjectReviewModal: React.FC<ProjectReviewModalProps> = ({ isOpen, 
                         {ledger.deliveryAdjustment !== 0 && <LedgerRow label={ledger.deliveryLabel} amount={ledger.deliveryAdjustment} signed />}
                         <LedgerRow label="Payout" amount={ledger.payout} strong />
                         {ledger.depositPaid > 0 && <LedgerRow label="Deposit already paid" amount={-ledger.depositPaid} signed />}
+                        {ledger.labelAdjustment !== 0 && <LedgerRow label={ledger.labelLabel} amount={ledger.labelAdjustment} signed />}
                         <LedgerRow label="Credited now" amount={ledger.netCredit} strong tone="text-emerald-400" />
                       </dl>
                     ) : (
