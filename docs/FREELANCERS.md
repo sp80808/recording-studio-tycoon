@@ -4,7 +4,7 @@ Freelancers are lightweight contacts, not a second roster. Where a stage's work 
 
 ## Rules
 
-- 12 authored contacts in `src/rpg/freelancers.ts`: mix, master and session musician, three rate bands. Three are known from the start (one per specialty). The rest unlock through a premises tier, a Regular or Loyal client, two staff, or a referral from a contact after two good jobs together.
+- 14 authored contacts in `src/rpg/freelancers.ts`: mix, master and session musician, three rate bands. Three are known from the start (one per specialty). The rest unlock through a premises tier, a Regular or Loyal client, two staff, a record label whose interest in you reaches 25 (its house mastering engineer), a player band with 25 fame (a venue mix engineer), or a referral from a contact after two good jobs together. The stage card shows one "Next contact" line saying how the nearest unmet contact opens.
 - Stage matching is by stage name (`specialtiesForStage`): "Mix" stages want mix engineers, "Master" stages mastering engineers, overdub and live-take stages session musicians. "Mixing & Mastering" accepts either.
 - **Fee** = band base ($40, $75, $150) scaled by the stage's work units (0.6x to 1.6x). Familiarity gives a preferred rate (2 jobs, 10% off) and a regular rate (4 jobs, 18% off).
 - **Quality**: the booked stage's creativity and technical gains are multiplied by 1 + uplift (band 4%, 8% or 12%, plus 3% for a genre they know, minus 3% for one they do not). It applies only to that stage, only from the day the specialist arrives, and the figure is locked when booked.

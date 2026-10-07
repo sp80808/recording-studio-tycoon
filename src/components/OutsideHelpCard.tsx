@@ -2,9 +2,10 @@ import React from 'react';
 import type { GameState } from '@/types/game';
 import { money } from '@/utils/displayMoney';
 import {
-  arrangeFreelancer, offersFor, outsourcedAt, specialtiesForStage, CONTACT_BY_ID, RATE_LABEL, SPECIALTY_LABEL,
+  arrangeFreelancer, offersFor, lockedForStage, outsourcedAt, specialtiesForStage, CONTACT_BY_ID, RATE_LABEL, SPECIALTY_LABEL,
 } from '@/rpg/freelancers';
 import { toast } from '@/hooks/use-toast';
+import { tc, useContentLocale } from '@/i18n/content';
 
 /**
  * Stage-boundary choice (#69): keep the stage in-house, or book an outside specialist. Shown only when a known
@@ -16,6 +17,7 @@ export const OutsideHelpCard: React.FC<{
   /** Phone: a one-line chip that opens the offers, so the transport dock keeps its space. */
   compact?: boolean;
 }> = ({ gameState, setGameState, compact }) => {
+  useContentLocale();
   const [open, setOpen] = React.useState(false);
   const project = gameState.activeProject;
   if (!project) return null;
@@ -38,6 +40,11 @@ export const OutsideHelpCard: React.FC<{
 
   const offers = offersFor(gameState, project, idx);
   if (!offers.length) return null;
+  const nextContact = lockedForStage(gameState, stage.stageName)[0];
+  const nextU = nextContact?.contact.unlock;
+  const nextHint = !nextContact ? '' : nextU?.kind === 'label'
+    ? tc('freelancer.unlock.label', nextContact.hint, { n: nextU.interest })
+    : nextU?.kind === 'venue' ? tc('freelancer.unlock.venue', nextContact.hint, { n: nextU.fame }) : nextContact.hint;
   const deadlineDay = (project.bookedDay ?? gameState.currentDay) + project.durationDaysTotal;
   const book = (contactId: string) => {
     const res = arrangeFreelancer(gameState, idx, contactId);
@@ -90,6 +97,11 @@ export const OutsideHelpCard: React.FC<{
           );
         })}
       </ul>
+      {nextContact && (
+        <div data-testid="outside-next-contact" className="text-stone-500">
+          {tc('freelancer.next', 'Next contact: {{name}}. {{hint}}', { name: nextContact.contact.name, hint: nextHint })}
+        </div>
+      )}
     </div>
   );
 };
