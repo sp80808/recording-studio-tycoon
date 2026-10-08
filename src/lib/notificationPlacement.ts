@@ -21,7 +21,7 @@ export type SurfaceKind = 'drawer' | 'session-panel' | 'modal' | 'coach';
 /**
  * Where a card may appear.
  * - top:     empty band under the HUD + enquiry chips (compact)
- * - session: empty band between the session header and its focus controls (compact)
+ * - session: critical-only lane; routine messages wait while the compact console is busy
  * - corner:  bottom-left stack on wide screens, where there is genuinely spare space
  * - hold:    no safe lane; the card waits (queued, not dropped) until the state changes
  */
@@ -68,8 +68,11 @@ export function resolveNotificationPlacement(state: ChromeState, compact: boolea
     case 'first-session':
       return { state, compact, lane: 'top', criticalLane: 'top', capacity: 1 };
     case 'session':
-      if (shortLandscape) return { state, compact, lane: 'hold', criticalLane: 'session', capacity: 1 };
-      return { state, compact, lane: 'session', criticalLane: 'session', capacity: 1 };
+      // On narrow screens, even the band below the header is occupied by the
+      // title, stage progress and intervention buttons. Routine feedback is
+      // already conveyed by the console and must never float over the mixer.
+      // Critical errors retain the narrow session lane.
+      return { state, compact, lane: 'hold', criticalLane: 'session', capacity: 1 };
     case 'take-calibration':
       // The meter and focus controls own the whole screen for a few seconds: wait, even for errors.
       return { state, compact, lane: 'hold', criticalLane: 'hold', capacity: 1 };
