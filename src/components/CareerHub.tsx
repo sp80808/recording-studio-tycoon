@@ -91,6 +91,7 @@ export function CareerHub({
   const [expanded, setExpanded] = useState(false);
   const [storyLogOpen, setStoryLogOpen] = useState(false);
   const [chaptersOpen, setChaptersOpen] = useState(false);
+  const [scrapbookOpen, setScrapbookOpen] = useState(false);
   const player = gameState.playerData;
   const challenge = checkDailyChallenge(gameState);
   const claimed =
@@ -235,7 +236,20 @@ export function CareerHub({
         <p className="rst-kicker mb-1">Current chapter</p>
         <p className="rst-title text-base">{chapter.title}</p>
         <p className="mt-0.5 text-stone-400">{chapter.blurb}</p>
-
+        {(pinned[0] || milestones[0]) && (
+          <div className="mt-3 flex items-center gap-2 rounded-lg border border-[var(--rst-brass-line)] bg-amber-400/[0.06] px-3 py-2">
+            <Flag size={15} className="shrink-0 text-[var(--rst-brass-300)]" aria-hidden="true" />
+            <span className="min-w-0 flex-1 truncate text-stone-200">{(pinned[0] || milestones[0]).title}</span>
+            <span className="shrink-0 text-[10px] text-[var(--rst-brass-300)]">LATEST</span>
+          </div>
+        )}
+        <button type="button" aria-expanded={scrapbookOpen} onClick={() => { click(); setScrapbookOpen(v => !v); }}
+          className="rst-btn mt-3 w-full justify-between !min-h-11 !px-3 text-left">
+          <span className="flex items-center gap-2"><BookOpen size={15} aria-hidden="true" /> Career scrapbook</span>
+          <span className="flex items-center gap-1 text-[11px] text-stone-400">{chapterGroups.reduce((n,g) => n + g.milestones.length,0)} moments <ChevronDown size={15} className={`motion-safe:transition-transform ${scrapbookOpen ? 'rotate-180' : ''}`} aria-hidden="true" /></span>
+        </button>
+        {scrapbookOpen && (
+          <div className="mt-2 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-1">
         {pinned.length > 0 && (
           <div className="mt-3" data-testid="pinned-moments">
             <p className="rst-kicker mb-1.5">Defining moments</p>
@@ -395,6 +409,8 @@ export function CareerHub({
               </ol>
             )}
           </>
+        )}
+          </div>
         )}
       </div>
 
