@@ -640,6 +640,8 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
               <StudioCustomizationPanel
                 customization={gameState.studioCustomization}
                 premisesTier={gameState.premisesTier}
+                producerCustomization={gameState.producerCustomization}
+                selectedEra={gameState.selectedEra}
                 onChange={next => setGameState(prev => ({ ...prev, studioCustomization: next }))}
               />
               <div className="grid gap-2.5 p-1 pt-3 sm:grid-cols-2">
