@@ -19,6 +19,7 @@ interface ProgressiveProjectInterfaceProps {
   onProjectSelect?: (project: Project) => void;
   onBookEnquiry?: (project: Project) => void;
   onOpenBookings?: () => void;
+  onRest?: () => void;
   autoTriggeredMinigame?: SessionIntervention | null;
   clearAutoTriggeredMinigame?: () => void;
 }
@@ -68,6 +69,7 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
   onProjectSelect,
   onBookEnquiry,
   onOpenBookings,
+  onRest,
   autoTriggeredMinigame,
   clearAutoTriggeredMinigame
 }) => {
@@ -150,6 +152,7 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
           onProjectSelect={onProjectSelect}
           onBookEnquiry={onBookEnquiry}
           onOpenBookings={onOpenBookings}
+          onRest={onRest}
           performDailyWork={performDailyWork}
           onMinigameReward={onMinigameReward}
           onProjectComplete={onProjectComplete}
@@ -209,6 +212,7 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
               onProjectSelect={onProjectSelect}
           onBookEnquiry={onBookEnquiry}
           onOpenBookings={onOpenBookings}
+          onRest={onRest}
               performDailyWork={performDailyWork}
               onMinigameReward={onMinigameReward}
               onProjectComplete={onProjectComplete}
@@ -256,6 +260,7 @@ export const ProgressiveProjectInterface: React.FC<ProgressiveProjectInterfacePr
               onProjectSelect={onProjectSelect}
           onBookEnquiry={onBookEnquiry}
           onOpenBookings={onOpenBookings}
+          onRest={onRest}
               performDailyWork={performDailyWork}
               onMinigameReward={onMinigameReward}
               onProjectComplete={onProjectComplete}
