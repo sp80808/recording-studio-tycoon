@@ -550,17 +550,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
               : 'default'
         }
         returnFocusRef={returnFocusRef}
-        headerActions={
-          panel === 'session' && gameState.playerData.dailyWorkCapacity <= 0 && !project?.awaitingReview ? (
-            <MotionButton
-              className="studio-primary-action ml-auto text-xs py-1 px-2.5"
-              onClick={advanceDay}
-            >
-              <Moon size={14} />
-              <span>{t('rest_advance_day')}</span>
-            </MotionButton>
-          ) : null
-        }
+
       >
         <FeatureBoundary feature={`drawer:${panel ?? 'closed'}:${dashboardTab}`} resetKey={`${panel}:${dashboardTab}`}>
         <div className="flex-1 min-h-0 min-w-0 flex flex-col relative" data-reward-source="activity">
@@ -585,6 +575,7 @@ export const MainGameContent: React.FC<MainGameContentProps> = ({
                 clearAutoTriggeredMinigame={clearAutoTriggeredMinigame}
                 onBookEnquiry={bookProject}
                 onOpenBookings={() => openPanel('bookings')}
+                onRest={advanceDay}
                 onProjectSelect={(project) => {
                   setGameState(prev => ({ ...prev, activeProject: project }));
                   setPanel('session');
