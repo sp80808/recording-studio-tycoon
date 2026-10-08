@@ -181,7 +181,7 @@ export const ContextDrawer: React.FC<ContextDrawerProps> = ({
                       <MotionButton
                         onClick={handleClose}
                         aria-label={t('context_drawer_close_aria')}
-                        className="grid h-9 w-9 place-items-center rounded-full border border-[var(--rst-line-strong)] bg-white/[0.03] text-stone-300 transition-colors hover:border-[var(--rst-brass-line)] hover:bg-white/[0.07] hover:text-[var(--rst-brass-200)]"
+                        className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[var(--rst-line-strong)] bg-white/[0.03] text-stone-300 transition-colors hover:border-[var(--rst-brass-line)] hover:bg-white/[0.07] hover:text-[var(--rst-brass-200)]"
                       >
                         <X size={16} aria-hidden="true" />
                       </MotionButton>
