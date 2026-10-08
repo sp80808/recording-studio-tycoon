@@ -13,6 +13,10 @@ echo "=== mobile onboarding regression (blank screen + creator touch) ==="
 ./node_modules/.bin/esbuild tests/mobile-onboarding-regression.check.tsx --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-mobile-onboarding.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-mobile-onboarding.cjs"
 
+echo "=== mobile tier-up overlay regression (#399) ==="
+./node_modules/.bin/esbuild tests/mobile-tier-upgrade.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-mobile-tier-upgrade.cjs" --alias:@=./src >/dev/null
+node "${CHECK_OUTPUT_DIR}/rst-mobile-tier-upgrade.cjs"
+
 echo "=== mobile shell: display mode, safe area, notification lanes, era labels ==="
 ./node_modules/.bin/esbuild tests/mobile-shell.check.ts --bundle --platform=node --format=cjs --outfile="${CHECK_OUTPUT_DIR}/rst-mobile-shell.cjs" --alias:@=./src >/dev/null
 node "${CHECK_OUTPUT_DIR}/rst-mobile-shell.cjs"
