@@ -951,6 +951,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
               payout={project.payoutBase}
               difficulty={project.difficulty}
               stageLabel={`${project.currentStageIndex + 1}/${project.stages.length} ${currentStage?.stageName ?? ''}`}
+              previousStageGrade={project.stageGrades?.[project.stageGrades.length - 1]}
               stageProgress={currentStageProgress}
               overallProgress={overallProgress}
               energy={availableEnergy}
