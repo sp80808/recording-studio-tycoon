@@ -1504,7 +1504,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                 />
               )}
 
-              {overdriveUnlocked && <div className="flex items-center gap-2">
+              {overdriveUnlocked && (!isPhone || availableEnergy >= 2 || overdriveArmed) && <div className="flex items-center gap-2">
                 <Button
                   onClick={toggleOverdrive}
                   disabled={availableEnergy < 2 || isProjectComplete}
@@ -1528,15 +1528,15 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
 
               <button
                 data-rst-surface="contextual" data-rst-action-id="console:record" data-rst-world-target="console"
-                onClick={isProjectComplete ? handleOpenProjectReview : handleArmTake}
-                disabled={!isProjectComplete && availableEnergy <= 0}
-                aria-label={isProjectComplete ? 'Review project' : availableEnergy > 0 ? `${t('active_arm_take', { cost: energyCost, left: availableEnergy })} — ${t('active_work_on_project')}` : t('active_out_of_capacity')}
+                onClick={isProjectComplete ? handleOpenProjectReview : availableEnergy <= 0 ? onRest : handleArmTake}
+                disabled={!isProjectComplete && availableEnergy <= 0 && !onRest}
+                aria-label={isProjectComplete ? 'Review project' : availableEnergy > 0 ? `${t('active_arm_take', { cost: energyCost, left: availableEnergy })} — ${t('active_work_on_project')}` : onRest ? t('rest_advance_day') : t('active_out_of_capacity')}
                 className={`w-full py-3.5 text-sm font-black uppercase tracking-wider rounded-[2px] border transition-all flex items-center justify-center gap-2 shadow-lg ${
                   isProjectComplete
                     ? 'bg-emerald-400/[0.16] border-emerald-400/55 text-emerald-100'
                     : availableEnergy > 0
                     ? 'bg-red-400/[0.14] hover:bg-red-400/[0.24] border-red-400 text-red-100 shadow-[0_0_12px_rgba(220,38,38,0.5)] active:scale-[0.99]'
-                    : 'bg-stone-900 border-stone-800 text-stone-500 cursor-not-allowed'
+                    : onRest ? 'bg-amber-400/[0.14] hover:bg-amber-400/[0.23] border-amber-400/70 text-amber-100 active:scale-[0.99]' : 'bg-stone-900 border-stone-800 text-stone-500 cursor-not-allowed'
                 }`}
               >
                 {isProjectComplete ? (
@@ -1550,7 +1550,7 @@ export const ActiveProject: React.FC<ActiveProjectProps> = ({
                     <span>{t('active_arm_take', { cost: energyCost, left: availableEnergy })}</span>
                   </>
                 ) : (
-                  <><StatIcon name="energy" /> {t('active_out_of_capacity')}</>
+                  <><StatIcon name="energy" /> {onRest ? t('rest_advance_day') : t('active_out_of_capacity')}</>
                 )}
               </button>
             </div>
