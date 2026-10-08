@@ -91,7 +91,8 @@ for (const s of states) {
 }
 ok(resolveNotificationPlacement('idle', true).lane === 'top', 'idle studio uses the top rail');
 ok(resolveNotificationPlacement('first-session', true).lane === 'top', 'first-session guide state keeps feedback off the bottom band');
-ok(resolveNotificationPlacement('session', true).lane === 'session', 'session console uses the free band under its header');
+ok(shouldDefer(resolveNotificationPlacement('session', true), 'important'), 'session console defers routine feedback to protect the mixer and stage controls');
+ok(laneFor(resolveNotificationPlacement('session', true), 'critical') === 'session', 'critical session errors still have a narrow lane');
 const calib = resolveNotificationPlacement('take-calibration', true);
 ok(shouldDefer(calib, 'important') && shouldDefer(calib, 'critical'), 'take calibration defers all feedback');
 for (const s of ['drawer', 'modal'] as const) {

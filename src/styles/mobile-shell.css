@@ -58,7 +58,9 @@
 
 /* Full-bleed drawers/sheets begin below the system area, not under it. */
 @media (max-width: 540px), (max-height: 500px) {
-  .studio-drawer-shell .studio-drawer-head {
+  /* General drawers need safe-area header padding. Session drawers already apply
+     that inset on their full-bleed shell; never apply it twice. */
+  [data-studio-drawer]:not([data-studio-drawer='session']) .studio-drawer-shell .studio-drawer-head {
     padding-top: max(var(--rst-top-inset), 10px) !important;
     padding-left: max(14px, var(--rst-safe-left)) !important;
     padding-right: max(14px, var(--rst-safe-right)) !important;

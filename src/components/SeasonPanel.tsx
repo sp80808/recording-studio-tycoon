@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Award, BookOpen, Check, Circle } from 'lucide-react';
+import { Award, BookOpen, Check, ChevronDown, Circle } from 'lucide-react';
 import type { GameState } from '@/types/game';
 import {
   FOCUS_INFO,
@@ -24,6 +24,7 @@ const STATUS_LABEL = { winner: 'On track to win', nominated: 'Nominated', not_no
 /** Compact Studio Seasons surface: focus choice, causal objective progress, award criteria, yearbook. */
 export function SeasonPanel({ gameState, onChooseFocus }: SeasonPanelProps) {
   const [showYear, setShowYear] = useState(false);
+  const [focusExpanded, setFocusExpanded] = useState(false);
   const state = ensureSeasons(gameState);
   const seasons = state.studioSeasons!;
   const objectives = currentObjectives(state);
@@ -44,7 +45,18 @@ export function SeasonPanel({ gameState, onChooseFocus }: SeasonPanelProps) {
         </span>
       </header>
 
-      <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5" role="group" aria-label="Season focus">
+      {seasons.focus && (
+        <button type="button" className="rst-btn flex w-full !min-h-11 items-center justify-between !px-3 text-left"
+          aria-expanded={focusExpanded} onClick={() => setFocusExpanded(v => !v)}>
+          <span className="flex items-center gap-2 text-xs"><Award size={15} className="text-[var(--rst-brass-300)]" aria-hidden="true" />
+            {objectives.filter(o => o.done).length}/{objectives.length} season goals complete · Change focus
+          </span>
+          <ChevronDown size={15} className={`motion-safe:transition-transform ${focusExpanded ? 'rotate-180' : ''}`} aria-hidden="true" />
+        </button>
+      )}
+      {(!seasons.focus || focusExpanded) && (
+        <div className="space-y-2 motion-safe:animate-in motion-safe:fade-in">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5" role="group" aria-label="Season focus">
         {STUDIO_FOCUSES.map(f => (
           <button
             key={f}
@@ -77,7 +89,9 @@ export function SeasonPanel({ gameState, onChooseFocus }: SeasonPanelProps) {
         </ul>
       )}
 
-      <button type="button" className="rst-btn !min-h-8 !px-3 !text-xs" onClick={() => setShowYear(v => !v)} aria-expanded={showYear}>
+        </div>
+      )}
+      <button type="button" className="rst-btn !min-h-11 !px-3 !text-xs" onClick={() => setShowYear(v => !v)} aria-expanded={showYear}>
         <Award size={13} aria-hidden="true" />
         Studio Awards and yearbook
       </button>

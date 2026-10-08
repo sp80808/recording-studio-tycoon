@@ -14,6 +14,7 @@ export interface MobileSessionStatusStripProps {
   payout: number;
   difficulty: number;
   stageLabel: string;
+  previousStageGrade?: 'Gold' | 'Silver' | 'Bronze';
   stageProgress: number;
   overallProgress: number;
   energy: number;
@@ -70,6 +71,7 @@ export const MobileSessionStatusStrip: React.FC<MobileSessionStatusStripProps> =
       {open && (
         <div className="absolute left-0 right-0 top-full mt-1 z-30 rounded-[2px] border border-stone-600 bg-stone-950 p-2.5 text-xs text-stone-300 shadow-2xl space-y-1.5" role="region" aria-label="Session details">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {p.previousStageGrade && <span className="text-[var(--rst-brass-300)]">🏅 Previous stage: {p.previousStageGrade}</span>}
             <span>{p.durationDays}d duration</span>
             <span>{Math.round(p.sessions)} sessions</span>
           </div>
